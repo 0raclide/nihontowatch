@@ -1,0 +1,120 @@
+/**
+ * Database type definitions
+ *
+ * This file should be generated from Supabase schema:
+ * npx supabase gen types typescript --project-id YOUR_PROJECT_ID > src/types/database.ts
+ *
+ * For now, we define a minimal structure that matches the Oshi-scrapper schema.
+ */
+
+export interface Database {
+  public: {
+    Tables: {
+      dealers: {
+        Row: {
+          id: number;
+          name: string;
+          domain: string;
+          catalog_url: string | null;
+          country: string;
+          is_active: boolean;
+          created_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['dealers']['Row'], 'id' | 'created_at'>;
+        Update: Partial<Database['public']['Tables']['dealers']['Insert']>;
+      };
+      listings: {
+        Row: {
+          id: number;
+          url: string;
+          dealer_id: number;
+          status: string;
+          is_available: boolean | null;
+          is_sold: boolean | null;
+          page_exists: boolean;
+          title: string | null;
+          description: string | null;
+          item_type: string | null;
+          item_category: string | null;
+          price_value: number | null;
+          price_currency: string;
+          price_raw: string | null;
+          nagasa_cm: number | null;
+          sori_cm: number | null;
+          motohaba_cm: number | null;
+          sakihaba_cm: number | null;
+          kasane_cm: number | null;
+          weight_g: number | null;
+          nakago_cm: number | null;
+          tosogu_maker: string | null;
+          tosogu_school: string | null;
+          material: string | null;
+          height_cm: number | null;
+          width_cm: number | null;
+          thickness_mm: number | null;
+          smith: string | null;
+          school: string | null;
+          province: string | null;
+          era: string | null;
+          mei_type: string | null;
+          cert_type: string | null;
+          cert_session: number | null;
+          cert_organization: string | null;
+          images: string[];
+          raw_page_text: string | null;
+          first_seen_at: string;
+          last_scraped_at: string;
+          scrape_count: number;
+        };
+        Insert: Omit<Database['public']['Tables']['listings']['Row'], 'id' | 'first_seen_at' | 'last_scraped_at' | 'scrape_count'>;
+        Update: Partial<Database['public']['Tables']['listings']['Insert']>;
+      };
+      price_history: {
+        Row: {
+          id: number;
+          listing_id: number;
+          old_price: number | null;
+          new_price: number | null;
+          old_currency: string | null;
+          new_currency: string | null;
+          change_type: string;
+          detected_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['price_history']['Row'], 'id' | 'detected_at'>;
+        Update: Partial<Database['public']['Tables']['price_history']['Insert']>;
+      };
+      discovered_urls: {
+        Row: {
+          id: number;
+          url: string;
+          dealer_id: number;
+          discovered_at: string;
+          last_scraped_at: string | null;
+          is_scraped: boolean;
+          scrape_priority: number;
+        };
+        Insert: Omit<Database['public']['Tables']['discovered_urls']['Row'], 'id' | 'discovered_at'>;
+        Update: Partial<Database['public']['Tables']['discovered_urls']['Insert']>;
+      };
+      scrape_runs: {
+        Row: {
+          id: number;
+          run_type: string;
+          dealer_id: number | null;
+          started_at: string;
+          completed_at: string | null;
+          urls_processed: number;
+          new_listings: number;
+          updated_listings: number;
+          errors: number;
+          status: string;
+        };
+        Insert: Omit<Database['public']['Tables']['scrape_runs']['Row'], 'id'>;
+        Update: Partial<Database['public']['Tables']['scrape_runs']['Insert']>;
+      };
+    };
+    Views: Record<string, never>;
+    Functions: Record<string, never>;
+    Enums: Record<string, never>;
+  };
+}
