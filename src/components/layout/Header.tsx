@@ -40,10 +40,14 @@ export function Header() {
     setHighlightedIndex(-1);
   }, [suggestions]);
 
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (query.trim()) {
-      navigateToSearch(query.trim());
+    // Get value directly from form data as fallback
+    const formData = new FormData(e.currentTarget);
+    const searchQuery = (formData.get('q') as string) || query;
+    console.log('[handleSearch]', { formQuery: formData.get('q'), stateQuery: query, searchQuery });
+    if (searchQuery.trim()) {
+      navigateToSearch(searchQuery.trim());
     }
   };
 
@@ -170,7 +174,8 @@ export function Header() {
                 <input
                   ref={inputRef}
                   type="text"
-                  value={query}
+                  name="q"
+                  defaultValue=""
                   onChange={(e) => {
                     console.log('[onChange]', e.target.value);
                     setQuery(e.target.value);
