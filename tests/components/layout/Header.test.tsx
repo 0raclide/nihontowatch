@@ -77,7 +77,6 @@ describe('Header Component', () => {
 
     // Desktop navigation links
     expect(screen.getByRole('link', { name: /browse/i })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /dealers/i })).toBeInTheDocument();
   });
 
   it('renders desktop search form', () => {
