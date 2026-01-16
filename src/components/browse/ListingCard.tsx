@@ -153,10 +153,10 @@ export function ListingCard({ listing, currency, exchangeRates }: ListingCardPro
       rel="noopener noreferrer"
       className="group block bg-white dark:bg-gray-800/50 border border-border dark:border-gray-700/50 hover:border-gold/40 dark:hover:border-gold/40 transition-all duration-300"
     >
-      {/* Dealer Name - Prominent at top */}
-      <div className="px-3 py-2 border-b border-border/50 dark:border-gray-700/30">
-        <span className="text-[10px] font-medium tracking-wide text-charcoal/80 dark:text-gray-400 uppercase">
-          {listing.dealers?.name}
+      {/* Dealer Domain - Elegant centered header */}
+      <div className="px-3 py-2.5 bg-gradient-to-b from-linen/80 to-transparent dark:from-gray-800/60 dark:to-transparent text-center">
+        <span className="text-[10px] font-medium tracking-[0.15em] text-charcoal/70 dark:text-gray-400 lowercase">
+          {listing.dealers?.domain}
         </span>
       </div>
 
