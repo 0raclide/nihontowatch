@@ -9,8 +9,12 @@
     "lint": "eslint",
     "test": "vitest",
     "test:run": "vitest run",
+    "test:unit": "vitest run tests/lib tests/hooks",
     "test:api": "vitest run tests/api",
-    "test:lib": "vitest run tests/lib"
+    "test:lib": "vitest run tests/lib",
+    "test:sql": "vitest run tests/sql",
+    "test:components": "vitest run tests/components tests/contexts",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@supabase/ssr": "^0.8.0",

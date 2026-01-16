@@ -1,105 +1,13 @@
--- Migration 007: Add Full-Text Search with tsvector
--- Enables fast PostgreSQL full-text search for Nihontowatch listings
--- Uses 'simple' config (not 'english') because Japanese romanization doesn't use English stemming
+-- Migration 008: Fix search function return types
+-- The id column in listings is INTEGER, not UUID
+-- This migration fixes the RPC function return types to match
+
+-- Drop existing functions (need to drop before recreating with different return types)
+DROP FUNCTION IF EXISTS search_listings_instant(TEXT, INTEGER);
+DROP FUNCTION IF EXISTS search_listings_ranked(TEXT, TEXT, TEXT[], TEXT[], INT[], BOOLEAN, TEXT, INTEGER, INTEGER);
 
 -- ============================================================================
--- STEP 1: Add tsvector column for search
--- ============================================================================
-ALTER TABLE listings ADD COLUMN IF NOT EXISTS search_vector tsvector;
-
--- ============================================================================
--- STEP 2: Create weighted search vector function
--- Weight A (highest): title, smith, tosogu_maker (most important for search)
--- Weight B: school, tosogu_school (attribution)
--- Weight C: province, era (context)
--- Weight D (lowest): description text from raw_page_text
--- ============================================================================
-CREATE OR REPLACE FUNCTION build_listing_search_vector(
-  p_title TEXT,
-  p_smith TEXT,
-  p_tosogu_maker TEXT,
-  p_school TEXT,
-  p_tosogu_school TEXT,
-  p_province TEXT,
-  p_era TEXT,
-  p_raw_page_text TEXT
-)
-RETURNS tsvector
-LANGUAGE plpgsql
-IMMUTABLE
-AS $$
-BEGIN
-  RETURN (
-    -- Weight A: Primary identifiers (title, artisan names)
-    setweight(to_tsvector('simple', COALESCE(p_title, '')), 'A') ||
-    setweight(to_tsvector('simple', COALESCE(p_smith, '')), 'A') ||
-    setweight(to_tsvector('simple', COALESCE(p_tosogu_maker, '')), 'A') ||
-    -- Weight B: Schools/lineage
-    setweight(to_tsvector('simple', COALESCE(p_school, '')), 'B') ||
-    setweight(to_tsvector('simple', COALESCE(p_tosogu_school, '')), 'B') ||
-    -- Weight C: Location and time period
-    setweight(to_tsvector('simple', COALESCE(p_province, '')), 'C') ||
-    setweight(to_tsvector('simple', COALESCE(p_era, '')), 'C') ||
-    -- Weight D: Description (first 5000 chars to avoid huge vectors)
-    setweight(to_tsvector('simple', COALESCE(LEFT(p_raw_page_text, 5000), '')), 'D')
-  );
-END;
-$$;
-
--- ============================================================================
--- STEP 3: Create trigger function to auto-update search_vector
--- ============================================================================
-CREATE OR REPLACE FUNCTION update_listing_search_vector()
-RETURNS TRIGGER
-LANGUAGE plpgsql
-AS $$
-BEGIN
-  NEW.search_vector := build_listing_search_vector(
-    NEW.title,
-    NEW.smith,
-    NEW.tosogu_maker,
-    NEW.school,
-    NEW.tosogu_school,
-    NEW.province,
-    NEW.era,
-    NEW.raw_page_text
-  );
-  RETURN NEW;
-END;
-$$;
-
--- Create trigger (drop first if exists to ensure idempotency)
-DROP TRIGGER IF EXISTS update_search_vector_trigger ON listings;
-CREATE TRIGGER update_search_vector_trigger
-  BEFORE INSERT OR UPDATE OF title, smith, tosogu_maker, school, tosogu_school, province, era, raw_page_text
-  ON listings
-  FOR EACH ROW
-  EXECUTE FUNCTION update_listing_search_vector();
-
--- ============================================================================
--- STEP 4: Create GIN index for fast full-text search
--- ============================================================================
-CREATE INDEX IF NOT EXISTS idx_listings_search_vector ON listings USING GIN(search_vector);
-
--- ============================================================================
--- STEP 5: Backfill existing records
--- ============================================================================
-UPDATE listings
-SET search_vector = build_listing_search_vector(
-  title,
-  smith,
-  tosogu_maker,
-  school,
-  tosogu_school,
-  province,
-  era,
-  raw_page_text
-)
-WHERE search_vector IS NULL;
-
--- ============================================================================
--- STEP 6: Create RPC function for instant search (autocomplete/typeahead)
--- Returns top N results quickly for search-as-you-type
+-- Recreate search_listings_instant with correct INTEGER id type
 -- ============================================================================
 CREATE OR REPLACE FUNCTION search_listings_instant(
   p_query TEXT,
@@ -167,8 +75,7 @@ COMMENT ON FUNCTION search_listings_instant IS
   'Fast instant search for typeahead/autocomplete. Returns top N results with total count.';
 
 -- ============================================================================
--- STEP 7: Create RPC function for full ranked search with filters
--- Supports all browse filters plus full-text search ranking
+-- Recreate search_listings_ranked with correct INTEGER id type
 -- ============================================================================
 CREATE OR REPLACE FUNCTION search_listings_ranked(
   p_query TEXT,
@@ -315,19 +222,3 @@ GRANT EXECUTE ON FUNCTION search_listings_ranked(TEXT, TEXT, TEXT[], TEXT[], INT
 
 COMMENT ON FUNCTION search_listings_ranked IS
   'Full search with filters, pagination, and flexible sorting. Supports relevance ranking when query provided.';
-
--- ============================================================================
--- VERIFICATION QUERIES (run manually to test)
--- ============================================================================
--- Test instant search:
--- SELECT * FROM search_listings_instant('katana');
--- SELECT * FROM search_listings_instant('Sukehiro', 5);
-
--- Test ranked search with filters:
--- SELECT * FROM search_listings_ranked('bizen', 'available', ARRAY['katana']::TEXT[], NULL, NULL, FALSE, 'relevance', 10, 0);
-
--- Check search vector is populated:
--- SELECT id, title, search_vector IS NOT NULL as has_vector FROM listings LIMIT 10;
-
--- Check index exists:
--- SELECT indexname FROM pg_indexes WHERE tablename = 'listings' AND indexname = 'idx_listings_search_vector';

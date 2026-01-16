@@ -301,7 +301,7 @@ function HomeContent() {
               className={`flex items-center gap-2 px-4 py-2.5 rounded-full font-medium text-[13px] transition-all active:scale-95 ${
                 getActiveFilterCount(filters) > 0
                   ? 'bg-gold text-white shadow-md'
-                  : 'bg-ink dark:bg-white text-white dark:text-ink'
+                  : 'bg-charcoal dark:bg-gray-700 text-white'
               }`}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
