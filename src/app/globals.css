@@ -1,26 +1,326 @@
 @import "tailwindcss";
 
+/*
+ * Nihontowatch - Scholarly Collector Aesthetic
+ * Refined, elegant, museum-quality presentation
+ */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Warm Museum Whites */
+  --cream: #FAF9F6;
+  --ivory: #FEFDFB;
+  --linen: #F8F6F3;
+  --paper: #F5F3EF;
+
+  /* Rich Darks */
+  --charcoal: #4A4A4A;
+  --onyx: #353535;
+  --ink: #1C1C1C;
+
+  /* Accent Colors */
+  --gold: #B8860B;
+  --gold-light: #D4AF37;
+  --burgundy: #6B2D35;
+  --sage: #8FA67A;
+
+  /* Certification Colors */
+  --juyo: #6B2D35;
+  --toku-hozon: #2D4A4A;
+  --hozon: #5A6670;
+
+  /* Semantic */
+  --background: var(--cream);
+  --foreground: var(--ink);
+  --muted: #7A7A7A;
+  --border: #E8E4DE;
+  --border-dark: #D4CFC6;
+}
+
+/* Dark mode overrides */
+.dark {
+  --cream: #0D0D0D;
+  --ivory: #141414;
+  --linen: #121212;
+  --paper: #181818;
+  --charcoal: #A8A8A8;
+  --ink: #F0F0F0;
+  --background: #0A0A0A;
+  --foreground: #F0F0F0;
+  --muted: #888888;
+  --border: #252525;
+  --border-dark: #333333;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-cream: var(--cream);
+  --color-ivory: var(--ivory);
+  --color-linen: var(--linen);
+  --color-paper: var(--paper);
+  --color-charcoal: var(--charcoal);
+  --color-onyx: var(--onyx);
+  --color-ink: var(--ink);
+  --color-gold: var(--gold);
+  --color-gold-light: var(--gold-light);
+  --color-burgundy: var(--burgundy);
+  --color-sage: var(--sage);
+  --color-juyo: var(--juyo);
+  --color-toku-hozon: var(--toku-hozon);
+  --color-hozon: var(--hozon);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-border-dark: var(--border-dark);
+  --font-serif: var(--font-serif);
+  --font-sans: var(--font-sans);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+/* Base styles */
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  line-height: 1.65;
+  font-feature-settings: "kern" 1, "liga" 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Typography - Scholarly hierarchy */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-serif), Georgia, "Times New Roman", serif;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+/* Readable body text */
+p, li, td, th {
+  letter-spacing: 0.01em;
+}
+
+/* Elegant scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-dark);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
+}
+
+/* Dark mode scrollbar */
+.dark::-webkit-scrollbar-thumb {
+  background: #3a3a3a;
+}
+
+.dark::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Utility classes */
+.font-serif {
+  font-family: var(--font-serif), Georgia, "Times New Roman", serif;
+}
+
+.font-sans {
+  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
+}
+
+/* Subtle card hover effect */
+.card-hover {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.08);
+}
+
+.dark .card-hover:hover {
+  box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.4);
+}
+
+/* Refined focus states */
+.focus-elegant:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--cream), 0 0 0 3px var(--gold);
+}
+
+/* Badge styles - more refined */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.65rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.badge-juyo {
+  background: var(--juyo);
+  color: white;
+}
+
+.badge-toku-hozon {
+  background: var(--toku-hozon);
+  color: white;
+}
+
+.badge-hozon {
+  background: var(--hozon);
+  color: white;
+}
+
+.badge-available {
+  background: var(--sage);
+  color: white;
+}
+
+.badge-sold {
+  background: var(--muted);
+  color: white;
+}
+
+/* Elegant button */
+.btn-elegant {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.625rem 1.25rem;
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  background: var(--ink);
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-elegant:hover {
+  background: var(--charcoal);
+}
+
+.dark .btn-elegant {
+  background: var(--gold);
+  color: #0a0a0a;
+}
+
+.dark .btn-elegant:hover {
+  background: var(--gold-light);
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--border-dark);
+}
+
+.btn-outline:hover {
+  background: var(--ink);
+  color: white;
+  border-color: var(--ink);
+}
+
+.dark .btn-outline {
+  color: var(--foreground);
+  border-color: var(--border-dark);
+}
+
+.dark .btn-outline:hover {
+  background: var(--gold);
+  color: #0a0a0a;
+  border-color: var(--gold);
+}
+
+/* Divider - subtle gradient */
+.divider {
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    var(--border),
+    transparent
+  );
+}
+
+/* Price display - refined */
+.price {
+  font-family: var(--font-serif), Georgia, serif;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+/* Japanese text */
+.jp {
+  font-family: "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif;
+}
+
+/* Selection */
+::selection {
+  background: var(--gold-light);
+  color: var(--ink);
+}
+
+.dark ::selection {
+  background: var(--gold);
+  color: #0a0a0a;
+}
+
+/* Smooth image loading */
+.img-loading {
+  background: linear-gradient(
+    110deg,
+    var(--border) 8%,
+    var(--cream) 18%,
+    var(--border) 33%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s linear infinite;
+}
+
+.dark .img-loading {
+  background: linear-gradient(
+    110deg,
+    #222 8%,
+    #1a1a1a 18%,
+    #222 33%
+  );
+  background-size: 200% 100%;
+}
+
+@keyframes shimmer {
+  to {
+    background-position-x: -200%;
+  }
+}
+
+/* Custom toggle switch track position fix */
+.translate-x-4\.5 {
+  transform: translateX(1.125rem);
+}
+
+/* Line clamping */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Tabular figures for numbers */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
 }

@@ -180,11 +180,13 @@ id, url (UNIQUE), dealer_id, discovered_at, is_scraped, scrape_priority
 
 ---
 
-## Current Dealers (18 Japanese)
+## Current Dealers (27 Total)
+
+### Japanese Dealers (24)
 
 | Dealer | Domain | Status |
 |--------|--------|--------|
-| Aoi Art | aoi-art.com | ✅ Active |
+| Aoi Art | aoijapan.com | ✅ Active |
 | Eirakudo | eirakudo.com | ✅ Active |
 | Nipponto | nipponto.co.jp | ✅ Active |
 | E-sword | e-sword.jp | ✅ Active |
@@ -200,6 +202,22 @@ id, url (UNIQUE), dealer_id, discovered_at, is_scraped, scrape_priority
 | Premi | premi.co.jp | ✅ Active |
 | Gallery Youyou | gallery-youyou.com | ✅ Active |
 | Hyozaemon | hyozaemon.com | ✅ Active |
+| Tsuruginoya | tsuruginoya.com | ✅ Active |
+| Touken Matsumoto | touken-matsumoto.jp | ✅ Active |
+| Touken Komachi | toukenkomachi.com | ✅ Active |
+| Touken Sakata | touken-sakata.com | ✅ Active |
+| Token-Net | token-net.com | ✅ Active |
+| World Seiyudo | world-seiyudo.com | ✅ Active |
+| Tokka Biz | tokka.biz | ✅ Active |
+| Sanmei | sanmei.com | ✅ Active |
+
+### Western Dealers (3)
+
+| Dealer | Domain | Country | Status |
+|--------|--------|---------|--------|
+| Nihonto | nihonto.com | USA | ✅ Active |
+| Nihonto Art | nihontoart.com | USA | ✅ Active |
+| Swords of Japan | swordsofjapan.com | USA | ✅ Active |
 
 ### Planned International Dealers
 
