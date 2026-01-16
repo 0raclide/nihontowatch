@@ -16,6 +16,11 @@ export function Header() {
   const { query, setQuery, suggestions, total, isLoading, clearSuggestions } =
     useSearch({ maxSuggestions: 5 });
 
+  // Debug: log search state changes
+  useEffect(() => {
+    console.log('[Search Debug]', { query, suggestions: suggestions.length, total, isLoading });
+  }, [query, suggestions, total, isLoading]);
+
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
