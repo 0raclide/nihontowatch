@@ -171,7 +171,10 @@ export function Header() {
                   ref={inputRef}
                   type="text"
                   value={query}
-                  onChange={(e) => setQuery(e.target.value)}
+                  onChange={(e) => {
+                    console.log('[onChange]', e.target.value);
+                    setQuery(e.target.value);
+                  }}
                   onFocus={handleInputFocus}
                   onKeyDown={handleKeyDown}
                   placeholder="Search collection..."
