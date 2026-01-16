@@ -16,20 +16,22 @@ export function Header() {
   const { query, setQuery, suggestions, total, isLoading, clearSuggestions } =
     useSearch({ maxSuggestions: 5 });
 
-  // Debug: log search state changes
-  useEffect(() => {
-    console.log('[Search Debug]', { query, suggestions: suggestions.length, total, isLoading });
-  }, [query, suggestions, total, isLoading]);
-
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
 
-  // Show suggestions when we have query and results
+  // Debug: log search state changes
+  useEffect(() => {
+    console.log('[Search Debug]', { query, suggestions: suggestions.length, total, isLoading, showSuggestions });
+  }, [query, suggestions, total, isLoading, showSuggestions]);
+
+  // Show/hide suggestions based on query and results
   useEffect(() => {
     if (query.length >= SEARCH.MIN_QUERY_LENGTH && (suggestions.length > 0 || isLoading)) {
       setShowSuggestions(true);
+    } else if (query.length < SEARCH.MIN_QUERY_LENGTH) {
+      setShowSuggestions(false);
     }
   }, [query, suggestions, isLoading]);
 
