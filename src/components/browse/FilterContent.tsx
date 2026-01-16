@@ -13,6 +13,8 @@ interface DealerFacet {
   count: number;
 }
 
+type Currency = 'USD' | 'JPY' | 'EUR';
+
 export interface FilterContentProps {
   facets: {
     itemTypes: Facet[];
@@ -30,6 +32,11 @@ export interface FilterContentProps {
   onFilterChange: (key: string, value: unknown) => void;
   onClose?: () => void;
   isUpdating?: boolean;
+  // Sort and currency for mobile drawer
+  sort?: string;
+  onSortChange?: (sort: string) => void;
+  currency?: Currency;
+  onCurrencyChange?: (currency: Currency) => void;
 }
 
 function FilterSection({
@@ -170,7 +177,17 @@ const CERT_LABELS: Record<string, string> = {
 // Sort order for certifications (highest to lowest)
 const CERT_ORDER = ['Tokuju', 'tokuju', 'Juyo', 'juyo', 'TokuHozon', 'tokubetsu_hozon', 'Hozon', 'hozon', 'TokuKicho', 'nbthk', 'nthk'];
 
-export function FilterContent({ facets, filters, onFilterChange, onClose, isUpdating }: FilterContentProps) {
+export function FilterContent({
+  facets,
+  filters,
+  onFilterChange,
+  onClose,
+  isUpdating,
+  sort,
+  onSortChange,
+  currency,
+  onCurrencyChange,
+}: FilterContentProps) {
   const [dealerSearch, setDealerSearch] = useState('');
   const [dealerDropdownOpen, setDealerDropdownOpen] = useState(false);
 
@@ -321,11 +338,11 @@ export function FilterContent({ facets, filters, onFilterChange, onClose, isUpda
 
   return (
     <div className="px-4 lg:px-0 pb-6">
-      {/* Header - Larger, clearer */}
-      <div className="flex items-center justify-between mb-2 py-2">
+      {/* Header with clear button */}
+      <div className="flex items-center justify-between mb-4 py-2 lg:hidden">
         <div className="flex items-center gap-3">
-          <h2 className="text-[15px] lg:text-[13px] uppercase tracking-[0.15em] font-semibold text-ink dark:text-white">
-            Filters
+          <h2 className="text-[17px] font-semibold text-ink dark:text-white">
+            Refine Results
           </h2>
           {isUpdating && (
             <div className="w-4 h-4 border-2 border-gold border-t-transparent rounded-full animate-spin" />
@@ -334,12 +351,61 @@ export function FilterContent({ facets, filters, onFilterChange, onClose, isUpda
         {hasActiveFilters && (
           <button
             onClick={clearAllFilters}
-            className="text-[13px] lg:text-[12px] text-gold hover:text-gold-light transition-colors font-medium"
+            className="text-[14px] text-gold hover:text-gold-light transition-colors font-medium"
           >
             Clear all
           </button>
         )}
       </div>
+
+      {/* Desktop header */}
+      <div className="hidden lg:flex items-center justify-between mb-2 py-2">
+        <h2 className="text-[13px] uppercase tracking-[0.15em] font-semibold text-ink dark:text-white">
+          Filters
+        </h2>
+        {hasActiveFilters && (
+          <button
+            onClick={clearAllFilters}
+            className="text-[12px] text-gold hover:text-gold-light transition-colors font-medium"
+          >
+            Clear all
+          </button>
+        )}
+      </div>
+
+      {/* Sort & Currency - Mobile only */}
+      {onSortChange && onCurrencyChange && (
+        <div className="lg:hidden grid grid-cols-2 gap-3 mb-5 pb-5 border-b border-border/50 dark:border-gray-700/30">
+          {/* Sort */}
+          <div>
+            <label className="text-[12px] text-muted dark:text-gray-500 mb-2 block">Sort by</label>
+            <select
+              value={sort}
+              onChange={(e) => onSortChange(e.target.value)}
+              className="w-full px-3 py-3 bg-white dark:bg-gray-800 border-2 border-border dark:border-gray-700 rounded-lg text-[15px] text-ink dark:text-white focus:outline-none focus:border-gold"
+            >
+              <option value="recent">Newest</option>
+              <option value="price_asc">Price ↑</option>
+              <option value="price_desc">Price ↓</option>
+              <option value="name">A-Z</option>
+            </select>
+          </div>
+
+          {/* Currency */}
+          <div>
+            <label className="text-[12px] text-muted dark:text-gray-500 mb-2 block">Currency</label>
+            <select
+              value={currency}
+              onChange={(e) => onCurrencyChange(e.target.value as Currency)}
+              className="w-full px-3 py-3 bg-white dark:bg-gray-800 border-2 border-border dark:border-gray-700 rounded-lg text-[15px] text-ink dark:text-white focus:outline-none focus:border-gold"
+            >
+              <option value="JPY">¥ JPY</option>
+              <option value="USD">$ USD</option>
+              <option value="EUR">€ EUR</option>
+            </select>
+          </div>
+        </div>
+      )}
 
       <div className="divide-y divide-border/50 dark:divide-gray-700/30">
         {/* 1. Category Toggle - Most Important */}

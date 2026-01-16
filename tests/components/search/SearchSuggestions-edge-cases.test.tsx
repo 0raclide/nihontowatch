@@ -234,26 +234,28 @@ describe('SearchSuggestions Long Text Edge Cases', () => {
     expect(screen.getByText(longDomain)).toBeInTheDocument();
   });
 
-  it('truncates title at exactly 47 chars + ellipsis', () => {
-    // 50 char title should be truncated
-    const title50 = 'A'.repeat(50);
-    // 47 char title should not be truncated
-    const title47 = 'B'.repeat(47);
+  it('truncates title at exactly 50 chars', () => {
+    // 51 char title should be truncated (>50 triggers truncation to 47 + '...')
+    const title51 = 'A'.repeat(51);
+    // 50 char title should NOT be truncated
+    const title50 = 'B'.repeat(50);
+
+    const props51 = createDefaultProps({
+      suggestions: [createSuggestion({ title: title51, smith: null })],
+    });
+
+    const { unmount } = render(<SearchSuggestions {...props51} />);
+    // The component truncates titles > 50 chars to 47 chars + '...'
+    expect(screen.getByText('A'.repeat(47) + '...')).toBeInTheDocument();
+    unmount();
 
     const props50 = createDefaultProps({
       suggestions: [createSuggestion({ title: title50, smith: null })],
     });
 
-    const { unmount } = render(<SearchSuggestions {...props50} />);
-    expect(screen.getByText('A'.repeat(47) + '...')).toBeInTheDocument();
-    unmount();
-
-    const props47 = createDefaultProps({
-      suggestions: [createSuggestion({ title: title47, smith: null })],
-    });
-
-    render(<SearchSuggestions {...props47} />);
-    expect(screen.getByText('B'.repeat(47))).toBeInTheDocument();
+    render(<SearchSuggestions {...props50} />);
+    // 50 char title should be displayed fully
+    expect(screen.getByText('B'.repeat(50))).toBeInTheDocument();
   });
 });
 
@@ -284,6 +286,8 @@ describe('SearchSuggestions Special Characters Edge Cases', () => {
   });
 
   it('handles HTML entities in text', () => {
+    // Note: React renders string content literally, it does NOT decode HTML entities
+    // '&amp;' in JSX string becomes '&amp;' in the DOM, not '&'
     const props = createDefaultProps({
       suggestions: [
         createSuggestion({
@@ -294,8 +298,9 @@ describe('SearchSuggestions Special Characters Edge Cases', () => {
     });
 
     render(<SearchSuggestions {...props} />);
-    // React should handle entities correctly
-    expect(screen.queryByText('&amp;')).toBeInTheDocument();
+    // The literal string '&amp;' is displayed (React does not decode entities in text)
+    // This test verifies the text is rendered safely as-is
+    expect(screen.getByText(/Smith &lt;Great&gt;/)).toBeInTheDocument();
   });
 
   it('handles Unicode special characters', () => {

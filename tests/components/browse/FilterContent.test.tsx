@@ -128,7 +128,9 @@ describe('FilterContent Component', () => {
       />
     );
 
-    expect(screen.getByRole('button', { name: /clear all/i })).toBeInTheDocument();
+    // There are two clear buttons (mobile and desktop), check at least one exists
+    const clearButtons = screen.getAllByRole('button', { name: /clear all/i });
+    expect(clearButtons.length).toBeGreaterThan(0);
   });
 
   it('does not show clear all button when no filters are active', () => {
@@ -158,7 +160,9 @@ describe('FilterContent Component', () => {
       />
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /clear all/i }));
+    // Click the first clear all button (could be mobile or desktop)
+    const clearButtons = screen.getAllByRole('button', { name: /clear all/i });
+    fireEvent.click(clearButtons[0]);
 
     expect(mockOnFilterChange).toHaveBeenCalledWith('category', 'all');
     expect(mockOnFilterChange).toHaveBeenCalledWith('itemTypes', []);

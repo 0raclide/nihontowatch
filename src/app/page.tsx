@@ -7,10 +7,10 @@ import { FilterSidebar } from '@/components/browse/FilterSidebar';
 import { FilterDrawer } from '@/components/browse/FilterDrawer';
 import { ListingGrid } from '@/components/browse/ListingGrid';
 import { CurrencySelector } from '@/components/ui/CurrencySelector';
-import { useMobileUI } from '@/contexts/MobileUIContext';
 import { getActiveFilterCount } from '@/components/browse/FilterContent';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
+import { BottomTabBar } from '@/components/navigation/BottomTabBar';
 
 interface Listing {
   id: string;
@@ -100,7 +100,6 @@ type Currency = 'USD' | 'JPY' | 'EUR';
 function HomeContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { openFilterDrawer } = useMobileUI();
   const isMobile = useIsMobile();
   const filtersChangedRef = useRef(false);
 
@@ -261,8 +260,8 @@ function HomeContent() {
             </p>
           </div>
 
-          {/* Controls row */}
-          <div className="flex items-center justify-between lg:justify-end gap-4 lg:gap-6">
+          {/* Controls row - Desktop only, mobile uses filter drawer */}
+          <div className="hidden lg:flex items-center gap-6">
             <CurrencySelector value={currency} onChange={handleCurrencyChange} />
 
             <select
@@ -290,31 +289,9 @@ function HomeContent() {
         {/* Subtle divider */}
         <div className="h-px bg-gradient-to-r from-transparent via-border dark:via-gray-700 to-transparent mb-4 lg:mb-8" />
 
-        {/* Mobile Filter Bar - Prominent sticky bar */}
-        <div className="lg:hidden sticky top-[57px] z-30 bg-cream/95 dark:bg-gray-900/95 backdrop-blur-sm border-b border-border/50 dark:border-gray-800/50 -mx-4 px-4 py-3 mb-4">
-          <div className="flex items-center justify-between">
-            <span className="text-[13px] text-muted dark:text-gray-500">
-              {isLoading ? 'Loading...' : `${data?.total?.toLocaleString() || 0} items`}
-            </span>
-            <button
-              onClick={openFilterDrawer}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-full font-medium text-[13px] transition-all active:scale-95 ${
-                getActiveFilterCount(filters) > 0
-                  ? 'bg-gold text-white shadow-md'
-                  : 'bg-charcoal dark:bg-gray-700 text-white'
-              }`}
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-              </svg>
-              Filters
-              {getActiveFilterCount(filters) > 0 && (
-                <span className="min-w-[20px] h-5 px-1.5 bg-white/20 rounded-full text-[11px] flex items-center justify-center">
-                  {getActiveFilterCount(filters)}
-                </span>
-              )}
-            </button>
-          </div>
+        {/* Mobile item count */}
+        <div className="lg:hidden text-[13px] text-muted dark:text-gray-500 mb-4">
+          {isLoading ? 'Loading...' : `${data?.total?.toLocaleString() || 0} items`}
         </div>
 
         {/* Main Content */}
@@ -347,23 +324,17 @@ function HomeContent() {
           filters={filters}
           onFilterChange={handleFilterChange}
           isUpdating={isLoading}
+          sort={sort}
+          onSortChange={(newSort) => {
+            setSort(newSort);
+            setPage(1);
+          }}
+          currency={currency}
+          onCurrencyChange={handleCurrencyChange}
         />
 
-        {/* Mobile Floating Action Button - always visible when scrolling */}
-        <button
-          onClick={openFilterDrawer}
-          className="lg:hidden fixed bottom-6 right-4 z-40 w-14 h-14 rounded-full bg-gold text-white shadow-lg shadow-gold/30 flex items-center justify-center active:scale-95 transition-transform"
-          aria-label="Open filters"
-        >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-          </svg>
-          {getActiveFilterCount(filters) > 0 && (
-            <span className="absolute -top-1 -right-1 min-w-[22px] h-[22px] px-1.5 bg-ink text-white text-[11px] rounded-full flex items-center justify-center font-medium">
-              {getActiveFilterCount(filters)}
-            </span>
-          )}
-        </button>
+        {/* Mobile Bottom Tab Bar */}
+        <BottomTabBar activeFilterCount={getActiveFilterCount(filters)} />
       </main>
 
       {/* Footer - Minimal, scholarly */}
