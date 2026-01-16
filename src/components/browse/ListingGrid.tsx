@@ -80,15 +80,18 @@ function Pagination({
 
   return (
     <div className="flex items-center justify-center gap-1">
+      {/* Previous button */}
       <button
         onClick={() => onPageChange(page - 1)}
         disabled={page === 1}
-        className="px-3 py-2 text-sm text-muted hover:text-ink dark:hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+        className="px-3 py-2 min-h-[44px] text-sm text-muted hover:text-ink dark:hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
       >
-        ← Previous
+        <span className="hidden sm:inline">← Previous</span>
+        <span className="sm:hidden">←</span>
       </button>
 
-      <div className="flex items-center gap-1 mx-4">
+      {/* Desktop: Full page numbers */}
+      <div className="hidden sm:flex items-center gap-1 mx-4">
         {pages.map((p, i) =>
           p === 'ellipsis' ? (
             <span key={`ellipsis-${i}`} className="px-2 text-muted">
@@ -110,12 +113,19 @@ function Pagination({
         )}
       </div>
 
+      {/* Mobile: Simple page indicator */}
+      <span className="sm:hidden text-sm text-muted mx-3">
+        {page} / {totalPages}
+      </span>
+
+      {/* Next button */}
       <button
         onClick={() => onPageChange(page + 1)}
         disabled={page === totalPages}
-        className="px-3 py-2 text-sm text-muted hover:text-ink dark:hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+        className="px-3 py-2 min-h-[44px] text-sm text-muted hover:text-ink dark:hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
       >
-        Next →
+        <span className="hidden sm:inline">Next →</span>
+        <span className="sm:hidden">→</span>
       </button>
     </div>
   );
@@ -123,7 +133,7 @@ function Pagination({
 
 function LoadingSkeleton() {
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
       {[...Array(20)].map((_, i) => (
         <div key={i} className="bg-white dark:bg-gray-800 border border-border dark:border-gray-700">
           <div className="aspect-[4/3] img-loading" />
@@ -180,8 +190,8 @@ export function ListingGrid({
 
   return (
     <div>
-      {/* Results count */}
-      <div className="flex items-center justify-between mb-6">
+      {/* Results count - hidden on mobile since it's in filter trigger bar */}
+      <div className="hidden lg:flex items-center justify-between mb-6">
         <p className="text-sm text-muted">
           Showing <span className="text-ink dark:text-white font-medium">{listings.length}</span> of{' '}
           <span className="text-ink dark:text-white font-medium">{total.toLocaleString()}</span> items
@@ -189,7 +199,7 @@ export function ListingGrid({
       </div>
 
       {/* Grid - Compact cards for scholarly browsing */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
         {listings.map((listing, index) => (
           <ListingCard
             key={listing.id}

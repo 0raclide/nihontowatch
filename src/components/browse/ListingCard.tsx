@@ -203,8 +203,8 @@ export function ListingCard({ listing, currency, exchangeRates, priority = false
       className="group block bg-white dark:bg-gray-800/50 border border-border dark:border-gray-700/50 hover:border-gold/40 dark:hover:border-gold/40 transition-all duration-300"
     >
       {/* Dealer Domain - Elegant centered header */}
-      <div className="px-3 py-2.5 bg-gradient-to-b from-linen/80 to-transparent dark:from-gray-800/60 dark:to-transparent text-center">
-        <span className="text-[10px] font-medium tracking-[0.15em] text-charcoal/70 dark:text-gray-400 lowercase">
+      <div className="px-2.5 py-2 lg:px-3 lg:py-2.5 bg-gradient-to-b from-linen/80 to-transparent dark:from-gray-800/60 dark:to-transparent text-center">
+        <span className="text-[9px] lg:text-[10px] font-medium tracking-[0.15em] text-charcoal/70 dark:text-gray-400 lowercase">
           {listing.dealers?.domain}
         </span>
       </div>
@@ -252,11 +252,11 @@ export function ListingCard({ listing, currency, exchangeRates, priority = false
       </div>
 
       {/* Content - Compact */}
-      <div className="p-3">
+      <div className="p-2.5 lg:p-3">
         {/* Certification badge */}
         {certInfo && (
           <div className="mb-1.5">
-            <span className={`text-[9px] uppercase tracking-wider font-medium px-1.5 py-0.5 ${
+            <span className={`text-[8px] lg:text-[9px] uppercase tracking-wider font-medium px-1 lg:px-1.5 py-0.5 ${
               certInfo.tier === 'premier'
                 ? 'bg-burgundy/10 text-burgundy dark:bg-burgundy/20 dark:text-red-300'
                 : certInfo.tier === 'high'
@@ -269,20 +269,20 @@ export function ListingCard({ listing, currency, exchangeRates, priority = false
         )}
 
         {/* Item Type - Primary identifier (always English), fallback to cleaned title */}
-        <h3 className="text-[15px] font-semibold leading-tight text-ink dark:text-white group-hover:text-gold transition-colors mb-1">
+        <h3 className="text-sm lg:text-[15px] font-semibold leading-tight text-ink dark:text-white group-hover:text-gold transition-colors mb-1">
           {itemType || cleanedTitle}
         </h3>
 
         {/* Smith/School - Key attribution */}
         {(artisan || school) && (
-          <p className="text-[12px] text-charcoal dark:text-gray-300 truncate mb-1">
+          <p className="text-[11px] lg:text-[12px] text-charcoal dark:text-gray-300 truncate mb-1">
             {artisan || school}
           </p>
         )}
 
         {/* Price - highly legible */}
         <div className="pt-2 border-t border-border/50 dark:border-gray-700/30">
-          <span className={`text-[15px] tabular-nums ${
+          <span className={`text-sm lg:text-[15px] tabular-nums ${
             isAskPrice
               ? 'text-muted dark:text-gray-500'
               : 'text-ink dark:text-white font-semibold'

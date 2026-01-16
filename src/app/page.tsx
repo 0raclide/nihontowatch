@@ -4,8 +4,11 @@ import { useEffect, useState, useCallback, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Header } from '@/components/layout/Header';
 import { FilterSidebar } from '@/components/browse/FilterSidebar';
+import { FilterDrawer } from '@/components/browse/FilterDrawer';
 import { ListingGrid } from '@/components/browse/ListingGrid';
 import { CurrencySelector } from '@/components/ui/CurrencySelector';
+import { useMobileUI } from '@/contexts/MobileUIContext';
+import { getActiveFilterCount } from '@/components/browse/FilterContent';
 
 interface Listing {
   id: string;
@@ -95,6 +98,7 @@ type Currency = 'USD' | 'JPY' | 'EUR';
 function HomeContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { openFilterDrawer } = useMobileUI();
 
   const activeTab = 'available'; // Only show available items
   const [filters, setFilters] = useState<Filters>({
@@ -202,18 +206,18 @@ function HomeContent() {
     <div className="min-h-screen bg-cream dark:bg-gray-900 transition-colors">
       <Header />
 
-      <main className="max-w-[1600px] mx-auto px-6 py-8">
+      <main className="max-w-[1600px] mx-auto px-4 py-4 lg:px-6 lg:py-8">
         {/* Page Header - Refined scholarly aesthetic */}
-        <div className="mb-6 flex items-end justify-between">
+        <div className="mb-4 lg:mb-6 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <h1 className="font-serif text-2xl text-ink dark:text-white tracking-tight">Collection</h1>
-            <p className="text-[13px] text-muted dark:text-gray-500 mt-1">
+            <h1 className="font-serif text-xl lg:text-2xl text-ink dark:text-white tracking-tight">Collection</h1>
+            <p className="text-[12px] lg:text-[13px] text-muted dark:text-gray-500 mt-1">
               Japanese swords and fittings from established dealers
             </p>
           </div>
 
           {/* Controls row */}
-          <div className="flex items-center gap-6">
+          <div className="flex items-center justify-between lg:justify-end gap-4 lg:gap-6">
             <CurrencySelector value={currency} onChange={handleCurrencyChange} />
 
             <select
@@ -239,10 +243,31 @@ function HomeContent() {
         </div>
 
         {/* Subtle divider */}
-        <div className="h-px bg-gradient-to-r from-transparent via-border dark:via-gray-700 to-transparent mb-8" />
+        <div className="h-px bg-gradient-to-r from-transparent via-border dark:via-gray-700 to-transparent mb-4 lg:mb-8" />
+
+        {/* Mobile Filter Trigger */}
+        <div className="lg:hidden flex items-center justify-between py-3 mb-4 border-b border-border/30 dark:border-gray-800/50">
+          <span className="text-[13px] text-muted dark:text-gray-500">
+            {data?.total || 0} items
+          </span>
+          <button
+            onClick={openFilterDrawer}
+            className="flex items-center gap-2 text-[13px] text-charcoal dark:text-gray-300 hover:text-gold transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+            </svg>
+            Filters
+            {getActiveFilterCount(filters) > 0 && (
+              <span className="px-1.5 py-0.5 text-[10px] bg-gold text-white rounded-full">
+                {getActiveFilterCount(filters)}
+              </span>
+            )}
+          </button>
+        </div>
 
         {/* Main Content */}
-        <div className="flex gap-10">
+        <div className="flex flex-col lg:flex-row lg:gap-10">
           <FilterSidebar
             facets={data?.facets || { itemTypes: [], certifications: [], dealers: [] }}
             filters={filters}
@@ -262,28 +287,35 @@ function HomeContent() {
             />
           </div>
         </div>
+
+        {/* Mobile Filter Drawer */}
+        <FilterDrawer
+          facets={data?.facets || { itemTypes: [], certifications: [], dealers: [] }}
+          filters={filters}
+          onFilterChange={handleFilterChange}
+        />
       </main>
 
       {/* Footer - Minimal, scholarly */}
-      <footer className="border-t border-border/50 dark:border-gray-800/50 mt-20 transition-colors">
-        <div className="max-w-[1600px] mx-auto px-6 py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-6">
+      <footer className="border-t border-border/50 dark:border-gray-800/50 mt-12 lg:mt-20 transition-colors">
+        <div className="max-w-[1600px] mx-auto px-4 py-6 lg:px-6">
+          <div className="flex flex-col gap-4 items-center lg:flex-row lg:justify-between">
+            <div className="flex flex-col items-center gap-2 lg:flex-row lg:gap-6">
               <span className="font-serif text-lg text-ink dark:text-white">
                 Nihonto<span className="text-gold">watch</span>
               </span>
-              <span className="text-[11px] text-muted dark:text-gray-600">
+              <span className="text-[11px] text-muted dark:text-gray-600 text-center lg:text-left">
                 Curated Japanese arms from dealers worldwide
               </span>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex flex-col items-center gap-2 lg:flex-row lg:gap-4">
               {/* Freshness indicator */}
               {data?.lastUpdated && (
                 <div className="flex items-center gap-2 text-[10px] text-muted/70 dark:text-gray-600">
                   <div className="w-1.5 h-1.5 rounded-full bg-sage animate-pulse" />
                   <span>Updated {formatFreshness(data.lastUpdated)}</span>
-                  <span className="text-muted/40">·</span>
-                  <span>Daily refresh</span>
+                  <span className="text-muted/40 hidden lg:inline">·</span>
+                  <span className="hidden lg:inline">Daily refresh</span>
                 </div>
               )}
               <span className="text-[10px] text-muted/60 dark:text-gray-600">

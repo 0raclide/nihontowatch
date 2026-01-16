@@ -190,8 +190,6 @@ export const ROUTES = {
   BROWSE: '/browse',
   SEARCH: '/search',
   LISTING: (id: string | number) => `/listing/${id}`,
-  DEALER: (slug: string) => `/dealers/${slug}`,
-  DEALERS: '/dealers',
   ALERTS: '/alerts',
   ABOUT: '/about',
 } as const;
