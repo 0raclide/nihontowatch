@@ -256,10 +256,11 @@ p, li, td, th {
   );
 }
 
-/* Price display - refined */
+/* Price display - highly legible */
 .price {
-  font-family: var(--font-serif), Georgia, serif;
-  font-weight: 500;
+  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
   letter-spacing: -0.01em;
 }
 

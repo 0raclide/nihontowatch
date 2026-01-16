@@ -1,257 +1,315 @@
-import Link from 'next/link';
-import { createClient } from '@/lib/supabase/server';
+'use client';
 
-async function getStats() {
-  const supabase = await createClient();
+import { useEffect, useState, useCallback, Suspense } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { Header } from '@/components/layout/Header';
+import { FilterSidebar } from '@/components/browse/FilterSidebar';
+import { ListingGrid } from '@/components/browse/ListingGrid';
+import { CurrencySelector } from '@/components/ui/CurrencySelector';
 
-  const [availableRes, soldRes, dealersRes] = await Promise.all([
-    supabase
-      .from('listings')
-      .select('id', { count: 'exact', head: true })
-      .or('status.eq.available,is_available.eq.true'),
-    supabase
-      .from('listings')
-      .select('id', { count: 'exact', head: true })
-      .or('status.eq.sold,status.eq.presumed_sold,is_sold.eq.true'),
-    supabase
-      .from('dealers')
-      .select('id', { count: 'exact', head: true }),
-  ]);
-
-  return {
-    available: availableRes.count || 0,
-    sold: soldRes.count || 0,
-    dealers: dealersRes.count || 0,
+interface Listing {
+  id: string;
+  url: string;
+  title: string;
+  item_type: string | null;
+  price_value: number | null;
+  price_currency: string | null;
+  smith: string | null;
+  tosogu_maker: string | null;
+  school: string | null;
+  tosogu_school: string | null;
+  cert_type: string | null;
+  nagasa_cm: number | null;
+  images: string[] | null;
+  first_seen_at: string;
+  status: string;
+  is_available: boolean;
+  is_sold: boolean;
+  dealer_id: number;
+  dealers: {
+    id: number;
+    name: string;
+    domain: string;
   };
 }
 
-export default async function Home() {
-  const stats = await getStats();
+interface Facet {
+  value: string;
+  count: number;
+}
+
+interface DealerFacet {
+  id: number;
+  name: string;
+  count: number;
+}
+
+interface BrowseResponse {
+  listings: Listing[];
+  total: number;
+  page: number;
+  totalPages: number;
+  facets: {
+    itemTypes: Facet[];
+    certifications: Facet[];
+    dealers: DealerFacet[];
+  };
+  lastUpdated: string | null;
+}
+
+// Format relative time for freshness display
+function formatFreshness(isoDate: string | null): string {
+  if (!isoDate) return 'Unknown';
+
+  const date = new Date(isoDate);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMins / 60);
+  const diffDays = Math.floor(diffHours / 24);
+
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays === 1) return 'Yesterday';
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+interface Filters {
+  category: 'all' | 'nihonto' | 'tosogu';
+  itemTypes: string[];
+  certifications: string[];
+  schools: string[];
+  dealers: number[];
+  askOnly?: boolean;
+}
+
+interface ExchangeRates {
+  base: string;
+  rates: Record<string, number>;
+  timestamp: number;
+}
+
+type Currency = 'USD' | 'JPY' | 'EUR';
+
+function HomeContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const activeTab = 'available'; // Only show available items
+  const [filters, setFilters] = useState<Filters>({
+    category: (searchParams.get('cat') as 'all' | 'nihonto' | 'tosogu') || 'all',
+    itemTypes: searchParams.get('type')?.split(',').filter(Boolean) || [],
+    certifications: searchParams.get('cert')?.split(',').filter(Boolean) || [],
+    schools: searchParams.get('school')?.split(',').filter(Boolean) || [],
+    dealers: searchParams.get('dealer')?.split(',').map(Number).filter(Boolean) || [],
+    askOnly: searchParams.get('ask') === 'true',
+  });
+  const [sort, setSort] = useState(searchParams.get('sort') || 'price_desc');
+  const [page, setPage] = useState(Number(searchParams.get('page')) || 1);
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
+
+  const [data, setData] = useState<BrowseResponse | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Currency state - default to JPY
+  const [currency, setCurrency] = useState<Currency>(() => {
+    if (typeof window !== 'undefined') {
+      return (localStorage.getItem('preferred_currency') as Currency) || 'JPY';
+    }
+    return 'JPY';
+  });
+  const [exchangeRates, setExchangeRates] = useState<ExchangeRates | null>(null);
+
+  // Fetch exchange rates on mount
+  useEffect(() => {
+    const fetchRates = async () => {
+      try {
+        const res = await fetch('/api/exchange-rates');
+        const rates = await res.json();
+        setExchangeRates(rates);
+      } catch (error) {
+        console.error('Failed to fetch exchange rates:', error);
+      }
+    };
+    fetchRates();
+  }, []);
+
+  // Persist currency preference
+  const handleCurrencyChange = useCallback((newCurrency: Currency) => {
+    setCurrency(newCurrency);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('preferred_currency', newCurrency);
+    }
+  }, []);
+
+  // Build URL params from state
+  const buildUrlParams = useCallback(() => {
+    const params = new URLSearchParams();
+
+    params.set('tab', 'available');
+    if (filters.category !== 'all') params.set('cat', filters.category);
+    if (filters.itemTypes.length) params.set('type', filters.itemTypes.join(','));
+    if (filters.certifications.length) params.set('cert', filters.certifications.join(','));
+    if (filters.schools.length) params.set('school', filters.schools.join(','));
+    if (filters.dealers.length) params.set('dealer', filters.dealers.join(','));
+    if (filters.askOnly) params.set('ask', 'true');
+    if (sort !== 'recent') params.set('sort', sort);
+    if (page > 1) params.set('page', String(page));
+    if (searchQuery) params.set('q', searchQuery);
+
+    return params;
+  }, [activeTab, filters, sort, page, searchQuery]);
+
+  // Sync URL with state
+  useEffect(() => {
+    const params = buildUrlParams();
+    const newUrl = `/${params.toString() ? `?${params.toString()}` : ''}`;
+    router.replace(newUrl, { scroll: false });
+  }, [buildUrlParams, router]);
+
+  // Fetch data
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const params = buildUrlParams();
+        const res = await fetch(`/api/browse?${params.toString()}`);
+        const json = await res.json();
+        setData(json);
+      } catch (error) {
+        console.error('Failed to fetch:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [buildUrlParams]);
+
+  const handleFilterChange = useCallback((key: string, value: unknown) => {
+    setFilters((prev) => ({ ...prev, [key]: value }));
+    setPage(1); // Reset to first page on filter change
+  }, []);
+
+
+  const handlePageChange = useCallback((newPage: number) => {
+    setPage(newPage);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
 
   return (
     <div className="min-h-screen bg-cream dark:bg-gray-900 transition-colors">
-      {/* Hero Section */}
-      <section className="relative min-h-[80vh] flex items-center justify-center">
-        {/* Background pattern */}
-        <div className="absolute inset-0 opacity-[0.03] dark:opacity-[0.05]">
-          <div
-            className="w-full h-full"
-            style={{
-              backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-            }}
+      <Header />
+
+      <main className="max-w-[1600px] mx-auto px-6 py-8">
+        {/* Page Header - Refined scholarly aesthetic */}
+        <div className="mb-6 flex items-end justify-between">
+          <div>
+            <h1 className="font-serif text-2xl text-ink dark:text-white tracking-tight">Collection</h1>
+            <p className="text-[13px] text-muted dark:text-gray-500 mt-1">
+              Japanese swords and fittings from established dealers
+            </p>
+          </div>
+
+          {/* Controls row */}
+          <div className="flex items-center gap-6">
+            <CurrencySelector value={currency} onChange={handleCurrencyChange} />
+
+            <select
+              value={sort}
+              onChange={(e) => {
+                setSort(e.target.value);
+                setPage(1);
+              }}
+              className="bg-transparent border-0 text-[12px] text-charcoal dark:text-gray-300 focus:outline-none cursor-pointer pr-5 appearance-none"
+              style={{
+                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239ca3af'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                backgroundRepeat: 'no-repeat',
+                backgroundPosition: 'right 0 center',
+                backgroundSize: '14px',
+              }}
+            >
+              <option value="recent">Newest</option>
+              <option value="price_asc">Price ↑</option>
+              <option value="price_desc">Price ↓</option>
+              <option value="name">A-Z</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Subtle divider */}
+        <div className="h-px bg-gradient-to-r from-transparent via-border dark:via-gray-700 to-transparent mb-8" />
+
+        {/* Main Content */}
+        <div className="flex gap-10">
+          <FilterSidebar
+            facets={data?.facets || { itemTypes: [], certifications: [], dealers: [] }}
+            filters={filters}
+            onFilterChange={handleFilterChange}
           />
-        </div>
 
-        <div className="relative z-10 text-center px-6 max-w-4xl">
-          {/* Logo */}
-          <h1 className="font-serif text-6xl md:text-7xl tracking-tight text-ink dark:text-white mb-4">
-            Nihonto<span className="text-gold">watch</span>
-          </h1>
-
-          {/* Tagline */}
-          <p className="text-lg md:text-xl text-charcoal dark:text-gray-300 mb-2 font-light tracking-wide">
-            The Premier Aggregator for Japanese Swords &amp; Fittings
-          </p>
-
-          {/* Subtitle */}
-          <p className="text-muted dark:text-gray-400 mb-12 max-w-xl mx-auto">
-            Discover katana, wakizashi, tsuba, and more from trusted dealers worldwide.
-            Curated, searchable, and always up to date.
-          </p>
-
-          {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link
-              href="/browse"
-              className="btn-elegant text-sm px-8 py-4"
-            >
-              Browse Collection
-            </Link>
-            <Link
-              href="/browse?tab=sold"
-              className="btn-outline text-sm px-8 py-4"
-            >
-              View Sold Archive
-            </Link>
-          </div>
-
-          {/* Stats */}
-          <div className="mt-16 pt-8 border-t border-border/50 dark:border-gray-700/50">
-            <div className="flex items-center justify-center gap-12 md:gap-16">
-              <div className="text-center">
-                <p className="font-serif text-3xl md:text-4xl text-ink dark:text-white">
-                  {stats.available.toLocaleString()}
-                </p>
-                <p className="text-[10px] uppercase tracking-[0.2em] text-muted dark:text-gray-500 mt-1">
-                  Available
-                </p>
-              </div>
-              <div className="w-px h-12 bg-border dark:bg-gray-700" />
-              <div className="text-center">
-                <p className="font-serif text-3xl md:text-4xl text-ink dark:text-white">
-                  {stats.sold.toLocaleString()}
-                </p>
-                <p className="text-[10px] uppercase tracking-[0.2em] text-muted dark:text-gray-500 mt-1">
-                  Sold Archive
-                </p>
-              </div>
-              <div className="w-px h-12 bg-border dark:bg-gray-700" />
-              <div className="text-center">
-                <p className="font-serif text-3xl md:text-4xl text-ink dark:text-white">
-                  {stats.dealers}
-                </p>
-                <p className="text-[10px] uppercase tracking-[0.2em] text-muted dark:text-gray-500 mt-1">
-                  Dealers
-                </p>
-              </div>
-            </div>
+          <div className="flex-1 min-w-0">
+            <ListingGrid
+              listings={data?.listings || []}
+              total={data?.total || 0}
+              page={page}
+              totalPages={data?.totalPages || 1}
+              onPageChange={handlePageChange}
+              isLoading={isLoading}
+              currency={currency}
+              exchangeRates={exchangeRates}
+            />
           </div>
         </div>
-      </section>
+      </main>
 
-      {/* Features Section */}
-      <section className="bg-white dark:bg-gray-800 border-y border-border dark:border-gray-700 py-20 transition-colors">
-        <div className="max-w-[1200px] mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2 className="font-serif text-3xl text-ink dark:text-white mb-3">
-              Why Nihontowatch?
-            </h2>
-            <p className="text-muted dark:text-gray-400 max-w-lg mx-auto">
-              We aggregate listings from the world&apos;s most respected nihonto dealers,
-              making it easy to find your next acquisition.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-12">
-            {/* Feature 1 */}
-            <div className="text-center">
-              <div className="w-14 h-14 mx-auto mb-5 flex items-center justify-center border border-border dark:border-gray-600 rounded-sm">
-                <svg className="w-6 h-6 text-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </div>
-              <h3 className="font-serif text-lg text-ink dark:text-white mb-2">Advanced Search</h3>
-              <p className="text-sm text-muted dark:text-gray-400">
-                Filter by smith, school, certification, price, and more.
-                Find exactly what you&apos;re looking for.
-              </p>
-            </div>
-
-            {/* Feature 2 */}
-            <div className="text-center">
-              <div className="w-14 h-14 mx-auto mb-5 flex items-center justify-center border border-border dark:border-gray-600 rounded-sm">
-                <svg className="w-6 h-6 text-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                </svg>
-              </div>
-              <h3 className="font-serif text-lg text-ink dark:text-white mb-2">Price Alerts</h3>
-              <p className="text-sm text-muted dark:text-gray-400">
-                Set alerts for specific criteria and budget.
-                Get notified when matching items appear.
-              </p>
-            </div>
-
-            {/* Feature 3 */}
-            <div className="text-center">
-              <div className="w-14 h-14 mx-auto mb-5 flex items-center justify-center border border-border dark:border-gray-600 rounded-sm">
-                <svg className="w-6 h-6 text-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <h3 className="font-serif text-lg text-ink dark:text-white mb-2">Sold Archive</h3>
-              <p className="text-sm text-muted dark:text-gray-400">
-                Research historical prices and track market trends
-                with our comprehensive sold listings archive.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Dealers Section */}
-      <section className="py-20">
-        <div className="max-w-[1200px] mx-auto px-6">
-          <div className="text-center mb-12">
-            <h2 className="font-serif text-3xl text-ink dark:text-white mb-3">
-              Trusted Dealers
-            </h2>
-            <p className="text-muted dark:text-gray-400 max-w-lg mx-auto">
-              We partner with established dealers known for authenticity and expertise.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center justify-center gap-8 text-sm text-charcoal dark:text-gray-300">
-            <span className="px-4 py-2 border border-border dark:border-gray-700 bg-white dark:bg-gray-800">Aoi Art</span>
-            <span className="px-4 py-2 border border-border dark:border-gray-700 bg-white dark:bg-gray-800">Tozando</span>
-            <span className="px-4 py-2 border border-border dark:border-gray-700 bg-white dark:bg-gray-800">Nihonto Antiques</span>
-            <span className="px-4 py-2 border border-border dark:border-gray-700 bg-white dark:bg-gray-800">Japanese Sword Index</span>
-            <span className="px-4 py-2 border border-border dark:border-gray-700 bg-white dark:bg-gray-800">Shibui Swords</span>
-            <span className="px-4 py-2 border border-border dark:border-gray-700 bg-white dark:bg-gray-800">And More...</span>
-          </div>
-
-          <div className="text-center mt-8">
-            <Link
-              href="/dealers"
-              className="text-xs uppercase tracking-[0.15em] text-gold hover:text-gold-light transition-colors"
-            >
-              View All Dealers →
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="bg-ink text-white py-16">
-        <div className="max-w-[800px] mx-auto px-6 text-center">
-          <h2 className="font-serif text-3xl mb-4">
-            Start Your Search
-          </h2>
-          <p className="text-white/70 mb-8">
-            Browse our collection of Japanese swords and fittings from dealers worldwide.
-          </p>
-          <Link
-            href="/browse"
-            className="inline-flex items-center justify-center px-8 py-4 text-sm uppercase tracking-[0.15em] bg-gold text-ink hover:bg-gold-light transition-colors"
-          >
-            Browse Now
-          </Link>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="bg-white dark:bg-gray-800 border-t border-border dark:border-gray-700 py-12 transition-colors">
-        <div className="max-w-[1200px] mx-auto px-6">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div>
-              <h2 className="font-serif text-xl text-ink dark:text-white">
+      {/* Footer - Minimal, scholarly */}
+      <footer className="border-t border-border/50 dark:border-gray-800/50 mt-20 transition-colors">
+        <div className="max-w-[1600px] mx-auto px-6 py-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-6">
+              <span className="font-serif text-lg text-ink dark:text-white">
                 Nihonto<span className="text-gold">watch</span>
-              </h2>
-              <p className="text-xs text-muted dark:text-gray-500 mt-1">
-                Japanese Swords &amp; Fittings from Dealers Worldwide
-              </p>
+              </span>
+              <span className="text-[11px] text-muted dark:text-gray-600">
+                Curated Japanese arms from dealers worldwide
+              </span>
             </div>
-
-            <nav className="flex items-center gap-8">
-              <Link href="/browse" className="text-xs uppercase tracking-[0.1em] text-charcoal dark:text-gray-300 hover:text-gold transition-colors">
-                Browse
-              </Link>
-              <Link href="/dealers" className="text-xs uppercase tracking-[0.1em] text-charcoal dark:text-gray-300 hover:text-gold transition-colors">
-                Dealers
-              </Link>
-              <Link href="/about" className="text-xs uppercase tracking-[0.1em] text-charcoal dark:text-gray-300 hover:text-gold transition-colors">
-                About
-              </Link>
-              <Link href="/alerts" className="text-xs uppercase tracking-[0.1em] text-charcoal dark:text-gray-300 hover:text-gold transition-colors">
-                Alerts
-              </Link>
-            </nav>
-
-            <p className="text-xs text-muted dark:text-gray-500">
-              © {new Date().getFullYear()} Nihontowatch
-            </p>
+            <div className="flex items-center gap-4">
+              {/* Freshness indicator */}
+              {data?.lastUpdated && (
+                <div className="flex items-center gap-2 text-[10px] text-muted/70 dark:text-gray-600">
+                  <div className="w-1.5 h-1.5 rounded-full bg-sage animate-pulse" />
+                  <span>Updated {formatFreshness(data.lastUpdated)}</span>
+                  <span className="text-muted/40">·</span>
+                  <span>Daily refresh</span>
+                </div>
+              )}
+              <span className="text-[10px] text-muted/60 dark:text-gray-600">
+                © {new Date().getFullYear()}
+              </span>
+            </div>
           </div>
         </div>
       </footer>
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-cream dark:bg-gray-900 flex items-center justify-center transition-colors">
+          <div className="text-center">
+            <div className="w-8 h-8 border-2 border-gold border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+            <p className="text-sm text-muted dark:text-gray-400">Loading collection...</p>
+          </div>
+        </div>
+      }
+    >
+      <HomeContent />
+    </Suspense>
   );
 }

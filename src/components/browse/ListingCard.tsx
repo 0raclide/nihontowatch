@@ -43,6 +43,31 @@ interface ListingCardProps {
   exchangeRates: ExchangeRates | null;
 }
 
+// Normalize Japanese kanji and variants to standard English keys
+const ITEM_TYPE_NORMALIZE: Record<string, string> = {
+  // Japanese kanji
+  '刀': 'katana',
+  '脇差': 'wakizashi',
+  '短刀': 'tanto',
+  '太刀': 'tachi',
+  '槍': 'yari',
+  '薙刀': 'naginata',
+  '鍔': 'tsuba',
+  '小柄': 'kozuka',
+  '目貫': 'menuki',
+  '甲冑': 'armor',
+  '兜': 'kabuto',
+  '拵': 'koshirae',
+  '拵え': 'koshirae',
+  // Variants
+  'fuchi_kashira': 'fuchi-kashira',
+  'Katana': 'katana',
+  'Wakizashi': 'wakizashi',
+  'Tanto': 'tanto',
+  'Tachi': 'tachi',
+  'Tsuba': 'tsuba',
+};
+
 const ITEM_TYPE_LABELS: Record<string, string> = {
   katana: 'Katana',
   wakizashi: 'Wakizashi',
@@ -53,7 +78,6 @@ const ITEM_TYPE_LABELS: Record<string, string> = {
   kodachi: 'Kodachi',
   tsuba: 'Tsuba',
   'fuchi-kashira': 'Fuchi-Kashira',
-  fuchi_kashira: 'Fuchi-Kashira',
   kozuka: 'Kozuka',
   menuki: 'Menuki',
   koshirae: 'Koshirae',
@@ -61,6 +85,25 @@ const ITEM_TYPE_LABELS: Record<string, string> = {
   kabuto: 'Kabuto',
   other: 'Other',
 };
+
+function normalizeItemType(rawType: string | null): string | null {
+  if (!rawType) return null;
+  const normalized = ITEM_TYPE_NORMALIZE[rawType] || rawType.toLowerCase();
+  return ITEM_TYPE_LABELS[normalized] || ITEM_TYPE_LABELS[rawType.toLowerCase()] || null;
+}
+
+// Check if string contains Japanese characters (hiragana, katakana, kanji)
+function isJapanese(str: string): boolean {
+  // Matches hiragana, katakana, and CJK unified ideographs (kanji)
+  return /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(str);
+}
+
+// Only return romanized names, hide Japanese text
+function getRomanizedName(name: string | null): string | null {
+  if (!name) return null;
+  if (isJapanese(name)) return null;
+  return name;
+}
 
 const CERT_LABELS: Record<string, { label: string; tier: 'premier' | 'high' | 'standard' }> = {
   Juyo: { label: 'Jūyō', tier: 'premier' },
@@ -136,11 +179,9 @@ function cleanTitle(title: string, smith: string | null, maker: string | null): 
 
 export function ListingCard({ listing, currency, exchangeRates }: ListingCardProps) {
   const imageUrl = listing.images?.[0] || '/placeholder-sword.jpg';
-  const artisan = listing.smith || listing.tosogu_maker;
-  const school = listing.school || listing.tosogu_school;
-  const itemType = listing.item_type
-    ? ITEM_TYPE_LABELS[listing.item_type.toLowerCase()] || ITEM_TYPE_LABELS[listing.item_type] || listing.item_type
-    : null;
+  const artisan = getRomanizedName(listing.smith) || getRomanizedName(listing.tosogu_maker);
+  const school = getRomanizedName(listing.school) || getRomanizedName(listing.tosogu_school);
+  const itemType = normalizeItemType(listing.item_type);
   const isSold = listing.is_sold || listing.status === 'sold' || listing.status === 'presumed_sold';
   const cleanedTitle = cleanTitle(listing.title, listing.smith, listing.tosogu_maker);
   const certInfo = listing.cert_type ? CERT_LABELS[listing.cert_type] : null;
@@ -180,9 +221,9 @@ export function ListingCard({ listing, currency, exchangeRates }: ListingCardPro
 
       {/* Content - Compact */}
       <div className="p-3">
-        {/* Certification (top) then Item Type */}
-        <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
-          {certInfo && (
+        {/* Certification badge */}
+        {certInfo && (
+          <div className="mb-1.5">
             <span className={`text-[9px] uppercase tracking-wider font-medium px-1.5 py-0.5 ${
               certInfo.tier === 'premier'
                 ? 'bg-burgundy/10 text-burgundy dark:bg-burgundy/20 dark:text-red-300'
@@ -192,32 +233,27 @@ export function ListingCard({ listing, currency, exchangeRates }: ListingCardPro
             }`}>
               {certInfo.label}
             </span>
-          )}
-          {itemType && (
-            <span className="text-[9px] uppercase tracking-wider text-muted dark:text-gray-500">
-              {itemType}
-            </span>
-          )}
-        </div>
+          </div>
+        )}
 
-        {/* Title */}
-        <h3 className="font-serif text-sm leading-snug text-ink dark:text-gray-100 group-hover:text-gold transition-colors line-clamp-2 mb-1">
-          {cleanedTitle}
+        {/* Item Type - Primary identifier (always English), fallback to cleaned title */}
+        <h3 className="text-[15px] font-semibold leading-tight text-ink dark:text-white group-hover:text-gold transition-colors mb-1">
+          {itemType || cleanedTitle}
         </h3>
 
-        {/* School or Artisan - subtle */}
-        {(school || artisan) && (
-          <p className="text-[11px] text-muted dark:text-gray-500 truncate mb-2">
-            {school || artisan}
+        {/* Smith/School - Key attribution */}
+        {(artisan || school) && (
+          <p className="text-[12px] text-charcoal dark:text-gray-300 truncate mb-1">
+            {artisan || school}
           </p>
         )}
 
-        {/* Price */}
+        {/* Price - highly legible */}
         <div className="pt-2 border-t border-border/50 dark:border-gray-700/30">
-          <span className={`font-serif text-sm ${
+          <span className={`text-[15px] tabular-nums ${
             isAskPrice
-              ? 'text-muted italic dark:text-gray-500'
-              : 'text-ink dark:text-white font-medium'
+              ? 'text-muted dark:text-gray-500'
+              : 'text-ink dark:text-white font-semibold'
           }`}>
             {formatPrice(listing.price_value, listing.price_currency, currency, exchangeRates)}
           </span>

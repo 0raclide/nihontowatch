@@ -77,6 +77,7 @@ export async function GET(request: NextRequest) {
         nagasa_cm,
         images,
         first_seen_at,
+        last_scraped_at,
         status,
         is_available,
         is_sold,
@@ -163,9 +164,15 @@ export async function GET(request: NextRequest) {
     }
 
     // Get facet counts using SQL aggregation (avoids row limit issues)
+    // Pass all filters so facets reflect current selection (like oshi-v2)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: facetData, error: facetError } = await (supabase.rpc as any)('get_listing_facets', {
-      p_tab: params.tab
+      p_tab: params.tab,
+      p_item_types: params.itemTypes || null,
+      p_certifications: params.certifications || null,
+      p_dealers: params.dealers || null,
+      p_query: params.query || null,
+      p_ask_only: params.askOnly || false
     });
 
     // Fallback to JS-based facet computation if RPC doesn't exist
@@ -192,6 +199,17 @@ export async function GET(request: NextRequest) {
       dealersFacet = facetData?.dealers || [];
     }
 
+    // Get the most recent scrape timestamp for freshness indicator
+    const { data: freshnessData } = await supabase
+      .from('listings')
+      .select('last_scraped_at')
+      .or(statusFilter)
+      .order('last_scraped_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    const lastUpdated = (freshnessData as { last_scraped_at: string } | null)?.last_scraped_at || null;
+
     return NextResponse.json({
       listings: listings || [],
       total: count || 0,
@@ -202,6 +220,7 @@ export async function GET(request: NextRequest) {
         certifications: certsFacet,
         dealers: dealersFacet,
       },
+      lastUpdated,
     });
   } catch (error) {
     console.error('Browse API error:', error);
