@@ -44,21 +44,21 @@ function FilterSection({
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
   return (
-    <div className="pb-5">
+    <div className="py-5">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-between w-full text-left group mb-3 py-1 lg:py-0"
+        className="flex items-center justify-between w-full text-left group mb-4 py-1"
       >
-        <h3 className="text-[11px] uppercase tracking-[0.2em] font-medium text-charcoal dark:text-gray-300">
+        <h3 className="text-[13px] uppercase tracking-[0.15em] font-semibold text-ink dark:text-white">
           {title}
         </h3>
         <svg
-          className={`w-3 h-3 text-muted dark:text-gray-500 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+          className={`w-4 h-4 text-charcoal dark:text-gray-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
         >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 9l-7 7-7-7" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
         </svg>
       </button>
       <div className={`transition-all duration-200 overflow-hidden ${isOpen ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}`}>
@@ -80,7 +80,7 @@ function Checkbox({
   onChange: (checked: boolean) => void;
 }) {
   return (
-    <label className="flex items-center gap-2.5 cursor-pointer group py-2 lg:py-1 min-h-[44px] lg:min-h-0">
+    <label className="flex items-center gap-3 cursor-pointer group py-2.5 min-h-[48px] lg:min-h-[40px]">
       <div className="relative">
         <input
           type="checkbox"
@@ -88,19 +88,19 @@ function Checkbox({
           onChange={(e) => onChange(e.target.checked)}
           className="peer sr-only"
         />
-        <div className="w-4 h-4 lg:w-3.5 lg:h-3.5 border border-border-dark dark:border-gray-600 peer-checked:border-gold peer-checked:bg-gold transition-colors rounded-sm">
+        <div className="w-5 h-5 lg:w-[18px] lg:h-[18px] border-2 border-charcoal/40 dark:border-gray-500 peer-checked:border-gold peer-checked:bg-gold transition-colors rounded">
           {checked && (
-            <svg className="w-4 h-4 lg:w-3.5 lg:h-3.5 text-white dark:text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+            <svg className="w-5 h-5 lg:w-[18px] lg:h-[18px] text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
             </svg>
           )}
         </div>
       </div>
-      <span className="text-[13px] text-charcoal dark:text-gray-300 group-hover:text-ink dark:group-hover:text-white transition-colors flex-1">
+      <span className="text-[15px] lg:text-[14px] text-charcoal dark:text-gray-200 group-hover:text-ink dark:group-hover:text-white transition-colors flex-1">
         {label}
       </span>
       {count !== undefined && (
-        <span className="text-[11px] text-muted/70 dark:text-gray-600 tabular-nums">{count}</span>
+        <span className="text-[13px] lg:text-[12px] text-muted dark:text-gray-500 tabular-nums">{count}</span>
       )}
     </label>
   );
@@ -320,44 +320,46 @@ export function FilterContent({ facets, filters, onFilterChange, onClose, isUpda
     (filters.askOnly ? 1 : 0);
 
   return (
-    <div className="px-4 lg:px-0">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-2">
-          <h2 className="text-[11px] uppercase tracking-[0.25em] font-medium text-ink dark:text-white">Refine</h2>
+    <div className="px-4 lg:px-0 pb-6">
+      {/* Header - Larger, clearer */}
+      <div className="flex items-center justify-between mb-2 py-2">
+        <div className="flex items-center gap-3">
+          <h2 className="text-[15px] lg:text-[13px] uppercase tracking-[0.15em] font-semibold text-ink dark:text-white">
+            Filters
+          </h2>
           {isUpdating && (
-            <div className="w-3 h-3 border-2 border-gold border-t-transparent rounded-full animate-spin" />
+            <div className="w-4 h-4 border-2 border-gold border-t-transparent rounded-full animate-spin" />
           )}
         </div>
         {hasActiveFilters && (
           <button
             onClick={clearAllFilters}
-            className="text-[10px] uppercase tracking-[0.1em] text-gold hover:text-gold-light transition-colors"
+            className="text-[13px] lg:text-[12px] text-gold hover:text-gold-light transition-colors font-medium"
           >
-            Reset
+            Clear all
           </button>
         )}
       </div>
 
-      <div className="space-y-1 divide-y divide-border/50 dark:divide-gray-700/30">
-        {/* Category Toggle - Elegant segmented control */}
-        <div className="pb-5">
-          <h3 className="text-[11px] uppercase tracking-[0.2em] font-medium text-charcoal dark:text-gray-300 mb-3">
+      <div className="divide-y divide-border/50 dark:divide-gray-700/30">
+        {/* 1. Category Toggle - Most Important */}
+        <div className="py-5">
+          <h3 className="text-[13px] uppercase tracking-[0.15em] font-semibold text-ink dark:text-white mb-4">
             Category
           </h3>
-          <div className="inline-flex bg-linen dark:bg-gray-800/50 p-0.5 rounded-sm">
+          <div className="flex gap-2">
             {[
               { key: 'all', label: 'All' },
-              { key: 'nihonto', label: 'Nihonto', count: nihontoTotal },
-              { key: 'tosogu', label: 'Tosogu', count: tosoguTotal },
+              { key: 'nihonto', label: 'Nihonto' },
+              { key: 'tosogu', label: 'Tosogu' },
             ].map(({ key, label }) => (
               <button
                 key={key}
                 onClick={() => handleCategoryChange(key as 'all' | 'nihonto' | 'tosogu')}
-                className={`px-3 py-2.5 lg:py-1.5 text-[11px] tracking-wide transition-all duration-200 ${
+                className={`flex-1 px-4 py-3 lg:py-2.5 text-[15px] lg:text-[14px] font-medium rounded-lg transition-all duration-200 ${
                   filters.category === key
-                    ? 'bg-white dark:bg-gray-700 text-ink dark:text-white shadow-sm'
-                    : 'text-muted dark:text-gray-500 hover:text-charcoal dark:hover:text-gray-300'
+                    ? 'bg-gold text-white shadow-sm'
+                    : 'bg-linen dark:bg-gray-800 text-charcoal dark:text-gray-300 hover:bg-border dark:hover:bg-gray-700'
                 }`}
               >
                 {label}
@@ -366,121 +368,9 @@ export function FilterContent({ facets, filters, onFilterChange, onClose, isUpda
           </div>
         </div>
 
-        {/* Dealer - Elegant dropdown */}
-        <div className="py-5">
-          <h3 className="text-[11px] uppercase tracking-[0.2em] font-medium text-charcoal dark:text-gray-300 mb-3">
-            Dealer
-          </h3>
-          <div className="relative">
-            <button
-              onClick={() => setDealerDropdownOpen(!dealerDropdownOpen)}
-              className="w-full flex items-center justify-between px-3 py-3 lg:py-2 bg-white dark:bg-gray-800/50 border border-border dark:border-gray-700 text-left text-[13px] text-charcoal dark:text-gray-300 hover:border-border-dark dark:hover:border-gray-600 transition-colors min-h-[44px] lg:min-h-0"
-            >
-              <span className={selectedDealerNames.length > 0 ? 'text-ink dark:text-white' : 'text-muted'}>
-                {selectedDealerNames.length > 0
-                  ? selectedDealerNames.length === 1
-                    ? selectedDealerNames[0]
-                    : `${selectedDealerNames.length} selected`
-                  : 'All dealers'}
-              </span>
-              <svg
-                className={`w-3.5 h-3.5 text-muted transition-transform duration-200 ${dealerDropdownOpen ? 'rotate-180' : ''}`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-
-            {dealerDropdownOpen && (
-              <div className="absolute z-20 top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-border dark:border-gray-700 shadow-lg max-h-64 overflow-hidden">
-                {/* Search */}
-                <div className="p-2 border-b border-border/50 dark:border-gray-700/50">
-                  <input
-                    type="text"
-                    value={dealerSearch}
-                    onChange={(e) => setDealerSearch(e.target.value)}
-                    placeholder="Search dealers..."
-                    className="w-full px-2 py-2 lg:py-1.5 text-[12px] bg-linen dark:bg-gray-900 border-0 text-ink dark:text-white placeholder:text-muted/60 focus:outline-none focus:ring-1 focus:ring-gold/50"
-                  />
-                </div>
-                {/* Dealer list */}
-                <div className="max-h-48 overflow-y-auto py-1">
-                  {filteredDealers.map((dealer) => (
-                    <label
-                      key={dealer.id}
-                      className="flex items-center gap-2 px-3 py-2.5 lg:py-1.5 cursor-pointer hover:bg-linen dark:hover:bg-gray-700/50 transition-colors min-h-[44px] lg:min-h-0"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={filters.dealers.includes(dealer.id)}
-                        onChange={(e) => handleDealerChange(dealer.id, e.target.checked)}
-                        className="sr-only peer"
-                      />
-                      <div className="w-4 h-4 lg:w-3 lg:h-3 border border-border-dark dark:border-gray-600 peer-checked:border-gold peer-checked:bg-gold transition-colors rounded-sm flex items-center justify-center">
-                        {filters.dealers.includes(dealer.id) && (
-                          <svg className="w-3 h-3 lg:w-2.5 lg:h-2.5 text-white dark:text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                          </svg>
-                        )}
-                      </div>
-                      <span className="flex-1 text-[12px] text-charcoal dark:text-gray-300">{dealer.name}</span>
-                      <span className="text-[10px] text-muted/60 tabular-nums">{dealer.count}</span>
-                    </label>
-                  ))}
-                  {filteredDealers.length === 0 && (
-                    <p className="px-3 py-2 text-[11px] text-muted italic">No dealers found</p>
-                  )}
-                </div>
-                {/* Clear selection */}
-                {filters.dealers.length > 0 && (
-                  <div className="p-2 border-t border-border/50 dark:border-gray-700/50">
-                    <button
-                      onClick={() => {
-                        onFilterChange('dealers', []);
-                        setDealerDropdownOpen(false);
-                      }}
-                      className="w-full text-[10px] uppercase tracking-wider text-muted hover:text-gold transition-colors py-1"
-                    >
-                      Clear selection
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Price on Request toggle - below dealer */}
-          <div className="mt-4 pt-4 border-t border-border/30 dark:border-gray-700/30">
-            <label className="flex items-center gap-3 cursor-pointer group min-h-[44px] lg:min-h-0">
-              <div className="relative">
-                <input
-                  type="checkbox"
-                  checked={filters.askOnly || false}
-                  onChange={(e) => onFilterChange('askOnly', e.target.checked)}
-                  className="peer sr-only"
-                />
-                <div className={`w-10 h-5 lg:w-8 lg:h-4 rounded-full transition-colors ${
-                  filters.askOnly
-                    ? 'bg-gold'
-                    : 'bg-border-dark dark:bg-gray-600'
-                }`}>
-                  <div className={`absolute top-0.5 w-4 h-4 lg:w-3 lg:h-3 bg-white rounded-full shadow transition-transform ${
-                    filters.askOnly ? 'translate-x-5 lg:translate-x-4.5' : 'translate-x-0.5'
-                  }`} />
-                </div>
-              </div>
-              <span className="text-[13px] text-charcoal dark:text-gray-300 group-hover:text-ink dark:group-hover:text-white transition-colors">
-                Price on request only
-              </span>
-            </label>
-          </div>
-        </div>
-
-        {/* Certification */}
+        {/* 2. Certification - Second Most Important */}
         <FilterSection title="Certification">
-          <div className="space-y-0.5">
+          <div className="space-y-1">
             {sortedCertifications.map((facet) => (
               <Checkbox
                 key={facet.value}
@@ -491,14 +381,14 @@ export function FilterContent({ facets, filters, onFilterChange, onClose, isUpda
               />
             ))}
             {sortedCertifications.length === 0 && (
-              <p className="text-[11px] text-muted dark:text-gray-500 italic">No certifications</p>
+              <p className="text-[14px] text-muted dark:text-gray-500 italic py-2">No certifications</p>
             )}
           </div>
         </FilterSection>
 
-        {/* Item Type */}
+        {/* 3. Item Type - Third */}
         <FilterSection title="Type">
-          <div className="space-y-0.5">
+          <div className="space-y-1">
             {visibleItemTypes.map((facet) => (
               <Checkbox
                 key={facet.value}
@@ -509,35 +399,131 @@ export function FilterContent({ facets, filters, onFilterChange, onClose, isUpda
               />
             ))}
             {visibleItemTypes.length === 0 && (
-              <p className="text-[11px] text-muted dark:text-gray-500 italic">No items available</p>
+              <p className="text-[14px] text-muted dark:text-gray-500 italic py-2">No items available</p>
             )}
           </div>
         </FilterSection>
+
+        {/* 4. Dealer - Fourth */}
+        <div className="py-5">
+          <h3 className="text-[13px] uppercase tracking-[0.15em] font-semibold text-ink dark:text-white mb-4">
+            Dealer
+          </h3>
+          <div className="relative">
+            <button
+              onClick={() => setDealerDropdownOpen(!dealerDropdownOpen)}
+              className="w-full flex items-center justify-between px-4 py-3.5 lg:py-3 bg-white dark:bg-gray-800 border-2 border-border dark:border-gray-700 rounded-lg text-left text-[15px] lg:text-[14px] text-charcoal dark:text-gray-300 hover:border-charcoal/50 dark:hover:border-gray-500 transition-colors min-h-[52px] lg:min-h-[48px]"
+            >
+              <span className={selectedDealerNames.length > 0 ? 'text-ink dark:text-white font-medium' : 'text-muted'}>
+                {selectedDealerNames.length > 0
+                  ? selectedDealerNames.length === 1
+                    ? selectedDealerNames[0]
+                    : `${selectedDealerNames.length} dealers selected`
+                  : 'All dealers'}
+              </span>
+              <svg
+                className={`w-5 h-5 text-charcoal dark:text-gray-400 transition-transform duration-200 ${dealerDropdownOpen ? 'rotate-180' : ''}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            {dealerDropdownOpen && (
+              <div className="absolute z-20 top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 border-2 border-border dark:border-gray-700 rounded-lg shadow-xl max-h-72 overflow-hidden">
+                {/* Search */}
+                <div className="p-3 border-b border-border/50 dark:border-gray-700/50">
+                  <input
+                    type="text"
+                    value={dealerSearch}
+                    onChange={(e) => setDealerSearch(e.target.value)}
+                    placeholder="Search dealers..."
+                    className="w-full px-3 py-2.5 text-[15px] lg:text-[14px] bg-linen dark:bg-gray-900 border-0 rounded-md text-ink dark:text-white placeholder:text-muted/60 focus:outline-none focus:ring-2 focus:ring-gold/50"
+                  />
+                </div>
+                {/* Dealer list */}
+                <div className="max-h-52 overflow-y-auto py-2">
+                  {filteredDealers.map((dealer) => (
+                    <label
+                      key={dealer.id}
+                      className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-linen dark:hover:bg-gray-700/50 transition-colors min-h-[48px]"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={filters.dealers.includes(dealer.id)}
+                        onChange={(e) => handleDealerChange(dealer.id, e.target.checked)}
+                        className="sr-only peer"
+                      />
+                      <div className="w-5 h-5 border-2 border-charcoal/40 dark:border-gray-500 peer-checked:border-gold peer-checked:bg-gold transition-colors rounded flex items-center justify-center">
+                        {filters.dealers.includes(dealer.id) && (
+                          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </div>
+                      <span className="flex-1 text-[15px] lg:text-[14px] text-charcoal dark:text-gray-200">{dealer.name}</span>
+                      <span className="text-[13px] lg:text-[12px] text-muted tabular-nums">{dealer.count}</span>
+                    </label>
+                  ))}
+                  {filteredDealers.length === 0 && (
+                    <p className="px-4 py-3 text-[14px] text-muted italic">No dealers found</p>
+                  )}
+                </div>
+                {/* Clear selection */}
+                {filters.dealers.length > 0 && (
+                  <div className="p-3 border-t border-border/50 dark:border-gray-700/50">
+                    <button
+                      onClick={() => {
+                        onFilterChange('dealers', []);
+                        setDealerDropdownOpen(false);
+                      }}
+                      className="w-full text-[13px] text-gold hover:text-gold-light transition-colors py-1 font-medium"
+                    >
+                      Clear selection
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* 5. Price on Request - Last, least important */}
+        <div className="py-5">
+          <label className="flex items-center justify-between cursor-pointer group min-h-[48px]">
+            <span className="text-[15px] lg:text-[14px] text-charcoal dark:text-gray-300 group-hover:text-ink dark:group-hover:text-white transition-colors">
+              Price on request only
+            </span>
+            <div className="relative">
+              <input
+                type="checkbox"
+                checked={filters.askOnly || false}
+                onChange={(e) => onFilterChange('askOnly', e.target.checked)}
+                className="peer sr-only"
+              />
+              <div className={`w-12 h-7 lg:w-11 lg:h-6 rounded-full transition-colors ${
+                filters.askOnly
+                  ? 'bg-gold'
+                  : 'bg-border-dark dark:bg-gray-600'
+              }`}>
+                <div className={`absolute top-1 w-5 h-5 lg:w-4 lg:h-4 bg-white rounded-full shadow transition-transform ${
+                  filters.askOnly ? 'translate-x-6 lg:translate-x-6' : 'translate-x-1'
+                }`} />
+              </div>
+            </div>
+          </label>
+        </div>
       </div>
 
-      {/* Mobile Done Button - filters apply instantly, this just closes */}
-      {onClose && (
-        <div className="lg:hidden mt-6 pb-4 space-y-3">
-          {/* Live update indicator */}
-          <p className="text-center text-[11px] text-muted">
-            {isUpdating ? (
-              <span className="flex items-center justify-center gap-2">
-                <span className="w-2 h-2 bg-gold rounded-full animate-pulse" />
-                Updating results...
-              </span>
-            ) : (
-              <span className="text-sage">Filters applied live</span>
-            )}
-          </p>
-          <button
-            onClick={onClose}
-            className="w-full py-3 bg-ink dark:bg-white text-white dark:text-ink text-[13px] uppercase tracking-[0.1em] font-medium hover:bg-charcoal dark:hover:bg-gray-100 transition-colors flex items-center justify-center gap-2"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
-            Done {activeFilterCount > 0 && `(${activeFilterCount})`}
-          </button>
+      {/* Live update indicator - subtle, at bottom */}
+      {onClose && isUpdating && (
+        <div className="lg:hidden text-center py-3">
+          <span className="inline-flex items-center gap-2 text-[13px] text-muted">
+            <span className="w-2 h-2 bg-gold rounded-full animate-pulse" />
+            Updating...
+          </span>
         </div>
       )}
     </div>

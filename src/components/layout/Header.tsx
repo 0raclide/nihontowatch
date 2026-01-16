@@ -1,20 +1,107 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { useMobileUI } from '@/contexts/MobileUIContext';
 import { MobileNavDrawer } from './MobileNavDrawer';
 import { MobileSearchSheet } from './MobileSearchSheet';
+import { useSearch } from '@/hooks/useSearch';
+import { SearchSuggestions } from '@/components/search/SearchSuggestions';
+import type { SearchSuggestion } from '@/lib/search/types';
+import { SEARCH } from '@/lib/constants';
 
 export function Header() {
-  const [searchQuery, setSearchQuery] = useState('');
   const { openSearch, openNavDrawer } = useMobileUI();
+  const { query, setQuery, suggestions, total, isLoading, clearSuggestions } =
+    useSearch({ maxSuggestions: 5 });
+
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  // Show suggestions when we have query and results
+  useEffect(() => {
+    if (query.length >= SEARCH.MIN_QUERY_LENGTH && (suggestions.length > 0 || isLoading)) {
+      setShowSuggestions(true);
+    }
+  }, [query, suggestions, isLoading]);
+
+  // Reset highlight when suggestions change
+  useEffect(() => {
+    setHighlightedIndex(-1);
+  }, [suggestions]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchQuery.trim()) {
-      window.location.href = `/browse?q=${encodeURIComponent(searchQuery.trim())}`;
+    if (query.trim()) {
+      navigateToSearch(query.trim());
+    }
+  };
+
+  const navigateToSearch = (searchQuery: string) => {
+    window.location.href = `/browse?q=${encodeURIComponent(searchQuery)}`;
+  };
+
+  const handleSelect = useCallback(
+    (suggestion: SearchSuggestion) => {
+      // Navigate to the listing URL directly
+      window.location.href = suggestion.url;
+      setShowSuggestions(false);
+      clearSuggestions();
+    },
+    [clearSuggestions]
+  );
+
+  const handleViewAll = useCallback(() => {
+    if (query.trim()) {
+      navigateToSearch(query.trim());
+    }
+    setShowSuggestions(false);
+  }, [query]);
+
+  const handleClose = useCallback(() => {
+    setShowSuggestions(false);
+    setHighlightedIndex(-1);
+  }, []);
+
+  const handleInputFocus = () => {
+    if (query.length >= SEARCH.MIN_QUERY_LENGTH && suggestions.length > 0) {
+      setShowSuggestions(true);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (!showSuggestions) return;
+
+    const maxIndex = total > suggestions.length ? suggestions.length : suggestions.length - 1;
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setHighlightedIndex((prev) => (prev < maxIndex ? prev + 1 : 0));
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setHighlightedIndex((prev) => (prev > 0 ? prev - 1 : maxIndex));
+        break;
+      case 'Enter':
+        if (highlightedIndex >= 0) {
+          e.preventDefault();
+          if (highlightedIndex < suggestions.length) {
+            handleSelect(suggestions[highlightedIndex]);
+          } else if (highlightedIndex === suggestions.length) {
+            // "View all" option
+            handleViewAll();
+          }
+        }
+        break;
+      case 'Escape':
+        e.preventDefault();
+        handleClose();
+        inputRef.current?.blur();
+        break;
     }
   };
 
@@ -67,14 +154,28 @@ export function Header() {
             </Link>
 
             {/* Search */}
-            <form onSubmit={handleSearch} className="flex-1 max-w-sm mx-10">
+            <form
+              ref={formRef}
+              onSubmit={handleSearch}
+              className="flex-1 max-w-sm mx-10 relative"
+            >
               <div className="relative">
                 <input
+                  ref={inputRef}
                   type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  onFocus={handleInputFocus}
+                  onKeyDown={handleKeyDown}
                   placeholder="Search collection..."
                   className="w-full px-4 py-2 bg-linen/50 dark:bg-gray-800/50 border-0 text-[13px] text-ink dark:text-white placeholder:text-muted/50 focus:outline-none focus:ring-1 focus:ring-gold/30 transition-all"
+                  role="combobox"
+                  aria-expanded={showSuggestions}
+                  aria-controls="search-suggestions"
+                  aria-autocomplete="list"
+                  aria-activedescendant={
+                    highlightedIndex >= 0 ? `suggestion-${highlightedIndex}` : undefined
+                  }
                 />
                 <button
                   type="submit"
@@ -85,6 +186,19 @@ export function Header() {
                   </svg>
                 </button>
               </div>
+
+              {/* Search Suggestions Dropdown */}
+              {showSuggestions && (query.length >= SEARCH.MIN_QUERY_LENGTH) && (
+                <SearchSuggestions
+                  suggestions={suggestions}
+                  total={total}
+                  isLoading={isLoading}
+                  onSelect={handleSelect}
+                  onViewAll={handleViewAll}
+                  onClose={handleClose}
+                  highlightedIndex={highlightedIndex}
+                />
+              )}
             </form>
 
             {/* Navigation */}

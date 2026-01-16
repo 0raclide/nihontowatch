@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+import { normalizeSearchText } from '@/lib/search';
 
 export const dynamic = 'force-dynamic';
 
@@ -122,9 +123,13 @@ export async function GET(request: NextRequest) {
       query = query.in('dealer_id', params.dealers);
     }
 
-    // Text search
-    if (params.query) {
-      query = query.or(`title.ilike.%${params.query}%,smith.ilike.%${params.query}%,tosogu_maker.ilike.%${params.query}%`);
+    // Text search - use normalized query for consistent matching
+    // Includes title, smith (swords), tosogu_maker (fittings), and schools
+    if (params.query && params.query.trim().length >= 2) {
+      const normalizedQuery = normalizeSearchText(params.query);
+      query = query.or(
+        `title.ilike.%${normalizedQuery}%,smith.ilike.%${normalizedQuery}%,tosogu_maker.ilike.%${normalizedQuery}%,school.ilike.%${normalizedQuery}%,tosogu_school.ilike.%${normalizedQuery}%`
+      );
     }
 
     // Sorting

@@ -46,11 +46,11 @@ describe('FilterContent Component', () => {
       />
     );
 
-    expect(screen.getByText('Refine')).toBeInTheDocument();
+    expect(screen.getByText('Filters')).toBeInTheDocument();
     expect(screen.getByText('Category')).toBeInTheDocument();
-    expect(screen.getByText('Dealer')).toBeInTheDocument();
     expect(screen.getByText('Certification')).toBeInTheDocument();
     expect(screen.getByText('Type')).toBeInTheDocument();
+    expect(screen.getByText('Dealer')).toBeInTheDocument();
   });
 
   it('renders category toggle buttons', () => {
@@ -114,7 +114,7 @@ describe('FilterContent Component', () => {
     expect(mockOnFilterChange).toHaveBeenCalledWith('certifications', ['Juyo']);
   });
 
-  it('shows reset button when filters are active', () => {
+  it('shows clear all button when filters are active', () => {
     const activeFilters = {
       ...defaultFilters,
       certifications: ['Juyo'],
@@ -128,10 +128,10 @@ describe('FilterContent Component', () => {
       />
     );
 
-    expect(screen.getByRole('button', { name: /reset/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /clear all/i })).toBeInTheDocument();
   });
 
-  it('does not show reset button when no filters are active', () => {
+  it('does not show clear all button when no filters are active', () => {
     render(
       <FilterContent
         facets={mockFacets}
@@ -140,10 +140,10 @@ describe('FilterContent Component', () => {
       />
     );
 
-    expect(screen.queryByRole('button', { name: /reset/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /clear all/i })).not.toBeInTheDocument();
   });
 
-  it('clears all filters when reset is clicked', () => {
+  it('clears all filters when clear all is clicked', () => {
     const activeFilters = {
       ...defaultFilters,
       category: 'nihonto' as const,
@@ -158,7 +158,7 @@ describe('FilterContent Component', () => {
       />
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /reset/i }));
+    fireEvent.click(screen.getByRole('button', { name: /clear all/i }));
 
     expect(mockOnFilterChange).toHaveBeenCalledWith('category', 'all');
     expect(mockOnFilterChange).toHaveBeenCalledWith('itemTypes', []);
@@ -221,78 +221,7 @@ describe('FilterContent Component', () => {
     expect(mockOnFilterChange).toHaveBeenCalledWith('askOnly', true);
   });
 
-  describe('Mobile Done Button', () => {
-    it('shows Done button when onClose is provided', () => {
-      render(
-        <FilterContent
-          facets={mockFacets}
-          filters={defaultFilters}
-          onFilterChange={mockOnFilterChange}
-          onClose={mockOnClose}
-        />
-      );
-
-      expect(screen.getByRole('button', { name: /done/i })).toBeInTheDocument();
-    });
-
-    it('does not show Done button when onClose is not provided', () => {
-      render(
-        <FilterContent
-          facets={mockFacets}
-          filters={defaultFilters}
-          onFilterChange={mockOnFilterChange}
-        />
-      );
-
-      expect(screen.queryByRole('button', { name: /done/i })).not.toBeInTheDocument();
-    });
-
-    it('calls onClose when Done button is clicked', () => {
-      render(
-        <FilterContent
-          facets={mockFacets}
-          filters={defaultFilters}
-          onFilterChange={mockOnFilterChange}
-          onClose={mockOnClose}
-        />
-      );
-
-      fireEvent.click(screen.getByRole('button', { name: /done/i }));
-      expect(mockOnClose).toHaveBeenCalledTimes(1);
-    });
-
-    it('shows active filter count in Done button', () => {
-      const activeFilters = {
-        ...defaultFilters,
-        certifications: ['Juyo', 'Hozon'],
-        itemTypes: ['katana'],
-      };
-
-      render(
-        <FilterContent
-          facets={mockFacets}
-          filters={activeFilters}
-          onFilterChange={mockOnFilterChange}
-          onClose={mockOnClose}
-        />
-      );
-
-      expect(screen.getByRole('button', { name: /done \(3\)/i })).toBeInTheDocument();
-    });
-
-    it('shows live update indicator text', () => {
-      render(
-        <FilterContent
-          facets={mockFacets}
-          filters={defaultFilters}
-          onFilterChange={mockOnFilterChange}
-          onClose={mockOnClose}
-        />
-      );
-
-      expect(screen.getByText('Filters applied live')).toBeInTheDocument();
-    });
-
+  describe('Mobile UI behavior', () => {
     it('shows updating indicator when isUpdating is true', () => {
       render(
         <FilterContent
@@ -304,12 +233,26 @@ describe('FilterContent Component', () => {
         />
       );
 
-      expect(screen.getByText('Updating results...')).toBeInTheDocument();
+      expect(screen.getByText('Updating...')).toBeInTheDocument();
+    });
+
+    it('does not show updating indicator when not updating', () => {
+      render(
+        <FilterContent
+          facets={mockFacets}
+          filters={defaultFilters}
+          onFilterChange={mockOnFilterChange}
+          onClose={mockOnClose}
+          isUpdating={false}
+        />
+      );
+
+      expect(screen.queryByText('Updating...')).not.toBeInTheDocument();
     });
   });
 
   describe('Touch-friendly sizing', () => {
-    it('has responsive checkbox sizing', () => {
+    it('has large checkbox sizing for accessibility', () => {
       render(
         <FilterContent
           facets={mockFacets}
@@ -318,8 +261,8 @@ describe('FilterContent Component', () => {
         />
       );
 
-      // Find checkbox containers with responsive classes
-      const checkboxes = document.querySelectorAll('.w-4.h-4.lg\\:w-3\\.5.lg\\:h-3\\.5');
+      // Find checkbox containers with accessible sizes
+      const checkboxes = document.querySelectorAll('.w-5.h-5');
       expect(checkboxes.length).toBeGreaterThan(0);
     });
 
@@ -332,12 +275,12 @@ describe('FilterContent Component', () => {
         />
       );
 
-      // Find labels with min-height classes
-      const labels = document.querySelectorAll('.min-h-\\[44px\\]');
+      // Find labels with min-height classes (48px for better touch targets)
+      const labels = document.querySelectorAll('.min-h-\\[48px\\]');
       expect(labels.length).toBeGreaterThan(0);
     });
 
-    it('has responsive category button padding', () => {
+    it('has large category buttons for easy tapping', () => {
       render(
         <FilterContent
           facets={mockFacets}
@@ -346,8 +289,8 @@ describe('FilterContent Component', () => {
         />
       );
 
-      // Find category buttons with responsive padding
-      const categoryButtons = document.querySelectorAll('.py-2\\.5.lg\\:py-1\\.5');
+      // Find category buttons with large padding
+      const categoryButtons = document.querySelectorAll('.py-3');
       expect(categoryButtons.length).toBeGreaterThan(0);
     });
   });
