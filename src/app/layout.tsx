@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Cormorant_Garamond, Inter } from "next/font/google";
 import "./globals.css";
 import { MobileUIProvider } from "@/contexts/MobileUIContext";
+import { ThemeProvider, themeInitScript } from "@/contexts/ThemeContext";
 
 const cormorant = Cormorant_Garamond({
   variable: "--font-serif",
@@ -36,9 +37,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${cormorant.variable} ${inter.variable}`}>
-      <body className="antialiased bg-cream text-stone-900 font-sans">
+      <head>
+        <meta name="theme-color" content="#121212" />
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
+      <body className="antialiased font-sans">
         <MobileUIProvider>
-          {children}
+          <ThemeProvider>
+            {children}
+          </ThemeProvider>
         </MobileUIProvider>
       </body>
     </html>
