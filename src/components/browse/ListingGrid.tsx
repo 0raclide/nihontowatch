@@ -43,6 +43,8 @@ interface ListingGridProps {
   totalPages: number;
   onPageChange: (page: number) => void;
   isLoading?: boolean;
+  isLoadingMore?: boolean;
+  infiniteScroll?: boolean;
   currency: Currency;
   exchangeRates: ExchangeRates | null;
 }
@@ -155,6 +157,8 @@ export function ListingGrid({
   totalPages,
   onPageChange,
   isLoading,
+  isLoadingMore,
+  infiniteScroll,
   currency,
   exchangeRates,
 }: ListingGridProps) {
@@ -211,8 +215,25 @@ export function ListingGrid({
         ))}
       </div>
 
-      {/* Pagination */}
-      {totalPages > 1 && (
+      {/* Infinite scroll loading indicator */}
+      {infiniteScroll && isLoadingMore && (
+        <div className="flex justify-center py-8">
+          <div className="flex items-center gap-3 text-muted">
+            <div className="w-5 h-5 border-2 border-gold border-t-transparent rounded-full animate-spin" />
+            <span className="text-sm">Loading more...</span>
+          </div>
+        </div>
+      )}
+
+      {/* Infinite scroll end indicator */}
+      {infiniteScroll && !isLoadingMore && page >= totalPages && listings.length > 0 && (
+        <div className="text-center py-8">
+          <p className="text-sm text-muted">You&apos;ve seen all {total.toLocaleString()} items</p>
+        </div>
+      )}
+
+      {/* Pagination - only on desktop or when not in infinite scroll mode */}
+      {!infiniteScroll && totalPages > 1 && (
         <div className="mt-12 pt-8 border-t border-border dark:border-gray-700">
           <Pagination page={page} totalPages={totalPages} onPageChange={onPageChange} />
         </div>

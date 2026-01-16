@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, Suspense } from 'react';
+import { useEffect, useState, useCallback, Suspense, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Header } from '@/components/layout/Header';
 import { FilterSidebar } from '@/components/browse/FilterSidebar';
@@ -9,6 +9,8 @@ import { ListingGrid } from '@/components/browse/ListingGrid';
 import { CurrencySelector } from '@/components/ui/CurrencySelector';
 import { useMobileUI } from '@/contexts/MobileUIContext';
 import { getActiveFilterCount } from '@/components/browse/FilterContent';
+import { useIsMobile } from '@/hooks/useIsMobile';
+import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 
 interface Listing {
   id: string;
@@ -99,6 +101,8 @@ function HomeContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { openFilterDrawer } = useMobileUI();
+  const isMobile = useIsMobile();
+  const filtersChangedRef = useRef(false);
 
   const activeTab = 'available'; // Only show available items
   const [filters, setFilters] = useState<Filters>({
@@ -115,6 +119,10 @@ function HomeContent() {
 
   const [data, setData] = useState<BrowseResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Infinite scroll state for mobile
+  const [allListings, setAllListings] = useState<Listing[]>([]);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   // Currency state - default to JPY
   const [currency, setCurrency] = useState<Currency>(() => {
@@ -181,6 +189,12 @@ function HomeContent() {
         const res = await fetch(`/api/browse?${params.toString()}`);
         const json = await res.json();
         setData(json);
+
+        // Reset accumulated listings when filters change or on fresh load
+        if (isMobile) {
+          setAllListings(json.listings || []);
+          filtersChangedRef.current = false;
+        }
       } catch (error) {
         console.error('Failed to fetch:', error);
       } finally {
@@ -189,11 +203,42 @@ function HomeContent() {
     };
 
     fetchData();
-  }, [buildUrlParams]);
+  }, [buildUrlParams, isMobile]);
+
+  // Load more for infinite scroll
+  const loadMore = useCallback(async () => {
+    if (!data || page >= data.totalPages || isLoadingMore) return;
+
+    setIsLoadingMore(true);
+    try {
+      const nextPage = page + 1;
+      const params = buildUrlParams();
+      params.set('page', String(nextPage));
+
+      const res = await fetch(`/api/browse?${params.toString()}`);
+      const json = await res.json();
+
+      setAllListings((prev) => [...prev, ...(json.listings || [])]);
+      setPage(nextPage);
+    } catch (error) {
+      console.error('Failed to load more:', error);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [data, page, isLoadingMore, buildUrlParams]);
+
+  // Infinite scroll hook - only on mobile
+  useInfiniteScroll({
+    onLoadMore: loadMore,
+    hasMore: data ? page < data.totalPages : false,
+    isLoading: isLoadingMore,
+    enabled: isMobile,
+  });
 
   const handleFilterChange = useCallback((key: string, value: unknown) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
     setPage(1); // Reset to first page on filter change
+    filtersChangedRef.current = true;
   }, []);
 
 
@@ -245,25 +290,31 @@ function HomeContent() {
         {/* Subtle divider */}
         <div className="h-px bg-gradient-to-r from-transparent via-border dark:via-gray-700 to-transparent mb-4 lg:mb-8" />
 
-        {/* Mobile Filter Trigger */}
-        <div className="lg:hidden flex items-center justify-between py-3 mb-4 border-b border-border/30 dark:border-gray-800/50">
-          <span className="text-[13px] text-muted dark:text-gray-500">
-            {data?.total || 0} items
-          </span>
-          <button
-            onClick={openFilterDrawer}
-            className="flex items-center gap-2 text-[13px] text-charcoal dark:text-gray-300 hover:text-gold transition-colors"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-            </svg>
-            Filters
-            {getActiveFilterCount(filters) > 0 && (
-              <span className="px-1.5 py-0.5 text-[10px] bg-gold text-white rounded-full">
-                {getActiveFilterCount(filters)}
-              </span>
-            )}
-          </button>
+        {/* Mobile Filter Bar - Prominent sticky bar */}
+        <div className="lg:hidden sticky top-[57px] z-30 bg-cream/95 dark:bg-gray-900/95 backdrop-blur-sm border-b border-border/50 dark:border-gray-800/50 -mx-4 px-4 py-3 mb-4">
+          <div className="flex items-center justify-between">
+            <span className="text-[13px] text-muted dark:text-gray-500">
+              {isLoading ? 'Loading...' : `${data?.total?.toLocaleString() || 0} items`}
+            </span>
+            <button
+              onClick={openFilterDrawer}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-full font-medium text-[13px] transition-all active:scale-95 ${
+                getActiveFilterCount(filters) > 0
+                  ? 'bg-gold text-white shadow-md'
+                  : 'bg-ink dark:bg-white text-white dark:text-ink'
+              }`}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+              </svg>
+              Filters
+              {getActiveFilterCount(filters) > 0 && (
+                <span className="min-w-[20px] h-5 px-1.5 bg-white/20 rounded-full text-[11px] flex items-center justify-center">
+                  {getActiveFilterCount(filters)}
+                </span>
+              )}
+            </button>
+          </div>
         </div>
 
         {/* Main Content */}
@@ -276,12 +327,14 @@ function HomeContent() {
 
           <div className="flex-1 min-w-0">
             <ListingGrid
-              listings={data?.listings || []}
+              listings={isMobile ? allListings : (data?.listings || [])}
               total={data?.total || 0}
               page={page}
               totalPages={data?.totalPages || 1}
               onPageChange={handlePageChange}
               isLoading={isLoading}
+              isLoadingMore={isLoadingMore}
+              infiniteScroll={isMobile}
               currency={currency}
               exchangeRates={exchangeRates}
             />
@@ -293,7 +346,24 @@ function HomeContent() {
           facets={data?.facets || { itemTypes: [], certifications: [], dealers: [] }}
           filters={filters}
           onFilterChange={handleFilterChange}
+          isUpdating={isLoading}
         />
+
+        {/* Mobile Floating Action Button - always visible when scrolling */}
+        <button
+          onClick={openFilterDrawer}
+          className="lg:hidden fixed bottom-6 right-4 z-40 w-14 h-14 rounded-full bg-gold text-white shadow-lg shadow-gold/30 flex items-center justify-center active:scale-95 transition-transform"
+          aria-label="Open filters"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+          </svg>
+          {getActiveFilterCount(filters) > 0 && (
+            <span className="absolute -top-1 -right-1 min-w-[22px] h-[22px] px-1.5 bg-ink text-white text-[11px] rounded-full flex items-center justify-center font-medium">
+              {getActiveFilterCount(filters)}
+            </span>
+          )}
+        </button>
       </main>
 
       {/* Footer - Minimal, scholarly */}

@@ -29,6 +29,7 @@ export interface FilterContentProps {
   };
   onFilterChange: (key: string, value: unknown) => void;
   onClose?: () => void;
+  isUpdating?: boolean;
 }
 
 function FilterSection({
@@ -169,7 +170,7 @@ const CERT_LABELS: Record<string, string> = {
 // Sort order for certifications (highest to lowest)
 const CERT_ORDER = ['Tokuju', 'tokuju', 'Juyo', 'juyo', 'TokuHozon', 'tokubetsu_hozon', 'Hozon', 'hozon', 'TokuKicho', 'nbthk', 'nthk'];
 
-export function FilterContent({ facets, filters, onFilterChange, onClose }: FilterContentProps) {
+export function FilterContent({ facets, filters, onFilterChange, onClose, isUpdating }: FilterContentProps) {
   const [dealerSearch, setDealerSearch] = useState('');
   const [dealerDropdownOpen, setDealerDropdownOpen] = useState(false);
 
@@ -322,7 +323,12 @@ export function FilterContent({ facets, filters, onFilterChange, onClose }: Filt
     <div className="px-4 lg:px-0">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-[11px] uppercase tracking-[0.25em] font-medium text-ink dark:text-white">Refine</h2>
+        <div className="flex items-center gap-2">
+          <h2 className="text-[11px] uppercase tracking-[0.25em] font-medium text-ink dark:text-white">Refine</h2>
+          {isUpdating && (
+            <div className="w-3 h-3 border-2 border-gold border-t-transparent rounded-full animate-spin" />
+          )}
+        </div>
         {hasActiveFilters && (
           <button
             onClick={clearAllFilters}
@@ -509,14 +515,28 @@ export function FilterContent({ facets, filters, onFilterChange, onClose }: Filt
         </FilterSection>
       </div>
 
-      {/* Mobile Apply Button */}
+      {/* Mobile Done Button - filters apply instantly, this just closes */}
       {onClose && (
-        <div className="lg:hidden mt-6 pb-4">
+        <div className="lg:hidden mt-6 pb-4 space-y-3">
+          {/* Live update indicator */}
+          <p className="text-center text-[11px] text-muted">
+            {isUpdating ? (
+              <span className="flex items-center justify-center gap-2">
+                <span className="w-2 h-2 bg-gold rounded-full animate-pulse" />
+                Updating results...
+              </span>
+            ) : (
+              <span className="text-sage">Filters applied live</span>
+            )}
+          </p>
           <button
             onClick={onClose}
-            className="w-full py-3 bg-gold text-white text-[13px] uppercase tracking-[0.1em] font-medium hover:bg-gold-light transition-colors"
+            className="w-full py-3 bg-ink dark:bg-white text-white dark:text-ink text-[13px] uppercase tracking-[0.1em] font-medium hover:bg-charcoal dark:hover:bg-gray-100 transition-colors flex items-center justify-center gap-2"
           >
-            Apply Filters {activeFilterCount > 0 && `(${activeFilterCount})`}
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+            Done {activeFilterCount > 0 && `(${activeFilterCount})`}
           </button>
         </div>
       )}

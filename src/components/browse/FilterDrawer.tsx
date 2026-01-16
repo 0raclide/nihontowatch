@@ -8,9 +8,10 @@ interface FilterDrawerProps {
   facets: FilterContentProps['facets'];
   filters: FilterContentProps['filters'];
   onFilterChange: FilterContentProps['onFilterChange'];
+  isUpdating?: boolean;
 }
 
-export function FilterDrawer({ facets, filters, onFilterChange }: FilterDrawerProps) {
+export function FilterDrawer({ facets, filters, onFilterChange, isUpdating }: FilterDrawerProps) {
   const { filterDrawerOpen, closeFilterDrawer } = useMobileUI();
 
   return (
@@ -20,6 +21,7 @@ export function FilterDrawer({ facets, filters, onFilterChange }: FilterDrawerPr
         filters={filters}
         onFilterChange={onFilterChange}
         onClose={closeFilterDrawer}
+        isUpdating={isUpdating}
       />
     </Drawer>
   );

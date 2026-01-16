@@ -62,6 +62,8 @@ describe('ListingGrid Component', () => {
     totalPages: 5,
     onPageChange: vi.fn(),
     isLoading: false,
+    isLoadingMore: false,
+    infiniteScroll: false,
     currency: 'JPY' as const,
     exchangeRates: null,
   };
@@ -220,6 +222,33 @@ describe('ListingGrid Component', () => {
         expect(screen.getByText('Next →')).toBeInTheDocument();
         expect(screen.getByText('→')).toBeInTheDocument();
       });
+    });
+  });
+
+  describe('Infinite Scroll Mode', () => {
+    it('hides pagination in infinite scroll mode', () => {
+      render(<ListingGrid {...defaultProps} infiniteScroll={true} />);
+
+      expect(screen.queryByText('← Previous')).not.toBeInTheDocument();
+      expect(screen.queryByText('Next →')).not.toBeInTheDocument();
+    });
+
+    it('shows loading more indicator when isLoadingMore', () => {
+      render(<ListingGrid {...defaultProps} infiniteScroll={true} isLoadingMore={true} />);
+
+      expect(screen.getByText('Loading more...')).toBeInTheDocument();
+    });
+
+    it('shows end of results message when all items loaded', () => {
+      render(<ListingGrid {...defaultProps} infiniteScroll={true} page={5} totalPages={5} />);
+
+      expect(screen.getByText(/You've seen all/)).toBeInTheDocument();
+    });
+
+    it('does not show end message when more items available', () => {
+      render(<ListingGrid {...defaultProps} infiniteScroll={true} page={1} totalPages={5} />);
+
+      expect(screen.queryByText(/You've seen all/)).not.toBeInTheDocument();
     });
   });
 });

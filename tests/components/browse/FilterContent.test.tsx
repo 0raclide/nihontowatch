@@ -221,8 +221,8 @@ describe('FilterContent Component', () => {
     expect(mockOnFilterChange).toHaveBeenCalledWith('askOnly', true);
   });
 
-  describe('Mobile Apply Button', () => {
-    it('shows Apply button when onClose is provided', () => {
+  describe('Mobile Done Button', () => {
+    it('shows Done button when onClose is provided', () => {
       render(
         <FilterContent
           facets={mockFacets}
@@ -232,10 +232,10 @@ describe('FilterContent Component', () => {
         />
       );
 
-      expect(screen.getByRole('button', { name: /apply filters/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /done/i })).toBeInTheDocument();
     });
 
-    it('does not show Apply button when onClose is not provided', () => {
+    it('does not show Done button when onClose is not provided', () => {
       render(
         <FilterContent
           facets={mockFacets}
@@ -244,10 +244,10 @@ describe('FilterContent Component', () => {
         />
       );
 
-      expect(screen.queryByRole('button', { name: /apply filters/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /done/i })).not.toBeInTheDocument();
     });
 
-    it('calls onClose when Apply button is clicked', () => {
+    it('calls onClose when Done button is clicked', () => {
       render(
         <FilterContent
           facets={mockFacets}
@@ -257,11 +257,11 @@ describe('FilterContent Component', () => {
         />
       );
 
-      fireEvent.click(screen.getByRole('button', { name: /apply filters/i }));
+      fireEvent.click(screen.getByRole('button', { name: /done/i }));
       expect(mockOnClose).toHaveBeenCalledTimes(1);
     });
 
-    it('shows active filter count in Apply button', () => {
+    it('shows active filter count in Done button', () => {
       const activeFilters = {
         ...defaultFilters,
         certifications: ['Juyo', 'Hozon'],
@@ -277,7 +277,34 @@ describe('FilterContent Component', () => {
         />
       );
 
-      expect(screen.getByRole('button', { name: /apply filters \(3\)/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /done \(3\)/i })).toBeInTheDocument();
+    });
+
+    it('shows live update indicator text', () => {
+      render(
+        <FilterContent
+          facets={mockFacets}
+          filters={defaultFilters}
+          onFilterChange={mockOnFilterChange}
+          onClose={mockOnClose}
+        />
+      );
+
+      expect(screen.getByText('Filters applied live')).toBeInTheDocument();
+    });
+
+    it('shows updating indicator when isUpdating is true', () => {
+      render(
+        <FilterContent
+          facets={mockFacets}
+          filters={defaultFilters}
+          onFilterChange={mockOnFilterChange}
+          onClose={mockOnClose}
+          isUpdating={true}
+        />
+      );
+
+      expect(screen.getByText('Updating results...')).toBeInTheDocument();
     });
   });
 
