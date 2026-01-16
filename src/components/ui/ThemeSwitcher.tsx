@@ -191,11 +191,6 @@ export function ThemeSwitcher() {
                   <div className="text-sm font-medium text-ink dark:text-white">
                     {themeConfig.label}
                   </div>
-                  {themeConfig.description && (
-                    <div className="text-xs text-muted dark:text-gray-400 truncate">
-                      {themeConfig.description}
-                    </div>
-                  )}
                 </div>
                 {isSelected && (
                   <svg

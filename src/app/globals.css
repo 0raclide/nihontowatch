@@ -66,10 +66,10 @@
 }
 
 /* ==========================================
-   Theme: Yuhinkai (Warm scholarly dark with steel blue accent)
-   From Oshi-v2
+   Theme: Dark mode (Warm scholarly dark with steel blue accent)
    ========================================== */
-html.theme-yuhinkai {
+html.theme-dark {
+  color-scheme: dark;
   --background: #121212;
   --background-warm: #171615;
   --foreground: #e8e6e3;
@@ -106,86 +106,11 @@ html.theme-yuhinkai {
 }
 
 /* ==========================================
-   Theme: Parchment (Aged manuscript light)
+   Theme: Light mode (Clean scholarly light)
    ========================================== */
-html.theme-parchment {
-  --background: #e8e0d0;
-  --foreground: #2d2a26;
-  --surface: #f0e8d8;
-  --surface-elevated: #f5efe3;
-  --border: #c5bba8;
-  --accent: #785a3c;
-  --accent-light: #9a7a58;
-  /* Keep original cream/ivory values for light theme */
-  --cream: #FAF9F6;
-  --ivory: #FEFDFB;
-  --linen: #F8F6F3;
-  --paper: #F5F3EF;
-  --charcoal: #4A4A4A;
-  --ink: #1C1C1C;
-  --gold: #B8860B;
-  --gold-light: #D4AF37;
-  --background-warm: #ece4d4;
-  --border-subtle: #d5cbb8;
-  --border-accent: rgba(120, 90, 60, 0.35);
-  --hover: #ddd5c5;
-  --active: #d5cdb8;
-  --accent-dark: #5a4028;
-  --accent-glow: rgba(120, 90, 60, 0.18);
-  --text-primary: #2d2a26;
-  --text-secondary: #4a4640;
-  --text-tertiary: #6a665e;
-  --text-muted: #8a857d;
-  --text-accent: #5a4028;
-  --muted: #7a7670;
-  --border-dark: #b5ab98;
-}
-
-/* ==========================================
-   Theme: Midnight (OLED optimized dark with violet)
-   ========================================== */
-html.theme-midnight {
-  --background: #08080c;
-  --foreground: #e8e6f0;
-  --surface: #101018;
-  --surface-elevated: #181820;
-  --border: #252530;
-  --accent: #a08cc8;
-  --accent-light: #b8a4e0;
-  /* Override existing vars */
-  --cream: #08080c;
-  --ivory: #101018;
-  --linen: #181820;
-  --paper: #202028;
-  --charcoal: #9090a0;
-  --ink: #e8e6f0;
-  --gold: #a08cc8;
-  --gold-light: #b8a4e0;
-  --background-warm: #0c0c10;
-  --border-subtle: #1a1a24;
-  --border-accent: rgba(160, 140, 200, 0.35);
-  --hover: #1c1c28;
-  --active: #242430;
-  --accent-dark: #7a68a0;
-  --accent-glow: rgba(160, 140, 200, 0.18);
-  --text-primary: #f0eef8;
-  --text-secondary: #b0aec0;
-  --text-tertiary: #808090;
-  --text-muted: #505060;
-  --text-accent: #c0b0e8;
-  --muted: #707080;
-  --border-dark: #303040;
-}
-
-/* ==========================================
-   Mode classes for Tailwind compatibility
-   ========================================== */
-html.theme-dark {
-  color-scheme: dark;
-}
-
 html.theme-light {
   color-scheme: light;
+  /* Uses :root defaults */
 }
 
 @theme inline {

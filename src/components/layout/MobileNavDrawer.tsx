@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { Drawer } from '@/components/ui/Drawer';
-import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import { ThemeSelector } from '@/components/ui/ThemeToggle';
 import { useMobileUI } from '@/contexts/MobileUIContext';
 
 export function MobileNavDrawer() {
@@ -14,16 +14,16 @@ export function MobileNavDrawer() {
         <Link
           href="/browse"
           onClick={closeNavDrawer}
-          className="flex items-center px-4 py-3 text-[13px] uppercase tracking-[0.15em] text-charcoal dark:text-gray-300 hover:bg-linen dark:hover:bg-gray-800 rounded-lg transition-colors"
+          className="flex items-center px-4 py-3 text-[13px] uppercase tracking-[0.15em] text-text-secondary hover:bg-hover rounded-lg transition-colors"
         >
           Browse Collection
         </Link>
 
-        <div className="h-px bg-border/50 dark:bg-gray-800 my-4" />
+        <div className="h-px bg-border/50 my-4" />
 
-        <div className="flex items-center justify-between px-4 py-3">
-          <span className="text-[13px] text-muted dark:text-gray-500">Theme</span>
-          <ThemeToggle />
+        <div className="px-4 py-2">
+          <span className="text-[11px] uppercase tracking-[0.15em] text-text-muted mb-2 block">Theme</span>
+          <ThemeSelector />
         </div>
       </nav>
     </Drawer>

@@ -21,7 +21,7 @@ import {
  *
  * Extensible: Add new themes to THEME_NAMES and THEMES record
  */
-export const THEME_NAMES = ['yuhinkai', 'parchment', 'midnight'] as const;
+export const THEME_NAMES = ['dark', 'light'] as const;
 export type ThemeName = (typeof THEME_NAMES)[number];
 
 export type ThemeMode = 'light' | 'dark';
@@ -29,8 +29,6 @@ export type ThemeMode = 'light' | 'dark';
 export interface ThemeDefinition {
   name: ThemeName;
   label: string;
-  labelJp: string;
-  description: string;
   mode: ThemeMode;
   /** Primary accent color for preview */
   previewAccent: string;
@@ -42,7 +40,6 @@ export interface ThemeDefinition {
 
 /**
  * Theme metadata for UI display
- * Each theme has an evocative name inspired by Japanese aesthetics
  *
  * To add a new theme:
  * 1. Add the name to THEME_NAMES array
@@ -50,35 +47,21 @@ export interface ThemeDefinition {
  * 3. Add corresponding CSS variables in your global styles
  */
 export const THEMES: Record<ThemeName, ThemeDefinition> = {
-  yuhinkai: {
-    name: 'yuhinkai',
-    label: 'Yuhinkai',
-    labelJp: '優品会',
-    description: 'The Society of Masterworks - warm scholarly blacks with steel blue accent',
+  dark: {
+    name: 'dark',
+    label: 'Dark mode',
     mode: 'dark',
     previewAccent: '#5d8aa8',
     previewBg: '#121212',
     metaColor: '#121212',
   },
-  parchment: {
-    name: 'parchment',
-    label: 'Parchment',
-    labelJp: '古紙',
-    description: 'Aged manuscript tones - sepia warmth',
+  light: {
+    name: 'light',
+    label: 'Light mode',
     mode: 'light',
-    previewAccent: '#785a3c',
-    previewBg: '#e8e0d0',
-    metaColor: '#e8e0d0',
-  },
-  midnight: {
-    name: 'midnight',
-    label: 'Midnight',
-    labelJp: '真夜中',
-    description: 'Deep space with violet glow - OLED optimized',
-    mode: 'dark',
-    previewAccent: '#a08cc8',
-    previewBg: '#08080c',
-    metaColor: '#08080c',
+    previewAccent: '#B8860B',
+    previewBg: '#FAF9F6',
+    metaColor: '#FAF9F6',
   },
 };
 
@@ -108,7 +91,7 @@ interface ThemeContextValue {
 // ============================================================================
 
 const STORAGE_KEY = 'nihontowatch-theme';
-const DEFAULT_THEME: ThemeName = 'yuhinkai';
+const DEFAULT_THEME: ThemeName = 'dark';
 
 // ============================================================================
 // Context
@@ -122,10 +105,9 @@ const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
 function getSystemTheme(): ThemeName {
   if (typeof window === 'undefined') return DEFAULT_THEME;
-  // System preference maps to yuhinkai (dark) or parchment (light)
   return window.matchMedia('(prefers-color-scheme: light)').matches
-    ? 'parchment'
-    : 'yuhinkai';
+    ? 'light'
+    : 'dark';
 }
 
 function getStoredTheme(): ThemeSetting | null {
@@ -152,13 +134,18 @@ function applyTheme(themeName: ThemeName) {
   THEME_NAMES.forEach((name) => {
     root.classList.remove(`theme-${name}`);
   });
-  root.classList.remove('theme-light', 'theme-dark');
+  root.classList.remove('theme-light', 'theme-dark', 'dark');
 
   // Add the theme class
   root.classList.add(`theme-${themeName}`);
 
   // Also add mode class for light: variant compatibility
   root.classList.add(`theme-${theme.mode}`);
+
+  // Add standard 'dark' class for Tailwind dark: prefix compatibility
+  if (theme.mode === 'dark') {
+    root.classList.add('dark');
+  }
 
   // Update meta theme-color for mobile browsers
   const metaThemeColor = document.querySelector('meta[name="theme-color"]');
@@ -269,23 +256,27 @@ export const themeInitScript = `
 (function() {
   try {
     var stored = localStorage.getItem('nihontowatch-theme');
-    var themes = ['yuhinkai', 'parchment', 'midnight'];
+    var themes = ['dark', 'light'];
     var themeData = {
-      yuhinkai: { mode: 'dark', metaColor: '#121212' },
-      parchment: { mode: 'light', metaColor: '#e8e0d0' },
-      midnight: { mode: 'dark', metaColor: '#08080c' }
+      dark: { mode: 'dark', metaColor: '#121212' },
+      light: { mode: 'light', metaColor: '#FAF9F6' }
     };
 
     var theme = themes.includes(stored) ? stored : null;
 
     if (stored === 'system' || !theme) {
-      theme = window.matchMedia('(prefers-color-scheme: light)').matches ? 'parchment' : 'yuhinkai';
+      theme = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
     }
 
-    var data = themeData[theme] || themeData.yuhinkai;
+    var data = themeData[theme] || themeData.dark;
 
     document.documentElement.classList.add('theme-' + theme);
     document.documentElement.classList.add('theme-' + data.mode);
+
+    // Add 'dark' class for Tailwind dark: prefix compatibility
+    if (data.mode === 'dark') {
+      document.documentElement.classList.add('dark');
+    }
 
     var meta = document.querySelector('meta[name="theme-color"]');
     if (meta) {
