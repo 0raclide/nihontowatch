@@ -9,9 +9,9 @@
 
 export const PAGINATION = {
   /** Default page size for listing grids */
-  DEFAULT_PAGE_SIZE: 24,
+  DEFAULT_PAGE_SIZE: 100,
   /** Maximum allowed page size */
-  MAX_PAGE_SIZE: 100,
+  MAX_PAGE_SIZE: 200,
   /** Page size for mobile devices */
   MOBILE_PAGE_SIZE: 12,
 } as const;

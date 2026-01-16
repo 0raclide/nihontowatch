@@ -190,12 +190,13 @@ export function ListingGrid({
 
       {/* Grid - Compact cards for scholarly browsing */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-        {listings.map((listing) => (
+        {listings.map((listing, index) => (
           <ListingCard
             key={listing.id}
             listing={listing}
             currency={currency}
             exchangeRates={exchangeRates}
+            priority={index < 10} // Prioritize first 10 images (above the fold)
           />
         ))}
       </div>

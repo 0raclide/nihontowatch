@@ -437,25 +437,33 @@ export function FilterSidebar({ facets, filters, onFilterChange }: FilterSidebar
                 </div>
               )}
             </div>
-          </div>
 
-          {/* Item Type */}
-          <FilterSection title="Type">
-            <div className="space-y-0.5">
-              {visibleItemTypes.map((facet) => (
-                <Checkbox
-                  key={facet.value}
-                  label={ITEM_TYPE_LABELS[facet.value] || facet.value}
-                  count={facet.count}
-                  checked={filters.itemTypes.includes(facet.value)}
-                  onChange={(checked) => handleItemTypeChange(facet.value, checked)}
-                />
-              ))}
-              {visibleItemTypes.length === 0 && (
-                <p className="text-[11px] text-muted dark:text-gray-500 italic">No items available</p>
-              )}
+            {/* Price on Request toggle - below dealer */}
+            <div className="mt-4 pt-4 border-t border-border/30 dark:border-gray-700/30">
+              <label className="flex items-center gap-3 cursor-pointer group">
+                <div className="relative">
+                  <input
+                    type="checkbox"
+                    checked={filters.askOnly || false}
+                    onChange={(e) => onFilterChange('askOnly', e.target.checked)}
+                    className="peer sr-only"
+                  />
+                  <div className={`w-8 h-4 rounded-full transition-colors ${
+                    filters.askOnly
+                      ? 'bg-gold'
+                      : 'bg-border-dark dark:bg-gray-600'
+                  }`}>
+                    <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full shadow transition-transform ${
+                      filters.askOnly ? 'translate-x-4.5' : 'translate-x-0.5'
+                    }`} />
+                  </div>
+                </div>
+                <span className="text-[13px] text-charcoal dark:text-gray-300 group-hover:text-ink dark:group-hover:text-white transition-colors">
+                  Price on request only
+                </span>
+              </label>
             </div>
-          </FilterSection>
+          </div>
 
           {/* Certification */}
           <FilterSection title="Certification">
@@ -475,31 +483,23 @@ export function FilterSidebar({ facets, filters, onFilterChange }: FilterSidebar
             </div>
           </FilterSection>
 
-          {/* Price on Request toggle */}
-          <div className="py-5">
-            <label className="flex items-center gap-3 cursor-pointer group">
-              <div className="relative">
-                <input
-                  type="checkbox"
-                  checked={filters.askOnly || false}
-                  onChange={(e) => onFilterChange('askOnly', e.target.checked)}
-                  className="peer sr-only"
+          {/* Item Type */}
+          <FilterSection title="Type">
+            <div className="space-y-0.5">
+              {visibleItemTypes.map((facet) => (
+                <Checkbox
+                  key={facet.value}
+                  label={ITEM_TYPE_LABELS[facet.value] || facet.value}
+                  count={facet.count}
+                  checked={filters.itemTypes.includes(facet.value)}
+                  onChange={(checked) => handleItemTypeChange(facet.value, checked)}
                 />
-                <div className={`w-8 h-4 rounded-full transition-colors ${
-                  filters.askOnly
-                    ? 'bg-gold'
-                    : 'bg-border-dark dark:bg-gray-600'
-                }`}>
-                  <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full shadow transition-transform ${
-                    filters.askOnly ? 'translate-x-4.5' : 'translate-x-0.5'
-                  }`} />
-                </div>
-              </div>
-              <span className="text-[13px] text-charcoal dark:text-gray-300 group-hover:text-ink dark:group-hover:text-white transition-colors">
-                Price on request only
-              </span>
-            </label>
-          </div>
+              ))}
+              {visibleItemTypes.length === 0 && (
+                <p className="text-[11px] text-muted dark:text-gray-500 italic">No items available</p>
+              )}
+            </div>
+          </FilterSection>
         </div>
       </div>
     </aside>

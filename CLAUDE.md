@@ -1,5 +1,23 @@
 # Nihontowatch Project Guide
 
+## Production Status
+
+**Live at:** https://nihontowatch.com
+
+**Current Features:**
+- Browse collection with faceted filters (certification, type, dealer)
+- Currency conversion (JPY/USD/EUR)
+- Image optimization with skeleton loaders
+- Dark mode support
+
+**Defaults:**
+- Currency: JPY
+- Sort: Price high to low
+- Items per page: 100
+- Only available items shown (sold archive hidden)
+
+---
+
 ## What This Project Is
 
 **Nihontowatch** is a public aggregator site for Japanese swords (nihonto) and sword fittings (tosogu) from dealers worldwide. The goal is to become the primary hub for collectors looking to make acquisitions by aggregating listings from all major dealers into a single searchable interface.

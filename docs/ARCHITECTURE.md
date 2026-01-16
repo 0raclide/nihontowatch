@@ -1,5 +1,15 @@
 # Nihontowatch Architecture
 
+## Production Status
+
+**Live at:** https://nihontowatch.com
+
+**Deployment:** Vercel (auto-deploy from CLI)
+
+**Last Updated:** January 2026
+
+---
+
 ## System Overview
 
 Nihontowatch is a **read-heavy** application. The scraping backend (Oshi-scrapper) writes data, and the frontend (nihontowatch) reads and displays it.
@@ -474,3 +484,132 @@ const BrowseSchema = z.object({
 ### Scraper State
 - `discovered_urls` table is recoverable
 - Re-scrape from scratch if needed (24-48h)
+
+---
+
+## Current App Layer Implementation
+
+### Routes
+
+| Route | Purpose |
+|-------|---------|
+| `/` | Main browse page (collection grid with filters) |
+| `/browse` | Redirects to `/` |
+| `/api/browse` | Browse API with faceted filtering |
+| `/api/exchange-rates` | Currency conversion rates |
+
+### Homepage (Browse Page)
+
+The homepage directly shows the collection grid - no landing page.
+
+**Default Settings:**
+- Currency: **JPY** (Japanese Yen)
+- Sort: **Price high to low** (`price_desc`)
+- Items per page: **100**
+- Tab: **Available only** (sold archive hidden)
+
+**Filter Sidebar Order:**
+1. Category (All / Nihonto / Tosogu)
+2. Dealer (dropdown with search)
+3. Price on request only (toggle)
+4. Certification (Jūyō, Tokubetsu Hozon, Hozon, etc.)
+5. Type (Katana, Wakizashi, Tsuba, etc.)
+
+### Image Optimization
+
+Images are optimized for fast loading with multiple strategies:
+
+```
+┌─────────────────────────────────────────────┐
+│           Image Loading Flow                │
+├─────────────────────────────────────────────┤
+│ 1. Skeleton shimmer (animated placeholder)  │
+│ 2. Blur placeholder (base64 SVG)            │
+│ 3. Image loads in background                │
+│ 4. Fade-in transition on load               │
+│ 5. Error fallback (icon) if load fails      │
+└─────────────────────────────────────────────┘
+```
+
+**Configuration (next.config.ts):**
+- Modern formats: AVIF, WebP (auto-served)
+- Cache TTL: 30 days
+- Priority loading: First 10 images
+- Device sizes: 640, 750, 828, 1080, 1200, 1920
+
+**Cache Headers:**
+```
+Cache-Control: public, max-age=31536000, immutable
+```
+
+### Component Structure
+
+```
+src/
+├── app/
+│   ├── page.tsx              # Homepage (browse functionality)
+│   ├── browse/page.tsx       # Redirects to /
+│   ├── globals.css           # Tailwind + custom styles
+│   └── api/
+│       ├── browse/route.ts   # Browse API
+│       └── exchange-rates/   # Currency API
+├── components/
+│   ├── browse/
+│   │   ├── FilterSidebar.tsx # Faceted filters
+│   │   ├── ListingGrid.tsx   # Card grid + pagination
+│   │   └── ListingCard.tsx   # Individual card with image
+│   ├── layout/
+│   │   └── Header.tsx        # Site header
+│   └── ui/
+│       ├── CurrencySelector.tsx
+│       └── ThemeToggle.tsx
+└── lib/
+    ├── constants.ts          # Pagination, cache, routes
+    └── supabase/             # Database client
+```
+
+### Styling
+
+- **Framework:** Tailwind CSS v4
+- **Theme:** Scholarly collector aesthetic
+- **Colors:** Warm museum whites, gold accents
+- **Dark mode:** Supported via class toggle
+
+**Key Design Tokens:**
+```css
+--cream: #FAF9F6      /* Background */
+--ink: #1C1C1C        /* Text */
+--gold: #B8860B       /* Accent */
+--burgundy: #6B2D35   /* Jūyō certification */
+--toku-hozon: #2D4A4A /* Tokubetsu Hozon */
+```
+
+### State Management
+
+Client-side state with URL sync:
+- Filters, sort, page → URL params
+- Currency preference → localStorage
+- Exchange rates → fetched on mount
+
+```typescript
+// URL params example
+/?tab=available&cat=nihonto&type=katana&sort=price_desc&page=2
+```
+
+---
+
+## Deployment
+
+### Production Deploy
+
+```bash
+vercel --prod --yes
+```
+
+Deploys directly to nihontowatch.com (no git push required).
+
+### DNS Configuration
+
+Domain managed at GoDaddy, pointing to Vercel:
+- A record: `@` → `76.76.21.21`
+- CNAME: `www` → `cname.vercel-dns.com`

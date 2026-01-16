@@ -303,9 +303,18 @@ p, li, td, th {
 }
 
 @keyframes shimmer {
-  to {
-    background-position-x: -200%;
+  0% {
+    background-position: 200% 0;
   }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Animate shimmer utility */
+.animate-shimmer {
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
 }
 
 /* Custom toggle switch track position fix */

@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import { useState } from 'react';
 
 interface Listing {
   id: string;
@@ -41,6 +42,7 @@ interface ListingCardProps {
   listing: Listing;
   currency: Currency;
   exchangeRates: ExchangeRates | null;
+  priority?: boolean; // For above-the-fold images
 }
 
 // Normalize Japanese kanji and variants to standard English keys
@@ -177,8 +179,14 @@ function cleanTitle(title: string, smith: string | null, maker: string | null): 
   return cleaned || title;
 }
 
-export function ListingCard({ listing, currency, exchangeRates }: ListingCardProps) {
-  const imageUrl = listing.images?.[0] || '/placeholder-sword.jpg';
+// Tiny placeholder for blur effect
+const BLUR_PLACEHOLDER = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjVmNGYwIi8+PC9zdmc+';
+
+export function ListingCard({ listing, currency, exchangeRates, priority = false }: ListingCardProps) {
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
+
+  const imageUrl = listing.images?.[0] || null;
   const artisan = getRomanizedName(listing.smith) || getRomanizedName(listing.tosogu_maker);
   const school = getRomanizedName(listing.school) || getRomanizedName(listing.tosogu_school);
   const itemType = normalizeItemType(listing.item_type);
@@ -201,15 +209,39 @@ export function ListingCard({ listing, currency, exchangeRates }: ListingCardPro
         </span>
       </div>
 
-      {/* Image Container - Compact */}
+      {/* Image Container with skeleton loader */}
       <div className="relative aspect-[4/3] overflow-hidden bg-linen dark:bg-gray-900">
-        <Image
-          src={imageUrl}
-          alt={listing.title}
-          fill
-          className="object-cover group-hover:scale-105 transition-transform duration-500"
-          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
-        />
+        {/* Skeleton loader - shows while loading */}
+        {isLoading && (
+          <div className="absolute inset-0 bg-gradient-to-r from-linen via-white to-linen dark:from-gray-800 dark:via-gray-700 dark:to-gray-800 animate-shimmer" />
+        )}
+
+        {/* Fallback for missing/broken images */}
+        {(hasError || !imageUrl) ? (
+          <div className="absolute inset-0 flex items-center justify-center bg-linen dark:bg-gray-800">
+            <svg className="w-12 h-12 text-muted/30 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </div>
+        ) : (
+          <Image
+            src={imageUrl}
+            alt={listing.title}
+            fill
+            className={`object-cover group-hover:scale-105 transition-all duration-500 ${
+              isLoading ? 'opacity-0' : 'opacity-100'
+            }`}
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
+            priority={priority}
+            placeholder="blur"
+            blurDataURL={BLUR_PLACEHOLDER}
+            onLoad={() => setIsLoading(false)}
+            onError={() => {
+              setIsLoading(false);
+              setHasError(true);
+            }}
+          />
+        )}
 
         {/* Sold overlay */}
         {isSold && (
