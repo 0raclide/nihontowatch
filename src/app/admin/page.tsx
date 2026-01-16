@@ -1,0 +1,287 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+
+interface DashboardStats {
+  totalUsers: number;
+  activeUsers24h: number;
+  totalListings: number;
+  favoritesCount: number;
+  recentSignups: {
+    id: string;
+    email: string;
+    display_name: string | null;
+    created_at: string;
+  }[];
+  popularListings: {
+    id: number;
+    title: string;
+    views: number;
+    favorites: number;
+  }[];
+}
+
+function MetricCard({
+  title,
+  value,
+  icon,
+  trend,
+  trendLabel,
+}: {
+  title: string;
+  value: string | number;
+  icon: React.ReactNode;
+  trend?: 'up' | 'down' | 'neutral';
+  trendLabel?: string;
+}) {
+  return (
+    <div className="bg-cream rounded-xl p-6 border border-border">
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-xs uppercase tracking-wider text-muted font-medium">{title}</p>
+          <p className="text-3xl font-serif text-ink mt-2">{value}</p>
+          {trendLabel && (
+            <p className={`text-xs mt-2 flex items-center gap-1 ${
+              trend === 'up' ? 'text-success' :
+              trend === 'down' ? 'text-error' :
+              'text-muted'
+            }`}>
+              {trend === 'up' && (
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                </svg>
+              )}
+              {trend === 'down' && (
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                </svg>
+              )}
+              {trendLabel}
+            </p>
+          )}
+        </div>
+        <div className="p-3 bg-gold/10 rounded-lg text-gold">
+          {icon}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function formatDate(dateString: string) {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diff = now.getTime() - date.getTime();
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+  if (days === 0) {
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    if (hours === 0) {
+      const minutes = Math.floor(diff / (1000 * 60));
+      return `${minutes}m ago`;
+    }
+    return `${hours}h ago`;
+  }
+  if (days === 1) return 'Yesterday';
+  if (days < 7) return `${days} days ago`;
+
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+  });
+}
+
+export default function AdminDashboard() {
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchStats() {
+      try {
+        const response = await fetch('/api/admin/stats');
+        if (!response.ok) {
+          throw new Error('Failed to fetch stats');
+        }
+        const data = await response.json();
+        setStats(data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An error occurred');
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchStats();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="w-8 h-8 border-2 border-gold border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-error/10 text-error rounded-lg p-4">
+        <p className="font-medium">Error loading dashboard</p>
+        <p className="text-sm mt-1">{error}</p>
+      </div>
+    );
+  }
+
+  if (!stats) {
+    return null;
+  }
+
+  return (
+    <div className="space-y-8">
+      {/* Page Title */}
+      <div>
+        <h1 className="text-2xl font-serif text-ink">Dashboard</h1>
+        <p className="text-muted text-sm mt-1">Overview of your site activity</p>
+      </div>
+
+      {/* Metrics Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <MetricCard
+          title="Total Users"
+          value={stats.totalUsers.toLocaleString()}
+          icon={
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+            </svg>
+          }
+        />
+        <MetricCard
+          title="Active Users (24h)"
+          value={stats.activeUsers24h.toLocaleString()}
+          icon={
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          }
+        />
+        <MetricCard
+          title="Total Listings"
+          value={stats.totalListings.toLocaleString()}
+          icon={
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+          }
+        />
+        <MetricCard
+          title="Favorites"
+          value={stats.favoritesCount.toLocaleString()}
+          icon={
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+            </svg>
+          }
+        />
+      </div>
+
+      {/* Content Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Recent Signups */}
+        <div className="bg-cream rounded-xl border border-border">
+          <div className="px-6 py-4 border-b border-border flex items-center justify-between">
+            <h2 className="font-serif text-lg text-ink">Recent Signups</h2>
+            <Link
+              href="/admin/users"
+              className="text-xs uppercase tracking-wider text-gold hover:text-gold-light transition-colors"
+            >
+              View All
+            </Link>
+          </div>
+          <div className="divide-y divide-border">
+            {stats.recentSignups.length === 0 ? (
+              <div className="px-6 py-8 text-center text-muted text-sm">
+                No recent signups
+              </div>
+            ) : (
+              stats.recentSignups.map((user) => (
+                <div key={user.id} className="px-6 py-4 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-gold/10 flex items-center justify-center text-gold font-medium">
+                      {(user.display_name || user.email)[0].toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-ink">
+                        {user.display_name || 'No name'}
+                      </p>
+                      <p className="text-xs text-muted">{user.email}</p>
+                    </div>
+                  </div>
+                  <span className="text-xs text-muted">{formatDate(user.created_at)}</span>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* Popular Listings */}
+        <div className="bg-cream rounded-xl border border-border">
+          <div className="px-6 py-4 border-b border-border flex items-center justify-between">
+            <h2 className="font-serif text-lg text-ink">Popular Listings</h2>
+            <Link
+              href="/admin/analytics"
+              className="text-xs uppercase tracking-wider text-gold hover:text-gold-light transition-colors"
+            >
+              View Analytics
+            </Link>
+          </div>
+          <div className="divide-y divide-border">
+            {stats.popularListings.length === 0 ? (
+              <div className="px-6 py-8 text-center text-muted text-sm">
+                No listing data available
+              </div>
+            ) : (
+              stats.popularListings.map((listing, index) => (
+                <div key={listing.id} className="px-6 py-4 flex items-center gap-4">
+                  <span className="text-lg font-serif text-muted w-6">{index + 1}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-ink truncate">{listing.title}</p>
+                    <div className="flex items-center gap-4 mt-1">
+                      <span className="text-xs text-muted flex items-center gap-1">
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                        {listing.views}
+                      </span>
+                      <span className="text-xs text-muted flex items-center gap-1">
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                        </svg>
+                        {listing.favorites}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Quick Stats Chart Placeholder */}
+      <div className="bg-cream rounded-xl border border-border p-6">
+        <h2 className="font-serif text-lg text-ink mb-4">Activity Overview</h2>
+        <div className="h-64 flex items-center justify-center bg-linen rounded-lg border border-border border-dashed">
+          <div className="text-center">
+            <svg className="w-12 h-12 text-muted mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+            <p className="text-muted text-sm">Activity chart coming soon</p>
+            <p className="text-muted/60 text-xs mt-1">Track user activity over time</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

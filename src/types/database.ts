@@ -112,9 +112,93 @@ export interface Database {
         Insert: Omit<Database['public']['Tables']['scrape_runs']['Row'], 'id'>;
         Update: Partial<Database['public']['Tables']['scrape_runs']['Insert']>;
       };
+      favorites: {
+        Row: {
+          id: number;
+          user_id: string;
+          listing_id: number;
+          created_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['favorites']['Row'], 'id' | 'created_at'>;
+        Update: Partial<Database['public']['Tables']['favorites']['Insert']>;
+      };
+      alerts: {
+        Row: {
+          id: number;
+          user_id: string;
+          alert_type: 'price_drop' | 'new_listing' | 'back_in_stock';
+          listing_id: number | null;
+          target_price: number | null;
+          search_criteria: {
+            item_type?: string;
+            dealer_id?: number;
+            min_price?: number;
+            max_price?: number;
+            cert_type?: string;
+          } | null;
+          is_active: boolean;
+          last_triggered_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['alerts']['Row'], 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Database['public']['Tables']['alerts']['Insert']>;
+      };
+      profiles: {
+        Row: {
+          id: string;
+          email: string;
+          display_name: string | null;
+          avatar_url: string | null;
+          is_admin: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id: string;
+          email: string;
+          display_name?: string | null;
+          avatar_url?: string | null;
+          is_admin?: boolean;
+        };
+        Update: Partial<Omit<Database['public']['Tables']['profiles']['Row'], 'id' | 'created_at'>>;
+      };
+      // User activity tracking for admin dashboard
+      user_activity: {
+        Row: {
+          id: number;
+          user_id: string;
+          action_type: 'view' | 'search' | 'favorite' | 'alert_create' | 'alert_delete' | 'login' | 'logout';
+          page_path: string | null;
+          listing_id: number | null;
+          search_query: string | null;
+          duration_seconds: number | null;
+          metadata: Record<string, unknown> | null;
+          created_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['user_activity']['Row'], 'id' | 'created_at'>;
+        Update: Partial<Database['public']['Tables']['user_activity']['Insert']>;
+      };
+      // Alert delivery history
+      alert_history: {
+        Row: {
+          id: number;
+          alert_id: number;
+          triggered_at: string;
+          delivery_status: 'pending' | 'sent' | 'failed';
+          delivery_method: 'email' | 'push';
+          error_message: string | null;
+        };
+        Insert: Omit<Database['public']['Tables']['alert_history']['Row'], 'id'>;
+        Update: Partial<Database['public']['Tables']['alert_history']['Insert']>;
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
-    Enums: Record<string, never>;
+    Enums: {
+      action_type: 'view' | 'search' | 'favorite' | 'alert_create' | 'alert_delete' | 'login' | 'logout';
+      alert_type: 'price_drop' | 'new_listing' | 'back_in_stock';
+      delivery_status: 'pending' | 'sent' | 'failed';
+    };
   };
 }

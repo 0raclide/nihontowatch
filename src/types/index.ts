@@ -323,3 +323,69 @@ export function getItemTypeLabel(type: ItemType): string {
 
   return labels[type] || type;
 }
+
+// =============================================================================
+// ALERTS
+// =============================================================================
+
+export type AlertType = 'price_drop' | 'new_listing' | 'back_in_stock';
+
+export interface AlertSearchCriteria {
+  item_type?: string;
+  dealer_id?: number;
+  min_price?: number;
+  max_price?: number;
+  cert_type?: string;
+}
+
+export interface Alert {
+  id: number;
+  user_id: string;
+  alert_type: AlertType;
+  listing_id: number | null;
+  target_price: number | null;
+  search_criteria: AlertSearchCriteria | null;
+  is_active: boolean;
+  last_triggered_at: string | null;
+  created_at: string;
+  updated_at: string;
+  // Joined relations
+  listing?: Listing;
+}
+
+export interface CreateAlertInput {
+  alert_type: AlertType;
+  listing_id?: number;
+  target_price?: number;
+  search_criteria?: AlertSearchCriteria;
+}
+
+export interface UpdateAlertInput {
+  is_active?: boolean;
+  target_price?: number;
+  search_criteria?: AlertSearchCriteria;
+}
+
+/**
+ * Get human-readable alert type label
+ */
+export function getAlertTypeLabel(type: AlertType): string {
+  const labels: Record<AlertType, string> = {
+    price_drop: 'Price Drop',
+    new_listing: 'New Listing',
+    back_in_stock: 'Back in Stock',
+  };
+  return labels[type] || type;
+}
+
+/**
+ * Get alert type description
+ */
+export function getAlertTypeDescription(type: AlertType): string {
+  const descriptions: Record<AlertType, string> = {
+    price_drop: 'Get notified when the price drops',
+    new_listing: 'Get notified when new items match your criteria',
+    back_in_stock: 'Get notified when this item becomes available again',
+  };
+  return descriptions[type] || '';
+}

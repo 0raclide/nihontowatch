@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { ThemeSwitcher } from '@/components/ui/ThemeSwitcher';
 import { useMobileUI } from '@/contexts/MobileUIContext';
 import { MobileNavDrawer } from './MobileNavDrawer';
@@ -8,6 +9,8 @@ import { MobileSearchSheet } from './MobileSearchSheet';
 
 export function Header() {
   const { openSearch, openNavDrawer } = useMobileUI();
+  const searchParams = useSearchParams();
+  const currentQuery = searchParams.get('q') || '';
 
   const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -72,6 +75,7 @@ export function Header() {
                 <input
                   type="text"
                   name="q"
+                  defaultValue={currentQuery}
                   placeholder="Search collection..."
                   className="w-full px-4 py-2 bg-linen/50 border-0 text-[13px] text-ink placeholder:text-muted/50 focus:outline-none focus:ring-1 focus:ring-gold/30 transition-all"
                 />

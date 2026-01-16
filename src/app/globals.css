@@ -1,156 +1,221 @@
 @import "tailwindcss";
 
 /*
- * Nihontowatch - Scholarly Collector Aesthetic
- * Refined, elegant, museum-quality presentation
+ * Nihontowatch - Theme System
+ * Based on Oshi-v2 Yuhinkai design system
+ *
+ * Themes:
+ *   - Dark mode (default): Warm scholarly blacks with steel blue accent
+ *   - Light mode: Clean museum whites with gold accent
  */
 
+/* ==========================================================================
+   Light Mode (Default) - Clean scholarly whites
+   ========================================================================== */
 :root {
-  /* Warm Museum Whites - Light mode defaults */
-  --cream: #FAF9F6;
-  --ivory: #FEFDFB;
-  --linen: #F8F6F3;
-  --paper: #F5F3EF;
+  /* Core palette */
+  --background: #FAF9F6;
+  --background-warm: #FEFDFB;
+  --foreground: #1C1C1C;
 
-  /* Rich Darks */
-  --charcoal: #4A4A4A;
-  --onyx: #353535;
-  --ink: #1C1C1C;
+  /* Surfaces - elevation through subtle warmth */
+  --surface: #F8F6F3;
+  --surface-elevated: #FFFFFF;
+  --surface-overlay: rgba(248, 246, 243, 0.97);
 
-  /* Accent Colors */
-  --gold: #B8860B;
-  --gold-light: #D4AF37;
-  --burgundy: #6B2D35;
-  --sage: #8FA67A;
-
-  /* Certification Colors */
-  --juyo: #6B2D35;
-  --toku-hozon: #2D4A4A;
-  --hozon: #5A6670;
-
-  /* Semantic */
-  --background: var(--cream);
-  --background-warm: var(--ivory);
-  --foreground: var(--ink);
-  --muted: #7A7A7A;
+  /* Borders */
   --border: #E8E4DE;
-  --border-dark: #D4CFC6;
   --border-subtle: #F0EDE8;
   --border-accent: rgba(184, 134, 11, 0.35);
 
-  /* Surface levels */
-  --surface: var(--linen);
-  --surface-elevated: var(--paper);
-
-  /* Interaction states */
+  /* Interactive states */
   --hover: #F2F0EC;
   --active: #EBE8E2;
 
-  /* Accent system */
-  --accent: var(--gold);
-  --accent-light: var(--gold-light);
+  /* Primary accent - gold */
+  --accent: #B8860B;
+  --accent-light: #D4AF37;
   --accent-dark: #9A7209;
   --accent-glow: rgba(184, 134, 11, 0.18);
 
   /* Text hierarchy */
-  --text-primary: var(--ink);
-  --text-secondary: var(--charcoal);
+  --text-primary: #1C1C1C;
+  --text-secondary: #4A4A4A;
   --text-tertiary: #6A6A6A;
-  --text-muted: var(--muted);
+  --text-muted: #7A7A7A;
   --text-accent: #9A7209;
 
-  /* Status colors */
+  /* Semantic colors */
   --success: #5a9b7a;
   --warning: #c9a857;
   --error: #c97070;
+
+  /* Certification colors */
+  --juyo: #6B2D35;
+  --toku-hozon: #2D4A4A;
+  --hozon: #5A6670;
+  --sage: #8FA67A;
+
+  /* Shadows */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.10);
+  --shadow-glow: 0 0 32px rgba(184, 134, 11, 0.08);
+
+  /* Legacy aliases for backwards compat */
+  --cream: var(--background);
+  --ivory: var(--background-warm);
+  --linen: var(--surface);
+  --paper: var(--surface-elevated);
+  --charcoal: var(--text-secondary);
+  --ink: var(--text-primary);
+  --gold: var(--accent);
+  --gold-light: var(--accent-light);
+  --muted: var(--text-muted);
+  --border-dark: #D4CFC6;
 }
 
-/* ==========================================
-   Theme: Dark mode (Warm scholarly dark with steel blue accent)
-   ========================================== */
-html.theme-dark {
+/* ==========================================================================
+   Dark Mode - Warm scholarly blacks with steel blue accent
+   Based on Oshi-v2 Yuhinkai theme
+   ========================================================================== */
+html.theme-dark,
+html.dark {
   color-scheme: dark;
+
+  /* Core palette - Material dark with warmth */
   --background: #121212;
   --background-warm: #171615;
   --foreground: #e8e6e3;
+
+  /* Surfaces - elevation through lightness */
   --surface: #1e1d1c;
   --surface-elevated: #282726;
+  --surface-overlay: rgba(30, 29, 28, 0.97);
+
+  /* Borders - warm grays */
   --border: #333231;
   --border-subtle: #242322;
   --border-accent: rgba(93, 138, 168, 0.35);
+
+  /* Interactive states */
   --hover: #2d2c2a;
   --active: #383736;
+
+  /* Primary accent - desaturated steel blue */
   --accent: #5d8aa8;
   --accent-light: #7ba4be;
   --accent-dark: #456a82;
   --accent-glow: rgba(93, 138, 168, 0.18);
+
+  /* Text hierarchy - WCAG compliant contrast */
   --text-primary: #f2f0ed;
   --text-secondary: #b8b4ae;
   --text-tertiary: #8a857f;
   --text-muted: #5c5955;
   --text-accent: #8ab8d8;
+
+  /* Semantic colors - desaturated for dark backgrounds */
   --success: #5a9b7a;
   --warning: #c9a857;
   --error: #c97070;
-  /* Override existing vars */
-  --cream: #121212;
-  --ivory: #171615;
-  --linen: #1e1d1c;
-  --paper: #282726;
-  --charcoal: #b8b4ae;
-  --ink: #f2f0ed;
-  --gold: #5d8aa8;
-  --gold-light: #7ba4be;
-  --muted: #8a857f;
+
+  /* Shadows - softer for elegance */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.25);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.45);
+  --shadow-glow: 0 0 32px rgba(93, 138, 168, 0.12);
+
+  /* Legacy aliases - point to dark theme colors */
+  --cream: var(--background);
+  --ivory: var(--background-warm);
+  --linen: var(--surface);
+  --paper: var(--surface-elevated);
+  --charcoal: var(--text-secondary);
+  --ink: var(--text-primary);
+  --gold: var(--accent);
+  --gold-light: var(--accent-light);
+  --muted: var(--text-muted);
   --border-dark: #3a3938;
 }
 
-/* ==========================================
-   Theme: Light mode (Clean scholarly light)
-   ========================================== */
+/* Light mode explicit class */
 html.theme-light {
   color-scheme: light;
-  /* Uses :root defaults */
 }
 
+/* ==========================================================================
+   Tailwind Theme Integration
+   Maps CSS variables to Tailwind color classes
+   ========================================================================== */
 @theme inline {
-  --color-cream: var(--cream);
-  --color-ivory: var(--ivory);
-  --color-linen: var(--linen);
-  --color-paper: var(--paper);
-  --color-charcoal: var(--charcoal);
-  --color-onyx: var(--onyx);
-  --color-ink: var(--ink);
-  --color-gold: var(--gold);
-  --color-gold-light: var(--gold-light);
-  --color-burgundy: var(--burgundy);
-  --color-sage: var(--sage);
-  --color-juyo: var(--juyo);
-  --color-toku-hozon: var(--toku-hozon);
-  --color-hozon: var(--hozon);
-  --color-muted: var(--muted);
-  --color-border: var(--border);
-  --color-border-dark: var(--border-dark);
-  --font-serif: var(--font-serif);
-  --font-sans: var(--font-sans);
-  /* New theme variables */
+  /* Core colors */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
   --color-surface: var(--surface);
   --color-surface-elevated: var(--surface-elevated);
+
+  /* Legacy names mapped to variables */
+  --color-cream: var(--background);
+  --color-ivory: var(--background-warm);
+  --color-linen: var(--surface);
+  --color-paper: var(--surface-elevated);
+  --color-charcoal: var(--text-secondary);
+  --color-ink: var(--text-primary);
+
+  /* Accent colors */
+  --color-gold: var(--accent);
+  --color-gold-light: var(--accent-light);
   --color-accent: var(--accent);
   --color-accent-light: var(--accent-light);
-  --color-hover: var(--hover);
-  --color-active: var(--active);
+
+  /* Borders */
+  --color-border: var(--border);
+  --color-border-subtle: var(--border-subtle);
+  --color-border-dark: var(--border-dark);
+
+  /* Text */
+  --color-muted: var(--text-muted);
   --color-text-primary: var(--text-primary);
   --color-text-secondary: var(--text-secondary);
   --color-text-tertiary: var(--text-tertiary);
   --color-text-muted: var(--text-muted);
   --color-text-accent: var(--text-accent);
+
+  /* Interactive */
+  --color-hover: var(--hover);
+  --color-active: var(--active);
+
+  /* Status */
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-error: var(--error);
+
+  /* Certification badges */
+  --color-juyo: var(--juyo);
+  --color-toku-hozon: var(--toku-hozon);
+  --color-hozon: var(--hozon);
+  --color-sage: var(--sage);
+
+  /* Fonts */
+  --font-serif: var(--font-serif);
+  --font-sans: var(--font-sans);
 }
 
-/* Base styles */
+/* ==========================================================================
+   Base Styles
+   ========================================================================== */
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
@@ -169,6 +234,7 @@ h1, h2, h3, h4, h5, h6 {
   font-weight: 500;
   letter-spacing: -0.02em;
   line-height: 1.25;
+  color: var(--text-primary);
 }
 
 /* Readable body text */
@@ -176,35 +242,46 @@ p, li, td, th {
   letter-spacing: 0.01em;
 }
 
-/* Elegant scrollbar */
+/* ==========================================================================
+   Scrollbar
+   ========================================================================== */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: var(--background);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--border-dark);
+  background: var(--border);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--muted);
+  background: var(--text-muted);
 }
 
-/* Dark mode scrollbar */
-.theme-dark::-webkit-scrollbar-thumb {
-  background: #3a3a3a;
+/* ==========================================================================
+   Selection
+   ========================================================================== */
+::selection {
+  background: var(--accent-glow);
+  color: var(--accent-light);
 }
 
-.theme-dark::-webkit-scrollbar-thumb:hover {
-  background: #555;
+/* ==========================================================================
+   Focus States
+   ========================================================================== */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
-/* Utility classes */
+/* ==========================================================================
+   Utility Classes
+   ========================================================================== */
 .font-serif {
   font-family: var(--font-serif), Georgia, "Times New Roman", serif;
 }
@@ -213,27 +290,47 @@ p, li, td, th {
   font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
 }
 
-/* Subtle card hover effect */
+/* Japanese text */
+.jp {
+  font-family: "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif;
+}
+
+/* Tabular figures for numbers */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Price display - highly legible */
+.price {
+  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+/* Line clamping */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ==========================================================================
+   Card Styles
+   ========================================================================== */
 .card-hover {
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .card-hover:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--shadow-lg);
 }
 
-.theme-dark .card-hover:hover {
-  box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.4);
-}
-
-/* Refined focus states */
-.focus-elegant:focus {
-  outline: none;
-  box-shadow: 0 0 0 2px var(--cream), 0 0 0 3px var(--gold);
-}
-
-/* Badge styles - more refined */
+/* ==========================================================================
+   Badge Styles
+   ========================================================================== */
 .badge {
   display: inline-flex;
   align-items: center;
@@ -265,11 +362,13 @@ p, li, td, th {
 }
 
 .badge-sold {
-  background: var(--muted);
+  background: var(--text-muted);
   color: white;
 }
 
-/* Elegant button */
+/* ==========================================================================
+   Button Styles
+   ========================================================================== */
 .btn-elegant {
   display: inline-flex;
   align-items: center;
@@ -279,50 +378,33 @@ p, li, td, th {
   font-weight: 500;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  background: var(--ink);
-  color: white;
-  border: none;
+  background: var(--surface-elevated);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .btn-elegant:hover {
-  background: var(--charcoal);
-}
-
-.theme-dark .btn-elegant {
-  background: var(--gold);
-  color: #0a0a0a;
-}
-
-.theme-dark .btn-elegant:hover {
-  background: var(--gold-light);
+  background: var(--hover);
+  border-color: var(--accent);
 }
 
 .btn-outline {
   background: transparent;
-  color: var(--ink);
-  border: 1px solid var(--border-dark);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
 }
 
 .btn-outline:hover {
-  background: var(--ink);
-  color: white;
-  border-color: var(--ink);
+  background: var(--accent);
+  color: var(--background);
+  border-color: var(--accent);
 }
 
-.theme-dark .btn-outline {
-  color: var(--foreground);
-  border-color: var(--border-dark);
-}
-
-.theme-dark .btn-outline:hover {
-  background: var(--gold);
-  color: #0a0a0a;
-  border-color: var(--gold);
-}
-
-/* Divider - subtle gradient */
+/* ==========================================================================
+   Divider
+   ========================================================================== */
 .divider {
   height: 1px;
   background: linear-gradient(
@@ -333,50 +415,18 @@ p, li, td, th {
   );
 }
 
-/* Price display - highly legible */
-.price {
-  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.01em;
-}
-
-/* Japanese text */
-.jp {
-  font-family: "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif;
-}
-
-/* Selection */
-::selection {
-  background: var(--gold-light);
-  color: var(--ink);
-}
-
-.theme-dark ::selection {
-  background: var(--gold);
-  color: #0a0a0a;
-}
-
-/* Smooth image loading */
+/* ==========================================================================
+   Loading States
+   ========================================================================== */
 .img-loading {
   background: linear-gradient(
     110deg,
-    var(--border) 8%,
-    var(--cream) 18%,
-    var(--border) 33%
+    var(--surface) 8%,
+    var(--surface-elevated) 18%,
+    var(--surface) 33%
   );
   background-size: 200% 100%;
   animation: shimmer 1.5s linear infinite;
-}
-
-.theme-dark .img-loading {
-  background: linear-gradient(
-    110deg,
-    #222 8%,
-    #1a1a1a 18%,
-    #222 33%
-  );
-  background-size: 200% 100%;
 }
 
 @keyframes shimmer {
@@ -388,52 +438,14 @@ p, li, td, th {
   }
 }
 
-/* Animate shimmer utility */
 .animate-shimmer {
   background-size: 200% 100%;
   animation: shimmer 1.5s ease-in-out infinite;
 }
 
-/* Custom toggle switch track position fix */
-.translate-x-4\.5 {
-  transform: translateX(1.125rem);
-}
-
-/* Line clamping */
-.line-clamp-2 {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-/* Tabular figures for numbers */
-.tabular-nums {
-  font-variant-numeric: tabular-nums;
-}
-
-/* ==========================================
-   Mobile-specific styles
-   ========================================== */
-
-/* Safe area padding for notched devices (iPhone X+, etc) */
-.safe-area-bottom {
-  padding-bottom: env(safe-area-inset-bottom, 0px);
-}
-
-.safe-area-top {
-  padding-top: env(safe-area-inset-top, 0px);
-}
-
-/* Body scroll lock when drawer/modal is open */
-body.drawer-open {
-  overflow: hidden;
-  position: fixed;
-  width: 100%;
-  height: 100%;
-}
-
-/* Drawer slide-up animation */
+/* ==========================================================================
+   Animations
+   ========================================================================== */
 @keyframes slideUp {
   from {
     transform: translateY(100%);
@@ -447,7 +459,6 @@ body.drawer-open {
   animation: slideUp 0.3s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
-/* Backdrop fade-in animation */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -461,10 +472,32 @@ body.drawer-open {
   animation: fadeIn 0.2s ease-out;
 }
 
+/* ==========================================================================
+   Mobile Specific
+   ========================================================================== */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.safe-area-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+body.drawer-open {
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+  height: 100%;
+}
+
+.overscroll-contain {
+  overscroll-behavior: contain;
+}
+
 /* Touch-friendly tap highlight */
 @media (hover: none) {
   button, a, label {
-    -webkit-tap-highlight-color: rgba(184, 134, 11, 0.1);
+    -webkit-tap-highlight-color: var(--accent-glow);
   }
 }
 
@@ -474,15 +507,6 @@ body.drawer-open {
     transform: none;
     box-shadow: none;
   }
-
-  .group:hover .group-hover\:scale-105 {
-    transform: none;
-  }
-}
-
-/* Improve touch scrolling */
-.overscroll-contain {
-  overscroll-behavior: contain;
 }
 
 /* Mobile-friendly text sizes */
@@ -490,4 +514,9 @@ body.drawer-open {
   body {
     font-size: 13px;
   }
+}
+
+/* Custom toggle switch track position fix */
+.translate-x-4\.5 {
+  transform: translateX(1.125rem);
 }

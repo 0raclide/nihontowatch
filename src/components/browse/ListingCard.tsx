@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
+import { FavoriteButton } from '@/components/favorites/FavoriteButton';
 
 interface Listing {
   id: string;
@@ -43,6 +44,7 @@ interface ListingCardProps {
   currency: Currency;
   exchangeRates: ExchangeRates | null;
   priority?: boolean; // For above-the-fold images
+  showFavoriteButton?: boolean;
 }
 
 // Normalize Japanese kanji and variants to standard English keys
@@ -182,7 +184,7 @@ function cleanTitle(title: string, smith: string | null, maker: string | null): 
 // Tiny placeholder for blur effect
 const BLUR_PLACEHOLDER = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjVmNGYwIi8+PC9zdmc+';
 
-export function ListingCard({ listing, currency, exchangeRates, priority = false }: ListingCardProps) {
+export function ListingCard({ listing, currency, exchangeRates, priority = false, showFavoriteButton = true }: ListingCardProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
 
@@ -247,6 +249,13 @@ export function ListingCard({ listing, currency, exchangeRates, priority = false
         {isSold && (
           <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
             <span className="text-[10px] uppercase tracking-widest text-white/90 font-medium">Sold</span>
+          </div>
+        )}
+
+        {/* Favorite button */}
+        {showFavoriteButton && !isSold && (
+          <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+            <FavoriteButton listingId={Number(listing.id)} size="sm" />
           </div>
         )}
       </div>

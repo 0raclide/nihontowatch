@@ -1,0 +1,209 @@
+import { createClient } from '@/lib/supabase/server';
+import { NextRequest, NextResponse } from 'next/server';
+import type {
+  CreateSessionPayload,
+  EndSessionPayload,
+  SessionPayload,
+} from '@/lib/activity/types';
+
+export const dynamic = 'force-dynamic';
+
+// =============================================================================
+// Validation
+// =============================================================================
+
+function isCreatePayload(body: SessionPayload): body is CreateSessionPayload {
+  return body.action === 'create';
+}
+
+function isEndPayload(body: SessionPayload): body is EndSessionPayload {
+  return body.action === 'end';
+}
+
+function validatePayload(body: unknown): body is SessionPayload {
+  if (!body || typeof body !== 'object') return false;
+
+  const payload = body as Record<string, unknown>;
+
+  // Action required
+  if (!payload.action || !['create', 'end'].includes(payload.action as string)) {
+    return false;
+  }
+
+  // Session ID required
+  if (!payload.sessionId || typeof payload.sessionId !== 'string') {
+    return false;
+  }
+
+  return true;
+}
+
+// =============================================================================
+// POST - Create a new session
+// =============================================================================
+
+export async function POST(request: NextRequest) {
+  try {
+    // Parse request body
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        { success: false, error: 'Invalid JSON' },
+        { status: 400 }
+      );
+    }
+
+    // Validate payload
+    if (!validatePayload(body)) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid payload structure' },
+        { status: 400 }
+      );
+    }
+
+    if (!isCreatePayload(body)) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid action for POST' },
+        { status: 400 }
+      );
+    }
+
+    const {
+      sessionId,
+      userAgent,
+      screenWidth,
+      screenHeight,
+      timezone,
+      language,
+    } = body;
+
+    // Insert session into database
+    const supabase = await createClient();
+
+    const { error } = await supabase.from('user_sessions').insert({
+      id: sessionId,
+      user_id: null, // Anonymous session - will be updated if user authenticates
+      started_at: new Date().toISOString(),
+      page_views: 0,
+      user_agent: userAgent || null,
+      screen_width: screenWidth || null,
+      screen_height: screenHeight || null,
+      timezone: timezone || null,
+      language: language || null,
+    });
+
+    if (error) {
+      // Log error but don't fail - session tracking is best-effort
+      console.error('Failed to create session:', error);
+
+      // Check if table doesn't exist
+      if (error.code === '42P01') {
+        return NextResponse.json({
+          success: true,
+          sessionId,
+          warning: 'Sessions table not configured',
+        });
+      }
+
+      // Check for duplicate session (ignore - might be refresh)
+      if (error.code === '23505') {
+        return NextResponse.json({
+          success: true,
+          sessionId,
+          existing: true,
+        });
+      }
+    }
+
+    return NextResponse.json({
+      success: true,
+      sessionId,
+    });
+  } catch (error) {
+    console.error('Session create API error:', error);
+    return NextResponse.json(
+      { success: false, error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+// =============================================================================
+// PATCH - End/update a session
+// =============================================================================
+
+export async function PATCH(request: NextRequest) {
+  try {
+    // Parse request body
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        { success: false, error: 'Invalid JSON' },
+        { status: 400 }
+      );
+    }
+
+    // Validate payload
+    if (!validatePayload(body)) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid payload structure' },
+        { status: 400 }
+      );
+    }
+
+    if (!isEndPayload(body)) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid action for PATCH' },
+        { status: 400 }
+      );
+    }
+
+    const {
+      sessionId,
+      endedAt,
+      totalDurationMs,
+      pageViews,
+    } = body;
+
+    // Update session in database
+    const supabase = await createClient();
+
+    const { error } = await supabase
+      .from('user_sessions')
+      .update({
+        ended_at: endedAt,
+        total_duration_ms: totalDurationMs,
+        page_views: pageViews,
+      })
+      .eq('id', sessionId);
+
+    if (error) {
+      // Log error but don't fail - session tracking is best-effort
+      console.error('Failed to end session:', error);
+
+      // Check if table doesn't exist
+      if (error.code === '42P01') {
+        return NextResponse.json({
+          success: true,
+          sessionId,
+          warning: 'Sessions table not configured',
+        });
+      }
+    }
+
+    return NextResponse.json({
+      success: true,
+      sessionId,
+    });
+  } catch (error) {
+    console.error('Session end API error:', error);
+    return NextResponse.json(
+      { success: false, error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
