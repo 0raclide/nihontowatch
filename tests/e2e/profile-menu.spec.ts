@@ -1,6 +1,5 @@
 import { test, expect, Page, BrowserContext } from '@playwright/test';
 import { readFileSync, existsSync } from 'fs';
-import { createClient } from '@supabase/supabase-js';
 
 // Load .env.local
 const envContent = readFileSync('.env.local', 'utf-8');
@@ -21,30 +20,6 @@ const testConfig = JSON.parse(readFileSync(configPath, 'utf-8'));
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-// Helper to authenticate and get session tokens
-async function getAuthTokens() {
-  const supabase = createClient(supabaseUrl, supabaseKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  });
-
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email: testConfig.email,
-    password: testConfig.password,
-  });
-
-  if (error || !data.session) {
-    throw new Error(`Failed to authenticate: ${error?.message}`);
-  }
-
-  return {
-    accessToken: data.session.access_token,
-    refreshToken: data.session.refresh_token,
-  };
-}
-
 test.describe('Profile and Menu Navigation', () => {
   test.describe.configure({ mode: 'serial' });
 
@@ -52,46 +27,73 @@ test.describe('Profile and Menu Navigation', () => {
   let page: Page;
 
   test.beforeAll(async ({ browser }) => {
-    // Get auth tokens before tests
-    console.log('Authenticating test user...');
-    const tokens = await getAuthTokens();
-    console.log('Got auth tokens');
-
-    // Create context with cookies set
     context = await browser.newContext();
-
-    // Set Supabase auth cookies
-    await context.addCookies([
-      {
-        name: 'sb-access-token',
-        value: tokens.accessToken,
-        domain: 'localhost',
-        path: '/',
-      },
-      {
-        name: 'sb-refresh-token',
-        value: tokens.refreshToken,
-        domain: 'localhost',
-        path: '/',
-      },
-    ]);
-
     page = await context.newPage();
 
-    // Also set localStorage (some Supabase versions use this)
+    // Go to the app
     await page.goto('/');
-    await page.evaluate(({ url, key, tokens }) => {
-      const storageKey = `sb-${new URL(url).hostname.split('.')[0]}-auth-token`;
-      localStorage.setItem(storageKey, JSON.stringify({
-        access_token: tokens.accessToken,
-        refresh_token: tokens.refreshToken,
-        token_type: 'bearer',
-      }));
-    }, { url: supabaseUrl, key: supabaseKey, tokens });
+    await page.waitForLoadState('networkidle');
 
-    // Reload to pick up auth
+    console.log('Authenticating via Supabase API from browser...');
+
+    // Call Supabase auth directly via REST API from the browser
+    const authResult = await page.evaluate(async ({ url, key, email, password }) => {
+      try {
+        const response = await fetch(`${url}/auth/v1/token?grant_type=password`, {
+          method: 'POST',
+          headers: {
+            'apikey': key,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email, password }),
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          return { error: error.error_description || error.message || 'Auth failed' };
+        }
+
+        const data = await response.json();
+
+        // Store the session in localStorage (same format as @supabase/ssr)
+        const projectRef = new URL(url).hostname.split('.')[0];
+        const storageKey = `sb-${projectRef}-auth-token`;
+
+        const sessionData = {
+          access_token: data.access_token,
+          refresh_token: data.refresh_token,
+          expires_at: Math.floor(Date.now() / 1000) + data.expires_in,
+          expires_in: data.expires_in,
+          token_type: data.token_type,
+          user: data.user,
+        };
+
+        localStorage.setItem(storageKey, JSON.stringify(sessionData));
+
+        return { success: true, email: data.user?.email };
+      } catch (err) {
+        return { error: String(err) };
+      }
+    }, {
+      url: supabaseUrl,
+      key: supabaseKey,
+      email: testConfig.email,
+      password: testConfig.password,
+    });
+
+    if (authResult.error) {
+      throw new Error(`Auth failed: ${authResult.error}`);
+    }
+
+    console.log('Authenticated as:', authResult.email);
+
+    // Reload to let the app pick up the auth
     await page.reload();
     await page.waitForLoadState('networkidle');
+
+    // Wait for auth to initialize
+    await page.waitForTimeout(3000);
+
     console.log('Auth setup complete');
   });
 
@@ -102,178 +104,140 @@ test.describe('Profile and Menu Navigation', () => {
   test('should be logged in after setup', async () => {
     await page.goto('/');
     await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(2000);
 
-    // User menu should be visible (indicating logged in)
+    // Check if user menu (avatar) is visible
     const userMenu = page.locator('[aria-haspopup="true"]').first();
     const isLoggedIn = await userMenu.isVisible({ timeout: 10000 }).catch(() => false);
 
     if (!isLoggedIn) {
-      // Debug: check page content
-      const bodyText = await page.textContent('body');
-      console.log('Not logged in. Page content preview:', bodyText?.substring(0, 500));
+      // Debug info
+      const projectRef = new URL(supabaseUrl).hostname.split('.')[0];
+      const storageKey = `sb-${projectRef}-auth-token`;
+
+      const authData = await page.evaluate((key) => localStorage.getItem(key), storageKey);
+      console.log('Auth data in localStorage:', authData ? 'present' : 'missing');
+
+      // Check for auth loading indicator
+      const isLoading = await page.locator('[class*="animate-spin"]').isVisible().catch(() => false);
+      console.log('Loading indicator visible:', isLoading);
 
       // Check for Sign In button
-      const signInButton = page.locator('button:has-text("Sign In")');
-      if (await signInButton.isVisible().catch(() => false)) {
-        console.log('Sign In button is visible - auth failed');
-      }
+      const signInVisible = await page.locator('text="Sign In"').isVisible().catch(() => false);
+      console.log('Sign In button visible:', signInVisible);
 
-      await page.screenshot({ path: 'test-results/auth-failed.png' });
+      await page.screenshot({ path: 'test-results/not-logged-in.png' });
     }
 
     expect(isLoggedIn).toBe(true);
-    console.log('✅ Logged in successfully');
+    console.log('✅ User is logged in');
   });
 
-  test('should open user dropdown menu', async () => {
-    // Click user menu button
+  test('should open user dropdown and see profile link', async () => {
     const userMenuButton = page.locator('[aria-haspopup="true"]').first();
-    await expect(userMenuButton).toBeVisible({ timeout: 10000 });
     await userMenuButton.click();
-
-    // Wait for dropdown to appear
     await page.waitForTimeout(500);
 
-    // Verify dropdown is open - profile link should be visible
     const profileLink = page.locator('a[href="/profile"]');
     await expect(profileLink).toBeVisible({ timeout: 5000 });
-    console.log('✅ User dropdown opened');
+
+    console.log('✅ Dropdown opened, Profile link visible');
   });
 
-  test('should navigate to profile page and stay logged in', async () => {
-    // Click Profile link
+  test('should navigate to profile page', async () => {
     await page.click('a[href="/profile"]');
-
-    // Wait for navigation
     await page.waitForURL('**/profile', { timeout: 10000 });
     await page.waitForLoadState('networkidle');
-
-    // Give auth time to settle
     await page.waitForTimeout(2000);
 
-    // Check page content
-    const pageContent = await page.textContent('body');
+    // Check for profile page content
+    const bodyText = await page.textContent('body');
+    const hasMyProfile = bodyText?.includes('My Profile');
+    const hasSignInPrompt = bodyText?.includes('Sign in to view your profile');
 
-    // Should see "My Profile" title (indicating logged in view)
-    const hasProfileTitle = pageContent?.includes('My Profile');
-
-    // Should NOT see "Sign in to view your profile"
-    const hasLoginPrompt = pageContent?.includes('Sign in to view your profile');
-
-    console.log('Profile page state:', {
-      hasProfileTitle,
-      hasLoginPrompt,
-      url: page.url(),
+    console.log('Profile page content:', {
+      hasMyProfile,
+      hasSignInPrompt,
     });
 
-    if (hasLoginPrompt || !hasProfileTitle) {
-      await page.screenshot({ path: 'test-results/profile-page-issue.png' });
-      console.log('Page HTML preview:', pageContent?.substring(0, 1000));
+    if (hasSignInPrompt) {
+      await page.screenshot({ path: 'test-results/profile-signed-out.png' });
     }
 
-    expect(hasLoginPrompt).toBe(false);
-    expect(hasProfileTitle).toBe(true);
-    console.log('✅ Profile page loaded correctly');
+    expect(hasSignInPrompt).toBe(false);
+    expect(hasMyProfile).toBe(true);
+
+    console.log('✅ Profile page shows user content');
   });
 
-  test('should display user email on profile page', async () => {
-    // Verify user email is displayed somewhere on the page
-    const emailRegex = new RegExp(testConfig.email.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
-    const pageContent = await page.textContent('body');
-
-    expect(pageContent).toMatch(emailRegex);
-    console.log('✅ User email displayed');
+  test('should display test user email', async () => {
+    const bodyText = await page.textContent('body');
+    expect(bodyText).toContain(testConfig.email);
+    console.log('✅ User email is displayed');
   });
 
-  test('should navigate to favorites page and stay logged in', async () => {
+  test('should navigate to favorites and remain logged in', async () => {
     await page.goto('/favorites');
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(1000);
 
-    const pageContent = await page.textContent('body');
-
-    // Should see My Favorites or favorites content
-    const hasFavoritesContent = pageContent?.includes('My Favorites') || pageContent?.includes('Favorites');
-
-    // Should NOT see sign in prompt
-    const hasLoginPrompt = pageContent?.includes('Sign in to view favorites') ||
-      pageContent?.includes('create an account');
-
-    if (hasLoginPrompt || !hasFavoritesContent) {
-      await page.screenshot({ path: 'test-results/favorites-page-issue.png' });
-    }
-
-    // User menu should still be visible
     const userMenu = page.locator('[aria-haspopup="true"]');
     const isLoggedIn = await userMenu.isVisible({ timeout: 5000 }).catch(() => false);
 
+    if (!isLoggedIn) {
+      await page.screenshot({ path: 'test-results/favorites-not-logged-in.png' });
+    }
+
     expect(isLoggedIn).toBe(true);
-    console.log('✅ Favorites page loaded while logged in');
+    console.log('✅ Favorites page - user still logged in');
   });
 
-  test('should navigate to alerts page and stay logged in', async () => {
+  test('should navigate to alerts and remain logged in', async () => {
     await page.goto('/alerts');
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(1000);
 
-    const pageContent = await page.textContent('body');
-
-    // Should see alerts content
-    const hasAlertsContent = pageContent?.includes('My Alerts') || pageContent?.includes('Alerts');
-
-    if (!hasAlertsContent) {
-      await page.screenshot({ path: 'test-results/alerts-page-issue.png' });
-    }
-
-    // User menu should still be visible
     const userMenu = page.locator('[aria-haspopup="true"]');
     const isLoggedIn = await userMenu.isVisible({ timeout: 5000 }).catch(() => false);
 
     expect(isLoggedIn).toBe(true);
-    console.log('✅ Alerts page loaded while logged in');
+    console.log('✅ Alerts page - user still logged in');
   });
 
-  test('should navigate to admin page (test user is admin)', async () => {
+  test('should access admin page as admin user', async () => {
     await page.goto('/admin');
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(2000);
 
-    // Should be on admin page, not redirected
-    const currentUrl = page.url();
+    // Should stay on admin page (not be redirected)
+    expect(page.url()).toContain('/admin');
 
-    if (!currentUrl.includes('/admin')) {
-      console.log('Redirected from admin. Current URL:', currentUrl);
-      await page.screenshot({ path: 'test-results/admin-redirect.png' });
-    }
-
-    expect(currentUrl).toContain('/admin');
     console.log('✅ Admin page accessible');
   });
 
-  test('should persist auth state when navigating back and forth', async () => {
-    const routes = ['/', '/profile', '/browse', '/favorites', '/alerts'];
+  test('should maintain auth across navigation', async () => {
+    const routes = ['/', '/browse', '/profile', '/alerts'];
 
     for (const route of routes) {
       await page.goto(route);
       await page.waitForLoadState('domcontentloaded');
       await page.waitForTimeout(500);
 
-      // User menu should be visible on every page
       const userMenu = page.locator('[aria-haspopup="true"]');
       const isLoggedIn = await userMenu.isVisible({ timeout: 5000 }).catch(() => false);
 
       if (!isLoggedIn) {
-        console.log(`Auth lost on ${route}`);
-        await page.screenshot({ path: `test-results/auth-lost-${route.replace(/\//g, '-') || 'home'}.png` });
+        await page.screenshot({ path: `test-results/lost-auth-${route.replace(/\//g, '-') || 'home'}.png` });
+        console.log(`Auth lost on: ${route}`);
       }
 
       expect(isLoggedIn).toBe(true);
     }
 
-    console.log('✅ Auth state persisted across all navigations');
+    console.log('✅ Auth maintained across all navigation');
   });
 
-  test('dropdown links should all be functional', async () => {
+  test('all dropdown links should be functional', async () => {
     await page.goto('/');
     await page.waitForLoadState('networkidle');
 
@@ -282,27 +246,20 @@ test.describe('Profile and Menu Navigation', () => {
     await userMenuButton.click();
     await page.waitForTimeout(500);
 
-    // Verify all expected links are present
-    const expectedLinks = [
-      { href: '/profile', text: 'Profile' },
-      { href: '/favorites', text: 'Favorites' },
-      { href: '/alerts', text: 'Alerts' },
-      { href: '/admin', text: 'Admin' },
-    ];
-
-    for (const link of expectedLinks) {
-      const linkElement = page.locator(`a[href="${link.href}"]`);
-      const isVisible = await linkElement.isVisible().catch(() => false);
-      console.log(`Link ${link.text} (${link.href}): ${isVisible ? 'visible' : 'NOT visible'}`);
-
-      if (link.href === '/admin') {
-        // Admin link may or may not be visible depending on user role
-        continue;
-      }
-
+    // Verify links
+    const links = ['/profile', '/favorites', '/alerts'];
+    for (const href of links) {
+      const link = page.locator(`a[href="${href}"]`);
+      const isVisible = await link.isVisible();
+      console.log(`Link ${href}: ${isVisible ? 'visible' : 'NOT visible'}`);
       expect(isVisible).toBe(true);
     }
 
-    console.log('✅ All dropdown links present');
+    // Admin link should be visible for admin
+    const adminLink = page.locator('a[href="/admin"]');
+    const hasAdmin = await adminLink.isVisible().catch(() => false);
+    console.log(`Admin link: ${hasAdmin ? 'visible' : 'NOT visible'}`);
+
+    console.log('✅ All dropdown links verified');
   });
 });
