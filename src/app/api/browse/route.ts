@@ -408,27 +408,13 @@ async function getCertificationFacets(
   statusFilter: string,
   options: FacetFilterOptions
 ) {
-  // Build query with filters (excluding certifications since we're counting those)
+  // Build query - fetch item_type along with cert_type for JS-side filtering
   let query = supabase
     .from('listings')
-    .select('cert_type')
+    .select('cert_type, item_type, dealer_id, price_value')
     .or(statusFilter);
 
-  // Apply category/itemType filter
-  const effectiveItemTypes = options.itemTypes?.length
-    ? options.itemTypes
-    : options.category === 'nihonto'
-      ? NIHONTO_TYPES
-      : options.category === 'tosogu'
-        ? TOSOGU_TYPES
-        : undefined;
-
-  if (effectiveItemTypes?.length) {
-    const typeConditions = effectiveItemTypes.map(t => `item_type.ilike.${t}`).join(',');
-    query = query.or(typeConditions);
-  }
-
-  // Apply dealer, askOnly filters
+  // Apply dealer filter at DB level (this works with AND)
   if (options.dealers?.length) {
     query = query.in('dealer_id', options.dealers);
   }
@@ -440,7 +426,16 @@ async function getCertificationFacets(
   const { data } = await query.limit(50000);
   if (!data) return [];
 
-  // Normalize and aggregate
+  // Determine which item types to include based on category
+  const effectiveItemTypes = options.itemTypes?.length
+    ? options.itemTypes
+    : options.category === 'nihonto'
+      ? NIHONTO_TYPES
+      : options.category === 'tosogu'
+        ? TOSOGU_TYPES
+        : undefined;
+
+  // Normalize cert function
   const normalizeCert = (cert: string): string => {
     const lower = cert.toLowerCase();
     if (lower === 'juyo') return 'Juyo';
@@ -451,8 +446,17 @@ async function getCertificationFacets(
     return cert;
   };
 
+  // Filter and aggregate in JS
   const counts: Record<string, number> = {};
-  (data as Array<{ cert_type: string | null }>).forEach(row => {
+  (data as Array<{ cert_type: string | null; item_type: string | null }>).forEach(row => {
+    // Filter by item type if category is set
+    if (effectiveItemTypes) {
+      const itemType = row.item_type?.toLowerCase().replace('fuchi_kashira', 'fuchi-kashira');
+      if (!itemType || !effectiveItemTypes.some(t => t.toLowerCase() === itemType)) {
+        return; // Skip this row - doesn't match category
+      }
+    }
+
     const cert = row.cert_type;
     if (cert && cert !== 'null') {
       const normalized = normalizeCert(cert);
@@ -470,27 +474,13 @@ async function getDealerFacets(
   statusFilter: string,
   options: FacetFilterOptions
 ) {
-  // Build query with filters (excluding dealers since we're counting those)
+  // Build query - fetch item_type and cert_type for JS-side filtering
   let query = supabase
     .from('listings')
-    .select('dealer_id, dealers!inner(name)')
+    .select('dealer_id, dealers!inner(name), item_type, cert_type, price_value')
     .or(statusFilter);
 
-  // Apply category/itemType filter
-  const effectiveItemTypes = options.itemTypes?.length
-    ? options.itemTypes
-    : options.category === 'nihonto'
-      ? NIHONTO_TYPES
-      : options.category === 'tosogu'
-        ? TOSOGU_TYPES
-        : undefined;
-
-  if (effectiveItemTypes?.length) {
-    const typeConditions = effectiveItemTypes.map(t => `item_type.ilike.${t}`).join(',');
-    query = query.or(typeConditions);
-  }
-
-  // Apply certification, askOnly filters
+  // Apply certification filter at DB level (this works with AND)
   if (options.certifications?.length) {
     const allVariants = options.certifications.flatMap(c => CERT_VARIANTS[c] || [c]);
     query = query.in('cert_type', allVariants);
@@ -503,9 +493,26 @@ async function getDealerFacets(
   const { data } = await query.limit(50000);
   if (!data) return [];
 
-  // Aggregate counts
+  // Determine which item types to include based on category
+  const effectiveItemTypes = options.itemTypes?.length
+    ? options.itemTypes
+    : options.category === 'nihonto'
+      ? NIHONTO_TYPES
+      : options.category === 'tosogu'
+        ? TOSOGU_TYPES
+        : undefined;
+
+  // Filter and aggregate in JS
   const counts: Record<string, { id: number; name: string; count: number }> = {};
-  (data as Array<{ dealer_id: number; dealers: { name: string } }>).forEach(row => {
+  (data as Array<{ dealer_id: number; dealers: { name: string }; item_type: string | null }>).forEach(row => {
+    // Filter by item type if category is set
+    if (effectiveItemTypes) {
+      const itemType = row.item_type?.toLowerCase().replace('fuchi_kashira', 'fuchi-kashira');
+      if (!itemType || !effectiveItemTypes.some(t => t.toLowerCase() === itemType)) {
+        return; // Skip this row - doesn't match category
+      }
+    }
+
     const id = row.dealer_id;
     const name = row.dealers?.name || 'Unknown';
     if (!counts[id]) {
