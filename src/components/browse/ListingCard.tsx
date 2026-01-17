@@ -281,10 +281,10 @@ export function ListingCard({ listing, currency, exchangeRates, priority = false
           <div className="mb-1.5">
             <span className={`text-[8px] lg:text-[9px] uppercase tracking-wider font-medium px-1 lg:px-1.5 py-0.5 ${
               certInfo.tier === 'premier'
-                ? 'bg-burgundy/10 text-burgundy'
+                ? 'bg-juyo-bg text-juyo'
                 : certInfo.tier === 'high'
-                ? 'bg-toku-hozon/10 text-toku-hozon'
-                : 'bg-hozon/10 text-hozon'
+                ? 'bg-toku-hozon-bg text-toku-hozon'
+                : 'bg-hozon-bg text-hozon'
             }`}>
               {certInfo.label}
             </span>

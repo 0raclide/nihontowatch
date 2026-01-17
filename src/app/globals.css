@@ -50,11 +50,17 @@
   --warning: #c9a857;
   --error: #c97070;
 
-  /* Certification colors */
+  /* Certification colors - light mode */
   --juyo: #6B2D35;
+  --juyo-bg: rgba(107, 45, 53, 0.12);
   --toku-hozon: #2D4A4A;
+  --toku-hozon-bg: rgba(45, 74, 74, 0.12);
   --hozon: #5A6670;
+  --hozon-bg: rgba(90, 102, 112, 0.12);
   --sage: #8FA67A;
+
+  /* Alias for backwards compatibility */
+  --burgundy: var(--juyo);
 
   /* Shadows */
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06);
@@ -120,6 +126,16 @@ html.dark {
   --warning: #c9a857;
   --error: #c97070;
 
+  /* Certification colors - brighter for dark mode contrast */
+  --juyo: #d4707d;
+  --juyo-bg: rgba(212, 112, 125, 0.18);
+  --toku-hozon: #6aadad;
+  --toku-hozon-bg: rgba(106, 173, 173, 0.18);
+  --hozon: #9aabb8;
+  --hozon-bg: rgba(154, 171, 184, 0.15);
+  --sage: #a8c990;
+  --burgundy: var(--juyo);
+
   /* Shadows - softer for elegance */
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.25);
   --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.35);
@@ -182,6 +198,16 @@ html.theme-opus {
   --success: #68a878;
   --warning: #daa55a;
   --error: #c87070;
+
+  /* Certification colors - warm amber tints for Opus */
+  --juyo: #e08888;
+  --juyo-bg: rgba(224, 136, 136, 0.18);
+  --toku-hozon: #70b8b8;
+  --toku-hozon-bg: rgba(112, 184, 184, 0.18);
+  --hozon: #a0b0c0;
+  --hozon-bg: rgba(160, 176, 192, 0.15);
+  --sage: #a8c890;
+  --burgundy: var(--juyo);
 
   /* Soft contemplative shadows */
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.35);
@@ -256,9 +282,13 @@ html.theme-light {
 
   /* Certification badges */
   --color-juyo: var(--juyo);
+  --color-juyo-bg: var(--juyo-bg);
   --color-toku-hozon: var(--toku-hozon);
+  --color-toku-hozon-bg: var(--toku-hozon-bg);
   --color-hozon: var(--hozon);
+  --color-hozon-bg: var(--hozon-bg);
   --color-sage: var(--sage);
+  --color-burgundy: var(--burgundy);
 
   /* Fonts */
   --font-serif: var(--font-serif);

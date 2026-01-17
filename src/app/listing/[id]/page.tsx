@@ -250,10 +250,10 @@ export default function ListingDetailPage() {
               {certInfo && (
                 <span className={`text-[11px] uppercase tracking-wider font-medium px-2.5 py-1 rounded ${
                   certInfo.tier === 'premier'
-                    ? 'bg-burgundy/10 text-burgundy'
+                    ? 'bg-juyo-bg text-juyo'
                     : certInfo.tier === 'high'
-                    ? 'bg-toku-hozon/10 text-toku-hozon'
-                    : 'bg-hozon/10 text-hozon'
+                    ? 'bg-toku-hozon-bg text-toku-hozon'
+                    : 'bg-hozon-bg text-hozon'
                 }`}>
                   {certInfo.label}
                 </span>

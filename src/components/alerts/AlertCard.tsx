@@ -129,7 +129,7 @@ export function AlertCard({ alert, onToggle, onDelete }: AlertCardProps) {
           {/* Alert Type Badge */}
           <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium ${
             alert.alert_type === 'price_drop'
-              ? 'bg-burgundy/10 text-burgundy'
+              ? 'bg-juyo-bg text-juyo'
               : alert.alert_type === 'new_listing'
               ? 'bg-sage/10 text-sage'
               : 'bg-gold/10 text-gold'
