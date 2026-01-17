@@ -1,5 +1,6 @@
 import type { SavedSearch, Listing } from '@/types';
 import { criteriaToHumanReadable, criteriaToUrl } from '@/lib/savedSearches/urlToCriteria';
+import { getImageUrl } from '@/lib/images';
 
 const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://nihontowatch.com';
 
@@ -40,8 +41,8 @@ export function generateSavedSearchNotificationHtml(
             <tr>
               <td width="80" valign="top" style="padding-right: 16px;">
                 ${
-                  listing.images && listing.images[0]
-                    ? `<img src="${listing.images[0]}" alt="${listing.title}" width="80" height="80" style="display: block; border-radius: 4px; object-fit: cover;" />`
+                  getImageUrl(listing)
+                    ? `<img src="${getImageUrl(listing)}" alt="${listing.title}" width="80" height="80" style="display: block; border-radius: 4px; object-fit: cover;" />`
                     : `<div style="width: 80px; height: 80px; background-color: #f5f5f5; border-radius: 4px;"></div>`
                 }
               </td>

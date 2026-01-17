@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useFavorites } from '@/hooks/useFavorites';
 import { ListingCard } from '@/components/browse/ListingCard';
 import { FavoriteButton } from './FavoriteButton';
+import { getImageUrl } from '@/lib/images';
 
 interface ExchangeRates {
   base: string;
@@ -188,9 +189,9 @@ export function FavoritesListCompact({ currency }: Omit<FavoritesListProps, 'exc
             rel="noopener noreferrer"
             className="w-20 h-20 flex-shrink-0 overflow-hidden bg-linen"
           >
-            {item.listing.images?.[0] ? (
+            {getImageUrl(item.listing) ? (
               <img
-                src={item.listing.images[0]}
+                src={getImageUrl(item.listing)!}
                 alt={item.listing.title}
                 className="w-full h-full object-cover"
               />

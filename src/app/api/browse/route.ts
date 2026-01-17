@@ -98,6 +98,8 @@ export async function GET(request: NextRequest) {
         cert_type,
         nagasa_cm,
         images,
+        stored_images,
+        images_stored_at,
         first_seen_at,
         last_scraped_at,
         freshness_source,

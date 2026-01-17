@@ -132,13 +132,15 @@ export function useAdaptiveVirtualScroll<T>({
 
     rafRef.current = requestAnimationFrame(() => {
       const newScrollTop = window.scrollY;
-      // Only update if scroll changed significantly (reduces re-renders)
-      if (Math.abs(newScrollTop - lastScrollTopRef.current) > 10) {
+      // Only update if scroll changed by at least half a row height
+      // This prevents micro-adjustments from causing bouncing
+      const threshold = dimensions.rowHeight / 2;
+      if (Math.abs(newScrollTop - lastScrollTopRef.current) > threshold) {
         lastScrollTopRef.current = newScrollTop;
         setScrollTop(newScrollTop);
       }
     });
-  }, []);
+  }, [dimensions.rowHeight]);
 
   useEffect(() => {
     if (!enabled) return;

@@ -6,6 +6,7 @@ import { FavoriteButton } from '@/components/favorites/FavoriteButton';
 import { useActivityOptional } from '@/components/activity/ActivityProvider';
 import { useQuickViewOptional } from '@/contexts/QuickViewContext';
 import { getMarketTimeDisplay } from '@/lib/freshness';
+import { getImageUrl } from '@/lib/images';
 
 interface Listing {
   id: string;
@@ -21,6 +22,7 @@ interface Listing {
   cert_type: string | null;
   nagasa_cm: number | null;
   images: string[] | null;
+  stored_images?: string[] | null;
   first_seen_at: string;
   listing_published_at?: string | null;
   freshness_source?: string;
@@ -210,7 +212,7 @@ export function ListingCard({
   const activity = useActivityOptional();
   const quickView = useQuickViewOptional();
 
-  const imageUrl = listing.images?.[0] || null;
+  const imageUrl = getImageUrl(listing);
   const artisan = getRomanizedName(listing.smith) || getRomanizedName(listing.tosogu_maker);
   const school = getRomanizedName(listing.school) || getRomanizedName(listing.tosogu_school);
   const itemType = normalizeItemType(listing.item_type);
@@ -288,7 +290,7 @@ export function ListingCard({
             className={`object-cover group-hover:scale-105 transition-all duration-500 ${
               isLoading ? 'opacity-0' : 'opacity-100'
             }`}
-            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
             priority={priority}
             loading={priority ? undefined : 'lazy'}
             placeholder="blur"

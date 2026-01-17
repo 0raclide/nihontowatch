@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import type { Alert } from '@/types';
+import { getImageUrl } from '@/lib/images';
 
 interface AlertCardProps {
   alert: Alert;
@@ -115,7 +116,7 @@ export function AlertCard({ alert, onToggle, onDelete }: AlertCardProps) {
   };
 
   const listing = alert.listing;
-  const imageUrl = listing?.images?.[0] || null;
+  const imageUrl = getImageUrl(listing);
 
   return (
     <div

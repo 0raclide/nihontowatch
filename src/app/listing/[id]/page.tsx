@@ -13,10 +13,12 @@ import { useAlerts } from '@/hooks/useAlerts';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { createClient } from '@/lib/supabase/client';
 import { getMarketTimeDisplay } from '@/lib/freshness';
+import { getAllImages } from '@/lib/images';
 import type { Listing, CreateAlertInput } from '@/types';
 
 // Extended listing type for this page
 interface ListingDetail extends Listing {
+  stored_images?: string[] | null;
   dealers: {
     id: number;
     name: string;
@@ -168,7 +170,7 @@ export default function ListingDetailPage() {
   const isSold = listing.is_sold || listing.status === 'sold' || listing.status === 'presumed_sold';
   const itemType = listing.item_type ? (ITEM_TYPE_LABELS[listing.item_type.toLowerCase()] || listing.item_type) : null;
   const certInfo = listing.cert_type ? CERT_LABELS[listing.cert_type] : null;
-  const images = listing.images || [];
+  const images = getAllImages(listing);
   const artisan = listing.smith || listing.tosogu_maker;
   const school = listing.school || listing.tosogu_school;
 
