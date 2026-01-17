@@ -1,29 +1,27 @@
 'use client';
 
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useRef,
-  type ReactNode,
-} from 'react';
+/**
+ * Activity Provider with Auth Integration
+ *
+ * This provider wraps the ActivityTrackerProvider from /lib/tracking/ActivityTracker.tsx
+ * and adds automatic page view tracking on route changes.
+ *
+ * Features:
+ * - Authenticated user ID integration (from AuthContext)
+ * - Privacy opt-out support
+ * - Session management
+ * - Event batching
+ * - Automatic page view tracking on route changes
+ */
+
+import { useEffect, useRef, type ReactNode } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import {
-  initSession,
-  setupUnloadHandler,
-  getSessionId,
-} from '@/lib/activity/sessionManager';
-import {
-  useActivityTracker,
+  ActivityTrackerProvider,
+  useActivityTracker as useTrackerFromLib,
+  useActivityTrackerOptional as useTrackerOptionalFromLib,
   type ActivityTracker,
-} from '@/hooks/useActivityTracker';
-import type { CreateSessionPayload } from '@/lib/activity/types';
-
-// =============================================================================
-// Context
-// =============================================================================
-
-const ActivityContext = createContext<ActivityTracker | null>(null);
+} from '@/lib/tracking/ActivityTracker';
 
 // =============================================================================
 // Provider Component
@@ -43,57 +41,23 @@ interface ActivityProviderProps {
   trackSessions?: boolean;
 }
 
-export function ActivityProvider({
+/**
+ * Inner component that handles automatic page view tracking
+ * Separated to ensure it has access to the tracker context
+ */
+function PageViewTracker({
   children,
-  autoTrackPageViews = true,
-  trackSessions = true,
-}: ActivityProviderProps) {
+  autoTrackPageViews,
+}: {
+  children: ReactNode;
+  autoTrackPageViews: boolean;
+}) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const tracker = useActivityTracker();
+  const tracker = useTrackerFromLib();
 
-  // Track if initial session has been created
-  const sessionCreatedRef = useRef(false);
   // Track previous pathname to detect route changes
   const prevPathnameRef = useRef<string | null>(null);
-
-  // Initialize session on mount
-  useEffect(() => {
-    if (!trackSessions) return;
-    if (sessionCreatedRef.current) return;
-
-    sessionCreatedRef.current = true;
-
-    // Initialize local session
-    initSession();
-
-    // Set up page unload handler
-    const cleanupUnload = setupUnloadHandler();
-
-    // Send session create event to API
-    const sessionPayload: CreateSessionPayload = {
-      action: 'create',
-      sessionId: getSessionId(),
-      userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : undefined,
-      screenWidth: typeof window !== 'undefined' ? window.screen.width : undefined,
-      screenHeight: typeof window !== 'undefined' ? window.screen.height : undefined,
-      timezone: typeof Intl !== 'undefined'
-        ? Intl.DateTimeFormat().resolvedOptions().timeZone
-        : undefined,
-      language: typeof navigator !== 'undefined' ? navigator.language : undefined,
-    };
-
-    // Fire and forget session creation
-    fetch('/api/activity/session', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(sessionPayload),
-    }).catch(() => {
-      // Silently fail - session tracking is best-effort
-    });
-
-    return cleanupUnload;
-  }, [trackSessions]);
 
   // Track page views on route changes
   useEffect(() => {
@@ -108,7 +72,10 @@ export function ActivityProvider({
       params[key] = value;
     });
 
-    tracker.trackPageView(pathname, Object.keys(params).length > 0 ? params : undefined);
+    tracker.trackPageView(
+      pathname,
+      Object.keys(params).length > 0 ? params : undefined
+    );
 
     // Update previous pathname
     prevPathnameRef.current = pathname;
@@ -129,15 +96,28 @@ export function ActivityProvider({
     };
   }, [tracker]);
 
+  return <>{children}</>;
+}
+
+export function ActivityProvider({
+  children,
+  autoTrackPageViews = true,
+  trackSessions = true,
+}: ActivityProviderProps) {
   return (
-    <ActivityContext.Provider value={tracker}>
-      {children}
-    </ActivityContext.Provider>
+    <ActivityTrackerProvider
+      autoTrackPageViews={false} // We handle this in PageViewTracker
+      trackSessions={trackSessions}
+    >
+      <PageViewTracker autoTrackPageViews={autoTrackPageViews}>
+        {children}
+      </PageViewTracker>
+    </ActivityTrackerProvider>
   );
 }
 
 // =============================================================================
-// Hook
+// Hook Re-exports
 // =============================================================================
 
 /**
@@ -145,13 +125,7 @@ export function ActivityProvider({
  * Must be used within an ActivityProvider
  */
 export function useActivity(): ActivityTracker {
-  const context = useContext(ActivityContext);
-
-  if (!context) {
-    throw new Error('useActivity must be used within an ActivityProvider');
-  }
-
-  return context;
+  return useTrackerFromLib();
 }
 
 /**
@@ -160,5 +134,8 @@ export function useActivity(): ActivityTracker {
  * Useful for components that may be used both inside and outside the provider
  */
 export function useActivityOptional(): ActivityTracker | null {
-  return useContext(ActivityContext);
+  return useTrackerOptionalFromLib();
 }
+
+// Re-export types for convenience
+export type { ActivityTracker } from '@/lib/tracking/ActivityTracker';

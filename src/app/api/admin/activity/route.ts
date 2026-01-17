@@ -14,11 +14,11 @@ async function verifyAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('is_admin')
+    .select('role')
     .eq('id', user.id)
-    .single<{ is_admin: boolean }>();
+    .single<{ role: string }>();
 
-  if (!profile?.is_admin) {
+  if (profile?.role !== 'admin') {
     return { error: 'Forbidden', status: 403 };
   }
 
@@ -45,6 +45,7 @@ export async function GET(request: NextRequest) {
     const offset = (page - 1) * limit;
 
     // Build query for user_activity table
+    // Use left join (no !inner) to include activities even if profile is missing
     let query = supabase
       .from('user_activity')
       .select(`
@@ -56,7 +57,7 @@ export async function GET(request: NextRequest) {
         search_query,
         duration_seconds,
         created_at,
-        profiles!inner(email, display_name)
+        profiles(email, display_name)
       `, { count: 'exact' });
 
     // Apply filters
@@ -143,7 +144,7 @@ interface ActivityRecord {
   profiles: {
     email: string;
     display_name: string | null;
-  };
+  } | null;
 }
 
 function convertToCSV(data: ActivityRecord[]): string {

@@ -14,11 +14,11 @@ async function verifyAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('is_admin')
+    .select('role')
     .eq('id', user.id)
-    .single<{ is_admin: boolean }>();
+    .single<{ role: string }>();
 
-  if (!profile?.is_admin) {
+  if (profile?.role !== 'admin') {
     return { error: 'Forbidden', status: 403 };
   }
 
@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
       // Total listings
       supabase.from('listings').select('id', { count: 'exact', head: true }),
       // Total favorites
-      supabase.from('favorites').select('id', { count: 'exact', head: true }),
+      supabase.from('user_favorites').select('id', { count: 'exact', head: true }),
       // Recent signups
       supabase
         .from('profiles')
@@ -77,11 +77,15 @@ export async function GET(request: NextRequest) {
     ]);
 
     // Get popular listings (most favorited)
-    type FavoriteWithListing = { listing_id: number; listings: { id: number; title: string } };
-    const { data: popularListings } = await supabase
-      .from('favorites')
-      .select('listing_id, listings!inner(id, title)')
-      .limit(1000) as { data: FavoriteWithListing[] | null };
+    type FavoriteWithListing = { listing_id: number; listings: { id: number; title: string } | null };
+    const { data: popularListings, error: popularError } = await supabase
+      .from('user_favorites')
+      .select('listing_id, listings(id, title)')
+      .limit(1000) as { data: FavoriteWithListing[] | null; error: unknown };
+
+    if (popularError) {
+      console.error('Error fetching popular listings:', popularError);
+    }
 
     // Count favorites per listing
     const listingFavorites: Record<number, { title: string; count: number }> = {};
@@ -89,8 +93,10 @@ export async function GET(request: NextRequest) {
       for (const fav of popularListings) {
         const listingId = fav.listing_id;
         const listing = fav.listings;
+        // Skip if listing was deleted (orphaned favorite)
+        if (!listing) continue;
         if (!listingFavorites[listingId]) {
-          listingFavorites[listingId] = { title: listing?.title || 'Unknown', count: 0 };
+          listingFavorites[listingId] = { title: listing.title || 'Unknown', count: 0 };
         }
         listingFavorites[listingId].count++;
       }
@@ -214,7 +220,7 @@ async function getAlertsData(
       is_active,
       last_triggered_at,
       created_at,
-      profiles!inner(email, display_name),
+      profiles(email, display_name),
       listings(title, price_value)
     `, { count: 'exact' });
 

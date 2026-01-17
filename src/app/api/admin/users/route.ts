@@ -14,11 +14,11 @@ async function verifyAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('is_admin')
+    .select('role')
     .eq('id', user.id)
-    .single<{ is_admin: boolean }>();
+    .single<{ role: string }>();
 
-  if (!profile?.is_admin) {
+  if (profile?.role !== 'admin') {
     return { error: 'Forbidden', status: 403 };
   }
 
@@ -100,9 +100,11 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
+    // Update role column - is_admin is a GENERATED column computed from role
+    const newRole = isAdmin ? 'admin' : 'user';
     const { error } = await supabase
       .from('profiles')
-      .update({ is_admin: isAdmin, updated_at: new Date().toISOString() } as Record<string, unknown>)
+      .update({ role: newRole, updated_at: new Date().toISOString() } as Record<string, unknown>)
       .eq('id', userId);
 
     if (error) {
