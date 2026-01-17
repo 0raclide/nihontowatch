@@ -295,11 +295,9 @@ export async function GET(request: NextRequest) {
       lastUpdated,
     });
 
-    // Add cache headers - allow edge caching for 5 minutes, stale-while-revalidate for 10 minutes
-    response.headers.set(
-      'Cache-Control',
-      `public, s-maxage=${CACHE.BROWSE_RESULTS}, stale-while-revalidate=${CACHE.SWR_WINDOW}`
-    );
+    // Temporarily disable cache to ensure fresh facet data after filter fix
+    // TODO: Re-enable caching once verified: s-maxage=${CACHE.BROWSE_RESULTS}, stale-while-revalidate=${CACHE.SWR_WINDOW}
+    response.headers.set('Cache-Control', 'no-store, max-age=0');
 
     return response;
   } catch (error) {
