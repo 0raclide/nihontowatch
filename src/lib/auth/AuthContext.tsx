@@ -107,6 +107,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
         if (session?.user) {
           const profile = await fetchProfile(session.user.id);
+          console.log('[Auth] Setting state with profile, isAdmin:', profile?.role === 'admin');
           setState({
             user: session.user,
             profile,
@@ -115,6 +116,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
             isAdmin: profile?.role === 'admin',
           });
         } else {
+          console.log('[Auth] No session, setting logged out state');
           setState({
             user: null,
             profile: null,
