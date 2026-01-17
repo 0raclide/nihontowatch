@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/lib/auth/AuthContext';
 
 // ============================================================================
@@ -12,14 +11,6 @@ export function UserMenu() {
   const { user, profile, isAdmin, signOut } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-  const router = useRouter();
-
-  // Navigate and close menu - use window.location for reliable navigation
-  const navigateTo = useCallback((href: string) => {
-    setIsOpen(false);
-    // Use window.location for reliable navigation that bypasses React state issues
-    window.location.href = href;
-  }, []);
 
   // Close on click outside
   useEffect(() => {
@@ -106,38 +97,42 @@ export function UserMenu() {
             <p className="text-xs text-muted truncate">{user.email}</p>
           </div>
 
-          {/* Menu Items */}
+          {/* Menu Items - using plain anchor tags for reliable navigation */}
           <div className="py-1">
-            <MenuButton
-              icon={<UserIcon />}
-              onClick={() => navigateTo('/profile')}
+            <a
+              href="/profile"
+              className="flex items-center gap-3 px-4 py-2.5 text-sm text-muted hover:text-ink hover:bg-hover transition-colors"
             >
+              <UserIcon />
               Profile
-            </MenuButton>
+            </a>
 
-            <MenuButton
-              icon={<HeartIcon />}
-              onClick={() => navigateTo('/favorites')}
+            <a
+              href="/favorites"
+              className="flex items-center gap-3 px-4 py-2.5 text-sm text-muted hover:text-ink hover:bg-hover transition-colors"
             >
+              <HeartIcon />
               Favorites
-            </MenuButton>
+            </a>
 
-            <MenuButton
-              icon={<BellIcon />}
-              onClick={() => navigateTo('/alerts')}
+            <a
+              href="/alerts"
+              className="flex items-center gap-3 px-4 py-2.5 text-sm text-muted hover:text-ink hover:bg-hover transition-colors"
             >
+              <BellIcon />
               Alerts
-            </MenuButton>
+            </a>
 
             {isAdmin && (
               <>
                 <div className="h-px bg-border my-1" />
-                <MenuButton
-                  icon={<ShieldIcon />}
-                  onClick={() => navigateTo('/admin')}
+                <a
+                  href="/admin"
+                  className="flex items-center gap-3 px-4 py-2.5 text-sm text-muted hover:text-ink hover:bg-hover transition-colors"
                 >
+                  <ShieldIcon />
                   Admin
-                </MenuButton>
+                </a>
               </>
             )}
           </div>
@@ -155,28 +150,6 @@ export function UserMenu() {
         </div>
       )}
     </div>
-  );
-}
-
-// ============================================================================
-// Menu Button Component
-// ============================================================================
-
-interface MenuButtonProps {
-  icon: React.ReactNode;
-  children: React.ReactNode;
-  onClick: () => void;
-}
-
-function MenuButton({ icon, children, onClick }: MenuButtonProps) {
-  return (
-    <button
-      onClick={onClick}
-      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-muted hover:text-ink hover:bg-hover transition-colors text-left"
-    >
-      {icon}
-      {children}
-    </button>
   );
 }
 

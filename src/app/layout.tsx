@@ -7,6 +7,7 @@ import { ThemeProvider, themeInitScript } from "@/contexts/ThemeContext";
 import { QuickViewProvider } from "@/contexts/QuickViewContext";
 import { QuickView } from "@/components/listing/QuickView";
 import { AuthProvider } from "@/lib/auth/AuthContext";
+import { FavoritesProvider } from "@/contexts/FavoritesContext";
 import { ActivityWrapper } from "@/components/activity/ActivityWrapper";
 
 const cormorant = Cormorant_Garamond({
@@ -48,18 +49,20 @@ export default function RootLayout({
       </head>
       <body className="antialiased font-sans">
         <AuthProvider>
-          <MobileUIProvider>
-            <ThemeProvider>
-              <Suspense fallback={null}>
-                <QuickViewProvider>
-                  <ActivityWrapper>
-                    {children}
-                  </ActivityWrapper>
-                  <QuickView />
-                </QuickViewProvider>
-              </Suspense>
-            </ThemeProvider>
-          </MobileUIProvider>
+          <FavoritesProvider>
+            <MobileUIProvider>
+              <ThemeProvider>
+                <Suspense fallback={null}>
+                  <QuickViewProvider>
+                    <ActivityWrapper>
+                      {children}
+                    </ActivityWrapper>
+                    <QuickView />
+                  </QuickViewProvider>
+                </Suspense>
+              </ThemeProvider>
+            </MobileUIProvider>
+          </FavoritesProvider>
         </AuthProvider>
       </body>
     </html>

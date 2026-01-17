@@ -92,7 +92,7 @@ test.describe('Profile and Menu Navigation', () => {
     console.log('✅ User is logged in');
   });
 
-  test('should open user dropdown and see menu buttons', async () => {
+  test('should open user dropdown and see menu items', async () => {
     // Navigate fresh and wait for page
     await page.goto('/');
     await page.waitForLoadState('networkidle');
@@ -105,32 +105,41 @@ test.describe('Profile and Menu Navigation', () => {
 
     // The dropdown has specific styling - find it by the dropdown container
     const dropdown = page.locator('.bg-cream.rounded-lg.shadow-lg').first();
-    const dropdownButtons = dropdown.locator('button');
+    const dropdownItems = dropdown.locator('a, button');
 
-    // Verify profile button (unique to dropdown)
-    const profileButton = dropdownButtons.filter({ hasText: 'Profile' });
-    await expect(profileButton).toBeVisible({ timeout: 5000 });
-    console.log('✅ Profile button visible in dropdown');
+    // Verify profile item (unique to dropdown)
+    const profileItem = dropdownItems.filter({ hasText: 'Profile' });
+    await expect(profileItem).toBeVisible({ timeout: 5000 });
+    console.log('✅ Profile item visible in dropdown');
 
-    // Verify favorites button (unique to dropdown)
-    const favoritesButton = dropdownButtons.filter({ hasText: 'Favorites' });
-    await expect(favoritesButton).toBeVisible({ timeout: 5000 });
-    console.log('✅ Favorites button visible in dropdown');
+    // Verify favorites item (unique to dropdown)
+    const favoritesItem = dropdownItems.filter({ hasText: 'Favorites' });
+    await expect(favoritesItem).toBeVisible({ timeout: 5000 });
+    console.log('✅ Favorites item visible in dropdown');
 
-    // Verify alerts button (in dropdown - there's also one in nav)
-    const alertsButton = dropdownButtons.filter({ hasText: 'Alerts' });
-    await expect(alertsButton).toBeVisible({ timeout: 5000 });
-    console.log('✅ Alerts button visible in dropdown');
+    // Verify alerts item (in dropdown - there's also one in nav)
+    const alertsItem = dropdownItems.filter({ hasText: 'Alerts' });
+    await expect(alertsItem).toBeVisible({ timeout: 5000 });
+    console.log('✅ Alerts item visible in dropdown');
 
-    // Admin button should be visible for admin user
-    const adminButton = dropdownButtons.filter({ hasText: 'Admin' });
-    const hasAdmin = await adminButton.isVisible().catch(() => false);
-    console.log(`Admin button: ${hasAdmin ? 'visible' : 'NOT visible'}`);
+    // Admin item should be visible for admin user
+    const adminItem = dropdownItems.filter({ hasText: 'Admin' });
+    const hasAdmin = await adminItem.isVisible().catch(() => false);
+    console.log(`Admin item: ${hasAdmin ? 'visible' : 'NOT visible'}`);
 
-    console.log('✅ All dropdown buttons verified');
+    console.log('✅ All dropdown items verified');
   });
 
-  test('should navigate to Profile page when clicking dropdown button', async () => {
+  test('should navigate to Profile page when clicking dropdown item', async () => {
+    // Capture console logs
+    const consoleLogs: string[] = [];
+    page.on('console', msg => {
+      const text = `[Browser ${msg.type()}] ${msg.text()}`;
+      consoleLogs.push(text);
+      console.log(text);
+    });
+    page.on('pageerror', err => console.log(`[Browser Error] ${err.message}`));
+
     await page.goto('/');
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(1000);
@@ -138,17 +147,28 @@ test.describe('Profile and Menu Navigation', () => {
     // Open user dropdown
     const userMenuButton = getUserAvatarButton(page);
     await userMenuButton.click();
+    await page.waitForTimeout(500);
 
     // Wait for dropdown to be visible
     const dropdown = page.locator('.bg-cream.rounded-lg.shadow-lg').first();
     await expect(dropdown).toBeVisible({ timeout: 5000 });
 
-    // Find Profile button (changed from link to button)
-    const profileButton = dropdown.locator('button').filter({ hasText: 'Profile' });
-    await expect(profileButton).toBeVisible({ timeout: 5000 });
+    // Find Profile item (could be a or button)
+    const profileItem = dropdown.locator('a, button').filter({ hasText: 'Profile' });
+    await expect(profileItem).toBeVisible({ timeout: 5000 });
 
-    // Click Profile button
-    await profileButton.click();
+    // Log the element info
+    const href = await profileItem.getAttribute('href');
+    console.log(`Profile item href: ${href}`);
+
+    // Click Profile item
+    console.log('Clicking Profile item...');
+    await profileItem.click();
+    console.log('Click completed');
+
+    // Wait a moment and check console logs
+    await page.waitForTimeout(1000);
+    console.log('Console logs so far:', consoleLogs.filter(l => l.includes('MenuLink')));
 
     // Wait for navigation
     await page.waitForURL('**/profile', { timeout: 10000 });
@@ -156,7 +176,7 @@ test.describe('Profile and Menu Navigation', () => {
     console.log('✅ Navigated to Profile page via dropdown');
   });
 
-  test('should navigate to Favorites page when clicking dropdown button', async () => {
+  test('should navigate to Favorites page when clicking dropdown item', async () => {
     await page.goto('/');
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(1000);
@@ -166,10 +186,10 @@ test.describe('Profile and Menu Navigation', () => {
     await userMenuButton.click();
     await page.waitForTimeout(500);
 
-    // Click Favorites button
+    // Click Favorites item
     const dropdown = page.locator('.bg-cream.rounded-lg.shadow-lg').first();
-    const favoritesButton = dropdown.locator('button').filter({ hasText: 'Favorites' });
-    await favoritesButton.click();
+    const favoritesItem = dropdown.locator('a, button').filter({ hasText: 'Favorites' });
+    await favoritesItem.click();
 
     // Wait for navigation
     await page.waitForURL('**/favorites', { timeout: 10000 });
@@ -177,7 +197,7 @@ test.describe('Profile and Menu Navigation', () => {
     console.log('✅ Navigated to Favorites page via dropdown');
   });
 
-  test('should navigate to Alerts page when clicking dropdown button', async () => {
+  test('should navigate to Alerts page when clicking dropdown item', async () => {
     await page.goto('/');
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(1000);
@@ -187,10 +207,10 @@ test.describe('Profile and Menu Navigation', () => {
     await userMenuButton.click();
     await page.waitForTimeout(500);
 
-    // Click Alerts button in the dropdown
+    // Click Alerts item in the dropdown
     const dropdown = page.locator('.bg-cream.rounded-lg.shadow-lg').first();
-    const alertsButton = dropdown.locator('button').filter({ hasText: 'Alerts' });
-    await alertsButton.click();
+    const alertsItem = dropdown.locator('a, button').filter({ hasText: 'Alerts' });
+    await alertsItem.click();
 
     // Wait for navigation
     await page.waitForURL('**/alerts', { timeout: 10000 });
@@ -198,7 +218,7 @@ test.describe('Profile and Menu Navigation', () => {
     console.log('✅ Navigated to Alerts page via dropdown');
   });
 
-  test('should navigate to Admin page when clicking dropdown button', async () => {
+  test('should navigate to Admin page when clicking dropdown item', async () => {
     await page.goto('/');
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(1000);
@@ -208,10 +228,10 @@ test.describe('Profile and Menu Navigation', () => {
     await userMenuButton.click();
     await page.waitForTimeout(500);
 
-    // Click Admin button
+    // Click Admin item
     const dropdown = page.locator('.bg-cream.rounded-lg.shadow-lg').first();
-    const adminButton = dropdown.locator('button').filter({ hasText: 'Admin' });
-    await adminButton.click();
+    const adminItem = dropdown.locator('a, button').filter({ hasText: 'Admin' });
+    await adminItem.click();
 
     // Wait for navigation
     await page.waitForURL('**/admin', { timeout: 10000 });
@@ -219,7 +239,7 @@ test.describe('Profile and Menu Navigation', () => {
     console.log('✅ Navigated to Admin page via dropdown');
   });
 
-  test('should navigate via Admin header dropdown buttons', async () => {
+  test('should navigate via Admin header dropdown items', async () => {
     await page.goto('/');
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(1000);
@@ -229,10 +249,10 @@ test.describe('Profile and Menu Navigation', () => {
     await adminDropdownButton.first().click();
     await page.waitForTimeout(500);
 
-    // Click Dashboard button
+    // Click Dashboard item (could be button or link)
     const adminMenu = page.locator('.bg-cream.rounded-lg.shadow-lg').last();
-    const dashboardButton = adminMenu.locator('button').filter({ hasText: 'Dashboard' });
-    await dashboardButton.click();
+    const dashboardItem = adminMenu.locator('a, button').filter({ hasText: 'Dashboard' });
+    await dashboardItem.click();
 
     // Wait for navigation
     await page.waitForURL('**/admin', { timeout: 10000 });
@@ -250,10 +270,10 @@ test.describe('Profile and Menu Navigation', () => {
     await adminDropdownButton.first().click();
     await page.waitForTimeout(500);
 
-    // Click Users button
+    // Click Users item (could be button or link)
     const adminMenu = page.locator('.bg-cream.rounded-lg.shadow-lg').last();
-    const usersButton = adminMenu.locator('button').filter({ hasText: 'Users' });
-    await usersButton.click();
+    const usersItem = adminMenu.locator('a, button').filter({ hasText: 'Users' });
+    await usersItem.click();
 
     // Wait for navigation
     await page.waitForURL('**/admin/users', { timeout: 10000 });
