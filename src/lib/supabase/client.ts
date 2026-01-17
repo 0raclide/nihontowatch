@@ -1,9 +1,26 @@
 import { createBrowserClient } from '@supabase/ssr';
 import type { Database } from '@/types/database';
 
-// Fallbacks for build time (will be replaced with actual values at runtime)
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.placeholder';
+// Environment variables with empty string fallbacks for type safety
+// The || '' ensures we always have a string type for createBrowserClient
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+
+// Runtime validation - warn if not configured (browser only)
+if (typeof window !== 'undefined') {
+  if (!supabaseUrl || supabaseUrl.includes('placeholder')) {
+    console.error(
+      '[Supabase] NEXT_PUBLIC_SUPABASE_URL is not configured. ' +
+      'Check your .env.local file or Vercel environment settings.'
+    );
+  }
+  if (!supabaseAnonKey || supabaseAnonKey.includes('placeholder')) {
+    console.error(
+      '[Supabase] NEXT_PUBLIC_SUPABASE_ANON_KEY is not configured. ' +
+      'Check your .env.local file or Vercel environment settings.'
+    );
+  }
+}
 
 /**
  * Create a new Supabase client for use in Client Components
