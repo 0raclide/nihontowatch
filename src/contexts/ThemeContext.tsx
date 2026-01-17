@@ -99,7 +99,7 @@ interface ThemeContextValue {
 // ============================================================================
 
 const STORAGE_KEY = 'nihontowatch-theme';
-const DEFAULT_THEME: ThemeName = 'dark';
+const DEFAULT_THEME: ThemeName = 'opus';
 
 // ============================================================================
 // Context
@@ -115,7 +115,7 @@ function getSystemTheme(): ThemeName {
   if (typeof window === 'undefined') return DEFAULT_THEME;
   return window.matchMedia('(prefers-color-scheme: light)').matches
     ? 'light'
-    : 'dark';
+    : 'opus';
 }
 
 function getStoredTheme(): ThemeSetting | null {
@@ -275,10 +275,10 @@ export const themeInitScript = `
     var theme = themes.includes(stored) ? stored : null;
 
     if (stored === 'system' || !theme) {
-      theme = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+      theme = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'opus';
     }
 
-    var data = themeData[theme] || themeData.dark;
+    var data = themeData[theme] || themeData.opus;
 
     document.documentElement.classList.add('theme-' + theme);
     document.documentElement.classList.add('theme-' + data.mode);
