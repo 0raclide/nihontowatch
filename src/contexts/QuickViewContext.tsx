@@ -69,6 +69,8 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
   const isProgrammaticNavigation = useRef(false);
   // Track the original URL before opening quick view
   const originalUrl = useRef<string | null>(null);
+  // Cooldown to prevent immediate re-opening after close
+  const closeCooldown = useRef(false);
 
   // Find index of listing in the listings array
   const findListingIndex = useCallback((listing: Listing) => {
@@ -103,6 +105,11 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
 
   // Open quick view
   const openQuickView = useCallback((listing: Listing) => {
+    // Prevent re-opening during cooldown (after close)
+    if (closeCooldown.current) {
+      return;
+    }
+
     // Store the original URL before opening
     if (!isOpen) {
       originalUrl.current = `${pathname}${searchParams.toString() ? `?${searchParams.toString()}` : ''}`;
@@ -120,6 +127,9 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
 
   // Close quick view
   const closeQuickView = useCallback(() => {
+    // Set cooldown to prevent immediate re-opening from click propagation
+    closeCooldown.current = true;
+
     setIsOpen(false);
     setCurrentListing(null);
     setCurrentIndex(-1);
@@ -128,6 +138,11 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
     updateUrl(null, true);
 
     originalUrl.current = null;
+
+    // Reset cooldown after animation completes
+    setTimeout(() => {
+      closeCooldown.current = false;
+    }, 300);
   }, [updateUrl]);
 
   // Navigate to next listing

@@ -106,18 +106,27 @@ export function QuickViewModal({
       aria-modal="true"
       aria-labelledby="quick-view-title"
     >
-      {/* Backdrop */}
+      {/* Backdrop - captures all clicks outside content */}
       <div
-        className={`absolute inset-0 bg-black/80 pointer-events-none ${
+        className={`absolute inset-0 bg-black/80 ${
           isAnimatingOut ? 'animate-fadeOut' : 'animate-fadeIn'
         }`}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          handleBackdropClick();
+        }}
         aria-hidden="true"
       />
 
       {/* Close button - outside content for better z-index handling */}
       <button
         type="button"
-        onClick={handleClose}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          handleClose();
+        }}
         className="absolute top-4 right-4 z-[60] flex items-center justify-center w-10 h-10 rounded-full bg-cream/95 hover:bg-cream text-ink shadow-lg transition-colors"
         aria-label="Close quick view"
       >
@@ -128,14 +137,13 @@ export function QuickViewModal({
 
       {/* Modal Content */}
       <div
-        className="absolute inset-0 flex items-end lg:items-center justify-center lg:p-4"
-        onClick={handleBackdropClick}
+        className="absolute inset-0 flex items-end lg:items-center justify-center lg:p-4 pointer-events-none"
       >
         <div
           ref={contentRef}
           onClick={(e) => e.stopPropagation()}
           className={`
-            relative w-full bg-cream shadow-xl
+            relative w-full bg-cream shadow-xl pointer-events-auto
             rounded-t-2xl lg:rounded-lg
             h-[92vh] lg:h-auto lg:max-h-[90vh]
             max-w-4xl overflow-hidden flex flex-col
