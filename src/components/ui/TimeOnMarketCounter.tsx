@@ -50,20 +50,11 @@ export function TimeOnMarketCounter({ startDate, className = '' }: TimeOnMarketC
   const showDays = time.days > 0;
 
   return (
-    <span className={`inline-flex items-center gap-1.5 ${className}`}>
-      <span className="text-charcoal/70 text-[10px] uppercase tracking-wide">On market</span>
+    <span className={`inline-flex items-baseline gap-1.5 ${className}`}>
+      <span className="text-charcoal text-[11px]">On the market since</span>
       <span className="tabular-nums text-charcoal font-medium">
-        {showDays && (
-          <>
-            <span>{time.days}d</span>
-            <span className="text-charcoal/50 mx-0.5">&middot;</span>
-          </>
-        )}
-        <span>
-          {formatTimeComponent(time.hours)}:
-          {formatTimeComponent(time.minutes)}:
-          <span className="text-charcoal/60">{formatTimeComponent(time.seconds)}</span>
-        </span>
+        {showDays && <span>{time.days}d </span>}
+        {formatTimeComponent(time.hours)}:{formatTimeComponent(time.minutes)}:{formatTimeComponent(time.seconds)}
       </span>
     </span>
   );
