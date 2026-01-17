@@ -107,9 +107,9 @@ export function QuickViewContent({ listing, onClose }: QuickViewContentProps) {
   );
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full min-h-0">
       {/* Scrollable Content */}
-      <div className="flex-1 overflow-y-auto overscroll-contain">
+      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
         {/* Hero Section - Key info at a glance */}
         <div className="px-4 py-3 lg:px-5 lg:py-4 bg-linen/50">
           {/* Top row: Type + Cert + Watch */}

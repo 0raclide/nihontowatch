@@ -8,13 +8,11 @@ import {
   ReactNode,
 } from 'react';
 import { createPortal } from 'react-dom';
-import { useSearchParams, usePathname } from 'next/navigation';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 
 interface QuickViewModalProps {
   isOpen: boolean;
   onClose: () => void;
-  listingId: number;
   children: ReactNode;
 }
 
@@ -24,12 +22,8 @@ const SPRING_DURATION = 250;
 export function QuickViewModal({
   isOpen,
   onClose,
-  listingId,
   children,
 }: QuickViewModalProps) {
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-
   const modalRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -45,28 +39,9 @@ export function QuickViewModal({
     return () => setMounted(false);
   }, []);
 
-  // Update URL when modal opens/closes
-  useEffect(() => {
-    if (!mounted) return;
-
-    if (isOpen && listingId) {
-      // Add listing param to URL
-      const params = new URLSearchParams(searchParams.toString());
-      params.set('listing', String(listingId));
-      const newUrl = `${pathname}?${params.toString()}`;
-      window.history.replaceState(null, '', newUrl);
-    }
-  }, [isOpen, listingId, pathname, searchParams, mounted]);
-
-  // Restore URL on close
+  // Handle close with animation
   const handleClose = useCallback(() => {
     if (isAnimatingOut) return; // Prevent double-close
-
-    // Remove listing param from URL
-    const params = new URLSearchParams(searchParams.toString());
-    params.delete('listing');
-    const newUrl = params.toString() ? `${pathname}?${params.toString()}` : pathname;
-    window.history.replaceState(null, '', newUrl);
 
     setIsAnimatingOut(true);
 
@@ -75,7 +50,7 @@ export function QuickViewModal({
       setIsAnimatingOut(false);
       onClose();
     }, SPRING_DURATION);
-  }, [pathname, searchParams, onClose, isAnimatingOut]);
+  }, [onClose, isAnimatingOut]);
 
   // Close on escape key
   useEffect(() => {
@@ -89,9 +64,12 @@ export function QuickViewModal({
     return () => document.removeEventListener('keydown', handleEscape);
   }, [isOpen, isAnimatingOut, handleClose]);
 
-  // Handle backdrop click (clicking outside modal content)
-  const handleBackdropClick = useCallback(() => {
-    if (!isAnimatingOut) {
+  // Handle backdrop click with mousedown to prevent event issues
+  const handleBackdropMouseDown = useCallback((e: React.MouseEvent) => {
+    // Only handle direct clicks on the backdrop itself
+    if (e.target === e.currentTarget && !isAnimatingOut) {
+      e.preventDefault();
+      e.stopPropagation();
       handleClose();
     }
   }, [isAnimatingOut, handleClose]);
@@ -105,24 +83,21 @@ export function QuickViewModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="quick-view-title"
+      // Capture clicks on the modal container (backdrop area)
+      onMouseDown={handleBackdropMouseDown}
     >
-      {/* Backdrop - captures all clicks outside content */}
+      {/* Backdrop overlay - visual only, clicks handled by parent */}
       <div
-        className={`absolute inset-0 bg-black/80 ${
+        className={`absolute inset-0 bg-black/80 pointer-events-none ${
           isAnimatingOut ? 'animate-fadeOut' : 'animate-fadeIn'
         }`}
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          handleBackdropClick();
-        }}
         aria-hidden="true"
       />
 
       {/* Close button - outside content for better z-index handling */}
       <button
         type="button"
-        onClick={(e) => {
+        onMouseDown={(e) => {
           e.preventDefault();
           e.stopPropagation();
           handleClose();
@@ -135,13 +110,13 @@ export function QuickViewModal({
         </svg>
       </button>
 
-      {/* Modal Content */}
+      {/* Modal Content Container */}
       <div
         className="absolute inset-0 flex items-end lg:items-center justify-center lg:p-4 pointer-events-none"
       >
         <div
           ref={contentRef}
-          onClick={(e) => e.stopPropagation()}
+          onMouseDown={(e) => e.stopPropagation()}
           className={`
             relative w-full bg-cream shadow-xl pointer-events-auto
             rounded-t-2xl lg:rounded-lg
@@ -155,7 +130,11 @@ export function QuickViewModal({
             <span className="text-[13px] font-medium text-ink">Quick View</span>
             <button
               type="button"
-              onClick={handleClose}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleClose();
+              }}
               className="flex items-center justify-center w-8 h-8 rounded-full bg-linen text-ink active:bg-border transition-colors"
               aria-label="Close"
             >

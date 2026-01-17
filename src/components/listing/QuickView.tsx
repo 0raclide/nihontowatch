@@ -71,7 +71,6 @@ export function QuickView() {
       <QuickViewModal
         isOpen={isOpen}
         onClose={closeQuickView}
-        listingId={currentListing.id}
       >
         <div className="flex flex-col lg:flex-row h-full overflow-hidden">
           {/* Image Section - Scrollable vertical list */}

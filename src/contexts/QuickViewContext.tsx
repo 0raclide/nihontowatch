@@ -9,7 +9,7 @@ import {
   useRef,
   type ReactNode,
 } from 'react';
-import { useRouter, useSearchParams, usePathname } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import type { Listing } from '@/types';
 
 // ============================================================================
@@ -56,19 +56,13 @@ interface QuickViewProviderProps {
 }
 
 export function QuickViewProvider({ children }: QuickViewProviderProps) {
-  const router = useRouter();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
 
   const [isOpen, setIsOpen] = useState(false);
   const [currentListing, setCurrentListing] = useState<Listing | null>(null);
   const [listings, setListingsState] = useState<Listing[]>([]);
   const [currentIndex, setCurrentIndex] = useState(-1);
 
-  // Track if we pushed a state to avoid double-handling
-  const isProgrammaticNavigation = useRef(false);
-  // Track the original URL before opening quick view
-  const originalUrl = useRef<string | null>(null);
   // Cooldown to prevent immediate re-opening after close
   const closeCooldown = useRef(false);
 
@@ -77,31 +71,21 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
     return listings.findIndex((l) => l.id === listing.id);
   }, [listings]);
 
-  // Update URL with listing parameter
-  const updateUrl = useCallback((listingId: number | null, shouldReplace = false) => {
-    const params = new URLSearchParams(searchParams.toString());
+  // Update URL synchronously using history API (no React re-renders)
+  const updateUrl = useCallback((listingId: number | null) => {
+    if (typeof window === 'undefined') return;
+
+    const url = new URL(window.location.href);
 
     if (listingId !== null) {
-      params.set('listing', String(listingId));
+      url.searchParams.set('listing', String(listingId));
     } else {
-      params.delete('listing');
+      url.searchParams.delete('listing');
     }
 
-    const newUrl = params.toString() ? `${pathname}?${params.toString()}` : pathname;
-
-    isProgrammaticNavigation.current = true;
-
-    if (shouldReplace) {
-      router.replace(newUrl, { scroll: false });
-    } else {
-      router.push(newUrl, { scroll: false });
-    }
-
-    // Reset flag after navigation
-    setTimeout(() => {
-      isProgrammaticNavigation.current = false;
-    }, 100);
-  }, [pathname, searchParams, router]);
+    // Use replaceState to update URL without triggering navigation
+    window.history.replaceState(null, '', url.toString());
+  }, []);
 
   // Open quick view
   const openQuickView = useCallback((listing: Listing) => {
@@ -110,20 +94,15 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
       return;
     }
 
-    // Store the original URL before opening
-    if (!isOpen) {
-      originalUrl.current = `${pathname}${searchParams.toString() ? `?${searchParams.toString()}` : ''}`;
-    }
-
     setCurrentListing(listing);
     setIsOpen(true);
 
     const index = findListingIndex(listing);
     setCurrentIndex(index);
 
-    // Update URL with listing ID (push new history entry)
-    updateUrl(listing.id, false);
-  }, [findListingIndex, updateUrl, isOpen, pathname, searchParams]);
+    // Update URL
+    updateUrl(listing.id);
+  }, [findListingIndex, updateUrl]);
 
   // Close quick view
   const closeQuickView = useCallback(() => {
@@ -134,10 +113,8 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
     setCurrentListing(null);
     setCurrentIndex(-1);
 
-    // Remove listing from URL (replace to avoid extra history entry)
-    updateUrl(null, true);
-
-    originalUrl.current = null;
+    // Remove listing from URL
+    updateUrl(null);
 
     // Reset cooldown after animation completes
     setTimeout(() => {
@@ -155,8 +132,7 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
     setCurrentListing(nextListing);
     setCurrentIndex(nextIndex);
 
-    // Replace URL to avoid building up history
-    updateUrl(nextListing.id, true);
+    updateUrl(nextListing.id);
   }, [listings, currentIndex, updateUrl]);
 
   // Navigate to previous listing
@@ -169,8 +145,7 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
     setCurrentListing(prevListing);
     setCurrentIndex(prevIndex);
 
-    // Replace URL to avoid building up history
-    updateUrl(prevListing.id, true);
+    updateUrl(prevListing.id);
   }, [listings, currentIndex, updateUrl]);
 
   // Set listings array for navigation
@@ -184,35 +159,25 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
     }
   }, [currentListing]);
 
-  // Handle browser back/forward navigation
+  // Handle browser back button (popstate)
   useEffect(() => {
-    const listingIdParam = searchParams.get('listing');
+    if (typeof window === 'undefined') return;
 
-    // Skip if this was a programmatic navigation
-    if (isProgrammaticNavigation.current) {
-      return;
-    }
+    const handlePopState = () => {
+      const url = new URL(window.location.href);
+      const listingIdParam = url.searchParams.get('listing');
 
-    if (listingIdParam) {
-      // URL has listing param - try to find and open it
-      const listingId = parseInt(listingIdParam, 10);
-      const listing = listings.find((l) => l.id === listingId);
-
-      if (listing && (!isOpen || currentListing?.id !== listingId)) {
-        setCurrentListing(listing);
-        setIsOpen(true);
-        setCurrentIndex(findListingIndex(listing));
-      }
-    } else {
-      // No listing param - close if open
-      if (isOpen) {
+      if (!listingIdParam && isOpen) {
+        // User pressed back, close the modal
         setIsOpen(false);
         setCurrentListing(null);
         setCurrentIndex(-1);
-        originalUrl.current = null;
       }
-    }
-  }, [searchParams, listings, isOpen, currentListing, findListingIndex]);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [isOpen]);
 
   // Keyboard navigation
   useEffect(() => {
