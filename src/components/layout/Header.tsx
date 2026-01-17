@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback, Suspense } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { ThemeSwitcher } from '@/components/ui/ThemeSwitcher';
 import { useMobileUI } from '@/contexts/MobileUIContext';
@@ -73,9 +74,16 @@ function HeaderContent() {
           {/* Mobile Header */}
           <div className="flex lg:hidden items-center justify-between">
             {/* Logo */}
-            <Link href="/" className="flex items-baseline">
+            <Link href="/" className="flex items-center gap-2">
+              <Image
+                src="/logo-mon.png"
+                alt="NihontoWatch Mon"
+                width={28}
+                height={28}
+                className="opacity-90"
+              />
               <h1 className="font-serif text-xl tracking-tight text-ink">
-                Nihonto<span className="text-gold">watch</span>
+                Nihonto<span className="text-gold font-medium">Watch</span>
               </h1>
             </Link>
 
@@ -108,9 +116,16 @@ function HeaderContent() {
           {/* Desktop Header */}
           <div className="hidden lg:flex items-center justify-between">
             {/* Logo */}
-            <Link href="/" className="group flex items-baseline gap-1">
+            <Link href="/" className="group flex items-center gap-3">
+              <Image
+                src="/logo-mon.png"
+                alt="NihontoWatch Mon"
+                width={36}
+                height={36}
+                className="opacity-90 group-hover:opacity-100 transition-opacity"
+              />
               <h1 className="font-serif text-2xl tracking-tight text-ink">
-                Nihonto<span className="text-gold">watch</span>
+                Nihonto<span className="text-gold font-medium">Watch</span>
               </h1>
             </Link>
 
@@ -280,8 +295,17 @@ function HeaderFallback() {
     <header className="sticky top-0 z-40 bg-cream transition-colors">
       <div className="max-w-[1600px] mx-auto px-4 py-3 lg:px-6 lg:py-5">
         <div className="flex items-center justify-between">
-          <div className="font-serif text-xl lg:text-2xl tracking-tight text-ink">
-            Nihonto<span className="text-gold">watch</span>
+          <div className="flex items-center gap-2 lg:gap-3">
+            <Image
+              src="/logo-mon.png"
+              alt="NihontoWatch Mon"
+              width={28}
+              height={28}
+              className="opacity-90 lg:w-9 lg:h-9"
+            />
+            <span className="font-serif text-xl lg:text-2xl tracking-tight text-ink">
+              Nihonto<span className="text-gold font-medium">Watch</span>
+            </span>
           </div>
           <div className="flex items-center gap-4">
             <div className="w-64 h-10 bg-linen/50 rounded animate-pulse hidden lg:block" />
