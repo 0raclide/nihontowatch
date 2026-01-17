@@ -3,6 +3,7 @@
 import { useRef, useCallback, useEffect, useState } from 'react';
 import type { Listing } from '@/types';
 import { isTosogu, getItemTypeLabel } from '@/types';
+import { useCurrency, formatPriceWithConversion } from '@/hooks/useCurrency';
 
 // =============================================================================
 // TYPES
@@ -47,18 +48,6 @@ const VELOCITY_THRESHOLD = 0.3; // Minimum velocity to trigger quick swipe
 // HELPERS
 // =============================================================================
 
-function formatPrice(value: number | undefined | null, currency: string = 'JPY'): string {
-  if (value === undefined || value === null) {
-    return 'Ask';
-  }
-
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency,
-    maximumFractionDigits: 0,
-  }).format(value);
-}
-
 function getArtisanName(listing: Listing): string | null {
   if (isTosogu(listing.item_type)) {
     return listing.tosogu_maker || null;
@@ -90,11 +79,17 @@ export function QuickViewMobileSheet({
   const dragStartTime = useRef(0);
   const lastY = useRef(0);
 
+  const { currency, exchangeRates } = useCurrency();
   const certInfo = getCertInfo(listing.cert_type);
   const artisanName = getArtisanName(listing);
   const itemTypeLabel = getItemTypeLabel(listing.item_type);
   const dealerName = listing.dealer?.name || 'Dealer';
-  const priceDisplay = formatPrice(listing.price_value, listing.price_currency);
+  const priceDisplay = formatPriceWithConversion(
+    listing.price_value,
+    listing.price_currency,
+    currency,
+    exchangeRates
+  );
 
   // Handle touch start
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
@@ -275,7 +270,7 @@ export function QuickViewMobileSheet({
             onClick={(e) => e.stopPropagation()}
             className="flex items-center justify-center gap-2 w-full px-5 py-3 text-[13px] font-medium text-white bg-gold hover:bg-gold-light rounded-lg transition-colors active:scale-[0.98]"
           >
-            View on {dealerName}
+            See Full Listing
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
             </svg>

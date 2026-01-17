@@ -8,6 +8,8 @@
 | [ARCHITECTURE.md](./ARCHITECTURE.md) | System architecture, data flow, infrastructure |
 | [CROSS_REPO_REFERENCE.md](./CROSS_REPO_REFERENCE.md) | What lives where across all repos |
 | [USER_ACCOUNTS_SYSTEM.md](./USER_ACCOUNTS_SYSTEM.md) | Auth, profiles, favorites, alerts, activity tracking, admin |
+| [MOBILE_UX.md](./MOBILE_UX.md) | Mobile interaction patterns, QuickView bottom sheet |
+| [SEARCH_FEATURES.md](./SEARCH_FEATURES.md) | Natural language search, filters, query syntax |
 
 ---
 
@@ -96,6 +98,12 @@
 3. Check `src/app/api/admin/` - Admin API routes
 4. Verify admin role check in middleware
 
+### "I need to work on mobile UX"
+1. Read [MOBILE_UX.md](./MOBILE_UX.md) - Mobile interaction patterns
+2. Check `src/components/listing/QuickViewMobileSheet.tsx` - Bottom sheet implementation
+3. Check `tests/quickview-regression.spec.ts` - Mobile test patterns
+4. Use viewport `{ width: 390, height: 844 }` for testing
+
 ---
 
 ## Architecture Diagrams
@@ -117,5 +125,7 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for:
 | Adding dealers | [CROSS_REPO_REFERENCE.md](./CROSS_REPO_REFERENCE.md#adding-dealers) |
 | User accounts & auth | [USER_ACCOUNTS_SYSTEM.md](./USER_ACCOUNTS_SYSTEM.md) |
 | Admin dashboard | [USER_ACCOUNTS_SYSTEM.md#admin-dashboard](./USER_ACCOUNTS_SYSTEM.md#admin-dashboard) |
-| Testing | Oshi-scrapper: `pytest tests/`, Oshi-v2: `npm run test` |
+| Mobile UX & gestures | [MOBILE_UX.md](./MOBILE_UX.md) |
+| Search features | [SEARCH_FEATURES.md](./SEARCH_FEATURES.md) |
+| Testing | Oshi-scrapper: `pytest tests/`, Nihontowatch: `npx playwright test` |
 | Deployment | [CLAUDE.md](../CLAUDE.md#deployment) |

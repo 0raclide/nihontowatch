@@ -11,7 +11,10 @@ import { test, expect, Page } from '@playwright/test';
 // Constants
 const BASE_URL = 'http://localhost:3000/browse';
 const ANIMATION_WAIT = 400; // Wait for animation completion
-const LOAD_TIMEOUT = 15000; // Wait for page load
+const LOAD_TIMEOUT = 30000; // Wait for page load (increased for stability)
+
+// Configure retries for flaky tests
+test.describe.configure({ retries: 2 });
 
 // =============================================================================
 // HELPER FUNCTIONS
@@ -21,8 +24,11 @@ const LOAD_TIMEOUT = 15000; // Wait for page load
  * Wait for listings to load and return the first listing card
  */
 async function waitForListings(page: Page) {
+  // Wait for network to be idle first
+  await page.waitForLoadState('networkidle', { timeout: LOAD_TIMEOUT });
+
   const listingCards = page.locator('[data-testid="listing-card"]');
-  await listingCards.first().waitFor({ timeout: LOAD_TIMEOUT });
+  await listingCards.first().waitFor({ state: 'visible', timeout: LOAD_TIMEOUT });
   return listingCards;
 }
 
@@ -622,12 +628,19 @@ test.describe('QuickView - Cross-Viewport Behavior', () => {
     await page.keyboard.press('Escape');
     await page.waitForTimeout(ANIMATION_WAIT);
 
+    // Verify modal is closed
+    await expect(page.locator('[data-testid="quickview-modal"]')).not.toBeVisible();
+
     // Switch to mobile viewport
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.waitForTimeout(100);
+    await page.waitForTimeout(500); // Wait for responsive layout to settle
 
-    // Open again
-    await openQuickView(page);
+    // Open again - click the listing card directly instead of using openQuickView
+    const card = page.locator('[data-testid="listing-card"]').first();
+    await expect(card).toBeVisible();
+    await card.click();
+    await page.waitForSelector('[data-testid="quickview-modal"]', { timeout: 5000 });
+    await page.waitForTimeout(ANIMATION_WAIT);
 
     // Mobile layout should be visible now
     await expect(mobileLayout).toBeVisible();

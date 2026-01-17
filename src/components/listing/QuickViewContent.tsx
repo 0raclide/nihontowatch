@@ -1,6 +1,7 @@
 'use client';
 
 import { FavoriteButton } from '@/components/favorites/FavoriteButton';
+import { useCurrency, formatPriceWithConversion } from '@/hooks/useCurrency';
 import type { Listing } from '@/types';
 import { isBlade, isTosogu, getItemTypeLabel } from '@/types';
 
@@ -38,18 +39,6 @@ const CERT_CONFIG: Record<string, { label: string; shortLabel: string; tier: 'pr
 // =============================================================================
 // HELPERS
 // =============================================================================
-
-function formatPrice(value: number | undefined | null, currency: string = 'JPY'): string {
-  if (value === undefined || value === null) {
-    return 'Price on request';
-  }
-
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency,
-    maximumFractionDigits: 0,
-  }).format(value);
-}
 
 function getArtisanInfo(listing: Listing): { artisan: string | null; school: string | null; artisanLabel: string } {
   if (isTosogu(listing.item_type)) {
@@ -90,12 +79,19 @@ function formatTimeAgo(dateString: string): string {
 // =============================================================================
 
 export function QuickViewContent({ listing, onClose }: QuickViewContentProps) {
+  const { currency, exchangeRates } = useCurrency();
   const certInfo = getCertInfo(listing.cert_type);
   const { artisan, school, artisanLabel } = getArtisanInfo(listing);
   const itemTypeLabel = getItemTypeLabel(listing.item_type);
   const dealerName = listing.dealer?.name || 'Dealer';
   const isSword = isBlade(listing.item_type);
   const isTosoguItem = isTosogu(listing.item_type);
+  const priceDisplay = formatPriceWithConversion(
+    listing.price_value,
+    listing.price_currency,
+    currency,
+    exchangeRates
+  );
 
   // Check for available measurements
   const hasSwordMeasurements = isSword && (
@@ -140,7 +136,7 @@ export function QuickViewContent({ listing, onClose }: QuickViewContentProps) {
             <span className={`text-2xl lg:text-3xl font-semibold tabular-nums ${
               listing.price_value ? 'text-ink' : 'text-muted'
             }`}>
-              {listing.price_value ? formatPrice(listing.price_value, listing.price_currency) : 'Price on request'}
+              {priceDisplay}
             </span>
           </div>
 
@@ -277,7 +273,7 @@ export function QuickViewContent({ listing, onClose }: QuickViewContentProps) {
           rel="noopener noreferrer"
           className="flex items-center justify-center gap-2 w-full px-5 py-3 text-[13px] lg:text-[14px] font-medium text-white bg-gold hover:bg-gold-light rounded-lg transition-colors"
         >
-          View on {dealerName}
+          See Full Listing
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
           </svg>
