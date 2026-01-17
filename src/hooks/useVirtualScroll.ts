@@ -41,9 +41,9 @@ export function useVirtualScroll({
   enabled = true,
 }: UseVirtualScrollOptions): UseVirtualScrollResult {
   const [scrollTop, setScrollTop] = useState(0);
-  const [viewportHeight, setViewportHeight] = useState(
-    typeof window !== 'undefined' ? window.innerHeight : 800
-  );
+  // Start with a reasonable default to avoid hydration mismatch
+  // Will be updated in useEffect on client
+  const [viewportHeight, setViewportHeight] = useState(800);
 
   // Track previous item count for scroll anchoring
   const prevTotalItemsRef = useRef(totalItems);
