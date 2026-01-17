@@ -11,7 +11,6 @@ import { getActiveFilterCount } from '@/components/browse/FilterContent';
 import { SaveSearchButton } from '@/components/browse/SaveSearchButton';
 import type { SavedSearchCriteria } from '@/types';
 import { useIsMobile } from '@/hooks/useIsMobile';
-import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { BottomTabBar } from '@/components/navigation/BottomTabBar';
 import { useActivityOptional } from '@/components/activity/ActivityProvider';
 
@@ -230,13 +229,8 @@ function HomeContent() {
     }
   }, [data, page, isLoadingMore, buildUrlParams]);
 
-  // Infinite scroll hook - only on mobile
-  useInfiniteScroll({
-    onLoadMore: loadMore,
-    hasMore: data ? page < data.totalPages : false,
-    isLoading: isLoadingMore,
-    enabled: isMobile,
-  });
+  // Note: Infinite scroll is now handled internally by VirtualListingGrid
+  // via IntersectionObserver. The useInfiniteScroll hook is no longer needed here.
 
   const handleFilterChange = useCallback((key: string, value: unknown) => {
     // Track filter change
@@ -359,6 +353,7 @@ function HomeContent() {
               infiniteScroll={isMobile}
               currency={currency}
               exchangeRates={exchangeRates}
+              onLoadMore={loadMore}
             />
           </div>
         </div>

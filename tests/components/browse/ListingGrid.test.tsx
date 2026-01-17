@@ -9,6 +9,19 @@ vi.mock('@/components/browse/ListingCard', () => ({
   ),
 }));
 
+// Mock useAdaptiveVirtualScroll to avoid window access issues
+vi.mock('@/hooks/useAdaptiveVirtualScroll', () => ({
+  useAdaptiveVirtualScroll: ({ items }: { items: unknown[] }) => ({
+    visibleItems: items,
+    startIndex: 0,
+    totalHeight: 0,
+    offsetY: 0,
+    columns: 3,
+    rowHeight: 310,
+    isVirtualized: false,
+  }),
+}));
+
 const mockListings = [
   {
     id: '1',
@@ -104,14 +117,16 @@ describe('ListingGrid Component', () => {
   });
 
   describe('Grid responsive classes', () => {
-    it('has responsive column classes', () => {
+    it('has responsive column classes (mobile-first 1-col)', () => {
       render(<ListingGrid {...defaultProps} />);
 
       const grid = document.querySelector('.grid');
-      expect(grid).toHaveClass('grid-cols-2');
-      expect(grid).toHaveClass('sm:grid-cols-3');
-      expect(grid).toHaveClass('lg:grid-cols-4');
-      expect(grid).toHaveClass('xl:grid-cols-5');
+      // New responsive grid: 1 col mobile, 2 sm, 3 lg, 4 xl, 5 2xl
+      expect(grid).toHaveClass('grid-cols-1');
+      expect(grid).toHaveClass('sm:grid-cols-2');
+      expect(grid).toHaveClass('lg:grid-cols-3');
+      expect(grid).toHaveClass('xl:grid-cols-4');
+      expect(grid).toHaveClass('2xl:grid-cols-5');
     });
 
     it('has responsive gap classes', () => {
@@ -239,8 +254,15 @@ describe('ListingGrid Component', () => {
       expect(screen.getByText('Loading more...')).toBeInTheDocument();
     });
 
-    it('shows end of results message when all items loaded', () => {
-      render(<ListingGrid {...defaultProps} infiniteScroll={true} page={5} totalPages={5} />);
+    it('shows end of results message when all items loaded (with enough items)', () => {
+      // End message only shows when listings.length >= 30
+      const manyListings = Array.from({ length: 50 }, (_, i) => ({
+        ...mockListings[0],
+        id: String(i + 1),
+        title: `Listing ${i + 1}`,
+      }));
+
+      render(<ListingGrid {...defaultProps} listings={manyListings} infiniteScroll={true} page={1} totalPages={1} />);
 
       expect(screen.getByText(/You've seen all/)).toBeInTheDocument();
     });
