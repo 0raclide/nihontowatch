@@ -165,60 +165,34 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Sign in with email (sends magic code)
   const signInWithEmail = useCallback(
     async (email: string): Promise<{ error: AuthError | null }> => {
-      console.log('[Auth] signInWithEmail called with:', email);
-      try {
-        const { error } = await supabase.auth.signInWithOtp({
-          email,
-          options: {
-            shouldCreateUser: true,
-          },
-        });
-        console.log('[Auth] signInWithOtp returned, error:', error);
-        return { error };
-      } catch (err) {
-        console.error('[Auth] signInWithEmail caught error:', err);
-        throw err;
-      }
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          shouldCreateUser: true,
+        },
+      });
+      return { error };
     },
     [supabase]
   );
 
-  // Verify OTP - use Supabase client directly
+  // Verify OTP code sent to email
   const verifyOtp = useCallback(
     async (
       email: string,
       token: string
     ): Promise<{ error: AuthError | null }> => {
-      const cleanEmail = email.trim().toLowerCase();
-      const cleanToken = token.trim();
-
-      console.log('[Auth] verifyOtp called with email:', cleanEmail, 'token length:', cleanToken.length);
-
       try {
-        console.log('[Auth] Calling supabase.auth.verifyOtp...');
-        const { data, error } = await supabase.auth.verifyOtp({
-          email: cleanEmail,
-          token: cleanToken,
+        const { error } = await supabase.auth.verifyOtp({
+          email: email.trim().toLowerCase(),
+          token: token.trim(),
           type: 'email',
         });
-
-        console.log('[Auth] verifyOtp result:', {
-          hasSession: !!data?.session,
-          hasUser: !!data?.user,
-          error: error?.message
-        });
-
-        if (error) {
-          return { error };
-        }
-
-        console.log('[Auth] verifyOtp success, session established');
-        return { error: null };
+        return { error };
       } catch (err) {
-        console.error('[Auth] verifyOtp caught error:', err);
         return {
           error: {
-            message: err instanceof Error ? err.message : 'Network error',
+            message: err instanceof Error ? err.message : 'Verification failed',
             status: 500,
           } as AuthError,
         };

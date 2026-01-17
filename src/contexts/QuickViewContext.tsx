@@ -179,7 +179,7 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
     return () => window.removeEventListener('popstate', handlePopState);
   }, [isOpen]);
 
-  // Keyboard navigation
+  // Keyboard navigation (arrow keys only - Escape is handled by QuickViewModal)
   useEffect(() => {
     if (!isOpen) return;
 
@@ -205,16 +205,14 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
           event.preventDefault();
           goToPrevious();
           break;
-        case 'Escape':
-          event.preventDefault();
-          closeQuickView();
-          break;
+        // NOTE: Escape key handling is done in QuickViewModal.tsx to ensure
+        // proper animation sequencing. Do NOT add Escape handling here.
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, goToNext, goToPrevious, closeQuickView]);
+  }, [isOpen, goToNext, goToPrevious]);
 
   // Prevent body scroll when modal is open
   useEffect(() => {

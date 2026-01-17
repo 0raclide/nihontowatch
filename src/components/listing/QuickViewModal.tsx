@@ -3,7 +3,6 @@
 import {
   useState,
   useEffect,
-  useRef,
   useCallback,
   ReactNode,
 } from 'react';
@@ -24,9 +23,6 @@ export function QuickViewModal({
   onClose,
   children,
 }: QuickViewModalProps) {
-  const modalRef = useRef<HTMLDivElement>(null);
-  const contentRef = useRef<HTMLDivElement>(null);
-
   // Animation state
   const [isAnimatingOut, setIsAnimatingOut] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -64,42 +60,36 @@ export function QuickViewModal({
     return () => document.removeEventListener('keydown', handleEscape);
   }, [isOpen, isAnimatingOut, handleClose]);
 
-  // Handle backdrop click with mousedown to prevent event issues
-  const handleBackdropMouseDown = useCallback((e: React.MouseEvent) => {
-    // Only handle direct clicks on the backdrop itself
-    if (e.target === e.currentTarget && !isAnimatingOut) {
-      e.preventDefault();
-      e.stopPropagation();
-      handleClose();
-    }
-  }, [isAnimatingOut, handleClose]);
-
   if (!mounted || !isOpen) return null;
 
   const modalContent = (
     <div
-      ref={modalRef}
       data-testid="quickview-modal"
       className="fixed inset-0 z-50"
       role="dialog"
       aria-modal="true"
       aria-labelledby="quick-view-title"
-      // Capture clicks on the modal container (backdrop area)
-      onMouseDown={handleBackdropMouseDown}
     >
-      {/* Backdrop overlay - visual only, clicks handled by parent */}
+      {/* Backdrop overlay - clickable to close */}
       <div
-        className={`absolute inset-0 bg-black/80 pointer-events-none ${
+        className={`absolute inset-0 bg-black/80 ${
           isAnimatingOut ? 'animate-fadeOut' : 'animate-fadeIn'
         }`}
         aria-hidden="true"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (!isAnimatingOut) {
+            handleClose();
+          }
+        }}
       />
 
       {/* Close button - outside content for better z-index handling */}
       <button
         type="button"
         data-testid="quickview-close-button"
-        onMouseDown={(e) => {
+        onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
           handleClose();
@@ -117,9 +107,8 @@ export function QuickViewModal({
         className="absolute inset-0 flex items-end lg:items-center justify-center lg:p-4 pointer-events-none"
       >
         <div
-          ref={contentRef}
           data-testid="quickview-content"
-          onMouseDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
           className={`
             relative w-full bg-cream shadow-xl pointer-events-auto
             rounded-t-2xl lg:rounded-lg

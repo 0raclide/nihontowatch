@@ -1,0 +1,50 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e5]:
+        - link "Nihontowatch" [ref=e6] [cursor=pointer]:
+          - /url: /
+          - heading "Nihontowatch" [level=1] [ref=e7]
+        - generic [ref=e8]:
+          - button "Search" [ref=e9]:
+            - img [ref=e10]
+          - button "Menu" [ref=e12]:
+            - img [ref=e13]
+    - main [ref=e16]:
+      - generic [ref=e18]:
+        - heading "Collection" [level=1] [ref=e19]
+        - paragraph [ref=e20]: Japanese swords and fittings from established dealers
+      - generic [ref=e22]: Loading...
+      - navigation "Main navigation" [ref=e146]:
+        - generic [ref=e147]:
+          - button "Search" [ref=e148]:
+            - img [ref=e149]
+            - generic [ref=e151]: Search
+          - button "Filters" [ref=e152]:
+            - img [ref=e154]
+            - generic [ref=e156]: Filters
+          - button "Menu" [ref=e157]:
+            - img [ref=e158]
+            - generic [ref=e160]: Menu
+    - contentinfo [ref=e162]:
+      - generic [ref=e164]:
+        - generic [ref=e165]:
+          - generic [ref=e166]: Nihontowatch
+          - generic [ref=e167]: Curated Japanese arms from dealers worldwide
+        - generic [ref=e169]: © 2026
+  - generic [ref=e174] [cursor=pointer]:
+    - button "Open Next.js Dev Tools" [ref=e175]:
+      - img [ref=e176]
+    - generic [ref=e179]:
+      - button "Open issues overlay" [ref=e180]:
+        - generic [ref=e181]:
+          - generic [ref=e182]: "0"
+          - generic [ref=e183]: "1"
+        - generic [ref=e184]: Issue
+      - button "Collapse issues badge" [ref=e185]:
+        - img [ref=e186]
+  - alert [ref=e188]
+```

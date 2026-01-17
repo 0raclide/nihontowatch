@@ -247,6 +247,7 @@ export function QuickView() {
                 </svg>
               </button>
               <button
+                data-testid="nav-next"
                 onClick={(e) => {
                   e.stopPropagation();
                   goToNext();
@@ -266,7 +267,7 @@ export function QuickView() {
               </button>
 
               {/* Listing counter */}
-              <div className="absolute bottom-3 left-2 z-20 px-2 py-1 rounded bg-ink/60 backdrop-blur-sm">
+              <div data-testid="listing-counter" className="absolute bottom-3 left-2 z-20 px-2 py-1 rounded bg-ink/60 backdrop-blur-sm">
                 <span className="text-[11px] text-white font-medium tabular-nums">
                   {currentIndex + 1} / {listings.length}
                 </span>
@@ -328,13 +329,13 @@ function LazyImage({
   return (
     <div
       ref={ref}
-      className="relative bg-linen rounded overflow-hidden"
+      className={`relative bg-linen rounded overflow-hidden ${!loaded && !error && isVisible ? 'min-h-[300px]' : ''}`}
     >
       {isVisible ? (
         <>
-          {/* Loading skeleton */}
+          {/* Loading skeleton - maintains height while image loads */}
           {!loaded && !error && (
-            <div className="absolute inset-0 img-loading" />
+            <div className="absolute inset-0 img-loading min-h-[300px]" />
           )}
 
           {/* Error state */}

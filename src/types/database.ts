@@ -112,15 +112,15 @@ export interface Database {
         Insert: Omit<Database['public']['Tables']['scrape_runs']['Row'], 'id'>;
         Update: Partial<Database['public']['Tables']['scrape_runs']['Insert']>;
       };
-      favorites: {
+      user_favorites: {
         Row: {
-          id: number;
+          id: string;
           user_id: string;
           listing_id: number;
           created_at: string;
         };
-        Insert: Omit<Database['public']['Tables']['favorites']['Row'], 'id' | 'created_at'>;
-        Update: Partial<Database['public']['Tables']['favorites']['Insert']>;
+        Insert: Omit<Database['public']['Tables']['user_favorites']['Row'], 'id' | 'created_at'>;
+        Update: Partial<Database['public']['Tables']['user_favorites']['Insert']>;
       };
       alerts: {
         Row: {

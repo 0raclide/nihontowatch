@@ -197,10 +197,24 @@ export function QuickViewMobileSheet({
       {isExpanded ? (
         // EXPANDED STATE
         <div className="px-4 pb-4 safe-area-bottom">
-          {/* Close button */}
+          {/* Close button - uses touch handlers to prevent sheet drag gestures from intercepting */}
           <button
             type="button"
-            onClick={onClose}
+            data-testid="mobile-sheet-close"
+            onClick={(e) => {
+              e.stopPropagation();
+              onClose();
+            }}
+            onTouchStart={(e) => {
+              // Stop propagation to prevent sheet's drag handling from starting
+              e.stopPropagation();
+            }}
+            onTouchEnd={(e) => {
+              // Stop propagation and trigger close immediately on touch for responsive mobile UX
+              e.stopPropagation();
+              e.preventDefault(); // Prevent click from also firing
+              onClose();
+            }}
             className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full bg-linen text-ink active:bg-border transition-colors z-10"
             aria-label="Close"
           >
@@ -251,11 +265,14 @@ export function QuickViewMobileSheet({
             <span className="truncate">{dealerName}</span>
           </div>
 
-          {/* CTA Button */}
+          {/* CTA Button - stop propagation to prevent sheet drag interference on mobile */}
           <a
             href={listing.url}
             target="_blank"
             rel="noopener noreferrer"
+            onTouchStart={(e) => e.stopPropagation()}
+            onTouchEnd={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
             className="flex items-center justify-center gap-2 w-full px-5 py-3 text-[13px] font-medium text-white bg-gold hover:bg-gold-light rounded-lg transition-colors active:scale-[0.98]"
           >
             View on {dealerName}

@@ -1,0 +1,86 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e5]:
+        - link "Nihontowatch" [ref=e6] [cursor=pointer]:
+          - /url: /
+          - heading "Nihontowatch" [level=1] [ref=e7]
+        - generic [ref=e9]:
+          - textbox "Search swords, smiths, dealers..." [ref=e10]
+          - button [ref=e11]:
+            - img [ref=e12]
+          - generic:
+            - generic: Enter
+        - navigation [ref=e14]:
+          - link "Browse" [ref=e15] [cursor=pointer]:
+            - /url: /browse
+          - link "Alerts" [ref=e16] [cursor=pointer]:
+            - /url: /alerts
+          - button "Select theme" [ref=e19]:
+            - img [ref=e20]
+          - button "Sign In" [ref=e23]
+    - main [ref=e25]:
+      - generic [ref=e26]:
+        - generic [ref=e27]:
+          - heading "Collection" [level=1] [ref=e28]
+          - paragraph [ref=e29]: Japanese swords and fittings from established dealers
+        - generic [ref=e30]:
+          - generic [ref=e31]:
+            - button "USD" [ref=e32]
+            - button "JPY" [ref=e33]
+            - button "EUR" [ref=e34]
+          - combobox [ref=e35] [cursor=pointer]:
+            - option "Newest"
+            - option "Price ↑"
+            - option "Price ↓" [selected]
+            - option "A-Z"
+      - complementary [ref=e38]:
+        - generic [ref=e40]:
+          - heading "Filters" [level=2] [ref=e42]
+          - generic [ref=e43]:
+            - generic [ref=e44]:
+              - heading "Category" [level=3] [ref=e45]
+              - generic [ref=e46]:
+                - button "All" [ref=e47]
+                - button "Nihonto" [ref=e48]
+                - button "Tosogu" [ref=e49]
+            - generic [ref=e50]:
+              - button "Certification" [ref=e51]:
+                - heading "Certification" [level=3] [ref=e52]
+                - img [ref=e53]
+              - paragraph [ref=e57]: No certifications
+            - generic [ref=e58]:
+              - button "Type" [ref=e59]:
+                - heading "Type" [level=3] [ref=e60]
+                - img [ref=e61]
+              - paragraph [ref=e65]: No items available
+            - generic [ref=e66]:
+              - heading "Dealer" [level=3] [ref=e67]
+              - button "All dealers" [ref=e69]:
+                - generic [ref=e70]: All dealers
+                - img [ref=e71]
+            - generic [ref=e74] [cursor=pointer]:
+              - generic [ref=e75]: Price on request only
+              - checkbox "Price on request only" [ref=e77]
+    - contentinfo [ref=e202]:
+      - generic [ref=e204]:
+        - generic [ref=e205]:
+          - generic [ref=e206]: Nihontowatch
+          - generic [ref=e207]: Curated Japanese arms from dealers worldwide
+        - generic [ref=e209]: © 2026
+  - generic [ref=e214] [cursor=pointer]:
+    - button "Open Next.js Dev Tools" [ref=e215]:
+      - img [ref=e216]
+    - generic [ref=e219]:
+      - button "Open issues overlay" [ref=e220]:
+        - generic [ref=e221]:
+          - generic [ref=e222]: "0"
+          - generic [ref=e223]: "1"
+        - generic [ref=e224]: Issue
+      - button "Collapse issues badge" [ref=e225]:
+        - img [ref=e226]
+  - alert [ref=e228]
+```

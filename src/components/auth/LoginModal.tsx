@@ -92,8 +92,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
           setStep('otp');
         }, 1000);
       }
-    } catch (err) {
-      console.error('Email submit error:', err);
+    } catch {
       setError('An unexpected error occurred. Please try again.');
     } finally {
       setIsLoading(false);
@@ -129,8 +128,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
           onClose();
         }, 500);
       }
-    } catch (err) {
-      console.error('OTP submit error:', err);
+    } catch {
       setError('An unexpected error occurred. Please try again.');
     } finally {
       setIsLoading(false);

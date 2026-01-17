@@ -232,6 +232,8 @@ export function ListingCard({ listing, currency, exchangeRates, priority = false
     <div
       role="button"
       tabIndex={0}
+      data-testid="listing-card"
+      data-listing-id={listing.id}
       onClick={handleClick}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {

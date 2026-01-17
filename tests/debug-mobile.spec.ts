@@ -13,6 +13,7 @@ import { test, expect } from '@playwright/test';
 // Set mobile viewport globally for all tests
 test.use({
   viewport: { width: 390, height: 844 }, // iPhone 14 Pro size
+  hasTouch: true, // Enable touch events like a real mobile device
 });
 
 test.describe('DEBUG: Mobile QuickView Sheet', () => {
@@ -67,8 +68,8 @@ test.describe('DEBUG: Mobile QuickView Sheet', () => {
     await expect(mobileSheet).toBeVisible();
     console.log('Mobile sheet is visible');
 
-    // Find the X button - it should have aria-label="Close"
-    const closeButton = mobileSheet.locator('[aria-label="Close"]');
+    // Find the X button - use data-testid for reliable selection
+    const closeButton = mobileSheet.locator('[data-testid="mobile-sheet-close"]');
     const closeButtonCount = await closeButton.count();
     console.log(`Found ${closeButtonCount} close buttons in mobile sheet`);
 
@@ -213,7 +214,7 @@ test.describe('DEBUG: Mobile QuickView Sheet', () => {
 
     // Check for mobile sheet close button
     const mobileSheet = page.locator('[data-testid="mobile-sheet"]');
-    const mobileCloseButton = mobileSheet.locator('button[aria-label="Close"]');
+    const mobileCloseButton = mobileSheet.locator('[data-testid="mobile-sheet-close"]');
     const mobileCloseCount = await mobileCloseButton.count();
     console.log(`Mobile sheet close buttons: ${mobileCloseCount}`);
 
@@ -254,5 +255,101 @@ test.describe('DEBUG: Mobile QuickView Sheet', () => {
 
     // Should be expanded by default
     expect(hasExpandedClass).toBe(true);
+  });
+
+  test('7. TOUCH TEST: Tap X button using touch events', async ({ page }) => {
+    // Setup: Navigate and open QuickView
+    await page.goto('http://localhost:3000/browse');
+    const listingCards = page.locator('[role="button"]');
+    await listingCards.first().waitFor({ timeout: 15000 });
+    await listingCards.first().tap(); // Use tap instead of click
+    await page.waitForSelector('[role="dialog"]', { timeout: 5000 });
+    await page.waitForTimeout(400);
+
+    // Get the mobile sheet
+    const mobileSheet = page.locator('[data-testid="mobile-sheet"]');
+    await expect(mobileSheet).toBeVisible();
+
+    // Find the X button using data-testid
+    const closeButton = mobileSheet.locator('[data-testid="mobile-sheet-close"]');
+    await expect(closeButton).toBeVisible();
+
+    // Get button position
+    const buttonBox = await closeButton.boundingBox();
+    console.log(`Close button position: ${JSON.stringify(buttonBox)}`);
+
+    // Record sheet state before tap
+    const sheetClassesBefore = await mobileSheet.getAttribute('class');
+    console.log(`Sheet classes before tap: ${sheetClassesBefore?.includes('sheet-expanded')}`);
+
+    // TAP the close button (simulates real mobile touch)
+    await closeButton.tap();
+    console.log('Tapped close button');
+
+    // Wait for close animation
+    await page.waitForTimeout(500);
+
+    // Check if modal closed
+    const modalCount = await page.locator('[role="dialog"]').count();
+    console.log(`Remaining modals after tap: ${modalCount}`);
+
+    // Check sheet state after tap (to see if it collapsed instead of closing)
+    const sheetAfterTap = page.locator('[data-testid="mobile-sheet"]');
+    const sheetStillExists = await sheetAfterTap.count();
+    if (sheetStillExists > 0) {
+      const sheetClassesAfter = await sheetAfterTap.getAttribute('class');
+      console.log(`Sheet still exists! Classes after tap: ${sheetClassesAfter}`);
+      console.log(`Sheet collapsed: ${sheetClassesAfter?.includes('sheet-collapsed')}`);
+    }
+
+    expect(modalCount).toBe(0);
+  });
+
+  test('8. TOUCH TEST: Check if tap collapses instead of closing', async ({ page }) => {
+    // Setup: Navigate and open QuickView
+    await page.goto('http://localhost:3000/browse');
+    const listingCards = page.locator('[role="button"]');
+    await listingCards.first().waitFor({ timeout: 15000 });
+    await listingCards.first().tap();
+    await page.waitForSelector('[role="dialog"]', { timeout: 5000 });
+    await page.waitForTimeout(400);
+
+    // Get the mobile sheet
+    const mobileSheet = page.locator('[data-testid="mobile-sheet"]');
+
+    // Find the X button using data-testid
+    const closeButton = mobileSheet.locator('[data-testid="mobile-sheet-close"]');
+    const buttonBox = await closeButton.boundingBox();
+
+    if (buttonBox) {
+      // Use touchscreen directly to simulate touch events
+      const centerX = buttonBox.x + buttonBox.width / 2;
+      const centerY = buttonBox.y + buttonBox.height / 2;
+
+      console.log(`Touching at: (${centerX}, ${centerY})`);
+
+      // Simulate touch sequence
+      await page.touchscreen.tap(centerX, centerY);
+      console.log('Touch tap executed');
+
+      await page.waitForTimeout(500);
+
+      // Check state
+      const modalCount = await page.locator('[role="dialog"]').count();
+      console.log(`Modal count after touch: ${modalCount}`);
+
+      // If modal still exists, check sheet state
+      if (modalCount > 0) {
+        const sheetClasses = await mobileSheet.getAttribute('class');
+        console.log(`Sheet classes: ${sheetClasses}`);
+
+        // BUG: If sheet collapsed instead of modal closing, touch handling is broken
+        if (sheetClasses?.includes('sheet-collapsed')) {
+          console.log('BUG FOUND: Sheet collapsed instead of closing! Touch events intercepted.');
+        }
+      }
+
+      expect(modalCount).toBe(0);
+    }
   });
 });

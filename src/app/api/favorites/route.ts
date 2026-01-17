@@ -25,7 +25,7 @@ export async function GET() {
 
     // Fetch favorites with listing details
     const { data: favorites, error } = await supabase
-      .from('favorites')
+      .from('user_favorites')
       .select(`
         id,
         created_at,
@@ -135,7 +135,7 @@ export async function POST(request: NextRequest) {
 
     // Check if already favorited
     const { data: existing } = await supabase
-      .from('favorites')
+      .from('user_favorites')
       .select('id')
       .eq('user_id', user.id)
       .eq('listing_id', listing_id)
@@ -150,7 +150,7 @@ export async function POST(request: NextRequest) {
 
     // Add to favorites
     const { data: favorite, error: insertError } = await supabase
-      .from('favorites')
+      .from('user_favorites')
       .insert({
         user_id: user.id,
         listing_id,
@@ -210,7 +210,7 @@ export async function DELETE(request: NextRequest) {
 
     // Delete the favorite
     const { error: deleteError } = await supabase
-      .from('favorites')
+      .from('user_favorites')
       .delete()
       .eq('user_id', user.id)
       .eq('listing_id', listing_id);

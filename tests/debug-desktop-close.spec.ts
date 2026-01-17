@@ -228,4 +228,95 @@ test.describe('QuickView Desktop Close Methods', () => {
     // This test is for debugging only - always pass
     expect(true).toBe(true);
   });
+
+  test('CLOSE after scrolling inside modal should work', async ({ page }) => {
+    console.log('Testing: Close after scrolling inside modal');
+
+    // Scroll inside the modal content
+    const modalContent = page.locator('[data-testid="quickview-content"]');
+    await modalContent.evaluate((el) => {
+      const scrollable = el.querySelector('.overflow-y-auto');
+      if (scrollable) {
+        scrollable.scrollTop = 100;
+      }
+    });
+    console.log('Scrolled inside modal content');
+
+    // Now try to close with Escape
+    await page.keyboard.press('Escape');
+    console.log('Pressed Escape after scroll');
+
+    await page.waitForTimeout(400);
+
+    const modalCount = await page.locator('[role="dialog"]').count();
+    console.log(`Modal count after Escape: ${modalCount}`);
+
+    expect(modalCount).toBe(0);
+    console.log('CLOSE AFTER SCROLL: PASS');
+  });
+
+  test('Multiple rapid Escape presses should close modal once', async ({ page }) => {
+    console.log('Testing: Multiple rapid Escape presses');
+
+    // Press Escape multiple times rapidly
+    await page.keyboard.press('Escape');
+    await page.keyboard.press('Escape');
+    await page.keyboard.press('Escape');
+    console.log('Pressed Escape 3 times rapidly');
+
+    await page.waitForTimeout(500);
+
+    const modalCount = await page.locator('[role="dialog"]').count();
+    console.log(`Modal count: ${modalCount}`);
+
+    expect(modalCount).toBe(0);
+    console.log('MULTIPLE ESCAPE: PASS');
+  });
+
+  test('Clicking on modal content should NOT close', async ({ page }) => {
+    console.log('Testing: Click on content should not close');
+
+    // Click on the content area (not backdrop)
+    const content = page.locator('[data-testid="quickview-content"]');
+    await content.click({ position: { x: 100, y: 100 } });
+    console.log('Clicked on modal content');
+
+    await page.waitForTimeout(400);
+
+    const modalCount = await page.locator('[role="dialog"]').count();
+    console.log(`Modal count after content click: ${modalCount}`);
+
+    expect(modalCount).toBe(1);
+    console.log('CONTENT CLICK NO CLOSE: PASS');
+  });
+
+  test('DEBUG: Check for duplicate event handlers', async ({ page }) => {
+    console.log('Checking for event handler issues...');
+
+    // Check how many keydown listeners exist
+    const keydownListenerCount = await page.evaluate(() => {
+      // This won't give exact count but we can check behavior
+      return (window as unknown as { __QUICKVIEW_DEBUG__?: number }).__QUICKVIEW_DEBUG__ || 'No debug info';
+    });
+    console.log(`Debug info: ${keydownListenerCount}`);
+
+    // Press Escape and check if modal closes exactly once
+    const beforeCount = await page.locator('[role="dialog"]').count();
+    console.log(`Modal count before: ${beforeCount}`);
+
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(100);
+
+    // Check immediately (within animation)
+    const duringAnimation = await page.locator('[role="dialog"]').count();
+    console.log(`Modal count during animation (100ms): ${duringAnimation}`);
+
+    await page.waitForTimeout(300);
+
+    const afterCount = await page.locator('[role="dialog"]').count();
+    console.log(`Modal count after (400ms total): ${afterCount}`);
+
+    expect(afterCount).toBe(0);
+    console.log('EVENT HANDLER CHECK: PASS');
+  });
 });
