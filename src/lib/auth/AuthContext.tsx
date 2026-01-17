@@ -189,7 +189,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
         type: 'email',
       });
 
-      return { error };
+      // If 'email' type fails, try 'magiclink' type
+      if (error) {
+        const { error: magicLinkError } = await supabase.auth.verifyOtp({
+          email,
+          token,
+          type: 'magiclink',
+        });
+        return { error: magicLinkError };
+      }
+
+      return { error: null };
     },
     [supabase]
   );

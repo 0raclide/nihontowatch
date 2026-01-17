@@ -11,7 +11,7 @@ import {
 } from 'react';
 import Image from 'next/image';
 
-interface ImageCarouselProps {
+export interface ImageCarouselProps {
   images: string[];
   initialIndex?: number;
   onIndexChange?: (index: number) => void;
@@ -91,22 +91,6 @@ export default function ImageCarousel({
     setZoomPosition({ x: 0, y: 0 });
   }, [currentIndex]);
 
-  // Handle keyboard navigation
-  const handleKeyDown = useCallback(
-    (e: KeyboardEvent) => {
-      if (zoomScale > 1) return; // Disable nav when zoomed
-
-      if (e.key === 'ArrowLeft') {
-        e.preventDefault();
-        goToPrevious();
-      } else if (e.key === 'ArrowRight') {
-        e.preventDefault();
-        goToNext();
-      }
-    },
-    [zoomScale]
-  );
-
   const goToIndex = useCallback(
     (index: number) => {
       if (index < 0 || index >= images.length || isTransitioning) return;
@@ -128,6 +112,22 @@ export default function ImageCarousel({
       goToIndex(currentIndex - 1);
     }
   }, [currentIndex, goToIndex]);
+
+  // Handle keyboard navigation
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      if (zoomScale > 1) return; // Disable nav when zoomed
+
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        goToPrevious();
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        goToNext();
+      }
+    },
+    [zoomScale, goToPrevious, goToNext]
+  );
 
   // Touch handlers
   const handleTouchStart = useCallback(

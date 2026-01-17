@@ -5,6 +5,7 @@ import "./globals.css";
 import { MobileUIProvider } from "@/contexts/MobileUIContext";
 import { ThemeProvider, themeInitScript } from "@/contexts/ThemeContext";
 import { QuickViewProvider } from "@/contexts/QuickViewContext";
+import { QuickView } from "@/components/listing/QuickView";
 import { AuthProvider } from "@/lib/auth/AuthContext";
 import { ActivityWrapper } from "@/components/activity/ActivityWrapper";
 
@@ -54,6 +55,7 @@ export default function RootLayout({
                   <ActivityWrapper>
                     {children}
                   </ActivityWrapper>
+                  <QuickView />
                 </QuickViewProvider>
               </Suspense>
             </ThemeProvider>

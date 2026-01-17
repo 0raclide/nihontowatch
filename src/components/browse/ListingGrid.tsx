@@ -1,6 +1,9 @@
 'use client';
 
+import { useEffect } from 'react';
 import { ListingCard } from './ListingCard';
+import { useQuickViewOptional } from '@/contexts/QuickViewContext';
+import type { Listing as QuickViewListing } from '@/types';
 
 interface Listing {
   id: string;
@@ -162,6 +165,26 @@ export function ListingGrid({
   currency,
   exchangeRates,
 }: ListingGridProps) {
+  const quickView = useQuickViewOptional();
+
+  // Pass listings to QuickView context for navigation between listings
+  useEffect(() => {
+    if (quickView && listings.length > 0) {
+      // Convert local Listing type to QuickViewListing type
+      const quickViewListings = listings.map(listing => ({
+        ...listing,
+        id: typeof listing.id === 'string' ? parseInt(listing.id, 10) : listing.id,
+        dealer: listing.dealers ? {
+          id: listing.dealers.id,
+          name: listing.dealers.name,
+          domain: listing.dealers.domain,
+        } : undefined,
+      })) as unknown as QuickViewListing[];
+
+      quickView.setListings(quickViewListings);
+    }
+  }, [listings, quickView]);
+
   if (isLoading) {
     return <LoadingSkeleton />;
   }
