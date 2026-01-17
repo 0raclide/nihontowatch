@@ -51,23 +51,6 @@ function formatPrice(value: number | undefined | null, currency: string = 'JPY')
   }).format(value);
 }
 
-function formatCompactPrice(value: number | undefined | null, currency: string = 'JPY'): { value: string; currency: string } {
-  if (value === undefined || value === null) {
-    return { value: 'POA', currency: '' };
-  }
-
-  const symbols: Record<string, string> = { JPY: '¥', USD: '$', EUR: '€' };
-  const symbol = symbols[currency] || currency;
-
-  if (value >= 1000000) {
-    return { value: `${(value / 1000000).toFixed(1)}M`, currency: symbol };
-  }
-  if (value >= 1000) {
-    return { value: `${Math.round(value / 1000)}K`, currency: symbol };
-  }
-  return { value: value.toLocaleString(), currency: symbol };
-}
-
 function getArtisanInfo(listing: Listing): { artisan: string | null; school: string | null; artisanLabel: string } {
   if (isTosogu(listing.item_type)) {
     return {
@@ -88,6 +71,20 @@ function getCertInfo(certType: string | undefined): { label: string; shortLabel:
   return CERT_CONFIG[certType] || null;
 }
 
+function formatTimeAgo(dateString: string): string {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffDays === 0) return 'Listed today';
+  if (diffDays === 1) return 'Listed yesterday';
+  if (diffDays < 7) return `Listed ${diffDays} days ago`;
+  if (diffDays < 30) return `Listed ${Math.floor(diffDays / 7)} weeks ago`;
+  if (diffDays < 365) return `Listed ${Math.floor(diffDays / 30)} months ago`;
+  return `Listed ${Math.floor(diffDays / 365)} years ago`;
+}
+
 // =============================================================================
 // COMPONENT
 // =============================================================================
@@ -99,7 +96,15 @@ export function QuickViewContent({ listing, onClose }: QuickViewContentProps) {
   const dealerName = listing.dealer?.name || 'Dealer';
   const isSword = isBlade(listing.item_type);
   const isTosoguItem = isTosogu(listing.item_type);
-  const priceInfo = formatCompactPrice(listing.price_value, listing.price_currency);
+
+  // Check for available measurements
+  const hasSwordMeasurements = isSword && (
+    listing.nagasa_cm || listing.sori_cm || listing.motohaba_cm ||
+    listing.sakihaba_cm || listing.kasane_cm || listing.nakago_cm || listing.weight_g
+  );
+  const hasTosoguMeasurements = isTosoguItem && (
+    listing.height_cm || listing.width_cm || listing.thickness_mm
+  );
 
   return (
     <div className="flex flex-col h-full">
@@ -107,7 +112,7 @@ export function QuickViewContent({ listing, onClose }: QuickViewContentProps) {
       <div className="flex-1 overflow-y-auto overscroll-contain">
         {/* Hero Section - Key info at a glance */}
         <div className="px-4 py-3 lg:px-5 lg:py-4 bg-linen/50">
-          {/* Top row: Type + Cert + Favorite */}
+          {/* Top row: Type + Cert + Watch */}
           <div className="flex items-center justify-between gap-2 mb-2">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-[11px] text-muted uppercase tracking-wide font-medium">
@@ -131,8 +136,7 @@ export function QuickViewContent({ listing, onClose }: QuickViewContentProps) {
           </div>
 
           {/* Price - Large and prominent */}
-          <div className="flex items-baseline gap-1 mb-2">
-            <span className="text-[11px] text-muted">{priceInfo.currency}</span>
+          <div className="mb-2">
             <span className={`text-2xl lg:text-3xl font-semibold tabular-nums ${
               listing.price_value ? 'text-ink' : 'text-muted'
             }`}>
@@ -140,14 +144,16 @@ export function QuickViewContent({ listing, onClose }: QuickViewContentProps) {
             </span>
           </div>
 
-          {/* Dealer */}
-          <div className="flex items-center gap-1.5 text-[12px] text-muted">
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-            </svg>
-            <span>{dealerName}</span>
-            {listing.dealer?.domain && (
-              <span className="text-muted/60">({listing.dealer.domain})</span>
+          {/* Dealer + Time listed */}
+          <div className="flex items-center justify-between text-[12px] text-muted">
+            <div className="flex items-center gap-1.5">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              </svg>
+              <span>{dealerName}</span>
+            </div>
+            {listing.first_seen_at && (
+              <span className="text-muted/70">{formatTimeAgo(listing.first_seen_at)}</span>
             )}
           </div>
         </div>
@@ -159,7 +165,7 @@ export function QuickViewContent({ listing, onClose }: QuickViewContentProps) {
             {artisan && (
               <div className="col-span-2">
                 <span className="text-[10px] uppercase tracking-wider text-muted block mb-0.5">{artisanLabel}</span>
-                <p className="text-[14px] text-ink font-medium truncate">{artisan}</p>
+                <p className="text-[14px] text-ink font-medium">{artisan}</p>
               </div>
             )}
 
@@ -167,7 +173,7 @@ export function QuickViewContent({ listing, onClose }: QuickViewContentProps) {
             {school && (
               <div>
                 <span className="text-[10px] uppercase tracking-wider text-muted block mb-0.5">School</span>
-                <p className="text-[13px] text-ink truncate">{school}</p>
+                <p className="text-[13px] text-ink">{school}</p>
               </div>
             )}
 
@@ -175,7 +181,7 @@ export function QuickViewContent({ listing, onClose }: QuickViewContentProps) {
             {listing.era && (
               <div>
                 <span className="text-[10px] uppercase tracking-wider text-muted block mb-0.5">Era</span>
-                <p className="text-[13px] text-ink truncate">{listing.era}</p>
+                <p className="text-[13px] text-ink">{listing.era}</p>
               </div>
             )}
 
@@ -183,15 +189,7 @@ export function QuickViewContent({ listing, onClose }: QuickViewContentProps) {
             {listing.province && (
               <div>
                 <span className="text-[10px] uppercase tracking-wider text-muted block mb-0.5">Province</span>
-                <p className="text-[13px] text-ink truncate">{listing.province}</p>
-              </div>
-            )}
-
-            {/* Nagasa (for swords) */}
-            {isSword && listing.nagasa_cm && (
-              <div>
-                <span className="text-[10px] uppercase tracking-wider text-muted block mb-0.5">Nagasa</span>
-                <p className="text-[13px] text-ink tabular-nums">{listing.nagasa_cm} cm</p>
+                <p className="text-[13px] text-ink">{listing.province}</p>
               </div>
             )}
 
@@ -199,43 +197,47 @@ export function QuickViewContent({ listing, onClose }: QuickViewContentProps) {
             {listing.mei_type && (
               <div>
                 <span className="text-[10px] uppercase tracking-wider text-muted block mb-0.5">Signature</span>
-                <p className="text-[13px] text-ink truncate">{listing.mei_type}</p>
+                <p className="text-[13px] text-ink">{listing.mei_type}</p>
               </div>
             )}
 
-            {/* Certification (full) */}
+            {/* Certification (full) with session */}
             {certInfo && (
-              <div>
+              <div className="col-span-2">
                 <span className="text-[10px] uppercase tracking-wider text-muted block mb-0.5">Papers</span>
-                <p className="text-[13px] text-ink">{certInfo.label}</p>
+                <p className="text-[13px] text-ink">
+                  {certInfo.label}
+                  {listing.cert_session && <span className="text-muted"> #{listing.cert_session}</span>}
+                  {listing.cert_organization && <span className="text-muted"> ({listing.cert_organization})</span>}
+                </p>
               </div>
             )}
           </div>
         </div>
 
-        {/* Detailed Specifications */}
-        {(isSword || isTosoguItem) && (
+        {/* Measurements Section */}
+        {(hasSwordMeasurements || hasTosoguMeasurements) && (
           <div className="px-4 py-3 lg:px-5 border-b border-border">
             <h3 className="text-[10px] uppercase tracking-wider text-muted mb-2 font-medium">Measurements</h3>
-            <div className="grid grid-cols-3 gap-x-3 gap-y-2">
+            <div className="flex flex-wrap gap-x-4 gap-y-1.5">
               {/* Sword specs */}
               {isSword && (
                 <>
-                  {listing.nagasa_cm && <SpecPill label="Nagasa" value={`${listing.nagasa_cm}cm`} />}
-                  {listing.sori_cm && <SpecPill label="Sori" value={`${listing.sori_cm}cm`} />}
-                  {listing.motohaba_cm && <SpecPill label="Motohaba" value={`${listing.motohaba_cm}cm`} />}
-                  {listing.sakihaba_cm && <SpecPill label="Sakihaba" value={`${listing.sakihaba_cm}cm`} />}
-                  {listing.kasane_cm && <SpecPill label="Kasane" value={`${listing.kasane_cm}cm`} />}
-                  {listing.nakago_cm && <SpecPill label="Nakago" value={`${listing.nakago_cm}cm`} />}
-                  {listing.weight_g && <SpecPill label="Weight" value={`${listing.weight_g}g`} />}
+                  {listing.nagasa_cm && <SpecItem label="Nagasa" value={`${listing.nagasa_cm}cm`} />}
+                  {listing.sori_cm && <SpecItem label="Sori" value={`${listing.sori_cm}cm`} />}
+                  {listing.motohaba_cm && <SpecItem label="Motohaba" value={`${listing.motohaba_cm}cm`} />}
+                  {listing.sakihaba_cm && <SpecItem label="Sakihaba" value={`${listing.sakihaba_cm}cm`} />}
+                  {listing.kasane_cm && <SpecItem label="Kasane" value={`${listing.kasane_cm}cm`} />}
+                  {listing.nakago_cm && <SpecItem label="Nakago" value={`${listing.nakago_cm}cm`} />}
+                  {listing.weight_g && <SpecItem label="Weight" value={`${listing.weight_g}g`} />}
                 </>
               )}
               {/* Tosogu specs */}
               {isTosoguItem && (
                 <>
-                  {listing.height_cm && <SpecPill label="H" value={`${listing.height_cm}cm`} />}
-                  {listing.width_cm && <SpecPill label="W" value={`${listing.width_cm}cm`} />}
-                  {listing.thickness_mm && <SpecPill label="D" value={`${listing.thickness_mm}mm`} />}
+                  {listing.height_cm && <SpecItem label="Height" value={`${listing.height_cm}cm`} />}
+                  {listing.width_cm && <SpecItem label="Width" value={`${listing.width_cm}cm`} />}
+                  {listing.thickness_mm && <SpecItem label="Thickness" value={`${listing.thickness_mm}mm`} />}
                 </>
               )}
             </div>
@@ -249,16 +251,26 @@ export function QuickViewContent({ listing, onClose }: QuickViewContentProps) {
           </div>
         )}
 
-        {/* Title - Searchable text */}
-        <div className="px-4 py-3 lg:px-5">
+        {/* Title */}
+        <div className="px-4 py-3 lg:px-5 border-b border-border">
           <h2 className="font-serif text-lg lg:text-xl text-ink leading-snug">
             {listing.title}
           </h2>
         </div>
+
+        {/* Description (if available) */}
+        {listing.description && (
+          <div className="px-4 py-3 lg:px-5">
+            <h3 className="text-[10px] uppercase tracking-wider text-muted mb-2 font-medium">Description</h3>
+            <p className="text-[13px] text-ink/80 leading-relaxed whitespace-pre-line line-clamp-6">
+              {listing.description}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Sticky CTA Button */}
-      <div className="px-4 py-3 lg:px-5 lg:py-4 bg-cream border-t border-border safe-area-bottom">
+      <div className="px-4 py-3 lg:px-5 lg:py-4 bg-cream border-t border-border safe-area-bottom shrink-0">
         <a
           href={listing.url}
           target="_blank"
@@ -279,9 +291,9 @@ export function QuickViewContent({ listing, onClose }: QuickViewContentProps) {
 // SUB-COMPONENTS
 // =============================================================================
 
-function SpecPill({ label, value }: { label: string; value: string }) {
+function SpecItem({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center gap-1.5 text-[11px]">
+    <div className="flex items-center gap-1.5 text-[12px]">
       <span className="text-muted">{label}</span>
       <span className="text-ink tabular-nums font-medium">{value}</span>
     </div>

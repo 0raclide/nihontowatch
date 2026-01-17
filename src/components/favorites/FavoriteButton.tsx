@@ -5,6 +5,7 @@ import { useFavorites } from '@/hooks/useFavorites';
 
 interface WatchButtonProps {
   listingId: number;
+  initialFavorited?: boolean;
   initialWatched?: boolean;
   className?: string;
   size?: 'sm' | 'md' | 'lg';
@@ -17,6 +18,7 @@ interface WatchButtonProps {
  */
 export function FavoriteButton({
   listingId,
+  initialFavorited,
   initialWatched,
   className = '',
   size = 'md',
@@ -26,9 +28,12 @@ export function FavoriteButton({
   const [isToggling, setIsToggling] = useState(false);
   const [showPrompt, setShowPrompt] = useState(false);
 
-  // Use initialWatched only if provided and hook is still loading
-  const watched = isLoading && initialWatched !== undefined
-    ? initialWatched
+  // Support both prop names for backwards compatibility
+  const initialValue = initialWatched ?? initialFavorited;
+
+  // Use initial value only if provided and hook is still loading
+  const watched = isLoading && initialValue !== undefined
+    ? initialValue
     : isFavorited(listingId);
 
   const handleClick = useCallback(async (e: React.MouseEvent) => {
@@ -137,14 +142,16 @@ export function FavoriteButton({
  */
 export function FavoriteButtonInline({
   listingId,
+  initialFavorited,
   initialWatched,
   className = '',
 }: Omit<WatchButtonProps, 'size'>) {
   const { isFavorited, toggleFavorite, isAuthenticated, isLoading } = useFavorites();
   const [isToggling, setIsToggling] = useState(false);
 
-  const watched = isLoading && initialWatched !== undefined
-    ? initialWatched
+  const initialValue = initialWatched ?? initialFavorited;
+  const watched = isLoading && initialValue !== undefined
+    ? initialValue
     : isFavorited(listingId);
 
   const handleClick = useCallback(async (e: React.MouseEvent) => {
