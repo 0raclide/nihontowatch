@@ -82,7 +82,9 @@ Triggered automatically when both thresholds are met.
 
 > **"Track what matters."**
 >
-> You're clearly discerning. Create an account to save the pieces you're watching, receive alerts when prices shift, and never lose track of a listing that caught your eye.
+> Create an account to save the pieces you're watching, receive alerts when prices shift, and never lose track of a listing that caught your eye.
+>
+> *Social proof: "Aggregating 27 dealers worldwide"*
 
 ### 2. Favorite (`favorite`)
 Triggered when user attempts to favorite a listing.
@@ -90,6 +92,8 @@ Triggered when user attempts to favorite a listing.
 > **"Keep this one close."**
 >
 > Create an account to save this piece to your collection. You'll be notified if the price changes or if it sells.
+>
+> *Social proof: "Price alerts delivered within minutes"*
 
 ### 3. Alert (`alert`)
 Triggered when user attempts to set up price/listing alerts.
@@ -97,6 +101,8 @@ Triggered when user attempts to set up price/listing alerts.
 > **"Never miss the moment."**
 >
 > Price drops and new listings move fast. Create an account to receive instant alerts tailored to your criteria.
+>
+> *Social proof: "Alerts delivered within minutes of changes"*
 
 ### 4. Price History (`priceHistory`)
 Triggered when user attempts to view price history.
@@ -104,6 +110,8 @@ Triggered when user attempts to view price history.
 > **"See the full picture."**
 >
 > Understanding price history helps you make informed decisions. Create an account to access historical data and market trends.
+>
+> *Social proof: "Price data across 27 dealers"*
 
 ---
 
@@ -125,10 +133,14 @@ src/
 │   ├── SignupPressureWrapper.tsx  # Auth-connected wrapper
 │   └── index.ts                   # Barrel exports
 
-tests/signup/
-├── storage.test.ts                # Storage utility tests
-├── SignupPressureContext.test.tsx # Context provider tests
-└── SignupModal.test.tsx           # Modal component tests
+tests/
+├── signup/
+│   ├── storage.test.ts                # Storage utility tests (80 tests)
+│   ├── SignupPressureContext.test.tsx # Context provider tests (55 tests)
+│   └── SignupModal.test.tsx           # Modal component tests (65 tests)
+│
+└── e2e/
+    └── signup-pressure.spec.ts        # Playwright e2e tests (29 tests)
 ```
 
 ---
@@ -327,19 +339,50 @@ export const SIGNUP_MODAL_COPY: SignupModalCopyVariants = {
 
 ## Testing
 
-Run the test suite:
+### Unit Tests (Vitest)
 
 ```bash
 npm test tests/signup
 ```
 
+### E2E Tests (Playwright)
+
+```bash
+npx playwright test tests/e2e/signup-pressure.spec.ts
+```
+
 ### Test Coverage
 
-| Area | Tests |
-|------|-------|
-| Storage utilities | Session management, cooldown logic, threshold checks |
-| Context provider | State management, triggers, dismissal behavior |
-| Modal component | Rendering, form behavior, accessibility, responsive layout |
+**Total: 229 tests**
+
+| Area | Count | Coverage |
+|------|-------|----------|
+| Storage utilities | 80 | Session management, cooldown logic, threshold checks, edge cases |
+| Context provider | 55 | State management, triggers, dismissal behavior, time tracking |
+| Modal component | 65 | Rendering, form behavior, accessibility, responsive layout |
+| E2E (Playwright) | 29 | Full user flows, threshold logic, dismissal, cooldowns, responsive |
+
+### What's Tested
+
+**Threshold Logic:**
+- Modal appears only when BOTH thresholds met (5 views AND 3 minutes)
+- Modal does NOT appear with only views or only time
+- Quick view counting increments correctly
+
+**Dismissal & Cooldown:**
+- All dismissal methods (backdrop, escape, close button, "Continue browsing")
+- 48-hour cooldown activates after dismissal
+- Max 3 dismissals before permanently suppressed
+
+**Responsive Design:**
+- Desktop: centered modal with backdrop blur
+- Mobile: bottom sheet with drag handle
+- Both viewports render correctly
+
+**Accessibility:**
+- ARIA attributes (role="dialog", aria-modal="true")
+- Accessible labels on all interactive elements
+- Keyboard navigation (Escape to close)
 
 ---
 

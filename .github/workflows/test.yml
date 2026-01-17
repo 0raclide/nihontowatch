@@ -8,7 +8,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  test:
+  unit-tests:
+    name: Unit Tests
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -26,7 +27,28 @@ jobs:
         run: npm ci
 
       - name: Run unit tests
-        run: npx vitest run tests/unit
+        run: npx vitest run tests/unit tests/api/browse.test.ts
+
+      - name: Run signup tests
+        run: npx vitest run tests/signup
+
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
 
       - name: Run integration tests
         env:
@@ -35,5 +57,54 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: npx vitest run tests/integration
 
-      - name: Build check
+  # Concordance tests run against production API to verify facet filtering
+  # These tests catch bugs where facet counts don't reflect user's filter selections
+  concordance-tests:
+    name: API Concordance Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    # Run after deploy completes (Vercel auto-deploys on push to main)
+    # Tests against production to verify the deployed code
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Wait for Vercel deployment
+        # Give Vercel time to deploy (typically 30-60 seconds)
+        run: sleep 90
+
+      - name: Run concordance tests against production
+        env:
+          TEST_API_URL: https://nihontowatch.com
+        run: npx vitest run tests/api/browse-concordance.test.ts --reporter=verbose
+
+  build-check:
+    name: Build Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
         run: npm run build

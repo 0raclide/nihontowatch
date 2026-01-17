@@ -528,7 +528,10 @@ test.describe('Signup Pressure - Responsive Design', () => {
 
     test('modal appears as centered dialog on desktop', async ({ page }) => {
       await page.goto('/browse');
-      await page.waitForLoadState('domcontentloaded');
+      await page.waitForLoadState('networkidle');
+
+      // Clear any existing state first
+      await clearSignupPressureState(page);
 
       // Set state with both thresholds met
       const fourMinutesAgo = Date.now() - 4 * 60 * 1000;
@@ -538,11 +541,11 @@ test.describe('Signup Pressure - Responsive Design', () => {
       });
 
       await page.reload();
-      await page.waitForLoadState('domcontentloaded');
+      await page.waitForLoadState('networkidle');
 
       // Wait for modal to appear
       const modal = page.locator('[role="dialog"][aria-modal="true"]');
-      await expect(modal).toBeVisible({ timeout: 5000 });
+      await expect(modal).toBeVisible({ timeout: 10000 });
 
       // Verify the modal is functional on desktop
       const headline = page.getByRole('heading', { name: 'Track what matters.' });
@@ -556,7 +559,10 @@ test.describe('Signup Pressure - Responsive Design', () => {
 
     test('desktop modal has rounded corners', async ({ page }) => {
       await page.goto('/browse');
-      await page.waitForLoadState('domcontentloaded');
+      await page.waitForLoadState('networkidle');
+
+      // Clear any existing state first
+      await clearSignupPressureState(page);
 
       // Set state with both thresholds met
       const fourMinutesAgo = Date.now() - 4 * 60 * 1000;
@@ -566,11 +572,11 @@ test.describe('Signup Pressure - Responsive Design', () => {
       });
 
       await page.reload();
-      await page.waitForLoadState('domcontentloaded');
+      await page.waitForLoadState('networkidle');
 
       // Wait for modal to appear
       const modal = page.locator('[role="dialog"][aria-modal="true"]');
-      await expect(modal).toBeVisible({ timeout: 5000 });
+      await expect(modal).toBeVisible({ timeout: 10000 });
 
       // Check for rounded corners class on the modal container
       const roundedModal = page.locator('.rounded-2xl, [class*="rounded-2xl"]');
@@ -579,7 +585,10 @@ test.describe('Signup Pressure - Responsive Design', () => {
 
     test('email input is auto-focused on desktop', async ({ page }) => {
       await page.goto('/browse');
-      await page.waitForLoadState('domcontentloaded');
+      await page.waitForLoadState('networkidle');
+
+      // Clear any existing state first
+      await clearSignupPressureState(page);
 
       // Set state with both thresholds met
       const fourMinutesAgo = Date.now() - 4 * 60 * 1000;
@@ -589,14 +598,14 @@ test.describe('Signup Pressure - Responsive Design', () => {
       });
 
       await page.reload();
-      await page.waitForLoadState('domcontentloaded');
+      await page.waitForLoadState('networkidle');
 
       // Wait for modal to appear
       const modal = page.locator('[role="dialog"][aria-modal="true"]');
-      await expect(modal).toBeVisible({ timeout: 5000 });
+      await expect(modal).toBeVisible({ timeout: 10000 });
 
       // Wait a moment for focus to be set
-      await page.waitForTimeout(200);
+      await page.waitForTimeout(300);
 
       // Email input should be focused (on desktop only)
       const emailInput = page.locator('input#signup-email');

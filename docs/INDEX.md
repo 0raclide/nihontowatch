@@ -9,10 +9,12 @@
 | [CROSS_REPO_REFERENCE.md](./CROSS_REPO_REFERENCE.md) | What lives where across all repos |
 | [DEALERS.md](./DEALERS.md) | Dealer-specific quirks, exclusions, maintenance notes |
 | [USER_ACCOUNTS_SYSTEM.md](./USER_ACCOUNTS_SYSTEM.md) | Auth, profiles, favorites, alerts, activity tracking, admin |
+| [SIGNUP_PRESSURE.md](./SIGNUP_PRESSURE.md) | Signup modal triggers, thresholds, copy variants, testing |
 | [MOBILE_UX.md](./MOBILE_UX.md) | Mobile interaction patterns, QuickView bottom sheet |
 | [SEARCH_FEATURES.md](./SEARCH_FEATURES.md) | Natural language search, filters, query syntax |
 | [FRESHNESS_SYSTEM.md](./FRESHNESS_SYSTEM.md) | Listing age verification, Wayback integration, confidence levels |
 | [OPTIMIZATION.md](./OPTIMIZATION.md) | Performance optimization, image loading, caching strategies |
+| [TESTING.md](./TESTING.md) | Test suite docs, concordance tests, CI/CD integration |
 
 ---
 
@@ -101,6 +103,14 @@
 3. Check `src/app/api/favorites/`, `src/app/api/alerts/` - API routes
 4. Check `src/app/admin/` - Admin dashboard pages
 
+### "I need to work on signup pressure/conversion"
+1. Read [SIGNUP_PRESSURE.md](./SIGNUP_PRESSURE.md) - Complete system docs
+2. Check `src/lib/signup/config.ts` - Thresholds and copy variants
+3. Check `src/contexts/SignupPressureContext.tsx` - State management
+4. Check `src/components/signup/SignupModal.tsx` - Modal UI
+5. Run `npm test tests/signup` - 200 unit tests
+6. Run `npx playwright test tests/e2e/signup-pressure.spec.ts` - 29 e2e tests
+
 ### "I need to add admin features"
 1. Read [USER_ACCOUNTS_SYSTEM.md#admin-dashboard](./USER_ACCOUNTS_SYSTEM.md#admin-dashboard)
 2. Check `src/app/admin/` - Existing admin pages
@@ -119,6 +129,14 @@
 3. Check `src/lib/wayback/` - Wayback Machine client
 4. Check `/api/admin/dealers/baseline` - Setting dealer baselines
 5. Check `/api/cron/wayback-check` - Background verification
+
+### "I need to run or write tests"
+1. Read [TESTING.md](./TESTING.md) - Complete testing documentation
+2. Run `npm test` - All tests
+3. Run `npm test -- browse-concordance` - Production API concordance tests
+4. Run `npm test -- browse` - Browse API unit tests
+5. Run `npx playwright test` - E2E tests
+6. Check `.github/workflows/test.yml` - CI configuration
 
 ---
 
@@ -142,8 +160,9 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for:
 | Dealer quirks & fixes | [DEALERS.md](./DEALERS.md) |
 | User accounts & auth | [USER_ACCOUNTS_SYSTEM.md](./USER_ACCOUNTS_SYSTEM.md) |
 | Admin dashboard | [USER_ACCOUNTS_SYSTEM.md#admin-dashboard](./USER_ACCOUNTS_SYSTEM.md#admin-dashboard) |
+| Signup pressure & conversion | [SIGNUP_PRESSURE.md](./SIGNUP_PRESSURE.md) |
 | Mobile UX & gestures | [MOBILE_UX.md](./MOBILE_UX.md) |
 | Search features | [SEARCH_FEATURES.md](./SEARCH_FEATURES.md) |
 | Listing freshness | [FRESHNESS_SYSTEM.md](./FRESHNESS_SYSTEM.md) |
-| Testing | Oshi-scrapper: `pytest tests/`, Nihontowatch: `npx playwright test` |
+| Testing | [TESTING.md](./TESTING.md) - Unit, concordance, integration tests |
 | Deployment | [CLAUDE.md](../CLAUDE.md#deployment) |
