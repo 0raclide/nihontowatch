@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -33,9 +33,12 @@ export async function GET() {
       return NextResponse.json({ error: authResult.error }, { status: authResult.status });
     }
 
+    // Use service client to bypass RLS for scraper tables
+    const serviceClient = createServiceClient();
+
     // Try to get recent scrape runs (table may not exist)
     try {
-      const { data: runs, error } = await supabase
+      const { data: runs, error } = await serviceClient
         .from('scrape_runs')
         .select('id, run_type, status, started_at, completed_at, urls_processed, errors, dealers(name)')
         .order('started_at', { ascending: false })

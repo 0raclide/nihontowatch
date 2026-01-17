@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -33,11 +33,14 @@ export async function GET() {
       return NextResponse.json({ error: authResult.error }, { status: authResult.status });
     }
 
+    // Use service client to bypass RLS for scraper tables
+    const serviceClient = createServiceClient();
+
     // Try to get extraction metrics (table may not exist)
     try {
       const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
-      const { data: metrics, error } = await supabase
+      const { data: metrics, error } = await serviceClient
         .from('extraction_metrics')
         .select('dealer_id, qa_status, validation_errors, dealers(name)')
         .gte('extracted_at', sevenDaysAgo);

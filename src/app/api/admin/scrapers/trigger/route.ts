@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/ban-ts-comment */
 // @ts-nocheck
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -35,20 +35,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: authResult.error }, { status: authResult.status });
     }
 
+    // Use service client to bypass RLS for scraper tables
+    const serviceClient = createServiceClient();
+
     const body = await request.json();
     const { dealer, limit = 50 } = body;
 
     // Try to create a scrape_run record (table may not exist)
     try {
       const { data: dealerData } = dealer
-        ? await supabase
+        ? await serviceClient
             .from('dealers')
             .select('id')
             .eq('name', dealer)
             .single()
         : { data: null };
 
-      const { data: run, error } = await supabase
+      const { data: run, error } = await serviceClient
         .from('scrape_runs')
         .insert({
           dealer_id: dealerData?.id || null,

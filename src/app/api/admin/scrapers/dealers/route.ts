@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -32,9 +32,12 @@ export async function GET() {
       return NextResponse.json({ error: authResult.error }, { status: authResult.status });
     }
 
+    // Use service client to bypass RLS for scraper tables
+    const serviceClient = createServiceClient();
+
     // Try to get active dealers (table may not exist)
     try {
-      const { data: dealers, error } = await supabase
+      const { data: dealers, error } = await serviceClient
         .from('dealers')
         .select('id, name')
         .eq('is_active', true)

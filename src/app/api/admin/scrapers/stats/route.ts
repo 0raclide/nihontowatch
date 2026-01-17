@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/ban-ts-comment */
 // @ts-nocheck
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -34,10 +34,13 @@ export async function GET() {
       return NextResponse.json({ error: authResult.error }, { status: authResult.status });
     }
 
+    // Use service client to bypass RLS for scraper tables
+    const serviceClient = createServiceClient();
+
     // Get listings stats (these tables exist)
     const [listingsResult, availableResult] = await Promise.all([
-      supabase.from('listings').select('id', { count: 'exact', head: true }),
-      supabase.from('listings').select('id', { count: 'exact', head: true }).eq('is_available', true),
+      serviceClient.from('listings').select('id', { count: 'exact', head: true }),
+      serviceClient.from('listings').select('id', { count: 'exact', head: true }).eq('is_available', true),
     ]);
 
     // Try to get scraper-specific stats (tables may not exist)
@@ -46,7 +49,7 @@ export async function GET() {
     let qaPassRate = 0;
 
     try {
-      const pendingResult = await supabase
+      const pendingResult = await serviceClient
         .from('discovered_urls')
         .select('id', { count: 'exact', head: true })
         .eq('is_scraped', false);
@@ -58,7 +61,7 @@ export async function GET() {
     }
 
     try {
-      const lastRunResult = await supabase
+      const lastRunResult = await serviceClient
         .from('scrape_runs')
         .select('completed_at, dealers(name)')
         .eq('status', 'completed')
@@ -76,7 +79,7 @@ export async function GET() {
     }
 
     try {
-      const qaResult = await supabase
+      const qaResult = await serviceClient
         .from('extraction_metrics')
         .select('qa_status')
         .gte('extracted_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
