@@ -17,9 +17,6 @@ if (!existsSync(configPath)) {
 }
 const testConfig = JSON.parse(readFileSync(configPath, 'utf-8'));
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-
 test.describe('Profile and Menu Navigation', () => {
   test.describe.configure({ mode: 'serial' });
 
@@ -34,101 +31,38 @@ test.describe('Profile and Menu Navigation', () => {
     await page.goto('/');
     await page.waitForLoadState('networkidle');
 
-    console.log('Authenticating via Supabase API from browser...');
+    console.log('Logging in via UI with test account...');
 
-    // Sign in using the app's Supabase client via window object
-    // First, we need to access the client and call signInWithPassword
-    const authResult = await page.evaluate(async ({ url, key, email, password }) => {
-      try {
-        // Use the Supabase REST API to get tokens
-        const response = await fetch(`${url}/auth/v1/token?grant_type=password`, {
-          method: 'POST',
-          headers: {
-            'apikey': key,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ email, password }),
-        });
+    // Click Sign In button in the header to open modal
+    const signInButton = page.locator('nav button:has-text("Sign In")');
+    await signInButton.click();
+    await page.waitForTimeout(500);
 
-        if (!response.ok) {
-          const error = await response.json();
-          return { error: error.error_description || error.message || 'Auth failed' };
-        }
+    // Enter test email (ends in .local, triggers password flow)
+    const emailInput = page.locator('input#email');
+    await emailInput.fill(testConfig.email);
 
-        const data = await response.json();
+    // Click Continue
+    const continueButton = page.locator('button[type="submit"]:has-text("Continue with Email")');
+    await continueButton.click();
+    await page.waitForTimeout(500);
 
-        // Now we need to set the session in a way the app recognizes
-        // The @supabase/ssr createBrowserClient stores in:
-        // 1. Cookies (for SSR)
-        // 2. localStorage (for client)
+    // Should now show password step
+    const passwordInput = page.locator('input#password');
+    await expect(passwordInput).toBeVisible({ timeout: 5000 });
+    await passwordInput.fill(testConfig.password);
 
-        // Set the auth in localStorage with the proper Supabase format
-        const projectRef = new URL(url).hostname.split('.')[0];
-        const storageKey = `sb-${projectRef}-auth-token`;
+    // Click Sign In button in the modal (form submit)
+    const signInSubmit = page.locator('form button[type="submit"]:has-text("Sign In")');
+    await signInSubmit.click();
 
-        localStorage.setItem(storageKey, JSON.stringify({
-          access_token: data.access_token,
-          refresh_token: data.refresh_token,
-          expires_at: Math.floor(Date.now() / 1000) + data.expires_in,
-          expires_in: data.expires_in,
-          token_type: data.token_type,
-          user: data.user,
-        }));
+    // Wait for success message and modal close
+    await page.waitForTimeout(2000);
 
-        // Also set the app's custom auth cache
-        localStorage.setItem('nihontowatch_auth_cache', JSON.stringify({
-          state: {
-            isAdmin: true, // We know test user is admin
-            profile: {
-              id: data.user.id,
-              email: data.user.email,
-              role: 'admin',
-              display_name: 'Test Admin',
-            },
-          },
-          timestamp: Date.now(),
-        }));
-
-        // Set cookies too - this is what @supabase/ssr middleware reads
-        // The cookie format is base64-encoded JSON, chunked if large
-        const cookieData = JSON.stringify({
-          access_token: data.access_token,
-          refresh_token: data.refresh_token,
-          expires_at: Math.floor(Date.now() / 1000) + data.expires_in,
-          expires_in: data.expires_in,
-          token_type: data.token_type,
-          user: data.user,
-        });
-        const encodedCookie = btoa(cookieData);
-
-        // Set as cookie - note: we can't set httpOnly from JS
-        document.cookie = `sb-${projectRef}-auth-token=${encodedCookie}; path=/; SameSite=Lax`;
-
-        return { success: true, email: data.user?.email };
-      } catch (err) {
-        return { error: String(err) };
-      }
-    }, {
-      url: supabaseUrl,
-      key: supabaseKey,
-      email: testConfig.email,
-      password: testConfig.password,
-    });
-
-    if (authResult.error) {
-      throw new Error(`Auth failed: ${authResult.error}`);
-    }
-
-    console.log('Authenticated as:', authResult.email);
-
-    // Reload to let the app pick up the auth
-    await page.reload();
-    await page.waitForLoadState('networkidle');
-
-    // Wait for auth to initialize
+    // Wait for auth to be recognized (modal should close, user menu should appear)
     await page.waitForTimeout(3000);
 
-    console.log('Auth setup complete');
+    console.log('Login attempt complete');
   });
 
   test.afterAll(async () => {
@@ -140,26 +74,14 @@ test.describe('Profile and Menu Navigation', () => {
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(2000);
 
-    // Check if user menu (avatar) is visible
-    const userMenu = page.locator('[aria-haspopup="true"]').first();
+    // Check if user menu (avatar) is visible - look for avatar with initials
+    const userMenu = page.locator('button[aria-haspopup="true"]').filter({ has: page.locator('.rounded-full') }).last();
     const isLoggedIn = await userMenu.isVisible({ timeout: 10000 }).catch(() => false);
 
     if (!isLoggedIn) {
       // Debug info
-      const projectRef = new URL(supabaseUrl).hostname.split('.')[0];
-      const storageKey = `sb-${projectRef}-auth-token`;
-
-      const authData = await page.evaluate((key) => localStorage.getItem(key), storageKey);
-      console.log('Auth data in localStorage:', authData ? 'present' : 'missing');
-
-      // Check for auth loading indicator
-      const isLoading = await page.locator('[class*="animate-spin"]').isVisible().catch(() => false);
-      console.log('Loading indicator visible:', isLoading);
-
-      // Check for Sign In button
-      const signInVisible = await page.locator('text="Sign In"').isVisible().catch(() => false);
+      const signInVisible = await page.locator('button:has-text("Sign In")').isVisible().catch(() => false);
       console.log('Sign In button visible:', signInVisible);
-
       await page.screenshot({ path: 'test-results/not-logged-in.png' });
     }
 
@@ -168,7 +90,9 @@ test.describe('Profile and Menu Navigation', () => {
   });
 
   test('should open user dropdown and see profile link', async () => {
-    const userMenuButton = page.locator('[aria-haspopup="true"]').first();
+    // Click on the user avatar button (not the Admin dropdown)
+    // The user avatar has a rounded-full div with initials
+    const userMenuButton = page.locator('button[aria-haspopup="true"]').filter({ has: page.locator('.rounded-full') }).last();
     await userMenuButton.click();
     await page.waitForTimeout(500);
 
@@ -215,7 +139,7 @@ test.describe('Profile and Menu Navigation', () => {
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(1000);
 
-    const userMenu = page.locator('[aria-haspopup="true"]');
+    const userMenu = page.locator('button[aria-haspopup="true"]').filter({ has: page.locator('.rounded-full') }).last();
     const isLoggedIn = await userMenu.isVisible({ timeout: 5000 }).catch(() => false);
 
     if (!isLoggedIn) {
@@ -231,7 +155,7 @@ test.describe('Profile and Menu Navigation', () => {
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(1000);
 
-    const userMenu = page.locator('[aria-haspopup="true"]');
+    const userMenu = page.locator('button[aria-haspopup="true"]').filter({ has: page.locator('.rounded-full') }).last();
     const isLoggedIn = await userMenu.isVisible({ timeout: 5000 }).catch(() => false);
 
     expect(isLoggedIn).toBe(true);
@@ -257,7 +181,7 @@ test.describe('Profile and Menu Navigation', () => {
       await page.waitForLoadState('domcontentloaded');
       await page.waitForTimeout(500);
 
-      const userMenu = page.locator('[aria-haspopup="true"]');
+      const userMenu = page.locator('button[aria-haspopup="true"]').filter({ has: page.locator('.rounded-full') }).last();
       const isLoggedIn = await userMenu.isVisible({ timeout: 5000 }).catch(() => false);
 
       if (!isLoggedIn) {
@@ -275,8 +199,8 @@ test.describe('Profile and Menu Navigation', () => {
     await page.goto('/');
     await page.waitForLoadState('networkidle');
 
-    // Open dropdown
-    const userMenuButton = page.locator('[aria-haspopup="true"]').first();
+    // Open user dropdown (avatar button, not Admin dropdown)
+    const userMenuButton = page.locator('button[aria-haspopup="true"]').filter({ has: page.locator('.rounded-full') }).last();
     await userMenuButton.click();
     await page.waitForTimeout(500);
 

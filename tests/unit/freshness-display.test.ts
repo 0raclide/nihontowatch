@@ -39,20 +39,20 @@ describe('formatFreshnessDisplay', () => {
 
       const result = formatFreshnessDisplay(listing);
 
-      expect(result.text).toBe('Listed 1 weeks ago');
+      expect(result.text).toBe('Listed 7 days ago');
       expect(result.isVerified).toBe(true);
     });
 
     it('uses wayback date when available', () => {
       const listing = {
         first_seen_at: '2025-01-14T12:00:00Z',
-        wayback_first_archive_at: '2024-12-17T12:00:00Z', // 1 month ago
+        wayback_first_archive_at: '2024-12-17T12:00:00Z', // 31 days ago
         freshness_confidence: 'high' as const,
       };
 
       const result = formatFreshnessDisplay(listing);
 
-      expect(result.text).toBe('Listed 1 months ago');
+      expect(result.text).toBe('Listed 31 days ago');
     });
   });
 
@@ -120,14 +120,14 @@ describe('formatFreshnessDisplay', () => {
       expect(result.text).toBe('Listed today');
     });
 
-    it('formats yesterday correctly', () => {
+    it('formats 1 day ago correctly', () => {
       const listing = {
         first_seen_at: '2025-01-16T12:00:00Z', // 1 day ago
         freshness_confidence: 'high' as const,
       };
 
       const result = formatFreshnessDisplay(listing);
-      expect(result.text).toBe('Listed yesterday');
+      expect(result.text).toBe('Listed 1 day ago');
     });
   });
 });

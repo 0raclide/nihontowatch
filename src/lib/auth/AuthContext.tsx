@@ -32,6 +32,8 @@ interface AuthContextValue extends AuthState {
   signInWithEmail: (email: string) => Promise<{ error: AuthError | null }>;
   /** Verify the OTP code sent to email */
   verifyOtp: (email: string, token: string) => Promise<{ error: AuthError | null }>;
+  /** Sign in with email and password (for test accounts) */
+  signInWithPassword: (email: string, password: string) => Promise<{ error: AuthError | null }>;
   /** Sign out the current user */
   signOut: () => Promise<void>;
   /** Refresh the user's profile from the database */
@@ -384,6 +386,30 @@ export function AuthProvider({ children }: AuthProviderProps) {
     [supabase]
   );
 
+  // Sign in with password (for test accounts)
+  const signInWithPassword = useCallback(
+    async (
+      email: string,
+      password: string
+    ): Promise<{ error: AuthError | null }> => {
+      try {
+        const { error } = await supabase.auth.signInWithPassword({
+          email: email.trim().toLowerCase(),
+          password,
+        });
+        return { error };
+      } catch (err) {
+        return {
+          error: {
+            message: err instanceof Error ? err.message : 'Sign in failed',
+            status: 500,
+          } as AuthError,
+        };
+      }
+    },
+    [supabase]
+  );
+
   // Sign out
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();
@@ -401,6 +427,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     ...state,
     signInWithEmail,
     verifyOtp,
+    signInWithPassword,
     signOut,
     refreshProfile,
   };

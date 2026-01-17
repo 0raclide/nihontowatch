@@ -3,12 +3,13 @@
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
+import { createClient } from '@/lib/supabase/client';
 
 // ============================================================================
 // Types
 // ============================================================================
 
-type Step = 'email' | 'otp';
+type Step = 'email' | 'otp' | 'password';
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -20,16 +21,18 @@ interface LoginModalProps {
 // ============================================================================
 
 export function LoginModal({ isOpen, onClose }: LoginModalProps) {
-  const { signInWithEmail, verifyOtp } = useAuth();
+  const { signInWithEmail, verifyOtp, signInWithPassword } = useAuth();
 
   const [step, setStep] = useState<Step>('email');
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const emailInputRef = useRef<HTMLInputElement>(null);
+  const passwordInputRef = useRef<HTMLInputElement>(null);
   const otpInputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const submitInProgress = useRef(false);
 
@@ -49,12 +52,20 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
     }
   }, [step]);
 
+  // Focus password input when switching to password step
+  useEffect(() => {
+    if (step === 'password') {
+      setTimeout(() => passwordInputRef.current?.focus(), 100);
+    }
+  }, [step]);
+
   // Reset state when modal closes
   useEffect(() => {
     if (!isOpen) {
       setTimeout(() => {
         setStep('email');
         setEmail('');
+        setPassword('');
         setOtp(['', '', '', '', '', '']);
         setError(null);
         setSuccessMessage(null);
@@ -74,10 +85,22 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
     }
   }, [isOpen, onClose]);
 
+  // Check if email is a test account (uses password instead of OTP)
+  function isTestAccount(emailAddr: string): boolean {
+    return emailAddr.toLowerCase().endsWith('.local');
+  }
+
   // Handle email submission
   async function handleEmailSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+
+    // For test accounts, go directly to password step
+    if (isTestAccount(email)) {
+      setStep('password');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -189,6 +212,43 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
     handleOtpSubmit(otp.join(''));
   }
 
+  // Handle password submission
+  async function handlePasswordSubmit(e: React.FormEvent) {
+    e.preventDefault();
+
+    if (submitInProgress.current || isLoading) {
+      return;
+    }
+
+    if (!password) {
+      setError('Please enter your password.');
+      return;
+    }
+
+    submitInProgress.current = true;
+    setError(null);
+    setIsLoading(true);
+
+    try {
+      const { error: signInError } = await signInWithPassword(email, password);
+
+      if (signInError) {
+        setError(signInError.message);
+        setPassword('');
+      } else {
+        setSuccessMessage('Login successful!');
+        setTimeout(() => {
+          onClose();
+        }, 500);
+      }
+    } catch {
+      setError('An unexpected error occurred. Please try again.');
+    } finally {
+      setIsLoading(false);
+      submitInProgress.current = false;
+    }
+  }
+
   if (!isOpen) return null;
 
   return (
@@ -233,12 +293,14 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
           {/* Header */}
           <div className="text-center mb-6">
             <h2 className="font-serif text-2xl text-ink mb-2">
-              {step === 'email' ? 'Welcome' : 'Enter Code'}
+              {step === 'email' ? 'Welcome' : step === 'otp' ? 'Enter Code' : 'Enter Password'}
             </h2>
             <p className="text-sm text-muted">
               {step === 'email'
                 ? 'Sign in with your email address'
-                : `We sent a code to ${email}`}
+                : step === 'otp'
+                ? `We sent a code to ${email}`
+                : `Sign in as ${email}`}
             </p>
           </div>
 
@@ -346,6 +408,60 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                 onClick={() => {
                   setStep('email');
                   setOtp(['', '', '', '', '', '']);
+                  setError(null);
+                }}
+                disabled={isLoading}
+                className="w-full py-2 text-sm text-muted hover:text-ink transition-colors disabled:opacity-50"
+              >
+                Use a different email
+              </button>
+            </form>
+          )}
+
+          {/* Password Step (for test accounts) */}
+          {step === 'password' && (
+            <form onSubmit={handlePasswordSubmit} className="space-y-4">
+              <div>
+                <label
+                  htmlFor="password"
+                  className="block text-xs uppercase tracking-wider text-muted mb-2"
+                >
+                  Password
+                </label>
+                <input
+                  ref={passwordInputRef}
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter your password"
+                  required
+                  disabled={isLoading}
+                  className="w-full px-4 py-3 bg-linen/50 border border-border rounded-lg text-ink placeholder:text-muted/50 focus:outline-none focus:ring-2 focus:ring-gold/50 focus:border-gold transition-all disabled:opacity-50"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={isLoading || !password}
+                className="w-full py-3 bg-gold hover:bg-gold/90 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {isLoading ? (
+                  <>
+                    <LoadingSpinner />
+                    Signing in...
+                  </>
+                ) : (
+                  'Sign In'
+                )}
+              </button>
+
+              {/* Back button */}
+              <button
+                type="button"
+                onClick={() => {
+                  setStep('email');
+                  setPassword('');
                   setError(null);
                 }}
                 disabled={isLoading}
