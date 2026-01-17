@@ -18,7 +18,7 @@ function HeaderContent() {
   const router = useRouter();
   const currentQuery = searchParams.get('q') || '';
   const loginParam = searchParams.get('login');
-  const { user, isLoading: authLoading, isAdmin } = useAuth();
+  const { user, profile, isLoading: authLoading, isAdmin } = useAuth();
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [showAdminMenu, setShowAdminMenu] = useState(false);
@@ -242,7 +242,8 @@ function HeaderContent() {
               )}
               <div className="h-3 w-px bg-border" />
               {/* Auth: Login button or User menu */}
-              {authLoading ? (
+              {authLoading || (profile && !user) ? (
+                // Show skeleton while loading or while we have cached profile but no user yet
                 <div className="w-8 h-8 rounded-full bg-linen/50 animate-pulse" />
               ) : user ? (
                 <UserMenu />

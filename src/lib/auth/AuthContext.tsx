@@ -51,13 +51,62 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
+// Key for localStorage
+const AUTH_CACHE_KEY = 'nihontowatch_auth_cache';
+
+// Helper to safely access localStorage
+function getAuthCache(): Partial<AuthState> | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const cached = localStorage.getItem(AUTH_CACHE_KEY);
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      // Only use cache if it's less than 1 hour old
+      if (parsed.timestamp && Date.now() - parsed.timestamp < 3600000) {
+        return parsed.state;
+      }
+    }
+  } catch {
+    // Ignore localStorage errors
+  }
+  return null;
+}
+
+function setAuthCache(state: AuthState) {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(AUTH_CACHE_KEY, JSON.stringify({
+      state: {
+        isAdmin: state.isAdmin,
+        profile: state.profile,
+        // Don't cache sensitive session data
+      },
+      timestamp: Date.now(),
+    }));
+  } catch {
+    // Ignore localStorage errors
+  }
+}
+
+function clearAuthCache() {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.removeItem(AUTH_CACHE_KEY);
+  } catch {
+    // Ignore localStorage errors
+  }
+}
+
 export function AuthProvider({ children }: AuthProviderProps) {
+  // Restore cached state immediately to prevent flash
+  const cachedState = getAuthCache();
+
   const [state, setState] = useState<AuthState>({
     user: null,
-    profile: null,
+    profile: cachedState?.profile || null,
     session: null,
     isLoading: true,
-    isAdmin: false,
+    isAdmin: cachedState?.isAdmin || false,
   });
 
   const supabase = createClient();
@@ -108,13 +157,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
         if (session?.user) {
           const profile = await fetchProfile(session.user.id);
           console.log('[Auth] Setting state with profile, isAdmin:', profile?.role === 'admin');
-          setState({
+          const newState = {
             user: session.user,
             profile,
             session,
             isLoading: false,
             isAdmin: profile?.role === 'admin',
-          });
+          };
+          setState(newState);
+          setAuthCache(newState);
         } else {
           console.log('[Auth] No session, setting logged out state');
           setState({
@@ -124,6 +175,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
             isLoading: false,
             isAdmin: false,
           });
+          clearAuthCache();
         }
       } catch (error) {
         console.error('Error initializing auth:', error);
@@ -139,13 +191,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session?.user) {
         const profile = await fetchProfile(session.user.id);
-        setState({
+        const newState = {
           user: session.user,
           profile,
           session,
           isLoading: false,
           isAdmin: profile?.role === 'admin',
-        });
+        };
+        setState(newState);
+        setAuthCache(newState);
       } else if (event === 'SIGNED_OUT') {
         setState({
           user: null,
@@ -154,6 +208,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           isLoading: false,
           isAdmin: false,
         });
+        clearAuthCache();
       } else if (event === 'TOKEN_REFRESHED' && session?.user) {
         setState((prev) => ({
           ...prev,
@@ -217,6 +272,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       isLoading: false,
       isAdmin: false,
     });
+    clearAuthCache();
   }, [supabase]);
 
   const value: AuthContextValue = {
