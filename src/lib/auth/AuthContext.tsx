@@ -165,15 +165,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Sign in with email (sends magic code)
   const signInWithEmail = useCallback(
     async (email: string): Promise<{ error: AuthError | null }> => {
-      // Use environment variable for redirect URL, fallback to window.location.origin
-      const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ||
-        (typeof window !== 'undefined' ? window.location.origin : 'https://nihontowatch.com');
-      const redirectUrl = `${baseUrl}/auth/callback`;
-
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: redirectUrl,
           shouldCreateUser: true,
         },
       });
@@ -193,30 +187,52 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const cleanEmail = email.trim().toLowerCase();
       const cleanToken = token.trim();
 
-      // Try 'email' type first (for 6-digit OTP codes)
-      const { error: emailError } = await supabase.auth.verifyOtp({
-        email: cleanEmail,
-        token: cleanToken,
-        type: 'email',
-      });
+      // Use direct API call to avoid any client-side interference
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-      if (!emailError) {
+      try {
+        const response = await fetch(`${supabaseUrl}/auth/v1/verify`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': supabaseKey || '',
+          },
+          body: JSON.stringify({
+            email: cleanEmail,
+            token: cleanToken,
+            type: 'email',
+          }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          return {
+            error: {
+              message: data.error_description || data.msg || data.error || 'Verification failed',
+              status: response.status,
+            } as AuthError,
+          };
+        }
+
+        // If successful, we need to set the session
+        if (data.access_token) {
+          await supabase.auth.setSession({
+            access_token: data.access_token,
+            refresh_token: data.refresh_token,
+          });
+        }
+
         return { error: null };
+      } catch (err) {
+        return {
+          error: {
+            message: err instanceof Error ? err.message : 'Network error',
+            status: 500,
+          } as AuthError,
+        };
       }
-
-      // If 'email' type fails, try 'magiclink' type (for link tokens)
-      const { error: magicLinkError } = await supabase.auth.verifyOtp({
-        email: cleanEmail,
-        token: cleanToken,
-        type: 'magiclink',
-      });
-
-      if (!magicLinkError) {
-        return { error: null };
-      }
-
-      // Return the original error for better debugging
-      return { error: emailError };
     },
     [supabase]
   );
