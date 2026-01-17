@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
-import Link from 'next/link';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth/AuthContext';
 
 // ============================================================================
@@ -12,6 +12,14 @@ export function UserMenu() {
   const { user, profile, isAdmin, signOut } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+
+  // Navigate and close menu - use window.location for reliable navigation
+  const navigateTo = useCallback((href: string) => {
+    setIsOpen(false);
+    // Use window.location for reliable navigation that bypasses React state issues
+    window.location.href = href;
+  }, []);
 
   // Close on click outside
   useEffect(() => {
@@ -100,40 +108,36 @@ export function UserMenu() {
 
           {/* Menu Items */}
           <div className="py-1">
-            <MenuLink
-              href="/profile"
+            <MenuButton
               icon={<UserIcon />}
-              onClick={() => setIsOpen(false)}
+              onClick={() => navigateTo('/profile')}
             >
               Profile
-            </MenuLink>
+            </MenuButton>
 
-            <MenuLink
-              href="/favorites"
+            <MenuButton
               icon={<HeartIcon />}
-              onClick={() => setIsOpen(false)}
+              onClick={() => navigateTo('/favorites')}
             >
               Favorites
-            </MenuLink>
+            </MenuButton>
 
-            <MenuLink
-              href="/alerts"
+            <MenuButton
               icon={<BellIcon />}
-              onClick={() => setIsOpen(false)}
+              onClick={() => navigateTo('/alerts')}
             >
               Alerts
-            </MenuLink>
+            </MenuButton>
 
             {isAdmin && (
               <>
                 <div className="h-px bg-border my-1" />
-                <MenuLink
-                  href="/admin"
+                <MenuButton
                   icon={<ShieldIcon />}
-                  onClick={() => setIsOpen(false)}
+                  onClick={() => navigateTo('/admin')}
                 >
                   Admin
-                </MenuLink>
+                </MenuButton>
               </>
             )}
           </div>
@@ -155,26 +159,24 @@ export function UserMenu() {
 }
 
 // ============================================================================
-// Menu Link Component
+// Menu Button Component
 // ============================================================================
 
-interface MenuLinkProps {
-  href: string;
+interface MenuButtonProps {
   icon: React.ReactNode;
   children: React.ReactNode;
-  onClick?: () => void;
+  onClick: () => void;
 }
 
-function MenuLink({ href, icon, children, onClick }: MenuLinkProps) {
+function MenuButton({ icon, children, onClick }: MenuButtonProps) {
   return (
-    <Link
-      href={href}
+    <button
       onClick={onClick}
-      className="flex items-center gap-3 px-4 py-2.5 text-sm text-muted hover:text-ink hover:bg-hover transition-colors"
+      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-muted hover:text-ink hover:bg-hover transition-colors text-left"
     >
       {icon}
       {children}
-    </Link>
+    </button>
   );
 }
 

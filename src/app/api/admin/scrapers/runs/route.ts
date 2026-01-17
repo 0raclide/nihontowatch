@@ -40,7 +40,7 @@ export async function GET() {
     try {
       const { data: runs, error } = await serviceClient
         .from('scrape_runs')
-        .select('id, run_type, status, started_at, completed_at, urls_processed, errors, dealers(name)')
+        .select('id, run_type, status, started_at, completed_at, urls_processed, new_listings, updated_listings, errors, error_message, dealers(name)')
         .order('started_at', { ascending: false })
         .limit(20);
 
@@ -53,11 +53,16 @@ export async function GET() {
       // Format runs for frontend
       const formattedRuns = (runs || []).map((run: any) => ({
         id: run.id,
+        runType: run.run_type,
         dealer: run.dealers?.name || 'All Dealers',
         status: run.status,
         processed: run.urls_processed || 0,
+        newListings: run.new_listings || 0,
+        updatedListings: run.updated_listings || 0,
         errors: run.errors || 0,
+        errorMessage: run.error_message || null,
         startedAt: run.started_at,
+        completedAt: run.completed_at,
       }));
 
       return NextResponse.json({ runs: formattedRuns });

@@ -15,11 +15,16 @@ interface ScraperStats {
 
 interface ScrapeRun {
   id: number;
+  runType: 'discovery' | 'scrape' | 'full';
   dealer: string;
-  status: 'running' | 'completed' | 'failed';
+  status: 'running' | 'completed' | 'failed' | 'pending';
   processed: number;
+  newListings: number;
+  updatedListings: number;
   errors: number;
+  errorMessage: string | null;
   startedAt: string;
+  completedAt: string | null;
 }
 
 interface QAIssue {
@@ -317,7 +322,7 @@ export default function ScrapersAdmin() {
       {/* Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Recent Runs */}
-        <div className="bg-cream rounded-xl border border-border">
+        <div className="bg-cream rounded-xl border border-border lg:col-span-2">
           <div className="px-6 py-4 border-b border-border">
             <h2 className="font-serif text-lg text-ink">Recent Runs</h2>
           </div>
@@ -330,30 +335,62 @@ export default function ScrapersAdmin() {
               <table className="w-full">
                 <thead>
                   <tr className="text-left text-xs uppercase tracking-wider text-muted border-b border-border">
-                    <th className="px-6 py-3 font-medium">Dealer</th>
-                    <th className="px-6 py-3 font-medium">Time</th>
-                    <th className="px-6 py-3 font-medium">Status</th>
-                    <th className="px-6 py-3 font-medium text-right">Processed</th>
+                    <th className="px-4 py-3 font-medium">Type</th>
+                    <th className="px-4 py-3 font-medium">Dealer</th>
+                    <th className="px-4 py-3 font-medium">Time</th>
+                    <th className="px-4 py-3 font-medium">Status</th>
+                    <th className="px-4 py-3 font-medium text-right">Processed</th>
+                    <th className="px-4 py-3 font-medium text-right">New</th>
+                    <th className="px-4 py-3 font-medium">Details</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {runs.slice(0, 10).map((run) => (
-                    <tr key={run.id} className="hover:bg-linen/50">
-                      <td className="px-6 py-3 text-sm text-ink">{run.dealer}</td>
-                      <td className="px-6 py-3 text-sm text-muted">{formatTimeAgo(run.startedAt)}</td>
-                      <td className="px-6 py-3">
+                  {runs.slice(0, 15).map((run) => (
+                    <tr key={run.id} className={`hover:bg-linen/50 ${run.status === 'failed' ? 'bg-error/5' : ''}`}>
+                      <td className="px-4 py-3">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                          run.runType === 'discovery' ? 'bg-blue-100 text-blue-700' :
+                          run.runType === 'scrape' ? 'bg-purple-100 text-purple-700' :
+                          'bg-gray-100 text-gray-700'
+                        }`}>
+                          {run.runType}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-ink">{run.dealer}</td>
+                      <td className="px-4 py-3 text-sm text-muted">{formatTimeAgo(run.startedAt)}</td>
+                      <td className="px-4 py-3">
                         <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
                           run.status === 'completed' ? 'bg-success/10 text-success' :
                           run.status === 'running' ? 'bg-gold/10 text-gold animate-pulse' :
+                          run.status === 'pending' ? 'bg-gray-100 text-gray-600' :
                           'bg-error/10 text-error'
                         }`}>
                           {run.status}
                         </span>
                       </td>
-                      <td className="px-6 py-3 text-sm text-right text-ink">
+                      <td className="px-4 py-3 text-sm text-right text-ink">
                         {run.processed}
-                        {run.errors > 0 && (
-                          <span className="text-error ml-1">({run.errors} errors)</span>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-right">
+                        {run.newListings > 0 ? (
+                          <span className="text-success font-medium">+{run.newListings}</span>
+                        ) : (
+                          <span className="text-muted">0</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-muted max-w-[200px]">
+                        {run.status === 'failed' && run.errorMessage ? (
+                          <span className="text-error truncate block" title={run.errorMessage}>
+                            {run.errorMessage.length > 50
+                              ? run.errorMessage.substring(0, 50) + '...'
+                              : run.errorMessage}
+                          </span>
+                        ) : run.errors > 0 ? (
+                          <span className="text-warning">{run.errors} errors</span>
+                        ) : run.updatedListings > 0 ? (
+                          <span>{run.updatedListings} updated</span>
+                        ) : (
+                          '-'
                         )}
                       </td>
                     </tr>
@@ -365,7 +402,7 @@ export default function ScrapersAdmin() {
         </div>
 
         {/* QA Issues */}
-        <div className="bg-cream rounded-xl border border-border">
+        <div className="bg-cream rounded-xl border border-border lg:col-span-2">
           <div className="px-6 py-4 border-b border-border">
             <h2 className="font-serif text-lg text-ink">QA Issues by Dealer</h2>
           </div>

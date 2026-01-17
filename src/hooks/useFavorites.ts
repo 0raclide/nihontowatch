@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 interface Listing {
   id: string;
@@ -11,7 +12,7 @@ interface Listing {
   price_value: number | null;
   price_currency: string | null;
   smith: string | null;
-  tosogu_maker: string | null;
+  tosugo_maker: string | null;
   school: string | null;
   tosogu_school: string | null;
   cert_type: string | null;
@@ -60,11 +61,28 @@ export function useFavorites(): UseFavoritesReturn {
     isAuthenticated: false,
   });
 
+  // Use ref to keep Supabase client stable across renders
+  const supabaseRef = useRef<SupabaseClient | null>(null);
+  if (!supabaseRef.current) {
+    supabaseRef.current = createClient();
+  }
+
+  // Track if component is mounted to prevent state updates after unmount
+  const isMountedRef = useRef(true);
+  // Track if we're currently fetching to prevent duplicate requests
+  const isFetchingRef = useRef(false);
+
   // Check authentication and fetch favorites on mount
   const fetchFavorites = useCallback(async () => {
+    // Prevent duplicate fetches
+    if (isFetchingRef.current || !isMountedRef.current) return;
+    isFetchingRef.current = true;
+
     try {
-      const supabase = createClient();
+      const supabase = supabaseRef.current!;
       const { data: { user } } = await supabase.auth.getUser();
+
+      if (!isMountedRef.current) return;
 
       if (!user) {
         setState(prev => ({
@@ -81,6 +99,8 @@ export function useFavorites(): UseFavoritesReturn {
 
       const response = await fetch('/api/favorites');
 
+      if (!isMountedRef.current) return;
+
       if (!response.ok) {
         if (response.status === 401) {
           setState(prev => ({
@@ -95,6 +115,8 @@ export function useFavorites(): UseFavoritesReturn {
 
       const data = await response.json();
 
+      if (!isMountedRef.current) return;
+
       setState({
         favorites: data.favorites || [],
         favoriteIds: new Set(data.favoriteIds || []),
@@ -103,27 +125,42 @@ export function useFavorites(): UseFavoritesReturn {
         isAuthenticated: true,
       });
     } catch (error) {
+      if (!isMountedRef.current) return;
       console.error('Error fetching favorites:', error);
       setState(prev => ({
         ...prev,
         isLoading: false,
         error: error instanceof Error ? error.message : 'Unknown error',
       }));
+    } finally {
+      isFetchingRef.current = false;
     }
   }, []);
 
   useEffect(() => {
+    isMountedRef.current = true;
     fetchFavorites();
+
+    return () => {
+      isMountedRef.current = false;
+    };
   }, [fetchFavorites]);
 
-  // Listen for auth state changes
+  // Listen for auth state changes - use stable ref for subscription
   useEffect(() => {
-    const supabase = createClient();
+    const supabase = supabaseRef.current!;
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event) => {
+        if (!isMountedRef.current) return;
+
         if (event === 'SIGNED_IN') {
-          fetchFavorites();
+          // Small delay to let auth state settle
+          setTimeout(() => {
+            if (isMountedRef.current) {
+              fetchFavorites();
+            }
+          }, 100);
         } else if (event === 'SIGNED_OUT') {
           setState({
             favorites: [],
