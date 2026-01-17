@@ -1,9 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { ReactNode, useEffect, useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import { usePathname, useRouter } from 'next/navigation';
+import { ReactNode, useEffect } from 'react';
+import { useAuth } from '@/lib/auth/AuthContext';
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -75,37 +75,19 @@ function getBreadcrumbs(pathname: string) {
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const breadcrumbs = getBreadcrumbs(pathname);
-  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { user, isAdmin, isLoading } = useAuth();
 
   useEffect(() => {
-    async function checkAdminStatus() {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-
+    if (!isLoading) {
       if (!user) {
-        window.location.href = '/?login=admin';
-        return;
+        router.push('/?login=admin');
+      } else if (!isAdmin) {
+        router.push('/');
       }
-
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single<{ role: string }>();
-
-      if (profile?.role !== 'admin') {
-        window.location.href = '/';
-        return;
-      }
-
-      setIsAdmin(true);
-      setIsLoading(false);
     }
-
-    checkAdminStatus();
-  }, []);
+  }, [user, isAdmin, isLoading, router]);
 
   if (isLoading) {
     return (
@@ -118,7 +100,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     );
   }
 
-  if (!isAdmin) {
+  if (!user || !isAdmin) {
     return null;
   }
 
