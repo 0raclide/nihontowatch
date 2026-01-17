@@ -302,18 +302,18 @@ test.describe('Signup Pressure System', () => {
       await expect(emailInput).toHaveAttribute('placeholder', 'email@example.com');
     });
 
-    test('modal has Google OAuth button', async ({ page }) => {
-      const googleButton = page.getByRole('button', {
-        name: /continue with google/i,
+    test('modal has Create Account button', async ({ page }) => {
+      const submitButton = page.getByRole('button', {
+        name: 'Create Account',
       });
-      await expect(googleButton).toBeVisible();
+      await expect(submitButton).toBeVisible();
     });
 
-    test('modal has Apple OAuth button', async ({ page }) => {
-      const appleButton = page.getByRole('button', {
-        name: /continue with apple/i,
+    test('Create Account button is initially disabled', async ({ page }) => {
+      const submitButton = page.getByRole('button', {
+        name: 'Create Account',
       });
-      await expect(appleButton).toBeVisible();
+      await expect(submitButton).toBeDisabled();
     });
 
     test('modal has "Continue browsing" dismiss link', async ({ page }) => {
@@ -440,22 +440,10 @@ test.describe('Signup Pressure System', () => {
       await expect(label).toContainText('Email address');
     });
 
-    test('OAuth buttons have accessible labels', async ({ page }) => {
-      const googleButton = page.getByRole('button', {
-        name: /continue with google/i,
-      });
-      const appleButton = page.getByRole('button', {
-        name: /continue with apple/i,
-      });
-
-      await expect(googleButton).toHaveAttribute(
-        'aria-label',
-        'Continue with Google'
-      );
-      await expect(appleButton).toHaveAttribute(
-        'aria-label',
-        'Continue with Apple'
-      );
+    test('submit button is properly labeled', async ({ page }) => {
+      const submitButton = page.getByRole('button', { name: 'Create Account' });
+      await expect(submitButton).toBeVisible();
+      await expect(submitButton).toHaveAttribute('type', 'submit');
     });
   });
 });
@@ -515,11 +503,14 @@ test.describe('Signup Pressure - Responsive Design', () => {
       await expect(modal).toBeVisible({ timeout: 5000 });
 
       // Verify form elements are present on mobile
+      const emailInput = page.locator('input#signup-email');
+      await expect(emailInput).toBeVisible();
+
       const submitButton = page.getByRole('button', { name: 'Create Account' });
       await expect(submitButton).toBeVisible();
 
-      const googleButton = page.getByRole('button', { name: /continue with google/i });
-      await expect(googleButton).toBeVisible();
+      const dismissButton = page.getByRole('button', { name: /continue browsing/i });
+      await expect(dismissButton).toBeVisible();
     });
   });
 
@@ -528,7 +519,7 @@ test.describe('Signup Pressure - Responsive Design', () => {
 
     test('modal appears as centered dialog on desktop', async ({ page }) => {
       await page.goto('/browse');
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('load');
 
       // Clear any existing state first
       await clearSignupPressureState(page);
@@ -541,7 +532,7 @@ test.describe('Signup Pressure - Responsive Design', () => {
       });
 
       await page.reload();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('load');
 
       // Wait for modal to appear
       const modal = page.locator('[role="dialog"][aria-modal="true"]');
@@ -559,7 +550,7 @@ test.describe('Signup Pressure - Responsive Design', () => {
 
     test('desktop modal has rounded corners', async ({ page }) => {
       await page.goto('/browse');
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('load');
 
       // Clear any existing state first
       await clearSignupPressureState(page);
@@ -572,7 +563,7 @@ test.describe('Signup Pressure - Responsive Design', () => {
       });
 
       await page.reload();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('load');
 
       // Wait for modal to appear
       const modal = page.locator('[role="dialog"][aria-modal="true"]');
@@ -585,7 +576,7 @@ test.describe('Signup Pressure - Responsive Design', () => {
 
     test('email input is auto-focused on desktop', async ({ page }) => {
       await page.goto('/browse');
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('load');
 
       // Clear any existing state first
       await clearSignupPressureState(page);
@@ -598,7 +589,7 @@ test.describe('Signup Pressure - Responsive Design', () => {
       });
 
       await page.reload();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('load');
 
       // Wait for modal to appear
       const modal = page.locator('[role="dialog"][aria-modal="true"]');

@@ -2,9 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { ListingCard } from './ListingCard';
-import { MobileVirtualListingGrid } from './MobileVirtualListingGrid';
 import { useQuickViewOptional } from '@/contexts/QuickViewContext';
-import { useIsMobile } from '@/hooks/useIsMobile';
 import type { Listing as QuickViewListing } from '@/types';
 
 // Number of cards to prioritize for immediate loading (above the fold)
@@ -55,7 +53,6 @@ interface ListingGridProps {
   isLoading?: boolean;
   isLoadingMore?: boolean;
   infiniteScroll?: boolean;
-  onLoadMore?: () => void;
   currency: Currency;
   exchangeRates: ExchangeRates | null;
 }
@@ -250,35 +247,11 @@ export function ListingGrid({
   isLoading,
   isLoadingMore,
   infiniteScroll,
-  onLoadMore,
   currency,
   exchangeRates,
 }: ListingGridProps) {
-  const isMobile = useIsMobile();
   const quickView = useQuickViewOptional();
   const { visibleIndices, setCardRef } = useVisibleCards(listings.length);
-
-  // Track if component has mounted to avoid hydration mismatch
-  // Server renders desktop grid, client may switch to mobile after mount
-  const [hasMounted, setHasMounted] = useState(false);
-  useEffect(() => {
-    setHasMounted(true);
-  }, []);
-
-  // Mobile: Use virtualized 1-column layout (only after hydration)
-  if (hasMounted && isMobile && infiniteScroll && !isLoading) {
-    return (
-      <MobileVirtualListingGrid
-        listings={listings}
-        total={total}
-        isLoadingMore={isLoadingMore}
-        onLoadMore={onLoadMore}
-        hasMore={page < totalPages}
-        currency={currency}
-        exchangeRates={exchangeRates}
-      />
-    );
-  }
 
   // Memoize the converted listings for QuickView to avoid recreating on every render
   const quickViewListings = useMemo(() => {
@@ -339,7 +312,7 @@ export function ListingGrid({
   }
 
   return (
-    <div data-testid="desktop-grid">
+    <div>
       {/* Results count - hidden on mobile since it's in filter trigger bar */}
       <div className="hidden lg:flex items-center justify-between mb-6">
         <p className="text-sm text-muted">
