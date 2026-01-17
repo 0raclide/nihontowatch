@@ -49,7 +49,7 @@ export async function GET() {
       const pendingResult = await supabase
         .from('discovered_urls')
         .select('id', { count: 'exact', head: true })
-        .is('scraped_at', null);
+        .eq('is_scraped', false);
       if (!pendingResult.error) {
         pendingUrls = pendingResult.count || 0;
       }
@@ -79,7 +79,7 @@ export async function GET() {
       const qaResult = await supabase
         .from('extraction_metrics')
         .select('qa_status')
-        .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
+        .gte('extracted_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
       if (!qaResult.error && qaResult.data && qaResult.data.length > 0) {
         const total = qaResult.data.length;
         const passed = qaResult.data.filter(

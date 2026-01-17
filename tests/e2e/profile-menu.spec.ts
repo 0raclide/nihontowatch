@@ -130,6 +130,145 @@ test.describe('Profile and Menu Navigation', () => {
     console.log('✅ All dropdown links verified');
   });
 
+  test('should navigate to Profile page when clicking dropdown link', async () => {
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(1000);
+
+    // Open user dropdown
+    const userMenuButton = getUserAvatarButton(page);
+    await userMenuButton.click();
+
+    // Wait for dropdown to be visible
+    const dropdown = page.locator('.bg-cream.rounded-lg.shadow-lg').first();
+    await expect(dropdown).toBeVisible({ timeout: 5000 });
+    console.log('Dropdown is visible');
+
+    // Find and verify Profile link is visible
+    const profileLink = dropdown.locator('a').filter({ hasText: 'Profile' });
+    await expect(profileLink).toBeVisible({ timeout: 5000 });
+
+    // Get the href to verify it's correct
+    const href = await profileLink.getAttribute('href');
+    console.log('Profile link href:', href);
+
+    // Take screenshot before clicking
+    await page.screenshot({ path: 'test-results/before-profile-click.png' });
+
+    // Click Profile link
+    await profileLink.click();
+
+    // Wait for navigation
+    await page.waitForURL('**/profile', { timeout: 10000 });
+    expect(page.url()).toContain('/profile');
+    console.log('✅ Navigated to Profile page via dropdown');
+  });
+
+  test('should navigate to Favorites page when clicking dropdown link', async () => {
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(1000);
+
+    // Open user dropdown
+    const userMenuButton = getUserAvatarButton(page);
+    await userMenuButton.click();
+    await page.waitForTimeout(500);
+
+    // Click Favorites link
+    const dropdownLinks = page.locator('.bg-cream.rounded-lg.shadow-lg a');
+    const favoritesLink = dropdownLinks.filter({ hasText: 'Favorites' });
+    await favoritesLink.click();
+
+    // Wait for navigation
+    await page.waitForURL('**/favorites', { timeout: 5000 });
+    expect(page.url()).toContain('/favorites');
+    console.log('✅ Navigated to Favorites page via dropdown');
+  });
+
+  test('should navigate to Alerts page when clicking dropdown link', async () => {
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(1000);
+
+    // Open user dropdown
+    const userMenuButton = getUserAvatarButton(page);
+    await userMenuButton.click();
+    await page.waitForTimeout(500);
+
+    // Click Alerts link in the dropdown (not the one in nav)
+    const dropdownLinks = page.locator('.bg-cream.rounded-lg.shadow-lg a');
+    const alertsLink = dropdownLinks.filter({ hasText: 'Alerts' });
+    await alertsLink.click();
+
+    // Wait for navigation
+    await page.waitForURL('**/alerts', { timeout: 5000 });
+    expect(page.url()).toContain('/alerts');
+    console.log('✅ Navigated to Alerts page via dropdown');
+  });
+
+  test('should navigate to Admin page when clicking dropdown link', async () => {
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(1000);
+
+    // Open user dropdown
+    const userMenuButton = getUserAvatarButton(page);
+    await userMenuButton.click();
+    await page.waitForTimeout(500);
+
+    // Click Admin link
+    const dropdownLinks = page.locator('.bg-cream.rounded-lg.shadow-lg a');
+    const adminLink = dropdownLinks.filter({ hasText: 'Admin' });
+    await adminLink.click();
+
+    // Wait for navigation
+    await page.waitForURL('**/admin', { timeout: 5000 });
+    expect(page.url()).toContain('/admin');
+    console.log('✅ Navigated to Admin page via dropdown');
+  });
+
+  test('should navigate via Admin header dropdown links', async () => {
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(1000);
+
+    // Open Admin dropdown in header (separate from user menu)
+    const adminDropdownButton = page.locator('button:has-text("Admin")').filter({ has: page.locator('svg') });
+    await adminDropdownButton.click();
+    await page.waitForTimeout(500);
+
+    // Click Dashboard link
+    const adminMenu = page.locator('.bg-cream.rounded-lg.shadow-lg').last();
+    const dashboardLink = adminMenu.locator('a').filter({ hasText: 'Dashboard' });
+    await dashboardLink.click();
+
+    // Wait for navigation
+    await page.waitForURL('**/admin', { timeout: 5000 });
+    expect(page.url()).toMatch(/\/admin$/);
+    console.log('✅ Navigated to Admin Dashboard via header dropdown');
+  });
+
+  test('should navigate to Admin Users via header dropdown', async () => {
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(1000);
+
+    // Open Admin dropdown in header
+    const adminDropdownButton = page.locator('button:has-text("Admin")').filter({ has: page.locator('svg') });
+    await adminDropdownButton.click();
+    await page.waitForTimeout(500);
+
+    // Click Users link
+    const adminMenu = page.locator('.bg-cream.rounded-lg.shadow-lg').last();
+    const usersLink = adminMenu.locator('a').filter({ hasText: 'Users' });
+    await usersLink.click();
+
+    // Wait for navigation
+    await page.waitForURL('**/admin/users', { timeout: 5000 });
+    expect(page.url()).toContain('/admin/users');
+    console.log('✅ Navigated to Admin Users via header dropdown');
+  });
+
   test('should show profile page with user content', async () => {
     // Navigate directly to profile page
     await page.goto('/profile');

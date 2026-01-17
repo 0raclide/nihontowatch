@@ -40,7 +40,7 @@ export async function GET() {
       const { data: metrics, error } = await supabase
         .from('extraction_metrics')
         .select('dealer_id, qa_status, validation_errors, dealers(name)')
-        .gte('created_at', sevenDaysAgo);
+        .gte('extracted_at', sevenDaysAgo);
 
       if (error) {
         // Table doesn't exist or query failed
