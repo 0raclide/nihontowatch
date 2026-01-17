@@ -7,6 +7,7 @@
 | [CLAUDE.md](../CLAUDE.md) | AI context, project overview, quick reference |
 | [ARCHITECTURE.md](./ARCHITECTURE.md) | System architecture, data flow, infrastructure |
 | [CROSS_REPO_REFERENCE.md](./CROSS_REPO_REFERENCE.md) | What lives where across all repos |
+| [USER_ACCOUNTS_SYSTEM.md](./USER_ACCOUNTS_SYSTEM.md) | Auth, profiles, favorites, alerts, activity tracking, admin |
 
 ---
 
@@ -83,6 +84,18 @@
 2. Read `Oshi-scrapper/scripts/daily_scrape.py`
 3. See [CROSS_REPO_REFERENCE.md](./CROSS_REPO_REFERENCE.md#scraping)
 
+### "I need to work on user accounts/auth"
+1. Read [USER_ACCOUNTS_SYSTEM.md](./USER_ACCOUNTS_SYSTEM.md) - Complete system docs
+2. Check `src/lib/auth/AuthContext.tsx` - Auth state management
+3. Check `src/app/api/favorites/`, `src/app/api/alerts/` - API routes
+4. Check `src/app/admin/` - Admin dashboard pages
+
+### "I need to add admin features"
+1. Read [USER_ACCOUNTS_SYSTEM.md#admin-dashboard](./USER_ACCOUNTS_SYSTEM.md#admin-dashboard)
+2. Check `src/app/admin/` - Existing admin pages
+3. Check `src/app/api/admin/` - Admin API routes
+4. Verify admin role check in middleware
+
 ---
 
 ## Architecture Diagrams
@@ -102,5 +115,7 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for:
 | Local development | [CLAUDE.md](../CLAUDE.md#development-workflow) |
 | Database setup | [ARCHITECTURE.md](./ARCHITECTURE.md#database) |
 | Adding dealers | [CROSS_REPO_REFERENCE.md](./CROSS_REPO_REFERENCE.md#adding-dealers) |
+| User accounts & auth | [USER_ACCOUNTS_SYSTEM.md](./USER_ACCOUNTS_SYSTEM.md) |
+| Admin dashboard | [USER_ACCOUNTS_SYSTEM.md#admin-dashboard](./USER_ACCOUNTS_SYSTEM.md#admin-dashboard) |
 | Testing | Oshi-scrapper: `pytest tests/`, Oshi-v2: `npm run test` |
 | Deployment | [CLAUDE.md](../CLAUDE.md#deployment) |
