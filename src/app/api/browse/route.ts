@@ -76,10 +76,6 @@ export async function GET(request: NextRequest) {
     const supabase = await createClient();
     const params = parseParams(request.nextUrl.searchParams);
 
-    // Debug logging for facet issue
-    console.log('[browse API] params.category:', params.category);
-    console.log('[browse API] URL search params:', request.nextUrl.searchParams.toString());
-
     // Ensure page is reasonable
     const safePage = Math.max(1, Math.min(params.page || 1, 1000));
     const offset = (safePage - 1) * params.limit!;
@@ -297,17 +293,10 @@ export async function GET(request: NextRequest) {
         dealers: dealersFacet,
       },
       lastUpdated,
-      // Debug: version marker and params to verify deployment
-      _debug: {
-        version: 'v7-facet-fix',
-        category: params.category,
-        timestamp: new Date().toISOString(),
-      },
     });
 
-    // Temporarily disable cache to ensure fresh facet data after filter fix
-    // TODO: Re-enable caching once verified: s-maxage=${CACHE.BROWSE_RESULTS}, stale-while-revalidate=${CACHE.SWR_WINDOW}
-    response.headers.set('Cache-Control', 'no-store, max-age=0');
+    // Cache for short duration with SWR for quick invalidation
+    response.headers.set('Cache-Control', `public, s-maxage=${CACHE.BROWSE_RESULTS}, stale-while-revalidate=${CACHE.SWR_WINDOW}`);
 
     return response;
   } catch (error) {
@@ -329,45 +318,9 @@ interface FacetFilterOptions {
   query?: string;
 }
 
-// Helper to apply common filters to a query
-function applyFacetFilters(
-  query: ReturnType<Awaited<ReturnType<typeof createClient>>['from']>['select'],
-  options: FacetFilterOptions
-) {
-  let q = query;
-
-  // Category/item type filter
-  if (options.category === 'nihonto') {
-    const typeConditions = NIHONTO_TYPES.map(t => `item_type.ilike.${t}`).join(',');
-    q = q.or(typeConditions);
-  } else if (options.category === 'tosogu') {
-    const typeConditions = TOSOGU_TYPES.map(t => `item_type.ilike.${t}`).join(',');
-    q = q.or(typeConditions);
-  } else if (options.itemTypes?.length) {
-    const typeConditions = options.itemTypes.map(t => `item_type.ilike.${t}`).join(',');
-    q = q.or(typeConditions);
-  }
-
-  // Certification filter
-  if (options.certifications?.length) {
-    const allVariants = options.certifications.flatMap(c => CERT_VARIANTS[c] || [c]);
-    q = q.in('cert_type', allVariants);
-  }
-
-  // Dealer filter
-  if (options.dealers?.length) {
-    q = q.in('dealer_id', options.dealers);
-  }
-
-  // Ask only (price on request)
-  if (options.askOnly) {
-    q = q.is('price_value', null);
-  }
-
-  return q;
-}
-
 // Facet functions - apply filters to reflect user's current selection
+// Uses JS-side filtering for category/itemTypes since Supabase .or() calls
+// don't combine with AND when filtering by both status and item type
 
 async function getItemTypeFacets(
   supabase: Awaited<ReturnType<typeof createClient>>,
@@ -443,11 +396,6 @@ async function getCertificationFacets(
         ? TOSOGU_TYPES
         : undefined;
 
-  // Debug logging
-  console.log('[getCertificationFacets] options.category:', options.category);
-  console.log('[getCertificationFacets] effectiveItemTypes:', effectiveItemTypes);
-  console.log('[getCertificationFacets] total rows fetched:', data.length);
-
   // Normalize cert function
   const normalizeCert = (cert: string): string => {
     const lower = cert.toLowerCase();
@@ -461,18 +409,14 @@ async function getCertificationFacets(
 
   // Filter and aggregate in JS
   const counts: Record<string, number> = {};
-  let filteredCount = 0;
-  let skippedCount = 0;
   (data as Array<{ cert_type: string | null; item_type: string | null }>).forEach(row => {
     // Filter by item type if category is set
     if (effectiveItemTypes) {
       const itemType = row.item_type?.toLowerCase().replace('fuchi_kashira', 'fuchi-kashira');
       if (!itemType || !effectiveItemTypes.some(t => t.toLowerCase() === itemType)) {
-        skippedCount++;
         return; // Skip this row - doesn't match category
       }
     }
-    filteredCount++;
 
     const cert = row.cert_type;
     if (cert && cert !== 'null') {
@@ -480,9 +424,6 @@ async function getCertificationFacets(
       counts[normalized] = (counts[normalized] || 0) + 1;
     }
   });
-
-  console.log('[getCertificationFacets] rows after filtering:', filteredCount, 'skipped:', skippedCount);
-  console.log('[getCertificationFacets] cert counts:', counts);
 
   return Object.entries(counts)
     .map(([value, count]) => ({ value, count }))

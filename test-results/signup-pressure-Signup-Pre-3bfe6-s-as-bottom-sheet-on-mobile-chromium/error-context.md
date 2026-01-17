@@ -1,0 +1,356 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e5]:
+        - link "Nihontowatch" [ref=e6] [cursor=pointer]:
+          - /url: /
+          - heading "Nihontowatch" [level=1] [ref=e7]
+        - generic [ref=e8]:
+          - button "Search" [ref=e9]:
+            - img [ref=e10]
+          - button "Menu" [ref=e12]:
+            - img [ref=e13]
+    - main [ref=e16]:
+      - generic [ref=e18]:
+        - heading "Collection" [level=1] [ref=e19]
+        - paragraph [ref=e20]: Japanese swords and fittings from established dealers
+      - generic [ref=e22]: 2,199 items
+      - generic [ref=e26]:
+        - 'button "aoijapan.com Katana: Nagasone Okisato Nyudo Kotetsu with Saidan-mei(45th NBTHK Juyo Token) Add to watchlist Jūyō Katana Kotetsu ¥60,000,000" [ref=e28] [cursor=pointer]':
+          - generic [ref=e29]: aoijapan.com
+          - generic [ref=e30]:
+            - 'img "Katana: Nagasone Okisato Nyudo Kotetsu with Saidan-mei(45th NBTHK Juyo Token)" [ref=e31]'
+            - button "Add to watchlist" [ref=e34]:
+              - img [ref=e35]
+          - generic [ref=e37]:
+            - generic [ref=e38]: Jūyō
+            - heading "Katana" [level=3] [ref=e39]
+            - paragraph [ref=e41]: Kotetsu
+            - generic [ref=e43]: ¥60,000,000
+        - button "aoijapan.com Katana :Mumei (Unsigned), Den (Go)(NBTHK Tokubetsu Hozon Token) Add to watchlist Tokubetsu Hozon Katana ：Mumei ¥35,000,000" [ref=e45] [cursor=pointer]:
+          - generic [ref=e46]: aoijapan.com
+          - generic [ref=e47]:
+            - img "Katana :Mumei (Unsigned), Den (Go)(NBTHK Tokubetsu Hozon Token)" [ref=e48]
+            - button "Add to watchlist" [ref=e51]:
+              - img [ref=e52]
+          - generic [ref=e54]:
+            - generic [ref=e55]: Tokubetsu Hozon
+            - heading "Katana" [level=3] [ref=e56]
+            - paragraph [ref=e58]: ：Mumei
+            - generic [ref=e60]: ¥35,000,000
+        - 'button "aoijapan.com Katana: (Kin Zogan Mei) Rai Kunitoshi Hon''ami (Kaō) (Red signature) (Mitsutada) (Unclear red inscription)(25th NBTHK Tokubetsu Juyo Token) Add to watchlist Tokubetsu Jūyō Katana Kunitoshi ¥25,000,000" [ref=e62] [cursor=pointer]':
+          - generic [ref=e63]: aoijapan.com
+          - generic [ref=e64]:
+            - 'img "Katana: (Kin Zogan Mei) Rai Kunitoshi Hon''ami (Kaō) (Red signature) (Mitsutada) (Unclear red inscription)(25th NBTHK Tokubetsu Juyo Token)" [ref=e65]'
+            - button "Add to watchlist" [ref=e68]:
+              - img [ref=e69]
+          - generic [ref=e71]:
+            - generic [ref=e72]: Tokubetsu Jūyō
+            - heading "Katana" [level=3] [ref=e73]
+            - paragraph [ref=e75]: Kunitoshi
+            - generic [ref=e77]: ¥25,000,000
+        - button "tsuruginoya.com 太刀 備前長船倫光 Add to watchlist Tokubetsu Jūyō Tachi Tomomitsu ¥18,500,000" [ref=e79] [cursor=pointer]:
+          - generic [ref=e80]: tsuruginoya.com
+          - generic [ref=e81]:
+            - img "太刀 備前長船倫光" [ref=e82]
+            - button "Add to watchlist" [ref=e85]:
+              - img [ref=e86]
+          - generic [ref=e88]:
+            - generic [ref=e89]: Tokubetsu Jūyō
+            - heading "Tachi" [level=3] [ref=e90]
+            - paragraph [ref=e92]: Tomomitsu
+            - generic [ref=e94]: ¥18,500,000
+        - button "tsuruginoya.com 太刀 畠田真守 荒木貞夫陸軍大将旧蔵 Add to watchlist Jūyō Tachi Sanemori ¥17,500,000" [ref=e96] [cursor=pointer]:
+          - generic [ref=e97]: tsuruginoya.com
+          - generic [ref=e98]:
+            - img "太刀 畠田真守 荒木貞夫陸軍大将旧蔵" [ref=e99]
+            - button "Add to watchlist" [ref=e102]:
+              - img [ref=e103]
+          - generic [ref=e105]:
+            - generic [ref=e106]: Jūyō
+            - heading "Tachi" [level=3] [ref=e107]
+            - paragraph [ref=e109]: Sanemori
+            - generic [ref=e111]: ¥17,500,000
+        - 'button "aoijapan.com Katana: Iga no Kami Fujiwara Kanemichi (26th NBTHK Tokubetsu Juyo Token) Add to watchlist Tokubetsu Jūyō Katana Iga no Kami Fujiwara Kanemichi ¥15,500,000" [ref=e113] [cursor=pointer]':
+          - generic [ref=e114]: aoijapan.com
+          - generic [ref=e115]:
+            - 'img "Katana: Iga no Kami Fujiwara Kanemichi (26th NBTHK Tokubetsu Juyo Token)" [ref=e116]'
+            - button "Add to watchlist" [ref=e119]:
+              - img [ref=e120]
+          - generic [ref=e122]:
+            - generic [ref=e123]: Tokubetsu Jūyō
+            - heading "Katana" [level=3] [ref=e124]
+            - paragraph [ref=e126]: Iga no Kami Fujiwara Kanemichi
+            - generic [ref=e128]: ¥15,500,000
+        - 'button "aoijapan.com Tachi : Ichi(judged as Yoshioka Ichimonji)(NBTHK the 41st Juyo Token) Add to watchlist Jūyō Tachi Ichi ¥13,500,000" [ref=e130] [cursor=pointer]':
+          - generic [ref=e131]: aoijapan.com
+          - generic [ref=e132]:
+            - 'img "Tachi : Ichi(judged as Yoshioka Ichimonji)(NBTHK the 41st Juyo Token)" [ref=e133]'
+            - button "Add to watchlist" [ref=e136]:
+              - img [ref=e137]
+          - generic [ref=e139]:
+            - generic [ref=e140]: Jūyō
+            - heading "Tachi" [level=3] [ref=e141]
+            - paragraph [ref=e143]: Ichi
+            - generic [ref=e145]: ¥13,500,000
+        - 'button "aoijapan.com Tachi: Norinari (Ko-Ichimonji)(69th NBTHK Juyo Token) Add to watchlist Jūyō Tachi Norinari ¥13,500,000 Listed 6mo" [ref=e147] [cursor=pointer]':
+          - generic [ref=e148]: aoijapan.com
+          - generic [ref=e149]:
+            - 'img "Tachi: Norinari (Ko-Ichimonji)(69th NBTHK Juyo Token)" [ref=e150]'
+            - button "Add to watchlist" [ref=e153]:
+              - img [ref=e154]
+          - generic [ref=e156]:
+            - generic [ref=e157]: Jūyō
+            - heading "Tachi" [level=3] [ref=e158]
+            - paragraph [ref=e160]: Norinari
+            - generic [ref=e161]:
+              - generic [ref=e162]: ¥13,500,000
+              - generic [ref=e163]:
+                - generic [ref=e164]: Listed
+                - generic [ref=e165]: 6mo
+        - button "iidakoendo.com 井上真改(菊紋)延宝六年八月日 Add to watchlist Katana Inoue Shinkai ¥13,200,000" [ref=e167] [cursor=pointer]:
+          - generic [ref=e168]: iidakoendo.com
+          - generic [ref=e169]:
+            - img "井上真改(菊紋)延宝六年八月日" [ref=e170]
+            - button "Add to watchlist" [ref=e173]:
+              - img [ref=e174]
+          - generic [ref=e176]:
+            - heading "Katana" [level=3] [ref=e178]
+            - paragraph [ref=e180]: Inoue Shinkai
+            - generic [ref=e182]: ¥13,200,000
+        - button "eirakudo.shop 福岡一文字 太刀 重要刀剣 Add to watchlist Jūyō Tachi Ichimonji ¥12,000,000" [ref=e184] [cursor=pointer]:
+          - generic [ref=e185]: eirakudo.shop
+          - generic [ref=e186]:
+            - img "福岡一文字 太刀 重要刀剣" [ref=e187]
+            - button "Add to watchlist" [ref=e190]:
+              - img [ref=e191]
+          - generic [ref=e193]:
+            - generic [ref=e194]: Jūyō
+            - heading "Tachi" [level=3] [ref=e195]
+            - paragraph [ref=e197]: Ichimonji
+            - generic [ref=e199]: ¥12,000,000
+        - button "token-net.com Add to watchlist Jūyō Katana Sukesada ¥11,500,000" [ref=e201] [cursor=pointer]:
+          - generic [ref=e202]: token-net.com
+          - button "Add to watchlist" [ref=e208]:
+            - img [ref=e209]
+          - generic [ref=e211]:
+            - generic [ref=e212]: Jūyō
+            - heading "Katana" [level=3] [ref=e213]
+            - paragraph [ref=e215]: Sukesada
+            - generic [ref=e217]: ¥11,500,000
+        - button "tsuruginoya.com Add to watchlist Jūyō Katana Ichimonji ¥10,000,000" [ref=e219] [cursor=pointer]:
+          - generic [ref=e220]: tsuruginoya.com
+          - button "Add to watchlist" [ref=e226]:
+            - img [ref=e227]
+          - generic [ref=e229]:
+            - generic [ref=e230]: Jūyō
+            - heading "Katana" [level=3] [ref=e231]
+            - paragraph [ref=e233]: Ichimonji
+            - generic [ref=e235]: ¥10,000,000
+        - button "touken-sakata.com Add to watchlist Katana ¥10,000,000" [ref=e237] [cursor=pointer]:
+          - generic [ref=e238]: touken-sakata.com
+          - button "Add to watchlist" [ref=e244]:
+            - img [ref=e245]
+          - generic [ref=e247]:
+            - heading "Katana" [level=3] [ref=e249]
+            - generic [ref=e252]: ¥10,000,000
+        - button "token-net.com Add to watchlist Jūyō Katana 1st Gen. Yasutsugu ¥9,800,000" [ref=e254] [cursor=pointer]:
+          - generic [ref=e255]: token-net.com
+          - button "Add to watchlist" [ref=e261]:
+            - img [ref=e262]
+          - generic [ref=e264]:
+            - generic [ref=e265]: Jūyō
+            - heading "Katana" [level=3] [ref=e266]
+            - paragraph [ref=e268]: 1st Gen. Yasutsugu
+            - generic [ref=e270]: ¥9,800,000
+        - button "eirakudo.shop Add to watchlist Jūyō Tantō Yasuyoshi ¥9,500,000" [ref=e272] [cursor=pointer]:
+          - generic [ref=e273]: eirakudo.shop
+          - button "Add to watchlist" [ref=e279]:
+            - img [ref=e280]
+          - generic [ref=e282]:
+            - generic [ref=e283]: Jūyō
+            - heading "Tantō" [level=3] [ref=e284]
+            - paragraph [ref=e286]: Yasuyoshi
+            - generic [ref=e288]: ¥9,500,000
+        - button "aoijapan.com Add to watchlist Tokubetsu Hozon Tantō Muramasa ¥9,500,000" [ref=e290] [cursor=pointer]:
+          - generic [ref=e291]: aoijapan.com
+          - button "Add to watchlist" [ref=e297]:
+            - img [ref=e298]
+          - generic [ref=e300]:
+            - generic [ref=e301]: Tokubetsu Hozon
+            - heading "Tantō" [level=3] [ref=e302]
+            - paragraph [ref=e304]: Muramasa
+            - generic [ref=e306]: ¥9,500,000
+        - button "token-net.com Add to watchlist Jūyō Katana Kunisuke ¥9,500,000" [ref=e308] [cursor=pointer]:
+          - generic [ref=e309]: token-net.com
+          - button "Add to watchlist" [ref=e315]:
+            - img [ref=e316]
+          - generic [ref=e318]:
+            - generic [ref=e319]: Jūyō
+            - heading "Katana" [level=3] [ref=e320]
+            - paragraph [ref=e322]: Kunisuke
+            - generic [ref=e324]: ¥9,500,000
+        - button "aoijapan.com Add to watchlist Jūyō Katana Saemon no Jo Hidetugu ¥9,500,000" [ref=e326] [cursor=pointer]:
+          - generic [ref=e327]: aoijapan.com
+          - button "Add to watchlist" [ref=e333]:
+            - img [ref=e334]
+          - generic [ref=e336]:
+            - generic [ref=e337]: Jūyō
+            - heading "Katana" [level=3] [ref=e338]
+            - paragraph [ref=e340]: Saemon no Jo Hidetugu
+            - generic [ref=e342]: ¥9,500,000
+        - button "eirakudo.shop Add to watchlist Jūyō Tachi Motoshige ¥9,000,000" [ref=e344] [cursor=pointer]:
+          - generic [ref=e345]: eirakudo.shop
+          - button "Add to watchlist" [ref=e351]:
+            - img [ref=e352]
+          - generic [ref=e354]:
+            - generic [ref=e355]: Jūyō
+            - heading "Tachi" [level=3] [ref=e356]
+            - paragraph [ref=e358]: Motoshige
+            - generic [ref=e360]: ¥9,000,000
+        - button "kusanaginosya.com Add to watchlist Jūyō Tachi Sadaakane ¥8,800,000" [ref=e362] [cursor=pointer]:
+          - generic [ref=e363]: kusanaginosya.com
+          - button "Add to watchlist" [ref=e369]:
+            - img [ref=e370]
+          - generic [ref=e372]:
+            - generic [ref=e373]: Jūyō
+            - heading "Tachi" [level=3] [ref=e374]
+            - paragraph [ref=e376]: Sadaakane
+            - generic [ref=e378]: ¥8,800,000
+        - button "eirakudo.shop Add to watchlist Tokubetsu Hozon Tachi Yoshimoto ¥8,500,000" [ref=e380] [cursor=pointer]:
+          - generic [ref=e381]: eirakudo.shop
+          - button "Add to watchlist" [ref=e387]:
+            - img [ref=e388]
+          - generic [ref=e390]:
+            - generic [ref=e391]: Tokubetsu Hozon
+            - heading "Tachi" [level=3] [ref=e392]
+            - paragraph [ref=e394]: Yoshimoto
+            - generic [ref=e396]: ¥8,500,000
+        - button "samurai-nippon.net Add to watchlist Jūyō Katana Taikei Naotane ¥8,500,000" [ref=e398] [cursor=pointer]:
+          - generic [ref=e399]: samurai-nippon.net
+          - button "Add to watchlist" [ref=e405]:
+            - img [ref=e406]
+          - generic [ref=e408]:
+            - generic [ref=e409]: Jūyō
+            - heading "Katana" [level=3] [ref=e410]
+            - paragraph [ref=e412]: Taikei Naotane
+            - generic [ref=e414]: ¥8,500,000
+        - button "toukenkomachi.com Add to watchlist Jūyō Katana Taikei Naotane ¥8,000,000" [ref=e416] [cursor=pointer]:
+          - generic [ref=e417]: toukenkomachi.com
+          - button "Add to watchlist" [ref=e423]:
+            - img [ref=e424]
+          - generic [ref=e426]:
+            - generic [ref=e427]: Jūyō
+            - heading "Katana" [level=3] [ref=e428]
+            - paragraph [ref=e430]: Taikei Naotane
+            - generic [ref=e432]: ¥8,000,000
+        - button "eirakudo.shop Add to watchlist Tokubetsu Hozon Tachi Masatsugu ¥8,000,000" [ref=e434] [cursor=pointer]:
+          - generic [ref=e435]: eirakudo.shop
+          - button "Add to watchlist" [ref=e441]:
+            - img [ref=e442]
+          - generic [ref=e444]:
+            - generic [ref=e445]: Tokubetsu Hozon
+            - heading "Tachi" [level=3] [ref=e446]
+            - paragraph [ref=e448]: Masatsugu
+            - generic [ref=e450]: ¥8,000,000
+        - button "toukenkomachi.com Add to watchlist Jūyō Tachi Sukemura ¥8,000,000" [ref=e452] [cursor=pointer]:
+          - generic [ref=e453]: toukenkomachi.com
+          - button "Add to watchlist" [ref=e459]:
+            - img [ref=e460]
+          - generic [ref=e462]:
+            - generic [ref=e463]: Jūyō
+            - heading "Tachi" [level=3] [ref=e464]
+            - paragraph [ref=e466]: Sukemura
+            - generic [ref=e468]: ¥8,000,000
+        - button "eirakudo.shop Add to watchlist Jūyō Tachi Sukenaga ¥8,000,000" [ref=e470] [cursor=pointer]:
+          - generic [ref=e471]: eirakudo.shop
+          - button "Add to watchlist" [ref=e477]:
+            - img [ref=e478]
+          - generic [ref=e480]:
+            - generic [ref=e481]: Jūyō
+            - heading "Tachi" [level=3] [ref=e482]
+            - paragraph [ref=e484]: Sukenaga
+            - generic [ref=e486]: ¥8,000,000
+        - button "eirakudo.shop Add to watchlist Jūyō Katana Hisakuni ¥8,000,000" [ref=e488] [cursor=pointer]:
+          - generic [ref=e489]: eirakudo.shop
+          - button "Add to watchlist" [ref=e495]:
+            - img [ref=e496]
+          - generic [ref=e498]:
+            - generic [ref=e499]: Jūyō
+            - heading "Katana" [level=3] [ref=e500]
+            - paragraph [ref=e502]: Hisakuni
+            - generic [ref=e504]: ¥8,000,000
+        - button "samurai-nippon.net Add to watchlist Jūyō Tantō Kunitoshi ¥7,900,000" [ref=e506] [cursor=pointer]:
+          - generic [ref=e507]: samurai-nippon.net
+          - button "Add to watchlist" [ref=e513]:
+            - img [ref=e514]
+          - generic [ref=e516]:
+            - generic [ref=e517]: Jūyō
+            - heading "Tantō" [level=3] [ref=e518]
+            - paragraph [ref=e520]: Kunitoshi
+            - generic [ref=e522]: ¥7,900,000
+        - button "token-net.com Add to watchlist Jūyō Katana Izumi no Kami Kunisada ¥7,800,000" [ref=e524] [cursor=pointer]:
+          - generic [ref=e525]: token-net.com
+          - button "Add to watchlist" [ref=e531]:
+            - img [ref=e532]
+          - generic [ref=e534]:
+            - generic [ref=e535]: Jūyō
+            - heading "Katana" [level=3] [ref=e536]
+            - paragraph [ref=e538]: Izumi no Kami Kunisada
+            - generic [ref=e540]: ¥7,800,000
+        - button "eirakudo.shop Add to watchlist Jūyō Katana Rai Kunimitsu ¥7,800,000" [ref=e542] [cursor=pointer]:
+          - generic [ref=e543]: eirakudo.shop
+          - button "Add to watchlist" [ref=e549]:
+            - img [ref=e550]
+          - generic [ref=e552]:
+            - generic [ref=e553]: Jūyō
+            - heading "Katana" [level=3] [ref=e554]
+            - paragraph [ref=e556]: Rai Kunimitsu
+            - generic [ref=e558]: ¥7,800,000
+      - navigation "Main navigation" [ref=e559]:
+        - generic [ref=e560]:
+          - button "Search" [ref=e561]:
+            - img [ref=e562]
+            - generic [ref=e564]: Search
+          - button "Filters" [ref=e565]:
+            - img [ref=e567]
+            - generic [ref=e569]: Filters
+          - button "Menu" [ref=e570]:
+            - img [ref=e571]
+            - generic [ref=e573]: Menu
+    - contentinfo [ref=e575]:
+      - generic [ref=e577]:
+        - generic [ref=e578]:
+          - generic [ref=e579]: Nihontowatch
+          - generic [ref=e580]: Curated Japanese arms from dealers worldwide
+        - generic [ref=e581]:
+          - generic [ref=e584]: Updated 2h ago
+          - generic [ref=e585]: © 2026
+  - button "Open Next.js Dev Tools" [ref=e591] [cursor=pointer]:
+    - img [ref=e592]
+  - alert [ref=e595]
+  - dialog [ref=e596]:
+    - generic [ref=e598]:
+      - button "Close" [ref=e601]:
+        - img [ref=e602]
+      - generic [ref=e605]:
+        - heading "Track what matters." [level=2] [ref=e606]
+        - paragraph [ref=e607]: Create an account to save the pieces you're watching, receive alerts when prices shift, and never lose track of a listing that caught your eye.
+        - generic [ref=e608]:
+          - generic [ref=e609]:
+            - generic [ref=e610]: Email address
+            - textbox "Email address" [ref=e611]:
+              - /placeholder: email@example.com
+          - button "Create Account" [disabled] [ref=e612]
+        - generic [ref=e615]: or continue with
+        - generic [ref=e617]:
+          - button "Continue with Google" [ref=e618]:
+            - img [ref=e619]
+          - button "Continue with Apple" [ref=e624]:
+            - img [ref=e625]
+        - button "Continue browsing →" [ref=e627]
+        - paragraph [ref=e628]: Aggregating 27 dealers worldwide
+```
