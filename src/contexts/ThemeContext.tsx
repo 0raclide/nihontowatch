@@ -7,6 +7,7 @@ import {
   useState,
   useCallback,
   useRef,
+  useMemo,
   type ReactNode,
 } from 'react';
 
@@ -257,14 +258,18 @@ export function ThemeProvider({
 
   const themeDefinition = THEMES[activeTheme];
 
-  const value: ThemeContextValue = {
-    themeSetting: forcedTheme ?? themeSetting,
-    activeTheme,
-    activeMode: themeDefinition.mode,
-    themeDefinition,
-    setTheme,
-    themes: THEMES,
-  };
+  // Memoize the context value to prevent unnecessary re-renders in consumers
+  const value: ThemeContextValue = useMemo(
+    () => ({
+      themeSetting: forcedTheme ?? themeSetting,
+      activeTheme,
+      activeMode: themeDefinition.mode,
+      themeDefinition,
+      setTheme,
+      themes: THEMES,
+    }),
+    [forcedTheme, themeSetting, activeTheme, themeDefinition, setTheme]
+  );
 
   return (
     <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>

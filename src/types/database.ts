@@ -233,6 +233,60 @@ export interface Database {
         Insert: Omit<Database['public']['Tables']['activity_events']['Row'], 'id'>;
         Update: Partial<Database['public']['Tables']['activity_events']['Insert']>;
       };
+      // Saved searches for new listing notifications
+      saved_searches: {
+        Row: {
+          id: string;
+          user_id: string;
+          name: string | null;
+          search_criteria: {
+            tab?: 'available' | 'sold';
+            category?: 'all' | 'nihonto' | 'tosogu';
+            itemTypes?: string[];
+            certifications?: string[];
+            dealers?: number[];
+            schools?: string[];
+            askOnly?: boolean;
+            query?: string;
+            sort?: string;
+            minPrice?: number;
+            maxPrice?: number;
+          };
+          notification_frequency: 'instant' | 'daily' | 'none';
+          is_active: boolean;
+          last_notified_at: string | null;
+          last_match_count: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          name?: string | null;
+          search_criteria: Database['public']['Tables']['saved_searches']['Row']['search_criteria'];
+          notification_frequency?: 'instant' | 'daily' | 'none';
+          is_active?: boolean;
+        };
+        Update: Partial<Omit<Database['public']['Tables']['saved_searches']['Row'], 'id' | 'user_id' | 'created_at'>>;
+      };
+      // Saved search notification queue and history
+      saved_search_notifications: {
+        Row: {
+          id: string;
+          saved_search_id: string;
+          matched_listing_ids: number[];
+          status: 'pending' | 'sent' | 'failed';
+          error_message: string | null;
+          created_at: string;
+          sent_at: string | null;
+        };
+        Insert: {
+          saved_search_id: string;
+          matched_listing_ids: number[];
+          status?: 'pending' | 'sent' | 'failed';
+          error_message?: string | null;
+        };
+        Update: Partial<Omit<Database['public']['Tables']['saved_search_notifications']['Row'], 'id' | 'created_at'>>;
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
@@ -241,6 +295,8 @@ export interface Database {
       alert_type: 'price_drop' | 'new_listing' | 'back_in_stock';
       delivery_status: 'pending' | 'sent' | 'failed';
       activity_event_type: 'page_view' | 'listing_view' | 'search' | 'filter_change' | 'favorite_add' | 'favorite_remove' | 'alert_create' | 'alert_delete' | 'external_link_click';
+      notification_frequency: 'instant' | 'daily' | 'none';
+      saved_search_notification_status: 'pending' | 'sent' | 'failed';
     };
   };
 }

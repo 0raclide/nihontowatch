@@ -7,6 +7,7 @@ import {
   useCallback,
   useEffect,
   useRef,
+  useMemo,
   type ReactNode,
 } from 'react';
 import { useAuth } from '@/lib/auth/AuthContext';
@@ -263,18 +264,33 @@ export function FavoritesProvider({ children }: FavoritesProviderProps) {
     await fetchFavorites(true);
   }, [fetchFavorites]);
 
-  const value: FavoritesContextValue = {
-    favorites,
-    favoriteIds,
-    isLoading,
-    error,
-    isAuthenticated: !!user,
-    addFavorite,
-    removeFavorite,
-    isFavorited,
-    toggleFavorite,
-    refetch,
-  };
+  // Memoize the context value to prevent unnecessary re-renders in consumers
+  const value: FavoritesContextValue = useMemo(
+    () => ({
+      favorites,
+      favoriteIds,
+      isLoading,
+      error,
+      isAuthenticated: !!user,
+      addFavorite,
+      removeFavorite,
+      isFavorited,
+      toggleFavorite,
+      refetch,
+    }),
+    [
+      favorites,
+      favoriteIds,
+      isLoading,
+      error,
+      user,
+      addFavorite,
+      removeFavorite,
+      isFavorited,
+      toggleFavorite,
+      refetch,
+    ]
+  );
 
   return (
     <FavoritesContext.Provider value={value}>

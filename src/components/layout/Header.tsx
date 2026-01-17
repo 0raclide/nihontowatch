@@ -157,6 +157,12 @@ function HeaderContent() {
                 Browse
               </Link>
               <Link
+                href="/saved-searches"
+                className="text-[11px] uppercase tracking-[0.2em] text-muted hover:text-gold transition-colors"
+              >
+                Saved
+              </Link>
+              <Link
                 href="/alerts"
                 className="text-[11px] uppercase tracking-[0.2em] text-muted hover:text-gold transition-colors"
               >

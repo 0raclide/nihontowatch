@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import type { AlertType, CreateAlertInput, Listing, AlertSearchCriteria } from '@/types';
 
@@ -53,9 +54,11 @@ export function CreateAlertModal({
   listing,
   dealers = [],
 }: CreateAlertModalProps) {
+  const router = useRouter();
+
   // Determine initial alert type based on listing state
   const getInitialAlertType = useCallback((): AlertType => {
-    if (!listing) return 'new_listing';
+    if (!listing) return 'price_drop'; // Default to price_drop, new_listing is now handled by saved searches
     // If item is sold, suggest back_in_stock
     if (listing.is_sold || listing.status === 'sold' || listing.status === 'presumed_sold') {
       return 'back_in_stock';
@@ -209,17 +212,22 @@ export function CreateAlertModal({
                       </button>
                     </>
                   ) : (
-                    <button
-                      type="button"
-                      onClick={() => setAlertType('new_listing')}
-                      className={`col-span-3 px-3 py-3 text-[13px] font-medium rounded-lg transition-all ${
-                        alertType === 'new_listing'
-                          ? 'bg-gold text-white'
-                          : 'bg-linen text-charcoal hover:bg-hover'
-                      }`}
-                    >
-                      New Listing
-                    </button>
+                    /* New listing alerts are now handled by Saved Searches */
+                    <div className="col-span-3 p-4 bg-linen rounded-lg text-center">
+                      <p className="text-[13px] text-charcoal mb-3">
+                        Looking for new listing alerts? Use <strong>Saved Searches</strong> for more powerful filtering.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onClose();
+                          router.push('/saved-searches');
+                        }}
+                        className="text-[13px] font-medium text-gold hover:underline"
+                      >
+                        Go to Saved Searches →
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>

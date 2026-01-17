@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useMemo, ReactNode } from 'react';
 
 interface MobileUIState {
   filterDrawerOpen: boolean;
@@ -56,19 +56,32 @@ export function MobileUIProvider({ children }: { children: ReactNode }) {
     setState({ filterDrawerOpen: false, navDrawerOpen: false, searchOpen: false });
   }, []);
 
+  // Memoize the context value to prevent unnecessary re-renders in consumers
+  const value = useMemo(
+    () => ({
+      ...state,
+      openFilterDrawer,
+      closeFilterDrawer,
+      openNavDrawer,
+      closeNavDrawer,
+      openSearch,
+      closeSearch,
+      closeAll,
+    }),
+    [
+      state,
+      openFilterDrawer,
+      closeFilterDrawer,
+      openNavDrawer,
+      closeNavDrawer,
+      openSearch,
+      closeSearch,
+      closeAll,
+    ]
+  );
+
   return (
-    <MobileUIContext.Provider
-      value={{
-        ...state,
-        openFilterDrawer,
-        closeFilterDrawer,
-        openNavDrawer,
-        closeNavDrawer,
-        openSearch,
-        closeSearch,
-        closeAll,
-      }}
-    >
+    <MobileUIContext.Provider value={value}>
       {children}
     </MobileUIContext.Provider>
   );

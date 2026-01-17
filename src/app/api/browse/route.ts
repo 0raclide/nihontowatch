@@ -76,6 +76,10 @@ export async function GET(request: NextRequest) {
     const supabase = await createClient();
     const params = parseParams(request.nextUrl.searchParams);
 
+    // Debug logging for facet issue
+    console.log('[browse API] params.category:', params.category);
+    console.log('[browse API] URL search params:', request.nextUrl.searchParams.toString());
+
     // Ensure page is reasonable
     const safePage = Math.max(1, Math.min(params.page || 1, 1000));
     const offset = (safePage - 1) * params.limit!;
@@ -433,6 +437,11 @@ async function getCertificationFacets(
         ? TOSOGU_TYPES
         : undefined;
 
+  // Debug logging
+  console.log('[getCertificationFacets] options.category:', options.category);
+  console.log('[getCertificationFacets] effectiveItemTypes:', effectiveItemTypes);
+  console.log('[getCertificationFacets] total rows fetched:', data.length);
+
   // Normalize cert function
   const normalizeCert = (cert: string): string => {
     const lower = cert.toLowerCase();
@@ -446,14 +455,18 @@ async function getCertificationFacets(
 
   // Filter and aggregate in JS
   const counts: Record<string, number> = {};
+  let filteredCount = 0;
+  let skippedCount = 0;
   (data as Array<{ cert_type: string | null; item_type: string | null }>).forEach(row => {
     // Filter by item type if category is set
     if (effectiveItemTypes) {
       const itemType = row.item_type?.toLowerCase().replace('fuchi_kashira', 'fuchi-kashira');
       if (!itemType || !effectiveItemTypes.some(t => t.toLowerCase() === itemType)) {
+        skippedCount++;
         return; // Skip this row - doesn't match category
       }
     }
+    filteredCount++;
 
     const cert = row.cert_type;
     if (cert && cert !== 'null') {
@@ -461,6 +474,9 @@ async function getCertificationFacets(
       counts[normalized] = (counts[normalized] || 0) + 1;
     }
   });
+
+  console.log('[getCertificationFacets] rows after filtering:', filteredCount, 'skipped:', skippedCount);
+  console.log('[getCertificationFacets] cert counts:', counts);
 
   return Object.entries(counts)
     .map(([value, count]) => ({ value, count }))

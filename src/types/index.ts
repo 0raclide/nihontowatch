@@ -404,3 +404,88 @@ export function getAlertTypeDescription(type: AlertType): string {
 
 export type FreshnessConfidence = 'high' | 'medium' | 'low' | 'unknown';
 export type FreshnessSource = 'dealer_meta' | 'wayback' | 'inferred' | 'unknown';
+
+// =============================================================================
+// SAVED SEARCHES
+// =============================================================================
+
+export type NotificationFrequency = 'instant' | 'daily' | 'none';
+
+/**
+ * Full search criteria matching browse page filter state
+ */
+export interface SavedSearchCriteria {
+  tab?: 'available' | 'sold';
+  category?: 'all' | 'nihonto' | 'tosogu';
+  itemTypes?: string[];
+  certifications?: string[];
+  dealers?: number[];
+  schools?: string[];
+  askOnly?: boolean;
+  query?: string;
+  sort?: string;
+  minPrice?: number;
+  maxPrice?: number;
+}
+
+export interface SavedSearch {
+  id: string;
+  user_id: string;
+  name?: string;
+  search_criteria: SavedSearchCriteria;
+  notification_frequency: NotificationFrequency;
+  is_active: boolean;
+  last_notified_at?: string;
+  last_match_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateSavedSearchInput {
+  name?: string;
+  search_criteria: SavedSearchCriteria;
+  notification_frequency?: NotificationFrequency;
+}
+
+export interface UpdateSavedSearchInput {
+  name?: string;
+  search_criteria?: SavedSearchCriteria;
+  notification_frequency?: NotificationFrequency;
+  is_active?: boolean;
+}
+
+export type SavedSearchNotificationStatus = 'pending' | 'sent' | 'failed';
+
+export interface SavedSearchNotification {
+  id: string;
+  saved_search_id: string;
+  matched_listing_ids: number[];
+  status: SavedSearchNotificationStatus;
+  error_message?: string;
+  created_at: string;
+  sent_at?: string;
+}
+
+/**
+ * Get human-readable notification frequency label
+ */
+export function getNotificationFrequencyLabel(freq: NotificationFrequency): string {
+  const labels: Record<NotificationFrequency, string> = {
+    instant: 'Instant (every 15 min)',
+    daily: 'Daily digest',
+    none: 'No notifications',
+  };
+  return labels[freq] || freq;
+}
+
+/**
+ * Get notification frequency description
+ */
+export function getNotificationFrequencyDescription(freq: NotificationFrequency): string {
+  const descriptions: Record<NotificationFrequency, string> = {
+    instant: 'Get notified within 15 minutes of new matches',
+    daily: 'Receive a daily email at 8am UTC with all new matches',
+    none: 'Save for quick access, no email notifications',
+  };
+  return descriptions[freq] || '';
+}

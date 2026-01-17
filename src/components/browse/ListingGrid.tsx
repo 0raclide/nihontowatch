@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { ListingCard } from './ListingCard';
 import { useQuickViewOptional } from '@/contexts/QuickViewContext';
 import type { Listing as QuickViewListing } from '@/types';
@@ -253,23 +253,33 @@ export function ListingGrid({
   const quickView = useQuickViewOptional();
   const { visibleIndices, setCardRef } = useVisibleCards(listings.length);
 
+  // Memoize the converted listings for QuickView to avoid recreating on every render
+  const quickViewListings = useMemo(() => {
+    if (listings.length === 0) return [];
+    return listings.map(listing => ({
+      ...listing,
+      id: typeof listing.id === 'string' ? parseInt(listing.id, 10) : listing.id,
+      dealer: listing.dealers ? {
+        id: listing.dealers.id,
+        name: listing.dealers.name,
+        domain: listing.dealers.domain,
+      } : undefined,
+    })) as unknown as QuickViewListing[];
+  }, [listings]);
+
+  // Track what we've set to avoid unnecessary updates
+  const lastSetListingsRef = useRef<QuickViewListing[] | null>(null);
+
   // Pass listings to QuickView context for navigation between listings
   useEffect(() => {
-    if (quickView && listings.length > 0) {
-      // Convert local Listing type to QuickViewListing type
-      const quickViewListings = listings.map(listing => ({
-        ...listing,
-        id: typeof listing.id === 'string' ? parseInt(listing.id, 10) : listing.id,
-        dealer: listing.dealers ? {
-          id: listing.dealers.id,
-          name: listing.dealers.name,
-          domain: listing.dealers.domain,
-        } : undefined,
-      })) as unknown as QuickViewListing[];
-
-      quickView.setListings(quickViewListings);
+    if (quickView && quickViewListings.length > 0) {
+      // Only set if the listings have actually changed
+      if (lastSetListingsRef.current !== quickViewListings) {
+        lastSetListingsRef.current = quickViewListings;
+        quickView.setListings(quickViewListings);
+      }
     }
-  }, [listings, quickView]);
+  }, [quickViewListings, quickView]);
 
   if (isLoading) {
     return <LoadingSkeleton />;

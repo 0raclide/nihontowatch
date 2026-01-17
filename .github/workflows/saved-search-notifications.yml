@@ -1,0 +1,79 @@
+name: Saved Search Notifications
+
+on:
+  schedule:
+    # Instant notifications: every 15 minutes
+    - cron: '*/15 * * * *'
+    # Daily digest: 8am UTC
+    - cron: '0 8 * * *'
+  workflow_dispatch:
+    # Allow manual trigger from GitHub UI
+    inputs:
+      frequency:
+        description: 'Notification frequency to process'
+        required: true
+        type: choice
+        options:
+          - instant
+          - daily
+
+jobs:
+  process-notifications:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Determine frequency
+        id: freq
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            # Manual trigger - use input
+            echo "frequency=${{ inputs.frequency }}" >> $GITHUB_OUTPUT
+          else
+            # Scheduled trigger - determine from cron
+            minute=$(date -u +%M)
+            hour=$(date -u +%H)
+
+            # 8am UTC is daily digest
+            if [ "$hour" = "08" ] && [ "$minute" = "00" ]; then
+              echo "frequency=daily" >> $GITHUB_OUTPUT
+            else
+              echo "frequency=instant" >> $GITHUB_OUTPUT
+            fi
+          fi
+
+      - name: Process ${{ steps.freq.outputs.frequency }} notifications
+        run: |
+          frequency=${{ steps.freq.outputs.frequency }}
+          echo "Processing $frequency notifications..."
+
+          response=$(curl -s -w "\n%{http_code}" \
+            -X GET \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "https://nihontowatch.com/api/cron/process-saved-searches?frequency=$frequency")
+
+          # Extract HTTP status code (last line)
+          http_code=$(echo "$response" | tail -n1)
+          # Extract body (all but last line)
+          body=$(echo "$response" | sed '$d')
+
+          echo "Response: $body"
+          echo "HTTP Status: $http_code"
+
+          # Fail if not 200
+          if [ "$http_code" != "200" ]; then
+            echo "::error::API returned HTTP $http_code"
+            exit 1
+          fi
+
+          # Parse and display results
+          processed=$(echo "$body" | jq -r '.processed // 0')
+          sent=$(echo "$body" | jq -r '.notificationsSent // 0')
+          errors=$(echo "$body" | jq -r '.errors // 0')
+
+          echo "::notice::Processed $processed saved searches, sent $sent notifications, $errors errors"
+
+          # Warn if there were errors
+          if [ "$errors" != "0" ]; then
+            echo "::warning::$errors notifications failed to send"
+          fi

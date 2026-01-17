@@ -7,10 +7,12 @@ import {
   useCallback,
   useEffect,
   useRef,
+  useMemo,
   type ReactNode,
 } from 'react';
 import { usePathname } from 'next/navigation';
 import type { Listing } from '@/types';
+import { useSignupPressureOptional } from './SignupPressureContext';
 
 // ============================================================================
 // Types
@@ -57,6 +59,7 @@ interface QuickViewProviderProps {
 
 export function QuickViewProvider({ children }: QuickViewProviderProps) {
   const pathname = usePathname();
+  const signupPressure = useSignupPressureOptional();
 
   const [isOpen, setIsOpen] = useState(false);
   const [currentListing, setCurrentListing] = useState<Listing | null>(null);
@@ -102,7 +105,10 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
 
     // Update URL
     updateUrl(listing.id);
-  }, [findListingIndex, updateUrl]);
+
+    // Track for signup pressure system
+    signupPressure?.trackQuickView();
+  }, [findListingIndex, updateUrl, signupPressure]);
 
   // Close quick view
   const closeQuickView = useCallback(() => {
@@ -230,19 +236,35 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
   const hasNext = listings.length > 0 && currentIndex !== -1;
   const hasPrevious = listings.length > 0 && currentIndex !== -1;
 
-  const value: QuickViewContextType = {
-    isOpen,
-    currentListing,
-    openQuickView,
-    closeQuickView,
-    listings,
-    currentIndex,
-    goToNext,
-    goToPrevious,
-    hasNext,
-    hasPrevious,
-    setListings,
-  };
+  // Memoize the context value to prevent unnecessary re-renders in consumers
+  const value: QuickViewContextType = useMemo(
+    () => ({
+      isOpen,
+      currentListing,
+      openQuickView,
+      closeQuickView,
+      listings,
+      currentIndex,
+      goToNext,
+      goToPrevious,
+      hasNext,
+      hasPrevious,
+      setListings,
+    }),
+    [
+      isOpen,
+      currentListing,
+      openQuickView,
+      closeQuickView,
+      listings,
+      currentIndex,
+      goToNext,
+      goToPrevious,
+      hasNext,
+      hasPrevious,
+      setListings,
+    ]
+  );
 
   return (
     <QuickViewContext.Provider value={value}>

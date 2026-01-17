@@ -8,6 +8,8 @@ import { FilterDrawer } from '@/components/browse/FilterDrawer';
 import { ListingGrid } from '@/components/browse/ListingGrid';
 import { CurrencySelector } from '@/components/ui/CurrencySelector';
 import { getActiveFilterCount } from '@/components/browse/FilterContent';
+import { SaveSearchButton } from '@/components/browse/SaveSearchButton';
+import type { SavedSearchCriteria } from '@/types';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { BottomTabBar } from '@/components/navigation/BottomTabBar';
@@ -310,6 +312,22 @@ function HomeContent() {
               <option value="price_desc">Price ↓</option>
               <option value="name">A-Z</option>
             </select>
+
+            {/* Save Search Button */}
+            <SaveSearchButton
+              criteria={{
+                tab: 'available',
+                category: filters.category,
+                itemTypes: filters.itemTypes,
+                certifications: filters.certifications,
+                dealers: filters.dealers,
+                schools: filters.schools,
+                askOnly: filters.askOnly,
+                query: searchQuery || undefined,
+                sort,
+              } as SavedSearchCriteria}
+              currentMatchCount={data?.total}
+            />
           </div>
         </div>
 

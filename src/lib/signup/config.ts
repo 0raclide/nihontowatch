@@ -44,10 +44,10 @@ export const SIGNUP_PRESSURE_CONFIG: SignupPressureConfig = {
 export const SIGNUP_MODAL_COPY: SignupModalCopyVariants = {
   engagement: {
     headline: 'Track what matters.',
-    body: "You're clearly discerning. Create an account to save the pieces you're watching, receive alerts when prices shift, and never lose track of a listing that caught your eye.",
+    body: "Create an account to save the pieces you're watching, receive alerts when prices shift, and never lose track of a listing that caught your eye.",
     cta: 'Create Account',
     dismiss: 'Continue browsing',
-    socialProof: 'Trusted by collectors in 40+ countries',
+    socialProof: 'Aggregating 27 dealers worldwide',
   },
 
   favorite: {
@@ -55,7 +55,7 @@ export const SIGNUP_MODAL_COPY: SignupModalCopyVariants = {
     body: "Create an account to save this piece to your collection. You'll be notified if the price changes or if it sells.",
     cta: 'Create Account',
     dismiss: 'Continue browsing',
-    socialProof: 'Join thousands of collectors tracking their acquisitions',
+    socialProof: 'Price alerts delivered within minutes',
   },
 
   alert: {
@@ -63,7 +63,7 @@ export const SIGNUP_MODAL_COPY: SignupModalCopyVariants = {
     body: 'Price drops and new listings move fast. Create an account to receive instant alerts tailored to your criteria.',
     cta: 'Create Account',
     dismiss: 'Continue browsing',
-    socialProof: 'Collectors receive alerts within minutes of price changes',
+    socialProof: 'Alerts delivered within minutes of changes',
   },
 
   priceHistory: {
@@ -71,7 +71,7 @@ export const SIGNUP_MODAL_COPY: SignupModalCopyVariants = {
     body: 'Understanding price history helps you make informed decisions. Create an account to access historical data and market trends.',
     cta: 'Create Account',
     dismiss: 'Continue browsing',
-    socialProof: 'Track price movements across 27 dealers worldwide',
+    socialProof: 'Price data across 27 dealers',
   },
 };
 

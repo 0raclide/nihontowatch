@@ -24,6 +24,7 @@ import {
   useRef,
   useEffect,
   useState,
+  useMemo,
   type ReactNode,
 } from 'react';
 import { useAuth } from '@/lib/auth/AuthContext';
@@ -491,18 +492,33 @@ export function ActivityTrackerProvider({
     [createBaseEvent, queueEvent, isOptedOut]
   );
 
-  const tracker: ActivityTracker = {
-    trackPageView,
-    trackListingView,
-    trackSearch,
-    trackFilterChange,
-    trackFavoriteAction,
-    trackAlertAction,
-    trackExternalLinkClick,
-    flush: flushEvents,
-    isOptedOut,
-    setOptOut,
-  };
+  // Memoize the tracker object to prevent unnecessary re-renders in consumers
+  const tracker: ActivityTracker = useMemo(
+    () => ({
+      trackPageView,
+      trackListingView,
+      trackSearch,
+      trackFilterChange,
+      trackFavoriteAction,
+      trackAlertAction,
+      trackExternalLinkClick,
+      flush: flushEvents,
+      isOptedOut,
+      setOptOut,
+    }),
+    [
+      trackPageView,
+      trackListingView,
+      trackSearch,
+      trackFilterChange,
+      trackFavoriteAction,
+      trackAlertAction,
+      trackExternalLinkClick,
+      flushEvents,
+      isOptedOut,
+      setOptOut,
+    ]
+  );
 
   return (
     <ActivityTrackerContext.Provider value={tracker}>

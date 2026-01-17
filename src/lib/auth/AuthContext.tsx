@@ -7,6 +7,7 @@ import {
   useState,
   useCallback,
   useRef,
+  useMemo,
   type ReactNode,
 } from 'react';
 import { User, Session, AuthError, SupabaseClient } from '@supabase/supabase-js';
@@ -368,14 +369,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
     clearAuthCache();
   }, [supabase]);
 
-  const value: AuthContextValue = {
-    ...state,
-    signInWithEmail,
-    verifyOtp,
-    signInWithPassword,
-    signOut,
-    refreshProfile,
-  };
+  // Memoize the context value to prevent unnecessary re-renders in consumers
+  const value: AuthContextValue = useMemo(
+    () => ({
+      ...state,
+      signInWithEmail,
+      verifyOtp,
+      signInWithPassword,
+      signOut,
+      refreshProfile,
+    }),
+    [state, signInWithEmail, verifyOtp, signInWithPassword, signOut, refreshProfile]
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
