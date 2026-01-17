@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 
-const API_BASE = 'http://localhost:3020';
+// Use environment variable for API base URL, defaulting to production
+const API_BASE = process.env.TEST_API_URL || 'https://nihontowatch.com';
 
 describe('Exchange Rates API', () => {
   it('should return exchange rates', async () => {

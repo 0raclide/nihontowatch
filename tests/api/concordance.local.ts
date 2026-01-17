@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 
-const API_BASE = 'http://localhost:3020';
+// Use environment variable for API base URL, defaulting to production
+// This allows tests to run in CI against production or locally against dev server
+const API_BASE = process.env.TEST_API_URL || 'https://nihontowatch.com';
 
 interface BrowseResponse {
   listings: Array<{

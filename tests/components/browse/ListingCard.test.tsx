@@ -9,6 +9,26 @@ vi.mock('next/image', () => ({
   ),
 }));
 
+// Mock activity context (optional, returns null when not provided)
+vi.mock('@/components/activity/ActivityProvider', () => ({
+  useActivityOptional: () => null,
+}));
+
+// Mock quick view context (optional, returns null when not provided)
+vi.mock('@/contexts/QuickViewContext', () => ({
+  useQuickViewOptional: () => null,
+}));
+
+// Mock freshness helper
+vi.mock('@/lib/freshness', () => ({
+  getMarketTimeDisplay: () => null,
+}));
+
+// Mock images helper
+vi.mock('@/lib/images', () => ({
+  getImageUrl: (listing: { images?: string[] | null }) => listing.images?.[0] || null,
+}));
+
 const mockListing = {
   id: '1',
   url: 'https://example.com/listing/1',
@@ -85,69 +105,70 @@ describe('ListingCard Component', () => {
     expect(screen.getByText('Sold')).toBeInTheDocument();
   });
 
-  it('links to the listing URL', () => {
+  it('is clickable with correct data attributes', () => {
     render(<ListingCard {...defaultProps} />);
 
-    const link = screen.getByRole('link');
-    expect(link).toHaveAttribute('href', mockListing.url);
-    expect(link).toHaveAttribute('target', '_blank');
-    expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+    // ListingCard is now a button that opens quick view, not a direct link
+    // Use testid to find the main card container
+    const card = screen.getByTestId('listing-card');
+    expect(card).toHaveAttribute('data-listing-id', mockListing.id);
+    expect(card).toHaveAttribute('role', 'button');
   });
 
   describe('Responsive styling', () => {
     it('has responsive content padding', () => {
       render(<ListingCard {...defaultProps} />);
 
-      // Find content container with responsive padding
-      const contentDiv = document.querySelector('.p-2\\.5.lg\\:p-3');
+      // Find content container with responsive padding (p-2.5 lg:p-4)
+      const contentDiv = document.querySelector('.p-2\\.5.lg\\:p-4');
       expect(contentDiv).toBeInTheDocument();
     });
 
     it('has responsive title font size', () => {
       render(<ListingCard {...defaultProps} />);
 
-      // Title should have responsive font classes
-      const title = document.querySelector('.text-sm.lg\\:text-\\[15px\\]');
+      // Title should have responsive font classes (text-[15px] lg:text-base)
+      const title = document.querySelector('.text-\\[15px\\].lg\\:text-base');
       expect(title).toBeInTheDocument();
     });
 
     it('has responsive price font size', () => {
       render(<ListingCard {...defaultProps} />);
 
-      // Price should have responsive font classes
-      const price = document.querySelector('.text-sm.lg\\:text-\\[15px\\]');
+      // Price should have responsive font classes (text-[15px] lg:text-base)
+      const price = document.querySelector('.text-\\[15px\\].lg\\:text-base');
       expect(price).toBeInTheDocument();
     });
 
     it('has responsive dealer domain padding', () => {
       render(<ListingCard {...defaultProps} />);
 
-      // Dealer header should have responsive padding
-      const dealerHeader = document.querySelector('.px-2\\.5.py-2.lg\\:px-3.lg\\:py-2\\.5');
+      // Dealer header should have responsive padding (px-2.5 py-2 lg:px-4 lg:py-2.5)
+      const dealerHeader = document.querySelector('.px-2\\.5.py-2.lg\\:px-4.lg\\:py-2\\.5');
       expect(dealerHeader).toBeInTheDocument();
     });
 
     it('has responsive dealer domain font size', () => {
       render(<ListingCard {...defaultProps} />);
 
-      // Dealer domain should have responsive font
-      const dealerDomain = document.querySelector('.text-\\[9px\\].lg\\:text-\\[10px\\]');
+      // Dealer domain should have responsive font (text-[10px] lg:text-[12px])
+      const dealerDomain = document.querySelector('.text-\\[10px\\].lg\\:text-\\[12px\\]');
       expect(dealerDomain).toBeInTheDocument();
     });
 
     it('has responsive certification badge font size', () => {
       render(<ListingCard {...defaultProps} />);
 
-      // Cert badge should have responsive font
-      const certBadge = document.querySelector('.text-\\[8px\\].lg\\:text-\\[9px\\]');
+      // Cert badge should have responsive font (text-[9px] lg:text-[10px])
+      const certBadge = document.querySelector('.text-\\[9px\\].lg\\:text-\\[10px\\]');
       expect(certBadge).toBeInTheDocument();
     });
 
     it('has responsive artisan font size', () => {
       render(<ListingCard {...defaultProps} />);
 
-      // Artisan text should have responsive font
-      const artisan = document.querySelector('.text-\\[11px\\].lg\\:text-\\[12px\\]');
+      // Artisan text should have responsive font (text-[12px] lg:text-[13px])
+      const artisan = document.querySelector('.text-\\[12px\\].lg\\:text-\\[13px\\]');
       expect(artisan).toBeInTheDocument();
     });
   });
@@ -170,26 +191,29 @@ describe('ListingCard Component', () => {
   });
 
   describe('Certification badge tiers', () => {
-    it('shows premier tier styling for Juyo', () => {
+    it('shows juyo tier styling for Juyo', () => {
       render(<ListingCard {...defaultProps} />);
 
-      const badge = document.querySelector('.bg-burgundy\\/10');
+      // Current styling uses bg-juyo-bg class
+      const badge = document.querySelector('.bg-juyo-bg');
       expect(badge).toBeInTheDocument();
     });
 
-    it('shows high tier styling for TokuHozon', () => {
+    it('shows toku-hozon tier styling for TokuHozon', () => {
       const tokuHozonListing = { ...mockListing, cert_type: 'TokuHozon' };
       render(<ListingCard {...defaultProps} listing={tokuHozonListing} />);
 
-      const badge = document.querySelector('.bg-toku-hozon\\/10');
+      // Current styling uses bg-toku-hozon-bg class
+      const badge = document.querySelector('.bg-toku-hozon-bg');
       expect(badge).toBeInTheDocument();
     });
 
-    it('shows standard tier styling for Hozon', () => {
+    it('shows hozon tier styling for Hozon', () => {
       const hozonListing = { ...mockListing, cert_type: 'Hozon' };
       render(<ListingCard {...defaultProps} listing={hozonListing} />);
 
-      const badge = document.querySelector('.bg-hozon\\/10');
+      // Current styling uses bg-hozon-bg class
+      const badge = document.querySelector('.bg-hozon-bg');
       expect(badge).toBeInTheDocument();
     });
 

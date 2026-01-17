@@ -11,7 +11,9 @@
 
 import { describe, it, expect, beforeAll } from 'vitest';
 
-const API_BASE = process.env.TEST_API_URL || 'http://localhost:3020';
+// Use environment variable for API base URL, defaulting to production
+// For local testing with dev server, run: TEST_API_URL=http://localhost:3020 npm test tests/api/search.test.ts
+const API_BASE = process.env.TEST_API_URL || 'https://nihontowatch.com';
 
 describe('Search Suggestions API', () => {
   // Give the server a moment to be ready
