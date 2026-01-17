@@ -31,6 +31,10 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
 
   const emailInputRef = useRef<HTMLInputElement>(null);
   const otpInputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const emailRef = useRef(email); // Keep email in ref for callbacks
+
+  // Keep emailRef in sync with email state
+  emailRef.current = email;
 
   useBodyScrollLock(isOpen);
 
@@ -159,7 +163,9 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
   // Handle OTP submission
   const handleOtpSubmit = async (code?: string) => {
     const otpCode = code || otp.join('');
-    console.log('[LoginModal] handleOtpSubmit called, code length:', otpCode.length);
+    // Use ref to get current email value (avoids stale closure in callbacks)
+    const currentEmail = emailRef.current;
+    console.log('[LoginModal] handleOtpSubmit called, code length:', otpCode.length, 'email:', currentEmail);
 
     if (otpCode.length !== 6) {
       setError('Please enter the complete 6-digit code.');
@@ -169,9 +175,9 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
     setError(null);
     setIsLoading(true);
 
-    console.log('[LoginModal] Calling verifyOtp with email:', email);
+    console.log('[LoginModal] Calling verifyOtp with email:', currentEmail);
     try {
-      const { error } = await verifyOtp(email, otpCode);
+      const { error } = await verifyOtp(currentEmail, otpCode);
       console.log('[LoginModal] verifyOtp returned, error:', error);
 
       if (error) {
