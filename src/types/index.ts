@@ -66,6 +66,7 @@ export interface Dealer {
   country: string;
   is_active: boolean;
   created_at: string;
+  catalog_baseline_at?: string;
   // Computed fields
   listing_count?: number;
   slug?: string;
@@ -134,6 +135,13 @@ export interface Listing {
   first_seen_at: string;
   last_scraped_at: string;
   scrape_count: number;
+
+  // Freshness tracking
+  listing_published_at?: string;
+  freshness_source?: 'dealer_meta' | 'wayback' | 'inferred' | 'unknown';
+  freshness_confidence?: 'high' | 'medium' | 'low' | 'unknown';
+  wayback_first_archive_at?: string;
+  wayback_checked_at?: string;
 
   // Relations (when joined)
   dealer?: Dealer;
@@ -389,3 +397,10 @@ export function getAlertTypeDescription(type: AlertType): string {
   };
   return descriptions[type] || '';
 }
+
+// =============================================================================
+// FRESHNESS TYPES
+// =============================================================================
+
+export type FreshnessConfidence = 'high' | 'medium' | 'low' | 'unknown';
+export type FreshnessSource = 'dealer_meta' | 'wayback' | 'inferred' | 'unknown';

@@ -41,7 +41,11 @@ export async function middleware(request: NextRequest) {
 
   // Protect /admin routes
   if (request.nextUrl.pathname.startsWith('/admin')) {
+    console.log('[Middleware] Admin route requested:', request.nextUrl.pathname);
+    console.log('[Middleware] User:', user?.email);
+
     if (!user) {
+      console.log('[Middleware] No user, redirecting to login');
       // Redirect to home with login param
       const url = request.nextUrl.clone();
       url.pathname = '/';
@@ -50,18 +54,23 @@ export async function middleware(request: NextRequest) {
     }
 
     // Check if user is admin (using role column)
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('role')
       .eq('id', user.id)
-      .single() as { data: { role: string } | null };
+      .single() as { data: { role: string } | null; error: unknown };
+
+    console.log('[Middleware] Profile query result:', profile, 'Error:', profileError);
 
     if (profile?.role !== 'admin') {
+      console.log('[Middleware] Not admin (role:', profile?.role, '), redirecting to home');
       // Redirect non-admins to home page
       const url = request.nextUrl.clone();
       url.pathname = '/';
       return NextResponse.redirect(url);
     }
+
+    console.log('[Middleware] Admin access granted');
   }
 
   // Protect /api/admin routes

@@ -7,6 +7,7 @@
 | [CLAUDE.md](../CLAUDE.md) | AI context, project overview, quick reference |
 | [ARCHITECTURE.md](./ARCHITECTURE.md) | System architecture, data flow, infrastructure |
 | [CROSS_REPO_REFERENCE.md](./CROSS_REPO_REFERENCE.md) | What lives where across all repos |
+| [DEALERS.md](./DEALERS.md) | Dealer-specific quirks, exclusions, maintenance notes |
 | [USER_ACCOUNTS_SYSTEM.md](./USER_ACCOUNTS_SYSTEM.md) | Auth, profiles, favorites, alerts, activity tracking, admin |
 | [MOBILE_UX.md](./MOBILE_UX.md) | Mobile interaction patterns, QuickView bottom sheet |
 | [SEARCH_FEATURES.md](./SEARCH_FEATURES.md) | Natural language search, filters, query syntax |
@@ -70,6 +71,12 @@
 1. Read `Oshi-scrapper/scrapers/base.py` - Base class
 2. Copy `Oshi-scrapper/scrapers/generic.py` - Template
 3. Add tests in `Oshi-scrapper/tests/scrapers/`
+4. Document quirks in [DEALERS.md](./DEALERS.md)
+
+### "I need to fix dealer-specific issues"
+1. Read [DEALERS.md](./DEALERS.md) - Existing dealer notes
+2. Check `Oshi-scrapper/scrapers/<dealer>.py` - Scraper code
+3. Add exclusions, quirks, or cleanup notes to DEALERS.md
 
 ### "I need to build a UI component"
 1. Check `oshi-v2/src/components/` - Reference implementations
@@ -123,6 +130,7 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for:
 | Local development | [CLAUDE.md](../CLAUDE.md#development-workflow) |
 | Database setup | [ARCHITECTURE.md](./ARCHITECTURE.md#database) |
 | Adding dealers | [CROSS_REPO_REFERENCE.md](./CROSS_REPO_REFERENCE.md#adding-dealers) |
+| Dealer quirks & fixes | [DEALERS.md](./DEALERS.md) |
 | User accounts & auth | [USER_ACCOUNTS_SYSTEM.md](./USER_ACCOUNTS_SYSTEM.md) |
 | Admin dashboard | [USER_ACCOUNTS_SYSTEM.md#admin-dashboard](./USER_ACCOUNTS_SYSTEM.md#admin-dashboard) |
 | Mobile UX & gestures | [MOBILE_UX.md](./MOBILE_UX.md) |

@@ -2,6 +2,7 @@
 
 import { FavoriteButton } from '@/components/favorites/FavoriteButton';
 import { useCurrency, formatPriceWithConversion } from '@/hooks/useCurrency';
+import { formatFreshnessDisplay } from '@/lib/freshness';
 import type { Listing } from '@/types';
 import { isBlade, isTosogu, getItemTypeLabel } from '@/types';
 
@@ -60,18 +61,22 @@ function getCertInfo(certType: string | undefined): { label: string; shortLabel:
   return CERT_CONFIG[certType] || null;
 }
 
-function formatTimeAgo(dateString: string): string {
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-  if (diffDays === 0) return 'Listed today';
-  if (diffDays === 1) return 'Listed yesterday';
-  if (diffDays < 7) return `Listed ${diffDays} days ago`;
-  if (diffDays < 30) return `Listed ${Math.floor(diffDays / 7)} weeks ago`;
-  if (diffDays < 365) return `Listed ${Math.floor(diffDays / 30)} months ago`;
-  return `Listed ${Math.floor(diffDays / 365)} years ago`;
+// Freshness icon component
+function FreshnessIcon({ isVerified }: { isVerified: boolean }) {
+  if (isVerified) {
+    // Checkmark icon for verified freshness
+    return (
+      <svg className="w-3 h-3 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+      </svg>
+    );
+  }
+  // Question mark icon for unverified
+  return (
+    <svg className="w-3 h-3 text-muted/50" fill="currentColor" viewBox="0 0 20 20">
+      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+    </svg>
+  );
 }
 
 // =============================================================================
@@ -148,9 +153,15 @@ export function QuickViewContent({ listing, onClose }: QuickViewContentProps) {
               </svg>
               <span>{dealerName}</span>
             </div>
-            {listing.first_seen_at && (
-              <span className="text-muted/70">{formatTimeAgo(listing.first_seen_at)}</span>
-            )}
+            {listing.first_seen_at && (() => {
+              const freshness = formatFreshnessDisplay(listing);
+              return freshness.show ? (
+                <span className="flex items-center gap-1 text-muted/70">
+                  <FreshnessIcon isVerified={freshness.isVerified} />
+                  {freshness.text}
+                </span>
+              ) : null;
+            })()}
           </div>
         </div>
 

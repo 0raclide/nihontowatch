@@ -1,0 +1,599 @@
+'use client';
+
+/**
+ * Activity Tracker with Auth Integration
+ *
+ * This module provides activity tracking with:
+ * - Authenticated user ID integration
+ * - Privacy opt-out support
+ * - Session management
+ * - Event batching
+ *
+ * The core tracking logic is in:
+ * - /lib/activity/sessionManager.ts - Session lifecycle
+ * - /hooks/useActivityTracker.ts - Event tracking hook
+ * - /components/activity/ActivityProvider.tsx - Context provider
+ *
+ * This file adds auth integration and privacy controls.
+ */
+
+import {
+  createContext,
+  useContext,
+  useCallback,
+  useRef,
+  useEffect,
+  useState,
+  type ReactNode,
+} from 'react';
+import { useAuth } from '@/lib/auth/AuthContext';
+import {
+  getSessionId,
+  updateActivity,
+  isHidden,
+  setupVisibilityHandler,
+  initSession,
+  setupUnloadHandler,
+} from '@/lib/activity/sessionManager';
+import type {
+  ActivityEvent,
+  PageViewEvent,
+  ListingViewEvent,
+  SearchEvent,
+  FilterChangeEvent,
+  FavoriteEvent,
+  AlertEvent,
+  ExternalLinkClickEvent,
+  SearchFilters,
+  ActivityBatchPayload,
+  CreateSessionPayload,
+} from '@/lib/activity/types';
+
+// =============================================================================
+// Constants
+// =============================================================================
+
+const BATCH_INTERVAL_MS = 30000; // 30 seconds
+const MAX_BATCH_SIZE = 50;
+const ACTIVITY_API_ENDPOINT = '/api/activity';
+const PRIVACY_OPT_OUT_KEY = 'nihontowatch_tracking_opt_out';
+
+// =============================================================================
+// Privacy Management
+// =============================================================================
+
+/**
+ * Check if user has opted out of tracking
+ */
+export function hasOptedOutOfTracking(): boolean {
+  if (typeof window === 'undefined') return false;
+
+  try {
+    return localStorage.getItem(PRIVACY_OPT_OUT_KEY) === 'true';
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Set tracking opt-out preference
+ */
+export function setTrackingOptOut(optOut: boolean): void {
+  if (typeof window === 'undefined') return;
+
+  try {
+    if (optOut) {
+      localStorage.setItem(PRIVACY_OPT_OUT_KEY, 'true');
+    } else {
+      localStorage.removeItem(PRIVACY_OPT_OUT_KEY);
+    }
+  } catch {
+    // Silently fail if localStorage is unavailable
+  }
+}
+
+// =============================================================================
+// Tracker Types
+// =============================================================================
+
+export interface ActivityTracker {
+  trackPageView: (path: string, searchParams?: Record<string, string>) => void;
+  trackListingView: (
+    listingId: number,
+    durationMs: number,
+    extra?: { scrollDepth?: number; imageViews?: number }
+  ) => void;
+  trackSearch: (
+    query: string,
+    resultCount?: number,
+    filters?: SearchFilters
+  ) => void;
+  trackFilterChange: (
+    filters: SearchFilters,
+    changedFilter: string,
+    previousValue?: unknown,
+    newValue?: unknown
+  ) => void;
+  trackFavoriteAction: (listingId: number, action: 'add' | 'remove') => void;
+  trackAlertAction: (
+    action: 'create' | 'delete',
+    alertId?: string,
+    alertType?: string,
+    criteria?: Record<string, unknown>
+  ) => void;
+  trackExternalLinkClick: (
+    url: string,
+    listingId?: number,
+    dealerName?: string
+  ) => void;
+  flush: () => Promise<void>;
+  isOptedOut: boolean;
+  setOptOut: (optOut: boolean) => void;
+}
+
+// =============================================================================
+// Context
+// =============================================================================
+
+const ActivityTrackerContext = createContext<ActivityTracker | null>(null);
+
+// =============================================================================
+// Provider Component
+// =============================================================================
+
+interface ActivityTrackerProviderProps {
+  children: ReactNode;
+  /**
+   * Whether to track page views automatically on route changes
+   * @default true
+   */
+  autoTrackPageViews?: boolean;
+  /**
+   * Whether to create/track sessions
+   * @default true
+   */
+  trackSessions?: boolean;
+}
+
+export function ActivityTrackerProvider({
+  children,
+  autoTrackPageViews = true,
+  trackSessions = true,
+}: ActivityTrackerProviderProps) {
+  // Get user from auth context
+  const { user } = useAuth();
+
+  // Track opt-out state
+  const [isOptedOut, setIsOptedOut] = useState(() => hasOptedOutOfTracking());
+
+  // Event queue
+  const eventQueueRef = useRef<ActivityEvent[]>([]);
+  // Batch timer
+  const batchTimerRef = useRef<NodeJS.Timeout | null>(null);
+  // Track if component is mounted
+  const isMountedRef = useRef(true);
+  // Track pending flush promise
+  const flushingRef = useRef(false);
+  // Track if initial session has been created
+  const sessionCreatedRef = useRef(false);
+
+  // Set opt-out preference
+  const setOptOut = useCallback((optOut: boolean) => {
+    setTrackingOptOut(optOut);
+    setIsOptedOut(optOut);
+  }, []);
+
+  // Get user ID from auth context
+  const getUserId = useCallback((): string | undefined => {
+    return user?.id;
+  }, [user]);
+
+  // Create base event properties
+  const createBaseEvent = useCallback(() => {
+    return {
+      timestamp: new Date().toISOString(),
+      sessionId: getSessionId(),
+      userId: getUserId(),
+    };
+  }, [getUserId]);
+
+  // Send batched events to API
+  const flushEvents = useCallback(async () => {
+    if (flushingRef.current) return;
+    if (eventQueueRef.current.length === 0) return;
+    if (isOptedOut) {
+      eventQueueRef.current = [];
+      return;
+    }
+
+    flushingRef.current = true;
+
+    // Get events and clear queue
+    const events = [...eventQueueRef.current];
+    eventQueueRef.current = [];
+
+    const payload: ActivityBatchPayload = {
+      sessionId: getSessionId(),
+      userId: getUserId(),
+      events,
+    };
+
+    try {
+      // Use sendBeacon for reliability on page unload
+      if (
+        typeof navigator !== 'undefined' &&
+        navigator.sendBeacon &&
+        !isMountedRef.current
+      ) {
+        const blob = new Blob([JSON.stringify(payload)], {
+          type: 'application/json',
+        });
+        navigator.sendBeacon(ACTIVITY_API_ENDPOINT, blob);
+      } else {
+        await fetch(ACTIVITY_API_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+          keepalive: true,
+        });
+      }
+    } catch (error) {
+      // Re-queue events on failure (but limit retries)
+      if (isMountedRef.current) {
+        // Only re-queue first 20 events to prevent memory issues
+        eventQueueRef.current = [
+          ...events.slice(0, 20),
+          ...eventQueueRef.current,
+        ].slice(0, MAX_BATCH_SIZE);
+      }
+      console.error('Failed to send activity events:', error);
+    } finally {
+      flushingRef.current = false;
+    }
+  }, [getUserId, isOptedOut]);
+
+  // Add event to queue
+  const queueEvent = useCallback(
+    (event: ActivityEvent) => {
+      // Don't queue events when opted out or page is hidden
+      if (isOptedOut) return;
+      if (isHidden()) return;
+
+      eventQueueRef.current.push(event);
+      updateActivity();
+
+      // Flush if queue is getting large
+      if (eventQueueRef.current.length >= MAX_BATCH_SIZE) {
+        flushEvents();
+      }
+    },
+    [flushEvents, isOptedOut]
+  );
+
+  // Initialize session on mount
+  useEffect(() => {
+    if (!trackSessions) return;
+    if (sessionCreatedRef.current) return;
+    if (isOptedOut) return;
+
+    sessionCreatedRef.current = true;
+
+    // Initialize local session
+    initSession();
+
+    // Set up page unload handler
+    const cleanupUnload = setupUnloadHandler();
+
+    // Send session create event to API
+    const sessionPayload: CreateSessionPayload = {
+      action: 'create',
+      sessionId: getSessionId(),
+      userAgent:
+        typeof navigator !== 'undefined' ? navigator.userAgent : undefined,
+      screenWidth:
+        typeof window !== 'undefined' ? window.screen.width : undefined,
+      screenHeight:
+        typeof window !== 'undefined' ? window.screen.height : undefined,
+      timezone:
+        typeof Intl !== 'undefined'
+          ? Intl.DateTimeFormat().resolvedOptions().timeZone
+          : undefined,
+      language:
+        typeof navigator !== 'undefined' ? navigator.language : undefined,
+    };
+
+    // Fire and forget session creation
+    fetch('/api/activity/session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(sessionPayload),
+    }).catch(() => {
+      // Silently fail - session tracking is best-effort
+    });
+
+    return cleanupUnload;
+  }, [trackSessions, isOptedOut]);
+
+  // Set up batch timer and cleanup
+  useEffect(() => {
+    if (isOptedOut) return;
+
+    isMountedRef.current = true;
+
+    // Set up periodic flush
+    batchTimerRef.current = setInterval(() => {
+      if (eventQueueRef.current.length > 0) {
+        flushEvents();
+      }
+    }, BATCH_INTERVAL_MS);
+
+    // Set up visibility change handler to flush on hide
+    const cleanupVisibility = setupVisibilityHandler((hidden) => {
+      if (hidden && eventQueueRef.current.length > 0) {
+        flushEvents();
+      }
+    });
+
+    // Cleanup
+    return () => {
+      isMountedRef.current = false;
+
+      if (batchTimerRef.current) {
+        clearInterval(batchTimerRef.current);
+      }
+
+      cleanupVisibility();
+
+      // Final flush on unmount
+      if (eventQueueRef.current.length > 0) {
+        flushEvents();
+      }
+    };
+  }, [flushEvents, isOptedOut]);
+
+  // =============================================================================
+  // Tracking Methods
+  // =============================================================================
+
+  const trackPageView = useCallback(
+    (path: string, searchParams?: Record<string, string>) => {
+      if (isOptedOut || !autoTrackPageViews) return;
+
+      updateActivity(true); // Increment page views
+
+      const event: PageViewEvent = {
+        ...createBaseEvent(),
+        type: 'page_view',
+        path,
+        referrer:
+          typeof document !== 'undefined' ? document.referrer : undefined,
+        searchParams,
+      };
+
+      queueEvent(event);
+    },
+    [createBaseEvent, queueEvent, isOptedOut, autoTrackPageViews]
+  );
+
+  const trackListingView = useCallback(
+    (
+      listingId: number,
+      durationMs: number,
+      extra?: { scrollDepth?: number; imageViews?: number }
+    ) => {
+      if (isOptedOut) return;
+
+      const event: ListingViewEvent = {
+        ...createBaseEvent(),
+        type: 'listing_view',
+        listingId,
+        durationMs,
+        scrollDepth: extra?.scrollDepth,
+        imageViews: extra?.imageViews,
+      };
+
+      queueEvent(event);
+    },
+    [createBaseEvent, queueEvent, isOptedOut]
+  );
+
+  const trackSearch = useCallback(
+    (query: string, resultCount?: number, filters?: SearchFilters) => {
+      if (isOptedOut) return;
+
+      const event: SearchEvent = {
+        ...createBaseEvent(),
+        type: 'search',
+        query,
+        resultCount,
+        filters,
+      };
+
+      queueEvent(event);
+    },
+    [createBaseEvent, queueEvent, isOptedOut]
+  );
+
+  const trackFilterChange = useCallback(
+    (
+      filters: SearchFilters,
+      changedFilter: string,
+      previousValue?: unknown,
+      newValue?: unknown
+    ) => {
+      if (isOptedOut) return;
+
+      const event: FilterChangeEvent = {
+        ...createBaseEvent(),
+        type: 'filter_change',
+        filters,
+        changedFilter,
+        previousValue,
+        newValue,
+      };
+
+      queueEvent(event);
+    },
+    [createBaseEvent, queueEvent, isOptedOut]
+  );
+
+  const trackFavoriteAction = useCallback(
+    (listingId: number, action: 'add' | 'remove') => {
+      if (isOptedOut) return;
+
+      const event: FavoriteEvent = {
+        ...createBaseEvent(),
+        type: action === 'add' ? 'favorite_add' : 'favorite_remove',
+        listingId,
+      };
+
+      queueEvent(event);
+    },
+    [createBaseEvent, queueEvent, isOptedOut]
+  );
+
+  const trackAlertAction = useCallback(
+    (
+      action: 'create' | 'delete',
+      alertId?: string,
+      alertType?: string,
+      criteria?: Record<string, unknown>
+    ) => {
+      if (isOptedOut) return;
+
+      const event: AlertEvent = {
+        ...createBaseEvent(),
+        type: action === 'create' ? 'alert_create' : 'alert_delete',
+        alertId,
+        alertType,
+        criteria,
+      };
+
+      queueEvent(event);
+    },
+    [createBaseEvent, queueEvent, isOptedOut]
+  );
+
+  const trackExternalLinkClick = useCallback(
+    (url: string, listingId?: number, dealerName?: string) => {
+      if (isOptedOut) return;
+
+      const event: ExternalLinkClickEvent = {
+        ...createBaseEvent(),
+        type: 'external_link_click',
+        url,
+        listingId,
+        dealerName,
+      };
+
+      queueEvent(event);
+    },
+    [createBaseEvent, queueEvent, isOptedOut]
+  );
+
+  const tracker: ActivityTracker = {
+    trackPageView,
+    trackListingView,
+    trackSearch,
+    trackFilterChange,
+    trackFavoriteAction,
+    trackAlertAction,
+    trackExternalLinkClick,
+    flush: flushEvents,
+    isOptedOut,
+    setOptOut,
+  };
+
+  return (
+    <ActivityTrackerContext.Provider value={tracker}>
+      {children}
+    </ActivityTrackerContext.Provider>
+  );
+}
+
+// =============================================================================
+// Hooks
+// =============================================================================
+
+/**
+ * Hook to access the activity tracker
+ * Must be used within an ActivityTrackerProvider
+ */
+export function useActivityTracker(): ActivityTracker {
+  const context = useContext(ActivityTrackerContext);
+
+  if (!context) {
+    throw new Error(
+      'useActivityTracker must be used within an ActivityTrackerProvider'
+    );
+  }
+
+  return context;
+}
+
+/**
+ * Hook to access the activity tracker (optional)
+ * Returns null if not within an ActivityTrackerProvider
+ * Useful for components that may be used both inside and outside the provider
+ */
+export function useActivityTrackerOptional(): ActivityTracker | null {
+  return useContext(ActivityTrackerContext);
+}
+
+/**
+ * Hook to track viewing duration for a specific listing
+ * Automatically tracks when component unmounts
+ */
+export function useListingViewTracker(listingId: number): {
+  startTracking: () => void;
+  stopTracking: () => { durationMs: number };
+} {
+  const startTimeRef = useRef<number | null>(null);
+  const tracker = useActivityTrackerOptional();
+
+  const startTracking = useCallback(() => {
+    startTimeRef.current = Date.now();
+  }, []);
+
+  const stopTracking = useCallback(() => {
+    if (startTimeRef.current === null) {
+      return { durationMs: 0 };
+    }
+
+    const durationMs = Date.now() - startTimeRef.current;
+    startTimeRef.current = null;
+
+    return { durationMs };
+  }, []);
+
+  // Auto-track on unmount
+  useEffect(() => {
+    return () => {
+      if (startTimeRef.current !== null && tracker) {
+        const { durationMs } = stopTracking();
+        if (durationMs > 1000) {
+          // Only track if viewed for at least 1 second
+          tracker.trackListingView(listingId, durationMs);
+        }
+      }
+    };
+  }, [listingId, stopTracking, tracker]);
+
+  return { startTracking, stopTracking };
+}
+
+// =============================================================================
+// Re-exports for convenience
+// =============================================================================
+
+export type {
+  ActivityEvent,
+  PageViewEvent,
+  ListingViewEvent,
+  SearchEvent,
+  FilterChangeEvent,
+  FavoriteEvent,
+  AlertEvent,
+  ExternalLinkClickEvent,
+  SearchFilters,
+} from '@/lib/activity/types';

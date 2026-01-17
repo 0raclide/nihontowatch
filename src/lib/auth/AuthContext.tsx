@@ -65,6 +65,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Fetch profile from database
   const fetchProfile = useCallback(
     async (userId: string): Promise<Profile | null> => {
+      console.log('[Auth] Fetching profile for user:', userId);
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -72,11 +73,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
         .single();
 
       if (error) {
-        console.error('Error fetching profile:', error);
+        console.error('[Auth] Error fetching profile:', error);
         return null;
       }
 
-      return data;
+      console.log('[Auth] Profile fetched:', data);
+      const profile = data as Profile | null;
+      console.log('[Auth] Profile role:', profile?.role, 'isAdmin:', profile?.role === 'admin');
+      return profile;
     },
     [supabase]
   );
