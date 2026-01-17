@@ -127,6 +127,9 @@ export async function GET(request: NextRequest) {
     // Status filter
     query = query.or(statusFilter);
 
+    // Exclude stands/racks (display accessories, not collectibles)
+    query = query.neq('item_type', 'Stand');
+
     // Item type filter - use ILIKE for case-insensitive matching
     // Database has mixed case (e.g., "Katana" and "katana")
     // If specific itemTypes are provided, use those; otherwise use category filter
