@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 
@@ -31,16 +31,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
 
   const emailInputRef = useRef<HTMLInputElement>(null);
   const otpInputRefs = useRef<(HTMLInputElement | null)[]>([]);
-  const emailRef = useRef(email); // Keep email in ref for callbacks
-  const isLoadingRef = useRef(isLoading); // Prevent double-submit
-  const verifyOtpRef = useRef(verifyOtp); // Keep verifyOtp in ref to avoid stale closures
-  const onCloseRef = useRef(onClose); // Keep onClose in ref to avoid stale closures
-
-  // Keep refs in sync with current values
-  emailRef.current = email;
-  isLoadingRef.current = isLoading;
-  verifyOtpRef.current = verifyOtp;
-  onCloseRef.current = onClose;
+  const submitInProgress = useRef(false);
 
   useBodyScrollLock(isOpen);
 
@@ -67,6 +58,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
         setOtp(['', '', '', '', '', '']);
         setError(null);
         setSuccessMessage(null);
+        submitInProgress.current = false;
       }, 200);
     }
   }, [isOpen]);
@@ -83,22 +75,17 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
   }, [isOpen, onClose]);
 
   // Handle email submission
-  const handleEmailSubmit = async (e: React.FormEvent) => {
+  async function handleEmailSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setIsLoading(true);
 
-    console.log('[LoginModal] handleEmailSubmit called with email:', email);
-
     try {
-      console.log('[LoginModal] Calling signInWithEmail...');
-      const { error } = await signInWithEmail(email);
-      console.log('[LoginModal] signInWithEmail returned, error:', error);
+      const { error: signInError } = await signInWithEmail(email);
 
-      if (error) {
-        setError(error.message);
+      if (signInError) {
+        setError(signInError.message);
       } else {
-        console.log('[LoginModal] Email sent successfully, moving to OTP step');
         setSuccessMessage('Code sent! Check your email.');
         setTimeout(() => {
           setSuccessMessage(null);
@@ -106,128 +93,103 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
         }, 1000);
       }
     } catch (err) {
-      console.error('[LoginModal] handleEmailSubmit caught error:', err);
+      console.error('Email submit error:', err);
       setError('An unexpected error occurred. Please try again.');
     } finally {
-      console.log('[LoginModal] Email step: setting isLoading to false');
       setIsLoading(false);
     }
-  };
+  }
 
-  // Handle OTP submission - uses refs to avoid ALL stale closure issues
-  const handleOtpSubmit = useCallback(
-    async (code: string) => {
-      // Prevent double-submit - check and set immediately
-      if (isLoadingRef.current) {
-        return;
+  // Handle OTP submission - SIMPLE, no useCallback
+  async function handleOtpSubmit(code: string) {
+    // Prevent double submit
+    if (submitInProgress.current || isLoading) {
+      return;
+    }
+
+    if (code.length !== 6) {
+      setError('Please enter the complete 6-digit code.');
+      return;
+    }
+
+    submitInProgress.current = true;
+    setError(null);
+    setIsLoading(true);
+
+    try {
+      const { error: verifyError } = await verifyOtp(email, code);
+
+      if (verifyError) {
+        setError(verifyError.message);
+        setOtp(['', '', '', '', '', '']);
+        otpInputRefs.current[0]?.focus();
+      } else {
+        setSuccessMessage('Login successful!');
+        setTimeout(() => {
+          onClose();
+        }, 500);
       }
-      // Set ref immediately to prevent race conditions (before async operations)
-      isLoadingRef.current = true;
+    } catch (err) {
+      console.error('OTP submit error:', err);
+      setError('An unexpected error occurred. Please try again.');
+    } finally {
+      setIsLoading(false);
+      submitInProgress.current = false;
+    }
+  }
 
-      const currentEmail = emailRef.current;
+  // Handle OTP input change - SIMPLE, no useCallback
+  function handleOtpChange(index: number, value: string) {
+    const digit = value.slice(-1);
+    if (digit && !/^\d$/.test(digit)) return;
 
-      if (code.length !== 6) {
-        setError('Please enter the complete 6-digit code.');
-        isLoadingRef.current = false;
-        return;
-      }
+    const newOtp = [...otp];
+    newOtp[index] = digit;
+    setOtp(newOtp);
 
-      setError(null);
-      setIsLoading(true);
+    // Auto-advance to next input
+    if (digit && index < 5) {
+      otpInputRefs.current[index + 1]?.focus();
+    }
 
-      try {
-        // Use ref to get the latest verifyOtp function (avoids stale closure)
-        const { error } = await verifyOtpRef.current(currentEmail, code);
-
-        if (error) {
-          setError(error.message);
-          setOtp(['', '', '', '', '', '']);
-          otpInputRefs.current[0]?.focus();
-        } else {
-          setSuccessMessage('Login successful!');
-          setTimeout(() => {
-            // Use ref to get the latest onClose function
-            onCloseRef.current();
-          }, 500);
-        }
-      } catch (err) {
-        console.error('[LoginModal] OTP verification error:', err);
-        setError('An unexpected error occurred. Please try again.');
-      } finally {
-        setIsLoading(false);
-        isLoadingRef.current = false;
-      }
-    },
-    [] // No dependencies needed - all values accessed via refs
-  );
-
-  // Handle OTP input change
-  const handleOtpChange = useCallback(
-    (index: number, value: string) => {
-      // Only allow single digits
-      const digit = value.slice(-1);
-      if (digit && !/^\d$/.test(digit)) return;
-
-      const newOtp = [...otp];
-      newOtp[index] = digit;
-      setOtp(newOtp);
-
-      // Auto-advance to next input
-      if (digit && index < 5) {
-        otpInputRefs.current[index + 1]?.focus();
-      }
-
-      // Auto-submit when all digits are entered
-      if (digit && index === 5 && newOtp.every((d) => d)) {
-        handleOtpSubmit(newOtp.join(''));
-      }
-    },
-    [otp, handleOtpSubmit]
-  );
+    // Auto-submit when all digits are entered
+    if (digit && index === 5 && newOtp.every((d) => d)) {
+      handleOtpSubmit(newOtp.join(''));
+    }
+  }
 
   // Handle OTP paste
-  const handleOtpPaste = useCallback(
-    (e: React.ClipboardEvent) => {
-      e.preventDefault();
-      const pastedData = e.clipboardData.getData('text').slice(0, 6);
-      if (!/^\d+$/.test(pastedData)) return;
+  function handleOtpPaste(e: React.ClipboardEvent) {
+    e.preventDefault();
+    const pastedData = e.clipboardData.getData('text').slice(0, 6);
+    if (!/^\d+$/.test(pastedData)) return;
 
-      const newOtp = [...otp];
-      for (let i = 0; i < pastedData.length; i++) {
-        newOtp[i] = pastedData[i];
-      }
-      setOtp(newOtp);
+    const newOtp = [...otp];
+    for (let i = 0; i < pastedData.length; i++) {
+      newOtp[i] = pastedData[i];
+    }
+    setOtp(newOtp);
 
-      // Focus the last filled input or the next empty one
-      const nextIndex = Math.min(pastedData.length, 5);
-      otpInputRefs.current[nextIndex]?.focus();
+    const nextIndex = Math.min(pastedData.length, 5);
+    otpInputRefs.current[nextIndex]?.focus();
 
-      // Auto-submit if complete
-      if (pastedData.length === 6) {
-        handleOtpSubmit(pastedData);
-      }
-    },
-    [otp, handleOtpSubmit]
-  );
+    if (pastedData.length === 6) {
+      handleOtpSubmit(pastedData);
+    }
+  }
 
   // Handle OTP key down (backspace)
-  const handleOtpKeyDown = useCallback(
-    (index: number, e: React.KeyboardEvent) => {
-      if (e.key === 'Backspace' && !otp[index] && index > 0) {
-        otpInputRefs.current[index - 1]?.focus();
-      }
-    },
-    [otp]
-  );
+  function handleOtpKeyDown(index: number, e: React.KeyboardEvent) {
+    if (e.key === 'Backspace' && !otp[index] && index > 0) {
+      otpInputRefs.current[index - 1]?.focus();
+    }
+  }
 
   // Handle form submission for OTP step
-  const handleOtpFormSubmit = useCallback(
-    (e: React.FormEvent) => {
-      e.preventDefault();
-      handleOtpSubmit(otp.join(''));
-    },
-    [otp, handleOtpSubmit]
-  );
+  function handleOtpFormSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    handleOtpSubmit(otp.join(''));
+  }
 
   if (!isOpen) return null;
 

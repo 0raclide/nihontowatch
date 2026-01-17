@@ -85,17 +85,17 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       const { data: { user } } = await supabase.auth.getUser();
 
       if (!user) {
-        window.location.href = '/login?redirect=/admin';
+        window.location.href = '/?login=admin';
         return;
       }
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('is_admin')
+        .select('role')
         .eq('id', user.id)
-        .single();
+        .single<{ role: string }>();
 
-      if (!(profile as { is_admin: boolean } | null)?.is_admin) {
+      if (profile?.role !== 'admin') {
         window.location.href = '/';
         return;
       }

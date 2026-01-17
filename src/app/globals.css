@@ -647,3 +647,27 @@ body.drawer-open {
 .translate-x-4\.5 {
   transform: translateX(1.125rem);
 }
+
+/* ==========================================================================
+   Mobile Bottom Sheet
+   ========================================================================== */
+.sheet-expanded {
+  max-height: 50vh;
+}
+
+.sheet-collapsed {
+  max-height: 48px;
+}
+
+@keyframes bounce-subtle {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+.animate-bounce-subtle {
+  animation: bounce-subtle 1.5s ease-in-out infinite;
+}

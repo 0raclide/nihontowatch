@@ -42,21 +42,21 @@ export async function middleware(request: NextRequest) {
   // Protect /admin routes
   if (request.nextUrl.pathname.startsWith('/admin')) {
     if (!user) {
-      // Redirect to login with return URL
+      // Redirect to home with login param
       const url = request.nextUrl.clone();
-      url.pathname = '/login';
-      url.searchParams.set('redirect', request.nextUrl.pathname);
+      url.pathname = '/';
+      url.searchParams.set('login', 'admin');
       return NextResponse.redirect(url);
     }
 
-    // Check if user is admin
+    // Check if user is admin (using role column)
     const { data: profile } = await supabase
       .from('profiles')
-      .select('is_admin')
+      .select('role')
       .eq('id', user.id)
-      .single() as { data: { is_admin: boolean } | null };
+      .single() as { data: { role: string } | null };
 
-    if (!profile?.is_admin) {
+    if (profile?.role !== 'admin') {
       // Redirect non-admins to home page
       const url = request.nextUrl.clone();
       url.pathname = '/';
@@ -70,14 +70,14 @@ export async function middleware(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Check if user is admin
+    // Check if user is admin (using role column)
     const { data: profile } = await supabase
       .from('profiles')
-      .select('is_admin')
+      .select('role')
       .eq('id', user.id)
-      .single() as { data: { is_admin: boolean } | null };
+      .single() as { data: { role: string } | null };
 
-    if (!profile?.is_admin) {
+    if (profile?.role !== 'admin') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
   }

@@ -102,7 +102,7 @@ export function QuickViewModal({
           e.stopPropagation();
           handleClose();
         }}
-        className="absolute top-4 right-4 z-[60] flex items-center justify-center w-10 h-10 rounded-full bg-cream/95 hover:bg-cream text-ink shadow-lg transition-colors"
+        className="absolute top-4 right-4 z-[60] hidden lg:flex items-center justify-center w-10 h-10 rounded-full bg-cream/95 hover:bg-cream text-ink shadow-lg transition-colors"
         aria-label="Close quick view"
       >
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -125,25 +125,6 @@ export function QuickViewModal({
             ${isAnimatingOut ? 'animate-slideDown' : 'animate-slideUp'}
           `}
         >
-          {/* Mobile header with close button */}
-          <div className="lg:hidden flex items-center justify-between px-4 py-3 border-b border-border bg-cream shrink-0">
-            <span className="text-[13px] font-medium text-ink">Quick View</span>
-            <button
-              type="button"
-              onMouseDown={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                handleClose();
-              }}
-              className="flex items-center justify-center w-8 h-8 rounded-full bg-linen text-ink active:bg-border transition-colors"
-              aria-label="Close"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-
           {/* Content */}
           <div className="flex-1 min-h-0 overflow-hidden">
             {children}
