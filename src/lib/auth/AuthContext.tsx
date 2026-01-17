@@ -191,6 +191,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
       const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
+      // Debug: Log what we're sending
+      const requestBody = {
+        email: cleanEmail,
+        token: cleanToken,
+        type: 'email',
+      };
+      console.log('[OTP Debug] URL:', `${supabaseUrl}/auth/v1/verify`);
+      console.log('[OTP Debug] Request body:', JSON.stringify(requestBody));
+
       try {
         const response = await fetch(`${supabaseUrl}/auth/v1/verify`, {
           method: 'POST',
@@ -198,14 +207,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
             'Content-Type': 'application/json',
             'apikey': supabaseKey || '',
           },
-          body: JSON.stringify({
-            email: cleanEmail,
-            token: cleanToken,
-            type: 'email',
-          }),
+          body: JSON.stringify(requestBody),
         });
 
         const data = await response.json();
+        console.log('[OTP Debug] Response status:', response.status);
+        console.log('[OTP Debug] Response data:', JSON.stringify(data));
 
         if (!response.ok) {
           return {

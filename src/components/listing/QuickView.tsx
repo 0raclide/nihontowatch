@@ -133,29 +133,21 @@ export function QuickView() {
 
           {/* Content Section - Fixed on desktop, scrolls on mobile */}
           <div className="lg:w-2/5 lg:max-w-md lg:border-l lg:border-border bg-cream flex flex-col overflow-hidden">
-            {/* Desktop image counter with dots */}
+            {/* Desktop image progress */}
             {images.length > 1 && (
-              <div className="hidden lg:flex items-center justify-center gap-2 py-2 border-b border-border">
-                <span className="text-[11px] text-muted tabular-nums">
-                  {currentImageIndex + 1} / {images.length}
-                </span>
-                {/* Progress dots (max 10 shown) */}
-                <div className="flex gap-1">
-                  {images.slice(0, Math.min(10, images.length)).map((_, i) => (
-                    <div
-                      key={i}
-                      className={`w-1.5 h-1.5 rounded-full transition-colors ${
-                        i === currentImageIndex
-                          ? 'bg-gold'
-                          : i < currentImageIndex
-                          ? 'bg-muted/50'
-                          : 'bg-border'
-                      }`}
-                    />
-                  ))}
-                  {images.length > 10 && (
-                    <span className="text-[9px] text-muted ml-0.5">+{images.length - 10}</span>
-                  )}
+              <div className="hidden lg:block border-b border-border">
+                {/* Progress bar */}
+                <div className="h-0.5 bg-border">
+                  <div
+                    className="h-full bg-gold transition-all duration-300 ease-out"
+                    style={{ width: `${((currentImageIndex + 1) / images.length) * 100}%` }}
+                  />
+                </div>
+                {/* Counter */}
+                <div className="flex items-center justify-center py-1.5">
+                  <span className="text-[11px] text-muted tabular-nums">
+                    Photo {currentImageIndex + 1} of {images.length}
+                  </span>
                 </div>
               </div>
             )}
@@ -297,24 +289,30 @@ function LazyImage({
             />
           )}
 
-          {/* Image position indicator - shown on each image */}
+          {/* Image position indicator - elegant pill */}
           {loaded && totalImages > 1 && (
-            <div className="absolute bottom-2 right-2 px-2 py-0.5 rounded bg-ink/60 backdrop-blur-sm">
-              <span className="text-[10px] text-white font-medium tabular-nums">
-                {index + 1}/{totalImages}
+            <div className="absolute bottom-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-ink/70 backdrop-blur-sm">
+              <span className="text-[11px] text-white/90 font-medium tabular-nums">
+                {index + 1}
+              </span>
+              <span className="text-[11px] text-white/50">/</span>
+              <span className="text-[11px] text-white/50 tabular-nums">
+                {totalImages}
               </span>
             </div>
           )}
 
-          {/* Scroll hint on first image - fades out after scrolling */}
+          {/* Scroll hint on first image - subtle fade animation */}
           {showScrollHint && loaded && (
-            <div className="absolute bottom-12 left-1/2 -translate-x-1/2 flex flex-col items-center animate-bounce">
-              <span className="text-[11px] text-white bg-ink/70 backdrop-blur-sm px-3 py-1.5 rounded-full whitespace-nowrap">
-                Scroll for {totalImages - 1} more
-              </span>
-              <svg className="w-5 h-5 text-white mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-              </svg>
+            <div className="absolute bottom-16 inset-x-0 flex justify-center pointer-events-none animate-pulse">
+              <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-ink/60 backdrop-blur-md">
+                <svg className="w-4 h-4 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 9l-7 7-7-7" />
+                </svg>
+                <span className="text-[12px] text-white/90 font-medium">
+                  {totalImages - 1} more photos
+                </span>
+              </div>
             </div>
           )}
         </>
