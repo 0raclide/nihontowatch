@@ -365,9 +365,9 @@ export function ListingCard({
             {formatPrice(listing.price_value, listing.price_currency, currency, exchangeRates)}
           </span>
           {marketTime && (
-            <span className="text-[11px] lg:text-[12px] text-muted tabular-nums flex items-center gap-1">
-              <span className="text-muted/60">&#x25F7;</span>
-              {marketTime.shortLabel}
+            <span className="text-[10px] lg:text-[11px] text-charcoal flex items-center gap-1">
+              <span className="text-charcoal/50 uppercase tracking-wide">Listed</span>
+              <span className="tabular-nums font-medium">{marketTime.shortLabel}</span>
             </span>
           )}
         </div>
