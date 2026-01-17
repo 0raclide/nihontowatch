@@ -102,9 +102,9 @@ export function MobileSearchSheet() {
             Search Tips
           </h4>
           <ul className="space-y-1.5 text-[12px] text-muted/80">
-            <li>Search by smith name: "Masamune", "Sadamune"</li>
-            <li>Search by type: "katana", "wakizashi", "tsuba"</li>
-            <li>Search by certification: "Juyo", "Tokubetsu Hozon"</li>
+            <li>Combine terms: "juyo katana", "hozon tsuba"</li>
+            <li>Use shortcuts: "tokuju" or "tokuho"</li>
+            <li>Smith names: "Masamune", "Sadamune"</li>
           </ul>
         </div>
       </div>
