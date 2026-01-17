@@ -122,7 +122,7 @@ export default function ListingDetailPage() {
   // Loading state
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-cream dark:bg-gray-900 transition-colors">
+      <div className="min-h-screen bg-cream transition-colors">
         <Header />
         <div className="flex items-center justify-center py-32">
           <div className="w-8 h-8 border-2 border-gold border-t-transparent rounded-full animate-spin" />
@@ -134,7 +134,7 @@ export default function ListingDetailPage() {
   // Error state
   if (error || !listing) {
     return (
-      <div className="min-h-screen bg-cream dark:bg-gray-900 transition-colors">
+      <div className="min-h-screen bg-cream transition-colors">
         <Header />
         <main className="max-w-[1200px] mx-auto px-4 py-8 lg:px-6 lg:py-12">
           <div className="flex flex-col items-center justify-center py-16">
@@ -143,8 +143,8 @@ export default function ListingDetailPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
             </div>
-            <h2 className="font-serif text-xl text-ink dark:text-white mb-2">Listing not found</h2>
-            <p className="text-[14px] text-muted dark:text-gray-500 mb-6">{error}</p>
+            <h2 className="font-serif text-xl text-ink mb-2">Listing not found</h2>
+            <p className="text-[14px] text-muted mb-6">{error}</p>
             <button
               onClick={() => router.push('/')}
               className="px-5 py-2.5 text-[14px] font-medium text-white bg-gold hover:bg-gold-light rounded-lg transition-colors"
@@ -166,20 +166,20 @@ export default function ListingDetailPage() {
   const school = listing.school || listing.tosogu_school;
 
   return (
-    <div className="min-h-screen bg-cream dark:bg-gray-900 transition-colors">
+    <div className="min-h-screen bg-cream transition-colors">
       <Header />
 
       <main className="max-w-[1200px] mx-auto px-4 py-4 lg:px-6 lg:py-8">
         {/* Breadcrumb */}
         <nav className="mb-4 lg:mb-6">
-          <ol className="flex items-center gap-2 text-[12px] text-muted dark:text-gray-500">
+          <ol className="flex items-center gap-2 text-[12px] text-muted">
             <li>
               <Link href="/" className="hover:text-gold transition-colors">
                 Collection
               </Link>
             </li>
             <li>/</li>
-            <li className="text-charcoal dark:text-gray-300 truncate max-w-[200px]">
+            <li className="text-charcoal truncate max-w-[200px]">
               {listing.title}
             </li>
           </ol>
@@ -189,7 +189,7 @@ export default function ListingDetailPage() {
           {/* Image Gallery */}
           <div>
             {/* Main Image */}
-            <div className="relative aspect-[4/3] bg-linen dark:bg-gray-800 rounded-lg overflow-hidden mb-4">
+            <div className="relative aspect-[4/3] bg-linen rounded-lg overflow-hidden mb-4">
               {images.length > 0 ? (
                 <Image
                   src={images[selectedImageIndex]}
@@ -201,7 +201,7 @@ export default function ListingDetailPage() {
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
-                  <svg className="w-16 h-16 text-muted/30 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-16 h-16 text-muted/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
                 </div>
@@ -227,7 +227,7 @@ export default function ListingDetailPage() {
                     className={`relative w-16 h-16 flex-shrink-0 rounded-md overflow-hidden ${
                       index === selectedImageIndex
                         ? 'ring-2 ring-gold'
-                        : 'ring-1 ring-border dark:ring-gray-700 hover:ring-gold/50'
+                        : 'ring-1 ring-border hover:ring-gold/50'
                     }`}
                   >
                     <Image
@@ -250,37 +250,37 @@ export default function ListingDetailPage() {
               {certInfo && (
                 <span className={`text-[11px] uppercase tracking-wider font-medium px-2.5 py-1 rounded ${
                   certInfo.tier === 'premier'
-                    ? 'bg-burgundy/10 text-burgundy dark:bg-burgundy/20 dark:text-red-300'
+                    ? 'bg-burgundy/10 text-burgundy'
                     : certInfo.tier === 'high'
-                    ? 'bg-toku-hozon/10 text-toku-hozon dark:bg-teal-900/30 dark:text-teal-300'
-                    : 'bg-hozon/10 text-hozon dark:bg-gray-700/50 dark:text-gray-400'
+                    ? 'bg-toku-hozon/10 text-toku-hozon'
+                    : 'bg-hozon/10 text-hozon'
                 }`}>
                   {certInfo.label}
                 </span>
               )}
               {isSold && (
-                <span className="text-[11px] uppercase tracking-wider font-medium px-2.5 py-1 rounded bg-muted/10 text-muted dark:bg-gray-700/50 dark:text-gray-400">
+                <span className="text-[11px] uppercase tracking-wider font-medium px-2.5 py-1 rounded bg-muted/10 text-muted">
                   Sold
                 </span>
               )}
             </div>
 
             {/* Title */}
-            <h1 className="font-serif text-2xl lg:text-3xl text-ink dark:text-white mb-2">
+            <h1 className="font-serif text-2xl lg:text-3xl text-ink mb-2">
               {listing.title}
             </h1>
 
             {/* Item Type */}
             {itemType && (
-              <p className="text-[14px] text-charcoal dark:text-gray-300 mb-4">
+              <p className="text-[14px] text-charcoal mb-4">
                 {itemType}
               </p>
             )}
 
             {/* Price */}
-            <div className="mb-6 pb-6 border-b border-border dark:border-gray-800">
+            <div className="mb-6 pb-6 border-b border-border">
               {listing.price_value ? (
-                <p className="text-2xl lg:text-3xl font-semibold text-ink dark:text-white tabular-nums">
+                <p className="text-2xl lg:text-3xl font-semibold text-ink tabular-nums">
                   {new Intl.NumberFormat('en-US', {
                     style: 'currency',
                     currency: listing.price_currency || 'JPY',
@@ -288,7 +288,7 @@ export default function ListingDetailPage() {
                   }).format(listing.price_value)}
                 </p>
               ) : (
-                <p className="text-xl text-muted dark:text-gray-500">Price on request</p>
+                <p className="text-xl text-muted">Price on request</p>
               )}
             </div>
 
@@ -297,16 +297,16 @@ export default function ListingDetailPage() {
               <div className="mb-6">
                 {artisan && (
                   <div className="mb-2">
-                    <span className="text-[11px] uppercase tracking-wider text-muted dark:text-gray-500">
+                    <span className="text-[11px] uppercase tracking-wider text-muted">
                       {listing.smith ? 'Smith' : 'Maker'}
                     </span>
-                    <p className="text-[15px] text-ink dark:text-white font-medium">{artisan}</p>
+                    <p className="text-[15px] text-ink font-medium">{artisan}</p>
                   </div>
                 )}
                 {school && (
                   <div>
-                    <span className="text-[11px] uppercase tracking-wider text-muted dark:text-gray-500">School</span>
-                    <p className="text-[15px] text-ink dark:text-white font-medium">{school}</p>
+                    <span className="text-[11px] uppercase tracking-wider text-muted">School</span>
+                    <p className="text-[15px] text-ink font-medium">{school}</p>
                   </div>
                 )}
               </div>
@@ -314,33 +314,33 @@ export default function ListingDetailPage() {
 
             {/* Specifications */}
             {(listing.nagasa_cm || listing.sori_cm || listing.motohaba_cm) && (
-              <div className="mb-6 pb-6 border-b border-border dark:border-gray-800">
-                <h3 className="text-[11px] uppercase tracking-wider text-muted dark:text-gray-500 mb-3">
+              <div className="mb-6 pb-6 border-b border-border">
+                <h3 className="text-[11px] uppercase tracking-wider text-muted mb-3">
                   Specifications
                 </h3>
                 <div className="grid grid-cols-2 gap-3">
                   {listing.nagasa_cm && (
                     <div>
-                      <span className="text-[12px] text-muted dark:text-gray-500">Nagasa</span>
-                      <p className="text-[14px] text-ink dark:text-white">{listing.nagasa_cm} cm</p>
+                      <span className="text-[12px] text-muted">Nagasa</span>
+                      <p className="text-[14px] text-ink">{listing.nagasa_cm} cm</p>
                     </div>
                   )}
                   {listing.sori_cm && (
                     <div>
-                      <span className="text-[12px] text-muted dark:text-gray-500">Sori</span>
-                      <p className="text-[14px] text-ink dark:text-white">{listing.sori_cm} cm</p>
+                      <span className="text-[12px] text-muted">Sori</span>
+                      <p className="text-[14px] text-ink">{listing.sori_cm} cm</p>
                     </div>
                   )}
                   {listing.motohaba_cm && (
                     <div>
-                      <span className="text-[12px] text-muted dark:text-gray-500">Motohaba</span>
-                      <p className="text-[14px] text-ink dark:text-white">{listing.motohaba_cm} cm</p>
+                      <span className="text-[12px] text-muted">Motohaba</span>
+                      <p className="text-[14px] text-ink">{listing.motohaba_cm} cm</p>
                     </div>
                   )}
                   {listing.sakihaba_cm && (
                     <div>
-                      <span className="text-[12px] text-muted dark:text-gray-500">Sakihaba</span>
-                      <p className="text-[14px] text-ink dark:text-white">{listing.sakihaba_cm} cm</p>
+                      <span className="text-[12px] text-muted">Sakihaba</span>
+                      <p className="text-[14px] text-ink">{listing.sakihaba_cm} cm</p>
                     </div>
                   )}
                 </div>
@@ -348,10 +348,10 @@ export default function ListingDetailPage() {
             )}
 
             {/* Dealer */}
-            <div className="mb-6 pb-6 border-b border-border dark:border-gray-800">
-              <span className="text-[11px] uppercase tracking-wider text-muted dark:text-gray-500">Dealer</span>
-              <p className="text-[15px] text-ink dark:text-white font-medium">{listing.dealers?.name}</p>
-              <p className="text-[12px] text-muted dark:text-gray-500">{listing.dealers?.domain}</p>
+            <div className="mb-6 pb-6 border-b border-border">
+              <span className="text-[11px] uppercase tracking-wider text-muted">Dealer</span>
+              <p className="text-[15px] text-ink font-medium">{listing.dealers?.name}</p>
+              <p className="text-[12px] text-muted">{listing.dealers?.domain}</p>
             </div>
 
             {/* Action Buttons */}
@@ -372,7 +372,7 @@ export default function ListingDetailPage() {
               {/* Set Alert Button */}
               <button
                 onClick={handleSetAlert}
-                className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 text-[14px] font-medium text-charcoal dark:text-gray-300 bg-white dark:bg-gray-800 border border-border dark:border-gray-700 hover:border-gold dark:hover:border-gold hover:text-gold dark:hover:text-gold rounded-lg transition-colors"
+                className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 text-[14px] font-medium text-charcoal bg-paper border border-border hover:border-gold hover:text-gold rounded-lg transition-colors"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />

@@ -89,3 +89,45 @@ export const MIN_SEARCH_LENGTH = 2;
 export function isValidSearchQuery(query: string): boolean {
   return normalizeSearchText(query).length >= MIN_SEARCH_LENGTH;
 }
+
+/**
+ * Search term aliases for common variations and related terms.
+ * Maps normalized terms to arrays of related terms.
+ */
+const SEARCH_ALIASES: Record<string, string[]> = {
+  // Item type aliases
+  'sword': ['katana', 'wakizashi', 'tanto', 'tachi'],
+  'blade': ['katana', 'wakizashi', 'tanto', 'tachi'],
+  'fittings': ['tsuba', 'fuchi', 'kashira', 'menuki', 'kozuka', 'kogai'],
+  'tosogu': ['tsuba', 'fuchi', 'kashira', 'menuki', 'kozuka', 'kogai'],
+
+  // Certification aliases
+  'juyo': ['juyou', 'juuyou'],
+  'tokubetsu': ['tokubetsu hozon', 'toku hozon'],
+  'hozon': ['hozon'],
+
+  // Common romanization variations
+  'goto': ['gotou'],
+  'koto': ['kotou'],
+  'shinto': ['shintou'],
+  'shinshinto': ['shinshintou'],
+};
+
+/**
+ * Expand a search term to include related aliases.
+ * Returns an array containing the original term plus any aliases.
+ *
+ * @example
+ * expandSearchAliases('sword') // => ['sword', 'katana', 'wakizashi', 'tanto', 'tachi']
+ * expandSearchAliases('masa') // => ['masa'] (no aliases)
+ */
+export function expandSearchAliases(term: string): string[] {
+  const normalized = normalizeSearchText(term);
+  const aliases = SEARCH_ALIASES[normalized];
+
+  if (aliases) {
+    return [normalized, ...aliases];
+  }
+
+  return [normalized];
+}

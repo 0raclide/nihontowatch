@@ -2,50 +2,19 @@
 -- Activity Tracking Tables
 -- =============================================================================
 -- Migration: 010_activity_tracking.sql
--- Description: Creates tables for comprehensive user activity tracking
---
--- Tables:
--- - user_sessions: Track individual browsing sessions
--- - activity_events: Track detailed user interactions
+-- Description: Creates activity_events table for tracking user interactions
+-- Note: user_sessions table already exists from 009_user_accounts.sql
 -- =============================================================================
-
--- =============================================================================
--- User Sessions Table
--- =============================================================================
--- Tracks browsing sessions for both anonymous and authenticated users
-
-CREATE TABLE IF NOT EXISTS user_sessions (
-    id VARCHAR(100) PRIMARY KEY,
-    user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
-    started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    ended_at TIMESTAMPTZ,
-    total_duration_ms INTEGER,
-    page_views INTEGER NOT NULL DEFAULT 0,
-    user_agent TEXT,
-    screen_width INTEGER,
-    screen_height INTEGER,
-    timezone VARCHAR(100),
-    language VARCHAR(20),
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
--- Index for querying sessions by user
-CREATE INDEX IF NOT EXISTS idx_user_sessions_user_id ON user_sessions(user_id);
-
--- Index for querying active sessions (no ended_at)
-CREATE INDEX IF NOT EXISTS idx_user_sessions_active ON user_sessions(ended_at) WHERE ended_at IS NULL;
-
--- Index for time-based queries
-CREATE INDEX IF NOT EXISTS idx_user_sessions_started_at ON user_sessions(started_at DESC);
 
 -- =============================================================================
 -- Activity Events Table
 -- =============================================================================
 -- Tracks individual user interactions with the site
+-- References user_sessions.session_id (TEXT) from migration 009
 
 CREATE TABLE IF NOT EXISTS activity_events (
     id BIGSERIAL PRIMARY KEY,
-    session_id VARCHAR(100) NOT NULL REFERENCES user_sessions(id) ON DELETE CASCADE,
+    session_id TEXT NOT NULL,
     user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
     event_type VARCHAR(50) NOT NULL,
     event_data JSONB NOT NULL DEFAULT '{}',
@@ -86,39 +55,23 @@ CREATE INDEX IF NOT EXISTS idx_activity_events_data ON activity_events USING GIN
 -- Row Level Security (RLS)
 -- =============================================================================
 
--- Enable RLS on both tables
-ALTER TABLE user_sessions ENABLE ROW LEVEL SECURITY;
+-- Enable RLS on activity_events (user_sessions RLS is in 009)
 ALTER TABLE activity_events ENABLE ROW LEVEL SECURITY;
-
--- User sessions: Users can view their own sessions
-CREATE POLICY "Users can view own sessions" ON user_sessions
-    FOR SELECT
-    USING (auth.uid() = user_id);
-
--- User sessions: Service role can do anything (for API routes)
-CREATE POLICY "Service role has full access to sessions" ON user_sessions
-    FOR ALL
-    USING (auth.jwt() ->> 'role' = 'service_role');
-
--- User sessions: Anonymous users can insert sessions (no auth required for tracking)
-CREATE POLICY "Anyone can insert sessions" ON user_sessions
-    FOR INSERT
-    WITH CHECK (true);
-
--- User sessions: Anyone can update sessions (for ending sessions via sendBeacon)
-CREATE POLICY "Anyone can update sessions" ON user_sessions
-    FOR UPDATE
-    USING (true);
 
 -- Activity events: Users can view their own events
 CREATE POLICY "Users can view own events" ON activity_events
     FOR SELECT
     USING (auth.uid() = user_id);
 
--- Activity events: Service role can do anything
-CREATE POLICY "Service role has full access to events" ON activity_events
-    FOR ALL
-    USING (auth.jwt() ->> 'role' = 'service_role');
+-- Activity events: Admins can view all events
+CREATE POLICY "Admins can view all events" ON activity_events
+    FOR SELECT
+    USING (
+        EXISTS (
+            SELECT 1 FROM profiles
+            WHERE id = auth.uid() AND role = 'admin'
+        )
+    );
 
 -- Activity events: Anyone can insert events (for tracking)
 CREATE POLICY "Anyone can insert events" ON activity_events
@@ -266,7 +219,6 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- Comments
 -- =============================================================================
 
-COMMENT ON TABLE user_sessions IS 'Tracks browsing sessions for both anonymous and authenticated users';
 COMMENT ON TABLE activity_events IS 'Tracks individual user interactions and events';
 COMMENT ON FUNCTION get_user_session_stats IS 'Get session statistics for a specific user';
 COMMENT ON FUNCTION get_event_type_counts IS 'Get counts of each event type over a time period';
