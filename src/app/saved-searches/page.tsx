@@ -115,7 +115,7 @@ export default function SavedSearchesPage() {
   // Authentication loading state
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-cream dark:bg-ink transition-colors">
+      <div className="min-h-screen bg-cream transition-colors">
         <Header />
         <div className="flex items-center justify-center py-32">
           <div className="w-8 h-8 border-2 border-gold border-t-transparent rounded-full animate-spin" />
@@ -128,11 +128,11 @@ export default function SavedSearchesPage() {
   if (!user) {
     return (
       <>
-        <div className="min-h-screen bg-cream dark:bg-ink transition-colors">
+        <div className="min-h-screen bg-cream transition-colors">
           <Header />
           <main className="max-w-[1200px] mx-auto px-4 py-8 lg:px-6 lg:py-12">
             <div className="flex flex-col items-center justify-center py-16">
-              <div className="w-16 h-16 rounded-full bg-linen dark:bg-ink-light flex items-center justify-center mb-4">
+              <div className="w-16 h-16 rounded-full bg-linen flex items-center justify-center mb-4">
                 <svg
                   className="w-8 h-8 text-muted"
                   fill="none"
@@ -147,7 +147,7 @@ export default function SavedSearchesPage() {
                   />
                 </svg>
               </div>
-              <h2 className="font-serif text-xl text-ink dark:text-cream mb-2">
+              <h2 className="font-serif text-xl text-ink mb-2">
                 Sign in to manage saved searches
               </h2>
               <p className="text-[14px] text-muted text-center max-w-sm mb-6">
@@ -173,13 +173,13 @@ export default function SavedSearchesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-cream dark:bg-ink transition-colors">
+    <div className="min-h-screen bg-cream transition-colors">
       <Header />
 
       <main className="max-w-[1200px] mx-auto px-4 py-4 lg:px-6 lg:py-8">
         {/* Page Header */}
         <div className="mb-6 lg:mb-8">
-          <h1 className="font-serif text-xl lg:text-2xl text-ink dark:text-cream tracking-tight">
+          <h1 className="font-serif text-xl lg:text-2xl text-ink tracking-tight">
             Saved Searches
           </h1>
           <p className="text-[12px] lg:text-[13px] text-muted mt-1">
@@ -188,7 +188,7 @@ export default function SavedSearchesPage() {
         </div>
 
         {/* Subtle divider */}
-        <div className="h-px bg-gradient-to-r from-transparent via-border dark:via-border-dark to-transparent mb-6 lg:mb-8" />
+        <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent mb-6 lg:mb-8" />
 
         {/* Loading state */}
         {isLoading && (
@@ -199,15 +199,15 @@ export default function SavedSearchesPage() {
 
         {/* Error state */}
         {error && (
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-6">
-            <p className="text-red-700 dark:text-red-400 text-sm">{error}</p>
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <p className="text-red-700 text-sm">{error}</p>
           </div>
         )}
 
         {/* Empty state */}
         {!isLoading && !error && savedSearches.length === 0 && (
           <div className="flex flex-col items-center justify-center py-16">
-            <div className="w-16 h-16 rounded-full bg-linen dark:bg-ink-light flex items-center justify-center mb-4">
+            <div className="w-16 h-16 rounded-full bg-linen flex items-center justify-center mb-4">
               <svg
                 className="w-8 h-8 text-muted"
                 fill="none"
@@ -222,7 +222,7 @@ export default function SavedSearchesPage() {
                 />
               </svg>
             </div>
-            <h2 className="font-serif text-lg text-ink dark:text-cream mb-2">
+            <h2 className="font-serif text-lg text-ink mb-2">
               No saved searches yet
             </h2>
             <p className="text-[14px] text-muted text-center max-w-sm mb-6">
@@ -244,7 +244,7 @@ export default function SavedSearchesPage() {
             {savedSearches.map((search) => (
               <div
                 key={search.id}
-                className={`bg-white dark:bg-ink-light rounded-lg border border-border dark:border-border-dark p-4 lg:p-5 transition-opacity ${
+                className={`bg-paper rounded-lg border border-border p-4 lg:p-5 transition-opacity ${
                   !search.is_active ? 'opacity-60' : ''
                 }`}
               >
@@ -259,7 +259,7 @@ export default function SavedSearchesPage() {
                           value={editingName}
                           onChange={(e) => setEditingName(e.target.value)}
                           placeholder="Search name..."
-                          className="flex-1 px-3 py-1.5 text-[14px] border border-border dark:border-border-dark rounded-md bg-white dark:bg-ink focus:outline-none focus:ring-2 focus:ring-gold/20 focus:border-gold"
+                          className="flex-1 px-3 py-1.5 text-[14px] border border-border rounded-md bg-paper text-ink focus:outline-none focus:ring-2 focus:ring-gold/20 focus:border-gold"
                           autoFocus
                           onKeyDown={(e) => {
                             if (e.key === 'Enter') handleSaveName(search.id);
@@ -275,19 +275,19 @@ export default function SavedSearchesPage() {
                         </button>
                         <button
                           onClick={handleCancelEdit}
-                          className="px-3 py-1.5 text-[12px] font-medium text-muted hover:text-ink dark:hover:text-cream rounded-md transition-colors"
+                          className="px-3 py-1.5 text-[12px] font-medium text-muted hover:text-ink rounded-md transition-colors"
                         >
                           Cancel
                         </button>
                       </div>
                     ) : (
                       <div className="flex items-center gap-2 mb-2">
-                        <h3 className="font-medium text-ink dark:text-cream truncate">
+                        <h3 className="font-medium text-ink truncate">
                           {search.name || 'Unnamed search'}
                         </h3>
                         <button
                           onClick={() => handleStartEdit(search)}
-                          className="p-1 text-muted hover:text-ink dark:hover:text-cream transition-colors"
+                          className="p-1 text-muted hover:text-ink transition-colors"
                           title="Edit name"
                         >
                           <svg
@@ -343,7 +343,7 @@ export default function SavedSearchesPage() {
                           )
                         }
                         disabled={isUpdating}
-                        className="px-2 py-1 text-[12px] border border-border dark:border-border-dark rounded-md bg-white dark:bg-ink text-ink dark:text-cream focus:outline-none focus:ring-2 focus:ring-gold/20 focus:border-gold disabled:opacity-50"
+                        className="px-2 py-1 text-[12px] border border-border rounded-md bg-paper text-ink focus:outline-none focus:ring-2 focus:ring-gold/20 focus:border-gold disabled:opacity-50"
                       >
                         <option value="instant">Instant (15 min)</option>
                         <option value="daily">Daily digest</option>
@@ -380,8 +380,8 @@ export default function SavedSearchesPage() {
                         disabled={isUpdating}
                         className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium transition-colors disabled:opacity-50 ${
                           search.is_active
-                            ? 'text-amber-600 hover:text-amber-700 dark:text-amber-500'
-                            : 'text-green-600 hover:text-green-700 dark:text-green-500'
+                            ? 'text-amber-600 hover:text-amber-700'
+                            : 'text-green-600 hover:text-green-700'
                         }`}
                       >
                         {search.is_active ? (
@@ -431,7 +431,7 @@ export default function SavedSearchesPage() {
                       <button
                         onClick={() => handleDelete(search.id)}
                         disabled={isDeleting && deletingId === search.id}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium text-red-600 hover:text-red-700 dark:text-red-500 transition-colors disabled:opacity-50"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium text-red-600 hover:text-red-700 transition-colors disabled:opacity-50"
                       >
                         {isDeleting && deletingId === search.id ? (
                           <div className="w-3.5 h-3.5 border border-red-600 border-t-transparent rounded-full animate-spin" />
@@ -462,9 +462,9 @@ export default function SavedSearchesPage() {
 
         {/* Tip */}
         {!isLoading && !error && savedSearches.length > 0 && (
-          <div className="mt-8 p-4 bg-linen dark:bg-ink-light/50 rounded-lg border border-border dark:border-border-dark">
+          <div className="mt-8 p-4 bg-linen rounded-lg border border-border">
             <p className="text-[13px] text-muted">
-              <strong className="text-ink dark:text-cream">Tip:</strong> To save a new
+              <strong className="text-ink">Tip:</strong> To save a new
               search, go to the{' '}
               <button
                 onClick={() => router.push('/')}

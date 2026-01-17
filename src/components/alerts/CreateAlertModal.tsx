@@ -67,9 +67,8 @@ export function CreateAlertModal({
   }, [listing]);
 
   const [alertType, setAlertType] = useState<AlertType>(getInitialAlertType());
-  const [targetPrice, setTargetPrice] = useState<string>('');
 
-  // Search criteria for new_listing alerts
+  // Search criteria for new_listing alerts (legacy - now handled by saved searches)
   const [itemType, setItemType] = useState('');
   const [dealerId, setDealerId] = useState<string>('');
   const [minPrice, setMinPrice] = useState('');
@@ -83,7 +82,6 @@ export function CreateAlertModal({
     if (isOpen) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setAlertType(getInitialAlertType());
-      setTargetPrice('');
       setItemType('');
       setDealerId('');
       setMinPrice('');
@@ -113,9 +111,7 @@ export function CreateAlertModal({
     if (alertType === 'price_drop' || alertType === 'back_in_stock') {
       if (!listing) return;
       input.listing_id = listing.id;
-      if (alertType === 'price_drop' && targetPrice) {
-        input.target_price = parseFloat(targetPrice);
-      }
+      // No target price - notify on any price drop
     }
 
     if (alertType === 'new_listing') {
@@ -250,29 +246,6 @@ export function CreateAlertModal({
                 </div>
               )}
 
-              {/* Target Price (for price_drop) */}
-              {alertType === 'price_drop' && (
-                <div>
-                  <label className="block text-[12px] uppercase tracking-wider text-muted mb-2">
-                    Target Price (Optional)
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted text-[14px]">
-                      {listing?.price_currency === 'USD' ? '$' : listing?.price_currency === 'EUR' ? 'E' : '¥'}
-                    </span>
-                    <input
-                      type="number"
-                      value={targetPrice}
-                      onChange={(e) => setTargetPrice(e.target.value)}
-                      placeholder="Any price drop"
-                      className="w-full pl-8 pr-4 py-3 bg-paper border-2 border-border rounded-lg text-[14px] text-ink placeholder:text-muted/50 focus:outline-none focus:border-gold"
-                    />
-                  </div>
-                  <p className="text-[11px] text-muted mt-2">
-                    Leave empty to be notified of any price drop
-                  </p>
-                </div>
-              )}
 
               {/* Search Criteria (for new_listing) */}
               {alertType === 'new_listing' && (
@@ -387,7 +360,7 @@ export function CreateAlertModal({
                       {alertType === 'back_in_stock' && 'Back in Stock Alert'}
                     </p>
                     <p className="text-[12px] text-muted mt-0.5">
-                      {alertType === 'price_drop' && 'Get notified when the price drops'}
+                      {alertType === 'price_drop' && 'Get notified when the price drops by any amount'}
                       {alertType === 'new_listing' && 'Get notified when new items match your criteria'}
                       {alertType === 'back_in_stock' && 'Get notified when this item becomes available again'}
                     </p>

@@ -104,15 +104,15 @@ export function SaveSearchModal({
       />
 
       {/* Modal */}
-      <div className="relative w-full max-w-md bg-white dark:bg-ink-light rounded-xl shadow-xl">
+      <div className="relative w-full max-w-md bg-cream rounded-xl shadow-xl">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-border dark:border-border-dark">
-          <h2 className="font-serif text-lg text-ink dark:text-cream">
+        <div className="flex items-center justify-between p-4 border-b border-border">
+          <h2 className="font-serif text-lg text-ink">
             Save Search
           </h2>
           <button
             onClick={onClose}
-            className="p-1 text-muted hover:text-ink dark:hover:text-cream transition-colors"
+            className="p-1 text-muted hover:text-ink transition-colors"
           >
             <svg
               className="w-5 h-5"
@@ -133,9 +133,9 @@ export function SaveSearchModal({
         {/* Success state */}
         {success ? (
           <div className="p-6 flex flex-col items-center">
-            <div className="w-12 h-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mb-3">
+            <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mb-3">
               <svg
-                className="w-6 h-6 text-green-600 dark:text-green-400"
+                className="w-6 h-6 text-green-600"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -148,7 +148,7 @@ export function SaveSearchModal({
                 />
               </svg>
             </div>
-            <p className="text-ink dark:text-cream font-medium">Search saved!</p>
+            <p className="text-ink font-medium">Search saved!</p>
             <p className="text-[13px] text-muted mt-1">
               You&apos;ll be notified when new items match.
             </p>
@@ -157,11 +157,11 @@ export function SaveSearchModal({
           <form onSubmit={handleSubmit}>
             <div className="p-4 space-y-4">
               {/* Search criteria summary */}
-              <div className="p-3 bg-linen dark:bg-ink/50 rounded-lg">
+              <div className="p-3 bg-linen rounded-lg">
                 <p className="text-[11px] uppercase tracking-wider text-muted mb-1">
                   Search Criteria
                 </p>
-                <p className="text-[13px] text-ink dark:text-cream">
+                <p className="text-[13px] text-ink">
                   {criteriaToHumanReadable(criteria, dealerNames)}
                 </p>
                 {currentMatchCount !== undefined && (
@@ -175,7 +175,7 @@ export function SaveSearchModal({
               <div>
                 <label
                   htmlFor="search-name"
-                  className="block text-[12px] font-medium text-ink dark:text-cream mb-1"
+                  className="block text-[12px] font-medium text-ink mb-1"
                 >
                   Name (optional)
                 </label>
@@ -185,17 +185,17 @@ export function SaveSearchModal({
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g., Juyo Katana under 3M"
-                  className="w-full px-3 py-2 text-[14px] border border-border dark:border-border-dark rounded-lg bg-white dark:bg-ink text-ink dark:text-cream placeholder-muted focus:outline-none focus:ring-2 focus:ring-gold/20 focus:border-gold"
+                  className="w-full px-3 py-2 text-[14px] border border-border rounded-lg bg-paper text-ink placeholder-muted focus:outline-none focus:ring-2 focus:ring-gold/20 focus:border-gold"
                 />
               </div>
 
               {/* Notification frequency */}
               <div>
-                <label className="block text-[12px] font-medium text-ink dark:text-cream mb-2">
+                <label className="block text-[12px] font-medium text-ink mb-2">
                   Notification Frequency
                 </label>
                 <div className="space-y-2">
-                  <label className="flex items-start gap-3 p-3 border border-border dark:border-border-dark rounded-lg cursor-pointer hover:bg-linen dark:hover:bg-ink/50 transition-colors">
+                  <label className="flex items-start gap-3 p-3 border border-border rounded-lg cursor-pointer hover:bg-linen transition-colors">
                     <input
                       type="radio"
                       name="frequency"
@@ -207,7 +207,7 @@ export function SaveSearchModal({
                       className="mt-0.5 text-gold focus:ring-gold"
                     />
                     <div>
-                      <p className="text-[13px] font-medium text-ink dark:text-cream">
+                      <p className="text-[13px] font-medium text-ink">
                         Instant
                       </p>
                       <p className="text-[11px] text-muted">
@@ -216,7 +216,7 @@ export function SaveSearchModal({
                     </div>
                   </label>
 
-                  <label className="flex items-start gap-3 p-3 border border-border dark:border-border-dark rounded-lg cursor-pointer hover:bg-linen dark:hover:bg-ink/50 transition-colors">
+                  <label className="flex items-start gap-3 p-3 border border-border rounded-lg cursor-pointer hover:bg-linen transition-colors">
                     <input
                       type="radio"
                       name="frequency"
@@ -228,7 +228,7 @@ export function SaveSearchModal({
                       className="mt-0.5 text-gold focus:ring-gold"
                     />
                     <div>
-                      <p className="text-[13px] font-medium text-ink dark:text-cream">
+                      <p className="text-[13px] font-medium text-ink">
                         Daily Digest
                       </p>
                       <p className="text-[11px] text-muted">
@@ -237,7 +237,7 @@ export function SaveSearchModal({
                     </div>
                   </label>
 
-                  <label className="flex items-start gap-3 p-3 border border-border dark:border-border-dark rounded-lg cursor-pointer hover:bg-linen dark:hover:bg-ink/50 transition-colors">
+                  <label className="flex items-start gap-3 p-3 border border-border rounded-lg cursor-pointer hover:bg-linen transition-colors">
                     <input
                       type="radio"
                       name="frequency"
@@ -249,7 +249,7 @@ export function SaveSearchModal({
                       className="mt-0.5 text-gold focus:ring-gold"
                     />
                     <div>
-                      <p className="text-[13px] font-medium text-ink dark:text-cream">
+                      <p className="text-[13px] font-medium text-ink">
                         No Notifications
                       </p>
                       <p className="text-[11px] text-muted">
@@ -262,8 +262,8 @@ export function SaveSearchModal({
 
               {/* Error message */}
               {error && (
-                <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                  <p className="text-[13px] text-red-700 dark:text-red-400">
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-[13px] text-red-700">
                     {error}
                   </p>
                 </div>
@@ -271,7 +271,7 @@ export function SaveSearchModal({
             </div>
 
             {/* Footer */}
-            <div className="flex items-center justify-between p-4 border-t border-border dark:border-border-dark">
+            <div className="flex items-center justify-between p-4 border-t border-border">
               <button
                 type="button"
                 onClick={handleGoToSavedSearches}
@@ -284,7 +284,7 @@ export function SaveSearchModal({
                 <button
                   type="button"
                   onClick={onClose}
-                  className="px-4 py-2 text-[13px] font-medium text-muted hover:text-ink dark:hover:text-cream transition-colors"
+                  className="px-4 py-2 text-[13px] font-medium text-muted hover:text-ink transition-colors"
                 >
                   Cancel
                 </button>
