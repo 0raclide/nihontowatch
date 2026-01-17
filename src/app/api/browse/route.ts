@@ -116,6 +116,7 @@ export async function GET(request: NextRequest) {
         freshness_confidence,
         listing_published_at,
         wayback_first_archive_at,
+        wayback_checked_at,
         status,
         is_available,
         is_sold,
