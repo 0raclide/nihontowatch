@@ -247,10 +247,96 @@ describe('parseNumericFilters', () => {
       expect(result.textWords).toEqual(['weight>500']);
     });
 
-    it('treats "usd>100" as text (usd not a supported alias)', () => {
-      const result = parseNumericFilters('usd>100');
+    it('treats "gbp>100" as text (gbp not a supported currency)', () => {
+      const result = parseNumericFilters('gbp>100');
       expect(result.filters).toHaveLength(0);
-      expect(result.textWords).toEqual(['usd>100']);
+      expect(result.textWords).toEqual(['gbp>100']);
+    });
+  });
+
+  describe('currency conversion filters', () => {
+    // USD conversion rate: 150 JPY per USD
+    it('parses "usd>20000" and converts to JPY (20000 * 150 = 3000000)', () => {
+      const result = parseNumericFilters('usd>20000');
+      expect(result.filters).toHaveLength(1);
+      expect(result.filters[0]).toEqual({ field: 'price_value', op: 'gt', value: 3000000 });
+      expect(result.textWords).toHaveLength(0);
+    });
+
+    it('parses "dollar<5000" and converts to JPY', () => {
+      const result = parseNumericFilters('dollar<5000');
+      expect(result.filters).toHaveLength(1);
+      expect(result.filters[0]).toEqual({ field: 'price_value', op: 'lt', value: 750000 });
+      expect(result.textWords).toHaveLength(0);
+    });
+
+    it('parses "dollars>=10000" and converts to JPY', () => {
+      const result = parseNumericFilters('dollars>=10000');
+      expect(result.filters).toHaveLength(1);
+      expect(result.filters[0]).toEqual({ field: 'price_value', op: 'gte', value: 1500000 });
+      expect(result.textWords).toHaveLength(0);
+    });
+
+    // EUR conversion rate: 163 JPY per EUR
+    it('parses "eur>10000" and converts to JPY (10000 * 163 = 1630000)', () => {
+      const result = parseNumericFilters('eur>10000');
+      expect(result.filters).toHaveLength(1);
+      expect(result.filters[0]).toEqual({ field: 'price_value', op: 'gt', value: 1630000 });
+      expect(result.textWords).toHaveLength(0);
+    });
+
+    it('parses "euro<2000" and converts to JPY', () => {
+      const result = parseNumericFilters('euro<2000');
+      expect(result.filters).toHaveLength(1);
+      expect(result.filters[0]).toEqual({ field: 'price_value', op: 'lt', value: 326000 });
+      expect(result.textWords).toHaveLength(0);
+    });
+
+    it('parses "euros<=5000" and converts to JPY', () => {
+      const result = parseNumericFilters('euros<=5000');
+      expect(result.filters).toHaveLength(1);
+      expect(result.filters[0]).toEqual({ field: 'price_value', op: 'lte', value: 815000 });
+      expect(result.textWords).toHaveLength(0);
+    });
+
+    it('handles case-insensitive currency: USD>20000', () => {
+      const result = parseNumericFilters('USD>20000');
+      expect(result.filters).toHaveLength(1);
+      expect(result.filters[0]).toEqual({ field: 'price_value', op: 'gt', value: 3000000 });
+    });
+
+    it('handles mixed case: Eur<10000', () => {
+      const result = parseNumericFilters('Eur<10000');
+      expect(result.filters).toHaveLength(1);
+      expect(result.filters[0]).toEqual({ field: 'price_value', op: 'lt', value: 1630000 });
+    });
+
+    it('combines currency filter with text search', () => {
+      const result = parseNumericFilters('juyo katana usd>30000');
+      expect(result.filters).toHaveLength(1);
+      expect(result.filters[0]).toEqual({ field: 'price_value', op: 'gt', value: 4500000 });
+      expect(result.textWords).toEqual(['juyo', 'katana']);
+    });
+
+    it('combines currency filter with nagasa filter', () => {
+      const result = parseNumericFilters('usd>20000 cm>70');
+      expect(result.filters).toHaveLength(2);
+      expect(result.filters).toContainEqual({ field: 'price_value', op: 'gt', value: 3000000 });
+      expect(result.filters).toContainEqual({ field: 'nagasa_cm', op: 'gt', value: 70 });
+    });
+
+    it('allows both JPY and USD filters (multiple price filters)', () => {
+      const result = parseNumericFilters('jpy<5000000 usd>10000');
+      expect(result.filters).toHaveLength(2);
+      expect(result.filters).toContainEqual({ field: 'price_value', op: 'lt', value: 5000000 });
+      expect(result.filters).toContainEqual({ field: 'price_value', op: 'gt', value: 1500000 });
+    });
+
+    it('rounds converted values to integers', () => {
+      // 333 USD * 150 = 49950
+      const result = parseNumericFilters('usd>333');
+      expect(result.filters[0].value).toBe(49950);
+      expect(Number.isInteger(result.filters[0].value)).toBe(true);
     });
   });
 
@@ -397,6 +483,13 @@ describe('isNumericFilter', () => {
     expect(isNumericFilter('jpy<=500000')).toBe(true);
   });
 
+  it('returns true for currency filters', () => {
+    expect(isNumericFilter('usd>20000')).toBe(true);
+    expect(isNumericFilter('eur<10000')).toBe(true);
+    expect(isNumericFilter('dollar>=5000')).toBe(true);
+    expect(isNumericFilter('euros<=3000')).toBe(true);
+  });
+
   it('returns false for regular text', () => {
     expect(isNumericFilter('katana')).toBe(false);
     expect(isNumericFilter('bizen')).toBe(false);
@@ -407,16 +500,19 @@ describe('isNumericFilter', () => {
     expect(isNumericFilter('nagasa=70')).toBe(false);
     expect(isNumericFilter('width>10')).toBe(false);
     expect(isNumericFilter('nagasa>abc')).toBe(false);
+    expect(isNumericFilter('gbp>100')).toBe(false);
   });
 
   it('is case insensitive', () => {
     expect(isNumericFilter('NAGASA>70')).toBe(true);
     expect(isNumericFilter('Cm<65')).toBe(true);
+    expect(isNumericFilter('USD>20000')).toBe(true);
+    expect(isNumericFilter('EUR<10000')).toBe(true);
   });
 });
 
 describe('getSupportedFieldAliases', () => {
-  it('returns all supported aliases', () => {
+  it('returns all supported field aliases', () => {
     const aliases = getSupportedFieldAliases();
     expect(aliases).toContain('nagasa');
     expect(aliases).toContain('cm');
@@ -426,9 +522,19 @@ describe('getSupportedFieldAliases', () => {
     expect(aliases).toContain('jpy');
   });
 
-  it('returns exactly 6 aliases', () => {
+  it('returns currency aliases', () => {
     const aliases = getSupportedFieldAliases();
-    expect(aliases).toHaveLength(6);
+    expect(aliases).toContain('usd');
+    expect(aliases).toContain('dollar');
+    expect(aliases).toContain('dollars');
+    expect(aliases).toContain('eur');
+    expect(aliases).toContain('euro');
+    expect(aliases).toContain('euros');
+  });
+
+  it('returns 12 aliases (6 field + 6 currency)', () => {
+    const aliases = getSupportedFieldAliases();
+    expect(aliases).toHaveLength(12);
   });
 });
 

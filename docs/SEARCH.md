@@ -60,7 +60,7 @@ cm>70          # alias for nagasa>70
 length>70      # alias for nagasa>70
 ```
 
-### Price
+### Price (JPY)
 ```
 price>100000   # over ¥100,000
 price<500000   # under ¥500,000
@@ -68,11 +68,29 @@ yen>100000     # alias for price
 jpy<1000000    # alias for price
 ```
 
+### Price (USD / EUR)
+Filter by price in other currencies - automatically converts to JPY:
+```
+usd>20000      # over $20,000 (~¥3,000,000)
+usd<5000       # under $5,000 (~¥750,000)
+dollar>10000   # alias for usd
+dollars>=5000  # alias for usd
+
+eur>10000      # over €10,000 (~¥1,630,000)
+eur<2000       # under €2,000 (~¥326,000)
+euro>5000      # alias for eur
+euros<=3000    # alias for eur
+```
+
+**Note:** Currency conversion uses approximate rates (USD ≈ 150 JPY, EUR ≈ 163 JPY). These are fallback rates for filtering - actual display prices use live exchange rates.
+
 ### Combined Examples
 ```
 katana cm>70              # katana longer than 70cm
 bizen nagasa>72 juyo      # Bizen Juyo blades over 72cm
 wakizashi price<300000    # wakizashi under ¥300,000
+juyo katana usd>20000     # Juyo katana over $20,000
+tsuba eur<500             # Tsuba under €500
 ```
 
 ---

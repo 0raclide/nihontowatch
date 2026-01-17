@@ -104,8 +104,8 @@ export function MobileSearchSheet() {
           </h4>
           <ul className="space-y-1.5 text-[12px] text-muted/80">
             <li>Combine: &quot;bizen juyo katana&quot;</li>
-            <li>By size: &quot;katana cm&gt;70&quot; or &quot;nagasa&lt;65&quot;</li>
-            <li>Shortcuts: &quot;tokuju&quot;, &quot;tokuho&quot;, &quot;mumei&quot;</li>
+            <li>By size: &quot;cm&gt;70&quot; or &quot;nagasa&lt;65&quot;</li>
+            <li>By price: &quot;usd&gt;5000&quot; or &quot;eur&lt;2000&quot;</li>
           </ul>
         </div>
       </div>
