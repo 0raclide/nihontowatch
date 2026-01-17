@@ -102,9 +102,9 @@ export function MobileSearchSheet() {
             Search Tips
           </h4>
           <ul className="space-y-1.5 text-[12px] text-muted/80">
-            <li>Combine terms: "juyo katana", "hozon tsuba"</li>
-            <li>Use shortcuts: "tokuju" or "tokuho"</li>
-            <li>Smith names: "Masamune", "Sadamune"</li>
+            <li>Combine: "bizen juyo katana"</li>
+            <li>By size: "katana cm&gt;70" or "nagasa&lt;65"</li>
+            <li>Shortcuts: "tokuju", "tokuho", "mumei"</li>
           </ul>
         </div>
       </div>

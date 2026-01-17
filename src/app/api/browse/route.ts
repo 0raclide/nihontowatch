@@ -123,13 +123,79 @@ export async function GET(request: NextRequest) {
       query = query.in('dealer_id', params.dealers);
     }
 
-    // Text search - search across all relevant fields
-    // Split query into words, expand aliases, and require ALL words to match somewhere
-    if (params.query && params.query.trim().length >= 2) {
-      const words = params.query.trim().toLowerCase().split(/\s+/).filter(w => w.length >= 2);
-      const searchFields = ['title', 'smith', 'tosogu_maker', 'school', 'tosogu_school', 'cert_type', 'item_type'];
+    // Parse numeric filters from query (e.g., "nagasa>70", "cm<65", "price>100000")
+    // Returns { filters: applied filters, remainingWords: words for text search }
+    const parseNumericFilters = (queryStr: string) => {
+      const words = queryStr.trim().toLowerCase().split(/\s+/).filter(w => w.length >= 2);
+      const filters: Array<{ field: string; op: 'gt' | 'gte' | 'lt' | 'lte'; value: number }> = [];
+      const textWords: string[] = [];
+
+      // Patterns: nagasa>70, cm>70, nagasa>=70, price<500000, yen>100000
+      const numericPattern = /^(nagasa|cm|length|price|yen|jpy)([><]=?)(\d+(?:\.\d+)?)$/;
 
       for (const word of words) {
+        const match = word.match(numericPattern);
+        if (match) {
+          const [, fieldAlias, opStr, valueStr] = match;
+          const value = parseFloat(valueStr);
+
+          // Map aliases to database fields
+          let field: string;
+          if (['nagasa', 'cm', 'length'].includes(fieldAlias)) {
+            field = 'nagasa_cm';
+          } else if (['price', 'yen', 'jpy'].includes(fieldAlias)) {
+            field = 'price_value';
+          } else {
+            textWords.push(word);
+            continue;
+          }
+
+          // Map operator
+          let op: 'gt' | 'gte' | 'lt' | 'lte';
+          if (opStr === '>') op = 'gt';
+          else if (opStr === '>=') op = 'gte';
+          else if (opStr === '<') op = 'lt';
+          else op = 'lte'; // <=
+
+          filters.push({ field, op, value });
+        } else {
+          textWords.push(word);
+        }
+      }
+
+      return { filters, textWords };
+    };
+
+    // Process query with numeric filters
+    if (params.query && params.query.trim().length >= 2) {
+      const { filters, textWords } = parseNumericFilters(params.query);
+
+      // Apply numeric filters
+      for (const { field, op, value } of filters) {
+        query = query.filter(field, op, value);
+      }
+
+      // Text search on remaining words - include all relevant metadata fields
+      const searchFields = [
+        'title',
+        'description',
+        // Attribution
+        'smith',
+        'tosogu_maker',
+        'school',
+        'tosogu_school',
+        'province',
+        'era',
+        'mei_type',
+        // Classification
+        'cert_type',
+        'item_type',
+        'item_category',
+        // Tosogu-specific
+        'material',
+      ];
+
+      for (const word of textWords) {
         // Expand word to include aliases (e.g., "tokuju" -> ["tokuju", "tokubetsu juyo", "tokubetsu_juyo"])
         const expandedTerms = expandSearchAliases(word).map(normalizeSearchText);
 
@@ -139,7 +205,9 @@ export async function GET(request: NextRequest) {
         );
 
         // Each word (with its aliases) must match somewhere
-        query = query.or(conditions.join(','));
+        if (conditions.length > 0) {
+          query = query.or(conditions.join(','));
+        }
       }
     }
 

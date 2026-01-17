@@ -129,16 +129,57 @@ const SEARCH_ALIASES: Record<string, string[]> = {
   'tokuju': ['tokubetsu juyo', 'tokubetsu_juyo'],
   'tokuho': ['tokubetsu hozon', 'tokubetsu_hozon'],
   'tokukicho': ['tokubetsu kicho', 'tokubetsu_kicho'],
+  'nbthk': ['juyo', 'hozon', 'tokubetsu'],
+  'nthk': ['nthk'],
 
   // Item type abbreviations
   'waki': ['wakizashi'],
   'nagi': ['naginata'],
   'fuchikashira': ['fuchi_kashira', 'fuchi-kashira', 'fuchi kashira'],
+  'sword': ['katana', 'wakizashi', 'tanto', 'tachi'],
+  'blade': ['katana', 'wakizashi', 'tanto', 'tachi'],
+  'fitting': ['tsuba', 'fuchi', 'kashira', 'menuki', 'kozuka'],
+  'tosogu': ['tsuba', 'fuchi', 'kashira', 'menuki', 'kozuka'],
 
   // Common romanization variants
   'tuba': ['tsuba'],
   'tanto': ['tantou', 'tantō'],
-  'katana': ['katana'],
+
+  // Province aliases (old province names)
+  'bizen': ['bizen', 'bishu'],
+  'yamashiro': ['yamashiro'],
+  'yamato': ['yamato'],
+  'sagami': ['sagami', 'soshu'],
+  'soshu': ['soshu', 'sagami'],
+  'mino': ['mino', 'noshu'],
+  'seki': ['seki', 'mino'],
+  'hizen': ['hizen'],
+  'satsuma': ['satsuma'],
+  'echizen': ['echizen'],
+  'kaga': ['kaga'],
+
+  // Era/period aliases
+  'koto': ['koto', 'old sword'],
+  'shinto': ['shinto', 'new sword'],
+  'shinshinto': ['shinshinto', 'shin-shinto'],
+  'gendaito': ['gendaito', 'gendai', 'modern'],
+  'muromachi': ['muromachi'],
+  'kamakura': ['kamakura'],
+  'edo': ['edo', 'tokugawa'],
+  'meiji': ['meiji'],
+
+  // Mei (signature) types
+  'mumei': ['mumei', 'unsigned'],
+  'signed': ['mei', 'signed'],
+  'gimei': ['gimei', 'false signature'],
+
+  // Materials (for tosogu)
+  'iron': ['iron', 'tetsu'],
+  'shakudo': ['shakudo'],
+  'shibuichi': ['shibuichi'],
+  'gold': ['gold', 'kin'],
+  'silver': ['silver', 'gin'],
+  'copper': ['copper', 'akagane'],
 };
 
 /**
