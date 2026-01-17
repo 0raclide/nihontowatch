@@ -82,7 +82,9 @@ export async function POST(request: NextRequest) {
     // Insert session into database
     const supabase = await createClient();
 
-    const { error } = await supabase.from('user_sessions').insert({
+    // Use type assertion since user_sessions table may not be in generated types yet
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any).from('user_sessions').insert({
       id: sessionId,
       user_id: null, // Anonymous session - will be updated if user authenticates
       started_at: new Date().toISOString(),
@@ -172,7 +174,9 @@ export async function PATCH(request: NextRequest) {
     // Update session in database
     const supabase = await createClient();
 
-    const { error } = await supabase
+    // Use type assertion since user_sessions table may not be in generated types yet
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any)
       .from('user_sessions')
       .update({
         ended_at: endedAt,

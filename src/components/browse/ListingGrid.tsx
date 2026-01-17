@@ -86,7 +86,7 @@ function Pagination({
       <button
         onClick={() => onPageChange(page - 1)}
         disabled={page === 1}
-        className="px-3 py-2 min-h-[44px] text-sm text-muted hover:text-ink theme-dark:hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+        className="px-3 py-2 min-h-[44px] text-sm text-muted hover:text-ink disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
       >
         <span className="hidden sm:inline">← Previous</span>
         <span className="sm:hidden">←</span>
@@ -105,8 +105,8 @@ function Pagination({
               onClick={() => onPageChange(p)}
               className={`min-w-[40px] h-10 text-sm transition-colors ${
                 p === page
-                  ? 'bg-ink text-white theme-dark:bg-gold theme-dark:text-ink'
-                  : 'text-charcoal hover:bg-border/50 theme-dark:text-gray-300 theme-dark:hover:bg-white/10'
+                  ? 'bg-ink text-paper'
+                  : 'text-ink hover:bg-border/50'
               }`}
             >
               {p}
@@ -124,7 +124,7 @@ function Pagination({
       <button
         onClick={() => onPageChange(page + 1)}
         disabled={page === totalPages}
-        className="px-3 py-2 min-h-[44px] text-sm text-muted hover:text-ink theme-dark:hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+        className="px-3 py-2 min-h-[44px] text-sm text-muted hover:text-ink disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
       >
         <span className="hidden sm:inline">Next →</span>
         <span className="sm:hidden">→</span>
@@ -137,7 +137,7 @@ function LoadingSkeleton() {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
       {[...Array(20)].map((_, i) => (
-        <div key={i} className="bg-white theme-dark:bg-gray-800 border border-border theme-dark:border-gray-700">
+        <div key={i} className="bg-paper border border-border">
           <div className="aspect-[4/3] img-loading" />
           <div className="p-3 space-y-2">
             <div className="h-2.5 w-16 img-loading rounded" />
@@ -169,7 +169,7 @@ export function ListingGrid({
   if (listings.length === 0) {
     return (
       <div className="text-center py-16">
-        <div className="inline-block p-6 bg-white theme-dark:bg-gray-800 border border-border theme-dark:border-gray-700">
+        <div className="inline-block p-6 bg-paper border border-border">
           <svg
             className="w-12 h-12 text-muted mx-auto mb-4"
             fill="none"
@@ -183,7 +183,7 @@ export function ListingGrid({
               d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
             />
           </svg>
-          <h3 className="font-serif text-lg text-charcoal theme-dark:text-gray-200 mb-2">No items found</h3>
+          <h3 className="font-serif text-lg text-ink mb-2">No items found</h3>
           <p className="text-sm text-muted">
             Try adjusting your filters to see more results
           </p>
@@ -197,8 +197,8 @@ export function ListingGrid({
       {/* Results count - hidden on mobile since it's in filter trigger bar */}
       <div className="hidden lg:flex items-center justify-between mb-6">
         <p className="text-sm text-muted">
-          Showing <span className="text-ink theme-dark:text-white font-medium">{listings.length}</span> of{' '}
-          <span className="text-ink theme-dark:text-white font-medium">{total.toLocaleString()}</span> items
+          Showing <span className="text-ink font-medium">{listings.length}</span> of{' '}
+          <span className="text-ink font-medium">{total.toLocaleString()}</span> items
         </p>
       </div>
 
@@ -234,7 +234,7 @@ export function ListingGrid({
 
       {/* Pagination - only on desktop or when not in infinite scroll mode */}
       {!infiniteScroll && totalPages > 1 && (
-        <div className="mt-12 pt-8 border-t border-border theme-dark:border-gray-700">
+        <div className="mt-12 pt-8 border-t border-border">
           <Pagination page={page} totalPages={totalPages} onPageChange={onPageChange} />
         </div>
       )}

@@ -70,14 +70,14 @@ export function SearchResultPreview({
       onClick={onClick}
       className={`w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors ${
         isHighlighted
-          ? 'bg-gold/10 dark:bg-gold/20'
-          : 'hover:bg-linen/80 dark:hover:bg-gray-800/80'
+          ? 'bg-gold/10'
+          : 'hover:bg-hover'
       }`}
       role="option"
       aria-selected={isHighlighted}
     >
       {/* Image */}
-      <div className="relative w-12 h-12 flex-shrink-0 bg-linen dark:bg-gray-800 overflow-hidden">
+      <div className="relative w-12 h-12 flex-shrink-0 bg-linen overflow-hidden">
         {suggestion.image_url ? (
           <Image
             src={suggestion.image_url}
@@ -91,7 +91,7 @@ export function SearchResultPreview({
         ) : (
           <div className="w-full h-full flex items-center justify-center">
             <svg
-              className="w-5 h-5 text-muted/30 dark:text-gray-600"
+              className="w-5 h-5 text-muted/30"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -112,24 +112,24 @@ export function SearchResultPreview({
         {/* Title row with type badge */}
         <div className="flex items-center gap-2">
           {itemType && (
-            <span className="text-[9px] uppercase tracking-wider font-medium px-1.5 py-0.5 bg-linen dark:bg-gray-700 text-charcoal dark:text-gray-300 flex-shrink-0">
+            <span className="text-[9px] uppercase tracking-wider font-medium px-1.5 py-0.5 bg-linen text-charcoal flex-shrink-0">
               {itemType}
             </span>
           )}
-          <span className="text-[12px] text-ink dark:text-white truncate">
+          <span className="text-[12px] text-ink truncate">
             {artisan || displayTitle}
           </span>
         </div>
 
         {/* Dealer */}
-        <div className="text-[10px] text-muted dark:text-gray-500 mt-0.5">
+        <div className="text-[10px] text-muted mt-0.5">
           {suggestion.dealer_domain}
         </div>
       </div>
 
       {/* Price */}
       <div className="flex-shrink-0 text-right">
-        <span className="text-[12px] font-medium tabular-nums text-ink dark:text-white">
+        <span className="text-[12px] font-medium tabular-nums text-ink">
           {formatPrice(suggestion.price_value, suggestion.price_currency)}
         </span>
       </div>

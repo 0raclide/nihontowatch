@@ -112,7 +112,9 @@ export async function POST(request: NextRequest) {
     // Insert into database
     const supabase = await createClient();
 
-    const { error } = await supabase.from('activity_events').insert(records);
+    // Use type assertion since activity_events table may not be in generated types yet
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any).from('activity_events').insert(records);
 
     if (error) {
       // Log error but don't fail the request - activity tracking is best-effort

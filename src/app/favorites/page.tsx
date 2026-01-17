@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { Header } from '@/components/layout/Header';
 import { FavoritesList } from '@/components/favorites/FavoritesList';
@@ -94,12 +95,12 @@ export default function FavoritesPage() {
           <p className="text-sm text-muted dark:text-gray-400 mb-6">
             Create an account or sign in to save and manage your favorite items.
           </p>
-          <a
+          <Link
             href="/"
             className="inline-flex items-center gap-2 px-5 py-2.5 bg-ink dark:bg-gold text-white dark:text-ink text-sm font-medium hover:opacity-90 transition-opacity"
           >
             Go to Homepage
-          </a>
+          </Link>
         </div>
       </div>
     );

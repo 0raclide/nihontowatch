@@ -54,14 +54,14 @@ export function SearchSuggestions({
   return (
     <div
       ref={ref}
-      className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-900 border border-border dark:border-gray-700 shadow-lg z-50 overflow-hidden"
+      className="absolute top-full left-0 right-0 mt-1 bg-paper border border-border shadow-lg z-50 overflow-hidden"
       role="listbox"
       aria-label="Search suggestions"
     >
       {/* Loading state */}
       {isLoading && (
         <div className="px-4 py-6 flex items-center justify-center">
-          <div className="flex items-center gap-2 text-muted dark:text-gray-500">
+          <div className="flex items-center gap-2 text-muted">
             <svg
               className="w-4 h-4 animate-spin"
               fill="none"
@@ -103,13 +103,13 @@ export function SearchSuggestions({
 
           {/* View all link */}
           {remainingCount > 0 && (
-            <div className="border-t border-border/50 dark:border-gray-800">
+            <div className="border-t border-border/50">
               <button
                 onClick={onViewAll}
                 className={`w-full px-4 py-2.5 text-[12px] text-center transition-colors ${
                   highlightedIndex === suggestions.length
-                    ? 'bg-gold/10 dark:bg-gold/20 text-gold'
-                    : 'text-charcoal dark:text-gray-400 hover:bg-linen/50 dark:hover:bg-gray-800/50 hover:text-gold'
+                    ? 'bg-gold/10 text-gold'
+                    : 'text-charcoal hover:bg-hover hover:text-gold'
                 }`}
                 data-index={suggestions.length}
               >
@@ -123,7 +123,7 @@ export function SearchSuggestions({
       {/* No results */}
       {!isLoading && !hasResults && (
         <div className="px-4 py-6 text-center">
-          <p className="text-[12px] text-muted dark:text-gray-500">
+          <p className="text-[12px] text-muted">
             No results found
           </p>
         </div>

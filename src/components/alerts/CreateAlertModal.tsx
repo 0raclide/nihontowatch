@@ -181,7 +181,7 @@ export function CreateAlertModal({
                       <button
                         type="button"
                         onClick={() => setAlertType('price_drop')}
-                        disabled={isSold}
+                        disabled={!!isSold}
                         className={`px-3 py-3 text-[13px] font-medium rounded-lg transition-all ${
                           alertType === 'price_drop'
                             ? 'bg-gold text-white'

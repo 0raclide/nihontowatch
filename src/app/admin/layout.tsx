@@ -95,7 +95,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         .eq('id', user.id)
         .single();
 
-      if (!profile?.is_admin) {
+      if (!(profile as { is_admin: boolean } | null)?.is_admin) {
         window.location.href = '/';
         return;
       }

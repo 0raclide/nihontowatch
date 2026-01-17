@@ -22,7 +22,7 @@ export const BottomTabBar = memo(function BottomTabBar({
     <>
       {/* Bottom Tab Bar */}
       <nav
-        className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-cream/95 dark:bg-gray-900/95 backdrop-blur-sm border-t border-border dark:border-gray-800"
+        className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-cream/95 backdrop-blur-sm border-t border-border"
         style={{
           paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         }}
@@ -33,7 +33,7 @@ export const BottomTabBar = memo(function BottomTabBar({
           {/* Search */}
           <button
             onClick={openSearch}
-            className="flex flex-col items-center justify-center flex-1 h-full text-charcoal dark:text-gray-400 active:text-gold transition-colors"
+            className="flex flex-col items-center justify-center flex-1 h-full text-charcoal active:text-gold transition-colors"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -44,7 +44,7 @@ export const BottomTabBar = memo(function BottomTabBar({
           {/* Filters */}
           <button
             onClick={openFilterDrawer}
-            className="flex flex-col items-center justify-center flex-1 h-full text-charcoal dark:text-gray-400 active:text-gold transition-colors relative"
+            className="flex flex-col items-center justify-center flex-1 h-full text-charcoal active:text-gold transition-colors relative"
           >
             <div className="relative">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -62,7 +62,7 @@ export const BottomTabBar = memo(function BottomTabBar({
           {/* Menu */}
           <button
             onClick={openNavDrawer}
-            className="flex flex-col items-center justify-center flex-1 h-full text-charcoal dark:text-gray-400 active:text-gold transition-colors"
+            className="flex flex-col items-center justify-center flex-1 h-full text-charcoal active:text-gold transition-colors"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 12h16M4 18h16" />

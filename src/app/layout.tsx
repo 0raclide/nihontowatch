@@ -3,6 +3,8 @@ import { Cormorant_Garamond, Inter } from "next/font/google";
 import "./globals.css";
 import { MobileUIProvider } from "@/contexts/MobileUIContext";
 import { ThemeProvider, themeInitScript } from "@/contexts/ThemeContext";
+import { AuthProvider } from "@/lib/auth/AuthContext";
+import { ActivityWrapper } from "@/components/activity/ActivityWrapper";
 
 const cormorant = Cormorant_Garamond({
   variable: "--font-serif",
@@ -42,11 +44,15 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
       <body className="antialiased font-sans">
-        <MobileUIProvider>
-          <ThemeProvider>
-            {children}
-          </ThemeProvider>
-        </MobileUIProvider>
+        <AuthProvider>
+          <MobileUIProvider>
+            <ThemeProvider>
+              <ActivityWrapper>
+                {children}
+              </ActivityWrapper>
+            </ThemeProvider>
+          </MobileUIProvider>
+        </AuthProvider>
       </body>
     </html>
   );

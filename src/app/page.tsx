@@ -11,6 +11,7 @@ import { getActiveFilterCount } from '@/components/browse/FilterContent';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { BottomTabBar } from '@/components/navigation/BottomTabBar';
+import { useActivityOptional } from '@/components/activity/ActivityProvider';
 
 interface Listing {
   id: string;
@@ -102,6 +103,7 @@ function HomeContent() {
   const searchParams = useSearchParams();
   const isMobile = useIsMobile();
   const filtersChangedRef = useRef(false);
+  const activity = useActivityOptional();
 
   const activeTab = 'available'; // Only show available items
   const [filters, setFilters] = useState<Filters>({
@@ -235,10 +237,35 @@ function HomeContent() {
   });
 
   const handleFilterChange = useCallback((key: string, value: unknown) => {
-    setFilters((prev) => ({ ...prev, [key]: value }));
+    // Track filter change
+    const previousValue = filters[key as keyof Filters];
+
+    setFilters((prev) => {
+      const newFilters = { ...prev, [key]: value };
+
+      // Track filter change event
+      if (activity) {
+        activity.trackFilterChange(
+          {
+            category: newFilters.category,
+            itemTypes: newFilters.itemTypes,
+            certifications: newFilters.certifications,
+            schools: newFilters.schools,
+            dealers: newFilters.dealers,
+            askOnly: newFilters.askOnly,
+            sort,
+          },
+          key,
+          previousValue,
+          value
+        );
+      }
+
+      return newFilters;
+    });
     setPage(1); // Reset to first page on filter change
     filtersChangedRef.current = true;
-  }, []);
+  }, [filters, sort, activity]);
 
 
   const handlePageChange = useCallback((newPage: number) => {
@@ -247,15 +274,15 @@ function HomeContent() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-cream dark:bg-gray-900 transition-colors">
+    <div className="min-h-screen bg-cream transition-colors">
       <Header />
 
       <main className="max-w-[1600px] mx-auto px-4 py-4 lg:px-6 lg:py-8">
         {/* Page Header - Refined scholarly aesthetic */}
         <div className="mb-4 lg:mb-6 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <h1 className="font-serif text-xl lg:text-2xl text-ink dark:text-white tracking-tight">Collection</h1>
-            <p className="text-[12px] lg:text-[13px] text-muted dark:text-gray-500 mt-1">
+            <h1 className="font-serif text-xl lg:text-2xl text-ink tracking-tight">Collection</h1>
+            <p className="text-[12px] lg:text-[13px] text-muted mt-1">
               Japanese swords and fittings from established dealers
             </p>
           </div>
@@ -270,7 +297,7 @@ function HomeContent() {
                 setSort(e.target.value);
                 setPage(1);
               }}
-              className="bg-transparent border-0 text-[12px] text-charcoal dark:text-gray-300 focus:outline-none cursor-pointer pr-5 appearance-none"
+              className="bg-transparent border-0 text-[12px] text-charcoal focus:outline-none cursor-pointer pr-5 appearance-none"
               style={{
                 backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239ca3af'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
                 backgroundRepeat: 'no-repeat',
@@ -287,10 +314,10 @@ function HomeContent() {
         </div>
 
         {/* Subtle divider */}
-        <div className="h-px bg-gradient-to-r from-transparent via-border dark:via-gray-700 to-transparent mb-4 lg:mb-8" />
+        <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent mb-4 lg:mb-8" />
 
         {/* Mobile item count */}
-        <div className="lg:hidden text-[13px] text-muted dark:text-gray-500 mb-4">
+        <div className="lg:hidden text-[13px] text-muted mb-4">
           {isLoading ? 'Loading...' : `${data?.total?.toLocaleString() || 0} items`}
         </div>
 
@@ -338,28 +365,28 @@ function HomeContent() {
       </main>
 
       {/* Footer - Minimal, scholarly */}
-      <footer className="border-t border-border/50 dark:border-gray-800/50 mt-12 lg:mt-20 transition-colors">
+      <footer className="border-t border-border/50 mt-12 lg:mt-20 transition-colors">
         <div className="max-w-[1600px] mx-auto px-4 py-6 lg:px-6">
           <div className="flex flex-col gap-4 items-center lg:flex-row lg:justify-between">
             <div className="flex flex-col items-center gap-2 lg:flex-row lg:gap-6">
-              <span className="font-serif text-lg text-ink dark:text-white">
+              <span className="font-serif text-lg text-ink">
                 Nihonto<span className="text-gold">watch</span>
               </span>
-              <span className="text-[11px] text-muted dark:text-gray-600 text-center lg:text-left">
+              <span className="text-[11px] text-muted text-center lg:text-left">
                 Curated Japanese arms from dealers worldwide
               </span>
             </div>
             <div className="flex flex-col items-center gap-2 lg:flex-row lg:gap-4">
               {/* Freshness indicator */}
               {data?.lastUpdated && (
-                <div className="flex items-center gap-2 text-[10px] text-muted/70 dark:text-gray-600">
+                <div className="flex items-center gap-2 text-[10px] text-muted/70">
                   <div className="w-1.5 h-1.5 rounded-full bg-sage animate-pulse" />
                   <span>Updated {formatFreshness(data.lastUpdated)}</span>
                   <span className="text-muted/40 hidden lg:inline">·</span>
                   <span className="hidden lg:inline">Daily refresh</span>
                 </div>
               )}
-              <span className="text-[10px] text-muted/60 dark:text-gray-600">
+              <span className="text-[10px] text-muted/60">
                 © {new Date().getFullYear()}
               </span>
             </div>
@@ -374,10 +401,10 @@ export default function Home() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-cream dark:bg-gray-900 flex items-center justify-center transition-colors">
+        <div className="min-h-screen bg-cream flex items-center justify-center transition-colors">
           <div className="text-center">
             <div className="w-8 h-8 border-2 border-gold border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-            <p className="text-sm text-muted dark:text-gray-400">Loading collection...</p>
+            <p className="text-sm text-muted">Loading collection...</p>
           </div>
         </div>
       }

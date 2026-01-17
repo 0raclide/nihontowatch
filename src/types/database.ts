@@ -192,6 +192,38 @@ export interface Database {
         Insert: Omit<Database['public']['Tables']['alert_history']['Row'], 'id'>;
         Update: Partial<Database['public']['Tables']['alert_history']['Insert']>;
       };
+      // User sessions for activity tracking
+      user_sessions: {
+        Row: {
+          id: string;
+          user_id: string | null;
+          started_at: string;
+          ended_at: string | null;
+          total_duration_ms: number | null;
+          page_views: number;
+          user_agent: string | null;
+          screen_width: number | null;
+          screen_height: number | null;
+          timezone: string | null;
+          language: string | null;
+          created_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['user_sessions']['Row'], 'created_at'>;
+        Update: Partial<Database['public']['Tables']['user_sessions']['Insert']>;
+      };
+      // Activity events for detailed tracking
+      activity_events: {
+        Row: {
+          id: number;
+          session_id: string;
+          user_id: string | null;
+          event_type: 'page_view' | 'listing_view' | 'search' | 'filter_change' | 'favorite_add' | 'favorite_remove' | 'alert_create' | 'alert_delete' | 'external_link_click';
+          event_data: Record<string, unknown>;
+          created_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['activity_events']['Row'], 'id'>;
+        Update: Partial<Database['public']['Tables']['activity_events']['Insert']>;
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
@@ -199,6 +231,7 @@ export interface Database {
       action_type: 'view' | 'search' | 'favorite' | 'alert_create' | 'alert_delete' | 'login' | 'logout';
       alert_type: 'price_drop' | 'new_listing' | 'back_in_stock';
       delivery_status: 'pending' | 'sent' | 'failed';
+      activity_event_type: 'page_view' | 'listing_view' | 'search' | 'filter_change' | 'favorite_add' | 'favorite_remove' | 'alert_create' | 'alert_delete' | 'external_link_click';
     };
   };
 }

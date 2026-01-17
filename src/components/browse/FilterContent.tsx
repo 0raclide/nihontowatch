@@ -56,11 +56,11 @@ function FilterSection({
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center justify-between w-full text-left group mb-4 py-1"
       >
-        <h3 className="text-[13px] uppercase tracking-[0.15em] font-semibold text-ink theme-dark:text-white">
+        <h3 className="text-[13px] uppercase tracking-[0.15em] font-semibold text-ink">
           {title}
         </h3>
         <svg
-          className={`w-4 h-4 text-charcoal theme-dark:text-gray-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+          className={`w-4 h-4 text-charcoal transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -95,7 +95,7 @@ function Checkbox({
           onChange={(e) => onChange(e.target.checked)}
           className="peer sr-only"
         />
-        <div className="w-5 h-5 lg:w-[18px] lg:h-[18px] border-2 border-charcoal/40 theme-dark:border-gray-500 peer-checked:border-gold peer-checked:bg-gold transition-colors rounded">
+        <div className="w-5 h-5 lg:w-[18px] lg:h-[18px] border-2 border-charcoal/40 peer-checked:border-gold peer-checked:bg-gold transition-colors rounded">
           {checked && (
             <svg className="w-5 h-5 lg:w-[18px] lg:h-[18px] text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
@@ -103,11 +103,11 @@ function Checkbox({
           )}
         </div>
       </div>
-      <span className="text-[15px] lg:text-[14px] text-charcoal theme-dark:text-gray-200 group-hover:text-ink theme-dark:group-hover:text-white transition-colors flex-1">
+      <span className="text-[15px] lg:text-[14px] text-charcoal group-hover:text-ink transition-colors flex-1">
         {label}
       </span>
       {count !== undefined && (
-        <span className="text-[13px] lg:text-[12px] text-muted theme-dark:text-gray-500 tabular-nums">{count}</span>
+        <span className="text-[13px] lg:text-[12px] text-muted tabular-nums">{count}</span>
       )}
     </label>
   );
@@ -341,7 +341,7 @@ export function FilterContent({
       {/* Header with clear button */}
       <div className="flex items-center justify-between mb-4 py-2 lg:hidden">
         <div className="flex items-center gap-3">
-          <h2 className="text-[17px] font-semibold text-ink theme-dark:text-white">
+          <h2 className="text-[17px] font-semibold text-ink">
             Refine Results
           </h2>
           {isUpdating && (
@@ -360,7 +360,7 @@ export function FilterContent({
 
       {/* Desktop header */}
       <div className="hidden lg:flex items-center justify-between mb-2 py-2">
-        <h2 className="text-[13px] uppercase tracking-[0.15em] font-semibold text-ink dark:text-white">
+        <h2 className="text-[13px] uppercase tracking-[0.15em] font-semibold text-ink">
           Filters
         </h2>
         {hasActiveFilters && (
@@ -375,14 +375,14 @@ export function FilterContent({
 
       {/* Sort & Currency - Mobile only */}
       {onSortChange && onCurrencyChange && (
-        <div className="lg:hidden grid grid-cols-2 gap-3 mb-5 pb-5 border-b border-border/50 theme-dark:border-gray-700/30">
+        <div className="lg:hidden grid grid-cols-2 gap-3 mb-5 pb-5 border-b border-border/50">
           {/* Sort */}
           <div>
-            <label className="text-[12px] text-muted theme-dark:text-gray-500 mb-2 block">Sort by</label>
+            <label className="text-[12px] text-muted mb-2 block">Sort by</label>
             <select
               value={sort}
               onChange={(e) => onSortChange(e.target.value)}
-              className="w-full px-3 py-3 bg-white theme-dark:bg-gray-800 border-2 border-border theme-dark:border-gray-700 rounded-lg text-[15px] text-ink theme-dark:text-white focus:outline-none focus:border-gold"
+              className="w-full px-3 py-3 bg-paper border-2 border-border rounded-lg text-[15px] text-ink focus:outline-none focus:border-gold"
             >
               <option value="recent">Newest</option>
               <option value="price_asc">Price ↑</option>
@@ -393,11 +393,11 @@ export function FilterContent({
 
           {/* Currency */}
           <div>
-            <label className="text-[12px] text-muted theme-dark:text-gray-500 mb-2 block">Currency</label>
+            <label className="text-[12px] text-muted mb-2 block">Currency</label>
             <select
               value={currency}
               onChange={(e) => onCurrencyChange(e.target.value as Currency)}
-              className="w-full px-3 py-3 bg-white theme-dark:bg-gray-800 border-2 border-border theme-dark:border-gray-700 rounded-lg text-[15px] text-ink theme-dark:text-white focus:outline-none focus:border-gold"
+              className="w-full px-3 py-3 bg-paper border-2 border-border rounded-lg text-[15px] text-ink focus:outline-none focus:border-gold"
             >
               <option value="JPY">¥ JPY</option>
               <option value="USD">$ USD</option>
@@ -407,10 +407,10 @@ export function FilterContent({
         </div>
       )}
 
-      <div className="divide-y divide-border/50 theme-dark:divide-gray-700/30">
+      <div className="divide-y divide-border/50">
         {/* 1. Category Toggle - Most Important */}
         <div className="py-5">
-          <h3 className="text-[13px] uppercase tracking-[0.15em] font-semibold text-ink dark:text-white mb-4">
+          <h3 className="text-[13px] uppercase tracking-[0.15em] font-semibold text-ink mb-4">
             Category
           </h3>
           <div className="flex gap-2">
@@ -425,7 +425,7 @@ export function FilterContent({
                 className={`flex-1 px-4 py-3 lg:py-2.5 text-[15px] lg:text-[14px] font-medium rounded-lg transition-all duration-200 ${
                   filters.category === key
                     ? 'bg-gold text-white shadow-sm'
-                    : 'bg-linen theme-dark:bg-gray-800 text-charcoal theme-dark:text-gray-300 hover:bg-border theme-dark:hover:bg-gray-700'
+                    : 'bg-linen text-charcoal hover:bg-hover'
                 }`}
               >
                 {label}
@@ -447,7 +447,7 @@ export function FilterContent({
               />
             ))}
             {sortedCertifications.length === 0 && (
-              <p className="text-[14px] text-muted theme-dark:text-gray-500 italic py-2">No certifications</p>
+              <p className="text-[14px] text-muted italic py-2">No certifications</p>
             )}
           </div>
         </FilterSection>
@@ -465,22 +465,22 @@ export function FilterContent({
               />
             ))}
             {visibleItemTypes.length === 0 && (
-              <p className="text-[14px] text-muted theme-dark:text-gray-500 italic py-2">No items available</p>
+              <p className="text-[14px] text-muted italic py-2">No items available</p>
             )}
           </div>
         </FilterSection>
 
         {/* 4. Dealer - Fourth */}
         <div className="py-5">
-          <h3 className="text-[13px] uppercase tracking-[0.15em] font-semibold text-ink dark:text-white mb-4">
+          <h3 className="text-[13px] uppercase tracking-[0.15em] font-semibold text-ink mb-4">
             Dealer
           </h3>
           <div className="relative">
             <button
               onClick={() => setDealerDropdownOpen(!dealerDropdownOpen)}
-              className="w-full flex items-center justify-between px-4 py-3.5 lg:py-3 bg-white theme-dark:bg-gray-800 border-2 border-border theme-dark:border-gray-700 rounded-lg text-left text-[15px] lg:text-[14px] text-charcoal theme-dark:text-gray-300 hover:border-charcoal/50 theme-dark:hover:border-gray-500 transition-colors min-h-[52px] lg:min-h-[48px]"
+              className="w-full flex items-center justify-between px-4 py-3.5 lg:py-3 bg-paper border-2 border-border rounded-lg text-left text-[15px] lg:text-[14px] text-charcoal hover:border-charcoal/50 transition-colors min-h-[52px] lg:min-h-[48px]"
             >
-              <span className={selectedDealerNames.length > 0 ? 'text-ink theme-dark:text-white font-medium' : 'text-muted'}>
+              <span className={selectedDealerNames.length > 0 ? 'text-ink font-medium' : 'text-muted'}>
                 {selectedDealerNames.length > 0
                   ? selectedDealerNames.length === 1
                     ? selectedDealerNames[0]
@@ -488,7 +488,7 @@ export function FilterContent({
                   : 'All dealers'}
               </span>
               <svg
-                className={`w-5 h-5 text-charcoal theme-dark:text-gray-400 transition-transform duration-200 ${dealerDropdownOpen ? 'rotate-180' : ''}`}
+                className={`w-5 h-5 text-charcoal transition-transform duration-200 ${dealerDropdownOpen ? 'rotate-180' : ''}`}
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -498,15 +498,15 @@ export function FilterContent({
             </button>
 
             {dealerDropdownOpen && (
-              <div className="absolute z-20 top-full left-0 right-0 mt-2 bg-white theme-dark:bg-gray-800 border-2 border-border theme-dark:border-gray-700 rounded-lg shadow-xl max-h-72 overflow-hidden">
+              <div className="absolute z-20 top-full left-0 right-0 mt-2 bg-paper border-2 border-border rounded-lg shadow-xl max-h-72 overflow-hidden">
                 {/* Search */}
-                <div className="p-3 border-b border-border/50 theme-dark:border-gray-700/50">
+                <div className="p-3 border-b border-border/50">
                   <input
                     type="text"
                     value={dealerSearch}
                     onChange={(e) => setDealerSearch(e.target.value)}
                     placeholder="Search dealers..."
-                    className="w-full px-3 py-2.5 text-[15px] lg:text-[14px] bg-linen theme-dark:bg-gray-900 border-0 rounded-md text-ink theme-dark:text-white placeholder:text-muted/60 focus:outline-none focus:ring-2 focus:ring-gold/50"
+                    className="w-full px-3 py-2.5 text-[15px] lg:text-[14px] bg-linen border-0 rounded-md text-ink placeholder:text-muted/60 focus:outline-none focus:ring-2 focus:ring-gold/50"
                   />
                 </div>
                 {/* Dealer list */}
@@ -514,7 +514,7 @@ export function FilterContent({
                   {filteredDealers.map((dealer) => (
                     <label
                       key={dealer.id}
-                      className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-linen theme-dark:hover:bg-gray-700/50 transition-colors min-h-[48px]"
+                      className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-hover transition-colors min-h-[48px]"
                     >
                       <input
                         type="checkbox"
@@ -522,24 +522,24 @@ export function FilterContent({
                         onChange={(e) => handleDealerChange(dealer.id, e.target.checked)}
                         className="sr-only peer"
                       />
-                      <div className="w-5 h-5 border-2 border-charcoal/40 theme-dark:border-gray-500 peer-checked:border-gold peer-checked:bg-gold transition-colors rounded flex items-center justify-center">
+                      <div className="w-5 h-5 border-2 border-charcoal/40 peer-checked:border-gold peer-checked:bg-gold transition-colors rounded flex items-center justify-center">
                         {filters.dealers.includes(dealer.id) && (
                           <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                           </svg>
                         )}
                       </div>
-                      <span className="flex-1 text-[15px] lg:text-[14px] text-charcoal theme-dark:text-gray-200">{dealer.name}</span>
+                      <span className="flex-1 text-[15px] lg:text-[14px] text-charcoal">{dealer.name}</span>
                       <span className="text-[13px] lg:text-[12px] text-muted tabular-nums">{dealer.count}</span>
                     </label>
                   ))}
                   {filteredDealers.length === 0 && (
-                    <p className="px-4 py-3 text-[14px] text-muted theme-dark:text-muted italic">No dealers found</p>
+                    <p className="px-4 py-3 text-[14px] text-muted italic">No dealers found</p>
                   )}
                 </div>
                 {/* Clear selection */}
                 {filters.dealers.length > 0 && (
-                  <div className="p-3 border-t border-border/50 theme-dark:border-gray-700/50">
+                  <div className="p-3 border-t border-border/50">
                     <button
                       onClick={() => {
                         onFilterChange('dealers', []);
@@ -559,7 +559,7 @@ export function FilterContent({
         {/* 5. Price on Request - Last, least important */}
         <div className="py-5">
           <label className="flex items-center justify-between cursor-pointer group min-h-[48px]">
-            <span className="text-[15px] lg:text-[14px] text-charcoal theme-dark:text-gray-300 group-hover:text-ink theme-dark:group-hover:text-white transition-colors">
+            <span className="text-[15px] lg:text-[14px] text-charcoal group-hover:text-ink transition-colors">
               Price on request only
             </span>
             <div className="relative">
@@ -572,7 +572,7 @@ export function FilterContent({
               <div className={`w-12 h-7 lg:w-11 lg:h-6 rounded-full transition-colors ${
                 filters.askOnly
                   ? 'bg-gold'
-                  : 'bg-border-dark theme-dark:bg-gray-600'
+                  : 'bg-border-dark'
               }`}>
                 <div className={`absolute top-1 w-5 h-5 lg:w-4 lg:h-4 bg-white rounded-full shadow transition-transform ${
                   filters.askOnly ? 'translate-x-6 lg:translate-x-6' : 'translate-x-1'

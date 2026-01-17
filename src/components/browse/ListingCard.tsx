@@ -2,8 +2,9 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { FavoriteButton } from '@/components/favorites/FavoriteButton';
+import { useActivityOptional } from '@/components/activity/ActivityProvider';
 
 interface Listing {
   id: string;
@@ -187,6 +188,7 @@ const BLUR_PLACEHOLDER = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWln
 export function ListingCard({ listing, currency, exchangeRates, priority = false, showFavoriteButton = true }: ListingCardProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
+  const activity = useActivityOptional();
 
   const imageUrl = listing.images?.[0] || null;
   const artisan = getRomanizedName(listing.smith) || getRomanizedName(listing.tosogu_maker);
@@ -197,31 +199,43 @@ export function ListingCard({ listing, currency, exchangeRates, priority = false
   const certInfo = listing.cert_type ? CERT_LABELS[listing.cert_type] : null;
   const isAskPrice = listing.price_value === null;
 
+  // Track external link click when user clicks on the listing
+  const handleClick = useCallback(() => {
+    if (activity) {
+      activity.trackExternalLinkClick(
+        listing.url,
+        Number(listing.id),
+        listing.dealers?.name
+      );
+    }
+  }, [activity, listing.url, listing.id, listing.dealers?.name]);
+
   return (
     <Link
       href={listing.url}
       target="_blank"
       rel="noopener noreferrer"
-      className="group block bg-white theme-dark:bg-gray-800/50 border border-border theme-dark:border-gray-700/50 hover:border-gold/40 theme-dark:hover:border-gold/40 transition-all duration-300"
+      onClick={handleClick}
+      className="group block bg-paper border border-border hover:border-gold/40 transition-all duration-300"
     >
       {/* Dealer Domain - Elegant centered header */}
-      <div className="px-2.5 py-2 lg:px-3 lg:py-2.5 bg-gradient-to-b from-linen/80 to-transparent theme-dark:from-gray-800/60 theme-dark:to-transparent text-center">
-        <span className="text-[9px] lg:text-[10px] font-medium tracking-[0.15em] text-charcoal/70 theme-dark:text-gray-400 lowercase">
+      <div className="px-2.5 py-2 lg:px-3 lg:py-2.5 bg-gradient-to-b from-linen/80 to-transparent text-center">
+        <span className="text-[9px] lg:text-[10px] font-medium tracking-[0.15em] text-muted lowercase">
           {listing.dealers?.domain}
         </span>
       </div>
 
       {/* Image Container with skeleton loader */}
-      <div className="relative aspect-[4/3] overflow-hidden bg-linen theme-dark:bg-gray-900">
+      <div className="relative aspect-[4/3] overflow-hidden bg-linen">
         {/* Skeleton loader - shows while loading */}
         {isLoading && (
-          <div className="absolute inset-0 bg-gradient-to-r from-linen via-white to-linen theme-dark:from-gray-800 theme-dark:via-gray-700 theme-dark:to-gray-800 animate-shimmer" />
+          <div className="absolute inset-0 bg-gradient-to-r from-linen via-paper to-linen animate-shimmer" />
         )}
 
         {/* Fallback for missing/broken images */}
         {(hasError || !imageUrl) ? (
-          <div className="absolute inset-0 flex items-center justify-center bg-linen theme-dark:bg-gray-800">
-            <svg className="w-12 h-12 text-muted/30 theme-dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="absolute inset-0 flex items-center justify-center bg-linen">
+            <svg className="w-12 h-12 text-muted/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
           </div>
@@ -267,10 +281,10 @@ export function ListingCard({ listing, currency, exchangeRates, priority = false
           <div className="mb-1.5">
             <span className={`text-[8px] lg:text-[9px] uppercase tracking-wider font-medium px-1 lg:px-1.5 py-0.5 ${
               certInfo.tier === 'premier'
-                ? 'bg-burgundy/10 text-burgundy theme-dark:bg-burgundy/20 theme-dark:text-red-300'
+                ? 'bg-burgundy/10 text-burgundy'
                 : certInfo.tier === 'high'
-                ? 'bg-toku-hozon/10 text-toku-hozon theme-dark:bg-teal-900/30 theme-dark:text-teal-300'
-                : 'bg-hozon/10 text-hozon theme-dark:bg-gray-700/50 theme-dark:text-gray-400'
+                ? 'bg-toku-hozon/10 text-toku-hozon'
+                : 'bg-hozon/10 text-hozon'
             }`}>
               {certInfo.label}
             </span>
@@ -278,23 +292,23 @@ export function ListingCard({ listing, currency, exchangeRates, priority = false
         )}
 
         {/* Item Type - Primary identifier (always English), fallback to cleaned title */}
-        <h3 className="text-sm lg:text-[15px] font-semibold leading-tight text-ink theme-dark:text-white group-hover:text-gold transition-colors mb-1">
+        <h3 className="text-sm lg:text-[15px] font-semibold leading-tight text-ink group-hover:text-gold transition-colors mb-1">
           {itemType || cleanedTitle}
         </h3>
 
         {/* Smith/School - Key attribution */}
         {(artisan || school) && (
-          <p className="text-[11px] lg:text-[12px] text-charcoal theme-dark:text-gray-300 truncate mb-1">
+          <p className="text-[11px] lg:text-[12px] text-muted truncate mb-1">
             {artisan || school}
           </p>
         )}
 
         {/* Price - highly legible */}
-        <div className="pt-2 border-t border-border/50 theme-dark:border-gray-700/30">
+        <div className="pt-2 border-t border-border/50">
           <span className={`text-sm lg:text-[15px] tabular-nums ${
             isAskPrice
-              ? 'text-muted theme-dark:text-gray-500'
-              : 'text-ink theme-dark:text-white font-semibold'
+              ? 'text-muted'
+              : 'text-ink font-semibold'
           }`}>
             {formatPrice(listing.price_value, listing.price_currency, currency, exchangeRates)}
           </span>

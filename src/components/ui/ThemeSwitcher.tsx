@@ -63,7 +63,7 @@ export function ThemeSwitcher() {
   if (!mounted) {
     return (
       <button
-        className="w-9 h-9 flex items-center justify-center border border-border bg-white dark:bg-gray-800"
+        className="w-9 h-9 flex items-center justify-center border border-border bg-paper"
         aria-label="Theme selector loading"
       >
         <div className="w-4 h-4" />
@@ -79,14 +79,14 @@ export function ThemeSwitcher() {
       <button
         ref={buttonRef}
         onClick={toggleDropdown}
-        className="w-9 h-9 flex items-center justify-center border border-border dark:border-gray-600 bg-white dark:bg-gray-800 hover:bg-border/30 dark:hover:bg-gray-700 transition-colors"
+        className="w-9 h-9 flex items-center justify-center border border-border bg-paper hover:bg-hover transition-colors"
         aria-label="Select theme"
         aria-expanded={isOpen}
         aria-haspopup="listbox"
       >
         {/* Palette/Paint icon */}
         <svg
-          className="w-4 h-4 text-charcoal dark:text-gray-300"
+          className="w-4 h-4 text-charcoal"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -105,23 +105,23 @@ export function ThemeSwitcher() {
       {isOpen && (
         <div
           ref={dropdownRef}
-          className="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-gray-800 border border-border dark:border-gray-600 shadow-lg shadow-black/10 dark:shadow-black/30 z-50"
+          className="absolute right-0 top-full mt-2 w-64 bg-paper border border-border shadow-lg shadow-black/10 z-50"
           role="listbox"
           aria-label="Theme options"
         >
           {/* System option */}
           <button
             onClick={() => handleThemeSelect('system')}
-            className={`w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-linen dark:hover:bg-gray-700 transition-colors ${
-              themeSetting === 'system' ? 'bg-linen/70 dark:bg-gray-700/70' : ''
+            className={`w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-hover transition-colors ${
+              themeSetting === 'system' ? 'bg-hover' : ''
             }`}
             role="option"
             aria-selected={themeSetting === 'system'}
           >
             {/* System icon */}
-            <div className="w-6 h-6 flex items-center justify-center rounded-full border border-border dark:border-gray-600 bg-gradient-to-br from-white to-gray-200 dark:from-gray-700 dark:to-gray-900">
+            <div className="w-6 h-6 flex items-center justify-center rounded-full border border-border bg-gradient-to-br from-paper to-border">
               <svg
-                className="w-3.5 h-3.5 text-charcoal dark:text-gray-300"
+                className="w-3.5 h-3.5 text-charcoal"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -136,10 +136,10 @@ export function ThemeSwitcher() {
               </svg>
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-medium text-ink dark:text-white">
+              <div className="text-sm font-medium text-ink">
                 System
               </div>
-              <div className="text-xs text-muted dark:text-gray-400 truncate">
+              <div className="text-xs text-muted truncate">
                 Follow OS preference
               </div>
             </div>
@@ -160,7 +160,7 @@ export function ThemeSwitcher() {
           </button>
 
           {/* Divider */}
-          <div className="h-px bg-border dark:bg-gray-600 mx-3" />
+          <div className="h-px bg-border mx-3" />
 
           {/* Theme options */}
           {themeEntries.map(([themeName, themeConfig]) => {
@@ -170,15 +170,15 @@ export function ThemeSwitcher() {
               <button
                 key={themeName}
                 onClick={() => handleThemeSelect(themeName)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-linen dark:hover:bg-gray-700 transition-colors ${
-                  isSelected ? 'bg-linen/70 dark:bg-gray-700/70' : ''
+                className={`w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-hover transition-colors ${
+                  isSelected ? 'bg-hover' : ''
                 }`}
                 role="option"
                 aria-selected={isSelected}
               >
                 {/* Color preview swatch */}
                 <div
-                  className="w-6 h-6 rounded-full border border-border dark:border-gray-600 flex items-center justify-center overflow-hidden"
+                  className="w-6 h-6 rounded-full border border-border flex items-center justify-center overflow-hidden"
                   style={{ backgroundColor: themeConfig.previewBg }}
                   aria-hidden="true"
                 >
@@ -188,7 +188,7 @@ export function ThemeSwitcher() {
                   />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium text-ink dark:text-white">
+                  <div className="text-sm font-medium text-ink">
                     {themeConfig.label}
                   </div>
                 </div>

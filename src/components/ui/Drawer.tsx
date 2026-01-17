@@ -69,7 +69,7 @@ export function Drawer({ isOpen, onClose, children, title }: DrawerProps) {
       {/* Drawer */}
       <div
         ref={drawerRef}
-        className="absolute bottom-0 left-0 right-0 bg-cream theme-dark:bg-gray-900 rounded-t-2xl max-h-[85vh] flex flex-col animate-slideUp safe-area-bottom"
+        className="absolute bottom-0 left-0 right-0 bg-cream rounded-t-2xl max-h-[85vh] flex flex-col animate-slideUp safe-area-bottom"
         role="dialog"
         aria-modal="true"
         aria-label={title}
@@ -81,16 +81,16 @@ export function Drawer({ isOpen, onClose, children, title }: DrawerProps) {
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
         >
-          <div className="w-10 h-1 bg-border theme-dark:bg-gray-700 rounded-full" />
+          <div className="w-10 h-1 bg-border rounded-full" />
         </div>
 
         {/* Header */}
         {title && (
-          <div className="flex items-center justify-between px-4 pb-3 border-b border-border/50 theme-dark:border-gray-800">
-            <h2 className="font-serif text-lg text-ink theme-dark:text-white">{title}</h2>
+          <div className="flex items-center justify-between px-4 pb-3 border-b border-border/50">
+            <h2 className="font-serif text-lg text-ink">{title}</h2>
             <button
               onClick={onClose}
-              className="p-2 -mr-2 text-muted hover:text-ink theme-dark:hover:text-white transition-colors"
+              className="p-2 -mr-2 text-muted hover:text-ink transition-colors"
               aria-label="Close"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

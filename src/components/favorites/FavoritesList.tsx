@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useFavorites } from '@/hooks/useFavorites';
 import { ListingCard } from '@/components/browse/ListingCard';
 import { FavoriteButton } from './FavoriteButton';
@@ -58,7 +59,7 @@ function EmptyState() {
           Browse the collection and click the heart icon on items you&apos;re interested in.
           They&apos;ll appear here for easy access.
         </p>
-        <a
+        <Link
           href="/"
           className="inline-flex items-center gap-2 px-5 py-2.5 bg-ink theme-dark:bg-gold text-white theme-dark:text-ink text-sm font-medium hover:opacity-90 transition-opacity"
         >
@@ -66,14 +67,14 @@ function EmptyState() {
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
           </svg>
-        </a>
+        </Link>
       </div>
     </div>
   );
 }
 
 export function FavoritesList({ currency, exchangeRates }: FavoritesListProps) {
-  const { favorites, isLoading, error, removeFavorite } = useFavorites();
+  const { favorites, isLoading, error } = useFavorites();
 
   if (isLoading) {
     return <LoadingSkeleton />;
@@ -149,7 +150,7 @@ export function FavoritesList({ currency, exchangeRates }: FavoritesListProps) {
 /**
  * Compact list view for favorites (alternative to grid)
  */
-export function FavoritesListCompact({ currency, exchangeRates }: FavoritesListProps) {
+export function FavoritesListCompact({ currency }: Omit<FavoritesListProps, 'exchangeRates'>) {
   const { favorites, isLoading, removeFavorite } = useFavorites();
 
   if (isLoading) {
