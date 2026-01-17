@@ -165,9 +165,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Sign in with email (sends magic code)
   const signInWithEmail = useCallback(
     async (email: string): Promise<{ error: AuthError | null }> => {
+      // Use environment variable for redirect URL, fallback to window.location.origin
+      const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ||
+        (typeof window !== 'undefined' ? window.location.origin : 'https://nihontowatch.com');
+      const redirectUrl = `${baseUrl}/auth/callback`;
+
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
+          emailRedirectTo: redirectUrl,
           shouldCreateUser: true,
         },
       });
