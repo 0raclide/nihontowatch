@@ -148,38 +148,50 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // Initialize auth state
   useEffect(() => {
+    let isMounted = true;
+
     const initAuth = async () => {
+      console.log('[Auth] initAuth starting...');
       try {
         const {
           data: { session },
         } = await supabase.auth.getSession();
 
+        console.log('[Auth] getSession result:', { hasSession: !!session, hasUser: !!session?.user });
+
         if (session?.user) {
           const profile = await fetchProfile(session.user.id);
           console.log('[Auth] Setting state with profile, isAdmin:', profile?.role === 'admin');
-          const newState = {
-            user: session.user,
-            profile,
-            session,
-            isLoading: false,
-            isAdmin: profile?.role === 'admin',
-          };
-          setState(newState);
-          setAuthCache(newState);
+          if (isMounted) {
+            const newState = {
+              user: session.user,
+              profile,
+              session,
+              isLoading: false,
+              isAdmin: profile?.role === 'admin',
+            };
+            setState(newState);
+            setAuthCache(newState);
+            console.log('[Auth] State updated successfully');
+          }
         } else {
           console.log('[Auth] No session, setting logged out state');
-          setState({
-            user: null,
-            profile: null,
-            session: null,
-            isLoading: false,
-            isAdmin: false,
-          });
-          clearAuthCache();
+          if (isMounted) {
+            setState({
+              user: null,
+              profile: null,
+              session: null,
+              isLoading: false,
+              isAdmin: false,
+            });
+            clearAuthCache();
+          }
         }
       } catch (error) {
-        console.error('Error initializing auth:', error);
-        setState((prev) => ({ ...prev, isLoading: false }));
+        console.error('[Auth] Error initializing auth:', error);
+        if (isMounted) {
+          setState((prev) => ({ ...prev, isLoading: false }));
+        }
       }
     };
 
@@ -189,6 +201,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('[Auth] onAuthStateChange:', event);
       if (event === 'SIGNED_IN' && session?.user) {
         const profile = await fetchProfile(session.user.id);
         const newState = {
@@ -198,27 +211,35 @@ export function AuthProvider({ children }: AuthProviderProps) {
           isLoading: false,
           isAdmin: profile?.role === 'admin',
         };
-        setState(newState);
-        setAuthCache(newState);
+        if (isMounted) {
+          setState(newState);
+          setAuthCache(newState);
+          console.log('[Auth] State updated from SIGNED_IN event');
+        }
       } else if (event === 'SIGNED_OUT') {
-        setState({
-          user: null,
-          profile: null,
-          session: null,
-          isLoading: false,
-          isAdmin: false,
-        });
-        clearAuthCache();
+        if (isMounted) {
+          setState({
+            user: null,
+            profile: null,
+            session: null,
+            isLoading: false,
+            isAdmin: false,
+          });
+          clearAuthCache();
+        }
       } else if (event === 'TOKEN_REFRESHED' && session?.user) {
-        setState((prev) => ({
-          ...prev,
-          session,
-          user: session.user,
-        }));
+        if (isMounted) {
+          setState((prev) => ({
+            ...prev,
+            session,
+            user: session.user,
+          }));
+        }
       }
     });
 
     return () => {
+      isMounted = false;
       subscription.unsubscribe();
     };
   }, [supabase, fetchProfile]);
