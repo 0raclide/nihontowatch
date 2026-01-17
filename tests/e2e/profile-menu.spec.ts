@@ -17,6 +17,10 @@ if (!existsSync(configPath)) {
 }
 const testConfig = JSON.parse(readFileSync(configPath, 'utf-8'));
 
+// Helper to find user avatar button
+const getUserAvatarButton = (page: Page) =>
+  page.locator('button[aria-haspopup="true"]').filter({ has: page.locator('.rounded-full') }).last();
+
 test.describe('Profile and Menu Navigation', () => {
   test.describe.configure({ mode: 'serial' });
 
@@ -59,7 +63,7 @@ test.describe('Profile and Menu Navigation', () => {
     // Wait for success message and modal close
     await page.waitForTimeout(2000);
 
-    // Wait for auth to be recognized (modal should close, user menu should appear)
+    // Wait for auth to be recognized
     await page.waitForTimeout(3000);
 
     console.log('Login attempt complete');
@@ -69,17 +73,16 @@ test.describe('Profile and Menu Navigation', () => {
     await context.close();
   });
 
-  test('should be logged in after setup', async () => {
+  test('should be logged in and show user avatar', async () => {
     await page.goto('/');
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(2000);
 
-    // Check if user menu (avatar) is visible - look for avatar with initials
-    const userMenu = page.locator('button[aria-haspopup="true"]').filter({ has: page.locator('.rounded-full') }).last();
+    // Check if user avatar is visible
+    const userMenu = getUserAvatarButton(page);
     const isLoggedIn = await userMenu.isVisible({ timeout: 10000 }).catch(() => false);
 
     if (!isLoggedIn) {
-      // Debug info
       const signInVisible = await page.locator('button:has-text("Sign In")').isVisible().catch(() => false);
       console.log('Sign In button visible:', signInVisible);
       await page.screenshot({ path: 'test-results/not-logged-in.png' });
@@ -89,34 +92,69 @@ test.describe('Profile and Menu Navigation', () => {
     console.log('✅ User is logged in');
   });
 
-  test('should open user dropdown and see profile link', async () => {
-    // Click on the user avatar button (not the Admin dropdown)
-    // The user avatar has a rounded-full div with initials
-    const userMenuButton = page.locator('button[aria-haspopup="true"]').filter({ has: page.locator('.rounded-full') }).last();
+  test('should open user dropdown and see menu links', async () => {
+    // Navigate fresh and wait for page
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(1000);
+
+    // Open user dropdown
+    const userMenuButton = getUserAvatarButton(page);
     await userMenuButton.click();
     await page.waitForTimeout(500);
 
-    const profileLink = page.locator('a[href="/profile"]');
-    await expect(profileLink).toBeVisible({ timeout: 5000 });
+    // The dropdown has specific styling - find it by the dropdown container
+    // Links in the user dropdown have specific styling class
+    const dropdownLinks = page.locator('.bg-cream.rounded-lg.shadow-lg a');
 
-    console.log('✅ Dropdown opened, Profile link visible');
+    // Verify profile link (unique to dropdown)
+    const profileLink = dropdownLinks.filter({ hasText: 'Profile' });
+    await expect(profileLink).toBeVisible({ timeout: 5000 });
+    console.log('✅ Profile link visible in dropdown');
+
+    // Verify favorites link (unique to dropdown)
+    const favoritesLink = dropdownLinks.filter({ hasText: 'Favorites' });
+    await expect(favoritesLink).toBeVisible({ timeout: 5000 });
+    console.log('✅ Favorites link visible in dropdown');
+
+    // Verify alerts link (in dropdown - there's also one in nav)
+    const alertsLink = dropdownLinks.filter({ hasText: 'Alerts' });
+    await expect(alertsLink).toBeVisible({ timeout: 5000 });
+    console.log('✅ Alerts link visible in dropdown');
+
+    // Admin link should be visible for admin user
+    const adminLink = dropdownLinks.filter({ hasText: 'Admin' });
+    const hasAdmin = await adminLink.isVisible().catch(() => false);
+    console.log(`Admin link: ${hasAdmin ? 'visible' : 'NOT visible'}`);
+
+    console.log('✅ All dropdown links verified');
   });
 
-  test('should navigate to profile page', async () => {
-    await page.click('a[href="/profile"]');
+  test('should navigate to profile page via dropdown', async () => {
+    // Navigate fresh and wait for page
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(1000);
+
+    // Open user dropdown
+    const userMenuButton = getUserAvatarButton(page);
+    await userMenuButton.click();
+    await page.waitForTimeout(500);
+
+    // Click profile link in dropdown (scoped to dropdown container)
+    const dropdownLinks = page.locator('.bg-cream.rounded-lg.shadow-lg a');
+    const profileLink = dropdownLinks.filter({ hasText: 'Profile' });
+    await profileLink.click();
+
+    // Wait for navigation
     await page.waitForURL('**/profile', { timeout: 10000 });
     await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(1000);
 
     // Check for profile page content
     const bodyText = await page.textContent('body');
     const hasMyProfile = bodyText?.includes('My Profile');
     const hasSignInPrompt = bodyText?.includes('Sign in to view your profile');
-
-    console.log('Profile page content:', {
-      hasMyProfile,
-      hasSignInPrompt,
-    });
 
     if (hasSignInPrompt) {
       await page.screenshot({ path: 'test-results/profile-signed-out.png' });
@@ -124,64 +162,20 @@ test.describe('Profile and Menu Navigation', () => {
 
     expect(hasSignInPrompt).toBe(false);
     expect(hasMyProfile).toBe(true);
-
-    console.log('✅ Profile page shows user content');
-  });
-
-  test('should display test user email', async () => {
-    const bodyText = await page.textContent('body');
     expect(bodyText).toContain(testConfig.email);
-    console.log('✅ User email is displayed');
+
+    console.log('✅ Profile page shows user content with email');
   });
 
-  test('should navigate to favorites and remain logged in', async () => {
-    await page.goto('/favorites');
-    await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(1000);
-
-    const userMenu = page.locator('button[aria-haspopup="true"]').filter({ has: page.locator('.rounded-full') }).last();
-    const isLoggedIn = await userMenu.isVisible({ timeout: 5000 }).catch(() => false);
-
-    if (!isLoggedIn) {
-      await page.screenshot({ path: 'test-results/favorites-not-logged-in.png' });
-    }
-
-    expect(isLoggedIn).toBe(true);
-    console.log('✅ Favorites page - user still logged in');
-  });
-
-  test('should navigate to alerts and remain logged in', async () => {
-    await page.goto('/alerts');
-    await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(1000);
-
-    const userMenu = page.locator('button[aria-haspopup="true"]').filter({ has: page.locator('.rounded-full') }).last();
-    const isLoggedIn = await userMenu.isVisible({ timeout: 5000 }).catch(() => false);
-
-    expect(isLoggedIn).toBe(true);
-    console.log('✅ Alerts page - user still logged in');
-  });
-
-  test('should access admin page as admin user', async () => {
-    await page.goto('/admin');
-    await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(2000);
-
-    // Should stay on admin page (not be redirected)
-    expect(page.url()).toContain('/admin');
-
-    console.log('✅ Admin page accessible');
-  });
-
-  test('should maintain auth across navigation', async () => {
-    const routes = ['/', '/browse', '/profile', '/alerts'];
+  test('should maintain auth across page navigation', async () => {
+    const routes = ['/', '/browse', '/favorites', '/alerts', '/profile'];
 
     for (const route of routes) {
       await page.goto(route);
-      await page.waitForLoadState('domcontentloaded');
+      await page.waitForLoadState('networkidle');
       await page.waitForTimeout(500);
 
-      const userMenu = page.locator('button[aria-haspopup="true"]').filter({ has: page.locator('.rounded-full') }).last();
+      const userMenu = getUserAvatarButton(page);
       const isLoggedIn = await userMenu.isVisible({ timeout: 5000 }).catch(() => false);
 
       if (!isLoggedIn) {
@@ -195,29 +189,14 @@ test.describe('Profile and Menu Navigation', () => {
     console.log('✅ Auth maintained across all navigation');
   });
 
-  test('all dropdown links should be functional', async () => {
-    await page.goto('/');
+  test('should access admin page as admin user', async () => {
+    await page.goto('/admin');
     await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(2000);
 
-    // Open user dropdown (avatar button, not Admin dropdown)
-    const userMenuButton = page.locator('button[aria-haspopup="true"]').filter({ has: page.locator('.rounded-full') }).last();
-    await userMenuButton.click();
-    await page.waitForTimeout(500);
+    // Should stay on admin page (not be redirected)
+    expect(page.url()).toContain('/admin');
 
-    // Verify links
-    const links = ['/profile', '/favorites', '/alerts'];
-    for (const href of links) {
-      const link = page.locator(`a[href="${href}"]`);
-      const isVisible = await link.isVisible();
-      console.log(`Link ${href}: ${isVisible ? 'visible' : 'NOT visible'}`);
-      expect(isVisible).toBe(true);
-    }
-
-    // Admin link should be visible for admin
-    const adminLink = page.locator('a[href="/admin"]');
-    const hasAdmin = await adminLink.isVisible().catch(() => false);
-    console.log(`Admin link: ${hasAdmin ? 'visible' : 'NOT visible'}`);
-
-    console.log('✅ All dropdown links verified');
+    console.log('✅ Admin page accessible');
   });
 });
