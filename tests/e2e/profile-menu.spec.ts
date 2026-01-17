@@ -36,9 +36,11 @@ test.describe('Profile and Menu Navigation', () => {
 
     console.log('Authenticating via Supabase API from browser...');
 
-    // Call Supabase auth directly via REST API from the browser
+    // Sign in using the app's Supabase client via window object
+    // First, we need to access the client and call signInWithPassword
     const authResult = await page.evaluate(async ({ url, key, email, password }) => {
       try {
+        // Use the Supabase REST API to get tokens
         const response = await fetch(`${url}/auth/v1/token?grant_type=password`, {
           method: 'POST',
           headers: {
@@ -55,20 +57,52 @@ test.describe('Profile and Menu Navigation', () => {
 
         const data = await response.json();
 
-        // Store the session in localStorage (same format as @supabase/ssr)
+        // Now we need to set the session in a way the app recognizes
+        // The @supabase/ssr createBrowserClient stores in:
+        // 1. Cookies (for SSR)
+        // 2. localStorage (for client)
+
+        // Set the auth in localStorage with the proper Supabase format
         const projectRef = new URL(url).hostname.split('.')[0];
         const storageKey = `sb-${projectRef}-auth-token`;
 
-        const sessionData = {
+        localStorage.setItem(storageKey, JSON.stringify({
           access_token: data.access_token,
           refresh_token: data.refresh_token,
           expires_at: Math.floor(Date.now() / 1000) + data.expires_in,
           expires_in: data.expires_in,
           token_type: data.token_type,
           user: data.user,
-        };
+        }));
 
-        localStorage.setItem(storageKey, JSON.stringify(sessionData));
+        // Also set the app's custom auth cache
+        localStorage.setItem('nihontowatch_auth_cache', JSON.stringify({
+          state: {
+            isAdmin: true, // We know test user is admin
+            profile: {
+              id: data.user.id,
+              email: data.user.email,
+              role: 'admin',
+              display_name: 'Test Admin',
+            },
+          },
+          timestamp: Date.now(),
+        }));
+
+        // Set cookies too - this is what @supabase/ssr middleware reads
+        // The cookie format is base64-encoded JSON, chunked if large
+        const cookieData = JSON.stringify({
+          access_token: data.access_token,
+          refresh_token: data.refresh_token,
+          expires_at: Math.floor(Date.now() / 1000) + data.expires_in,
+          expires_in: data.expires_in,
+          token_type: data.token_type,
+          user: data.user,
+        });
+        const encodedCookie = btoa(cookieData);
+
+        // Set as cookie - note: we can't set httpOnly from JS
+        document.cookie = `sb-${projectRef}-auth-token=${encodedCookie}; path=/; SameSite=Lax`;
 
         return { success: true, email: data.user?.email };
       } catch (err) {
