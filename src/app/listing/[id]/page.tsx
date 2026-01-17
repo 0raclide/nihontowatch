@@ -8,9 +8,11 @@ import { Header } from '@/components/layout/Header';
 import { BottomTabBar } from '@/components/navigation/BottomTabBar';
 import { CreateAlertModal } from '@/components/alerts/CreateAlertModal';
 import { LoginModal } from '@/components/auth/LoginModal';
+import { TimeOnMarketCounter } from '@/components/ui/TimeOnMarketCounter';
 import { useAlerts } from '@/hooks/useAlerts';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { createClient } from '@/lib/supabase/client';
+import { getMarketTimeDisplay } from '@/lib/freshness';
 import type { Listing, CreateAlertInput } from '@/types';
 
 // Extended listing type for this page
@@ -354,11 +356,26 @@ export default function ListingDetailPage() {
               </div>
             )}
 
-            {/* Dealer */}
+            {/* Dealer & Time on Market */}
             <div className="mb-6 pb-6 border-b border-border">
-              <span className="text-[11px] uppercase tracking-wider text-muted">Dealer</span>
-              <p className="text-[15px] text-ink font-medium">{listing.dealers?.name}</p>
-              <p className="text-[12px] text-muted">{listing.dealers?.domain}</p>
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <span className="text-[11px] uppercase tracking-wider text-muted">Dealer</span>
+                  <p className="text-[15px] text-ink font-medium">{listing.dealers?.name}</p>
+                  <p className="text-[12px] text-muted">{listing.dealers?.domain}</p>
+                </div>
+                {(() => {
+                  const marketTime = getMarketTimeDisplay(listing);
+                  return marketTime ? (
+                    <div className="text-right">
+                      <TimeOnMarketCounter
+                        startDate={marketTime.startDate}
+                        className="text-[12px]"
+                      />
+                    </div>
+                  ) : null;
+                })()}
+              </div>
             </div>
 
             {/* Action Buttons */}
