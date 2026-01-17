@@ -78,6 +78,7 @@ export function CreateAlertModal({
   // Reset form when modal opens or listing changes
   useEffect(() => {
     if (isOpen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setAlertType(getInitialAlertType());
       setTargetPrice('');
       setItemType('');

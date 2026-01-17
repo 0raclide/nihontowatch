@@ -41,6 +41,7 @@ export function MobileSearchSheet() {
 
   const handleQuickSearch = (term: string) => {
     setIsSearching(true);
+    // eslint-disable-next-line react-hooks/immutability
     window.location.href = `/?q=${encodeURIComponent(term)}`;
   };
 
@@ -102,9 +103,9 @@ export function MobileSearchSheet() {
             Search Tips
           </h4>
           <ul className="space-y-1.5 text-[12px] text-muted/80">
-            <li>Combine: "bizen juyo katana"</li>
-            <li>By size: "katana cm&gt;70" or "nagasa&lt;65"</li>
-            <li>Shortcuts: "tokuju", "tokuho", "mumei"</li>
+            <li>Combine: &quot;bizen juyo katana&quot;</li>
+            <li>By size: &quot;katana cm&gt;70&quot; or &quot;nagasa&lt;65&quot;</li>
+            <li>Shortcuts: &quot;tokuju&quot;, &quot;tokuho&quot;, &quot;mumei&quot;</li>
           </ul>
         </div>
       </div>

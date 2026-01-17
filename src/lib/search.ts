@@ -131,3 +131,76 @@ export function expandSearchAliases(term: string): string[] {
 
   return [normalized];
 }
+
+/**
+ * Numeric filter result
+ */
+interface NumericFilter {
+  field: string;
+  op: 'gt' | 'lt' | 'gte' | 'lte' | 'eq';
+  value: number;
+}
+
+/**
+ * Field name mappings for numeric filter shortcuts
+ */
+const NUMERIC_FIELD_MAP: Record<string, string> = {
+  'cm': 'nagasa_cm',
+  'nagasa': 'nagasa_cm',
+  'sori': 'sori_cm',
+  'price': 'price_value',
+  'motohaba': 'motohaba_cm',
+  'sakihaba': 'sakihaba_cm',
+  'kasane': 'kasane_cm',
+  'weight': 'weight_g',
+};
+
+/**
+ * Parse numeric filters from search query.
+ * Supports patterns like: cm>70, price<500000, nagasa>=65
+ *
+ * @example
+ * parseNumericFilters('katana cm>70 juyo')
+ * // => { filters: [{ field: 'nagasa_cm', op: 'gt', value: 70 }], textWords: ['katana', 'juyo'] }
+ */
+export function parseNumericFilters(query: string): { filters: NumericFilter[]; textWords: string[] } {
+  const filters: NumericFilter[] = [];
+  const textWords: string[] = [];
+
+  // Split query into words
+  const words = query.trim().split(/\s+/);
+
+  // Pattern: field(>=|<=|>|<|=)number
+  const numericPattern = /^(\w+)(>=|<=|>|<|=)(\d+(?:\.\d+)?)$/;
+
+  for (const word of words) {
+    const match = word.match(numericPattern);
+
+    if (match) {
+      const [, fieldKey, operator, numValue] = match;
+      const field = NUMERIC_FIELD_MAP[fieldKey.toLowerCase()];
+
+      if (field) {
+        let op: NumericFilter['op'];
+        switch (operator) {
+          case '>=': op = 'gte'; break;
+          case '<=': op = 'lte'; break;
+          case '>': op = 'gt'; break;
+          case '<': op = 'lt'; break;
+          case '=': op = 'eq'; break;
+          default: op = 'eq';
+        }
+
+        filters.push({ field, op, value: parseFloat(numValue) });
+      } else {
+        // Unknown field, treat as text
+        textWords.push(word);
+      }
+    } else {
+      // Not a numeric filter, treat as text
+      textWords.push(word);
+    }
+  }
+
+  return { filters, textWords };
+}

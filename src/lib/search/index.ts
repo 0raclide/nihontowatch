@@ -13,6 +13,20 @@ export {
   expandSearchAliases,
 } from './textNormalization';
 
+// Numeric filter parsing
+export {
+  parseNumericFilters,
+  isNumericFilter,
+  getSupportedFieldAliases,
+  getFieldForAlias,
+} from './numericFilters';
+
+export type {
+  NumericOperator,
+  NumericFilter,
+  ParsedNumericFilters,
+} from './numericFilters';
+
 // Type definitions
 export type {
   // Suggestion types

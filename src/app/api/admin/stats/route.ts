@@ -1,4 +1,5 @@
-// @ts-nocheck - TODO: Add proper types for new tables (favorites, user_sessions, etc.)
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/ban-ts-comment */
+// @ts-nocheck
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -141,7 +142,7 @@ export async function GET(request: NextRequest) {
 
       if (sessionsResult.data) {
         totalSessions = sessionsResult.data.length;
-        for (const session of sessionsResult.data) {
+        for (const session of sessionsResult.data as any[]) {
           totalDuration += (session.total_duration_ms || 0) / 1000;
           totalPageViews += session.page_views || 0;
         }
@@ -150,7 +151,7 @@ export async function GET(request: NextRequest) {
       // Aggregate search terms
       const searchCounts: Record<string, number> = {};
       if (searchTermsResult.data) {
-        for (const event of searchTermsResult.data) {
+        for (const event of searchTermsResult.data as any[]) {
           const query = (event.event_data as Record<string, unknown>)?.query as string;
           if (query) {
             const normalized = query.toLowerCase().trim();

@@ -18,7 +18,11 @@ export function useInfiniteScroll({
   enabled = true,
 }: UseInfiniteScrollOptions) {
   const loadMoreRef = useRef(onLoadMore);
-  loadMoreRef.current = onLoadMore;
+
+  // Update ref in effect to avoid accessing during render
+  useEffect(() => {
+    loadMoreRef.current = onLoadMore;
+  }, [onLoadMore]);
 
   const handleScroll = useCallback(() => {
     if (!enabled || isLoading || !hasMore) return;

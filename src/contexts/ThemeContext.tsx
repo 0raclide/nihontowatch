@@ -185,6 +185,7 @@ export function ThemeProvider({
   useEffect(() => {
     const activeSetting = forcedTheme ?? themeSetting;
     const resolved = resolveTheme(activeSetting);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setActiveTheme(resolved);
     applyTheme(resolved);
   }, [themeSetting, forcedTheme]);

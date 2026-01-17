@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { normalizeSearchText, expandSearchAliases } from '@/lib/search';
+import { parseNumericFilters } from '@/lib/search/numericFilters';
 
 export const dynamic = 'force-dynamic';
 
@@ -122,49 +123,6 @@ export async function GET(request: NextRequest) {
     if (params.dealers?.length) {
       query = query.in('dealer_id', params.dealers);
     }
-
-    // Parse numeric filters from query (e.g., "nagasa>70", "cm<65", "price>100000")
-    // Returns { filters: applied filters, remainingWords: words for text search }
-    const parseNumericFilters = (queryStr: string) => {
-      const words = queryStr.trim().toLowerCase().split(/\s+/).filter(w => w.length >= 2);
-      const filters: Array<{ field: string; op: 'gt' | 'gte' | 'lt' | 'lte'; value: number }> = [];
-      const textWords: string[] = [];
-
-      // Patterns: nagasa>70, cm>70, nagasa>=70, price<500000, yen>100000
-      const numericPattern = /^(nagasa|cm|length|price|yen|jpy)([><]=?)(\d+(?:\.\d+)?)$/;
-
-      for (const word of words) {
-        const match = word.match(numericPattern);
-        if (match) {
-          const [, fieldAlias, opStr, valueStr] = match;
-          const value = parseFloat(valueStr);
-
-          // Map aliases to database fields
-          let field: string;
-          if (['nagasa', 'cm', 'length'].includes(fieldAlias)) {
-            field = 'nagasa_cm';
-          } else if (['price', 'yen', 'jpy'].includes(fieldAlias)) {
-            field = 'price_value';
-          } else {
-            textWords.push(word);
-            continue;
-          }
-
-          // Map operator
-          let op: 'gt' | 'gte' | 'lt' | 'lte';
-          if (opStr === '>') op = 'gt';
-          else if (opStr === '>=') op = 'gte';
-          else if (opStr === '<') op = 'lt';
-          else op = 'lte'; // <=
-
-          filters.push({ field, op, value });
-        } else {
-          textWords.push(word);
-        }
-      }
-
-      return { filters, textWords };
-    };
 
     // Process query with numeric filters
     if (params.query && params.query.trim().length >= 2) {
