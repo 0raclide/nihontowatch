@@ -7,7 +7,7 @@
  * Rate: 1 request/minute, so process ~5 listings per 5-minute cron run
  */
 
-import { createClient } from '@/lib/supabase/server';
+import { createServiceClient } from '@/lib/supabase/server';
 import { checkWaybackArchive } from '@/lib/wayback';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -64,7 +64,8 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const supabase = await createClient();
+    // Use service client to bypass RLS for update operations
+    const supabase = createServiceClient();
 
     // Get listings that need Wayback checking
     // Priority: oldest first (most likely to be in archive)
