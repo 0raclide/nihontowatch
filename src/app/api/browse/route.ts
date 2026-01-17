@@ -15,6 +15,7 @@ interface FacetCache {
   tab: string;
 }
 
+// Cache version: 2026-01-17-v2 (bump to invalidate)
 let facetCache: FacetCache = { data: null, timestamp: 0, tab: '' };
 const FACET_CACHE_TTL = 60000; // 60 seconds in-memory cache
 
