@@ -33,29 +33,35 @@ export async function GET() {
       return NextResponse.json({ error: authResult.error }, { status: authResult.status });
     }
 
-    // Get recent scrape runs with dealer info
-    const { data: runs, error } = await supabase
-      .from('scrape_runs')
-      .select('id, run_type, status, started_at, completed_at, urls_processed, errors, dealers(name)')
-      .order('started_at', { ascending: false })
-      .limit(20);
+    // Try to get recent scrape runs (table may not exist)
+    try {
+      const { data: runs, error } = await supabase
+        .from('scrape_runs')
+        .select('id, run_type, status, started_at, completed_at, urls_processed, errors, dealers(name)')
+        .order('started_at', { ascending: false })
+        .limit(20);
 
-    if (error) {
-      console.error('Error fetching runs:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      if (error) {
+        // Table doesn't exist or query failed
+        console.log('scrape_runs table not available:', error.message);
+        return NextResponse.json({ runs: [] });
+      }
+
+      // Format runs for frontend
+      const formattedRuns = (runs || []).map((run: any) => ({
+        id: run.id,
+        dealer: run.dealers?.name || 'All Dealers',
+        status: run.status,
+        processed: run.urls_processed || 0,
+        errors: run.errors || 0,
+        startedAt: run.started_at,
+      }));
+
+      return NextResponse.json({ runs: formattedRuns });
+    } catch (e) {
+      // Table doesn't exist
+      return NextResponse.json({ runs: [] });
     }
-
-    // Format runs for frontend
-    const formattedRuns = (runs || []).map((run: any) => ({
-      id: run.id,
-      dealer: run.dealers?.name || 'All Dealers',
-      status: run.status,
-      processed: run.urls_processed || 0,
-      errors: run.errors || 0,
-      startedAt: run.started_at,
-    }));
-
-    return NextResponse.json({ runs: formattedRuns });
   } catch (error) {
     console.error('Scraper runs error:', error);
     return NextResponse.json(

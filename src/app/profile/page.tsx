@@ -3,6 +3,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import Link from 'next/link';
 import { Header } from '@/components/layout/Header';
 import { BottomTabBar } from '@/components/navigation/BottomTabBar';
 import { useAuth } from '@/lib/auth/AuthContext';
@@ -218,7 +219,7 @@ export default function ProfilePage() {
         <div className="bg-white dark:bg-ink/5 rounded-xl border border-border p-6 lg:p-8 mb-6">
           <h3 className="font-serif text-[15px] text-ink mb-4">Quick Links</h3>
           <div className="space-y-3">
-            <a
+            <Link
               href="/favorites"
               className="flex items-center justify-between p-3 rounded-lg hover:bg-linen dark:hover:bg-ink/10 transition-colors group"
             >
@@ -231,8 +232,8 @@ export default function ProfilePage() {
               <svg className="w-4 h-4 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
-            </a>
-            <a
+            </Link>
+            <Link
               href="/alerts"
               className="flex items-center justify-between p-3 rounded-lg hover:bg-linen dark:hover:bg-ink/10 transition-colors group"
             >
@@ -245,9 +246,9 @@ export default function ProfilePage() {
               <svg className="w-4 h-4 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
-            </a>
+            </Link>
             {isAdmin && (
-              <a
+              <Link
                 href="/admin"
                 className="flex items-center justify-between p-3 rounded-lg hover:bg-linen dark:hover:bg-ink/10 transition-colors group"
               >
@@ -261,7 +262,7 @@ export default function ProfilePage() {
                 <svg className="w-4 h-4 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
-              </a>
+              </Link>
             )}
           </div>
         </div>

@@ -1,13 +1,12 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { createClient } from '@/lib/supabase/client';
+import { useState, useCallback, useEffect } from 'react';
 import { Header } from '@/components/layout/Header';
 import { FavoritesList } from '@/components/favorites/FavoritesList';
 import { CurrencySelector } from '@/components/ui/CurrencySelector';
 import { BottomTabBar } from '@/components/navigation/BottomTabBar';
+import { useAuth } from '@/lib/auth/AuthContext';
+import { LoginModal } from '@/components/auth/LoginModal';
 
 interface ExchangeRates {
   base: string;
@@ -18,9 +17,8 @@ interface ExchangeRates {
 type Currency = 'USD' | 'JPY' | 'EUR';
 
 export default function FavoritesPage() {
-  const router = useRouter();
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { user, profile, isLoading: authLoading } = useAuth();
+  const [showLoginModal, setShowLoginModal] = useState(false);
 
   // Currency state - default to JPY
   const [currency, setCurrency] = useState<Currency>(() => {
@@ -30,25 +28,6 @@ export default function FavoritesPage() {
     return 'JPY';
   });
   const [exchangeRates, setExchangeRates] = useState<ExchangeRates | null>(null);
-
-  // Check authentication
-  useEffect(() => {
-    const checkAuth = async () => {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-
-      if (!user) {
-        // Redirect to login (or home page if no login page exists)
-        router.push('/');
-        return;
-      }
-
-      setIsAuthenticated(true);
-      setIsLoading(false);
-    };
-
-    checkAuth();
-  }, [router]);
 
   // Fetch exchange rates
   useEffect(() => {
@@ -72,37 +51,47 @@ export default function FavoritesPage() {
     }
   }, []);
 
-  // Show loading state while checking auth
-  if (isLoading || isAuthenticated === null) {
+  // Authentication loading state - also show loading if we have cached profile but no user yet
+  if (authLoading || (profile && !user)) {
     return (
-      <div className="min-h-screen bg-cream flex items-center justify-center transition-colors">
-        <div className="text-center">
-          <div className="w-8 h-8 border-2 border-gold border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-sm text-muted">Loading favorites...</p>
+      <div className="min-h-screen bg-cream transition-colors">
+        <Header />
+        <div className="flex items-center justify-center py-32">
+          <div className="w-8 h-8 border-2 border-gold border-t-transparent rounded-full animate-spin" />
         </div>
       </div>
     );
   }
 
-  // If not authenticated (shouldn't reach here due to redirect, but just in case)
-  if (!isAuthenticated) {
+  // Not authenticated state
+  if (!user) {
     return (
-      <div className="min-h-screen bg-cream flex items-center justify-center transition-colors">
-        <div className="text-center p-8">
-          <h2 className="font-serif text-xl text-ink mb-4">
-            Sign in to view favorites
-          </h2>
-          <p className="text-sm text-muted mb-6">
-            Create an account or sign in to save and manage your favorite items.
-          </p>
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-ink text-white text-sm font-medium hover:opacity-90 transition-opacity"
-          >
-            Go to Homepage
-          </Link>
+      <>
+        <div className="min-h-screen bg-cream transition-colors">
+          <Header />
+          <main className="max-w-[1200px] mx-auto px-4 py-8 lg:px-6 lg:py-12">
+            <div className="flex flex-col items-center justify-center py-16">
+              <div className="w-16 h-16 rounded-full bg-linen flex items-center justify-center mb-4">
+                <svg className="w-8 h-8 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                </svg>
+              </div>
+              <h2 className="font-serif text-xl text-ink mb-2">Sign in to view favorites</h2>
+              <p className="text-[14px] text-muted text-center max-w-sm mb-6">
+                Create an account or sign in to save and manage your favorite items.
+              </p>
+              <button
+                onClick={() => setShowLoginModal(true)}
+                className="px-6 py-3 text-[14px] font-medium text-white bg-gold hover:bg-gold-light rounded-lg transition-colors"
+              >
+                Sign In
+              </button>
+            </div>
+          </main>
+          <BottomTabBar activeFilterCount={0} />
         </div>
-      </div>
+        <LoginModal isOpen={showLoginModal} onClose={() => setShowLoginModal(false)} />
+      </>
     );
   }
 

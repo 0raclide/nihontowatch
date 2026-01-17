@@ -32,19 +32,25 @@ export async function GET() {
       return NextResponse.json({ error: authResult.error }, { status: authResult.status });
     }
 
-    // Get active dealers
-    const { data: dealers, error } = await supabase
-      .from('dealers')
-      .select('id, name')
-      .eq('is_active', true)
-      .order('name', { ascending: true });
+    // Try to get active dealers (table may not exist)
+    try {
+      const { data: dealers, error } = await supabase
+        .from('dealers')
+        .select('id, name')
+        .eq('is_active', true)
+        .order('name', { ascending: true });
 
-    if (error) {
-      console.error('Error fetching dealers:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      if (error) {
+        // Table doesn't exist - return empty list
+        console.log('dealers table not available:', error.message);
+        return NextResponse.json({ dealers: [] });
+      }
+
+      return NextResponse.json({ dealers: dealers || [] });
+    } catch (e) {
+      // Table doesn't exist
+      return NextResponse.json({ dealers: [] });
     }
-
-    return NextResponse.json({ dealers: dealers || [] });
   } catch (error) {
     console.error('Dealers error:', error);
     return NextResponse.json(
