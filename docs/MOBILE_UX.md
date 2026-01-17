@@ -176,3 +176,138 @@ Key test scenarios:
 - Currency preference respected
 
 See `tests/quickview-regression.spec.ts` for the full test suite.
+
+---
+
+## Adaptive Virtual Scroll Grid
+
+The listing grid uses an SSR-safe virtual scrolling system that adapts to different screen sizes using CSS-first responsive design.
+
+### Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                      ListingGrid                                 │
+│  (Thin wrapper - handles loading/empty states)                  │
+│                                                                  │
+│  ┌─────────────────────────────────────────────────────────────┐│
+│  │              VirtualListingGrid                             ││
+│  │  (Same component for all screen sizes - SSR safe)           ││
+│  │                                                              ││
+│  │  ┌─────────────────────────────────────────────────────────┐││
+│  │  │              CSS Grid (responsive)                      │││
+│  │  │  grid-cols-1 → sm:2 → lg:3 → xl:4 → 2xl:5             │││
+│  │  │                                                         │││
+│  │  │  ┌──────────┐  ┌──────────┐  ┌──────────┐             │││
+│  │  │  │ListingCard│  │ListingCard│  │ListingCard│             │││
+│  │  │  └──────────┘  └──────────┘  └──────────┘             │││
+│  │  └─────────────────────────────────────────────────────────┘││
+│  └─────────────────────────────────────────────────────────────┘│
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Why CSS-First?
+
+Previous implementations caused React hydration errors (#300) because:
+
+```tsx
+// ANTI-PATTERN - causes hydration mismatch
+if (isMobile) {
+  return <MobileComponent />;  // Different component tree!
+}
+return <DesktopComponent />;
+```
+
+**The fix:** Render the **same component tree** on server and client. Use CSS for responsive layout changes, not JS conditional rendering.
+
+### Responsive Column Breakpoints
+
+| Viewport Width | Columns | Tailwind Class |
+|----------------|---------|----------------|
+| < 640px (mobile) | 1 | `grid-cols-1` |
+| 640-1023px (tablet) | 2 | `sm:grid-cols-2` |
+| 1024-1279px (desktop) | 3 | `lg:grid-cols-3` |
+| 1280-1535px (large) | 4 | `xl:grid-cols-4` |
+| ≥ 1536px (extra large) | 5 | `2xl:grid-cols-5` |
+
+### Virtual Scrolling
+
+The `useAdaptiveVirtualScroll` hook enables virtual scrolling for large lists:
+
+```typescript
+const {
+  visibleItems,    // Only items currently visible + overscan buffer
+  startIndex,      // First visible item index
+  totalHeight,     // Total scrollable height
+  offsetY,         // Y position to offset visible items
+  columns,         // Current column count (1-5)
+  isVirtualized,   // Whether virtualization is active
+} = useAdaptiveVirtualScroll({
+  items: listings,
+  overscan: 2,     // Extra rows above/below viewport
+  enabled: infiniteScroll && listings.length > 30,
+});
+```
+
+**Key features:**
+- **SSR-safe defaults:** Uses static dimensions during server render
+- **Row-based virtualization:** Virtualizes by rows (1-5 items per row)
+- **Adaptive row height:** Mobile (360px) vs desktop (310px)
+- **Scroll anchoring:** Preserves position when new items load
+
+### When Virtualization Activates
+
+| Mode | Condition | Behavior |
+|------|-----------|----------|
+| Pagination (desktop) | `infiniteScroll=false` | No virtualization, shows pagination |
+| Infinite scroll (mobile) | `infiniteScroll=true && items>30` | Virtualization enabled |
+| Small lists | Any mode, items ≤ 30 | No virtualization (not needed) |
+
+### Component Files
+
+| Component | Location | Description |
+|-----------|----------|-------------|
+| ListingGrid | `src/components/browse/ListingGrid.tsx` | Wrapper with loading/empty states |
+| VirtualListingGrid | `src/components/browse/VirtualListingGrid.tsx` | Core grid with virtualization |
+| useAdaptiveVirtualScroll | `src/hooks/useAdaptiveVirtualScroll.ts` | Virtual scroll logic |
+
+### Testing
+
+**Unit tests:** `tests/hooks/useAdaptiveVirtualScroll.test.ts`
+- SSR safety (disabled mode returns first batch)
+- Column calculations at all breakpoints
+- Row height calculations (mobile vs desktop)
+- Virtualization math (total height, visible items)
+
+**E2E tests:** `tests/e2e/mobile-responsive-grid.spec.ts`
+- 1-column layout on mobile viewport
+- 2-column on tablet
+- Multi-column on desktop
+- **No hydration errors in console** (critical test)
+- Pagination visible on desktop
+- DOM size remains reasonable during scroll
+
+```typescript
+// Run E2E tests
+npx playwright test tests/e2e/mobile-responsive-grid.spec.ts
+```
+
+### Debugging Hydration Issues
+
+If you see React error #300 or hydration warnings:
+
+1. **Check for conditional component rendering based on client-only state:**
+   ```tsx
+   // BAD - causes hydration mismatch
+   const isMobile = useIsMobile();
+   if (isMobile) return <MobileComponent />;
+   return <DesktopComponent />;
+   ```
+
+2. **Solution: Same component, different styling:**
+   ```tsx
+   // GOOD - CSS handles responsive changes
+   return <UnifiedComponent className="grid-cols-1 lg:grid-cols-4" />;
+   ```
+
+3. **For data differences:** Different data is OK, different components are not. The VirtualListingGrid may show different items on server vs client, but the component tree is identical.
