@@ -159,6 +159,8 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
   // Handle OTP submission
   const handleOtpSubmit = async (code?: string) => {
     const otpCode = code || otp.join('');
+    console.log('[LoginModal] handleOtpSubmit called, code length:', otpCode.length);
+
     if (otpCode.length !== 6) {
       setError('Please enter the complete 6-digit code.');
       return;
@@ -167,10 +169,13 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
     setError(null);
     setIsLoading(true);
 
+    console.log('[LoginModal] Calling verifyOtp with email:', email);
     try {
       const { error } = await verifyOtp(email, otpCode);
+      console.log('[LoginModal] verifyOtp returned, error:', error);
 
       if (error) {
+        console.log('[LoginModal] Error message:', error.message);
         setError(error.message);
         setOtp(['', '', '', '', '', '']);
         otpInputRefs.current[0]?.focus();

@@ -183,6 +183,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       email: string,
       token: string
     ): Promise<{ error: AuthError | null }> => {
+      console.log('[OTP Debug] verifyOtp called with email:', email, 'token length:', token.length);
+
       // Sanitize inputs
       const cleanEmail = email.trim().toLowerCase();
       const cleanToken = token.trim();
