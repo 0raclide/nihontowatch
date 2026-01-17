@@ -150,7 +150,7 @@ export async function GET(request: NextRequest) {
         'item_type',
         'item_category',
         // Tosogu-specific
-        'material',
+        'tosogu_material',
       ];
 
       for (const word of textWords) {
