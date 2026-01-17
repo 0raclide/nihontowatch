@@ -72,12 +72,12 @@ export function QuickView() {
         isOpen={isOpen}
         onClose={closeQuickView}
       >
-        <div className="flex flex-col lg:flex-row h-full overflow-hidden">
+        <div className="flex flex-col lg:flex-row h-full min-h-0 overflow-hidden">
           {/* Image Section - Scrollable vertical list */}
           <div
             ref={scrollContainerRef}
             onScroll={handleScroll}
-            className="flex-1 lg:w-3/5 overflow-y-auto overscroll-contain bg-ink/5 relative"
+            className="flex-1 min-h-0 lg:w-3/5 overflow-y-auto overscroll-contain bg-ink/5 relative"
           >
             {/* Sold overlay */}
             {isSold && (
@@ -131,7 +131,7 @@ export function QuickView() {
           </div>
 
           {/* Content Section - Fixed on desktop, scrolls on mobile */}
-          <div className="lg:w-2/5 lg:max-w-md lg:border-l lg:border-border bg-cream flex flex-col overflow-hidden">
+          <div className="lg:w-2/5 lg:max-w-md lg:border-l lg:border-border bg-cream flex flex-col min-h-0 overflow-hidden">
             {/* Desktop image progress */}
             {images.length > 1 && (
               <div className="hidden lg:block border-b border-border">
@@ -151,7 +151,7 @@ export function QuickView() {
               </div>
             )}
 
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 min-h-0 overflow-y-auto">
               <QuickViewContent listing={currentListing} onClose={closeQuickView} />
             </div>
           </div>

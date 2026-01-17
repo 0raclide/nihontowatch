@@ -120,7 +120,7 @@ export function QuickViewModal({
           className={`
             relative w-full bg-cream shadow-xl pointer-events-auto
             rounded-t-2xl lg:rounded-lg
-            h-[92vh] lg:h-auto lg:max-h-[90vh]
+            h-[92vh] lg:h-[90vh]
             max-w-4xl overflow-hidden flex flex-col
             ${isAnimatingOut ? 'animate-slideDown' : 'animate-slideUp'}
           `}
