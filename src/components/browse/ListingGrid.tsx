@@ -258,8 +258,15 @@ export function ListingGrid({
   const quickView = useQuickViewOptional();
   const { visibleIndices, setCardRef } = useVisibleCards(listings.length);
 
-  // Mobile: Use virtualized 1-column layout
-  if (isMobile && infiniteScroll && !isLoading) {
+  // Track if component has mounted to avoid hydration mismatch
+  // Server renders desktop grid, client may switch to mobile after mount
+  const [hasMounted, setHasMounted] = useState(false);
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
+
+  // Mobile: Use virtualized 1-column layout (only after hydration)
+  if (hasMounted && isMobile && infiniteScroll && !isLoading) {
     return (
       <MobileVirtualListingGrid
         listings={listings}
