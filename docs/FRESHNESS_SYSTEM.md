@@ -85,10 +85,18 @@ GET https://web.archive.org/cdx/search/cdx?url=<URL>&limit=1&output=json&fl=time
 - Background cron job processes 5 listings every 5 minutes
 - Oldest listings checked first (most likely to be archived)
 
-### Cron Job
+### Cron Job (GitHub Actions)
 **Endpoint:** `/api/cron/wayback-check`
 **Schedule:** Every 5 minutes (`*/5 * * * *`)
 **Batch size:** 5 listings per run
+**Workflow:** `.github/workflows/wayback-check.yml`
+
+The endpoint requires authorization via `CRON_SECRET` environment variable.
+
+#### Setup
+1. Generate a secret: `openssl rand -hex 32`
+2. Add to Vercel: Settings → Environment Variables → `CRON_SECRET`
+3. Add to GitHub: Settings → Secrets → Actions → `CRON_SECRET` (same value)
 
 ---
 

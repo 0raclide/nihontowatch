@@ -1,7 +1,7 @@
 /**
  * Cron job for Wayback Machine verification
  *
- * Designed to be called by Vercel Cron (or manually)
+ * Called by GitHub Actions on a schedule (every 5 minutes)
  * Processes a small batch of listings each run
  *
  * Rate: 1 request/minute, so process ~5 listings per 5-minute cron run
@@ -9,7 +9,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { checkWaybackArchive } from '@/lib/wayback';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 // Process this many listings per cron run
 const BATCH_SIZE = 5;
@@ -27,7 +27,42 @@ interface ListingForWayback {
   first_seen_at: string;
 }
 
-export async function GET() {
+/**
+ * Verify the request is authorized (from GitHub Actions or with correct secret)
+ */
+function isAuthorized(request: NextRequest): boolean {
+  const cronSecret = process.env.CRON_SECRET;
+
+  // If no secret configured, allow (for local dev)
+  if (!cronSecret) {
+    console.warn('CRON_SECRET not configured - allowing unauthenticated access');
+    return true;
+  }
+
+  // Check Authorization header
+  const authHeader = request.headers.get('authorization');
+  if (authHeader === `Bearer ${cronSecret}`) {
+    return true;
+  }
+
+  // Also check x-cron-secret header (alternative)
+  const cronHeader = request.headers.get('x-cron-secret');
+  if (cronHeader === cronSecret) {
+    return true;
+  }
+
+  return false;
+}
+
+export async function GET(request: NextRequest) {
+  // Verify authorization
+  if (!isAuthorized(request)) {
+    return NextResponse.json(
+      { error: 'Unauthorized' },
+      { status: 401 }
+    );
+  }
+
   try {
     const supabase = await createClient();
 

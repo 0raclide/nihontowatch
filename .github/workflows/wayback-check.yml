@@ -1,0 +1,39 @@
+name: Wayback Freshness Check
+
+on:
+  schedule:
+    # Run every 5 minutes
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+    # Allow manual trigger from GitHub UI
+
+jobs:
+  wayback-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Call Wayback Check API
+        run: |
+          response=$(curl -s -w "\n%{http_code}" \
+            -X GET \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "https://nihontowatch.com/api/cron/wayback-check")
+
+          # Extract HTTP status code (last line)
+          http_code=$(echo "$response" | tail -n1)
+          # Extract body (all but last line)
+          body=$(echo "$response" | sed '$d')
+
+          echo "Response: $body"
+          echo "HTTP Status: $http_code"
+
+          # Fail if not 200
+          if [ "$http_code" != "200" ]; then
+            echo "::error::API returned HTTP $http_code"
+            exit 1
+          fi
+
+          # Parse and display results
+          processed=$(echo "$body" | jq -r '.processed // 0')
+          echo "::notice::Processed $processed listings"
