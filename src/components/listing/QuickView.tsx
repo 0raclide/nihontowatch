@@ -85,10 +85,11 @@ export function QuickView() {
         onClose={closeQuickView}
       >
         {/* Mobile layout (show below lg, hide on lg+) */}
-        <div className="lg:hidden h-full flex flex-col">
+        <div className="lg:hidden h-full flex flex-col" data-testid="quickview-mobile-layout">
           {/* Full-screen image scroller */}
           <div
             ref={mobileScrollContainerRef}
+            data-testid="mobile-image-scroller"
             onScroll={handleScroll}
             onClick={toggleSheet}
             className="flex-1 min-h-0 overflow-y-auto overscroll-contain bg-ink/5 relative"
@@ -147,10 +148,11 @@ export function QuickView() {
         </div>
 
         {/* Desktop layout (hide below lg, show on lg+) */}
-        <div className="hidden lg:flex flex-row h-full min-h-0 overflow-hidden">
+        <div className="hidden lg:flex flex-row h-full min-h-0 overflow-hidden" data-testid="quickview-desktop-layout">
           {/* Image Section - Scrollable vertical list */}
           <div
             ref={scrollContainerRef}
+            data-testid="desktop-image-scroller"
             onScroll={handleScroll}
             className="flex-1 min-h-0 w-3/5 overflow-y-auto overscroll-contain bg-ink/5 relative"
           >
@@ -197,7 +199,7 @@ export function QuickView() {
           </div>
 
           {/* Content Section - Fixed on desktop */}
-          <div className="w-2/5 max-w-md border-l border-border bg-cream flex flex-col min-h-0 overflow-hidden">
+          <div data-testid="desktop-content-panel" className="w-2/5 max-w-md border-l border-border bg-cream flex flex-col min-h-0 overflow-hidden">
             {/* Desktop image progress */}
             {images.length > 1 && (
               <div className="border-b border-border">
@@ -226,6 +228,7 @@ export function QuickView() {
           {showNavigation && (
             <>
               <button
+                data-testid="nav-previous"
                 onClick={(e) => {
                   e.stopPropagation();
                   goToPrevious();

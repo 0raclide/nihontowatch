@@ -183,7 +183,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     [supabase]
   );
 
-  // Verify OTP - uses direct API call to avoid Supabase client library issues
+  // Verify OTP - use Supabase client directly
   const verifyOtp = useCallback(
     async (
       email: string,
@@ -192,76 +192,27 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const cleanEmail = email.trim().toLowerCase();
       const cleanToken = token.trim();
 
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
       console.log('[Auth] verifyOtp called with email:', cleanEmail, 'token length:', cleanToken.length);
 
       try {
-        console.log('[Auth] Making fetch request to:', `${supabaseUrl}/auth/v1/verify`);
-        const response = await fetch(`${supabaseUrl}/auth/v1/verify`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'apikey': supabaseKey || '',
-          },
-          body: JSON.stringify({
-            email: cleanEmail,
-            token: cleanToken,
-            type: 'email',
-          }),
+        console.log('[Auth] Calling supabase.auth.verifyOtp...');
+        const { data, error } = await supabase.auth.verifyOtp({
+          email: cleanEmail,
+          token: cleanToken,
+          type: 'email',
         });
 
-        console.log('[Auth] Fetch response status:', response.status);
-        const data = await response.json();
-        console.log('[Auth] Response data:', { hasAccessToken: !!data.access_token, error: data.error || data.error_description });
+        console.log('[Auth] verifyOtp result:', {
+          hasSession: !!data?.session,
+          hasUser: !!data?.user,
+          error: error?.message
+        });
 
-        if (!response.ok) {
-          console.log('[Auth] Response not OK, returning error');
-          return {
-            error: {
-              message: data.error_description || data.msg || data.error || 'Verification failed',
-              status: response.status,
-            } as AuthError,
-          };
+        if (error) {
+          return { error };
         }
 
-        // If successful, we need to set the session
-        if (data.access_token) {
-          console.log('[Auth] Setting session with access token');
-          try {
-            const setSessionResult = await supabase.auth.setSession({
-              access_token: data.access_token,
-              refresh_token: data.refresh_token,
-            });
-            console.log('[Auth] setSession result:', {
-              error: setSessionResult.error,
-              hasUser: !!setSessionResult.data?.user,
-              hasSession: !!setSessionResult.data?.session,
-            });
-            if (setSessionResult.error) {
-              return {
-                error: {
-                  message: setSessionResult.error.message || 'Failed to set session',
-                  status: 500,
-                } as AuthError,
-              };
-            }
-          } catch (setSessionErr) {
-            console.error('[Auth] setSession threw error:', setSessionErr);
-            return {
-              error: {
-                message: setSessionErr instanceof Error ? setSessionErr.message : 'Failed to set session',
-                status: 500,
-              } as AuthError,
-            };
-          }
-          console.log('[Auth] Session set successfully');
-        } else {
-          console.log('[Auth] No access_token in response');
-        }
-
-        console.log('[Auth] verifyOtp returning success');
+        console.log('[Auth] verifyOtp success, session established');
         return { error: null };
       } catch (err) {
         console.error('[Auth] verifyOtp caught error:', err);

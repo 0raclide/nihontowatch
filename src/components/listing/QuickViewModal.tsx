@@ -79,6 +79,7 @@ export function QuickViewModal({
   const modalContent = (
     <div
       ref={modalRef}
+      data-testid="quickview-modal"
       className="fixed inset-0 z-50"
       role="dialog"
       aria-modal="true"
@@ -97,6 +98,7 @@ export function QuickViewModal({
       {/* Close button - outside content for better z-index handling */}
       <button
         type="button"
+        data-testid="quickview-close-button"
         onMouseDown={(e) => {
           e.preventDefault();
           e.stopPropagation();
@@ -116,6 +118,7 @@ export function QuickViewModal({
       >
         <div
           ref={contentRef}
+          data-testid="quickview-content"
           onMouseDown={(e) => e.stopPropagation()}
           className={`
             relative w-full bg-cream shadow-xl pointer-events-auto
