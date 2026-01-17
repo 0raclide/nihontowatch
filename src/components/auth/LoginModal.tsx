@@ -33,10 +33,14 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const otpInputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const emailRef = useRef(email); // Keep email in ref for callbacks
   const isLoadingRef = useRef(isLoading); // Prevent double-submit
+  const verifyOtpRef = useRef(verifyOtp); // Keep verifyOtp in ref to avoid stale closures
+  const onCloseRef = useRef(onClose); // Keep onClose in ref to avoid stale closures
 
-  // Keep refs in sync with state
+  // Keep refs in sync with current values
   emailRef.current = email;
   isLoadingRef.current = isLoading;
+  verifyOtpRef.current = verifyOtp;
+  onCloseRef.current = onClose;
 
   useBodyScrollLock(isOpen);
 
@@ -110,22 +114,21 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
     }
   };
 
-  // Handle OTP submission - defined first so other handlers can reference it
-  // Uses refs to avoid stale closure issues when called from memoized callbacks
+  // Handle OTP submission - uses refs to avoid ALL stale closure issues
   const handleOtpSubmit = useCallback(
     async (code: string) => {
-      // Prevent double-submit
+      // Prevent double-submit - check and set immediately
       if (isLoadingRef.current) {
-        console.log('[LoginModal] handleOtpSubmit skipped - already loading');
         return;
       }
+      // Set ref immediately to prevent race conditions (before async operations)
+      isLoadingRef.current = true;
 
       const currentEmail = emailRef.current;
 
-      console.log('[LoginModal] handleOtpSubmit called with code length:', code.length, 'email:', currentEmail);
-
       if (code.length !== 6) {
         setError('Please enter the complete 6-digit code.');
+        isLoadingRef.current = false;
         return;
       }
 
@@ -133,30 +136,29 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
       setIsLoading(true);
 
       try {
-        console.log('[LoginModal] Calling verifyOtp...');
-        const { error } = await verifyOtp(currentEmail, code);
-        console.log('[LoginModal] verifyOtp returned, error:', error);
+        // Use ref to get the latest verifyOtp function (avoids stale closure)
+        const { error } = await verifyOtpRef.current(currentEmail, code);
 
         if (error) {
           setError(error.message);
           setOtp(['', '', '', '', '', '']);
           otpInputRefs.current[0]?.focus();
         } else {
-          console.log('[LoginModal] Login successful, closing modal in 500ms');
           setSuccessMessage('Login successful!');
           setTimeout(() => {
-            onClose();
+            // Use ref to get the latest onClose function
+            onCloseRef.current();
           }, 500);
         }
       } catch (err) {
-        console.error('[LoginModal] handleOtpSubmit caught error:', err);
+        console.error('[LoginModal] OTP verification error:', err);
         setError('An unexpected error occurred. Please try again.');
       } finally {
-        console.log('[LoginModal] Setting isLoading to false');
         setIsLoading(false);
+        isLoadingRef.current = false;
       }
     },
-    [verifyOtp, onClose]
+    [] // No dependencies needed - all values accessed via refs
   );
 
   // Handle OTP input change
