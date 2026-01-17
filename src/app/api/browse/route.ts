@@ -123,13 +123,18 @@ export async function GET(request: NextRequest) {
       query = query.in('dealer_id', params.dealers);
     }
 
-    // Text search - use normalized query for consistent matching
-    // Includes title, smith (swords), tosogu_maker (fittings), and schools
+    // Text search - search across all relevant fields
+    // Split query into words and require ALL words to match somewhere
     if (params.query && params.query.trim().length >= 2) {
-      const normalizedQuery = normalizeSearchText(params.query);
-      query = query.or(
-        `title.ilike.%${normalizedQuery}%,smith.ilike.%${normalizedQuery}%,tosogu_maker.ilike.%${normalizedQuery}%,school.ilike.%${normalizedQuery}%,tosogu_school.ilike.%${normalizedQuery}%`
-      );
+      const words = params.query.trim().toLowerCase().split(/\s+/).filter(w => w.length >= 2);
+
+      for (const word of words) {
+        const normalizedWord = normalizeSearchText(word);
+        // Each word must match in at least one field
+        query = query.or(
+          `title.ilike.%${normalizedWord}%,smith.ilike.%${normalizedWord}%,tosogu_maker.ilike.%${normalizedWord}%,school.ilike.%${normalizedWord}%,tosogu_school.ilike.%${normalizedWord}%,cert_type.ilike.%${normalizedWord}%,item_type.ilike.%${normalizedWord}%`
+        );
+      }
     }
 
     // Sorting

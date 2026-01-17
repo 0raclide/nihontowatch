@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { ThemeSwitcher } from '@/components/ui/ThemeSwitcher';
@@ -12,7 +12,7 @@ import { LoginModal } from '@/components/auth/LoginModal';
 import { UserMenu } from '@/components/auth/UserMenu';
 import { useActivityOptional } from '@/components/activity/ActivityProvider';
 
-export function Header() {
+function HeaderContent() {
   const { openSearch, openNavDrawer } = useMobileUI();
   const searchParams = useSearchParams();
   const currentQuery = searchParams.get('q') || '';
@@ -162,5 +162,33 @@ export function Header() {
       {/* Login Modal */}
       <LoginModal isOpen={showLoginModal} onClose={() => setShowLoginModal(false)} />
     </>
+  );
+}
+
+// Fallback for Suspense - minimal header skeleton
+function HeaderFallback() {
+  return (
+    <header className="sticky top-0 z-40 bg-cream transition-colors">
+      <div className="max-w-[1600px] mx-auto px-4 py-3 lg:px-6 lg:py-5">
+        <div className="flex items-center justify-between">
+          <div className="font-serif text-xl lg:text-2xl tracking-tight text-ink">
+            Nihonto<span className="text-gold">watch</span>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="w-64 h-10 bg-linen/50 rounded animate-pulse hidden lg:block" />
+            <div className="w-8 h-8 bg-linen/50 rounded-full animate-pulse" />
+          </div>
+        </div>
+      </div>
+      <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+    </header>
+  );
+}
+
+export function Header() {
+  return (
+    <Suspense fallback={<HeaderFallback />}>
+      <HeaderContent />
+    </Suspense>
   );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, Suspense } from 'react';
 import { Header } from '@/components/layout/Header';
 import { AlertsList } from '@/components/alerts/AlertsList';
 import { CreateAlertModal } from '@/components/alerts/CreateAlertModal';

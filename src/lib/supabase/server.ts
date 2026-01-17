@@ -2,6 +2,10 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import type { Database } from '@/types/database';
 
+// Get environment variables with fallbacks for build time
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key';
+
 /**
  * Create a Supabase client for use in Server Components and Route Handlers
  */
@@ -9,8 +13,8 @@ export async function createClient() {
   const cookieStore = await cookies();
 
   return createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    supabaseUrl,
+    supabaseAnonKey,
     {
       cookies: {
         getAll() {
@@ -36,9 +40,10 @@ export async function createClient() {
  * WARNING: Only use in trusted server-side contexts
  */
 export function createServiceClient() {
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
   return createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    supabaseUrl,
+    serviceRoleKey,
     {
       cookies: {
         getAll() {
