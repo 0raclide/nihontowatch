@@ -12,6 +12,7 @@
 | [MOBILE_UX.md](./MOBILE_UX.md) | Mobile interaction patterns, QuickView bottom sheet |
 | [SEARCH_FEATURES.md](./SEARCH_FEATURES.md) | Natural language search, filters, query syntax |
 | [FRESHNESS_SYSTEM.md](./FRESHNESS_SYSTEM.md) | Listing age verification, Wayback integration, confidence levels |
+| [OPTIMIZATION.md](./OPTIMIZATION.md) | Performance optimization, image loading, caching strategies |
 
 ---
 

@@ -1,10 +1,14 @@
 'use client';
 
 import { Suspense, useRef, useEffect, useState, useCallback } from 'react';
+import Image from 'next/image';
 import { QuickViewModal } from './QuickViewModal';
 import { QuickViewContent } from './QuickViewContent';
 import { QuickViewMobileSheet } from './QuickViewMobileSheet';
 import { useQuickView } from '@/contexts/QuickViewContext';
+
+// Blur placeholder for lazy images
+const BLUR_PLACEHOLDER = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjVmNGYwIi8+PC9zdmc+';
 
 /**
  * QuickView with vertical scrolling image layout.
@@ -345,16 +349,22 @@ function LazyImage({
             </div>
           )}
 
-          {/* Actual image - use img tag for external URLs to avoid Next.js domain restrictions */}
+          {/* Actual image - Next.js Image for optimization (AVIF/WebP, sizing) */}
           {!error && (
-            <img
+            <Image
               src={src}
               alt={`Image ${index + 1}`}
+              width={800}
+              height={600}
               className={`w-full h-auto transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+              style={{ width: '100%', height: 'auto' }}
               onLoad={() => setLoaded(true)}
               onError={() => setError(true)}
-              loading="lazy"
-              decoding="async"
+              loading={isFirst ? 'eager' : 'lazy'}
+              placeholder="blur"
+              blurDataURL={BLUR_PLACEHOLDER}
+              sizes="(max-width: 1024px) 100vw, 60vw"
+              unoptimized={false}
             />
           )}
 

@@ -1,9 +1,14 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { ListingCard } from './ListingCard';
 import { useQuickViewOptional } from '@/contexts/QuickViewContext';
 import type { Listing as QuickViewListing } from '@/types';
+
+// Number of cards to prioritize for immediate loading (above the fold)
+const PRIORITY_COUNT = 10;
+// Load images when card is within this margin of viewport
+const INTERSECTION_MARGIN = '200px';
 
 interface Listing {
   id: string;
@@ -153,6 +158,86 @@ function LoadingSkeleton() {
   );
 }
 
+/**
+ * Hook to track which listing cards are near the viewport for lazy image loading.
+ * Uses IntersectionObserver to efficiently detect visibility.
+ */
+function useVisibleCards(listingCount: number) {
+  const [visibleIndices, setVisibleIndices] = useState<Set<number>>(() => {
+    // Initialize with first PRIORITY_COUNT cards as visible
+    const initial = new Set<number>();
+    for (let i = 0; i < Math.min(PRIORITY_COUNT, listingCount); i++) {
+      initial.add(i);
+    }
+    return initial;
+  });
+
+  const observerRef = useRef<IntersectionObserver | null>(null);
+  const cardRefs = useRef<Map<number, HTMLDivElement>>(new Map());
+
+  const setCardRef = useCallback((index: number, el: HTMLDivElement | null) => {
+    if (el) {
+      cardRefs.current.set(index, el);
+      // Observe new elements
+      observerRef.current?.observe(el);
+    } else {
+      const existing = cardRefs.current.get(index);
+      if (existing) {
+        observerRef.current?.unobserve(existing);
+        cardRefs.current.delete(index);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    // Create intersection observer
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        setVisibleIndices((prev) => {
+          const next = new Set(prev);
+          entries.forEach((entry) => {
+            const index = Number(entry.target.getAttribute('data-index'));
+            if (entry.isIntersecting) {
+              // Mark this card and next few as visible (preload ahead)
+              for (let i = index; i < Math.min(index + 5, listingCount); i++) {
+                next.add(i);
+              }
+            }
+            // Note: We don't remove from visible set - once loaded, stay loaded
+          });
+          return next;
+        });
+      },
+      {
+        rootMargin: INTERSECTION_MARGIN,
+        threshold: 0
+      }
+    );
+
+    // Observe all current refs
+    cardRefs.current.forEach((el) => {
+      observerRef.current?.observe(el);
+    });
+
+    return () => {
+      observerRef.current?.disconnect();
+    };
+  }, [listingCount]);
+
+  // Reset visible indices when listings change significantly
+  useEffect(() => {
+    setVisibleIndices(() => {
+      const initial = new Set<number>();
+      for (let i = 0; i < Math.min(PRIORITY_COUNT, listingCount); i++) {
+        initial.add(i);
+      }
+      return initial;
+    });
+  }, [listingCount]);
+
+  return { visibleIndices, setCardRef };
+}
+
 export function ListingGrid({
   listings,
   total,
@@ -166,6 +251,7 @@ export function ListingGrid({
   exchangeRates,
 }: ListingGridProps) {
   const quickView = useQuickViewOptional();
+  const { visibleIndices, setCardRef } = useVisibleCards(listings.length);
 
   // Pass listings to QuickView context for navigation between listings
   useEffect(() => {
@@ -228,13 +314,19 @@ export function ListingGrid({
       {/* Grid - Compact cards for scholarly browsing */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
         {listings.map((listing, index) => (
-          <ListingCard
+          <div
             key={listing.id}
-            listing={listing}
-            currency={currency}
-            exchangeRates={exchangeRates}
-            priority={index < 10} // Prioritize first 10 images (above the fold)
-          />
+            ref={(el) => setCardRef(index, el)}
+            data-index={index}
+          >
+            <ListingCard
+              listing={listing}
+              currency={currency}
+              exchangeRates={exchangeRates}
+              priority={index < PRIORITY_COUNT}
+              isNearViewport={visibleIndices.has(index)}
+            />
+          </div>
         ))}
       </div>
 

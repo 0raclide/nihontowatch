@@ -2,8 +2,21 @@ import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { normalizeSearchText, expandSearchAliases } from '@/lib/search';
 import { parseNumericFilters } from '@/lib/search/numericFilters';
+import { CACHE } from '@/lib/constants';
 
-export const dynamic = 'force-dynamic';
+// In-memory cache for facet data (reduces DB queries)
+interface FacetCache {
+  data: {
+    itemTypes: Array<{ value: string; count: number }>;
+    certifications: Array<{ value: string; count: number }>;
+    dealers: Array<{ id: number; name: string; count: number }>;
+  } | null;
+  timestamp: number;
+  tab: string;
+}
+
+let facetCache: FacetCache = { data: null, timestamp: 0, tab: '' };
+const FACET_CACHE_TTL = 60000; // 60 seconds in-memory cache
 
 interface BrowseParams {
   tab: 'available' | 'sold';
@@ -209,40 +222,65 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // Get facet counts using SQL aggregation (avoids row limit issues)
-    // Pass all filters so facets reflect current selection (like oshi-v2)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: facetData, error: facetError } = await (supabase.rpc as any)('get_listing_facets', {
-      p_tab: params.tab,
-      p_item_types: params.itemTypes || null,
-      p_certifications: params.certifications || null,
-      p_dealers: params.dealers || null,
-      p_query: params.query || null,
-      p_ask_only: params.askOnly || false
-    });
-
-    // Fallback to JS-based facet computation if RPC doesn't exist
+    // Get facet counts - use in-memory cache to reduce DB queries
+    // Facets don't change frequently, so we can cache them for 60 seconds
     let typesFacet, certsFacet, dealersFacet;
-    if (facetError?.code === 'PGRST202') {
-      // RPC not found - use fallback functions
-      [typesFacet, certsFacet, dealersFacet] = await Promise.all([
-        getItemTypeFacets(supabase, statusFilter),
-        getCertificationFacets(supabase, statusFilter),
-        getDealerFacets(supabase, statusFilter),
-      ]);
-    } else if (facetError) {
-      console.error('Facet RPC error:', facetError);
-      // Use fallback on other errors too
-      [typesFacet, certsFacet, dealersFacet] = await Promise.all([
-        getItemTypeFacets(supabase, statusFilter),
-        getCertificationFacets(supabase, statusFilter),
-        getDealerFacets(supabase, statusFilter),
-      ]);
+    const now = Date.now();
+
+    if (
+      facetCache.data &&
+      facetCache.tab === params.tab &&
+      now - facetCache.timestamp < FACET_CACHE_TTL
+    ) {
+      // Use cached facets
+      typesFacet = facetCache.data.itemTypes;
+      certsFacet = facetCache.data.certifications;
+      dealersFacet = facetCache.data.dealers;
     } else {
-      // Use RPC results
-      typesFacet = facetData?.itemTypes || [];
-      certsFacet = facetData?.certifications || [];
-      dealersFacet = facetData?.dealers || [];
+      // Fetch fresh facets using SQL aggregation (avoids row limit issues)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: facetData, error: facetError } = await (supabase.rpc as any)('get_listing_facets', {
+        p_tab: params.tab,
+        p_item_types: params.itemTypes || null,
+        p_certifications: params.certifications || null,
+        p_dealers: params.dealers || null,
+        p_query: params.query || null,
+        p_ask_only: params.askOnly || false
+      });
+
+      // Fallback to JS-based facet computation if RPC doesn't exist
+      if (facetError?.code === 'PGRST202') {
+        // RPC not found - use fallback functions
+        [typesFacet, certsFacet, dealersFacet] = await Promise.all([
+          getItemTypeFacets(supabase, statusFilter),
+          getCertificationFacets(supabase, statusFilter),
+          getDealerFacets(supabase, statusFilter),
+        ]);
+      } else if (facetError) {
+        console.error('Facet RPC error:', facetError);
+        // Use fallback on other errors too
+        [typesFacet, certsFacet, dealersFacet] = await Promise.all([
+          getItemTypeFacets(supabase, statusFilter),
+          getCertificationFacets(supabase, statusFilter),
+          getDealerFacets(supabase, statusFilter),
+        ]);
+      } else {
+        // Use RPC results
+        typesFacet = facetData?.itemTypes || [];
+        certsFacet = facetData?.certifications || [];
+        dealersFacet = facetData?.dealers || [];
+      }
+
+      // Update cache
+      facetCache = {
+        data: {
+          itemTypes: typesFacet,
+          certifications: certsFacet,
+          dealers: dealersFacet,
+        },
+        timestamp: now,
+        tab: params.tab,
+      };
     }
 
     // Get the most recent scrape timestamp for freshness indicator
@@ -256,7 +294,8 @@ export async function GET(request: NextRequest) {
 
     const lastUpdated = (freshnessData as { last_scraped_at: string } | null)?.last_scraped_at || null;
 
-    return NextResponse.json({
+    // Create response with cache headers
+    const response = NextResponse.json({
       listings: listings || [],
       total: count || 0,
       page: safePage,
@@ -268,6 +307,14 @@ export async function GET(request: NextRequest) {
       },
       lastUpdated,
     });
+
+    // Add cache headers - allow edge caching for 5 minutes, stale-while-revalidate for 10 minutes
+    response.headers.set(
+      'Cache-Control',
+      `public, s-maxage=${CACHE.BROWSE_RESULTS}, stale-while-revalidate=${CACHE.SWR_WINDOW}`
+    );
+
+    return response;
   } catch (error) {
     console.error('Browse API error:', error);
     return NextResponse.json(
