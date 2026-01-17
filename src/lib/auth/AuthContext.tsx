@@ -183,23 +183,34 @@ export function AuthProvider({ children }: AuthProviderProps) {
       email: string,
       token: string
     ): Promise<{ error: AuthError | null }> => {
-      const { error } = await supabase.auth.verifyOtp({
-        email,
-        token,
+      // Sanitize inputs
+      const cleanEmail = email.trim().toLowerCase();
+      const cleanToken = token.trim();
+
+      // Try 'email' type first (for 6-digit OTP codes)
+      const { error: emailError } = await supabase.auth.verifyOtp({
+        email: cleanEmail,
+        token: cleanToken,
         type: 'email',
       });
 
-      // If 'email' type fails, try 'magiclink' type
-      if (error) {
-        const { error: magicLinkError } = await supabase.auth.verifyOtp({
-          email,
-          token,
-          type: 'magiclink',
-        });
-        return { error: magicLinkError };
+      if (!emailError) {
+        return { error: null };
       }
 
-      return { error: null };
+      // If 'email' type fails, try 'magiclink' type (for link tokens)
+      const { error: magicLinkError } = await supabase.auth.verifyOtp({
+        email: cleanEmail,
+        token: cleanToken,
+        type: 'magiclink',
+      });
+
+      if (!magicLinkError) {
+        return { error: null };
+      }
+
+      // Return the original error for better debugging
+      return { error: emailError };
     },
     [supabase]
   );
