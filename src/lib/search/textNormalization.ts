@@ -117,6 +117,48 @@ export function hasKanjiVariants(str: string): boolean {
 }
 
 // =============================================================================
+// SEARCH ALIASES
+// =============================================================================
+
+/**
+ * Search term aliases for common abbreviations and variants.
+ * Maps user-friendly short forms to canonical database values.
+ */
+const SEARCH_ALIASES: Record<string, string[]> = {
+  // Certification abbreviations
+  'tokuju': ['tokubetsu juyo', 'tokubetsu_juyo'],
+  'tokuho': ['tokubetsu hozon', 'tokubetsu_hozon'],
+  'tokukicho': ['tokubetsu kicho', 'tokubetsu_kicho'],
+
+  // Item type abbreviations
+  'waki': ['wakizashi'],
+  'nagi': ['naginata'],
+  'fuchikashira': ['fuchi_kashira', 'fuchi-kashira', 'fuchi kashira'],
+
+  // Common romanization variants
+  'tuba': ['tsuba'],
+  'tanto': ['tantou', 'tantō'],
+  'katana': ['katana'],
+};
+
+/**
+ * Expand a search word to include aliases.
+ * Returns the original word plus any matching alias expansions.
+ *
+ * @example
+ * expandSearchAliases('tokuju') // → ['tokuju', 'tokubetsu juyo', 'tokubetsu_juyo']
+ * expandSearchAliases('katana') // → ['katana']
+ */
+export function expandSearchAliases(word: string): string[] {
+  const normalized = word.toLowerCase().trim();
+  const aliases = SEARCH_ALIASES[normalized];
+  if (aliases) {
+    return [normalized, ...aliases];
+  }
+  return [normalized];
+}
+
+// =============================================================================
 // SEARCH NORMALIZATION
 // =============================================================================
 

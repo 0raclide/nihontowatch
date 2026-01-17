@@ -206,7 +206,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
 
       {/* Modal */}
       <div
-        className="relative w-full max-w-md bg-cream dark:bg-gray-900 rounded-lg shadow-xl animate-slideUp"
+        className="relative w-full max-w-md bg-cream rounded-lg shadow-xl animate-slideUp"
         role="dialog"
         aria-modal="true"
         aria-label="Sign in"
@@ -214,7 +214,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 text-muted hover:text-ink dark:hover:text-white transition-colors"
+          className="absolute top-4 right-4 p-2 text-muted hover:text-ink transition-colors"
           aria-label="Close"
         >
           <svg
@@ -236,7 +236,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
         <div className="p-6 sm:p-8">
           {/* Header */}
           <div className="text-center mb-6">
-            <h2 className="font-serif text-2xl text-ink dark:text-white mb-2">
+            <h2 className="font-serif text-2xl text-ink mb-2">
               {step === 'email' ? 'Welcome' : 'Enter Code'}
             </h2>
             <p className="text-sm text-muted">
@@ -248,14 +248,14 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
 
           {/* Success message */}
           {successMessage && (
-            <div className="mb-4 p-3 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 text-sm rounded-lg text-center">
+            <div className="mb-4 p-3 bg-green-100 text-green-800 text-sm rounded-lg text-center">
               {successMessage}
             </div>
           )}
 
           {/* Error message */}
           {error && (
-            <div className="mb-4 p-3 bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 text-sm rounded-lg text-center">
+            <div className="mb-4 p-3 bg-red-100 text-red-800 text-sm rounded-lg text-center">
               {error}
             </div>
           )}
@@ -279,7 +279,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                   placeholder="your@email.com"
                   required
                   disabled={isLoading}
-                  className="w-full px-4 py-3 bg-linen/50 dark:bg-gray-800 border border-border dark:border-gray-700 rounded-lg text-ink dark:text-white placeholder:text-muted/50 focus:outline-none focus:ring-2 focus:ring-gold/50 focus:border-gold transition-all disabled:opacity-50"
+                  className="w-full px-4 py-3 bg-linen/50 border border-border rounded-lg text-ink placeholder:text-muted/50 focus:outline-none focus:ring-2 focus:ring-gold/50 focus:border-gold transition-all disabled:opacity-50"
                 />
               </div>
 
@@ -323,7 +323,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                       onKeyDown={(e) => handleOtpKeyDown(index, e)}
                       onPaste={index === 0 ? handleOtpPaste : undefined}
                       disabled={isLoading}
-                      className="w-12 h-14 text-center text-xl font-mono bg-linen/50 dark:bg-gray-800 border border-border dark:border-gray-700 rounded-lg text-ink dark:text-white focus:outline-none focus:ring-2 focus:ring-gold/50 focus:border-gold transition-all disabled:opacity-50"
+                      className="w-12 h-14 text-center text-xl font-mono bg-linen/50 border border-border rounded-lg text-ink focus:outline-none focus:ring-2 focus:ring-gold/50 focus:border-gold transition-all disabled:opacity-50"
                     />
                   ))}
                 </div>
@@ -353,7 +353,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                   setError(null);
                 }}
                 disabled={isLoading}
-                className="w-full py-2 text-sm text-muted hover:text-ink dark:hover:text-white transition-colors disabled:opacity-50"
+                className="w-full py-2 text-sm text-muted hover:text-ink transition-colors disabled:opacity-50"
               >
                 Use a different email
               </button>

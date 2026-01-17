@@ -67,7 +67,7 @@ export function FavoriteButton({
         transition-all duration-200
         ${favorited
           ? 'bg-burgundy/90 text-white hover:bg-burgundy'
-          : 'bg-white/80 theme-dark:bg-gray-800/80 text-muted hover:text-burgundy hover:bg-white theme-dark:hover:bg-gray-800'
+          : 'bg-paper/80 text-muted hover:text-burgundy hover:bg-paper'
         }
         ${isToggling ? 'opacity-50 cursor-wait' : 'cursor-pointer'}
         backdrop-blur-sm

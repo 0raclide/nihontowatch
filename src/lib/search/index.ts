@@ -10,6 +10,7 @@ export {
   normalizeSearchText,
   prepareSearchQuery,
   getSearchVariants,
+  expandSearchAliases,
 } from './textNormalization';
 
 // Type definitions

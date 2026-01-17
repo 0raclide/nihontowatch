@@ -50,7 +50,7 @@ export function AlertsList({
     return (
       <div className="flex flex-col items-center justify-center py-16">
         <div className="w-8 h-8 border-2 border-gold border-t-transparent rounded-full animate-spin mb-4" />
-        <p className="text-[14px] text-muted dark:text-gray-500">Loading alerts...</p>
+        <p className="text-[14px] text-muted">Loading alerts...</p>
       </div>
     );
   }
@@ -65,7 +65,7 @@ export function AlertsList({
           </svg>
         </div>
         <p className="text-[14px] text-error mb-2">Failed to load alerts</p>
-        <p className="text-[12px] text-muted dark:text-gray-500">{error}</p>
+        <p className="text-[12px] text-muted">{error}</p>
       </div>
     );
   }
@@ -74,13 +74,13 @@ export function AlertsList({
   if (alerts.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16">
-        <div className="w-16 h-16 rounded-full bg-linen dark:bg-gray-800 flex items-center justify-center mb-4">
-          <svg className="w-8 h-8 text-muted dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="w-16 h-16 rounded-full bg-linen flex items-center justify-center mb-4">
+          <svg className="w-8 h-8 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
           </svg>
         </div>
-        <h3 className="font-serif text-lg text-ink dark:text-white mb-2">No alerts yet</h3>
-        <p className="text-[14px] text-muted dark:text-gray-500 text-center max-w-sm mb-6">
+        <h3 className="font-serif text-lg text-ink mb-2">No alerts yet</h3>
+        <p className="text-[14px] text-muted text-center max-w-sm mb-6">
           Create alerts to get notified about price drops, new listings, and items back in stock.
         </p>
         <button
@@ -102,7 +102,7 @@ export function AlertsList({
           className={`flex-shrink-0 px-4 py-2 text-[13px] font-medium rounded-lg transition-all ${
             filter === 'all'
               ? 'bg-gold text-white'
-              : 'bg-linen dark:bg-gray-800 text-charcoal dark:text-gray-300 hover:bg-border dark:hover:bg-gray-700'
+              : 'bg-linen text-charcoal hover:bg-hover'
           }`}
         >
           All
@@ -115,7 +115,7 @@ export function AlertsList({
           className={`flex-shrink-0 px-4 py-2 text-[13px] font-medium rounded-lg transition-all ${
             filter === 'price_drop'
               ? 'bg-gold text-white'
-              : 'bg-linen dark:bg-gray-800 text-charcoal dark:text-gray-300 hover:bg-border dark:hover:bg-gray-700'
+              : 'bg-linen text-charcoal hover:bg-hover'
           }`}
         >
           Price Drops
@@ -128,7 +128,7 @@ export function AlertsList({
           className={`flex-shrink-0 px-4 py-2 text-[13px] font-medium rounded-lg transition-all ${
             filter === 'new_listing'
               ? 'bg-gold text-white'
-              : 'bg-linen dark:bg-gray-800 text-charcoal dark:text-gray-300 hover:bg-border dark:hover:bg-gray-700'
+              : 'bg-linen text-charcoal hover:bg-hover'
           }`}
         >
           New Listings
@@ -141,7 +141,7 @@ export function AlertsList({
           className={`flex-shrink-0 px-4 py-2 text-[13px] font-medium rounded-lg transition-all ${
             filter === 'back_in_stock'
               ? 'bg-gold text-white'
-              : 'bg-linen dark:bg-gray-800 text-charcoal dark:text-gray-300 hover:bg-border dark:hover:bg-gray-700'
+              : 'bg-linen text-charcoal hover:bg-hover'
           }`}
         >
           Back in Stock
@@ -164,8 +164,8 @@ export function AlertsList({
           ))}
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center py-12 bg-linen/50 dark:bg-gray-800/30 rounded-lg">
-          <p className="text-[14px] text-muted dark:text-gray-500">
+        <div className="flex flex-col items-center justify-center py-12 bg-linen/50 rounded-lg">
+          <p className="text-[14px] text-muted">
             No {filter.replace('_', ' ')} alerts
           </p>
         </div>

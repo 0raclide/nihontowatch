@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
-import { normalizeSearchText } from '@/lib/search';
+import { normalizeSearchText, expandSearchAliases } from '@/lib/search';
 
 export const dynamic = 'force-dynamic';
 
@@ -124,16 +124,22 @@ export async function GET(request: NextRequest) {
     }
 
     // Text search - search across all relevant fields
-    // Split query into words and require ALL words to match somewhere
+    // Split query into words, expand aliases, and require ALL words to match somewhere
     if (params.query && params.query.trim().length >= 2) {
       const words = params.query.trim().toLowerCase().split(/\s+/).filter(w => w.length >= 2);
+      const searchFields = ['title', 'smith', 'tosogu_maker', 'school', 'tosogu_school', 'cert_type', 'item_type'];
 
       for (const word of words) {
-        const normalizedWord = normalizeSearchText(word);
-        // Each word must match in at least one field
-        query = query.or(
-          `title.ilike.%${normalizedWord}%,smith.ilike.%${normalizedWord}%,tosogu_maker.ilike.%${normalizedWord}%,school.ilike.%${normalizedWord}%,tosogu_school.ilike.%${normalizedWord}%,cert_type.ilike.%${normalizedWord}%,item_type.ilike.%${normalizedWord}%`
+        // Expand word to include aliases (e.g., "tokuju" -> ["tokuju", "tokubetsu juyo", "tokubetsu_juyo"])
+        const expandedTerms = expandSearchAliases(word).map(normalizeSearchText);
+
+        // Build OR conditions: each expanded term can match in any field
+        const conditions = expandedTerms.flatMap(term =>
+          searchFields.map(field => `${field}.ilike.%${term}%`)
         );
+
+        // Each word (with its aliases) must match somewhere
+        query = query.or(conditions.join(','));
       }
     }
 

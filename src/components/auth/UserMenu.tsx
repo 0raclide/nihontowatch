@@ -54,7 +54,7 @@ export function UserMenu() {
       {/* Trigger Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 p-1.5 rounded-full hover:bg-linen/50 dark:hover:bg-gray-800 transition-colors"
+        className="flex items-center gap-2 p-1.5 rounded-full hover:bg-hover transition-colors"
         aria-expanded={isOpen}
         aria-haspopup="true"
       >
@@ -66,7 +66,7 @@ export function UserMenu() {
             className="w-8 h-8 rounded-full object-cover"
           />
         ) : (
-          <div className="w-8 h-8 rounded-full bg-gold/20 dark:bg-gold/30 flex items-center justify-center">
+          <div className="w-8 h-8 rounded-full bg-gold/20 flex items-center justify-center">
             <span className="text-xs font-medium text-gold">{initials}</span>
           </div>
         )}
@@ -89,10 +89,10 @@ export function UserMenu() {
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-56 bg-cream dark:bg-gray-900 rounded-lg shadow-lg border border-border dark:border-gray-800 py-1 z-50 animate-fadeIn">
+        <div className="absolute right-0 mt-2 w-56 bg-cream rounded-lg shadow-lg border border-border py-1 z-50 animate-fadeIn">
           {/* User Info */}
-          <div className="px-4 py-3 border-b border-border dark:border-gray-800">
-            <p className="text-sm font-medium text-ink dark:text-white truncate">
+          <div className="px-4 py-3 border-b border-border">
+            <p className="text-sm font-medium text-ink truncate">
               {displayName}
             </p>
             <p className="text-xs text-muted truncate">{user.email}</p>
@@ -126,7 +126,7 @@ export function UserMenu() {
 
             {isAdmin && (
               <>
-                <div className="h-px bg-border dark:bg-gray-800 my-1" />
+                <div className="h-px bg-border my-1" />
                 <MenuLink
                   href="/admin"
                   icon={<ShieldIcon />}
@@ -139,10 +139,10 @@ export function UserMenu() {
           </div>
 
           {/* Sign Out */}
-          <div className="border-t border-border dark:border-gray-800 py-1">
+          <div className="border-t border-border py-1">
             <button
               onClick={handleSignOut}
-              className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-muted hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+              className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-muted hover:text-red-600 hover:bg-red-50 transition-colors"
             >
               <LogoutIcon />
               Sign Out
@@ -170,7 +170,7 @@ function MenuLink({ href, icon, children, onClick }: MenuLinkProps) {
     <Link
       href={href}
       onClick={onClick}
-      className="flex items-center gap-3 px-4 py-2.5 text-sm text-muted hover:text-ink dark:hover:text-white hover:bg-linen/50 dark:hover:bg-gray-800 transition-colors"
+      className="flex items-center gap-3 px-4 py-2.5 text-sm text-muted hover:text-ink hover:bg-hover transition-colors"
     >
       {icon}
       {children}

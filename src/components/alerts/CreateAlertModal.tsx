@@ -146,19 +146,19 @@ export function CreateAlertModal({
       {/* Modal */}
       <div className="absolute inset-0 flex items-center justify-center p-4">
         <div
-          className="relative w-full max-w-md bg-cream dark:bg-gray-900 rounded-lg shadow-xl animate-slideUp max-h-[90vh] overflow-hidden flex flex-col"
+          className="relative w-full max-w-md bg-cream rounded-lg shadow-xl animate-slideUp max-h-[90vh] overflow-hidden flex flex-col"
           role="dialog"
           aria-modal="true"
           aria-labelledby="modal-title"
         >
           {/* Header */}
-          <div className="flex items-center justify-between px-5 py-4 border-b border-border dark:border-gray-800">
-            <h2 id="modal-title" className="font-serif text-lg text-ink dark:text-white">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+            <h2 id="modal-title" className="font-serif text-lg text-ink">
               Create Alert
             </h2>
             <button
               onClick={onClose}
-              className="p-1 text-muted hover:text-ink dark:hover:text-white transition-colors"
+              className="p-1 text-muted hover:text-ink transition-colors"
               aria-label="Close"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -172,7 +172,7 @@ export function CreateAlertModal({
             <div className="p-5 space-y-5">
               {/* Alert Type Selection */}
               <div>
-                <label className="block text-[12px] uppercase tracking-wider text-muted dark:text-gray-500 mb-3">
+                <label className="block text-[12px] uppercase tracking-wider text-muted mb-3">
                   Alert Type
                 </label>
                 <div className="grid grid-cols-3 gap-2">
@@ -186,8 +186,8 @@ export function CreateAlertModal({
                           alertType === 'price_drop'
                             ? 'bg-gold text-white'
                             : isSold
-                            ? 'bg-linen dark:bg-gray-800 text-muted/50 cursor-not-allowed'
-                            : 'bg-linen dark:bg-gray-800 text-charcoal dark:text-gray-300 hover:bg-border dark:hover:bg-gray-700'
+                            ? 'bg-linen text-muted/50 cursor-not-allowed'
+                            : 'bg-linen text-charcoal hover:bg-hover'
                         }`}
                       >
                         Price Drop
@@ -200,8 +200,8 @@ export function CreateAlertModal({
                           alertType === 'back_in_stock'
                             ? 'bg-gold text-white'
                             : !isSold
-                            ? 'bg-linen dark:bg-gray-800 text-muted/50 cursor-not-allowed'
-                            : 'bg-linen dark:bg-gray-800 text-charcoal dark:text-gray-300 hover:bg-border dark:hover:bg-gray-700'
+                            ? 'bg-linen text-muted/50 cursor-not-allowed'
+                            : 'bg-linen text-charcoal hover:bg-hover'
                         }`}
                       >
                         Back in Stock
@@ -214,7 +214,7 @@ export function CreateAlertModal({
                       className={`col-span-3 px-3 py-3 text-[13px] font-medium rounded-lg transition-all ${
                         alertType === 'new_listing'
                           ? 'bg-gold text-white'
-                          : 'bg-linen dark:bg-gray-800 text-charcoal dark:text-gray-300 hover:bg-border dark:hover:bg-gray-700'
+                          : 'bg-linen text-charcoal hover:bg-hover'
                       }`}
                     >
                       New Listing
@@ -225,12 +225,12 @@ export function CreateAlertModal({
 
               {/* Listing Info (for price_drop and back_in_stock) */}
               {listing && (alertType === 'price_drop' || alertType === 'back_in_stock') && (
-                <div className="bg-linen dark:bg-gray-800/50 rounded-lg p-4">
-                  <p className="text-[13px] text-charcoal dark:text-gray-300 font-medium line-clamp-2">
+                <div className="bg-linen rounded-lg p-4">
+                  <p className="text-[13px] text-charcoal font-medium line-clamp-2">
                     {listing.title}
                   </p>
                   {listing.price_value && alertType === 'price_drop' && (
-                    <p className="text-[12px] text-muted dark:text-gray-500 mt-1">
+                    <p className="text-[12px] text-muted mt-1">
                       Current price: {new Intl.NumberFormat('en-US', {
                         style: 'currency',
                         currency: listing.price_currency || 'JPY',
@@ -244,11 +244,11 @@ export function CreateAlertModal({
               {/* Target Price (for price_drop) */}
               {alertType === 'price_drop' && (
                 <div>
-                  <label className="block text-[12px] uppercase tracking-wider text-muted dark:text-gray-500 mb-2">
+                  <label className="block text-[12px] uppercase tracking-wider text-muted mb-2">
                     Target Price (Optional)
                   </label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted dark:text-gray-500 text-[14px]">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted text-[14px]">
                       {listing?.price_currency === 'USD' ? '$' : listing?.price_currency === 'EUR' ? 'E' : '¥'}
                     </span>
                     <input
@@ -256,10 +256,10 @@ export function CreateAlertModal({
                       value={targetPrice}
                       onChange={(e) => setTargetPrice(e.target.value)}
                       placeholder="Any price drop"
-                      className="w-full pl-8 pr-4 py-3 bg-white dark:bg-gray-800 border-2 border-border dark:border-gray-700 rounded-lg text-[14px] text-ink dark:text-white placeholder:text-muted/50 focus:outline-none focus:border-gold"
+                      className="w-full pl-8 pr-4 py-3 bg-paper border-2 border-border rounded-lg text-[14px] text-ink placeholder:text-muted/50 focus:outline-none focus:border-gold"
                     />
                   </div>
-                  <p className="text-[11px] text-muted dark:text-gray-600 mt-2">
+                  <p className="text-[11px] text-muted mt-2">
                     Leave empty to be notified of any price drop
                   </p>
                 </div>
@@ -270,13 +270,13 @@ export function CreateAlertModal({
                 <div className="space-y-4">
                   {/* Item Type */}
                   <div>
-                    <label className="block text-[12px] uppercase tracking-wider text-muted dark:text-gray-500 mb-2">
+                    <label className="block text-[12px] uppercase tracking-wider text-muted mb-2">
                       Item Type
                     </label>
                     <select
                       value={itemType}
                       onChange={(e) => setItemType(e.target.value)}
-                      className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-border dark:border-gray-700 rounded-lg text-[14px] text-ink dark:text-white focus:outline-none focus:border-gold"
+                      className="w-full px-4 py-3 bg-paper border-2 border-border rounded-lg text-[14px] text-ink focus:outline-none focus:border-gold"
                     >
                       {ITEM_TYPE_OPTIONS.map((option) => (
                         <option key={option.value} value={option.value}>
@@ -289,13 +289,13 @@ export function CreateAlertModal({
                   {/* Dealer */}
                   {dealers.length > 0 && (
                     <div>
-                      <label className="block text-[12px] uppercase tracking-wider text-muted dark:text-gray-500 mb-2">
+                      <label className="block text-[12px] uppercase tracking-wider text-muted mb-2">
                         Dealer
                       </label>
                       <select
                         value={dealerId}
                         onChange={(e) => setDealerId(e.target.value)}
-                        className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-border dark:border-gray-700 rounded-lg text-[14px] text-ink dark:text-white focus:outline-none focus:border-gold"
+                        className="w-full px-4 py-3 bg-paper border-2 border-border rounded-lg text-[14px] text-ink focus:outline-none focus:border-gold"
                       >
                         <option value="">Any dealer</option>
                         {dealers.map((dealer) => (
@@ -309,7 +309,7 @@ export function CreateAlertModal({
 
                   {/* Price Range */}
                   <div>
-                    <label className="block text-[12px] uppercase tracking-wider text-muted dark:text-gray-500 mb-2">
+                    <label className="block text-[12px] uppercase tracking-wider text-muted mb-2">
                       Price Range (JPY)
                     </label>
                     <div className="flex gap-3">
@@ -318,7 +318,7 @@ export function CreateAlertModal({
                         value={minPrice}
                         onChange={(e) => setMinPrice(e.target.value)}
                         placeholder="Min"
-                        className="flex-1 px-4 py-3 bg-white dark:bg-gray-800 border-2 border-border dark:border-gray-700 rounded-lg text-[14px] text-ink dark:text-white placeholder:text-muted/50 focus:outline-none focus:border-gold"
+                        className="flex-1 px-4 py-3 bg-paper border-2 border-border rounded-lg text-[14px] text-ink placeholder:text-muted/50 focus:outline-none focus:border-gold"
                       />
                       <span className="flex items-center text-muted">-</span>
                       <input
@@ -326,20 +326,20 @@ export function CreateAlertModal({
                         value={maxPrice}
                         onChange={(e) => setMaxPrice(e.target.value)}
                         placeholder="Max"
-                        className="flex-1 px-4 py-3 bg-white dark:bg-gray-800 border-2 border-border dark:border-gray-700 rounded-lg text-[14px] text-ink dark:text-white placeholder:text-muted/50 focus:outline-none focus:border-gold"
+                        className="flex-1 px-4 py-3 bg-paper border-2 border-border rounded-lg text-[14px] text-ink placeholder:text-muted/50 focus:outline-none focus:border-gold"
                       />
                     </div>
                   </div>
 
                   {/* Certification */}
                   <div>
-                    <label className="block text-[12px] uppercase tracking-wider text-muted dark:text-gray-500 mb-2">
+                    <label className="block text-[12px] uppercase tracking-wider text-muted mb-2">
                       Certification
                     </label>
                     <select
                       value={certType}
                       onChange={(e) => setCertType(e.target.value)}
-                      className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-border dark:border-gray-700 rounded-lg text-[14px] text-ink dark:text-white focus:outline-none focus:border-gold"
+                      className="w-full px-4 py-3 bg-paper border-2 border-border rounded-lg text-[14px] text-ink focus:outline-none focus:border-gold"
                     >
                       {CERT_OPTIONS.map((option) => (
                         <option key={option.value} value={option.value}>
@@ -352,7 +352,7 @@ export function CreateAlertModal({
               )}
 
               {/* Alert Type Description */}
-              <div className="bg-linen/50 dark:bg-gray-800/30 rounded-lg p-4">
+              <div className="bg-linen/50 rounded-lg p-4">
                 <div className="flex items-start gap-3">
                   <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gold/10 flex items-center justify-center">
                     {alertType === 'price_drop' && (
@@ -372,12 +372,12 @@ export function CreateAlertModal({
                     )}
                   </div>
                   <div>
-                    <p className="text-[13px] text-ink dark:text-white font-medium">
+                    <p className="text-[13px] text-ink font-medium">
                       {alertType === 'price_drop' && 'Price Drop Alert'}
                       {alertType === 'new_listing' && 'New Listing Alert'}
                       {alertType === 'back_in_stock' && 'Back in Stock Alert'}
                     </p>
-                    <p className="text-[12px] text-muted dark:text-gray-500 mt-0.5">
+                    <p className="text-[12px] text-muted mt-0.5">
                       {alertType === 'price_drop' && 'Get notified when the price drops'}
                       {alertType === 'new_listing' && 'Get notified when new items match your criteria'}
                       {alertType === 'back_in_stock' && 'Get notified when this item becomes available again'}
@@ -388,12 +388,12 @@ export function CreateAlertModal({
             </div>
 
             {/* Footer */}
-            <div className="px-5 py-4 border-t border-border dark:border-gray-800 bg-linen/50 dark:bg-gray-900">
+            <div className="px-5 py-4 border-t border-border bg-linen/50">
               <div className="flex gap-3">
                 <button
                   type="button"
                   onClick={onClose}
-                  className="flex-1 px-4 py-3 text-[14px] font-medium text-charcoal dark:text-gray-300 bg-white dark:bg-gray-800 border border-border dark:border-gray-700 rounded-lg hover:bg-linen dark:hover:bg-gray-700 transition-colors"
+                  className="flex-1 px-4 py-3 text-[14px] font-medium text-charcoal bg-paper border border-border rounded-lg hover:bg-hover transition-colors"
                 >
                   Cancel
                 </button>

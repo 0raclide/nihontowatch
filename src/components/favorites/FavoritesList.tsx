@@ -22,7 +22,7 @@ function LoadingSkeleton() {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
       {[...Array(8)].map((_, i) => (
-        <div key={i} className="bg-white theme-dark:bg-gray-800 border border-border theme-dark:border-gray-700">
+        <div key={i} className="bg-paper border border-border">
           <div className="aspect-[4/3] img-loading" />
           <div className="p-3 space-y-2">
             <div className="h-2.5 w-16 img-loading rounded" />
@@ -38,7 +38,7 @@ function LoadingSkeleton() {
 function EmptyState() {
   return (
     <div className="text-center py-16">
-      <div className="inline-block p-8 bg-white theme-dark:bg-gray-800 border border-border theme-dark:border-gray-700 max-w-md">
+      <div className="inline-block p-8 bg-paper border border-border max-w-md">
         <svg
           className="w-16 h-16 text-muted/30 mx-auto mb-6"
           fill="none"
@@ -52,16 +52,16 @@ function EmptyState() {
             d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
           />
         </svg>
-        <h3 className="font-serif text-xl text-charcoal theme-dark:text-gray-200 mb-3">
+        <h3 className="font-serif text-xl text-charcoal mb-3">
           No favorites yet
         </h3>
-        <p className="text-sm text-muted theme-dark:text-gray-400 mb-6">
+        <p className="text-sm text-muted mb-6">
           Browse the collection and click the heart icon on items you&apos;re interested in.
           They&apos;ll appear here for easy access.
         </p>
         <Link
           href="/"
-          className="inline-flex items-center gap-2 px-5 py-2.5 bg-ink theme-dark:bg-gold text-white theme-dark:text-ink text-sm font-medium hover:opacity-90 transition-opacity"
+          className="inline-flex items-center gap-2 px-5 py-2.5 bg-ink text-white text-sm font-medium hover:opacity-90 transition-opacity"
         >
           Browse Collection
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -83,7 +83,7 @@ export function FavoritesList({ currency, exchangeRates }: FavoritesListProps) {
   if (error) {
     return (
       <div className="text-center py-16">
-        <div className="inline-block p-6 bg-white theme-dark:bg-gray-800 border border-red-200 theme-dark:border-red-900">
+        <div className="inline-block p-6 bg-paper border border-red-200">
           <svg
             className="w-12 h-12 text-red-400 mx-auto mb-4"
             fill="none"
@@ -97,7 +97,7 @@ export function FavoritesList({ currency, exchangeRates }: FavoritesListProps) {
               d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
             />
           </svg>
-          <h3 className="font-serif text-lg text-charcoal theme-dark:text-gray-200 mb-2">
+          <h3 className="font-serif text-lg text-charcoal mb-2">
             Error loading favorites
           </h3>
           <p className="text-sm text-muted">
@@ -117,7 +117,7 @@ export function FavoritesList({ currency, exchangeRates }: FavoritesListProps) {
       {/* Results count */}
       <div className="flex items-center justify-between mb-6">
         <p className="text-sm text-muted">
-          <span className="text-ink theme-dark:text-white font-medium">{favorites.length}</span>{' '}
+          <span className="text-ink font-medium">{favorites.length}</span>{' '}
           {favorites.length === 1 ? 'item' : 'items'} saved
         </p>
       </div>
@@ -157,7 +157,7 @@ export function FavoritesListCompact({ currency }: Omit<FavoritesListProps, 'exc
     return (
       <div className="space-y-3">
         {[...Array(5)].map((_, i) => (
-          <div key={i} className="flex gap-4 p-3 bg-white theme-dark:bg-gray-800 border border-border theme-dark:border-gray-700">
+          <div key={i} className="flex gap-4 p-3 bg-paper border border-border">
             <div className="w-20 h-20 img-loading rounded" />
             <div className="flex-1 space-y-2">
               <div className="h-4 w-3/4 img-loading rounded" />
@@ -179,14 +179,14 @@ export function FavoritesListCompact({ currency }: Omit<FavoritesListProps, 'exc
       {favorites.map((item) => (
         <div
           key={item.favoriteId}
-          className="flex gap-4 p-3 bg-white theme-dark:bg-gray-800 border border-border theme-dark:border-gray-700 hover:border-gold/40 transition-colors"
+          className="flex gap-4 p-3 bg-paper border border-border hover:border-gold/40 transition-colors"
         >
           {/* Thumbnail */}
           <a
             href={item.listing.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-20 h-20 flex-shrink-0 overflow-hidden bg-linen theme-dark:bg-gray-900"
+            className="w-20 h-20 flex-shrink-0 overflow-hidden bg-linen"
           >
             {item.listing.images?.[0] ? (
               <img
@@ -211,13 +211,13 @@ export function FavoritesListCompact({ currency }: Omit<FavoritesListProps, 'exc
               rel="noopener noreferrer"
               className="block"
             >
-              <h3 className="text-sm font-medium text-ink theme-dark:text-white truncate hover:text-gold transition-colors">
+              <h3 className="text-sm font-medium text-ink truncate hover:text-gold transition-colors">
                 {item.listing.title}
               </h3>
               <p className="text-xs text-muted mt-1">
                 {item.listing.dealers?.name}
               </p>
-              <p className="text-sm font-medium text-ink theme-dark:text-white mt-2">
+              <p className="text-sm font-medium text-ink mt-2">
                 {item.listing.price_value
                   ? new Intl.NumberFormat('en-US', {
                       style: 'currency',

@@ -56,7 +56,7 @@ export function MobileSearchSheet() {
               name="q"
               disabled={isSearching}
               placeholder="Search swords, smiths, dealers..."
-              className="w-full pl-4 pr-12 py-3.5 bg-linen/50 dark:bg-gray-800/50 border border-transparent text-[15px] text-ink dark:text-white placeholder:text-muted/40 rounded-xl focus:outline-none focus:border-gold/40 focus:bg-white dark:focus:bg-gray-800 focus:shadow-[0_0_0_4px_rgba(181,142,78,0.1)] transition-all duration-200 disabled:opacity-60"
+              className="w-full pl-4 pr-12 py-3.5 bg-linen/50 border border-transparent text-[15px] text-ink placeholder:text-muted/40 rounded-xl focus:outline-none focus:border-gold/40 focus:bg-paper focus:shadow-[0_0_0_4px_rgba(181,142,78,0.1)] transition-all duration-200 disabled:opacity-60"
             />
             <button
               type="submit"
@@ -88,7 +88,7 @@ export function MobileSearchSheet() {
                 key={term}
                 onClick={() => handleQuickSearch(term)}
                 disabled={isSearching}
-                className="px-3.5 py-2.5 text-[13px] bg-linen dark:bg-gray-800 text-charcoal dark:text-gray-200 rounded-lg hover:bg-gold/10 hover:text-gold active:scale-95 transition-all duration-150 disabled:opacity-50 disabled:pointer-events-none"
+                className="px-3.5 py-2.5 text-[13px] bg-linen text-charcoal rounded-lg hover:bg-gold/10 hover:text-gold active:scale-95 transition-all duration-150 disabled:opacity-50 disabled:pointer-events-none"
               >
                 {term}
               </button>
@@ -97,7 +97,7 @@ export function MobileSearchSheet() {
         </div>
 
         {/* Search tips */}
-        <div className="mt-8 p-4 bg-linen/30 dark:bg-gray-800/30 rounded-xl">
+        <div className="mt-8 p-4 bg-linen/30 rounded-xl">
           <h4 className="text-[11px] uppercase tracking-[0.15em] text-muted mb-2">
             Search Tips
           </h4>
