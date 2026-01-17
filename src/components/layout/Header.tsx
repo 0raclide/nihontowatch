@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState, useEffect, useRef, useCallback, Suspense } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { ThemeSwitcher } from '@/components/ui/ThemeSwitcher';
 import { useMobileUI } from '@/contexts/MobileUIContext';
 import { MobileNavDrawer } from './MobileNavDrawer';
@@ -15,11 +15,42 @@ import { useActivityOptional } from '@/components/activity/ActivityProvider';
 function HeaderContent() {
   const { openSearch, openNavDrawer } = useMobileUI();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const currentQuery = searchParams.get('q') || '';
-  const { user, isLoading: authLoading } = useAuth();
+  const loginParam = searchParams.get('login');
+  const { user, isLoading: authLoading, isAdmin } = useAuth();
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
+  const [showAdminMenu, setShowAdminMenu] = useState(false);
+  const adminMenuRef = useRef<HTMLDivElement>(null);
   const activity = useActivityOptional();
+
+  // Stable callback for closing login modal (prevents re-render loops)
+  const closeLoginModal = useCallback(() => {
+    setShowLoginModal(false);
+  }, []);
+
+  // Handle login redirect from admin pages
+  useEffect(() => {
+    if (loginParam === 'admin' && !user && !authLoading) {
+      setShowLoginModal(true);
+      // Clean up URL
+      router.replace('/');
+    }
+  }, [loginParam, user, authLoading, router]);
+
+  // Close admin menu on outside click
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (adminMenuRef.current && !adminMenuRef.current.contains(event.target as Node)) {
+        setShowAdminMenu(false);
+      }
+    };
+    if (showAdminMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showAdminMenu]);
 
   const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -133,6 +164,82 @@ function HeaderContent() {
               </Link>
               <div className="h-3 w-px bg-border" />
               <ThemeSwitcher />
+              {/* Admin Quick Menu */}
+              {isAdmin && (
+                <>
+                  <div className="h-3 w-px bg-border" />
+                  <div ref={adminMenuRef} className="relative">
+                    <button
+                      onClick={() => setShowAdminMenu(!showAdminMenu)}
+                      className="flex items-center gap-1.5 text-[11px] uppercase tracking-[0.2em] text-gold hover:text-gold/80 transition-colors"
+                      aria-expanded={showAdminMenu}
+                      aria-haspopup="true"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                      </svg>
+                      Admin
+                      <svg className={`w-3 h-3 transition-transform ${showAdminMenu ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                    {showAdminMenu && (
+                      <div className="absolute right-0 mt-2 w-48 bg-cream rounded-lg shadow-lg border border-border py-1 z-50 animate-fadeIn">
+                        <Link
+                          href="/admin"
+                          onClick={() => setShowAdminMenu(false)}
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-muted hover:text-ink hover:bg-hover transition-colors"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                          </svg>
+                          Dashboard
+                        </Link>
+                        <Link
+                          href="/admin/users"
+                          onClick={() => setShowAdminMenu(false)}
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-muted hover:text-ink hover:bg-hover transition-colors"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                          </svg>
+                          Users
+                        </Link>
+                        <Link
+                          href="/admin/activity"
+                          onClick={() => setShowAdminMenu(false)}
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-muted hover:text-ink hover:bg-hover transition-colors"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                          </svg>
+                          Activity
+                        </Link>
+                        <Link
+                          href="/admin/analytics"
+                          onClick={() => setShowAdminMenu(false)}
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-muted hover:text-ink hover:bg-hover transition-colors"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                          Analytics
+                        </Link>
+                        <Link
+                          href="/admin/alerts"
+                          onClick={() => setShowAdminMenu(false)}
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-muted hover:text-ink hover:bg-hover transition-colors"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                          </svg>
+                          Alerts
+                        </Link>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
               <div className="h-3 w-px bg-border" />
               {/* Auth: Login button or User menu */}
               {authLoading ? (
@@ -160,7 +267,7 @@ function HeaderContent() {
       <MobileSearchSheet />
 
       {/* Login Modal */}
-      <LoginModal isOpen={showLoginModal} onClose={() => setShowLoginModal(false)} />
+      <LoginModal isOpen={showLoginModal} onClose={closeLoginModal} />
     </>
   );
 }

@@ -229,10 +229,33 @@ export function AuthProvider({ children }: AuthProviderProps) {
         // If successful, we need to set the session
         if (data.access_token) {
           console.log('[Auth] Setting session with access token');
-          await supabase.auth.setSession({
-            access_token: data.access_token,
-            refresh_token: data.refresh_token,
-          });
+          try {
+            const setSessionResult = await supabase.auth.setSession({
+              access_token: data.access_token,
+              refresh_token: data.refresh_token,
+            });
+            console.log('[Auth] setSession result:', {
+              error: setSessionResult.error,
+              hasUser: !!setSessionResult.data?.user,
+              hasSession: !!setSessionResult.data?.session,
+            });
+            if (setSessionResult.error) {
+              return {
+                error: {
+                  message: setSessionResult.error.message || 'Failed to set session',
+                  status: 500,
+                } as AuthError,
+              };
+            }
+          } catch (setSessionErr) {
+            console.error('[Auth] setSession threw error:', setSessionErr);
+            return {
+              error: {
+                message: setSessionErr instanceof Error ? setSessionErr.message : 'Failed to set session',
+                status: 500,
+              } as AuthError,
+            };
+          }
           console.log('[Auth] Session set successfully');
         } else {
           console.log('[Auth] No access_token in response');
