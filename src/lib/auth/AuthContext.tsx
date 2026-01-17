@@ -162,6 +162,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // Track if we've already initialized to prevent double-init from INITIAL_SESSION + initAuth
   const hasInitializedRef = useRef(false);
+  // Track if INITIAL_SESSION has fired - SIGNED_IN before INITIAL_SESSION means cookies aren't ready
+  const hasReceivedInitialSessionRef = useRef(false);
 
   // Refresh profile (for manual refresh)
   const refreshProfile = useCallback(async () => {
@@ -246,7 +248,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       console.log('[Auth] onAuthStateChange:', event);
 
       // Handle INITIAL_SESSION - this fires immediately with cached session
+      // This is the most reliable event for initial auth state
       if (event === 'INITIAL_SESSION') {
+        hasReceivedInitialSessionRef.current = true;
         if (session?.user) {
           console.log('[Auth] INITIAL_SESSION with user, fetching profile...');
           const profile = await fetchProfileWithTimeout(supabase, session.user.id);
@@ -281,7 +285,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
 
       if (event === 'SIGNED_IN' && session?.user) {
+        // If INITIAL_SESSION hasn't fired yet, wait for it instead
+        // SIGNED_IN before INITIAL_SESSION means cookies might not be ready
+        if (!hasReceivedInitialSessionRef.current) {
+          console.log('[Auth] SIGNED_IN received before INITIAL_SESSION, deferring to INITIAL_SESSION');
+          return;
+        }
+
         // Only process if not already initialized (avoid duplicate processing)
+        if (hasInitializedRef.current) {
+          console.log('[Auth] Already initialized, skipping SIGNED_IN');
+          return;
+        }
+
         console.log('[Auth] SIGNED_IN event, fetching profile...');
         const profile = await fetchProfileWithTimeout(supabase, session.user.id);
         if (isMounted) {
