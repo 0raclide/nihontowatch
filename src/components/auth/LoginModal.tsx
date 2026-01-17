@@ -32,9 +32,11 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const emailInputRef = useRef<HTMLInputElement>(null);
   const otpInputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const emailRef = useRef(email); // Keep email in ref for callbacks
+  const isLoadingRef = useRef(isLoading); // Prevent double-submit
 
-  // Keep emailRef in sync with email state
+  // Keep refs in sync with state
   emailRef.current = email;
+  isLoadingRef.current = isLoading;
 
   useBodyScrollLock(isOpen);
 
@@ -82,24 +84,80 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
     setError(null);
     setIsLoading(true);
 
+    console.log('[LoginModal] handleEmailSubmit called with email:', email);
+
     try {
+      console.log('[LoginModal] Calling signInWithEmail...');
       const { error } = await signInWithEmail(email);
+      console.log('[LoginModal] signInWithEmail returned, error:', error);
 
       if (error) {
         setError(error.message);
       } else {
+        console.log('[LoginModal] Email sent successfully, moving to OTP step');
         setSuccessMessage('Code sent! Check your email.');
         setTimeout(() => {
           setSuccessMessage(null);
           setStep('otp');
         }, 1000);
       }
-    } catch {
+    } catch (err) {
+      console.error('[LoginModal] handleEmailSubmit caught error:', err);
       setError('An unexpected error occurred. Please try again.');
     } finally {
+      console.log('[LoginModal] Email step: setting isLoading to false');
       setIsLoading(false);
     }
   };
+
+  // Handle OTP submission - defined first so other handlers can reference it
+  // Uses refs to avoid stale closure issues when called from memoized callbacks
+  const handleOtpSubmit = useCallback(
+    async (code: string) => {
+      // Prevent double-submit
+      if (isLoadingRef.current) {
+        console.log('[LoginModal] handleOtpSubmit skipped - already loading');
+        return;
+      }
+
+      const currentEmail = emailRef.current;
+
+      console.log('[LoginModal] handleOtpSubmit called with code length:', code.length, 'email:', currentEmail);
+
+      if (code.length !== 6) {
+        setError('Please enter the complete 6-digit code.');
+        return;
+      }
+
+      setError(null);
+      setIsLoading(true);
+
+      try {
+        console.log('[LoginModal] Calling verifyOtp...');
+        const { error } = await verifyOtp(currentEmail, code);
+        console.log('[LoginModal] verifyOtp returned, error:', error);
+
+        if (error) {
+          setError(error.message);
+          setOtp(['', '', '', '', '', '']);
+          otpInputRefs.current[0]?.focus();
+        } else {
+          console.log('[LoginModal] Login successful, closing modal in 500ms');
+          setSuccessMessage('Login successful!');
+          setTimeout(() => {
+            onClose();
+          }, 500);
+        }
+      } catch (err) {
+        console.error('[LoginModal] handleOtpSubmit caught error:', err);
+        setError('An unexpected error occurred. Please try again.');
+      } finally {
+        console.log('[LoginModal] Setting isLoading to false');
+        setIsLoading(false);
+      }
+    },
+    [verifyOtp, onClose]
+  );
 
   // Handle OTP input change
   const handleOtpChange = useCallback(
@@ -122,7 +180,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
         handleOtpSubmit(newOtp.join(''));
       }
     },
-    [otp]
+    [otp, handleOtpSubmit]
   );
 
   // Handle OTP paste
@@ -147,7 +205,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
         handleOtpSubmit(pastedData);
       }
     },
-    [otp]
+    [otp, handleOtpSubmit]
   );
 
   // Handle OTP key down (backspace)
@@ -160,45 +218,14 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
     [otp]
   );
 
-  // Handle OTP submission
-  const handleOtpSubmit = async (code?: string) => {
-    const otpCode = code || otp.join('');
-    // Use ref to get current email value (avoids stale closure in callbacks)
-    const currentEmail = emailRef.current;
-
-    if (otpCode.length !== 6) {
-      setError('Please enter the complete 6-digit code.');
-      return;
-    }
-
-    setError(null);
-    setIsLoading(true);
-
-    try {
-      const { error } = await verifyOtp(currentEmail, otpCode);
-
-      if (error) {
-        setError(error.message);
-        setOtp(['', '', '', '', '', '']);
-        otpInputRefs.current[0]?.focus();
-      } else {
-        setSuccessMessage('Login successful!');
-        setTimeout(() => {
-          onClose();
-        }, 500);
-      }
-    } catch {
-      setError('An unexpected error occurred. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   // Handle form submission for OTP step
-  const handleOtpFormSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    handleOtpSubmit();
-  };
+  const handleOtpFormSubmit = useCallback(
+    (e: React.FormEvent) => {
+      e.preventDefault();
+      handleOtpSubmit(otp.join(''));
+    },
+    [otp, handleOtpSubmit]
+  );
 
   if (!isOpen) return null;
 

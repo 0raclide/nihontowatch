@@ -89,7 +89,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setState((prev) => ({
       ...prev,
       profile,
-      isAdmin: profile?.is_admin ?? false,
+      isAdmin: profile?.role === 'admin',
     }));
   }, [state.user, fetchProfile]);
 
@@ -108,7 +108,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
             profile,
             session,
             isLoading: false,
-            isAdmin: profile?.is_admin ?? false,
+            isAdmin: profile?.role === 'admin',
           });
         } else {
           setState({
@@ -138,7 +138,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           profile,
           session,
           isLoading: false,
-          isAdmin: profile?.is_admin ?? false,
+          isAdmin: profile?.role === 'admin',
         });
       } else if (event === 'SIGNED_OUT') {
         setState({
@@ -165,14 +165,20 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Sign in with email (sends magic code)
   const signInWithEmail = useCallback(
     async (email: string): Promise<{ error: AuthError | null }> => {
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          shouldCreateUser: true,
-        },
-      });
-
-      return { error };
+      console.log('[Auth] signInWithEmail called with:', email);
+      try {
+        const { error } = await supabase.auth.signInWithOtp({
+          email,
+          options: {
+            shouldCreateUser: true,
+          },
+        });
+        console.log('[Auth] signInWithOtp returned, error:', error);
+        return { error };
+      } catch (err) {
+        console.error('[Auth] signInWithEmail caught error:', err);
+        throw err;
+      }
     },
     [supabase]
   );
@@ -189,7 +195,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
       const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
+      console.log('[Auth] verifyOtp called with email:', cleanEmail, 'token length:', cleanToken.length);
+
       try {
+        console.log('[Auth] Making fetch request to:', `${supabaseUrl}/auth/v1/verify`);
         const response = await fetch(`${supabaseUrl}/auth/v1/verify`, {
           method: 'POST',
           headers: {
@@ -203,9 +212,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
           }),
         });
 
+        console.log('[Auth] Fetch response status:', response.status);
         const data = await response.json();
+        console.log('[Auth] Response data:', { hasAccessToken: !!data.access_token, error: data.error || data.error_description });
 
         if (!response.ok) {
+          console.log('[Auth] Response not OK, returning error');
           return {
             error: {
               message: data.error_description || data.msg || data.error || 'Verification failed',
@@ -216,14 +228,20 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
         // If successful, we need to set the session
         if (data.access_token) {
+          console.log('[Auth] Setting session with access token');
           await supabase.auth.setSession({
             access_token: data.access_token,
             refresh_token: data.refresh_token,
           });
+          console.log('[Auth] Session set successfully');
+        } else {
+          console.log('[Auth] No access_token in response');
         }
 
+        console.log('[Auth] verifyOtp returning success');
         return { error: null };
       } catch (err) {
+        console.error('[Auth] verifyOtp caught error:', err);
         return {
           error: {
             message: err instanceof Error ? err.message : 'Network error',
