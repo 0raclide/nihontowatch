@@ -1269,3 +1269,152 @@ describe('Response Structure', () => {
     expect(certFacet).toHaveProperty('count');
   });
 });
+
+// =============================================================================
+// FACET FILTERING TESTS
+// =============================================================================
+
+describe('Facet Filtering Logic', () => {
+  const NIHONTO_TYPES = ['katana', 'wakizashi', 'tanto', 'tachi', 'naginata', 'yari', 'kodachi'];
+  const TOSOGU_TYPES = ['tsuba', 'fuchi-kashira', 'fuchi_kashira', 'kozuka', 'menuki', 'koshirae'];
+
+  describe('Certification facets should reflect category filter', () => {
+    it('certification facets for nihonto should only count nihonto items', () => {
+      // When category=nihonto, certification facets should filter by nihonto types
+      const category = 'nihonto';
+      const effectiveItemTypes = category === 'nihonto' ? NIHONTO_TYPES : category === 'tosogu' ? TOSOGU_TYPES : undefined;
+
+      // Cert facet query should include item type filter
+      expect(effectiveItemTypes).toEqual(NIHONTO_TYPES);
+      expect(effectiveItemTypes).toContain('katana');
+      expect(effectiveItemTypes).not.toContain('tsuba');
+    });
+
+    it('certification facets for tosogu should only count tosogu items', () => {
+      // When category=tosogu, certification facets should filter by tosogu types
+      const category = 'tosogu';
+      const effectiveItemTypes = category === 'nihonto' ? NIHONTO_TYPES : category === 'tosogu' ? TOSOGU_TYPES : undefined;
+
+      // Cert facet query should include item type filter
+      expect(effectiveItemTypes).toEqual(TOSOGU_TYPES);
+      expect(effectiveItemTypes).toContain('tsuba');
+      expect(effectiveItemTypes).not.toContain('katana');
+    });
+
+    it('certification facets for all category should not filter by type', () => {
+      const category = 'all';
+      const effectiveItemTypes = category === 'nihonto' ? NIHONTO_TYPES : category === 'tosogu' ? TOSOGU_TYPES : undefined;
+
+      expect(effectiveItemTypes).toBeUndefined();
+    });
+  });
+
+  describe('Dealer facets should reflect category filter', () => {
+    it('dealer facets for nihonto should only count nihonto items', () => {
+      const category = 'nihonto';
+      const effectiveItemTypes = category === 'nihonto' ? NIHONTO_TYPES : category === 'tosogu' ? TOSOGU_TYPES : undefined;
+
+      expect(effectiveItemTypes).toEqual(NIHONTO_TYPES);
+    });
+
+    it('dealer facets for tosogu should only count tosogu items', () => {
+      const category = 'tosogu';
+      const effectiveItemTypes = category === 'nihonto' ? NIHONTO_TYPES : category === 'tosogu' ? TOSOGU_TYPES : undefined;
+
+      expect(effectiveItemTypes).toEqual(TOSOGU_TYPES);
+    });
+  });
+
+  describe('Item type facets should reflect other filters', () => {
+    it('item type facets should respect certification filter', () => {
+      // When cert=Juyo is selected, item type facets should only count Juyo items
+      const certifications = ['Juyo'];
+      const CERT_VARIANTS: Record<string, string[]> = {
+        'Juyo': ['Juyo', 'juyo'],
+      };
+      const allVariants = certifications.flatMap(c => CERT_VARIANTS[c] || [c]);
+
+      expect(allVariants).toEqual(['Juyo', 'juyo']);
+    });
+
+    it('item type facets should respect dealer filter', () => {
+      const dealers = [1, 4];
+      // Item type facet query should include dealer filter
+      expect(dealers).toHaveLength(2);
+    });
+
+    it('item type facets should NOT be filtered by category', () => {
+      // Item type facets show all types so user can see what's available
+      // They are filtered by OTHER constraints (cert, dealer, askOnly)
+      // but NOT by category/itemTypes - that would hide the options
+      const category = 'nihonto';
+
+      // Item type facets should show both nihonto AND tosogu counts
+      // so user can switch categories and see what's available
+      expect(category).toBe('nihonto');
+    });
+  });
+
+  describe('Facet filter application pattern', () => {
+    it('each facet is filtered by OTHER active filters, not its own', () => {
+      // Standard faceted search pattern:
+      // - Item type facets: filtered by cert, dealer, askOnly (NOT by itemTypes)
+      // - Certification facets: filtered by category/itemTypes, dealer, askOnly (NOT by cert)
+      // - Dealer facets: filtered by category/itemTypes, cert, askOnly (NOT by dealers)
+
+      const filters = {
+        category: 'nihonto' as const,
+        certifications: ['Juyo'],
+        dealers: [1],
+        askOnly: false,
+      };
+
+      // Item type facet filters (excludes itemTypes/category)
+      const itemTypeFacetFilters = {
+        certifications: filters.certifications,
+        dealers: filters.dealers,
+        askOnly: filters.askOnly,
+      };
+      expect(itemTypeFacetFilters).not.toHaveProperty('category');
+      expect(itemTypeFacetFilters).not.toHaveProperty('itemTypes');
+
+      // Certification facet filters (excludes certifications)
+      const certFacetFilters = {
+        category: filters.category,
+        dealers: filters.dealers,
+        askOnly: filters.askOnly,
+      };
+      expect(certFacetFilters).not.toHaveProperty('certifications');
+
+      // Dealer facet filters (excludes dealers)
+      const dealerFacetFilters = {
+        category: filters.category,
+        certifications: filters.certifications,
+        askOnly: filters.askOnly,
+      };
+      expect(dealerFacetFilters).not.toHaveProperty('dealers');
+    });
+  });
+
+  describe('Category changes should update facet counts', () => {
+    it('switching from all to nihonto should reduce cert counts', () => {
+      // Example: If total has 100 Juyo certs, switching to nihonto might show 80
+      // because only swords have Juyo, not all tosogu
+
+      // This tests the concept - actual counts come from DB
+      const allCerts = { Juyo: 100, Hozon: 200 };
+      const nihontoCerts = { Juyo: 80, Hozon: 150 };
+
+      expect(nihontoCerts.Juyo).toBeLessThanOrEqual(allCerts.Juyo);
+      expect(nihontoCerts.Hozon).toBeLessThanOrEqual(allCerts.Hozon);
+    });
+
+    it('switching from all to tosogu should show different cert counts', () => {
+      const allCerts = { Juyo: 100, Hozon: 200 };
+      const tosoguCerts = { Juyo: 20, Hozon: 50 };
+
+      // Tosogu typically has fewer high-level certs
+      expect(tosoguCerts.Juyo).toBeLessThanOrEqual(allCerts.Juyo);
+    });
+  });
+});

@@ -4,20 +4,8 @@ import { normalizeSearchText, expandSearchAliases } from '@/lib/search';
 import { parseNumericFilters } from '@/lib/search/numericFilters';
 import { CACHE } from '@/lib/constants';
 
-// In-memory cache for facet data (reduces DB queries)
-interface FacetCache {
-  data: {
-    itemTypes: Array<{ value: string; count: number }>;
-    certifications: Array<{ value: string; count: number }>;
-    dealers: Array<{ id: number; name: string; count: number }>;
-  } | null;
-  timestamp: number;
-  tab: string;
-}
-
-// Cache version: 2026-01-17-v2 (bump to invalidate)
-let facetCache: FacetCache = { data: null, timestamp: 0, tab: '' };
-const FACET_CACHE_TTL = 60000; // 60 seconds in-memory cache
+// Facets are computed fresh for each request to reflect current filters
+// No caching - facet counts must accurately reflect user's filter selections
 
 interface BrowseParams {
   tab: 'available' | 'sold';
@@ -254,66 +242,33 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // Get facet counts - use in-memory cache to reduce DB queries
-    // Facets don't change frequently, so we can cache them for 60 seconds
-    let typesFacet, certsFacet, dealersFacet;
-    const now = Date.now();
-
-    if (
-      facetCache.data &&
-      facetCache.tab === params.tab &&
-      now - facetCache.timestamp < FACET_CACHE_TTL
-    ) {
-      // Use cached facets
-      typesFacet = facetCache.data.itemTypes;
-      certsFacet = facetCache.data.certifications;
-      dealersFacet = facetCache.data.dealers;
-    } else {
-      // Fetch fresh facets using SQL aggregation (avoids row limit issues)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: facetData, error: facetError } = await (supabase.rpc as any)('get_listing_facets', {
-        p_tab: params.tab,
-        p_item_types: params.itemTypes || null,
-        p_certifications: params.certifications || null,
-        p_dealers: params.dealers || null,
-        p_query: params.query || null,
-        p_ask_only: params.askOnly || false
-      });
-
-      // Fallback to JS-based facet computation if RPC doesn't exist
-      if (facetError?.code === 'PGRST202') {
-        // RPC not found - use fallback functions
-        [typesFacet, certsFacet, dealersFacet] = await Promise.all([
-          getItemTypeFacets(supabase, statusFilter),
-          getCertificationFacets(supabase, statusFilter),
-          getDealerFacets(supabase, statusFilter),
-        ]);
-      } else if (facetError) {
-        console.error('Facet RPC error:', facetError);
-        // Use fallback on other errors too
-        [typesFacet, certsFacet, dealersFacet] = await Promise.all([
-          getItemTypeFacets(supabase, statusFilter),
-          getCertificationFacets(supabase, statusFilter),
-          getDealerFacets(supabase, statusFilter),
-        ]);
-      } else {
-        // Use RPC results
-        typesFacet = facetData?.itemTypes || [];
-        certsFacet = facetData?.certifications || [];
-        dealersFacet = facetData?.dealers || [];
-      }
-
-      // Update cache
-      facetCache = {
-        data: {
-          itemTypes: typesFacet,
-          certifications: certsFacet,
-          dealers: dealersFacet,
-        },
-        timestamp: now,
-        tab: params.tab,
-      };
-    }
+    // Get facet counts - computed fresh to reflect current filter state
+    // Each facet is filtered by all OTHER active filters (standard faceted search pattern)
+    const [typesFacet, certsFacet, dealersFacet] = await Promise.all([
+      // Item type facets: filtered by certifications, dealers, askOnly (NOT by category/itemTypes)
+      getItemTypeFacets(supabase, statusFilter, {
+        certifications: params.certifications,
+        dealers: params.dealers,
+        askOnly: params.askOnly,
+        query: params.query,
+      }),
+      // Certification facets: filtered by category/itemTypes, dealers, askOnly
+      getCertificationFacets(supabase, statusFilter, {
+        category: params.category,
+        itemTypes: params.itemTypes,
+        dealers: params.dealers,
+        askOnly: params.askOnly,
+        query: params.query,
+      }),
+      // Dealer facets: filtered by category/itemTypes, certifications, askOnly
+      getDealerFacets(supabase, statusFilter, {
+        category: params.category,
+        itemTypes: params.itemTypes,
+        certifications: params.certifications,
+        askOnly: params.askOnly,
+        query: params.query,
+      }),
+    ]);
 
     // Get the most recent scrape timestamp for freshness indicator
     const { data: freshnessData } = await supabase
@@ -356,42 +311,92 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// Facet functions - use same status filter as main query for concordance
+// Facet filter options
+interface FacetFilterOptions {
+  category?: 'all' | 'nihonto' | 'tosogu';
+  itemTypes?: string[];
+  certifications?: string[];
+  dealers?: number[];
+  askOnly?: boolean;
+  query?: string;
+}
+
+// Helper to apply common filters to a query
+function applyFacetFilters(
+  query: ReturnType<Awaited<ReturnType<typeof createClient>>['from']>['select'],
+  options: FacetFilterOptions
+) {
+  let q = query;
+
+  // Category/item type filter
+  if (options.category === 'nihonto') {
+    const typeConditions = NIHONTO_TYPES.map(t => `item_type.ilike.${t}`).join(',');
+    q = q.or(typeConditions);
+  } else if (options.category === 'tosogu') {
+    const typeConditions = TOSOGU_TYPES.map(t => `item_type.ilike.${t}`).join(',');
+    q = q.or(typeConditions);
+  } else if (options.itemTypes?.length) {
+    const typeConditions = options.itemTypes.map(t => `item_type.ilike.${t}`).join(',');
+    q = q.or(typeConditions);
+  }
+
+  // Certification filter
+  if (options.certifications?.length) {
+    const allVariants = options.certifications.flatMap(c => CERT_VARIANTS[c] || [c]);
+    q = q.in('cert_type', allVariants);
+  }
+
+  // Dealer filter
+  if (options.dealers?.length) {
+    q = q.in('dealer_id', options.dealers);
+  }
+
+  // Ask only (price on request)
+  if (options.askOnly) {
+    q = q.is('price_value', null);
+  }
+
+  return q;
+}
+
+// Facet functions - apply filters to reflect user's current selection
 
 async function getItemTypeFacets(
   supabase: Awaited<ReturnType<typeof createClient>>,
-  statusFilter: string
+  statusFilter: string,
+  options: FacetFilterOptions
 ) {
-  // Paginate through ALL results since Supabase has a max_rows limit (typically 1000)
-  const PAGE_SIZE = 1000;
-  const counts: Record<string, number> = {};
-  let offset = 0;
-  let hasMore = true;
+  // Build query with filters (excluding category/itemTypes since we're counting those)
+  let query = supabase
+    .from('listings')
+    .select('item_type')
+    .or(statusFilter);
 
-  while (hasMore) {
-    const { data } = await supabase
-      .from('listings')
-      .select('item_type')
-      .or(statusFilter)
-      .range(offset, offset + PAGE_SIZE - 1);
-
-    if (!data || data.length === 0) {
-      hasMore = false;
-      break;
-    }
-
-    // Aggregate this page
-    (data as Array<{ item_type: string | null }>).forEach(row => {
-      const type = row.item_type;
-      if (type) {
-        const normalized = type.toLowerCase().replace('fuchi_kashira', 'fuchi-kashira');
-        counts[normalized] = (counts[normalized] || 0) + 1;
-      }
-    });
-
-    offset += PAGE_SIZE;
-    hasMore = data.length === PAGE_SIZE;
+  // Apply certification, dealer, askOnly filters
+  if (options.certifications?.length) {
+    const allVariants = options.certifications.flatMap(c => CERT_VARIANTS[c] || [c]);
+    query = query.in('cert_type', allVariants);
   }
+  if (options.dealers?.length) {
+    query = query.in('dealer_id', options.dealers);
+  }
+  if (options.askOnly) {
+    query = query.is('price_value', null);
+  }
+
+  // Fetch with high limit
+  const { data } = await query.limit(50000);
+  if (!data) return [];
+
+  // Aggregate counts
+  const counts: Record<string, number> = {};
+  (data as Array<{ item_type: string | null }>).forEach(row => {
+    const type = row.item_type;
+    if (type) {
+      const normalized = type.toLowerCase().replace('fuchi_kashira', 'fuchi-kashira');
+      counts[normalized] = (counts[normalized] || 0) + 1;
+    }
+  });
 
   return Object.entries(counts)
     .map(([value, count]) => ({ value, count }))
@@ -400,61 +405,42 @@ async function getItemTypeFacets(
 
 async function getCertificationFacets(
   supabase: Awaited<ReturnType<typeof createClient>>,
-  statusFilter: string
+  statusFilter: string,
+  options: FacetFilterOptions
 ) {
-  // Use SQL aggregation to count ALL matching items efficiently
-  // Supabase defaults to 1000 rows which causes incorrect facet counts
-  const isAvailable = statusFilter === STATUS_AVAILABLE;
+  // Build query with filters (excluding certifications since we're counting those)
+  let query = supabase
+    .from('listings')
+    .select('cert_type')
+    .or(statusFilter);
 
-  // Build SQL for status filter - same logic as main query
-  const statusCondition = isAvailable
-    ? "(status = 'available' OR is_available = true)"
-    : "(status = 'sold' OR status = 'presumed_sold' OR is_sold = true)";
+  // Apply category/itemType filter
+  const effectiveItemTypes = options.itemTypes?.length
+    ? options.itemTypes
+    : options.category === 'nihonto'
+      ? NIHONTO_TYPES
+      : options.category === 'tosogu'
+        ? TOSOGU_TYPES
+        : undefined;
 
-  // Use RPC to run aggregation query
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase.rpc as any)('get_cert_facets', {
-    status_condition: statusCondition
-  });
-
-  // Fallback to regular query if RPC doesn't exist
-  if (error?.code === 'PGRST202') {
-    // RPC not found - use full data fetch with high limit
-    const { data: fullData } = await supabase
-      .from('listings')
-      .select('cert_type')
-      .or(statusFilter)
-      .limit(50000);
-
-    if (!fullData) return [];
-
-    const normalizeCert = (cert: string): string => {
-      const lower = cert.toLowerCase();
-      if (lower === 'juyo') return 'Juyo';
-      if (['tokuju', 'tokubetsu juyo', 'tokubetsu_juyo'].includes(lower)) return 'Tokuju';
-      if (['tokuhozon', 'tokubetsu hozon', 'tokubetsu_hozon'].includes(lower)) return 'TokuHozon';
-      if (lower === 'hozon') return 'Hozon';
-      if (['tokukicho', 'tokubetsu kicho', 'tokubetsu_kicho'].includes(lower)) return 'TokuKicho';
-      return cert;
-    };
-
-    const counts: Record<string, number> = {};
-    fullData.forEach((row: { cert_type: string | null }) => {
-      const cert = row.cert_type;
-      if (cert && cert !== 'null') {
-        const normalized = normalizeCert(cert);
-        counts[normalized] = (counts[normalized] || 0) + 1;
-      }
-    });
-
-    return Object.entries(counts)
-      .map(([value, count]) => ({ value, count }))
-      .sort((a, b) => b.count - a.count);
+  if (effectiveItemTypes?.length) {
+    const typeConditions = effectiveItemTypes.map(t => `item_type.ilike.${t}`).join(',');
+    query = query.or(typeConditions);
   }
 
+  // Apply dealer, askOnly filters
+  if (options.dealers?.length) {
+    query = query.in('dealer_id', options.dealers);
+  }
+  if (options.askOnly) {
+    query = query.is('price_value', null);
+  }
+
+  // Fetch with high limit
+  const { data } = await query.limit(50000);
   if (!data) return [];
 
-  // Normalize RPC results
+  // Normalize and aggregate
   const normalizeCert = (cert: string): string => {
     const lower = cert.toLowerCase();
     if (lower === 'juyo') return 'Juyo';
@@ -466,10 +452,11 @@ async function getCertificationFacets(
   };
 
   const counts: Record<string, number> = {};
-  (data as Array<{ cert_type: string; count: number }>).forEach(row => {
-    if (row.cert_type && row.cert_type !== 'null') {
-      const normalized = normalizeCert(row.cert_type);
-      counts[normalized] = (counts[normalized] || 0) + row.count;
+  (data as Array<{ cert_type: string | null }>).forEach(row => {
+    const cert = row.cert_type;
+    if (cert && cert !== 'null') {
+      const normalized = normalizeCert(cert);
+      counts[normalized] = (counts[normalized] || 0) + 1;
     }
   });
 
@@ -480,19 +467,45 @@ async function getCertificationFacets(
 
 async function getDealerFacets(
   supabase: Awaited<ReturnType<typeof createClient>>,
-  statusFilter: string
+  statusFilter: string,
+  options: FacetFilterOptions
 ) {
-  // Use high limit to get ALL matching items (Supabase defaults to 1000)
-  const { data } = await supabase
+  // Build query with filters (excluding dealers since we're counting those)
+  let query = supabase
     .from('listings')
     .select('dealer_id, dealers!inner(name)')
-    .or(statusFilter)
-    .limit(50000);
+    .or(statusFilter);
 
+  // Apply category/itemType filter
+  const effectiveItemTypes = options.itemTypes?.length
+    ? options.itemTypes
+    : options.category === 'nihonto'
+      ? NIHONTO_TYPES
+      : options.category === 'tosogu'
+        ? TOSOGU_TYPES
+        : undefined;
+
+  if (effectiveItemTypes?.length) {
+    const typeConditions = effectiveItemTypes.map(t => `item_type.ilike.${t}`).join(',');
+    query = query.or(typeConditions);
+  }
+
+  // Apply certification, askOnly filters
+  if (options.certifications?.length) {
+    const allVariants = options.certifications.flatMap(c => CERT_VARIANTS[c] || [c]);
+    query = query.in('cert_type', allVariants);
+  }
+  if (options.askOnly) {
+    query = query.is('price_value', null);
+  }
+
+  // Fetch with high limit
+  const { data } = await query.limit(50000);
   if (!data) return [];
 
+  // Aggregate counts
   const counts: Record<string, { id: number; name: string; count: number }> = {};
-  data.forEach((row: { dealer_id: number; dealers: { name: string } }) => {
+  (data as Array<{ dealer_id: number; dealers: { name: string } }>).forEach(row => {
     const id = row.dealer_id;
     const name = row.dealers?.name || 'Unknown';
     if (!counts[id]) {
