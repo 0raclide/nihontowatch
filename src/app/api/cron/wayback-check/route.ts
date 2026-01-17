@@ -12,7 +12,8 @@ import { checkWaybackArchive } from '@/lib/wayback';
 import { NextRequest, NextResponse } from 'next/server';
 
 // Process this many listings per cron run
-const BATCH_SIZE = 5;
+// Reduced from 5 to 3 to stay within Vercel's 5-min timeout
+const BATCH_SIZE = 3;
 
 // Minimum interval between requests (ms) - 60 seconds for 1/min rate
 const REQUEST_INTERVAL_MS = 60000;
