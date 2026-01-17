@@ -177,30 +177,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
     [supabase]
   );
 
-  // Verify OTP
+  // Verify OTP - uses direct API call to avoid Supabase client library issues
   const verifyOtp = useCallback(
     async (
       email: string,
       token: string
     ): Promise<{ error: AuthError | null }> => {
-      console.log('[OTP Debug] verifyOtp called with email:', email, 'token length:', token.length);
-
-      // Sanitize inputs
       const cleanEmail = email.trim().toLowerCase();
       const cleanToken = token.trim();
 
-      // Use direct API call to avoid any client-side interference
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
       const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-      // Debug: Log what we're sending
-      const requestBody = {
-        email: cleanEmail,
-        token: cleanToken,
-        type: 'email',
-      };
-      console.log('[OTP Debug] URL:', `${supabaseUrl}/auth/v1/verify`);
-      console.log('[OTP Debug] Request body:', JSON.stringify(requestBody));
 
       try {
         const response = await fetch(`${supabaseUrl}/auth/v1/verify`, {
@@ -209,12 +196,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
             'Content-Type': 'application/json',
             'apikey': supabaseKey || '',
           },
-          body: JSON.stringify(requestBody),
+          body: JSON.stringify({
+            email: cleanEmail,
+            token: cleanToken,
+            type: 'email',
+          }),
         });
 
         const data = await response.json();
-        console.log('[OTP Debug] Response status:', response.status);
-        console.log('[OTP Debug] Response data:', JSON.stringify(data));
 
         if (!response.ok) {
           return {

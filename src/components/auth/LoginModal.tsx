@@ -165,7 +165,6 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
     const otpCode = code || otp.join('');
     // Use ref to get current email value (avoids stale closure in callbacks)
     const currentEmail = emailRef.current;
-    console.log('[LoginModal] handleOtpSubmit called, code length:', otpCode.length, 'email:', currentEmail);
 
     if (otpCode.length !== 6) {
       setError('Please enter the complete 6-digit code.');
@@ -175,13 +174,10 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
     setError(null);
     setIsLoading(true);
 
-    console.log('[LoginModal] Calling verifyOtp with email:', currentEmail);
     try {
       const { error } = await verifyOtp(currentEmail, otpCode);
-      console.log('[LoginModal] verifyOtp returned, error:', error);
 
       if (error) {
-        console.log('[LoginModal] Error message:', error.message);
         setError(error.message);
         setOtp(['', '', '', '', '', '']);
         otpInputRefs.current[0]?.focus();

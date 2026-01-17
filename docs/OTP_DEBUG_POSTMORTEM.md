@@ -199,10 +199,109 @@ The user's email might have some corrupted state. Try:
 
 ---
 
-## Current State
+## Resolution (2026-01-17)
 
-The latest commit (`619dbef`) includes:
-1. Direct fetch call to Supabase `/auth/v1/verify` endpoint
-2. Bypasses the Supabase client library entirely
-3. If this works, the issue is in the client library
-4. If this fails with the same error, the issue is in Supabase project configuration
+### Root Cause: React Stale Closure Bug
+
+The error message `"Only an email address or phone number should be provided on verify"` was a **red herring**. The actual issue was a **React stale closure bug** in the LoginModal component.
+
+#### The Bug
+
+```typescript
+// handleOtpChange had [otp] as its only dependency
+const handleOtpChange = useCallback(
+  (index: number, value: string) => {
+    // ...
+    if (digit && index === 5 && newOtp.every((d) => d)) {
+      handleOtpSubmit(newOtp.join('')); // Called handleOtpSubmit
+    }
+  },
+  [otp]  // Missing email dependency!
+);
+
+// handleOtpSubmit used email from component state
+const handleOtpSubmit = async (code?: string) => {
+  // ...
+  const { error } = await verifyOtp(email, otpCode); // email was EMPTY here
+};
+```
+
+When `handleOtpChange` was created, it captured a reference to `handleOtpSubmit`. But `handleOtpSubmit` captured the `email` state at the time it was defined - which was an **empty string** before the user entered their email.
+
+When the user typed the 6th digit and auto-submit triggered, it called the stale `handleOtpSubmit` with `email = ""`.
+
+#### Debug Evidence
+
+Console logs revealed:
+```
+[OTP Debug] Request body: {"email":"","token":"595673","type":"email"}
+```
+
+The email was empty! Supabase received an empty email and likely had fallback logic that checked for phone, hence the misleading error.
+
+### The Fix
+
+Used a React ref to always access the current email value:
+
+```typescript
+const emailRef = useRef(email);
+emailRef.current = email; // Keep in sync
+
+const handleOtpSubmit = async (code?: string) => {
+  const currentEmail = emailRef.current; // Always current!
+  const { error } = await verifyOtp(currentEmail, otpCode);
+};
+```
+
+### Final Solution
+
+The working implementation uses:
+1. **Direct fetch to Supabase API** (`/auth/v1/verify`) instead of client library
+2. **React ref for email** to avoid stale closure in callbacks
+3. **`setSession()` after verification** to establish the authenticated session
+
+---
+
+## Lessons Learned
+
+### 1. Error Messages Can Be Misleading
+The Supabase error `"Only an email address or phone number should be provided"` suggested both were being sent. In reality, **neither** was being sent correctly - the email was empty. Always add debug logging to see the actual request payload.
+
+### 2. React Closures Are Treacherous
+When using `useCallback` with functions that call other functions:
+- The inner function captures state at definition time
+- If the outer callback's dependency array is incomplete, the inner function becomes stale
+- **Solution:** Use refs for values that need to be current in deeply nested callbacks
+
+### 3. Auto-Submit Features Need Extra Care
+The auto-submit on 6th digit feature triggered a complex callback chain:
+```
+handleOtpChange → handleOtpSubmit → verifyOtp
+```
+Each hop in this chain can introduce stale closure bugs. Test auto-submit paths separately from manual submit.
+
+### 4. Debug with Console Logs First
+Before diving into complex hypotheses (Supabase client bugs, phone auth settings, package versions), simple `console.log` statements revealed the true issue in seconds.
+
+### 5. Direct API Calls as Escape Hatch
+When client libraries behave unexpectedly, bypassing them with direct `fetch` calls can:
+- Isolate whether the issue is client-side or server-side
+- Provide a working solution while investigating
+- Give you full control over the request payload
+
+---
+
+## Final State
+
+**Resolved in commit:** `104711f`
+
+**Working flow:**
+1. User enters email → `signInWithOtp()` sends 6-digit code
+2. User enters code → auto-submits on 6th digit
+3. `verifyOtp()` sends direct fetch to `/auth/v1/verify`
+4. On success, `setSession()` establishes authenticated state
+5. Modal closes, user is logged in
+
+**Files modified:**
+- `src/components/auth/LoginModal.tsx` - Added emailRef for stale closure fix
+- `src/lib/auth/AuthContext.tsx` - Direct API call for verification
