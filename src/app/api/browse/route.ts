@@ -20,6 +20,7 @@ const FACET_CACHE_TTL = 60000; // 60 seconds in-memory cache
 
 interface BrowseParams {
   tab: 'available' | 'sold';
+  category?: 'all' | 'nihonto' | 'tosogu';
   itemTypes?: string[];
   certifications?: string[];
   schools?: string[];
@@ -31,14 +32,31 @@ interface BrowseParams {
   limit?: number;
 }
 
+// Item type categories for filtering
+const NIHONTO_TYPES = ['katana', 'wakizashi', 'tanto', 'tachi', 'naginata', 'yari', 'kodachi', 'ken', 'naginata naoshi', 'sword'];
+// Comprehensive tosogu types - includes all fittings and variants for database compatibility
+const TOSOGU_TYPES = [
+  'tsuba',
+  'fuchi-kashira', 'fuchi_kashira',  // fuchi+kashira set variants
+  'fuchi', 'kashira',  // individual pieces
+  'kozuka', 'kogatana',  // utility knife handle
+  'kogai',  // hair pick
+  'menuki',
+  'koshirae',  // complete mounting
+  'tosogu',  // generic/unspecified fitting
+  'mitokoromono',  // matched set of kozuka, kogai, menuki
+];
+
 function parseParams(searchParams: URLSearchParams): BrowseParams {
   const itemTypesRaw = searchParams.get('type');
   const certificationsRaw = searchParams.get('cert');
   const schoolsRaw = searchParams.get('school');
   const dealersRaw = searchParams.get('dealer');
+  const categoryRaw = searchParams.get('cat') as 'all' | 'nihonto' | 'tosogu' | null;
 
   return {
     tab: (searchParams.get('tab') as 'available' | 'sold') || 'available',
+    category: categoryRaw || 'all',
     itemTypes: itemTypesRaw ? itemTypesRaw.split(',').map(t => t.toLowerCase()) : undefined,
     certifications: certificationsRaw ? certificationsRaw.split(',') : undefined,
     schools: schoolsRaw ? schoolsRaw.split(',') : undefined,
@@ -109,9 +127,18 @@ export async function GET(request: NextRequest) {
 
     // Item type filter - use ILIKE for case-insensitive matching
     // Database has mixed case (e.g., "Katana" and "katana")
-    if (params.itemTypes?.length) {
+    // If specific itemTypes are provided, use those; otherwise use category filter
+    const effectiveItemTypes = params.itemTypes?.length
+      ? params.itemTypes
+      : params.category === 'nihonto'
+        ? NIHONTO_TYPES
+        : params.category === 'tosogu'
+          ? TOSOGU_TYPES
+          : undefined;
+
+    if (effectiveItemTypes?.length) {
       // Build OR condition for case-insensitive matching
-      const typeConditions = params.itemTypes
+      const typeConditions = effectiveItemTypes
         .map(t => `item_type.ilike.${t}`)
         .join(',');
       query = query.or(typeConditions);

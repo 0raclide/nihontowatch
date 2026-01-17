@@ -208,8 +208,10 @@ async function getAlertsData(
   const statusFilter = searchParams.get('status');
   const offset = (page - 1) * limit;
 
+  // Try the newer 'alerts' table first, fall back to 'user_alerts' if it doesn't exist
+  let tableName: 'alerts' | 'user_alerts' = 'alerts';
   let query = supabase
-    .from('alerts')
+    .from(tableName)
     .select(`
       id,
       user_id,
@@ -219,9 +221,7 @@ async function getAlertsData(
       search_criteria,
       is_active,
       last_triggered_at,
-      created_at,
-      profiles(email, display_name),
-      listings(title, price_value)
+      created_at
     `, { count: 'exact' });
 
   if (typeFilter) {
@@ -234,39 +234,116 @@ async function getAlertsData(
     query = query.eq('is_active', false);
   }
 
-  const { data: alerts, count, error } = await query
+  let { data: alerts, count, error } = await query
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1);
+
+  // If 'alerts' table doesn't exist, try 'user_alerts'
+  if (error?.code === '42P01' || error?.message?.includes('does not exist')) {
+    tableName = 'user_alerts';
+    query = supabase
+      .from(tableName)
+      .select(`
+        id,
+        user_id,
+        alert_type,
+        listing_id,
+        target_price,
+        search_criteria,
+        is_active,
+        last_triggered_at,
+        created_at
+      `, { count: 'exact' });
+
+    if (typeFilter) {
+      query = query.eq('alert_type', typeFilter);
+    }
+
+    if (statusFilter === 'active') {
+      query = query.eq('is_active', true);
+    } else if (statusFilter === 'inactive') {
+      query = query.eq('is_active', false);
+    }
+
+    const result = await query
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    alerts = result.data;
+    count = result.count;
+    error = result.error;
+  }
 
   if (error) {
     console.error('Alerts query error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  // Get alert history for each alert
-  const alertIds = alerts?.map(a => a.id) || [];
-  const { data: historyData } = await supabase
-    .from('alert_history')
-    .select('*')
-    .in('alert_id', alertIds.length > 0 ? alertIds : [-1])
-    .order('triggered_at', { ascending: false });
+  // Fetch user profiles separately to avoid join issues
+  const userIds = [...new Set(alerts?.map(a => a.user_id).filter(Boolean) || [])];
+  const listingIds = [...new Set(alerts?.map(a => a.listing_id).filter(Boolean) || [])];
 
-  // Group history by alert_id
-  const historyByAlert: Record<number, typeof historyData> = {};
-  if (historyData) {
-    for (const record of historyData) {
-      if (!historyByAlert[record.alert_id]) {
-        historyByAlert[record.alert_id] = [];
+  // Fetch profiles
+  const profilesMap: Record<string, { email: string; display_name: string | null }> = {};
+  if (userIds.length > 0) {
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, email, display_name')
+      .in('id', userIds);
+
+    if (profiles) {
+      for (const p of profiles) {
+        profilesMap[p.id] = { email: p.email, display_name: p.display_name };
       }
-      historyByAlert[record.alert_id].push(record);
     }
+  }
+
+  // Fetch listings
+  const listingsMap: Record<number, { title: string | null; price_value: number | null }> = {};
+  if (listingIds.length > 0) {
+    const { data: listings } = await supabase
+      .from('listings')
+      .select('id, title, price_value')
+      .in('id', listingIds);
+
+    if (listings) {
+      for (const l of listings) {
+        listingsMap[l.id] = { title: l.title, price_value: l.price_value };
+      }
+    }
+  }
+
+  // Get alert history - skip if IDs are integers but table expects UUIDs
+  const historyByAlert: Record<string | number, any[]> = {};
+  try {
+    const alertIds = alerts?.map(a => a.id) || [];
+    if (alertIds.length > 0) {
+      const { data: historyData, error: historyError } = await supabase
+        .from('alert_history')
+        .select('*')
+        .in('alert_id', alertIds)
+        .order('triggered_at', { ascending: false });
+
+      if (!historyError && historyData) {
+        for (const record of historyData) {
+          const alertId = record.alert_id;
+          if (!historyByAlert[alertId]) {
+            historyByAlert[alertId] = [];
+          }
+          historyByAlert[alertId].push(record);
+        }
+      }
+    }
+  } catch (historyErr) {
+    // History fetch failed (likely due to type mismatch), continue without it
+    console.warn('Could not fetch alert history:', historyErr);
   }
 
   // Format response
   const formattedAlerts = alerts?.map(alert => ({
     ...alert,
-    user: alert.profiles,
-    listing: alert.listings,
+    user: profilesMap[alert.user_id] || null,
+    listing: alert.listing_id ? listingsMap[alert.listing_id] || null : null,
     history: historyByAlert[alert.id] || [],
   })) || [];
 

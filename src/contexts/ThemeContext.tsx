@@ -6,6 +6,7 @@ import {
   useEffect,
   useState,
   useCallback,
+  useRef,
   type ReactNode,
 } from 'react';
 
@@ -179,24 +180,53 @@ export function ThemeProvider({
   defaultTheme = DEFAULT_THEME,
   forcedTheme,
 }: ThemeProviderProps) {
-  const [themeSetting, setThemeSettingState] = useState<ThemeSetting>(() => {
-    if (typeof window === 'undefined') return defaultTheme;
-    if (forcedTheme) return forcedTheme;
-    return getStoredTheme() ?? defaultTheme;
-  });
-
-  const [activeTheme, setActiveTheme] = useState<ThemeName>(() =>
-    resolveTheme(forcedTheme ?? themeSetting)
+  // IMPORTANT: Always use the same initial value on server and client to avoid hydration mismatch
+  // The actual stored theme will be applied in useEffect after mount
+  const [themeSetting, setThemeSettingState] = useState<ThemeSetting>(
+    forcedTheme ?? defaultTheme
   );
 
-  // Apply theme to DOM whenever it changes
+  const [activeTheme, setActiveTheme] = useState<ThemeName>(
+    resolveTheme(forcedTheme ?? defaultTheme)
+  );
+
+  // Track if we've initialized from localStorage
+  const isHydratedRef = useRef(false);
+
+  // Initialize theme from localStorage after mount (client-only)
+  // This runs once on mount
   useEffect(() => {
+    if (isHydratedRef.current) return;
+    isHydratedRef.current = true;
+
+    if (forcedTheme) return;
+
+    const stored = getStoredTheme();
+    if (stored && stored !== themeSetting) {
+      setThemeSettingState(stored);
+      const resolved = resolveTheme(stored);
+      if (resolved !== activeTheme) {
+        setActiveTheme(resolved);
+      }
+      applyTheme(resolved);
+    } else {
+      // Apply default theme to DOM
+      applyTheme(activeTheme);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Apply theme to DOM whenever themeSetting changes (user action)
+  useEffect(() => {
+    // Skip on first render (handled by init effect above)
+    if (!isHydratedRef.current) return;
+
     const activeSetting = forcedTheme ?? themeSetting;
     const resolved = resolveTheme(activeSetting);
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setActiveTheme(resolved);
+    if (resolved !== activeTheme) {
+      setActiveTheme(resolved);
+    }
     applyTheme(resolved);
-  }, [themeSetting, forcedTheme]);
+  }, [themeSetting, forcedTheme]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Listen for system preference changes when theme is 'system'
   useEffect(() => {

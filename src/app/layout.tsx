@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Cormorant_Garamond, Inter } from "next/font/google";
-import { Suspense } from "react";
 import "./globals.css";
 import { MobileUIProvider } from "@/contexts/MobileUIContext";
 import { ThemeProvider, themeInitScript } from "@/contexts/ThemeContext";
@@ -42,24 +41,22 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${cormorant.variable} ${inter.variable}`}>
+    <html lang="en" className={`${cormorant.variable} ${inter.variable}`} suppressHydrationWarning>
       <head>
         <meta name="theme-color" content="#121212" />
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
-      <body className="antialiased font-sans">
+      <body className="antialiased font-sans" suppressHydrationWarning>
         <AuthProvider>
           <FavoritesProvider>
             <MobileUIProvider>
               <ThemeProvider>
-                <Suspense fallback={null}>
-                  <QuickViewProvider>
-                    <ActivityWrapper>
-                      {children}
-                    </ActivityWrapper>
-                    <QuickView />
-                  </QuickViewProvider>
-                </Suspense>
+                <QuickViewProvider>
+                  <ActivityWrapper>
+                    {children}
+                  </ActivityWrapper>
+                  <QuickView />
+                </QuickViewProvider>
               </ThemeProvider>
             </MobileUIProvider>
           </FavoritesProvider>

@@ -114,10 +114,20 @@ function Checkbox({
 }
 
 // Nihonto (swords/blades)
-const NIHONTO_TYPES = ['katana', 'wakizashi', 'tanto', 'tachi', 'naginata', 'yari', 'kodachi'];
+const NIHONTO_TYPES = ['katana', 'wakizashi', 'tanto', 'tachi', 'naginata', 'yari', 'kodachi', 'ken', 'naginata naoshi', 'sword'];
 
-// Tosogu (fittings)
-const TOSOGU_TYPES = ['tsuba', 'fuchi-kashira', 'kozuka', 'menuki', 'koshirae'];
+// Tosogu (fittings) - comprehensive list including all variants
+const TOSOGU_TYPES = [
+  'tsuba',
+  'fuchi-kashira', 'fuchi_kashira',
+  'fuchi', 'kashira',
+  'kozuka', 'kogatana',
+  'kogai',
+  'menuki',
+  'koshirae',
+  'tosogu',
+  'mitokoromono',
+];
 
 // Normalize Japanese/variant item types to standard English
 const ITEM_TYPE_NORMALIZE: Record<string, string> = {
@@ -143,18 +153,31 @@ const ITEM_TYPE_NORMALIZE: Record<string, string> = {
 
 // Display labels
 const ITEM_TYPE_LABELS: Record<string, string> = {
+  // Nihonto
   katana: 'Katana',
   wakizashi: 'Wakizashi',
   tanto: 'Tantō',
   tachi: 'Tachi',
   naginata: 'Naginata',
+  'naginata naoshi': 'Naginata Naoshi',
   yari: 'Yari',
   kodachi: 'Kodachi',
+  ken: 'Ken',
+  sword: 'Sword',
+  // Tosogu
   tsuba: 'Tsuba',
   'fuchi-kashira': 'Fuchi-Kashira',
+  'fuchi_kashira': 'Fuchi-Kashira',
+  fuchi: 'Fuchi',
+  kashira: 'Kashira',
   kozuka: 'Kozuka',
+  kogatana: 'Kogatana',
+  kogai: 'Kōgai',
   menuki: 'Menuki',
   koshirae: 'Koshirae',
+  tosogu: 'Tosogu',
+  mitokoromono: 'Mitokoromono',
+  // Other
   armor: 'Armor',
   kabuto: 'Kabuto',
   other: 'Other',

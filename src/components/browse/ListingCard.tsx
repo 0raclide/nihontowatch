@@ -9,7 +9,7 @@ import { useQuickViewOptional } from '@/contexts/QuickViewContext';
 interface Listing {
   id: string;
   url: string;
-  title: string;
+  title: string | null;
   item_type: string | null;
   price_value: number | null;
   price_currency: string | null;
@@ -169,7 +169,9 @@ function formatPrice(
   return formatter.format(Math.round(converted));
 }
 
-function cleanTitle(title: string, smith: string | null, maker: string | null): string {
+function cleanTitle(title: string | null, smith: string | null, maker: string | null): string {
+  if (!title) return 'Untitled';
+
   let cleaned = title;
   cleaned = cleaned.replace(/^(Katana|Wakizashi|Tanto|Tachi|Tsuba|Kozuka|Menuki|Koshirae|Naginata|Yari):\s*/i, '');
   cleaned = cleaned.replace(/\s*\(NBTHK [^)]+\)\s*/gi, ' ');
@@ -275,7 +277,7 @@ export function ListingCard({
         ) : isNearViewport ? (
           <Image
             src={imageUrl}
-            alt={listing.title}
+            alt={listing.title || 'Listing image'}
             fill
             className={`object-cover group-hover:scale-105 transition-all duration-500 ${
               isLoading ? 'opacity-0' : 'opacity-100'

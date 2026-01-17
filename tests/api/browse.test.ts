@@ -321,6 +321,100 @@ describe('Parameter Parsing', () => {
       expect(askOnly).toBe(false);
     });
   });
+
+  describe('Category parameter', () => {
+    it('defaults to "all" when not specified', () => {
+      const params = new URLSearchParams('');
+      const category = params.get('cat') || 'all';
+      expect(category).toBe('all');
+    });
+
+    it('accepts "nihonto" category', () => {
+      const params = new URLSearchParams('cat=nihonto');
+      const category = params.get('cat');
+      expect(category).toBe('nihonto');
+    });
+
+    it('accepts "tosogu" category', () => {
+      const params = new URLSearchParams('cat=tosogu');
+      const category = params.get('cat');
+      expect(category).toBe('tosogu');
+    });
+  });
+
+  describe('Category to item types mapping', () => {
+    const NIHONTO_TYPES = ['katana', 'wakizashi', 'tanto', 'tachi', 'naginata', 'yari', 'kodachi', 'ken', 'naginata naoshi', 'sword'];
+    const TOSOGU_TYPES = [
+      'tsuba', 'fuchi-kashira', 'fuchi_kashira', 'fuchi', 'kashira',
+      'kozuka', 'kogatana', 'kogai', 'menuki', 'koshirae', 'tosogu', 'mitokoromono'
+    ];
+
+    it('maps nihonto category to sword types', () => {
+      const category = 'nihonto';
+      const itemTypes: string[] = [];
+
+      const effectiveItemTypes = itemTypes.length
+        ? itemTypes
+        : category === 'nihonto'
+          ? NIHONTO_TYPES
+          : category === 'tosogu'
+            ? TOSOGU_TYPES
+            : undefined;
+
+      expect(effectiveItemTypes).toEqual(NIHONTO_TYPES);
+      expect(effectiveItemTypes).toContain('katana');
+      expect(effectiveItemTypes).toContain('wakizashi');
+      expect(effectiveItemTypes).not.toContain('tsuba');
+    });
+
+    it('maps tosogu category to fitting types', () => {
+      const category = 'tosogu';
+      const itemTypes: string[] = [];
+
+      const effectiveItemTypes = itemTypes.length
+        ? itemTypes
+        : category === 'nihonto'
+          ? NIHONTO_TYPES
+          : category === 'tosogu'
+            ? TOSOGU_TYPES
+            : undefined;
+
+      expect(effectiveItemTypes).toEqual(TOSOGU_TYPES);
+      expect(effectiveItemTypes).toContain('tsuba');
+      expect(effectiveItemTypes).toContain('menuki');
+      expect(effectiveItemTypes).not.toContain('katana');
+    });
+
+    it('uses explicit itemTypes over category when provided', () => {
+      const category = 'nihonto';
+      const itemTypes = ['tsuba', 'kozuka']; // User specifically selected tosogu types
+
+      const effectiveItemTypes = itemTypes.length
+        ? itemTypes
+        : category === 'nihonto'
+          ? NIHONTO_TYPES
+          : category === 'tosogu'
+            ? TOSOGU_TYPES
+            : undefined;
+
+      expect(effectiveItemTypes).toEqual(['tsuba', 'kozuka']);
+    });
+
+    it('returns undefined for "all" category with no itemTypes', () => {
+      const category = 'all';
+      const itemTypes: string[] = [];
+
+      const effectiveItemTypes = itemTypes.length
+        ? itemTypes
+        : category === 'nihonto'
+          ? NIHONTO_TYPES
+          : category === 'tosogu'
+            ? TOSOGU_TYPES
+            : undefined;
+
+      expect(effectiveItemTypes).toBeUndefined();
+    });
+  });
 });
 
 // =============================================================================

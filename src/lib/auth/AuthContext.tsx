@@ -144,15 +144,14 @@ async function fetchProfileWithTimeout(
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  // Restore cached state immediately to prevent flash
-  const cachedState = getAuthCache();
-
+  // IMPORTANT: Always use the same initial state on server and client to avoid hydration mismatch
+  // Cached state will be restored in useEffect after mount
   const [state, setState] = useState<AuthState>({
     user: null,
-    profile: cachedState?.profile || null,
+    profile: null,
     session: null,
     isLoading: true,
-    isAdmin: cachedState?.isAdmin || false,
+    isAdmin: false,
   });
 
   // Use ref to store supabase client to avoid recreating on each render
@@ -180,68 +179,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, [state.user, supabase]);
 
   // Initialize auth state - runs ONCE on mount
+  // Uses onAuthStateChange's INITIAL_SESSION event as the primary init mechanism
   useEffect(() => {
     let isMounted = true;
-
-    const initAuth = async () => {
-      // Skip if already initialized by onAuthStateChange
-      if (hasInitializedRef.current) {
-        console.log('[Auth] Already initialized, skipping initAuth');
-        return;
-      }
-
-      console.log('[Auth] initAuth starting...');
-      try {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-
-        console.log('[Auth] getSession result:', { hasSession: !!session, hasUser: !!session?.user });
-
-        // Check again in case onAuthStateChange fired while we were waiting
-        if (hasInitializedRef.current) {
-          console.log('[Auth] Initialized during getSession, skipping state update');
-          return;
-        }
-
-        if (session?.user) {
-          const profile = await fetchProfileWithTimeout(supabase, session.user.id);
-          console.log('[Auth] Setting state with profile, isAdmin:', profile?.role === 'admin');
-          if (isMounted && !hasInitializedRef.current) {
-            hasInitializedRef.current = true;
-            const newState = {
-              user: session.user,
-              profile,
-              session,
-              isLoading: false,
-              isAdmin: profile?.role === 'admin',
-            };
-            setState(newState);
-            setAuthCache(newState);
-            console.log('[Auth] State updated successfully from initAuth');
-          }
-        } else {
-          console.log('[Auth] No session, setting logged out state');
-          if (isMounted && !hasInitializedRef.current) {
-            hasInitializedRef.current = true;
-            setState({
-              user: null,
-              profile: null,
-              session: null,
-              isLoading: false,
-              isAdmin: false,
-            });
-            clearAuthCache();
-          }
-        }
-      } catch (error) {
-        console.error('[Auth] Error initializing auth:', error);
-        if (isMounted) {
-          hasInitializedRef.current = true;
-          setState((prev) => ({ ...prev, isLoading: false }));
-        }
-      }
-    };
 
     // Listen for auth state changes
     const {
@@ -253,10 +193,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
       // This is the most reliable event for initial auth state
       if (event === 'INITIAL_SESSION') {
         hasReceivedInitialSessionRef.current = true;
+
+        // Skip if already initialized (happens in React 18 Strict Mode)
+        if (hasInitializedRef.current) {
+          console.log('[Auth] INITIAL_SESSION skipped - already initialized');
+          return;
+        }
+
         if (session?.user) {
           console.log('[Auth] INITIAL_SESSION with user, fetching profile...');
           const profile = await fetchProfileWithTimeout(supabase, session.user.id);
-          if (isMounted) {
+          // Double-check we haven't been initialized while fetching
+          if (isMounted && !hasInitializedRef.current) {
             hasInitializedRef.current = true;
             const newState = {
               user: session.user,
@@ -271,7 +219,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           }
         } else {
           console.log('[Auth] INITIAL_SESSION with no user');
-          if (isMounted) {
+          if (isMounted && !hasInitializedRef.current) {
             hasInitializedRef.current = true;
             setState({
               user: null,
@@ -336,9 +284,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
       }
     });
-
-    // Start initialization after setting up listener
-    initAuth();
 
     return () => {
       isMounted = false;
