@@ -54,8 +54,9 @@ export default function ProfilePage() {
     await signOut();
   }, [signOut]);
 
-  // Authentication loading state
-  if (authLoading) {
+  // Authentication loading state - also show loading if we have cached profile but no user yet
+  // This handles the case where auth is still initializing during page navigation
+  if (authLoading || (profile && !user)) {
     return (
       <div className="min-h-screen bg-cream transition-colors">
         <Header />
@@ -66,8 +67,8 @@ export default function ProfilePage() {
     );
   }
 
-  // Not authenticated state
-  if (!user) {
+  // Not authenticated state - only show if we definitely have no user AND no cached profile
+  if (!user && !profile) {
     return (
       <>
         <div className="min-h-screen bg-cream transition-colors">
@@ -137,7 +138,7 @@ export default function ProfilePage() {
                 />
               ) : (
                 <span className="text-2xl lg:text-3xl font-serif text-gold">
-                  {(profile?.display_name || user.email || 'U')[0].toUpperCase()}
+                  {(profile?.display_name || user?.email || 'U')[0].toUpperCase()}
                 </span>
               )}
             </div>
@@ -192,7 +193,7 @@ export default function ProfilePage() {
                   </>
                 )}
               </div>
-              <p className="text-[14px] text-muted mt-1 truncate">{user.email}</p>
+              <p className="text-[14px] text-muted mt-1 truncate">{user?.email}</p>
             </div>
           </div>
 
@@ -200,7 +201,7 @@ export default function ProfilePage() {
           <div className="space-y-4 pt-4 border-t border-border">
             <div className="flex justify-between items-center">
               <span className="text-[13px] text-muted">Email</span>
-              <span className="text-[14px] text-ink">{user.email}</span>
+              <span className="text-[14px] text-ink">{user?.email || profile?.email}</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-[13px] text-muted">Member since</span>
