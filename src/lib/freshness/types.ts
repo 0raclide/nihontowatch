@@ -17,3 +17,13 @@ export interface FreshnessDisplayResult {
   show: boolean;
   isVerified: boolean;
 }
+
+export type MarketTimeTier = 'fresh' | 'recent' | 'standard' | 'aging' | 'long';
+
+export interface MarketTimeDisplay {
+  label: string;           // "3 days", "2 months", "Over a year"
+  shortLabel: string;      // "3d", "2mo", "1y+"
+  daysOnMarket: number;
+  tier: MarketTimeTier;
+  startDate: string;       // ISO date for counter calculation
+}

@@ -1,8 +1,9 @@
 'use client';
 
 import { FavoriteButton } from '@/components/favorites/FavoriteButton';
+import { TimeOnMarketCounter } from '@/components/ui/TimeOnMarketCounter';
 import { useCurrency, formatPriceWithConversion } from '@/hooks/useCurrency';
-import { formatFreshnessDisplay } from '@/lib/freshness';
+import { getMarketTimeDisplay } from '@/lib/freshness';
 import type { Listing } from '@/types';
 import { isBlade, isTosogu, getItemTypeLabel } from '@/types';
 
@@ -61,24 +62,6 @@ function getCertInfo(certType: string | undefined): { label: string; shortLabel:
   return CERT_CONFIG[certType] || null;
 }
 
-// Freshness icon component
-function FreshnessIcon({ isVerified }: { isVerified: boolean }) {
-  if (isVerified) {
-    // Checkmark icon for verified freshness
-    return (
-      <svg className="w-3 h-3 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-      </svg>
-    );
-  }
-  // Question mark icon for unverified
-  return (
-    <svg className="w-3 h-3 text-muted/50" fill="currentColor" viewBox="0 0 20 20">
-      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
-    </svg>
-  );
-}
-
 // =============================================================================
 // COMPONENT
 // =============================================================================
@@ -97,6 +80,7 @@ export function QuickViewContent({ listing, onClose }: QuickViewContentProps) {
     currency,
     exchangeRates
   );
+  const marketTime = getMarketTimeDisplay(listing);
 
   // Check for available measurements
   const hasSwordMeasurements = isSword && (
@@ -145,7 +129,7 @@ export function QuickViewContent({ listing, onClose }: QuickViewContentProps) {
             </span>
           </div>
 
-          {/* Dealer + Time listed */}
+          {/* Dealer + Time on Market */}
           <div className="flex items-center justify-between text-[12px] text-muted">
             <div className="flex items-center gap-1.5">
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -153,15 +137,12 @@ export function QuickViewContent({ listing, onClose }: QuickViewContentProps) {
               </svg>
               <span>{dealerName}</span>
             </div>
-            {listing.first_seen_at && (() => {
-              const freshness = formatFreshnessDisplay(listing);
-              return freshness.show ? (
-                <span className="flex items-center gap-1 text-muted/70">
-                  <FreshnessIcon isVerified={freshness.isVerified} />
-                  {freshness.text}
-                </span>
-              ) : null;
-            })()}
+            {marketTime && (
+              <TimeOnMarketCounter
+                startDate={marketTime.startDate}
+                className="text-[11px]"
+              />
+            )}
           </div>
         </div>
 

@@ -5,6 +5,7 @@ import { useState, useCallback } from 'react';
 import { FavoriteButton } from '@/components/favorites/FavoriteButton';
 import { useActivityOptional } from '@/components/activity/ActivityProvider';
 import { useQuickViewOptional } from '@/contexts/QuickViewContext';
+import { getMarketTimeDisplay } from '@/lib/freshness';
 
 interface Listing {
   id: string;
@@ -21,6 +22,10 @@ interface Listing {
   nagasa_cm: number | null;
   images: string[] | null;
   first_seen_at: string;
+  listing_published_at?: string | null;
+  freshness_source?: string;
+  freshness_confidence?: string;
+  wayback_first_archive_at?: string | null;
   status: string;
   is_available: boolean;
   is_sold: boolean;
@@ -213,6 +218,7 @@ export function ListingCard({
   const cleanedTitle = cleanTitle(listing.title, listing.smith, listing.tosogu_maker);
   const certInfo = listing.cert_type ? CERT_LABELS[listing.cert_type] : null;
   const isAskPrice = listing.price_value === null;
+  const marketTime = getMarketTimeDisplay(listing as Parameters<typeof getMarketTimeDisplay>[0]);
 
   // Handle card click - open quick view or track activity
   const handleClick = useCallback((e: React.MouseEvent) => {
@@ -344,8 +350,8 @@ export function ListingCard({
           </p>
         )}
 
-        {/* Price - highly legible */}
-        <div className="pt-2.5 border-t border-border/50">
+        {/* Price + Time on Market */}
+        <div className="pt-2.5 border-t border-border/50 flex items-center justify-between gap-2">
           <span className={`text-[15px] lg:text-base tabular-nums ${
             isAskPrice
               ? 'text-charcoal'
@@ -353,6 +359,12 @@ export function ListingCard({
           }`}>
             {formatPrice(listing.price_value, listing.price_currency, currency, exchangeRates)}
           </span>
+          {marketTime && (
+            <span className="text-[11px] lg:text-[12px] text-muted tabular-nums flex items-center gap-1">
+              <span className="text-muted/60">&#x25F7;</span>
+              {marketTime.shortLabel}
+            </span>
+          )}
         </div>
       </div>
     </div>
