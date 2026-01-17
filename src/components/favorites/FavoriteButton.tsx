@@ -60,6 +60,7 @@ export function FavoriteButton({
     <button
       onClick={handleClick}
       disabled={isToggling}
+      data-favorite-button
       className={`
         ${sizeClasses[size]}
         flex items-center justify-center
@@ -136,6 +137,7 @@ export function FavoriteButtonInline({
     <button
       onClick={handleClick}
       disabled={isToggling || !isAuthenticated}
+      data-favorite-button
       className={`
         p-1.5
         transition-colors duration-200

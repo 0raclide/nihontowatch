@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { Cormorant_Garamond, Inter } from "next/font/google";
+import { Suspense } from "react";
 import "./globals.css";
 import { MobileUIProvider } from "@/contexts/MobileUIContext";
 import { ThemeProvider, themeInitScript } from "@/contexts/ThemeContext";
+import { QuickViewProvider } from "@/contexts/QuickViewContext";
 import { AuthProvider } from "@/lib/auth/AuthContext";
 import { ActivityWrapper } from "@/components/activity/ActivityWrapper";
 
@@ -47,9 +49,13 @@ export default function RootLayout({
         <AuthProvider>
           <MobileUIProvider>
             <ThemeProvider>
-              <ActivityWrapper>
-                {children}
-              </ActivityWrapper>
+              <Suspense fallback={null}>
+                <QuickViewProvider>
+                  <ActivityWrapper>
+                    {children}
+                  </ActivityWrapper>
+                </QuickViewProvider>
+              </Suspense>
             </ThemeProvider>
           </MobileUIProvider>
         </AuthProvider>

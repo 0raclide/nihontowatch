@@ -23,15 +23,20 @@ interface ListingDetail extends Listing {
 }
 
 // Certification display config
-const CERT_LABELS: Record<string, { label: string; tier: 'premier' | 'high' | 'standard' }> = {
-  Juyo: { label: 'Juyo', tier: 'premier' },
-  juyo: { label: 'Juyo', tier: 'premier' },
-  Tokuju: { label: 'Tokubetsu Juyo', tier: 'premier' },
-  tokuju: { label: 'Tokubetsu Juyo', tier: 'premier' },
-  TokuHozon: { label: 'Tokubetsu Hozon', tier: 'high' },
-  tokubetsu_hozon: { label: 'Tokubetsu Hozon', tier: 'high' },
-  Hozon: { label: 'Hozon', tier: 'standard' },
-  hozon: { label: 'Hozon', tier: 'standard' },
+const CERT_LABELS: Record<string, { label: string; tier: 'tokuju' | 'juyo' | 'tokuho' | 'hozon' }> = {
+  // Tokubetsu Juyo - highest tier (purple)
+  Tokuju: { label: 'Tokubetsu Juyo', tier: 'tokuju' },
+  tokuju: { label: 'Tokubetsu Juyo', tier: 'tokuju' },
+  tokubetsu_juyo: { label: 'Tokubetsu Juyo', tier: 'tokuju' },
+  // Juyo - high tier (blue)
+  Juyo: { label: 'Juyo', tier: 'juyo' },
+  juyo: { label: 'Juyo', tier: 'juyo' },
+  // Tokubetsu Hozon - mid tier (brown)
+  TokuHozon: { label: 'Tokubetsu Hozon', tier: 'tokuho' },
+  tokubetsu_hozon: { label: 'Tokubetsu Hozon', tier: 'tokuho' },
+  // Hozon - standard tier (yellow)
+  Hozon: { label: 'Hozon', tier: 'hozon' },
+  hozon: { label: 'Hozon', tier: 'hozon' },
 };
 
 // Item type labels
@@ -249,9 +254,11 @@ export default function ListingDetailPage() {
             <div className="flex items-center gap-3 mb-4">
               {certInfo && (
                 <span className={`text-[11px] uppercase tracking-wider font-medium px-2.5 py-1 rounded ${
-                  certInfo.tier === 'premier'
+                  certInfo.tier === 'tokuju'
+                    ? 'bg-tokuju-bg text-tokuju'
+                    : certInfo.tier === 'juyo'
                     ? 'bg-juyo-bg text-juyo'
-                    : certInfo.tier === 'high'
+                    : certInfo.tier === 'tokuho'
                     ? 'bg-toku-hozon-bg text-toku-hozon'
                     : 'bg-hozon-bg text-hozon'
                 }`}>

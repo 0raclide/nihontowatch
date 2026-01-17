@@ -1,10 +1,10 @@
 'use client';
 
 import Image from 'next/image';
-import Link from 'next/link';
 import { useState, useCallback } from 'react';
 import { FavoriteButton } from '@/components/favorites/FavoriteButton';
 import { useActivityOptional } from '@/components/activity/ActivityProvider';
+import { useQuickViewOptional } from '@/contexts/QuickViewContext';
 
 interface Listing {
   id: string;
@@ -110,19 +110,23 @@ function getRomanizedName(name: string | null): string | null {
   return name;
 }
 
-const CERT_LABELS: Record<string, { label: string; tier: 'premier' | 'high' | 'standard' }> = {
-  Juyo: { label: 'Jūyō', tier: 'premier' },
-  juyo: { label: 'Jūyō', tier: 'premier' },
-  Tokuju: { label: 'Tokubetsu Jūyō', tier: 'premier' },
-  tokuju: { label: 'Tokubetsu Jūyō', tier: 'premier' },
-  tokubetsu_juyo: { label: 'Tokubetsu Jūyō', tier: 'premier' },
-  TokuHozon: { label: 'Tokubetsu Hozon', tier: 'high' },
-  tokubetsu_hozon: { label: 'Tokubetsu Hozon', tier: 'high' },
-  Hozon: { label: 'Hozon', tier: 'standard' },
-  hozon: { label: 'Hozon', tier: 'standard' },
-  TokuKicho: { label: 'Tokubetsu Kichō', tier: 'high' },
-  nbthk: { label: 'NBTHK', tier: 'standard' },
-  nthk: { label: 'NTHK', tier: 'standard' },
+const CERT_LABELS: Record<string, { label: string; tier: 'tokuju' | 'juyo' | 'tokuho' | 'hozon' }> = {
+  // Tokubetsu Juyo - highest tier (purple)
+  Tokuju: { label: 'Tokubetsu Jūyō', tier: 'tokuju' },
+  tokuju: { label: 'Tokubetsu Jūyō', tier: 'tokuju' },
+  tokubetsu_juyo: { label: 'Tokubetsu Jūyō', tier: 'tokuju' },
+  // Juyo - high tier (blue)
+  Juyo: { label: 'Jūyō', tier: 'juyo' },
+  juyo: { label: 'Jūyō', tier: 'juyo' },
+  // Tokubetsu Hozon - mid tier (brown)
+  TokuHozon: { label: 'Tokubetsu Hozon', tier: 'tokuho' },
+  tokubetsu_hozon: { label: 'Tokubetsu Hozon', tier: 'tokuho' },
+  TokuKicho: { label: 'Tokubetsu Kichō', tier: 'tokuho' },
+  // Hozon - standard tier (yellow)
+  Hozon: { label: 'Hozon', tier: 'hozon' },
+  hozon: { label: 'Hozon', tier: 'hozon' },
+  nbthk: { label: 'NBTHK', tier: 'hozon' },
+  nthk: { label: 'NTHK', tier: 'hozon' },
 };
 
 function convertPrice(
@@ -189,6 +193,7 @@ export function ListingCard({ listing, currency, exchangeRates, priority = false
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const activity = useActivityOptional();
+  const quickView = useQuickViewOptional();
 
   const imageUrl = listing.images?.[0] || null;
   const artisan = getRomanizedName(listing.smith) || getRomanizedName(listing.tosogu_maker);
@@ -199,8 +204,14 @@ export function ListingCard({ listing, currency, exchangeRates, priority = false
   const certInfo = listing.cert_type ? CERT_LABELS[listing.cert_type] : null;
   const isAskPrice = listing.price_value === null;
 
-  // Track external link click when user clicks on the listing
-  const handleClick = useCallback(() => {
+  // Handle card click - open quick view or track activity
+  const handleClick = useCallback((e: React.MouseEvent) => {
+    // Don't handle if clicking on the favorite button
+    if ((e.target as HTMLElement).closest('[data-favorite-button]')) {
+      return;
+    }
+
+    // Track click activity
     if (activity) {
       activity.trackExternalLinkClick(
         listing.url,
@@ -208,15 +219,27 @@ export function ListingCard({ listing, currency, exchangeRates, priority = false
         listing.dealers?.name
       );
     }
-  }, [activity, listing.url, listing.id, listing.dealers?.name]);
+
+    // Open quick view if available
+    if (quickView) {
+      // Convert local Listing type to the imported Listing type for context
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      quickView.openQuickView(listing as any);
+    }
+  }, [activity, quickView, listing]);
 
   return (
-    <Link
-      href={listing.url}
-      target="_blank"
-      rel="noopener noreferrer"
+    <div
+      role="button"
+      tabIndex={0}
       onClick={handleClick}
-      className="group block bg-paper border border-border hover:border-gold/40 transition-all duration-300"
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          handleClick(e as unknown as React.MouseEvent);
+        }
+      }}
+      className="group block bg-paper border border-border hover:border-gold/40 transition-all duration-300 cursor-pointer"
     >
       {/* Dealer Domain - Elegant centered header */}
       <div className="px-2.5 py-2 lg:px-3 lg:py-2.5 bg-gradient-to-b from-linen/80 to-transparent text-center">
@@ -280,9 +303,11 @@ export function ListingCard({ listing, currency, exchangeRates, priority = false
         {certInfo && (
           <div className="mb-1.5">
             <span className={`text-[8px] lg:text-[9px] uppercase tracking-wider font-medium px-1 lg:px-1.5 py-0.5 ${
-              certInfo.tier === 'premier'
+              certInfo.tier === 'tokuju'
+                ? 'bg-tokuju-bg text-tokuju'
+                : certInfo.tier === 'juyo'
                 ? 'bg-juyo-bg text-juyo'
-                : certInfo.tier === 'high'
+                : certInfo.tier === 'tokuho'
                 ? 'bg-toku-hozon-bg text-toku-hozon'
                 : 'bg-hozon-bg text-hozon'
             }`}>
@@ -314,6 +339,6 @@ export function ListingCard({ listing, currency, exchangeRates, priority = false
           </span>
         </div>
       </div>
-    </Link>
+    </div>
   );
 }
