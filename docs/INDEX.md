@@ -11,6 +11,7 @@
 | [USER_ACCOUNTS_SYSTEM.md](./USER_ACCOUNTS_SYSTEM.md) | Auth, profiles, favorites, alerts, activity tracking, admin |
 | [MOBILE_UX.md](./MOBILE_UX.md) | Mobile interaction patterns, QuickView bottom sheet |
 | [SEARCH_FEATURES.md](./SEARCH_FEATURES.md) | Natural language search, filters, query syntax |
+| [FRESHNESS_SYSTEM.md](./FRESHNESS_SYSTEM.md) | Listing age verification, Wayback integration, confidence levels |
 
 ---
 
@@ -111,6 +112,13 @@
 3. Check `tests/quickview-regression.spec.ts` - Mobile test patterns
 4. Use viewport `{ width: 390, height: 844 }` for testing
 
+### "I need to work on listing freshness"
+1. Read [FRESHNESS_SYSTEM.md](./FRESHNESS_SYSTEM.md) - Complete system docs
+2. Check `src/lib/freshness/` - Freshness calculation and display
+3. Check `src/lib/wayback/` - Wayback Machine client
+4. Check `/api/admin/dealers/baseline` - Setting dealer baselines
+5. Check `/api/cron/wayback-check` - Background verification
+
 ---
 
 ## Architecture Diagrams
@@ -135,5 +143,6 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for:
 | Admin dashboard | [USER_ACCOUNTS_SYSTEM.md#admin-dashboard](./USER_ACCOUNTS_SYSTEM.md#admin-dashboard) |
 | Mobile UX & gestures | [MOBILE_UX.md](./MOBILE_UX.md) |
 | Search features | [SEARCH_FEATURES.md](./SEARCH_FEATURES.md) |
+| Listing freshness | [FRESHNESS_SYSTEM.md](./FRESHNESS_SYSTEM.md) |
 | Testing | Oshi-scrapper: `pytest tests/`, Nihontowatch: `npx playwright test` |
 | Deployment | [CLAUDE.md](../CLAUDE.md#deployment) |
