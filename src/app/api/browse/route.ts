@@ -297,6 +297,12 @@ export async function GET(request: NextRequest) {
         dealers: dealersFacet,
       },
       lastUpdated,
+      // Debug: version marker and params to verify deployment
+      _debug: {
+        version: 'v7-facet-fix',
+        category: params.category,
+        timestamp: new Date().toISOString(),
+      },
     });
 
     // Temporarily disable cache to ensure fresh facet data after filter fix

@@ -320,43 +320,40 @@ export function ListingCard({
       </div>
 
       {/* Content - Fixed height with flex layout for consistent card sizes */}
-      <div className="p-2.5 lg:p-4 flex flex-col h-[120px] lg:h-[130px]">
-        {/* Top section - cert badge and item type */}
-        <div className="flex-1 min-h-0">
-          {/* Certification badge - fixed height slot */}
-          <div className="h-[22px] lg:h-[26px] mb-1">
-            {certInfo && (
-              <span className={`text-[9px] lg:text-[10px] uppercase tracking-wider font-semibold px-1.5 lg:px-2 py-0.5 lg:py-1 ${
-                certInfo.tier === 'tokuju'
-                  ? 'bg-tokuju-bg text-tokuju'
-                  : certInfo.tier === 'juyo'
-                  ? 'bg-juyo-bg text-juyo'
-                  : certInfo.tier === 'tokuho'
-                  ? 'bg-toku-hozon-bg text-toku-hozon'
-                  : 'bg-hozon-bg text-hozon'
-              }`}>
-                {certInfo.label}
-              </span>
-            )}
-          </div>
+      <div className="p-2.5 lg:p-4 flex flex-col h-[130px] lg:h-[140px]">
+        {/* Certification badge - fixed height slot */}
+        <div className="h-[24px] lg:h-[28px]">
+          {certInfo && (
+            <span className={`text-[9px] lg:text-[10px] uppercase tracking-wider font-semibold px-1.5 lg:px-2 py-0.5 lg:py-1 ${
+              certInfo.tier === 'tokuju'
+                ? 'bg-tokuju-bg text-tokuju'
+                : certInfo.tier === 'juyo'
+                ? 'bg-juyo-bg text-juyo'
+                : certInfo.tier === 'tokuho'
+                ? 'bg-toku-hozon-bg text-toku-hozon'
+                : 'bg-hozon-bg text-hozon'
+            }`}>
+              {certInfo.label}
+            </span>
+          )}
+        </div>
 
-          {/* Item Type - Primary identifier (always English), fallback to cleaned title */}
-          <h3 className="text-[15px] lg:text-base font-semibold leading-snug text-ink group-hover:text-gold transition-colors mb-1">
-            {itemType || cleanedTitle}
-          </h3>
+        {/* Item Type - Primary identifier (always English), fallback to cleaned title */}
+        <h3 className="text-[15px] lg:text-base font-semibold leading-snug text-ink group-hover:text-gold transition-colors mb-1">
+          {itemType || cleanedTitle}
+        </h3>
 
-          {/* Smith/School - Key attribution - fixed height slot */}
-          <div className="h-[18px] lg:h-[20px]">
-            {(artisan || school) && (
-              <p className="text-[12px] lg:text-[13px] text-charcoal truncate">
-                {artisan || school}
-              </p>
-            )}
-          </div>
+        {/* Smith/School - Key attribution - fixed height slot */}
+        <div className="h-[20px] lg:h-[22px]">
+          {(artisan || school) && (
+            <p className="text-[12px] lg:text-[13px] text-charcoal truncate">
+              {artisan || school}
+            </p>
+          )}
         </div>
 
         {/* Price + Time on Market - always at bottom */}
-        <div className="pt-2 border-t border-border/50 flex items-center justify-between gap-2 mt-auto">
+        <div className="pt-2.5 mt-auto border-t border-border/50 flex items-center justify-between gap-2">
           <span className={`text-[15px] lg:text-base tabular-nums ${
             isAskPrice
               ? 'text-charcoal'
