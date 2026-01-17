@@ -75,38 +75,38 @@
                     - generic [ref=e86]: Jūyō
                     - generic [ref=e87]: "172"
                   - generic [ref=e88] [cursor=pointer]:
-                    - checkbox "Tokubetsu Hozon 856" [ref=e90]
+                    - checkbox "Tokubetsu Hozon 871" [ref=e90]
                     - generic [ref=e92]: Tokubetsu Hozon
-                    - generic [ref=e93]: "856"
+                    - generic [ref=e93]: "871"
                   - generic [ref=e94] [cursor=pointer]:
-                    - checkbox "Hozon 808" [ref=e96]
+                    - checkbox "Hozon 813" [ref=e96]
                     - generic [ref=e98]: Hozon
-                    - generic [ref=e99]: "808"
+                    - generic [ref=e99]: "813"
                   - generic [ref=e100] [cursor=pointer]:
-                    - checkbox "Tokubetsu Kichō 18" [ref=e102]
+                    - checkbox "Tokubetsu Kichō 20" [ref=e102]
                     - generic [ref=e104]: Tokubetsu Kichō
-                    - generic [ref=e105]: "18"
+                    - generic [ref=e105]: "20"
               - generic [ref=e106]:
                 - button "Type" [ref=e107]:
                   - heading "Type" [level=3] [ref=e108]
                   - img [ref=e109]
                 - generic [ref=e112]:
                   - generic [ref=e113] [cursor=pointer]:
-                    - checkbox "Katana 662" [ref=e115]
+                    - checkbox "Katana 661" [ref=e115]
                     - generic [ref=e117]: Katana
-                    - generic [ref=e118]: "662"
+                    - generic [ref=e118]: "661"
                   - generic [ref=e119] [cursor=pointer]:
                     - checkbox "Wakizashi 334" [ref=e121]
                     - generic [ref=e123]: Wakizashi
                     - generic [ref=e124]: "334"
                   - generic [ref=e125] [cursor=pointer]:
-                    - checkbox "Tantō 195" [ref=e127]
+                    - checkbox "Tantō 199" [ref=e127]
                     - generic [ref=e129]: Tantō
-                    - generic [ref=e130]: "195"
+                    - generic [ref=e130]: "199"
                   - generic [ref=e131] [cursor=pointer]:
-                    - checkbox "Tachi 72" [ref=e133]
+                    - checkbox "Tachi 76" [ref=e133]
                     - generic [ref=e135]: Tachi
-                    - generic [ref=e136]: "72"
+                    - generic [ref=e136]: "76"
                   - generic [ref=e137] [cursor=pointer]:
                     - checkbox "Yari 22" [ref=e139]
                     - generic [ref=e141]: Yari
@@ -116,13 +116,13 @@
                     - generic [ref=e147]: Naginata
                     - generic [ref=e148]: "4"
                   - generic [ref=e149] [cursor=pointer]:
-                    - checkbox "Tsuba 644" [ref=e151]
+                    - checkbox "Tsuba 645" [ref=e151]
                     - generic [ref=e153]: Tsuba
-                    - generic [ref=e154]: "644"
+                    - generic [ref=e154]: "645"
                   - generic [ref=e155] [cursor=pointer]:
-                    - checkbox "Kozuka 146" [ref=e157]
+                    - checkbox "Kozuka 141" [ref=e157]
                     - generic [ref=e159]: Kozuka
-                    - generic [ref=e160]: "146"
+                    - generic [ref=e160]: "141"
                   - generic [ref=e161] [cursor=pointer]:
                     - checkbox "Menuki 94" [ref=e163]
                     - generic [ref=e165]: Menuki
@@ -136,25 +136,25 @@
                     - generic [ref=e177]: Koshirae
                     - generic [ref=e178]: "14"
                   - generic [ref=e179] [cursor=pointer]:
-                    - checkbox "unknown 99" [ref=e181]
+                    - checkbox "unknown 100" [ref=e181]
                     - generic [ref=e183]: unknown
-                    - generic [ref=e184]: "99"
+                    - generic [ref=e184]: "100"
                   - generic [ref=e185] [cursor=pointer]:
-                    - checkbox "Other 5" [ref=e187]
-                    - generic [ref=e189]: Other
-                    - generic [ref=e190]: "5"
+                    - checkbox "kogai 6" [ref=e187]
+                    - generic [ref=e189]: kogai
+                    - generic [ref=e190]: "6"
                   - generic [ref=e191] [cursor=pointer]:
-                    - checkbox "ken 2" [ref=e193]
-                    - generic [ref=e195]: ken
-                    - generic [ref=e196]: "2"
+                    - checkbox "Other 5" [ref=e193]
+                    - generic [ref=e195]: Other
+                    - generic [ref=e196]: "5"
                   - generic [ref=e197] [cursor=pointer]:
-                    - checkbox "Armor 2" [ref=e199]
-                    - generic [ref=e201]: Armor
+                    - checkbox "ken 2" [ref=e199]
+                    - generic [ref=e201]: ken
                     - generic [ref=e202]: "2"
                   - generic [ref=e203] [cursor=pointer]:
-                    - checkbox "kogai 1" [ref=e205]
-                    - generic [ref=e207]: kogai
-                    - generic [ref=e208]: "1"
+                    - checkbox "Armor 2" [ref=e205]
+                    - generic [ref=e207]: Armor
+                    - generic [ref=e208]: "2"
                   - generic [ref=e209] [cursor=pointer]:
                     - checkbox "naginata naoshi 1" [ref=e211]
                     - generic [ref=e213]: naginata naoshi
@@ -172,7 +172,7 @@
                 - generic [ref=e230]: Price on request only
                 - checkbox "Price on request only" [ref=e232]
         - generic [ref=e236]:
-          - paragraph [ref=e238]: Showing 30 of 2,337 items
+          - paragraph [ref=e238]: Showing 30 of 2,346 items
           - generic [ref=e239]:
             - 'button "aoijapan.com Katana: Nagasone Okisato Nyudo Kotetsu with Saidan-mei(45th NBTHK Juyo Token) Add to watchlist Jūyō Katana Kotetsu ¥60,000,000" [ref=e240] [cursor=pointer]':
               - generic [ref=e241]: aoijapan.com
@@ -303,27 +303,27 @@
                 - generic [ref=e402]: Jūyō
                 - heading "Katana" [level=3] [ref=e403]
                 - generic [ref=e404]: ¥9,800,000
-            - button "eirakudo.shop 銘安吉 短刀 重要刀剣 Add to watchlist Jūyō Tantō Yasuyoshi ¥9,500,000" [ref=e405] [cursor=pointer]:
-              - generic [ref=e406]: eirakudo.shop
+            - button "token-net.com 河内守藤原国助 (第38回重要刀剣) Add to watchlist Jūyō Katana Horikawa ¥9,500,000" [ref=e405] [cursor=pointer]:
+              - generic [ref=e406]: token-net.com
               - generic [ref=e407]:
-                - img "銘安吉 短刀 重要刀剣" [ref=e408]
+                - img "河内守藤原国助 (第38回重要刀剣)" [ref=e408]
                 - button "Add to watchlist" [ref=e411]:
                   - img [ref=e412]
               - generic [ref=e414]:
                 - generic [ref=e415]: Jūyō
-                - heading "Tantō" [level=3] [ref=e416]
-                - paragraph [ref=e417]: Yasuyoshi
+                - heading "Katana" [level=3] [ref=e416]
+                - paragraph [ref=e417]: Horikawa
                 - generic [ref=e418]: ¥9,500,000
-            - button "token-net.com 河内守藤原国助 (第38回重要刀剣) Add to watchlist Jūyō Katana Horikawa ¥9,500,000" [ref=e419] [cursor=pointer]:
-              - generic [ref=e420]: token-net.com
+            - button "eirakudo.shop 銘安吉 短刀 重要刀剣 Add to watchlist Jūyō Tantō Yasuyoshi ¥9,500,000" [ref=e419] [cursor=pointer]:
+              - generic [ref=e420]: eirakudo.shop
               - generic [ref=e421]:
-                - img "河内守藤原国助 (第38回重要刀剣)" [ref=e422]
+                - img "銘安吉 短刀 重要刀剣" [ref=e422]
                 - button "Add to watchlist" [ref=e425]:
                   - img [ref=e426]
               - generic [ref=e428]:
                 - generic [ref=e429]: Jūyō
-                - heading "Katana" [level=3] [ref=e430]
-                - paragraph [ref=e431]: Horikawa
+                - heading "Tantō" [level=3] [ref=e430]
+                - paragraph [ref=e431]: Yasuyoshi
                 - generic [ref=e432]: ¥9,500,000
             - 'button "aoijapan.com Katana: Bitchu Koku ju Saemon no Jo Hidetugu (Aoe school)(1327)(The 68th NBTHK Juyo Token) Add to watchlist Jūyō Katana Hidetugu ¥9,500,000" [ref=e433] [cursor=pointer]':
               - generic [ref=e434]: aoijapan.com
@@ -347,7 +347,7 @@
                 - heading "Tantō" [level=3] [ref=e458]
                 - paragraph [ref=e459]: Muramasa
                 - generic [ref=e460]: ¥9,500,000
-            - button "eirakudo.shop 元重 刀 重要刀剣 Add to watchlist Jūyō Katana Motoshige ¥9,000,000" [ref=e461] [cursor=pointer]:
+            - button "eirakudo.shop 元重 刀 重要刀剣 Add to watchlist Jūyō Tachi Motoshige ¥9,000,000" [ref=e461] [cursor=pointer]:
               - generic [ref=e462]: eirakudo.shop
               - generic [ref=e463]:
                 - img "元重 刀 重要刀剣" [ref=e464]
@@ -355,7 +355,7 @@
                   - img [ref=e468]
               - generic [ref=e470]:
                 - generic [ref=e471]: Jūyō
-                - heading "Katana" [level=3] [ref=e472]
+                - heading "Tachi" [level=3] [ref=e472]
                 - paragraph [ref=e473]: Motoshige
                 - generic [ref=e474]: ¥9,000,000
             - button "kusanaginosya.com 重要刀剣!現存唯一無二!古備前三平である包平,高平,助平の孫『定包』平安期!古備前最初期の作!健全無比田野辺先生鞘書 Add to watchlist Jūyō Tachi Sadaakane ¥8,800,000" [ref=e475] [cursor=pointer]:
@@ -391,58 +391,58 @@
                 - heading "Katana" [level=3] [ref=e514]
                 - paragraph [ref=e515]: Taikei Naotane
                 - generic [ref=e516]: ¥8,500,000
-            - 'button "toukenkomachi.com 刀 大慶直胤(銘 表 : 出羽国住人大慶庄司直胤(花押) 裏 : 文政三年中秋) 白鞘入 Add to watchlist Jūyō Katana ¥8,000,000" [ref=e517] [cursor=pointer]':
-              - generic [ref=e518]: toukenkomachi.com
+            - button "eirakudo.shop 助長 太刀 重要刀剣 Add to watchlist Jūyō Tachi Sukenaga ¥8,000,000" [ref=e517] [cursor=pointer]:
+              - generic [ref=e518]: eirakudo.shop
               - generic [ref=e519]:
-                - 'img "刀 大慶直胤(銘 表 : 出羽国住人大慶庄司直胤(花押) 裏 : 文政三年中秋) 白鞘入" [ref=e520]'
+                - img "助長 太刀 重要刀剣" [ref=e520]
                 - button "Add to watchlist" [ref=e523]:
                   - img [ref=e524]
               - generic [ref=e526]:
                 - generic [ref=e527]: Jūyō
-                - heading "Katana" [level=3] [ref=e528]
-                - generic [ref=e529]: ¥8,000,000
-            - button "eirakudo.shop 正次 太刀 特別保存刀剣 Add to watchlist Tokubetsu Hozon Tachi Masatsugu ¥8,000,000" [ref=e530] [cursor=pointer]:
-              - generic [ref=e531]: eirakudo.shop
-              - generic [ref=e532]:
-                - img "正次 太刀 特別保存刀剣" [ref=e533]
-                - button "Add to watchlist" [ref=e536]:
-                  - img [ref=e537]
-              - generic [ref=e539]:
-                - generic [ref=e540]: Tokubetsu Hozon
-                - heading "Tachi" [level=3] [ref=e541]
-                - paragraph [ref=e542]: Masatsugu
+                - heading "Tachi" [level=3] [ref=e528]
+                - paragraph [ref=e529]: Sukenaga
+                - generic [ref=e530]: ¥8,000,000
+            - 'button "toukenkomachi.com 太刀 銘 (表)助村 (Tachi : Sukemura) Add to watchlist Jūyō Tachi ¥8,000,000" [ref=e531] [cursor=pointer]':
+              - generic [ref=e532]: toukenkomachi.com
+              - generic [ref=e533]:
+                - 'img "太刀 銘 (表)助村 (Tachi : Sukemura)" [ref=e534]'
+                - button "Add to watchlist" [ref=e537]:
+                  - img [ref=e538]
+              - generic [ref=e540]:
+                - generic [ref=e541]: Jūyō
+                - heading "Tachi" [level=3] [ref=e542]
                 - generic [ref=e543]: ¥8,000,000
-            - 'button "toukenkomachi.com 太刀 銘 (表)助村 (Tachi : Sukemura) Add to watchlist Jūyō Tachi ¥8,000,000" [ref=e544] [cursor=pointer]':
-              - generic [ref=e545]: toukenkomachi.com
+            - button "eirakudo.shop 正次 太刀 特別保存刀剣 Add to watchlist Tokubetsu Hozon Tachi Masatsugu ¥8,000,000" [ref=e544] [cursor=pointer]:
+              - generic [ref=e545]: eirakudo.shop
               - generic [ref=e546]:
-                - 'img "太刀 銘 (表)助村 (Tachi : Sukemura)" [ref=e547]'
+                - img "正次 太刀 特別保存刀剣" [ref=e547]
                 - button "Add to watchlist" [ref=e550]:
                   - img [ref=e551]
               - generic [ref=e553]:
-                - generic [ref=e554]: Jūyō
+                - generic [ref=e554]: Tokubetsu Hozon
                 - heading "Tachi" [level=3] [ref=e555]
-                - generic [ref=e556]: ¥8,000,000
-            - button "eirakudo.shop 助長 太刀 重要刀剣 Add to watchlist Jūyō Tachi Sukenaga ¥8,000,000" [ref=e557] [cursor=pointer]:
-              - generic [ref=e558]: eirakudo.shop
-              - generic [ref=e559]:
-                - img "助長 太刀 重要刀剣" [ref=e560]
-                - button "Add to watchlist" [ref=e563]:
-                  - img [ref=e564]
-              - generic [ref=e566]:
-                - generic [ref=e567]: Jūyō
-                - heading "Tachi" [level=3] [ref=e568]
-                - paragraph [ref=e569]: Sukenaga
-                - generic [ref=e570]: ¥8,000,000
-            - button "eirakudo.shop 粟田口久国 刀 重要刀剣 Add to watchlist Jūyō Katana Hisakuni ¥8,000,000" [ref=e571] [cursor=pointer]:
-              - generic [ref=e572]: eirakudo.shop
-              - generic [ref=e573]:
-                - img "粟田口久国 刀 重要刀剣" [ref=e574]
-                - button "Add to watchlist" [ref=e577]:
-                  - img [ref=e578]
-              - generic [ref=e580]:
-                - generic [ref=e581]: Jūyō
-                - heading "Katana" [level=3] [ref=e582]
-                - paragraph [ref=e583]: Hisakuni
+                - paragraph [ref=e556]: Masatsugu
+                - generic [ref=e557]: ¥8,000,000
+            - button "eirakudo.shop 粟田口久国 刀 重要刀剣 Add to watchlist Jūyō Katana Hisakuni ¥8,000,000" [ref=e558] [cursor=pointer]:
+              - generic [ref=e559]: eirakudo.shop
+              - generic [ref=e560]:
+                - img "粟田口久国 刀 重要刀剣" [ref=e561]
+                - button "Add to watchlist" [ref=e564]:
+                  - img [ref=e565]
+              - generic [ref=e567]:
+                - generic [ref=e568]: Jūyō
+                - heading "Katana" [level=3] [ref=e569]
+                - paragraph [ref=e570]: Hisakuni
+                - generic [ref=e571]: ¥8,000,000
+            - 'button "toukenkomachi.com 刀 大慶直胤(銘 表 : 出羽国住人大慶庄司直胤(花押) 裏 : 文政三年中秋) 白鞘入 Add to watchlist Jūyō Katana ¥8,000,000" [ref=e572] [cursor=pointer]':
+              - generic [ref=e573]: toukenkomachi.com
+              - generic [ref=e574]:
+                - 'img "刀 大慶直胤(銘 表 : 出羽国住人大慶庄司直胤(花押) 裏 : 文政三年中秋) 白鞘入" [ref=e575]'
+                - button "Add to watchlist" [ref=e578]:
+                  - img [ref=e579]
+              - generic [ref=e581]:
+                - generic [ref=e582]: Jūyō
+                - heading "Katana" [level=3] [ref=e583]
                 - generic [ref=e584]: ¥8,000,000
             - button "samurai-nippon.net 短刀 来国俊 Tanto:Rai Kunitoshi Add to watchlist Jūyō Tantō Kunitoshi ¥7,900,000" [ref=e585] [cursor=pointer]:
               - generic [ref=e586]: samurai-nippon.net
@@ -503,7 +503,7 @@
               - button "1" [ref=e657]
               - button "2" [ref=e658]
               - generic [ref=e659]: …
-              - button "78" [ref=e660]
+              - button "79" [ref=e660]
             - button "Next →" [ref=e661]
     - contentinfo [ref=e662]:
       - generic [ref=e664]:
@@ -512,7 +512,7 @@
           - generic [ref=e667]: Curated Japanese arms from dealers worldwide
         - generic [ref=e668]:
           - generic [ref=e669]:
-            - generic [ref=e671]: Updated 16m ago
+            - generic [ref=e671]: Updated 1m ago
             - generic [ref=e672]: ·
             - generic [ref=e673]: Daily refresh
           - generic [ref=e674]: © 2026
