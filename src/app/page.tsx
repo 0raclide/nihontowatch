@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useCallback, Suspense, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import Image from 'next/image';
+import Link from 'next/link';
 import { Header } from '@/components/layout/Header';
 import { FilterSidebar } from '@/components/browse/FilterSidebar';
 import { FilterDrawer } from '@/components/browse/FilterDrawer';
@@ -277,7 +279,21 @@ function HomeContent() {
         {/* Page Header - Refined scholarly aesthetic */}
         <div className="mb-4 lg:mb-6 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <h1 className="font-serif text-xl lg:text-2xl text-ink tracking-tight">Collection</h1>
+            {/* Mobile: Show NihontoWatch branding */}
+            <Link href="/" className="lg:hidden flex items-center gap-2 mb-1">
+              <Image
+                src="/logo-mon.png"
+                alt="NihontoWatch Mon"
+                width={28}
+                height={28}
+                className="opacity-90"
+              />
+              <h1 className="font-serif text-xl tracking-tight text-ink">
+                Nihonto<span className="text-gold font-medium">Watch</span>
+              </h1>
+            </Link>
+            {/* Desktop: Show "Collection" */}
+            <h1 className="hidden lg:block font-serif text-2xl text-ink tracking-tight">Collection</h1>
             <p className="text-[12px] lg:text-[13px] text-muted mt-1">
               Japanese swords and fittings from established dealers
             </p>

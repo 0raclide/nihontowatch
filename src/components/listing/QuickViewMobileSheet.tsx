@@ -4,6 +4,7 @@ import { useRef, useCallback, useEffect, useState } from 'react';
 import type { Listing } from '@/types';
 import { isTosogu, getItemTypeLabel } from '@/types';
 import { useCurrency, formatPriceWithConversion } from '@/hooks/useCurrency';
+import { FavoriteButton } from '@/components/favorites/FavoriteButton';
 
 // =============================================================================
 // TYPES
@@ -218,11 +219,15 @@ export function QuickViewMobileSheet({
             </svg>
           </button>
 
-          {/* Price - Large and prominent */}
-          <div className="pt-1 pb-3">
+          {/* Price row with favorite button */}
+          <div className="pt-1 pb-3 flex items-center justify-between">
             <span className={`text-2xl font-semibold tabular-nums ${listing.price_value ? 'text-ink' : 'text-muted'}`}>
               {priceDisplay}
             </span>
+            <FavoriteButton
+              listingId={listing.id}
+              size="sm"
+            />
           </div>
 
           {/* Badges row: Item type + Certification */}
@@ -297,12 +302,23 @@ export function QuickViewMobileSheet({
             </svg>
           </div>
 
-          {/* Image counter on right */}
-          {imageCount > 0 && (
-            <span className="text-[12px] text-muted tabular-nums">
-              {currentImageIndex + 1}/{imageCount}
-            </span>
-          )}
+          {/* Right side: Favorite button + Image counter */}
+          <div className="flex items-center gap-3">
+            <div
+              onClick={(e) => e.stopPropagation()}
+              onTouchStart={(e) => e.stopPropagation()}
+            >
+              <FavoriteButton
+                listingId={listing.id}
+                size="sm"
+              />
+            </div>
+            {imageCount > 0 && (
+              <span className="text-[12px] text-muted tabular-nums">
+                {currentImageIndex + 1}/{imageCount}
+              </span>
+            )}
+          </div>
         </div>
       )}
     </div>

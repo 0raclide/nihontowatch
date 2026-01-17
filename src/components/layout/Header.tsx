@@ -14,7 +14,8 @@ import { UserMenu } from '@/components/auth/UserMenu';
 import { useActivityOptional } from '@/components/activity/ActivityProvider';
 
 function HeaderContent() {
-  const { openSearch, openNavDrawer } = useMobileUI();
+  // Note: useMobileUI is imported but openSearch/openNavDrawer are used by MobileNavDrawer/MobileSearchSheet
+  useMobileUI(); // Keep context active for child components
   const searchParams = useSearchParams();
   const router = useRouter();
   const currentQuery = searchParams.get('q') || '';
@@ -69,52 +70,11 @@ function HeaderContent() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 bg-cream transition-colors">
+      {/* Header hidden on mobile - branding moved to page header */}
+      <header className="hidden lg:block sticky top-0 z-40 bg-cream transition-colors">
         <div className="max-w-[1600px] mx-auto px-4 py-3 lg:px-6 lg:py-5">
-          {/* Mobile Header */}
-          <div className="flex lg:hidden items-center justify-between">
-            {/* Logo */}
-            <Link href="/" className="flex items-center gap-2">
-              <Image
-                src="/logo-mon.png"
-                alt="NihontoWatch Mon"
-                width={28}
-                height={28}
-                className="opacity-90"
-              />
-              <h1 className="font-serif text-xl tracking-tight text-ink">
-                Nihonto<span className="text-gold font-medium">Watch</span>
-              </h1>
-            </Link>
-
-            {/* Mobile Actions */}
-            <div className="flex items-center gap-1">
-              {/* Search Button */}
-              <button
-                onClick={openSearch}
-                className="p-2.5 text-muted hover:text-gold transition-colors"
-                aria-label="Search"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </button>
-
-              {/* Menu Button */}
-              <button
-                onClick={openNavDrawer}
-                className="p-2.5 text-muted hover:text-gold transition-colors"
-                aria-label="Menu"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              </button>
-            </div>
-          </div>
-
           {/* Desktop Header */}
-          <div className="hidden lg:flex items-center justify-between">
+          <div className="flex items-center justify-between">
             {/* Logo */}
             <Link href="/" className="group flex items-center gap-3">
               <Image
@@ -289,26 +249,26 @@ function HeaderContent() {
   );
 }
 
-// Fallback for Suspense - minimal header skeleton
+// Fallback for Suspense - minimal header skeleton (hidden on mobile)
 function HeaderFallback() {
   return (
-    <header className="sticky top-0 z-40 bg-cream transition-colors">
+    <header className="hidden lg:block sticky top-0 z-40 bg-cream transition-colors">
       <div className="max-w-[1600px] mx-auto px-4 py-3 lg:px-6 lg:py-5">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 lg:gap-3">
+          <div className="flex items-center gap-3">
             <Image
               src="/logo-mon.png"
               alt="NihontoWatch Mon"
-              width={28}
-              height={28}
-              className="opacity-90 lg:w-9 lg:h-9"
+              width={36}
+              height={36}
+              className="opacity-90"
             />
-            <span className="font-serif text-xl lg:text-2xl tracking-tight text-ink">
+            <span className="font-serif text-2xl tracking-tight text-ink">
               Nihonto<span className="text-gold font-medium">Watch</span>
             </span>
           </div>
           <div className="flex items-center gap-4">
-            <div className="w-64 h-10 bg-linen/50 rounded animate-pulse hidden lg:block" />
+            <div className="w-64 h-10 bg-linen/50 rounded animate-pulse" />
             <div className="w-8 h-8 bg-linen/50 rounded-full animate-pulse" />
           </div>
         </div>
