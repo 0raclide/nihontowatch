@@ -6,14 +6,11 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.placeholder';
 
 /**
- * Singleton Supabase client for browser use
- * Created at module level for consistent auth state (matches oshi-v2 pattern)
- */
-const supabase = createBrowserClient<Database>(supabaseUrl, supabaseAnonKey);
-
-/**
- * Get the Supabase client for use in Client Components
+ * Create a new Supabase client for use in Client Components
+ *
+ * Note: We create a fresh client each call to avoid stale state issues.
+ * The @supabase/ssr package handles session persistence via cookies automatically.
  */
 export function createClient() {
-  return supabase;
+  return createBrowserClient<Database>(supabaseUrl, supabaseAnonKey);
 }

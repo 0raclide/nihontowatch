@@ -6,9 +6,10 @@ import {
   useEffect,
   useState,
   useCallback,
+  useRef,
   type ReactNode,
 } from 'react';
-import { User, Session, AuthError } from '@supabase/supabase-js';
+import { User, Session, AuthError, SupabaseClient } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/client';
 import type { Database } from '@/types/database';
 
@@ -54,6 +55,9 @@ interface AuthProviderProps {
 // Key for localStorage
 const AUTH_CACHE_KEY = 'nihontowatch_auth_cache';
 
+// Profile fetch timeout (10 seconds)
+const PROFILE_FETCH_TIMEOUT = 10000;
+
 // Helper to safely access localStorage
 function getAuthCache(): Partial<AuthState> | null {
   if (typeof window === 'undefined') return null;
@@ -97,6 +101,46 @@ function clearAuthCache() {
   }
 }
 
+// Fetch profile with timeout protection
+async function fetchProfileWithTimeout(
+  supabase: SupabaseClient<Database>,
+  userId: string
+): Promise<Profile | null> {
+  console.log('[Auth] Fetching profile for user:', userId);
+
+  // Create timeout promise
+  const timeoutPromise = new Promise<{ data: null; error: { message: string } }>((resolve) => {
+    setTimeout(() => {
+      console.error('[Auth] Profile fetch timed out after', PROFILE_FETCH_TIMEOUT, 'ms');
+      resolve({ data: null, error: { message: 'Profile fetch timed out' } });
+    }, PROFILE_FETCH_TIMEOUT);
+  });
+
+  // Race between fetch and timeout
+  const fetchPromise = supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', userId)
+    .single();
+
+  try {
+    const result = await Promise.race([fetchPromise, timeoutPromise]);
+
+    if (result.error) {
+      console.error('[Auth] Error fetching profile:', result.error);
+      return null;
+    }
+
+    console.log('[Auth] Profile fetched:', result.data);
+    const profile = result.data as Profile | null;
+    console.log('[Auth] Profile role:', profile?.role, 'isAdmin:', profile?.role === 'admin');
+    return profile;
+  } catch (err) {
+    console.error('[Auth] Unexpected error fetching profile:', err);
+    return null;
+  }
+}
+
 export function AuthProvider({ children }: AuthProviderProps) {
   // Restore cached state immediately to prevent flash
   const cachedState = getAuthCache();
@@ -109,48 +153,39 @@ export function AuthProvider({ children }: AuthProviderProps) {
     isAdmin: cachedState?.isAdmin || false,
   });
 
-  const supabase = createClient();
+  // Use ref to store supabase client to avoid recreating on each render
+  const supabaseRef = useRef<SupabaseClient<Database> | null>(null);
+  if (!supabaseRef.current) {
+    supabaseRef.current = createClient();
+  }
+  const supabase = supabaseRef.current;
 
-  // Fetch profile from database
-  const fetchProfile = useCallback(
-    async (userId: string): Promise<Profile | null> => {
-      console.log('[Auth] Fetching profile for user:', userId);
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
+  // Track if we've already initialized to prevent double-init from INITIAL_SESSION + initAuth
+  const hasInitializedRef = useRef(false);
 
-      if (error) {
-        console.error('[Auth] Error fetching profile:', error);
-        return null;
-      }
-
-      console.log('[Auth] Profile fetched:', data);
-      const profile = data as Profile | null;
-      console.log('[Auth] Profile role:', profile?.role, 'isAdmin:', profile?.role === 'admin');
-      return profile;
-    },
-    [supabase]
-  );
-
-  // Refresh profile
+  // Refresh profile (for manual refresh)
   const refreshProfile = useCallback(async () => {
     if (!state.user) return;
 
-    const profile = await fetchProfile(state.user.id);
+    const profile = await fetchProfileWithTimeout(supabase, state.user.id);
     setState((prev) => ({
       ...prev,
       profile,
       isAdmin: profile?.role === 'admin',
     }));
-  }, [state.user, fetchProfile]);
+  }, [state.user, supabase]);
 
-  // Initialize auth state
+  // Initialize auth state - runs ONCE on mount
   useEffect(() => {
     let isMounted = true;
 
     const initAuth = async () => {
+      // Skip if already initialized by onAuthStateChange
+      if (hasInitializedRef.current) {
+        console.log('[Auth] Already initialized, skipping initAuth');
+        return;
+      }
+
       console.log('[Auth] initAuth starting...');
       try {
         const {
@@ -159,10 +194,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
         console.log('[Auth] getSession result:', { hasSession: !!session, hasUser: !!session?.user });
 
+        // Check again in case onAuthStateChange fired while we were waiting
+        if (hasInitializedRef.current) {
+          console.log('[Auth] Initialized during getSession, skipping state update');
+          return;
+        }
+
         if (session?.user) {
-          const profile = await fetchProfile(session.user.id);
+          const profile = await fetchProfileWithTimeout(supabase, session.user.id);
           console.log('[Auth] Setting state with profile, isAdmin:', profile?.role === 'admin');
-          if (isMounted) {
+          if (isMounted && !hasInitializedRef.current) {
+            hasInitializedRef.current = true;
             const newState = {
               user: session.user,
               profile,
@@ -172,11 +214,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
             };
             setState(newState);
             setAuthCache(newState);
-            console.log('[Auth] State updated successfully');
+            console.log('[Auth] State updated successfully from initAuth');
           }
         } else {
           console.log('[Auth] No session, setting logged out state');
-          if (isMounted) {
+          if (isMounted && !hasInitializedRef.current) {
+            hasInitializedRef.current = true;
             setState({
               user: null,
               profile: null,
@@ -190,28 +233,66 @@ export function AuthProvider({ children }: AuthProviderProps) {
       } catch (error) {
         console.error('[Auth] Error initializing auth:', error);
         if (isMounted) {
+          hasInitializedRef.current = true;
           setState((prev) => ({ ...prev, isLoading: false }));
         }
       }
     };
-
-    initAuth();
 
     // Listen for auth state changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('[Auth] onAuthStateChange:', event);
+
+      // Handle INITIAL_SESSION - this fires immediately with cached session
+      if (event === 'INITIAL_SESSION') {
+        if (session?.user) {
+          console.log('[Auth] INITIAL_SESSION with user, fetching profile...');
+          const profile = await fetchProfileWithTimeout(supabase, session.user.id);
+          if (isMounted) {
+            hasInitializedRef.current = true;
+            const newState = {
+              user: session.user,
+              profile,
+              session,
+              isLoading: false,
+              isAdmin: profile?.role === 'admin',
+            };
+            setState(newState);
+            setAuthCache(newState);
+            console.log('[Auth] State updated from INITIAL_SESSION');
+          }
+        } else {
+          console.log('[Auth] INITIAL_SESSION with no user');
+          if (isMounted) {
+            hasInitializedRef.current = true;
+            setState({
+              user: null,
+              profile: null,
+              session: null,
+              isLoading: false,
+              isAdmin: false,
+            });
+            clearAuthCache();
+          }
+        }
+        return;
+      }
+
       if (event === 'SIGNED_IN' && session?.user) {
-        const profile = await fetchProfile(session.user.id);
-        const newState = {
-          user: session.user,
-          profile,
-          session,
-          isLoading: false,
-          isAdmin: profile?.role === 'admin',
-        };
+        // Only process if not already initialized (avoid duplicate processing)
+        console.log('[Auth] SIGNED_IN event, fetching profile...');
+        const profile = await fetchProfileWithTimeout(supabase, session.user.id);
         if (isMounted) {
+          hasInitializedRef.current = true;
+          const newState = {
+            user: session.user,
+            profile,
+            session,
+            isLoading: false,
+            isAdmin: profile?.role === 'admin',
+          };
           setState(newState);
           setAuthCache(newState);
           console.log('[Auth] State updated from SIGNED_IN event');
@@ -238,11 +319,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
     });
 
+    // Start initialization after setting up listener
+    initAuth();
+
     return () => {
       isMounted = false;
       subscription.unsubscribe();
     };
-  }, [supabase, fetchProfile]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty deps - only run once on mount
 
   // Sign in with email (sends magic code)
   const signInWithEmail = useCallback(
