@@ -621,6 +621,19 @@ body.drawer-open {
   overscroll-behavior: contain;
 }
 
+/* ==========================================================================
+   Mobile Virtual Scroll
+   ========================================================================== */
+.virtual-scroll-container {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+}
+
+/* Mobile listing card - no image transitions for smooth scrolling */
+.mobile-listing-card img {
+  transition: none !important;
+}
+
 /* Touch-friendly tap highlight */
 @media (hover: none) {
   button, a, label {

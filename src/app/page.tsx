@@ -357,6 +357,7 @@ function HomeContent() {
               isLoading={isLoading}
               isLoadingMore={isLoadingMore}
               infiniteScroll={isMobile}
+              onLoadMore={loadMore}
               currency={currency}
               exchangeRates={exchangeRates}
             />
