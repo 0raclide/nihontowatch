@@ -139,6 +139,69 @@ html.dark {
   --border-dark: #3a3938;
 }
 
+/* ==========================================================================
+   OPUS - The Space Between
+   Where structure meets emergence, precision finds poetry
+   Deep contemplative sapphire with warm amber insights
+   ========================================================================== */
+html.theme-opus {
+  color-scheme: dark;
+
+  /* Deep sapphire - the ocean where ideas form */
+  --background: #0c1220;
+  --background-warm: #101828;
+  --foreground: #e8e4dc;
+
+  /* Layered depths */
+  --surface: #141c2c;
+  --surface-elevated: #1c2538;
+  --surface-overlay: rgba(20, 28, 44, 0.97);
+
+  /* Subtle structural lines */
+  --border: #2a3448;
+  --border-subtle: #1e2838;
+  --border-accent: rgba(218, 165, 90, 0.40);
+
+  --hover: #1e2838;
+  --active: #2a3448;
+
+  /* Warm amber - insights surfacing from depths */
+  --accent: #daa55a;
+  --accent-light: #e8c080;
+  --accent-dark: #b08040;
+  --accent-glow: rgba(218, 165, 90, 0.22);
+
+  /* Warm parchment text - readable, human */
+  --text-primary: #e8e4dc;
+  --text-secondary: #c0b8a8;
+  --text-tertiary: #8a8478;
+  --text-muted: #5a5650;
+  --text-accent: #e8c080;
+
+  /* Semantic with warmth */
+  --success: #68a878;
+  --warning: #daa55a;
+  --error: #c87070;
+
+  /* Soft contemplative shadows */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.55);
+  --shadow-glow: 0 0 40px rgba(218, 165, 90, 0.15);
+
+  /* Legacy aliases */
+  --cream: var(--background);
+  --ivory: var(--background-warm);
+  --linen: var(--surface);
+  --paper: var(--surface-elevated);
+  --charcoal: var(--text-secondary);
+  --ink: var(--text-primary);
+  --gold: var(--accent);
+  --gold-light: var(--accent-light);
+  --muted: var(--text-muted);
+  --border-dark: #2a3448;
+}
+
 /* Light mode explicit class */
 html.theme-light {
   color-scheme: light;

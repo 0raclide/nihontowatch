@@ -16,12 +16,12 @@ import {
 /**
  * Available theme names - each has a unique aesthetic
  *
- * Dark themes: yuhinkai (default), midnight
- * Light themes: parchment
+ * Dark themes: dark (default), opus
+ * Light themes: light
  *
  * Extensible: Add new themes to THEME_NAMES and THEMES record
  */
-export const THEME_NAMES = ['dark', 'light'] as const;
+export const THEME_NAMES = ['dark', 'light', 'opus'] as const;
 export type ThemeName = (typeof THEME_NAMES)[number];
 
 export type ThemeMode = 'light' | 'dark';
@@ -62,6 +62,14 @@ export const THEMES: Record<ThemeName, ThemeDefinition> = {
     previewAccent: '#B8860B',
     previewBg: '#FAF9F6',
     metaColor: '#FAF9F6',
+  },
+  opus: {
+    name: 'opus',
+    label: 'Opus',
+    mode: 'dark',
+    previewAccent: '#daa55a',
+    previewBg: '#0c1220',
+    metaColor: '#0c1220',
   },
 };
 
@@ -257,10 +265,11 @@ export const themeInitScript = `
 (function() {
   try {
     var stored = localStorage.getItem('nihontowatch-theme');
-    var themes = ['dark', 'light'];
+    var themes = ['dark', 'light', 'opus'];
     var themeData = {
       dark: { mode: 'dark', metaColor: '#121212' },
-      light: { mode: 'light', metaColor: '#FAF9F6' }
+      light: { mode: 'light', metaColor: '#FAF9F6' },
+      opus: { mode: 'dark', metaColor: '#0c1220' }
     };
 
     var theme = themes.includes(stored) ? stored : null;
