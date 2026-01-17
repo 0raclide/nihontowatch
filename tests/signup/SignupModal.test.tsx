@@ -212,17 +212,6 @@ describe('SignupModal', () => {
       });
     });
 
-    it('renders OAuth buttons', async () => {
-      render(<TestWrapper />);
-
-      fireEvent.click(screen.getByTestId('trigger-modal'));
-
-      await waitFor(() => {
-        expect(screen.getByRole('button', { name: /google/i })).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: /apple/i })).toBeInTheDocument();
-      });
-    });
-
     it('renders dismiss link', async () => {
       render(<TestWrapper />);
 
@@ -406,21 +395,6 @@ describe('SignupModal', () => {
       expect(closeButton.tagName.toLowerCase()).toBe('button');
     });
 
-    it('has accessible OAuth buttons', async () => {
-      render(<TestWrapper />);
-
-      fireEvent.click(screen.getByTestId('trigger-modal'));
-
-      await waitFor(() => {
-        expect(
-          screen.getByRole('button', { name: /continue with google/i })
-        ).toBeInTheDocument();
-        expect(
-          screen.getByRole('button', { name: /continue with apple/i })
-        ).toBeInTheDocument();
-      });
-    });
-
     it('has accessible email input with label', async () => {
       render(<TestWrapper />);
 
@@ -574,44 +548,6 @@ describe('SignupModal', () => {
       await waitFor(() => {
         expect(screen.getByRole('button', { name: 'Creating account...' })).toBeInTheDocument();
       });
-    });
-  });
-
-  describe('OAuth Button Clicks', () => {
-    it('calls handler when Google button is clicked', async () => {
-      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-
-      render(<TestWrapper />);
-
-      fireEvent.click(screen.getByTestId('trigger-modal'));
-
-      await waitFor(() => {
-        expect(screen.getByRole('dialog')).toBeInTheDocument();
-      });
-
-      const googleButton = screen.getByRole('button', { name: /google/i });
-      fireEvent.click(googleButton);
-
-      expect(consoleSpy).toHaveBeenCalledWith('OAuth with google');
-      consoleSpy.mockRestore();
-    });
-
-    it('calls handler when Apple button is clicked', async () => {
-      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-
-      render(<TestWrapper />);
-
-      fireEvent.click(screen.getByTestId('trigger-modal'));
-
-      await waitFor(() => {
-        expect(screen.getByRole('dialog')).toBeInTheDocument();
-      });
-
-      const appleButton = screen.getByRole('button', { name: /apple/i });
-      fireEvent.click(appleButton);
-
-      expect(consoleSpy).toHaveBeenCalledWith('OAuth with apple');
-      consoleSpy.mockRestore();
     });
   });
 
@@ -846,7 +782,7 @@ describe('SignupModal', () => {
         // Verify critical modal elements are rendered
         expect(screen.getByRole('dialog')).toBeInTheDocument();
         expect(screen.getByPlaceholderText('email@example.com')).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: /google/i })).toBeInTheDocument();
+        expect(screen.getByText(/continue browsing/i)).toBeInTheDocument();
       });
     });
   });
@@ -1114,14 +1050,9 @@ describe('SignupModal', () => {
       // Tab to submit button
       fireEvent.keyDown(document.activeElement!, { key: 'Tab' });
 
-      // Tab to Google button
-      const googleButton = screen.getByRole('button', { name: /google/i });
-      const appleButton = screen.getByRole('button', { name: /apple/i });
       const dismissLink = screen.getByText(/continue browsing/i);
 
-      // Verify these elements are tabbable (have no tabindex=-1)
-      expect(googleButton).not.toHaveAttribute('tabindex', '-1');
-      expect(appleButton).not.toHaveAttribute('tabindex', '-1');
+      // Verify dismiss link is tabbable (has no tabindex=-1)
       expect(dismissLink).not.toHaveAttribute('tabindex', '-1');
     });
 
@@ -1182,7 +1113,7 @@ describe('SignupModal', () => {
       await waitFor(() => {
         const dialog = screen.getByRole('dialog');
         const svgs = dialog.querySelectorAll('svg[aria-hidden="true"]');
-        // Should have close icon, google icon, apple icon
+        // Should have close icon
         expect(svgs.length).toBeGreaterThanOrEqual(1);
       });
     });
