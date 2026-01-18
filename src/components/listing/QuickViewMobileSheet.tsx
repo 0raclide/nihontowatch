@@ -345,12 +345,14 @@ export function QuickViewMobileSheet({
             onTouchEnd={(e) => e.stopPropagation()}
             data-testid="mobile-sheet-scroll-content"
           >
-            {/* Attribution & Measurements */}
+            {/* Attribution & Measurements (artisan/school shown in header above) */}
             <MetadataGrid
               listing={listing}
               variant="full"
               showAttribution={true}
               showMeasurements={true}
+              hideArtisan={true}
+              hideSchool={true}
             />
 
             {/* Title (auto-translated if Japanese) */}

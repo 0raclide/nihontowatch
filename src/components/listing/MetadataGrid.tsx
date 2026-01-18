@@ -13,6 +13,8 @@ interface MetadataGridProps {
   className?: string;
   showAttribution?: boolean;
   showMeasurements?: boolean;
+  hideArtisan?: boolean; // Hide smith/maker (shown elsewhere)
+  hideSchool?: boolean;  // Hide school (shown elsewhere)
 }
 
 interface MetadataItemProps {
@@ -116,6 +118,8 @@ export function MetadataGrid({
   className = '',
   showAttribution = true,
   showMeasurements = true,
+  hideArtisan = false,
+  hideSchool = false,
 }: MetadataGridProps) {
   const { artisan, school, artisanLabel } = getArtisanInfo(listing);
   const certInfo = getCertInfo(listing.cert_type);
@@ -131,8 +135,10 @@ export function MetadataGrid({
   // Tosogu measurements not yet available in database
   const hasMeasurements = hasSwordMeasurements;
 
-  // Check for attribution data
-  const hasAttribution = artisan || school || listing.era || listing.province || listing.mei_type || certInfo;
+  // Check for attribution data (excluding hidden fields)
+  const displayArtisan = !hideArtisan && artisan;
+  const displaySchool = !hideSchool && school;
+  const hasAttribution = displayArtisan || displaySchool || listing.era || listing.province || listing.mei_type || certInfo;
 
   if (variant === 'compact') {
     // Compact variant: single row of key measurements
@@ -158,7 +164,7 @@ export function MetadataGrid({
             </h3>
             <div className="grid grid-cols-2 gap-x-4 gap-y-3">
               {/* Artisan */}
-              {artisan && (
+              {displayArtisan && (
                 <div className="col-span-2">
                   <span className="text-[10px] uppercase tracking-wider text-muted block mb-0.5">
                     {artisanLabel}
@@ -167,7 +173,7 @@ export function MetadataGrid({
                 </div>
               )}
 
-              <MetadataItem label="School" value={school} />
+              {displaySchool && <MetadataItem label="School" value={school} />}
               <MetadataItem label="Era" value={listing.era} />
               <MetadataItem label="Province" value={listing.province} />
               <MetadataItem label="Signature" value={listing.mei_type} />
