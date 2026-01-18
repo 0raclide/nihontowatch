@@ -8,7 +8,7 @@ This document covers Nihontowatch's user behavior tracking system, the signals w
 
 **North Star Metric:** Time spent using the app (session duration, return visits)
 
-**Last Updated:** January 2026
+**Last Updated:** January 18, 2026
 
 ---
 
@@ -25,6 +25,7 @@ This document covers Nihontowatch's user behavior tracking system, the signals w
 9. [Technical Reference](#technical-reference)
 10. [Database Schema](#database-schema)
 11. [Querying Activity Data](#querying-activity-data)
+12. [Admin Dashboard (Plausible-lite)](#admin-dashboard-plausible-lite)
 
 ---
 
@@ -60,7 +61,8 @@ Supabase Tables
 └── user_activity (admin dashboard summary)
         │
         ▼
-Admin Dashboard
+Admin Dashboards
+├── /admin/visitors (Plausible-lite - visitor analytics)
 ├── /admin/analytics (high-level stats)
 └── /admin/activity (detailed log + CSV export)
 ```
@@ -82,6 +84,9 @@ Admin Dashboard
 | `src/components/listing/QuickView.tsx` | Panel toggle + pinch zoom integration |
 | `src/app/api/activity/route.ts` | Batch event ingestion, IP extraction |
 | `src/app/api/activity/session/route.ts` | Session create/end |
+| `src/app/api/admin/visitors/route.ts` | Visitor statistics API (Plausible-lite) |
+| `src/app/api/admin/visitors/geo/route.ts` | IP geolocation batch lookup |
+| `src/app/admin/visitors/page.tsx` | Plausible-lite dashboard UI |
 
 ### Currently Tracked Events
 
@@ -845,6 +850,100 @@ This outputs:
 - Top dealers by click count
 - Activity by hour
 - Unique visitor/session counts
+
+---
+
+## Admin Dashboard (Plausible-lite)
+
+A privacy-respecting analytics dashboard inspired by Plausible, available at `/admin/visitors`.
+
+### Features
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ ⚠️ Visitor tracking started recently                            │
+│   13 of 1,253 events (1.0%) have visitor tracking.              │
+│   Tracking began 2h ago.                                        │
+├─────────────────────────────────────────────────────────────────┤
+│  Tracked Visitors    Unique IPs    Sessions    Total Events     │
+│        2                 1            430          1,253         │
+│  Unique visitor IDs  Distinct IPs  Browser tabs  All actions    │
+├─────────────────────────────────────────────────────────────────┤
+│  [████████░░░░] Visitors Over Time (bar chart)                  │
+├──────────────────┬──────────────────┬────────────────────────────┤
+│  Locations       │  Top Dealers     │  Event Types               │
+│  🇨🇭 Switzerland  │  Aoi Art    66   │  Filter Changes   441      │
+│  🇯🇵 Japan        │  Iida Koendo 34  │  Page Views       310      │
+│  🇺🇸 USA          │  Eirakudo   32   │  Dealer Clicks    232      │
+├──────────────────┴──────────────────┴────────────────────────────┤
+│  Recent Visitors (table with location, events, last seen)       │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Honest Metrics Philosophy
+
+The dashboard is designed to be **honest about data quality**:
+
+| Metric | What It Shows | Why It's Honest |
+|--------|---------------|-----------------|
+| **Tracked Visitors** | Unique `visitor_id` values | Only counts events with proper tracking |
+| **Unique IPs** | Distinct IP addresses | Secondary signal, shown separately |
+| **Sessions** | Unique `session_id` values | Context only - not conflated with visitors |
+| **Tracking Coverage** | % of events with `visitor_id` | Warns when coverage is incomplete |
+
+### API Endpoints
+
+**GET `/api/admin/visitors?range=7d`**
+
+Returns aggregated visitor statistics:
+```typescript
+{
+  trackedVisitors: number;      // Unique visitor_ids
+  totalSessions: number;        // Unique session_ids
+  uniqueIPs: string[];          // For geo lookup
+  totalEvents: number;
+  eventsWithTracking: number;   // Events with visitor_id
+  eventsWithoutTracking: number;
+  trackingStartDate: string;    // When tracking began
+  visitorsByDay: [...];         // Time series
+  topEventTypes: [...];
+  topDealers: [...];
+  visitors: [...];              // Top visitors list
+  activeNow: number;            // Real-time (last 5 min)
+}
+```
+
+**POST `/api/admin/visitors/geo`**
+
+Batch IP geolocation lookup:
+```typescript
+// Request
+{ ips: ["1.2.3.4", "5.6.7.8"] }
+
+// Response
+{
+  geoData: {
+    "1.2.3.4": { country: "Japan", countryCode: "JP", city: "Tokyo", ... }
+  },
+  countrySummary: [
+    { country: "Japan", countryCode: "JP", count: 5, percentage: 50 }
+  ]
+}
+```
+
+### Time Ranges
+
+- `24h` - Last 24 hours
+- `7d` - Last 7 days (default)
+- `30d` - Last 30 days
+- `90d` - Last 90 days
+
+### Geolocation
+
+IP addresses are looked up via [ip-api.com](http://ip-api.com) (free tier):
+- Batch requests (up to 100 IPs per request)
+- Returns country, region, city, ISP, timezone
+- Country flags displayed using Unicode regional indicators
 
 ---
 
