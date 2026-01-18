@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Drawer } from '@/components/ui/Drawer';
 import { useMobileUI } from '@/contexts/MobileUIContext';
 
@@ -16,6 +16,8 @@ const QUICK_SEARCHES = [
 
 export function MobileSearchSheet() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const currentQuery = searchParams.get('q') || '';
   const { searchOpen, closeSearch } = useMobileUI();
   const [isSearching, setIsSearching] = useState(false);
   const [inputValue, setInputValue] = useState('');
@@ -31,6 +33,11 @@ export function MobileSearchSheet() {
       setIsSearching(false);
     }
   }, [searchOpen]);
+
+  // Reset searching state when URL changes (navigation completed)
+  useEffect(() => {
+    setIsSearching(false);
+  }, [currentQuery]);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

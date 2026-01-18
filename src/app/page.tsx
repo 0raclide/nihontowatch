@@ -207,10 +207,26 @@ function HomeContent() {
     return params;
   }, [activeTab, filters, sort, searchQuery]); // Note: page is NOT in deps
 
-  // Sync URL with state
+  // Track previous URL to avoid unnecessary replaces that break history
+  const prevUrlRef = useRef<string | null>(null);
+
+  // Sync URL with state - only replace when URL actually changes
+  // This prevents infinite loops and preserves router.push() history entries
   useEffect(() => {
     const params = buildUrlParams();
     const newUrl = `/${params.toString() ? `?${params.toString()}` : ''}`;
+
+    // Skip if URL hasn't changed (prevents infinite loop and history overwrites)
+    if (prevUrlRef.current === newUrl) return;
+
+    // On initial mount, just record the URL without replacing
+    // This preserves the history entry created by router.push() from search
+    if (prevUrlRef.current === null) {
+      prevUrlRef.current = newUrl;
+      return;
+    }
+
+    prevUrlRef.current = newUrl;
     router.replace(newUrl, { scroll: false });
   }, [buildUrlParams, router]);
 

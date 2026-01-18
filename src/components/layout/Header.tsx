@@ -23,6 +23,11 @@ function HeaderContent() {
   const { user, profile, isLoading: authLoading, isAdmin } = useAuth();
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
+
+  // Reset searching state when URL changes (navigation completed)
+  useEffect(() => {
+    setIsSearching(false);
+  }, [currentQuery]);
   const [showAdminMenu, setShowAdminMenu] = useState(false);
   const adminMenuRef = useRef<HTMLDivElement>(null);
   const activity = useActivityOptional();
