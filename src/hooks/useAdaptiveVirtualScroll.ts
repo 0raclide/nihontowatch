@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef, useLayoutEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 /**
  * Responsive breakpoints matching Tailwind defaults.
@@ -38,10 +38,10 @@ function getRowHeight(columns: number): number {
 
 interface UseAdaptiveVirtualScrollOptions<T> {
   items: T[];
+  /** Total count of all items (for pre-calculating container height) */
+  totalCount?: number;
   overscan?: number;
   enabled?: boolean;
-  /** Called when container height is about to change (before render) */
-  onHeightWillChange?: () => void;
 }
 
 interface UseAdaptiveVirtualScrollResult<T> {
@@ -74,9 +74,9 @@ interface UseAdaptiveVirtualScrollResult<T> {
  */
 export function useAdaptiveVirtualScroll<T>({
   items,
+  totalCount,
   overscan = 2,
   enabled = true,
-  onHeightWillChange,
 }: UseAdaptiveVirtualScrollOptions<T>): UseAdaptiveVirtualScrollResult<T> {
   // SSR-safe defaults - assume desktop-ish viewport
   const [dimensions, setDimensions] = useState({
@@ -89,7 +89,6 @@ export function useAdaptiveVirtualScroll<T>({
   const [isClient, setIsClient] = useState(false);
   const rafRef = useRef<number | null>(null);
   const lastScrollTopRef = useRef(0);
-  const prevHeightRef = useRef(0);
 
   // Track client-side mounting
   useEffect(() => {
@@ -160,25 +159,20 @@ export function useAdaptiveVirtualScroll<T>({
 
   // Calculate virtualization parameters
   const { viewportHeight, columns, rowHeight } = dimensions;
-  const rowCount = Math.ceil(items.length / columns);
+
+  // Use totalCount for height calculation if provided (prevents bounce on load more)
+  // This reserves space for ALL items upfront, so loading more doesn't change height
+  const itemCountForHeight = totalCount ?? items.length;
+  const rowCount = Math.ceil(itemCountForHeight / columns);
   const totalHeight = rowCount * rowHeight;
 
-  // Detect height changes and notify before paint
-  // useLayoutEffect runs synchronously after DOM mutations but before paint
-  useLayoutEffect(() => {
-    if (enabled && isClient && totalHeight > 0) {
-      if (prevHeightRef.current > 0 && totalHeight !== prevHeightRef.current) {
-        // Height is about to change - notify consumer so they can lock scroll position
-        onHeightWillChange?.();
-      }
-      prevHeightRef.current = totalHeight;
-    }
-  }, [enabled, isClient, totalHeight, onHeightWillChange]);
+  // For visible range calculation, use actual loaded items
+  const loadedRowCount = Math.ceil(items.length / columns);
 
-  // Calculate visible row range
+  // Calculate visible row range (capped to loaded items, not total)
   const startRow = Math.max(0, Math.floor(scrollTop / rowHeight) - overscan);
   const visibleRowCount = Math.ceil(viewportHeight / rowHeight) + (overscan * 2);
-  const endRow = Math.min(rowCount, startRow + visibleRowCount);
+  const endRow = Math.min(loadedRowCount, startRow + visibleRowCount);
 
   // Convert row range to item indices
   const startIndex = startRow * columns;

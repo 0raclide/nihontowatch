@@ -299,78 +299,51 @@ describe('useAdaptiveVirtualScroll', () => {
     });
   });
 
-  describe('height change callback', () => {
-    it('calls onHeightWillChange when height changes', () => {
-      const onHeightWillChange = vi.fn();
-      let items = createItems(50);
+  describe('totalCount for fixed height', () => {
+    it('uses totalCount for height calculation when provided', () => {
+      mockWindowProperties(1280, 800);
+      const items = createItems(50); // Only 50 items loaded
+      const totalCount = 200; // But 200 total items exist
 
-      const { result, rerender } = renderHook(
-        ({ items }) => useAdaptiveVirtualScroll({
-          items,
-          overscan: 2,
-          onHeightWillChange,
-        }),
-        { initialProps: { items } }
+      const { result } = renderHook(() =>
+        useAdaptiveVirtualScroll({ items, totalCount, overscan: 2 })
       );
 
-      // Initial mount - should not call callback
       act(() => {
         vi.runAllTimers();
       });
 
-      expect(onHeightWillChange).not.toHaveBeenCalled();
-
-      // Add more items - height will change
-      items = createItems(100);
-      rerender({ items });
-
-      act(() => {
-        vi.runAllTimers();
-      });
-
-      // Should have called callback because height changed
-      expect(onHeightWillChange).toHaveBeenCalled();
+      // Height should be based on totalCount (200), not items.length (50)
+      // 200 items / 4 columns = 50 rows
+      // 50 rows * 310px = 15500px
+      expect(result.current.totalHeight).toBe(15500);
     });
 
-    it('does not call onHeightWillChange when height stays the same', () => {
-      const onHeightWillChange = vi.fn();
+    it('falls back to items.length when totalCount not provided', () => {
+      mockWindowProperties(1280, 800);
       const items = createItems(50);
 
-      const { rerender } = renderHook(
-        ({ items }) => useAdaptiveVirtualScroll({
-          items,
-          overscan: 2,
-          onHeightWillChange,
-        }),
-        { initialProps: { items } }
+      const { result } = renderHook(() =>
+        useAdaptiveVirtualScroll({ items, overscan: 2 })
       );
 
       act(() => {
         vi.runAllTimers();
       });
 
-      // Re-render with same items (same height)
-      rerender({ items });
-
-      act(() => {
-        vi.runAllTimers();
-      });
-
-      // Should not have called callback
-      expect(onHeightWillChange).not.toHaveBeenCalled();
+      // Height should be based on items.length (50)
+      // 50 items / 4 columns = 13 rows (ceil)
+      // 13 rows * 310px = 4030px
+      expect(result.current.totalHeight).toBe(4030);
     });
 
-    it('does not call onHeightWillChange when disabled', () => {
-      const onHeightWillChange = vi.fn();
+    it('keeps height stable when more items load with totalCount', () => {
+      mockWindowProperties(1280, 800);
       let items = createItems(50);
+      const totalCount = 200;
 
-      const { rerender } = renderHook(
-        ({ items }) => useAdaptiveVirtualScroll({
-          items,
-          overscan: 2,
-          enabled: false,
-          onHeightWillChange,
-        }),
+      const { result, rerender } = renderHook(
+        ({ items }) => useAdaptiveVirtualScroll({ items, totalCount, overscan: 2 }),
         { initialProps: { items } }
       );
 
@@ -378,7 +351,9 @@ describe('useAdaptiveVirtualScroll', () => {
         vi.runAllTimers();
       });
 
-      // Add more items
+      const heightBefore = result.current.totalHeight;
+
+      // Load more items
       items = createItems(100);
       rerender({ items });
 
@@ -386,37 +361,8 @@ describe('useAdaptiveVirtualScroll', () => {
         vi.runAllTimers();
       });
 
-      // Should not have called callback since disabled
-      expect(onHeightWillChange).not.toHaveBeenCalled();
-    });
-
-    it('calls onHeightWillChange when height decreases', () => {
-      const onHeightWillChange = vi.fn();
-      let items = createItems(100);
-
-      const { rerender } = renderHook(
-        ({ items }) => useAdaptiveVirtualScroll({
-          items,
-          overscan: 2,
-          onHeightWillChange,
-        }),
-        { initialProps: { items } }
-      );
-
-      act(() => {
-        vi.runAllTimers();
-      });
-
-      // Remove items - height will decrease
-      items = createItems(30);
-      rerender({ items });
-
-      act(() => {
-        vi.runAllTimers();
-      });
-
-      // Should have called callback because height changed
-      expect(onHeightWillChange).toHaveBeenCalled();
+      // Height should NOT change - still based on totalCount
+      expect(result.current.totalHeight).toBe(heightBefore);
     });
   });
 });
