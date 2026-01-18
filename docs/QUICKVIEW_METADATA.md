@@ -84,33 +84,35 @@ interface MetadataGridProps {
 
 #### Sword Fields (Blades)
 
-| Field | Label | Unit | Example |
-|-------|-------|------|---------|
-| `smith` | Smith | - | Sukehiro |
-| `school` | School | - | Settsu |
-| `era` | Era | - | Edo |
-| `province` | Province | - | Osaka |
-| `mei_type` | Signature | - | Mei |
-| `nagasa_cm` | Nagasa | cm | 71.2 |
-| `sori_cm` | Sori | cm | 1.8 |
-| `motohaba_cm` | Motohaba | cm | 3.2 |
-| `sakihaba_cm` | Sakihaba | cm | 2.3 |
-| `kasane_cm` | Kasane | cm | 0.72 |
-| `nakago_cm` | Nakago | cm | 21.5 |
-| `weight_g` | Weight | g | 820 |
+| Field | Label | Unit | Example | Status |
+|-------|-------|------|---------|--------|
+| `smith` | Smith | - | Sukehiro | ✅ Available |
+| `school` | School | - | Settsu | ✅ Available |
+| `era` | Era | - | Edo | ✅ Available |
+| `province` | Province | - | Osaka | ✅ Available |
+| `mei_type` | Signature | - | Mei | ✅ Available |
+| `nagasa_cm` | Nagasa | cm | 71.2 | ✅ Available |
+| `sori_cm` | Sori | cm | 1.8 | ✅ Available |
+| `motohaba_cm` | Motohaba | cm | 3.2 | ✅ Available |
+| `sakihaba_cm` | Sakihaba | cm | 2.3 | ✅ Available |
+| `kasane_cm` | Kasane | cm | 0.72 | ✅ Available |
+| `weight_g` | Weight | g | 820 | ✅ Available |
+| `nakago_cm` | Nakago | cm | 21.5 | ❌ Not in DB |
 
 #### Tosogu Fields (Fittings)
 
-| Field | Label | Unit | Example |
-|-------|-------|------|---------|
-| `tosogu_maker` | Maker | - | Goto Ichijo |
-| `tosogu_school` | School | - | Goto |
-| `era` | Era | - | Edo |
-| `mei_type` | Signature | - | Mei |
-| `height_cm` | Height | cm | 7.5 |
-| `width_cm` | Width | cm | 7.2 |
-| `thickness_mm` | Thickness | mm | 5.2 |
-| `material` | Material | - | Iron with gold inlay |
+| Field | Label | Unit | Example | Status |
+|-------|-------|------|---------|--------|
+| `tosogu_maker` | Maker | - | Goto Ichijo | ✅ Available |
+| `tosogu_school` | School | - | Goto | ✅ Available |
+| `era` | Era | - | Edo | ✅ Available |
+| `mei_type` | Signature | - | Mei | ✅ Available |
+| `height_cm` | Height | cm | 7.5 | ❌ Not in DB |
+| `width_cm` | Width | cm | 7.2 | ❌ Not in DB |
+| `thickness_mm` | Thickness | mm | 5.2 | ❌ Not in DB |
+| `material` | Material | - | Iron with gold inlay | ❌ Not in DB |
+
+> **Note:** Tosogu measurement fields (`height_cm`, `width_cm`, `thickness_mm`, `material`) and sword `nakago_cm` are defined in the Oshi-scrapper data model but not yet added to the production database. The UI gracefully handles missing fields by hiding them.
 
 #### Certification Display
 
@@ -354,20 +356,33 @@ ALTER TABLE listings ADD COLUMN IF NOT EXISTS description_en TEXT;
 ### Fields Used by QuickView
 
 ```sql
--- Attribution
+-- Attribution (all available)
 smith, school, tosogu_maker, tosogu_school,
 era, province, mei_type,
 cert_type, cert_session, cert_organization,
 
--- Sword Measurements
+-- Sword Measurements (available)
 nagasa_cm, sori_cm, motohaba_cm, sakihaba_cm,
-kasane_cm, nakago_cm, weight_g,
+kasane_cm, weight_g,
 
--- Tosogu Measurements
-height_cm, width_cm, thickness_mm, material,
+-- NOT YET IN DATABASE (defined in Oshi-scrapper but not migrated):
+-- nakago_cm, height_cm, width_cm, thickness_mm, material
 
 -- Description
 description, description_en
+```
+
+### Missing Columns (Future Migration)
+
+These columns are defined in the Oshi-scrapper data model but need to be added to production:
+
+```sql
+-- Run this when ready to add tosogu measurements
+ALTER TABLE listings ADD COLUMN IF NOT EXISTS nakago_cm NUMERIC;
+ALTER TABLE listings ADD COLUMN IF NOT EXISTS height_cm NUMERIC;
+ALTER TABLE listings ADD COLUMN IF NOT EXISTS width_cm NUMERIC;
+ALTER TABLE listings ADD COLUMN IF NOT EXISTS thickness_mm NUMERIC;
+ALTER TABLE listings ADD COLUMN IF NOT EXISTS material TEXT;
 ```
 
 ---

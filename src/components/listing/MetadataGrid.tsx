@@ -123,14 +123,13 @@ export function MetadataGrid({
   const itemIsTosogu = isTosogu(listing.item_type);
 
   // Check for available measurements
+  // Note: nakago_cm, height_cm, width_cm, thickness_mm, material don't exist in DB yet
   const hasSwordMeasurements = itemIsBlade && (
     listing.nagasa_cm || listing.sori_cm || listing.motohaba_cm ||
-    listing.sakihaba_cm || listing.kasane_cm || listing.nakago_cm || listing.weight_g
+    listing.sakihaba_cm || listing.kasane_cm || listing.weight_g
   );
-  const hasTosoguMeasurements = itemIsTosogu && (
-    listing.height_cm || listing.width_cm || listing.thickness_mm
-  );
-  const hasMeasurements = hasSwordMeasurements || hasTosoguMeasurements;
+  // Tosogu measurements not yet available in database
+  const hasMeasurements = hasSwordMeasurements;
 
   // Check for attribution data
   const hasAttribution = artisan || school || listing.era || listing.province || listing.mei_type || certInfo;
@@ -142,15 +141,7 @@ export function MetadataGrid({
         {itemIsBlade && listing.nagasa_cm && (
           <MeasurementItem label="Nagasa" value={listing.nagasa_cm} unit="cm" />
         )}
-        {itemIsTosogu && listing.height_cm && listing.width_cm && (
-          <MeasurementItem label="Size" value={`${listing.height_cm}×${listing.width_cm}`} unit="cm" />
-        )}
-        {itemIsTosogu && listing.material && (
-          <div className="flex items-center gap-1.5 text-[12px]">
-            <span className="text-muted">Material</span>
-            <span className="text-ink font-medium">{listing.material}</span>
-          </div>
-        )}
+        {/* Tosogu compact measurements - columns not yet in database */}
       </div>
     );
   }
@@ -215,28 +206,13 @@ export function MetadataGrid({
                   <MeasurementItem label="Motohaba" value={listing.motohaba_cm} unit="cm" />
                   <MeasurementItem label="Sakihaba" value={listing.sakihaba_cm} unit="cm" />
                   <MeasurementItem label="Kasane" value={listing.kasane_cm} unit="cm" />
-                  <MeasurementItem label="Nakago" value={listing.nakago_cm} unit="cm" />
                   <MeasurementItem label="Weight" value={listing.weight_g} unit="g" />
                 </>
               )}
 
-              {/* Tosogu measurements */}
-              {itemIsTosogu && (
-                <>
-                  <MeasurementItem label="Height" value={listing.height_cm} unit="cm" />
-                  <MeasurementItem label="Width" value={listing.width_cm} unit="cm" />
-                  <MeasurementItem label="Thickness" value={listing.thickness_mm} unit="mm" />
-                </>
-              )}
+              {/* Tosogu measurements - columns not yet in database */}
+              {/* TODO: Add when height_cm, width_cm, thickness_mm, material columns exist */}
             </div>
-
-            {/* Material for tosogu */}
-            {itemIsTosogu && listing.material && (
-              <div className="mt-2">
-                <span className="text-[10px] uppercase tracking-wider text-muted">Material: </span>
-                <span className="text-[12px] text-ink">{listing.material}</span>
-              </div>
-            )}
           </div>
         </div>
       )}
