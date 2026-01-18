@@ -59,7 +59,7 @@ test.describe('Mobile QuickView Polish', () => {
     console.log(`Sheet bottom position: ${sheetBottom?.y ?? 0 + (sheetBottom?.height ?? 0)}px`);
 
     // Look for the CTA button
-    const ctaButton = mobileSheet.locator('a:has-text("See Full Listing")');
+    const ctaButton = mobileSheet.locator('a:has-text("View on")');
     if (await ctaButton.isVisible()) {
       const ctaBox = await ctaButton.boundingBox();
       console.log(`CTA button position: y=${ctaBox?.y}, height=${ctaBox?.height}`);
