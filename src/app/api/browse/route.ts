@@ -265,7 +265,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Sorting - use price_jpy for currency-normalized price sorting
+    // Sorting - use price_jpy for currency-normalized price sorting (cross-currency fix)
     switch (params.sort) {
       case 'price_asc':
         query = query.order('price_jpy', { ascending: true, nullsFirst: false });
