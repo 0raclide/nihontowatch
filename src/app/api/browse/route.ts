@@ -335,43 +335,60 @@ interface FacetFilterOptions {
 // Facet functions - apply filters to reflect user's current selection
 // Uses JS-side filtering for category/itemTypes since Supabase .or() calls
 // don't combine with AND when filtering by both status and item type
+//
+// IMPORTANT: Supabase limits queries to 1000 rows by default, so we must
+// paginate to get accurate facet counts for large result sets.
+
+const FACET_PAGE_SIZE = 1000;
 
 async function getItemTypeFacets(
   supabase: Awaited<ReturnType<typeof createClient>>,
   statusFilter: string,
   options: FacetFilterOptions
 ) {
-  // Build query with filters (excluding category/itemTypes since we're counting those)
-  let query = supabase
-    .from('listings')
-    .select('item_type')
-    .or(statusFilter);
-
-  // Apply certification, dealer, askOnly filters
-  if (options.certifications?.length) {
-    const allVariants = options.certifications.flatMap(c => CERT_VARIANTS[c] || [c]);
-    query = query.in('cert_type', allVariants);
-  }
-  if (options.dealers?.length) {
-    query = query.in('dealer_id', options.dealers);
-  }
-  if (options.askOnly) {
-    query = query.is('price_value', null);
-  }
-
-  // Fetch with high limit
-  const { data } = await query.limit(50000);
-  if (!data) return [];
-
-  // Aggregate counts
+  // Aggregate counts with pagination
   const counts: Record<string, number> = {};
-  (data as Array<{ item_type: string | null }>).forEach(row => {
-    const type = row.item_type;
-    if (type) {
-      const normalized = type.toLowerCase().replace('fuchi_kashira', 'fuchi-kashira');
-      counts[normalized] = (counts[normalized] || 0) + 1;
+  let offset = 0;
+  let hasMore = true;
+
+  while (hasMore) {
+    // Build query with filters (excluding category/itemTypes since we're counting those)
+    let query = supabase
+      .from('listings')
+      .select('item_type')
+      .or(statusFilter);
+
+    // Apply certification, dealer, askOnly filters
+    if (options.certifications?.length) {
+      const allVariants = options.certifications.flatMap(c => CERT_VARIANTS[c] || [c]);
+      query = query.in('cert_type', allVariants);
     }
-  });
+    if (options.dealers?.length) {
+      query = query.in('dealer_id', options.dealers);
+    }
+    if (options.askOnly) {
+      query = query.is('price_value', null);
+    }
+
+    // Fetch page
+    const { data, error } = await query.range(offset, offset + FACET_PAGE_SIZE - 1);
+    if (error || !data) break;
+
+    // Count this page
+    (data as Array<{ item_type: string | null }>).forEach(row => {
+      const type = row.item_type;
+      if (type) {
+        const normalized = type.toLowerCase().replace('fuchi_kashira', 'fuchi-kashira');
+        counts[normalized] = (counts[normalized] || 0) + 1;
+      }
+    });
+
+    hasMore = data.length === FACET_PAGE_SIZE;
+    offset += FACET_PAGE_SIZE;
+
+    // Safety limit
+    if (offset > 50000) break;
+  }
 
   return Object.entries(counts)
     .map(([value, count]) => ({ value, count }))
@@ -383,24 +400,6 @@ async function getCertificationFacets(
   statusFilter: string,
   options: FacetFilterOptions
 ) {
-  // Build query - fetch item_type along with cert_type for JS-side filtering
-  let query = supabase
-    .from('listings')
-    .select('cert_type, item_type, dealer_id, price_value')
-    .or(statusFilter);
-
-  // Apply dealer filter at DB level (this works with AND)
-  if (options.dealers?.length) {
-    query = query.in('dealer_id', options.dealers);
-  }
-  if (options.askOnly) {
-    query = query.is('price_value', null);
-  }
-
-  // Fetch with high limit
-  const { data } = await query.limit(50000);
-  if (!data) return [];
-
   // Determine which item types to include based on category
   const effectiveItemTypes = options.itemTypes?.length
     ? options.itemTypes
@@ -421,23 +420,53 @@ async function getCertificationFacets(
     return cert;
   };
 
-  // Filter and aggregate in JS
+  // Aggregate counts with pagination
   const counts: Record<string, number> = {};
-  (data as Array<{ cert_type: string | null; item_type: string | null }>).forEach(row => {
-    // Filter by item type if category is set
-    if (effectiveItemTypes) {
-      const itemType = row.item_type?.toLowerCase().replace('fuchi_kashira', 'fuchi-kashira');
-      if (!itemType || !effectiveItemTypes.some(t => t.toLowerCase() === itemType)) {
-        return; // Skip this row - doesn't match category
-      }
+  let offset = 0;
+  let hasMore = true;
+
+  while (hasMore) {
+    // Build query - fetch item_type along with cert_type for JS-side filtering
+    let query = supabase
+      .from('listings')
+      .select('cert_type, item_type')
+      .or(statusFilter);
+
+    // Apply dealer filter at DB level (this works with AND)
+    if (options.dealers?.length) {
+      query = query.in('dealer_id', options.dealers);
+    }
+    if (options.askOnly) {
+      query = query.is('price_value', null);
     }
 
-    const cert = row.cert_type;
-    if (cert && cert !== 'null') {
-      const normalized = normalizeCert(cert);
-      counts[normalized] = (counts[normalized] || 0) + 1;
-    }
-  });
+    // Fetch page
+    const { data, error } = await query.range(offset, offset + FACET_PAGE_SIZE - 1);
+    if (error || !data) break;
+
+    // Filter and count this page
+    (data as Array<{ cert_type: string | null; item_type: string | null }>).forEach(row => {
+      // Filter by item type if category is set
+      if (effectiveItemTypes) {
+        const itemType = row.item_type?.toLowerCase().replace('fuchi_kashira', 'fuchi-kashira');
+        if (!itemType || !effectiveItemTypes.some(t => t.toLowerCase() === itemType)) {
+          return; // Skip this row - doesn't match category
+        }
+      }
+
+      const cert = row.cert_type;
+      if (cert && cert !== 'null') {
+        const normalized = normalizeCert(cert);
+        counts[normalized] = (counts[normalized] || 0) + 1;
+      }
+    });
+
+    hasMore = data.length === FACET_PAGE_SIZE;
+    offset += FACET_PAGE_SIZE;
+
+    // Safety limit
+    if (offset > 50000) break;
+  }
 
   return Object.entries(counts)
     .map(([value, count]) => ({ value, count }))
@@ -449,25 +478,6 @@ async function getDealerFacets(
   statusFilter: string,
   options: FacetFilterOptions
 ) {
-  // Build query - fetch item_type and cert_type for JS-side filtering
-  let query = supabase
-    .from('listings')
-    .select('dealer_id, dealers!inner(name), item_type, cert_type, price_value')
-    .or(statusFilter);
-
-  // Apply certification filter at DB level (this works with AND)
-  if (options.certifications?.length) {
-    const allVariants = options.certifications.flatMap(c => CERT_VARIANTS[c] || [c]);
-    query = query.in('cert_type', allVariants);
-  }
-  if (options.askOnly) {
-    query = query.is('price_value', null);
-  }
-
-  // Fetch with high limit
-  const { data } = await query.limit(50000);
-  if (!data) return [];
-
   // Determine which item types to include based on category
   const effectiveItemTypes = options.itemTypes?.length
     ? options.itemTypes
@@ -477,24 +487,55 @@ async function getDealerFacets(
         ? TOSOGU_TYPES
         : undefined;
 
-  // Filter and aggregate in JS
+  // Aggregate counts with pagination
   const counts: Record<string, { id: number; name: string; count: number }> = {};
-  (data as Array<{ dealer_id: number; dealers: { name: string }; item_type: string | null }>).forEach(row => {
-    // Filter by item type if category is set
-    if (effectiveItemTypes) {
-      const itemType = row.item_type?.toLowerCase().replace('fuchi_kashira', 'fuchi-kashira');
-      if (!itemType || !effectiveItemTypes.some(t => t.toLowerCase() === itemType)) {
-        return; // Skip this row - doesn't match category
-      }
+  let offset = 0;
+  let hasMore = true;
+
+  while (hasMore) {
+    // Build query - fetch item_type and cert_type for JS-side filtering
+    let query = supabase
+      .from('listings')
+      .select('dealer_id, dealers!inner(name), item_type')
+      .or(statusFilter);
+
+    // Apply certification filter at DB level (this works with AND)
+    if (options.certifications?.length) {
+      const allVariants = options.certifications.flatMap(c => CERT_VARIANTS[c] || [c]);
+      query = query.in('cert_type', allVariants);
+    }
+    if (options.askOnly) {
+      query = query.is('price_value', null);
     }
 
-    const id = row.dealer_id;
-    const name = row.dealers?.name || 'Unknown';
-    if (!counts[id]) {
-      counts[id] = { id, name, count: 0 };
-    }
-    counts[id].count++;
-  });
+    // Fetch page
+    const { data, error } = await query.range(offset, offset + FACET_PAGE_SIZE - 1);
+    if (error || !data) break;
+
+    // Filter and count this page
+    (data as Array<{ dealer_id: number; dealers: { name: string }; item_type: string | null }>).forEach(row => {
+      // Filter by item type if category is set
+      if (effectiveItemTypes) {
+        const itemType = row.item_type?.toLowerCase().replace('fuchi_kashira', 'fuchi-kashira');
+        if (!itemType || !effectiveItemTypes.some(t => t.toLowerCase() === itemType)) {
+          return; // Skip this row - doesn't match category
+        }
+      }
+
+      const id = row.dealer_id;
+      const name = row.dealers?.name || 'Unknown';
+      if (!counts[id]) {
+        counts[id] = { id, name, count: 0 };
+      }
+      counts[id].count++;
+    });
+
+    hasMore = data.length === FACET_PAGE_SIZE;
+    offset += FACET_PAGE_SIZE;
+
+    // Safety limit
+    if (offset > 50000) break;
+  }
 
   return Object.values(counts).sort((a, b) => b.count - a.count);
 }

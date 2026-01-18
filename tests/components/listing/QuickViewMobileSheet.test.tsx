@@ -171,12 +171,16 @@ describe('QuickViewMobileSheet', () => {
 
     it('renders the certification badge', () => {
       render(<QuickViewMobileSheet {...expandedProps} />);
-      expect(screen.getByText('Juyo')).toBeInTheDocument();
+      // Cert info appears in both the badge and MetadataGrid, so use getAllByText
+      const certElements = screen.getAllByText('Juyo');
+      expect(certElements.length).toBeGreaterThanOrEqual(1);
     });
 
     it('renders the artisan name', () => {
       render(<QuickViewMobileSheet {...expandedProps} />);
-      expect(screen.getByText('Famous Smith')).toBeInTheDocument();
+      // Artisan name appears in both header and MetadataGrid, so use getAllByText
+      const artisanElements = screen.getAllByText('Famous Smith');
+      expect(artisanElements.length).toBeGreaterThanOrEqual(1);
     });
 
     it('renders the dealer name', () => {
@@ -210,7 +214,9 @@ describe('QuickViewMobileSheet', () => {
           isExpanded={true}
         />
       );
-      expect(screen.getByText('Tosogu Artisan')).toBeInTheDocument();
+      // Tosogu maker appears in both header and MetadataGrid, so use getAllByText
+      const artisanElements = screen.getAllByText('Tosogu Artisan');
+      expect(artisanElements.length).toBeGreaterThanOrEqual(1);
     });
 
     it('displays correct item type label for tsuba', () => {
@@ -309,7 +315,9 @@ describe('QuickViewMobileSheet', () => {
           isExpanded={true}
         />
       );
-      expect(screen.getByText('Hozon')).toBeInTheDocument();
+      // Hozon appears in both the badge and MetadataGrid, so use getAllByText
+      const hozonElements = screen.getAllByText('Hozon');
+      expect(hozonElements.length).toBeGreaterThanOrEqual(1);
     });
 
     it('does not display certification badge when no cert_type', () => {
