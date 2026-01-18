@@ -14,6 +14,7 @@ import { SaveSearchButton } from '@/components/browse/SaveSearchButton';
 import type { SavedSearchCriteria } from '@/types';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { BottomTabBar } from '@/components/navigation/BottomTabBar';
+import { PAGINATION } from '@/lib/constants';
 import { useActivityOptional } from '@/components/activity/ActivityProvider';
 
 interface Listing {
@@ -130,7 +131,7 @@ function HomeContent() {
   const [data, setData] = useState<BrowseResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Infinite scroll state for mobile
+  // Infinite scroll state - accumulates listings as user scrolls
   const [allListings, setAllListings] = useState<Listing[]>([]);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const loadingMoreRef = useRef(false); // Ref for synchronous guard against rapid calls
@@ -166,7 +167,7 @@ function HomeContent() {
     }
   }, []);
 
-  // Build URL params from state (for URL sync - includes page)
+  // Build URL params from state (for URL sync - filters and sort only, not page)
   const buildUrlParams = useCallback(() => {
     const params = new URLSearchParams();
 
@@ -180,11 +181,11 @@ function HomeContent() {
     if (filters.signatureStatuses.length) params.set('sig', filters.signatureStatuses.join(','));
     if (filters.askOnly) params.set('ask', 'true');
     if (sort !== 'recent') params.set('sort', sort);
-    if (page > 1) params.set('page', String(page));
+    // Note: page not synced to URL - infinite scroll manages page internally
     if (searchQuery) params.set('q', searchQuery);
 
     return params;
-  }, [activeTab, filters, sort, page, searchQuery]);
+  }, [activeTab, filters, sort, searchQuery]);
 
   // Build params for data fetching (excludes page - page changes handled by loadMore)
   const buildFetchParams = useCallback(() => {
@@ -214,7 +215,7 @@ function HomeContent() {
   }, [buildUrlParams, router]);
 
   // Fetch data - uses buildFetchParams (excludes page) so this only runs on filter/search changes
-  // Page changes are handled by loadMore in mobile mode
+  // Page changes are handled by loadMore via infinite scroll
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
@@ -226,12 +227,10 @@ function HomeContent() {
         const json = await res.json();
         setData(json);
 
-        // Reset to page 1 and set initial listings
-        if (isMobile) {
-          setAllListings(json.listings || []);
-          setPage(1);
-          filtersChangedRef.current = false;
-        }
+        // Reset to page 1 and set initial listings for infinite scroll
+        setAllListings(json.listings || []);
+        setPage(1);
+        filtersChangedRef.current = false;
       } catch (error) {
         console.error('Failed to fetch:', error);
       } finally {
@@ -240,7 +239,7 @@ function HomeContent() {
     };
 
     fetchData();
-  }, [buildFetchParams, isMobile]);
+  }, [buildFetchParams]);
 
   // Load more for infinite scroll
   const loadMore = useCallback(async () => {
@@ -253,6 +252,7 @@ function HomeContent() {
       const nextPage = page + 1;
       const params = buildFetchParams();
       params.set('page', String(nextPage));
+      params.set('limit', String(PAGINATION.INFINITE_SCROLL_BATCH_SIZE));
 
       const res = await fetch(`/api/browse?${params.toString()}`);
       const json = await res.json();
@@ -395,14 +395,14 @@ function HomeContent() {
 
           <div className="flex-1 min-w-0">
             <ListingGrid
-              listings={isMobile ? allListings : (data?.listings || [])}
+              listings={allListings}
               total={data?.total || 0}
               page={page}
               totalPages={data?.totalPages || 1}
               onPageChange={handlePageChange}
               isLoading={isLoading}
               isLoadingMore={isLoadingMore}
-              infiniteScroll={isMobile}
+              infiniteScroll={true}
               currency={currency}
               exchangeRates={exchangeRates}
               onLoadMore={loadMore}

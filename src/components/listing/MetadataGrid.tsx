@@ -159,35 +159,39 @@ export function MetadataGrid({
       {showAttribution && hasAttribution && (
         <div className="border-b border-border">
           <div className="px-4 py-3 lg:px-5">
-            {/* School + Artisan combined (e.g., "Osafune Tomomitsu") */}
-            {(displayArtisan || displaySchool) && (
-              <p className="text-[15px] text-ink font-medium mb-3">
-                {displaySchool && school}
-                {displaySchool && displayArtisan && ' '}
-                {displayArtisan && artisan}
-              </p>
-            )}
+            <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+              {/* School + Smith combined (e.g., "Rai Kunimitsu" or "Osafune Tomomitsu") */}
+              {(displayArtisan || displaySchool) && (
+                <div className="col-span-2">
+                  <span className="text-[10px] uppercase tracking-wider text-muted block mb-0.5">
+                    {artisanLabel}
+                  </span>
+                  <p className="text-[14px] text-ink font-medium">
+                    {displaySchool && school}
+                    {displaySchool && displayArtisan && ' '}
+                    {displayArtisan && artisan}
+                  </p>
+                </div>
+              )}
 
-            {/* Era / Province / Signature in a clean row */}
-            <div className="flex flex-wrap gap-x-4 gap-y-2 text-[13px]">
-              {listing.era && (
-                <span className="text-ink">{listing.era}</span>
-              )}
-              {listing.province && (
-                <span className="text-ink">{listing.province}</span>
-              )}
-              {listing.mei_type && (
-                <span className="text-muted">{listing.mei_type}</span>
+              <MetadataItem label="Era" value={listing.era} />
+              <MetadataItem label="Province" value={listing.province} />
+              <MetadataItem label="Signature" value={listing.mei_type} />
+
+              {/* Certification with session */}
+              {certInfo && (
+                <div className="col-span-2">
+                  <span className="text-[10px] uppercase tracking-wider text-muted block mb-0.5">
+                    Papers
+                  </span>
+                  <p className="text-[13px] text-ink">
+                    {certInfo.label}
+                    {listing.cert_session && <span className="text-muted"> #{listing.cert_session}</span>}
+                    {listing.cert_organization && <span className="text-muted"> ({listing.cert_organization})</span>}
+                  </p>
+                </div>
               )}
             </div>
-
-            {/* Papers on its own line if present */}
-            {certInfo && (
-              <p className="text-[13px] text-ink mt-2">
-                {certInfo.label}
-                {listing.cert_session && <span className="text-muted"> #{listing.cert_session}</span>}
-              </p>
-            )}
           </div>
         </div>
       )}
