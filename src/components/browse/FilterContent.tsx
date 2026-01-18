@@ -20,6 +20,8 @@ export interface FilterContentProps {
     itemTypes: Facet[];
     certifications: Facet[];
     dealers: DealerFacet[];
+    historicalPeriods: Facet[];
+    signatureStatuses: Facet[];
   };
   filters: {
     category: 'all' | 'nihonto' | 'tosogu';
@@ -27,6 +29,8 @@ export interface FilterContentProps {
     certifications: string[];
     schools: string[];
     dealers: number[];
+    historicalPeriods: string[];
+    signatureStatuses: string[];
     askOnly?: boolean;
   };
   onFilterChange: (key: string, value: unknown) => void;
@@ -200,6 +204,27 @@ const CERT_LABELS: Record<string, string> = {
 // Sort order for certifications (highest to lowest)
 const CERT_ORDER = ['Tokuju', 'tokuju', 'Juyo', 'juyo', 'TokuHozon', 'tokubetsu_hozon', 'Hozon', 'hozon', 'TokuKicho', 'nbthk', 'nthk'];
 
+// Signature status labels
+const SIGNATURE_LABELS: Record<string, string> = {
+  signed: 'Signed',
+  unsigned: 'Mumei',
+};
+
+// Historical period labels (all are display-ready as-is)
+const PERIOD_LABELS: Record<string, string> = {
+  Heian: 'Heian',
+  Kamakura: 'Kamakura',
+  Nanbokucho: 'Nanbokuchō',
+  Muromachi: 'Muromachi',
+  Momoyama: 'Momoyama',
+  Edo: 'Edo',
+  Meiji: 'Meiji',
+  Taisho: 'Taishō',
+  Showa: 'Shōwa',
+  Heisei: 'Heisei',
+  Reiwa: 'Reiwa',
+};
+
 export function FilterContent({
   facets,
   filters,
@@ -334,12 +359,36 @@ export function FilterContent({
     [filters.dealers, onFilterChange]
   );
 
+  const handlePeriodChange = useCallback(
+    (period: string, checked: boolean) => {
+      const current = filters.historicalPeriods;
+      const updated = checked
+        ? [...current, period]
+        : current.filter((p) => p !== period);
+      onFilterChange('historicalPeriods', updated);
+    },
+    [filters.historicalPeriods, onFilterChange]
+  );
+
+  const handleSignatureChange = useCallback(
+    (status: string, checked: boolean) => {
+      const current = filters.signatureStatuses;
+      const updated = checked
+        ? [...current, status]
+        : current.filter((s) => s !== status);
+      onFilterChange('signatureStatuses', updated);
+    },
+    [filters.signatureStatuses, onFilterChange]
+  );
+
   const clearAllFilters = useCallback(() => {
     onFilterChange('category', 'all');
     onFilterChange('itemTypes', []);
     onFilterChange('certifications', []);
     onFilterChange('dealers', []);
     onFilterChange('schools', []);
+    onFilterChange('historicalPeriods', []);
+    onFilterChange('signatureStatuses', []);
     onFilterChange('askOnly', false);
     setDealerSearch('');
   }, [onFilterChange]);
@@ -350,6 +399,8 @@ export function FilterContent({
     filters.certifications.length > 0 ||
     filters.dealers.length > 0 ||
     filters.schools.length > 0 ||
+    filters.historicalPeriods.length > 0 ||
+    filters.signatureStatuses.length > 0 ||
     filters.askOnly;
 
   const activeFilterCount =
@@ -357,6 +408,8 @@ export function FilterContent({
     filters.itemTypes.length +
     filters.certifications.length +
     filters.dealers.length +
+    filters.historicalPeriods.length +
+    filters.signatureStatuses.length +
     (filters.askOnly ? 1 : 0);
 
   return (
@@ -475,7 +528,43 @@ export function FilterContent({
           </div>
         </FilterSection>
 
-        {/* 3. Item Type - Third */}
+        {/* 3. Historical Period - After Certification */}
+        <FilterSection title="Period" defaultOpen={false}>
+          <div className="space-y-1">
+            {facets.historicalPeriods?.map((facet) => (
+              <Checkbox
+                key={facet.value}
+                label={PERIOD_LABELS[facet.value] || facet.value}
+                count={facet.count}
+                checked={filters.historicalPeriods.includes(facet.value)}
+                onChange={(checked) => handlePeriodChange(facet.value, checked)}
+              />
+            ))}
+            {(!facets.historicalPeriods || facets.historicalPeriods.length === 0) && (
+              <p className="text-[14px] text-muted italic py-2">No periods available</p>
+            )}
+          </div>
+        </FilterSection>
+
+        {/* 4. Signature Status */}
+        <FilterSection title="Signature" defaultOpen={false}>
+          <div className="space-y-1">
+            {facets.signatureStatuses?.map((facet) => (
+              <Checkbox
+                key={facet.value}
+                label={SIGNATURE_LABELS[facet.value] || facet.value}
+                count={facet.count}
+                checked={filters.signatureStatuses.includes(facet.value)}
+                onChange={(checked) => handleSignatureChange(facet.value, checked)}
+              />
+            ))}
+            {(!facets.signatureStatuses || facets.signatureStatuses.length === 0) && (
+              <p className="text-[14px] text-muted italic py-2">No signature data</p>
+            )}
+          </div>
+        </FilterSection>
+
+        {/* 5. Item Type */}
         <FilterSection title="Type">
           <div className="space-y-1">
             {visibleItemTypes.map((facet) => (
@@ -626,6 +715,8 @@ export function getActiveFilterCount(filters: FilterContentProps['filters']): nu
     filters.itemTypes.length +
     filters.certifications.length +
     filters.dealers.length +
+    filters.historicalPeriods.length +
+    filters.signatureStatuses.length +
     (filters.askOnly ? 1 : 0)
   );
 }

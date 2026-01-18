@@ -181,6 +181,16 @@ export async function GET(request: NextRequest) {
       query = query.in('dealer_id', params.dealers);
     }
 
+    // Historical period filter
+    if (params.historicalPeriods?.length) {
+      query = query.in('historical_period', params.historicalPeriods);
+    }
+
+    // Signature status filter (mei_type: signed = has mei, unsigned/mumei = no mei)
+    if (params.signatureStatuses?.length) {
+      query = query.in('signature_status', params.signatureStatuses);
+    }
+
     // Process query with numeric filters
     if (params.query && params.query.trim().length >= 2) {
       const { filters, textWords } = parseNumericFilters(params.query);
@@ -264,11 +274,13 @@ export async function GET(request: NextRequest) {
 
     // Get facet counts - computed fresh to reflect current filter state
     // Each facet is filtered by all OTHER active filters (standard faceted search pattern)
-    const [typesFacet, certsFacet, dealersFacet] = await Promise.all([
+    const [typesFacet, certsFacet, dealersFacet, periodsFacet, signatureFacet] = await Promise.all([
       // Item type facets: filtered by certifications, dealers, askOnly (NOT by category/itemTypes)
       getItemTypeFacets(supabase, statusFilter, {
         certifications: params.certifications,
         dealers: params.dealers,
+        historicalPeriods: params.historicalPeriods,
+        signatureStatuses: params.signatureStatuses,
         askOnly: params.askOnly,
         query: params.query,
       }),
@@ -277,6 +289,8 @@ export async function GET(request: NextRequest) {
         category: params.category,
         itemTypes: params.itemTypes,
         dealers: params.dealers,
+        historicalPeriods: params.historicalPeriods,
+        signatureStatuses: params.signatureStatuses,
         askOnly: params.askOnly,
         query: params.query,
       }),
@@ -285,6 +299,28 @@ export async function GET(request: NextRequest) {
         category: params.category,
         itemTypes: params.itemTypes,
         certifications: params.certifications,
+        historicalPeriods: params.historicalPeriods,
+        signatureStatuses: params.signatureStatuses,
+        askOnly: params.askOnly,
+        query: params.query,
+      }),
+      // Historical period facets
+      getHistoricalPeriodFacets(supabase, statusFilter, {
+        category: params.category,
+        itemTypes: params.itemTypes,
+        certifications: params.certifications,
+        dealers: params.dealers,
+        signatureStatuses: params.signatureStatuses,
+        askOnly: params.askOnly,
+        query: params.query,
+      }),
+      // Signature status facets
+      getSignatureStatusFacets(supabase, statusFilter, {
+        category: params.category,
+        itemTypes: params.itemTypes,
+        certifications: params.certifications,
+        dealers: params.dealers,
+        historicalPeriods: params.historicalPeriods,
         askOnly: params.askOnly,
         query: params.query,
       }),
@@ -311,6 +347,8 @@ export async function GET(request: NextRequest) {
         itemTypes: typesFacet,
         certifications: certsFacet,
         dealers: dealersFacet,
+        historicalPeriods: periodsFacet,
+        signatureStatuses: signatureFacet,
       },
       lastUpdated,
     });
@@ -334,6 +372,8 @@ interface FacetFilterOptions {
   itemTypes?: string[];
   certifications?: string[];
   dealers?: number[];
+  historicalPeriods?: string[];
+  signatureStatuses?: string[];
   askOnly?: boolean;
   query?: string;
 }
@@ -547,4 +587,158 @@ async function getDealerFacets(
   }
 
   return Object.values(counts).sort((a, b) => b.count - a.count);
+}
+
+// Historical period order (chronological)
+const HISTORICAL_PERIOD_ORDER = [
+  'Heian', 'Kamakura', 'Nanbokucho', 'Muromachi', 'Momoyama',
+  'Edo', 'Meiji', 'Taisho', 'Showa', 'Heisei', 'Reiwa'
+];
+
+async function getHistoricalPeriodFacets(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  statusFilter: string,
+  options: FacetFilterOptions
+) {
+  // Determine which item types to include based on category
+  const effectiveItemTypes = options.itemTypes?.length
+    ? options.itemTypes
+    : options.category === 'nihonto'
+      ? NIHONTO_TYPES
+      : options.category === 'tosogu'
+        ? TOSOGU_TYPES
+        : undefined;
+
+  // Aggregate counts with pagination
+  const counts: Record<string, number> = {};
+  let offset = 0;
+  let hasMore = true;
+
+  while (hasMore) {
+    let query = supabase
+      .from('listings')
+      .select('historical_period, item_type')
+      .or(statusFilter)
+      .not('item_type', 'ilike', 'stand');
+
+    // Apply filters
+    if (options.certifications?.length) {
+      const allVariants = options.certifications.flatMap(c => CERT_VARIANTS[c] || [c]);
+      query = query.in('cert_type', allVariants);
+    }
+    if (options.dealers?.length) {
+      query = query.in('dealer_id', options.dealers);
+    }
+    if (options.signatureStatuses?.length) {
+      query = query.in('signature_status', options.signatureStatuses);
+    }
+    if (options.askOnly) {
+      query = query.is('price_value', null);
+    }
+
+    const { data, error } = await query.range(offset, offset + FACET_PAGE_SIZE - 1);
+    if (error || !data) break;
+
+    (data as Array<{ historical_period: string | null; item_type: string | null }>).forEach(row => {
+      // Filter by item type if category is set
+      if (effectiveItemTypes) {
+        const itemType = row.item_type?.toLowerCase().replace('fuchi_kashira', 'fuchi-kashira');
+        if (!itemType || !effectiveItemTypes.some(t => t.toLowerCase() === itemType)) {
+          return;
+        }
+      }
+
+      const period = row.historical_period;
+      if (period && period !== 'null') {
+        counts[period] = (counts[period] || 0) + 1;
+      }
+    });
+
+    hasMore = data.length === FACET_PAGE_SIZE;
+    offset += FACET_PAGE_SIZE;
+    if (offset > 50000) break;
+  }
+
+  // Sort by chronological order
+  return Object.entries(counts)
+    .map(([value, count]) => ({ value, count }))
+    .sort((a, b) => {
+      const aIdx = HISTORICAL_PERIOD_ORDER.indexOf(a.value);
+      const bIdx = HISTORICAL_PERIOD_ORDER.indexOf(b.value);
+      return (aIdx === -1 ? 999 : aIdx) - (bIdx === -1 ? 999 : bIdx);
+    });
+}
+
+async function getSignatureStatusFacets(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  statusFilter: string,
+  options: FacetFilterOptions
+) {
+  // Determine which item types to include based on category
+  const effectiveItemTypes = options.itemTypes?.length
+    ? options.itemTypes
+    : options.category === 'nihonto'
+      ? NIHONTO_TYPES
+      : options.category === 'tosogu'
+        ? TOSOGU_TYPES
+        : undefined;
+
+  // Aggregate counts with pagination
+  const counts: Record<string, number> = {};
+  let offset = 0;
+  let hasMore = true;
+
+  while (hasMore) {
+    let query = supabase
+      .from('listings')
+      .select('signature_status, item_type')
+      .or(statusFilter)
+      .not('item_type', 'ilike', 'stand');
+
+    // Apply filters
+    if (options.certifications?.length) {
+      const allVariants = options.certifications.flatMap(c => CERT_VARIANTS[c] || [c]);
+      query = query.in('cert_type', allVariants);
+    }
+    if (options.dealers?.length) {
+      query = query.in('dealer_id', options.dealers);
+    }
+    if (options.historicalPeriods?.length) {
+      query = query.in('historical_period', options.historicalPeriods);
+    }
+    if (options.askOnly) {
+      query = query.is('price_value', null);
+    }
+
+    const { data, error } = await query.range(offset, offset + FACET_PAGE_SIZE - 1);
+    if (error || !data) break;
+
+    (data as Array<{ signature_status: string | null; item_type: string | null }>).forEach(row => {
+      // Filter by item type if category is set
+      if (effectiveItemTypes) {
+        const itemType = row.item_type?.toLowerCase().replace('fuchi_kashira', 'fuchi-kashira');
+        if (!itemType || !effectiveItemTypes.some(t => t.toLowerCase() === itemType)) {
+          return;
+        }
+      }
+
+      const status = row.signature_status;
+      if (status && status !== 'null') {
+        counts[status] = (counts[status] || 0) + 1;
+      }
+    });
+
+    hasMore = data.length === FACET_PAGE_SIZE;
+    offset += FACET_PAGE_SIZE;
+    if (offset > 50000) break;
+  }
+
+  // Sort: signed first, then unsigned/mumei
+  return Object.entries(counts)
+    .map(([value, count]) => ({ value, count }))
+    .sort((a, b) => {
+      if (a.value === 'signed') return -1;
+      if (b.value === 'signed') return 1;
+      return a.value.localeCompare(b.value);
+    });
 }
