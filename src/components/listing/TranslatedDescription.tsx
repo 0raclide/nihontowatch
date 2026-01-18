@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import type { Listing } from '@/types';
 
 // =============================================================================
@@ -29,6 +29,9 @@ export function TranslatedDescription({
   const [isLoading, setIsLoading] = useState(false);
   const [showOriginal, setShowOriginal] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [isTruncated, setIsTruncated] = useState(false);
+  const textRef = useRef<HTMLParagraphElement>(null);
 
   // Check if description has Japanese text
   const hasJapanese = listing.description ? JAPANESE_REGEX.test(listing.description) : false;
@@ -69,6 +72,28 @@ export function TranslatedDescription({
     }
   }, [listing.description, listing.description_en, hasJapanese, fetchTranslation]);
 
+  // Reset expanded state when listing changes or when toggling original/translation
+  useEffect(() => {
+    setIsExpanded(false);
+    setIsTruncated(false);
+  }, [listing.id, showOriginal]);
+
+  // Detect if text is truncated (needs "Read more")
+  useEffect(() => {
+    const checkTruncation = () => {
+      if (textRef.current && !isExpanded) {
+        // Compare scroll height vs client height to detect overflow
+        const { scrollHeight, clientHeight } = textRef.current;
+        setIsTruncated(scrollHeight > clientHeight + 1); // +1 for rounding
+      }
+    };
+
+    // Check after render and on resize
+    checkTruncation();
+    window.addEventListener('resize', checkTruncation);
+    return () => window.removeEventListener('resize', checkTruncation);
+  }, [translation, showOriginal, isLoading, isExpanded]);
+
   // No description to show
   if (!listing.description) {
     return null;
@@ -108,8 +133,9 @@ export function TranslatedDescription({
       {error && !isLoading && (
         <>
           <p
+            ref={textRef}
             className="text-[13px] text-ink/80 leading-relaxed whitespace-pre-line"
-            style={{
+            style={isExpanded ? {} : {
               display: '-webkit-box',
               WebkitLineClamp: maxLines,
               WebkitBoxOrient: 'vertical',
@@ -119,22 +145,43 @@ export function TranslatedDescription({
             {listing.description}
           </p>
           <p className="text-[10px] text-muted mt-1">(Translation unavailable)</p>
+          {(isTruncated || isExpanded) && (
+            <button
+              type="button"
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="text-[12px] text-gold hover:text-gold-light transition-colors mt-2 font-medium"
+            >
+              {isExpanded ? 'Show less' : 'Read more'}
+            </button>
+          )}
         </>
       )}
 
       {/* Normal display */}
       {!isLoading && !error && (
-        <p
-          className="text-[13px] text-ink/80 leading-relaxed whitespace-pre-line"
-          style={{
-            display: '-webkit-box',
-            WebkitLineClamp: maxLines,
-            WebkitBoxOrient: 'vertical',
-            overflow: 'hidden',
-          }}
-        >
-          {displayText}
-        </p>
+        <>
+          <p
+            ref={textRef}
+            className="text-[13px] text-ink/80 leading-relaxed whitespace-pre-line"
+            style={isExpanded ? {} : {
+              display: '-webkit-box',
+              WebkitLineClamp: maxLines,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
+            }}
+          >
+            {displayText}
+          </p>
+          {(isTruncated || isExpanded) && (
+            <button
+              type="button"
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="text-[12px] text-gold hover:text-gold-light transition-colors mt-2 font-medium"
+            >
+              {isExpanded ? 'Show less' : 'Read more'}
+            </button>
+          )}
+        </>
       )}
     </div>
   );
