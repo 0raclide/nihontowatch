@@ -185,7 +185,7 @@ export function VirtualListingGrid({
     items: listings,
     totalCount: undefined, // Dynamic height - grows as items load (no massive empty space)
     overscan: 3, // Extra buffer rows to prevent edge flickering
-    enabled: infiniteScroll && listings.length > 30, // Only virtualize in infinite scroll mode
+    enabled: infiniteScroll && listings.length > 15, // Start virtualization earlier to avoid jarring iOS transition
   });
 
   // Memoize the converted listings for QuickView

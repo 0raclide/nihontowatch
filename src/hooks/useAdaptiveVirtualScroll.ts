@@ -135,9 +135,9 @@ export function useAdaptiveVirtualScroll<T>({
 
     rafRef.current = requestAnimationFrame(() => {
       const newScrollTop = window.scrollY;
-      // Only update if scroll changed by at least half a row height
-      // This prevents micro-adjustments from causing bouncing
-      const threshold = dimensions.rowHeight / 2;
+      // Only update if scroll changed by threshold amount
+      // Use smaller threshold (1/4 row) for more responsive updates on iOS
+      const threshold = dimensions.rowHeight / 4;
       if (Math.abs(newScrollTop - lastScrollTopRef.current) > threshold) {
         lastScrollTopRef.current = newScrollTop;
         setScrollTop(newScrollTop);

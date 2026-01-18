@@ -685,6 +685,9 @@ body.drawer-open {
    from totalCount, so we don't need browser anchoring. */
 .virtual-scroll-container {
   overflow-anchor: none;
+  /* iOS Safari scroll stability - prevent rubber-band during height changes */
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Prevent overscroll bounce during content changes on mobile */

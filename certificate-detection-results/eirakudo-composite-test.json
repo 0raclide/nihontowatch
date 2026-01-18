@@ -1,0 +1,50 @@
+[
+  {
+    "listing_id": 1215,
+    "db_cert_type": "TokuHozon",
+    "composite_url": "https://eirakudo.shop/images/537180mogusa_z.jpeg",
+    "analysis": {
+      "error": "400 {\"type\":\"error\",\"error\":{\"type\":\"invalid_request_error\",\"message\":\"messages.0.content.0.image.source.base64.data: At least one of the image dimensions exceed max allowed size: 8000 pixels\"},\"reque"
+    }
+  },
+  {
+    "listing_id": 405,
+    "db_cert_type": "TokuHozon",
+    "composite_url": "https://eirakudo.shop/images/kanetane_z.jpg",
+    "analysis": {
+      "error": "400 {\"type\":\"error\",\"error\":{\"type\":\"invalid_request_error\",\"message\":\"messages.0.content.0.image.source.base64.data: At least one of the image dimensions exceed max allowed size: 8000 pixels\"},\"reque"
+    }
+  },
+  {
+    "listing_id": 738,
+    "db_cert_type": "Juyo",
+    "composite_url": "https://eirakudo.shop/images/165762sanekage_z.jpeg",
+    "analysis": {
+      "error": "400 {\"type\":\"error\",\"error\":{\"type\":\"invalid_request_error\",\"message\":\"messages.0.content.0.image.source.base64.data: At least one of the image dimensions exceed max allowed size: 8000 pixels\"},\"reque"
+    }
+  },
+  {
+    "listing_id": 578,
+    "db_cert_type": "Juyo",
+    "composite_url": "https://eirakudo.shop/images/hirotsugu_z.jpg",
+    "analysis": {
+      "error": "400 {\"type\":\"error\",\"error\":{\"type\":\"invalid_request_error\",\"message\":\"messages.0.content.0.image.source.base64.data: At least one of the image dimensions exceed max allowed size: 8000 pixels\"},\"reque"
+    }
+  },
+  {
+    "listing_id": 771,
+    "db_cert_type": "Hozon",
+    "composite_url": "https://eirakudo.shop/images/shoamibukan_z.jpg",
+    "analysis": {
+      "error": "400 {\"type\":\"error\",\"error\":{\"type\":\"invalid_request_error\",\"message\":\"messages.0.content.0.image.source.base64.data: At least one of the image dimensions exceed max allowed size: 8000 pixels\"},\"reque"
+    }
+  },
+  {
+    "listing_id": 806,
+    "db_cert_type": "Hozon",
+    "composite_url": "https://eirakudo.shop/images/840013kokinko_ebi_z.jpg",
+    "analysis": {
+      "error": "400 {\"type\":\"error\",\"error\":{\"type\":\"invalid_request_error\",\"message\":\"messages.0.content.0.image.source.base64.data: At least one of the image dimensions exceed max allowed size: 8000 pixels\"},\"reque"
+    }
+  }
+]
