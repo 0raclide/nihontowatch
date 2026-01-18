@@ -1,0 +1,194 @@
+{
+  "dealer": "hyozaemon.jp",
+  "timestamp": "2026-01-18T10:58:49.910Z",
+  "summary": {
+    "total": 33,
+    "sampled": 15,
+    "verdicts": {
+      "FETCH_FAILED": 11,
+      "SAME": 3,
+      "DIFFERENT": 1
+    },
+    "avgTitleSim": 9,
+    "avgImageSim": 75,
+    "urlReuseRate": 25
+  },
+  "results": [
+    {
+      "id": 6308,
+      "url": "https://hyozaemon.jp/product/korekazu",
+      "gap": 3910,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    },
+    {
+      "id": 5393,
+      "url": "https://hyozaemon.jp/product/sousyuhirotugu",
+      "gap": 1542,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    },
+    {
+      "id": 5249,
+      "url": "https://www.hyozaemon.jp/product/nobukuni/",
+      "gap": 1131,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    },
+    {
+      "id": 5307,
+      "url": "https://hyozaemon.jp/product/tyousyuakikuni/",
+      "gap": 1020,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    },
+    {
+      "id": 5272,
+      "url": "https://hyozaemon.jp/product/fukuokaitimonji/",
+      "gap": 1020,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    },
+    {
+      "id": 5390,
+      "url": "https://hyozaemon.jp/product/fugakusukasituba",
+      "gap": 968,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    },
+    {
+      "id": 5268,
+      "url": "https://hyozaemon.jp/product/fukuokaitimonjiyosifusa/",
+      "gap": 966,
+      "archived": {
+        "title": "吉房（福岡一文字） ｜ 刀剣、兵左衛門百観音堂",
+        "imageCount": 20,
+        "price": null
+      },
+      "current": {
+        "title": "吉房（福岡一文字）",
+        "imageCount": 19,
+        "price": null
+      },
+      "similarity": {
+        "title": 36,
+        "images": 75,
+        "commonImages": 15
+      },
+      "verdict": "SAME",
+      "confidence": "medium"
+    },
+    {
+      "id": 5284,
+      "url": "https://hyozaemon.jp/product/mitunaga/",
+      "gap": 834,
+      "archived": {
+        "title": "兵左衛門百観音堂\n\t\t\t\t0480-58-0224",
+        "imageCount": 10,
+        "price": null
+      },
+      "current": {
+        "title": "備前国長船住光長 建武五年八月日",
+        "imageCount": 6,
+        "price": null
+      },
+      "similarity": {
+        "title": 0,
+        "images": 60,
+        "commonImages": 6
+      },
+      "verdict": "DIFFERENT",
+      "confidence": "high"
+    },
+    {
+      "id": 5278,
+      "url": "https://hyozaemon.jp/product/yoshiokaitimonji/",
+      "gap": 773,
+      "archived": {
+        "title": "兵左衛門百観音堂\n\t\t\t\t0480-58-0224",
+        "imageCount": 18,
+        "price": null
+      },
+      "current": {
+        "title": "無銘（吉岡一文字）",
+        "imageCount": 14,
+        "price": null
+      },
+      "similarity": {
+        "title": 0,
+        "images": 78,
+        "commonImages": 14
+      },
+      "verdict": "SAME",
+      "confidence": "medium"
+    },
+    {
+      "id": 5383,
+      "url": "https://hyozaemon.jp/product/osafunenorimitu",
+      "gap": 519,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    },
+    {
+      "id": 5283,
+      "url": "https://hyozaemon.jp/product/osafunetikakagetati/",
+      "gap": 426,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    },
+    {
+      "id": 5287,
+      "url": "https://hyozaemon.jp/product/osafunemotosige/",
+      "gap": 426,
+      "archived": {
+        "title": "兵左衛門百観音堂\n\t\t\t\t昌和美術刀剣（東京・荻窪店）TEL:03-6276-9908　営業時間：10～18時　定休日：火・水曜日\n\t\t\t\t百観音美術館（久喜本店）TEL:0480-58-0224　予",
+        "imageCount": 20,
+        "price": null
+      },
+      "current": {
+        "title": "備州長船元重",
+        "imageCount": 17,
+        "price": null
+      },
+      "similarity": {
+        "title": 0,
+        "images": 85,
+        "commonImages": 17
+      },
+      "verdict": "SAME",
+      "confidence": "medium"
+    },
+    {
+      "id": 5387,
+      "url": "https://hyozaemon.jp/product/kokattyusi",
+      "gap": 359,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    },
+    {
+      "id": 5388,
+      "url": "https://hyozaemon.jp/product/kokinkoufutigasira",
+      "gap": 359,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    },
+    {
+      "id": 5241,
+      "url": "https://hyozaemon.jp/product/hasebekunisige/",
+      "gap": 359,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    }
+  ]
+}

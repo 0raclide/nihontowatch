@@ -226,7 +226,10 @@ describe('Browse API with Search', () => {
 
     it('combines search with price filter', async () => {
       const minPrice = 500000;
-      const res = await fetch(`${API_BASE}/api/browse?q=katana&minPrice=${minPrice}&tab=available`);
+      // Price filter is parsed from query text, not a separate parameter
+      // Use encodeURIComponent for proper URL encoding
+      const query = encodeURIComponent(`katana price>=${minPrice}`);
+      const res = await fetch(`${API_BASE}/api/browse?q=${query}&tab=available`);
       expect(res.ok).toBe(true);
 
       const data = await res.json();
@@ -249,7 +252,10 @@ describe('Browse API with Search', () => {
     });
 
     it('combines search with multiple filters', async () => {
-      const res = await fetch(`${API_BASE}/api/browse?q=katana&type=katana&cert=Juyo&minPrice=1000000&tab=available`);
+      const minPrice = 1000000;
+      // Price filter is parsed from query text
+      const query = encodeURIComponent(`katana price>=${minPrice}`);
+      const res = await fetch(`${API_BASE}/api/browse?q=${query}&type=katana&cert=Juyo&tab=available`);
       expect(res.ok).toBe(true);
 
       const data = await res.json();
@@ -257,7 +263,7 @@ describe('Browse API with Search', () => {
         expect(listing.item_type?.toLowerCase()).toBe('katana');
         expect(listing.cert_type).toBe('Juyo');
         if (listing.price_value !== null) {
-          expect(listing.price_value).toBeGreaterThanOrEqual(1000000);
+          expect(listing.price_value).toBeGreaterThanOrEqual(minPrice);
         }
       });
     });

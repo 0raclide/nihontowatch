@@ -1,0 +1,278 @@
+{
+  "dealer": "eirakudo.shop",
+  "timestamp": "2026-01-18T10:56:37.511Z",
+  "summary": {
+    "total": 290,
+    "sampled": 15,
+    "verdicts": {
+      "DIFFERENT": 7,
+      "UNCERTAIN": 3,
+      "FETCH_FAILED": 5
+    },
+    "avgTitleSim": 13,
+    "avgImageSim": 0,
+    "urlReuseRate": 70
+  },
+  "results": [
+    {
+      "id": 521,
+      "url": "https://eirakudo.shop/token/tachikatana/detail/351451",
+      "gap": 2290,
+      "archived": {
+        "title": "日本刀・刀剣販売　ネット通販専門店",
+        "imageCount": 16,
+        "price": "¥1,500,000"
+      },
+      "current": {
+        "title": "直江志津 刀 特別保存刀剣",
+        "imageCount": 1,
+        "price": null
+      },
+      "similarity": {
+        "title": 4,
+        "images": 0,
+        "commonImages": 0
+      },
+      "verdict": "DIFFERENT",
+      "confidence": "high"
+    },
+    {
+      "id": 625,
+      "url": "https://eirakudo.shop/token/tachikatana/detail/298423",
+      "gap": 2290,
+      "archived": {
+        "title": "日本刀・刀剣販売　ネット通販専門店",
+        "imageCount": 17,
+        "price": "¥2,000,000"
+      },
+      "current": {
+        "title": "和泉守国貞 刀 特別保存刀剣",
+        "imageCount": 3,
+        "price": null
+      },
+      "similarity": {
+        "title": 4,
+        "images": 0,
+        "commonImages": 0
+      },
+      "verdict": "DIFFERENT",
+      "confidence": "high"
+    },
+    {
+      "id": 1067,
+      "url": "https://eirakudo.shop/tosogu/tsuba/detail/979127",
+      "gap": 2065,
+      "archived": {
+        "title": "日本刀・刀剣販売　ネット通販専門店",
+        "imageCount": 16,
+        "price": "¥80,000"
+      },
+      "current": {
+        "title": "赤阪 芦雁透鍔/鐔",
+        "imageCount": 1,
+        "price": "¥80000"
+      },
+      "similarity": {
+        "title": 0,
+        "images": 0,
+        "commonImages": 0
+      },
+      "verdict": "DIFFERENT",
+      "confidence": "high"
+    },
+    {
+      "id": 1018,
+      "url": "https://eirakudo.shop/tosogu/tsuba/detail/506388",
+      "gap": 2027,
+      "archived": {
+        "title": "日本刀販売 刀剣販売買取の両国 永楽堂",
+        "imageCount": 5,
+        "price": "¥120,000"
+      },
+      "current": {
+        "title": "古正阿弥 菱花卉透鍔/鐔",
+        "imageCount": 1,
+        "price": "¥120000"
+      },
+      "similarity": {
+        "title": 0,
+        "images": 0,
+        "commonImages": 0
+      },
+      "verdict": "DIFFERENT",
+      "confidence": "high"
+    },
+    {
+      "id": 717,
+      "url": "https://eirakudo.shop/tosogu/tsuba/detail/482420",
+      "gap": 1969,
+      "archived": {
+        "title": "日本刀販売 刀剣販売買取の両国 永楽堂",
+        "imageCount": 5,
+        "price": "¥130,000"
+      },
+      "current": {
+        "title": "京透 四方抱茗荷唐草透鍔/鐔",
+        "imageCount": 1,
+        "price": "¥130000"
+      },
+      "similarity": {
+        "title": 0,
+        "images": 0,
+        "commonImages": 0
+      },
+      "verdict": "DIFFERENT",
+      "confidence": "high"
+    },
+    {
+      "id": 682,
+      "url": "https://eirakudo.shop/tosogu/tsuba/detail/875009",
+      "gap": 1959,
+      "archived": {
+        "title": "日本刀販売 刀剣販売買取の両国 永楽堂",
+        "imageCount": 5,
+        "price": "¥160,000"
+      },
+      "current": {
+        "title": "伝間 渦文図鍔/鐔",
+        "imageCount": 1,
+        "price": "¥160000"
+      },
+      "similarity": {
+        "title": 0,
+        "images": 0,
+        "commonImages": 0
+      },
+      "verdict": "DIFFERENT",
+      "confidence": "high"
+    },
+    {
+      "id": 913,
+      "url": "https://eirakudo.shop/tosogu/tsuba/detail/062721",
+      "gap": 1921,
+      "archived": {
+        "title": "正阿弥 鍔",
+        "imageCount": 5,
+        "price": "¥35,000"
+      },
+      "current": {
+        "title": "京正阿弥 柏樹尾長鳥透鍔",
+        "imageCount": 1,
+        "price": "¥100000"
+      },
+      "similarity": {
+        "title": 25,
+        "images": 0,
+        "commonImages": 0
+      },
+      "verdict": "UNCERTAIN",
+      "confidence": "low"
+    },
+    {
+      "id": 681,
+      "url": "https://eirakudo.shop/tosogu/tsuba/detail/817385",
+      "gap": 1886,
+      "archived": {
+        "title": "鎌倉 花透菊水花模様図鍔/鐔 |  日本刀販売の両国 永楽堂",
+        "imageCount": 5,
+        "price": "¥300,000"
+      },
+      "current": {
+        "title": "鎌倉 花透菊水花模様図鍔/鐔",
+        "imageCount": 3,
+        "price": "¥350000"
+      },
+      "similarity": {
+        "title": 45,
+        "images": 0,
+        "commonImages": 0
+      },
+      "verdict": "UNCERTAIN",
+      "confidence": "low"
+    },
+    {
+      "id": 686,
+      "url": "https://eirakudo.shop/tosogu/tsuba/detail/492995",
+      "gap": 1886,
+      "archived": {
+        "title": "法安兼重 鍔",
+        "imageCount": 5,
+        "price": "¥230,000"
+      },
+      "current": {
+        "title": "法安兼重 黄初平図鍔/鐔",
+        "imageCount": 2,
+        "price": "¥230000"
+      },
+      "similarity": {
+        "title": 33,
+        "images": 0,
+        "commonImages": 0
+      },
+      "verdict": "UNCERTAIN",
+      "confidence": "low"
+    },
+    {
+      "id": 1199,
+      "url": "https://eirakudo.shop/tosogu/tsuba/detail/475239",
+      "gap": 1882,
+      "archived": {
+        "title": "長州鐔 銘 職幹",
+        "imageCount": 5,
+        "price": "¥200,000"
+      },
+      "current": {
+        "title": "銘 長州萩住職幹作 宮中人風景図鍔/鐔",
+        "imageCount": 1,
+        "price": "¥200000"
+      },
+      "similarity": {
+        "title": 14,
+        "images": 0,
+        "commonImages": 0
+      },
+      "verdict": "DIFFERENT",
+      "confidence": "high"
+    },
+    {
+      "id": 839,
+      "url": "https://eirakudo.shop/tosogu/tsuba/detail/471155",
+      "gap": 1872,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    },
+    {
+      "id": 472,
+      "url": "https://eirakudo.shop/tosogu/tsuba/detail/480043",
+      "gap": 1865,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    },
+    {
+      "id": 404,
+      "url": "https://eirakudo.shop/tosogu/tsuba/detail/351651",
+      "gap": 1854,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    },
+    {
+      "id": 840,
+      "url": "https://eirakudo.shop/tosogu/tsuba/detail/495623",
+      "gap": 1848,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    },
+    {
+      "id": 716,
+      "url": "https://eirakudo.shop/tosogu/tsuba/detail/378361",
+      "gap": 1829,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    }
+  ]
+}

@@ -1,0 +1,208 @@
+{
+  "dealer": "galleryyouyou.com",
+  "timestamp": "2026-01-18T10:56:36.666Z",
+  "summary": {
+    "total": 103,
+    "sampled": 15,
+    "verdicts": {
+      "FETCH_FAILED": 10,
+      "DIFFERENT": 3,
+      "SAME": 2
+    },
+    "avgTitleSim": 0,
+    "avgImageSim": 50,
+    "urlReuseRate": 60
+  },
+  "results": [
+    {
+      "id": 6359,
+      "url": "https://www.galleryyouyou.com/je4",
+      "gap": 1986,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    },
+    {
+      "id": 6357,
+      "url": "https://www.galleryyouyou.com/jm6-netsuke",
+      "gap": 1986,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    },
+    {
+      "id": 6362,
+      "url": "https://www.galleryyouyou.com/jm2",
+      "gap": 1986,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    },
+    {
+      "id": 6368,
+      "url": "https://www.galleryyouyou.com/jt6",
+      "gap": 1986,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    },
+    {
+      "id": 6377,
+      "url": "https://www.galleryyouyou.com/jm3",
+      "gap": 1986,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    },
+    {
+      "id": 6379,
+      "url": "https://www.galleryyouyou.com/jb1",
+      "gap": 1986,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    },
+    {
+      "id": 6378,
+      "url": "https://www.galleryyouyou.com/je1",
+      "gap": 1986,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    },
+    {
+      "id": 6400,
+      "url": "https://www.galleryyouyou.com/jm5-1",
+      "gap": 1986,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    },
+    {
+      "id": 6367,
+      "url": "https://www.galleryyouyou.com/jt10",
+      "gap": 1941,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    },
+    {
+      "id": 6372,
+      "url": "https://www.galleryyouyou.com/jt7",
+      "gap": 1941,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    },
+    {
+      "id": 6370,
+      "url": "https://www.galleryyouyou.com/jm578",
+      "gap": 1941,
+      "archived": {
+        "title": "gallery陽 々y ouyou",
+        "imageCount": 4,
+        "price": "¥400,000"
+      },
+      "current": {
+        "title": "花桐図目貫",
+        "imageCount": 4,
+        "price": "¥400000"
+      },
+      "similarity": {
+        "title": 0,
+        "images": 50,
+        "commonImages": 2
+      },
+      "verdict": "DIFFERENT",
+      "confidence": "high"
+    },
+    {
+      "id": 6376,
+      "url": "https://www.galleryyouyou.com/je3",
+      "gap": 1941,
+      "archived": {
+        "title": "gallery陽 々y ouyou",
+        "imageCount": 4,
+        "price": "¥200,000"
+      },
+      "current": {
+        "title": "JE3 丁子頭勾玉",
+        "imageCount": 4,
+        "price": "¥200000"
+      },
+      "similarity": {
+        "title": 0,
+        "images": 50,
+        "commonImages": 2
+      },
+      "verdict": "DIFFERENT",
+      "confidence": "high"
+    },
+    {
+      "id": 6386,
+      "url": "https://www.galleryyouyou.com/jt22",
+      "gap": 1941,
+      "archived": {
+        "title": "gallery陽 々y ouyou",
+        "imageCount": 9,
+        "price": "¥250,000"
+      },
+      "current": {
+        "title": "絵唐津茶碗",
+        "imageCount": 9,
+        "price": "¥250000"
+      },
+      "similarity": {
+        "title": 0,
+        "images": 78,
+        "commonImages": 7
+      },
+      "verdict": "SAME",
+      "confidence": "medium"
+    },
+    {
+      "id": 6396,
+      "url": "https://www.galleryyouyou.com/jt8",
+      "gap": 1941,
+      "archived": {
+        "title": "gallery陽 々y ouyou",
+        "imageCount": 7,
+        "price": "¥350,000"
+      },
+      "current": {
+        "title": "JT8 萩片身替茶碗",
+        "imageCount": 7,
+        "price": "¥350000"
+      },
+      "similarity": {
+        "title": 0,
+        "images": 71,
+        "commonImages": 5
+      },
+      "verdict": "SAME",
+      "confidence": "medium"
+    },
+    {
+      "id": 6412,
+      "url": "https://www.galleryyouyou.com/jt958",
+      "gap": 1941,
+      "archived": {
+        "title": "gallery陽 々y ouyou",
+        "imageCount": 6,
+        "price": "¥180,000"
+      },
+      "current": {
+        "title": "清白図鐔",
+        "imageCount": 6,
+        "price": "¥180000"
+      },
+      "similarity": {
+        "title": 0,
+        "images": 0,
+        "commonImages": 0
+      },
+      "verdict": "DIFFERENT",
+      "confidence": "high"
+    }
+  ]
+}

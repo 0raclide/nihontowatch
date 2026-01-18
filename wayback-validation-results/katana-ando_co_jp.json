@@ -1,0 +1,305 @@
+{
+  "dealer": "katana-ando.co.jp",
+  "timestamp": "2026-01-18T10:56:31.815Z",
+  "summary": {
+    "total": 103,
+    "sampled": 15,
+    "verdicts": {
+      "DIFFERENT": 12,
+      "FETCH_FAILED": 3
+    },
+    "avgTitleSim": 0,
+    "avgImageSim": 0,
+    "urlReuseRate": 100
+  },
+  "results": [
+    {
+      "id": 5778,
+      "url": "https://www.katana-ando.co.jp/swords.php#item28",
+      "gap": 1938,
+      "archived": {
+        "title": "日本一取り扱い本数を誇る刀剣会社 安東貿易",
+        "imageCount": 20,
+        "price": null
+      },
+      "current": {
+        "title": "短刀 無銘（新々刀薩州正房）",
+        "imageCount": 0,
+        "price": null
+      },
+      "similarity": {
+        "title": 0,
+        "images": 0,
+        "commonImages": 0
+      },
+      "verdict": "DIFFERENT",
+      "confidence": "high"
+    },
+    {
+      "id": 5836,
+      "url": "https://www.katana-ando.co.jp/swords.php#item86",
+      "gap": 1938,
+      "archived": {
+        "title": "日本一取り扱い本数を誇る刀剣会社 安東貿易",
+        "imageCount": 20,
+        "price": null
+      },
+      "current": {
+        "title": "短刀 備前介宗次　拵入",
+        "imageCount": 0,
+        "price": "¥550000"
+      },
+      "similarity": {
+        "title": 0,
+        "images": 0,
+        "commonImages": 0
+      },
+      "verdict": "DIFFERENT",
+      "confidence": "high"
+    },
+    {
+      "id": 5801,
+      "url": "https://www.katana-ando.co.jp/swords.php#item51",
+      "gap": 1938,
+      "archived": {
+        "title": "日本一取り扱い本数を誇る刀剣会社 安東貿易",
+        "imageCount": 20,
+        "price": null
+      },
+      "current": {
+        "title": "刀 無銘（宮崎38640)",
+        "imageCount": 0,
+        "price": "¥350000"
+      },
+      "similarity": {
+        "title": 0,
+        "images": 0,
+        "commonImages": 0
+      },
+      "verdict": "DIFFERENT",
+      "confidence": "high"
+    },
+    {
+      "id": 5802,
+      "url": "https://www.katana-ando.co.jp/swords.php#item52",
+      "gap": 1938,
+      "archived": {
+        "title": "日本一取り扱い本数を誇る刀剣会社 安東貿易",
+        "imageCount": 20,
+        "price": null
+      },
+      "current": {
+        "title": "刀 無銘（長野65061) 拵入",
+        "imageCount": 0,
+        "price": null
+      },
+      "similarity": {
+        "title": 0,
+        "images": 0,
+        "commonImages": 0
+      },
+      "verdict": "DIFFERENT",
+      "confidence": "high"
+    },
+    {
+      "id": 5793,
+      "url": "https://www.katana-ando.co.jp/swords.php#item43",
+      "gap": 1938,
+      "archived": {
+        "title": "日本一取り扱い本数を誇る刀剣会社 安東貿易",
+        "imageCount": 20,
+        "price": null
+      },
+      "current": {
+        "title": "刀 河内守國助　拵入",
+        "imageCount": 0,
+        "price": null
+      },
+      "similarity": {
+        "title": 0,
+        "images": 0,
+        "commonImages": 0
+      },
+      "verdict": "DIFFERENT",
+      "confidence": "high"
+    },
+    {
+      "id": 5754,
+      "url": "https://www.katana-ando.co.jp/swords.php#item4",
+      "gap": 1938,
+      "archived": {
+        "title": "日本一取り扱い本数を誇る刀剣会社 安東貿易",
+        "imageCount": 20,
+        "price": null
+      },
+      "current": {
+        "title": "太刀 肥前國河内守藤原正廣",
+        "imageCount": 0,
+        "price": "¥1400000"
+      },
+      "similarity": {
+        "title": 0,
+        "images": 0,
+        "commonImages": 0
+      },
+      "verdict": "DIFFERENT",
+      "confidence": "high"
+    },
+    {
+      "id": 5817,
+      "url": "https://www.katana-ando.co.jp/swords.php#item67",
+      "gap": 1938,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    },
+    {
+      "id": 5818,
+      "url": "https://www.katana-ando.co.jp/swords.php#item68",
+      "gap": 1938,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    },
+    {
+      "id": 5819,
+      "url": "https://www.katana-ando.co.jp/swords.php#item69",
+      "gap": 1938,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    },
+    {
+      "id": 5765,
+      "url": "https://www.katana-ando.co.jp/swords.php#item15",
+      "gap": 1938,
+      "archived": {
+        "title": "日本一取り扱い本数を誇る刀剣会社 安東貿易",
+        "imageCount": 20,
+        "price": null
+      },
+      "current": {
+        "title": "脇差 備前国住長船祐（以下切）　拵付",
+        "imageCount": 0,
+        "price": "¥550000"
+      },
+      "similarity": {
+        "title": 0,
+        "images": 0,
+        "commonImages": 0
+      },
+      "verdict": "DIFFERENT",
+      "confidence": "high"
+    },
+    {
+      "id": 5814,
+      "url": "https://www.katana-ando.co.jp/swords.php#item64",
+      "gap": 1938,
+      "archived": {
+        "title": "日本一取り扱い本数を誇る刀剣会社 安東貿易",
+        "imageCount": 20,
+        "price": null
+      },
+      "current": {
+        "title": "脇差 國廣",
+        "imageCount": 0,
+        "price": null
+      },
+      "similarity": {
+        "title": 0,
+        "images": 0,
+        "commonImages": 0
+      },
+      "verdict": "DIFFERENT",
+      "confidence": "high"
+    },
+    {
+      "id": 5816,
+      "url": "https://www.katana-ando.co.jp/swords.php#item66",
+      "gap": 1938,
+      "archived": {
+        "title": "日本一取り扱い本数を誇る刀剣会社 安東貿易",
+        "imageCount": 20,
+        "price": null
+      },
+      "current": {
+        "title": "脇差 備州長船康光　応永三十五年二月日",
+        "imageCount": 0,
+        "price": "¥350000"
+      },
+      "similarity": {
+        "title": 0,
+        "images": 0,
+        "commonImages": 0
+      },
+      "verdict": "DIFFERENT",
+      "confidence": "high"
+    },
+    {
+      "id": 5794,
+      "url": "https://www.katana-ando.co.jp/swords.php#item44",
+      "gap": 1938,
+      "archived": {
+        "title": "日本一取り扱い本数を誇る刀剣会社 安東貿易",
+        "imageCount": 20,
+        "price": null
+      },
+      "current": {
+        "title": "刀 備前国吉井盛則　応永二十六年二月日",
+        "imageCount": 0,
+        "price": "¥450000"
+      },
+      "similarity": {
+        "title": 0,
+        "images": 0,
+        "commonImages": 0
+      },
+      "verdict": "DIFFERENT",
+      "confidence": "high"
+    },
+    {
+      "id": 5789,
+      "url": "https://www.katana-ando.co.jp/swords.php#item39",
+      "gap": 1938,
+      "archived": {
+        "title": "日本一取り扱い本数を誇る刀剣会社 安東貿易",
+        "imageCount": 20,
+        "price": null
+      },
+      "current": {
+        "title": "刀 横山加賀介藤原祐永　天保十四年八月日　菊一　備陽長船郷",
+        "imageCount": 0,
+        "price": null
+      },
+      "similarity": {
+        "title": 0,
+        "images": 0,
+        "commonImages": 0
+      },
+      "verdict": "DIFFERENT",
+      "confidence": "high"
+    },
+    {
+      "id": 5799,
+      "url": "https://www.katana-ando.co.jp/swords.php#item49",
+      "gap": 1938,
+      "archived": {
+        "title": "日本一取り扱い本数を誇る刀剣会社 安東貿易",
+        "imageCount": 20,
+        "price": null
+      },
+      "current": {
+        "title": "刀 無銘（岡山126521)",
+        "imageCount": 0,
+        "price": "¥400000"
+      },
+      "similarity": {
+        "title": 0,
+        "images": 0,
+        "commonImages": 0
+      },
+      "verdict": "DIFFERENT",
+      "confidence": "high"
+    }
+  ]
+}

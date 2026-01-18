@@ -1,0 +1,325 @@
+{
+  "dealer": "tsuruginoya.com",
+  "timestamp": "2026-01-18T10:57:42.756Z",
+  "summary": {
+    "total": 21,
+    "sampled": 14,
+    "verdicts": {
+      "SAME": 12,
+      "DIFFERENT": 2
+    },
+    "avgTitleSim": 0,
+    "avgImageSim": 85,
+    "urlReuseRate": 14
+  },
+  "results": [
+    {
+      "id": 6759,
+      "url": "https://www.tsuruginoya.com/items/f00223.html",
+      "gap": 2280,
+      "archived": {
+        "title": "商品詳細",
+        "imageCount": 9,
+        "price": null
+      },
+      "current": {
+        "title": "太刀 備前長船倫光",
+        "imageCount": 9,
+        "price": "¥18500000"
+      },
+      "similarity": {
+        "title": 0,
+        "images": 100,
+        "commonImages": 9
+      },
+      "verdict": "SAME",
+      "confidence": "medium"
+    },
+    {
+      "id": 6770,
+      "url": "https://www.tsuruginoya.com/items/a00540.html",
+      "gap": 1980,
+      "archived": {
+        "title": "商品詳細",
+        "imageCount": 3,
+        "price": null
+      },
+      "current": {
+        "title": "脇指 小沢正寿",
+        "imageCount": 3,
+        "price": "¥750000"
+      },
+      "similarity": {
+        "title": 0,
+        "images": 100,
+        "commonImages": 3
+      },
+      "verdict": "SAME",
+      "confidence": "medium"
+    },
+    {
+      "id": 6772,
+      "url": "https://www.tsuruginoya.com/items/a00528.html",
+      "gap": 1942,
+      "archived": {
+        "title": "商品詳細",
+        "imageCount": 5,
+        "price": null
+      },
+      "current": {
+        "title": "刀 堀井龍寒子胤次 昭和五十五年紀",
+        "imageCount": 5,
+        "price": "¥550000"
+      },
+      "similarity": {
+        "title": 0,
+        "images": 100,
+        "commonImages": 5
+      },
+      "verdict": "SAME",
+      "confidence": "medium"
+    },
+    {
+      "id": 6766,
+      "url": "https://www.tsuruginoya.com/items/a00281.html",
+      "gap": 1942,
+      "archived": {
+        "title": "商品詳細",
+        "imageCount": 4,
+        "price": null
+      },
+      "current": {
+        "title": "脇指 備前長船経家",
+        "imageCount": 4,
+        "price": "¥850000"
+      },
+      "similarity": {
+        "title": 0,
+        "images": 100,
+        "commonImages": 4
+      },
+      "verdict": "SAME",
+      "confidence": "medium"
+    },
+    {
+      "id": 6774,
+      "url": "https://www.tsuruginoya.com/items/a00530.html",
+      "gap": 1939,
+      "archived": {
+        "title": "商品詳細",
+        "imageCount": 3,
+        "price": null
+      },
+      "current": {
+        "title": "短刀 堀井胤明 大正十五年紀",
+        "imageCount": 3,
+        "price": "¥245000"
+      },
+      "similarity": {
+        "title": 0,
+        "images": 100,
+        "commonImages": 3
+      },
+      "verdict": "SAME",
+      "confidence": "medium"
+    },
+    {
+      "id": 6769,
+      "url": "https://www.tsuruginoya.com/items/a00563.html",
+      "gap": 1779,
+      "archived": {
+        "title": "商品詳細",
+        "imageCount": 6,
+        "price": null
+      },
+      "current": {
+        "title": "脇指 酒井一貫斎繁正",
+        "imageCount": 6,
+        "price": "¥800000"
+      },
+      "similarity": {
+        "title": 0,
+        "images": 100,
+        "commonImages": 6
+      },
+      "verdict": "SAME",
+      "confidence": "medium"
+    },
+    {
+      "id": 6763,
+      "url": "https://www.tsuruginoya.com/items/a00614.html",
+      "gap": 1330,
+      "archived": {
+        "title": "商品詳細",
+        "imageCount": 8,
+        "price": null
+      },
+      "current": {
+        "title": "太刀 備前長船政光",
+        "imageCount": 8,
+        "price": "¥4800000"
+      },
+      "similarity": {
+        "title": 0,
+        "images": 100,
+        "commonImages": 8
+      },
+      "verdict": "SAME",
+      "confidence": "medium"
+    },
+    {
+      "id": 6771,
+      "url": "https://www.tsuruginoya.com/items/a00646.html",
+      "gap": 833,
+      "archived": {
+        "title": "商品詳細",
+        "imageCount": 3,
+        "price": null
+      },
+      "current": {
+        "title": "刀 谷川盛吉",
+        "imageCount": 6,
+        "price": "¥750000"
+      },
+      "similarity": {
+        "title": 0,
+        "images": 50,
+        "commonImages": 3
+      },
+      "verdict": "DIFFERENT",
+      "confidence": "high"
+    },
+    {
+      "id": 6765,
+      "url": "https://www.tsuruginoya.com/items/a00642.html",
+      "gap": 682,
+      "archived": {
+        "title": "商品詳細",
+        "imageCount": 8,
+        "price": null
+      },
+      "current": {
+        "title": "刀 和泉守兼定 粉補光遜",
+        "imageCount": 8,
+        "price": "¥2400000"
+      },
+      "similarity": {
+        "title": 0,
+        "images": 100,
+        "commonImages": 8
+      },
+      "verdict": "SAME",
+      "confidence": "medium"
+    },
+    {
+      "id": 6768,
+      "url": "https://www.tsuruginoya.com/items/a00438.html",
+      "gap": 660,
+      "archived": {
+        "title": "商品詳細",
+        "imageCount": 4,
+        "price": null
+      },
+      "current": {
+        "title": "短刀 相州広正",
+        "imageCount": 5,
+        "price": "¥550000"
+      },
+      "similarity": {
+        "title": 0,
+        "images": 80,
+        "commonImages": 4
+      },
+      "verdict": "SAME",
+      "confidence": "medium"
+    },
+    {
+      "id": 6758,
+      "url": "https://www.tsuruginoya.com/items/f00665.html",
+      "gap": 466,
+      "archived": {
+        "title": "商品詳細",
+        "imageCount": 17,
+        "price": null
+      },
+      "current": {
+        "title": "刀 相州行光",
+        "imageCount": 18,
+        "price": null
+      },
+      "similarity": {
+        "title": 0,
+        "images": 94,
+        "commonImages": 17
+      },
+      "verdict": "SAME",
+      "confidence": "medium"
+    },
+    {
+      "id": 6761,
+      "url": "https://www.tsuruginoya.com/items/f00311.html",
+      "gap": 211,
+      "archived": {
+        "title": "商品詳細",
+        "imageCount": 14,
+        "price": null
+      },
+      "current": {
+        "title": "刀 無銘 福岡一文字",
+        "imageCount": 14,
+        "price": "¥10000000"
+      },
+      "similarity": {
+        "title": 0,
+        "images": 100,
+        "commonImages": 14
+      },
+      "verdict": "SAME",
+      "confidence": "medium"
+    },
+    {
+      "id": 6756,
+      "url": "https://www.tsuruginoya.com/items/a00669.html",
+      "gap": 210,
+      "archived": {
+        "title": "商品詳細",
+        "imageCount": 6,
+        "price": null
+      },
+      "current": {
+        "title": "刀 大和守元平 安永十年紀",
+        "imageCount": 9,
+        "price": "¥5000000"
+      },
+      "similarity": {
+        "title": 0,
+        "images": 67,
+        "commonImages": 6
+      },
+      "verdict": "SAME",
+      "confidence": "medium"
+    },
+    {
+      "id": 6764,
+      "url": "https://www.tsuruginoya.com/items/a00672.html",
+      "gap": 210,
+      "archived": {
+        "title": "商品詳細",
+        "imageCount": 1,
+        "price": null
+      },
+      "current": {
+        "title": "刀 青江",
+        "imageCount": 8,
+        "price": "¥4300000"
+      },
+      "similarity": {
+        "title": 0,
+        "images": 0,
+        "commonImages": 0
+      },
+      "verdict": "DIFFERENT",
+      "confidence": "high"
+    }
+  ]
+}

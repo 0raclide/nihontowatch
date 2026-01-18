@@ -1,9 +1,8 @@
 'use client';
 
-import { useEffect, useRef, useMemo, useCallback } from 'react';
+import { useEffect, useRef, useMemo } from 'react';
 import { ListingCard } from './ListingCard';
 import { useAdaptiveVirtualScroll } from '@/hooks/useAdaptiveVirtualScroll';
-import { useScrollPositionLock } from '@/hooks/useScrollPositionLock';
 import { useQuickViewOptional } from '@/contexts/QuickViewContext';
 import type { Listing as QuickViewListing } from '@/types';
 
@@ -172,14 +171,6 @@ export function VirtualListingGrid({
   const loadMoreTriggerRef = useRef<HTMLDivElement>(null);
   const lastListingCountRef = useRef(listings.length);
 
-  // Scroll position lock for preventing bounce during load more
-  const { lockScrollPosition, unlockScrollPosition } = useScrollPositionLock();
-
-  // Callback when height is about to change - lock scroll position
-  const handleHeightWillChange = useCallback(() => {
-    lockScrollPosition();
-  }, [lockScrollPosition]);
-
   // Adaptive virtual scrolling - works for all screen sizes
   // Only enable for infinite scroll mode with larger lists
   const {
@@ -193,7 +184,6 @@ export function VirtualListingGrid({
     items: listings,
     overscan: 3, // Extra buffer rows to prevent edge flickering
     enabled: infiniteScroll && listings.length > 30, // Only virtualize in infinite scroll mode
-    onHeightWillChange: handleHeightWillChange, // Lock scroll before height change
   });
 
   // Memoize the converted listings for QuickView
@@ -244,17 +234,10 @@ export function VirtualListingGrid({
     return () => observer.disconnect();
   }, [infiniteScroll, onLoadMore, hasMore, isLoadingMore]);
 
-  // Scroll anchoring: unlock scroll position after new items are added and rendered
+  // Track listing count changes (for debugging/future use)
   useEffect(() => {
-    if (listings.length > lastListingCountRef.current) {
-      // Items were added - unlock scroll position after render completes
-      // Use requestAnimationFrame to ensure DOM has updated
-      requestAnimationFrame(() => {
-        unlockScrollPosition();
-      });
-    }
     lastListingCountRef.current = listings.length;
-  }, [listings.length, unlockScrollPosition]);
+  }, [listings.length]);
 
   // Render the grid
   const renderGrid = () => (

@@ -46,6 +46,8 @@ import type {
   AlertEvent,
   ExternalLinkClickEvent,
   ViewportDwellEvent,
+  QuickViewPanelToggleEvent,
+  ImagePinchZoomEvent,
   SearchFilters,
   ActivityBatchPayload,
   CreateSessionPayload,
@@ -132,6 +134,16 @@ export interface ActivityTracker {
     listingId: number,
     dwellMs: number,
     extra?: { intersectionRatio?: number; isRevisit?: boolean }
+  ) => void;
+  trackQuickViewPanelToggle: (
+    listingId: number,
+    action: 'collapse' | 'expand',
+    dwellMs?: number
+  ) => void;
+  trackImagePinchZoom: (
+    listingId: number,
+    imageIndex: number,
+    extra?: { zoomScale?: number; durationMs?: number }
   ) => void;
   flush: () => Promise<void>;
   isOptedOut: boolean;
@@ -520,6 +532,49 @@ export function ActivityTrackerProvider({
     [createBaseEvent, queueEvent, isOptedOut]
   );
 
+  const trackQuickViewPanelToggle = useCallback(
+    (
+      listingId: number,
+      action: 'collapse' | 'expand',
+      dwellMs?: number
+    ) => {
+      if (isOptedOut) return;
+
+      const event: QuickViewPanelToggleEvent = {
+        ...createBaseEvent(),
+        type: 'quickview_panel_toggle',
+        listingId,
+        action,
+        dwellMs,
+      };
+
+      queueEvent(event);
+    },
+    [createBaseEvent, queueEvent, isOptedOut]
+  );
+
+  const trackImagePinchZoom = useCallback(
+    (
+      listingId: number,
+      imageIndex: number,
+      extra?: { zoomScale?: number; durationMs?: number }
+    ) => {
+      if (isOptedOut) return;
+
+      const event: ImagePinchZoomEvent = {
+        ...createBaseEvent(),
+        type: 'image_pinch_zoom',
+        listingId,
+        imageIndex,
+        zoomScale: extra?.zoomScale,
+        durationMs: extra?.durationMs,
+      };
+
+      queueEvent(event);
+    },
+    [createBaseEvent, queueEvent, isOptedOut]
+  );
+
   // Memoize the tracker object to prevent unnecessary re-renders in consumers
   const tracker: ActivityTracker = useMemo(
     () => ({
@@ -531,6 +586,8 @@ export function ActivityTrackerProvider({
       trackAlertAction,
       trackExternalLinkClick,
       trackViewportDwell,
+      trackQuickViewPanelToggle,
+      trackImagePinchZoom,
       flush: flushEvents,
       isOptedOut,
       setOptOut,
@@ -544,6 +601,8 @@ export function ActivityTrackerProvider({
       trackAlertAction,
       trackExternalLinkClick,
       trackViewportDwell,
+      trackQuickViewPanelToggle,
+      trackImagePinchZoom,
       flushEvents,
       isOptedOut,
       setOptOut,
@@ -642,5 +701,7 @@ export type {
   AlertEvent,
   ExternalLinkClickEvent,
   ViewportDwellEvent,
+  QuickViewPanelToggleEvent,
+  ImagePinchZoomEvent,
   SearchFilters,
 } from '@/lib/activity/types';

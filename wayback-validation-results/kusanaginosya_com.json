@@ -1,0 +1,96 @@
+{
+  "dealer": "kusanaginosya.com",
+  "timestamp": "2026-01-18T10:55:52.209Z",
+  "summary": {
+    "total": 14,
+    "sampled": 10,
+    "verdicts": {
+      "FETCH_FAILED": 10
+    },
+    "avgTitleSim": 0,
+    "avgImageSim": 0,
+    "urlReuseRate": 0
+  },
+  "results": [
+    {
+      "id": 310,
+      "url": "https://www.kusanaginosya.com/SHOP/83.html",
+      "gap": 4639,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    },
+    {
+      "id": 1722,
+      "url": "https://www.kusanaginosya.com/SHOP/209.html",
+      "gap": 3946,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    },
+    {
+      "id": 1482,
+      "url": "https://www.kusanaginosya.com/SHOP/47.html",
+      "gap": 3943,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    },
+    {
+      "id": 1687,
+      "url": "https://www.kusanaginosya.com/SHOP/286.html",
+      "gap": 3739,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    },
+    {
+      "id": 1696,
+      "url": "https://www.kusanaginosya.com/SHOP/261.html",
+      "gap": 3739,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    },
+    {
+      "id": 1632,
+      "url": "https://www.kusanaginosya.com/SHOP/409.html",
+      "gap": 3092,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    },
+    {
+      "id": 345,
+      "url": "https://www.kusanaginosya.com/SHOP/388.html",
+      "gap": 3091,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    },
+    {
+      "id": 1626,
+      "url": "https://www.kusanaginosya.com/SHOP/425.html",
+      "gap": 3084,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    },
+    {
+      "id": 1556,
+      "url": "https://www.kusanaginosya.com/SHOP/444.html",
+      "gap": 3039,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    },
+    {
+      "id": 1618,
+      "url": "https://www.kusanaginosya.com/SHOP/448.html",
+      "gap": 3039,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    }
+  ]
+}

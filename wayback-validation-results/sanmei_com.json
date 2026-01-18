@@ -1,0 +1,250 @@
+{
+  "dealer": "sanmei.com",
+  "timestamp": "2026-01-18T10:58:08.166Z",
+  "summary": {
+    "total": 31,
+    "sampled": 15,
+    "verdicts": {
+      "FETCH_FAILED": 7,
+      "SAME": 5,
+      "DIFFERENT": 3
+    },
+    "avgTitleSim": 0,
+    "avgImageSim": 58,
+    "urlReuseRate": 38
+  },
+  "results": [
+    {
+      "id": 6847,
+      "url": "https://sanmei.com/contents/en-us/p1921.html",
+      "gap": 3493,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    },
+    {
+      "id": 6845,
+      "url": "https://sanmei.com/contents/en-us/p2043.html",
+      "gap": 2309,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    },
+    {
+      "id": 6844,
+      "url": "https://sanmei.com/contents/en-us/p2081.html",
+      "gap": 2281,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    },
+    {
+      "id": 6842,
+      "url": "https://sanmei.com/contents/en-us/p2247.html",
+      "gap": 1707,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    },
+    {
+      "id": 6841,
+      "url": "https://sanmei.com/contents/en-us/p2251.html",
+      "gap": 1707,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    },
+    {
+      "id": 6849,
+      "url": "https://sanmei.com/contents/en-us/p1204.html",
+      "gap": 1675,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    },
+    {
+      "id": 6840,
+      "url": "https://sanmei.com/contents/en-us/p2269.html",
+      "gap": 1636,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    },
+    {
+      "id": 6839,
+      "url": "https://sanmei.com/contents/en-us/p2313.html",
+      "gap": 1331,
+      "archived": {
+        "title": "Tokugawa art",
+        "imageCount": 11,
+        "price": null
+      },
+      "current": {
+        "title": "KIKU Chrysanthemum flower Tsuba",
+        "imageCount": 5,
+        "price": "¥140000"
+      },
+      "similarity": {
+        "title": 0,
+        "images": 63,
+        "commonImages": 5
+      },
+      "verdict": "SAME",
+      "confidence": "medium"
+    },
+    {
+      "id": 6836,
+      "url": "https://sanmei.com/contents/en-us/p2322.html",
+      "gap": 1330,
+      "archived": {
+        "title": "Tokugawa art",
+        "imageCount": 13,
+        "price": null
+      },
+      "current": {
+        "title": "Bamboo Fence Baby Hawk Tsuba",
+        "imageCount": 6,
+        "price": "¥120000"
+      },
+      "similarity": {
+        "title": 0,
+        "images": 60,
+        "commonImages": 6
+      },
+      "verdict": "DIFFERENT",
+      "confidence": "high"
+    },
+    {
+      "id": 6837,
+      "url": "https://sanmei.com/contents/en-us/p2321.html",
+      "gap": 1330,
+      "archived": {
+        "title": "Tokugawa art",
+        "imageCount": 12,
+        "price": null
+      },
+      "current": {
+        "title": "SHI'PPO Seven Treasures crest Openwork Tsuba",
+        "imageCount": 5,
+        "price": "¥80000"
+      },
+      "similarity": {
+        "title": 0,
+        "images": 56,
+        "commonImages": 5
+      },
+      "verdict": "DIFFERENT",
+      "confidence": "high"
+    },
+    {
+      "id": 6838,
+      "url": "https://sanmei.com/contents/en-us/p2318.html",
+      "gap": 1330,
+      "archived": {
+        "title": "Tokugawa art",
+        "imageCount": 11,
+        "price": null
+      },
+      "current": {
+        "title": "Water gate Autumn grass Tsuba",
+        "imageCount": 5,
+        "price": "¥80000"
+      },
+      "similarity": {
+        "title": 0,
+        "images": 63,
+        "commonImages": 5
+      },
+      "verdict": "SAME",
+      "confidence": "medium"
+    },
+    {
+      "id": 6834,
+      "url": "https://sanmei.com/contents/en-us/p2326.html",
+      "gap": 1330,
+      "archived": {
+        "title": "Tokugawa art",
+        "imageCount": 11,
+        "price": null
+      },
+      "current": {
+        "title": "KIRI crest Surges Tsuba",
+        "imageCount": 5,
+        "price": "¥37000"
+      },
+      "similarity": {
+        "title": 0,
+        "images": 63,
+        "commonImages": 5
+      },
+      "verdict": "SAME",
+      "confidence": "medium"
+    },
+    {
+      "id": 6833,
+      "url": "https://sanmei.com/contents/en-us/p2358.html",
+      "gap": 1208,
+      "archived": {
+        "title": "Tokugawa art",
+        "imageCount": 15,
+        "price": null
+      },
+      "current": {
+        "title": "Iron-barred window KOUSHI Tsuba",
+        "imageCount": 8,
+        "price": "¥180000"
+      },
+      "similarity": {
+        "title": 0,
+        "images": 67,
+        "commonImages": 8
+      },
+      "verdict": "SAME",
+      "confidence": "medium"
+    },
+    {
+      "id": 6791,
+      "url": "https://sanmei.com/contents/en-us/p2390.html",
+      "gap": 847,
+      "archived": {
+        "title": "Tokugawa art",
+        "imageCount": 6,
+        "price": null
+      },
+      "current": {
+        "title": "Katana unsigned KANENOBU with)Brushing traces-surface burgundylacquered scabbard Higo Uchikatana Kos",
+        "imageCount": 4,
+        "price": "¥1500000"
+      },
+      "similarity": {
+        "title": 0,
+        "images": 25,
+        "commonImages": 1
+      },
+      "verdict": "DIFFERENT",
+      "confidence": "high"
+    },
+    {
+      "id": 6831,
+      "url": "https://sanmei.com/contents/en-us/p2423.html",
+      "gap": 485,
+      "archived": {
+        "title": "Tokugawa art",
+        "imageCount": 9,
+        "price": null
+      },
+      "current": {
+        "title": "Mitsu-tomoe crest Tsuba",
+        "imageCount": 4,
+        "price": "¥60000"
+      },
+      "similarity": {
+        "title": 0,
+        "images": 67,
+        "commonImages": 4
+      },
+      "verdict": "SAME",
+      "confidence": "medium"
+    }
+  ]
+}

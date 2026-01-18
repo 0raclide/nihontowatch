@@ -1,0 +1,136 @@
+{
+  "dealer": "e-sword.jp",
+  "timestamp": "2026-01-18T10:56:44.796Z",
+  "summary": {
+    "total": 41,
+    "sampled": 15,
+    "verdicts": {
+      "FETCH_FAILED": 15
+    },
+    "avgTitleSim": 0,
+    "avgImageSim": 0,
+    "urlReuseRate": 0
+  },
+  "results": [
+    {
+      "id": 1467,
+      "url": "https://www.e-sword.jp/tantou/1410-3022.htm",
+      "gap": 3944,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    },
+    {
+      "id": 1465,
+      "url": "https://www.e-sword.jp/tantou/1710-3021.htm",
+      "gap": 3207,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    },
+    {
+      "id": 1466,
+      "url": "https://www.e-sword.jp/tantou/1610-3056.htm",
+      "gap": 3207,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    },
+    {
+      "id": 1464,
+      "url": "https://www.e-sword.jp/tantou/1810-3022.htm",
+      "gap": 2463,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    },
+    {
+      "id": 273,
+      "url": "https://www.e-sword.jp/tantou/2210-3002.htm",
+      "gap": 1490,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    },
+    {
+      "id": 295,
+      "url": "https://www.e-sword.jp/tantou/2210-3016.htm",
+      "gap": 1370,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    },
+    {
+      "id": 285,
+      "url": "https://www.e-sword.jp/tantou/2210-3030.htm",
+      "gap": 1275,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    },
+    {
+      "id": 258,
+      "url": "https://www.e-sword.jp/tantou/2210-3041.htm",
+      "gap": 1188,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    },
+    {
+      "id": 1462,
+      "url": "https://www.e-sword.jp/katana/2310-1026.htm",
+      "gap": 1011,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    },
+    {
+      "id": 271,
+      "url": "https://www.e-sword.jp/tantou/2310-6080.htm",
+      "gap": 822,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    },
+    {
+      "id": 278,
+      "url": "https://www.e-sword.jp/tantou/2310-3035.htm",
+      "gap": 822,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    },
+    {
+      "id": 288,
+      "url": "https://www.e-sword.jp/tantou/2310-3047.htm",
+      "gap": 757,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    },
+    {
+      "id": 292,
+      "url": "https://www.e-sword.jp/tantou/2410-3031.htm",
+      "gap": 616,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    },
+    {
+      "id": 1461,
+      "url": "https://www.e-sword.jp/katana/2410-1054.htm",
+      "gap": 591,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    },
+    {
+      "id": 1460,
+      "url": "https://www.e-sword.jp/katana/2410-1068.htm",
+      "gap": 554,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    }
+  ]
+}

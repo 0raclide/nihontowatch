@@ -18,7 +18,9 @@ export type ActivityEventType =
   | 'alert_create'
   | 'alert_delete'
   | 'external_link_click'
-  | 'viewport_dwell';
+  | 'viewport_dwell'
+  | 'quickview_panel_toggle'
+  | 'image_pinch_zoom';
 
 // =============================================================================
 // Event Payloads
@@ -90,6 +92,26 @@ export interface ViewportDwellEvent extends BaseActivityEvent {
   isRevisit?: boolean;
 }
 
+export interface QuickViewPanelToggleEvent extends BaseActivityEvent {
+  type: 'quickview_panel_toggle';
+  listingId: number;
+  /** The action performed: 'collapse' (user wants more image space) or 'expand' */
+  action: 'collapse' | 'expand';
+  /** Duration the panel was in previous state before toggle (ms) */
+  dwellMs?: number;
+}
+
+export interface ImagePinchZoomEvent extends BaseActivityEvent {
+  type: 'image_pinch_zoom';
+  listingId: number;
+  /** Which image in the gallery (0-indexed) */
+  imageIndex: number;
+  /** Final zoom scale achieved */
+  zoomScale?: number;
+  /** Duration of the zoom gesture (ms) */
+  durationMs?: number;
+}
+
 // Union type for all events
 export type ActivityEvent =
   | PageViewEvent
@@ -99,7 +121,9 @@ export type ActivityEvent =
   | FavoriteEvent
   | AlertEvent
   | ExternalLinkClickEvent
-  | ViewportDwellEvent;
+  | ViewportDwellEvent
+  | QuickViewPanelToggleEvent
+  | ImagePinchZoomEvent;
 
 // =============================================================================
 // Search Filters

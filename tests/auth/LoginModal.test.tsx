@@ -80,7 +80,8 @@ describe('LoginModal', () => {
       render(<LoginModal isOpen={true} onClose={mockOnClose} />);
 
       const emailInput = screen.getByPlaceholderText('your@email.com');
-      await user.type(emailInput, 'invalid');
+      // Use valid email format to pass HTML5 validation, server returns error
+      await user.type(emailInput, 'invalid@test.com');
 
       const submitButton = screen.getByText('Continue with Email');
       await user.click(submitButton);

@@ -1,0 +1,193 @@
+{
+  "dealer": "ginza.choshuya.co.jp",
+  "timestamp": "2026-01-18T10:58:30.271Z",
+  "summary": {
+    "total": 39,
+    "sampled": 15,
+    "verdicts": {
+      "FETCH_FAILED": 11,
+      "SAME": 4
+    },
+    "avgTitleSim": 6,
+    "avgImageSim": 91,
+    "urlReuseRate": 0
+  },
+  "results": [
+    {
+      "id": 4323,
+      "url": "https://ginza.choshuya.co.jp/sale/sword/22/07/hisayuki_sokan.htm",
+      "gap": 1232,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    },
+    {
+      "id": 4324,
+      "url": "https://ginza.choshuya.co.jp/sale/sword/22/07/harumitsu.htm",
+      "gap": 1189,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    },
+    {
+      "id": 4319,
+      "url": "https://ginza.choshuya.co.jp/sale/gj/r6/007/14_kanekiyo.php",
+      "gap": 534,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    },
+    {
+      "id": 4357,
+      "url": "https://ginza.choshuya.co.jp/sale/sword/24/07/masatsune_yari.php",
+      "gap": 506,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    },
+    {
+      "id": 4316,
+      "url": "https://ginza.choshuya.co.jp/sale/gj/r6/009/nobukuni.php",
+      "gap": 477,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    },
+    {
+      "id": 4341,
+      "url": "https://ginza.choshuya.co.jp/sale/gj/r6/003/05_katsumitsu.php",
+      "gap": 473,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    },
+    {
+      "id": 4356,
+      "url": "https://ginza.choshuya.co.jp/sale/gj/r6/008/17_koshirae_reiju.php",
+      "gap": 473,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    },
+    {
+      "id": 4322,
+      "url": "https://ginza.choshuya.co.jp/sale/gj/r6/009/yasuhiro.php",
+      "gap": 473,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    },
+    {
+      "id": 4317,
+      "url": "https://ginza.choshuya.co.jp/sale/gj/r6/009/senjyuin.php",
+      "gap": 473,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    },
+    {
+      "id": 4350,
+      "url": "https://ginza.choshuya.co.jp/sale/gj/r6/009/masaharu.php",
+      "gap": 473,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    },
+    {
+      "id": 4361,
+      "url": "https://ginza.choshuya.co.jp/sale/gj/r3/009/15_koshirae_ishiguro.php",
+      "gap": 458,
+      "error": "fetch failed",
+      "verdict": "FETCH_FAILED",
+      "confidence": "none"
+    },
+    {
+      "id": 4342,
+      "url": "https://ginza.choshuya.co.jp/sale/gj/r5/001/06_teruhiro.php",
+      "gap": 458,
+      "archived": {
+        "title": "",
+        "imageCount": 12,
+        "price": null
+      },
+      "current": {
+        "title": "脇差 銘 播磨守輝廣 (業物)",
+        "imageCount": 11,
+        "price": "¥1300000"
+      },
+      "similarity": {
+        "title": 0,
+        "images": 92,
+        "commonImages": 11
+      },
+      "verdict": "SAME",
+      "confidence": "medium"
+    },
+    {
+      "id": 4344,
+      "url": "https://ginza.choshuya.co.jp/sale/gj/r6/008/03_sadakazu.php",
+      "gap": 458,
+      "archived": {
+        "title": "平造脇差\n    銘　太阿月山源貞一彫同作(花押)\n    昭和六十二年三月吉日\n    Hira-zukuri wakizashiTaia Gassan Minamoto no SADAKAZUHo",
+        "imageCount": 9,
+        "price": null
+      },
+      "current": {
+        "title": "平造脇差 銘 太阿月山源貞一彫同作(花押) 昭和六十二年三月吉日",
+        "imageCount": 8,
+        "price": "¥2800000"
+      },
+      "similarity": {
+        "title": 22,
+        "images": 89,
+        "commonImages": 8
+      },
+      "verdict": "SAME",
+      "confidence": "medium"
+    },
+    {
+      "id": 4343,
+      "url": "https://ginza.choshuya.co.jp/sale/gj/r5/009/08_kunimichi.php",
+      "gap": 445,
+      "archived": {
+        "title": "",
+        "imageCount": 10,
+        "price": null
+      },
+      "current": {
+        "title": "脇差 銘 出羽大掾藤原國路(業物)",
+        "imageCount": 9,
+        "price": "¥900000"
+      },
+      "similarity": {
+        "title": 0,
+        "images": 90,
+        "commonImages": 9
+      },
+      "verdict": "SAME",
+      "confidence": "medium"
+    },
+    {
+      "id": 4351,
+      "url": "https://ginza.choshuya.co.jp/sale/gj/r6/011/23_muneari.php",
+      "gap": 418,
+      "archived": {
+        "title": "",
+        "imageCount": 14,
+        "price": null
+      },
+      "current": {
+        "title": "短刀 銘 於粟田宗有/ 慶應三年冬",
+        "imageCount": 13,
+        "price": "¥1300000"
+      },
+      "similarity": {
+        "title": 0,
+        "images": 93,
+        "commonImages": 13
+      },
+      "verdict": "SAME",
+      "confidence": "medium"
+    }
+  ]
+}

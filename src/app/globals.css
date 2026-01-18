@@ -327,6 +327,8 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   transition: background-color 0.3s ease, color 0.3s ease;
+  /* Prevent iOS Safari rubber-band bounce at page boundaries */
+  overscroll-behavior-y: contain;
 }
 
 /* Typography - Scholarly hierarchy */

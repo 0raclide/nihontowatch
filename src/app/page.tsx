@@ -13,7 +13,6 @@ import { getActiveFilterCount } from '@/components/browse/FilterContent';
 import { SaveSearchButton } from '@/components/browse/SaveSearchButton';
 import type { SavedSearchCriteria } from '@/types';
 import { useIsMobile } from '@/hooks/useIsMobile';
-import { useScrollPositionLock } from '@/hooks/useScrollPositionLock';
 import { BottomTabBar } from '@/components/navigation/BottomTabBar';
 import { useActivityOptional } from '@/components/activity/ActivityProvider';
 
@@ -108,9 +107,6 @@ function HomeContent() {
   const isMobile = useIsMobile();
   const filtersChangedRef = useRef(false);
   const activity = useActivityOptional();
-
-  // Scroll position lock for preventing bounce during infinite scroll
-  const { lockScrollPosition } = useScrollPositionLock();
 
   const activeTab = 'available'; // Only show available items
   const [filters, setFilters] = useState<Filters>({
@@ -217,10 +213,6 @@ function HomeContent() {
   const loadMore = useCallback(async () => {
     if (!data || page >= data.totalPages || isLoadingMore) return;
 
-    // Lock scroll position BEFORE loading to prevent bounce
-    // The unlock happens in VirtualListingGrid after render completes
-    lockScrollPosition();
-
     setIsLoadingMore(true);
     try {
       const nextPage = page + 1;
@@ -237,7 +229,7 @@ function HomeContent() {
     } finally {
       setIsLoadingMore(false);
     }
-  }, [data, page, isLoadingMore, buildUrlParams, lockScrollPosition]);
+  }, [data, page, isLoadingMore, buildUrlParams]);
 
   // Note: Infinite scroll is now handled internally by VirtualListingGrid
   // via IntersectionObserver. The useInfiniteScroll hook is no longer needed here.
