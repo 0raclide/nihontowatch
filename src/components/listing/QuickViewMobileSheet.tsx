@@ -182,7 +182,7 @@ export function QuickViewMobileSheet({
                 e.preventDefault();
                 onClose();
               }}
-              className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full bg-linen text-ink active:bg-border transition-colors z-10"
+              className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full bg-ink/80 text-white active:bg-ink transition-colors z-10 outline-none focus:outline-none"
               aria-label="Close"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
