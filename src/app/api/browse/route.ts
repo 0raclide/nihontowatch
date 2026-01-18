@@ -70,10 +70,11 @@ const STATUS_AVAILABLE = 'status.eq.available,is_available.eq.true';
 const STATUS_SOLD = 'status.eq.sold,status.eq.presumed_sold,is_sold.eq.true';
 
 // Helper to apply minimum price filter to queries
+// Uses price_jpy (normalized JPY price) to filter consistently regardless of original currency
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function applyMinPriceFilter<T extends { gte: (column: string, value: number) => T }>(query: T): T {
   if (LISTING_FILTERS.MIN_PRICE_JPY > 0) {
-    return query.gte('price_value', LISTING_FILTERS.MIN_PRICE_JPY);
+    return query.gte('price_jpy', LISTING_FILTERS.MIN_PRICE_JPY);
   }
   return query;
 }
@@ -135,7 +136,7 @@ export async function GET(request: NextRequest) {
         is_available,
         is_sold,
         dealer_id,
-        dealers!inner(id, name, domain)
+        dealer:dealers!inner(id, name, domain)
       `, { count: 'exact' });
 
     // Status filter
