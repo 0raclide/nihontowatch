@@ -19,7 +19,6 @@ export interface Database {
           country: string;
           is_active: boolean;
           created_at: string;
-          catalog_baseline_at: string | null;
         };
         Insert: Omit<Database['public']['Tables']['dealers']['Row'], 'id' | 'created_at'>;
         Update: Partial<Database['public']['Tables']['dealers']['Insert']>;
@@ -67,12 +66,6 @@ export interface Database {
           first_seen_at: string;
           last_scraped_at: string;
           scrape_count: number;
-          // Freshness tracking
-          listing_published_at: string | null;
-          freshness_source: 'dealer_meta' | 'wayback' | 'inferred' | 'unknown';
-          freshness_confidence: 'high' | 'medium' | 'low' | 'unknown';
-          wayback_first_archive_at: string | null;
-          wayback_checked_at: string | null;
         };
         Insert: Omit<Database['public']['Tables']['listings']['Row'], 'id' | 'first_seen_at' | 'last_scraped_at' | 'scrape_count'>;
         Update: Partial<Database['public']['Tables']['listings']['Insert']>;

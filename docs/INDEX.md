@@ -14,7 +14,6 @@
 | [USER_BEHAVIOR_TRACKING.md](./USER_BEHAVIOR_TRACKING.md) | Engagement signals, interest scoring, recommendations |
 | [QUICKVIEW_METADATA.md](./QUICKVIEW_METADATA.md) | QuickView metadata display, translation system |
 | [SEARCH_FEATURES.md](./SEARCH_FEATURES.md) | Natural language search, filters, query syntax |
-| [FRESHNESS_SYSTEM.md](./FRESHNESS_SYSTEM.md) | Listing age verification, Wayback integration, confidence levels |
 | [OPTIMIZATION.md](./OPTIMIZATION.md) | Performance optimization, image loading, caching strategies |
 | [TESTING.md](./TESTING.md) | Test suite docs, concordance tests, CI/CD integration |
 
@@ -132,13 +131,6 @@
 4. Check `src/app/api/translate/route.ts` - OpenRouter translation API
 5. Run `npx playwright test tests/translation-api.spec.ts` - Translation tests
 
-### "I need to work on listing freshness"
-1. Read [FRESHNESS_SYSTEM.md](./FRESHNESS_SYSTEM.md) - Complete system docs
-2. Check `src/lib/freshness/` - Freshness calculation and display
-3. Check `src/lib/wayback/` - Wayback Machine client
-4. Check `/api/admin/dealers/baseline` - Setting dealer baselines
-5. Check `/api/cron/wayback-check` - Background verification
-
 ### "I need to work on user behavior tracking or recommendations"
 1. Read [USER_BEHAVIOR_TRACKING.md](./USER_BEHAVIOR_TRACKING.md) - Complete tracking docs
 2. Check `src/lib/tracking/ActivityTracker.tsx` - Main tracking provider
@@ -180,6 +172,5 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for:
 | Mobile UX & gestures | [MOBILE_UX.md](./MOBILE_UX.md) |
 | QuickView metadata & translation | [QUICKVIEW_METADATA.md](./QUICKVIEW_METADATA.md) |
 | Search features | [SEARCH_FEATURES.md](./SEARCH_FEATURES.md) |
-| Listing freshness | [FRESHNESS_SYSTEM.md](./FRESHNESS_SYSTEM.md) |
 | Testing | [TESTING.md](./TESTING.md) - Unit, concordance, integration tests |
 | Deployment | [CLAUDE.md](../CLAUDE.md#deployment) |

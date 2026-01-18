@@ -183,7 +183,7 @@ export function VirtualListingGrid({
     isVirtualized,
   } = useAdaptiveVirtualScroll({
     items: listings,
-    totalCount: infiniteScroll ? total : undefined, // Pre-reserve height for all items
+    totalCount: undefined, // Dynamic height - grows as items load (no massive empty space)
     overscan: 3, // Extra buffer rows to prevent edge flickering
     enabled: infiniteScroll && listings.length > 30, // Only virtualize in infinite scroll mode
   });

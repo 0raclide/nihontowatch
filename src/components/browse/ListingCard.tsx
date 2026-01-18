@@ -6,7 +6,6 @@ import { FavoriteButton } from '@/components/favorites/FavoriteButton';
 import { useActivityOptional } from '@/components/activity/ActivityProvider';
 import { useQuickViewOptional } from '@/contexts/QuickViewContext';
 import { useViewportTrackingOptional } from '@/lib/viewport';
-import { getMarketTimeDisplay } from '@/lib/freshness';
 import { getImageUrl } from '@/lib/images';
 
 interface Listing {
@@ -25,10 +24,6 @@ interface Listing {
   images: string[] | null;
   stored_images?: string[] | null;
   first_seen_at: string;
-  listing_published_at?: string | null;
-  freshness_source?: string;
-  freshness_confidence?: string;
-  wayback_first_archive_at?: string | null;
   status: string;
   is_available: boolean;
   is_sold: boolean;
@@ -234,7 +229,6 @@ export function ListingCard({
   const cleanedTitle = cleanTitle(listing.title, listing.smith, listing.tosogu_maker);
   const certInfo = listing.cert_type ? CERT_LABELS[listing.cert_type] : null;
   const isAskPrice = listing.price_value === null;
-  const marketTime = getMarketTimeDisplay(listing as Parameters<typeof getMarketTimeDisplay>[0]);
 
   // Handle card click - open quick view or track activity
   const handleClick = useCallback((e: React.MouseEvent) => {
@@ -369,8 +363,8 @@ export function ListingCard({
           )}
         </div>
 
-        {/* Price + Time on Market - always at bottom */}
-        <div className="pt-2.5 mt-auto border-t border-border/50 flex items-center justify-between gap-2">
+        {/* Price - always at bottom */}
+        <div className="pt-2.5 mt-auto border-t border-border/50">
           <span className={`text-[15px] lg:text-base tabular-nums ${
             isAskPrice
               ? 'text-charcoal'
@@ -378,12 +372,6 @@ export function ListingCard({
           }`}>
             {formatPrice(listing.price_value, listing.price_currency, currency, exchangeRates)}
           </span>
-          {marketTime && (
-            <span className="text-[10px] lg:text-[11px] text-charcoal flex items-center gap-1">
-              <span className="text-charcoal/50 uppercase tracking-wide">Listed</span>
-              <span className="tabular-nums font-medium">{marketTime.shortLabel}</span>
-            </span>
-          )}
         </div>
       </div>
     </div>

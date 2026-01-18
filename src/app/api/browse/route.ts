@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { normalizeSearchText, expandSearchAliases } from '@/lib/search';
 import { parseNumericFilters } from '@/lib/search/numericFilters';
-import { CACHE } from '@/lib/constants';
+import { CACHE, PAGINATION } from '@/lib/constants';
 
 // Facets are computed fresh for each request to reflect current filters
 // No caching - facet counts must accurately reflect user's filter selections
@@ -60,7 +60,7 @@ function parseParams(searchParams: URLSearchParams): BrowseParams {
     query: searchParams.get('q') || undefined,
     sort: searchParams.get('sort') || 'recent',
     page: Number(searchParams.get('page')) || 1,
-    limit: Math.min(Number(searchParams.get('limit')) || 30, 100),
+    limit: Math.min(Number(searchParams.get('limit')) || PAGINATION.DEFAULT_PAGE_SIZE, PAGINATION.MAX_PAGE_SIZE),
   };
 }
 
@@ -120,11 +120,6 @@ export async function GET(request: NextRequest) {
         images_stored_at,
         first_seen_at,
         last_scraped_at,
-        freshness_source,
-        freshness_confidence,
-        listing_published_at,
-        wayback_first_archive_at,
-        wayback_checked_at,
         status,
         is_available,
         is_sold,

@@ -5,8 +5,6 @@ import type { Listing } from '@/types';
 import { isTosogu, getItemTypeLabel } from '@/types';
 import { useCurrency, formatPriceWithConversion } from '@/hooks/useCurrency';
 import { FavoriteButton } from '@/components/favorites/FavoriteButton';
-import { TimeOnMarketCounter } from '@/components/ui/TimeOnMarketCounter';
-import { getMarketTimeDisplay } from '@/lib/freshness';
 import { MetadataGrid, getCertInfo, getArtisanInfo } from './MetadataGrid';
 import { TranslatedDescription } from './TranslatedDescription';
 import { QuickMeasurement } from './QuickMeasurement';
@@ -62,7 +60,6 @@ export function QuickViewMobileSheet({
     currency,
     exchangeRates
   );
-  const marketTime = getMarketTimeDisplay(listing);
 
   // Handle touch start
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
@@ -228,20 +225,14 @@ export function QuickViewMobileSheet({
               </p>
             )}
 
-            {/* Dealer name + Time on market */}
-            <div className="flex items-center justify-between text-[12px] text-muted">
+            {/* Dealer name */}
+            <div className="flex items-center text-[12px] text-muted">
               <div className="flex items-center gap-1.5">
                 <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                 </svg>
                 <span className="truncate">{dealerName}</span>
               </div>
-              {marketTime && (
-                <TimeOnMarketCounter
-                  startDate={marketTime.startDate}
-                  className="text-[11px]"
-                />
-              )}
             </div>
           </div>
 
