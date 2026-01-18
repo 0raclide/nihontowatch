@@ -63,6 +63,7 @@ export interface Database {
           cert_organization: string | null;
           images: string[];
           raw_page_text: string | null;
+          description_en: string | null;
           first_seen_at: string;
           last_scraped_at: string;
           scrape_count: number;

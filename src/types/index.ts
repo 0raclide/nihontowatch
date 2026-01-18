@@ -132,6 +132,7 @@ export interface Listing {
   stored_images?: string[] | null;  // Supabase Storage URLs (preferred)
   images_stored_at?: string | null; // When images were uploaded to storage
   raw_page_text?: string;
+  description_en?: string; // Cached English translation of description
 
   // Timestamps
   first_seen_at: string;
