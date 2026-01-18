@@ -71,10 +71,13 @@ const STATUS_SOLD = 'status.eq.sold,status.eq.presumed_sold,is_sold.eq.true';
 
 // Helper to apply minimum price filter to queries
 // Uses price_jpy (normalized JPY price) to filter consistently regardless of original currency
+// Also excludes items where price_jpy is NULL (not yet refreshed) to prevent low-price items slipping through
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function applyMinPriceFilter<T extends { gte: (column: string, value: number) => T }>(query: T): T {
+function applyMinPriceFilter<T extends { gte: (column: string, value: number) => T; not: (column: string, operator: string, value: null) => T }>(query: T): T {
   if (LISTING_FILTERS.MIN_PRICE_JPY > 0) {
-    return query.gte('price_jpy', LISTING_FILTERS.MIN_PRICE_JPY);
+    return query
+      .not('price_jpy', 'is', null)
+      .gte('price_jpy', LISTING_FILTERS.MIN_PRICE_JPY);
   }
   return query;
 }
@@ -108,6 +111,7 @@ export async function GET(request: NextRequest) {
         item_type,
         price_value,
         price_currency,
+        price_jpy,
         smith,
         tosogu_maker,
         school,

@@ -275,6 +275,7 @@ export function QuickViewMobileSheet({
                 />
               </div>
               <button
+                data-testid="mobile-sheet-close"
                 onClick={(e) => {
                   e.stopPropagation();
                   onClose();

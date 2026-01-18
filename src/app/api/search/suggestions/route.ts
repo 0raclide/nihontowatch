@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { normalizeSearchText } from '@/lib/search';
+import { LISTING_FILTERS } from '@/lib/constants';
 import type { SearchSuggestion, SearchSuggestionsResponse } from '@/lib/search/types';
 
 export const dynamic = 'force-dynamic';
@@ -60,7 +61,7 @@ export async function GET(request: NextRequest) {
       `tosogu_school.ilike.%${normalizedQuery}%`,
     ].join(',');
 
-    const { data, count, error } = await supabase
+    let dbQuery = supabase
       .from('listings')
       .select(
         `
@@ -79,7 +80,17 @@ export async function GET(request: NextRequest) {
         { count: 'exact' }
       )
       .or('status.eq.available,is_available.eq.true')
-      .or(searchFields)
+      .or(searchFields);
+
+    // Apply minimum price filter (uses normalized JPY price)
+    // Also exclude NULL price_jpy to prevent unpriced items slipping through
+    if (LISTING_FILTERS.MIN_PRICE_JPY > 0) {
+      dbQuery = dbQuery
+        .not('price_jpy', 'is', null)
+        .gte('price_jpy', LISTING_FILTERS.MIN_PRICE_JPY);
+    }
+
+    const { data, count, error } = await dbQuery
       .order('first_seen_at', { ascending: false })
       .limit(limit);
 

@@ -220,18 +220,8 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, goToNext, goToPrevious]);
 
-  // Prevent body scroll when modal is open
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [isOpen]);
+  // NOTE: Body scroll locking is handled by useBodyScrollLock in QuickViewModal
+  // Don't duplicate it here - that causes race conditions and scroll jump issues
 
   const hasNext = listings.length > 0 && currentIndex !== -1;
   const hasPrevious = listings.length > 0 && currentIndex !== -1;

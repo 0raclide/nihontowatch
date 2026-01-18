@@ -27,6 +27,19 @@ export type {
   ParsedNumericFilters,
 } from './numericFilters';
 
+// Semantic query parsing (certifications, item types)
+export {
+  parseSemanticQuery,
+  isSemanticTerm,
+  getCertificationKey,
+  getItemTypeKey,
+} from './semanticQueryParser';
+
+export type {
+  SemanticFilters,
+  ParsedSemanticQuery,
+} from './semanticQueryParser';
+
 // Type definitions
 export type {
   // Suggestion types

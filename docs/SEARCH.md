@@ -46,6 +46,70 @@ Macrons are normalized automatically:
 
 ---
 
+## Semantic Filters (Certifications & Item Types)
+
+**Important**: Certification and item type terms are treated as **exact-match filters**, not text searches. This ensures precise results.
+
+### How It Works
+
+When you search for "Tanto Juyo":
+1. `juyo` is recognized as a certification → filters to `cert_type = 'Juyo'` (exact match)
+2. `tanto` is recognized as an item type → filters to `item_type = 'tanto'` (exact match)
+3. Result: Only Juyo-certified tanto are returned
+
+This prevents issues like:
+- Searching "Juyo" and getting Tokubetsu Juyo items (because "Juyo" is a substring)
+- Searching "Juyo" and getting Hozon items that mention "Juyo" in their description
+
+### Certification Terms (Exact Match)
+
+| Search Term | Filters To |
+|-------------|-----------|
+| `juyo` | Juyo only (not Tokubetsu Juyo) |
+| `tokuju`, `tokubetsu juyo` | Tokubetsu Juyo |
+| `hozon` | Hozon only (not Tokubetsu Hozon) |
+| `tokuho`, `tokubetsu hozon` | Tokubetsu Hozon |
+| `kicho` | Kicho |
+| `tokukicho`, `tokubetsu kicho` | Tokubetsu Kicho |
+| `nthk` | NTHK |
+
+### Item Type Terms (Exact Match)
+
+| Search Term | Filters To |
+|-------------|-----------|
+| `katana` | Katana |
+| `wakizashi`, `waki` | Wakizashi |
+| `tanto`, `tantō` | Tanto |
+| `tachi` | Tachi |
+| `naginata`, `nagi` | Naginata |
+| `yari` | Yari |
+| `tsuba`, `tuba` | Tsuba |
+| `fuchi`, `kashira`, `fuchi-kashira`, `fuchikashira` | Fuchi/Kashira |
+| `menuki` | Menuki |
+| `kozuka` | Kozuka |
+| `kogai` | Kogai |
+| `koshirae` | Koshirae |
+
+### Remaining Terms → Text Search
+
+Terms not recognized as certifications or item types go to text search:
+- Artisan names: `goto`, `kotetsu`, `masamune`
+- Provinces: `bizen`, `yamashiro`, `soshu`
+- Schools: `rai`, `ichimonji`
+- Any other descriptive terms
+
+### Examples
+
+| Search | Semantic Filters | Text Search |
+|--------|------------------|-------------|
+| `tanto juyo` | cert=Juyo, type=tanto | (none) |
+| `goto juyo katana` | cert=Juyo, type=katana | `goto` |
+| `bizen wakizashi hozon` | cert=Hozon, type=wakizashi | `bizen` |
+| `tokuju` | cert=Tokuju | (none) |
+| `soshu tsuba tokuho` | cert=TokuHozon, type=tsuba | `soshu` |
+
+---
+
 ## Numeric Filters
 
 Filter by measurements using comparison operators.
@@ -198,18 +262,48 @@ Search state is preserved in the URL for sharing/bookmarking.
 
 ### Search Flow
 1. Parse query string
-2. Extract numeric filters (nagasa>70, price<500000)
-3. Split remaining text into words
-4. Expand each word with aliases
-5. Build SQL OR conditions for each word across all fields
-6. Combine with AND logic between words
-7. Apply numeric filters
-8. Execute query with pagination
+2. **Extract semantic filters** (certifications, item types) → exact match
+3. Extract numeric filters (nagasa>70, price<500000)
+4. Split remaining text into words
+5. Expand each word with aliases
+6. Build SQL OR conditions for each word across text fields
+7. Combine with AND logic between words
+8. Apply all filters (semantic + numeric + text)
+9. Execute query with pagination
 
-### Database Fields Searched
+### Semantic Query Parser
+Located in `/src/lib/search/semanticQueryParser.ts`:
+
+```typescript
+parseSemanticQuery("tanto juyo goto")
+// Returns:
+// {
+//   extractedFilters: { certifications: ['Juyo'], itemTypes: ['tanto'] },
+//   remainingTerms: ['goto']
+// }
+```
+
+Multi-word phrases (e.g., "tokubetsu juyo") are matched before single words to ensure correct extraction.
+
+### Database Fields for Text Search
 ```sql
+-- Text search only (after semantic extraction):
 title, description, smith, tosogu_maker, school, tosogu_school,
-province, era, mei_type, cert_type, item_type, item_category, material
+province, era, mei_type, tosogu_material
+```
+
+Note: `cert_type` and `item_type` are NOT in text search - they use exact match via semantic filters.
+
+### Semantic Filter SQL
+```sql
+-- "juyo" becomes:
+WHERE cert_type IN ('Juyo', 'juyo')
+
+-- "tokuju" becomes:
+WHERE cert_type IN ('Tokuju', 'tokuju', 'Tokubetsu Juyo', 'tokubetsu_juyo')
+
+-- "tanto" becomes:
+WHERE item_type ILIKE 'tanto'
 ```
 
 ### Numeric Filter SQL
@@ -220,6 +314,14 @@ WHERE nagasa_cm > 70
 -- price<500000 becomes:
 WHERE price_value < 500000
 ```
+
+### Key Files
+| File | Purpose |
+|------|---------|
+| `/src/lib/search/semanticQueryParser.ts` | Extract cert/type filters from query |
+| `/src/lib/search/numericFilters.ts` | Extract numeric filters (cm>70, price<500000) |
+| `/src/lib/search/textNormalization.ts` | Macron removal, aliases, normalization |
+| `/src/app/api/browse/route.ts` | Main search API - combines all filters |
 
 ---
 
@@ -233,12 +335,14 @@ tsuba                     # All tsuba
 tanto                     # All tanto
 ```
 
-### By Certification
+### By Certification (Exact Match)
 ```
-juyo                      # All Juyo items
-tokuju                    # Tokubetsu Juyo
-hozon                     # Hozon papers
-tokuho                    # Tokubetsu Hozon
+juyo                      # Juyo ONLY (not Tokubetsu Juyo)
+tokuju                    # Tokubetsu Juyo only
+hozon                     # Hozon ONLY (not Tokubetsu Hozon)
+tokuho                    # Tokubetsu Hozon only
+tokubetsu juyo            # Same as tokuju
+tokubetsu hozon           # Same as tokuho
 ```
 
 ### By School/Province

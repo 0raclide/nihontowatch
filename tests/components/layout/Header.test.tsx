@@ -12,10 +12,11 @@ vi.mock('next/image', () => ({
   ),
 }));
 
-// Mock Next.js navigation hooks
+// Mock router with trackable push
+const mockPush = vi.fn();
 vi.mock('next/navigation', () => ({
   useRouter: () => ({
-    push: vi.fn(),
+    push: mockPush,
     replace: vi.fn(),
     back: vi.fn(),
     forward: vi.fn(),
@@ -86,6 +87,7 @@ vi.mock('@/contexts/MobileUIContext', async () => {
 describe('Header Component', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockPush.mockClear();
   });
 
   describe('Desktop Header', () => {
@@ -136,11 +138,6 @@ describe('Header Component', () => {
     });
 
     it('navigates to search results on form submit', () => {
-      // Mock window.location
-      const originalLocation = window.location;
-      delete (window as any).location;
-      window.location = { ...originalLocation, href: '' } as Location;
-
       render(
         <MobileUIProvider>
           <Header />
@@ -153,17 +150,10 @@ describe('Header Component', () => {
       const form = searchInput.closest('form');
       fireEvent.submit(form!);
 
-      expect(window.location.href).toBe('/?q=katana');
-
-      // Restore
-      window.location = originalLocation;
+      expect(mockPush).toHaveBeenCalledWith('/?q=katana');
     });
 
     it('does not navigate on empty search', () => {
-      const originalLocation = window.location;
-      delete (window as any).location;
-      window.location = { ...originalLocation, href: '' } as Location;
-
       render(
         <MobileUIProvider>
           <Header />
@@ -174,9 +164,7 @@ describe('Header Component', () => {
       const form = searchInput.closest('form');
       fireEvent.submit(form!);
 
-      expect(window.location.href).toBe('');
-
-      window.location = originalLocation;
+      expect(mockPush).not.toHaveBeenCalled();
     });
   });
 

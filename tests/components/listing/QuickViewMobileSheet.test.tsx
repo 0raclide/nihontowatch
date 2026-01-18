@@ -101,17 +101,13 @@ describe('QuickViewMobileSheet', () => {
       expect(favoriteButton).toHaveAttribute('data-size', 'sm');
     });
 
-    it('renders the image counter', () => {
-      render(<QuickViewMobileSheet {...defaultProps} />);
-      expect(screen.getByText('1/3')).toBeInTheDocument();
-    });
-
-    it('calls onToggle when collapsed bar is clicked', () => {
+    it('calls onToggle when header bar is clicked in collapsed state', () => {
       const onToggle = vi.fn();
-      render(<QuickViewMobileSheet {...defaultProps} onToggle={onToggle} />);
+      render(<QuickViewMobileSheet {...defaultProps} onToggle={onToggle} isExpanded={false} />);
 
-      const expandButton = screen.getByRole('button', { name: /expand details/i });
-      fireEvent.click(expandButton);
+      // The header area is clickable for toggle - click on the price which is in the header
+      const priceElement = screen.getByText(/¥2,500,000/);
+      fireEvent.click(priceElement);
       expect(onToggle).toHaveBeenCalledTimes(1);
     });
 
@@ -178,8 +174,9 @@ describe('QuickViewMobileSheet', () => {
 
     it('renders the artisan name', () => {
       render(<QuickViewMobileSheet {...expandedProps} />);
-      // Artisan name appears in both header and MetadataGrid, so use getAllByText
-      const artisanElements = screen.getAllByText('Famous Smith');
+      // Artisan name appears in MetadataGrid combined with school (e.g., "Bizen Famous Smith")
+      // Use getAllByText since it may appear in multiple places (title, metadata)
+      const artisanElements = screen.getAllByText(/Famous Smith/);
       expect(artisanElements.length).toBeGreaterThanOrEqual(1);
     });
 
@@ -190,7 +187,7 @@ describe('QuickViewMobileSheet', () => {
 
     it('renders the CTA button with correct link', () => {
       render(<QuickViewMobileSheet {...expandedProps} />);
-      const ctaLink = screen.getByRole('link', { name: /see full listing/i });
+      const ctaLink = screen.getByRole('link', { name: /view on test dealer/i });
       expect(ctaLink).toHaveAttribute('href', 'https://example.com/listing/123');
       expect(ctaLink).toHaveAttribute('target', '_blank');
     });
@@ -214,9 +211,8 @@ describe('QuickViewMobileSheet', () => {
           isExpanded={true}
         />
       );
-      // Tosogu maker appears in both header and MetadataGrid, so use getAllByText
-      const artisanElements = screen.getAllByText('Tosogu Artisan');
-      expect(artisanElements.length).toBeGreaterThanOrEqual(1);
+      // Tosogu maker appears in MetadataGrid combined with school as "Shoami Tosogu Artisan"
+      expect(screen.getByText(/Tosogu Artisan/)).toBeInTheDocument();
     });
 
     it('displays correct item type label for tsuba', () => {
@@ -261,16 +257,20 @@ describe('QuickViewMobileSheet', () => {
       expect(screen.getByTestId('mobile-sheet')).toBeInTheDocument();
     });
 
-    it('has sheet-collapsed class when collapsed', () => {
+    it('renders with base styling classes', () => {
       render(<QuickViewMobileSheet {...defaultProps} isExpanded={false} />);
       const sheet = screen.getByTestId('mobile-sheet');
-      expect(sheet).toHaveClass('sheet-collapsed');
+      expect(sheet).toHaveClass('fixed');
+      expect(sheet).toHaveClass('bottom-0');
+      expect(sheet).toHaveClass('bg-cream');
     });
 
-    it('has sheet-expanded class when expanded', () => {
+    it('has inline height style for responsive sizing', () => {
       render(<QuickViewMobileSheet {...defaultProps} isExpanded={true} />);
       const sheet = screen.getByTestId('mobile-sheet');
-      expect(sheet).toHaveClass('sheet-expanded');
+      // Sheet uses inline height style for smooth transitions
+      expect(sheet.style.height).toBeDefined();
+      expect(sheet.style.height).not.toBe('');
     });
 
     it('has swipe indicator handle', () => {

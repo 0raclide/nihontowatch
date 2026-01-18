@@ -4,6 +4,20 @@
  */
 
 // =============================================================================
+// LISTING FILTERS
+// =============================================================================
+
+export const LISTING_FILTERS = {
+  /**
+   * Minimum price threshold in JPY.
+   * Listings below this price are hidden from the app.
+   * Set to 0 to disable the filter.
+   * This helps filter out books, accessories, and very low-quality items.
+   */
+  MIN_PRICE_JPY: 100000,
+} as const;
+
+// =============================================================================
 // PAGINATION
 // =============================================================================
 
