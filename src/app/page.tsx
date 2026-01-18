@@ -133,6 +133,7 @@ function HomeContent() {
   // Infinite scroll state for mobile
   const [allListings, setAllListings] = useState<Listing[]>([]);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const loadingMoreRef = useRef(false); // Ref for synchronous guard against rapid calls
 
   // Currency state - default to JPY
   const [currency, setCurrency] = useState<Currency>(() => {
@@ -219,8 +220,10 @@ function HomeContent() {
 
   // Load more for infinite scroll
   const loadMore = useCallback(async () => {
-    if (!data || page >= data.totalPages || isLoadingMore) return;
+    // Use ref for synchronous guard (state updates are async and can cause race conditions)
+    if (!data || page >= data.totalPages || loadingMoreRef.current) return;
 
+    loadingMoreRef.current = true;
     setIsLoadingMore(true);
     try {
       const nextPage = page + 1;
@@ -235,9 +238,10 @@ function HomeContent() {
     } catch (error) {
       console.error('Failed to load more:', error);
     } finally {
+      loadingMoreRef.current = false;
       setIsLoadingMore(false);
     }
-  }, [data, page, isLoadingMore, buildUrlParams]);
+  }, [data, page, buildUrlParams]);
 
   // Note: Infinite scroll is now handled internally by VirtualListingGrid
   // via IntersectionObserver. The useInfiniteScroll hook is no longer needed here.

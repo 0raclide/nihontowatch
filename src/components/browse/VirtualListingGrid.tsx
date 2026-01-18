@@ -170,7 +170,7 @@ export function VirtualListingGrid({
   const quickView = useQuickViewOptional();
   const loadMoreTriggerRef = useRef<HTMLDivElement>(null);
   const lastListingCountRef = useRef(listings.length);
-  const loadMoreCooldownRef = useRef(false);
+  const lastLoadTimeRef = useRef(0);
 
   // Adaptive virtual scrolling - works for all screen sizes
   // Only enable for infinite scroll mode with larger lists
@@ -215,49 +215,34 @@ export function VirtualListingGrid({
     }
   }, [quickViewListings, quickView]);
 
-  // Store loading state in ref so observer callback can check it without recreating observer
-  const isLoadingMoreRef = useRef(isLoadingMore);
-  isLoadingMoreRef.current = isLoadingMore;
-
   // Infinite scroll trigger - load more when approaching bottom
-  // Observer is NOT recreated when isLoadingMore changes (uses ref instead)
-  // Cooldown prevents rapid re-triggering; reset when new items load
+  // Uses time-based throttle to prevent rapid re-triggering
   useEffect(() => {
-    if (!infiniteScroll || !onLoadMore || !hasMore) return;
+    if (!infiniteScroll || !onLoadMore || !hasMore || isLoadingMore) return;
+
+    const trigger = loadMoreTriggerRef.current;
+    if (!trigger) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
-        // Check loading state via ref (avoids recreating observer)
-        // Check cooldown to prevent rapid re-triggering
-        if (
-          entries[0].isIntersecting &&
-          !isLoadingMoreRef.current &&
-          !loadMoreCooldownRef.current
-        ) {
-          loadMoreCooldownRef.current = true;
-          onLoadMore();
+        if (entries[0].isIntersecting) {
+          const now = Date.now();
+          // Throttle: minimum 1 second between load triggers
+          if (now - lastLoadTimeRef.current > 1000) {
+            lastLoadTimeRef.current = now;
+            onLoadMore();
+          }
         }
       },
       { rootMargin: '400px' }
     );
 
-    const trigger = loadMoreTriggerRef.current;
-    if (trigger) {
-      observer.observe(trigger);
-    }
-
+    observer.observe(trigger);
     return () => observer.disconnect();
-  }, [infiniteScroll, onLoadMore, hasMore]); // Note: isLoadingMore NOT in deps
+  }, [infiniteScroll, onLoadMore, hasMore, isLoadingMore]);
 
-  // Track listing count changes and reset cooldown when new items load
+  // Track listing count for debugging
   useEffect(() => {
-    if (listings.length > lastListingCountRef.current) {
-      // New items loaded - reset cooldown so user can trigger more loads
-      // But delay slightly to ensure the DOM has updated
-      setTimeout(() => {
-        loadMoreCooldownRef.current = false;
-      }, 100);
-    }
     lastListingCountRef.current = listings.length;
   }, [listings.length]);
 
@@ -318,7 +303,9 @@ export function VirtualListingGrid({
               <span className="text-sm">Loading more...</span>
             </div>
           ) : hasMore ? (
-            <div ref={loadMoreTriggerRef} className="h-1" aria-hidden="true" />
+            // Trigger element - only rendered when not loading
+            // IntersectionObserver watches this element
+            <div ref={loadMoreTriggerRef} className="h-4 w-full" aria-hidden="true" />
           ) : listings.length >= 30 ? (
             <p className="text-sm text-muted">You&apos;ve seen all {total.toLocaleString()} items</p>
           ) : null}
