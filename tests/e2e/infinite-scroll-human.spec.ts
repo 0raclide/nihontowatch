@@ -120,6 +120,7 @@ test.describe('Human-like Infinite Scroll Experience', () => {
     }
 
     // The test should fail if we see excessive API calls
+    // With the throttle fix, we expect at most 2-3 calls (initial trigger + maybe one more)
     expect(apiCallsWhileAtBottom).toBeLessThanOrEqual(3);
   });
 

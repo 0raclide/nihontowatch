@@ -75,11 +75,23 @@ async function testScrollBehavior() {
       console.log('✅ OK: Loading behavior is controlled');
     }
 
-    // Check final state
+    // Scroll back to top to verify items are still there
+    console.log('\n--- Scrolling back to top ---');
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await new Promise(r => setTimeout(r, 1000));
+
     const finalCards = await page.locator('[data-testid="listing-card"]').count();
     const hasEndMessage = await page.locator('text=/seen all/i').isVisible().catch(() => false);
-    console.log(`Final cards: ${finalCards}`);
+    console.log(`Cards visible at top: ${finalCards}`);
     console.log(`"End of list" message visible: ${hasEndMessage}`);
+
+    // Check the "Showing X of Y items" text to see actual totals
+    const showingText = await page.locator('text=/Showing .* of .* items/').textContent().catch(() => null);
+    console.log(`Showing text: ${showingText}`);
+
+    // Get document height after all loading
+    const finalDocHeight = await page.evaluate(() => document.documentElement.scrollHeight);
+    console.log(`Final document height: ${finalDocHeight}px`);
 
     console.log('\n--- All API calls ---');
     observations.forEach(o => console.log(o));
