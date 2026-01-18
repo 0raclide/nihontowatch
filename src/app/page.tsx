@@ -62,6 +62,8 @@ interface BrowseResponse {
     itemTypes: Facet[];
     certifications: Facet[];
     dealers: DealerFacet[];
+    historicalPeriods: Facet[];
+    signatureStatuses: Facet[];
   };
   lastUpdated: string | null;
 }
@@ -90,6 +92,8 @@ interface Filters {
   certifications: string[];
   schools: string[];
   dealers: number[];
+  historicalPeriods: string[];
+  signatureStatuses: string[];
   askOnly?: boolean;
 }
 
@@ -115,6 +119,8 @@ function HomeContent() {
     certifications: searchParams.get('cert')?.split(',').filter(Boolean) || [],
     schools: searchParams.get('school')?.split(',').filter(Boolean) || [],
     dealers: searchParams.get('dealer')?.split(',').map(Number).filter(Boolean) || [],
+    historicalPeriods: searchParams.get('period')?.split(',').filter(Boolean) || [],
+    signatureStatuses: searchParams.get('sig')?.split(',').filter(Boolean) || [],
     askOnly: searchParams.get('ask') === 'true',
   });
   const [sort, setSort] = useState(searchParams.get('sort') || 'price_desc');
@@ -169,6 +175,8 @@ function HomeContent() {
     if (filters.certifications.length) params.set('cert', filters.certifications.join(','));
     if (filters.schools.length) params.set('school', filters.schools.join(','));
     if (filters.dealers.length) params.set('dealer', filters.dealers.join(','));
+    if (filters.historicalPeriods.length) params.set('period', filters.historicalPeriods.join(','));
+    if (filters.signatureStatuses.length) params.set('sig', filters.signatureStatuses.join(','));
     if (filters.askOnly) params.set('ask', 'true');
     if (sort !== 'recent') params.set('sort', sort);
     if (page > 1) params.set('page', String(page));
@@ -352,7 +360,7 @@ function HomeContent() {
         {/* Main Content */}
         <div className="flex flex-col lg:flex-row lg:gap-10">
           <FilterSidebar
-            facets={data?.facets || { itemTypes: [], certifications: [], dealers: [] }}
+            facets={data?.facets || { itemTypes: [], certifications: [], dealers: [], historicalPeriods: [], signatureStatuses: [] }}
             filters={filters}
             onFilterChange={handleFilterChange}
           />
@@ -376,7 +384,7 @@ function HomeContent() {
 
         {/* Mobile Filter Drawer */}
         <FilterDrawer
-          facets={data?.facets || { itemTypes: [], certifications: [], dealers: [] }}
+          facets={data?.facets || { itemTypes: [], certifications: [], dealers: [], historicalPeriods: [], signatureStatuses: [] }}
           filters={filters}
           onFilterChange={handleFilterChange}
           isUpdating={isLoading}

@@ -8,18 +8,23 @@ This document covers Nihontowatch's user behavior tracking system, the signals w
 
 **North Star Metric:** Time spent using the app (session duration, return visits)
 
+**Last Updated:** January 2026
+
 ---
 
 ## Table of Contents
 
 1. [Current Implementation](#current-implementation)
-2. [Signal Inventory](#signal-inventory)
-3. [Gaps & Missing Signals](#gaps--missing-signals)
-4. [Most Valuable Signals](#most-valuable-signals)
-5. [Interest Scoring Model](#interest-scoring-model)
-6. [Privacy & Compliance](#privacy--compliance)
-7. [Implementation Roadmap](#implementation-roadmap)
-8. [Technical Reference](#technical-reference)
+2. [Visitor Identification](#visitor-identification)
+3. [Signal Inventory](#signal-inventory)
+4. [Gaps & Missing Signals](#gaps--missing-signals)
+5. [Most Valuable Signals](#most-valuable-signals)
+6. [Interest Scoring Model](#interest-scoring-model)
+7. [Privacy & Compliance](#privacy--compliance)
+8. [Implementation Roadmap](#implementation-roadmap)
+9. [Technical Reference](#technical-reference)
+10. [Database Schema](#database-schema)
+11. [Querying Activity Data](#querying-activity-data)
 
 ---
 
@@ -64,12 +69,18 @@ Admin Dashboard
 
 | File | Purpose |
 |------|---------|
-| `src/lib/tracking/ActivityTracker.tsx` | Main provider, auth integration, privacy |
+| `src/lib/tracking/ActivityTracker.tsx` | Main provider, auth integration, privacy, all tracking methods |
 | `src/lib/activity/sessionManager.ts` | Session lifecycle, visibility handling |
 | `src/lib/activity/types.ts` | Event type definitions |
+| `src/lib/activity/visitorId.ts` | Persistent visitor ID generation and storage |
+| `src/lib/viewport/useViewportTracking.ts` | IntersectionObserver-based dwell tracking |
+| `src/lib/viewport/usePinchZoomTracking.ts` | Mobile pinch-to-zoom gesture detection |
+| `src/lib/viewport/interestScore.ts` | Interest score calculation from signals |
+| `src/lib/viewport/constants.ts` | Tracking thresholds and weights |
 | `src/hooks/useActivityTracker.ts` | Standalone tracking hook |
 | `src/components/activity/ActivityProvider.tsx` | Auto page-view tracking |
-| `src/app/api/activity/route.ts` | Batch event ingestion |
+| `src/components/listing/QuickView.tsx` | Panel toggle + pinch zoom integration |
+| `src/app/api/activity/route.ts` | Batch event ingestion, IP extraction |
 | `src/app/api/activity/session/route.ts` | Session create/end |
 
 ### Currently Tracked Events
@@ -83,6 +94,9 @@ Admin Dashboard
 | `favorite_add/remove` | Favorite action | listingId |
 | `alert_create/delete` | Alert action | alertId, alertType, criteria |
 | `external_link_click` | Dealer link click | url, listingId, dealerName |
+| `viewport_dwell` | Listing card visible for >1.5s in browse grid | listingId, dwellMs, intersectionRatio, isRevisit |
+| `quickview_panel_toggle` | User collapses/expands QuickView panel | listingId, action (collapse/expand), dwellMs |
+| `image_pinch_zoom` | User pinch-zooms on mobile | listingId, imageIndex, zoomScale, durationMs |
 
 *Fields defined but not actively populated in UI
 
@@ -102,6 +116,87 @@ Admin Dashboard
 
 ---
 
+## Visitor Identification
+
+### Overview
+
+Anonymous visitor tracking uses a **localStorage-based visitor ID** combined with **server-side IP capture**. This approach was chosen over cookies because:
+
+1. **No consent banner required** - localStorage analytics typically fall outside GDPR cookie consent requirements
+2. **Simpler implementation** - No cookie management or expiration handling
+3. **Privacy-friendly** - Data not sent with every request, only when explicitly tracked
+4. **IP captured server-side** - Provides secondary identifier without client-side complexity
+
+### How It Works
+
+```
+User visits site
+       │
+       ▼
+Check localStorage for visitor_id
+       │
+       ├─ Found → Use existing ID
+       │
+       └─ Not found → Generate new ID (vis_[timestamp]_[random])
+                      Store in localStorage
+       │
+       ▼
+Include visitor_id in all activity events
+       │
+       ▼
+API extracts IP from request headers
+       │
+       ▼
+Both stored in activity_events table
+```
+
+### Visitor ID Format
+
+```
+vis_mkjoszll_38b3b28886aa
+│   │        │
+│   │        └─ 12 random characters (crypto.randomUUID or Math.random)
+│   └─ Base36 timestamp
+└─ Prefix
+```
+
+### IP Address Extraction
+
+The API route extracts client IP from headers in this priority order:
+
+1. `x-forwarded-for` (first IP in comma-separated list)
+2. `x-real-ip`
+3. `x-vercel-forwarded-for` (Vercel-specific)
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `src/lib/activity/visitorId.ts` | Visitor ID generation and persistence |
+| `src/app/api/activity/route.ts` | IP extraction, stores both in DB |
+
+### localStorage Keys
+
+| Key | Purpose |
+|-----|---------|
+| `nihontowatch_visitor_id` | Persistent visitor identifier |
+| `nihontowatch_visitor_created` | Timestamp when visitor ID was created |
+| `nihontowatch_tracking_opt_out` | User opt-out flag |
+
+### Identifying Unique Users
+
+With these two signals, you can identify users:
+
+| Scenario | Identification Method |
+|----------|----------------------|
+| Same browser, same device | `visitor_id` (persistent) |
+| Different browser, same network | `ip_address` (may match) |
+| Cleared localStorage | `ip_address` as fallback |
+| VPN/mobile network | `visitor_id` (IP changes, visitor_id stable) |
+| Multiple users, same device | Cannot distinguish (edge case) |
+
+---
+
 ## Signal Inventory
 
 ### Explicit Signals (User-Initiated Actions)
@@ -118,12 +213,13 @@ Admin Dashboard
 
 | Signal | Interest Indicator | Weight | Status |
 |--------|-------------------|--------|--------|
-| **Listing View Duration** | Engagement depth | High | Tracked (detail page only) |
+| **Listing View Duration** | Engagement depth | High | ✅ Tracked (detail page only) |
+| **Viewport Dwell Time** | Browse-level interest | High | ✅ **IMPLEMENTED** |
+| **QuickView Panel Toggle** | Wants more image space | High | ✅ **IMPLEMENTED** |
+| **Image Pinch-Zoom** | Inspecting details | Very High | ✅ **IMPLEMENTED** |
 | **Return to Same Listing** | Persistent interest | Very High | Not tracked |
-| **Image Gallery Interaction** | Visual inspection | High | Not tracked |
 | **Scroll Depth** | Content consumption | Medium | Defined but not populated |
-| **Viewport Dwell Time** | Browse-level interest | High | **NOT IMPLEMENTED** |
-| **Scroll Velocity** | Browsing vs. reading | Medium | **NOT IMPLEMENTED** |
+| **Scroll Velocity** | Browsing vs. reading | Medium | Not implemented |
 | **Session Frequency** | Habit formation | High | Partial (session count) |
 | **Time of Day** | Usage patterns | Low | Available via timestamp |
 
@@ -131,43 +227,54 @@ Admin Dashboard
 
 ## Gaps & Missing Signals
 
-### Critical Gap: Browse Grid Viewport Tracking
+### ✅ RESOLVED: Browse Grid Viewport Tracking
 
-**Problem:** We track listing detail page views but NOT which items users pause on while scrolling the browse grid. This is the most common interaction pattern.
+**Status:** Implemented via `viewport_dwell` events using IntersectionObserver.
 
-**User Journey:**
-```
-Browse Grid (90% of time) ──> Quick scroll past
-                          └──> Pause & look (interest signal!) ──> Maybe click
-                                                                └──> Maybe not click (still interested!)
-```
-
-**What we're missing:**
+Now tracks:
 - Which listings enter the viewport
 - How long each listing is visible (dwell time)
-- Whether user scrolled back to re-view
-- Viewport intersection ratio (50% vs 100% visible)
+- Whether user scrolled back to re-view (isRevisit flag)
+- Viewport intersection ratio
 
-### Missing: Image Interaction Tracking
+### ✅ RESOLVED: Image Interaction Tracking (Partial)
 
-On listing detail pages and QuickView:
-- Number of images viewed
+**Status:** Pinch-zoom tracking implemented via `image_pinch_zoom` events.
+
+Now tracks:
+- Pinch-to-zoom gestures on mobile
+- Zoom scale achieved
+- Duration of zoom interaction
+
+**Still missing:**
+- Number of images viewed in gallery
 - Time spent on each image
-- Zoom/pinch interactions (mobile)
 - Image swipe patterns
 
-### Missing: Scroll Behavior Patterns
+### ✅ RESOLVED: Cross-Session Identity (Anonymous)
+
+**Status:** Implemented via persistent `visitor_id` in localStorage + IP capture.
+
+Now supports:
+- Linking multiple sessions from same anonymous user
+- Tracking return visits without login
+- Building preference history over time
+
+See [Visitor Identification](#visitor-identification) section for details.
+
+### Remaining Gaps
+
+#### Scroll Behavior Patterns
 
 - Scroll velocity (fast = browsing, slow = reading)
 - Scroll direction changes (hesitation = interest)
 - Scroll-to-top events (re-browsing)
 
-### Missing: Cross-Session Identity (Anonymous)
+#### Image Gallery Depth
 
-Currently each browser tab = new session. No way to:
-- Link multiple sessions from same anonymous user
-- Track return visits without login
-- Build preference history over time
+- Which images in a gallery were viewed
+- Time spent on each image
+- Completion rate (viewed all images)
 
 ---
 
@@ -274,31 +381,52 @@ function calculateInterestScore(e: ListingEngagement): number {
 
 | Feature | Status |
 |---------|--------|
-| Opt-out mechanism | Implemented (`localStorage` flag) |
-| No cookies | Correct - uses `sessionStorage` only |
-| No fingerprinting | Correct - only captures consented data |
-| Anonymous by default | Correct - userId null until login |
-| Data retention | Not implemented (needs policy) |
+| Opt-out mechanism | ✅ Implemented (`localStorage` flag) |
+| No cookies | ✅ Correct - uses `localStorage` only |
+| No fingerprinting | ✅ Correct - only captures non-invasive data |
+| Anonymous by default | ✅ Correct - userId null until login |
+| Persistent visitor ID | ✅ localStorage-based (not cookies) |
+| IP address capture | ✅ Server-side extraction |
+| Data retention | ⚠️ Not implemented (needs policy) |
+
+### Why localStorage Over Cookies
+
+| Aspect | Cookies | localStorage (Our Choice) |
+|--------|---------|---------------------------|
+| GDPR consent banner | Required for tracking | Generally not required |
+| Sent with requests | Yes (privacy concern) | No (explicit only) |
+| Cross-site tracking | Possible | Not possible |
+| User control | Browser settings | Easy to clear |
+| Implementation | Complex (expiry, flags) | Simple |
 
 ### GDPR Considerations
 
-1. **Session-based tracking** (no cookies) is generally consent-free under GDPR if:
-   - No cross-session identification
-   - Data is anonymous
-   - No sharing with third parties
+1. **localStorage-based tracking** is generally consent-free under GDPR because:
+   - Data not automatically sent to server
+   - No cross-site tracking capability
+   - User can clear at any time
+   - First-party analytics only
 
-2. **For logged-in users**: Covered by account terms of service
+2. **IP address capture** considerations:
+   - IP is PII under GDPR
+   - Justified under legitimate interest for fraud prevention/analytics
+   - Consider hashing after 30 days for data minimization
 
-3. **Recommended additions**:
+3. **For logged-in users**: Covered by account terms of service
+
+4. **Recommended additions**:
    - Add privacy notice explaining tracking
    - Add data export endpoint (GDPR Article 15)
    - Implement data deletion endpoint (GDPR Article 17)
-   - Define retention period (recommend: 90 days anonymous, 2 years authenticated)
+   - Define retention period (recommend: 90 days for IP, indefinite for hashed visitor_id)
+   - Hash IP addresses after analysis period
 
 ### localStorage Keys Used
 
 | Key | Purpose |
 |-----|---------|
+| `nihontowatch_visitor_id` | Persistent anonymous visitor identifier |
+| `nihontowatch_visitor_created` | When visitor ID was first created |
 | `nihontowatch_tracking_opt_out` | User opt-out flag |
 
 ---
@@ -526,6 +654,197 @@ HAVING COUNT(*) >= 3;
 | **Events per Session** | Activity volume | >10 avg |
 | **Viewport Dwell Coverage** | % of viewed listings tracked | >80% |
 | **Interest Score Distribution** | Healthy spread across tiers | No >50% in single tier |
+
+---
+
+## Database Schema
+
+### activity_events Table
+
+The main table storing all tracked events:
+
+```sql
+CREATE TABLE activity_events (
+  id BIGSERIAL PRIMARY KEY,
+  session_id TEXT NOT NULL,
+  user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  visitor_id TEXT,                    -- Persistent anonymous identifier
+  ip_address TEXT,                    -- Client IP for secondary identification
+  event_type TEXT NOT NULL,
+  event_data JSONB,                   -- Event-specific payload
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Indexes for efficient querying
+CREATE INDEX idx_activity_events_session_id ON activity_events(session_id);
+CREATE INDEX idx_activity_events_user_id ON activity_events(user_id);
+CREATE INDEX idx_activity_events_visitor_id ON activity_events(visitor_id);
+CREATE INDEX idx_activity_events_ip_address ON activity_events(ip_address);
+CREATE INDEX idx_activity_events_event_type ON activity_events(event_type);
+CREATE INDEX idx_activity_events_created_at ON activity_events(created_at);
+```
+
+### Column Descriptions
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | BIGSERIAL | Auto-incrementing primary key |
+| `session_id` | TEXT | Session identifier (per browser tab) |
+| `user_id` | UUID | Auth user ID (null for anonymous) |
+| `visitor_id` | TEXT | Persistent visitor ID from localStorage (e.g., `vis_mkjoszll_38b3b28886aa`) |
+| `ip_address` | TEXT | Client IP extracted from request headers |
+| `event_type` | TEXT | Event type (page_view, external_link_click, etc.) |
+| `event_data` | JSONB | Event-specific data (listingId, url, filters, etc.) |
+| `created_at` | TIMESTAMPTZ | When the event occurred |
+
+### Event Data Examples
+
+**external_link_click:**
+```json
+{
+  "url": "https://aoijapan.com/katana/12345",
+  "listingId": 12345,
+  "dealerName": "Aoi Art"
+}
+```
+
+**viewport_dwell:**
+```json
+{
+  "listingId": 67890,
+  "dwellMs": 3500,
+  "intersectionRatio": 0.85,
+  "isRevisit": false
+}
+```
+
+**quickview_panel_toggle:**
+```json
+{
+  "listingId": 11111,
+  "action": "collapse",
+  "dwellMs": 8000
+}
+```
+
+**image_pinch_zoom:**
+```json
+{
+  "listingId": 22222,
+  "imageIndex": 2,
+  "zoomScale": 2.5,
+  "durationMs": 4200
+}
+```
+
+---
+
+## Querying Activity Data
+
+### Basic Queries
+
+**Recent events with visitor info:**
+```sql
+SELECT
+  visitor_id,
+  ip_address,
+  event_type,
+  event_data,
+  created_at
+FROM activity_events
+ORDER BY created_at DESC
+LIMIT 50;
+```
+
+**Events by type (last 24 hours):**
+```sql
+SELECT
+  event_type,
+  COUNT(*) as count
+FROM activity_events
+WHERE created_at > NOW() - INTERVAL '24 hours'
+GROUP BY event_type
+ORDER BY count DESC;
+```
+
+**Unique visitors (last 7 days):**
+```sql
+SELECT COUNT(DISTINCT visitor_id) as unique_visitors
+FROM activity_events
+WHERE created_at > NOW() - INTERVAL '7 days'
+  AND visitor_id IS NOT NULL;
+```
+
+### Engagement Analysis
+
+**Top clicked dealers:**
+```sql
+SELECT
+  event_data->>'dealerName' as dealer,
+  COUNT(*) as clicks
+FROM activity_events
+WHERE event_type = 'external_link_click'
+  AND event_data->>'dealerName' IS NOT NULL
+GROUP BY event_data->>'dealerName'
+ORDER BY clicks DESC
+LIMIT 10;
+```
+
+**Most viewed listings (by viewport dwell):**
+```sql
+SELECT
+  (event_data->>'listingId')::int as listing_id,
+  COUNT(*) as view_count,
+  AVG((event_data->>'dwellMs')::int) as avg_dwell_ms
+FROM activity_events
+WHERE event_type = 'viewport_dwell'
+GROUP BY event_data->>'listingId'
+ORDER BY view_count DESC
+LIMIT 20;
+```
+
+**Visitor engagement summary:**
+```sql
+SELECT
+  visitor_id,
+  COUNT(*) as total_events,
+  COUNT(DISTINCT session_id) as sessions,
+  MIN(created_at) as first_seen,
+  MAX(created_at) as last_seen,
+  COUNT(*) FILTER (WHERE event_type = 'external_link_click') as link_clicks,
+  COUNT(*) FILTER (WHERE event_type = 'viewport_dwell') as dwell_events
+FROM activity_events
+WHERE visitor_id IS NOT NULL
+GROUP BY visitor_id
+ORDER BY total_events DESC
+LIMIT 20;
+```
+
+### Activity by Hour (for usage patterns)
+
+```sql
+SELECT
+  EXTRACT(HOUR FROM created_at) as hour_utc,
+  COUNT(*) as events
+FROM activity_events
+WHERE created_at > NOW() - INTERVAL '7 days'
+GROUP BY EXTRACT(HOUR FROM created_at)
+ORDER BY hour_utc;
+```
+
+### Node.js Query Script
+
+A query script is available at `scripts/query-activity.mjs`:
+
+```bash
+node scripts/query-activity.mjs
+```
+
+This outputs:
+- Total events and breakdown by type
+- Top dealers by click count
+- Activity by hour
+- Unique visitor/session counts
 
 ---
 
