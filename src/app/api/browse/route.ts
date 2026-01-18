@@ -130,7 +130,7 @@ export async function GET(request: NextRequest) {
     query = query.or(statusFilter);
 
     // Exclude stands/racks (display accessories, not collectibles)
-    query = query.neq('item_type', 'Stand');
+    query = query.not('item_type', 'ilike', 'stand');
 
     // Item type filter - use ILIKE for case-insensitive matching
     // Database has mixed case (e.g., "Katana" and "katana")
@@ -357,7 +357,7 @@ async function getItemTypeFacets(
       .from('listings')
       .select('item_type')
       .or(statusFilter)
-      .neq('item_type', 'Stand'); // Exclude stands to match main query
+      .not('item_type', 'ilike', 'stand'); // Exclude stands to match main query (case-insensitive)
 
     // Apply certification, dealer, askOnly filters
     if (options.certifications?.length) {
@@ -432,7 +432,7 @@ async function getCertificationFacets(
       .from('listings')
       .select('cert_type, item_type')
       .or(statusFilter)
-      .neq('item_type', 'Stand'); // Exclude stands to match main query
+      .not('item_type', 'ilike', 'stand'); // Exclude stands to match main query (case-insensitive)
 
     // Apply dealer filter at DB level (this works with AND)
     if (options.dealers?.length) {
@@ -500,7 +500,7 @@ async function getDealerFacets(
       .from('listings')
       .select('dealer_id, dealers!inner(name), item_type')
       .or(statusFilter)
-      .neq('item_type', 'Stand'); // Exclude stands to match main query
+      .not('item_type', 'ilike', 'stand'); // Exclude stands to match main query (case-insensitive)
 
     // Apply certification filter at DB level (this works with AND)
     if (options.certifications?.length) {
