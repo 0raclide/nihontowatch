@@ -140,7 +140,7 @@ export async function GET(request: NextRequest) {
         is_available,
         is_sold,
         dealer_id,
-        dealer:dealers!inner(id, name, domain)
+        dealers:dealers!inner(id, name, domain)
       `, { count: 'exact' });
 
     // Status filter
