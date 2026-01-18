@@ -9,10 +9,13 @@ const JAPANESE_REGEX = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/;
 
 interface TranslateRequest {
   listingId: number;
+  type?: 'description' | 'title';
 }
 
 interface ListingForTranslation {
   id: number;
+  title: string | null;
+  title_en: string | null;
   description: string | null;
   description_en: string | null;
   item_type: string | null;
@@ -28,13 +31,16 @@ interface OpenRouterResponse {
 
 /**
  * POST /api/translate
- * Translate a listing description to English using OpenRouter
+ * Translate a listing title or description to English using OpenRouter
  * Caches the translation in the database for future requests
+ *
+ * Body: { listingId: number, type?: 'description' | 'title' }
+ * Defaults to 'description' for backwards compatibility
  */
 export async function POST(request: NextRequest) {
   try {
     const body: TranslateRequest = await request.json();
-    const { listingId } = body;
+    const { listingId, type = 'description' } = body;
 
     if (!listingId || typeof listingId !== 'number') {
       return NextResponse.json(
@@ -43,12 +49,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (type !== 'description' && type !== 'title') {
+      return NextResponse.json(
+        { error: 'Invalid type. Must be "description" or "title"' },
+        { status: 400 }
+      );
+    }
+
     const supabase = await createClient();
 
-    // Fetch the listing with description and existing translation
+    // Fetch the listing with both original and translated fields
     const { data, error: fetchError } = await supabase
       .from('listings')
-      .select('id, description, description_en, item_type')
+      .select('id, title, title_en, description, description_en, item_type')
       .eq('id', listingId)
       .single();
 
@@ -61,34 +74,38 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // If no description, return null
-    if (!listing.description) {
+    // Determine which field to translate
+    const sourceField = type === 'title' ? listing.title : listing.description;
+    const cachedField = type === 'title' ? listing.title_en : listing.description_en;
+    const targetColumn = type === 'title' ? 'title_en' : 'description_en';
+
+    // If no source text, return null
+    if (!sourceField) {
       return NextResponse.json({
         translation: null,
         cached: true,
-        reason: 'no_description',
+        reason: `no_${type}`,
       });
     }
 
     // If already translated, return cached version
-    if (listing.description_en) {
+    if (cachedField) {
       return NextResponse.json({
-        translation: listing.description_en,
+        translation: cachedField,
         cached: true,
       });
     }
 
-    // Check if description contains Japanese
-    if (!JAPANESE_REGEX.test(listing.description)) {
+    // Check if source contains Japanese
+    if (!JAPANESE_REGEX.test(sourceField)) {
       // No Japanese text, store original as translation
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await (supabase as any)
         .from('listings')
-        .update({ description_en: listing.description })
+        .update({ [targetColumn]: sourceField })
         .eq('id', listingId);
 
       return NextResponse.json({
-        translation: listing.description,
+        translation: sourceField,
         cached: false,
         reason: 'no_japanese',
       });
@@ -99,28 +116,41 @@ export async function POST(request: NextRequest) {
     if (!apiKey) {
       console.error('OPENROUTER_API_KEY not configured');
       return NextResponse.json({
-        translation: listing.description,
+        translation: sourceField,
         cached: false,
         error: 'Translation service unavailable',
       });
     }
 
     // Determine item context for better translation
-    const itemContext = listing.item_type?.includes('tsuba') ||
+    const isTosogu = listing.item_type?.includes('tsuba') ||
       listing.item_type?.includes('menuki') ||
       listing.item_type?.includes('kozuka') ||
       listing.item_type?.includes('kogai') ||
       listing.item_type?.includes('fuchi') ||
-      listing.item_type?.includes('kashira')
+      listing.item_type?.includes('kashira');
+
+    const itemContext = isTosogu
       ? 'sword fitting (tosogu)'
       : 'Japanese sword (nihonto)';
 
-    const prompt = `Translate this Japanese ${itemContext} dealer description to English.
+    // Different prompts for title vs description
+    let prompt: string;
+    if (type === 'title') {
+      prompt = `Translate this Japanese ${itemContext} listing title to English.
+Keep it concise. Preserve technical terms in romaji (mei, mumei, etc.).
+Preserve proper names (smith names, schools).
+Only output the translation, no explanations.
+
+${sourceField}`;
+    } else {
+      prompt = `Translate this Japanese ${itemContext} dealer description to English.
 Preserve technical terms in romaji (mei, mumei, nagasa, sori, shakudo, etc.).
 Keep formatting and line breaks.
 Only output the translation, no explanations or preamble.
 
-${listing.description}`;
+${sourceField}`;
+    }
 
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
@@ -136,7 +166,7 @@ ${listing.description}`;
           role: 'user',
           content: prompt,
         }],
-        max_tokens: 2000,
+        max_tokens: type === 'title' ? 200 : 2000,
         temperature: 0.3,
       }),
     });
@@ -145,9 +175,9 @@ ${listing.description}`;
       const errorText = await response.text();
       console.error('OpenRouter API error:', response.status, errorText);
 
-      // Return original description on API failure
+      // Return original text on API failure
       return NextResponse.json({
-        translation: listing.description,
+        translation: sourceField,
         cached: false,
         error: 'Translation failed',
       });
@@ -159,17 +189,16 @@ ${listing.description}`;
     if (!translation) {
       console.error('Empty translation response');
       return NextResponse.json({
-        translation: listing.description,
+        translation: sourceField,
         cached: false,
         error: 'Empty translation',
       });
     }
 
     // Cache the translation in the database
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error: updateError } = await (supabase as any)
       .from('listings')
-      .update({ description_en: translation })
+      .update({ [targetColumn]: translation })
       .eq('id', listingId);
 
     if (updateError) {

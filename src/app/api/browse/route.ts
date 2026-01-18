@@ -115,6 +115,7 @@ export async function GET(request: NextRequest) {
         weight_g,
         description,
         description_en,
+        title_en,
         images,
         stored_images,
         images_stored_at,

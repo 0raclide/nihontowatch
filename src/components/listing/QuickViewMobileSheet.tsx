@@ -1,12 +1,13 @@
 'use client';
 
-import { useRef, useCallback, useEffect, useState } from 'react';
+import { useRef, useCallback, useEffect, useState, useMemo } from 'react';
 import type { Listing } from '@/types';
 import { isTosogu, getItemTypeLabel } from '@/types';
 import { useCurrency, formatPriceWithConversion } from '@/hooks/useCurrency';
 import { FavoriteButton } from '@/components/favorites/FavoriteButton';
 import { MetadataGrid, getCertInfo, getArtisanInfo } from './MetadataGrid';
 import { TranslatedDescription } from './TranslatedDescription';
+import { TranslatedTitle } from './TranslatedTitle';
 import { QuickMeasurement } from './QuickMeasurement';
 
 // =============================================================================
@@ -26,9 +27,16 @@ interface QuickViewMobileSheetProps {
 // CONSTANTS
 // =============================================================================
 
+// Sheet heights
+const COLLAPSED_HEIGHT = 64; // Compact bar height in pixels
+const HANDLE_HEIGHT = 16; // Swipe handle area
+
 // Gesture thresholds
-const SWIPE_THRESHOLD = 50; // Minimum distance to trigger state change
-const VELOCITY_THRESHOLD = 0.3; // Minimum velocity to trigger quick swipe
+const SWIPE_THRESHOLD = 40; // Minimum distance to trigger state change
+const VELOCITY_THRESHOLD = 0.4; // Minimum velocity for quick swipe (px/ms)
+
+// Snap points as percentage of viewport height
+const EXPANDED_RATIO = 0.70; // 70% of screen when expanded
 
 // =============================================================================
 // COMPONENT
@@ -43,11 +51,26 @@ export function QuickViewMobileSheet({
   currentImageIndex,
 }: QuickViewMobileSheetProps) {
   const sheetRef = useRef<HTMLDivElement>(null);
+  const scrollContentRef = useRef<HTMLDivElement>(null);
+
+  // Track current sheet height for smooth gestures
+  const [sheetHeight, setSheetHeight] = useState(COLLAPSED_HEIGHT);
   const [isDragging, setIsDragging] = useState(false);
-  const [dragOffset, setDragOffset] = useState(0);
+  const [viewportHeight, setViewportHeight] = useState(0);
+
+  // Gesture tracking refs
   const dragStartY = useRef(0);
+  const dragStartHeight = useRef(0);
   const dragStartTime = useRef(0);
   const lastY = useRef(0);
+  const lastTime = useRef(0);
+  const velocity = useRef(0);
+
+  // Computed values
+  const expandedHeight = useMemo(() =>
+    viewportHeight * EXPANDED_RATIO,
+    [viewportHeight]
+  );
 
   const { currency, exchangeRates } = useCurrency();
   const certInfo = getCertInfo(listing.cert_type);
@@ -61,55 +84,30 @@ export function QuickViewMobileSheet({
     exchangeRates
   );
 
-  // Handle touch start
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    const touch = e.touches[0];
-    dragStartY.current = touch.clientY;
-    dragStartTime.current = Date.now();
-    lastY.current = touch.clientY;
-    setIsDragging(true);
-    setDragOffset(0);
+  // Initialize viewport height
+  useEffect(() => {
+    const updateViewportHeight = () => {
+      // Use visualViewport for accurate height on iOS
+      const vh = window.visualViewport?.height || window.innerHeight;
+      setViewportHeight(vh);
+    };
+
+    updateViewportHeight();
+    window.addEventListener('resize', updateViewportHeight);
+    window.visualViewport?.addEventListener('resize', updateViewportHeight);
+
+    return () => {
+      window.removeEventListener('resize', updateViewportHeight);
+      window.visualViewport?.removeEventListener('resize', updateViewportHeight);
+    };
   }, []);
 
-  // Handle touch move
-  const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    if (!isDragging) return;
-
-    const touch = e.touches[0];
-    const deltaY = touch.clientY - dragStartY.current;
-    lastY.current = touch.clientY;
-
-    // When expanded, only allow dragging down (positive deltaY)
-    // When collapsed, only allow dragging up (negative deltaY)
-    if (isExpanded) {
-      setDragOffset(Math.max(0, deltaY));
-    } else {
-      setDragOffset(Math.min(0, deltaY));
+  // Sync sheet height with isExpanded prop (for external control)
+  useEffect(() => {
+    if (!isDragging && viewportHeight > 0) {
+      setSheetHeight(isExpanded ? expandedHeight : COLLAPSED_HEIGHT);
     }
-  }, [isDragging, isExpanded]);
-
-  // Handle touch end
-  const handleTouchEnd = useCallback(() => {
-    if (!isDragging) return;
-
-    const duration = Date.now() - dragStartTime.current;
-    const velocity = Math.abs(dragOffset) / duration;
-    const shouldToggle = Math.abs(dragOffset) > SWIPE_THRESHOLD || velocity > VELOCITY_THRESHOLD;
-
-    if (shouldToggle) {
-      onToggle();
-    }
-
-    setIsDragging(false);
-    setDragOffset(0);
-  }, [isDragging, dragOffset, onToggle]);
-
-  // Handle click on collapsed bar
-  const handleCollapsedClick = useCallback(() => {
-    if (!isDragging && !isExpanded) {
-      onToggle();
-    }
-  }, [isDragging, isExpanded, onToggle]);
+  }, [isExpanded, expandedHeight, isDragging, viewportHeight]);
 
   // Prevent body scroll when sheet is expanded
   useEffect(() => {
@@ -123,122 +121,240 @@ export function QuickViewMobileSheet({
     };
   }, [isExpanded]);
 
-  // Calculate transform based on drag state
-  const getTransformStyle = () => {
-    if (isDragging) {
-      return {
-        transform: `translateY(${dragOffset}px)`,
-        transition: 'none',
-      };
+  // Handle touch start on the drag handle area
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    dragStartY.current = touch.clientY;
+    dragStartHeight.current = sheetHeight;
+    dragStartTime.current = Date.now();
+    lastY.current = touch.clientY;
+    lastTime.current = Date.now();
+    velocity.current = 0;
+    setIsDragging(true);
+  }, [sheetHeight]);
+
+  // Handle touch move - update sheet height based on gesture
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!isDragging) return;
+
+    const touch = e.touches[0];
+    const currentY = touch.clientY;
+    const currentTime = Date.now();
+
+    // Calculate velocity for momentum
+    const dt = currentTime - lastTime.current;
+    if (dt > 0) {
+      velocity.current = (lastY.current - currentY) / dt; // Positive = dragging up
     }
-    return {
-      transition: 'transform 0.35s cubic-bezier(0.32, 0.72, 0, 1)',
-    };
-  };
+    lastY.current = currentY;
+    lastTime.current = currentTime;
+
+    // Calculate new height: dragging up (negative deltaY) increases height
+    const deltaY = dragStartY.current - currentY;
+    const newHeight = dragStartHeight.current + deltaY;
+
+    // Clamp height with rubber-band effect at boundaries
+    const minH = COLLAPSED_HEIGHT;
+    const maxH = expandedHeight;
+
+    let clampedHeight: number;
+    if (newHeight < minH) {
+      // Rubber-band effect below minimum
+      const overflow = minH - newHeight;
+      clampedHeight = minH - overflow * 0.3;
+    } else if (newHeight > maxH) {
+      // Rubber-band effect above maximum
+      const overflow = newHeight - maxH;
+      clampedHeight = maxH + overflow * 0.3;
+    } else {
+      clampedHeight = newHeight;
+    }
+
+    setSheetHeight(clampedHeight);
+  }, [isDragging, expandedHeight]);
+
+  // Handle touch end - snap to nearest state
+  const handleTouchEnd = useCallback(() => {
+    if (!isDragging) return;
+    setIsDragging(false);
+
+    const midpoint = (COLLAPSED_HEIGHT + expandedHeight) / 2;
+    const currentVelocity = velocity.current;
+
+    // Determine target based on velocity or position
+    let shouldExpand: boolean;
+
+    if (Math.abs(currentVelocity) > VELOCITY_THRESHOLD) {
+      // High velocity: use velocity direction
+      shouldExpand = currentVelocity > 0;
+    } else {
+      // Low velocity: use position relative to midpoint
+      shouldExpand = sheetHeight > midpoint;
+    }
+
+    // Also check if we crossed the threshold from current state
+    const dragDistance = Math.abs(sheetHeight - dragStartHeight.current);
+    if (dragDistance > SWIPE_THRESHOLD) {
+      // Significant drag: toggle based on direction
+      shouldExpand = sheetHeight > dragStartHeight.current;
+    }
+
+    // Update state if changed
+    if (shouldExpand !== isExpanded) {
+      onToggle();
+    } else {
+      // Snap back to current state
+      setSheetHeight(isExpanded ? expandedHeight : COLLAPSED_HEIGHT);
+    }
+  }, [isDragging, sheetHeight, expandedHeight, isExpanded, onToggle]);
+
+  // Handle tap on collapsed bar to expand
+  const handleBarTap = useCallback((e: React.MouseEvent) => {
+    // Only trigger if not dragging and currently collapsed
+    if (!isDragging && !isExpanded) {
+      onToggle();
+    }
+  }, [isDragging, isExpanded, onToggle]);
+
+  // Calculate progress from collapsed to expanded (0-1)
+  const progress = useMemo(() => {
+    if (expandedHeight <= COLLAPSED_HEIGHT) return 0;
+    return Math.max(0, Math.min(1,
+      (sheetHeight - COLLAPSED_HEIGHT) / (expandedHeight - COLLAPSED_HEIGHT)
+    ));
+  }, [sheetHeight, expandedHeight]);
+
+  // Determine if we're in "expanded mode" (for content visibility)
+  const showExpandedContent = progress > 0.1;
 
   return (
     <div
       ref={sheetRef}
       data-testid="mobile-sheet"
-      className={`
-        fixed left-0 right-0 bottom-0 z-50
-        bg-cream rounded-t-2xl
-        shadow-lg
-        ${isExpanded ? 'sheet-expanded' : 'sheet-collapsed'}
-      `}
+      className="fixed left-0 right-0 bottom-0 z-50 bg-cream rounded-t-2xl overflow-hidden"
       style={{
-        ...getTransformStyle(),
+        height: sheetHeight,
         boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.15)',
-        maxHeight: isExpanded ? '85vh' : 'auto',
+        transition: isDragging ? 'none' : 'height 0.35s cubic-bezier(0.32, 0.72, 0, 1)',
+        willChange: 'height',
       }}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
     >
-      {/* Swipe indicator handle */}
-      <div className="flex justify-center pt-2 pb-1">
+      {/* Drag handle area */}
+      <div
+        className="flex justify-center pt-2 pb-1 cursor-grab active:cursor-grabbing"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onClick={handleBarTap}
+      >
         <div className="w-10 h-1 rounded-full bg-border" />
       </div>
 
-      {isExpanded ? (
-        // EXPANDED STATE - Full metadata with scroll
-        <div className="flex flex-col" style={{ maxHeight: 'calc(85vh - 16px)' }}>
-          {/* Fixed header */}
-          <div className="px-4 pb-3 safe-area-bottom shrink-0">
-            {/* Close button */}
-            <button
-              type="button"
-              data-testid="mobile-sheet-close"
-              onClick={(e) => {
-                e.stopPropagation();
-                onClose();
-              }}
-              onTouchStart={(e) => e.stopPropagation()}
-              onTouchEnd={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                onClose();
-              }}
-              className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full bg-ink/80 text-white active:bg-ink transition-colors z-10 outline-none focus:outline-none"
-              aria-label="Close"
+      {/* Unified content structure - always rendered, clips based on height */}
+      <div className="flex flex-col h-full overflow-hidden">
+        {/* Header row: Close + Price + Favorite */}
+        <div className="px-4 pb-2 shrink-0">
+          <div className="flex items-center justify-between">
+            {/* Close button (only visible when expanded enough) */}
+            <div
+              className="w-8 h-8 flex items-center justify-center transition-opacity"
+              style={{ opacity: progress > 0.3 ? 1 : 0, pointerEvents: progress > 0.3 ? 'auto' : 'none' }}
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-
-            {/* Price row with favorite button */}
-            <div className="pt-1 pb-3 flex items-center justify-between">
-              <span className={`text-2xl font-semibold tabular-nums ${listing.price_value ? 'text-ink' : 'text-muted'}`}>
-                {priceDisplay}
-              </span>
-              <FavoriteButton
-                listingId={listing.id}
-                size="sm"
-              />
+              <button
+                type="button"
+                data-testid="mobile-sheet-close"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onClose();
+                }}
+                onTouchStart={(e) => e.stopPropagation()}
+                onTouchEnd={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  onClose();
+                }}
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-ink/80 text-white active:bg-ink transition-colors outline-none focus:outline-none"
+                aria-label="Close"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
 
-            {/* Badges row: Item type + Certification */}
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-[11px] text-muted uppercase tracking-wide font-medium px-2 py-0.5 bg-linen rounded">
-                {itemTypeLabel}
-              </span>
-              {certInfo && (
-                <span
-                  className={`text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded ${
-                    certInfo.tier === 'premier'
-                      ? 'bg-juyo-bg text-juyo'
-                      : certInfo.tier === 'high'
-                      ? 'bg-toku-hozon-bg text-toku-hozon'
-                      : 'bg-hozon-bg text-hozon'
-                  }`}
-                >
-                  {certInfo.shortLabel}
+            {/* Price - centered */}
+            <span className={`text-lg font-semibold tabular-nums flex-1 text-center ${listing.price_value ? 'text-ink' : 'text-muted'}`}>
+              {priceDisplay}
+            </span>
+
+            {/* Right side: Favorite + Image counter */}
+            <div className="flex items-center gap-2">
+              <div
+                onClick={(e) => e.stopPropagation()}
+                onTouchStart={(e) => e.stopPropagation()}
+              >
+                <FavoriteButton
+                  listingId={listing.id}
+                  size="sm"
+                />
+              </div>
+              {imageCount > 0 && (
+                <span className="text-[11px] text-muted tabular-nums min-w-[32px] text-right">
+                  {currentImageIndex + 1}/{imageCount}
                 </span>
               )}
             </div>
+          </div>
+        </div>
 
-            {/* Artisan name */}
+        {/* Expandable content - visible as sheet grows */}
+        <div
+          className="flex flex-col flex-1 min-h-0 overflow-hidden transition-opacity"
+          style={{
+            opacity: showExpandedContent ? 1 : 0,
+            pointerEvents: showExpandedContent ? 'auto' : 'none',
+          }}
+        >
+          {/* Badges row: Item type + Certification + Measurement */}
+          <div className="px-4 pb-2 flex items-center gap-2 flex-wrap shrink-0">
+            <span className="text-[11px] text-muted uppercase tracking-wide font-medium px-2 py-0.5 bg-linen rounded">
+              {itemTypeLabel}
+            </span>
+            {certInfo && (
+              <span
+                className={`text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded ${
+                  certInfo.tier === 'premier'
+                    ? 'bg-juyo-bg text-juyo'
+                    : certInfo.tier === 'high'
+                    ? 'bg-toku-hozon-bg text-toku-hozon'
+                    : 'bg-hozon-bg text-hozon'
+                }`}
+              >
+                {certInfo.shortLabel}
+              </span>
+            )}
+            <QuickMeasurement listing={listing} />
+          </div>
+
+          {/* Artisan + Dealer row */}
+          <div className="px-4 pb-2 shrink-0">
             {artisan && (
-              <p className="text-[14px] text-ink font-medium truncate mb-1">
+              <p className="text-[14px] text-ink font-medium truncate">
                 {artisan}
               </p>
             )}
-
-            {/* Dealer name */}
-            <div className="flex items-center text-[12px] text-muted">
-              <div className="flex items-center gap-1.5">
-                <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                </svg>
-                <span className="truncate">{dealerName}</span>
-              </div>
+            <div className="flex items-center text-[12px] text-muted mt-0.5">
+              <svg className="w-3 h-3 mr-1 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              </svg>
+              <span className="truncate">{dealerName}</span>
             </div>
           </div>
 
           {/* Scrollable content area */}
           <div
-            className="flex-1 overflow-y-auto overscroll-contain min-h-0"
+            ref={scrollContentRef}
+            className="flex-1 overflow-y-auto overscroll-contain min-h-0 border-t border-border"
             onTouchStart={(e) => e.stopPropagation()}
             onTouchMove={(e) => e.stopPropagation()}
             onTouchEnd={(e) => e.stopPropagation()}
@@ -252,11 +368,9 @@ export function QuickViewMobileSheet({
               showMeasurements={true}
             />
 
-            {/* Title */}
+            {/* Title (auto-translated if Japanese) */}
             <div className="px-4 py-3 border-b border-border">
-              <h2 className="font-serif text-lg text-ink leading-snug">
-                {listing.title}
-              </h2>
+              <TranslatedTitle listing={listing} />
             </div>
 
             {/* Description */}
@@ -264,7 +378,12 @@ export function QuickViewMobileSheet({
           </div>
 
           {/* Sticky CTA */}
-          <div className="px-4 py-3 bg-cream border-t border-border safe-area-bottom shrink-0">
+          <div
+            className="px-4 py-3 bg-cream border-t border-border shrink-0"
+            style={{
+              paddingBottom: 'max(12px, calc(env(safe-area-inset-bottom, 0px) + 12px))'
+            }}
+          >
             <a
               href={listing.url}
               target="_blank"
@@ -281,49 +400,19 @@ export function QuickViewMobileSheet({
             </a>
           </div>
         </div>
-      ) : (
-        // COLLAPSED STATE - Price + Measurement + Chevron + Favorite + Count
-        <div
-          className="flex items-center justify-between px-4 py-2 safe-area-bottom cursor-pointer"
-          onClick={handleCollapsedClick}
-          role="button"
-          tabIndex={0}
-          aria-label="Expand details"
-        >
-          {/* Price on left */}
-          <span className={`text-[15px] font-semibold tabular-nums ${listing.price_value ? 'text-ink' : 'text-muted'}`}>
-            {priceDisplay}
-          </span>
 
-          {/* Measurement in center-left */}
-          <QuickMeasurement listing={listing} />
-
-          {/* Swipe up chevron in center */}
-          <div className="flex flex-col items-center gap-0.5">
+        {/* Collapsed state hint - visible when mostly collapsed */}
+        {!showExpandedContent && (
+          <div
+            className="absolute bottom-0 left-0 right-0 flex items-center justify-center pb-2 pointer-events-none"
+            style={{ opacity: 1 - progress * 3 }}
+          >
             <svg className="w-5 h-5 text-muted animate-bounce-subtle" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
             </svg>
           </div>
-
-          {/* Right side: Favorite button + Image counter */}
-          <div className="flex items-center gap-3">
-            <div
-              onClick={(e) => e.stopPropagation()}
-              onTouchStart={(e) => e.stopPropagation()}
-            >
-              <FavoriteButton
-                listingId={listing.id}
-                size="sm"
-              />
-            </div>
-            {imageCount > 0 && (
-              <span className="text-[12px] text-muted tabular-nums">
-                {currentImageIndex + 1}/{imageCount}
-              </span>
-            )}
-          </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

@@ -6,6 +6,7 @@ import type { Listing } from '@/types';
 import { getItemTypeLabel } from '@/types';
 import { MetadataGrid, getCertInfo } from './MetadataGrid';
 import { TranslatedDescription } from './TranslatedDescription';
+import { TranslatedTitle } from './TranslatedTitle';
 
 // =============================================================================
 // TYPES
@@ -90,11 +91,9 @@ export function QuickViewContent({ listing }: QuickViewContentProps) {
           showMeasurements={true}
         />
 
-        {/* Title */}
+        {/* Title (auto-translated if Japanese) */}
         <div className="px-4 py-3 lg:px-5 border-b border-border">
-          <h2 className="font-serif text-lg lg:text-xl text-ink leading-snug" data-testid="listing-title">
-            {listing.title}
-          </h2>
+          <TranslatedTitle listing={listing} className="lg:text-xl" />
         </div>
 
         {/* Translated Description */}
