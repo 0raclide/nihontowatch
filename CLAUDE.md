@@ -363,6 +363,8 @@ Use JSON-LD for:
 4. **Accessibility** - WCAG 2.1 AA compliance
 5. **No secrets in code** - All keys in .env.local
 6. **Test locally first** - Use `npm run dev` before deploying
+7. **ALWAYS run tests before deploying** - Run `npm test` before any deploy. If tests fail, investigate and fix the issues before proceeding. Never deploy with failing tests.
+8. **NEVER modify tests to match broken code** - If a test fails during refactoring, the TEST IS RIGHT and the code is wrong. Tests exist to catch regressions. Changing a test to make it pass defeats its entire purpose. If a test fails: (1) understand WHY it's failing, (2) fix the CODE, not the test, (3) only modify tests when intentionally changing behavior WITH explicit user approval. This rule exists because we shipped a regression (dealer name → domain) when a test was silently "fixed" to match broken code.
 
 ---
 
@@ -383,6 +385,8 @@ supabase db diff
 
 ### Deploy
 ```bash
+# ALWAYS run tests first - investigate and fix any failures before deploying
+npm test
 git add -A && git commit -m "feat: description" && git push
 ```
 

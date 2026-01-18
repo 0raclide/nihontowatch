@@ -66,10 +66,13 @@ describe('ListingCard Component', () => {
     expect(screen.getByText('Katana')).toBeInTheDocument();
   });
 
-  it('renders dealer domain', () => {
+  it('renders dealer name (not domain)', () => {
     render(<ListingCard {...defaultProps} />);
 
-    expect(screen.getByText('aoijapan.com')).toBeInTheDocument();
+    // Must show dealer NAME (e.g., "Aoi Art"), NOT dealer domain (e.g., "aoijapan.com")
+    expect(screen.getByText('Aoi Art')).toBeInTheDocument();
+    // Ensure domain is NOT displayed instead of name
+    expect(screen.queryByText('aoijapan.com')).not.toBeInTheDocument();
   });
 
   it('renders certification badge', () => {
@@ -140,7 +143,7 @@ describe('ListingCard Component', () => {
       expect(price).toBeInTheDocument();
     });
 
-    it('has responsive dealer domain padding', () => {
+    it('has responsive dealer name padding', () => {
       render(<ListingCard {...defaultProps} />);
 
       // Dealer header should have responsive padding (px-2.5 py-2 lg:px-4 lg:py-2.5)
@@ -148,12 +151,12 @@ describe('ListingCard Component', () => {
       expect(dealerHeader).toBeInTheDocument();
     });
 
-    it('has responsive dealer domain font size', () => {
+    it('has responsive dealer name font size', () => {
       render(<ListingCard {...defaultProps} />);
 
-      // Dealer domain should have responsive font (text-[10px] lg:text-[12px])
-      const dealerDomain = document.querySelector('.text-\\[10px\\].lg\\:text-\\[12px\\]');
-      expect(dealerDomain).toBeInTheDocument();
+      // Dealer name should have responsive font (text-[10px] lg:text-[12px])
+      const dealerName = document.querySelector('.text-\\[10px\\].lg\\:text-\\[12px\\]');
+      expect(dealerName).toBeInTheDocument();
     });
 
     it('has responsive certification badge font size', () => {
