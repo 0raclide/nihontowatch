@@ -280,21 +280,21 @@ function HomeContent() {
         <div className="mb-4 lg:mb-6 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
           <div>
             {/* Mobile: Show NihontoWatch branding - centered with mon above */}
-            <Link href="/" className="lg:hidden flex flex-col items-center mb-2">
+            <Link href="/" className="lg:hidden flex flex-col items-center mb-3">
               <Image
                 src="/logo-mon.png"
                 alt="NihontoWatch Mon"
-                width={42}
-                height={42}
+                width={44}
+                height={44}
                 className="opacity-90"
               />
-              <h1 className="font-serif text-lg tracking-tight text-ink -mt-0.5">
+              <h1 className="font-serif text-[22px] tracking-wide text-ink mt-1.5">
                 Nihonto<span className="text-gold font-medium">Watch</span>
               </h1>
             </Link>
             {/* Desktop: Show "Collection" */}
             <h1 className="hidden lg:block font-serif text-2xl text-ink tracking-tight">Collection</h1>
-            <p className="text-[12px] lg:text-[13px] text-muted mt-1 text-center lg:text-left">
+            <p className="hidden lg:block text-[13px] text-muted mt-1">
               Japanese swords and fittings from established dealers
             </p>
           </div>
