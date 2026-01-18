@@ -18,6 +18,8 @@ describe('FilterContent Component', () => {
       { id: 1, name: 'Aoi Art', count: 100 },
       { id: 2, name: 'Eirakudo', count: 80 },
     ],
+    historicalPeriods: [],
+    signatureStatuses: [],
   };
 
   const defaultFilters = {
@@ -26,6 +28,8 @@ describe('FilterContent Component', () => {
     certifications: [],
     schools: [],
     dealers: [],
+    historicalPeriods: [],
+    signatureStatuses: [],
     askOnly: false,
   };
 
@@ -117,7 +121,7 @@ describe('FilterContent Component', () => {
   it('shows clear all button when filters are active', () => {
     const activeFilters = {
       ...defaultFilters,
-      certifications: ['Juyo'],
+      certifications: ['Juyo'] as string[],
     };
 
     render(
@@ -304,10 +308,12 @@ describe('getActiveFilterCount', () => {
   it('returns 0 for default filters', () => {
     const filters = {
       category: 'all' as const,
-      itemTypes: [],
-      certifications: [],
-      schools: [],
-      dealers: [],
+      itemTypes: [] as string[],
+      certifications: [] as string[],
+      schools: [] as string[],
+      dealers: [] as number[],
+      historicalPeriods: [] as string[],
+      signatureStatuses: [] as string[],
       askOnly: false,
     };
 
@@ -317,10 +323,12 @@ describe('getActiveFilterCount', () => {
   it('counts category change as 1', () => {
     const filters = {
       category: 'nihonto' as const,
-      itemTypes: [],
-      certifications: [],
-      schools: [],
-      dealers: [],
+      itemTypes: [] as string[],
+      certifications: [] as string[],
+      schools: [] as string[],
+      dealers: [] as number[],
+      historicalPeriods: [] as string[],
+      signatureStatuses: [] as string[],
       askOnly: false,
     };
 
@@ -331,9 +339,11 @@ describe('getActiveFilterCount', () => {
     const filters = {
       category: 'all' as const,
       itemTypes: ['katana', 'wakizashi'],
-      certifications: [],
-      schools: [],
-      dealers: [],
+      certifications: [] as string[],
+      schools: [] as string[],
+      dealers: [] as number[],
+      historicalPeriods: [] as string[],
+      signatureStatuses: [] as string[],
       askOnly: false,
     };
 
@@ -343,10 +353,12 @@ describe('getActiveFilterCount', () => {
   it('counts each certification', () => {
     const filters = {
       category: 'all' as const,
-      itemTypes: [],
+      itemTypes: [] as string[],
       certifications: ['Juyo', 'Hozon', 'TokuHozon'],
-      schools: [],
-      dealers: [],
+      schools: [] as string[],
+      dealers: [] as number[],
+      historicalPeriods: [] as string[],
+      signatureStatuses: [] as string[],
       askOnly: false,
     };
 
@@ -356,10 +368,12 @@ describe('getActiveFilterCount', () => {
   it('counts each dealer', () => {
     const filters = {
       category: 'all' as const,
-      itemTypes: [],
-      certifications: [],
-      schools: [],
+      itemTypes: [] as string[],
+      certifications: [] as string[],
+      schools: [] as string[],
       dealers: [1, 2, 3],
+      historicalPeriods: [] as string[],
+      signatureStatuses: [] as string[],
       askOnly: false,
     };
 
@@ -369,10 +383,12 @@ describe('getActiveFilterCount', () => {
   it('counts askOnly as 1', () => {
     const filters = {
       category: 'all' as const,
-      itemTypes: [],
-      certifications: [],
-      schools: [],
-      dealers: [],
+      itemTypes: [] as string[],
+      certifications: [] as string[],
+      schools: [] as string[],
+      dealers: [] as number[],
+      historicalPeriods: [] as string[],
+      signatureStatuses: [] as string[],
       askOnly: true,
     };
 
@@ -384,8 +400,10 @@ describe('getActiveFilterCount', () => {
       category: 'nihonto' as const, // 1
       itemTypes: ['katana', 'wakizashi'], // 2
       certifications: ['Juyo'], // 1
-      schools: [],
+      schools: [] as string[],
       dealers: [1], // 1
+      historicalPeriods: [] as string[],
+      signatureStatuses: [] as string[],
       askOnly: true, // 1
     };
 

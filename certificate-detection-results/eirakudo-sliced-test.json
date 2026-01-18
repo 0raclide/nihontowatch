@@ -1,0 +1,92 @@
+[
+  {
+    "listing_id": 738,
+    "db_cert_type": "Juyo",
+    "title": "真景 刀 重要刀剣",
+    "url": "https://eirakudo.shop/token/tachikatana/detail/165762",
+    "analysis": {
+      "dimensions": "1000x18475",
+      "slices": 5,
+      "certificates": [
+        {
+          "has_cert": true,
+          "cert_type": "hozon",
+          "session": null,
+          "doc_num": null,
+          "text_seen": "Japanese text with red seal visible, appears to be NBTHK certification document but specific details are difficult to read clearly in this image quality",
+          "slice": 0,
+          "y_position": 0
+        }
+      ],
+      "highest_cert": {
+        "has_cert": true,
+        "cert_type": "hozon",
+        "session": null,
+        "doc_num": null,
+        "text_seen": "Japanese text with red seal visible, appears to be NBTHK certification document but specific details are difficult to read clearly in this image quality",
+        "slice": 0,
+        "y_position": 0
+      }
+    }
+  },
+  {
+    "listing_id": 578,
+    "db_cert_type": "Juyo",
+    "title": "銘 弘次 太刀 重要刀剣",
+    "url": "https://eirakudo.shop/580928",
+    "analysis": {
+      "dimensions": "1000x24406",
+      "slices": 7,
+      "certificates": [
+        {
+          "has_cert": true,
+          "cert_type": null,
+          "session": null,
+          "doc_num": null,
+          "text_seen": "Japanese text with red seal visible on yellow document, but specific certification details not clearly readable",
+          "slice": 0,
+          "y_position": 0
+        }
+      ],
+      "highest_cert": {
+        "has_cert": true,
+        "cert_type": null,
+        "session": null,
+        "doc_num": null,
+        "text_seen": "Japanese text with red seal visible on yellow document, but specific certification details not clearly readable",
+        "slice": 0,
+        "y_position": 0
+      }
+    }
+  },
+  {
+    "listing_id": 1098,
+    "db_cert_type": "Juyo",
+    "title": "来国光 刀 重要刀剣",
+    "url": "https://eirakudo.shop/422693",
+    "analysis": {
+      "dimensions": "1000x22396",
+      "slices": 6,
+      "certificates": [
+        {
+          "has_cert": true,
+          "cert_type": null,
+          "session": null,
+          "doc_num": null,
+          "text_seen": "Japanese certification document with red seal visible, but specific details not clearly readable",
+          "slice": 0,
+          "y_position": 0
+        }
+      ],
+      "highest_cert": {
+        "has_cert": true,
+        "cert_type": null,
+        "session": null,
+        "doc_num": null,
+        "text_seen": "Japanese certification document with red seal visible, but specific details not clearly readable",
+        "slice": 0,
+        "y_position": 0
+      }
+    }
+  }
+]

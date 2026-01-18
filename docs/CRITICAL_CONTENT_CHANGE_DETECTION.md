@@ -339,19 +339,29 @@ Certificates have distinctive visual characteristics:
 3. **API cost**: Vision API calls add expense (~$0.01/image)
 4. **Hozon/TokuHozon numbers**: Not as standardized as Juyo session/item format
 
-### Recommendation
+### Research Conclusion (January 2026)
 
-**Use certificate extraction as a complement to image hashing, not a replacement:**
+**Certificate extraction is NOT viable as a general strategy.**
 
-| Approach | Coverage | Reliability | Cost |
-|----------|----------|-------------|------|
-| Image pHash | ~99% | High | Compute only |
-| Certificate extraction | ~10-15% | Very High (when extracted) | API calls |
+After extensive testing (6 dealers, 48+ listings, 300+ images):
+- Only works reliably on 2 dealers (token-net.com, aoijapan.com)
+- 33% session extraction rate overall (vs 100% on token-net alone)
+- 0% validation rate - cannot verify extracted data
+- Most "Juyo" items only have Hozon certificate photographs
+
+See `docs/CERTIFICATE_DETECTION_RESEARCH.md` for full findings.
+
+**Recommended approach:**
+
+| Approach | Coverage | Reliability | Status |
+|----------|----------|-------------|--------|
+| Image pHash | ~99% | High | ✅ **Implement this** |
+| Certificate extraction | ~2% reliable | Limited | ❌ **Deferred** |
 
 **Implementation priority:**
 1. ✅ Image pHash for all listings (primary change detection)
-2. ⬜ Certificate extraction for certified items (product identification)
-3. ⬜ Cross-reference both for highest confidence matching
+2. ❌ ~~Certificate extraction~~ - Not viable at scale, deferred
+3. ⬜ Content fingerprinting from title + measurements as fallback
 
 ---
 

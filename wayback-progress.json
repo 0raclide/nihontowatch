@@ -1,12 +1,12 @@
 {
   "batch": 2,
-  "batchProcessed": 840,
+  "batchProcessed": 990,
   "batchTotal": 1000,
-  "totalProcessed": 1840,
-  "totalFound": 1476,
+  "totalProcessed": 1990,
+  "totalFound": 1623,
   "totalErrors": 45,
   "rate": "1.4/min",
-  "elapsed": "41784s",
-  "percent": "84.0%",
-  "lastUpdate": "2026-01-18T18:50:53.717Z"
+  "elapsed": "42914s",
+  "percent": "99.0%",
+  "lastUpdate": "2026-01-18T19:09:44.253Z"
 }

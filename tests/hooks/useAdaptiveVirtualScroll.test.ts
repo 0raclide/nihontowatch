@@ -25,15 +25,15 @@ describe('useAdaptiveVirtualScroll', () => {
   });
 
   describe('SSR safety', () => {
-    it('returns SSR-safe defaults when disabled', () => {
+    it('returns all items when disabled (pagination mode)', () => {
       const items = createItems(100);
       const { result } = renderHook(() =>
         useAdaptiveVirtualScroll({ items, overscan: 2, enabled: false })
       );
 
-      // When disabled, shows first batch without virtualization (simulates SSR)
+      // When disabled, shows all items without virtualization (for desktop pagination)
       expect(result.current.isVirtualized).toBe(false);
-      expect(result.current.visibleItems.length).toBeLessThanOrEqual(20);
+      expect(result.current.visibleItems.length).toBe(100); // All items
       expect(result.current.startIndex).toBe(0);
     });
 
@@ -225,7 +225,7 @@ describe('useAdaptiveVirtualScroll', () => {
       });
 
       expect(result.current.isVirtualized).toBe(false);
-      expect(result.current.visibleItems.length).toBe(20); // SSR batch
+      expect(result.current.visibleItems.length).toBe(100); // All items (pagination mode)
     });
 
     it('enables virtualization when enabled=true (default)', () => {

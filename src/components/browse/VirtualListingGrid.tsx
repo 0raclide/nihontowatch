@@ -1,10 +1,22 @@
 'use client';
 
-import { useEffect, useRef, useMemo } from 'react';
+import { useEffect, useRef, useMemo, useState } from 'react';
 import { ListingCard } from './ListingCard';
 import { useAdaptiveVirtualScroll } from '@/hooks/useAdaptiveVirtualScroll';
 import { useQuickViewOptional } from '@/contexts/QuickViewContext';
 import type { Listing as QuickViewListing } from '@/types';
+
+// Detect iOS Safari - has known issues with transform-based virtualization
+function useIsIOS() {
+  const [isIOS, setIsIOS] = useState(false);
+  useEffect(() => {
+    const ua = navigator.userAgent;
+    const isIOSDevice = /iPad|iPhone|iPod/.test(ua) ||
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    setIsIOS(isIOSDevice);
+  }, []);
+  return isIOS;
+}
 
 // Number of cards to prioritize for immediate loading (above the fold)
 const PRIORITY_COUNT = 10;
@@ -172,8 +184,12 @@ export function VirtualListingGrid({
   const lastListingCountRef = useRef(listings.length);
   const lastLoadTimeRef = useRef(0);
 
+  // iOS Safari has known issues with transform-based virtualization
+  // Disable JS virtualization on iOS and use CSS content-visibility instead
+  const isIOS = useIsIOS();
+
   // Adaptive virtual scrolling - works for all screen sizes
-  // Only enable for infinite scroll mode with larger lists
+  // Disabled on iOS due to transform glitches - uses CSS content-visibility instead
   const {
     visibleItems,
     startIndex,
@@ -185,7 +201,8 @@ export function VirtualListingGrid({
     items: listings,
     totalCount: undefined, // Dynamic height - grows as items load (no massive empty space)
     overscan: 3, // Extra buffer rows to prevent edge flickering
-    enabled: infiniteScroll && listings.length > 15, // Start virtualization earlier to avoid jarring iOS transition
+    // Disable JS virtualization on iOS - use CSS content-visibility instead
+    enabled: infiniteScroll && listings.length > 15 && !isIOS,
   });
 
   // Memoize the converted listings for QuickView
@@ -247,10 +264,11 @@ export function VirtualListingGrid({
   }, [listings.length]);
 
   // Render the grid
+  // On iOS, add ios-native-virtualize class for CSS content-visibility virtualization
   const renderGrid = () => (
     <div
       data-testid="virtual-listing-grid"
-      className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5"
+      className={`grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 ${isIOS ? 'ios-native-virtualize' : ''}`}
     >
       {visibleItems.map((listing, idx) => (
         <ListingCard

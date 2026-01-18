@@ -182,8 +182,8 @@ export function useAdaptiveVirtualScroll<T>({
   const visibleItems = items.slice(startIndex, endIndex);
   const offsetY = startRow * rowHeight;
 
-  // If not enabled or on server (initial render), show first batch without virtualization
-  if (!enabled || !isClient) {
+  // SSR: Show first batch for fast initial render
+  if (!isClient) {
     const initialCount = Math.min(items.length, 20); // Show first 20 items on SSR
     return {
       visibleItems: items.slice(0, initialCount),
@@ -192,6 +192,19 @@ export function useAdaptiveVirtualScroll<T>({
       offsetY: 0,
       columns: dimensions.columns,
       rowHeight: dimensions.rowHeight,
+      isVirtualized: false,
+    };
+  }
+
+  // Virtualization disabled (e.g., desktop pagination mode): show all items
+  if (!enabled) {
+    return {
+      visibleItems: items,
+      startIndex: 0,
+      totalHeight: 0,
+      offsetY: 0,
+      columns,
+      rowHeight,
       isVirtualized: false,
     };
   }

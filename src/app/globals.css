@@ -700,3 +700,12 @@ body.drawer-open {
   height: 64px;
   min-height: 64px;
 }
+
+/* iOS Safari virtualization - use native content-visibility instead of JS transform
+   This avoids the transform glitches that cause cards to "teleport" on iOS */
+@supports (content-visibility: auto) {
+  .ios-native-virtualize > * {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 360px; /* Match estimated card height */
+  }
+}

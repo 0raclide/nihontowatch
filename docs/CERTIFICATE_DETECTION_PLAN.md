@@ -1,8 +1,10 @@
 # Certificate Detection Implementation Plan
 
 **Date:** January 18, 2026
-**Status:** Research Complete, Ready for Implementation
-**Priority:** 🟡 HIGH - Enables unique product identification for certified items
+**Status:** ❌ SUPERSEDED - See CERTIFICATE_DETECTION_RESEARCH.md
+**Priority:** ⚪ DEFERRED - Not viable as general strategy
+
+> **UPDATE:** Critical validation testing revealed this approach only works for 2 dealers (token-net.com, aoijapan.com). Implementation deferred. See `CERTIFICATE_DETECTION_RESEARCH.md` for findings.
 
 ---
 
