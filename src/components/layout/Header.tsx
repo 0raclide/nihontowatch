@@ -64,7 +64,8 @@ function HeaderContent() {
       if (activity) {
         activity.trackSearch(searchQuery.trim());
       }
-      window.location.href = `/?q=${encodeURIComponent(searchQuery.trim())}`;
+      // Use router.push to create history entry (allows back button)
+      router.push(`/?q=${encodeURIComponent(searchQuery.trim())}`);
     }
   };
 
@@ -90,12 +91,17 @@ function HeaderContent() {
             </Link>
 
             {/* Search - Simple form */}
-            <form onSubmit={handleSearch} className="flex-1 max-w-md mx-10 group">
+            <form action="/" onSubmit={handleSearch} role="search" className="flex-1 max-w-md mx-10 group">
               <div className="relative">
                 <input
-                  type="text"
+                  type="search"
+                  enterKeyHint="search"
                   name="q"
                   defaultValue={currentQuery}
+                  autoComplete="off"
+                  autoCapitalize="off"
+                  autoCorrect="off"
+                  spellCheck={false}
                   placeholder="Search swords, smiths, dealers..."
                   disabled={isSearching}
                   className="w-full pl-4 pr-12 py-2.5 bg-linen/50 border border-transparent text-[13px] text-ink placeholder:text-muted/40 focus:outline-none focus:border-gold/40 focus:bg-paper focus:shadow-[0_0_0_3px_rgba(181,142,78,0.1)] transition-all duration-200 disabled:opacity-60"

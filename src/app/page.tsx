@@ -380,9 +380,36 @@ function HomeContent() {
         {/* Subtle divider */}
         <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent mb-4 lg:mb-8" />
 
+        {/* Mobile: Active search indicator with clear button */}
+        {searchQuery && (
+          <div className="lg:hidden flex items-center gap-2 mb-3">
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-gold/10 border border-gold/20 rounded-full">
+              <svg className="w-3.5 h-3.5 text-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <span className="text-[12px] text-charcoal font-medium max-w-[150px] truncate">
+                {searchQuery}
+              </span>
+              <button
+                onClick={() => {
+                  setSearchQuery('');
+                  // Use router.push to create history entry for back navigation
+                  router.push('/');
+                }}
+                aria-label="Clear search"
+                className="p-0.5 -mr-1 text-gold/60 hover:text-gold hover:bg-gold/10 rounded-full transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Mobile item count */}
         <div className="lg:hidden text-[13px] text-muted mb-4">
-          {isLoading ? 'Loading...' : `${data?.total?.toLocaleString() || 0} items`}
+          {isLoading ? 'Loading...' : `${data?.total?.toLocaleString() || 0} items${searchQuery ? ` for "${searchQuery}"` : ''}`}
         </div>
 
         {/* Main Content */}

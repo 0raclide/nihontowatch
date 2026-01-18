@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Drawer } from '@/components/ui/Drawer';
 import { useMobileUI } from '@/contexts/MobileUIContext';
 
@@ -14,8 +15,10 @@ const QUICK_SEARCHES = [
 ];
 
 export function MobileSearchSheet() {
+  const router = useRouter();
   const { searchOpen, closeSearch } = useMobileUI();
   const [isSearching, setIsSearching] = useState(false);
+  const [inputValue, setInputValue] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Auto-focus input when opened
@@ -31,34 +34,62 @@ export function MobileSearchSheet() {
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const query = (formData.get('q') as string) || '';
-    if (query.trim()) {
+    const query = inputValue.trim();
+    if (query) {
       setIsSearching(true);
-      window.location.href = `/?q=${encodeURIComponent(query.trim())}`;
+      closeSearch();
+      // Use router.push to create history entry (allows back button)
+      router.push(`/?q=${encodeURIComponent(query)}`);
     }
   };
 
   const handleQuickSearch = (term: string) => {
     setIsSearching(true);
-    // eslint-disable-next-line react-hooks/immutability
-    window.location.href = `/?q=${encodeURIComponent(term)}`;
+    closeSearch();
+    // Use router.push to create history entry
+    router.push(`/?q=${encodeURIComponent(term)}`);
+  };
+
+  const handleClearInput = () => {
+    setInputValue('');
+    inputRef.current?.focus();
   };
 
   return (
     <Drawer isOpen={searchOpen} onClose={closeSearch} title="Search">
       <div className="p-4">
-        {/* Search Input */}
-        <form onSubmit={handleSubmit}>
+        {/* Search Input - action attribute required for iOS keyboard "Search" button */}
+        <form action="/" onSubmit={handleSubmit} role="search">
           <div className="relative">
             <input
               ref={inputRef}
-              type="text"
+              type="search"
+              enterKeyHint="search"
+              inputMode="search"
               name="q"
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              autoComplete="off"
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellCheck={false}
               disabled={isSearching}
               placeholder="Search swords, smiths, dealers..."
-              className="w-full pl-4 pr-12 py-3.5 bg-linen/50 border border-transparent text-[15px] text-ink placeholder:text-muted/40 rounded-xl focus:outline-none focus:border-gold/40 focus:bg-paper focus:shadow-[0_0_0_4px_rgba(181,142,78,0.1)] transition-all duration-200 disabled:opacity-60"
+              className="w-full pl-4 pr-20 py-3.5 bg-linen/50 border border-transparent text-[15px] text-ink placeholder:text-muted/40 rounded-xl focus:outline-none focus:border-gold/40 focus:bg-paper focus:shadow-[0_0_0_4px_rgba(181,142,78,0.1)] transition-all duration-200 disabled:opacity-60"
             />
+            {/* Clear button - only show when there's input */}
+            {inputValue && !isSearching && (
+              <button
+                type="button"
+                onClick={handleClearInput}
+                aria-label="Clear search"
+                className="absolute right-12 top-1/2 -translate-y-1/2 p-2 text-muted/40 hover:text-muted rounded-lg transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
             <button
               type="submit"
               disabled={isSearching}
