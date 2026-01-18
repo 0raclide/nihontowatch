@@ -6,16 +6,17 @@ import { useAdaptiveVirtualScroll } from '@/hooks/useAdaptiveVirtualScroll';
 import { useQuickViewOptional } from '@/contexts/QuickViewContext';
 import type { Listing as QuickViewListing } from '@/types';
 
-// Detect iOS Safari - has known issues with transform-based virtualization
-function useIsIOS() {
-  const [isIOS, setIsIOS] = useState(false);
+// Detect mobile devices - disable JS virtualization on mobile due to scroll issues
+// Mobile browsers (especially iOS) have transform timing issues that cause "teleport" glitches
+function useIsMobileDevice() {
+  const [isMobile, setIsMobile] = useState(true); // Default to true (safer for SSR)
   useEffect(() => {
-    const ua = navigator.userAgent;
-    const isIOSDevice = /iPad|iPhone|iPod/.test(ua) ||
-      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-    setIsIOS(isIOSDevice);
+    // Check for touch capability and small screen
+    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    const isSmallScreen = window.innerWidth < 768;
+    setIsMobile(isTouchDevice && isSmallScreen);
   }, []);
-  return isIOS;
+  return isMobile;
 }
 
 // Number of cards to prioritize for immediate loading (above the fold)
@@ -184,9 +185,9 @@ export function VirtualListingGrid({
   const lastListingCountRef = useRef(listings.length);
   const lastLoadTimeRef = useRef(0);
 
-  // iOS Safari has known issues with transform-based virtualization
-  // Disable JS virtualization on iOS and use CSS content-visibility instead
-  const isIOS = useIsIOS();
+  // Mobile browsers have transform timing issues that cause scroll glitches
+  // Disable JS virtualization on mobile - render all items directly
+  const isMobileDevice = useIsMobileDevice();
 
   // Adaptive virtual scrolling - works for all screen sizes
   // Disabled on iOS due to transform glitches - uses CSS content-visibility instead
@@ -201,8 +202,9 @@ export function VirtualListingGrid({
     items: listings,
     totalCount: undefined, // Dynamic height - grows as items load (no massive empty space)
     overscan: 3, // Extra buffer rows to prevent edge flickering
-    // Disable JS virtualization on iOS - use CSS content-visibility instead
-    enabled: infiniteScroll && listings.length > 15 && !isIOS,
+    // Disable JS virtualization on mobile devices due to scroll glitches
+    // With infinite scroll loading ~100 items at a time, no virtualization needed
+    enabled: infiniteScroll && listings.length > 15 && !isMobileDevice,
   });
 
   // Memoize the converted listings for QuickView
@@ -268,7 +270,7 @@ export function VirtualListingGrid({
   const renderGrid = () => (
     <div
       data-testid="virtual-listing-grid"
-      className={`grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 ${isIOS ? 'ios-native-virtualize' : ''}`}
+      className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5"
     >
       {visibleItems.map((listing, idx) => (
         <ListingCard
