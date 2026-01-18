@@ -14,6 +14,8 @@ interface BrowseParams {
   certifications?: string[];
   schools?: string[];
   dealers?: number[];
+  historicalPeriods?: string[];
+  signatureStatuses?: string[];
   askOnly?: boolean;
   query?: string;
   sort?: string;
@@ -41,6 +43,8 @@ function parseParams(searchParams: URLSearchParams): BrowseParams {
   const certificationsRaw = searchParams.get('cert');
   const schoolsRaw = searchParams.get('school');
   const dealersRaw = searchParams.get('dealer');
+  const historicalPeriodsRaw = searchParams.get('period');
+  const signatureStatusesRaw = searchParams.get('sig');
   const categoryRaw = searchParams.get('cat') as 'all' | 'nihonto' | 'tosogu' | null;
 
   return {
@@ -50,6 +54,8 @@ function parseParams(searchParams: URLSearchParams): BrowseParams {
     certifications: certificationsRaw ? certificationsRaw.split(',') : undefined,
     schools: schoolsRaw ? schoolsRaw.split(',') : undefined,
     dealers: dealersRaw ? dealersRaw.split(',').map(Number) : undefined,
+    historicalPeriods: historicalPeriodsRaw ? historicalPeriodsRaw.split(',') : undefined,
+    signatureStatuses: signatureStatusesRaw ? signatureStatusesRaw.split(',') : undefined,
     askOnly: searchParams.get('ask') === 'true',
     query: searchParams.get('q') || undefined,
     sort: searchParams.get('sort') || 'recent',

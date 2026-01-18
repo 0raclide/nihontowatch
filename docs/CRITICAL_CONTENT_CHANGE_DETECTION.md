@@ -250,6 +250,111 @@ def detect_content_change(stored_listing, current_content) -> ChangeResult:
 
 ---
 
+## Certificate Image Extraction (Alternative Approach)
+
+### Concept
+
+Many dealers photograph NBTHK certification documents alongside their swords. These certificates contain **unique identifiers** that can serve as product fingerprints:
+
+- **Juyo Token**: Session number + Item number (e.g., "第四十五回" → Juyo-45)
+- **Tokubetsu Hozon/Hozon**: Document number (e.g., 019170, 1023264)
+- **NTHK**: Paper number
+
+**Key insight:** Different photos of the same certificate will yield the same extracted ID, providing a reliable product identifier even when dealers use different photography.
+
+### Feasibility Test Results (January 2026)
+
+We tested certificate detection on **15 known certificate images** (identified by "paper" in filename):
+
+| Metric | Result |
+|--------|--------|
+| Correctly identified as certificate | 60% (9/15) |
+| Cert type identified | 67% (10/15) |
+| Full cert ID extracted | 20% (3/15) |
+| Session number extracted | 13% (2/15) |
+| Smith name extracted | 73% (11/15) |
+
+**Sample extractions:**
+```
+Listing 1345: Juyo-45 (session 45, smith: 河内守長藤原国助)
+Listing 140:  019170 (TokuHozon document number)
+Listing 58:   1023264 (TokuHozon document number)
+```
+
+### Dealer Certificate Photography Patterns
+
+| Dealer | Images with "paper" | Convention |
+|--------|---------------------|------------|
+| aoijapan.com | 133 | `{item_id}paper-1.jpg`, `{item_id}paper-2.jpg` |
+| nihontoart.com | 7 | `{name}-Kanteisho.jpeg` |
+| Other dealers | Unknown | No clear pattern - visual detection required |
+
+**Key finding:** aoijapan.com uses predictable filenames, enabling targeted certificate detection.
+
+### Certificate Detection Pipeline
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ STAGE 1: Quick Filters (No API cost)                       │
+├─────────────────────────────────────────────────────────────┤
+│ • URL pattern: filename contains "paper", "cert", etc.     │
+│ • Image aspect ratio: certificates are typically ~1.4:1    │
+│ • Position: often last images in gallery                   │
+└────────────────────────────┬────────────────────────────────┘
+                             │ Candidates
+                             ▼
+┌─────────────────────────────────────────────────────────────┐
+│ STAGE 2: LLM Vision Analysis                               │
+├─────────────────────────────────────────────────────────────┤
+│ • Certificate detection: is_certificate? confidence        │
+│ • Type identification: juyo, tokubetsu_hozon, hozon, etc.  │
+│ • ID extraction: session + item number OR document number  │
+│ • Smith name: attribution from certificate                 │
+└────────────────────────────┬────────────────────────────────┘
+                             │ Extracted Data
+                             ▼
+┌─────────────────────────────────────────────────────────────┐
+│ STAGE 3: Store & Index                                     │
+├─────────────────────────────────────────────────────────────┤
+│ • cert_id: normalized identifier (e.g., "NBTHK-J-45-123")  │
+│ • cert_type: standardized enum                             │
+│ • cert_image_url: reference to certificate photo           │
+│ • Link to product_id for cross-dealer matching             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Visual Indicators for Certificate Detection
+
+Certificates have distinctive visual characteristics:
+
+1. **Red circular seal** (印) - pathognomonic for NBTHK papers
+2. **Rectangular document format** - landscape or portrait paper
+3. **Japanese vertical text** - formal document layout
+4. **Keywords visible**: 重要刀剣, 特別保存, 保存刀剣, 鑑定書
+
+### Limitations
+
+1. **Coverage**: Only ~35% of listings have certificates, and only subset photograph them
+2. **Image quality**: Poor photos reduce OCR accuracy
+3. **API cost**: Vision API calls add expense (~$0.01/image)
+4. **Hozon/TokuHozon numbers**: Not as standardized as Juyo session/item format
+
+### Recommendation
+
+**Use certificate extraction as a complement to image hashing, not a replacement:**
+
+| Approach | Coverage | Reliability | Cost |
+|----------|----------|-------------|------|
+| Image pHash | ~99% | High | Compute only |
+| Certificate extraction | ~10-15% | Very High (when extracted) | API calls |
+
+**Implementation priority:**
+1. ✅ Image pHash for all listings (primary change detection)
+2. ⬜ Certificate extraction for certified items (product identification)
+3. ⬜ Cross-reference both for highest confidence matching
+
+---
+
 ## Implementation Plan
 
 ### Phase 1: Schema Migration
@@ -555,6 +660,37 @@ async function computePhash(imageUrl: string): Promise<string | null> {
   }
 }
 ```
+
+---
+
+## Appendix: Certificate Detection Test Scripts
+
+The following scripts were created to validate the certificate extraction approach:
+
+### Find Certificate Images by URL Pattern
+
+```bash
+node scripts/find-cert-images.mjs
+```
+
+Searches database for image URLs containing keywords like "paper", "cert", "kanteisho".
+
+### Test Certificate Extraction on Known Certificates
+
+```bash
+node scripts/test-known-certificates.mjs
+```
+
+Tests LLM-based extraction on images known to be certificates (via filename pattern).
+Results saved to `certificate-detection-results/`.
+
+### General Certificate Detection Test
+
+```bash
+node scripts/certificate-detection-test.mjs --sample 20 [--dealer DOMAIN]
+```
+
+Tests both detection (is it a certificate?) and extraction (what's the ID?) on random listings.
 
 ---
 

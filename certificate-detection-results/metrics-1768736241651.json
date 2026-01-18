@@ -1,0 +1,9 @@
+{
+  "total_listings": 0,
+  "certificates_found": 0,
+  "cert_ids_extracted": 0,
+  "detection_rate": "NaN%",
+  "extraction_rate": "NaN%",
+  "by_cert_type": {},
+  "by_dealer": {}
+}

@@ -14,9 +14,13 @@
     "test:lib": "vitest run tests/lib",
     "test:sql": "vitest run tests/sql",
     "test:components": "vitest run tests/components tests/contexts",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:debug": "playwright test --debug"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.71.2",
     "@sendgrid/mail": "^8.1.6",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.90.1",

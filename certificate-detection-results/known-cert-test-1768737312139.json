@@ -1,0 +1,252 @@
+[
+  {
+    "listing_id": 1335,
+    "dealer": "www.aoijapan.com",
+    "title": "Katana: Den Joshu Sueyuki (NBTHK Tokubetsu Hozon Token)",
+    "db_cert_type": "TokuHozon",
+    "image_url": "https://www.aoijapan.com/img/sword/2024/24772paper-1.jpg",
+    "analysis": {
+      "is_certificate": true,
+      "confidence": 0.95,
+      "cert_type": "other",
+      "organization": "other",
+      "session_number": null,
+      "item_number": null,
+      "full_cert_id": null,
+      "smith_name": "無銘伝城州末行",
+      "visible_japanese_text": "太刀 鑑定書 無銘伝城州末行 長二尺四寸六分半 令和六年八月二十三日 公益財団法人日本美術刀剣保存協会",
+      "date_if_visible": "令和六年八月二十三日 (August 23, Reiwa 6/2024)",
+      "quality_notes": "This appears to be an authentication certificate for a mumei (unsigned) tachi attributed to Jōshū Sueyuki school. The document shows clear Japanese text and includes what appears to be an organizational seal. The blade length is listed as 2 shaku 4 sun 6 bu han (approximately 74.5cm)."
+    }
+  },
+  {
+    "listing_id": 1335,
+    "dealer": "www.aoijapan.com",
+    "title": "Katana: Den Joshu Sueyuki (NBTHK Tokubetsu Hozon Token)",
+    "db_cert_type": "TokuHozon",
+    "image_url": "https://www.aoijapan.com/img/sword/2024/24772paper-2.jpg",
+    "analysis": {
+      "error": "400 {\"type\":\"error\",\"error\":{\"type\":\"invalid_request_error\",\"message\":\"messages.0.content.0.image.source.base64.media_type: Input should be 'image/jpeg', 'image/png', 'image/gif' or 'image/webp'\"},\"request_id\":\"req_011CXEo57mAuBN6dN1CBTFry\"}"
+    }
+  },
+  {
+    "listing_id": 7708,
+    "dealer": "www.aoijapan.com",
+    "title": "Tsuba:Mumei(unsigned)",
+    "db_cert_type": null,
+    "image_url": "https://www.aoijapan.com/img/fittings/2025/F25201paper-1.jpg",
+    "analysis": {
+      "error": "400 {\"type\":\"error\",\"error\":{\"type\":\"invalid_request_error\",\"message\":\"messages.0.content.0.image.source.base64.media_type: Input should be 'image/jpeg', 'image/png', 'image/gif' or 'image/webp'\"},\"request_id\":\"req_011CXEo5JDj1S3AazVRwriAi\"}"
+    }
+  },
+  {
+    "listing_id": 7690,
+    "dealer": "www.aoijapan.com",
+    "title": "Katana:Kawachi Kami Kunisuke(1st)(NBTHK Tokubetsu Hozon Token)",
+    "db_cert_type": "TokuHozon",
+    "image_url": "https://www.aoijapan.com/img/sword/2024/24064paper-1.jpg",
+    "analysis": {
+      "is_certificate": true,
+      "confidence": 0.95,
+      "cert_type": "other",
+      "organization": "NBTHK",
+      "session_number": null,
+      "item_number": null,
+      "full_cert_id": null,
+      "smith_name": "河内守国助",
+      "visible_japanese_text": "一刀銘鑑定書 河内守国助 初代 長二尺三寸五分 公益財団法人日本美術刀剣保存協会 令和四年三月二日 鑑定しこれを証する",
+      "date_if_visible": "令和四年三月二日 (March 2, 2022)",
+      "quality_notes": "Clear document with good readability. This appears to be an appraisal certificate (鑑定書) rather than one of the standard preservation categories. The blade is attributed to Kawachi-no-kami Kunisuke (初代/first generation) with a length of 2 shaku 3 sun 5 bu."
+    }
+  },
+  {
+    "listing_id": 1345,
+    "dealer": "www.aoijapan.com",
+    "title": "Katana: Kawachi Kami Fujiwara Kunisuke (NBTHK the 39th Juyo Token)",
+    "db_cert_type": "Juyo",
+    "image_url": "https://www.aoijapan.com/img/sword/2015/15276paper-1.jpg",
+    "analysis": {
+      "is_certificate": true,
+      "confidence": 0.95,
+      "cert_type": "juyo",
+      "organization": "NBTHK",
+      "session_number": 45,
+      "item_number": null,
+      "full_cert_id": "Juyo-45",
+      "smith_name": "河内守長藤原国助",
+      "visible_japanese_text": "重要刀剣, 第四十五回, 一刀銘河内守長藤原国助, 証明書, 平成二十年四月二十八日, 日本美術刀剣保存協会",
+      "date_if_visible": "平成二十年四月二十八日 (April 28, 2008)",
+      "quality_notes": "Clear, high-quality document with good readability of all text and red seals visible"
+    }
+  },
+  {
+    "listing_id": 1345,
+    "dealer": "www.aoijapan.com",
+    "title": "Katana: Kawachi Kami Fujiwara Kunisuke (NBTHK the 39th Juyo Token)",
+    "db_cert_type": "Juyo",
+    "image_url": "https://www.aoijapan.com/img/sword/2015/15276paper-2.jpg",
+    "analysis": {
+      "is_certificate": false,
+      "confidence": 0.8,
+      "cert_type": "juyo",
+      "organization": "likely_NBTHK",
+      "session_number": 49,
+      "item_number": null,
+      "full_cert_id": null,
+      "smith_name": null,
+      "visible_japanese_text": "重要刀剣 (Important Art Sword), 第四十九回 (49th session), various technical descriptions about blade characteristics, hamon patterns, and historical details",
+      "date_if_visible": null,
+      "quality_notes": "This appears to be a page from a Juyo Token catalog or reference book showing sword illustrations with detailed Japanese text descriptions. The text discusses blade characteristics, hamon (temper line) patterns, and historical information. Image quality makes it difficult to read specific smith names or dates clearly. The format suggests this documents multiple swords from the 49th Juyo session rather than being a single certificate."
+    }
+  },
+  {
+    "listing_id": 140,
+    "dealer": "www.aoijapan.com",
+    "title": "Katana in Shirasaya with Koshirae (NBTHK Tokubetsu Hozon Token) Signature: Ishido Fujiwara Korekazu Seitan Kore",
+    "db_cert_type": "TokuHozon",
+    "image_url": "https://www.aoijapan.com/img/sword/2025/25220paper-1.jpg",
+    "analysis": {
+      "is_certificate": true,
+      "confidence": 0.9,
+      "cert_type": "other",
+      "organization": "NBTHK",
+      "session_number": null,
+      "item_number": 19170,
+      "full_cert_id": "019170",
+      "smith_name": "石堂藤原是精鍛之",
+      "visible_japanese_text": "一刀 鑑定書 石堂藤原是精鍛之 令和四年十二月十四日 公益財団法人日本美術刀剣保存協会 右は当協会が於て審査の結果特別保存刀剣と鑑定しこれを証する",
+      "date_if_visible": "令和四年十二月十四日 (Reiwa 4, December 14 - December 14, 2022)",
+      "quality_notes": "This appears to be a Tokubetsu Hozon certificate based on the text '特別保存刀剣' (Special Preservation Sword). The document is clearly readable with good image quality. Certificate number 019170 is visible in the top right corner."
+    }
+  },
+  {
+    "listing_id": 140,
+    "dealer": "www.aoijapan.com",
+    "title": "Katana in Shirasaya with Koshirae (NBTHK Tokubetsu Hozon Token) Signature: Ishido Fujiwara Korekazu Seitan Kore",
+    "db_cert_type": "TokuHozon",
+    "image_url": "https://www.aoijapan.com/img/sword/2025/25220paper-2.jpg",
+    "analysis": {
+      "is_certificate": true,
+      "confidence": 0.85,
+      "cert_type": "other",
+      "organization": "NBTHK",
+      "session_number": null,
+      "item_number": null,
+      "full_cert_id": null,
+      "smith_name": "石堂藤原是一",
+      "visible_japanese_text": "一刀鑑定書, 石堂藤原是一, 脇差, 昭和四十年, 会長",
+      "date_if_visible": "昭和四十年 (Showa 40, 1965)",
+      "quality_notes": "Document appears to be a basic authentication certificate (鑑定書) rather than one of the major classification types. Text is generally clear but some smaller characters are difficult to read due to image resolution."
+    }
+  },
+  {
+    "listing_id": 1380,
+    "dealer": "www.aoijapan.com",
+    "title": "Katana: Ho-ki Kami Taira Ason Masayuki",
+    "db_cert_type": null,
+    "image_url": "https://www.aoijapan.com/img/sword/2020/20000paper-1.jpg",
+    "analysis": {
+      "error": "400 {\"type\":\"error\",\"error\":{\"type\":\"invalid_request_error\",\"message\":\"messages.0.content.0.image.source.base64.media_type: Input should be 'image/jpeg', 'image/png', 'image/gif' or 'image/webp'\"},\"request_id\":\"req_011CXEoB9yYfPaYbgAhXnsQi\"}"
+    }
+  },
+  {
+    "listing_id": 58,
+    "dealer": "www.aoijapan.com",
+    "title": "Katana: Mumei (attributed to Naoe Shizu)(NBTHK Tokubetsu Hozon Token)",
+    "db_cert_type": "TokuHozon",
+    "image_url": "https://www.aoijapan.com/img/sword/2024/24821paper-1.jpg",
+    "analysis": {
+      "is_certificate": true,
+      "confidence": 0.95,
+      "cert_type": "other",
+      "organization": "NBTHK",
+      "session_number": null,
+      "item_number": 1023264,
+      "full_cert_id": "1023264",
+      "smith_name": "直江志津",
+      "visible_japanese_text": "一刀 無銘 鑑定書 直江志津 長二尺三寸三分弱 今和六年八月二十三日 公益財団法人日本美術刀剣保存協会",
+      "date_if_visible": "今和六年八月二十三日",
+      "quality_notes": "Document is clearly readable. This appears to be an authentication certificate (鑑定書) rather than one of the standard preservation categories. The blade is unsigned (無銘) but attributed to Naoe Shizu school."
+    }
+  },
+  {
+    "listing_id": 58,
+    "dealer": "www.aoijapan.com",
+    "title": "Katana: Mumei (attributed to Naoe Shizu)(NBTHK Tokubetsu Hozon Token)",
+    "db_cert_type": "TokuHozon",
+    "image_url": "https://www.aoijapan.com/img/sword/2024/24821paper-2.jpg",
+    "analysis": {
+      "error": "400 {\"type\":\"error\",\"error\":{\"type\":\"invalid_request_error\",\"message\":\"messages.0.content.0.image.source.base64.media_type: Input should be 'image/jpeg', 'image/png', 'image/gif' or 'image/webp'\"},\"request_id\":\"req_011CXEoCXuSBDCcPjiAHqjdZ\"}"
+    }
+  },
+  {
+    "listing_id": 1381,
+    "dealer": "www.aoijapan.com",
+    "title": "Katana : Kun Yonto Kurihara Akihide Saku Showa 18 nen 2 gatsu",
+    "db_cert_type": null,
+    "image_url": "https://www.aoijapan.com/img/sword/2017/17096paper-1.jpg",
+    "analysis": {
+      "is_certificate": true,
+      "confidence": 0.95,
+      "cert_type": "other",
+      "organization": "NBTHK",
+      "session_number": null,
+      "item_number": null,
+      "full_cert_id": null,
+      "smith_name": null,
+      "visible_japanese_text": "一万銭, 鑑定書, 昭和, 日本美術刀剣保存協会, 長さ二尺六寸分半",
+      "date_if_visible": "昭和三十九年三月二十四日 (Showa 39, March 24th - 1964)",
+      "quality_notes": "This appears to be an NBTHK appraisal document (鑑定書) rather than one of the main certification levels. The image shows a tanto or wakizashi tang (nakago) with inscriptions. Some characters are clear but the full smith attribution is not clearly visible in this image quality. The document shows dimensions and includes official seals."
+    }
+  },
+  {
+    "listing_id": 7710,
+    "dealer": "www.aoijapan.com",
+    "title": "Tsuba: Bushu Ju Masayoshi",
+    "db_cert_type": null,
+    "image_url": "https://www.aoijapan.com/img/fittings/2025/F25123paper-1.jpg",
+    "analysis": {
+      "error": "400 {\"type\":\"error\",\"error\":{\"type\":\"invalid_request_error\",\"message\":\"messages.0.content.0.image.source.base64.media_type: Input should be 'image/jpeg', 'image/png', 'image/gif' or 'image/webp'\"},\"request_id\":\"req_011CXEoDaDcvzDR8ZaZ6yBWp\"}"
+    }
+  },
+  {
+    "listing_id": 6692,
+    "dealer": "nihontoart.com",
+    "title": "Exceptional Edo Period complete Russet Iron Myochin Yoroi",
+    "db_cert_type": null,
+    "image_url": "https://nihontoart.com/wp-content/uploads/2020/06/Myochin-Yoroi-Kanteisho-1.jpeg",
+    "analysis": {
+      "is_certificate": true,
+      "confidence": 0.95,
+      "cert_type": "other",
+      "organization": "other",
+      "session_number": null,
+      "item_number": null,
+      "full_cert_id": null,
+      "smith_name": "石禱普省",
+      "visible_japanese_text": "認定書, 石禱普省の結果, 甲種特別貴重資料, 認定する, 平成十五年十二月三十日",
+      "date_if_visible": "平成十五年十二月三十日 (December 30, 2003)",
+      "quality_notes": "This appears to be a special certification document (認定書) rather than a standard NBTHK sword paper. The document mentions '甲種特別貴重資料' (Grade A Special Precious Materials) and shows samurai armor in the photograph rather than a sword. Text is generally clear and readable."
+    }
+  },
+  {
+    "listing_id": 6692,
+    "dealer": "nihontoart.com",
+    "title": "Exceptional Edo Period complete Russet Iron Myochin Yoroi",
+    "db_cert_type": null,
+    "image_url": "https://nihontoart.com/wp-content/uploads/2020/06/Myochin-Yoroi-Kanteisho.jpeg",
+    "analysis": {
+      "is_certificate": true,
+      "confidence": 0.9,
+      "cert_type": "tokubetsu_hozon",
+      "organization": "NBTHK",
+      "session_number": null,
+      "item_number": null,
+      "full_cert_id": null,
+      "smith_name": "江戸時代後期",
+      "visible_japanese_text": "特別保存刀剣, 鉄鍔地学打出五枚胴具足, 江戸時代後期, 甲種特別保存",
+      "date_if_visible": "江戸時代後期",
+      "quality_notes": "Clear image with readable text. This appears to be a certificate for armor (具足) rather than a sword, specifically a five-plate cuirass from the late Edo period. The red seal stamp is clearly visible in the upper right."
+    }
+  }
+]

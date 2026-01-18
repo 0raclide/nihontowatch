@@ -612,11 +612,11 @@ p, li, td, th {
   padding-top: env(safe-area-inset-top, 0px);
 }
 
+/* Drawer open state - overflow hidden WITHOUT position:fixed
+   Using position:fixed breaks fixed children (BottomTabBar) */
 body.drawer-open {
   overflow: hidden;
-  position: fixed;
-  width: 100%;
-  height: 100%;
+  /* NO position:fixed - this preserves coordinate system for fixed children */
 }
 
 .overscroll-contain {
@@ -679,9 +679,12 @@ body.drawer-open {
    Prevents bouncing/jank during infinite scroll load more
    ========================================================================== */
 
-/* Enable CSS scroll anchoring for virtualized containers */
+/* DISABLE CSS scroll anchoring for virtualized containers
+   Browser anchoring conflicts with our virtualization which already
+   manages scroll position. The container height is pre-calculated
+   from totalCount, so we don't need browser anchoring. */
 .virtual-scroll-container {
-  overflow-anchor: auto;
+  overflow-anchor: none;
 }
 
 /* Prevent overscroll bounce during content changes on mobile */
