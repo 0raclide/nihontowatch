@@ -11,6 +11,7 @@
 | [USER_ACCOUNTS_SYSTEM.md](./USER_ACCOUNTS_SYSTEM.md) | Auth, profiles, favorites, alerts, activity tracking, admin |
 | [SIGNUP_PRESSURE.md](./SIGNUP_PRESSURE.md) | Signup modal triggers, thresholds, copy variants, testing |
 | [MOBILE_UX.md](./MOBILE_UX.md) | Mobile interaction patterns, QuickView bottom sheet |
+| [USER_BEHAVIOR_TRACKING.md](./USER_BEHAVIOR_TRACKING.md) | Engagement signals, interest scoring, recommendations |
 | [QUICKVIEW_METADATA.md](./QUICKVIEW_METADATA.md) | QuickView metadata display, translation system |
 | [SEARCH_FEATURES.md](./SEARCH_FEATURES.md) | Natural language search, filters, query syntax |
 | [FRESHNESS_SYSTEM.md](./FRESHNESS_SYSTEM.md) | Listing age verification, Wayback integration, confidence levels |
@@ -137,6 +138,13 @@
 3. Check `src/lib/wayback/` - Wayback Machine client
 4. Check `/api/admin/dealers/baseline` - Setting dealer baselines
 5. Check `/api/cron/wayback-check` - Background verification
+
+### "I need to work on user behavior tracking or recommendations"
+1. Read [USER_BEHAVIOR_TRACKING.md](./USER_BEHAVIOR_TRACKING.md) - Complete tracking docs
+2. Check `src/lib/tracking/ActivityTracker.tsx` - Main tracking provider
+3. Check `src/lib/activity/types.ts` - Event type definitions
+4. Check `src/app/api/activity/` - API routes
+5. Check `src/app/admin/analytics/` - Analytics dashboard
 
 ### "I need to run or write tests"
 1. Read [TESTING.md](./TESTING.md) - Complete testing documentation

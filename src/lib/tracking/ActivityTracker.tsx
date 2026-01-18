@@ -45,6 +45,7 @@ import type {
   FavoriteEvent,
   AlertEvent,
   ExternalLinkClickEvent,
+  ViewportDwellEvent,
   SearchFilters,
   ActivityBatchPayload,
   CreateSessionPayload,
@@ -126,6 +127,11 @@ export interface ActivityTracker {
     url: string,
     listingId?: number,
     dealerName?: string
+  ) => void;
+  trackViewportDwell: (
+    listingId: number,
+    dwellMs: number,
+    extra?: { intersectionRatio?: number; isRevisit?: boolean }
   ) => void;
   flush: () => Promise<void>;
   isOptedOut: boolean;
@@ -492,6 +498,28 @@ export function ActivityTrackerProvider({
     [createBaseEvent, queueEvent, isOptedOut]
   );
 
+  const trackViewportDwell = useCallback(
+    (
+      listingId: number,
+      dwellMs: number,
+      extra?: { intersectionRatio?: number; isRevisit?: boolean }
+    ) => {
+      if (isOptedOut) return;
+
+      const event: ViewportDwellEvent = {
+        ...createBaseEvent(),
+        type: 'viewport_dwell',
+        listingId,
+        dwellMs,
+        intersectionRatio: extra?.intersectionRatio,
+        isRevisit: extra?.isRevisit,
+      };
+
+      queueEvent(event);
+    },
+    [createBaseEvent, queueEvent, isOptedOut]
+  );
+
   // Memoize the tracker object to prevent unnecessary re-renders in consumers
   const tracker: ActivityTracker = useMemo(
     () => ({
@@ -502,6 +530,7 @@ export function ActivityTrackerProvider({
       trackFavoriteAction,
       trackAlertAction,
       trackExternalLinkClick,
+      trackViewportDwell,
       flush: flushEvents,
       isOptedOut,
       setOptOut,
@@ -514,6 +543,7 @@ export function ActivityTrackerProvider({
       trackFavoriteAction,
       trackAlertAction,
       trackExternalLinkClick,
+      trackViewportDwell,
       flushEvents,
       isOptedOut,
       setOptOut,
@@ -611,5 +641,6 @@ export type {
   FavoriteEvent,
   AlertEvent,
   ExternalLinkClickEvent,
+  ViewportDwellEvent,
   SearchFilters,
 } from '@/lib/activity/types';

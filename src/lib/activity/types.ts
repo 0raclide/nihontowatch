@@ -17,7 +17,8 @@ export type ActivityEventType =
   | 'favorite_remove'
   | 'alert_create'
   | 'alert_delete'
-  | 'external_link_click';
+  | 'external_link_click'
+  | 'viewport_dwell';
 
 // =============================================================================
 // Event Payloads
@@ -79,6 +80,16 @@ export interface ExternalLinkClickEvent extends BaseActivityEvent {
   dealerName?: string;
 }
 
+export interface ViewportDwellEvent extends BaseActivityEvent {
+  type: 'viewport_dwell';
+  listingId: number;
+  dwellMs: number;
+  /** Percentage of element visible when tracked (0-1) */
+  intersectionRatio?: number;
+  /** Whether this was a re-view (user scrolled back) */
+  isRevisit?: boolean;
+}
+
 // Union type for all events
 export type ActivityEvent =
   | PageViewEvent
@@ -87,7 +98,8 @@ export type ActivityEvent =
   | FilterChangeEvent
   | FavoriteEvent
   | AlertEvent
-  | ExternalLinkClickEvent;
+  | ExternalLinkClickEvent
+  | ViewportDwellEvent;
 
 // =============================================================================
 // Search Filters

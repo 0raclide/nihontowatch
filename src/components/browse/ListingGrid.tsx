@@ -1,6 +1,7 @@
 'use client';
 
 import { VirtualListingGrid } from './VirtualListingGrid';
+import { ViewportTrackingProvider } from '@/lib/viewport';
 
 interface Listing {
   id: string;
@@ -130,19 +131,22 @@ export function ListingGrid({
 
   // Always use VirtualListingGrid - same component for all screen sizes
   // This ensures SSR hydration compatibility (no conditional component trees)
+  // ViewportTrackingProvider enables dwell time tracking on listing cards
   return (
-    <VirtualListingGrid
-      listings={listings}
-      total={total}
-      currency={currency}
-      exchangeRates={exchangeRates}
-      infiniteScroll={infiniteScroll}
-      page={page}
-      totalPages={totalPages}
-      onPageChange={onPageChange}
-      isLoadingMore={isLoadingMore}
-      hasMore={page < totalPages}
-      onLoadMore={onLoadMore}
-    />
+    <ViewportTrackingProvider>
+      <VirtualListingGrid
+        listings={listings}
+        total={total}
+        currency={currency}
+        exchangeRates={exchangeRates}
+        infiniteScroll={infiniteScroll}
+        page={page}
+        totalPages={totalPages}
+        onPageChange={onPageChange}
+        isLoadingMore={isLoadingMore}
+        hasMore={page < totalPages}
+        onLoadMore={onLoadMore}
+      />
+    </ViewportTrackingProvider>
   );
 }

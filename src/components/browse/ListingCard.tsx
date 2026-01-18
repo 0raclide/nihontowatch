@@ -1,10 +1,11 @@
 'use client';
 
 import Image from 'next/image';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { FavoriteButton } from '@/components/favorites/FavoriteButton';
 import { useActivityOptional } from '@/components/activity/ActivityProvider';
 import { useQuickViewOptional } from '@/contexts/QuickViewContext';
+import { useViewportTrackingOptional } from '@/lib/viewport';
 import { getMarketTimeDisplay } from '@/lib/freshness';
 import { getImageUrl } from '@/lib/images';
 
@@ -211,6 +212,19 @@ export function ListingCard({
   const [hasError, setHasError] = useState(false);
   const activity = useActivityOptional();
   const quickView = useQuickViewOptional();
+  const viewportTracking = useViewportTrackingOptional();
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  // Register for viewport tracking when mounted
+  useEffect(() => {
+    const element = cardRef.current;
+    if (!element || !viewportTracking) return;
+
+    viewportTracking.trackElement(element, Number(listing.id));
+    return () => {
+      viewportTracking.untrackElement(element);
+    };
+  }, [listing.id, viewportTracking]);
 
   const imageUrl = getImageUrl(listing);
   const artisan = getRomanizedName(listing.smith) || getRomanizedName(listing.tosogu_maker);
@@ -248,6 +262,7 @@ export function ListingCard({
 
   return (
     <div
+      ref={cardRef}
       role="button"
       tabIndex={0}
       data-testid="listing-card"
