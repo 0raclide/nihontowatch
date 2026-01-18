@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useLayoutEffect } from 'react';
 
 /**
  * Responsive breakpoints matching Tailwind defaults.
@@ -40,6 +40,8 @@ interface UseAdaptiveVirtualScrollOptions<T> {
   items: T[];
   overscan?: number;
   enabled?: boolean;
+  /** Called when container height is about to change (before render) */
+  onHeightWillChange?: () => void;
 }
 
 interface UseAdaptiveVirtualScrollResult<T> {
@@ -74,6 +76,7 @@ export function useAdaptiveVirtualScroll<T>({
   items,
   overscan = 2,
   enabled = true,
+  onHeightWillChange,
 }: UseAdaptiveVirtualScrollOptions<T>): UseAdaptiveVirtualScrollResult<T> {
   // SSR-safe defaults - assume desktop-ish viewport
   const [dimensions, setDimensions] = useState({
@@ -86,6 +89,7 @@ export function useAdaptiveVirtualScroll<T>({
   const [isClient, setIsClient] = useState(false);
   const rafRef = useRef<number | null>(null);
   const lastScrollTopRef = useRef(0);
+  const prevHeightRef = useRef(0);
 
   // Track client-side mounting
   useEffect(() => {
@@ -158,6 +162,18 @@ export function useAdaptiveVirtualScroll<T>({
   const { viewportHeight, columns, rowHeight } = dimensions;
   const rowCount = Math.ceil(items.length / columns);
   const totalHeight = rowCount * rowHeight;
+
+  // Detect height changes and notify before paint
+  // useLayoutEffect runs synchronously after DOM mutations but before paint
+  useLayoutEffect(() => {
+    if (enabled && isClient && totalHeight > 0) {
+      if (prevHeightRef.current > 0 && totalHeight !== prevHeightRef.current) {
+        // Height is about to change - notify consumer so they can lock scroll position
+        onHeightWillChange?.();
+      }
+      prevHeightRef.current = totalHeight;
+    }
+  }, [enabled, isClient, totalHeight, onHeightWillChange]);
 
   // Calculate visible row range
   const startRow = Math.max(0, Math.floor(scrollTop / rowHeight) - overscan);

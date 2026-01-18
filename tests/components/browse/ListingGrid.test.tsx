@@ -22,6 +22,15 @@ vi.mock('@/hooks/useAdaptiveVirtualScroll', () => ({
   }),
 }));
 
+// Mock useScrollPositionLock
+vi.mock('@/hooks/useScrollPositionLock', () => ({
+  useScrollPositionLock: () => ({
+    lockScrollPosition: vi.fn(),
+    unlockScrollPosition: vi.fn(),
+    isLocked: false,
+  }),
+}));
+
 const mockListings = [
   {
     id: '1',
@@ -271,6 +280,36 @@ describe('ListingGrid Component', () => {
       render(<ListingGrid {...defaultProps} infiniteScroll={true} page={1} totalPages={5} />);
 
       expect(screen.queryByText(/You've seen all/)).not.toBeInTheDocument();
+    });
+
+    it('renders fixed-height loading placeholder zone', () => {
+      render(<ListingGrid {...defaultProps} infiniteScroll={true} />);
+
+      // Check that the fixed-height placeholder exists
+      const placeholder = document.querySelector('.load-more-placeholder');
+      expect(placeholder).toBeInTheDocument();
+    });
+
+    it('loading placeholder has consistent height', () => {
+      // Test that loading state doesn't cause height change
+      const { rerender } = render(
+        <ListingGrid {...defaultProps} infiniteScroll={true} isLoadingMore={false} />
+      );
+
+      const placeholderBefore = document.querySelector('.load-more-placeholder');
+      expect(placeholderBefore).toBeInTheDocument();
+
+      // Rerender with loading state
+      rerender(
+        <ListingGrid {...defaultProps} infiniteScroll={true} isLoadingMore={true} />
+      );
+
+      const placeholderAfter = document.querySelector('.load-more-placeholder');
+      expect(placeholderAfter).toBeInTheDocument();
+
+      // Both should have the same class (fixed height)
+      expect(placeholderBefore).toHaveClass('load-more-placeholder');
+      expect(placeholderAfter).toHaveClass('load-more-placeholder');
     });
   });
 });

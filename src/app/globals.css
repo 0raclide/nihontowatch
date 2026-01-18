@@ -671,3 +671,24 @@ body.drawer-open {
 .animate-bounce-subtle {
   animation: bounce-subtle 1.5s ease-in-out infinite;
 }
+
+/* ==========================================================================
+   Mobile Scroll Stability
+   Prevents bouncing/jank during infinite scroll load more
+   ========================================================================== */
+
+/* Enable CSS scroll anchoring for virtualized containers */
+.virtual-scroll-container {
+  overflow-anchor: auto;
+}
+
+/* Prevent overscroll bounce during content changes on mobile */
+.scroll-stable {
+  overscroll-behavior-y: contain;
+}
+
+/* Fixed-height loading indicator zone to prevent layout shifts */
+.load-more-placeholder {
+  height: 64px;
+  min-height: 64px;
+}

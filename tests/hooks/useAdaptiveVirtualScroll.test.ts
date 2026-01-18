@@ -298,4 +298,125 @@ describe('useAdaptiveVirtualScroll', () => {
       expect(result.current.columns).toBe(1);
     });
   });
+
+  describe('height change callback', () => {
+    it('calls onHeightWillChange when height changes', () => {
+      const onHeightWillChange = vi.fn();
+      let items = createItems(50);
+
+      const { result, rerender } = renderHook(
+        ({ items }) => useAdaptiveVirtualScroll({
+          items,
+          overscan: 2,
+          onHeightWillChange,
+        }),
+        { initialProps: { items } }
+      );
+
+      // Initial mount - should not call callback
+      act(() => {
+        vi.runAllTimers();
+      });
+
+      expect(onHeightWillChange).not.toHaveBeenCalled();
+
+      // Add more items - height will change
+      items = createItems(100);
+      rerender({ items });
+
+      act(() => {
+        vi.runAllTimers();
+      });
+
+      // Should have called callback because height changed
+      expect(onHeightWillChange).toHaveBeenCalled();
+    });
+
+    it('does not call onHeightWillChange when height stays the same', () => {
+      const onHeightWillChange = vi.fn();
+      const items = createItems(50);
+
+      const { rerender } = renderHook(
+        ({ items }) => useAdaptiveVirtualScroll({
+          items,
+          overscan: 2,
+          onHeightWillChange,
+        }),
+        { initialProps: { items } }
+      );
+
+      act(() => {
+        vi.runAllTimers();
+      });
+
+      // Re-render with same items (same height)
+      rerender({ items });
+
+      act(() => {
+        vi.runAllTimers();
+      });
+
+      // Should not have called callback
+      expect(onHeightWillChange).not.toHaveBeenCalled();
+    });
+
+    it('does not call onHeightWillChange when disabled', () => {
+      const onHeightWillChange = vi.fn();
+      let items = createItems(50);
+
+      const { rerender } = renderHook(
+        ({ items }) => useAdaptiveVirtualScroll({
+          items,
+          overscan: 2,
+          enabled: false,
+          onHeightWillChange,
+        }),
+        { initialProps: { items } }
+      );
+
+      act(() => {
+        vi.runAllTimers();
+      });
+
+      // Add more items
+      items = createItems(100);
+      rerender({ items });
+
+      act(() => {
+        vi.runAllTimers();
+      });
+
+      // Should not have called callback since disabled
+      expect(onHeightWillChange).not.toHaveBeenCalled();
+    });
+
+    it('calls onHeightWillChange when height decreases', () => {
+      const onHeightWillChange = vi.fn();
+      let items = createItems(100);
+
+      const { rerender } = renderHook(
+        ({ items }) => useAdaptiveVirtualScroll({
+          items,
+          overscan: 2,
+          onHeightWillChange,
+        }),
+        { initialProps: { items } }
+      );
+
+      act(() => {
+        vi.runAllTimers();
+      });
+
+      // Remove items - height will decrease
+      items = createItems(30);
+      rerender({ items });
+
+      act(() => {
+        vi.runAllTimers();
+      });
+
+      // Should have called callback because height changed
+      expect(onHeightWillChange).toHaveBeenCalled();
+    });
+  });
 });

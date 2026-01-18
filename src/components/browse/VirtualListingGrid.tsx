@@ -3,6 +3,7 @@
 import { useEffect, useRef, useMemo, useCallback } from 'react';
 import { ListingCard } from './ListingCard';
 import { useAdaptiveVirtualScroll } from '@/hooks/useAdaptiveVirtualScroll';
+import { useScrollPositionLock } from '@/hooks/useScrollPositionLock';
 import { useQuickViewOptional } from '@/contexts/QuickViewContext';
 import type { Listing as QuickViewListing } from '@/types';
 
@@ -171,6 +172,14 @@ export function VirtualListingGrid({
   const loadMoreTriggerRef = useRef<HTMLDivElement>(null);
   const lastListingCountRef = useRef(listings.length);
 
+  // Scroll position lock for preventing bounce during load more
+  const { lockScrollPosition, unlockScrollPosition } = useScrollPositionLock();
+
+  // Callback when height is about to change - lock scroll position
+  const handleHeightWillChange = useCallback(() => {
+    lockScrollPosition();
+  }, [lockScrollPosition]);
+
   // Adaptive virtual scrolling - works for all screen sizes
   // Only enable for infinite scroll mode with larger lists
   const {
@@ -184,6 +193,7 @@ export function VirtualListingGrid({
     items: listings,
     overscan: 3, // Extra buffer rows to prevent edge flickering
     enabled: infiniteScroll && listings.length > 30, // Only virtualize in infinite scroll mode
+    onHeightWillChange: handleHeightWillChange, // Lock scroll before height change
   });
 
   // Memoize the converted listings for QuickView
@@ -234,17 +244,17 @@ export function VirtualListingGrid({
     return () => observer.disconnect();
   }, [infiniteScroll, onLoadMore, hasMore, isLoadingMore]);
 
-  // Scroll anchoring: preserve position when new items are added
-  const handleScrollAnchor = useCallback(() => {
-    if (listings.length > lastListingCountRef.current) {
-      // Items were added - scroll position is maintained by browser
-      lastListingCountRef.current = listings.length;
-    }
-  }, [listings.length]);
-
+  // Scroll anchoring: unlock scroll position after new items are added and rendered
   useEffect(() => {
-    handleScrollAnchor();
-  }, [handleScrollAnchor]);
+    if (listings.length > lastListingCountRef.current) {
+      // Items were added - unlock scroll position after render completes
+      // Use requestAnimationFrame to ensure DOM has updated
+      requestAnimationFrame(() => {
+        unlockScrollPosition();
+      });
+    }
+    lastListingCountRef.current = listings.length;
+  }, [listings.length, unlockScrollPosition]);
 
   // Render the grid
   const renderGrid = () => (
@@ -276,10 +286,10 @@ export function VirtualListingGrid({
         </p>
       </div>
 
-      {/* Virtualized container */}
+      {/* Virtualized container with scroll anchoring CSS */}
       {isVirtualized ? (
         <div
-          className="relative"
+          className="relative virtual-scroll-container"
           style={{ height: totalHeight }}
         >
           <div
@@ -294,31 +304,20 @@ export function VirtualListingGrid({
         renderGrid()
       )}
 
-      {/* Infinite scroll elements (only in infinite scroll mode) */}
+      {/* Fixed-height loading zone (prevents layout shifts during infinite scroll) */}
       {infiniteScroll && (
-        <>
-          {/* Infinite scroll trigger */}
-          {hasMore && (
+        <div className="load-more-placeholder flex items-center justify-center">
+          {isLoadingMore ? (
+            <div className="flex items-center gap-3 text-muted">
+              <div className="w-5 h-5 border-2 border-gold border-t-transparent rounded-full animate-spin" />
+              <span className="text-sm">Loading more...</span>
+            </div>
+          ) : hasMore ? (
             <div ref={loadMoreTriggerRef} className="h-1" aria-hidden="true" />
-          )}
-
-          {/* Loading more indicator */}
-          {isLoadingMore && (
-            <div className="flex justify-center py-8">
-              <div className="flex items-center gap-3 text-muted">
-                <div className="w-5 h-5 border-2 border-gold border-t-transparent rounded-full animate-spin" />
-                <span className="text-sm">Loading more...</span>
-              </div>
-            </div>
-          )}
-
-          {/* End of list indicator */}
-          {!hasMore && !isLoadingMore && listings.length > 0 && listings.length >= 30 && (
-            <div className="text-center py-8">
-              <p className="text-sm text-muted">You&apos;ve seen all {total.toLocaleString()} items</p>
-            </div>
-          )}
-        </>
+          ) : listings.length >= 30 ? (
+            <p className="text-sm text-muted">You&apos;ve seen all {total.toLocaleString()} items</p>
+          ) : null}
+        </div>
       )}
 
       {/* Pagination (only in pagination mode) */}
