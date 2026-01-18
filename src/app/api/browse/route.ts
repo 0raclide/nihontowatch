@@ -356,7 +356,8 @@ async function getItemTypeFacets(
     let query = supabase
       .from('listings')
       .select('item_type')
-      .or(statusFilter);
+      .or(statusFilter)
+      .neq('item_type', 'Stand'); // Exclude stands to match main query
 
     // Apply certification, dealer, askOnly filters
     if (options.certifications?.length) {
@@ -430,7 +431,8 @@ async function getCertificationFacets(
     let query = supabase
       .from('listings')
       .select('cert_type, item_type')
-      .or(statusFilter);
+      .or(statusFilter)
+      .neq('item_type', 'Stand'); // Exclude stands to match main query
 
     // Apply dealer filter at DB level (this works with AND)
     if (options.dealers?.length) {
@@ -497,7 +499,8 @@ async function getDealerFacets(
     let query = supabase
       .from('listings')
       .select('dealer_id, dealers!inner(name), item_type')
-      .or(statusFilter);
+      .or(statusFilter)
+      .neq('item_type', 'Stand'); // Exclude stands to match main query
 
     // Apply certification filter at DB level (this works with AND)
     if (options.certifications?.length) {
