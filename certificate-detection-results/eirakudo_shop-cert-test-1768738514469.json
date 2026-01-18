@@ -1,0 +1,280 @@
+{
+  "dealer": "eirakudo.shop",
+  "timestamp": "2026-01-18T12:15:14.469Z",
+  "summary": {
+    "listings_tested": 8,
+    "total_images": 15,
+    "cert_images_found": 6,
+    "detection_rate": "75.0%",
+    "session_extraction_rate": "0.0%",
+    "item_extraction_rate": "12.5%",
+    "smith_extraction_rate": "25.0%"
+  },
+  "results": [
+    {
+      "listing_id": 14080,
+      "title": "銘 元春 曲芸人物図小柄 保存刀装具",
+      "db_cert_type": "Hozon",
+      "image_count": 2,
+      "cert_found": true,
+      "cert_image_index": 0,
+      "cert_data": {
+        "is_cert": true,
+        "confidence": 0.9,
+        "cert_type": "hozon",
+        "session": null,
+        "item": "02200311",
+        "smith": "備中小田原森政宗",
+        "reason": "Japanese certificate with red seal, vertical text, item number visible, smith attribution present"
+      },
+      "all_analyses": [
+        {
+          "index": 0,
+          "filename": "motoharu_b.jpg",
+          "is_cert": true,
+          "confidence": 0.9,
+          "cert_type": "hozon",
+          "session": null,
+          "item": "02200311",
+          "smith": "備中小田原森政宗",
+          "reason": "Japanese certificate with red seal, vertical text, item number visible, smith attribution present"
+        },
+        {
+          "index": 1,
+          "filename": "motoharu_z.jpg",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "Images show sword blades, fittings, and storage boxes - no paper documents with Japanese text and red seals visible"
+        }
+      ]
+    },
+    {
+      "listing_id": 9637,
+      "title": "国宗 在銘太刀 重要刀剣",
+      "db_cert_type": "Juyo",
+      "image_count": 2,
+      "cert_found": true,
+      "cert_image_index": 0,
+      "cert_data": {
+        "is_cert": true,
+        "confidence": 0.9,
+        "cert_type": "hozon",
+        "session": null,
+        "item": null,
+        "smith": "備前国住長船与三左衛門尉祐定",
+        "reason": "Yellow paper with Japanese vertical text, red seal visible, appears to be NBTHK hozon certificate"
+      },
+      "all_analyses": [
+        {
+          "index": 0,
+          "filename": "kunimune_b.jpg",
+          "is_cert": true,
+          "confidence": 0.9,
+          "cert_type": "hozon",
+          "session": null,
+          "item": null,
+          "smith": "備前国住長船与三左衛門尉祐定",
+          "reason": "Yellow paper with Japanese vertical text, red seal visible, appears to be NBTHK hozon certificate"
+        },
+        {
+          "index": 1,
+          "filename": "kunimune_z.jpg",
+          "error": "400 {\"type\":\"error\",\"error\":{\"type\":\"invalid_request_error\",\"message\":\"messages.0.content.0.image.so"
+        }
+      ]
+    },
+    {
+      "listing_id": 8463,
+      "title": "赤坂 柳樹透鍔/鐔 特別保存刀装具",
+      "db_cert_type": "TokuHozon",
+      "image_count": 2,
+      "cert_found": false,
+      "cert_image_index": null,
+      "cert_data": null,
+      "all_analyses": [
+        {
+          "index": 0,
+          "filename": "akasakayanagi_a.jpg",
+          "is_cert": false,
+          "confidence": 1,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a tsuba (sword guard) with decorative cutouts, not a paper document"
+        },
+        {
+          "index": 1,
+          "filename": "akasakayanagi_z.jpg",
+          "error": "400 {\"type\":\"error\",\"error\":{\"type\":\"invalid_request_error\",\"message\":\"messages.0.content.0.image.so"
+        }
+      ]
+    },
+    {
+      "listing_id": 8461,
+      "title": "尾張 菊透鍔/鐔",
+      "db_cert_type": "Hozon",
+      "image_count": 1,
+      "cert_found": false,
+      "cert_image_index": null,
+      "cert_data": null,
+      "all_analyses": [
+        {
+          "index": 0,
+          "filename": "kiku_1-6.jpg",
+          "is_cert": false,
+          "confidence": 1,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a metal tsuba (sword guard) with decorative cutout patterns, not a paper certification document"
+        }
+      ]
+    },
+    {
+      "listing_id": 7712,
+      "title": "銘 皆山応起 東大寺柱潜り図小柄 保存刀装具",
+      "db_cert_type": "Hozon",
+      "image_count": 2,
+      "cert_found": true,
+      "cert_image_index": 0,
+      "cert_data": {
+        "is_cert": true,
+        "confidence": 0.9,
+        "cert_type": "hozon",
+        "session": null,
+        "item": null,
+        "smith": null,
+        "reason": "Document shows Japanese text, red seal visible, appears to be NBTHK hozon certificate format with sword image"
+      },
+      "all_analyses": [
+        {
+          "index": 0,
+          "filename": "ouki_b.jpg",
+          "is_cert": true,
+          "confidence": 0.9,
+          "cert_type": "hozon",
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "Document shows Japanese text, red seal visible, appears to be NBTHK hozon certificate format with sword image"
+        },
+        {
+          "index": 1,
+          "filename": "ouki_z.jpg",
+          "error": "400 {\"type\":\"error\",\"error\":{\"type\":\"invalid_request_error\",\"message\":\"messages.0.content.0.image.so"
+        }
+      ]
+    },
+    {
+      "listing_id": 6305,
+      "title": "二王 太刀 特別保存刀剣",
+      "db_cert_type": "TokuHozon",
+      "image_count": 2,
+      "cert_found": true,
+      "cert_image_index": 0,
+      "cert_data": {
+        "is_cert": true,
+        "confidence": 0.95,
+        "cert_type": "hozon",
+        "session": null,
+        "item": null,
+        "smith": null,
+        "reason": "Clear Japanese certification document with vertical text, red seal, and formal layout typical of NBTHK papers, though specific details not fully legible in image"
+      },
+      "all_analyses": [
+        {
+          "index": 0,
+          "filename": "niou_b.jpg",
+          "is_cert": true,
+          "confidence": 0.95,
+          "cert_type": "hozon",
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "Clear Japanese certification document with vertical text, red seal, and formal layout typical of NBTHK papers, though specific details not fully legible in image"
+        },
+        {
+          "index": 1,
+          "filename": "niou_z1.jpg",
+          "error": "400 {\"type\":\"error\",\"error\":{\"type\":\"invalid_request_error\",\"message\":\"messages.0.content.0.image.so"
+        }
+      ]
+    },
+    {
+      "listing_id": 5670,
+      "title": "長州顕国 刀 特別保存刀剣",
+      "db_cert_type": "TokuHozon",
+      "image_count": 2,
+      "cert_found": true,
+      "cert_image_index": 0,
+      "cert_data": {
+        "is_cert": true,
+        "confidence": 0.9,
+        "cert_type": "other",
+        "session": null,
+        "item": null,
+        "smith": null,
+        "reason": "Japanese sword certificate with vertical text, red seal visible, but specific details not clearly legible in image"
+      },
+      "all_analyses": [
+        {
+          "index": 0,
+          "filename": "akikuni_b.jpg",
+          "is_cert": true,
+          "confidence": 0.9,
+          "cert_type": "other",
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "Japanese sword certificate with vertical text, red seal visible, but specific details not clearly legible in image"
+        },
+        {
+          "index": 1,
+          "filename": "akikuni_z.jpg",
+          "error": "400 {\"type\":\"error\",\"error\":{\"type\":\"invalid_request_error\",\"message\":\"messages.0.content.0.image.so"
+        }
+      ]
+    },
+    {
+      "listing_id": 5666,
+      "title": "当麻 刀 重要刀剣",
+      "db_cert_type": "Juyo",
+      "image_count": 2,
+      "cert_found": true,
+      "cert_image_index": 0,
+      "cert_data": {
+        "is_cert": true,
+        "confidence": 0.9,
+        "cert_type": "hozon",
+        "session": null,
+        "item": null,
+        "smith": null,
+        "reason": "Japanese certificate document with vertical text and red seal visible, appears to be sword authentication paper"
+      },
+      "all_analyses": [
+        {
+          "index": 0,
+          "filename": "887064taima_b.jpeg",
+          "is_cert": true,
+          "confidence": 0.9,
+          "cert_type": "hozon",
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "Japanese certificate document with vertical text and red seal visible, appears to be sword authentication paper"
+        },
+        {
+          "index": 1,
+          "filename": "887064taima_z.jpeg",
+          "error": "400 {\"type\":\"error\",\"error\":{\"type\":\"invalid_request_error\",\"message\":\"messages.0.content.0.image.so"
+        }
+      ]
+    }
+  ]
+}

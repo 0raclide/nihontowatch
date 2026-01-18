@@ -1,0 +1,239 @@
+{
+  "dealer": "www.kusanaginosya.com",
+  "timestamp": "2026-01-18T12:14:30.462Z",
+  "summary": {
+    "listings_tested": 8,
+    "total_images": 8,
+    "cert_images_found": 6,
+    "detection_rate": "75.0%",
+    "session_extraction_rate": "0.0%",
+    "item_extraction_rate": "0.0%",
+    "smith_extraction_rate": "0.0%"
+  },
+  "results": [
+    {
+      "listing_id": 11825,
+      "title": "後藤就乗の門人義経弁慶図目貫『山崎一賀』保存刀装具",
+      "db_cert_type": "Hozon",
+      "image_count": 1,
+      "cert_found": true,
+      "cert_image_index": 0,
+      "cert_data": {
+        "is_cert": true,
+        "confidence": 0.85,
+        "cert_type": "hozon",
+        "session": null,
+        "item": null,
+        "smith": null,
+        "reason": "Japanese document with vertical text and red seal visible, appears to be sword certification but specific details obscured by SOLD OUT overlay"
+      },
+      "all_analyses": [
+        {
+          "index": 0,
+          "filename": "itiga15.jpg",
+          "is_cert": true,
+          "confidence": 0.85,
+          "cert_type": "hozon",
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "Japanese document with vertical text and red seal visible, appears to be sword certification but specific details obscured by SOLD OUT overlay"
+        }
+      ]
+    },
+    {
+      "listing_id": 11036,
+      "title": "最高傑作松尽菊花唐草図鍔『阿波献上』特別保存刀装具",
+      "db_cert_type": "TokuHozon",
+      "image_count": 1,
+      "cert_found": true,
+      "cert_image_index": 0,
+      "cert_data": {
+        "is_cert": true,
+        "confidence": 0.9,
+        "cert_type": "other",
+        "session": null,
+        "item": null,
+        "smith": null,
+        "reason": "Japanese document with vertical text and what appears to be certification format, but specific details not clearly visible due to image quality"
+      },
+      "all_analyses": [
+        {
+          "index": 0,
+          "filename": "awa6.jpg",
+          "is_cert": true,
+          "confidence": 0.9,
+          "cert_type": "other",
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "Japanese document with vertical text and what appears to be certification format, but specific details not clearly visible due to image quality"
+        }
+      ]
+    },
+    {
+      "listing_id": 10554,
+      "title": "稀少平安時代の名工在銘古波平『行安』保存刀剣",
+      "db_cert_type": "Hozon",
+      "image_count": 1,
+      "cert_found": false,
+      "cert_image_index": null,
+      "cert_data": null,
+      "all_analyses": [
+        {
+          "index": 0,
+          "filename": "konamihei3.jpg",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "Image shows sword blades with 'SOLD OUT' overlay, not a certification document"
+        }
+      ]
+    },
+    {
+      "listing_id": 10552,
+      "title": "業物映り見事長船『春光』保存刀剣拵え付",
+      "db_cert_type": "Hozon",
+      "image_count": 1,
+      "cert_found": false,
+      "cert_image_index": null,
+      "cert_data": null,
+      "all_analyses": [
+        {
+          "index": 0,
+          "filename": "harunitu4.jpg",
+          "is_cert": false,
+          "confidence": 0.9,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "Image shows sword blades with 'SOLD OUT' overlay, not a certification document"
+        }
+      ]
+    },
+    {
+      "listing_id": 10549,
+      "title": "素晴らしい出来の藤島保存刀剣傑作刀",
+      "db_cert_type": "Hozon",
+      "image_count": 1,
+      "cert_found": true,
+      "cert_image_index": 0,
+      "cert_data": {
+        "is_cert": true,
+        "confidence": 0.95,
+        "cert_type": "hozon",
+        "session": null,
+        "item": null,
+        "smith": null,
+        "reason": "Japanese certificate document with vertical text and proper format, but specific details obscured by SOLD OUT overlay"
+      },
+      "all_analyses": [
+        {
+          "index": 0,
+          "filename": "hujisimameinn4.jpg",
+          "is_cert": true,
+          "confidence": 0.95,
+          "cert_type": "hozon",
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "Japanese certificate document with vertical text and proper format, but specific details obscured by SOLD OUT overlay"
+        }
+      ]
+    },
+    {
+      "listing_id": 10547,
+      "title": "最上大業物三代陸奥『肥前国陸奥守忠吉』特別保存刀剣",
+      "db_cert_type": "TokuHozon",
+      "image_count": 1,
+      "cert_found": true,
+      "cert_image_index": 0,
+      "cert_data": {
+        "is_cert": true,
+        "confidence": 0.85,
+        "cert_type": "hozon",
+        "session": null,
+        "item": null,
+        "smith": null,
+        "reason": "Japanese certification document with vertical text and official format visible, but specific details obscured by SOLDOUT overlay"
+      },
+      "all_analyses": [
+        {
+          "index": 0,
+          "filename": "tadayosiwaki4.jpg",
+          "is_cert": true,
+          "confidence": 0.85,
+          "cert_type": "hozon",
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "Japanese certification document with vertical text and official format visible, but specific details obscured by SOLDOUT overlay"
+        }
+      ]
+    },
+    {
+      "listing_id": 10544,
+      "title": "新刀上々作大業物『近江大掾藤原忠広』保存刀剣",
+      "db_cert_type": "Hozon",
+      "image_count": 1,
+      "cert_found": true,
+      "cert_image_index": 0,
+      "cert_data": {
+        "is_cert": true,
+        "confidence": 0.9,
+        "cert_type": "hozon",
+        "session": null,
+        "item": null,
+        "smith": null,
+        "reason": "Document shows Japanese certificate format with vertical text and red SOLDOUT overlay, but specific details are not clearly legible"
+      },
+      "all_analyses": [
+        {
+          "index": 0,
+          "filename": "oumidaijyou4.jpg",
+          "is_cert": true,
+          "confidence": 0.9,
+          "cert_type": "hozon",
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "Document shows Japanese certificate format with vertical text and red SOLDOUT overlay, but specific details are not clearly legible"
+        }
+      ]
+    },
+    {
+      "listing_id": 10536,
+      "title": "重要刀剣『法華兼安』大帽子素晴らしい大杢目肌の名刀",
+      "db_cert_type": "Juyo",
+      "image_count": 1,
+      "cert_found": true,
+      "cert_image_index": 0,
+      "cert_data": {
+        "is_cert": true,
+        "confidence": 0.9,
+        "cert_type": "other",
+        "session": null,
+        "item": null,
+        "smith": null,
+        "reason": "Shows Japanese certification document with vertical text and red seal, but specific details not clearly readable in image"
+      },
+      "all_analyses": [
+        {
+          "index": 0,
+          "filename": "hoxtuke4.jpg",
+          "is_cert": true,
+          "confidence": 0.9,
+          "cert_type": "other",
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "Shows Japanese certification document with vertical text and red seal, but specific details not clearly readable in image"
+        }
+      ]
+    }
+  ]
+}

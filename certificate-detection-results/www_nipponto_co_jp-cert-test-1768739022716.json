@@ -1,0 +1,246 @@
+{
+  "dealer": "www.nipponto.co.jp",
+  "timestamp": "2026-01-18T12:23:42.716Z",
+  "summary": {
+    "listings_tested": 1,
+    "total_images": 20,
+    "cert_images_found": 0,
+    "detection_rate": "0.0%",
+    "session_extraction_rate": "0.0%",
+    "item_extraction_rate": "0.0%",
+    "smith_extraction_rate": "0.0%"
+  },
+  "results": [
+    {
+      "listing_id": 13887,
+      "title": "則光（重要刀剣） Norimitsu",
+      "db_cert_type": "Juyo",
+      "image_count": 20,
+      "cert_found": false,
+      "cert_image_index": null,
+      "cert_data": null,
+      "all_analyses": [
+        {
+          "index": 0,
+          "filename": "2312_01.jpg",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a photograph of an actual sword blade, not a paper certificate document"
+        },
+        {
+          "index": 1,
+          "filename": "2312_02.jpg",
+          "is_cert": false,
+          "confidence": 1,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a photograph of an actual sword blade, not a paper certification document"
+        },
+        {
+          "index": 2,
+          "filename": "2312_03.jpg",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a photograph of a sword blade showing the hamon (temper line), not a paper certification document"
+        },
+        {
+          "index": 3,
+          "filename": "2312_04.jpg",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This appears to be a cross-sectional view or microscopic image of a sword blade edge, not a paper certificate document"
+        },
+        {
+          "index": 4,
+          "filename": "2312_05.jpg",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "Image shows what appears to be a sword blade edge/hamon pattern, not a paper document"
+        },
+        {
+          "index": 5,
+          "filename": "2312_06.jpg",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "Image shows what appears to be a sword blade edge or hamon pattern, not a paper document or certificate"
+        },
+        {
+          "index": 6,
+          "filename": "2312_07.jpg",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This appears to be a cross-sectional image of a sword blade showing the hamon (temper line), not a paper certificate document"
+        },
+        {
+          "index": 7,
+          "filename": "2312_08.jpg",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "Shows sword blade edge/hamon, not a paper document"
+        },
+        {
+          "index": 8,
+          "filename": "2312_09.jpg",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This appears to be a sword blade tang (nakago) with a hole (mekugi-ana), not a paper certificate document"
+        },
+        {
+          "index": 9,
+          "filename": "2312_10.jpg",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "Image shows what appears to be a metal blade or tang with holes, not a paper document"
+        },
+        {
+          "index": 10,
+          "filename": "2312_11.jpg",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "Image shows a sword blade cross-section or edge, not a paper document"
+        },
+        {
+          "index": 11,
+          "filename": "2312_12.jpg",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This appears to be a sword blade edge, not a paper document or certificate"
+        },
+        {
+          "index": 12,
+          "filename": "2312_13.jpg",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This appears to be a close-up photograph of a sword blade edge/hamon, not a paper certificate document"
+        },
+        {
+          "index": 13,
+          "filename": "2312_14.jpg",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This appears to be a close-up photograph of a sword blade edge/hamon, not a paper certificate document"
+        },
+        {
+          "index": 14,
+          "filename": "2312_15.jpg",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This appears to be a photograph of a sword blade edge/hamon, not a paper document or certificate"
+        },
+        {
+          "index": 15,
+          "filename": "2312_16.jpg",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This appears to be a cross-sectional image of a sword blade showing the hamon (temper line), not a paper certificate document"
+        },
+        {
+          "index": 16,
+          "filename": "2312_17.jpg",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This appears to be a sword blade or tang, not a paper certificate document"
+        },
+        {
+          "index": 17,
+          "filename": "2312_18.jpg",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This appears to be a sword tang/nakago with holes and inscriptions, not a paper certificate document"
+        },
+        {
+          "index": 18,
+          "filename": "2312_19.jpg",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a photograph of an actual sword blade showing the hamon (temper line), not a paper certificate document"
+        },
+        {
+          "index": 19,
+          "filename": "2312_20.jpg",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This appears to be a sword blade photograph, not a certification document - no visible paper, Japanese text, or red seals"
+        }
+      ]
+    }
+  ]
+}

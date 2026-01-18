@@ -1,0 +1,733 @@
+{
+  "dealer": "www.nipponto.co.jp",
+  "timestamp": "2026-01-18T12:16:07.098Z",
+  "summary": {
+    "listings_tested": 8,
+    "total_images": 126,
+    "cert_images_found": 0,
+    "detection_rate": "0.0%",
+    "session_extraction_rate": "0.0%",
+    "item_extraction_rate": "0.0%",
+    "smith_extraction_rate": "0.0%"
+  },
+  "results": [
+    {
+      "listing_id": 13887,
+      "title": "則光（重要刀剣） Norimitsu",
+      "db_cert_type": "Juyo",
+      "image_count": 20,
+      "cert_found": false,
+      "cert_image_index": null,
+      "cert_data": null,
+      "all_analyses": [
+        {
+          "index": 0,
+          "filename": "2312_01.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 1,
+          "filename": "2312_02.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 2,
+          "filename": "2312_03.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 3,
+          "filename": "2312_04.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 4,
+          "filename": "2312_05.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 5,
+          "filename": "2312_06.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 6,
+          "filename": "2312_07.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 7,
+          "filename": "2312_08.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 8,
+          "filename": "2312_09.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 9,
+          "filename": "2312_10.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 10,
+          "filename": "2312_11.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 11,
+          "filename": "2312_12.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 12,
+          "filename": "2312_13.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 13,
+          "filename": "2312_14.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 14,
+          "filename": "2312_15.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 15,
+          "filename": "2312_16.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 16,
+          "filename": "2312_17.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 17,
+          "filename": "2312_18.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 18,
+          "filename": "2312_19.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 19,
+          "filename": "2312_20.jpg",
+          "error": "fetch failed"
+        }
+      ]
+    },
+    {
+      "listing_id": 11901,
+      "title": "御賜の刀 大阪住人月山貞勝謹作 大正十五年三月吉日",
+      "db_cert_type": "Hozon",
+      "image_count": 20,
+      "cert_found": false,
+      "cert_image_index": null,
+      "cert_data": null,
+      "all_analyses": [
+        {
+          "index": 0,
+          "filename": "2381_01.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 1,
+          "filename": "2381_02.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 2,
+          "filename": "2381_16.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 3,
+          "filename": "2381_17.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 4,
+          "filename": "2381_03.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 5,
+          "filename": "2381_04.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 6,
+          "filename": "2381_05.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 7,
+          "filename": "2381_06.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 8,
+          "filename": "2381_07.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 9,
+          "filename": "2381_08.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 10,
+          "filename": "2381_18.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 11,
+          "filename": "2381_09.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 12,
+          "filename": "2381_10.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 13,
+          "filename": "2381_11.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 14,
+          "filename": "2381_12.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 15,
+          "filename": "2381_13.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 16,
+          "filename": "2381_14.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 17,
+          "filename": "2381_19.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 18,
+          "filename": "2381_20.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 19,
+          "filename": "2381_15.jpg",
+          "error": "fetch failed"
+        }
+      ]
+    },
+    {
+      "listing_id": 11117,
+      "title": "日本刀 国行(山城京来派の祖)(杉山茂丸男爵家伝来)(重要刀剣) Kuniyuki(Rai)",
+      "db_cert_type": "Juyo",
+      "image_count": 20,
+      "cert_found": false,
+      "cert_image_index": null,
+      "cert_data": null,
+      "all_analyses": [
+        {
+          "index": 0,
+          "filename": "2509_01.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 1,
+          "filename": "2509_02.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 2,
+          "filename": "2509_03.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 3,
+          "filename": "2509_04.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 4,
+          "filename": "2509_05.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 5,
+          "filename": "2509_06.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 6,
+          "filename": "2509_07.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 7,
+          "filename": "2509_08.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 8,
+          "filename": "2509_09.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 9,
+          "filename": "2509_10.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 10,
+          "filename": "2509_11.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 11,
+          "filename": "2509_12.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 12,
+          "filename": "2509_13.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 13,
+          "filename": "2509_14.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 14,
+          "filename": "2509_15.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 15,
+          "filename": "2509_16.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 16,
+          "filename": "2509_17.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 17,
+          "filename": "2509_18.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 18,
+          "filename": "2509_19.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 19,
+          "filename": "2509_20.jpg",
+          "error": "fetch failed"
+        }
+      ]
+    },
+    {
+      "listing_id": 10766,
+      "title": "日本刀 筑前住源信国吉包(演歌歌手村田英雄先生旧蔵品) Chikuzenju Minamoto Nobukuni Yos",
+      "db_cert_type": "TokuHozon",
+      "image_count": 20,
+      "cert_found": false,
+      "cert_image_index": null,
+      "cert_data": null,
+      "all_analyses": [
+        {
+          "index": 0,
+          "filename": "689_01.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 1,
+          "filename": "689_02.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 2,
+          "filename": "689_03.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 3,
+          "filename": "689_04.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 4,
+          "filename": "689_05.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 5,
+          "filename": "689_06.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 6,
+          "filename": "689_07.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 7,
+          "filename": "689_08.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 8,
+          "filename": "689_09.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 9,
+          "filename": "689_10.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 10,
+          "filename": "689_11.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 11,
+          "filename": "689_12.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 12,
+          "filename": "689_13.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 13,
+          "filename": "689_14.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 14,
+          "filename": "689_15.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 15,
+          "filename": "689_16.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 16,
+          "filename": "689_17.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 17,
+          "filename": "689_18.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 18,
+          "filename": "689_19.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 19,
+          "filename": "689_20.jpg",
+          "error": "fetch failed"
+        }
+      ]
+    },
+    {
+      "listing_id": 10765,
+      "title": "小柄 k-15 大森英彦(花押) 秋草の図 銀磨地 毛彫 平象嵌(保存刀装具)",
+      "db_cert_type": "Hozon",
+      "image_count": 3,
+      "cert_found": false,
+      "cert_image_index": null,
+      "cert_data": null,
+      "all_analyses": [
+        {
+          "index": 0,
+          "filename": "k-15_01.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 1,
+          "filename": "k-15_02.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 2,
+          "filename": "k-15_03.jpg",
+          "error": "fetch failed"
+        }
+      ]
+    },
+    {
+      "listing_id": 10762,
+      "title": "日本刀 藤原国隆作(山上播磨守国隆)(井上真改の師) Fujiwara Kunitaka",
+      "db_cert_type": "Hozon",
+      "image_count": 20,
+      "cert_found": false,
+      "cert_image_index": null,
+      "cert_data": null,
+      "all_analyses": [
+        {
+          "index": 0,
+          "filename": "3017_01.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 1,
+          "filename": "3017_02.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 2,
+          "filename": "3017_03.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 3,
+          "filename": "3017_04.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 4,
+          "filename": "3017_05.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 5,
+          "filename": "3017_06.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 6,
+          "filename": "3017_07.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 7,
+          "filename": "3017_08.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 8,
+          "filename": "3017_09.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 9,
+          "filename": "3017_10.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 10,
+          "filename": "3017_11.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 11,
+          "filename": "3017_12.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 12,
+          "filename": "3017_13.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 13,
+          "filename": "3017_14.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 14,
+          "filename": "3017_21.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 15,
+          "filename": "3017_22.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 16,
+          "filename": "3017_23.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 17,
+          "filename": "3017_24.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 18,
+          "filename": "3017_25.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 19,
+          "filename": "3017_26.jpg",
+          "error": "fetch failed"
+        }
+      ]
+    },
+    {
+      "listing_id": 10761,
+      "title": "日本刀 常陽笠間士高木源正行 明治三午年二月日 Joyokasamashi Takagi Minamoto Masayu",
+      "db_cert_type": "TokuHozon",
+      "image_count": 20,
+      "cert_found": false,
+      "cert_image_index": null,
+      "cert_data": null,
+      "all_analyses": [
+        {
+          "index": 0,
+          "filename": "2530_01.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 1,
+          "filename": "2530_02.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 2,
+          "filename": "2530_03.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 3,
+          "filename": "2530_04.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 4,
+          "filename": "2530_05.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 5,
+          "filename": "2530_06.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 6,
+          "filename": "2530_07.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 7,
+          "filename": "2530_08.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 8,
+          "filename": "2530_09.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 9,
+          "filename": "2530_10.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 10,
+          "filename": "2530_11.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 11,
+          "filename": "2530_12.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 12,
+          "filename": "2530_13.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 13,
+          "filename": "2530_14.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 14,
+          "filename": "2530_15.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 15,
+          "filename": "2530_16.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 16,
+          "filename": "2530_30.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 17,
+          "filename": "2530_29.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 18,
+          "filename": "2530_17.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 19,
+          "filename": "2530_18.jpg",
+          "error": "fetch failed"
+        }
+      ]
+    },
+    {
+      "listing_id": 10756,
+      "title": "t-147 雁繋透鐔(尾張)(特別貴重刀装具) 鉄地",
+      "db_cert_type": "TokuKicho",
+      "image_count": 3,
+      "cert_found": false,
+      "cert_image_index": null,
+      "cert_data": null,
+      "all_analyses": [
+        {
+          "index": 0,
+          "filename": "t-147_01.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 1,
+          "filename": "t-147_02.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 2,
+          "filename": "t-147_03.jpg",
+          "error": "fetch failed"
+        }
+      ]
+    }
+  ]
+}

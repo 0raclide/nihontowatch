@@ -1,0 +1,491 @@
+{
+  "dealer": "www.aoijapan.com",
+  "timestamp": "2026-01-18T12:18:28.494Z",
+  "summary": {
+    "listings_tested": 8,
+    "total_images": 35,
+    "cert_images_found": 11,
+    "detection_rate": "100.0%",
+    "session_extraction_rate": "12.5%",
+    "item_extraction_rate": "75.0%",
+    "smith_extraction_rate": "100.0%"
+  },
+  "results": [
+    {
+      "listing_id": 14077,
+      "title": "Katana: Hizen Kuni Kawachi Kami Fujiwara Masahiro(2nd Genera",
+      "db_cert_type": "TokuHozon",
+      "image_count": 8,
+      "cert_found": true,
+      "cert_image_index": 6,
+      "cert_data": {
+        "is_cert": true,
+        "confidence": 0.95,
+        "cert_type": "other",
+        "session": null,
+        "item": null,
+        "smith": "池田義重",
+        "reason": "Japanese document with vertical text, red seals, and smith attribution visible"
+      },
+      "all_analyses": [
+        {
+          "index": 0,
+          "filename": "23634-2.jpg",
+          "error": "400 {\"type\":\"error\",\"error\":{\"type\":\"invalid_request_error\",\"message\":\"messages.0.content.0.image.so"
+        },
+        {
+          "index": 1,
+          "filename": "23634-3.jpg",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "Image shows multiple sword blade cross-sections and physical blade segments, not a paper certificate document"
+        },
+        {
+          "index": 2,
+          "filename": "23634-4.jpg",
+          "error": "400 {\"type\":\"error\",\"error\":{\"type\":\"invalid_request_error\",\"message\":\"messages.0.content.0.image.so"
+        },
+        {
+          "index": 3,
+          "filename": "23634koshirae.jpg",
+          "error": "400 {\"type\":\"error\",\"error\":{\"type\":\"invalid_request_error\",\"message\":\"messages.0.content.0.image.so"
+        },
+        {
+          "index": 4,
+          "filename": "23634paper-1.jpg",
+          "is_cert": true,
+          "confidence": 0.95,
+          "cert_type": "hozon",
+          "session": null,
+          "item": "46095",
+          "smith": "肥前国河内守藤原正広",
+          "reason": "Japanese certificate with vertical text, red seals, contains 保存刀剣 indicating hozon level certification"
+        },
+        {
+          "index": 5,
+          "filename": "23634paper-2.jpg",
+          "is_cert": true,
+          "confidence": 0.95,
+          "cert_type": "hozon",
+          "session": null,
+          "item": "4021013",
+          "smith": "大森英満",
+          "reason": "Japanese sword certificate with vertical text, red seals, item number 4021013, and smith attribution to Omori Hidemitsu"
+        },
+        {
+          "index": 6,
+          "filename": "23634paper-3.jpg",
+          "is_cert": true,
+          "confidence": 0.95,
+          "cert_type": "other",
+          "session": null,
+          "item": null,
+          "smith": "池田義重",
+          "reason": "Japanese document with vertical text, red seals, and smith attribution visible"
+        },
+        {
+          "index": 7,
+          "filename": "23634_p.jpg",
+          "is_cert": false,
+          "confidence": 1,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a photograph of a person examining actual sword blades, not a certification document"
+        }
+      ]
+    },
+    {
+      "listing_id": 14076,
+      "title": "Katana: Mumei(Den Motoshige)(NBTHK Tokubetsu Hozon Token)",
+      "db_cert_type": "TokuHozon",
+      "image_count": 7,
+      "cert_found": true,
+      "cert_image_index": 3,
+      "cert_data": {
+        "is_cert": true,
+        "confidence": 0.95,
+        "cert_type": "hozon",
+        "session": null,
+        "item": "10095586",
+        "smith": "青湖",
+        "reason": "Japanese sword certificate with red seals, vertical text, and hozon preservation level indicated"
+      },
+      "all_analyses": [
+        {
+          "index": 0,
+          "filename": "25644-2.jpg",
+          "error": "400 {\"type\":\"error\",\"error\":{\"type\":\"invalid_request_error\",\"message\":\"messages.0.content.0.image.so"
+        },
+        {
+          "index": 1,
+          "filename": "25644-3.jpg",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This shows sword blade components and metal fittings, not a paper certificate document"
+        },
+        {
+          "index": 2,
+          "filename": "25644-4.jpg",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This appears to be a close-up photograph of a metal sword blade or tang with spiral/curved ridged patterns, not a paper document or certificate"
+        },
+        {
+          "index": 3,
+          "filename": "25644paper-1.jpg",
+          "is_cert": true,
+          "confidence": 0.95,
+          "cert_type": "hozon",
+          "session": null,
+          "item": "10095586",
+          "smith": "青湖",
+          "reason": "Japanese sword certificate with red seals, vertical text, and hozon preservation level indicated"
+        },
+        {
+          "index": 4,
+          "filename": "25644paper-2.jpg",
+          "error": "fetch_failed",
+          "status": 404
+        },
+        {
+          "index": 5,
+          "filename": "25644sayagaki.jpg",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "These are bamboo items with Japanese calligraphy, not sword certification documents - no red seals, no certification terminology visible"
+        },
+        {
+          "index": 6,
+          "filename": "25644_p.jpg",
+          "error": "fetch_failed",
+          "status": 404
+        }
+      ]
+    },
+    {
+      "listing_id": 8212,
+      "title": "Tanto: Gassan Sadakazu (Kokuin \"Sada\")(NBTHK Tokubetsu Hozon",
+      "db_cert_type": "TokuHozon",
+      "image_count": 8,
+      "cert_found": true,
+      "cert_image_index": 4,
+      "cert_data": {
+        "is_cert": true,
+        "confidence": 0.95,
+        "cert_type": "hozon",
+        "session": null,
+        "item": "115768",
+        "smith": "月山貞一",
+        "reason": "Japanese sword certificate with vertical text, red seals, mentions 保存刀剣, shows tanto blade photo, and includes official numbering"
+      },
+      "all_analyses": [
+        {
+          "index": 0,
+          "filename": "24345-2.jpg",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This shows actual sword blades with inscriptions, not a paper certificate document"
+        },
+        {
+          "index": 1,
+          "filename": "24345-3.jpg",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "These are X-ray or photographic images of sword blades showing tang inscriptions and blade geometry, not certification documents"
+        },
+        {
+          "index": 2,
+          "filename": "24345-4.jpg",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "Image shows metal sword blade with engravings, not paper certificate document"
+        },
+        {
+          "index": 3,
+          "filename": "24345koshirae.jpg",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "These are sword fittings and components with rayskin wrapping and red lacquer, not certification documents"
+        },
+        {
+          "index": 4,
+          "filename": "24345paper-1.jpg",
+          "is_cert": true,
+          "confidence": 0.95,
+          "cert_type": "hozon",
+          "session": null,
+          "item": "115768",
+          "smith": "月山貞一",
+          "reason": "Japanese sword certificate with vertical text, red seals, mentions 保存刀剣, shows tanto blade photo, and includes official numbering"
+        },
+        {
+          "index": 5,
+          "filename": "24345paper-2.jpg",
+          "error": "fetch_failed",
+          "status": 404
+        },
+        {
+          "index": 6,
+          "filename": "24345sayagaki.jpg",
+          "error": "fetch_failed",
+          "status": 404
+        },
+        {
+          "index": 7,
+          "filename": "24345_p.jpg",
+          "error": "fetch_failed",
+          "status": 404
+        }
+      ]
+    },
+    {
+      "listing_id": 7785,
+      "title": "Tsuba:Bushu Ju Akasaka/Hikojuro Tadatoki Saku(NBTHK Tokubets",
+      "db_cert_type": "TokuHozon",
+      "image_count": 2,
+      "cert_found": true,
+      "cert_image_index": 1,
+      "cert_data": {
+        "is_cert": true,
+        "confidence": 0.95,
+        "cert_type": "other",
+        "session": null,
+        "item": "224509",
+        "smith": "一雨龍逸鐔",
+        "reason": "Japanese document with vertical text, red seals, photos of tsuba (sword guard), contains 鑑定書 (appraisal certificate), item number 224509 visible"
+      },
+      "all_analyses": [
+        {
+          "index": 0,
+          "filename": "F22519.jpg",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "These are tsuba (sword guards) - metal fittings with decorative cutouts, not paper certification documents"
+        },
+        {
+          "index": 1,
+          "filename": "F22519paper-1.jpg",
+          "is_cert": true,
+          "confidence": 0.95,
+          "cert_type": "other",
+          "session": null,
+          "item": "224509",
+          "smith": "一雨龍逸鐔",
+          "reason": "Japanese document with vertical text, red seals, photos of tsuba (sword guard), contains 鑑定書 (appraisal certificate), item number 224509 visible"
+        }
+      ]
+    },
+    {
+      "listing_id": 7773,
+      "title": "Tsuba:Mumei(judged as Nishigaki Kanshiro)(NBTHK the 48th Juy",
+      "db_cert_type": "Juyo",
+      "image_count": 4,
+      "cert_found": true,
+      "cert_image_index": 2,
+      "cert_data": {
+        "is_cert": true,
+        "confidence": 0.95,
+        "cert_type": "juyo",
+        "session": 48,
+        "item": null,
+        "smith": "西垣勘四郎",
+        "reason": "Document shows 重要刀装具 certification with 第四十八回 (48th session), red seal, and attribution to 西垣勘四郎"
+      },
+      "all_analyses": [
+        {
+          "index": 0,
+          "filename": "F23049.jpg",
+          "error": "400 {\"type\":\"error\",\"error\":{\"type\":\"invalid_request_error\",\"message\":\"messages.0.content.0.image.so"
+        },
+        {
+          "index": 1,
+          "filename": "F23049paper-1.jpg",
+          "is_cert": true,
+          "confidence": 0.95,
+          "cert_type": "other",
+          "session": 37,
+          "item": null,
+          "smith": "一枝桐道鐔",
+          "reason": "Japanese certification document with vertical text, red seals, session number 第三十七回, appears to be for tsuba/sword guard rather than blade"
+        },
+        {
+          "index": 2,
+          "filename": "F23049paper-2.jpg",
+          "is_cert": true,
+          "confidence": 0.95,
+          "cert_type": "juyo",
+          "session": 48,
+          "item": null,
+          "smith": "西垣勘四郎",
+          "reason": "Document shows 重要刀装具 certification with 第四十八回 (48th session), red seal, and attribution to 西垣勘四郎"
+        },
+        {
+          "index": 3,
+          "filename": "F23049paper-3.jpg",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a catalog page showing tsuba (sword guards) with paulownia designs, not a certification document"
+        }
+      ]
+    },
+    {
+      "listing_id": 7772,
+      "title": "Tsuba:Mumei(judged as Hayashi Shigemitsu)(NBTHK Tokubetsu Ho",
+      "db_cert_type": "TokuHozon",
+      "image_count": 2,
+      "cert_found": true,
+      "cert_image_index": 1,
+      "cert_data": {
+        "is_cert": true,
+        "confidence": 0.95,
+        "cert_type": "other",
+        "session": null,
+        "item": "2006402",
+        "smith": "林重光",
+        "reason": "Japanese certificate document with red seals, vertical text, item number visible in top right, appears to be tsuba appraisal certificate rather than sword blade certification"
+      },
+      "all_analyses": [
+        {
+          "index": 0,
+          "filename": "F23050.jpg",
+          "error": "400 {\"type\":\"error\",\"error\":{\"type\":\"invalid_request_error\",\"message\":\"messages.0.content.0.image.so"
+        },
+        {
+          "index": 1,
+          "filename": "F23050paper-1.jpg",
+          "is_cert": true,
+          "confidence": 0.95,
+          "cert_type": "other",
+          "session": null,
+          "item": "2006402",
+          "smith": "林重光",
+          "reason": "Japanese certificate document with red seals, vertical text, item number visible in top right, appears to be tsuba appraisal certificate rather than sword blade certification"
+        }
+      ]
+    },
+    {
+      "listing_id": 7766,
+      "title": "Tsuba:Mumei(judged as Kyo Sukashi[Kyoto openwork])(NBTHK Tok",
+      "db_cert_type": "TokuHozon",
+      "image_count": 2,
+      "cert_found": true,
+      "cert_image_index": 1,
+      "cert_data": {
+        "is_cert": true,
+        "confidence": 0.95,
+        "cert_type": "other",
+        "session": null,
+        "item": "2008607",
+        "smith": "無銘 京透",
+        "reason": "Japanese certificate document with vertical text, red seals, shows tsuba images, contains certification language and item numbering"
+      },
+      "all_analyses": [
+        {
+          "index": 0,
+          "filename": "F23393.jpg",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "These are tsuba (sword guards) - metal fittings with openwork designs, not paper certification documents"
+        },
+        {
+          "index": 1,
+          "filename": "F23393paper-1.jpg",
+          "is_cert": true,
+          "confidence": 0.95,
+          "cert_type": "other",
+          "session": null,
+          "item": "2008607",
+          "smith": "無銘 京透",
+          "reason": "Japanese certificate document with vertical text, red seals, shows tsuba images, contains certification language and item numbering"
+        }
+      ]
+    },
+    {
+      "listing_id": 7763,
+      "title": "Tsuba:Mumei(unsigned)(Higo)(NBTHK Tokubetsu Hozon)",
+      "db_cert_type": "TokuHozon",
+      "image_count": 2,
+      "cert_found": true,
+      "cert_image_index": 1,
+      "cert_data": {
+        "is_cert": true,
+        "confidence": 0.95,
+        "cert_type": "nthk",
+        "session": null,
+        "item": "2010142",
+        "smith": "無銘 肥後",
+        "reason": "Japanese certificate with vertical text, red seals, shows tsuba images, contains 鑑定書 and attribution to unsigned Higo work"
+      },
+      "all_analyses": [
+        {
+          "index": 0,
+          "filename": "F23215.jpg",
+          "is_cert": false,
+          "confidence": 1,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "These are images of a tsuba (sword guard) with decorative metalwork, not a certification document"
+        },
+        {
+          "index": 1,
+          "filename": "F23215paper-1.jpg",
+          "is_cert": true,
+          "confidence": 0.95,
+          "cert_type": "nthk",
+          "session": null,
+          "item": "2010142",
+          "smith": "無銘 肥後",
+          "reason": "Japanese certificate with vertical text, red seals, shows tsuba images, contains 鑑定書 and attribution to unsigned Higo work"
+        }
+      ]
+    }
+  ]
+}

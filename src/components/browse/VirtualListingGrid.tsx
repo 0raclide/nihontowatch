@@ -170,6 +170,7 @@ export function VirtualListingGrid({
   const quickView = useQuickViewOptional();
   const loadMoreTriggerRef = useRef<HTMLDivElement>(null);
   const lastListingCountRef = useRef(listings.length);
+  const loadMoreCooldownRef = useRef(false);
 
   // Adaptive virtual scrolling - works for all screen sizes
   // Only enable for infinite scroll mode with larger lists
@@ -214,13 +215,26 @@ export function VirtualListingGrid({
     }
   }, [quickViewListings, quickView]);
 
+  // Store loading state in ref so observer callback can check it without recreating observer
+  const isLoadingMoreRef = useRef(isLoadingMore);
+  isLoadingMoreRef.current = isLoadingMore;
+
   // Infinite scroll trigger - load more when approaching bottom
+  // Observer is NOT recreated when isLoadingMore changes (uses ref instead)
+  // Cooldown prevents rapid re-triggering; reset when new items load
   useEffect(() => {
-    if (!infiniteScroll || !onLoadMore || !hasMore || isLoadingMore) return;
+    if (!infiniteScroll || !onLoadMore || !hasMore) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting) {
+        // Check loading state via ref (avoids recreating observer)
+        // Check cooldown to prevent rapid re-triggering
+        if (
+          entries[0].isIntersecting &&
+          !isLoadingMoreRef.current &&
+          !loadMoreCooldownRef.current
+        ) {
+          loadMoreCooldownRef.current = true;
           onLoadMore();
         }
       },
@@ -233,10 +247,17 @@ export function VirtualListingGrid({
     }
 
     return () => observer.disconnect();
-  }, [infiniteScroll, onLoadMore, hasMore, isLoadingMore]);
+  }, [infiniteScroll, onLoadMore, hasMore]); // Note: isLoadingMore NOT in deps
 
-  // Track listing count changes (for debugging/future use)
+  // Track listing count changes and reset cooldown when new items load
   useEffect(() => {
+    if (listings.length > lastListingCountRef.current) {
+      // New items loaded - reset cooldown so user can trigger more loads
+      // But delay slightly to ensure the DOM has updated
+      setTimeout(() => {
+        loadMoreCooldownRef.current = false;
+      }, 100);
+    }
     lastListingCountRef.current = listings.length;
   }, [listings.length]);
 

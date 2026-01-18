@@ -1,0 +1,195 @@
+{
+  "falsePositives": {
+    "test": "false_positives",
+    "results": [
+      {
+        "listing_id": 19035,
+        "image": "15_eiju_fg.jpg",
+        "detected_as_cert": false,
+        "confidence": 1,
+        "what_seen": "Two decorative metal sword fittings (tsuba or menuki) with relief carvings showing figures, dragons, and ornamental details in dark metal with gold/bronze highlights"
+      },
+      {
+        "listing_id": 6836,
+        "image": "t_tuba2837a.jpg"
+      },
+      {
+        "listing_id": 5179,
+        "image": "09021349_66d543c9db8ad.jpg",
+        "detected_as_cert": false,
+        "confidence": 1,
+        "what_seen": "Two Japanese swords (katana) with their blades and complete fittings/koshirae displayed against a black background. The top shows the bare blades, and the bottom shows the same swords in their decorated scabbards with wrapped handles and ornate fittings featuring circular patterns."
+      },
+      {
+        "listing_id": 14765,
+        "image": "ushi_o600.jpg",
+        "detected_as_cert": false,
+        "confidence": 1,
+        "what_seen": "A circular metal tsuba (sword hand guard) with decorative openwork design featuring what appears to be animals or mythical creatures carved in relief around the central rectangular opening"
+      },
+      {
+        "listing_id": 4328,
+        "image": "000_1a.jpg",
+        "detected_as_cert": false,
+        "confidence": 1,
+        "what_seen": "A Japanese sword blade (likely a katana) photographed against a black background, showing the curved blade with visible hamon (temper line) and what appears to be a wooden handle or tang at the bottom"
+      },
+      {
+        "listing_id": 14776,
+        "image": "eiju1.jpg",
+        "detected_as_cert": false,
+        "confidence": 1,
+        "what_seen": "A circular dark metal tsuba (sword guard) with decorative inlay work showing what appears to be plants or grasses, featuring oval-shaped openings (hitsu-ana) and ornate metalwork with gold/silver accents"
+      },
+      {
+        "listing_id": 6302,
+        "image": "09151355_57da29db7659d.jpg",
+        "detected_as_cert": false,
+        "confidence": 1,
+        "what_seen": "Two sword blades (tangs/nakago) shown side by side against black background, displaying inscriptions and maker's marks"
+      },
+      {
+        "listing_id": 6247,
+        "image": "09151618_57da4b401643f.jpg",
+        "detected_as_cert": false,
+        "confidence": 1,
+        "what_seen": "Two Japanese sword blades (likely katana) displayed horizontally against a black background, showing the curved profile and hamon (temper line) patterns along the cutting edges"
+      },
+      {
+        "listing_id": 6155,
+        "image": "09292208_66f9514e85503.jpg",
+        "detected_as_cert": false,
+        "confidence": 1,
+        "what_seen": "Two Japanese sword blades (katana) at the top showing their curved shape and hamon (temper line), and two complete swords below in their scabbards (saya) with traditional fittings including tsuka (handles) wrapped in what appears to be tan/brown ito (cord wrapping) and circular mon (family crests) on the scabbards"
+      },
+      {
+        "listing_id": 6244,
+        "image": "12031753_5a23bba566dc1.jpg",
+        "detected_as_cert": false,
+        "confidence": 1,
+        "what_seen": "Two photographs of Japanese sword blades - top image shows bare blade profiles against black background, bottom image shows a complete sword with black scabbard, handle wrapping, and blue cord"
+      },
+      {
+        "listing_id": 7255,
+        "image": "1.jpg",
+        "detected_as_cert": false,
+        "confidence": 1,
+        "what_seen": "A Japanese sword (katana) with red lacquered scabbard (saya) and wrapped handle (tsuka), displayed horizontally against black background"
+      },
+      {
+        "listing_id": 6916,
+        "image": "1-koshirae-1.jpg",
+        "detected_as_cert": false,
+        "confidence": 1,
+        "what_seen": "A Japanese katana sword with curved blade, black handle wrapping (tsuka-ito), circular tsuba (hand guard), and what appears to be a dark scabbard (saya). This is a physical sword, not a paper document."
+      },
+      {
+        "listing_id": 24290,
+        "image": "no_oshigata_hirokuni.jpg",
+        "detected_as_cert": false,
+        "confidence": 0.95,
+        "what_seen": "A USB flash drive or memory stick with what appears to be a logo or branding on it, shown against a dark background"
+      },
+      {
+        "listing_id": 14741,
+        "image": "600.jpg",
+        "detected_as_cert": false,
+        "confidence": 0.95,
+        "what_seen": "A dark metallic tsuba (sword guard) with decorative carved or inlaid designs in gold/brass, featuring curved patterns and a central oval opening with keyhole-shaped opening"
+      },
+      {
+        "listing_id": 21677,
+        "image": "shipou1.jpg",
+        "detected_as_cert": false,
+        "confidence": 1,
+        "what_seen": "Two Japanese sword fittings (tsuba or similar) with decorative fish motifs in gold/bronze coloring on dark textured backgrounds"
+      },
+      {
+        "listing_id": 1380,
+        "image": "22187-2.jpg"
+      },
+      {
+        "listing_id": 6221,
+        "image": "11231754_5fbb78c49fa6e.jpg",
+        "detected_as_cert": false,
+        "confidence": 1,
+        "what_seen": "A Japanese sword blade (likely a katana) photographed against a black background, showing the full length of the blade from tang to tip. The blade appears to be polished steel with a visible hamon (temper line) and has mounting holes (mekugi-ana) visible in the tang area."
+      },
+      {
+        "listing_id": 557,
+        "image": "kanayama2_1-1.jpg",
+        "detected_as_cert": false,
+        "confidence": 1,
+        "what_seen": "A black iron tsuba (sword guard) with decorative cutouts in a rounded square shape, featuring openwork design with what appears to be anchor or cross-like motifs"
+      },
+      {
+        "listing_id": 1404,
+        "image": "F24619.jpg",
+        "detected_as_cert": false,
+        "confidence": 1,
+        "what_seen": "Japanese sword tsuba (hand guard) with decorative openwork design featuring floral or vine patterns, shown from multiple angles including framed display view and profile view"
+      },
+      {
+        "listing_id": 1381,
+        "image": "17096-2.jpg",
+        "detected_as_cert": false,
+        "confidence": 1,
+        "what_seen": "Two sword blades shown side by side - left blade shows the metal tang/nakago area, right blade shows the full blade with Japanese inscriptions along the tang and what appears to be a red seal at the bottom"
+      },
+      {
+        "listing_id": 7408,
+        "image": "A060221-1.jpg",
+        "detected_as_cert": false,
+        "confidence": 1,
+        "what_seen": "A Japanese sword blade (likely katana) photographed against black background, showing the full length of the blade with visible hamon (temper line), tang area with what appears to be maker's signature, and mekugi-ana (holes in the tang)"
+      },
+      {
+        "listing_id": 6692,
+        "image": "IMG_14740.jpg",
+        "detected_as_cert": false,
+        "confidence": 1,
+        "what_seen": "A complete set of Japanese samurai armor (yoroi) including helmet (kabuto) with face mask (menpo), chainmail, chest plates, and other protective gear displayed on a mannequin"
+      },
+      {
+        "listing_id": 4952,
+        "image": "thum-1-6.jpg",
+        "detected_as_cert": false,
+        "confidence": 1,
+        "what_seen": "A Japanese sword (katana) displayed in parts - the complete sword with handle and scabbard at top, a pink/purple cord or sageo in the middle, and what appears to be a plain wooden scabbard (shirasaya) at the bottom"
+      },
+      {
+        "listing_id": 1383,
+        "image": "17510-2.jpg",
+        "detected_as_cert": false,
+        "confidence": 1,
+        "what_seen": "Two Japanese sword blades photographed against black background - one showing the blade profile/geometry and one showing the hamon (temper line) pattern along the edge"
+      },
+      {
+        "listing_id": 4341,
+        "image": "000_1a.jpg",
+        "detected_as_cert": false,
+        "confidence": 1,
+        "what_seen": "A curved Japanese sword blade (katana) with a long, polished steel blade showing hamon (temper line) and a partial tang/handle visible at the bottom"
+      },
+      {
+        "listing_id": 5019,
+        "image": "1-コピー-2-scaled.jpg",
+        "detected_as_cert": false,
+        "confidence": 1,
+        "what_seen": "A circular metal tsuba (sword guard) with an openwork design featuring what appears to be a stylized tree or plant motif with branches and leaves cut out of the metal"
+      },
+      {
+        "listing_id": 4985,
+        "image": "表-scaled.jpg",
+        "detected_as_cert": false,
+        "confidence": 1,
+        "what_seen": "A Japanese sword tsuba (hand guard) made of metal with decorative engravings, featuring the characteristic central opening for the blade and a smaller opening, with gold accent details"
+      }
+    ],
+    "summary": {
+      "totalImages": 27,
+      "falsePositives": 0,
+      "rate": "0.0%"
+    }
+  }
+}

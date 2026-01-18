@@ -1,0 +1,1073 @@
+{
+  "dealer": "www.token-net.com",
+  "timestamp": "2026-01-18T12:22:12.281Z",
+  "summary": {
+    "listings_tested": 8,
+    "total_images": 84,
+    "cert_images_found": 18,
+    "detection_rate": "100.0%",
+    "session_extraction_rate": "100.0%",
+    "item_extraction_rate": "25.0%",
+    "smith_extraction_rate": "87.5%"
+  },
+  "results": [
+    {
+      "listing_id": 7023,
+      "title": "野村包教製 江州彦根住辛丑仲秋 (第46回重要刀装具)",
+      "db_cert_type": "Juyo",
+      "image_count": 6,
+      "cert_found": true,
+      "cert_image_index": 4,
+      "cert_data": {
+        "is_cert": true,
+        "confidence": 0.95,
+        "cert_type": "juyo",
+        "session": 47,
+        "item": null,
+        "smith": "重要刀装具",
+        "reason": "Japanese certificate document with vertical text, shows 第四十七回 (session 47), contains 重要 designation, and has formal certificate layout"
+      },
+      "all_analyses": [
+        {
+          "index": 0,
+          "filename": "1-6.jpg",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a Japanese sword tsuba (hand guard) with decorative metalwork, not a paper certification document"
+        },
+        {
+          "index": 1,
+          "filename": "2-5.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 2,
+          "filename": "3-2.jpg",
+          "is_cert": true,
+          "confidence": 0.95,
+          "cert_type": "hozon",
+          "session": null,
+          "item": null,
+          "smith": "山中上総大掾則重",
+          "reason": "Japanese sword certificate with vertical text, red seals, and smith attribution visible"
+        },
+        {
+          "index": 3,
+          "filename": "4-2.jpg",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This appears to be documentation of tsuba (sword guards) with rubbings/impressions, not a sword blade certification document"
+        },
+        {
+          "index": 4,
+          "filename": "5-2.jpg",
+          "is_cert": true,
+          "confidence": 0.95,
+          "cert_type": "juyo",
+          "session": 47,
+          "item": null,
+          "smith": "重要刀装具",
+          "reason": "Japanese certificate document with vertical text, shows 第四十七回 (session 47), contains 重要 designation, and has formal certificate layout"
+        },
+        {
+          "index": 5,
+          "filename": "f-tel_2.png",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This appears to be a fax header or document header with phone/fax numbers, not a sword certification document. No visible Japanese certification text, red seals, or sword-related terminology."
+        }
+      ]
+    },
+    {
+      "listing_id": 7019,
+      "title": "小柄・笄 銘 園部芳英(花押) 目貫 無銘 芳英",
+      "db_cert_type": "Juyo",
+      "image_count": 13,
+      "cert_found": true,
+      "cert_image_index": 11,
+      "cert_data": {
+        "is_cert": true,
+        "confidence": 0.95,
+        "cert_type": "juyo",
+        "session": "49",
+        "item": "1",
+        "smith": "芳英",
+        "reason": "Document shows vertical Japanese text with '重要刀装具' (Important Sword Fittings), '第四十九回' (49th session), '一組' (item 1), and smith name '芳英'. This is a NBTHK Juyo certificate for sword fittings."
+      },
+      "all_analyses": [
+        {
+          "index": 0,
+          "filename": "1-mitokoro-1.jpg",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a display case containing decorative sword fittings/ornaments with blue fabric backing, not a paper certification document"
+        },
+        {
+          "index": 1,
+          "filename": "2-mitokoro-2.jpg",
+          "is_cert": false,
+          "confidence": 1,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is an image of actual sword components (blade and fittings) with decorative elements, not a paper certificate document"
+        },
+        {
+          "index": 2,
+          "filename": "3-mitokoro-3.jpg",
+          "is_cert": false,
+          "confidence": 1,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "Image shows sword blade and fittings, not a paper document"
+        },
+        {
+          "index": 3,
+          "filename": "4-kougai-2.jpg",
+          "is_cert": false,
+          "confidence": 1,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a photograph of an actual sword blade with decorative fittings, not a paper certificate document"
+        },
+        {
+          "index": 4,
+          "filename": "5-kougai-1.jpg",
+          "is_cert": false,
+          "confidence": 1,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a decorated sword blade or fitting with gold inlay work, not a paper certificate document"
+        },
+        {
+          "index": 5,
+          "filename": "6-kougai-3.jpg",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a photograph of an actual sword blade with golden coloring, not a paper certificate document"
+        },
+        {
+          "index": 6,
+          "filename": "7-kozuka.jpg",
+          "is_cert": false,
+          "confidence": 1,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a decorative sword fitting (likely kozuka or kogai) with gold inlay work, not a paper certificate document"
+        },
+        {
+          "index": 7,
+          "filename": "8-kozuka-2.jpg",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a gold-colored sword blade with engraved patterns, not a paper certificate document"
+        },
+        {
+          "index": 8,
+          "filename": "10-mei-4.jpg",
+          "is_cert": false,
+          "confidence": 1,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "These are bamboo tubes/containers with decorative patterns, not paper documents"
+        },
+        {
+          "index": 9,
+          "filename": "10-zufu-1.jpg",
+          "is_cert": true,
+          "confidence": 0.9,
+          "cert_type": "other",
+          "session": null,
+          "item": null,
+          "smith": "山中貞則",
+          "reason": "Japanese document with vertical text, red seals, appears to be sword certification but specific NBTHK/NTHK terminology not clearly visible"
+        },
+        {
+          "index": 10,
+          "filename": "11-zufu-2.jpg",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is an illustration/diagram of sword accessories (tsuba, kozuka, etc.) with their scabbards, not a certification document. It appears to be from a reference book or catalog showing different sword fittings and their storage cases."
+        },
+        {
+          "index": 11,
+          "filename": "12-zufu-3.jpg",
+          "is_cert": true,
+          "confidence": 0.95,
+          "cert_type": "juyo",
+          "session": "49",
+          "item": "1",
+          "smith": "芳英",
+          "reason": "Document shows vertical Japanese text with '重要刀装具' (Important Sword Fittings), '第四十九回' (49th session), '一組' (item 1), and smith name '芳英'. This is a NBTHK Juyo certificate for sword fittings."
+        },
+        {
+          "index": 12,
+          "filename": "f-tel_2.png",
+          "is_cert": false,
+          "confidence": 0.9,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This appears to be a business card or contact information with phone/fax numbers, not a sword certification document"
+        }
+      ]
+    },
+    {
+      "listing_id": 7015,
+      "title": "家紋散二所物 無銘 栄乗 (第33回重要刀装具)",
+      "db_cert_type": "Juyo",
+      "image_count": 5,
+      "cert_found": true,
+      "cert_image_index": 3,
+      "cert_data": {
+        "is_cert": true,
+        "confidence": 0.95,
+        "cert_type": "juyo",
+        "session": "十三回",
+        "item": null,
+        "smith": "無銘",
+        "reason": "Document shows 重要刀装具 (Juyo Toso-gu) certificate with 第十三回 (13th session), vertical Japanese text, and formal certification format for sword fittings"
+      },
+      "all_analyses": [
+        {
+          "index": 0,
+          "filename": "2-6.jpg",
+          "is_cert": false,
+          "confidence": 1,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "Images show sword blade and scabbard with decorative mon/kamon crests, not paper certificates"
+        },
+        {
+          "index": 1,
+          "filename": "3-3.jpg",
+          "is_cert": true,
+          "confidence": 0.9,
+          "cert_type": "other",
+          "session": null,
+          "item": null,
+          "smith": "桃山時代",
+          "reason": "Japanese certificate document with vertical text, red seals, and formal layout, but specific NBTHK/NTHK certification markers not clearly visible"
+        },
+        {
+          "index": 2,
+          "filename": "4-3.jpg",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This appears to be an illustrated catalog or reference book page showing sword fittings (kozuka and kogai) with descriptive text, not a certification document"
+        },
+        {
+          "index": 3,
+          "filename": "5-3.jpg",
+          "is_cert": true,
+          "confidence": 0.95,
+          "cert_type": "juyo",
+          "session": "十三回",
+          "item": null,
+          "smith": "無銘",
+          "reason": "Document shows 重要刀装具 (Juyo Toso-gu) certificate with 第十三回 (13th session), vertical Japanese text, and formal certification format for sword fittings"
+        },
+        {
+          "index": 4,
+          "filename": "f-tel_2.png",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This appears to be a business card or contact information with fax number, hours, and address - not a sword certification document"
+        }
+      ]
+    },
+    {
+      "listing_id": 7011,
+      "title": "金梨地桐桜紋散金蒔絵長覆輪鞘肥後糸巻太刀拵 (第46回重要刀装具)",
+      "db_cert_type": "Juyo",
+      "image_count": 10,
+      "cert_found": true,
+      "cert_image_index": 8,
+      "cert_data": {
+        "is_cert": true,
+        "confidence": 0.95,
+        "cert_type": "juyo",
+        "session": 46,
+        "item": null,
+        "smith": null,
+        "reason": "Japanese certificate with vertical text, red seal visible, contains 重要刀装 and 第四十六回 indicating 46th session juyo certification for sword fittings"
+      },
+      "all_analyses": [
+        {
+          "index": 0,
+          "filename": "1-koshirae03.jpg",
+          "is_cert": false,
+          "confidence": 1,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a photograph of an actual sword with scabbard and fittings, not a paper certificate document"
+        },
+        {
+          "index": 1,
+          "filename": "2-koshirae13.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 2,
+          "filename": "3-tsuka.jpg",
+          "is_cert": false,
+          "confidence": 1,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a sword tsuka (handle) with decorative fittings, not a paper certificate document"
+        },
+        {
+          "index": 3,
+          "filename": "4-kanagu.jpg",
+          "is_cert": false,
+          "confidence": 1,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "Images show jewelry/decorative items with gold and black patterns, not paper documents"
+        },
+        {
+          "index": 4,
+          "filename": "5-tsuba2.jpg",
+          "error": "fetch failed"
+        },
+        {
+          "index": 5,
+          "filename": "6-tsuba.jpg",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "These are decorative sword guard (tsuba) fittings with ornate metalwork, not paper certification documents"
+        },
+        {
+          "index": 6,
+          "filename": "7-zufu1.jpg",
+          "is_cert": true,
+          "confidence": 0.9,
+          "cert_type": "hozon",
+          "session": null,
+          "item": null,
+          "smith": "指定書",
+          "reason": "Japanese document with vertical text, red seals, and certificate formatting typical of NBTHK papers"
+        },
+        {
+          "index": 7,
+          "filename": "8-zufu2.jpg",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a rubbing/print of sword scabbards and fittings, not a certification document"
+        },
+        {
+          "index": 8,
+          "filename": "9-zufu3.jpg",
+          "is_cert": true,
+          "confidence": 0.95,
+          "cert_type": "juyo",
+          "session": 46,
+          "item": null,
+          "smith": null,
+          "reason": "Japanese certificate with vertical text, red seal visible, contains 重要刀装 and 第四十六回 indicating 46th session juyo certification for sword fittings"
+        },
+        {
+          "index": 9,
+          "filename": "f-tel_2.png",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This appears to be a business card or contact information card with fax number, phone number and business hours, not a sword certification document"
+        }
+      ]
+    },
+    {
+      "listing_id": 7006,
+      "title": "<売却済み>備前国住長船五郎左衛門尉清光 為政秀作之 天文廿四年八月吉日 (第13回重要刀剣)",
+      "db_cert_type": "Juyo",
+      "image_count": 4,
+      "cert_found": true,
+      "cert_image_index": 2,
+      "cert_data": {
+        "is_cert": true,
+        "confidence": 0.95,
+        "cert_type": "juyo",
+        "session": "23",
+        "item": null,
+        "smith": "波平 佐一",
+        "reason": "Contains 重要刀剣 title, 第二十三回 session number, vertical Japanese text format, and red seal"
+      },
+      "all_analyses": [
+        {
+          "index": 0,
+          "filename": "zufu1-3-1.jpg",
+          "is_cert": true,
+          "confidence": 0.95,
+          "cert_type": "other",
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "Japanese sword certificate with vertical text, red seals, and formal document layout, but cannot clearly identify specific NBTHK/NTHK type or extract detailed information"
+        },
+        {
+          "index": 1,
+          "filename": "zufu2-3.jpg",
+          "is_cert": true,
+          "confidence": 0.95,
+          "cert_type": "other",
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "Document showing blade rubbings with vertical Japanese text and red seal, appears to be sword documentation but specific certification details not clearly visible"
+        },
+        {
+          "index": 2,
+          "filename": "zufu3-4.jpg",
+          "is_cert": true,
+          "confidence": 0.95,
+          "cert_type": "juyo",
+          "session": "23",
+          "item": null,
+          "smith": "波平 佐一",
+          "reason": "Contains 重要刀剣 title, 第二十三回 session number, vertical Japanese text format, and red seal"
+        },
+        {
+          "index": 3,
+          "filename": "f-tel_2.png",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This appears to be a fax header or document reference number, not a sword certification document. Contains phone/fax numbers and scheduling information rather than authentication text."
+        }
+      ]
+    },
+    {
+      "listing_id": 6990,
+      "title": "出羽大掾藤原國路 (山城)(畿内) (第25回重要刀剣)",
+      "db_cert_type": "Juyo",
+      "image_count": 18,
+      "cert_found": true,
+      "cert_image_index": 16,
+      "cert_data": {
+        "is_cert": true,
+        "confidence": 0.95,
+        "cert_type": "juyo",
+        "session": 25,
+        "item": null,
+        "smith": "出羽大掾藤原国路",
+        "reason": "Japanese certificate with vertical text, red seal, 重要刀剣 title, 第二十五回 session number, and smith attribution"
+      },
+      "all_analyses": [
+        {
+          "index": 0,
+          "filename": "1-koshirae5.jpg",
+          "is_cert": false,
+          "confidence": 1,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is an image of a sword blade with fittings, not a paper certification document"
+        },
+        {
+          "index": 1,
+          "filename": "2-toushi04.jpg",
+          "is_cert": false,
+          "confidence": 1,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a photograph of an actual sword blade, not a certification document"
+        },
+        {
+          "index": 2,
+          "filename": "3-toushi14.jpg",
+          "is_cert": false,
+          "confidence": 1,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a sword blade, not a paper certificate document"
+        },
+        {
+          "index": 3,
+          "filename": "4-boushi04.jpg",
+          "is_cert": false,
+          "confidence": 1,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a photograph of a sword blade, not a paper certificate document"
+        },
+        {
+          "index": 4,
+          "filename": "5-boushi14.jpg",
+          "is_cert": false,
+          "confidence": 1,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a photograph of a sword blade, not a paper certificate document"
+        },
+        {
+          "index": 5,
+          "filename": "6-boushi2.jpg",
+          "is_cert": false,
+          "confidence": 1,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a photograph of an actual sword blade, not a paper certificate document"
+        },
+        {
+          "index": 6,
+          "filename": "7-kitae01.jpg",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This appears to be a black and white landscape photograph showing mountains/hills, not a document or certificate"
+        },
+        {
+          "index": 7,
+          "filename": "8-kitae11.jpg",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This appears to be a photograph of a sword blade or tang, not a paper certificate document"
+        },
+        {
+          "index": 8,
+          "filename": "9-kitae2.jpg",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This appears to be a sword blade image, not a paper certificate document"
+        },
+        {
+          "index": 9,
+          "filename": "10-nakago0.jpg",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a sword blade with inscribed characters, not a paper certification document"
+        },
+        {
+          "index": 10,
+          "filename": "11-nakago1.jpg",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a photograph of an actual sword blade, not a paper certificate document"
+        },
+        {
+          "index": 11,
+          "filename": "12-tsuka.jpg",
+          "is_cert": false,
+          "confidence": 1,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a sword tsuka (handle) with decorative menuki fittings, not a paper certificate document"
+        },
+        {
+          "index": 12,
+          "filename": "13-kanagu.jpg",
+          "is_cert": false,
+          "confidence": 1,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "Image shows three metal objects - decorative items and what appears to be a lighter, not paper documents"
+        },
+        {
+          "index": 13,
+          "filename": "14-tsuba.jpg",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "These are tsuba (sword guards) with decorative metalwork, not paper certification documents"
+        },
+        {
+          "index": 14,
+          "filename": "15-zufu1.jpg",
+          "is_cert": true,
+          "confidence": 0.95,
+          "cert_type": "tokubetsu_hozon",
+          "session": null,
+          "item": null,
+          "smith": "来国俊",
+          "reason": "Japanese certificate document with vertical text, red seals, and tokubetsu hozon format with smith attribution to Rai Kunitoshi"
+        },
+        {
+          "index": 15,
+          "filename": "16-zufu2.jpg",
+          "is_cert": true,
+          "confidence": 0.85,
+          "cert_type": "other",
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "Document shows sword blade outline with Japanese vertical text and red seal, but specific certification details not clearly visible"
+        },
+        {
+          "index": 16,
+          "filename": "17-zufu3.jpg",
+          "is_cert": true,
+          "confidence": 0.95,
+          "cert_type": "juyo",
+          "session": 25,
+          "item": null,
+          "smith": "出羽大掾藤原国路",
+          "reason": "Japanese certificate with vertical text, red seal, 重要刀剣 title, 第二十五回 session number, and smith attribution"
+        },
+        {
+          "index": 17,
+          "filename": "f-tel_2.png",
+          "is_cert": false,
+          "confidence": 0.9,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This appears to be a fax header or contact information with phone/fax numbers, not a sword certification document"
+        }
+      ]
+    },
+    {
+      "listing_id": 6985,
+      "title": "於大坂和泉守國貞作之 (摂津)(五畿) (第17回重要刀剣)",
+      "db_cert_type": "Juyo",
+      "image_count": 13,
+      "cert_found": true,
+      "cert_image_index": 11,
+      "cert_data": {
+        "is_cert": true,
+        "confidence": 0.95,
+        "cert_type": "juyo",
+        "session": "17",
+        "item": "56",
+        "smith": "長光",
+        "reason": "Document shows vertical Japanese text with red seal, contains '重要刀剣' (juyo token), '第十七回' (17th session), and attribution to smith Nagamitsu (長光)"
+      },
+      "all_analyses": [
+        {
+          "index": 0,
+          "filename": "1-toushi02.jpg",
+          "is_cert": false,
+          "confidence": 1,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a photograph of an actual sword blade, not a paper certificate document"
+        },
+        {
+          "index": 1,
+          "filename": "2-toushi12.jpg",
+          "is_cert": false,
+          "confidence": 1,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a photograph of an actual sword blade, not a paper certificate document"
+        },
+        {
+          "index": 2,
+          "filename": "4-boushi12.jpg",
+          "is_cert": false,
+          "confidence": 1,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a photograph of a sword blade, not a paper certificate document"
+        },
+        {
+          "index": 3,
+          "filename": "5-boushi2.jpg",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "Image shows a sword blade, not a paper certificate document"
+        },
+        {
+          "index": 4,
+          "filename": "7-kitae12.jpg",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "Image shows only a sword blade, not a paper document or certificate"
+        },
+        {
+          "index": 5,
+          "filename": "8-kitae2.jpg",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "Image shows a sword blade, not a paper certificate document"
+        },
+        {
+          "index": 6,
+          "filename": "9-nakago01.jpg",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a sword blade with inscribed characters, not a paper certificate document"
+        },
+        {
+          "index": 7,
+          "filename": "10-nakago11.jpg",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This appears to be a photograph of a sword blade, not a paper certificate document"
+        },
+        {
+          "index": 8,
+          "filename": "11-habaki2.jpg",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "Images show metal objects with textured surfaces, not paper documents"
+        },
+        {
+          "index": 9,
+          "filename": "12-zufu1.jpg",
+          "is_cert": true,
+          "confidence": 0.85,
+          "cert_type": "other",
+          "session": null,
+          "item": null,
+          "smith": "指定吉宗",
+          "reason": "Japanese document with vertical text, red seal present, appears to be sword certification but specific NBTHK/NTHK markers not clearly visible"
+        },
+        {
+          "index": 10,
+          "filename": "13-zufu2.jpg",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This appears to be a rubbing or print of an actual sword blade showing the tang (nakago) with inscriptions, not a certification document. It shows the physical blade itself rather than being a paper certificate."
+        },
+        {
+          "index": 11,
+          "filename": "14-zufu3.jpg",
+          "is_cert": true,
+          "confidence": 0.95,
+          "cert_type": "juyo",
+          "session": "17",
+          "item": "56",
+          "smith": "長光",
+          "reason": "Document shows vertical Japanese text with red seal, contains '重要刀剣' (juyo token), '第十七回' (17th session), and attribution to smith Nagamitsu (長光)"
+        },
+        {
+          "index": 12,
+          "filename": "f-tel_2.png",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This appears to be a fax cover sheet or business document with fax number, not a sword certification"
+        }
+      ]
+    },
+    {
+      "listing_id": 6981,
+      "title": "美濃国御勝山麓住藤原永貞 慶應二年八月日於江戸青山造之(第48回重要刀剣)",
+      "db_cert_type": "Juyo",
+      "image_count": 15,
+      "cert_found": true,
+      "cert_image_index": 13,
+      "cert_data": {
+        "is_cert": true,
+        "confidence": 0.95,
+        "cert_type": "juyo",
+        "session": 10,
+        "item": null,
+        "smith": "慶応",
+        "reason": "Document shows vertical Japanese text with 重要刀剣 header, 第十回 (session 10), red seal present, and attribution to 慶応"
+      },
+      "all_analyses": [
+        {
+          "index": 0,
+          "filename": "toushi0100.jpg",
+          "is_cert": false,
+          "confidence": 1,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a photograph of an actual sword blade, not a paper certificate document"
+        },
+        {
+          "index": 1,
+          "filename": "toushi1101.jpg",
+          "is_cert": false,
+          "confidence": 1,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a photograph of an actual sword blade, not a certification document"
+        },
+        {
+          "index": 2,
+          "filename": "boushi096.jpg",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a sword blade, not a certification document"
+        },
+        {
+          "index": 3,
+          "filename": "boushi189.jpg",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a photograph of an actual sword blade, not a paper certificate document"
+        },
+        {
+          "index": 4,
+          "filename": "boushi2.jpg",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a photograph of a sword blade, not a certification document"
+        },
+        {
+          "index": 5,
+          "filename": "kitae096.jpg",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "Image shows a landscape/mountain silhouette, not a document or certificate"
+        },
+        {
+          "index": 6,
+          "filename": "kitae192.jpg",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "Image shows a sword blade, not a paper certificate document"
+        },
+        {
+          "index": 7,
+          "filename": "kitae221.jpg",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "Image shows what appears to be a sword blade edge/hamon, not a paper document or certificate"
+        },
+        {
+          "index": 8,
+          "filename": "nakago0107.jpg",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a sword blade with inscribed characters, not a paper certificate document"
+        },
+        {
+          "index": 9,
+          "filename": "nakago1103.jpg",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a sword blade with engraved Japanese characters, not a paper certificate document"
+        },
+        {
+          "index": 10,
+          "filename": "habaki1.jpg",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "Images show golden metallic cube objects, not paper documents"
+        },
+        {
+          "index": 11,
+          "filename": "shousho.jpg",
+          "is_cert": true,
+          "confidence": 0.9,
+          "cert_type": "hozon",
+          "session": null,
+          "item": null,
+          "smith": "山中貞宗",
+          "reason": "Japanese sword certificate with vertical text, red seal, and sword attribution visible"
+        },
+        {
+          "index": 12,
+          "filename": "zufu0.jpg",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a technical diagram/illustration of sword blade construction showing cross-sections and tang details, not a certification document"
+        },
+        {
+          "index": 13,
+          "filename": "zufu110.jpg",
+          "is_cert": true,
+          "confidence": 0.95,
+          "cert_type": "juyo",
+          "session": 10,
+          "item": null,
+          "smith": "慶応",
+          "reason": "Document shows vertical Japanese text with 重要刀剣 header, 第十回 (session 10), red seal present, and attribution to 慶応"
+        },
+        {
+          "index": 14,
+          "filename": "f-tel_2.png",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This appears to be a fax header or contact information with phone/fax numbers, not a sword certification document. No visible red seals, certification terminology, or typical document layout of NBTHK/NTHK papers."
+        }
+      ]
+    }
+  ]
+}

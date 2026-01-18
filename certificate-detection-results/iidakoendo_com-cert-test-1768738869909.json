@@ -1,0 +1,824 @@
+{
+  "dealer": "iidakoendo.com",
+  "timestamp": "2026-01-18T12:21:09.909Z",
+  "summary": {
+    "listings_tested": 8,
+    "total_images": 61,
+    "cert_images_found": 9,
+    "detection_rate": "87.5%",
+    "session_extraction_rate": "12.5%",
+    "item_extraction_rate": "50.0%",
+    "smith_extraction_rate": "62.5%"
+  },
+  "results": [
+    {
+      "listing_id": 10324,
+      "title": "雲形透日足鑢鐔 無銘 彦三",
+      "db_cert_type": "Juyo",
+      "image_count": 12,
+      "cert_found": true,
+      "cert_image_index": 2,
+      "cert_data": {
+        "is_cert": true,
+        "confidence": 0.9,
+        "cert_type": "juyo",
+        "session": 55,
+        "item": null,
+        "smith": null,
+        "reason": "Document shows Japanese text with vertical layout, contains '重要刀装具' title and '第五十五回' (55th session), appears to be NBTHK certification for sword fittings"
+      },
+      "all_analyses": [
+        {
+          "index": 0,
+          "filename": "IMG_6495.gif",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a metal tsuba (sword guard) displayed in a wooden box with fabric lining, not a paper certificate document"
+        },
+        {
+          "index": 1,
+          "filename": "68a8b74d95cbde30d9d71c74823148a5-1.gif",
+          "is_cert": true,
+          "confidence": 0.95,
+          "cert_type": "other",
+          "session": null,
+          "item": null,
+          "smith": "指定書",
+          "reason": "Japanese document with vertical text, red seals, and formal certificate structure, but doesn't match standard NBTHK/NTHK sword certification format"
+        },
+        {
+          "index": 2,
+          "filename": "20250714_13250901-1-717x1024.gif",
+          "is_cert": true,
+          "confidence": 0.9,
+          "cert_type": "juyo",
+          "session": 55,
+          "item": null,
+          "smith": null,
+          "reason": "Document shows Japanese text with vertical layout, contains '重要刀装具' title and '第五十五回' (55th session), appears to be NBTHK certification for sword fittings"
+        },
+        {
+          "index": 3,
+          "filename": "20250714_13253266-1-717x1024.gif",
+          "is_cert": false,
+          "confidence": 0.9,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This appears to be a catalog or reference page showing two tsuba (sword guards) with Japanese text, not a certification document. No certification terminology visible."
+        },
+        {
+          "index": 4,
+          "filename": "token-kinko-meisaku-shu_higo-kinko-650x1024.gif",
+          "is_cert": false,
+          "confidence": 0.9,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This appears to be a book cover or title page with vertical Japanese text, not a sword certification document. Missing key elements like red seals, certification terminology, and proper document format."
+        },
+        {
+          "index": 5,
+          "filename": "token-kinko-meisaku-shu_higo-kinko2-626x1024.gif",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This appears to be a historical illustration or catalog page showing two circular sword guards (tsuba) with detailed drawings and descriptive text, not a modern NBTHK/NTHK sword certification document"
+        },
+        {
+          "index": 6,
+          "filename": "IMG_6496.gif",
+          "is_cert": false,
+          "confidence": 1,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a metal tsuba (sword guard) with openwork design, not a paper certificate document"
+        },
+        {
+          "index": 7,
+          "filename": "IMG_6497.gif",
+          "is_cert": false,
+          "confidence": 1,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a metal tsuba (sword guard) with decorative cutouts, not a paper certification document"
+        },
+        {
+          "index": 8,
+          "filename": "IMG_5326-1024x482.jpeg",
+          "is_cert": false,
+          "confidence": 1,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a metal sword guard (tsuba) with decorative cutouts, not a paper certification document"
+        },
+        {
+          "index": 9,
+          "filename": "IMG_6498.gif",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a sword tsuba (hand guard) in a display box, not a paper certificate"
+        },
+        {
+          "index": 10,
+          "filename": "IMG_6499.gif",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This appears to be a fabric-covered box or folder, not a paper document with Japanese text and red seals"
+        },
+        {
+          "index": 11,
+          "filename": "IMG_6500.gif",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This appears to be a wrapped gift box or package with a dark ribbon bow, not a document or certificate"
+        }
+      ]
+    },
+    {
+      "listing_id": 10321,
+      "title": "後藤桂乗光守 竹図鐔",
+      "db_cert_type": "Hozon",
+      "image_count": 9,
+      "cert_found": true,
+      "cert_image_index": 8,
+      "cert_data": {
+        "is_cert": true,
+        "confidence": 0.85,
+        "cert_type": "other",
+        "session": null,
+        "item": null,
+        "smith": "福士繁雄",
+        "reason": "Japanese document with vertical text, red seals, and sword-related terminology visible"
+      },
+      "all_analyses": [
+        {
+          "index": 0,
+          "filename": "alls-6.gif",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a tsuba (sword guard) displayed in a presentation box, not a paper certificate document"
+        },
+        {
+          "index": 1,
+          "filename": "kan2-1.gif",
+          "is_cert": true,
+          "confidence": 0.95,
+          "cert_type": "other",
+          "session": null,
+          "item": null,
+          "smith": "後藤光守",
+          "reason": "Japanese certificate document with vertical text, red seals, shows tsuba images, attribution to Goto Mitsumori but appears to be for sword fittings rather than blade"
+        },
+        {
+          "index": 2,
+          "filename": "all-1.gif",
+          "is_cert": false,
+          "confidence": 1,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a tsuba (sword guard) with bamboo leaf decorations, not a paper certificate document"
+        },
+        {
+          "index": 3,
+          "filename": "omote-3.gif",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a tsuba (sword guard) with bamboo decorations, not a paper certificate document"
+        },
+        {
+          "index": 4,
+          "filename": "ura-4.gif",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a tsuba (sword guard) with decorative patterns, not a paper certificate document"
+        },
+        {
+          "index": 5,
+          "filename": "mimi.gif",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a metal sword guard (tsuba) with decorative bamboo leaf patterns, not a paper certification document"
+        },
+        {
+          "index": 6,
+          "filename": "hakoiri-5.gif",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a framed tsuba (sword guard) with decorative metalwork, not a paper certificate document"
+        },
+        {
+          "index": 7,
+          "filename": "hako-3.gif",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This appears to be a wooden storage box (tomobako) with a paper label, not a certification document. Missing key elements like red seals, formal document structure, and certification terminology."
+        },
+        {
+          "index": 8,
+          "filename": "hakogaki.gif",
+          "is_cert": true,
+          "confidence": 0.85,
+          "cert_type": "other",
+          "session": null,
+          "item": null,
+          "smith": "福士繁雄",
+          "reason": "Japanese document with vertical text, red seals, and sword-related terminology visible"
+        }
+      ]
+    },
+    {
+      "listing_id": 9340,
+      "title": "信家 亀甲紋散図鐔",
+      "db_cert_type": "TokuHozon",
+      "image_count": 6,
+      "cert_found": false,
+      "cert_image_index": null,
+      "cert_data": null,
+      "all_analyses": [
+        {
+          "index": 0,
+          "filename": "IMG_3879.gif",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a circular metal tsuba (sword guard) with decorative patterns displayed in a wooden presentation box, not a paper certificate document"
+        },
+        {
+          "index": 1,
+          "filename": "m543.tif",
+          "error": "400 {\"type\":\"error\",\"error\":{\"type\":\"invalid_request_error\",\"message\":\"messages.0.content.0.image.so"
+        },
+        {
+          "index": 2,
+          "filename": "IMG_3873-1.gif",
+          "is_cert": false,
+          "confidence": 1,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a metal tsuba (sword guard) with decorative patterns, not a paper certificate document"
+        },
+        {
+          "index": 3,
+          "filename": "IMG_3875-2-1.gif",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a metal tsuba (sword guard) with decorative patterns, not a paper certificate document"
+        },
+        {
+          "index": 4,
+          "filename": "IMG_3876.gif",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This appears to be a textile/fabric with a repeating hexagonal pattern, not a paper document with Japanese text"
+        },
+        {
+          "index": 5,
+          "filename": "IMG_3877.gif",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a tsuba (sword guard) displayed in a wooden box, not a paper certificate document"
+        }
+      ]
+    },
+    {
+      "listing_id": 9339,
+      "title": "信家 雲龍図鐔",
+      "db_cert_type": "TokuHozon",
+      "image_count": 6,
+      "cert_found": true,
+      "cert_image_index": 1,
+      "cert_data": {
+        "is_cert": true,
+        "confidence": 0.95,
+        "cert_type": "other",
+        "session": null,
+        "item": "2001754",
+        "smith": "雲龍斎祖国綱",
+        "reason": "Japanese certification document with vertical text, red seals, item number 2001754, and smith attribution visible"
+      },
+      "all_analyses": [
+        {
+          "index": 0,
+          "filename": "IMG_4034.gif",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a tsuba (sword guard) displayed in a presentation box, not a paper certificate document"
+        },
+        {
+          "index": 1,
+          "filename": "c09811a51ec979b3edb52e8273fea9ea.gif",
+          "is_cert": true,
+          "confidence": 0.95,
+          "cert_type": "other",
+          "session": null,
+          "item": "2001754",
+          "smith": "雲龍斎祖国綱",
+          "reason": "Japanese certification document with vertical text, red seals, item number 2001754, and smith attribution visible"
+        },
+        {
+          "index": 2,
+          "filename": "IMG_4035.gif",
+          "is_cert": false,
+          "confidence": 1,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a tsuba (sword guard) with decorative metalwork, not a paper certificate document"
+        },
+        {
+          "index": 3,
+          "filename": "IMG_4036.gif",
+          "is_cert": false,
+          "confidence": 1,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a tsuba (sword guard) with floral engravings and gold inlay, not a paper certificate document"
+        },
+        {
+          "index": 4,
+          "filename": "IMG_4034.gif",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a metal tsuba (sword guard) with decorative patterns in a display box, not a paper certificate document"
+        },
+        {
+          "index": 5,
+          "filename": "IMG_4038.gif",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a folded textile/fabric with decorative floral patterns, not a paper document"
+        }
+      ]
+    },
+    {
+      "listing_id": 9337,
+      "title": "秋草図鐔 銘 時年七十四伯応(花押)",
+      "db_cert_type": "TokuHozon",
+      "image_count": 6,
+      "cert_found": true,
+      "cert_image_index": 1,
+      "cert_data": {
+        "is_cert": true,
+        "confidence": 0.95,
+        "cert_type": "other",
+        "session": null,
+        "item": "2002419",
+        "smith": "秋草図鍔",
+        "reason": "Japanese certification document with vertical text, red seals, and item number visible. Shows tsuba (sword guard) with autumn grass design rather than blade certification."
+      },
+      "all_analyses": [
+        {
+          "index": 0,
+          "filename": "IMG_6831.gif",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a tsuba (sword guard) with floral engravings displayed in a presentation box, not a paper certificate document"
+        },
+        {
+          "index": 1,
+          "filename": "20250729_13155806.gif",
+          "is_cert": true,
+          "confidence": 0.95,
+          "cert_type": "other",
+          "session": null,
+          "item": "2002419",
+          "smith": "秋草図鍔",
+          "reason": "Japanese certification document with vertical text, red seals, and item number visible. Shows tsuba (sword guard) with autumn grass design rather than blade certification."
+        },
+        {
+          "index": 2,
+          "filename": "20250729_13181258.gif",
+          "is_cert": false,
+          "confidence": 1,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a metal tsuba (sword guard) with decorative floral engravings, not a paper certificate document"
+        },
+        {
+          "index": 3,
+          "filename": "20250729_13184618-1.gif",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a metal tsuba (sword guard) with decorative floral inlay, not a paper certification document"
+        },
+        {
+          "index": 4,
+          "filename": "IMG_6832.gif",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a tsuba (sword guard) with floral engravings displayed in wooden boxes, not a paper certificate document"
+        },
+        {
+          "index": 5,
+          "filename": "Hakuo-744x1024.gif",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This appears to be a reference book page showing sword signature examples, not a certification document. Contains multiple blade tang photos with signature analysis but lacks certificate format, red seals, and official document structure."
+        }
+      ]
+    },
+    {
+      "listing_id": 8942,
+      "title": "信家 唐草紋鐔 Nobuie Tsuba with Arabesque Design",
+      "db_cert_type": "TokuHozon",
+      "image_count": 7,
+      "cert_found": true,
+      "cert_image_index": 1,
+      "cert_data": {
+        "is_cert": true,
+        "confidence": 0.95,
+        "cert_type": "other",
+        "session": null,
+        "item": "2000031",
+        "smith": "一庵重図",
+        "reason": "Japanese certificate with red seals, vertical text, shows tsuba with authentication details and smith attribution"
+      },
+      "all_analyses": [
+        {
+          "index": 0,
+          "filename": "IMG_3928.gif",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a metal tsuba (sword guard) with decorative patterns displayed in a presentation box, not a paper certificate document"
+        },
+        {
+          "index": 1,
+          "filename": "m545.gif",
+          "is_cert": true,
+          "confidence": 0.95,
+          "cert_type": "other",
+          "session": null,
+          "item": "2000031",
+          "smith": "一庵重図",
+          "reason": "Japanese certificate with red seals, vertical text, shows tsuba with authentication details and smith attribution"
+        },
+        {
+          "index": 2,
+          "filename": "IMG_3926-1.gif",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a tsuba (sword guard) with decorative floral patterns, not a paper certificate document"
+        },
+        {
+          "index": 3,
+          "filename": "IMG_3925-1.gif",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a metal tsuba (sword guard) with decorative patterns, not a paper certificate document"
+        },
+        {
+          "index": 4,
+          "filename": "IMG_1627.gif",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a metal tsuba (sword guard) with decorative engravings, not a paper certification document"
+        },
+        {
+          "index": 5,
+          "filename": "IMG_3929.gif",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This appears to be a folded textile or fabric with a repeating geometric pattern, not a paper document"
+        },
+        {
+          "index": 6,
+          "filename": "IMG_1629.gif",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a tsuba (sword guard) displayed in a presentation box, not a paper certificate document"
+        }
+      ]
+    },
+    {
+      "listing_id": 8931,
+      "title": "斎藤富随(花押) 雨龍図鐔 Saitou Tomiyuki Tsuba",
+      "db_cert_type": "Hozon",
+      "image_count": 5,
+      "cert_found": true,
+      "cert_image_index": 1,
+      "cert_data": {
+        "is_cert": true,
+        "confidence": 0.9,
+        "cert_type": "other",
+        "session": null,
+        "item": "4019730",
+        "smith": null,
+        "reason": "Japanese document with vertical text, red seals, shows tsuba with 鑑定書 (appraisal certificate) visible, item number 4019730 in top right"
+      },
+      "all_analyses": [
+        {
+          "index": 0,
+          "filename": "IMG_5370.gif",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a tsuba (sword guard) with decorative dragon design, not a paper certificate document"
+        },
+        {
+          "index": 1,
+          "filename": "500f6eb5dbc18519ade57f81a63cdb9a.gif",
+          "is_cert": true,
+          "confidence": 0.9,
+          "cert_type": "other",
+          "session": null,
+          "item": "4019730",
+          "smith": null,
+          "reason": "Japanese document with vertical text, red seals, shows tsuba with 鑑定書 (appraisal certificate) visible, item number 4019730 in top right"
+        },
+        {
+          "index": 2,
+          "filename": "IMG_5397.gif",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a tsuba (sword guard) with dragon design and Japanese characters, not a paper certification document"
+        },
+        {
+          "index": 3,
+          "filename": "IMG_5398.gif",
+          "is_cert": false,
+          "confidence": 1,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a tsuba (sword hand guard) with decorative metalwork, not a paper certificate document"
+        },
+        {
+          "index": 4,
+          "filename": "IMG_5389.gif",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a tsuba (sword guard) with decorative dragon motifs, not a paper certificate document"
+        }
+      ]
+    },
+    {
+      "listing_id": 8928,
+      "title": "投桐透鐔 西垣勘四郎",
+      "db_cert_type": "TokuHozon",
+      "image_count": 10,
+      "cert_found": true,
+      "cert_image_index": 1,
+      "cert_data": {
+        "is_cert": true,
+        "confidence": 0.95,
+        "cert_type": "other",
+        "session": null,
+        "item": null,
+        "smith": "二代越前康継",
+        "reason": "Japanese sword certificate with vertical text, red seal, tsuba image, and smith attribution visible"
+      },
+      "all_analyses": [
+        {
+          "index": 0,
+          "filename": "IMG_5295.gif",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a tsuba (sword guard) with decorative metalwork in a presentation box, not a paper certificate document"
+        },
+        {
+          "index": 1,
+          "filename": "img20250421_13410108-300x210.gif",
+          "is_cert": true,
+          "confidence": 0.95,
+          "cert_type": "other",
+          "session": null,
+          "item": null,
+          "smith": "二代越前康継",
+          "reason": "Japanese sword certificate with vertical text, red seal, tsuba image, and smith attribution visible"
+        },
+        {
+          "index": 2,
+          "filename": "higokinkotaikan.gif",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This appears to be calligraphy or text written vertically in black ink, but lacks the characteristic formatting, red seals, and specific terminology of NBTHK/NTHK sword certification documents"
+        },
+        {
+          "index": 3,
+          "filename": "kan3-2.gif",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This appears to be a catalog or reference book showing tsuba (sword guards) with descriptions, not a certification document. No red seals or certification terminology visible."
+        },
+        {
+          "index": 4,
+          "filename": "higonokinko.gif",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is an exhibition catalog cover for Kumamoto arts, not a sword certification document"
+        },
+        {
+          "index": 5,
+          "filename": "higonokinko2.gif",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a book page showing a tsuba (sword guard) with botanical design, not a certification document"
+        },
+        {
+          "index": 6,
+          "filename": "IMG_5296.gif",
+          "is_cert": false,
+          "confidence": 1,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a metal tsuba (sword guard) with decorative cutouts, not a paper certificate document"
+        },
+        {
+          "index": 7,
+          "filename": "IMG_5297.gif",
+          "is_cert": false,
+          "confidence": 1,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a metal tsuba (sword guard) with decorative cutout design, not a paper certificate document"
+        },
+        {
+          "index": 8,
+          "filename": "IMG_5298.gif",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a circular metal tsuba (sword guard) with decorative cutwork pattern, displayed in a presentation box, not a paper certificate document"
+        },
+        {
+          "index": 9,
+          "filename": "IMG_5299-265x300.gif",
+          "is_cert": false,
+          "confidence": 0.95,
+          "cert_type": null,
+          "session": null,
+          "item": null,
+          "smith": null,
+          "reason": "This is a leather-bound book or journal with a ribbon tie, not a Japanese sword certification document"
+        }
+      ]
+    }
+  ]
+}
