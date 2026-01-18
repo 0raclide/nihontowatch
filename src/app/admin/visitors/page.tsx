@@ -36,14 +36,26 @@ function formatRelativeTime(isoDate: string): string {
 }
 
 interface VisitorStats {
-  uniqueVisitors: number;
+  // HONEST metrics
+  trackedVisitors: number;
+  totalSessions: number;
+  uniqueIPs: string[];
   totalEvents: number;
-  avgEventsPerVisitor: number;
-  bounceRate: number;
-  visitorsByDay: { date: string; visitors: number; events: number }[];
+
+  // Tracking coverage
+  eventsWithTracking: number;
+  eventsWithoutTracking: number;
+  trackingStartDate: string | null;
+
+  // Time series
+  visitorsByDay: { date: string; visitors: number; sessions: number; events: number }[];
+
+  // Breakdowns
   topEventTypes: { type: string; count: number; percentage: number }[];
   topDealers: { name: string; clicks: number; percentage: number }[];
   topPaths: { path: string; count: number; percentage: number }[];
+
+  // Visitor details
   visitors: {
     visitorId: string;
     ip: string | null;
@@ -52,8 +64,11 @@ interface VisitorStats {
     lastSeen: string;
     topEvent: string;
   }[];
+
+  // Real-time
   activeNow: number;
-  uniqueIPs: string[];
+
+  // Time range
   periodStart: string;
   periodEnd: string;
 }
@@ -206,23 +221,45 @@ export default function VisitorsPage() {
         </div>
       </div>
 
-      {/* Top Metrics */}
+      {/* Tracking Coverage Warning */}
+      {stats && stats.eventsWithoutTracking > 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
+          <svg className="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <div>
+            <p className="text-sm font-medium text-amber-800">Visitor tracking started recently</p>
+            <p className="text-xs text-amber-700 mt-1">
+              {stats.eventsWithTracking} of {stats.totalEvents} events ({((stats.eventsWithTracking / stats.totalEvents) * 100).toFixed(1)}%) have visitor tracking.
+              {stats.trackingStartDate && (
+                <> Tracking began {formatRelativeTime(stats.trackingStartDate)}.</>
+              )}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Top Metrics - HONEST */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-cream rounded-xl p-5 border border-border">
-          <p className="text-xs uppercase tracking-wider text-muted font-medium">Unique Visitors</p>
-          <p className="text-3xl font-serif text-ink mt-2">{formatNumber(stats?.uniqueVisitors || 0)}</p>
+          <p className="text-xs uppercase tracking-wider text-muted font-medium">Tracked Visitors</p>
+          <p className="text-3xl font-serif text-ink mt-2">{formatNumber(stats?.trackedVisitors || 0)}</p>
+          <p className="text-xs text-muted mt-1">Unique visitor IDs</p>
+        </div>
+        <div className="bg-cream rounded-xl p-5 border border-border">
+          <p className="text-xs uppercase tracking-wider text-muted font-medium">Unique IPs</p>
+          <p className="text-3xl font-serif text-ink mt-2">{formatNumber(stats?.uniqueIPs?.length || 0)}</p>
+          <p className="text-xs text-muted mt-1">Distinct IP addresses</p>
+        </div>
+        <div className="bg-cream rounded-xl p-5 border border-border">
+          <p className="text-xs uppercase tracking-wider text-muted font-medium">Sessions</p>
+          <p className="text-3xl font-serif text-ink mt-2">{formatNumber(stats?.totalSessions || 0)}</p>
+          <p className="text-xs text-muted mt-1">Browser tabs/sessions</p>
         </div>
         <div className="bg-cream rounded-xl p-5 border border-border">
           <p className="text-xs uppercase tracking-wider text-muted font-medium">Total Events</p>
           <p className="text-3xl font-serif text-ink mt-2">{formatNumber(stats?.totalEvents || 0)}</p>
-        </div>
-        <div className="bg-cream rounded-xl p-5 border border-border">
-          <p className="text-xs uppercase tracking-wider text-muted font-medium">Events/Visitor</p>
-          <p className="text-3xl font-serif text-ink mt-2">{stats?.avgEventsPerVisitor || 0}</p>
-        </div>
-        <div className="bg-cream rounded-xl p-5 border border-border">
-          <p className="text-xs uppercase tracking-wider text-muted font-medium">Bounce Rate</p>
-          <p className="text-3xl font-serif text-ink mt-2">{stats?.bounceRate || 0}%</p>
+          <p className="text-xs text-muted mt-1">All tracked actions</p>
         </div>
       </div>
 

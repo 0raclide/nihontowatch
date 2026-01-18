@@ -166,8 +166,8 @@ function HomeContent() {
     }
   }, []);
 
-  // Build URL params from state
-  const buildUrlParams = useCallback(() => {
+  // Build URL params from state (for URL sync only, excludes page for fetch)
+  const buildUrlParams = useCallback((includePage = true) => {
     const params = new URLSearchParams();
 
     params.set('tab', 'available');
@@ -180,11 +180,16 @@ function HomeContent() {
     if (filters.signatureStatuses.length) params.set('sig', filters.signatureStatuses.join(','));
     if (filters.askOnly) params.set('ask', 'true');
     if (sort !== 'recent') params.set('sort', sort);
-    if (page > 1) params.set('page', String(page));
+    if (includePage && page > 1) params.set('page', String(page));
     if (searchQuery) params.set('q', searchQuery);
 
     return params;
   }, [activeTab, filters, sort, page, searchQuery]);
+
+  // Separate params for data fetching (excludes page - handled by loadMore in mobile)
+  const fetchParams = useCallback(() => {
+    return buildUrlParams(false); // Don't include page
+  }, [buildUrlParams]);
 
   // Sync URL with state
   useEffect(() => {
@@ -193,19 +198,23 @@ function HomeContent() {
     router.replace(newUrl, { scroll: false });
   }, [buildUrlParams, router]);
 
-  // Fetch data
+  // Fetch data - uses fetchParams (excludes page) so this only runs on filter/search changes
+  // Page changes are handled by loadMore in mobile mode
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        const params = buildUrlParams();
+        // Always fetch page 1 on initial/filter change
+        const params = fetchParams();
+        params.set('page', '1');
         const res = await fetch(`/api/browse?${params.toString()}`);
         const json = await res.json();
         setData(json);
 
-        // Reset accumulated listings when filters change or on fresh load
+        // Reset to page 1 and set initial listings
         if (isMobile) {
           setAllListings(json.listings || []);
+          setPage(1);
           filtersChangedRef.current = false;
         }
       } catch (error) {
@@ -216,7 +225,7 @@ function HomeContent() {
     };
 
     fetchData();
-  }, [buildUrlParams, isMobile]);
+  }, [fetchParams, isMobile]);
 
   // Load more for infinite scroll
   const loadMore = useCallback(async () => {

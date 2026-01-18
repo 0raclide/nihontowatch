@@ -4,21 +4,26 @@ import { NextRequest, NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 
 interface VisitorStats {
-  // Top metrics
-  uniqueVisitors: number;
+  // Top metrics - HONEST numbers
+  trackedVisitors: number;      // Unique visitor_ids (reliable)
+  totalSessions: number;        // Unique session_ids (less reliable)
+  uniqueIPs: string[];          // For geo lookup
   totalEvents: number;
-  avgEventsPerVisitor: number;
-  bounceRate: number; // % of visitors with only 1 event
+
+  // Tracking coverage
+  eventsWithTracking: number;   // Events that have visitor_id
+  eventsWithoutTracking: number; // Old events without visitor_id
+  trackingStartDate: string | null; // When visitor tracking began
 
   // Time series for chart
-  visitorsByDay: { date: string; visitors: number; events: number }[];
+  visitorsByDay: { date: string; visitors: number; sessions: number; events: number }[];
 
   // Breakdowns
   topEventTypes: { type: string; count: number; percentage: number }[];
   topDealers: { name: string; clicks: number; percentage: number }[];
   topPaths: { path: string; count: number; percentage: number }[];
 
-  // Visitor details
+  // Visitor details (only tracked visitors)
   visitors: {
     visitorId: string;
     ip: string | null;
@@ -30,9 +35,6 @@ interface VisitorStats {
 
   // Real-time
   activeNow: number;
-
-  // For geo lookup
-  uniqueIPs: string[];
 
   // Time range
   periodStart: string;
@@ -90,52 +92,71 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Database error' }, { status: 500 });
     }
 
-    // Process events
-    const visitorMap = new Map<string, {
+    // Process events - HONEST tracking
+    // Only count visitor_id as real visitors, session_id is unreliable
+    const trackedVisitorMap = new Map<string, {
       ip: string | null;
       events: number;
       firstSeen: string;
       lastSeen: string;
       eventTypes: Map<string, number>;
-      sessions: Set<string>;
     }>();
 
+    const sessionIds = new Set<string>();
     const eventTypeCounts = new Map<string, number>();
     const dealerClicks = new Map<string, number>();
     const pathCounts = new Map<string, number>();
-    const eventsByDay = new Map<string, { visitors: Set<string>; events: number }>();
+    const eventsByDay = new Map<string, { visitors: Set<string>; sessions: Set<string>; events: number }>();
     const ipSet = new Set<string>();
+
+    // Tracking coverage
+    let eventsWithTracking = 0;
+    let eventsWithoutTracking = 0;
+    let trackingStartDate: string | null = null;
 
     // Real-time: visitors in last 5 minutes
     const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000).toISOString();
     const recentVisitors = new Set<string>();
 
     for (const event of events || []) {
-      const visitorId = event.visitor_id || event.session_id || 'unknown';
       const eventType = event.event_type || 'unknown';
       const createdAt = event.created_at;
       const dateKey = createdAt.slice(0, 10); // YYYY-MM-DD
 
-      // Track visitor
-      if (!visitorMap.has(visitorId)) {
-        visitorMap.set(visitorId, {
-          ip: event.ip_address,
-          events: 0,
-          firstSeen: createdAt,
-          lastSeen: createdAt,
-          eventTypes: new Map(),
-          sessions: new Set(),
-        });
+      // Track sessions (all events have session_id)
+      if (event.session_id) {
+        sessionIds.add(event.session_id);
       }
-      const visitor = visitorMap.get(visitorId)!;
-      visitor.events++;
-      visitor.lastSeen = createdAt > visitor.lastSeen ? createdAt : visitor.lastSeen;
-      visitor.firstSeen = createdAt < visitor.firstSeen ? createdAt : visitor.firstSeen;
-      visitor.eventTypes.set(eventType, (visitor.eventTypes.get(eventType) || 0) + 1);
-      if (event.session_id) visitor.sessions.add(event.session_id);
-      if (event.ip_address && !visitor.ip) visitor.ip = event.ip_address;
 
-      // Track event types
+      // Only track as "visitor" if we have visitor_id (new tracking)
+      if (event.visitor_id) {
+        eventsWithTracking++;
+
+        // Track first event with visitor_id
+        if (!trackingStartDate || createdAt < trackingStartDate) {
+          trackingStartDate = createdAt;
+        }
+
+        if (!trackedVisitorMap.has(event.visitor_id)) {
+          trackedVisitorMap.set(event.visitor_id, {
+            ip: event.ip_address,
+            events: 0,
+            firstSeen: createdAt,
+            lastSeen: createdAt,
+            eventTypes: new Map(),
+          });
+        }
+        const visitor = trackedVisitorMap.get(event.visitor_id)!;
+        visitor.events++;
+        visitor.lastSeen = createdAt > visitor.lastSeen ? createdAt : visitor.lastSeen;
+        visitor.firstSeen = createdAt < visitor.firstSeen ? createdAt : visitor.firstSeen;
+        visitor.eventTypes.set(eventType, (visitor.eventTypes.get(eventType) || 0) + 1);
+        if (event.ip_address && !visitor.ip) visitor.ip = event.ip_address;
+      } else {
+        eventsWithoutTracking++;
+      }
+
+      // Track event types (all events)
       eventTypeCounts.set(eventType, (eventTypeCounts.get(eventType) || 0) + 1);
 
       // Track dealer clicks
@@ -150,12 +171,17 @@ export async function GET(request: NextRequest) {
         pathCounts.set(path, (pathCounts.get(path) || 0) + 1);
       }
 
-      // Track by day
+      // Track by day - separate visitors (with tracking) from sessions
       if (!eventsByDay.has(dateKey)) {
-        eventsByDay.set(dateKey, { visitors: new Set(), events: 0 });
+        eventsByDay.set(dateKey, { visitors: new Set(), sessions: new Set(), events: 0 });
       }
       const dayData = eventsByDay.get(dateKey)!;
-      dayData.visitors.add(visitorId);
+      if (event.visitor_id) {
+        dayData.visitors.add(event.visitor_id);
+      }
+      if (event.session_id) {
+        dayData.sessions.add(event.session_id);
+      }
       dayData.events++;
 
       // Track IPs
@@ -163,26 +189,19 @@ export async function GET(request: NextRequest) {
         ipSet.add(event.ip_address);
       }
 
-      // Real-time tracking
-      if (createdAt >= fiveMinutesAgo) {
-        recentVisitors.add(visitorId);
+      // Real-time tracking (only tracked visitors)
+      if (event.visitor_id && createdAt >= fiveMinutesAgo) {
+        recentVisitors.add(event.visitor_id);
       }
     }
 
-    // Calculate metrics
-    const uniqueVisitors = visitorMap.size;
+    // Calculate HONEST metrics
+    const trackedVisitors = trackedVisitorMap.size;
+    const totalSessions = sessionIds.size;
     const totalEvents = events?.length || 0;
-    const avgEventsPerVisitor = uniqueVisitors > 0 ? totalEvents / uniqueVisitors : 0;
-
-    // Bounce rate: visitors with only 1 session
-    let singleSessionVisitors = 0;
-    visitorMap.forEach((v) => {
-      if (v.sessions.size <= 1 && v.events <= 2) singleSessionVisitors++;
-    });
-    const bounceRate = uniqueVisitors > 0 ? (singleSessionVisitors / uniqueVisitors) * 100 : 0;
 
     // Build time series (fill in missing days)
-    const visitorsByDay: { date: string; visitors: number; events: number }[] = [];
+    const visitorsByDay: { date: string; visitors: number; sessions: number; events: number }[] = [];
     const currentDate = new Date(periodStart);
     while (currentDate <= now) {
       const dateKey = currentDate.toISOString().slice(0, 10);
@@ -190,6 +209,7 @@ export async function GET(request: NextRequest) {
       visitorsByDay.push({
         date: dateKey,
         visitors: dayData?.visitors.size || 0,
+        sessions: dayData?.sessions.size || 0,
         events: dayData?.events || 0,
       });
       currentDate.setDate(currentDate.getDate() + 1);
@@ -227,8 +247,8 @@ export async function GET(request: NextRequest) {
         percentage: totalPathViews > 0 ? (count / totalPathViews) * 100 : 0,
       }));
 
-    // Visitor list (top 50 by events)
-    const visitors = Array.from(visitorMap.entries())
+    // Visitor list - ONLY tracked visitors (with visitor_id)
+    const visitors = Array.from(trackedVisitorMap.entries())
       .sort((a, b) => b[1].events - a[1].events)
       .slice(0, 50)
       .map(([visitorId, data]) => {
@@ -253,17 +273,32 @@ export async function GET(request: NextRequest) {
       });
 
     const stats: VisitorStats = {
-      uniqueVisitors,
+      // HONEST metrics
+      trackedVisitors,
+      totalSessions,
+      uniqueIPs: Array.from(ipSet),
       totalEvents,
-      avgEventsPerVisitor: Math.round(avgEventsPerVisitor * 10) / 10,
-      bounceRate: Math.round(bounceRate),
+
+      // Tracking coverage
+      eventsWithTracking,
+      eventsWithoutTracking,
+      trackingStartDate,
+
+      // Time series
       visitorsByDay,
+
+      // Breakdowns
       topEventTypes,
       topDealers,
       topPaths,
+
+      // Visitor details
       visitors,
+
+      // Real-time
       activeNow: recentVisitors.size,
-      uniqueIPs: Array.from(ipSet),
+
+      // Time range
       periodStart: periodStartISO,
       periodEnd: periodEndISO,
     };
