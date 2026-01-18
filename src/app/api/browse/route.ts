@@ -2,7 +2,8 @@ import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { normalizeSearchText, expandSearchAliases } from '@/lib/search';
 import { parseNumericFilters } from '@/lib/search/numericFilters';
-import { CACHE, PAGINATION } from '@/lib/constants';
+import { parseSemanticQuery } from '@/lib/search/semanticQueryParser';
+import { CACHE, PAGINATION, LISTING_FILTERS } from '@/lib/constants';
 
 // Facets are computed fresh for each request to reflect current filters
 // No caching - facet counts must accurately reflect user's filter selections
@@ -68,6 +69,15 @@ function parseParams(searchParams: URLSearchParams): BrowseParams {
 const STATUS_AVAILABLE = 'status.eq.available,is_available.eq.true';
 const STATUS_SOLD = 'status.eq.sold,status.eq.presumed_sold,is_sold.eq.true';
 
+// Helper to apply minimum price filter to queries
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function applyMinPriceFilter<T extends { gte: (column: string, value: number) => T }>(query: T): T {
+  if (LISTING_FILTERS.MIN_PRICE_JPY > 0) {
+    return query.gte('price_value', LISTING_FILTERS.MIN_PRICE_JPY);
+  }
+  return query;
+}
+
 // Certification variants mapping (for backward compatibility until data is normalized)
 const CERT_VARIANTS: Record<string, string[]> = {
   'Juyo': ['Juyo', 'juyo'],
@@ -131,6 +141,9 @@ export async function GET(request: NextRequest) {
     // Status filter
     query = query.or(statusFilter);
 
+    // Minimum price filter (excludes books, accessories, low-quality items)
+    query = applyMinPriceFilter(query);
+
     // Exclude stands/racks (display accessories, not collectibles)
     query = query.not('item_type', 'ilike', 'stand');
 
@@ -187,16 +200,39 @@ export async function GET(request: NextRequest) {
       query = query.in('signature_status', params.signatureStatuses);
     }
 
-    // Process query with numeric filters
+    // Process query with semantic extraction, numeric filters, and text search
     if (params.query && params.query.trim().length >= 2) {
-      const { filters, textWords } = parseNumericFilters(params.query);
+      // Step 1: Extract semantic filters (certifications, item types) from query
+      // This ensures "Tanto Juyo" filters by Juyo certification, not text match
+      const { extractedFilters, remainingTerms } = parseSemanticQuery(params.query);
+
+      // Apply extracted certification filters (exact match on cert_type)
+      // Only apply if no explicit certification filter was already set via URL params
+      if (extractedFilters.certifications.length > 0 && !params.certifications?.length) {
+        const certVariants = extractedFilters.certifications.flatMap(c => CERT_VARIANTS[c] || [c]);
+        query = query.in('cert_type', certVariants);
+      }
+
+      // Apply extracted item type filters (exact match on item_type)
+      // Only apply if no explicit item type filter was already set via URL params
+      if (extractedFilters.itemTypes.length > 0 && !params.itemTypes?.length && params.category === 'all') {
+        const typeConditions = extractedFilters.itemTypes
+          .map(t => `item_type.ilike.${t}`)
+          .join(',');
+        query = query.or(typeConditions);
+      }
+
+      // Step 2: Parse numeric filters from remaining terms
+      const remainingQuery = remainingTerms.join(' ');
+      const { filters, textWords } = parseNumericFilters(remainingQuery);
 
       // Apply numeric filters
       for (const { field, op, value } of filters) {
         query = query.filter(field, op, value);
       }
 
-      // Text search on remaining words - include all relevant metadata fields
+      // Step 3: Text search on remaining words (artisan names, provinces, etc.)
+      // These are terms that weren't recognized as semantic filters
       const searchFields = [
         'title',
         'description',
@@ -208,16 +244,12 @@ export async function GET(request: NextRequest) {
         'province',
         'era',
         'mei_type',
-        // Classification
-        'cert_type',
-        'item_type',
-        'item_category',
         // Tosogu-specific
         'tosogu_material',
       ];
 
       for (const word of textWords) {
-        // Expand word to include aliases (e.g., "tokuju" -> ["tokuju", "tokubetsu juyo", "tokubetsu_juyo"])
+        // Expand word to include aliases (e.g., "bizen" -> ["bizen", "bishu"])
         const expandedTerms = expandSearchAliases(word).map(normalizeSearchText);
 
         // Build OR conditions: each expanded term can match in any field
@@ -232,13 +264,13 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Sorting
+    // Sorting - use price_jpy for currency-normalized price sorting
     switch (params.sort) {
       case 'price_asc':
-        query = query.order('price_value', { ascending: true, nullsFirst: false });
+        query = query.order('price_jpy', { ascending: true, nullsFirst: false });
         break;
       case 'price_desc':
-        query = query.order('price_value', { ascending: false, nullsFirst: false });
+        query = query.order('price_jpy', { ascending: false, nullsFirst: false });
         break;
       case 'name':
         query = query.order('title', { ascending: true });
@@ -401,6 +433,9 @@ async function getItemTypeFacets(
       .or(statusFilter)
       .not('item_type', 'ilike', 'stand'); // Exclude stands to match main query (case-insensitive)
 
+    // Apply minimum price filter
+    query = applyMinPriceFilter(query);
+
     // Apply certification, dealer, askOnly filters
     if (options.certifications?.length) {
       const allVariants = options.certifications.flatMap(c => CERT_VARIANTS[c] || [c]);
@@ -476,6 +511,9 @@ async function getCertificationFacets(
       .or(statusFilter)
       .not('item_type', 'ilike', 'stand'); // Exclude stands to match main query (case-insensitive)
 
+    // Apply minimum price filter
+    query = applyMinPriceFilter(query);
+
     // Apply dealer filter at DB level (this works with AND)
     if (options.dealers?.length) {
       query = query.in('dealer_id', options.dealers);
@@ -543,6 +581,9 @@ async function getDealerFacets(
       .select('dealer_id, dealers!inner(name), item_type')
       .or(statusFilter)
       .not('item_type', 'ilike', 'stand'); // Exclude stands to match main query (case-insensitive)
+
+    // Apply minimum price filter
+    query = applyMinPriceFilter(query);
 
     // Apply certification filter at DB level (this works with AND)
     if (options.certifications?.length) {
@@ -617,6 +658,9 @@ async function getHistoricalPeriodFacets(
       .or(statusFilter)
       .not('item_type', 'ilike', 'stand');
 
+    // Apply minimum price filter
+    query = applyMinPriceFilter(query);
+
     // Apply filters
     if (options.certifications?.length) {
       const allVariants = options.certifications.flatMap(c => CERT_VARIANTS[c] || [c]);
@@ -690,6 +734,9 @@ async function getSignatureStatusFacets(
       .select('signature_status, item_type')
       .or(statusFilter)
       .not('item_type', 'ilike', 'stand');
+
+    // Apply minimum price filter
+    query = applyMinPriceFilter(query);
 
     // Apply filters
     if (options.certifications?.length) {

@@ -39,6 +39,7 @@ export interface Database {
           price_value: number | null;
           price_currency: string;
           price_raw: string | null;
+          price_jpy: number | null; // Normalized price in JPY for cross-currency sorting
           nagasa_cm: number | null;
           sori_cm: number | null;
           motohaba_cm: number | null;
@@ -283,7 +284,16 @@ export interface Database {
       };
     };
     Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Functions: {
+      refresh_price_jpy: {
+        Args: {
+          usd_to_jpy?: number;
+          eur_to_jpy?: number;
+          gbp_to_jpy?: number;
+        };
+        Returns: number;
+      };
+    };
     Enums: {
       action_type: 'view' | 'search' | 'favorite' | 'alert_create' | 'alert_delete' | 'login' | 'logout';
       alert_type: 'price_drop' | 'new_listing' | 'back_in_stock';
