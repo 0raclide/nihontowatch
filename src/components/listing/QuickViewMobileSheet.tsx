@@ -309,30 +309,13 @@ export function QuickViewMobileSheet({
             <QuickMeasurement listing={listing} />
           </div>
 
-          {/* Artisan (+ School) and Dealer row */}
-          <div className="px-4 pb-2 shrink-0 flex items-center justify-between gap-2">
-            {/* Artisan + School on left */}
-            <div className="flex items-center gap-1.5 min-w-0 flex-1">
-              {artisan && (
-                <span className="text-[14px] text-ink font-medium truncate">
-                  {artisan}
-                </span>
-              )}
-              {artisan && school && (
-                <span className="text-[12px] text-muted">·</span>
-              )}
-              {school && (
-                <span className="text-[12px] text-muted truncate">
-                  {school}
-                </span>
-              )}
-            </div>
-            {/* Dealer on right */}
-            <div className="flex items-center text-[12px] text-muted shrink-0">
+          {/* Dealer row */}
+          <div className="px-4 pb-2 shrink-0">
+            <div className="flex items-center text-[12px] text-muted">
               <svg className="w-3 h-3 mr-1 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
               </svg>
-              <span className="truncate max-w-[100px]">{dealerName}</span>
+              <span className="truncate">{dealerName}</span>
             </div>
           </div>
 
@@ -345,14 +328,12 @@ export function QuickViewMobileSheet({
             onTouchEnd={(e) => e.stopPropagation()}
             data-testid="mobile-sheet-scroll-content"
           >
-            {/* Attribution & Measurements (artisan/school shown in header above) */}
+            {/* Attribution & Measurements */}
             <MetadataGrid
               listing={listing}
               variant="full"
               showAttribution={true}
               showMeasurements={true}
-              hideArtisan={true}
-              hideSchool={true}
             />
 
             {/* Title (auto-translated if Japanese) */}

@@ -184,11 +184,11 @@ export function useAdaptiveVirtualScroll<T>({
 
   // SSR: Show first batch for fast initial render
   if (!isClient) {
-    const initialCount = Math.min(items.length, 20); // Show first 20 items on SSR
+    const initialCount = Math.min(items.length, 20);
     return {
       visibleItems: items.slice(0, initialCount),
       startIndex: 0,
-      totalHeight: 0, // No fixed height on SSR
+      totalHeight: 0,
       offsetY: 0,
       columns: dimensions.columns,
       rowHeight: dimensions.rowHeight,
