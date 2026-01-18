@@ -36,7 +36,7 @@ const SWIPE_THRESHOLD = 40; // Minimum distance to trigger state change
 const VELOCITY_THRESHOLD = 0.4; // Minimum velocity for quick swipe (px/ms)
 
 // Snap points as percentage of viewport height
-const EXPANDED_RATIO = 0.70; // 70% of screen when expanded
+const EXPANDED_RATIO = 0.60; // 60% of screen when expanded
 
 // =============================================================================
 // COMPONENT
@@ -74,7 +74,7 @@ export function QuickViewMobileSheet({
 
   const { currency, exchangeRates } = useCurrency();
   const certInfo = getCertInfo(listing.cert_type);
-  const { artisan } = getArtisanInfo(listing);
+  const { artisan, school } = getArtisanInfo(listing);
   const itemTypeLabel = getItemTypeLabel(listing.item_type);
   const dealerName = listing.dealer?.name || 'Dealer';
   const priceDisplay = formatPriceWithConversion(
@@ -252,38 +252,11 @@ export function QuickViewMobileSheet({
 
       {/* Unified content structure - always rendered, clips based on height */}
       <div className="flex flex-col h-full overflow-hidden">
-        {/* Header row: Close + Price + Favorite */}
+        {/* Header row: Price + Favorite + Image counter */}
         <div className="px-4 pb-2 shrink-0">
           <div className="flex items-center justify-between">
-            {/* Close button (only visible when expanded enough) */}
-            <div
-              className="w-8 h-8 flex items-center justify-center transition-opacity"
-              style={{ opacity: progress > 0.3 ? 1 : 0, pointerEvents: progress > 0.3 ? 'auto' : 'none' }}
-            >
-              <button
-                type="button"
-                data-testid="mobile-sheet-close"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onClose();
-                }}
-                onTouchStart={(e) => e.stopPropagation()}
-                onTouchEnd={(e) => {
-                  e.stopPropagation();
-                  e.preventDefault();
-                  onClose();
-                }}
-                className="w-8 h-8 flex items-center justify-center rounded-full bg-ink/80 text-white active:bg-ink transition-colors outline-none focus:outline-none"
-                aria-label="Close"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            {/* Price - centered */}
-            <span className={`text-lg font-semibold tabular-nums flex-1 text-center ${listing.price_value ? 'text-ink' : 'text-muted'}`}>
+            {/* Price - left aligned */}
+            <span className={`text-lg font-semibold tabular-nums ${listing.price_value ? 'text-ink' : 'text-muted'}`}>
               {priceDisplay}
             </span>
 
@@ -336,18 +309,30 @@ export function QuickViewMobileSheet({
             <QuickMeasurement listing={listing} />
           </div>
 
-          {/* Artisan + Dealer row */}
-          <div className="px-4 pb-2 shrink-0">
-            {artisan && (
-              <p className="text-[14px] text-ink font-medium truncate">
-                {artisan}
-              </p>
-            )}
-            <div className="flex items-center text-[12px] text-muted mt-0.5">
+          {/* Artisan (+ School) and Dealer row */}
+          <div className="px-4 pb-2 shrink-0 flex items-center justify-between gap-2">
+            {/* Artisan + School on left */}
+            <div className="flex items-center gap-1.5 min-w-0 flex-1">
+              {artisan && (
+                <span className="text-[14px] text-ink font-medium truncate">
+                  {artisan}
+                </span>
+              )}
+              {artisan && school && (
+                <span className="text-[12px] text-muted">·</span>
+              )}
+              {school && (
+                <span className="text-[12px] text-muted truncate">
+                  {school}
+                </span>
+              )}
+            </div>
+            {/* Dealer on right */}
+            <div className="flex items-center text-[12px] text-muted shrink-0">
               <svg className="w-3 h-3 mr-1 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
               </svg>
-              <span className="truncate">{dealerName}</span>
+              <span className="truncate max-w-[100px]">{dealerName}</span>
             </div>
           </div>
 
