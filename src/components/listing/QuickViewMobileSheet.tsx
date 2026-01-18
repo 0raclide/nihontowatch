@@ -227,11 +227,14 @@ export function QuickViewMobileSheet({
   // Determine if we're in "expanded mode" (for content visibility)
   const showExpandedContent = progress > 0.1;
 
+  // Check if we have a real dealer name (not just the fallback)
+  const hasRealDealerName = listing.dealer?.name && listing.dealer.name !== 'Dealer';
+
   return (
     <div
       ref={sheetRef}
       data-testid="mobile-sheet"
-      className="fixed left-0 right-0 bottom-0 z-50 bg-cream rounded-t-2xl overflow-hidden"
+      className="fixed left-0 right-0 bottom-0 z-50 bg-cream rounded-t-2xl overflow-hidden flex flex-col"
       style={{
         height: sheetHeight,
         boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.15)',
@@ -241,7 +244,7 @@ export function QuickViewMobileSheet({
     >
       {/* Draggable header area - entire top section responds to drag gestures */}
       <div
-        className="cursor-grab active:cursor-grabbing"
+        className="cursor-grab active:cursor-grabbing shrink-0"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
@@ -252,11 +255,16 @@ export function QuickViewMobileSheet({
           <div className="w-10 h-1 rounded-full bg-border" />
         </div>
 
-        {/* Header row: Favorite + Price + Image counter + Close */}
+        {/* Header row: Price + Favorite + Close */}
         <div className="px-4 pb-2">
           <div className="flex items-center justify-between">
-            {/* Left side: Favorite + Price */}
-            <div className="flex items-center gap-3">
+            {/* Left side: Price */}
+            <span className={`text-lg font-semibold tabular-nums ${listing.price_value ? 'text-ink' : 'text-muted'}`}>
+              {priceDisplay}
+            </span>
+
+            {/* Right side: Favorite + Close button */}
+            <div className="flex items-center gap-2">
               <div
                 onClick={(e) => e.stopPropagation()}
                 onTouchStart={(e) => e.stopPropagation()}
@@ -266,18 +274,6 @@ export function QuickViewMobileSheet({
                   size="sm"
                 />
               </div>
-              <span className={`text-lg font-semibold tabular-nums ${listing.price_value ? 'text-ink' : 'text-muted'}`}>
-                {priceDisplay}
-              </span>
-            </div>
-
-            {/* Right side: Image counter + Close button */}
-            <div className="flex items-center gap-3">
-              {imageCount > 0 && (
-                <span className="text-[11px] text-muted tabular-nums">
-                  {currentImageIndex + 1}/{imageCount}
-                </span>
-              )}
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -285,7 +281,7 @@ export function QuickViewMobileSheet({
                 }}
                 onTouchStart={(e) => e.stopPropagation()}
                 onTouchEnd={(e) => e.stopPropagation()}
-                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-ink/10 active:bg-ink/20 transition-colors -mr-1"
+                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-ink/10 active:bg-ink/20 transition-colors"
                 aria-label="Close quick view"
               >
                 <svg className="w-5 h-5 text-ink" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -297,8 +293,8 @@ export function QuickViewMobileSheet({
         </div>
       </div>
 
-      {/* Unified content structure - always rendered, clips based on height */}
-      <div className="flex flex-col h-full overflow-hidden">
+      {/* Unified content structure - flex-1 to fill remaining space after header */}
+      <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
 
         {/* Expandable content - visible as sheet grows */}
         <div
@@ -329,15 +325,17 @@ export function QuickViewMobileSheet({
             <QuickMeasurement listing={listing} />
           </div>
 
-          {/* Dealer row */}
-          <div className="px-4 pb-2 shrink-0">
-            <div className="flex items-center text-[12px] text-muted">
-              <svg className="w-3 h-3 mr-1 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-              </svg>
-              <span className="truncate">{dealerName}</span>
+          {/* Dealer row - only show if we have a real dealer name */}
+          {hasRealDealerName && (
+            <div className="px-4 pb-2 shrink-0">
+              <div className="flex items-center text-[12px] text-muted">
+                <svg className="w-3 h-3 mr-1 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+                <span className="truncate">{dealerName}</span>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Scrollable content area */}
           <div
@@ -365,11 +363,11 @@ export function QuickViewMobileSheet({
             <TranslatedDescription listing={listing} maxLines={12} />
           </div>
 
-          {/* Sticky CTA */}
+          {/* Sticky CTA - extra padding for iOS browser chrome */}
           <div
-            className="px-4 py-3 bg-cream border-t border-border shrink-0"
+            className="px-4 pt-3 bg-cream border-t border-border shrink-0"
             style={{
-              paddingBottom: 'max(12px, calc(env(safe-area-inset-bottom, 0px) + 12px))'
+              paddingBottom: 'max(20px, calc(env(safe-area-inset-bottom, 0px) + 20px))'
             }}
           >
             <a
