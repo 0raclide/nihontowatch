@@ -11,6 +11,7 @@
 | [USER_ACCOUNTS_SYSTEM.md](./USER_ACCOUNTS_SYSTEM.md) | Auth, profiles, favorites, alerts, activity tracking, admin |
 | [SIGNUP_PRESSURE.md](./SIGNUP_PRESSURE.md) | Signup modal triggers, thresholds, copy variants, testing |
 | [MOBILE_UX.md](./MOBILE_UX.md) | Mobile interaction patterns, QuickView bottom sheet |
+| [QUICKVIEW_METADATA.md](./QUICKVIEW_METADATA.md) | QuickView metadata display, translation system |
 | [SEARCH_FEATURES.md](./SEARCH_FEATURES.md) | Natural language search, filters, query syntax |
 | [FRESHNESS_SYSTEM.md](./FRESHNESS_SYSTEM.md) | Listing age verification, Wayback integration, confidence levels |
 | [OPTIMIZATION.md](./OPTIMIZATION.md) | Performance optimization, image loading, caching strategies |
@@ -123,6 +124,13 @@
 3. Check `tests/quickview-regression.spec.ts` - Mobile test patterns
 4. Use viewport `{ width: 390, height: 844 }` for testing
 
+### "I need to work on QuickView metadata or translation"
+1. Read [QUICKVIEW_METADATA.md](./QUICKVIEW_METADATA.md) - Complete system docs
+2. Check `src/components/listing/MetadataGrid.tsx` - Type-aware metadata display
+3. Check `src/components/listing/TranslatedDescription.tsx` - Translation UI
+4. Check `src/app/api/translate/route.ts` - OpenRouter translation API
+5. Run `npx playwright test tests/translation-api.spec.ts` - Translation tests
+
 ### "I need to work on listing freshness"
 1. Read [FRESHNESS_SYSTEM.md](./FRESHNESS_SYSTEM.md) - Complete system docs
 2. Check `src/lib/freshness/` - Freshness calculation and display
@@ -162,6 +170,7 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for:
 | Admin dashboard | [USER_ACCOUNTS_SYSTEM.md#admin-dashboard](./USER_ACCOUNTS_SYSTEM.md#admin-dashboard) |
 | Signup pressure & conversion | [SIGNUP_PRESSURE.md](./SIGNUP_PRESSURE.md) |
 | Mobile UX & gestures | [MOBILE_UX.md](./MOBILE_UX.md) |
+| QuickView metadata & translation | [QUICKVIEW_METADATA.md](./QUICKVIEW_METADATA.md) |
 | Search features | [SEARCH_FEATURES.md](./SEARCH_FEATURES.md) |
 | Listing freshness | [FRESHNESS_SYSTEM.md](./FRESHNESS_SYSTEM.md) |
 | Testing | [TESTING.md](./TESTING.md) - Unit, concordance, integration tests |

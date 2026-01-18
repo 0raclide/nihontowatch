@@ -113,6 +113,7 @@ export async function GET(request: NextRequest) {
         thickness_mm,
         material,
         description,
+        description_en,
         images,
         stored_images,
         images_stored_at,

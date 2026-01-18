@@ -1,0 +1,575 @@
+# QuickView Metadata & Translation System
+
+Complete documentation for the enhanced QuickView metadata display and automatic translation system.
+
+---
+
+## Overview
+
+The QuickView feature displays detailed item information in a modal/sheet overlay. This system provides:
+
+1. **Rich Metadata Display** - Type-aware metadata for swords vs tosogu
+2. **Automatic Translation** - Japanese descriptions translated to English via OpenRouter
+3. **Mobile Parity** - Full metadata in expanded mobile sheet
+4. **Collapsed Quick Info** - Key measurement in mobile collapsed pill
+
+---
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        QuickView System                         │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  ┌─────────────┐    ┌──────────────┐    ┌─────────────────┐   │
+│  │ QuickView   │───▶│ QuickView    │───▶│ MetadataGrid    │   │
+│  │ (Container) │    │ Content      │    │ (Type-aware)    │   │
+│  └─────────────┘    └──────────────┘    └─────────────────┘   │
+│         │                  │                     │             │
+│         │                  │            ┌────────┴────────┐   │
+│         │                  │            ▼                 ▼   │
+│         │                  │     ┌──────────┐     ┌──────────┐│
+│         │                  │     │ Sword    │     │ Tosogu   ││
+│         │                  │     │ Fields   │     │ Fields   ││
+│         │                  │     └──────────┘     └──────────┘│
+│         │                  │                                   │
+│         │                  ▼                                   │
+│         │         ┌──────────────────┐                        │
+│         │         │ Translated       │                        │
+│         │         │ Description      │───────┐                │
+│         │         └──────────────────┘       │                │
+│         │                                    ▼                │
+│         │                          ┌─────────────────┐        │
+│         │                          │ /api/translate  │        │
+│         │                          │ (OpenRouter)    │        │
+│         │                          └─────────────────┘        │
+│         │                                    │                │
+│         ▼                                    ▼                │
+│  ┌─────────────────┐               ┌─────────────────┐        │
+│  │ QuickView       │               │ Supabase        │        │
+│  │ MobileSheet     │               │ (Cache)         │        │
+│  └─────────────────┘               └─────────────────┘        │
+│         │                                                      │
+│         ▼                                                      │
+│  ┌─────────────────┐                                          │
+│  │ QuickMeasurement│                                          │
+│  │ (Collapsed Pill)│                                          │
+│  └─────────────────┘                                          │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Components
+
+### MetadataGrid
+
+**Location:** `src/components/listing/MetadataGrid.tsx`
+
+Type-aware metadata display that automatically shows appropriate fields based on item type.
+
+#### Props
+
+```typescript
+interface MetadataGridProps {
+  listing: Listing;
+  variant?: 'full' | 'compact';
+  className?: string;
+  showAttribution?: boolean;
+  showMeasurements?: boolean;
+}
+```
+
+#### Sword Fields (Blades)
+
+| Field | Label | Unit | Example |
+|-------|-------|------|---------|
+| `smith` | Smith | - | Sukehiro |
+| `school` | School | - | Settsu |
+| `era` | Era | - | Edo |
+| `province` | Province | - | Osaka |
+| `mei_type` | Signature | - | Mei |
+| `nagasa_cm` | Nagasa | cm | 71.2 |
+| `sori_cm` | Sori | cm | 1.8 |
+| `motohaba_cm` | Motohaba | cm | 3.2 |
+| `sakihaba_cm` | Sakihaba | cm | 2.3 |
+| `kasane_cm` | Kasane | cm | 0.72 |
+| `nakago_cm` | Nakago | cm | 21.5 |
+| `weight_g` | Weight | g | 820 |
+
+#### Tosogu Fields (Fittings)
+
+| Field | Label | Unit | Example |
+|-------|-------|------|---------|
+| `tosogu_maker` | Maker | - | Goto Ichijo |
+| `tosogu_school` | School | - | Goto |
+| `era` | Era | - | Edo |
+| `mei_type` | Signature | - | Mei |
+| `height_cm` | Height | cm | 7.5 |
+| `width_cm` | Width | cm | 7.2 |
+| `thickness_mm` | Thickness | mm | 5.2 |
+| `material` | Material | - | Iron with gold inlay |
+
+#### Certification Display
+
+Certifications are displayed with tier-based styling:
+
+| Tier | Certifications | Style |
+|------|----------------|-------|
+| Premier | Juyo, Tokubetsu Juyo | Gold background |
+| High | Tokubetsu Hozon | Amber background |
+| Standard | Hozon, NTHK | Gray background |
+
+```typescript
+const CERT_CONFIG = {
+  'Juyo': { label: 'Juyo', shortLabel: 'Juyo', tier: 'premier' },
+  'Tokubetsu Juyo': { label: 'Tokubetsu Juyo', shortLabel: 'TokuJu', tier: 'premier' },
+  'Tokubetsu Hozon': { label: 'Tokubetsu Hozon', shortLabel: 'TokuHo', tier: 'high' },
+  'Hozon': { label: 'Hozon', shortLabel: 'Hozon', tier: 'standard' },
+  // ... tosogu variants
+};
+```
+
+#### Helper Functions
+
+```typescript
+// Get artisan info based on item type
+getArtisanInfo(listing: Listing): {
+  artisan: string | null;   // smith or tosogu_maker
+  school: string | null;    // school or tosogu_school
+  artisanLabel: string;     // "Smith" or "Maker"
+}
+
+// Get certification display info
+getCertInfo(certType: string): {
+  label: string;
+  shortLabel: string;
+  tier: 'premier' | 'high' | 'standard';
+} | null
+```
+
+---
+
+### TranslatedDescription
+
+**Location:** `src/components/listing/TranslatedDescription.tsx`
+
+Displays listing descriptions with automatic Japanese-to-English translation.
+
+#### Props
+
+```typescript
+interface TranslatedDescriptionProps {
+  listing: Listing;
+  className?: string;
+  maxLines?: number;  // Default: 6
+}
+```
+
+#### Behavior
+
+1. **Check for cached translation** - If `description_en` exists, display immediately
+2. **Detect Japanese text** - Uses regex: `/[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/`
+3. **Trigger translation** - Calls `/api/translate` if Japanese detected
+4. **Show loading state** - Skeleton animation while translating
+5. **Toggle original** - "Show original" / "Show translation" button
+
+#### States
+
+| State | Display |
+|-------|---------|
+| Loading | Animated skeleton lines |
+| Translated | English text with toggle button |
+| No Japanese | Original text (no toggle) |
+| Error | Original text with "(Translation unavailable)" |
+| No description | Component returns null |
+
+---
+
+### QuickMeasurement
+
+**Location:** `src/components/listing/QuickMeasurement.tsx`
+
+Compact measurement display for mobile collapsed pill.
+
+#### Props
+
+```typescript
+interface QuickMeasurementProps {
+  listing: Listing;
+  className?: string;
+}
+```
+
+#### Output by Type
+
+| Item Type | Format | Example |
+|-----------|--------|---------|
+| Sword (blade) | `{nagasa}cm` | 71.2cm |
+| Tosogu (fitting) | `{height}×{width}cm` | 7.5×7.2cm |
+| No measurements | Returns null | - |
+
+---
+
+## Translation API
+
+**Endpoint:** `POST /api/translate`
+
+### Request
+
+```typescript
+{
+  listingId: number
+}
+```
+
+### Response
+
+```typescript
+// Success - fresh translation
+{
+  translation: string,
+  cached: false
+}
+
+// Success - cached translation
+{
+  translation: string,
+  cached: true
+}
+
+// No description
+{
+  translation: null,
+  cached: true,
+  reason: 'no_description'
+}
+
+// No Japanese text
+{
+  translation: string,  // Original text
+  cached: false,
+  reason: 'no_japanese'
+}
+
+// Error
+{
+  translation: string,  // Original text as fallback
+  cached: false,
+  error: 'Translation failed'
+}
+```
+
+### Translation Flow
+
+```
+Request: { listingId: 123 }
+    │
+    ▼
+┌──────────────────────────────┐
+│ Fetch listing from Supabase  │
+│ SELECT id, description,      │
+│        description_en,       │
+│        item_type             │
+└──────────────────────────────┘
+    │
+    ▼
+┌──────────────────────────────┐
+│ Check if description exists  │──▶ No ──▶ Return { translation: null }
+└──────────────────────────────┘
+    │ Yes
+    ▼
+┌──────────────────────────────┐
+│ Check if description_en      │──▶ Yes ──▶ Return cached
+│ already exists               │
+└──────────────────────────────┘
+    │ No
+    ▼
+┌──────────────────────────────┐
+│ Check for Japanese text      │──▶ No ──▶ Store original as translation
+│ (regex detection)            │
+└──────────────────────────────┘
+    │ Yes
+    ▼
+┌──────────────────────────────┐
+│ Call OpenRouter API          │
+│ Model: gemini-2.0-flash-001  │
+└──────────────────────────────┘
+    │
+    ▼
+┌──────────────────────────────┐
+│ Cache in description_en      │
+└──────────────────────────────┘
+    │
+    ▼
+Return { translation, cached: false }
+```
+
+### OpenRouter Configuration
+
+```typescript
+{
+  model: 'google/gemini-2.0-flash-001',
+  messages: [{
+    role: 'user',
+    content: `Translate this Japanese ${itemContext} dealer description to English.
+Preserve technical terms in romaji (mei, mumei, nagasa, sori, shakudo, etc.).
+Keep formatting and line breaks.
+Only output the translation, no explanations or preamble.
+
+${description}`
+  }],
+  max_tokens: 2000,
+  temperature: 0.3
+}
+```
+
+### Item Context Detection
+
+The API determines item context for better translation quality:
+
+```typescript
+const itemContext = listing.item_type?.includes('tsuba') ||
+  listing.item_type?.includes('menuki') ||
+  listing.item_type?.includes('kozuka') ||
+  listing.item_type?.includes('kogai') ||
+  listing.item_type?.includes('fuchi') ||
+  listing.item_type?.includes('kashira')
+  ? 'sword fitting (tosogu)'
+  : 'Japanese sword (nihonto)';
+```
+
+---
+
+## Database Schema
+
+### Required Column
+
+```sql
+ALTER TABLE listings ADD COLUMN IF NOT EXISTS description_en TEXT;
+```
+
+### Fields Used by QuickView
+
+```sql
+-- Attribution
+smith, school, tosogu_maker, tosogu_school,
+era, province, mei_type,
+cert_type, cert_session, cert_organization,
+
+-- Sword Measurements
+nagasa_cm, sori_cm, motohaba_cm, sakihaba_cm,
+kasane_cm, nakago_cm, weight_g,
+
+-- Tosogu Measurements
+height_cm, width_cm, thickness_mm, material,
+
+-- Description
+description, description_en
+```
+
+---
+
+## Mobile UX
+
+### Collapsed State
+
+```
+┌────────────────────────────────────────────────────┐
+│  ¥6,000,000  │  71.2cm  │  [↑]  │  ❤  │  3/8     │
+└────────────────────────────────────────────────────┘
+     Price      Measurement  Expand  Fav   Images
+```
+
+- **Price** - Left aligned, prominent
+- **Measurement** - QuickMeasurement component (nagasa or dimensions)
+- **Expand** - Chevron with subtle bounce animation
+- **Favorite** - Heart button (stops event propagation)
+- **Image Count** - Current/total indicator
+
+### Expanded State
+
+```
+┌──────────────────────────────────────────┐
+│  ──────  (drag handle)               [X] │
+├──────────────────────────────────────────┤
+│  ¥6,000,000                          [❤] │
+│  ┌────────┐  ┌──────────┐                │
+│  │ KATANA │  │  JUYO    │                │
+│  └────────┘  └──────────┘                │
+│                                          │
+│  Sukehiro (2nd gen)                      │
+│  🏢 Aoi Art  ·  3 days                   │
+├──────────────────────────────────────────┤
+│  ATTRIBUTION                             │
+│  School    Settsu   │  Era      Edo      │
+│  Province  Osaka    │  Signature Mei     │
+│  Papers    Juyo #42 (NBTHK)              │
+├──────────────────────────────────────────┤
+│  MEASUREMENTS                            │
+│  Nagasa   71.2cm  │  Sori     1.8cm      │
+│  Motohaba  3.2cm  │  Sakihaba 2.3cm      │
+│  Kasane   0.72cm  │  Weight   820g       │
+├──────────────────────────────────────────┤
+│  DESCRIPTION                             │
+│  "This exceptional katana by the         │
+│   second generation Sukehiro..."         │
+│   [Show original Japanese]               │
+├──────────────────────────────────────────┤
+│  ┌────────────────────────────────────┐  │
+│  │       See Full Listing     →       │  │
+│  └────────────────────────────────────┘  │
+└──────────────────────────────────────────┘
+```
+
+### Gestures
+
+| Gesture | Action |
+|---------|--------|
+| Swipe up on collapsed | Expand sheet |
+| Swipe down on expanded | Collapse sheet |
+| Tap collapsed bar | Expand sheet |
+| Tap X button | Close QuickView |
+| Tap image area | Toggle expand/collapse |
+
+### Scroll Handling
+
+The expanded sheet has a scrollable content area that:
+- Stops touch event propagation to prevent sheet gestures
+- Uses `overscroll-contain` to prevent body scroll
+- Has `data-testid="mobile-sheet-scroll-content"` for testing
+
+---
+
+## Environment Variables
+
+```bash
+# Required for translation
+OPENROUTER_API_KEY=sk-or-v1-xxx
+
+# Existing Supabase config
+NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=xxx
+SUPABASE_SERVICE_ROLE_KEY=xxx
+```
+
+---
+
+## Testing
+
+### Test Files
+
+| File | Coverage |
+|------|----------|
+| `tests/quickview-regression.spec.ts` | Metadata display, mobile sheet |
+| `tests/translation-api.spec.ts` | Translation API endpoints |
+
+### Key Test Cases
+
+#### Metadata Display
+- Sword metadata shows nagasa, sori, motohaba, etc.
+- Tosogu metadata shows height, width, material
+- Missing measurements hide gracefully
+- Certification badges display with correct tier styling
+
+#### Mobile Sheet
+- Collapsed pill shows QuickMeasurement
+- Expanded sheet has full metadata parity
+- Content area scrolls independently
+- Gestures work correctly
+
+#### Translation API
+- Returns error for missing listingId
+- Returns error for invalid listingId type
+- Returns 404 for non-existent listing
+- Returns cached translation if available
+- Handles concurrent requests gracefully
+
+### Running Tests
+
+```bash
+# All QuickView tests
+npx playwright test tests/quickview-regression.spec.ts
+
+# Translation API tests
+npx playwright test tests/translation-api.spec.ts
+
+# Specific test
+npx playwright test -g "sword metadata displays correctly"
+```
+
+---
+
+## Error Handling
+
+### Translation Errors
+
+| Error | Handling |
+|-------|----------|
+| OpenRouter API failure | Return original description |
+| Empty translation response | Return original description |
+| Network timeout | Return original description |
+| Missing API key | Return original description with console error |
+
+### Graceful Degradation
+
+The system degrades gracefully at each level:
+
+1. **No description_en column** - Translation API will fail but browse works
+2. **No OPENROUTER_API_KEY** - Shows original Japanese description
+3. **Translation fails** - Shows original with "(Translation unavailable)"
+4. **No description** - Section hidden entirely
+5. **No measurements** - Section hidden entirely
+
+---
+
+## Performance Considerations
+
+### Translation Caching
+
+- Translations cached in `description_en` column
+- Subsequent views instant (no API call)
+- Non-Japanese descriptions auto-cached as-is
+
+### API Efficiency
+
+- Browse API fetches description in initial query
+- Translation triggered only when QuickView opens
+- One translation per listing (cached forever)
+
+### Mobile Optimization
+
+- MetadataGrid uses minimal DOM
+- MeasurementItem only renders if value exists
+- Translation loading shows skeleton (not spinner)
+
+---
+
+## File Reference
+
+| File | Purpose |
+|------|---------|
+| `src/components/listing/MetadataGrid.tsx` | Type-aware metadata display |
+| `src/components/listing/TranslatedDescription.tsx` | Translation UI with toggle |
+| `src/components/listing/QuickMeasurement.tsx` | Compact measurement for mobile |
+| `src/components/listing/QuickViewContent.tsx` | Desktop QuickView content |
+| `src/components/listing/QuickViewMobileSheet.tsx` | Mobile bottom sheet |
+| `src/app/api/translate/route.ts` | OpenRouter translation endpoint |
+| `src/app/api/browse/route.ts` | Browse API (fetches metadata) |
+| `src/types/index.ts` | Listing type with description_en |
+| `tests/quickview-regression.spec.ts` | QuickView tests |
+| `tests/translation-api.spec.ts` | Translation API tests |
+
+---
+
+## Changelog
+
+### 2026-01-18
+- Initial implementation
+- MetadataGrid component with sword/tosogu support
+- TranslatedDescription with OpenRouter integration
+- QuickMeasurement for mobile collapsed pill
+- Enhanced mobile sheet with full metadata parity
+- Translation caching in description_en column
