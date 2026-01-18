@@ -239,29 +239,24 @@ export function QuickViewMobileSheet({
         willChange: 'height',
       }}
     >
-      {/* Drag handle area */}
+      {/* Draggable header area - entire top section responds to drag gestures */}
       <div
-        className="flex justify-center pt-2 pb-1 cursor-grab active:cursor-grabbing"
+        className="cursor-grab active:cursor-grabbing"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
         onClick={handleBarTap}
       >
-        <div className="w-10 h-1 rounded-full bg-border" />
-      </div>
+        {/* Drag handle pill */}
+        <div className="flex justify-center pt-2 pb-1">
+          <div className="w-10 h-1 rounded-full bg-border" />
+        </div>
 
-      {/* Unified content structure - always rendered, clips based on height */}
-      <div className="flex flex-col h-full overflow-hidden">
-        {/* Header row: Price + Favorite + Image counter */}
-        <div className="px-4 pb-2 shrink-0">
+        {/* Header row: Favorite + Price + Image counter + Close */}
+        <div className="px-4 pb-2">
           <div className="flex items-center justify-between">
-            {/* Price - left aligned */}
-            <span className={`text-lg font-semibold tabular-nums ${listing.price_value ? 'text-ink' : 'text-muted'}`}>
-              {priceDisplay}
-            </span>
-
-            {/* Right side: Favorite + Image counter */}
-            <div className="flex items-center gap-2">
+            {/* Left side: Favorite + Price */}
+            <div className="flex items-center gap-3">
               <div
                 onClick={(e) => e.stopPropagation()}
                 onTouchStart={(e) => e.stopPropagation()}
@@ -271,14 +266,39 @@ export function QuickViewMobileSheet({
                   size="sm"
                 />
               </div>
+              <span className={`text-lg font-semibold tabular-nums ${listing.price_value ? 'text-ink' : 'text-muted'}`}>
+                {priceDisplay}
+              </span>
+            </div>
+
+            {/* Right side: Image counter + Close button */}
+            <div className="flex items-center gap-3">
               {imageCount > 0 && (
-                <span className="text-[11px] text-muted tabular-nums min-w-[32px] text-right">
+                <span className="text-[11px] text-muted tabular-nums">
                   {currentImageIndex + 1}/{imageCount}
                 </span>
               )}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onClose();
+                }}
+                onTouchStart={(e) => e.stopPropagation()}
+                onTouchEnd={(e) => e.stopPropagation()}
+                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-ink/10 active:bg-ink/20 transition-colors -mr-1"
+                aria-label="Close quick view"
+              >
+                <svg className="w-5 h-5 text-ink" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Unified content structure - always rendered, clips based on height */}
+      <div className="flex flex-col h-full overflow-hidden">
 
         {/* Expandable content - visible as sheet grows */}
         <div
