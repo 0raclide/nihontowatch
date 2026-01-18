@@ -1,0 +1,226 @@
+{
+  "juyo": {
+    "test": "juyo_across_dealers",
+    "results": [
+      {
+        "listing_id": 1345,
+        "dealer": "www.aoijapan.com",
+        "title": "Katana: Kawachi Kami Fujiwara Kunisuke (NBTHK the 39th Juyo Token)",
+        "title_session": 39,
+        "cert_found": true,
+        "extracted_session": 56,
+        "validated": false,
+        "position": 3,
+        "cert_type_detected": "juyo"
+      },
+      {
+        "listing_id": 184,
+        "dealer": "www.aoijapan.com",
+        "title": "Katana: Bishu Nakaji Ju Moritsugu Saku (16th NBTHK Juyo Token)",
+        "title_session": null,
+        "cert_found": true,
+        "extracted_session": 18,
+        "validated": null,
+        "position": 5,
+        "cert_type_detected": "juyo"
+      },
+      {
+        "listing_id": 1353,
+        "dealer": "www.aoijapan.com",
+        "title": "Katana: (Gold inlaid)Nagamori (47th NBTHK Juyo Token)",
+        "title_session": null,
+        "cert_found": true,
+        "extracted_session": 47,
+        "validated": null,
+        "position": 4,
+        "cert_type_detected": "juyo"
+      },
+      {
+        "listing_id": 206,
+        "dealer": "www.aoijapan.com",
+        "title": "Wakizashi: Mumei (attributed to Hatakeda Sanemori)e (43rd NBTHK Juyo Token)",
+        "title_session": null,
+        "cert_found": true,
+        "extracted_session": 359,
+        "validated": null,
+        "position": 4,
+        "cert_type_detected": "other"
+      },
+      {
+        "listing_id": 738,
+        "dealer": "eirakudo.shop",
+        "title": "真景 刀 重要刀剣",
+        "title_session": null,
+        "cert_found": true,
+        "extracted_session": null,
+        "validated": null,
+        "position": 0,
+        "cert_type_detected": "hozon"
+      },
+      {
+        "listing_id": 578,
+        "dealer": "eirakudo.shop",
+        "title": "銘 弘次 太刀 重要刀剣",
+        "title_session": null,
+        "cert_found": true,
+        "extracted_session": null,
+        "validated": null,
+        "position": 0,
+        "cert_type_detected": "hozon"
+      },
+      {
+        "listing_id": 1098,
+        "dealer": "eirakudo.shop",
+        "title": "来国光 刀 重要刀剣",
+        "title_session": null,
+        "cert_found": true,
+        "extracted_session": null,
+        "validated": null,
+        "position": 0,
+        "cert_type_detected": "hozon"
+      },
+      {
+        "listing_id": 1106,
+        "dealer": "eirakudo.shop",
+        "title": "景光 太刀 重要刀剣",
+        "title_session": null,
+        "cert_found": true,
+        "extracted_session": null,
+        "validated": null,
+        "position": 0,
+        "cert_type_detected": "other"
+      },
+      {
+        "listing_id": 1314,
+        "dealer": "www.samurai-nippon.net",
+        "title": "脇差し 備州長船兼光 Wakizashi:Bishu Osafune Kanemitsu",
+        "title_session": null,
+        "cert_found": false,
+        "validated": null
+      },
+      {
+        "listing_id": 1311,
+        "dealer": "www.samurai-nippon.net",
+        "title": "刀 (金象嵌銘)国時(延寿)",
+        "title_session": null,
+        "cert_found": true,
+        "extracted_session": null,
+        "validated": null,
+        "position": 5,
+        "cert_type_detected": "juyo"
+      },
+      {
+        "listing_id": 1309,
+        "dealer": "www.samurai-nippon.net",
+        "title": "鐔:車透図 Tsuba:Kuruma Sukashi Zu",
+        "title_session": null,
+        "cert_found": true,
+        "extracted_session": null,
+        "validated": null,
+        "position": 3,
+        "cert_type_detected": "other"
+      },
+      {
+        "listing_id": 1316,
+        "dealer": "www.samurai-nippon.net",
+        "title": "刀 (太刀銘)造大慶直胤(花押) Katana:Taikei Naotane",
+        "title_session": null,
+        "cert_found": false,
+        "validated": null
+      },
+      {
+        "listing_id": 5678,
+        "dealer": "www.shoubudou.co.jp",
+        "title": "刀 無銘 中島来",
+        "title_session": null,
+        "cert_found": true,
+        "extracted_session": 41,
+        "validated": null,
+        "position": 1,
+        "cert_type_detected": "juyo"
+      },
+      {
+        "listing_id": 4585,
+        "dealer": "www.nipponto.co.jp",
+        "title": "伝行光（相州） （重要刀剣） Den Yukimitsu(Soushu)",
+        "title_session": null,
+        "cert_found": false,
+        "validated": null
+      },
+      {
+        "listing_id": 1222,
+        "dealer": "iidakoendo.com",
+        "title": "蛸図鐔 甚五",
+        "title_session": null,
+        "cert_found": true,
+        "extracted_session": 43,
+        "validated": null,
+        "position": 1,
+        "cert_type_detected": "tokubetsu_hozon"
+      },
+      {
+        "listing_id": 1265,
+        "dealer": "iidakoendo.com",
+        "title": "八つ蕨手透九曜紋唐草沙綾金象嵌鐔 無銘 神吉深信",
+        "title_session": null,
+        "cert_found": true,
+        "extracted_session": null,
+        "validated": null,
+        "position": 1,
+        "cert_type_detected": "hozon"
+      },
+      {
+        "listing_id": 5446,
+        "dealer": "katanahanbai.com",
+        "title": "刀 備前長船長義 (附)朱石目塗鞘打刀拵",
+        "title_session": null,
+        "cert_found": false,
+        "validated": null
+      },
+      {
+        "listing_id": 8440,
+        "dealer": "www.kusanaginosya.com",
+        "title": "平安時代の最上作奇跡の在銘古備前『助包』奇跡の健全太刀重要刀剣",
+        "title_session": null,
+        "cert_found": true,
+        "extracted_session": null,
+        "validated": null,
+        "position": 0,
+        "cert_type_detected": "hozon"
+      },
+      {
+        "listing_id": 9552,
+        "dealer": "www.kusanaginosya.com",
+        "title": "重要刀剣安綱の子古伯耆『有綱』薫山鞘書大名登録平安時代の奇跡の太刀",
+        "title_session": null,
+        "cert_found": false,
+        "validated": null
+      },
+      {
+        "listing_id": 7047,
+        "dealer": "www.touken-matsumoto.jp",
+        "title": "備前国[ ]長船基光",
+        "title_session": null,
+        "cert_found": true,
+        "extracted_session": 57,
+        "validated": null,
+        "position": 17,
+        "cert_type_detected": "juyo"
+      },
+      {
+        "listing_id": 6994,
+        "dealer": "www.toukenkomachi.com",
+        "title": "刀剣小町 太刀 銘 (表)助村 (Tachi : Sukemura)",
+        "title_session": null,
+        "cert_found": false,
+        "validated": null
+      }
+    ],
+    "summary": {
+      "totalTested": 21,
+      "certFound": 15,
+      "sessionExtracted": 7,
+      "sessionValidated": 0
+    }
+  }
+}
