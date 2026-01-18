@@ -57,6 +57,14 @@ export type {
   InterestScoreResult,
 } from './interestScore';
 
+// Pinch zoom tracking
+export { usePinchZoomTracking } from './usePinchZoomTracking';
+export type {
+  PinchZoomEvent,
+  PinchZoomTrackingOptions,
+  PinchZoomTrackingResult,
+} from './usePinchZoomTracking';
+
 // Constants
 export {
   MIN_DWELL_MS,

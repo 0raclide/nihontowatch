@@ -48,6 +48,11 @@ export const INTEREST_WEIGHTS = {
   favoritePoints: 50,
   alertPoints: 40,
   externalClickPoints: 30,
+
+  /** Points for QuickView engagement signals */
+  panelCollapsePoints: 15, // User collapsed data panel to see more image
+  panelExpandPoints: 5, // User expanded panel (less strong signal)
+  pinchZoomPoints: 20, // User pinch-zoomed on image (strong inspection signal)
 } as const;
 
 /**

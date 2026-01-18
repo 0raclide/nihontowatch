@@ -24,6 +24,12 @@ export interface EngagementSignals {
   alertCreated?: boolean;
   /** User clicked external link to dealer */
   externalClicked?: boolean;
+  /** User collapsed QuickView panel to see more image */
+  panelCollapsed?: boolean;
+  /** User expanded QuickView panel */
+  panelExpanded?: boolean;
+  /** User pinch-zoomed on an image */
+  pinchZoomed?: boolean;
 }
 
 export type InterestTier =
@@ -50,6 +56,9 @@ export interface InterestScoreResult {
     favorite: number;
     alert: number;
     externalClick: number;
+    panelCollapse: number;
+    panelExpand: number;
+    pinchZoom: number;
   };
 }
 
@@ -69,6 +78,9 @@ export function calculateInterestScore(
     favorite: 0,
     alert: 0,
     externalClick: 0,
+    panelCollapse: 0,
+    panelExpand: 0,
+    pinchZoom: 0,
   };
 
   // Viewport dwell time (points per second, capped)
@@ -119,6 +131,17 @@ export function calculateInterestScore(
   }
   if (signals.externalClicked) {
     breakdown.externalClick = w.externalClickPoints;
+  }
+
+  // QuickView engagement signals
+  if (signals.panelCollapsed) {
+    breakdown.panelCollapse = w.panelCollapsePoints;
+  }
+  if (signals.panelExpanded) {
+    breakdown.panelExpand = w.panelExpandPoints;
+  }
+  if (signals.pinchZoomed) {
+    breakdown.pinchZoom = w.pinchZoomPoints;
   }
 
   // Calculate total (capped at 100)
@@ -191,6 +214,9 @@ export function mergeSignals(
     if (signals.favorited) merged.favorited = true;
     if (signals.alertCreated) merged.alertCreated = true;
     if (signals.externalClicked) merged.externalClicked = true;
+    if (signals.panelCollapsed) merged.panelCollapsed = true;
+    if (signals.panelExpanded) merged.panelExpanded = true;
+    if (signals.pinchZoomed) merged.pinchZoomed = true;
   }
 
   return merged;

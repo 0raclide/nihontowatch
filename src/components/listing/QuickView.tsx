@@ -6,6 +6,8 @@ import { QuickViewModal } from './QuickViewModal';
 import { QuickViewContent } from './QuickViewContent';
 import { QuickViewMobileSheet } from './QuickViewMobileSheet';
 import { useQuickView } from '@/contexts/QuickViewContext';
+import { useActivityTrackerOptional } from '@/lib/tracking/ActivityTracker';
+import { usePinchZoomTracking } from '@/lib/viewport';
 
 // Blur placeholder for lazy images
 const BLUR_PLACEHOLDER = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjVmNGYwIi8+PC9zdmc+';
@@ -28,6 +30,7 @@ export function QuickView() {
     listings,
   } = useQuickView();
 
+  const activityTracker = useActivityTrackerOptional();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const mobileScrollContainerRef = useRef<HTMLDivElement>(null);
   const [visibleImages, setVisibleImages] = useState<Set<number>>(new Set([0, 1]));
@@ -35,10 +38,31 @@ export function QuickView() {
   const [hasScrolled, setHasScrolled] = useState(false);
   const [isSheetExpanded, setIsSheetExpanded] = useState(true);
 
-  // Toggle sheet expanded/collapsed state
+  // Track when the sheet state last changed for dwell time calculation
+  const sheetStateChangeTimeRef = useRef<number>(Date.now());
+
+  // Toggle sheet expanded/collapsed state and track engagement
   const toggleSheet = useCallback(() => {
+    const now = Date.now();
+    const dwellMs = now - sheetStateChangeTimeRef.current;
+    sheetStateChangeTimeRef.current = now;
+
+    // Determine the action based on current state
+    // If currently expanded and toggling, the action is 'collapse'
+    const action = isSheetExpanded ? 'collapse' : 'expand';
+
+    // Track the toggle - 'collapse' is a particularly strong signal
+    // (user wants more image space to inspect the item)
+    if (activityTracker && currentListing) {
+      activityTracker.trackQuickViewPanelToggle(
+        currentListing.id,
+        action,
+        dwellMs
+      );
+    }
+
     setIsSheetExpanded(prev => !prev);
-  }, []);
+  }, [isSheetExpanded, activityTracker, currentListing]);
 
   // Reset scroll and visible images when listing changes
   useEffect(() => {
@@ -47,6 +71,7 @@ export function QuickView() {
       setCurrentImageIndex(0);
       setHasScrolled(false);
       setIsSheetExpanded(true);
+      sheetStateChangeTimeRef.current = Date.now(); // Reset timing for new listing
       if (scrollContainerRef.current) {
         scrollContainerRef.current.scrollTop = 0;
       }
@@ -62,6 +87,39 @@ export function QuickView() {
       setHasScrolled(true);
     }
   }, [hasScrolled]);
+
+  // Track pinch zoom gestures on images
+  const handlePinchZoom = useCallback(
+    (event: { scale: number; durationMs: number }) => {
+      if (activityTracker && currentListing) {
+        activityTracker.trackImagePinchZoom(
+          currentListing.id,
+          currentImageIndex,
+          {
+            zoomScale: event.scale,
+            durationMs: event.durationMs,
+          }
+        );
+      }
+    },
+    [activityTracker, currentListing, currentImageIndex]
+  );
+
+  // Pinch zoom tracking for mobile image scroller
+  const { ref: pinchZoomRef } = usePinchZoomTracking({
+    onPinchZoom: handlePinchZoom,
+    minScaleThreshold: 1.15, // 15% zoom to trigger
+    enabled: !!currentListing,
+  });
+
+  // Combine refs for mobile image scroller
+  const setMobileScrollerRef = useCallback(
+    (element: HTMLDivElement | null) => {
+      mobileScrollContainerRef.current = element;
+      pinchZoomRef(element);
+    },
+    [pinchZoomRef]
+  );
 
   // Intersection observer for lazy loading
   const handleImageVisible = useCallback((index: number) => {
@@ -90,9 +148,9 @@ export function QuickView() {
       >
         {/* Mobile layout (show below lg, hide on lg+) */}
         <div className="lg:hidden h-full flex flex-col" data-testid="quickview-mobile-layout">
-          {/* Full-screen image scroller */}
+          {/* Full-screen image scroller with pinch zoom tracking */}
           <div
-            ref={mobileScrollContainerRef}
+            ref={setMobileScrollerRef}
             data-testid="mobile-image-scroller"
             onScroll={handleScroll}
             onClick={toggleSheet}
