@@ -277,10 +277,10 @@ function HomeContent() {
 
       <main className="max-w-[1600px] mx-auto px-4 py-4 lg:px-6 lg:py-8">
         {/* Page Header - Refined scholarly aesthetic */}
-        <div className="mb-4 lg:mb-6 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+        <div className="mb-2 lg:mb-6 flex flex-col lg:flex-row lg:items-end lg:justify-between">
           <div>
             {/* Mobile: Show NihontoWatch branding - centered with mon above */}
-            <Link href="/" className="lg:hidden flex flex-col items-center mb-3">
+            <Link href="/" className="lg:hidden flex flex-col items-center">
               <Image
                 src="/logo-mon.png"
                 alt="NihontoWatch Mon"
