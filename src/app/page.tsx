@@ -166,8 +166,8 @@ function HomeContent() {
     }
   }, []);
 
-  // Build URL params from state (for URL sync only, excludes page for fetch)
-  const buildUrlParams = useCallback((includePage = true) => {
+  // Build URL params from state (for URL sync - includes page)
+  const buildUrlParams = useCallback(() => {
     const params = new URLSearchParams();
 
     params.set('tab', 'available');
@@ -180,16 +180,31 @@ function HomeContent() {
     if (filters.signatureStatuses.length) params.set('sig', filters.signatureStatuses.join(','));
     if (filters.askOnly) params.set('ask', 'true');
     if (sort !== 'recent') params.set('sort', sort);
-    if (includePage && page > 1) params.set('page', String(page));
+    if (page > 1) params.set('page', String(page));
     if (searchQuery) params.set('q', searchQuery);
 
     return params;
   }, [activeTab, filters, sort, page, searchQuery]);
 
-  // Separate params for data fetching (excludes page - handled by loadMore in mobile)
-  const fetchParams = useCallback(() => {
-    return buildUrlParams(false); // Don't include page
-  }, [buildUrlParams]);
+  // Build params for data fetching (excludes page - page changes handled by loadMore)
+  const buildFetchParams = useCallback(() => {
+    const params = new URLSearchParams();
+
+    params.set('tab', 'available');
+    if (filters.category !== 'all') params.set('cat', filters.category);
+    if (filters.itemTypes.length) params.set('type', filters.itemTypes.join(','));
+    if (filters.certifications.length) params.set('cert', filters.certifications.join(','));
+    if (filters.schools.length) params.set('school', filters.schools.join(','));
+    if (filters.dealers.length) params.set('dealer', filters.dealers.join(','));
+    if (filters.historicalPeriods.length) params.set('period', filters.historicalPeriods.join(','));
+    if (filters.signatureStatuses.length) params.set('sig', filters.signatureStatuses.join(','));
+    if (filters.askOnly) params.set('ask', 'true');
+    if (sort !== 'recent') params.set('sort', sort);
+    // Note: page is NOT included - handled by loadMore
+    if (searchQuery) params.set('q', searchQuery);
+
+    return params;
+  }, [activeTab, filters, sort, searchQuery]); // Note: page is NOT in deps
 
   // Sync URL with state
   useEffect(() => {
@@ -198,14 +213,14 @@ function HomeContent() {
     router.replace(newUrl, { scroll: false });
   }, [buildUrlParams, router]);
 
-  // Fetch data - uses fetchParams (excludes page) so this only runs on filter/search changes
+  // Fetch data - uses buildFetchParams (excludes page) so this only runs on filter/search changes
   // Page changes are handled by loadMore in mobile mode
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
         // Always fetch page 1 on initial/filter change
-        const params = fetchParams();
+        const params = buildFetchParams();
         params.set('page', '1');
         const res = await fetch(`/api/browse?${params.toString()}`);
         const json = await res.json();
@@ -225,7 +240,7 @@ function HomeContent() {
     };
 
     fetchData();
-  }, [fetchParams, isMobile]);
+  }, [buildFetchParams, isMobile]);
 
   // Load more for infinite scroll
   const loadMore = useCallback(async () => {
@@ -236,7 +251,7 @@ function HomeContent() {
     setIsLoadingMore(true);
     try {
       const nextPage = page + 1;
-      const params = buildUrlParams();
+      const params = buildFetchParams();
       params.set('page', String(nextPage));
 
       const res = await fetch(`/api/browse?${params.toString()}`);
@@ -250,7 +265,7 @@ function HomeContent() {
       loadingMoreRef.current = false;
       setIsLoadingMore(false);
     }
-  }, [data, page, buildUrlParams]);
+  }, [data, page, buildFetchParams]);
 
   // Note: Infinite scroll is now handled internally by VirtualListingGrid
   // via IntersectionObserver. The useInfiniteScroll hook is no longer needed here.
