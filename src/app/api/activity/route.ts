@@ -23,8 +23,36 @@ function isValidEventType(type: string): boolean {
     'alert_create',
     'alert_delete',
     'external_link_click',
+    'viewport_dwell',
+    'quickview_panel_toggle',
+    'image_pinch_zoom',
   ];
   return validTypes.includes(type);
+}
+
+/**
+ * Extract client IP address from request headers
+ */
+function getClientIp(request: NextRequest): string | null {
+  // Check various headers in order of preference
+  const forwardedFor = request.headers.get('x-forwarded-for');
+  if (forwardedFor) {
+    // x-forwarded-for can contain multiple IPs, take the first one
+    return forwardedFor.split(',')[0].trim();
+  }
+
+  const realIp = request.headers.get('x-real-ip');
+  if (realIp) {
+    return realIp;
+  }
+
+  // Vercel-specific header
+  const vercelForwardedFor = request.headers.get('x-vercel-forwarded-for');
+  if (vercelForwardedFor) {
+    return vercelForwardedFor.split(',')[0].trim();
+  }
+
+  return null;
 }
 
 function validateEvent(event: unknown): event is ActivityEvent {
@@ -88,7 +116,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { sessionId, userId, events } = body;
+    const { sessionId, userId, visitorId, events } = body;
+
+    // Get client IP address
+    const clientIp = getClientIp(request);
 
     // Filter and validate events
     const validEvents = events.filter(validateEvent);
@@ -104,6 +135,8 @@ export async function POST(request: NextRequest) {
     const records = validEvents.map((event) => ({
       session_id: sessionId,
       user_id: userId || null,
+      visitor_id: visitorId || event.visitorId || null,
+      ip_address: clientIp,
       event_type: event.type,
       event_data: extractEventData(event),
       created_at: event.timestamp,
@@ -154,6 +187,6 @@ export async function POST(request: NextRequest) {
  */
 function extractEventData(event: ActivityEvent): Record<string, unknown> {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { type, timestamp, sessionId, userId, ...data } = event;
+  const { type, timestamp, sessionId, userId, visitorId, ...data } = event;
   return data;
 }

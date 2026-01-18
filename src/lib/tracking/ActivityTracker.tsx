@@ -36,6 +36,7 @@ import {
   initSession,
   setupUnloadHandler,
 } from '@/lib/activity/sessionManager';
+import { getVisitorId, getDeviceInfo } from '@/lib/activity/visitorId';
 import type {
   ActivityEvent,
   PageViewEvent,
@@ -213,6 +214,7 @@ export function ActivityTrackerProvider({
       timestamp: new Date().toISOString(),
       sessionId: getSessionId(),
       userId: getUserId(),
+      visitorId: getVisitorId(),
     };
   }, [getUserId]);
 
@@ -234,6 +236,7 @@ export function ActivityTrackerProvider({
     const payload: ActivityBatchPayload = {
       sessionId: getSessionId(),
       userId: getUserId(),
+      visitorId: getVisitorId(),
       events,
     };
 

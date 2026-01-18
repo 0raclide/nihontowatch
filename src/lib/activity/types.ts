@@ -31,6 +31,7 @@ export interface BaseActivityEvent {
   timestamp: string; // ISO string
   sessionId: string;
   userId?: string; // Optional - for authenticated users
+  visitorId?: string; // Persistent anonymous user ID
 }
 
 export interface PageViewEvent extends BaseActivityEvent {
@@ -147,6 +148,7 @@ export interface SearchFilters {
 export interface ActivityBatchPayload {
   sessionId: string;
   userId?: string;
+  visitorId?: string;
   events: ActivityEvent[];
 }
 
