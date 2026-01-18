@@ -332,10 +332,7 @@ describe('Browse API Concordance Tests', () => {
       }
     });
 
-    // TODO: Re-enable after deploying facet pagination fix (src/app/api/browse/route.ts)
-    // The fix adds pagination to facet queries to handle >1000 available items.
-    // Until deployed, production facets are undercounting due to Supabase row limit.
-    it.skip('facet count should approximately match filtered total (same request)', async () => {
+    it('facet count should approximately match filtered total (same request)', async () => {
       // Make a fresh request and verify internal consistency
       const fresh = await fetchBrowse({});
       const firstCert = fresh.facets.certifications[0];
