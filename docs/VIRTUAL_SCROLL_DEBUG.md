@@ -5,6 +5,7 @@
 The browse page uses a custom virtual scroll implementation for performance with 2,000+ listings. **All major issues have been fixed**:
 - Visual jumping during scroll (fixed Jan 2025)
 - QuickView scroll position restoration (fixed Jan 2025)
+- Layout shift when QuickView opens/closes (fixed Jan 2025)
 
 The implementation is now stable and production-tested.
 
@@ -128,6 +129,33 @@ const handleScroll = () => {
 - `src/components/listing/QuickView.tsx` - Removed savedScrollPosition usage
 
 **Production Tested**: ✅ Scroll position preserved (500 → 500), 0px drift
+
+### 6. ✅ FIXED: Layout Shift When QuickView Opens/Closes (Jan 2025)
+
+**Problem**: Cards in the background would shift slightly (1-3px) when opening and closing QuickView.
+
+**Root Cause**: When `position: fixed` is applied to the body, the scrollbar disappears. This causes the document width to expand by the scrollbar width (~6px), shifting centered content.
+
+**Fix Applied**:
+- Calculate scrollbar width before applying position:fixed
+- Add compensating padding-right to body equal to scrollbar width
+- Restore original padding on close
+
+```typescript
+// Calculate scrollbar width BEFORE applying position:fixed
+const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+
+// Add padding-right to compensate for scrollbar disappearing
+if (scrollbarWidth > 0) {
+  const currentPadding = parseInt(getComputedStyle(body).paddingRight, 10) || 0;
+  body.style.paddingRight = `${currentPadding + scrollbarWidth}px`;
+}
+```
+
+**Files Modified**:
+- `src/hooks/useBodyScrollLock.ts` - Added scrollbar width compensation
+
+**Production Tested**: ✅ 0px shift on all cards during open/close
 
 ## Current Implementation
 
