@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { isScrollLockActive } from './useBodyScrollLock';
 
 /**
  * Responsive breakpoints matching Tailwind defaults.
@@ -129,11 +130,22 @@ export function useAdaptiveVirtualScroll<T>({
 
   // Scroll position tracking with RAF for smooth performance
   const handleScroll = useCallback(() => {
+    // Skip scroll updates when body scroll is locked (modal open)
+    // This prevents virtual grid from recalculating during modal transitions
+    if (isScrollLockActive()) {
+      return;
+    }
+
     if (rafRef.current !== null) {
       cancelAnimationFrame(rafRef.current);
     }
 
     rafRef.current = requestAnimationFrame(() => {
+      // Double-check lock status inside RAF (in case it changed)
+      if (isScrollLockActive()) {
+        return;
+      }
+
       const newScrollTop = window.scrollY;
       // Only update if scroll changed by threshold amount
       // Use smaller threshold (1/4 row) for more responsive updates on iOS

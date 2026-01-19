@@ -204,6 +204,7 @@ export function VirtualListingGrid({
     overscan: 3, // Extra buffer rows to prevent edge flickering
     // Disable JS virtualization on mobile devices due to scroll glitches
     // With infinite scroll loading ~100 items at a time, no virtualization needed
+    // Note: QuickView scroll lock handles preventing recalculation during modal
     enabled: infiniteScroll && listings.length > 15 && !isMobileDevice,
   });
 

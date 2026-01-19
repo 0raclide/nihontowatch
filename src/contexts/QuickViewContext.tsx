@@ -121,6 +121,12 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
       return;
     }
 
+    // Set global scroll lock flag SYNCHRONOUSLY before any React state updates
+    // This prevents virtual scroll from reacting to any scroll events during the transition
+    if (typeof window !== 'undefined') {
+      window.__scrollLockActive = true;
+    }
+
     setCurrentListing(listing);
     setIsOpen(true);
 
