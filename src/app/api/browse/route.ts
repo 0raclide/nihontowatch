@@ -10,7 +10,7 @@ import { CACHE, PAGINATION, LISTING_FILTERS } from '@/lib/constants';
 
 interface BrowseParams {
   tab: 'available' | 'sold';
-  category?: 'all' | 'nihonto' | 'tosogu';
+  category?: 'all' | 'nihonto' | 'tosogu' | 'armor';
   itemTypes?: string[];
   certifications?: string[];
   schools?: string[];
@@ -41,6 +41,16 @@ const TOSOGU_TYPES = [
   'mitokoromono',  // matched set of kozuka, kogai, menuki
 ];
 
+// Armor & accessories
+const ARMOR_TYPES = [
+  'armor', 'yoroi', 'gusoku',  // Full armor suits
+  'helmet', 'kabuto',  // Helmets
+  'menpo', 'mengu',  // Face masks
+  'kote',  // Gauntlets
+  'suneate',  // Shin guards
+  'do',  // Chest armor
+];
+
 function parseParams(searchParams: URLSearchParams): BrowseParams {
   const itemTypesRaw = searchParams.get('type');
   const certificationsRaw = searchParams.get('cert');
@@ -48,7 +58,7 @@ function parseParams(searchParams: URLSearchParams): BrowseParams {
   const dealersRaw = searchParams.get('dealer');
   const historicalPeriodsRaw = searchParams.get('period');
   const signatureStatusesRaw = searchParams.get('sig');
-  const categoryRaw = searchParams.get('cat') as 'all' | 'nihonto' | 'tosogu' | null;
+  const categoryRaw = searchParams.get('cat') as 'all' | 'nihonto' | 'tosogu' | 'armor' | null;
 
   // Parse offset if provided (explicit offset takes precedence over page-based calculation)
   const offsetRaw = searchParams.get('offset');
@@ -171,7 +181,9 @@ export async function GET(request: NextRequest) {
         ? NIHONTO_TYPES
         : params.category === 'tosogu'
           ? TOSOGU_TYPES
-          : undefined;
+          : params.category === 'armor'
+            ? ARMOR_TYPES
+            : undefined;
 
     if (effectiveItemTypes?.length) {
       // Build OR condition for case-insensitive matching
@@ -465,7 +477,7 @@ export async function GET(request: NextRequest) {
 
 // Facet filter options
 interface FacetFilterOptions {
-  category?: 'all' | 'nihonto' | 'tosogu';
+  category?: 'all' | 'nihonto' | 'tosogu' | 'armor';
   itemTypes?: string[];
   certifications?: string[];
   dealers?: number[];
@@ -554,7 +566,9 @@ async function getCertificationFacets(
       ? NIHONTO_TYPES
       : options.category === 'tosogu'
         ? TOSOGU_TYPES
-        : undefined;
+        : options.category === 'armor'
+          ? ARMOR_TYPES
+          : undefined;
 
   // Normalize cert function
   const normalizeCert = (cert: string): string => {
@@ -636,7 +650,9 @@ async function getDealerFacets(
       ? NIHONTO_TYPES
       : options.category === 'tosogu'
         ? TOSOGU_TYPES
-        : undefined;
+        : options.category === 'armor'
+          ? ARMOR_TYPES
+          : undefined;
 
   // Aggregate counts with pagination
   const counts: Record<string, { id: number; name: string; count: number }> = {};
@@ -713,7 +729,9 @@ async function getHistoricalPeriodFacets(
       ? NIHONTO_TYPES
       : options.category === 'tosogu'
         ? TOSOGU_TYPES
-        : undefined;
+        : options.category === 'armor'
+          ? ARMOR_TYPES
+          : undefined;
 
   // Aggregate counts with pagination
   const counts: Record<string, number> = {};
@@ -790,7 +808,9 @@ async function getSignatureStatusFacets(
       ? NIHONTO_TYPES
       : options.category === 'tosogu'
         ? TOSOGU_TYPES
-        : undefined;
+        : options.category === 'armor'
+          ? ARMOR_TYPES
+          : undefined;
 
   // Aggregate counts with pagination
   const counts: Record<string, number> = {};

@@ -24,7 +24,7 @@ export interface FilterContentProps {
     signatureStatuses: Facet[];
   };
   filters: {
-    category: 'all' | 'nihonto' | 'tosogu';
+    category: 'all' | 'nihonto' | 'tosogu' | 'armor';
     itemTypes: string[];
     certifications: string[];
     schools: string[];
@@ -133,6 +133,14 @@ const TOSOGU_TYPES = [
   'mitokoromono',
 ];
 
+// Armor types
+const ARMOR_TYPES = [
+  'armor', 'yoroi', 'gusoku',
+  'helmet', 'kabuto',
+  'menpo', 'mengu',
+  'kote', 'suneate', 'do',
+];
+
 // Normalize Japanese/variant item types to standard English
 const ITEM_TYPE_NORMALIZE: Record<string, string> = {
   '甲冑': 'armor',
@@ -181,9 +189,18 @@ const ITEM_TYPE_LABELS: Record<string, string> = {
   koshirae: 'Koshirae',
   tosogu: 'Tosogu',
   mitokoromono: 'Mitokoromono',
-  // Other
+  // Armor
   armor: 'Armor',
+  yoroi: 'Yoroi',
+  gusoku: 'Gusoku',
+  helmet: 'Helmet',
   kabuto: 'Kabuto',
+  menpo: 'Menpō',
+  mengu: 'Mengu',
+  kote: 'Kote',
+  suneate: 'Suneate',
+  do: 'Dō',
+  // Other
   other: 'Other',
 };
 
@@ -274,9 +291,16 @@ export function FilterContent({
     [normalizedItemTypes]
   );
 
+  const armorTypes = useMemo(() =>
+    normalizedItemTypes
+      .filter(f => ARMOR_TYPES.includes(f.value))
+      .sort((a, b) => b.count - a.count),
+    [normalizedItemTypes]
+  );
+
   const otherTypes = useMemo(() =>
     normalizedItemTypes
-      .filter(f => !NIHONTO_TYPES.includes(f.value) && !TOSOGU_TYPES.includes(f.value))
+      .filter(f => !NIHONTO_TYPES.includes(f.value) && !TOSOGU_TYPES.includes(f.value) && !ARMOR_TYPES.includes(f.value))
       .sort((a, b) => b.count - a.count),
     [normalizedItemTypes]
   );
@@ -285,8 +309,9 @@ export function FilterContent({
   const visibleItemTypes = useMemo(() => {
     if (filters.category === 'nihonto') return nihontoTypes;
     if (filters.category === 'tosogu') return tosoguTypes;
-    return [...nihontoTypes, ...tosoguTypes, ...otherTypes];
-  }, [filters.category, nihontoTypes, tosoguTypes, otherTypes]);
+    if (filters.category === 'armor') return armorTypes;
+    return [...nihontoTypes, ...tosoguTypes, ...armorTypes, ...otherTypes];
+  }, [filters.category, nihontoTypes, tosoguTypes, armorTypes, otherTypes]);
 
   // Sort certifications by rank
   const sortedCertifications = useMemo(() => {
@@ -313,7 +338,12 @@ export function FilterContent({
     [tosoguTypes]
   );
 
-  const handleCategoryChange = useCallback((category: 'all' | 'nihonto' | 'tosogu') => {
+  const armorTotal = useMemo(() =>
+    armorTypes.reduce((sum, t) => sum + t.count, 0),
+    [armorTypes]
+  );
+
+  const handleCategoryChange = useCallback((category: 'all' | 'nihonto' | 'tosogu' | 'armor') => {
     onFilterChange('category', category);
     onFilterChange('itemTypes', []);
   }, [onFilterChange]);
@@ -485,10 +515,11 @@ export function FilterContent({
               { key: 'all', label: 'All' },
               { key: 'nihonto', label: 'Nihonto' },
               { key: 'tosogu', label: 'Tosogu' },
+              { key: 'armor', label: 'Armor' },
             ].map(({ key, label }) => (
               <button
                 key={key}
-                onClick={() => handleCategoryChange(key as 'all' | 'nihonto' | 'tosogu')}
+                onClick={() => handleCategoryChange(key as 'all' | 'nihonto' | 'tosogu' | 'armor')}
                 className={`flex-1 px-4 py-3 lg:py-2.5 text-[15px] lg:text-[14px] font-medium rounded-lg transition-all duration-200 ${
                   filters.category === key
                     ? 'bg-gold text-white shadow-sm'

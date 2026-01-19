@@ -18,6 +18,7 @@ import {
   getSignatureStatusKey,
   NIHONTO_TYPES,
   TOSOGU_TYPES,
+  ARMOR_TYPES,
 } from '@/lib/search/semanticQueryParser';
 
 // =============================================================================
@@ -118,6 +119,57 @@ describe('Category Term Expansion', () => {
     });
   });
 
+  describe('armor category', () => {
+    it('expands "armor" to all armor types', () => {
+      const result = parseSemanticQuery('armor');
+
+      expect(result.extractedFilters.itemTypes).toEqual(
+        expect.arrayContaining(['armor', 'helmet', 'menpo', 'kabuto'])
+      );
+      expect(result.extractedFilters.itemTypes.length).toBe(ARMOR_TYPES.length);
+      expect(result.remainingTerms).toEqual([]);
+    });
+
+    it('expands "armour" (British spelling) to all armor types', () => {
+      const result = parseSemanticQuery('armour');
+
+      expect(result.extractedFilters.itemTypes.length).toBe(ARMOR_TYPES.length);
+      expect(result.remainingTerms).toEqual([]);
+    });
+
+    it('expands "yoroi" to all armor types', () => {
+      const result = parseSemanticQuery('yoroi');
+
+      expect(result.extractedFilters.itemTypes.length).toBe(ARMOR_TYPES.length);
+    });
+
+    it('expands "gusoku" to all armor types', () => {
+      const result = parseSemanticQuery('gusoku');
+
+      expect(result.extractedFilters.itemTypes.length).toBe(ARMOR_TYPES.length);
+    });
+
+    it('expands "samurai armor" (multi-word) to all armor types', () => {
+      const result = parseSemanticQuery('samurai armor');
+
+      expect(result.extractedFilters.itemTypes.length).toBe(ARMOR_TYPES.length);
+      expect(result.remainingTerms).toEqual([]);
+    });
+
+    it('expands "japanese armor" (multi-word) to all armor types', () => {
+      const result = parseSemanticQuery('japanese armor');
+
+      expect(result.extractedFilters.itemTypes.length).toBe(ARMOR_TYPES.length);
+      expect(result.remainingTerms).toEqual([]);
+    });
+
+    it('expands "kacchu" to all armor types', () => {
+      const result = parseSemanticQuery('kacchu');
+
+      expect(result.extractedFilters.itemTypes.length).toBe(ARMOR_TYPES.length);
+    });
+  });
+
   describe('category with additional terms', () => {
     it('combines category expansion with artisan search', () => {
       const result = parseSemanticQuery('tosogu goto');
@@ -196,6 +248,38 @@ describe('Single Item Types (no expansion)', () => {
 
     expect(result.extractedFilters.itemTypes).toEqual(['kozuka']);
   });
+
+  // === ARMOR SINGLE TYPES ===
+  it('"kabuto" returns only kabuto (not all armor)', () => {
+    const result = parseSemanticQuery('kabuto');
+
+    expect(result.extractedFilters.itemTypes).toEqual(['kabuto']);
+    expect(result.extractedFilters.itemTypes.length).toBe(1);
+  });
+
+  it('"helmet" returns only helmet', () => {
+    const result = parseSemanticQuery('helmet');
+
+    expect(result.extractedFilters.itemTypes).toEqual(['helmet']);
+  });
+
+  it('"menpo" returns only menpo', () => {
+    const result = parseSemanticQuery('menpo');
+
+    expect(result.extractedFilters.itemTypes).toEqual(['menpo']);
+  });
+
+  it('"kote" returns only kote', () => {
+    const result = parseSemanticQuery('kote');
+
+    expect(result.extractedFilters.itemTypes).toEqual(['kote']);
+  });
+
+  it('"suneate" returns only suneate', () => {
+    const result = parseSemanticQuery('suneate');
+
+    expect(result.extractedFilters.itemTypes).toEqual(['suneate']);
+  });
 });
 
 // =============================================================================
@@ -225,6 +309,22 @@ describe('getCategoryTypes', () => {
     expect(types).toEqual(TOSOGU_TYPES);
   });
 
+  it('returns armor types for "armor"', () => {
+    const types = getCategoryTypes('armor');
+    expect(types).toBeDefined();
+    expect(types).toEqual(ARMOR_TYPES);
+  });
+
+  it('returns armor types for "yoroi"', () => {
+    const types = getCategoryTypes('yoroi');
+    expect(types).toEqual(ARMOR_TYPES);
+  });
+
+  it('returns armor types for "kacchu"', () => {
+    const types = getCategoryTypes('kacchu');
+    expect(types).toEqual(ARMOR_TYPES);
+  });
+
   it('returns undefined for single item types', () => {
     expect(getCategoryTypes('katana')).toBeUndefined();
     expect(getCategoryTypes('tsuba')).toBeUndefined();
@@ -242,11 +342,15 @@ describe('isSemanticTerm', () => {
     expect(isSemanticTerm('tosogu')).toBe(true);
     expect(isSemanticTerm('sword')).toBe(true);
     expect(isSemanticTerm('fittings')).toBe(true);
+    expect(isSemanticTerm('armor')).toBe(true);
+    expect(isSemanticTerm('yoroi')).toBe(true);
   });
 
   it('returns true for item types', () => {
     expect(isSemanticTerm('katana')).toBe(true);
     expect(isSemanticTerm('tsuba')).toBe(true);
+    expect(isSemanticTerm('kabuto')).toBe(true);
+    expect(isSemanticTerm('menpo')).toBe(true);
   });
 
   it('returns true for certifications', () => {
@@ -285,6 +389,16 @@ describe('Case Insensitivity', () => {
     const result = parseSemanticQuery('NiHonTo');
     expect(result.extractedFilters.itemTypes.length).toBe(NIHONTO_TYPES.length);
   });
+
+  it('handles uppercase "ARMOR"', () => {
+    const result = parseSemanticQuery('ARMOR');
+    expect(result.extractedFilters.itemTypes.length).toBe(ARMOR_TYPES.length);
+  });
+
+  it('handles mixed case "KaBuTo"', () => {
+    const result = parseSemanticQuery('KaBuTo');
+    expect(result.extractedFilters.itemTypes).toEqual(['kabuto']);
+  });
 });
 
 // =============================================================================
@@ -311,6 +425,14 @@ describe('Edge Cases', () => {
 
     // Should have BOTH nihonto AND tosogu types
     const expectedLength = NIHONTO_TYPES.length + TOSOGU_TYPES.length;
+    expect(result.extractedFilters.itemTypes.length).toBe(expectedLength);
+  });
+
+  it('handles all three category terms (nihonto tosogu armor)', () => {
+    const result = parseSemanticQuery('nihonto tosogu armor');
+
+    // Should have all three categories
+    const expectedLength = NIHONTO_TYPES.length + TOSOGU_TYPES.length + ARMOR_TYPES.length;
     expect(result.extractedFilters.itemTypes.length).toBe(expectedLength);
   });
 
@@ -373,6 +495,21 @@ describe('Regression Tests', () => {
     expect(result.extractedFilters.itemTypes).toEqual([]);
     expect(result.extractedFilters.certifications).toEqual([]);
     expect(result.remainingTerms).toEqual(['bizen', 'masamune']);
+  });
+
+  it('armor search with maker name still works', () => {
+    const result = parseSemanticQuery('kabuto saotome');
+
+    expect(result.extractedFilters.itemTypes).toEqual(['kabuto']);
+    expect(result.remainingTerms).toEqual(['saotome']);
+  });
+
+  it('armor category with certification still works', () => {
+    const result = parseSemanticQuery('armor hozon');
+
+    expect(result.extractedFilters.itemTypes.length).toBe(ARMOR_TYPES.length);
+    expect(result.extractedFilters.certifications).toEqual(['Hozon']);
+    expect(result.remainingTerms).toEqual([]);
   });
 });
 

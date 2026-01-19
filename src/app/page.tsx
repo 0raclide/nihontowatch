@@ -88,7 +88,7 @@ function formatFreshness(isoDate: string | null): string {
 }
 
 interface Filters {
-  category: 'all' | 'nihonto' | 'tosogu';
+  category: 'all' | 'nihonto' | 'tosogu' | 'armor';
   itemTypes: string[];
   certifications: string[];
   schools: string[];
@@ -115,7 +115,7 @@ function HomeContent() {
 
   const activeTab = 'available'; // Only show available items
   const [filters, setFilters] = useState<Filters>({
-    category: (searchParams.get('cat') as 'all' | 'nihonto' | 'tosogu') || 'all',
+    category: (searchParams.get('cat') as 'all' | 'nihonto' | 'tosogu' | 'armor') || 'all',
     itemTypes: searchParams.get('type')?.split(',').filter(Boolean) || [],
     certifications: searchParams.get('cert')?.split(',').filter(Boolean) || [],
     schools: searchParams.get('school')?.split(',').filter(Boolean) || [],

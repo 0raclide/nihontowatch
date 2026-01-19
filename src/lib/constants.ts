@@ -99,9 +99,18 @@ export const ITEM_TYPES = {
   FUCHI: 'fuchi',
   KASHIRA: 'kashira',
   FUCHI_KASHIRA: 'fuchi_kashira',
-  // Other
+  // Armor & Accessories
   ARMOR: 'armor',
+  YOROI: 'yoroi',
+  GUSOKU: 'gusoku',
   HELMET: 'helmet',
+  KABUTO: 'kabuto',
+  MENPO: 'menpo',
+  MENGU: 'mengu',
+  KOTE: 'kote',
+  SUNEATE: 'suneate',
+  DO: 'do',
+  // Other
   KOSHIRAE: 'koshirae',
   UNKNOWN: 'unknown',
 } as const;
@@ -124,6 +133,23 @@ export const TOSOGU_TYPES = [
   ITEM_TYPES.FUCHI,
   ITEM_TYPES.KASHIRA,
   ITEM_TYPES.FUCHI_KASHIRA,
+] as const;
+
+export const ARMOR_TYPES = [
+  // Full armor suits
+  ITEM_TYPES.ARMOR,
+  ITEM_TYPES.YOROI,
+  ITEM_TYPES.GUSOKU,
+  // Helmets
+  ITEM_TYPES.HELMET,
+  ITEM_TYPES.KABUTO,
+  // Face masks
+  ITEM_TYPES.MENPO,
+  ITEM_TYPES.MENGU,
+  // Body armor components
+  ITEM_TYPES.KOTE,     // Gauntlets
+  ITEM_TYPES.SUNEATE,  // Shin guards
+  ITEM_TYPES.DO,       // Chest armor
 ] as const;
 
 // =============================================================================

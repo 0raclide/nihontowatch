@@ -52,6 +52,19 @@ const TOSOGU_TYPES = [
   'kozuka', 'kogatana', 'kogai', 'menuki', 'koshirae', 'tosogu', 'mitokoromono'
 ];
 
+/**
+ * All armor types for category expansion.
+ * Must stay in sync with ARMOR_TYPES in /src/app/api/browse/route.ts
+ */
+const ARMOR_TYPES = [
+  'armor', 'yoroi', 'gusoku',  // Full armor suits
+  'helmet', 'kabuto',  // Helmets
+  'menpo', 'mengu',  // Face masks
+  'kote',  // Gauntlets
+  'suneate',  // Shin guards
+  'do',  // Chest armor
+];
+
 // =============================================================================
 // CATEGORY TERM MAPPINGS
 // =============================================================================
@@ -81,6 +94,18 @@ const CATEGORY_TERMS: Record<string, string[]> = {
   'sword fitting': TOSOGU_TYPES,
   'kodogu': TOSOGU_TYPES,
   'kodōgu': TOSOGU_TYPES,
+
+  // Armor category terms
+  'armor': ARMOR_TYPES,
+  'armour': ARMOR_TYPES,
+  'yoroi': ARMOR_TYPES,
+  'gusoku': ARMOR_TYPES,
+  'samurai armor': ARMOR_TYPES,
+  'samurai armour': ARMOR_TYPES,
+  'japanese armor': ARMOR_TYPES,
+  'japanese armour': ARMOR_TYPES,
+  'kacchu': ARMOR_TYPES,
+  'katchū': ARMOR_TYPES,
 };
 
 export interface ParsedSemanticQuery {
@@ -191,6 +216,16 @@ const ITEM_TYPE_TERMS: Record<string, string> = {
   'kogai': 'kogai',
   'koshirae': 'koshirae',
   'mitokoromono': 'mitokoromono',
+
+  // === ARMOR ===
+  'kabuto': 'kabuto',
+  'helmet': 'helmet',
+  'menpo': 'menpo',
+  'mengu': 'mengu',
+  'kote': 'kote',
+  'suneate': 'suneate',
+  'do': 'do',
+  'dō': 'do',
 };
 
 /**
@@ -224,6 +259,10 @@ const MULTI_WORD_CATEGORY_PHRASES = [
   'japanese swords',
   'sword fittings',
   'sword fitting',
+  'samurai armor',
+  'samurai armour',
+  'japanese armor',
+  'japanese armour',
 ];
 
 // =============================================================================
@@ -400,4 +439,4 @@ export function getCategoryTypes(term: string): string[] | undefined {
 }
 
 // Export type arrays for testing
-export { NIHONTO_TYPES, TOSOGU_TYPES };
+export { NIHONTO_TYPES, TOSOGU_TYPES, ARMOR_TYPES };
