@@ -2,7 +2,11 @@
 
 ## Executive Summary
 
-The browse page uses a custom virtual scroll implementation for performance with 2,000+ listings. **All major issues have been fixed** including the visual jumping during scroll (fixed Jan 2025).
+The browse page uses a custom virtual scroll implementation for performance with 2,000+ listings. **All major issues have been fixed**:
+- Visual jumping during scroll (fixed Jan 2025)
+- QuickView scroll position restoration (fixed Jan 2025)
+
+The implementation is now stable and production-tested.
 
 ## Issues Addressed
 
@@ -26,12 +30,12 @@ The browse page uses a custom virtual scroll implementation for performance with
 
 **Problem**: Opening QuickView caused background cards to shuffle/jump.
 
-**Root Cause**: Body scroll lock using `position: fixed` made `window.scrollY` return 0, causing virtual scroll to recalculate with wrong position.
+**Root Cause**: Body scroll lock made `window.scrollY` return 0, causing virtual scroll to recalculate with wrong position.
 
 **Fix Applied**:
 - Global `window.__scrollLockActive` flag set synchronously before React state updates
 - Virtual scroll handler checks this flag and skips updates when true
-- Reverted from `position:fixed` to `overflow:hidden` for scroll lock
+- Uses `position:fixed` with stable scroll tracking (see issue #5)
 
 **Files Modified**:
 - `src/hooks/useBodyScrollLock.ts`
@@ -105,6 +109,25 @@ const handleScroll = () => {
 **Tests Added**:
 - `tests/hooks/useAdaptiveVirtualScroll.test.ts` - New "scroll jumping fix" test suite
 - `tests/components/browse/VirtualListingGrid.scroll.test.tsx` - Integration tests
+
+### 5. ✅ FIXED: QuickView Scroll Position Restoration (Jan 2025)
+
+**Problem**: Opening QuickView at scroll position 500 would restore to position 273 after closing.
+
+**Root Cause**: When clicking on a card partially outside the viewport, the browser performs an instant "scroll-into-view" BEFORE any JavaScript events fire. Our handlers captured the wrong (post-scroll) position.
+
+**Fix Applied**:
+- Stable scroll position tracking with 150ms lag (browser instant scrolls <50ms are ignored)
+- Use `position:fixed` on body with `top: -stableScrollPosition` to preserve visual position
+- Simplified QuickViewContext (removed complex capture mechanisms)
+
+**Files Modified**:
+- `src/hooks/useBodyScrollLock.ts` - Complete rewrite with stable scroll tracking
+- `src/contexts/QuickViewContext.tsx` - Simplified
+- `src/components/listing/QuickViewModal.tsx` - Removed savedScrollPosition prop
+- `src/components/listing/QuickView.tsx` - Removed savedScrollPosition usage
+
+**Production Tested**: ✅ Scroll position preserved (500 → 500), 0px drift
 
 ## Current Implementation
 
