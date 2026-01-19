@@ -29,6 +29,58 @@ export interface SemanticFilters {
   itemTypes: string[];
 }
 
+// =============================================================================
+// CATEGORY TYPE DEFINITIONS
+// =============================================================================
+
+/**
+ * All nihonto (blade) types for category expansion.
+ * Must stay in sync with NIHONTO_TYPES in /src/app/api/browse/route.ts
+ */
+const NIHONTO_TYPES = [
+  'katana', 'wakizashi', 'tanto', 'tachi', 'naginata', 'yari', 'kodachi', 'ken', 'naginata naoshi', 'sword'
+];
+
+/**
+ * All tosogu (fitting) types for category expansion.
+ * Must stay in sync with TOSOGU_TYPES in /src/app/api/browse/route.ts
+ */
+const TOSOGU_TYPES = [
+  'tsuba', 'fuchi-kashira', 'fuchi_kashira', 'fuchi', 'kashira',
+  'kozuka', 'kogatana', 'kogai', 'menuki', 'koshirae', 'tosogu', 'mitokoromono'
+];
+
+// =============================================================================
+// CATEGORY TERM MAPPINGS
+// =============================================================================
+
+/**
+ * Maps search terms (lowercase) to arrays of item types.
+ * When a user types "nihonto" or "tosogu", expand to ALL types in that category.
+ * This ensures typing "tosogu" gives the same results as selecting the Tosogu filter.
+ */
+const CATEGORY_TERMS: Record<string, string[]> = {
+  // Nihonto category terms
+  'nihonto': NIHONTO_TYPES,
+  'nihon-to': NIHONTO_TYPES,
+  'sword': NIHONTO_TYPES,
+  'swords': NIHONTO_TYPES,
+  'blade': NIHONTO_TYPES,
+  'blades': NIHONTO_TYPES,
+  'japanese sword': NIHONTO_TYPES,
+  'japanese swords': NIHONTO_TYPES,
+
+  // Tosogu category terms
+  'tosogu': TOSOGU_TYPES,
+  'tōsōgu': TOSOGU_TYPES,
+  'fitting': TOSOGU_TYPES,
+  'fittings': TOSOGU_TYPES,
+  'sword fittings': TOSOGU_TYPES,
+  'sword fitting': TOSOGU_TYPES,
+  'kodogu': TOSOGU_TYPES,
+  'kodōgu': TOSOGU_TYPES,
+};
+
 export interface ParsedSemanticQuery {
   /** Extracted semantic filters to apply as exact-match DB filters */
   extractedFilters: SemanticFilters;
@@ -147,6 +199,16 @@ const MULTI_WORD_TYPE_PHRASES = [
   'fuchi-kashira',
 ];
 
+/**
+ * Multi-word category phrases to check before splitting into words.
+ */
+const MULTI_WORD_CATEGORY_PHRASES = [
+  'japanese sword',
+  'japanese swords',
+  'sword fittings',
+  'sword fitting',
+];
+
 // =============================================================================
 // PARSER FUNCTIONS
 // =============================================================================
@@ -191,7 +253,23 @@ export function parseSemanticQuery(queryStr: string): ParsedSemanticQuery {
     }
   }
 
-  // Step 2: Extract multi-word item type phrases
+  // Step 2: Extract multi-word category phrases (e.g., "japanese sword", "sword fittings")
+  // These expand to ALL types in the category
+  for (const phrase of MULTI_WORD_CATEGORY_PHRASES) {
+    if (workingQuery.includes(phrase)) {
+      const categoryTypes = CATEGORY_TERMS[phrase];
+      if (categoryTypes) {
+        for (const type of categoryTypes) {
+          if (!result.extractedFilters.itemTypes.includes(type)) {
+            result.extractedFilters.itemTypes.push(type);
+          }
+        }
+      }
+      workingQuery = workingQuery.replace(phrase, ' ').replace(/\s+/g, ' ').trim();
+    }
+  }
+
+  // Step 3: Extract multi-word item type phrases
   for (const phrase of MULTI_WORD_TYPE_PHRASES) {
     if (workingQuery.includes(phrase)) {
       const canonical = ITEM_TYPE_TERMS[phrase];
@@ -202,7 +280,7 @@ export function parseSemanticQuery(queryStr: string): ParsedSemanticQuery {
     }
   }
 
-  // Step 3: Split remaining query into words and process each
+  // Step 4: Split remaining query into words and process each
   const words = workingQuery.split(/\s+/).filter(w => w.length >= 2);
 
   for (const word of words) {
@@ -215,7 +293,19 @@ export function parseSemanticQuery(queryStr: string): ParsedSemanticQuery {
       continue;
     }
 
-    // Check if it's an item type term
+    // Check if it's a category term (expands to ALL types in that category)
+    // e.g., "nihonto" -> all blade types, "tosogu" -> all fitting types
+    const categoryTypes = CATEGORY_TERMS[word];
+    if (categoryTypes) {
+      for (const type of categoryTypes) {
+        if (!result.extractedFilters.itemTypes.includes(type)) {
+          result.extractedFilters.itemTypes.push(type);
+        }
+      }
+      continue;
+    }
+
+    // Check if it's a single item type term
     const typeCanonical = ITEM_TYPE_TERMS[word];
     if (typeCanonical) {
       if (!result.extractedFilters.itemTypes.includes(typeCanonical)) {
@@ -232,12 +322,12 @@ export function parseSemanticQuery(queryStr: string): ParsedSemanticQuery {
 }
 
 /**
- * Check if a word is a known semantic term (certification or item type).
+ * Check if a word is a known semantic term (certification, item type, or category).
  * Useful for highlighting or UI purposes.
  */
 export function isSemanticTerm(word: string): boolean {
   const normalized = normalizeSearchText(word);
-  return !!(CERTIFICATION_TERMS[normalized] || ITEM_TYPE_TERMS[normalized]);
+  return !!(CERTIFICATION_TERMS[normalized] || ITEM_TYPE_TERMS[normalized] || CATEGORY_TERMS[normalized]);
 }
 
 /**
@@ -255,3 +345,19 @@ export function getCertificationKey(term: string): string | undefined {
 export function getItemTypeKey(term: string): string | undefined {
   return ITEM_TYPE_TERMS[normalizeSearchText(term)];
 }
+
+/**
+ * Get the expanded item types for a category term.
+ * Returns undefined if not a category term.
+ *
+ * @example
+ * getCategoryTypes('nihonto') // ['katana', 'wakizashi', 'tanto', ...]
+ * getCategoryTypes('tosogu')  // ['tsuba', 'fuchi-kashira', ...]
+ * getCategoryTypes('katana')  // undefined (not a category term)
+ */
+export function getCategoryTypes(term: string): string[] | undefined {
+  return CATEGORY_TERMS[normalizeSearchText(term)];
+}
+
+// Export type arrays for testing
+export { NIHONTO_TYPES, TOSOGU_TYPES };
