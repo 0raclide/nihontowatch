@@ -71,13 +71,12 @@ const STATUS_SOLD = 'status.eq.sold,status.eq.presumed_sold,is_sold.eq.true';
 
 // Helper to apply minimum price filter to queries
 // Uses price_jpy (normalized JPY price) to filter consistently regardless of original currency
-// Also excludes items where price_jpy is NULL (not yet refreshed) to prevent low-price items slipping through
+// Allows NULL price_jpy (ASK listings) while filtering out low-price items
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function applyMinPriceFilter<T extends { gte: (column: string, value: number) => T; not: (column: string, operator: string, value: null) => T }>(query: T): T {
+function applyMinPriceFilter<T extends { or: (condition: string) => T }>(query: T): T {
   if (LISTING_FILTERS.MIN_PRICE_JPY > 0) {
-    return query
-      .not('price_jpy', 'is', null)
-      .gte('price_jpy', LISTING_FILTERS.MIN_PRICE_JPY);
+    // Allow ASK listings (NULL) OR items with price >= minimum
+    return query.or(`price_jpy.is.null,price_jpy.gte.${LISTING_FILTERS.MIN_PRICE_JPY}`);
   }
   return query;
 }
@@ -275,7 +274,8 @@ export async function GET(request: NextRequest) {
         query = query.order('price_jpy', { ascending: true, nullsFirst: false });
         break;
       case 'price_desc':
-        query = query.order('price_jpy', { ascending: false, nullsFirst: false });
+        // ASK items (NULL price) appear first, treated as most expensive
+        query = query.order('price_jpy', { ascending: false, nullsFirst: true });
         break;
       case 'name':
         query = query.order('title', { ascending: true });
