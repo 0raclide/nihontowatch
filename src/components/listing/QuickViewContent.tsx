@@ -2,6 +2,7 @@
 
 import { FavoriteButton } from '@/components/favorites/FavoriteButton';
 import { useCurrency, formatPriceWithConversion } from '@/hooks/useCurrency';
+import { shouldShowNewBadge } from '@/lib/newListing';
 import type { Listing } from '@/types';
 import { getItemTypeLabel } from '@/types';
 import { MetadataGrid, getCertInfo } from './MetadataGrid';
@@ -57,6 +58,14 @@ export function QuickViewContent({ listing }: QuickViewContentProps) {
                   }`}
                 >
                   {certInfo.shortLabel}
+                </span>
+              )}
+              {shouldShowNewBadge(listing.first_seen_at, listing.dealer_earliest_seen_at) && (
+                <span
+                  data-testid="new-listing-badge"
+                  className="text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded bg-new-listing-bg text-new-listing"
+                >
+                  New this week
                 </span>
               )}
             </div>

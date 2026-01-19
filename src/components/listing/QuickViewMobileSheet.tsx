@@ -4,6 +4,7 @@ import { useRef, useCallback, useEffect, useState, useMemo } from 'react';
 import type { Listing } from '@/types';
 import { isTosogu, getItemTypeLabel } from '@/types';
 import { useCurrency, formatPriceWithConversion } from '@/hooks/useCurrency';
+import { shouldShowNewBadge } from '@/lib/newListing';
 import { FavoriteButton } from '@/components/favorites/FavoriteButton';
 import { MetadataGrid, getCertInfo, getArtisanInfo } from './MetadataGrid';
 import { TranslatedDescription } from './TranslatedDescription';
@@ -321,6 +322,11 @@ export function QuickViewMobileSheet({
                 }`}
               >
                 {certInfo.shortLabel}
+              </span>
+            )}
+            {shouldShowNewBadge(listing.first_seen_at, listing.dealer_earliest_seen_at) && (
+              <span className="text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded bg-new-listing-bg text-new-listing">
+                New this week
               </span>
             )}
             <QuickMeasurement listing={listing} />

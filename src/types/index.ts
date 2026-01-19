@@ -139,6 +139,9 @@ export interface Listing {
   last_scraped_at: string;
   scrape_count: number;
 
+  // Enriched by API (for "New this week" badge)
+  dealer_earliest_seen_at?: string | null;
+
   // Relations (when joined)
   dealer?: Dealer;
 }
