@@ -263,8 +263,8 @@ function HeaderContent() {
               )}
               <div className="h-3 w-px bg-border" />
               {/* Auth: Login button or User menu */}
-              {authLoading || (profile && !user) ? (
-                // Show skeleton while loading or while we have cached profile but no user yet
+              {authLoading ? (
+                // Show skeleton while auth is loading
                 <div className="w-8 h-8 rounded-full bg-linen/50 animate-pulse" />
               ) : user ? (
                 <UserMenu />
