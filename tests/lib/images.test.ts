@@ -32,8 +32,8 @@ describe('getImageUrl', () => {
     });
   });
 
-  describe('prefers stored_images over original images', () => {
-    it('returns stored_images when both available', () => {
+  describe('returns stored_images first', () => {
+    it('returns first stored image when both available', () => {
       const listing = {
         stored_images: ['https://supabase.co/storage/stored1.jpg'],
         images: ['https://dealer.com/original1.jpg'],
@@ -47,6 +47,16 @@ describe('getImageUrl', () => {
         images: ['https://dealer.com/original1.jpg', 'https://dealer.com/original2.jpg'],
       };
       expect(getImageUrl(listing, 1)).toBe('https://supabase.co/storage/stored2.jpg');
+    });
+
+    it('returns original images after stored images', () => {
+      const listing = {
+        stored_images: ['https://supabase.co/storage/stored1.jpg', 'https://supabase.co/storage/stored2.jpg'],
+        images: ['https://dealer.com/original1.jpg', 'https://dealer.com/original2.jpg'],
+      };
+      // Index 2 is first original image (after 2 stored images)
+      expect(getImageUrl(listing, 2)).toBe('https://dealer.com/original1.jpg');
+      expect(getImageUrl(listing, 3)).toBe('https://dealer.com/original2.jpg');
     });
   });
 
@@ -74,12 +84,16 @@ describe('getImageUrl', () => {
       expect(getImageUrl(listing)).toBe('https://dealer.com/original1.jpg');
     });
 
-    it('returns original at specific index when stored is shorter', () => {
+    it('returns combined list at specific index when stored is shorter', () => {
       const listing = {
         stored_images: ['https://supabase.co/storage/stored1.jpg'],
         images: ['https://dealer.com/original1.jpg', 'https://dealer.com/original2.jpg', 'https://dealer.com/original3.jpg'],
       };
-      expect(getImageUrl(listing, 2)).toBe('https://dealer.com/original3.jpg');
+      // New behavior: stored first, then original
+      // Index 0: stored1, Index 1: original1, Index 2: original2, Index 3: original3
+      expect(getImageUrl(listing, 0)).toBe('https://supabase.co/storage/stored1.jpg');
+      expect(getImageUrl(listing, 2)).toBe('https://dealer.com/original2.jpg');
+      expect(getImageUrl(listing, 3)).toBe('https://dealer.com/original3.jpg');
     });
   });
 
@@ -92,13 +106,23 @@ describe('getImageUrl', () => {
       expect(getImageUrl(listing, 5)).toBeNull();
     });
 
-    it('handles sparse stored_images array', () => {
+    it('handles sparse stored_images array (skips empty strings)', () => {
       const listing = {
         stored_images: ['https://supabase.co/storage/stored1.jpg', '', 'https://supabase.co/storage/stored3.jpg'],
         images: ['https://dealer.com/original1.jpg', 'https://dealer.com/original2.jpg', 'https://dealer.com/original3.jpg'],
       };
-      // Empty string is falsy, should fall back to original
-      expect(getImageUrl(listing, 1)).toBe('https://dealer.com/original2.jpg');
+      // New behavior: empty strings are skipped, so index 1 is stored3.jpg
+      expect(getImageUrl(listing, 0)).toBe('https://supabase.co/storage/stored1.jpg');
+      expect(getImageUrl(listing, 1)).toBe('https://supabase.co/storage/stored3.jpg');
+    });
+
+    it('filters out unsupported formats', () => {
+      const listing = {
+        stored_images: [],
+        images: ['https://dealer.com/original1.tif', 'https://dealer.com/original2.jpg'],
+      };
+      // TIF is filtered out, so first image is the jpg
+      expect(getImageUrl(listing, 0)).toBe('https://dealer.com/original2.jpg');
     });
   });
 });
@@ -118,7 +142,7 @@ describe('getAllImages', () => {
     });
   });
 
-  describe('merges stored and original images correctly', () => {
+  describe('combines stored and original images', () => {
     it('returns stored images when original is empty', () => {
       const listing = {
         stored_images: ['https://supabase.co/stored1.jpg', 'https://supabase.co/stored2.jpg'],
@@ -141,52 +165,149 @@ describe('getAllImages', () => {
       ]);
     });
 
-    it('prefers stored over original at same index', () => {
+    it('returns stored first, then original (deduplicated)', () => {
       const listing = {
         stored_images: ['https://supabase.co/stored1.jpg', 'https://supabase.co/stored2.jpg'],
         images: ['https://dealer.com/original1.jpg', 'https://dealer.com/original2.jpg'],
       };
+      // New behavior: stored first, then original (all unique)
       expect(getAllImages(listing)).toEqual([
         'https://supabase.co/stored1.jpg',
         'https://supabase.co/stored2.jpg',
+        'https://dealer.com/original1.jpg',
+        'https://dealer.com/original2.jpg',
       ]);
     });
 
-    it('merges arrays of different lengths (stored shorter)', () => {
+    it('combines all images from both arrays', () => {
       const listing = {
         stored_images: ['https://supabase.co/stored1.jpg'],
         images: ['https://dealer.com/original1.jpg', 'https://dealer.com/original2.jpg', 'https://dealer.com/original3.jpg'],
       };
+      // New behavior: stored first, then all original
       expect(getAllImages(listing)).toEqual([
         'https://supabase.co/stored1.jpg',
+        'https://dealer.com/original1.jpg',
         'https://dealer.com/original2.jpg',
         'https://dealer.com/original3.jpg',
       ]);
     });
 
-    it('merges arrays of different lengths (stored longer)', () => {
+    it('deduplicates identical URLs', () => {
       const listing = {
-        stored_images: ['https://supabase.co/stored1.jpg', 'https://supabase.co/stored2.jpg', 'https://supabase.co/stored3.jpg'],
-        images: ['https://dealer.com/original1.jpg'],
+        stored_images: ['https://supabase.co/same.jpg', 'https://supabase.co/stored2.jpg'],
+        images: ['https://supabase.co/same.jpg', 'https://dealer.com/original2.jpg'],
       };
+      // Duplicate removed
       expect(getAllImages(listing)).toEqual([
-        'https://supabase.co/stored1.jpg',
+        'https://supabase.co/same.jpg',
         'https://supabase.co/stored2.jpg',
-        'https://supabase.co/stored3.jpg',
+        'https://dealer.com/original2.jpg',
       ]);
     });
   });
 
-  describe('handles partial migration', () => {
-    it('fills gaps with original images when stored has empty strings', () => {
+  describe('filters unsupported image formats', () => {
+    it('filters out .tif files', () => {
+      const listing = {
+        stored_images: [],
+        images: ['https://dealer.com/img1.jpg', 'https://dealer.com/img2.tif', 'https://dealer.com/img3.jpg'],
+      };
+      expect(getAllImages(listing)).toEqual([
+        'https://dealer.com/img1.jpg',
+        'https://dealer.com/img3.jpg',
+      ]);
+    });
+
+    it('filters out .tiff files', () => {
+      const listing = {
+        stored_images: [],
+        images: ['https://dealer.com/img1.tiff', 'https://dealer.com/img2.jpg'],
+      };
+      expect(getAllImages(listing)).toEqual([
+        'https://dealer.com/img2.jpg',
+      ]);
+    });
+
+    it('filters out .bmp files', () => {
+      const listing = {
+        stored_images: [],
+        images: ['https://dealer.com/img1.bmp', 'https://dealer.com/img2.jpg'],
+      };
+      expect(getAllImages(listing)).toEqual([
+        'https://dealer.com/img2.jpg',
+      ]);
+    });
+
+    it('filters out .psd files', () => {
+      const listing = {
+        stored_images: [],
+        images: ['https://dealer.com/img1.psd', 'https://dealer.com/img2.jpg'],
+      };
+      expect(getAllImages(listing)).toEqual([
+        'https://dealer.com/img2.jpg',
+      ]);
+    });
+
+    it('filters out raw camera formats', () => {
+      const listing = {
+        stored_images: [],
+        images: [
+          'https://dealer.com/img1.raw',
+          'https://dealer.com/img2.cr2',
+          'https://dealer.com/img3.nef',
+          'https://dealer.com/img4.jpg',
+        ],
+      };
+      expect(getAllImages(listing)).toEqual([
+        'https://dealer.com/img4.jpg',
+      ]);
+    });
+
+    it('handles case-insensitive extension matching', () => {
+      const listing = {
+        stored_images: [],
+        images: ['https://dealer.com/img1.TIF', 'https://dealer.com/img2.Tiff', 'https://dealer.com/img3.jpg'],
+      };
+      expect(getAllImages(listing)).toEqual([
+        'https://dealer.com/img3.jpg',
+      ]);
+    });
+
+    it('allows common web formats', () => {
+      const listing = {
+        stored_images: [],
+        images: [
+          'https://dealer.com/img1.jpg',
+          'https://dealer.com/img2.jpeg',
+          'https://dealer.com/img3.png',
+          'https://dealer.com/img4.gif',
+          'https://dealer.com/img5.webp',
+          'https://dealer.com/img6.avif',
+        ],
+      };
+      expect(getAllImages(listing)).toEqual([
+        'https://dealer.com/img1.jpg',
+        'https://dealer.com/img2.jpeg',
+        'https://dealer.com/img3.png',
+        'https://dealer.com/img4.gif',
+        'https://dealer.com/img5.webp',
+        'https://dealer.com/img6.avif',
+      ]);
+    });
+  });
+
+  describe('handles empty strings and null values', () => {
+    it('skips empty strings in arrays', () => {
       const listing = {
         stored_images: ['https://supabase.co/stored1.jpg', '', 'https://supabase.co/stored3.jpg'],
-        images: ['https://dealer.com/original1.jpg', 'https://dealer.com/original2.jpg', 'https://dealer.com/original3.jpg'],
+        images: ['https://dealer.com/original1.jpg', 'https://dealer.com/original2.jpg'],
       };
       expect(getAllImages(listing)).toEqual([
         'https://supabase.co/stored1.jpg',
-        'https://dealer.com/original2.jpg',
         'https://supabase.co/stored3.jpg',
+        'https://dealer.com/original1.jpg',
+        'https://dealer.com/original2.jpg',
       ]);
     });
   });
@@ -265,25 +386,32 @@ describe('getImageCount', () => {
     expect(getImageCount({ stored_images: [], images: [] })).toBe(0);
   });
 
-  it('returns stored count when larger', () => {
+  it('returns total unique count (stored + original)', () => {
     expect(getImageCount({
-      stored_images: ['a', 'b', 'c'],
-      images: ['x'],
-    })).toBe(3);
+      stored_images: ['a.jpg', 'b.jpg', 'c.jpg'],
+      images: ['x.jpg'],
+    })).toBe(4); // New behavior: 3 + 1 = 4
   });
 
-  it('returns original count when larger', () => {
+  it('returns total unique count when original is larger', () => {
     expect(getImageCount({
-      stored_images: ['a'],
-      images: ['x', 'y', 'z'],
-    })).toBe(3);
+      stored_images: ['a.jpg'],
+      images: ['x.jpg', 'y.jpg', 'z.jpg'],
+    })).toBe(4); // New behavior: 1 + 3 = 4
   });
 
-  it('returns count when arrays equal length', () => {
+  it('deduplicates when counting', () => {
     expect(getImageCount({
-      stored_images: ['a', 'b'],
-      images: ['x', 'y'],
-    })).toBe(2);
+      stored_images: ['same.jpg', 'b.jpg'],
+      images: ['same.jpg', 'y.jpg'],
+    })).toBe(3); // 'same.jpg' is deduplicated
+  });
+
+  it('excludes unsupported formats from count', () => {
+    expect(getImageCount({
+      stored_images: [],
+      images: ['a.jpg', 'b.tif', 'c.jpg'],
+    })).toBe(2); // TIF is filtered out
   });
 });
 
@@ -342,40 +470,43 @@ describe('real-world scenarios', () => {
       ],
     };
     expect(getImageUrl(listing)).toBe('https://supabase.co/storage/aoi-art/L00001/00.jpg');
+    // New behavior: returns all stored, then all original (4 total)
     expect(getAllImages(listing)).toEqual([
       'https://supabase.co/storage/aoi-art/L00001/00.jpg',
       'https://supabase.co/storage/aoi-art/L00001/01.jpg',
+      'https://aoijapan.com/images/sword1.jpg',
+      'https://aoijapan.com/images/sword2.jpg',
     ]);
     expect(hasStoredImages(listing)).toBe(true);
     expect(getImageSource(listing)).toBe('stored');
   });
 
-  it('handles partially migrated listing (first 2 of 5 uploaded)', () => {
+  it('handles partially migrated listing (sparse stored_images)', () => {
+    // Real case: stored_images named by original index (02.gif = original[2])
+    // stored_images array only has some images, not all
     const listing = {
       stored_images: [
-        'https://supabase.co/storage/aoi-art/L00001/00.jpg',
-        'https://supabase.co/storage/aoi-art/L00001/01.jpg',
+        'https://supabase.co/storage/aoi-art/L00001/02.jpg',
+        'https://supabase.co/storage/aoi-art/L00001/04.jpg',
       ],
       images: [
         'https://aoijapan.com/images/sword1.jpg',
-        'https://aoijapan.com/images/sword2.jpg',
+        'https://aoijapan.com/images/sword2.tif', // TIF will be filtered
         'https://aoijapan.com/images/sword3.jpg',
         'https://aoijapan.com/images/sword4.jpg',
         'https://aoijapan.com/images/sword5.jpg',
       ],
     };
-    expect(getImageUrl(listing, 0)).toBe('https://supabase.co/storage/aoi-art/L00001/00.jpg');
-    expect(getImageUrl(listing, 2)).toBe('https://aoijapan.com/images/sword3.jpg');
+    // New behavior: stored first, then original (minus tif)
     expect(getAllImages(listing)).toEqual([
-      'https://supabase.co/storage/aoi-art/L00001/00.jpg',
-      'https://supabase.co/storage/aoi-art/L00001/01.jpg',
+      'https://supabase.co/storage/aoi-art/L00001/02.jpg',
+      'https://supabase.co/storage/aoi-art/L00001/04.jpg',
+      'https://aoijapan.com/images/sword1.jpg',
       'https://aoijapan.com/images/sword3.jpg',
       'https://aoijapan.com/images/sword4.jpg',
       'https://aoijapan.com/images/sword5.jpg',
     ]);
-    expect(getImageCount(listing)).toBe(5);
-    expect(getImageSource(listing, 0)).toBe('stored');
-    expect(getImageSource(listing, 2)).toBe('original');
+    expect(getImageCount(listing)).toBe(6);
   });
 
   it('handles listing with no images', () => {
@@ -388,6 +519,34 @@ describe('real-world scenarios', () => {
     expect(hasStoredImages(listing)).toBe(false);
     expect(hasAnyImages(listing)).toBe(false);
     expect(getImageCount(listing)).toBe(0);
+  });
+
+  it('handles iidakoendo listing with TIF file (real case)', () => {
+    // Exact data from listing 9340
+    const listing = {
+      stored_images: [
+        'https://supabase.co/storage/listing-images/iida-koendo/L09340/02.gif',
+        'https://supabase.co/storage/listing-images/iida-koendo/L09340/04.gif',
+      ],
+      images: [
+        'https://iidakoendo.com/wp-content/uploads/2025/01/IMG_3879.gif',
+        'https://iidakoendo.com/wp-content/uploads/2025/01/m543.tif',  // Should be filtered
+        'https://iidakoendo.com/wp-content/uploads/2025/01/IMG_3873-1.gif',
+        'https://iidakoendo.com/wp-content/uploads/2025/01/IMG_3875-2-1.gif',
+        'https://iidakoendo.com/wp-content/uploads/2025/01/IMG_3876.gif',
+        'https://iidakoendo.com/wp-content/uploads/2025/01/IMG_3877.gif',
+      ],
+    };
+    const result = getAllImages(listing);
+    // TIF should be filtered out
+    expect(result).not.toContain('https://iidakoendo.com/wp-content/uploads/2025/01/m543.tif');
+    // Should have stored images first
+    expect(result[0]).toBe('https://supabase.co/storage/listing-images/iida-koendo/L09340/02.gif');
+    expect(result[1]).toBe('https://supabase.co/storage/listing-images/iida-koendo/L09340/04.gif');
+    // Should include all GIF images
+    expect(result).toContain('https://iidakoendo.com/wp-content/uploads/2025/01/IMG_3879.gif');
+    // Total count: 2 stored + 5 original GIFs = 7
+    expect(result.length).toBe(7);
   });
 });
 
@@ -443,15 +602,15 @@ describe('isValidItemImage', () => {
 
   describe('handles extreme aspect ratios', () => {
     it('rejects extremely wide images (banners)', () => {
-      // 1000x100 = 10:1 aspect ratio, exceeds MAX_ASPECT_RATIO of 6
-      const result = isValidItemImage({ width: 1000, height: 100 });
+      // 2000x100 = 20:1 aspect ratio, exceeds MAX_ASPECT_RATIO of 15
+      const result = isValidItemImage({ width: 2000, height: 100 });
       expect(result.isValid).toBe(false);
       expect(result.reason).toBe('aspect_ratio');
     });
 
     it('rejects extremely tall images (ribbons)', () => {
-      // 100x1000 = 0.1 aspect ratio, below MIN_ASPECT_RATIO of 0.15
-      const result = isValidItemImage({ width: 100, height: 1000 });
+      // 100x5000 = 0.02 aspect ratio, below MIN_ASPECT_RATIO of 0.03
+      const result = isValidItemImage({ width: 100, height: 5000 });
       expect(result.isValid).toBe(false);
       expect(result.reason).toBe('aspect_ratio');
     });

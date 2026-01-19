@@ -84,10 +84,11 @@ describe('useImagePreloader', () => {
         result.current.preloadListing(listing);
       });
 
-      // Should preload first 3 images (default), but listing only has 2
-      expect(mockImageInstances.length).toBe(2);
+      // getAllImages now returns stored + original (4 total), limited to default of 3
+      expect(mockImageInstances.length).toBe(3);
       expect(mockImageInstances[0].src).toBe('https://cdn.com/stored1.jpg');
       expect(mockImageInstances[1].src).toBe('https://cdn.com/stored2.jpg');
+      expect(mockImageInstances[2].src).toBe('https://dealer.com/original1.jpg');
     });
 
     it('falls back to original images when no stored_images', () => {

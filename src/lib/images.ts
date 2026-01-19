@@ -27,6 +27,22 @@ export interface ImageSource {
 }
 
 /**
+ * File extensions that browsers cannot display natively.
+ * These are filtered out from image arrays.
+ */
+const UNSUPPORTED_EXTENSIONS = ['.tif', '.tiff', '.bmp', '.psd', '.raw', '.cr2', '.nef'];
+
+/**
+ * Check if an image URL has a supported file format.
+ * Filters out formats like .tif that browsers cannot display.
+ */
+function isSupportedImageFormat(url: string): boolean {
+  if (!url) return false;
+  const lowerUrl = url.toLowerCase();
+  return !UNSUPPORTED_EXTENSIONS.some(ext => lowerUrl.endsWith(ext));
+}
+
+/**
  * Dimensions of an image for validation purposes.
  */
 export interface ImageDimensions {
@@ -92,6 +108,9 @@ export function isValidItemImage(dimensions: ImageDimensions): ImageValidationRe
 /**
  * Get a single image URL with fallback logic.
  *
+ * Uses getAllImages() to get the combined list and returns the requested index.
+ * This ensures consistent behavior with filtering and deduplication.
+ *
  * @param listing - Object with stored_images and/or images arrays
  * @param index - Which image to get (default: 0 for first/cover image)
  * @returns Image URL or null if none available
@@ -106,34 +125,29 @@ export function getImageUrl(
 ): string | null {
   if (!listing) return null;
 
-  // Priority 1: Supabase stored images (CDN-optimized)
-  if (listing.stored_images?.[index]) {
-    return listing.stored_images[index];
-  }
-
-  // Priority 2: Original dealer URLs (fallback)
-  if (listing.images?.[index]) {
-    return listing.images[index];
-  }
-
-  return null;
+  const allImages = getAllImages(listing);
+  return allImages[index] || null;
 }
 
 /**
- * Get all available images, preferring stored over original.
+ * Get all available images, combining stored and original images.
  *
- * Merges stored_images and images arrays, using stored URLs where available
- * and falling back to original URLs for any missing indices.
+ * Strategy:
+ * 1. Include all stored images first (CDN-optimized, faster loading)
+ * 2. Then include all original images (for completeness)
+ * 3. Filter out unsupported formats (e.g., .tif files that browsers can't display)
+ * 4. Deduplicate by URL
  *
- * Useful for image carousels that need all images.
+ * Note: We don't try to merge by index because stored_images may be sparse
+ * (only some original images get stored) and their filenames indicate the
+ * original index, not their position in the stored_images array.
  *
  * @param listing - Object with stored_images and/or images arrays
- * @returns Array of all available image URLs
+ * @returns Array of all available image URLs (deduplicated, supported formats only)
  *
  * @example
  * const allImages = getAllImages(listing);
- * // If stored_images has 3 URLs and images has 5,
- * // returns [stored[0], stored[1], stored[2], original[3], original[4]]
+ * // Returns all stored images first, then original images, deduplicated
  */
 export function getAllImages(listing: ImageSource | null | undefined): string[] {
   if (!listing) return [];
@@ -141,15 +155,21 @@ export function getAllImages(listing: ImageSource | null | undefined): string[] 
   const stored = listing.stored_images || [];
   const original = listing.images || [];
 
-  const maxLength = Math.max(stored.length, original.length);
-  const combined: string[] = [];
+  // Combine stored first (optimized), then original (fallback)
+  const allUrls = [...stored, ...original];
 
-  for (let i = 0; i < maxLength; i++) {
-    const url = stored[i] || original[i];
-    if (url) combined.push(url);
+  // Filter unsupported formats and deduplicate
+  const seen = new Set<string>();
+  const result: string[] = [];
+
+  for (const url of allUrls) {
+    if (url && !seen.has(url) && isSupportedImageFormat(url)) {
+      seen.add(url);
+      result.push(url);
+    }
   }
 
-  return combined;
+  return result;
 }
 
 /**
@@ -182,16 +202,13 @@ export function getImageSource(
 }
 
 /**
- * Get image count (from whichever source has more).
+ * Get image count (total unique images with supported formats).
  *
  * @param listing - Object with stored_images and/or images arrays
  * @returns Number of images available
  */
 export function getImageCount(listing: ImageSource | null | undefined): number {
-  if (!listing) return 0;
-  const storedCount = listing.stored_images?.length || 0;
-  const originalCount = listing.images?.length || 0;
-  return Math.max(storedCount, originalCount);
+  return getAllImages(listing).length;
 }
 
 /**

@@ -16,6 +16,7 @@ import { useIsMobile } from '@/hooks/useIsMobile';
 import { BottomTabBar } from '@/components/navigation/BottomTabBar';
 import { PAGINATION } from '@/lib/constants';
 import { useActivityOptional } from '@/components/activity/ActivityProvider';
+import { DeepLinkHandler } from '@/components/browse/DeepLinkHandler';
 
 interface Listing {
   id: string;
@@ -348,6 +349,9 @@ function HomeContent() {
   return (
     <div className="min-h-screen bg-cream transition-colors">
       <Header />
+
+      {/* Handle deep links to specific listings via ?listing= URL param */}
+      <DeepLinkHandler />
 
       <main className="max-w-[1600px] mx-auto px-4 py-4 lg:px-6 lg:py-8">
         {/* Page Header - Refined scholarly aesthetic */}

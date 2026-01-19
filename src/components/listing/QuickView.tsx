@@ -349,7 +349,10 @@ export function QuickView() {
 }
 
 /**
- * Lazy-loaded image component with intersection observer
+ * Lazy-loaded image component with intersection observer and retry logic.
+ *
+ * On error, it retries once with unoptimized=true (bypasses Next.js image optimization),
+ * which can help when the optimization service has issues with certain images.
  */
 function LazyImage({
   src,
@@ -371,6 +374,16 @@ function LazyImage({
   const ref = useRef<HTMLDivElement>(null);
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+  const [useUnoptimized, setUseUnoptimized] = useState(false);
+
+  // Reset state when src changes
+  useEffect(() => {
+    setLoaded(false);
+    setError(false);
+    setRetryCount(0);
+    setUseUnoptimized(false);
+  }, [src]);
 
   useEffect(() => {
     const element = ref.current;
@@ -394,6 +407,19 @@ function LazyImage({
     return () => observer.disconnect();
   }, [index, onVisible]);
 
+  const handleError = () => {
+    // On first error, retry with unoptimized (bypasses Next.js image optimization)
+    if (retryCount === 0) {
+      setRetryCount(1);
+      setUseUnoptimized(true);
+      setLoaded(false);
+      // Don't set error yet, let the retry happen
+    } else {
+      // After retry failed, show error state
+      setError(true);
+    }
+  };
+
   return (
     <div
       ref={ref}
@@ -414,8 +440,10 @@ function LazyImage({
           )}
 
           {/* Actual image - Next.js Image for optimization (AVIF/WebP, sizing) */}
+          {/* On retry, uses unoptimized=true to bypass optimization which may fix certain images */}
           {!error && (
             <Image
+              key={`${src}-${retryCount}`}
               src={src}
               alt={`Image ${index + 1}`}
               width={800}
@@ -423,12 +451,12 @@ function LazyImage({
               className={`w-full h-auto transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
               style={{ width: '100%', height: 'auto' }}
               onLoad={() => setLoaded(true)}
-              onError={() => setError(true)}
+              onError={handleError}
               loading={isFirst ? 'eager' : 'lazy'}
               placeholder="blur"
               blurDataURL={BLUR_PLACEHOLDER}
               sizes="(max-width: 1024px) 100vw, 60vw"
-              unoptimized={false}
+              unoptimized={useUnoptimized}
             />
           )}
 
