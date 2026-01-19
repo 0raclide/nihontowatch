@@ -200,10 +200,11 @@ html.theme-opus {
   --accent-glow: rgba(218, 165, 90, 0.22);
 
   /* Warm parchment text - readable, human */
+  /* WCAG AA requires 4.5:1 contrast for normal text against #0c1220 background */
   --text-primary: #e8e4dc;
   --text-secondary: #c0b8a8;
   --text-tertiary: #8a8478;
-  --text-muted: #5a5650;
+  --text-muted: #8a847c;  /* Lightened from #5a5650 for WCAG AA (~5:1 contrast) */
   --text-accent: #e8c080;
 
   /* Semantic with warmth */
