@@ -14,7 +14,6 @@ import { usePathname } from 'next/navigation';
 import type { Listing } from '@/types';
 import { useSignupPressureOptional } from './SignupPressureContext';
 import { getAllImages } from '@/lib/images';
-import { captureScrollPosition, getCapturedScrollPosition } from '@/hooks/useBodyScrollLock';
 
 // ============================================================================
 // Types
@@ -29,8 +28,6 @@ interface QuickViewContextType {
   openQuickView: (listing: Listing) => void;
   /** Close the quick view modal */
   closeQuickView: () => void;
-  /** Scroll position saved when modal opened (for restoration) */
-  savedScrollPosition: number;
   /** Array of listings for navigation (optional) */
   listings: Listing[];
   /** Current index in the listings array */
@@ -69,34 +66,9 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
   const [currentListing, setCurrentListing] = useState<Listing | null>(null);
   const [listings, setListingsState] = useState<Listing[]>([]);
   const [currentIndex, setCurrentIndex] = useState(-1);
-  // Store scroll position as STATE so it's properly passed through context
-  const [savedScrollPosition, setSavedScrollPosition] = useState(0);
 
   // Cooldown to prevent immediate re-opening after close
   const closeCooldown = useRef(false);
-
-  // Ref to capture scroll position on mousedown (before any state changes)
-  const mousedownScrollPosition = useRef(0);
-
-  // Track isOpen state in a ref for use in event handlers
-  const isOpenRef = useRef(false);
-  isOpenRef.current = isOpen;
-
-  // Capture scroll position on mousedown - uses global capture for reliability
-  // This ensures we have the scroll position before any React updates or
-  // browser-initiated scrolling (like scrollIntoView)
-  useEffect(() => {
-    const handleMouseDown = () => {
-      // captureScrollPosition checks if scroll lock is active internally
-      captureScrollPosition();
-      // Also store locally for backward compatibility
-      if (!isOpenRef.current) {
-        mousedownScrollPosition.current = window.scrollY;
-      }
-    };
-    document.addEventListener('mousedown', handleMouseDown);
-    return () => document.removeEventListener('mousedown', handleMouseDown);
-  }, []);
 
   // Find index of listing in the listings array
   const findListingIndex = useCallback((listing: Listing) => {
@@ -131,11 +103,6 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
     if (typeof window !== 'undefined') {
       window.__scrollLockActive = true;
     }
-
-    // Get scroll position from global capture (set on mousedown) or local ref
-    // The global capture is the most reliable as it's set synchronously on mousedown
-    const scrollPos = getCapturedScrollPosition() || mousedownScrollPosition.current || window.scrollY;
-    setSavedScrollPosition(scrollPos);
 
     setCurrentListing(listing);
     setIsOpen(true);
@@ -297,7 +264,6 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
       currentListing,
       openQuickView,
       closeQuickView,
-      savedScrollPosition, // Now a state variable, properly triggers re-render
       listings,
       currentIndex,
       goToNext,
@@ -311,7 +277,6 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
       currentListing,
       openQuickView,
       closeQuickView,
-      savedScrollPosition, // Added to dependencies
       listings,
       currentIndex,
       goToNext,

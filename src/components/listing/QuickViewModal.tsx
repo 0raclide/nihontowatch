@@ -13,8 +13,6 @@ interface QuickViewModalProps {
   isOpen: boolean;
   onClose: () => void;
   children: ReactNode;
-  /** Pre-captured scroll position for reliable restoration */
-  savedScrollPosition?: number;
 }
 
 // Spring animation duration
@@ -24,13 +22,13 @@ export function QuickViewModal({
   isOpen,
   onClose,
   children,
-  savedScrollPosition,
 }: QuickViewModalProps) {
   // Animation state
   const [isAnimatingOut, setIsAnimatingOut] = useState(false);
   const [mounted, setMounted] = useState(false);
 
-  useBodyScrollLock(isOpen, savedScrollPosition);
+  // Lock body scroll when modal is open - uses position:fixed to preserve visual position
+  useBodyScrollLock(isOpen);
 
   // Handle portal mounting
   useEffect(() => {

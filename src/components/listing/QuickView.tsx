@@ -30,7 +30,6 @@ export function QuickView() {
     goToPrevious,
     currentIndex,
     listings,
-    savedScrollPosition,
   } = useQuickView();
 
   const activityTracker = useActivityTrackerOptional();
@@ -152,7 +151,6 @@ export function QuickView() {
       <QuickViewModal
         isOpen={isOpen}
         onClose={closeQuickView}
-        savedScrollPosition={savedScrollPosition}
       >
         {/* Mobile layout (show below lg, hide on lg+) */}
         <div className="lg:hidden h-full flex flex-col" data-testid="quickview-mobile-layout">

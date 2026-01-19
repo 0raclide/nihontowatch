@@ -166,9 +166,6 @@ npm test -- tests/hooks/useAdaptiveVirtualScroll.test.ts
 
 # Test VirtualListingGrid scroll behavior
 npm test -- tests/components/browse/VirtualListingGrid.scroll.test.tsx
-
-# Manual Playwright test for jumping (diagnostic - may be outdated)
-node test-scroll-jumping.mjs
 ```
 
 ## Session History
@@ -193,6 +190,58 @@ node test-scroll-jumping.mjs
 - Only triggers re-render when startRow changes
 - Added comprehensive test suite (24 hook tests + 6 integration tests)
 - All tests passing
+
+### Session 5: QuickView Scroll Position Fix (Jan 2025)
+
+**Problem**: When opening and closing QuickView, the scroll position would shift. Opening QuickView at scroll position 500 would restore to position 273 after closing.
+
+**Root Cause Identified**:
+When clicking on a card that's partially outside the viewport, the browser performs an instant "scroll-into-view" operation BEFORE any JavaScript events fire. This meant:
+1. User scrolls to position 500
+2. User clicks on a card at -227px (above viewport)
+3. Browser instantly scrolls to bring card into view (new position: 273)
+4. mousedown/click events fire with scrollY already at 273
+5. React effect captures wrong position (273 instead of 500)
+
+**Fix Applied**:
+Two-part solution in `useBodyScrollLock.ts`:
+
+1. **Stable Scroll Position Tracking**: Added a global scroll position tracker that updates with a 150ms lag. This ensures instant browser scrolls (scroll-into-view) don't update the tracked position.
+
+2. **Position Fixed with Correct Offset**: Use `position: fixed` on body with `top: -stableScrollPosition` to preserve visual position.
+
+```typescript
+// Scroll tracking with 150ms lag
+window.addEventListener('scroll', () => {
+  clearTimeout(updateTimeout);
+  updateTimeout = setTimeout(() => {
+    if (!window.__scrollLockActive) {
+      window.__stableScrollPosition = window.scrollY;
+    }
+  }, 150);  // Longer than browser instant-scroll duration
+}, { passive: true });
+
+// In useBodyScrollLock:
+const scrollY = window.__stableScrollPosition ?? window.scrollY;
+body.style.position = 'fixed';
+body.style.top = `-${scrollY}px`;
+```
+
+**Why This Works**:
+- User scrolling takes time (100ms+), so the 150ms lag captures the final position
+- Browser instant scroll (scroll-into-view) completes in <50ms, so it's ignored
+- The stable position reflects where the user intentionally scrolled, not where the browser auto-scrolled
+
+**Files Modified**:
+- `src/hooks/useBodyScrollLock.ts` - Complete rewrite with stable scroll tracking
+- `src/contexts/QuickViewContext.tsx` - Simplified (removed scroll capture logic)
+- `src/components/listing/QuickViewModal.tsx` - Removed savedScrollPosition prop
+- `src/components/listing/QuickView.tsx` - Removed savedScrollPosition usage
+
+**Test Results**:
+- Visual position preserved during QuickView open ✅
+- Scroll position restored correctly after close ✅
+- Multiple open/close cycles work correctly ✅
 
 ## Maintenance Notes
 
