@@ -78,6 +78,57 @@ const images = getAllImages(currentListing);
 
 This ensures consistent fast loading between grid cards and QuickView modal.
 
+### Image Quality Validation
+
+**Files**: `src/lib/images.ts`, `src/lib/constants.ts`, `src/hooks/useValidatedImages.ts`
+
+The scraper sometimes captures UI elements (icons, buttons, navigation elements) alongside actual product images. These are filtered out client-side before display.
+
+#### Quality Thresholds
+
+From `src/lib/constants.ts`:
+
+```typescript
+IMAGE_QUALITY = {
+  MIN_WIDTH: 100,         // Filters tiny icons
+  MIN_HEIGHT: 100,        // Filters tiny buttons
+  MIN_AREA: 15000,        // ~125x120 minimum area
+  MIN_ASPECT_RATIO: 0.15, // Rejects extremely tall ribbons (1:6.67)
+  MAX_ASPECT_RATIO: 6.0,  // Rejects extremely wide banners (6:1)
+}
+```
+
+#### Validation Function
+
+```typescript
+import { isValidItemImage } from '@/lib/images';
+
+const result = isValidItemImage({ width: 73, height: 27 });
+// { isValid: false, reason: 'too_narrow' }
+
+const result2 = isValidItemImage({ width: 600, height: 600 });
+// { isValid: true }
+```
+
+#### useValidatedImages Hook
+
+Components use the `useValidatedImages` hook to filter images:
+
+```typescript
+import { useValidatedImages } from '@/hooks/useValidatedImages';
+import { getAllImages } from '@/lib/images';
+
+const rawImages = getAllImages(listing);
+const { validatedImages } = useValidatedImages(rawImages);
+// validatedImages only contains images that pass quality checks
+```
+
+**Benefits:**
+- Filters out accidentally scraped icons/buttons/UI elements
+- No API changes required (client-side validation)
+- Graceful degradation (validation happens asynchronously)
+- Centralized thresholds in constants.ts
+
 ---
 
 ## QuickView Preloading

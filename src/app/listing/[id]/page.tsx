@@ -12,6 +12,7 @@ import { useAlerts } from '@/hooks/useAlerts';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { createClient } from '@/lib/supabase/client';
 import { getAllImages } from '@/lib/images';
+import { useValidatedImages } from '@/hooks/useValidatedImages';
 import { shouldShowNewBadge } from '@/lib/newListing';
 import type { Listing, CreateAlertInput } from '@/types';
 
@@ -72,6 +73,17 @@ export default function ListingDetailPage() {
   const [showLoginModal, setShowLoginModal] = useState(false);
 
   const { createAlert, isCreating } = useAlerts({ autoFetch: false });
+
+  // Validate images - hook must be called unconditionally before any early returns
+  const rawImages = listing ? getAllImages(listing) : [];
+  const { validatedImages } = useValidatedImages(rawImages);
+
+  // Reset selectedImageIndex if it's out of bounds after images are filtered
+  useEffect(() => {
+    if (validatedImages.length > 0 && selectedImageIndex >= validatedImages.length) {
+      setSelectedImageIndex(0);
+    }
+  }, [validatedImages.length, selectedImageIndex]);
 
   // Fetch listing data
   useEffect(() => {
@@ -189,7 +201,7 @@ export default function ListingDetailPage() {
   const isSold = listing.is_sold || listing.status === 'sold' || listing.status === 'presumed_sold';
   const itemType = listing.item_type ? (ITEM_TYPE_LABELS[listing.item_type.toLowerCase()] || listing.item_type) : null;
   const certInfo = listing.cert_type ? CERT_LABELS[listing.cert_type] : null;
-  const images = getAllImages(listing);
+  const images = validatedImages; // Use validated images (filtered for minimum dimensions)
   const artisan = listing.smith || listing.tosogu_maker;
   const school = listing.school || listing.tosogu_school;
 

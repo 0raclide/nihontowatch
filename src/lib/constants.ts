@@ -201,6 +201,41 @@ export const DISPLAY = {
 } as const;
 
 // =============================================================================
+// IMAGE QUALITY
+// =============================================================================
+
+export const IMAGE_QUALITY = {
+  /**
+   * Minimum width in pixels for a valid product image.
+   * Images below this threshold are likely UI icons, buttons, or navigation elements
+   * that were accidentally scraped from dealer pages.
+   */
+  MIN_WIDTH: 100,
+
+  /**
+   * Minimum height in pixels for a valid product image.
+   * Combined with MIN_WIDTH, filters out tiny UI elements.
+   */
+  MIN_HEIGHT: 100,
+
+  /**
+   * Minimum area (width × height) for a valid product image.
+   * This catches images that might pass individual dimension checks
+   * but are still too small to be useful (e.g., 200x50 banner).
+   * 15000 = ~125x120 or similar reasonable minimum.
+   */
+  MIN_AREA: 15000,
+
+  /**
+   * Aspect ratio extremes. Images outside this range are likely
+   * banners, icons, or other non-product imagery.
+   * Format: width/height
+   */
+  MIN_ASPECT_RATIO: 0.15, // Very tall images (1:6.67)
+  MAX_ASPECT_RATIO: 6.0, // Very wide images (6:1)
+} as const;
+
+// =============================================================================
 // API
 // =============================================================================
 

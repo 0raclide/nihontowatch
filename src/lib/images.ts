@@ -1,5 +1,5 @@
 /**
- * Image URL resolution utilities with smart fallback.
+ * Image URL resolution utilities with smart fallback and quality validation.
  *
  * Provides a centralized way to get image URLs from listings, with automatic
  * fallback from Supabase-stored images to original dealer URLs.
@@ -8,7 +8,14 @@
  * 1. stored_images[index] - Supabase Storage (fast, reliable)
  * 2. images[index] - Original dealer URL (fallback)
  * 3. null - No image available
+ *
+ * Image Quality Validation:
+ * The scraper sometimes captures UI icons, buttons, and navigation elements
+ * alongside actual product images. Use `isValidItemImage()` to filter these
+ * out after loading images and checking their natural dimensions.
  */
+
+import { IMAGE_QUALITY } from './constants';
 
 /**
  * Minimal interface for image source fields.
@@ -17,6 +24,69 @@
 export interface ImageSource {
   stored_images?: string[] | null;
   images?: string[] | null;
+}
+
+/**
+ * Dimensions of an image for validation purposes.
+ */
+export interface ImageDimensions {
+  width: number;
+  height: number;
+}
+
+/**
+ * Result of image validation with reason for rejection.
+ */
+export interface ImageValidationResult {
+  isValid: boolean;
+  reason?: 'too_narrow' | 'too_short' | 'too_small_area' | 'aspect_ratio';
+}
+
+/**
+ * Validate whether an image has acceptable dimensions for display as a product image.
+ *
+ * This filters out:
+ * - Tiny icons (< 100px in either dimension)
+ * - Navigation buttons scraped from dealer pages
+ * - Extreme aspect ratio images (banners, ribbons)
+ * - Very small area images that somehow pass individual dimension checks
+ *
+ * @param dimensions - The natural width and height of the image
+ * @returns Validation result with reason if invalid
+ *
+ * @example
+ * const img = new Image();
+ * img.onload = () => {
+ *   const result = isValidItemImage({ width: img.naturalWidth, height: img.naturalHeight });
+ *   if (!result.isValid) console.log('Filtered:', result.reason);
+ * };
+ */
+export function isValidItemImage(dimensions: ImageDimensions): ImageValidationResult {
+  const { width, height } = dimensions;
+
+  // Check minimum width
+  if (width < IMAGE_QUALITY.MIN_WIDTH) {
+    return { isValid: false, reason: 'too_narrow' };
+  }
+
+  // Check minimum height
+  if (height < IMAGE_QUALITY.MIN_HEIGHT) {
+    return { isValid: false, reason: 'too_short' };
+  }
+
+  // Check minimum area (catches long thin images that pass individual checks)
+  const area = width * height;
+  if (area < IMAGE_QUALITY.MIN_AREA) {
+    return { isValid: false, reason: 'too_small_area' };
+  }
+
+  // Check aspect ratio (catches extreme banners/ribbons)
+  const aspectRatio = width / height;
+  if (aspectRatio < IMAGE_QUALITY.MIN_ASPECT_RATIO || aspectRatio > IMAGE_QUALITY.MAX_ASPECT_RATIO) {
+    return { isValid: false, reason: 'aspect_ratio' };
+  }
+
+  return { isValid: true };
 }
 
 /**

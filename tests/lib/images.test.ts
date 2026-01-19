@@ -6,6 +6,7 @@ import {
   getImageSource,
   getImageCount,
   hasAnyImages,
+  isValidItemImage,
 } from '@/lib/images';
 
 describe('getImageUrl', () => {
@@ -387,5 +388,116 @@ describe('real-world scenarios', () => {
     expect(hasStoredImages(listing)).toBe(false);
     expect(hasAnyImages(listing)).toBe(false);
     expect(getImageCount(listing)).toBe(0);
+  });
+});
+
+describe('isValidItemImage', () => {
+  describe('filters out tiny icons and buttons', () => {
+    it('rejects images narrower than MIN_WIDTH', () => {
+      const result = isValidItemImage({ width: 73, height: 200 });
+      expect(result.isValid).toBe(false);
+      expect(result.reason).toBe('too_narrow');
+    });
+
+    it('rejects images shorter than MIN_HEIGHT', () => {
+      const result = isValidItemImage({ width: 200, height: 27 });
+      expect(result.isValid).toBe(false);
+      expect(result.reason).toBe('too_short');
+    });
+
+    it('rejects tiny icons (both dimensions small)', () => {
+      const result = isValidItemImage({ width: 73, height: 27 });
+      expect(result.isValid).toBe(false);
+    });
+
+    it('rejects very small area images', () => {
+      // 120x120 = 14400, which is below MIN_AREA of 15000
+      const result = isValidItemImage({ width: 120, height: 120 });
+      expect(result.isValid).toBe(false);
+      expect(result.reason).toBe('too_small_area');
+    });
+  });
+
+  describe('accepts valid product images', () => {
+    it('accepts typical product image (600x600)', () => {
+      const result = isValidItemImage({ width: 600, height: 600 });
+      expect(result.isValid).toBe(true);
+      expect(result.reason).toBeUndefined();
+    });
+
+    it('accepts tall sword image (415x500)', () => {
+      const result = isValidItemImage({ width: 415, height: 500 });
+      expect(result.isValid).toBe(true);
+    });
+
+    it('accepts wide image with decent height (962x167)', () => {
+      const result = isValidItemImage({ width: 962, height: 167 });
+      expect(result.isValid).toBe(true);
+    });
+
+    it('accepts borderline image (200x200)', () => {
+      const result = isValidItemImage({ width: 200, height: 200 });
+      expect(result.isValid).toBe(true);
+    });
+  });
+
+  describe('handles extreme aspect ratios', () => {
+    it('rejects extremely wide images (banners)', () => {
+      // 1000x100 = 10:1 aspect ratio, exceeds MAX_ASPECT_RATIO of 6
+      const result = isValidItemImage({ width: 1000, height: 100 });
+      expect(result.isValid).toBe(false);
+      expect(result.reason).toBe('aspect_ratio');
+    });
+
+    it('rejects extremely tall images (ribbons)', () => {
+      // 100x1000 = 0.1 aspect ratio, below MIN_ASPECT_RATIO of 0.15
+      const result = isValidItemImage({ width: 100, height: 1000 });
+      expect(result.isValid).toBe(false);
+      expect(result.reason).toBe('aspect_ratio');
+    });
+
+    it('accepts very tall sword images (common ratio)', () => {
+      // 300x1500 = 0.2 aspect ratio, within acceptable range
+      const result = isValidItemImage({ width: 300, height: 1500 });
+      expect(result.isValid).toBe(true);
+    });
+
+    it('accepts wide detail shots', () => {
+      // 1200x300 = 4:1 aspect ratio, within acceptable range
+      const result = isValidItemImage({ width: 1200, height: 300 });
+      expect(result.isValid).toBe(true);
+    });
+  });
+
+  describe('real-world examples from listing 31135', () => {
+    it('accepts main product image (600x600)', () => {
+      expect(isValidItemImage({ width: 600, height: 600 }).isValid).toBe(true);
+    });
+
+    it('rejects navigation icon (73x27)', () => {
+      expect(isValidItemImage({ width: 73, height: 27 }).isValid).toBe(false);
+    });
+
+    it('rejects small button (50x27)', () => {
+      expect(isValidItemImage({ width: 50, height: 27 }).isValid).toBe(false);
+    });
+
+    it('rejects small icon (64x90)', () => {
+      expect(isValidItemImage({ width: 64, height: 90 }).isValid).toBe(false);
+    });
+
+    it('rejects small thumbnail with small area (103x104)', () => {
+      // 103x104 = 10712 area, below MIN_AREA of 15000
+      expect(isValidItemImage({ width: 103, height: 104 }).isValid).toBe(false);
+      expect(isValidItemImage({ width: 103, height: 104 }).reason).toBe('too_small_area');
+    });
+
+    it('rejects small square icon (79x79)', () => {
+      expect(isValidItemImage({ width: 79, height: 79 }).isValid).toBe(false);
+    });
+
+    it('accepts GIF thumbnail (180x180)', () => {
+      expect(isValidItemImage({ width: 180, height: 180 }).isValid).toBe(true);
+    });
   });
 });

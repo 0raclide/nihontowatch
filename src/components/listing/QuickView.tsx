@@ -9,6 +9,7 @@ import { useQuickView } from '@/contexts/QuickViewContext';
 import { useActivityTrackerOptional } from '@/lib/tracking/ActivityTracker';
 import { usePinchZoomTracking } from '@/lib/viewport';
 import { getAllImages } from '@/lib/images';
+import { useValidatedImages } from '@/hooks/useValidatedImages';
 
 // Blur placeholder for lazy images
 const BLUR_PLACEHOLDER = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjVmNGYwIi8+PC9zdmc+';
@@ -136,10 +137,13 @@ export function QuickView() {
     setCurrentImageIndex(index);
   }, []);
 
+  // Get all images and validate them to filter out icons/buttons/tiny UI elements
+  // Hook must be called unconditionally, so we handle null listing with empty array
+  const rawImages = currentListing ? getAllImages(currentListing) : [];
+  const { validatedImages: images } = useValidatedImages(rawImages);
+
   if (!currentListing) return null;
 
-  // Use getAllImages to prefer stored_images (CDN) over original dealer URLs
-  const images = getAllImages(currentListing);
   const showNavigation = listings.length > 1 && currentIndex !== -1;
   const isSold = currentListing.is_sold || currentListing.status === 'sold' || currentListing.status === 'presumed_sold';
 
