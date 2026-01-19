@@ -166,6 +166,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const hasInitializedRef = useRef(false);
   // Track if INITIAL_SESSION has fired - SIGNED_IN before INITIAL_SESSION means cookies aren't ready
   const hasReceivedInitialSessionRef = useRef(false);
+  // Track when we last signed in to ignore spurious SIGNED_OUT events
+  const lastSignInTimeRef = useRef<number>(0);
 
   // Refresh profile (for manual refresh)
   const refreshProfile = useCallback(async () => {
@@ -203,6 +205,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
         if (session?.user) {
           console.log('[Auth] INITIAL_SESSION with user, fetching profile...');
+          lastSignInTimeRef.current = Date.now();
           const profile = await fetchProfileWithTimeout(supabase, session.user.id);
           // Double-check we haven't been initialized while fetching
           if (isMounted && !hasInitializedRef.current) {
@@ -250,6 +253,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
 
         console.log('[Auth] SIGNED_IN event, fetching profile...');
+        lastSignInTimeRef.current = Date.now();
         const profile = await fetchProfileWithTimeout(supabase, session.user.id);
         if (isMounted) {
           hasInitializedRef.current = true;
@@ -265,7 +269,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
           console.log('[Auth] State updated from SIGNED_IN event');
         }
       } else if (event === 'SIGNED_OUT') {
+        // Ignore spurious SIGNED_OUT events that happen within 5 seconds of sign-in
+        // This can happen due to race conditions with session validation
+        const timeSinceSignIn = Date.now() - lastSignInTimeRef.current;
+        if (timeSinceSignIn < 5000 && lastSignInTimeRef.current > 0) {
+          console.log('[Auth] Ignoring spurious SIGNED_OUT event (within 5s of sign-in)');
+          return;
+        }
+
         if (isMounted) {
+          console.log('[Auth] Processing SIGNED_OUT event');
           setState({
             user: null,
             profile: null,
