@@ -15,6 +15,7 @@ import {
   getCategoryTypes,
   getCertificationKey,
   getItemTypeKey,
+  getSignatureStatusKey,
   NIHONTO_TYPES,
   TOSOGU_TYPES,
 } from '@/lib/search/semanticQueryParser';
@@ -295,6 +296,7 @@ describe('Edge Cases', () => {
     const result = parseSemanticQuery('');
     expect(result.extractedFilters.itemTypes).toEqual([]);
     expect(result.extractedFilters.certifications).toEqual([]);
+    expect(result.extractedFilters.signatureStatuses).toEqual([]);
     expect(result.remainingTerms).toEqual([]);
   });
 
@@ -371,5 +373,105 @@ describe('Regression Tests', () => {
     expect(result.extractedFilters.itemTypes).toEqual([]);
     expect(result.extractedFilters.certifications).toEqual([]);
     expect(result.remainingTerms).toEqual(['bizen', 'masamune']);
+  });
+});
+
+// =============================================================================
+// SIGNATURE STATUS EXTRACTION
+// =============================================================================
+
+describe('Signature Status Extraction', () => {
+  describe('signed variants', () => {
+    it('extracts "signed" as signature filter', () => {
+      const result = parseSemanticQuery('katana signed');
+
+      expect(result.extractedFilters.signatureStatuses).toEqual(['signed']);
+      expect(result.extractedFilters.itemTypes).toEqual(['katana']);
+      expect(result.remainingTerms).toEqual([]);
+    });
+
+    it('extracts "mei" as signed filter', () => {
+      const result = parseSemanticQuery('mei tanto');
+
+      expect(result.extractedFilters.signatureStatuses).toEqual(['signed']);
+      expect(result.extractedFilters.itemTypes).toEqual(['tanto']);
+    });
+  });
+
+  describe('unsigned variants', () => {
+    it('extracts "unsigned" as signature filter', () => {
+      const result = parseSemanticQuery('unsigned wakizashi');
+
+      expect(result.extractedFilters.signatureStatuses).toEqual(['unsigned']);
+      expect(result.extractedFilters.itemTypes).toEqual(['wakizashi']);
+    });
+
+    it('extracts "mumei" as unsigned filter', () => {
+      const result = parseSemanticQuery('mumei tanto');
+
+      expect(result.extractedFilters.signatureStatuses).toEqual(['unsigned']);
+      expect(result.extractedFilters.itemTypes).toEqual(['tanto']);
+    });
+  });
+
+  describe('combined queries', () => {
+    it('handles cert + type + signature: "tokuju tachi signed"', () => {
+      const result = parseSemanticQuery('tokuju tachi signed');
+
+      expect(result.extractedFilters.certifications).toEqual(['Tokuju']);
+      expect(result.extractedFilters.itemTypes).toEqual(['tachi']);
+      expect(result.extractedFilters.signatureStatuses).toEqual(['signed']);
+      expect(result.remainingTerms).toEqual([]);
+    });
+
+    it('handles signature with text search term', () => {
+      const result = parseSemanticQuery('signed bizen');
+
+      expect(result.extractedFilters.signatureStatuses).toEqual(['signed']);
+      expect(result.remainingTerms).toEqual(['bizen']);
+    });
+
+    it('handles signature with category expansion', () => {
+      const result = parseSemanticQuery('mumei nihonto');
+
+      expect(result.extractedFilters.signatureStatuses).toEqual(['unsigned']);
+      expect(result.extractedFilters.itemTypes.length).toBe(NIHONTO_TYPES.length);
+    });
+  });
+
+  describe('helper functions', () => {
+    it('getSignatureStatusKey returns "signed" for "mei"', () => {
+      expect(getSignatureStatusKey('mei')).toBe('signed');
+      expect(getSignatureStatusKey('signed')).toBe('signed');
+    });
+
+    it('getSignatureStatusKey returns "unsigned" for "mumei"', () => {
+      expect(getSignatureStatusKey('mumei')).toBe('unsigned');
+      expect(getSignatureStatusKey('unsigned')).toBe('unsigned');
+    });
+
+    it('getSignatureStatusKey returns undefined for non-signature terms', () => {
+      expect(getSignatureStatusKey('katana')).toBeUndefined();
+      expect(getSignatureStatusKey('bizen')).toBeUndefined();
+    });
+
+    it('isSemanticTerm returns true for signature terms', () => {
+      expect(isSemanticTerm('signed')).toBe(true);
+      expect(isSemanticTerm('unsigned')).toBe(true);
+      expect(isSemanticTerm('mei')).toBe(true);
+      expect(isSemanticTerm('mumei')).toBe(true);
+    });
+  });
+
+  describe('case insensitivity', () => {
+    it('handles uppercase "SIGNED"', () => {
+      const result = parseSemanticQuery('SIGNED katana');
+      expect(result.extractedFilters.signatureStatuses).toEqual(['signed']);
+    });
+
+    it('handles mixed case "MuMei"', () => {
+      const result = parseSemanticQuery('MuMei');
+      expect(result.extractedFilters.signatureStatuses).toEqual(['unsigned']);
+    });
   });
 });

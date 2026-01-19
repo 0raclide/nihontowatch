@@ -237,6 +237,12 @@ export async function GET(request: NextRequest) {
         query = query.or(typeConditions);
       }
 
+      // Apply extracted signature status filters (exact match on signature_status)
+      // Only apply if no explicit signature status filter was already set via URL params
+      if (extractedFilters.signatureStatuses?.length && !params.signatureStatuses?.length) {
+        query = query.in('signature_status', extractedFilters.signatureStatuses);
+      }
+
       // Step 2: Parse numeric filters from remaining terms
       const remainingQuery = remainingTerms.join(' ');
       const { filters, textWords } = parseNumericFilters(remainingQuery);

@@ -27,6 +27,8 @@ export interface SemanticFilters {
   certifications: string[];
   /** Canonical item type values (e.g., 'katana', 'tanto', 'tsuba') */
   itemTypes: string[];
+  /** Canonical signature status values ('signed', 'unsigned') */
+  signatureStatuses: string[];
 }
 
 // =============================================================================
@@ -199,6 +201,21 @@ const MULTI_WORD_TYPE_PHRASES = [
   'fuchi-kashira',
 ];
 
+// =============================================================================
+// SIGNATURE STATUS MAPPINGS
+// =============================================================================
+
+/**
+ * Maps search terms (lowercase) to canonical signature status values.
+ * These values are used for exact matching against the signature_status column.
+ */
+const SIGNATURE_STATUS_TERMS: Record<string, string> = {
+  'signed': 'signed',
+  'mei': 'signed',
+  'unsigned': 'unsigned',
+  'mumei': 'unsigned',
+};
+
 /**
  * Multi-word category phrases to check before splitting into words.
  */
@@ -230,6 +247,7 @@ export function parseSemanticQuery(queryStr: string): ParsedSemanticQuery {
     extractedFilters: {
       certifications: [],
       itemTypes: [],
+      signatureStatuses: [],
     },
     remainingTerms: [],
   };
@@ -314,6 +332,15 @@ export function parseSemanticQuery(queryStr: string): ParsedSemanticQuery {
       continue;
     }
 
+    // Check if it's a signature status term
+    const sigCanonical = SIGNATURE_STATUS_TERMS[word];
+    if (sigCanonical) {
+      if (!result.extractedFilters.signatureStatuses.includes(sigCanonical)) {
+        result.extractedFilters.signatureStatuses.push(sigCanonical);
+      }
+      continue;
+    }
+
     // Not a semantic term - pass to text search
     result.remainingTerms.push(word);
   }
@@ -322,12 +349,25 @@ export function parseSemanticQuery(queryStr: string): ParsedSemanticQuery {
 }
 
 /**
- * Check if a word is a known semantic term (certification, item type, or category).
+ * Check if a word is a known semantic term (certification, item type, category, or signature status).
  * Useful for highlighting or UI purposes.
  */
 export function isSemanticTerm(word: string): boolean {
   const normalized = normalizeSearchText(word);
-  return !!(CERTIFICATION_TERMS[normalized] || ITEM_TYPE_TERMS[normalized] || CATEGORY_TERMS[normalized]);
+  return !!(
+    CERTIFICATION_TERMS[normalized] ||
+    ITEM_TYPE_TERMS[normalized] ||
+    CATEGORY_TERMS[normalized] ||
+    SIGNATURE_STATUS_TERMS[normalized]
+  );
+}
+
+/**
+ * Get the canonical signature status for a search term.
+ * Returns undefined if not a signature status term.
+ */
+export function getSignatureStatusKey(term: string): string | undefined {
+  return SIGNATURE_STATUS_TERMS[normalizeSearchText(term)];
 }
 
 /**

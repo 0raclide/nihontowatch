@@ -89,6 +89,31 @@ Certification terms are extracted and converted to exact-match database filters:
 | `kicho`, `tokukicho` | Kicho/Tokubetsu Kicho |
 | `nthk` | NTHK certification |
 
+---
+
+## Signature Status Extraction
+
+**Added:** January 2026
+
+Signature status terms are extracted and converted to exact-match filters on `signature_status`:
+
+| Search Term | Filters To |
+|-------------|------------|
+| `signed`, `mei` | `signature_status = 'signed'` |
+| `unsigned`, `mumei` | `signature_status = 'unsigned'` |
+
+### Example
+
+Query: `"tokuju tachi signed"`
+
+Parsing result:
+- `certifications: ['Tokuju']` → exact filter on `cert_type`
+- `itemTypes: ['tachi']` → exact filter on `item_type`
+- `signatureStatuses: ['signed']` → exact filter on `signature_status`
+- `remainingTerms: []` → nothing left for text search
+
+This fixes the issue where searching "tokuju tachi signed" returned 0 results because "signed" was being text-searched instead of filtered.
+
 ### Example
 
 Query: `"tanto juyo goto"`
@@ -322,6 +347,26 @@ npm test -- browse
 
 ## Changelog
 
+### January 2026 - Signature Status Semantic Extraction
+
+**Commit:** (pending)
+
+**Problem:** Searching "tokuju tachi signed" returned 0 results because "signed" was text-searched instead of filtered.
+
+**Root Cause:** The `mei_type` field wasn't in the search_vector, and there was no semantic extraction for signature terms.
+
+**Solution:** Added "signed"/"unsigned"/"mei"/"mumei" to the semantic query parser:
+- These terms are now extracted and converted to exact-match filters on `signature_status`
+- Follows the same pattern as certifications and item types
+- Bypasses text search entirely for better precision
+
+**Files Changed:**
+- `src/lib/search/semanticQueryParser.ts` - Added SIGNATURE_STATUS_TERMS and extraction logic
+- `src/app/api/browse/route.ts` - Apply extracted signature filters
+- `tests/lib/semanticQueryParser.test.ts` - Added 17 new unit tests
+
+---
+
 ### January 2026 - FTS Alias OR Fix
 
 **Commit:** `e6af058`
@@ -404,15 +449,11 @@ npm test -- browse
 
 ## Known Limitations
 
-### 1. mei_type Not Searchable by Text
+### 1. ~~mei_type Not Searchable by Text~~ ✅ FIXED
 
-The `mei_type` field (signed/unsigned) is NOT in the search_vector. Searching "signed" will not find items with `mei_type="mei"`.
+~~The `mei_type` field (signed/unsigned) is NOT in the search_vector. Searching "signed" will not find items with `mei_type="mei"`.~~
 
-**Workaround:** Use the signature status filter (`?signatureStatus=signed`) instead of text search.
-
-**Potential Fix:** Add `mei_type` to search vector with expansion:
-- `mei_type="mei"` → add "signed" to search_vector
-- `mei_type="mumei"` → add "unsigned" to search_vector
+**Fixed (January 2026):** Added "signed"/"unsigned"/"mei"/"mumei" to semantic query parser. These terms are now extracted and applied as exact-match filters on `signature_status` column, bypassing text search entirely.
 
 ### 2. ID 7701 False Positive for "Rai Kunimitsu"
 
@@ -428,7 +469,7 @@ The main browse endpoint doesn't yet support `sort=relevance` with `ts_rank_cd` 
 
 ## Future Enhancements
 
-- [ ] Add `mei_type` to search vector (map "mei"→"signed", "mumei"→"unsigned")
+- [x] ~~Add `mei_type` to search vector~~ → Solved via semantic extraction instead (Jan 2026)
 - [ ] Relevance sorting option with `ts_rank_cd`
 - [ ] Autocomplete suggestions for category terms
 - [ ] Visual indicator when category expansion is applied
