@@ -27,6 +27,8 @@ interface QuickViewContextType {
   openQuickView: (listing: Listing) => void;
   /** Close the quick view modal */
   closeQuickView: () => void;
+  /** Scroll position saved when modal opened (for restoration) */
+  savedScrollPosition: number;
   /** Array of listings for navigation (optional) */
   listings: Listing[];
   /** Current index in the listings array */
@@ -68,6 +70,20 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
 
   // Cooldown to prevent immediate re-opening after close
   const closeCooldown = useRef(false);
+
+  // Store scroll position at the moment of opening (before any React state changes)
+  const savedScrollPosition = useRef(0);
+
+  // Capture scroll position on ANY mousedown - before click events fire
+  // This ensures we have the scroll position before any React updates or
+  // browser-initiated scrolling (like scrollIntoView)
+  useEffect(() => {
+    const captureScrollOnMouseDown = () => {
+      savedScrollPosition.current = window.scrollY;
+    };
+    document.addEventListener('mousedown', captureScrollOnMouseDown);
+    return () => document.removeEventListener('mousedown', captureScrollOnMouseDown);
+  }, []);
 
   // Find index of listing in the listings array
   const findListingIndex = useCallback((listing: Listing) => {
@@ -233,6 +249,7 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
       currentListing,
       openQuickView,
       closeQuickView,
+      savedScrollPosition: savedScrollPosition.current,
       listings,
       currentIndex,
       goToNext,

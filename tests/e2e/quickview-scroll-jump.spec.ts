@@ -7,7 +7,6 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('QuickView scroll position stability', () => {
-  // Use base URL from config
   test.beforeEach(async ({ page }) => {
     // Set desktop viewport
     await page.setViewportSize({ width: 1280, height: 800 });
@@ -19,23 +18,22 @@ test.describe('QuickView scroll position stability', () => {
 
     // Wait for listings grid to load
     await page.waitForSelector('[data-testid="virtual-listing-grid"]', { timeout: 15000 });
-    const cards = page.locator('[role="button"]');
-    await cards.first().waitFor({ timeout: 5000 });
 
     // Scroll down to test scroll restoration
     await page.evaluate(() => window.scrollTo(0, 500));
-    await page.waitForTimeout(100);
+    await page.waitForTimeout(200);
 
     const scrollBefore = await page.evaluate(() => window.scrollY);
 
-    // Open QuickView
-    await cards.first().click();
+    // Click in center of viewport to hit a visible card
+    // (Using cards.first().click() can cause browser to scroll to reveal the element)
+    await page.mouse.click(640, 400);
     await page.waitForSelector('[data-testid="quickview-modal"]', { timeout: 5000 });
-    await page.waitForTimeout(350); // Wait for open animation
+    await page.waitForTimeout(350);
 
     // Close via button
     await page.locator('[data-testid="quickview-close-button"]').click();
-    await page.waitForTimeout(500); // Wait for close animation + rAF
+    await page.waitForTimeout(500);
 
     const scrollAfter = await page.evaluate(() => window.scrollY);
     const jumpAmount = Math.abs(scrollAfter - scrollBefore);
@@ -48,20 +46,43 @@ test.describe('QuickView scroll position stability', () => {
     await page.goto('/browse');
 
     await page.waitForSelector('[data-testid="virtual-listing-grid"]', { timeout: 15000 });
-    const cards = page.locator('[role="button"]');
-    await cards.first().waitFor({ timeout: 5000 });
 
     await page.evaluate(() => window.scrollTo(0, 400));
-    await page.waitForTimeout(100);
+    await page.waitForTimeout(200);
 
     const scrollBefore = await page.evaluate(() => window.scrollY);
 
-    // Open and close via Escape
-    await cards.first().click();
+    // Click in center of viewport
+    await page.mouse.click(640, 400);
     await page.waitForSelector('[data-testid="quickview-modal"]', { timeout: 5000 });
     await page.waitForTimeout(350);
 
     await page.keyboard.press('Escape');
+    await page.waitForTimeout(500);
+
+    const scrollAfter = await page.evaluate(() => window.scrollY);
+    const jumpAmount = Math.abs(scrollAfter - scrollBefore);
+
+    expect(jumpAmount).toBeLessThan(10);
+  });
+
+  test('desktop: scroll position stable after closing via backdrop click', async ({ page }) => {
+    await page.goto('/browse');
+
+    await page.waitForSelector('[data-testid="virtual-listing-grid"]', { timeout: 15000 });
+
+    await page.evaluate(() => window.scrollTo(0, 600));
+    await page.waitForTimeout(200);
+
+    const scrollBefore = await page.evaluate(() => window.scrollY);
+
+    // Click in center of viewport to open
+    await page.mouse.click(640, 400);
+    await page.waitForSelector('[data-testid="quickview-modal"]', { timeout: 5000 });
+    await page.waitForTimeout(350);
+
+    // Click on backdrop (left edge)
+    await page.mouse.click(50, 400);
     await page.waitForTimeout(500);
 
     const scrollAfter = await page.evaluate(() => window.scrollY);
