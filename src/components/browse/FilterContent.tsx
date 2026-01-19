@@ -133,18 +133,12 @@ const TOSOGU_TYPES = [
   'mitokoromono',
 ];
 
-// Armor & accessories
+// Armor types
 const ARMOR_TYPES = [
-  // Full armor suits
   'armor', 'yoroi', 'gusoku',
-  // Helmets
   'helmet', 'kabuto',
-  // Face masks
   'menpo', 'mengu',
-  // Body armor components
-  'kote',     // Gauntlets
-  'suneate',  // Shin guards
-  'do',       // Chest armor
+  'kote', 'suneate', 'do',
 ];
 
 // Normalize Japanese/variant item types to standard English
@@ -195,13 +189,13 @@ const ITEM_TYPE_LABELS: Record<string, string> = {
   koshirae: 'Koshirae',
   tosogu: 'Tosogu',
   mitokoromono: 'Mitokoromono',
-  // Armor & accessories
+  // Armor
   armor: 'Armor',
   yoroi: 'Yoroi',
   gusoku: 'Gusoku',
   helmet: 'Helmet',
   kabuto: 'Kabuto',
-  menpo: 'Menpo',
+  menpo: 'Menpō',
   mengu: 'Mengu',
   kote: 'Kote',
   suneate: 'Suneate',

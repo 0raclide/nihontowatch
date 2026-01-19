@@ -8,6 +8,9 @@ describe('FilterContent Component', () => {
       { value: 'katana', count: 100 },
       { value: 'wakizashi', count: 50 },
       { value: 'tsuba', count: 75 },
+      { value: 'kabuto', count: 15 },
+      { value: 'menpo', count: 8 },
+      { value: 'armor', count: 5 },
     ],
     certifications: [
       { value: 'Juyo', count: 20 },
@@ -23,13 +26,13 @@ describe('FilterContent Component', () => {
   };
 
   const defaultFilters = {
-    category: 'all' as const,
-    itemTypes: [],
-    certifications: [],
-    schools: [],
-    dealers: [],
-    historicalPeriods: [],
-    signatureStatuses: [],
+    category: 'all' as 'all' | 'nihonto' | 'tosogu' | 'armor',
+    itemTypes: [] as string[],
+    certifications: [] as string[],
+    schools: [] as string[],
+    dealers: [] as number[],
+    historicalPeriods: [] as string[],
+    signatureStatuses: [] as string[],
     askOnly: false,
   };
 
@@ -57,7 +60,7 @@ describe('FilterContent Component', () => {
     expect(screen.getByText('Dealer')).toBeInTheDocument();
   });
 
-  it('renders category toggle buttons', () => {
+  it('renders category toggle buttons including Armor', () => {
     render(
       <FilterContent
         facets={mockFacets}
@@ -70,9 +73,10 @@ describe('FilterContent Component', () => {
     expect(screen.getByRole('button', { name: /^all$/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^nihonto$/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^tosogu$/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^armor$/i })).toBeInTheDocument();
   });
 
-  it('calls onFilterChange when category is changed', () => {
+  it('calls onFilterChange when category is changed to nihonto', () => {
     render(
       <FilterContent
         facets={mockFacets}
@@ -84,6 +88,21 @@ describe('FilterContent Component', () => {
     fireEvent.click(screen.getByRole('button', { name: /nihonto/i }));
 
     expect(mockOnFilterChange).toHaveBeenCalledWith('category', 'nihonto');
+    expect(mockOnFilterChange).toHaveBeenCalledWith('itemTypes', []);
+  });
+
+  it('calls onFilterChange when category is changed to armor', () => {
+    render(
+      <FilterContent
+        facets={mockFacets}
+        filters={defaultFilters}
+        onFilterChange={mockOnFilterChange}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /armor/i }));
+
+    expect(mockOnFilterChange).toHaveBeenCalledWith('category', 'armor');
     expect(mockOnFilterChange).toHaveBeenCalledWith('itemTypes', []);
   });
 
@@ -320,9 +339,24 @@ describe('getActiveFilterCount', () => {
     expect(getActiveFilterCount(filters)).toBe(0);
   });
 
-  it('counts category change as 1', () => {
+  it('counts category change to nihonto as 1', () => {
     const filters = {
       category: 'nihonto' as const,
+      itemTypes: [] as string[],
+      certifications: [] as string[],
+      schools: [] as string[],
+      dealers: [] as number[],
+      historicalPeriods: [] as string[],
+      signatureStatuses: [] as string[],
+      askOnly: false,
+    };
+
+    expect(getActiveFilterCount(filters)).toBe(1);
+  });
+
+  it('counts category change to armor as 1', () => {
+    const filters = {
+      category: 'armor' as const,
       itemTypes: [] as string[],
       certifications: [] as string[],
       schools: [] as string[],

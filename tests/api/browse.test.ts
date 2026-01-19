@@ -340,6 +340,12 @@ describe('Parameter Parsing', () => {
       const category = params.get('cat');
       expect(category).toBe('tosogu');
     });
+
+    it('accepts "armor" category', () => {
+      const params = new URLSearchParams('cat=armor');
+      const category = params.get('cat');
+      expect(category).toBe('armor');
+    });
   });
 
   describe('Category to item types mapping', () => {
@@ -347,6 +353,12 @@ describe('Parameter Parsing', () => {
     const TOSOGU_TYPES = [
       'tsuba', 'fuchi-kashira', 'fuchi_kashira', 'fuchi', 'kashira',
       'kozuka', 'kogatana', 'kogai', 'menuki', 'koshirae', 'tosogu', 'mitokoromono'
+    ];
+    const ARMOR_TYPES = [
+      'armor', 'yoroi', 'gusoku',
+      'helmet', 'kabuto',
+      'menpo', 'mengu',
+      'kote', 'suneate', 'do',
     ];
 
     it('maps nihonto category to sword types', () => {
@@ -359,12 +371,15 @@ describe('Parameter Parsing', () => {
           ? NIHONTO_TYPES
           : category === 'tosogu'
             ? TOSOGU_TYPES
-            : undefined;
+            : category === 'armor'
+              ? ARMOR_TYPES
+              : undefined;
 
       expect(effectiveItemTypes).toEqual(NIHONTO_TYPES);
       expect(effectiveItemTypes).toContain('katana');
       expect(effectiveItemTypes).toContain('wakizashi');
       expect(effectiveItemTypes).not.toContain('tsuba');
+      expect(effectiveItemTypes).not.toContain('kabuto');
     });
 
     it('maps tosogu category to fitting types', () => {
@@ -377,12 +392,38 @@ describe('Parameter Parsing', () => {
           ? NIHONTO_TYPES
           : category === 'tosogu'
             ? TOSOGU_TYPES
-            : undefined;
+            : category === 'armor'
+              ? ARMOR_TYPES
+              : undefined;
 
       expect(effectiveItemTypes).toEqual(TOSOGU_TYPES);
       expect(effectiveItemTypes).toContain('tsuba');
       expect(effectiveItemTypes).toContain('menuki');
       expect(effectiveItemTypes).not.toContain('katana');
+      expect(effectiveItemTypes).not.toContain('kabuto');
+    });
+
+    it('maps armor category to armor types', () => {
+      const category = 'armor';
+      const itemTypes: string[] = [];
+
+      const effectiveItemTypes = itemTypes.length
+        ? itemTypes
+        : category === 'nihonto'
+          ? NIHONTO_TYPES
+          : category === 'tosogu'
+            ? TOSOGU_TYPES
+            : category === 'armor'
+              ? ARMOR_TYPES
+              : undefined;
+
+      expect(effectiveItemTypes).toEqual(ARMOR_TYPES);
+      expect(effectiveItemTypes).toContain('armor');
+      expect(effectiveItemTypes).toContain('kabuto');
+      expect(effectiveItemTypes).toContain('menpo');
+      expect(effectiveItemTypes).toContain('helmet');
+      expect(effectiveItemTypes).not.toContain('katana');
+      expect(effectiveItemTypes).not.toContain('tsuba');
     });
 
     it('uses explicit itemTypes over category when provided', () => {
@@ -395,7 +436,9 @@ describe('Parameter Parsing', () => {
           ? NIHONTO_TYPES
           : category === 'tosogu'
             ? TOSOGU_TYPES
-            : undefined;
+            : category === 'armor'
+              ? ARMOR_TYPES
+              : undefined;
 
       expect(effectiveItemTypes).toEqual(['tsuba', 'kozuka']);
     });
@@ -410,7 +453,9 @@ describe('Parameter Parsing', () => {
           ? NIHONTO_TYPES
           : category === 'tosogu'
             ? TOSOGU_TYPES
-            : undefined;
+            : category === 'armor'
+              ? ARMOR_TYPES
+              : undefined;
 
       expect(effectiveItemTypes).toBeUndefined();
     });
@@ -1277,33 +1322,49 @@ describe('Response Structure', () => {
 describe('Facet Filtering Logic', () => {
   const NIHONTO_TYPES = ['katana', 'wakizashi', 'tanto', 'tachi', 'naginata', 'yari', 'kodachi'];
   const TOSOGU_TYPES = ['tsuba', 'fuchi-kashira', 'fuchi_kashira', 'kozuka', 'menuki', 'koshirae'];
+  const ARMOR_TYPES = ['armor', 'yoroi', 'gusoku', 'helmet', 'kabuto', 'menpo', 'mengu', 'kote', 'suneate', 'do'];
 
   describe('Certification facets should reflect category filter', () => {
     it('certification facets for nihonto should only count nihonto items', () => {
       // When category=nihonto, certification facets should filter by nihonto types
       const category = 'nihonto';
-      const effectiveItemTypes = category === 'nihonto' ? NIHONTO_TYPES : category === 'tosogu' ? TOSOGU_TYPES : undefined;
+      const effectiveItemTypes = category === 'nihonto' ? NIHONTO_TYPES : category === 'tosogu' ? TOSOGU_TYPES : category === 'armor' ? ARMOR_TYPES : undefined;
 
       // Cert facet query should include item type filter
       expect(effectiveItemTypes).toEqual(NIHONTO_TYPES);
       expect(effectiveItemTypes).toContain('katana');
       expect(effectiveItemTypes).not.toContain('tsuba');
+      expect(effectiveItemTypes).not.toContain('kabuto');
     });
 
     it('certification facets for tosogu should only count tosogu items', () => {
       // When category=tosogu, certification facets should filter by tosogu types
       const category = 'tosogu';
-      const effectiveItemTypes = category === 'nihonto' ? NIHONTO_TYPES : category === 'tosogu' ? TOSOGU_TYPES : undefined;
+      const effectiveItemTypes = category === 'nihonto' ? NIHONTO_TYPES : category === 'tosogu' ? TOSOGU_TYPES : category === 'armor' ? ARMOR_TYPES : undefined;
 
       // Cert facet query should include item type filter
       expect(effectiveItemTypes).toEqual(TOSOGU_TYPES);
       expect(effectiveItemTypes).toContain('tsuba');
       expect(effectiveItemTypes).not.toContain('katana');
+      expect(effectiveItemTypes).not.toContain('kabuto');
+    });
+
+    it('certification facets for armor should only count armor items', () => {
+      // When category=armor, certification facets should filter by armor types
+      const category = 'armor';
+      const effectiveItemTypes = category === 'nihonto' ? NIHONTO_TYPES : category === 'tosogu' ? TOSOGU_TYPES : category === 'armor' ? ARMOR_TYPES : undefined;
+
+      // Cert facet query should include item type filter
+      expect(effectiveItemTypes).toEqual(ARMOR_TYPES);
+      expect(effectiveItemTypes).toContain('kabuto');
+      expect(effectiveItemTypes).toContain('menpo');
+      expect(effectiveItemTypes).not.toContain('katana');
+      expect(effectiveItemTypes).not.toContain('tsuba');
     });
 
     it('certification facets for all category should not filter by type', () => {
       const category = 'all';
-      const effectiveItemTypes = category === 'nihonto' ? NIHONTO_TYPES : category === 'tosogu' ? TOSOGU_TYPES : undefined;
+      const effectiveItemTypes = category === 'nihonto' ? NIHONTO_TYPES : category === 'tosogu' ? TOSOGU_TYPES : category === 'armor' ? ARMOR_TYPES : undefined;
 
       expect(effectiveItemTypes).toBeUndefined();
     });
@@ -1312,16 +1373,23 @@ describe('Facet Filtering Logic', () => {
   describe('Dealer facets should reflect category filter', () => {
     it('dealer facets for nihonto should only count nihonto items', () => {
       const category = 'nihonto';
-      const effectiveItemTypes = category === 'nihonto' ? NIHONTO_TYPES : category === 'tosogu' ? TOSOGU_TYPES : undefined;
+      const effectiveItemTypes = category === 'nihonto' ? NIHONTO_TYPES : category === 'tosogu' ? TOSOGU_TYPES : category === 'armor' ? ARMOR_TYPES : undefined;
 
       expect(effectiveItemTypes).toEqual(NIHONTO_TYPES);
     });
 
     it('dealer facets for tosogu should only count tosogu items', () => {
       const category = 'tosogu';
-      const effectiveItemTypes = category === 'nihonto' ? NIHONTO_TYPES : category === 'tosogu' ? TOSOGU_TYPES : undefined;
+      const effectiveItemTypes = category === 'nihonto' ? NIHONTO_TYPES : category === 'tosogu' ? TOSOGU_TYPES : category === 'armor' ? ARMOR_TYPES : undefined;
 
       expect(effectiveItemTypes).toEqual(TOSOGU_TYPES);
+    });
+
+    it('dealer facets for armor should only count armor items', () => {
+      const category = 'armor';
+      const effectiveItemTypes = category === 'nihonto' ? NIHONTO_TYPES : category === 'tosogu' ? TOSOGU_TYPES : category === 'armor' ? ARMOR_TYPES : undefined;
+
+      expect(effectiveItemTypes).toEqual(ARMOR_TYPES);
     });
   });
 
