@@ -306,8 +306,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Get dealer baselines for "new" badge logic
-    // A dealer is "established" if their oldest listing is > 14 days old
-    // This prevents showing "NEW" on all items when a new dealer is onboarded
+    // A dealer's baseline is their earliest listing's first_seen_at date
+    // This prevents showing "NEW" badges on items that were part of initial import
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let enrichedListings: any[] = listings || [];
 
@@ -316,21 +316,26 @@ export async function GET(request: NextRequest) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const dealerIds = [...new Set(listings.map((l: any) => l.dealer_id as number))];
 
-      // Query earliest first_seen_at per dealer
-      const { data: dealerBaselines } = await supabase
-        .from('listings')
-        .select('dealer_id, first_seen_at')
-        .in('dealer_id', dealerIds)
-        .order('first_seen_at', { ascending: true });
+      // Query earliest first_seen_at for each dealer individually
+      // This avoids the 1000-row Supabase limit that was causing missing baselines
+      const baselinePromises = dealerIds.map(async (dealerId) => {
+        const { data } = await supabase
+          .from('listings')
+          .select('dealer_id, first_seen_at')
+          .eq('dealer_id', dealerId)
+          .order('first_seen_at', { ascending: true })
+          .limit(1)
+          .single();
+        return data as { dealer_id: number; first_seen_at: string } | null;
+      });
+
+      const baselines = await Promise.all(baselinePromises);
 
       // Build map of dealer_id -> earliest first_seen_at
       const baselineMap: Record<number, string> = {};
-      if (dealerBaselines) {
-        for (const row of dealerBaselines as { dealer_id: number; first_seen_at: string }[]) {
-          // Only keep the first (earliest) entry per dealer
-          if (!baselineMap[row.dealer_id]) {
-            baselineMap[row.dealer_id] = row.first_seen_at;
-          }
+      for (const row of baselines) {
+        if (row) {
+          baselineMap[row.dealer_id] = row.first_seen_at;
         }
       }
 
