@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { createClient } from '@/lib/supabase/client';
@@ -21,6 +22,7 @@ interface LoginModalProps {
 // ============================================================================
 
 export function LoginModal({ isOpen, onClose }: LoginModalProps) {
+  const router = useRouter();
   const { signInWithEmail, verifyOtp, signInWithPassword } = useAuth();
 
   const [step, setStep] = useState<Step>('email');
@@ -149,6 +151,9 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
         setSuccessMessage('Login successful!');
         setTimeout(() => {
           onClose();
+          // Force router refresh to update all components with new auth state
+          // This ensures Header re-renders with the logged-in user
+          router.refresh();
         }, 500);
       }
     } catch {
@@ -239,6 +244,8 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
         setSuccessMessage('Login successful!');
         setTimeout(() => {
           onClose();
+          // Force router refresh to update all components with new auth state
+          router.refresh();
         }, 500);
       }
     } catch {
