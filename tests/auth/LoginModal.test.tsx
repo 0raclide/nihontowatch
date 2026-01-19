@@ -6,6 +6,7 @@
  * - OTP code entry and auto-submit
  * - Error handling
  * - Modal state management
+ * - Router refresh after successful login (critical for UI update)
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -16,11 +17,24 @@ import { LoginModal } from '@/components/auth/LoginModal';
 // Mock useAuth hook
 const mockSignInWithEmail = vi.fn();
 const mockVerifyOtp = vi.fn();
+const mockSignInWithPassword = vi.fn();
 
 vi.mock('@/lib/auth/AuthContext', () => ({
   useAuth: () => ({
     signInWithEmail: mockSignInWithEmail,
     verifyOtp: mockVerifyOtp,
+    signInWithPassword: mockSignInWithPassword,
+  }),
+}));
+
+// Mock useRouter from next/navigation
+const mockRouterRefresh = vi.fn();
+const mockRouterPush = vi.fn();
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({
+    refresh: mockRouterRefresh,
+    push: mockRouterPush,
   }),
 }));
 
@@ -36,6 +50,7 @@ describe('LoginModal', () => {
     vi.clearAllMocks();
     mockSignInWithEmail.mockResolvedValue({ error: null });
     mockVerifyOtp.mockResolvedValue({ error: null });
+    mockSignInWithPassword.mockResolvedValue({ error: null });
   });
 
   describe('Email Step', () => {
@@ -235,6 +250,169 @@ describe('LoginModal', () => {
       fireEvent.keyDown(document, { key: 'Escape' });
 
       expect(mockOnClose).toHaveBeenCalled();
+    });
+  });
+
+  describe('UI State Update After Login', () => {
+    /**
+     * CRITICAL: These tests ensure the UI updates after successful login.
+     *
+     * Previously, there was a bug where the auth state would update correctly
+     * but the Header component wouldn't re-render, leaving the "Sign In" button
+     * visible even after successful login. The fix was to call router.refresh()
+     * after successful authentication.
+     *
+     * If these tests fail, users will see "Login successful!" but the UI will
+     * still show "Sign In" instead of their user menu.
+     */
+
+    async function goToOtpStepForRefreshTest() {
+      const user = userEvent.setup();
+      render(<LoginModal isOpen={true} onClose={mockOnClose} />);
+
+      const emailInput = screen.getByPlaceholderText('your@email.com');
+      await user.type(emailInput, 'test@example.com');
+      await user.click(screen.getByText('Continue with Email'));
+
+      await waitFor(() => {
+        expect(screen.getByText('Enter Code')).toBeInTheDocument();
+      }, { timeout: 2000 });
+
+      return user;
+    }
+
+    it('calls router.refresh() after successful OTP verification', async () => {
+      const user = await goToOtpStepForRefreshTest();
+
+      const inputs = screen.getAllByRole('textbox');
+      for (let i = 0; i < 6; i++) {
+        await user.type(inputs[i], '1');
+      }
+
+      // Wait for success message
+      await waitFor(() => {
+        expect(screen.getByText('Login successful!')).toBeInTheDocument();
+      });
+
+      // Wait for the 500ms delay + router.refresh() call
+      await waitFor(() => {
+        expect(mockRouterRefresh).toHaveBeenCalled();
+      }, { timeout: 1000 });
+    });
+
+    it('does NOT call router.refresh() when OTP verification fails', async () => {
+      mockVerifyOtp.mockResolvedValue({
+        error: { message: 'Invalid code' }
+      });
+
+      const user = await goToOtpStepForRefreshTest();
+
+      const inputs = screen.getAllByRole('textbox');
+      for (let i = 0; i < 6; i++) {
+        await user.type(inputs[i], '0');
+      }
+
+      // Wait for error message
+      await waitFor(() => {
+        expect(screen.getByText('Invalid code')).toBeInTheDocument();
+      });
+
+      // router.refresh should NOT have been called
+      expect(mockRouterRefresh).not.toHaveBeenCalled();
+    });
+
+    it('calls router.refresh() after successful password login (test accounts)', async () => {
+      const user = userEvent.setup();
+      render(<LoginModal isOpen={true} onClose={mockOnClose} />);
+
+      // Use a .local email to trigger password flow
+      const emailInput = screen.getByPlaceholderText('your@email.com');
+      await user.type(emailInput, 'admin@test.local');
+      await user.click(screen.getByText('Continue with Email'));
+
+      // Should transition to password step (not OTP)
+      await waitFor(() => {
+        expect(screen.getByText('Enter Password')).toBeInTheDocument();
+      });
+
+      // Enter password
+      const passwordInput = screen.getByPlaceholderText('Enter your password');
+      await user.type(passwordInput, 'testpassword123');
+      await user.click(screen.getByText('Sign In'));
+
+      // Wait for success message
+      await waitFor(() => {
+        expect(screen.getByText('Login successful!')).toBeInTheDocument();
+      });
+
+      // Wait for the 500ms delay + router.refresh() call
+      await waitFor(() => {
+        expect(mockRouterRefresh).toHaveBeenCalled();
+      }, { timeout: 1000 });
+    });
+
+    it('does NOT call router.refresh() when password login fails', async () => {
+      mockSignInWithPassword.mockResolvedValue({
+        error: { message: 'Invalid password' }
+      });
+
+      const user = userEvent.setup();
+      render(<LoginModal isOpen={true} onClose={mockOnClose} />);
+
+      // Use a .local email to trigger password flow
+      const emailInput = screen.getByPlaceholderText('your@email.com');
+      await user.type(emailInput, 'admin@test.local');
+      await user.click(screen.getByText('Continue with Email'));
+
+      // Wait for password step
+      await waitFor(() => {
+        expect(screen.getByText('Enter Password')).toBeInTheDocument();
+      });
+
+      // Enter wrong password
+      const passwordInput = screen.getByPlaceholderText('Enter your password');
+      await user.type(passwordInput, 'wrongpassword');
+      await user.click(screen.getByText('Sign In'));
+
+      // Wait for error message
+      await waitFor(() => {
+        expect(screen.getByText('Invalid password')).toBeInTheDocument();
+      });
+
+      // router.refresh should NOT have been called
+      expect(mockRouterRefresh).not.toHaveBeenCalled();
+    });
+
+    it('calls both onClose and router.refresh() in the correct order', async () => {
+      const callOrder: string[] = [];
+      const trackingOnClose = vi.fn(() => callOrder.push('onClose'));
+      mockRouterRefresh.mockImplementation(() => callOrder.push('refresh'));
+
+      const user = userEvent.setup();
+      render(<LoginModal isOpen={true} onClose={trackingOnClose} />);
+
+      // Go through OTP flow
+      const emailInput = screen.getByPlaceholderText('your@email.com');
+      await user.type(emailInput, 'test@example.com');
+      await user.click(screen.getByText('Continue with Email'));
+
+      await waitFor(() => {
+        expect(screen.getByText('Enter Code')).toBeInTheDocument();
+      }, { timeout: 2000 });
+
+      const inputs = screen.getAllByRole('textbox');
+      for (let i = 0; i < 6; i++) {
+        await user.type(inputs[i], '1');
+      }
+
+      // Wait for both calls
+      await waitFor(() => {
+        expect(trackingOnClose).toHaveBeenCalled();
+        expect(mockRouterRefresh).toHaveBeenCalled();
+      }, { timeout: 1000 });
+
+      // onClose should be called first, then refresh
+      expect(callOrder).toEqual(['onClose', 'refresh']);
     });
   });
 });
