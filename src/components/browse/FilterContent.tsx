@@ -413,7 +413,7 @@ export function FilterContent({
     (filters.askOnly ? 1 : 0);
 
   return (
-    <div className="px-4 lg:px-0 pb-6">
+    <div className="pl-4 pr-8 lg:px-0 pb-6">
       {/* Header with clear button */}
       <div className="flex items-center justify-between mb-4 py-2 lg:hidden">
         <div className="flex items-center gap-3">
