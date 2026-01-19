@@ -27,7 +27,12 @@ interface BrowseParams {
 }
 
 // Item type categories for filtering
-const NIHONTO_TYPES = ['katana', 'wakizashi', 'tanto', 'tachi', 'naginata', 'yari', 'kodachi', 'ken', 'naginata naoshi', 'sword'];
+const NIHONTO_TYPES = [
+  'katana', 'wakizashi', 'tanto', 'tachi', 'kodachi',
+  'naginata', 'naginata naoshi', 'naginata-naoshi',  // Support both formats
+  'yari', 'ken', 'daisho',
+];
+
 // Comprehensive tosogu types - includes all fittings and variants for database compatibility
 const TOSOGU_TYPES = [
   'tsuba',
@@ -36,9 +41,10 @@ const TOSOGU_TYPES = [
   'kozuka', 'kogatana',  // utility knife handle
   'kogai',  // hair pick
   'menuki',
+  'futatokoro',  // 2-piece set (kozuka + kogai)
+  'mitokoromono',  // 3-piece set (kozuka + kogai + menuki)
   'koshirae',  // complete mounting
   'tosogu',  // generic/unspecified fitting
-  'mitokoromono',  // matched set of kozuka, kogai, menuki
 ];
 
 // Armor & accessories
@@ -50,6 +56,9 @@ const ARMOR_TYPES = [
   'suneate',  // Shin guards
   'do',  // Chest armor
 ];
+
+// Types to exclude from browse results (non-collectibles)
+const EXCLUDED_TYPES = ['stand', 'book', 'other'];
 
 function parseParams(searchParams: URLSearchParams): BrowseParams {
   const itemTypesRaw = searchParams.get('type');
@@ -169,8 +178,10 @@ export async function GET(request: NextRequest) {
     // Minimum price filter (excludes books, accessories, low-quality items)
     query = applyMinPriceFilter(query);
 
-    // Exclude stands/racks (display accessories, not collectibles)
+    // Exclude non-collectibles (stands, books, other accessories)
     query = query.not('item_type', 'ilike', 'stand');
+    query = query.not('item_type', 'ilike', 'book');
+    query = query.not('item_type', 'ilike', 'other');
 
     // Item type filter - use ILIKE for case-insensitive matching
     // Database has mixed case (e.g., "Katana" and "katana")
@@ -512,7 +523,9 @@ async function getItemTypeFacets(
       .from('listings')
       .select('item_type')
       .or(statusFilter)
-      .not('item_type', 'ilike', 'stand'); // Exclude stands to match main query (case-insensitive)
+      .not('item_type', 'ilike', 'stand')  // Exclude non-collectibles to match main query
+      .not('item_type', 'ilike', 'book')
+      .not('item_type', 'ilike', 'other');
 
     // Apply minimum price filter
     query = applyMinPriceFilter(query);
@@ -592,7 +605,9 @@ async function getCertificationFacets(
       .from('listings')
       .select('cert_type, item_type')
       .or(statusFilter)
-      .not('item_type', 'ilike', 'stand'); // Exclude stands to match main query (case-insensitive)
+      .not('item_type', 'ilike', 'stand')  // Exclude non-collectibles to match main query
+      .not('item_type', 'ilike', 'book')
+      .not('item_type', 'ilike', 'other');
 
     // Apply minimum price filter
     query = applyMinPriceFilter(query);
@@ -665,7 +680,9 @@ async function getDealerFacets(
       .from('listings')
       .select('dealer_id, dealers!inner(name), item_type')
       .or(statusFilter)
-      .not('item_type', 'ilike', 'stand'); // Exclude stands to match main query (case-insensitive)
+      .not('item_type', 'ilike', 'stand')  // Exclude non-collectibles to match main query
+      .not('item_type', 'ilike', 'book')
+      .not('item_type', 'ilike', 'other');
 
     // Apply minimum price filter
     query = applyMinPriceFilter(query);
@@ -743,7 +760,9 @@ async function getHistoricalPeriodFacets(
       .from('listings')
       .select('historical_period, item_type')
       .or(statusFilter)
-      .not('item_type', 'ilike', 'stand');
+      .not('item_type', 'ilike', 'stand')  // Exclude non-collectibles
+      .not('item_type', 'ilike', 'book')
+      .not('item_type', 'ilike', 'other');
 
     // Apply minimum price filter
     query = applyMinPriceFilter(query);
@@ -822,7 +841,9 @@ async function getSignatureStatusFacets(
       .from('listings')
       .select('signature_status, item_type')
       .or(statusFilter)
-      .not('item_type', 'ilike', 'stand');
+      .not('item_type', 'ilike', 'stand')  // Exclude non-collectibles
+      .not('item_type', 'ilike', 'book')
+      .not('item_type', 'ilike', 'other');
 
     // Apply minimum price filter
     query = applyMinPriceFilter(query);

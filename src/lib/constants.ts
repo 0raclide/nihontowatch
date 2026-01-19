@@ -88,9 +88,12 @@ export const ITEM_TYPES = {
   WAKIZASHI: 'wakizashi',
   TANTO: 'tanto',
   TACHI: 'tachi',
+  KODACHI: 'kodachi',           // Short sword (小太刀)
   NAGINATA: 'naginata',
+  NAGINATA_NAOSHI: 'naginata naoshi',  // Converted naginata
   YARI: 'yari',
   KEN: 'ken',
+  DAISHO: 'daisho',             // Matched katana + wakizashi pair (大小)
   // Tosogu
   TSUBA: 'tsuba',
   MENUKI: 'menuki',
@@ -99,6 +102,9 @@ export const ITEM_TYPES = {
   FUCHI: 'fuchi',
   KASHIRA: 'kashira',
   FUCHI_KASHIRA: 'fuchi_kashira',
+  FUTATOKORO: 'futatokoro',     // 2-piece set: kozuka + kogai (二所物)
+  MITOKOROMONO: 'mitokoromono', // 3-piece set (三所物)
+  TOSOGU: 'tosogu',             // Generic fitting
   // Armor & Accessories
   ARMOR: 'armor',
   YOROI: 'yoroi',
@@ -112,6 +118,9 @@ export const ITEM_TYPES = {
   DO: 'do',
   // Other
   KOSHIRAE: 'koshirae',
+  STAND: 'stand',               // Sword racks, display stands
+  BOOK: 'book',                 // Reference books, catalogs
+  OTHER: 'other',               // Non-collectible items
   UNKNOWN: 'unknown',
 } as const;
 
@@ -120,9 +129,12 @@ export const BLADE_TYPES = [
   ITEM_TYPES.WAKIZASHI,
   ITEM_TYPES.TANTO,
   ITEM_TYPES.TACHI,
+  ITEM_TYPES.KODACHI,
   ITEM_TYPES.NAGINATA,
+  ITEM_TYPES.NAGINATA_NAOSHI,
   ITEM_TYPES.YARI,
   ITEM_TYPES.KEN,
+  ITEM_TYPES.DAISHO,
 ] as const;
 
 export const TOSOGU_TYPES = [
@@ -133,6 +145,16 @@ export const TOSOGU_TYPES = [
   ITEM_TYPES.FUCHI,
   ITEM_TYPES.KASHIRA,
   ITEM_TYPES.FUCHI_KASHIRA,
+  ITEM_TYPES.FUTATOKORO,
+  ITEM_TYPES.MITOKOROMONO,
+  ITEM_TYPES.TOSOGU,
+] as const;
+
+// Items that should be excluded from browse results (non-collectibles)
+export const EXCLUDED_TYPES = [
+  ITEM_TYPES.STAND,
+  ITEM_TYPES.BOOK,
+  ITEM_TYPES.OTHER,
 ] as const;
 
 export const ARMOR_TYPES = [

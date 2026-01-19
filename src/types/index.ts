@@ -15,9 +15,12 @@ export type ItemType =
   | 'wakizashi'
   | 'tanto'
   | 'tachi'
+  | 'kodachi'           // Short sword (小太刀)
   | 'naginata'
+  | 'naginata naoshi'   // Converted naginata (薙刀直し)
   | 'yari'
   | 'ken'
+  | 'daisho'            // Matched pair (大小)
   // Tosogu
   | 'tsuba'
   | 'menuki'
@@ -26,10 +29,16 @@ export type ItemType =
   | 'fuchi'
   | 'kashira'
   | 'fuchi_kashira'
+  | 'futatokoro'        // 2-piece set (二所物)
+  | 'mitokoromono'      // 3-piece set (三所物)
+  | 'tosogu'            // Generic fitting
   // Other
   | 'armor'
   | 'helmet'
   | 'koshirae'
+  | 'stand'             // Display stands
+  | 'book'              // Reference books
+  | 'other'             // Non-collectibles
   | 'unknown';
 
 export type ListingStatus =
@@ -252,14 +261,21 @@ export interface ApiError {
  * Check if item is a blade type
  */
 export function isBlade(type: ItemType): boolean {
-  return ['katana', 'wakizashi', 'tanto', 'tachi', 'naginata', 'yari', 'ken'].includes(type);
+  return ['katana', 'wakizashi', 'tanto', 'tachi', 'kodachi', 'naginata', 'naginata naoshi', 'yari', 'ken', 'daisho'].includes(type);
 }
 
 /**
  * Check if item is tosogu
  */
 export function isTosogu(type: ItemType): boolean {
-  return ['tsuba', 'menuki', 'kozuka', 'kogai', 'fuchi', 'kashira', 'fuchi_kashira'].includes(type);
+  return ['tsuba', 'menuki', 'kozuka', 'kogai', 'fuchi', 'kashira', 'fuchi_kashira', 'futatokoro', 'mitokoromono', 'tosogu'].includes(type);
+}
+
+/**
+ * Check if item type should be excluded from browse results
+ */
+export function isExcludedType(type: ItemType): boolean {
+  return ['stand', 'book', 'other'].includes(type);
 }
 
 /**
@@ -308,13 +324,18 @@ export function formatPrice(value: number | undefined, currency: Currency = 'JPY
  */
 export function getItemTypeLabel(type: ItemType): string {
   const labels: Record<ItemType, string> = {
+    // Blades
     katana: 'Katana',
     wakizashi: 'Wakizashi',
     tanto: 'Tantō',
     tachi: 'Tachi',
+    kodachi: 'Kodachi',
     naginata: 'Naginata',
+    'naginata naoshi': 'Naginata-Naoshi',
     yari: 'Yari',
     ken: 'Ken',
+    daisho: 'Daishō',
+    // Tosogu
     tsuba: 'Tsuba',
     menuki: 'Menuki',
     kozuka: 'Kōzuka',
@@ -322,9 +343,16 @@ export function getItemTypeLabel(type: ItemType): string {
     fuchi: 'Fuchi',
     kashira: 'Kashira',
     fuchi_kashira: 'Fuchi-Kashira',
+    futatokoro: 'Futatokoro',
+    mitokoromono: 'Mitokoromono',
+    tosogu: 'Tosogu',
+    // Other
     armor: 'Armor',
     helmet: 'Helmet',
     koshirae: 'Koshirae',
+    stand: 'Stand',
+    book: 'Book',
+    other: 'Other',
     unknown: 'Unknown',
   };
 
