@@ -29,7 +29,7 @@ export function generateSavedSearchNotificationHtml(
   const searchName = savedSearch.name || 'Your saved search';
   const criteriaSummary = criteriaToHumanReadable(savedSearch.search_criteria);
   const searchUrl = `${BASE_URL}${criteriaToUrl(savedSearch.search_criteria)}`;
-  const manageUrl = `${BASE_URL}/saved-searches`;
+  const manageUrl = `${BASE_URL}/saved`;
 
   const listingsHtml = matchedListings
     .slice(0, 10) // Limit to 10 in email
@@ -179,7 +179,7 @@ export function generateSavedSearchNotificationText(
   const searchName = savedSearch.name || 'Your saved search';
   const criteriaSummary = criteriaToHumanReadable(savedSearch.search_criteria);
   const searchUrl = `${BASE_URL}${criteriaToUrl(savedSearch.search_criteria)}`;
-  const manageUrl = `${BASE_URL}/saved-searches`;
+  const manageUrl = `${BASE_URL}/saved`;
 
   const listingsText = matchedListings
     .slice(0, 10)
