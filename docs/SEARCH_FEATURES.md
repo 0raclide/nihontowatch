@@ -132,32 +132,103 @@ Parsing result:
 
 ---
 
+## Full-Text Search (FTS) Implementation
+
+**Added:** January 2026
+
+The search system uses PostgreSQL Full-Text Search (FTS) for text matching, providing **word boundary matching** instead of substring matching. This prevents false positives like "rai" matching "grained".
+
+### Architecture
+
+```
+User Query: "koto tanto"
+         ↓
+┌─────────────────────────────────────────────────┐
+│ 1. Semantic Parsing (certifications, types)     │
+│    → No semantic terms found                    │
+└─────────────────────────────────────────────────┘
+         ↓
+┌─────────────────────────────────────────────────┐
+│ 2. Alias Expansion (with OR)                    │
+│    "koto" → ["koto", "kotou"]                   │
+│    "tanto" → ["tanto"]                          │
+└─────────────────────────────────────────────────┘
+         ↓
+┌─────────────────────────────────────────────────┐
+│ 3. FTS Query Builder                            │
+│    tsquery: "(koto:* | kotou:*) & tanto:*"      │
+└─────────────────────────────────────────────────┘
+         ↓
+┌─────────────────────────────────────────────────┐
+│ 4. PostgreSQL textSearch on search_vector       │
+│    Uses GIN index for fast lookups              │
+└─────────────────────────────────────────────────┘
+```
+
+### Search Vector Fields (Weighted)
+
+The `search_vector` column is a pre-computed `tsvector` with weighted fields:
+
+| Weight | Fields | Description |
+|--------|--------|-------------|
+| **A** (highest) | `title`, `smith`, `tosogu_maker` | Primary identifiers |
+| **B** | `school`, `tosogu_school` | Attribution lineage |
+| **C** | `province`, `era`, `description`, `description_en` | Context |
+
+**Important:** `raw_page_text` was **removed** from the search vector (migration 026) because it contained noise from dealer page sidebars (Related Items, navigation, etc.) that caused false positives.
+
+### Word Boundary Matching
+
+FTS provides word boundary matching via the `@@` operator:
+
+| Query | ILIKE (old) | FTS (current) |
+|-------|-------------|---------------|
+| `rai` | ✗ Matches "g**rai**ned" | ✓ Only matches "rai" as word |
+| `kunimitsu` | ✗ Matches substrings | ✓ Word boundary match |
+
+### Alias Expansion with OR
+
+Aliases are joined with OR (`|`) to match ANY variant:
+
+```
+"koto"  → tsquery: "(koto:* | kotou:*)"
+"goto"  → tsquery: "(goto:* | gotou:*)"
+```
+
+**Critical:** Using AND for aliases would require BOTH variants in the same document, returning 0 results. This was a bug fixed in commit `e6af058`.
+
+---
+
 ## Text Search Fields
 
-After semantic and numeric extraction, remaining terms search these fields:
+After semantic and numeric extraction, remaining terms search these fields via the `search_vector`:
 
-| Field | Description |
-|-------|-------------|
-| `title` | Listing title |
-| `description` | Full description |
-| `smith` | Sword smith name (nihonto) |
-| `tosogu_maker` | Fitting maker name (tosogu) |
-| `school` | Smith school (nihonto) |
-| `tosogu_school` | Maker school (tosogu) |
-| `province` | Geographic origin (Bizen, Yamashiro, etc.) |
-| `era` | Time period |
-| `mei_type` | Signature status |
-| `tosogu_material` | Material (for fittings) |
+| Field | Weight | Description |
+|-------|--------|-------------|
+| `title` | A | Listing title |
+| `smith` | A | Sword smith name (nihonto) |
+| `tosogu_maker` | A | Fitting maker name (tosogu) |
+| `school` | B | Smith school (nihonto) |
+| `tosogu_school` | B | Maker school (tosogu) |
+| `province` | C | Geographic origin (Bizen, Yamashiro, etc.) |
+| `era` | C | Time period |
+| `description` | C | Japanese description (3000 chars max) |
+| `description_en` | C | English description (3000 chars max) |
+
+**Note:** `mei_type` is NOT in the search_vector. Searching "signed" won't match `mei_type="mei"`. Use the signature filter instead.
 
 ### Alias Expansion
 
-Search terms are expanded to include common aliases:
+Search terms are expanded to include romanization variants:
 
 | Term | Also Searches |
 |------|---------------|
 | `bizen` | `bishu` |
 | `yamashiro` | `joshu` |
 | `goto` | `gotou` |
+| `koto` | `kotou` |
+| `shinto` | `shintou` |
+| `shinshinto` | `shinshintou` |
 
 ---
 
@@ -208,8 +279,19 @@ GET /api/browse?q=<query>&type=<types>&cert=<certs>&...
 | `src/lib/search/semanticQueryParser.ts` | Certification, item type, and category extraction |
 | `src/lib/search/numericFilters.ts` | Price and measurement filter extraction |
 | `src/lib/search/textNormalization.ts` | Text normalization and alias expansion |
+| `src/lib/search/ftsQueryBuilder.ts` | FTS tsquery builder (partially deprecated) |
 | `src/lib/search/index.ts` | Library exports |
-| `src/app/api/browse/route.ts` | Main search/filter API endpoint |
+| `src/lib/search.ts` | Main search utilities (alias expansion used by browse) |
+| `src/app/api/browse/route.ts` | Main search/filter API endpoint with FTS |
+
+### Database Migrations
+
+| Migration | Purpose |
+|-----------|---------|
+| `007_fts_search.sql` | Initial FTS setup (search_vector, GIN index) |
+| `024_fix_search_vector.sql` | Add description_en to search vector |
+| `025_clean_raw_page_text.sql` | Strip navigation noise from raw_page_text |
+| `026_remove_raw_text_from_search.sql` | Remove raw_page_text entirely from search vector |
 
 ---
 
@@ -240,6 +322,66 @@ npm test -- browse
 
 ## Changelog
 
+### January 2026 - FTS Alias OR Fix
+
+**Commit:** `e6af058`
+
+**Problem:** Searches like "koto tanto" returned 0 results despite valid data existing.
+
+**Root Cause:** The alias expansion was joining aliases with AND:
+- "koto" expanded to `['koto', 'kotou']`
+- Query became `koto:* & kotou:*` (requiring BOTH in same document)
+- No documents have both romanizations, so 0 results
+
+**Solution:** Changed alias expansion to use OR (`|`) operator:
+- "koto" now generates `(koto:* | kotou:*)`
+- "koto tanto" generates `(koto:* | kotou:*) & tanto:*`
+
+**Files Changed:**
+- `src/app/api/browse/route.ts` - Fixed alias expansion logic
+
+---
+
+### January 2026 - Remove raw_page_text from Search Vector
+
+**Migration:** `026_remove_raw_text_from_search.sql`
+
+**Problem:** False positives for "Rai Kunimitsu" returning unrelated items because dealer page sidebars (Related Items, navigation) were indexed.
+
+**Root Cause:** `raw_page_text` contained content from both BEFORE and AFTER the main listing content, including other products from the dealer's Related Items section.
+
+**Solution:** Removed `raw_page_text` from search vector entirely. We have sufficient structured fields:
+- Weight A: title, smith, tosogu_maker
+- Weight B: school, tosogu_school
+- Weight C: province, era, description, description_en
+
+**Files Changed:**
+- `supabase/migrations/026_remove_raw_text_from_search.sql` - Updated `build_listing_search_vector` function
+
+---
+
+### January 2026 - FTS Implementation
+
+**Commits:** Multiple (see git log)
+
+**Problem:** ILIKE `%term%` matching caused false positives:
+- "rai" matched "g**rai**ned" in descriptions
+- No word boundary enforcement
+- No relevance scoring
+
+**Solution:** Replaced ILIKE with PostgreSQL Full-Text Search:
+- Uses pre-computed `search_vector` column with GIN index
+- Provides word boundary matching (no substring pollution)
+- Supports weighted relevance scoring
+- Uses `simple` config (no stemming) for Japanese romanization
+
+**Files Changed:**
+- `src/app/api/browse/route.ts` - Replaced ILIKE loop with FTS textSearch
+- `src/lib/search/ftsQueryBuilder.ts` - Created FTS query builder (now partially deprecated, inline logic in route)
+- `supabase/migrations/024-026` - Search vector improvements
+
+---
+
 ### January 2026 - Category Term Expansion
 
 **Commit:** `1abd6a3`
@@ -260,9 +402,36 @@ npm test -- browse
 
 ---
 
+## Known Limitations
+
+### 1. mei_type Not Searchable by Text
+
+The `mei_type` field (signed/unsigned) is NOT in the search_vector. Searching "signed" will not find items with `mei_type="mei"`.
+
+**Workaround:** Use the signature status filter (`?signatureStatus=signed`) instead of text search.
+
+**Potential Fix:** Add `mei_type` to search vector with expansion:
+- `mei_type="mei"` → add "signed" to search_vector
+- `mei_type="mumei"` → add "unsigned" to search_vector
+
+### 2. ID 7701 False Positive for "Rai Kunimitsu"
+
+One listing (ID 7701) still appears for "Rai Kunimitsu" because its `description` field genuinely contains "Rai Kunimitsu" text (likely an attribution comparison). This is a data quality issue, not a search issue.
+
+### 3. No Relevance Sorting in Main Browse
+
+The main browse endpoint doesn't yet support `sort=relevance` with `ts_rank_cd` scoring. All results are sorted by price or date, not search relevance.
+
+**Potential Fix:** Create RPC function with relevance sorting, or add `ts_rank_cd` to query builder.
+
+---
+
 ## Future Enhancements
 
+- [ ] Add `mei_type` to search vector (map "mei"→"signed", "mumei"→"unsigned")
+- [ ] Relevance sorting option with `ts_rank_cd`
 - [ ] Autocomplete suggestions for category terms
 - [ ] Visual indicator when category expansion is applied
 - [ ] Search history with category term recognition
 - [ ] Synonym expansion for artisan names (e.g., "Goto" → "Gotō", "後藤")
+- [ ] Phrase matching with quotes: `"Rai Kunimitsu"` → `rai <-> kunimitsu`
