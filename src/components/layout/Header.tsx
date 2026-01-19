@@ -63,14 +63,18 @@ function HeaderContent() {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const searchQuery = (formData.get('q') as string) || '';
-    if (searchQuery.trim()) {
-      setIsSearching(true);
+    const trimmedQuery = searchQuery.trim();
+    if (trimmedQuery) {
+      // Only show spinner if query is different (otherwise URL won't change and spinner gets stuck)
+      if (trimmedQuery !== currentQuery) {
+        setIsSearching(true);
+      }
       // Track search event
       if (activity) {
-        activity.trackSearch(searchQuery.trim());
+        activity.trackSearch(trimmedQuery);
       }
       // Use router.push to create history entry (allows back button)
-      router.push(`/?q=${encodeURIComponent(searchQuery.trim())}`);
+      router.push(`/?q=${encodeURIComponent(trimmedQuery)}`);
     }
   };
 

@@ -43,7 +43,10 @@ export function MobileSearchSheet() {
     e.preventDefault();
     const query = inputValue.trim();
     if (query) {
-      setIsSearching(true);
+      // Only show spinner if query is different (otherwise URL won't change and spinner gets stuck)
+      if (query !== currentQuery) {
+        setIsSearching(true);
+      }
       closeSearch();
       // Use router.push to create history entry (allows back button)
       router.push(`/?q=${encodeURIComponent(query)}`);
@@ -51,7 +54,10 @@ export function MobileSearchSheet() {
   };
 
   const handleQuickSearch = (term: string) => {
-    setIsSearching(true);
+    // Only show spinner if query is different (otherwise URL won't change and spinner gets stuck)
+    if (term !== currentQuery) {
+      setIsSearching(true);
+    }
     closeSearch();
     // Use router.push to create history entry
     router.push(`/?q=${encodeURIComponent(term)}`);
