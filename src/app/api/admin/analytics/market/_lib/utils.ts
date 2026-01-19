@@ -367,6 +367,70 @@ export function validateTrendMetric(
 }
 
 // =============================================================================
+// PAGINATION
+// =============================================================================
+
+/**
+ * Fetch all rows from a Supabase query using pagination.
+ * Supabase has a default limit of 1000 rows per request.
+ *
+ * @param supabase - Supabase client instance
+ * @param tableName - Table to query
+ * @param selectColumns - Columns to select
+ * @param filters - Object with filter conditions
+ * @param pageSize - Rows per page (default 1000)
+ * @returns Array of all matching rows
+ */
+export async function fetchAllRows<T>(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  tableName: string,
+  selectColumns: string,
+  filters: Record<string, unknown> = {},
+  pageSize: number = 1000
+): Promise<T[]> {
+  const allRows: T[] = [];
+  let offset = 0;
+  let hasMore = true;
+
+  while (hasMore) {
+    let query = supabase
+      .from(tableName)
+      .select(selectColumns)
+      .range(offset, offset + pageSize - 1);
+
+    // Apply filters
+    for (const [key, value] of Object.entries(filters)) {
+      if (key === 'is_available' && value === true) {
+        query = query.eq('is_available', true);
+      } else if (key === 'price_not_null' && value === true) {
+        query = query.not('price_value', 'is', null);
+      } else if (key === 'price_gt_zero' && value === true) {
+        query = query.gt('price_value', 0);
+      } else if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+        query = query.eq(key, value);
+      }
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error(`Pagination error at offset ${offset}:`, error);
+      break;
+    }
+
+    if (data && data.length > 0) {
+      allRows.push(...(data as T[]));
+      offset += pageSize;
+      hasMore = data.length === pageSize;
+    } else {
+      hasMore = false;
+    }
+  }
+
+  return allRows;
+}
+
+// =============================================================================
 // HELPERS
 // =============================================================================
 

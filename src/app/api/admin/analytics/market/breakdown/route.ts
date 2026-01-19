@@ -30,6 +30,7 @@ import {
   errorResponse,
   successResponse,
   roundTo,
+  fetchAllRows,
 } from '../_lib/utils';
 import { median, mean } from '@/lib/analytics/statistics';
 
@@ -152,21 +153,17 @@ async function getCategoryBreakdown(
   supabase: Awaited<ReturnType<typeof createClient>>,
   limit: number
 ): Promise<NextResponse<AnalyticsAPIResponse<CategoryBreakdownResponse>>> {
-  // Query all available listings grouped by item_type
-  const result = await supabase
-    .from('listings')
-    .select('item_type, price_value, price_currency, is_available, is_sold')
-    .limit(100000);
+  // Fetch ALL listings with pagination (Supabase default limit is 1000)
+  const listings = await fetchAllRows<CategoryListingRow>(
+    supabase,
+    'listings',
+    'item_type, price_value, price_currency, is_available, is_sold',
+    {} // No filters - we need all for category breakdown
+  );
 
-  const listings = result.data as CategoryListingRow[] | null;
-  const error = result.error;
+  console.log(`Category breakdown: fetched ${listings.length} listings for aggregation`);
 
-  if (error) {
-    console.error('Category breakdown query error:', error);
-    return errorResponse('Failed to fetch category data', 500);
-  }
-
-  if (!listings || listings.length === 0) {
+  if (listings.length === 0) {
     const emptyResponse: CategoryBreakdownResponse = {
       categories: [],
       totals: { totalCount: 0, totalValueJPY: 0, medianPriceJPY: 0 },
@@ -271,24 +268,28 @@ async function getDealerBreakdown(
   supabase: Awaited<ReturnType<typeof createClient>>,
   limit: number
 ): Promise<NextResponse<AnalyticsAPIResponse<DealerBreakdownResponse>>> {
-  // Query dealers with their listings
-  const dealersPromise = supabase.from('dealers').select('id, name').eq('is_active', true);
-  const listingsPromise = supabase
-    .from('listings')
-    .select('dealer_id, price_value, price_currency, is_available')
-    .eq('is_available', true)
-    .not('price_value', 'is', null)
-    .limit(100000);
+  // Query dealers
+  const { data: dealersData, error: dealersError } = await supabase
+    .from('dealers')
+    .select('id, name')
+    .eq('is_active', true);
 
-  const [dealersResult, listingsResult] = await Promise.all([dealersPromise, listingsPromise]);
-
-  if (dealersResult.error || listingsResult.error) {
-    console.error('Dealer breakdown query error:', dealersResult.error || listingsResult.error);
+  if (dealersError) {
+    console.error('Dealer query error:', dealersError);
     return errorResponse('Failed to fetch dealer data', 500);
   }
 
-  const dealers = (dealersResult.data || []) as DealerRow[];
-  const listings = (listingsResult.data || []) as DealerListingRow[];
+  const dealers = (dealersData || []) as DealerRow[];
+
+  // Fetch ALL listings with pagination (Supabase default limit is 1000)
+  const listings = await fetchAllRows<DealerListingRow>(
+    supabase,
+    'listings',
+    'dealer_id, price_value, price_currency, is_available',
+    { is_available: true, price_not_null: true }
+  );
+
+  console.log(`Dealer breakdown: fetched ${listings.length} listings for aggregation`);
 
   // Create dealer name lookup
   const dealerNames = new Map<number, string>();
@@ -369,23 +370,21 @@ async function getCertificationBreakdown(
   supabase: Awaited<ReturnType<typeof createClient>>,
   limit: number
 ): Promise<NextResponse<AnalyticsAPIResponse<CertificationBreakdownResponse>>> {
-  // Query listings with certification info
-  const result = await supabase
-    .from('listings')
-    .select('cert_type, price_value, price_currency, is_available')
-    .eq('is_available', true)
-    .not('cert_type', 'is', null)
-    .limit(100000);
+  // Fetch ALL listings with pagination (Supabase default limit is 1000)
+  // We filter for cert_type in code since we can't do NOT NULL in the generic fetcher
+  const allListings = await fetchAllRows<CertificationListingRow>(
+    supabase,
+    'listings',
+    'cert_type, price_value, price_currency, is_available',
+    { is_available: true }
+  );
 
-  const listings = result.data as CertificationListingRow[] | null;
-  const error = result.error;
+  // Filter for listings with certifications
+  const listings = allListings.filter(l => l.cert_type !== null && l.cert_type !== '');
 
-  if (error) {
-    console.error('Certification breakdown query error:', error);
-    return errorResponse('Failed to fetch certification data', 500);
-  }
+  console.log(`Certification breakdown: fetched ${listings.length} certified listings`);
 
-  if (!listings || listings.length === 0) {
+  if (listings.length === 0) {
     const emptyResponse: CertificationBreakdownResponse = {
       certifications: [],
       totals: { totalCount: 0, totalValueJPY: 0 },

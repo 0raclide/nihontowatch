@@ -7,7 +7,6 @@ interface DealerStats {
   dealerId: number;
   dealerName: string;
   domain: string;
-  country: string;
 
   // Traffic metrics
   clickThroughs: number;
@@ -108,7 +107,7 @@ export async function GET(request: NextRequest) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: dealers, error: dealersError } = await (supabase as any)
       .from('dealers')
-      .select('id, name, domain, country, is_active')
+      .select('id, name, domain, is_active')
       .eq('is_active', true)
       .order('name');
 
@@ -317,7 +316,6 @@ export async function GET(request: NextRequest) {
         dealerId: dealer.id,
         dealerName: dealer.name,
         domain: dealer.domain,
-        country: dealer.country,
         clickThroughs: stats.clicks,
         uniqueVisitors: stats.uniqueVisitors.size,
         listingViews: stats.dwellCount,

@@ -7,7 +7,6 @@ interface DealerStats {
   dealerId: number;
   dealerName: string;
   domain: string;
-  country: string;
   clickThroughs: number;
   uniqueVisitors: number;
   listingViews: number;
