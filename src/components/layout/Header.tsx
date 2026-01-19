@@ -264,7 +264,7 @@ function HeaderContent() {
   );
 }
 
-// Fallback for Suspense - minimal header skeleton (hidden on mobile)
+// Fallback for Suspense - includes functional form for native submission before JS hydrates
 function HeaderFallback() {
   return (
     <header className="hidden lg:block sticky top-0 z-40 bg-cream transition-colors">
@@ -282,8 +282,26 @@ function HeaderFallback() {
               Nihonto<span className="text-gold font-medium">Watch</span>
             </span>
           </div>
+          {/* Functional form that works without JS via native form submission */}
+          <form action="/" method="GET" role="search" className="flex-1 max-w-md mx-10">
+            <div className="relative">
+              <input
+                type="search"
+                name="q"
+                placeholder="Search swords, smiths, dealers..."
+                className="w-full pl-4 pr-12 py-2.5 bg-linen/50 border border-transparent text-[13px] text-ink placeholder:text-muted/40 focus:outline-none focus:border-gold/40 focus:bg-paper transition-all duration-200"
+              />
+              <button
+                type="submit"
+                className="absolute right-1 top-1/2 -translate-y-1/2 p-2 text-muted/50 hover:text-gold"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </button>
+            </div>
+          </form>
           <div className="flex items-center gap-4">
-            <div className="w-64 h-10 bg-linen/50 rounded animate-pulse" />
             <div className="w-8 h-8 bg-linen/50 rounded-full animate-pulse" />
           </div>
         </div>
