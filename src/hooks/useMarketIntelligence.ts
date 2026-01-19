@@ -260,7 +260,7 @@ export function useMarketIntelligence(
     try {
       const result = await fetchAnalyticsData<CategoryBreakdownResponse>(
         '/api/admin/analytics/market/breakdown',
-        buildQueryString(filters, { type: 'category' })
+        buildQueryString(filters, { by: 'category' })
       );
 
       if (isMountedRef.current) {
@@ -288,7 +288,7 @@ export function useMarketIntelligence(
     try {
       const result = await fetchAnalyticsData<DealerBreakdownResponse>(
         '/api/admin/analytics/market/breakdown',
-        buildQueryString(filters, { type: 'dealer' })
+        buildQueryString(filters, { by: 'dealer' })
       );
 
       if (isMountedRef.current) {
