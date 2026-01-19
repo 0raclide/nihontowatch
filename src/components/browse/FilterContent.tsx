@@ -193,7 +193,7 @@ const ITEM_TYPE_LABELS: Record<string, string> = {
   armor: 'Armor',
   yoroi: 'Yoroi',
   gusoku: 'Gusoku',
-  helmet: 'Helmet',
+  helmet: 'Kabuto',
   kabuto: 'Kabuto',
   menpo: 'Menpō',
   mengu: 'Mengu',
@@ -587,9 +587,11 @@ export function FilterContent({
         </FilterSection>
 
         {/* 5. Item Type */}
-        <FilterSection title="Type">
+        <FilterSection title="Type" defaultOpen={false}>
           <div className="space-y-1">
-            {visibleItemTypes.map((facet) => (
+            {visibleItemTypes
+              .filter((facet) => facet.value !== 'other')
+              .map((facet) => (
               <Checkbox
                 key={facet.value}
                 label={ITEM_TYPE_LABELS[facet.value] || facet.value}
