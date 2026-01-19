@@ -204,6 +204,7 @@ const handleScroll = () => {
 | `src/app/page.tsx` | Page state, loadMore function |
 | `src/app/api/browse/route.ts` | API pagination |
 | `tests/hooks/useAdaptiveVirtualScroll.test.ts` | Hook unit tests (24 tests) |
+| `tests/hooks/useBodyScrollLock.test.ts` | Scroll lock tests (23 tests) |
 | `tests/components/browse/VirtualListingGrid.scroll.test.tsx` | Integration tests (6 tests) |
 
 ## Test Commands
@@ -214,6 +215,9 @@ npm test
 
 # Test virtual scroll hook specifically
 npm test -- tests/hooks/useAdaptiveVirtualScroll.test.ts
+
+# Test body scroll lock (QuickView modal)
+npm test -- tests/hooks/useBodyScrollLock.test.ts
 
 # Test VirtualListingGrid scroll behavior
 npm test -- tests/components/browse/VirtualListingGrid.scroll.test.tsx
