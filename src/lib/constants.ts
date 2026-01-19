@@ -278,9 +278,13 @@ export const IMAGE_QUALITY = {
    * Aspect ratio extremes. Images outside this range are likely
    * banners, icons, or other non-product imagery.
    * Format: width/height
+   *
+   * Japanese sword dealers use extreme aspect ratios:
+   * - Tall composites: Full blade stitched vertically (e.g., Eirakudo uses 1:17)
+   * - Wide blade shots: Horizontal detail photos (e.g., Token-Net uses 9:1)
    */
-  MIN_ASPECT_RATIO: 0.15, // Very tall images (1:6.67)
-  MAX_ASPECT_RATIO: 6.0, // Very wide images (6:1)
+  MIN_ASPECT_RATIO: 0.03, // Very tall images (1:33) - accommodates tall composite blade photos
+  MAX_ASPECT_RATIO: 15.0, // Very wide images (15:1) - accommodates wide horizontal blade shots
 } as const;
 
 // =============================================================================
