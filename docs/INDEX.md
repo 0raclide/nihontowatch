@@ -9,6 +9,7 @@
 | [CROSS_REPO_REFERENCE.md](./CROSS_REPO_REFERENCE.md) | What lives where across all repos |
 | [DEALERS.md](./DEALERS.md) | Dealer-specific quirks, exclusions, maintenance notes |
 | [USER_ACCOUNTS_SYSTEM.md](./USER_ACCOUNTS_SYSTEM.md) | Auth, profiles, favorites, alerts, activity tracking, admin |
+| [EMAIL_ALERTS.md](./EMAIL_ALERTS.md) | Email notification system (saved searches, price drops, back-in-stock) |
 | [SIGNUP_PRESSURE.md](./SIGNUP_PRESSURE.md) | Signup modal triggers, thresholds, copy variants, testing |
 | [MOBILE_UX.md](./MOBILE_UX.md) | Mobile interaction patterns, QuickView bottom sheet |
 | [USER_BEHAVIOR_TRACKING.md](./USER_BEHAVIOR_TRACKING.md) | Engagement signals, interest scoring, recommendations |
@@ -139,6 +140,13 @@
 4. Check `src/app/api/activity/` - API routes
 5. Check `src/app/admin/analytics/` - Analytics dashboard
 
+### "I need to work on email alerts"
+1. Read [EMAIL_ALERTS.md](./EMAIL_ALERTS.md) - Complete email system docs
+2. Check `src/app/api/cron/` - Cron job endpoints
+3. Check `src/lib/email/` - SendGrid integration and templates
+4. Test with `POST /api/test/send-email` endpoint
+5. Monitor at https://app.sendgrid.com/email_activity
+
 ### "I need to run or write tests"
 1. Read [TESTING.md](./TESTING.md) - Complete testing documentation
 2. Run `npm test` - All tests
@@ -173,5 +181,6 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for:
 | Mobile UX & gestures | [MOBILE_UX.md](./MOBILE_UX.md) |
 | QuickView metadata & translation | [QUICKVIEW_METADATA.md](./QUICKVIEW_METADATA.md) |
 | Search features | [SEARCH_FEATURES.md](./SEARCH_FEATURES.md) |
+| Email alerts | [EMAIL_ALERTS.md](./EMAIL_ALERTS.md) - Saved search, price drop, back-in-stock |
 | Testing | [TESTING.md](./TESTING.md) - Unit, concordance, integration tests |
 | Deployment | [CLAUDE.md](../CLAUDE.md#deployment) |
