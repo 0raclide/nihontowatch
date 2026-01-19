@@ -101,7 +101,7 @@ export function Drawer({ isOpen, onClose, children, title }: DrawerProps) {
         )}
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto overscroll-contain">
+        <div className="flex-1 overflow-y-auto overscroll-contain pr-3">
           {children}
         </div>
       </div>
