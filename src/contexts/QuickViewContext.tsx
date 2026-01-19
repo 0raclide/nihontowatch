@@ -74,12 +74,20 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
   // Store scroll position at the moment of opening (before any React state changes)
   const savedScrollPosition = useRef(0);
 
-  // Capture scroll position on ANY mousedown - before click events fire
+  // Track isOpen state in a ref for use in event handlers
+  const isOpenRef = useRef(false);
+  isOpenRef.current = isOpen;
+
+  // Capture scroll position on mousedown - but ONLY when modal is not open
   // This ensures we have the scroll position before any React updates or
   // browser-initiated scrolling (like scrollIntoView)
+  // We skip capture when modal is open because window.scrollY is 0 during scroll lock
   useEffect(() => {
     const captureScrollOnMouseDown = () => {
-      savedScrollPosition.current = window.scrollY;
+      // Only capture when modal is closed - when open, scrollY is 0 due to overflow:hidden
+      if (!isOpenRef.current) {
+        savedScrollPosition.current = window.scrollY;
+      }
     };
     document.addEventListener('mousedown', captureScrollOnMouseDown);
     return () => document.removeEventListener('mousedown', captureScrollOnMouseDown);
