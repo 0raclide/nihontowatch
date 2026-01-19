@@ -274,8 +274,8 @@ export async function GET(request: NextRequest) {
         query = query.order('price_jpy', { ascending: true, nullsFirst: false });
         break;
       case 'price_desc':
-        // ASK items (NULL price) appear first, treated as most expensive
-        query = query.order('price_jpy', { ascending: false, nullsFirst: true });
+        // ASK items (NULL price) appear last, after all priced items
+        query = query.order('price_jpy', { ascending: false, nullsFirst: false });
         break;
       case 'name':
         query = query.order('title', { ascending: true });
