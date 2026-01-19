@@ -9,6 +9,14 @@ const mockWindowProperties = (width: number, height: number, scrollY: number = 0
   Object.defineProperty(window, 'scrollY', { value: scrollY, writable: true });
 };
 
+// Helper to simulate scroll and trigger RAF
+const simulateScroll = async (scrollY: number) => {
+  Object.defineProperty(window, 'scrollY', { value: scrollY, writable: true });
+  window.dispatchEvent(new Event('scroll'));
+  // Advance timers to process RAF callback
+  await vi.advanceTimersByTimeAsync(16);
+};
+
 describe('useAdaptiveVirtualScroll', () => {
   const createItems = (count: number) =>
     Array.from({ length: count }, (_, i) => ({ id: i, name: `Item ${i}` }));
@@ -17,6 +25,8 @@ describe('useAdaptiveVirtualScroll', () => {
     vi.useFakeTimers();
     // Default to desktop dimensions
     mockWindowProperties(1280, 800);
+    // Reset scroll lock flag
+    window.__scrollLockActive = false;
   });
 
   afterEach(() => {
@@ -296,6 +306,143 @@ describe('useAdaptiveVirtualScroll', () => {
       });
 
       expect(result.current.columns).toBe(1);
+    });
+  });
+
+  describe('scroll jumping fix', () => {
+    it('updates startRow only when crossing row boundary', async () => {
+      mockWindowProperties(1280, 800); // 4 columns, 372px row height
+      const items = createItems(200);
+      const { result } = renderHook(() =>
+        useAdaptiveVirtualScroll({ items, overscan: 2 })
+      );
+
+      await act(async () => {
+        await vi.runAllTimersAsync();
+      });
+
+      expect(result.current.startIndex).toBe(0);
+      expect(result.current.offsetY).toBe(0);
+
+      // Scroll within same row boundary (less than rowHeight)
+      await act(async () => {
+        await simulateScroll(100); // Well below 372px threshold
+      });
+
+      // startRow should still be 0 (with overscan: 2, startRow stays 0 until scroll > 3*372)
+      expect(result.current.startIndex).toBe(0);
+
+      // Scroll past the row boundary that would change startRow
+      // With overscan: 2, startRow changes when floor(scrollY/372) - 2 > 0
+      // That's when floor(scrollY/372) > 2, meaning scrollY >= 3*372 = 1116
+      await act(async () => {
+        await simulateScroll(1116);
+      });
+
+      // Now startRow should be 1
+      expect(result.current.startIndex).toBe(4); // 1 row * 4 columns
+      expect(result.current.offsetY).toBe(372); // 1 row * 372px
+    });
+
+    it('offsetY only jumps in row-height increments', async () => {
+      mockWindowProperties(1280, 800); // 4 columns, 372px row height
+      const items = createItems(200);
+      const { result } = renderHook(() =>
+        useAdaptiveVirtualScroll({ items, overscan: 2 })
+      );
+
+      await act(async () => {
+        await vi.runAllTimersAsync();
+      });
+
+      const scrollPositions = [0, 100, 500, 1000, 1116, 1488, 2000];
+      const offsetHistory: number[] = [];
+
+      for (const scrollY of scrollPositions) {
+        await act(async () => {
+          await simulateScroll(scrollY);
+        });
+        offsetHistory.push(result.current.offsetY);
+      }
+
+      // Verify offsetY only increases in rowHeight (372px) increments
+      for (let i = 1; i < offsetHistory.length; i++) {
+        const diff = offsetHistory[i] - offsetHistory[i - 1];
+        // Difference should either be 0 (same row) or a multiple of 372
+        if (diff !== 0) {
+          expect(diff % 372).toBe(0);
+        }
+      }
+    });
+
+    it('does not update during scroll lock (modal open)', async () => {
+      mockWindowProperties(1280, 800);
+      const items = createItems(200);
+      const { result } = renderHook(() =>
+        useAdaptiveVirtualScroll({ items, overscan: 2 })
+      );
+
+      await act(async () => {
+        await vi.runAllTimersAsync();
+      });
+
+      const initialOffset = result.current.offsetY;
+
+      // Simulate scroll lock (modal open)
+      window.__scrollLockActive = true;
+
+      // Try to scroll while locked
+      await act(async () => {
+        await simulateScroll(2000);
+      });
+
+      // Offset should NOT have changed
+      expect(result.current.offsetY).toBe(initialOffset);
+
+      // Unlock and scroll
+      window.__scrollLockActive = false;
+      await act(async () => {
+        await simulateScroll(2000);
+      });
+
+      // Now offset should update
+      expect(result.current.offsetY).toBeGreaterThan(initialOffset);
+    });
+
+    it('responds to every row boundary crossing without threshold delay', async () => {
+      mockWindowProperties(1280, 800); // 4 columns, 372px row height
+      const items = createItems(200);
+      const { result } = renderHook(() =>
+        useAdaptiveVirtualScroll({ items, overscan: 0 }) // No overscan for clearer test
+      );
+
+      await act(async () => {
+        await vi.runAllTimersAsync();
+      });
+
+      // With overscan: 0, startRow = floor(scrollY/372)
+      // At scrollY = 371, startRow = 0
+      // At scrollY = 372, startRow = 1
+
+      await act(async () => {
+        await simulateScroll(371);
+      });
+      expect(result.current.offsetY).toBe(0);
+
+      await act(async () => {
+        await simulateScroll(372);
+      });
+      expect(result.current.offsetY).toBe(372);
+
+      await act(async () => {
+        await simulateScroll(743);
+      });
+      expect(result.current.offsetY).toBe(372);
+
+      await act(async () => {
+        await simulateScroll(744);
+      });
+      expect(result.current.offsetY).toBe(744);
     });
   });
 

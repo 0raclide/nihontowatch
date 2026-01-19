@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { isScrollLockActive } from './useBodyScrollLock';
 
 /**
@@ -48,6 +48,9 @@ function getRowHeight(columns: number): number {
   }
 }
 
+// Use useLayoutEffect on client, useEffect on server (for SSR safety)
+const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
+
 interface UseAdaptiveVirtualScrollOptions<T> {
   items: T[];
   /** Total count of all items (for pre-calculating container height) */
@@ -80,27 +83,37 @@ interface UseAdaptiveVirtualScrollResult<T> {
  * - SSR-safe: Uses static defaults during server render
  * - Responsive: Adapts to viewport width changes
  * - Row-based: Virtualizes by rows, not individual items
+ * - Smooth scrolling: Only re-renders when visible rows change (no threshold lag)
  *
  * The hook virtualizes by ROWS (not individual items) because a row
  * can contain 1-5 items depending on screen width.
+ *
+ * IMPORTANT: Visual jumping fix (Jan 2025)
+ * Previously, scroll position was tracked with a threshold (~93px), causing offsetY
+ * to jump out of sync with actual scroll position. Now we calculate startRow on every
+ * animation frame and only trigger React re-renders when startRow actually changes.
+ * This ensures offsetY changes are perfectly synchronized with scroll position.
  */
 export function useAdaptiveVirtualScroll<T>({
   items,
   totalCount,
-  overscan = 2,
+  overscan = 3,
   enabled = true,
 }: UseAdaptiveVirtualScrollOptions<T>): UseAdaptiveVirtualScrollResult<T> {
   // SSR-safe defaults - assume desktop-ish viewport
   const [dimensions, setDimensions] = useState({
     viewportHeight: 800,
     columns: 3,
-    rowHeight: 310,
+    rowHeight: 370,
   });
 
-  const [scrollTop, setScrollTop] = useState(0);
+  // Track which row we're starting from (triggers re-render when visible rows change)
+  const [startRow, setStartRow] = useState(0);
   const [isClient, setIsClient] = useState(false);
+
+  // Refs for non-reactive values
   const rafRef = useRef<number | null>(null);
-  const lastScrollTopRef = useRef(0);
+  const startRowRef = useRef(0);
 
   // Track client-side mounting
   useEffect(() => {
@@ -139,46 +152,63 @@ export function useAdaptiveVirtualScroll<T>({
     };
   }, [enabled]);
 
-  // Scroll position tracking with RAF for smooth performance
-  const handleScroll = useCallback(() => {
-    // Skip scroll updates when body scroll is locked (modal open)
-    // This prevents virtual grid from recalculating during modal transitions
-    if (isScrollLockActive()) {
-      return;
-    }
+  // Scroll handling with RAF - calculates startRow on every frame
+  // Only triggers React re-render when startRow actually changes
+  useIsomorphicLayoutEffect(() => {
+    if (!enabled) return;
 
-    if (rafRef.current !== null) {
-      cancelAnimationFrame(rafRef.current);
-    }
+    const { rowHeight } = dimensions;
 
-    rafRef.current = requestAnimationFrame(() => {
-      // Double-check lock status inside RAF (in case it changed)
+    const calculateStartRow = () => {
+      const scrollTop = window.scrollY;
+      return Math.max(0, Math.floor(scrollTop / rowHeight) - overscan);
+    };
+
+    const handleScroll = () => {
+      // Skip scroll updates when body scroll is locked (modal open)
       if (isScrollLockActive()) {
         return;
       }
 
-      const newScrollTop = window.scrollY;
-      // Only update if scroll changed by threshold amount
-      // Use smaller threshold (1/4 row) for more responsive updates on iOS
-      const threshold = dimensions.rowHeight / 4;
-      if (Math.abs(newScrollTop - lastScrollTopRef.current) > threshold) {
-        lastScrollTopRef.current = newScrollTop;
-        setScrollTop(newScrollTop);
+      // Cancel any pending RAF to prevent double updates
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
       }
-    });
-  }, [dimensions.rowHeight]);
 
-  useEffect(() => {
-    if (!enabled) return;
+      rafRef.current = requestAnimationFrame(() => {
+        // Double-check lock status inside RAF
+        if (isScrollLockActive()) {
+          return;
+        }
+
+        const newStartRow = calculateStartRow();
+
+        // CRITICAL: Only update state when startRow actually changes
+        // This prevents unnecessary re-renders AND ensures offsetY
+        // only changes when we're crossing a row boundary
+        if (newStartRow !== startRowRef.current) {
+          startRowRef.current = newStartRow;
+          setStartRow(newStartRow);
+        }
+      });
+    };
+
+    // Perform initial calculation
+    const initialStartRow = calculateStartRow();
+    if (initialStartRow !== startRowRef.current) {
+      startRowRef.current = initialStartRow;
+      setStartRow(initialStartRow);
+    }
 
     window.addEventListener('scroll', handleScroll, { passive: true });
+
     return () => {
       window.removeEventListener('scroll', handleScroll);
       if (rafRef.current !== null) {
         cancelAnimationFrame(rafRef.current);
       }
     };
-  }, [handleScroll, enabled]);
+  }, [enabled, dimensions.rowHeight, overscan]);
 
   // Calculate virtualization parameters
   const { viewportHeight, columns, rowHeight } = dimensions;
@@ -193,7 +223,6 @@ export function useAdaptiveVirtualScroll<T>({
   const loadedRowCount = Math.ceil(items.length / columns);
 
   // Calculate visible row range (capped to loaded items, not total)
-  const startRow = Math.max(0, Math.floor(scrollTop / rowHeight) - overscan);
   const visibleRowCount = Math.ceil(viewportHeight / rowHeight) + (overscan * 2);
   const endRow = Math.min(loadedRowCount, startRow + visibleRowCount);
 
@@ -203,6 +232,9 @@ export function useAdaptiveVirtualScroll<T>({
 
   // Slice visible items
   const visibleItems = items.slice(startIndex, endIndex);
+
+  // offsetY positions the visible items correctly within the scroll container
+  // It only changes when startRow changes, ensuring smooth visual transitions
   const offsetY = startRow * rowHeight;
 
   // SSR: Show first batch for fast initial render
