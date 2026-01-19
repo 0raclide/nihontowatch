@@ -4,7 +4,7 @@ import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
-export const maxDuration = 300; // 5 minute timeout for scrape operations
+export const maxDuration = 30; // Quick timeout - we just trigger the workflow
 
 async function verifyAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
   const { data: { user } } = await supabase.auth.getUser();
@@ -26,6 +26,85 @@ async function verifyAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
   return { user };
 }
 
+/**
+ * Trigger the Oshi-scrapper GitHub Actions workflow
+ * Uses the workflow_dispatch event to start the daily-scrape.yml workflow
+ */
+async function triggerGitHubWorkflow(options: {
+  dealer?: string;
+  discoverOnly?: boolean;
+  scrapeOnly?: boolean;
+  extractOnly?: boolean;
+  noExtract?: boolean;
+}): Promise<{ success: boolean; error?: string }> {
+  const token = process.env.GITHUB_TOKEN;
+  const owner = process.env.GITHUB_OWNER || 'christopherhill';
+  const repo = process.env.GITHUB_REPO || 'Oshi-scrapper';
+
+  if (!token) {
+    return {
+      success: false,
+      error: 'GitHub token not configured. Add GITHUB_TOKEN to environment variables.'
+    };
+  }
+
+  try {
+    const response = await fetch(
+      `https://api.github.com/repos/${owner}/${repo}/actions/workflows/daily-scrape.yml/dispatches`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/vnd.github.v3+json',
+          'Content-Type': 'application/json',
+          'X-GitHub-Api-Version': '2022-11-28',
+        },
+        body: JSON.stringify({
+          ref: 'main',
+          inputs: {
+            dealer: options.dealer || '',
+            discover_only: options.discoverOnly ? 'true' : 'false',
+            scrape_only: options.scrapeOnly ? 'true' : 'false',
+            extract_only: options.extractOnly ? 'true' : 'false',
+            no_extract: options.noExtract ? 'true' : 'false',
+          },
+        }),
+      }
+    );
+
+    // GitHub returns 204 No Content on success
+    if (response.status === 204) {
+      return { success: true };
+    }
+
+    // Handle errors
+    if (!response.ok) {
+      const errorBody = await response.text();
+      console.error('GitHub API error:', response.status, errorBody);
+
+      if (response.status === 401) {
+        return { success: false, error: 'GitHub token is invalid or expired' };
+      }
+      if (response.status === 403) {
+        return { success: false, error: 'GitHub token lacks workflow permissions' };
+      }
+      if (response.status === 404) {
+        return { success: false, error: 'Workflow not found. Check GITHUB_OWNER and GITHUB_REPO settings.' };
+      }
+
+      return { success: false, error: `GitHub API error: ${response.status}` };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('GitHub workflow trigger error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to trigger workflow'
+    };
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
@@ -35,13 +114,62 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: authResult.error }, { status: authResult.status });
     }
 
-    // Use service client to bypass RLS for scraper tables
-    const serviceClient = createServiceClient();
-
     const body = await request.json();
-    const { dealer, limit = 50 } = body;
+    const {
+      dealer,
+      discoverOnly = false,
+      scrapeOnly = false,
+      extractOnly = false,
+      noExtract = false,
+    } = body;
 
-    // Try to create a scrape_run record (table may not exist)
+    // Trigger the GitHub Actions workflow
+    const workflowResult = await triggerGitHubWorkflow({
+      dealer,
+      discoverOnly,
+      scrapeOnly,
+      extractOnly,
+      noExtract,
+    });
+
+    if (!workflowResult.success) {
+      // If GitHub trigger fails, still try to create a pending record for visibility
+      const serviceClient = createServiceClient();
+
+      try {
+        const { data: dealerData } = dealer
+          ? await serviceClient
+              .from('dealers')
+              .select('id')
+              .eq('name', dealer)
+              .single()
+          : { data: null };
+
+        await serviceClient
+          .from('scrape_runs')
+          .insert({
+            dealer_id: dealerData?.id || null,
+            run_type: 'scrape',
+            status: 'failed',
+            error_message: workflowResult.error,
+            urls_processed: 0,
+            errors: 0,
+          });
+      } catch (e) {
+        // Table might not exist, ignore
+      }
+
+      return NextResponse.json({
+        success: false,
+        error: workflowResult.error,
+        message: 'Failed to trigger scraper workflow',
+      }, { status: 500 });
+    }
+
+    // Record that we triggered a workflow (optional - Oshi-scrapper will create its own record)
+    const serviceClient = createServiceClient();
+    let runId = null;
+
     try {
       const { data: dealerData } = dealer
         ? await serviceClient
@@ -51,41 +179,42 @@ export async function POST(request: NextRequest) {
             .single()
         : { data: null };
 
-      const { data: run, error } = await serviceClient
+      const runType = discoverOnly ? 'discovery'
+        : scrapeOnly ? 'scrape'
+        : extractOnly ? 'extract'
+        : 'full';
+
+      const { data: run } = await serviceClient
         .from('scrape_runs')
         .insert({
           dealer_id: dealerData?.id || null,
-          run_type: 'scrape',
-          status: 'pending',
+          run_type: runType,
+          status: 'running', // Will be updated by Oshi-scrapper
           urls_processed: 0,
           errors: 0,
         })
         .select('id')
         .single();
 
-      if (error) {
-        // Table doesn't exist - just return success message
-        console.log('scrape_runs table not available:', error.message);
-        return NextResponse.json({
-          success: true,
-          runId: null,
-          message: `Scrape request noted for ${dealer || 'all dealers'} (limit: ${limit}). Note: Scraper tables not yet configured.`,
-        });
-      }
-
-      return NextResponse.json({
-        success: true,
-        runId: run.id,
-        message: `Scrape queued for ${dealer || 'all dealers'} (limit: ${limit})`,
-      });
+      runId = run?.id;
     } catch (e) {
-      // Tables don't exist
-      return NextResponse.json({
-        success: true,
-        runId: null,
-        message: `Scrape request noted for ${dealer || 'all dealers'} (limit: ${limit}). Note: Scraper tables not yet configured.`,
-      });
+      // Table might not exist, that's ok - Oshi-scrapper will create its own record
+      console.log('Could not create scrape_runs record:', e);
     }
+
+    const targetDesc = dealer ? `dealer "${dealer}"` : 'all dealers';
+    const modeDesc = discoverOnly ? 'discovery only'
+      : scrapeOnly ? 'scrape only'
+      : extractOnly ? 'extraction only'
+      : noExtract ? 'full (no extraction)'
+      : 'full run';
+
+    return NextResponse.json({
+      success: true,
+      runId,
+      message: `Scrape workflow triggered for ${targetDesc} (${modeDesc})`,
+      workflowUrl: `https://github.com/${process.env.GITHUB_OWNER || 'christopherhill'}/${process.env.GITHUB_REPO || 'Oshi-scrapper'}/actions`,
+    });
   } catch (error) {
     console.error('Trigger scrape error:', error);
     return NextResponse.json(
