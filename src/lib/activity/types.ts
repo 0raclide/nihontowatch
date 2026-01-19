@@ -11,6 +11,7 @@
 export type ActivityEventType =
   | 'page_view'
   | 'listing_view'
+  | 'listing_impression'
   | 'search'
   | 'filter_change'
   | 'favorite_add'
@@ -18,6 +19,7 @@ export type ActivityEventType =
   | 'alert_create'
   | 'alert_delete'
   | 'external_link_click'
+  | 'dealer_click'
   | 'viewport_dwell'
   | 'quickview_panel_toggle'
   | 'image_pinch_zoom';
@@ -83,6 +85,60 @@ export interface ExternalLinkClickEvent extends BaseActivityEvent {
   dealerName?: string;
 }
 
+/**
+ * Enhanced dealer click event with more context for analytics
+ */
+export interface DealerClickEvent extends BaseActivityEvent {
+  type: 'dealer_click';
+  url: string;
+  listingId: number;
+  dealerId: number;
+  dealerName: string;
+  /** Source of the click */
+  source: 'listing_card' | 'quickview' | 'listing_detail' | 'dealer_page';
+  /** Price at time of click (for conversion tracking) */
+  priceAtClick?: number;
+  currencyAtClick?: string;
+  /** Search context that led to this click */
+  searchQuery?: string;
+  /** Position in search results (1-indexed) */
+  resultPosition?: number;
+}
+
+/**
+ * Listing impression - when a listing appears in search results
+ */
+export interface ListingImpressionEvent extends BaseActivityEvent {
+  type: 'listing_impression';
+  listingId: number;
+  dealerId: number;
+  /** Position in search results (1-indexed) */
+  position: number;
+  /** Current search query */
+  searchQuery?: string;
+  /** Active filters */
+  filters?: SearchFilters;
+  /** Page number */
+  page?: number;
+}
+
+/**
+ * Batch impression event for efficiency
+ */
+export interface BatchImpressionPayload {
+  sessionId: string;
+  visitorId?: string;
+  impressions: Array<{
+    listingId: number;
+    dealerId: number;
+    position: number;
+  }>;
+  searchQuery?: string;
+  filters?: SearchFilters;
+  page?: number;
+  timestamp: string;
+}
+
 export interface ViewportDwellEvent extends BaseActivityEvent {
   type: 'viewport_dwell';
   listingId: number;
@@ -117,11 +173,13 @@ export interface ImagePinchZoomEvent extends BaseActivityEvent {
 export type ActivityEvent =
   | PageViewEvent
   | ListingViewEvent
+  | ListingImpressionEvent
   | SearchEvent
   | FilterChangeEvent
   | FavoriteEvent
   | AlertEvent
   | ExternalLinkClickEvent
+  | DealerClickEvent
   | ViewportDwellEvent
   | QuickViewPanelToggleEvent
   | ImagePinchZoomEvent;

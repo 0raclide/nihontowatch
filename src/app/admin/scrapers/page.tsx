@@ -112,7 +112,6 @@ export default function ScrapersAdmin() {
 
   // Scrape trigger state
   const [selectedDealer, setSelectedDealer] = useState<string>('all');
-  const [limit, setLimit] = useState(50);
   const [isRunning, setIsRunning] = useState(false);
   const [scrapeStatus, setScrapeStatus] = useState<string | null>(null);
 
@@ -165,7 +164,6 @@ export default function ScrapersAdmin() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           dealer: selectedDealer === 'all' ? null : selectedDealer,
-          limit,
         }),
       });
 
@@ -279,21 +277,6 @@ export default function ScrapersAdmin() {
                 </option>
               ))}
             </select>
-          </div>
-          <div className="w-48">
-            <label className="block text-xs uppercase tracking-wider text-muted font-medium mb-2">
-              Limit: {limit}
-            </label>
-            <input
-              type="range"
-              min="10"
-              max="200"
-              step="10"
-              value={limit}
-              onChange={(e) => setLimit(parseInt(e.target.value))}
-              className="w-full"
-              disabled={isRunning}
-            />
           </div>
           <button
             onClick={handleRunScrape}
