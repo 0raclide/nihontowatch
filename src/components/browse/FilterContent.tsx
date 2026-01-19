@@ -236,9 +236,6 @@ export function FilterContent({
   currency,
   onCurrencyChange,
 }: FilterContentProps) {
-  const [dealerSearch, setDealerSearch] = useState('');
-  const [dealerDropdownOpen, setDealerDropdownOpen] = useState(false);
-
   // Normalize and aggregate item types
   const normalizedItemTypes = useMemo(() => {
     const aggregated: Record<string, number> = {};
@@ -306,20 +303,6 @@ export function FilterContent({
     tosoguTypes.reduce((sum, t) => sum + t.count, 0),
     [tosoguTypes]
   );
-
-  // Filter dealers by search
-  const filteredDealers = useMemo(() => {
-    if (!dealerSearch.trim()) return facets.dealers;
-    const search = dealerSearch.toLowerCase();
-    return facets.dealers.filter(d => d.name.toLowerCase().includes(search));
-  }, [facets.dealers, dealerSearch]);
-
-  // Selected dealer names for display
-  const selectedDealerNames = useMemo(() => {
-    return facets.dealers
-      .filter(d => filters.dealers.includes(d.id))
-      .map(d => d.name);
-  }, [facets.dealers, filters.dealers]);
 
   const handleCategoryChange = useCallback((category: 'all' | 'nihonto' | 'tosogu') => {
     onFilterChange('category', category);
@@ -390,7 +373,6 @@ export function FilterContent({
     onFilterChange('historicalPeriods', []);
     onFilterChange('signatureStatuses', []);
     onFilterChange('askOnly', false);
-    setDealerSearch('');
   }, [onFilterChange]);
 
   const hasActiveFilters =
@@ -582,91 +564,25 @@ export function FilterContent({
           </div>
         </FilterSection>
 
-        {/* 4. Dealer - Fourth */}
-        <div className="py-5">
-          <h3 className="text-[13px] uppercase tracking-[0.15em] font-semibold text-ink mb-4">
-            Dealer
-          </h3>
-          <div className="relative">
-            <button
-              onClick={() => setDealerDropdownOpen(!dealerDropdownOpen)}
-              className="w-full flex items-center justify-between px-4 py-3.5 lg:py-3 bg-paper border-2 border-border rounded-lg text-left text-[15px] lg:text-[14px] text-charcoal hover:border-charcoal/50 transition-colors min-h-[52px] lg:min-h-[48px]"
-            >
-              <span className={selectedDealerNames.length > 0 ? 'text-ink font-medium' : 'text-muted'}>
-                {selectedDealerNames.length > 0
-                  ? selectedDealerNames.length === 1
-                    ? selectedDealerNames[0]
-                    : `${selectedDealerNames.length} dealers selected`
-                  : 'All dealers'}
-              </span>
-              <svg
-                className={`w-5 h-5 text-charcoal transition-transform duration-200 ${dealerDropdownOpen ? 'rotate-180' : ''}`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-
-            {dealerDropdownOpen && (
-              <div className="absolute z-20 top-full left-0 right-0 mt-2 bg-paper border-2 border-border rounded-lg shadow-xl max-h-72 overflow-hidden">
-                {/* Search */}
-                <div className="p-3 border-b border-border/50">
-                  <input
-                    type="text"
-                    value={dealerSearch}
-                    onChange={(e) => setDealerSearch(e.target.value)}
-                    placeholder="Search dealers..."
-                    className="w-full px-3 py-2.5 text-[15px] lg:text-[14px] bg-linen border-0 rounded-md text-ink placeholder:text-muted/60 focus:outline-none focus:ring-2 focus:ring-gold/50"
-                  />
-                </div>
-                {/* Dealer list */}
-                <div className="max-h-52 overflow-y-auto py-2">
-                  {filteredDealers.map((dealer) => (
-                    <label
-                      key={dealer.id}
-                      className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-hover transition-colors min-h-[48px]"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={filters.dealers.includes(dealer.id)}
-                        onChange={(e) => handleDealerChange(dealer.id, e.target.checked)}
-                        className="sr-only peer"
-                      />
-                      <div className="w-5 h-5 border-2 border-charcoal/40 peer-checked:border-gold peer-checked:bg-gold transition-colors rounded flex items-center justify-center">
-                        {filters.dealers.includes(dealer.id) && (
-                          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                          </svg>
-                        )}
-                      </div>
-                      <span className="flex-1 text-[15px] lg:text-[14px] text-charcoal">{dealer.name}</span>
-                      <span className="text-[13px] lg:text-[12px] text-muted tabular-nums">{dealer.count}</span>
-                    </label>
-                  ))}
-                  {filteredDealers.length === 0 && (
-                    <p className="px-4 py-3 text-[14px] text-muted italic">No dealers found</p>
-                  )}
-                </div>
-                {/* Clear selection */}
-                {filters.dealers.length > 0 && (
-                  <div className="p-3 border-t border-border/50">
-                    <button
-                      onClick={() => {
-                        onFilterChange('dealers', []);
-                        setDealerDropdownOpen(false);
-                      }}
-                      className="w-full text-[13px] text-gold hover:text-gold-light transition-colors py-1 font-medium"
-                    >
-                      Clear selection
-                    </button>
-                  </div>
-                )}
-              </div>
+        {/* 4. Dealer - Checkbox list like item types */}
+        <FilterSection title="Dealer" defaultOpen={false}>
+          <div className="space-y-1">
+            {facets.dealers
+              .sort((a, b) => b.count - a.count)
+              .map((dealer) => (
+                <Checkbox
+                  key={dealer.id}
+                  label={dealer.name}
+                  count={dealer.count}
+                  checked={filters.dealers.includes(dealer.id)}
+                  onChange={(checked) => handleDealerChange(dealer.id, checked)}
+                />
+              ))}
+            {facets.dealers.length === 0 && (
+              <p className="text-[14px] text-muted italic py-2">No dealers available</p>
             )}
           </div>
-        </div>
+        </FilterSection>
 
         {/* 5. Price on Request - Last, least important */}
         <div className="py-5">
