@@ -113,8 +113,33 @@ function HeaderContent() {
                   spellCheck={false}
                   placeholder="Search swords, smiths, dealers..."
                   disabled={isSearching}
-                  className="w-full pl-4 pr-12 py-2.5 bg-linen/50 border border-transparent text-[13px] text-ink placeholder:text-muted/40 focus:outline-none focus:border-gold/40 focus:bg-paper focus:shadow-[0_0_0_3px_rgba(181,142,78,0.1)] transition-all duration-200 disabled:opacity-60"
+                  onKeyDown={(e) => {
+                    // ESC key clears search
+                    if (e.key === 'Escape' && currentQuery) {
+                      e.currentTarget.value = '';
+                      router.push('/');
+                    }
+                  }}
+                  className={`w-full pl-4 ${currentQuery ? 'pr-20' : 'pr-12'} py-2.5 bg-linen/50 border border-transparent text-[13px] text-ink placeholder:text-muted/40 focus:outline-none focus:border-gold/40 focus:bg-paper focus:shadow-[0_0_0_3px_rgba(181,142,78,0.1)] transition-all duration-200 disabled:opacity-60`}
                 />
+                {/* Clear button - shows when there's a search query */}
+                {currentQuery && !isSearching && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      // Clear the input and navigate home
+                      const input = document.querySelector('header form[role="search"] input') as HTMLInputElement;
+                      if (input) input.value = '';
+                      router.push('/');
+                    }}
+                    aria-label="Clear search"
+                    className="absolute right-10 top-1/2 -translate-y-1/2 p-1.5 text-muted/40 hover:text-muted hover:bg-linen rounded transition-colors"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                )}
                 <button
                   type="submit"
                   disabled={isSearching}
@@ -131,9 +156,11 @@ function HeaderContent() {
                     </svg>
                   )}
                 </button>
-                {/* Keyboard hint */}
+                {/* Keyboard hint - show ESC when searching, Enter when not */}
                 <div className="absolute right-12 top-1/2 -translate-y-1/2 hidden sm:flex items-center gap-0.5 opacity-0 group-focus-within:opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                  <kbd className="px-1.5 py-0.5 text-[10px] font-medium text-muted/40 bg-linen/80 rounded">Enter</kbd>
+                  <kbd className="px-1.5 py-0.5 text-[10px] font-medium text-muted/40 bg-linen/80 rounded">
+                    {currentQuery ? 'Esc' : 'Enter'}
+                  </kbd>
                 </div>
               </div>
             </form>
@@ -147,16 +174,10 @@ function HeaderContent() {
                 Browse
               </Link>
               <Link
-                href="/saved-searches"
+                href="/saved"
                 className="text-[11px] uppercase tracking-[0.2em] text-muted hover:text-gold transition-colors"
               >
                 Saved
-              </Link>
-              <Link
-                href="/alerts"
-                className="text-[11px] uppercase tracking-[0.2em] text-muted hover:text-gold transition-colors"
-              >
-                Alerts
               </Link>
               <div className="h-3 w-px bg-border" />
               <ThemeSwitcher />

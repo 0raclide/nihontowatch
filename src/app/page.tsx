@@ -404,14 +404,14 @@ function HomeContent() {
         {/* Subtle divider */}
         <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent mb-4 lg:mb-8" />
 
-        {/* Mobile: Active search indicator with clear button */}
+        {/* Active search indicator with clear button - visible on all screen sizes */}
         {searchQuery && (
-          <div className="lg:hidden flex items-center gap-2 mb-3">
+          <div className="flex items-center gap-2 mb-3 lg:mb-6">
             <div className="flex items-center gap-2 px-3 py-1.5 bg-gold/10 border border-gold/20 rounded-full">
               <svg className="w-3.5 h-3.5 text-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
-              <span className="text-[12px] text-charcoal font-medium max-w-[150px] truncate">
+              <span className="text-[12px] lg:text-[13px] text-charcoal dark:text-paper font-medium max-w-[150px] lg:max-w-[300px] truncate">
                 {searchQuery}
               </span>
               <button
@@ -428,6 +428,9 @@ function HomeContent() {
                 </svg>
               </button>
             </div>
+            <span className="hidden lg:inline text-[12px] text-muted">
+              Press <kbd className="px-1.5 py-0.5 bg-linen dark:bg-charcoal/50 rounded text-[10px] font-medium">Esc</kbd> or click × to clear
+            </span>
           </div>
         )}
 
