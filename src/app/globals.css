@@ -61,6 +61,10 @@
   --hozon-bg: rgba(138, 122, 32, 0.12);
   --sage: #8FA67A;
 
+  /* New listing badge - fresh green */
+  --new-listing: #2D8A5A;
+  --new-listing-bg: rgba(45, 138, 90, 0.12);
+
   /* Alias for backwards compatibility */
   --burgundy: var(--juyo);
 
@@ -140,6 +144,10 @@ html.dark {
   --sage: #a8c990;
   --burgundy: var(--juyo);
 
+  /* New listing badge - bright for dark mode */
+  --new-listing: #50d890;
+  --new-listing-bg: rgba(80, 216, 144, 0.20);
+
   /* Shadows - softer for elegance */
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.25);
   --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.35);
@@ -214,6 +222,10 @@ html.theme-opus {
   --hozon-bg: rgba(224, 208, 72, 0.18);
   --sage: #a8c890;
   --burgundy: var(--juyo);
+
+  /* New listing badge - warm green for Opus */
+  --new-listing: #68c890;
+  --new-listing-bg: rgba(104, 200, 144, 0.20);
 
   /* Soft contemplative shadows */
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.35);
@@ -297,6 +309,10 @@ html.theme-light {
   --color-hozon-bg: var(--hozon-bg);
   --color-sage: var(--sage);
   --color-burgundy: var(--burgundy);
+
+  /* New listing badge */
+  --color-new-listing: var(--new-listing);
+  --color-new-listing-bg: var(--new-listing-bg);
 
   /* Fonts */
   --font-serif: var(--font-serif);

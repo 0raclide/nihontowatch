@@ -170,6 +170,22 @@ export const LISTING_STATUS = {
 } as const;
 
 // =============================================================================
+// NEW LISTING INDICATOR
+// =============================================================================
+
+export const NEW_LISTING = {
+  /**
+   * Number of days after first_seen_at during which a listing shows the "New this week" badge.
+   */
+  THRESHOLD_DAYS: 7,
+  /**
+   * Items discovered within this many hours of the dealer's baseline are considered
+   * part of the initial import (not genuinely new listings).
+   */
+  INITIAL_IMPORT_WINDOW_HOURS: 24,
+} as const;
+
+// =============================================================================
 // DISPLAY
 // =============================================================================
 

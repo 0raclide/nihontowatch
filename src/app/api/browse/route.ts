@@ -305,6 +305,43 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    // Get dealer baselines for "new" badge logic
+    // A dealer is "established" if their oldest listing is > 14 days old
+    // This prevents showing "NEW" on all items when a new dealer is onboarded
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let enrichedListings: any[] = listings || [];
+
+    if (listings && listings.length > 0) {
+      // Get unique dealer IDs from results
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const dealerIds = [...new Set(listings.map((l: any) => l.dealer_id as number))];
+
+      // Query earliest first_seen_at per dealer
+      const { data: dealerBaselines } = await supabase
+        .from('listings')
+        .select('dealer_id, first_seen_at')
+        .in('dealer_id', dealerIds)
+        .order('first_seen_at', { ascending: true });
+
+      // Build map of dealer_id -> earliest first_seen_at
+      const baselineMap: Record<number, string> = {};
+      if (dealerBaselines) {
+        for (const row of dealerBaselines as { dealer_id: number; first_seen_at: string }[]) {
+          // Only keep the first (earliest) entry per dealer
+          if (!baselineMap[row.dealer_id]) {
+            baselineMap[row.dealer_id] = row.first_seen_at;
+          }
+        }
+      }
+
+      // Enrich listings with dealer baseline
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      enrichedListings = listings.map((listing: any) => ({
+        ...listing,
+        dealer_earliest_seen_at: baselineMap[listing.dealer_id] || null,
+      }));
+    }
+
     // Get facet counts - computed fresh to reflect current filter state
     // Each facet is filtered by all OTHER active filters (standard faceted search pattern)
     const [typesFacet, certsFacet, dealersFacet, periodsFacet, signatureFacet] = await Promise.all([
@@ -372,7 +409,7 @@ export async function GET(request: NextRequest) {
 
     // Create response with cache headers
     const response = NextResponse.json({
-      listings: listings || [],
+      listings: enrichedListings,
       total: count || 0,
       page: safePage,
       totalPages: Math.ceil((count || 0) / params.limit!),

@@ -8,6 +8,7 @@ import { QuickViewMobileSheet } from './QuickViewMobileSheet';
 import { useQuickView } from '@/contexts/QuickViewContext';
 import { useActivityTrackerOptional } from '@/lib/tracking/ActivityTracker';
 import { usePinchZoomTracking } from '@/lib/viewport';
+import { getAllImages } from '@/lib/images';
 
 // Blur placeholder for lazy images
 const BLUR_PLACEHOLDER = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjVmNGYwIi8+PC9zdmc+';
@@ -137,7 +138,8 @@ export function QuickView() {
 
   if (!currentListing) return null;
 
-  const images = currentListing.images || [];
+  // Use getAllImages to prefer stored_images (CDN) over original dealer URLs
+  const images = getAllImages(currentListing);
   const showNavigation = listings.length > 1 && currentIndex !== -1;
   const isSold = currentListing.is_sold || currentListing.status === 'sold' || currentListing.status === 'presumed_sold';
 

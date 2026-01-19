@@ -7,6 +7,8 @@ import { useActivityOptional } from '@/components/activity/ActivityProvider';
 import { useQuickViewOptional } from '@/contexts/QuickViewContext';
 import { useViewportTrackingOptional } from '@/lib/viewport';
 import { getImageUrl } from '@/lib/images';
+import { shouldShowNewBadge } from '@/lib/newListing';
+import { useImagePreloader } from '@/hooks/useImagePreloader';
 
 interface Listing {
   id: string;
@@ -24,6 +26,7 @@ interface Listing {
   images: string[] | null;
   stored_images?: string[] | null;
   first_seen_at: string;
+  dealer_earliest_seen_at?: string | null; // Earliest listing from this dealer (for baseline check)
   status: string;
   is_available: boolean;
   is_sold: boolean;
@@ -209,6 +212,8 @@ export function ListingCard({
   const quickView = useQuickViewOptional();
   const viewportTracking = useViewportTrackingOptional();
   const cardRef = useRef<HTMLDivElement>(null);
+  const hoverTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const { preloadListing, cancelPreloads } = useImagePreloader();
 
   // Register for viewport tracking when mounted
   useEffect(() => {
@@ -254,6 +259,34 @@ export function ListingCard({
     }
   }, [activity, quickView, listing]);
 
+  // Preload QuickView images on hover (after 150ms delay)
+  const handleMouseEnter = useCallback(() => {
+    // Only preload if QuickView is available (no point otherwise)
+    if (!quickView) return;
+
+    hoverTimerRef.current = setTimeout(() => {
+      preloadListing(listing);
+    }, 150);
+  }, [quickView, preloadListing, listing]);
+
+  // Cancel preload if user moves away before delay
+  const handleMouseLeave = useCallback(() => {
+    if (hoverTimerRef.current) {
+      clearTimeout(hoverTimerRef.current);
+      hoverTimerRef.current = null;
+    }
+    cancelPreloads();
+  }, [cancelPreloads]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (hoverTimerRef.current) {
+        clearTimeout(hoverTimerRef.current);
+      }
+    };
+  }, []);
+
   return (
     <div
       ref={cardRef}
@@ -262,6 +295,8 @@ export function ListingCard({
       data-testid="listing-card"
       data-listing-id={listing.id}
       onClick={handleClick}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
@@ -332,8 +367,8 @@ export function ListingCard({
 
       {/* Content - Fixed height with flex layout for consistent card sizes */}
       <div className="p-2.5 lg:p-4 flex flex-col h-[130px] lg:h-[140px]">
-        {/* Certification badge - fixed height slot */}
-        <div className="h-[24px] lg:h-[28px]">
+        {/* Certification & New badges - fixed height slot */}
+        <div className="h-[24px] lg:h-[28px] flex items-center gap-1.5">
           {certInfo && (
             <span className={`text-[9px] lg:text-[10px] uppercase tracking-wider font-semibold px-1.5 lg:px-2 py-0.5 lg:py-1 ${
               certInfo.tier === 'tokuju'
@@ -345,6 +380,14 @@ export function ListingCard({
                 : 'bg-hozon-bg text-hozon'
             }`}>
               {certInfo.label}
+            </span>
+          )}
+          {shouldShowNewBadge(listing.first_seen_at, listing.dealer_earliest_seen_at) && (
+            <span
+              data-testid="new-listing-badge"
+              className="text-[9px] lg:text-[10px] uppercase tracking-wider font-semibold px-1.5 lg:px-2 py-0.5 lg:py-1 bg-new-listing-bg text-new-listing"
+            >
+              New this week
             </span>
           )}
         </div>

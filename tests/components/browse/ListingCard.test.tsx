@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { ListingCard } from '@/components/browse/ListingCard';
 
@@ -29,6 +29,8 @@ vi.mock('@/lib/images', () => ({
   getImageUrl: (listing: { images?: string[] | null }) => listing.images?.[0] || null,
 }));
 
+// We DON'T mock newListing - we want to test the real integration
+
 const mockListing = {
   id: '1',
   url: 'https://example.com/listing/1',
@@ -44,6 +46,7 @@ const mockListing = {
   nagasa_cm: 70.5,
   images: ['https://example.com/image1.jpg'],
   first_seen_at: '2024-01-01',
+  dealer_earliest_seen_at: '2023-01-01', // Established dealer (months ago)
   status: 'available',
   is_available: true,
   is_sold: false,
@@ -258,6 +261,167 @@ describe('ListingCard Component', () => {
 
       // 1,500,000 JPY / 150 * 0.92 = €9,200 EUR
       expect(screen.getByText('€9,200')).toBeInTheDocument();
+    });
+  });
+
+  describe('New listing badge', () => {
+    // Established dealer baseline - scraped months ago
+    const establishedDealerBaseline = '2025-06-01T12:00:00Z';
+
+    beforeEach(() => {
+      // Mock Date.now() to a fixed point for consistent "new" calculation
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2026-01-15T12:00:00Z'));
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('shows "New this week" badge for recently discovered listing (after baseline)', () => {
+      const newListing = {
+        ...mockListing,
+        first_seen_at: '2026-01-12T12:00:00Z', // 3 days ago, well after baseline
+        dealer_earliest_seen_at: establishedDealerBaseline,
+      };
+      render(<ListingCard {...defaultProps} listing={newListing} />);
+
+      const newBadge = screen.getByTestId('new-listing-badge');
+      expect(newBadge).toBeInTheDocument();
+      expect(newBadge).toHaveTextContent('New this week');
+    });
+
+    it('shows badge for listing discovered today', () => {
+      const todayListing = {
+        ...mockListing,
+        first_seen_at: '2026-01-15T08:00:00Z', // Today
+        dealer_earliest_seen_at: establishedDealerBaseline,
+      };
+      render(<ListingCard {...defaultProps} listing={todayListing} />);
+
+      expect(screen.getByTestId('new-listing-badge')).toBeInTheDocument();
+    });
+
+    it('shows badge for listing at threshold boundary (7 days)', () => {
+      const boundaryListing = {
+        ...mockListing,
+        first_seen_at: '2026-01-08T12:00:00Z', // Exactly 7 days ago
+        dealer_earliest_seen_at: establishedDealerBaseline,
+      };
+      render(<ListingCard {...defaultProps} listing={boundaryListing} />);
+
+      expect(screen.getByTestId('new-listing-badge')).toBeInTheDocument();
+    });
+
+    it('does NOT show badge for listing older than 7 days', () => {
+      const oldListing = {
+        ...mockListing,
+        first_seen_at: '2026-01-07T12:00:00Z', // 8 days ago
+        dealer_earliest_seen_at: establishedDealerBaseline,
+      };
+      render(<ListingCard {...defaultProps} listing={oldListing} />);
+
+      expect(screen.queryByTestId('new-listing-badge')).not.toBeInTheDocument();
+    });
+
+    it('does NOT show badge for listing from initial import (within 24h of baseline)', () => {
+      // When a dealer is first scraped, all their items get first_seen_at within 24h of baseline
+      const initialImportListing = {
+        ...mockListing,
+        first_seen_at: '2025-06-01T18:00:00Z', // 6 hours after baseline
+        dealer_earliest_seen_at: establishedDealerBaseline,
+      };
+      render(<ListingCard {...defaultProps} listing={initialImportListing} />);
+
+      // No badge because this was part of initial import
+      expect(screen.queryByTestId('new-listing-badge')).not.toBeInTheDocument();
+    });
+
+    it('does NOT show badge for listing exactly at baseline', () => {
+      const atBaselineListing = {
+        ...mockListing,
+        first_seen_at: establishedDealerBaseline, // Same as baseline
+        dealer_earliest_seen_at: establishedDealerBaseline,
+      };
+      render(<ListingCard {...defaultProps} listing={atBaselineListing} />);
+
+      expect(screen.queryByTestId('new-listing-badge')).not.toBeInTheDocument();
+    });
+
+    it('does NOT show badge when dealer_earliest_seen_at is null', () => {
+      const listingNoBaseline = {
+        ...mockListing,
+        first_seen_at: '2026-01-12T12:00:00Z', // 3 days ago
+        dealer_earliest_seen_at: null,
+      };
+      render(<ListingCard {...defaultProps} listing={listingNoBaseline} />);
+
+      expect(screen.queryByTestId('new-listing-badge')).not.toBeInTheDocument();
+    });
+
+    it('shows badge for newly onboarded dealer ONLY for items added AFTER 24h window', () => {
+      // Dealer onboarded 3 days ago
+      const recentDealerBaseline = '2026-01-12T10:00:00Z';
+
+      // New item added today (outside 24h initial import window)
+      const genuinelyNewItem = {
+        ...mockListing,
+        first_seen_at: '2026-01-15T08:00:00Z', // Today
+        dealer_earliest_seen_at: recentDealerBaseline,
+      };
+      render(<ListingCard {...defaultProps} listing={genuinelyNewItem} />);
+
+      // Should show badge because it's after the 24h import window
+      expect(screen.getByTestId('new-listing-badge')).toBeInTheDocument();
+    });
+
+    it('shows both certification and "New this week" badges together', () => {
+      const certifiedNewListing = {
+        ...mockListing,
+        cert_type: 'Juyo',
+        first_seen_at: '2026-01-12T12:00:00Z', // 3 days ago
+        dealer_earliest_seen_at: establishedDealerBaseline,
+      };
+      render(<ListingCard {...defaultProps} listing={certifiedNewListing} />);
+
+      // Both badges should be visible
+      expect(screen.getByText('Jūyō')).toBeInTheDocument();
+      expect(screen.getByTestId('new-listing-badge')).toBeInTheDocument();
+    });
+
+    it('shows only "New this week" badge when no certification', () => {
+      const noCertNewListing = {
+        ...mockListing,
+        cert_type: null,
+        first_seen_at: '2026-01-12T12:00:00Z', // 3 days ago
+        dealer_earliest_seen_at: establishedDealerBaseline,
+      };
+      render(<ListingCard {...defaultProps} listing={noCertNewListing} />);
+
+      expect(screen.queryByText('Jūyō')).not.toBeInTheDocument();
+      expect(screen.getByTestId('new-listing-badge')).toBeInTheDocument();
+    });
+
+    it('"New this week" badge has correct styling classes', () => {
+      const newListing = {
+        ...mockListing,
+        first_seen_at: '2026-01-12T12:00:00Z',
+        dealer_earliest_seen_at: establishedDealerBaseline,
+      };
+      render(<ListingCard {...defaultProps} listing={newListing} />);
+
+      const newBadge = screen.getByTestId('new-listing-badge');
+      expect(newBadge).toHaveClass('bg-new-listing-bg');
+      expect(newBadge).toHaveClass('text-new-listing');
+      expect(newBadge).toHaveClass('uppercase');
+    });
+
+    it('badge slot container uses flex layout for multiple badges', () => {
+      render(<ListingCard {...defaultProps} />);
+
+      // Badge container should have flex class for horizontal layout
+      const badgeContainer = document.querySelector('.flex.items-center.gap-1\\.5');
+      expect(badgeContainer).toBeInTheDocument();
     });
   });
 });

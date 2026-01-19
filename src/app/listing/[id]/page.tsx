@@ -12,11 +12,13 @@ import { useAlerts } from '@/hooks/useAlerts';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { createClient } from '@/lib/supabase/client';
 import { getAllImages } from '@/lib/images';
+import { shouldShowNewBadge } from '@/lib/newListing';
 import type { Listing, CreateAlertInput } from '@/types';
 
 // Extended listing type for this page
 interface ListingDetail extends Listing {
   stored_images?: string[] | null;
+  dealer_earliest_seen_at?: string | null; // For "New this week" badge
   dealers: {
     id: number;
     name: string;
@@ -102,7 +104,26 @@ export default function ListingDetailPage() {
           throw new Error('Listing not found');
         }
 
-        setListing(data as ListingDetail);
+        // Get dealer baseline for "New this week" badge
+        let dealer_earliest_seen_at: string | null = null;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const listingData = data as any;
+        if (listingData.dealer_id) {
+          const { data: baselineData } = await supabase
+            .from('listings')
+            .select('first_seen_at')
+            .eq('dealer_id', listingData.dealer_id)
+            .order('first_seen_at', { ascending: true })
+            .limit(1)
+            .single();
+
+          if (baselineData) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            dealer_earliest_seen_at = (baselineData as any).first_seen_at;
+          }
+        }
+
+        setListing({ ...listingData, dealer_earliest_seen_at } as ListingDetail);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load listing');
       } finally {
@@ -265,6 +286,11 @@ export default function ListingDetailPage() {
                     : 'bg-hozon-bg text-hozon'
                 }`}>
                   {certInfo.label}
+                </span>
+              )}
+              {shouldShowNewBadge(listing.first_seen_at, listing.dealer_earliest_seen_at) && (
+                <span className="text-[11px] uppercase tracking-wider font-medium px-2.5 py-1 rounded bg-new-listing-bg text-new-listing">
+                  New this week
                 </span>
               )}
               {isSold && (

@@ -13,6 +13,7 @@ import {
 import { usePathname } from 'next/navigation';
 import type { Listing } from '@/types';
 import { useSignupPressureOptional } from './SignupPressureContext';
+import { getAllImages } from '@/lib/images';
 
 // ============================================================================
 // Types
@@ -252,6 +253,30 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
 
   // NOTE: Body scroll locking is handled by useBodyScrollLock in QuickViewModal
   // Don't duplicate it here - that causes race conditions and scroll jump issues
+
+  // Prefetch images for adjacent listings when navigating
+  // This makes J/K navigation feel instant
+  useEffect(() => {
+    if (!isOpen || currentIndex === -1 || listings.length === 0) return;
+
+    const preloadImages = (listing: Listing, count: number = 2) => {
+      const images = getAllImages(listing);
+      images.slice(0, count).forEach((url) => {
+        const img = new window.Image();
+        img.src = url;
+      });
+    };
+
+    // Preload previous listing
+    if (currentIndex > 0) {
+      preloadImages(listings[currentIndex - 1]);
+    }
+
+    // Preload next listing
+    if (currentIndex < listings.length - 1) {
+      preloadImages(listings[currentIndex + 1]);
+    }
+  }, [isOpen, currentIndex, listings]);
 
   const hasNext = listings.length > 0 && currentIndex !== -1;
   const hasPrevious = listings.length > 0 && currentIndex !== -1;
