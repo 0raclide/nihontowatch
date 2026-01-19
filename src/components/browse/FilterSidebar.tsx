@@ -28,12 +28,12 @@ export function FilterSidebar({ facets, filters, onFilterChange }: FilterSidebar
   }, []);
 
   return (
-    <aside className="hidden lg:block w-56 flex-shrink-0">
+    <aside className="hidden lg:block w-60 flex-shrink-0">
       <div className="sticky top-20">
         <div
           ref={scrollRef}
           onWheel={handleWheel}
-          className="max-h-[calc(100vh-6rem)] overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent" style={{ scrollbarGutter: 'stable' }}
+          className="max-h-[calc(100vh-6rem)] overflow-y-auto overflow-x-hidden overscroll-contain scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent pr-5"
         >
           <FilterContent
             facets={facets}

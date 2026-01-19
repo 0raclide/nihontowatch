@@ -100,8 +100,8 @@ export function Drawer({ isOpen, onClose, children, title }: DrawerProps) {
           </div>
         )}
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto overscroll-contain" style={{ scrollbarGutter: 'stable' }}>
+        {/* Content - pr-2 provides fallback spacing for scrollbar in browsers without scrollbar-gutter support */}
+        <div className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain pr-2">
           {children}
         </div>
       </div>

@@ -489,7 +489,7 @@ export function FilterContent({
           <h3 className="text-[13px] uppercase tracking-[0.15em] font-semibold text-ink mb-4">
             Category
           </h3>
-          <div className="flex gap-2">
+          <div className="flex gap-2 lg:mr-2">
             {[
               { key: 'all', label: 'All' },
               { key: 'nihonto', label: 'Nihonto' },
