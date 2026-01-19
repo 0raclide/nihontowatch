@@ -7,6 +7,7 @@ import { useLayoutEffect, useRef } from 'react';
 declare global {
   interface Window {
     __scrollLockActive?: boolean;
+    __savedScrollPosition?: number;
   }
 }
 
@@ -15,6 +16,23 @@ declare global {
  */
 export function isScrollLockActive(): boolean {
   return typeof window !== 'undefined' && window.__scrollLockActive === true;
+}
+
+/**
+ * Capture scroll position globally before any state changes.
+ * Call this on mousedown for reliable position capture.
+ */
+export function captureScrollPosition(): void {
+  if (typeof window !== 'undefined' && !window.__scrollLockActive) {
+    window.__savedScrollPosition = window.scrollY;
+  }
+}
+
+/**
+ * Get the captured scroll position.
+ */
+export function getCapturedScrollPosition(): number {
+  return typeof window !== 'undefined' ? (window.__savedScrollPosition ?? 0) : 0;
 }
 
 /**
@@ -36,8 +54,11 @@ export function useBodyScrollLock(isLocked: boolean, savedScrollPosition?: numbe
   useLayoutEffect(() => {
     if (!isLocked) return;
 
-    // Use provided scroll position if available, otherwise capture current
-    const scrollY = savedScrollPosition ?? window.scrollY;
+    // Priority for scroll position:
+    // 1. Provided savedScrollPosition (from context/prop)
+    // 2. Globally captured position (set on mousedown)
+    // 3. Current window.scrollY (may be wrong if overflow already applied)
+    const scrollY = savedScrollPosition || window.__savedScrollPosition || window.scrollY;
     scrollPositionRef.current = scrollY;
 
     // Set global flag FIRST to tell scroll handlers to ignore events
@@ -61,6 +82,9 @@ export function useBodyScrollLock(isLocked: boolean, savedScrollPosition?: numbe
 
       // Restore scroll position
       window.scrollTo(0, scrollY);
+
+      // Clear global saved position
+      window.__savedScrollPosition = undefined;
 
       // Clear global flag AFTER scroll is restored
       window.__scrollLockActive = false;

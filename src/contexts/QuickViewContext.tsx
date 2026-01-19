@@ -14,6 +14,7 @@ import { usePathname } from 'next/navigation';
 import type { Listing } from '@/types';
 import { useSignupPressureOptional } from './SignupPressureContext';
 import { getAllImages } from '@/lib/images';
+import { captureScrollPosition, getCapturedScrollPosition } from '@/hooks/useBodyScrollLock';
 
 // ============================================================================
 // Types
@@ -81,19 +82,20 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
   const isOpenRef = useRef(false);
   isOpenRef.current = isOpen;
 
-  // Capture scroll position on mousedown - but ONLY when modal is not open
+  // Capture scroll position on mousedown - uses global capture for reliability
   // This ensures we have the scroll position before any React updates or
   // browser-initiated scrolling (like scrollIntoView)
-  // We skip capture when modal is open because window.scrollY is 0 during scroll lock
   useEffect(() => {
-    const captureScrollOnMouseDown = () => {
-      // Only capture when modal is closed - when open, scrollY is 0 due to overflow:hidden
+    const handleMouseDown = () => {
+      // captureScrollPosition checks if scroll lock is active internally
+      captureScrollPosition();
+      // Also store locally for backward compatibility
       if (!isOpenRef.current) {
         mousedownScrollPosition.current = window.scrollY;
       }
     };
-    document.addEventListener('mousedown', captureScrollOnMouseDown);
-    return () => document.removeEventListener('mousedown', captureScrollOnMouseDown);
+    document.addEventListener('mousedown', handleMouseDown);
+    return () => document.removeEventListener('mousedown', handleMouseDown);
   }, []);
 
   // Find index of listing in the listings array
@@ -130,9 +132,10 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
       window.__scrollLockActive = true;
     }
 
-    // Transfer the mousedown-captured scroll position to state
-    // This ensures it's properly passed through context to useBodyScrollLock
-    setSavedScrollPosition(mousedownScrollPosition.current);
+    // Get scroll position from global capture (set on mousedown) or local ref
+    // The global capture is the most reliable as it's set synchronously on mousedown
+    const scrollPos = getCapturedScrollPosition() || mousedownScrollPosition.current || window.scrollY;
+    setSavedScrollPosition(scrollPos);
 
     setCurrentListing(listing);
     setIsOpen(true);
