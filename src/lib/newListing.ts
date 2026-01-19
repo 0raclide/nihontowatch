@@ -4,11 +4,13 @@
  * Determines if a listing should display the "New this week" badge.
  *
  * A listing shows the badge if:
- * 1. It was discovered AFTER the dealer's baseline (not part of initial import)
- * 2. It was discovered within the last 7 days
+ * 1. The dealer is "established" (baseline is at least 7 days old)
+ * 2. The listing was discovered AFTER the dealer's baseline (not part of initial import)
+ * 3. The listing was discovered within the last 7 days
  *
  * The baseline is the earliest first_seen_at for any listing from a dealer.
  * Items within 24 hours of the baseline are considered part of the initial import.
+ * Dealers need to be established for 7+ days before their new listings show badges.
  */
 
 import { NEW_LISTING } from './constants';
@@ -75,6 +77,30 @@ export function getNewListingLabel(firstSeenAt: string | null | undefined): stri
 }
 
 /**
+ * Checks if a dealer is "established" - i.e., has been in our system long enough
+ * to reliably distinguish new listings from initial import.
+ *
+ * A dealer is established if their baseline (earliest listing) is >= 7 days old.
+ * New dealers don't show badges until they've been in the system for a week.
+ *
+ * @param dealerEarliestSeenAt - The earliest first_seen_at for any listing from this dealer
+ * @param thresholdDays - Days required for dealer to be "established" (default 7)
+ * @returns true if the dealer is established
+ */
+export function isDealerEstablished(
+  dealerEarliestSeenAt: string | null | undefined,
+  thresholdDays: number = NEW_LISTING.THRESHOLD_DAYS
+): boolean {
+  if (!dealerEarliestSeenAt) return false; // No data = not established
+
+  const baselineDate = new Date(dealerEarliestSeenAt);
+  if (isNaN(baselineDate.getTime())) return false;
+
+  const daysSinceBaseline = (Date.now() - baselineDate.getTime()) / (1000 * 60 * 60 * 24);
+  return daysSinceBaseline >= thresholdDays;
+}
+
+/**
  * Checks if a listing was part of the initial import batch for a dealer.
  * Items discovered within 24 hours of the dealer's baseline are considered
  * part of the initial import.
@@ -106,8 +132,9 @@ export function isPartOfInitialImport(
  * Full check for whether a listing should show the "New this week" badge.
  *
  * Requirements:
- * 1. Listing was discovered AFTER the dealer's initial import window
- * 2. Listing was discovered within the last 7 days
+ * 1. Dealer must be "established" (baseline >= 7 days old)
+ * 2. Listing was discovered AFTER the dealer's initial import window
+ * 3. Listing was discovered within the last 7 days
  *
  * @param listingFirstSeenAt - When this listing was first scraped
  * @param dealerEarliestSeenAt - The earliest first_seen_at for any listing from this dealer
@@ -119,6 +146,12 @@ export function shouldShowNewBadge(
   dealerEarliestSeenAt: string | null | undefined,
   thresholdDays: number = NEW_LISTING.THRESHOLD_DAYS
 ): boolean {
+  // Dealer must be established (in system for at least 7 days)
+  // This prevents flooding badges for newly onboarded dealers
+  if (!isDealerEstablished(dealerEarliestSeenAt, thresholdDays)) {
+    return false;
+  }
+
   // Must not be part of initial import (must be genuinely new)
   if (isPartOfInitialImport(listingFirstSeenAt, dealerEarliestSeenAt)) {
     return false;
