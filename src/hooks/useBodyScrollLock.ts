@@ -95,6 +95,10 @@ export function useBodyScrollLock(isLocked: boolean) {
     const scrollY = window.__stableScrollPosition ?? window.scrollY;
     scrollPositionRef.current = scrollY;
 
+    // Calculate scrollbar width BEFORE applying position:fixed
+    // This is the difference between window width and document width
+    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+
     // Set global flag FIRST to tell scroll handlers to ignore events
     window.__scrollLockActive = true;
 
@@ -107,6 +111,7 @@ export function useBodyScrollLock(isLocked: boolean) {
     const originalRight = body.style.right;
     const originalOverflow = body.style.overflow;
     const originalWidth = body.style.width;
+    const originalPaddingRight = body.style.paddingRight;
 
     // Apply scroll lock using position:fixed
     // The negative top offset preserves visual position
@@ -117,6 +122,13 @@ export function useBodyScrollLock(isLocked: boolean) {
     body.style.overflow = 'hidden';
     body.style.width = '100%';
 
+    // Add padding-right to compensate for scrollbar disappearing
+    // This prevents layout shift when the scrollbar is removed
+    if (scrollbarWidth > 0) {
+      const currentPadding = parseInt(getComputedStyle(body).paddingRight, 10) || 0;
+      body.style.paddingRight = `${currentPadding + scrollbarWidth}px`;
+    }
+
     return () => {
       // Restore original styles
       body.style.position = originalPosition;
@@ -125,6 +137,7 @@ export function useBodyScrollLock(isLocked: boolean) {
       body.style.right = originalRight;
       body.style.overflow = originalOverflow;
       body.style.width = originalWidth;
+      body.style.paddingRight = originalPaddingRight;
 
       // Restore scroll position BEFORE clearing the flag
       // This ensures virtual scroll doesn't see a scrollY of 0
