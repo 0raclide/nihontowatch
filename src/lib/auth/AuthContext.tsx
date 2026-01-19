@@ -205,11 +205,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
         if (session?.user) {
           console.log('[Auth] INITIAL_SESSION with user, fetching profile...');
-          lastSignInTimeRef.current = Date.now();
           const profile = await fetchProfileWithTimeout(supabase, session.user.id);
           // Double-check we haven't been initialized while fetching
           if (isMounted && !hasInitializedRef.current) {
             hasInitializedRef.current = true;
+            lastSignInTimeRef.current = Date.now(); // Set AFTER successful init
             const newState = {
               user: session.user,
               profile,
@@ -253,10 +253,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
 
         console.log('[Auth] SIGNED_IN event, fetching profile...');
-        lastSignInTimeRef.current = Date.now();
         const profile = await fetchProfileWithTimeout(supabase, session.user.id);
         if (isMounted) {
           hasInitializedRef.current = true;
+          lastSignInTimeRef.current = Date.now(); // Set AFTER successful init
           const newState = {
             user: session.user,
             profile,
@@ -269,16 +269,22 @@ export function AuthProvider({ children }: AuthProviderProps) {
           console.log('[Auth] State updated from SIGNED_IN event');
         }
       } else if (event === 'SIGNED_OUT') {
-        // Ignore spurious SIGNED_OUT events that happen within 5 seconds of sign-in
-        // This can happen due to race conditions with session validation
+        // Ignore SIGNED_OUT if we already have a valid session initialized
+        // This handles race conditions where session validation triggers spurious sign-outs
         const timeSinceSignIn = Date.now() - lastSignInTimeRef.current;
-        if (timeSinceSignIn < 5000 && lastSignInTimeRef.current > 0) {
-          console.log('[Auth] Ignoring spurious SIGNED_OUT event (within 5s of sign-in)');
+        console.log('[Auth] SIGNED_OUT event, timeSinceSignIn:', timeSinceSignIn, 'hasInitialized:', hasInitializedRef.current);
+
+        // If we've initialized with a user session within the last 30 seconds, ignore this
+        // The profile fetch can take up to 10s to timeout, so we need a longer window
+        if (timeSinceSignIn < 30000 && lastSignInTimeRef.current > 0 && hasInitializedRef.current) {
+          console.log('[Auth] Ignoring spurious SIGNED_OUT event (within 30s of sign-in with active session)');
           return;
         }
 
         if (isMounted) {
-          console.log('[Auth] Processing SIGNED_OUT event');
+          console.log('[Auth] Processing SIGNED_OUT event - clearing state');
+          hasInitializedRef.current = false;
+          lastSignInTimeRef.current = 0;
           setState({
             user: null,
             profile: null,
