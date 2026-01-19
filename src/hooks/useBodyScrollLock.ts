@@ -3,12 +3,12 @@
 import { useEffect, useRef } from 'react';
 
 /**
- * Locks body scroll using overflow:hidden approach.
+ * Locks body scroll using position:fixed technique.
  *
  * This approach:
- * - Uses overflow:hidden on html/body to prevent scrolling
- * - Does NOT use position:fixed (which can interfere with virtual scroll)
- * - Captures scroll position and restores on unlock
+ * - Uses position:fixed on body with negative top offset
+ * - Maintains visual scroll position during lock (no jump)
+ * - Restores exact scroll position on unlock
  *
  * @param isLocked - Whether scroll should be locked
  * @param savedScrollPosition - Optional: pre-captured scroll position to restore
@@ -25,22 +25,30 @@ export function useBodyScrollLock(isLocked: boolean, savedScrollPosition?: numbe
     const scrollY = savedScrollPosition ?? window.scrollY;
     scrollPositionRef.current = scrollY;
 
-    const html = document.documentElement;
     const body = document.body;
 
     // Store original styles
-    const originalHtmlOverflow = html.style.overflow;
-    const originalBodyOverflow = body.style.overflow;
+    const originalPosition = body.style.position;
+    const originalTop = body.style.top;
+    const originalLeft = body.style.left;
+    const originalRight = body.style.right;
+    const originalOverflow = body.style.overflow;
 
-    // Apply scroll lock using overflow:hidden
-    // Keep document at current scroll position visually
-    html.style.overflow = 'hidden';
+    // Apply scroll lock using position:fixed
+    // The negative top offset keeps the page visually in the same position
+    body.style.position = 'fixed';
+    body.style.top = `-${scrollY}px`;
+    body.style.left = '0';
+    body.style.right = '0';
     body.style.overflow = 'hidden';
 
     return () => {
       // Restore original styles
-      html.style.overflow = originalHtmlOverflow;
-      body.style.overflow = originalBodyOverflow;
+      body.style.position = originalPosition;
+      body.style.top = originalTop;
+      body.style.left = originalLeft;
+      body.style.right = originalRight;
+      body.style.overflow = originalOverflow;
 
       // Restore scroll position
       window.scrollTo(0, scrollY);
