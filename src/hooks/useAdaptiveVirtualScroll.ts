@@ -28,13 +28,24 @@ function getColumnCount(width: number): number {
 
 /**
  * Estimate row height based on column count.
- * Mobile (1-col) has taller cards, desktop has more compact cards.
+ * Includes card height + gap. Values measured from actual rendered cards.
+ *
+ * Measurements (card height + gap):
+ * - 1 column (mobile): 425px + 12px gap = 437px
+ * - 2 columns (sm): 390px + 16px gap = 406px
+ * - 3 columns (lg): 354px + 16px gap = 370px
+ * - 4 columns (xl): 356px + 16px gap = 372px
+ * - 5 columns (2xl): 358px + 16px gap = 374px
  */
 function getRowHeight(columns: number): number {
-  // These match the approximate rendered heights of ListingCard
-  // 1 column (mobile): larger cards ~360px
-  // 2+ columns: more compact ~310px
-  return columns === 1 ? 360 : 310;
+  switch (columns) {
+    case 1: return 437;
+    case 2: return 406;
+    case 3: return 370;
+    case 4: return 372;
+    case 5: return 374;
+    default: return 372; // Fallback to most common
+  }
 }
 
 interface UseAdaptiveVirtualScrollOptions<T> {
