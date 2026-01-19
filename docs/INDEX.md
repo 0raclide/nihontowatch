@@ -19,6 +19,16 @@
 | [OPTIMIZATION.md](./OPTIMIZATION.md) | Performance optimization, image loading, caching strategies |
 | [TESTING.md](./TESTING.md) | Test suite docs, concordance tests, CI/CD integration |
 
+## Postmortems
+
+| Document | Date | Issue |
+|----------|------|-------|
+| [POSTMORTEM_TRAILING_SLASH_DUPLICATES.md](./POSTMORTEM_TRAILING_SLASH_DUPLICATES.md) | 2026-01-19 | Duplicate listings from URL trailing slash variants |
+| [POSTMORTEM_SEARCH_DEBUG.md](./POSTMORTEM_SEARCH_DEBUG.md) | - | Search functionality debugging |
+| [POSTMORTEM_NAVIGATION_CRASH.md](./POSTMORTEM_NAVIGATION_CRASH.md) | - | Navigation crash issue |
+| [AUTH_SYSTEM_POSTMORTEM.md](./AUTH_SYSTEM_POSTMORTEM.md) | - | Auth system issues |
+| [OTP_DEBUG_POSTMORTEM.md](./OTP_DEBUG_POSTMORTEM.md) | - | OTP verification issues |
+
 ---
 
 ## Related Projects
