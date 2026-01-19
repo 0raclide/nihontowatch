@@ -246,9 +246,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
           return;
         }
 
-        // Only process if not already initialized (avoid duplicate processing)
-        if (hasInitializedRef.current) {
-          console.log('[Auth] Already initialized, skipping SIGNED_IN');
+        // Only skip if we already initialized WITH A USER (avoid duplicate on initial load)
+        // But DO process if we initialized with no user (user just signed in fresh)
+        // lastSignInTimeRef > 0 means we've successfully set up a user session before
+        if (hasInitializedRef.current && lastSignInTimeRef.current > 0) {
+          console.log('[Auth] Already initialized with a user, skipping duplicate SIGNED_IN');
           return;
         }
 
