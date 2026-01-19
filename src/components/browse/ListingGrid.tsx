@@ -144,7 +144,7 @@ export function ListingGrid({
         totalPages={totalPages}
         onPageChange={onPageChange}
         isLoadingMore={isLoadingMore}
-        hasMore={page < totalPages}
+        hasMore={listings.length < total}
         onLoadMore={onLoadMore}
       />
     </ViewportTrackingProvider>

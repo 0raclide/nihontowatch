@@ -13,6 +13,21 @@ export {
   expandSearchAliases,
 } from './textNormalization';
 
+// Full-Text Search query builder
+export {
+  buildFTSQuery,
+  buildPhraseQuery,
+  buildTermsQuery,
+  escapeForTsquery,
+  extractPhrases,
+  isValidTsquery,
+} from './ftsQueryBuilder';
+
+export type {
+  FTSQuery,
+  FTSQueryOptions,
+} from './ftsQueryBuilder';
+
 // Numeric filter parsing
 export {
   parseNumericFilters,

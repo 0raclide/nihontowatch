@@ -264,19 +264,22 @@ describe('ListingGrid Component', () => {
     });
 
     it('shows end of results message when all items loaded (with enough items)', () => {
-      // End message only shows when listings.length >= 30
+      // End message only shows when listings.length >= 30 and listings.length >= total
       const manyListings = Array.from({ length: 50 }, (_, i) => ({
         ...mockListings[0],
         id: String(i + 1),
         title: `Listing ${i + 1}`,
       }));
 
-      render(<ListingGrid {...defaultProps} listings={manyListings} infiniteScroll={true} page={1} totalPages={1} />);
+      // hasMore is now based on listings.length < total, so set total=50 to match listings
+      render(<ListingGrid {...defaultProps} listings={manyListings} total={50} infiniteScroll={true} page={1} totalPages={1} />);
 
       expect(screen.getByText(/You've seen all/)).toBeInTheDocument();
     });
 
     it('does not show end message when more items available', () => {
+      // hasMore is now based on listings.length < total
+      // With 2 listings (from mockListings) and total=100, hasMore is true
       render(<ListingGrid {...defaultProps} infiniteScroll={true} page={1} totalPages={5} />);
 
       expect(screen.queryByText(/You've seen all/)).not.toBeInTheDocument();

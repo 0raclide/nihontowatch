@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { normalizeSearchText, expandSearchAliases } from '@/lib/search';
 import { parseNumericFilters } from '@/lib/search/numericFilters';
 import { parseSemanticQuery } from '@/lib/search/semanticQueryParser';
+import { buildFTSQuery } from '@/lib/search/ftsQueryBuilder';
 import { CACHE, PAGINATION, LISTING_FILTERS } from '@/lib/constants';
 
 // Facets are computed fresh for each request to reflect current filters
@@ -22,6 +23,8 @@ interface BrowseParams {
   sort?: string;
   page?: number;
   limit?: number;
+  /** Explicit offset for pagination - takes precedence over page-based calculation */
+  offset?: number;
 }
 
 // Item type categories for filtering
@@ -48,6 +51,10 @@ function parseParams(searchParams: URLSearchParams): BrowseParams {
   const signatureStatusesRaw = searchParams.get('sig');
   const categoryRaw = searchParams.get('cat') as 'all' | 'nihonto' | 'tosogu' | null;
 
+  // Parse offset if provided (explicit offset takes precedence over page-based calculation)
+  const offsetRaw = searchParams.get('offset');
+  const explicitOffset = offsetRaw ? Number(offsetRaw) : undefined;
+
   return {
     tab: (searchParams.get('tab') as 'available' | 'sold') || 'available',
     category: categoryRaw || 'all',
@@ -62,6 +69,7 @@ function parseParams(searchParams: URLSearchParams): BrowseParams {
     sort: searchParams.get('sort') || 'recent',
     page: Number(searchParams.get('page')) || 1,
     limit: Math.min(Number(searchParams.get('limit')) || PAGINATION.DEFAULT_PAGE_SIZE, PAGINATION.MAX_PAGE_SIZE),
+    offset: explicitOffset,
   };
 }
 
@@ -97,7 +105,11 @@ export async function GET(request: NextRequest) {
 
     // Ensure page is reasonable
     const safePage = Math.max(1, Math.min(params.page || 1, 1000));
-    const offset = (safePage - 1) * params.limit!;
+    // Use explicit offset if provided, otherwise calculate from page
+    // Explicit offset is needed for infinite scroll where page sizes vary
+    const offset = params.offset !== undefined
+      ? Math.max(0, params.offset)
+      : (safePage - 1) * params.limit!;
     const statusFilter = params.tab === 'available' ? STATUS_AVAILABLE : STATUS_SOLD;
 
     // Build query
@@ -236,34 +248,27 @@ export async function GET(request: NextRequest) {
       }
 
       // Step 3: Text search on remaining words (artisan names, provinces, etc.)
-      // These are terms that weren't recognized as semantic filters
-      const searchFields = [
-        'title',
-        'description',
-        // Attribution
-        'smith',
-        'tosogu_maker',
-        'school',
-        'tosogu_school',
-        'province',
-        'era',
-        'mei_type',
-        // Tosogu-specific
-        'tosogu_material',
-      ];
+      // Uses PostgreSQL Full-Text Search with word boundary matching
+      // This prevents substring pollution (e.g., "rai" matching "grained")
+      if (textWords.length > 0) {
+        // Expand all words with aliases and normalize
+        const expandedTerms = textWords
+          .flatMap(word => expandSearchAliases(word))
+          .map(normalizeSearchText)
+          .filter(term => term.length >= 2);
 
-      for (const word of textWords) {
-        // Expand word to include aliases (e.g., "bizen" -> ["bizen", "bishu"])
-        const expandedTerms = expandSearchAliases(word).map(normalizeSearchText);
+        if (expandedTerms.length > 0) {
+          // Build FTS query with prefix matching for partial word support
+          const ftsQuery = buildFTSQuery(expandedTerms.join(' '), { prefixMatch: true });
 
-        // Build OR conditions: each expanded term can match in any field
-        const conditions = expandedTerms.flatMap(term =>
-          searchFields.map(field => `${field}.ilike.%${term}%`)
-        );
-
-        // Each word (with its aliases) must match somewhere
-        if (conditions.length > 0) {
-          query = query.or(conditions.join(','));
+          if (!ftsQuery.isEmpty && ftsQuery.tsquery) {
+            // Use PostgreSQL full-text search on the pre-computed search_vector column
+            // This uses the GIN index for fast lookups with proper word boundary matching
+            query = query.textSearch('search_vector', ftsQuery.tsquery, {
+              config: 'simple',  // 'simple' config for Japanese romanization (no stemming)
+              type: 'plain',     // plain mode for prefix matching support
+            });
+          }
         }
       }
     }

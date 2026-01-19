@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { isNewListing, daysSince, getNewListingLabel, isPartOfInitialImport, shouldShowNewBadge } from '@/lib/newListing';
+import { isNewListing, daysSince, getNewListingLabel, isPartOfInitialImport, shouldShowNewBadge, isDealerEstablished } from '@/lib/newListing';
 import { NEW_LISTING } from '@/lib/constants';
 
 describe('daysSince', () => {
@@ -327,6 +327,91 @@ describe('isPartOfInitialImport', () => {
   });
 });
 
+describe('isDealerEstablished', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-01-15T12:00:00Z'));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  describe('established dealers (7+ days)', () => {
+    it('returns true for dealer with baseline 7 days ago', () => {
+      const baseline = '2026-01-08T12:00:00Z'; // Exactly 7 days ago
+      expect(isDealerEstablished(baseline)).toBe(true);
+    });
+
+    it('returns true for dealer with baseline 14 days ago', () => {
+      const baseline = '2026-01-01T12:00:00Z'; // 14 days ago
+      expect(isDealerEstablished(baseline)).toBe(true);
+    });
+
+    it('returns true for dealer with baseline 30 days ago', () => {
+      const baseline = '2025-12-16T12:00:00Z'; // 30 days ago
+      expect(isDealerEstablished(baseline)).toBe(true);
+    });
+
+    it('returns true for dealer with baseline months ago', () => {
+      const baseline = '2025-06-01T12:00:00Z'; // ~7 months ago
+      expect(isDealerEstablished(baseline)).toBe(true);
+    });
+  });
+
+  describe('new dealers (not established)', () => {
+    it('returns false for dealer with baseline 1 day ago', () => {
+      const baseline = '2026-01-14T12:00:00Z'; // 1 day ago
+      expect(isDealerEstablished(baseline)).toBe(false);
+    });
+
+    it('returns false for dealer with baseline 3 days ago', () => {
+      const baseline = '2026-01-12T12:00:00Z'; // 3 days ago
+      expect(isDealerEstablished(baseline)).toBe(false);
+    });
+
+    it('returns false for dealer with baseline 6 days ago', () => {
+      const baseline = '2026-01-09T12:00:00Z'; // 6 days ago
+      expect(isDealerEstablished(baseline)).toBe(false);
+    });
+
+    it('returns false for dealer onboarded today', () => {
+      const baseline = '2026-01-15T10:00:00Z'; // Today
+      expect(isDealerEstablished(baseline)).toBe(false);
+    });
+  });
+
+  describe('edge cases', () => {
+    it('returns false for null baseline', () => {
+      expect(isDealerEstablished(null)).toBe(false);
+    });
+
+    it('returns false for undefined baseline', () => {
+      expect(isDealerEstablished(undefined)).toBe(false);
+    });
+
+    it('returns false for invalid date string', () => {
+      expect(isDealerEstablished('not-a-date')).toBe(false);
+    });
+
+    it('returns false for empty string', () => {
+      expect(isDealerEstablished('')).toBe(false);
+    });
+  });
+
+  describe('custom threshold', () => {
+    it('respects custom 14-day threshold', () => {
+      const baseline = '2026-01-08T12:00:00Z'; // 7 days ago
+      expect(isDealerEstablished(baseline, 14)).toBe(false); // Not 14 days yet
+    });
+
+    it('respects custom 3-day threshold', () => {
+      const baseline = '2026-01-12T12:00:00Z'; // 3 days ago
+      expect(isDealerEstablished(baseline, 3)).toBe(true); // Meets 3-day threshold
+    });
+  });
+});
+
 describe('shouldShowNewBadge', () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -381,19 +466,26 @@ describe('shouldShowNewBadge', () => {
     });
   });
 
-  describe('newly onboarded dealer (recent baseline)', () => {
-    // Dealer was just added 3 days ago
+  describe('newly onboarded dealer (recent baseline - NOT established)', () => {
+    // Dealer was just added 3 days ago - NOT established yet
     const recentBaseline = '2026-01-12T12:00:00Z';
 
-    it('hides badge for all listings from newly onboarded dealer', () => {
+    it('hides badge for all listings from newly onboarded dealer (not established)', () => {
       // Listing from same day as baseline
       expect(shouldShowNewBadge('2026-01-12T14:00:00Z', recentBaseline)).toBe(false);
     });
 
-    it('shows badge only for listings discovered AFTER the 24h import window', () => {
+    it('hides badge even for listings after 24h window (dealer not established)', () => {
       // Listing 2 days after the recent baseline (outside 24h window)
-      const listing = '2026-01-14T14:00:00Z'; // ~2 days after baseline, 1 day ago
-      expect(shouldShowNewBadge(listing, recentBaseline)).toBe(true);
+      // But dealer is only 3 days old, not 7+ days, so NO badge
+      const listing = '2026-01-14T14:00:00Z';
+      expect(shouldShowNewBadge(listing, recentBaseline)).toBe(false);
+    });
+
+    it('hides badge for all new listings until dealer is established', () => {
+      // Even a listing from today won't show badge because dealer is too new
+      const listing = '2026-01-15T10:00:00Z';
+      expect(shouldShowNewBadge(listing, recentBaseline)).toBe(false);
     });
   });
 
@@ -420,7 +512,7 @@ describe('shouldShowNewBadge', () => {
 
   describe('real-world scenarios', () => {
     it('scenario: established dealer adds new inventory', () => {
-      // Dealer has been in our system for months
+      // Dealer has been in our system for months (established)
       const baseline = '2025-10-01T12:00:00Z';
       // New sword added 2 days ago
       const newSword = '2026-01-13T09:00:00Z';
@@ -428,27 +520,58 @@ describe('shouldShowNewBadge', () => {
     });
 
     it('scenario: new dealer just onboarded with existing inventory', () => {
-      // Dealer added yesterday, we scraped all their existing items
+      // Dealer added yesterday (NOT established), we scraped all their existing items
       const baseline = '2026-01-14T10:00:00Z';
       // All their items have first_seen_at within the import window
       const existingItem = '2026-01-14T14:00:00Z';
+      // No badge: dealer not established (only 1 day old)
       expect(shouldShowNewBadge(existingItem, baseline)).toBe(false);
     });
 
-    it('scenario: new dealer gets fresh inventory after onboarding', () => {
-      // Dealer added 3 days ago
+    it('scenario: new dealer gets fresh inventory after onboarding (dealer not established yet)', () => {
+      // Dealer added 3 days ago (NOT established - needs 7+ days)
       const baseline = '2026-01-12T10:00:00Z';
       // They just got new inventory today (outside 24h window)
       const freshItem = '2026-01-15T08:00:00Z';
+      // No badge: dealer is only 3 days old, not established yet
+      expect(shouldShowNewBadge(freshItem, baseline)).toBe(false);
+    });
+
+    it('scenario: established dealer gets fresh inventory', () => {
+      // Dealer added 10 days ago (established)
+      const baseline = '2026-01-05T10:00:00Z';
+      // They just got new inventory today (outside 24h window)
+      const freshItem = '2026-01-15T08:00:00Z';
+      // Shows badge: dealer is established AND listing is new AND outside import window
       expect(shouldShowNewBadge(freshItem, baseline)).toBe(true);
     });
 
     it('scenario: URL reuse detected (item changed)', () => {
       // When change detection finds a new item at an old URL,
       // the first_seen_at is reset to the discovery time
-      const baseline = '2025-06-01T12:00:00Z';
+      const baseline = '2025-06-01T12:00:00Z'; // Dealer established long ago
       const resetDate = '2026-01-14T08:00:00Z';
       expect(shouldShowNewBadge(resetDate, baseline)).toBe(true);
+    });
+
+    it('scenario: World Seiyudo bug - new dealer flooding badges', () => {
+      // This was the actual bug: World Seiyudo had baseline 3 days ago
+      // and ALL their listings after 24h were showing badges
+      const worldSeiyudoBaseline = '2026-01-12T12:00:00Z'; // 3 days ago
+      const listing = '2026-01-14T10:00:00Z'; // 1 day ago, outside 24h window
+
+      // Old (buggy) behavior would have returned true
+      // New (correct) behavior returns false - dealer not established
+      expect(shouldShowNewBadge(listing, worldSeiyudoBaseline)).toBe(false);
+    });
+
+    it('scenario: Aoi Art (established) adds new listing', () => {
+      // Aoi Art has been in system for weeks (established)
+      const aoiArtBaseline = '2025-12-31T12:00:00Z'; // ~15 days ago
+      const newListing = '2026-01-14T10:00:00Z'; // 1 day ago
+
+      // Shows badge: dealer is established + listing is new + outside import window
+      expect(shouldShowNewBadge(newListing, aoiArtBaseline)).toBe(true);
     });
   });
 });

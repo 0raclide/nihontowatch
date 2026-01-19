@@ -266,30 +266,44 @@ function HomeContent() {
   }, [buildFetchParams]);
 
   // Load more for infinite scroll
+  // Uses explicit offset based on loaded items count to avoid pagination bugs
+  // when page sizes differ between initial load and subsequent loads
   const loadMore = useCallback(async () => {
     // Use ref for synchronous guard (state updates are async and can cause race conditions)
-    if (!data || page >= data.totalPages || loadingMoreRef.current) return;
+    if (!data || loadingMoreRef.current) return;
+
+    // Check if we have more items to load based on total count
+    if (allListings.length >= data.total) return;
 
     loadingMoreRef.current = true;
     setIsLoadingMore(true);
     try {
-      const nextPage = page + 1;
       const params = buildFetchParams();
-      params.set('page', String(nextPage));
+      // Use explicit offset = number of items already loaded
+      // This fixes the bug where page-based offset calculation was wrong
+      // when initial page size (100) differs from subsequent page size (50)
+      params.set('offset', String(allListings.length));
       params.set('limit', String(PAGINATION.INFINITE_SCROLL_BATCH_SIZE));
 
       const res = await fetch(`/api/browse?${params.toString()}`);
       const json = await res.json();
 
-      setAllListings((prev) => [...prev, ...(json.listings || [])]);
-      setPage(nextPage);
+      // Deduplicate items as a safety net
+      const newListings = json.listings || [];
+      const existingIds = new Set(allListings.map(l => l.id));
+      const uniqueNewListings = newListings.filter((l: Listing) => !existingIds.has(l.id));
+
+      if (uniqueNewListings.length > 0) {
+        setAllListings((prev) => [...prev, ...uniqueNewListings]);
+      }
+      setPage((prev) => prev + 1);
     } catch (error) {
       console.error('Failed to load more:', error);
     } finally {
       loadingMoreRef.current = false;
       setIsLoadingMore(false);
     }
-  }, [data, page, buildFetchParams]);
+  }, [data, allListings, buildFetchParams]);
 
   // Note: Infinite scroll is now handled internally by VirtualListingGrid
   // via IntersectionObserver. The useInfiniteScroll hook is no longer needed here.
