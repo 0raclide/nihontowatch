@@ -193,11 +193,15 @@ export function useAdaptiveVirtualScroll<T>({
       });
     };
 
-    // Perform initial calculation
-    const initialStartRow = calculateStartRow();
-    if (initialStartRow !== startRowRef.current) {
-      startRowRef.current = initialStartRow;
-      setStartRow(initialStartRow);
+    // Perform initial calculation - but ONLY if scroll lock is not active
+    // When QuickView is open, window.scrollY may be 0 due to overflow:hidden,
+    // so we must not recalculate based on that incorrect value
+    if (!isScrollLockActive()) {
+      const initialStartRow = calculateStartRow();
+      if (initialStartRow !== startRowRef.current) {
+        startRowRef.current = initialStartRow;
+        setStartRow(initialStartRow);
+      }
     }
 
     window.addEventListener('scroll', handleScroll, { passive: true });
