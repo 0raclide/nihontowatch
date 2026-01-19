@@ -225,6 +225,15 @@ const PERIOD_LABELS: Record<string, string> = {
   Reiwa: 'Reiwa',
 };
 
+// Dealer display name overrides
+const DEALER_LABELS: Record<string, string> = {
+  'Nihonto': 'Nihonto.com',
+  'Ginza_Seikodo': 'Ginza Seikodo',
+  'ginza_seikodo': 'Ginza Seikodo',
+  'Katana_Ando': 'Katana Ando',
+  'katana_ando': 'Katana Ando',
+};
+
 export function FilterContent({
   facets,
   filters,
@@ -572,7 +581,7 @@ export function FilterContent({
               .map((dealer) => (
                 <Checkbox
                   key={dealer.id}
-                  label={dealer.name}
+                  label={DEALER_LABELS[dealer.name] || dealer.name}
                   count={dealer.count}
                   checked={filters.dealers.includes(dealer.id)}
                   onChange={(checked) => handleDealerChange(dealer.id, checked)}
