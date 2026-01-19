@@ -101,7 +101,7 @@ export function Drawer({ isOpen, onClose, children, title }: DrawerProps) {
         )}
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto overscroll-contain pr-3">
+        <div className="flex-1 overflow-y-auto overscroll-contain" style={{ scrollbarGutter: 'stable' }}>
           {children}
         </div>
       </div>

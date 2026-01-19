@@ -33,7 +33,7 @@ export function FilterSidebar({ facets, filters, onFilterChange }: FilterSidebar
         <div
           ref={scrollRef}
           onWheel={handleWheel}
-          className="max-h-[calc(100vh-6rem)] overflow-y-auto overscroll-contain pr-5 -mr-5 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent"
+          className="max-h-[calc(100vh-6rem)] overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent" style={{ scrollbarGutter: 'stable' }}
         >
           <FilterContent
             facets={facets}

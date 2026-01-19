@@ -25,6 +25,8 @@ export function isScrollLockActive(): boolean {
 export function captureScrollPosition(): void {
   if (typeof window !== 'undefined' && !window.__scrollLockActive) {
     window.__savedScrollPosition = window.scrollY;
+    // Debug: log capture
+    console.log('[ScrollCapture] Captured:', window.scrollY, 'at', new Date().toISOString());
   }
 }
 
@@ -60,6 +62,10 @@ export function useBodyScrollLock(isLocked: boolean, savedScrollPosition?: numbe
     // 3. Current window.scrollY (may be wrong if overflow already applied)
     const scrollY = savedScrollPosition || window.__savedScrollPosition || window.scrollY;
     scrollPositionRef.current = scrollY;
+
+    // Debug: log what we're using
+    console.log('[ScrollLock] Using scrollY:', scrollY,
+      '(prop:', savedScrollPosition, ', global:', window.__savedScrollPosition, ', current:', window.scrollY, ')');
 
     // Set global flag FIRST to tell scroll handlers to ignore events
     window.__scrollLockActive = true;

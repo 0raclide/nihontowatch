@@ -53,6 +53,12 @@ async function test() {
     await page.evaluate(() => window.scrollTo(0, 500));
     await page.waitForTimeout(500);
 
+    // Check scroll position multiple times to see if it's stable
+    const scroll1 = await page.evaluate(() => window.scrollY);
+    await page.waitForTimeout(100);
+    const scroll2 = await page.evaluate(() => window.scrollY);
+    console.log('  Scroll check 1:', scroll1, 'Scroll check 2:', scroll2);
+
     const afterScrollState = await getPageState();
     console.log('  ScrollY:', afterScrollState.scrollY);
     console.log('  Filter bar top:', afterScrollState.filterBarTop?.toFixed(0), 'px');
@@ -70,8 +76,21 @@ async function test() {
       console.log('    Filter bar top:', beforeClick.filterBarTop?.toFixed(0), 'px');
       console.log('    First card top:', beforeClick.firstCardTop?.toFixed(0), 'px');
 
-      await cardToClick.click();
+      // Check scroll position RIGHT before click
+      const scrollRightBeforeClick = await page.evaluate(() => window.scrollY);
+      console.log('    ScrollY right before click:', scrollRightBeforeClick);
+
+      // Check global captured position before click
+      const globalBefore = await page.evaluate(() => window.__savedScrollPosition);
+      console.log('    Global captured position:', globalBefore);
+
+      // Use force:true to prevent Playwright from scrolling element into view
+      await cardToClick.click({ force: true });
       await page.waitForTimeout(100); // Short wait to catch immediate changes
+
+      // Check global captured position after click
+      const globalAfter = await page.evaluate(() => window.__savedScrollPosition);
+      console.log('    Global captured position after click:', globalAfter);
 
       const duringOpen = await getPageState();
       console.log('  DURING OPEN (100ms):');
