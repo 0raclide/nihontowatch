@@ -128,6 +128,14 @@ function HomeContent() {
   const [page, setPage] = useState(Number(searchParams.get('page')) || 1);
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
 
+  // Sync searchQuery state with URL when it changes (e.g., from header search)
+  const urlQuery = searchParams.get('q') || '';
+  useEffect(() => {
+    if (urlQuery !== searchQuery) {
+      setSearchQuery(urlQuery);
+    }
+  }, [urlQuery]); // Only depend on urlQuery, not searchQuery to avoid loops
+
   const [data, setData] = useState<BrowseResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
