@@ -282,8 +282,129 @@ export interface Database {
         };
         Update: Partial<Omit<Database['public']['Tables']['saved_search_notifications']['Row'], 'id' | 'created_at'>>;
       };
+      // Market intelligence daily snapshots
+      market_daily_snapshots: {
+        Row: {
+          id: string;
+          snapshot_date: string; // DATE as ISO string
+          // Aggregate counts
+          total_listings: number;
+          available_listings: number;
+          sold_listings: number;
+          new_listings_24h: number;
+          sold_24h: number;
+          price_changes_24h: number;
+          // Market value (in JPY)
+          total_market_value_jpy: number;
+          median_price_jpy: number | null;
+          avg_price_jpy: number | null;
+          // Price percentiles
+          price_p10_jpy: number | null;
+          price_p25_jpy: number | null;
+          price_p75_jpy: number | null;
+          price_p90_jpy: number | null;
+          price_min_jpy: number | null;
+          price_max_jpy: number | null;
+          // Breakdowns (JSONB)
+          category_breakdown: Record<string, {
+            count: number;
+            available: number;
+            sold: number;
+            value_jpy: number;
+            median_jpy: number;
+            avg_jpy?: number;
+            min_jpy?: number;
+            max_jpy?: number;
+          }>;
+          dealer_breakdown: Record<string, {
+            dealer_id: number;
+            domain?: string;
+            country?: string;
+            count: number;
+            available: number;
+            sold?: number;
+            value_jpy: number;
+            median_jpy: number;
+            avg_jpy?: number;
+          }>;
+          certification_breakdown: Record<string, {
+            count: number;
+            available: number;
+            sold?: number;
+            value_jpy: number;
+            median_jpy: number;
+            avg_jpy?: number;
+          }>;
+          // Metadata
+          created_at: string;
+        };
+        Insert: {
+          snapshot_date: string;
+          total_listings: number;
+          available_listings: number;
+          sold_listings: number;
+          new_listings_24h?: number;
+          sold_24h?: number;
+          price_changes_24h?: number;
+          total_market_value_jpy: number;
+          median_price_jpy?: number | null;
+          avg_price_jpy?: number | null;
+          price_p10_jpy?: number | null;
+          price_p25_jpy?: number | null;
+          price_p75_jpy?: number | null;
+          price_p90_jpy?: number | null;
+          price_min_jpy?: number | null;
+          price_max_jpy?: number | null;
+          category_breakdown?: Record<string, unknown>;
+          dealer_breakdown?: Record<string, unknown>;
+          certification_breakdown?: Record<string, unknown>;
+        };
+        Update: Partial<Omit<Database['public']['Tables']['market_daily_snapshots']['Row'], 'id' | 'created_at'>>;
+      };
     };
-    Views: Record<string, never>;
+    Views: {
+      // Materialized view for market statistics by item type
+      mv_market_by_item_type: {
+        Row: {
+          item_type: string | null;
+          total_count: number;
+          available_count: number;
+          sold_count: number;
+          total_value_jpy: number;
+          median_price_jpy: number | null;
+          avg_price_jpy: number | null;
+          min_price_jpy: number | null;
+          max_price_jpy: number | null;
+        };
+      };
+      // Materialized view for market statistics by dealer
+      mv_market_by_dealer: {
+        Row: {
+          dealer_id: number;
+          dealer_name: string;
+          dealer_domain: string;
+          dealer_country: string;
+          total_count: number;
+          available_count: number;
+          sold_count: number;
+          total_value_jpy: number;
+          median_price_jpy: number | null;
+          avg_price_jpy: number | null;
+        };
+      };
+      // Materialized view for market statistics by certification
+      mv_market_by_certification: {
+        Row: {
+          cert_type: string;
+          total_count: number;
+          available_count: number;
+          sold_count: number;
+          total_value_jpy: number;
+          median_price_jpy: number | null;
+          avg_price_jpy: number | null;
+        };
+      };
+    };
     Functions: {
       refresh_price_jpy: {
         Args: {
@@ -292,6 +413,101 @@ export interface Database {
           gbp_to_jpy?: number;
         };
         Returns: number;
+      };
+      // Market intelligence functions
+      refresh_market_views: {
+        Args: Record<string, never>;
+        Returns: void;
+      };
+      capture_market_snapshot: {
+        Args: Record<string, never>;
+        Returns: string; // UUID
+      };
+      get_market_overview: {
+        Args: Record<string, never>;
+        Returns: {
+          total_listings: number;
+          available_listings: number;
+          sold_listings: number;
+          total_market_value_jpy: number;
+          median_price_jpy: number | null;
+          avg_price_jpy: number | null;
+          min_price_jpy: number | null;
+          max_price_jpy: number | null;
+          p10_jpy: number | null;
+          p25_jpy: number | null;
+          p75_jpy: number | null;
+          p90_jpy: number | null;
+          new_listings_24h: number;
+          sold_24h: number;
+          price_changes_24h: number;
+        }[];
+      };
+      get_price_distribution: {
+        Args: {
+          p_bucket_count?: number;
+          p_item_type?: string | null;
+          p_cert_type?: string | null;
+          p_dealer_id?: number | null;
+        };
+        Returns: {
+          bucket_num: number;
+          range_start: number;
+          range_end: number;
+          count: number;
+        }[];
+      };
+      get_market_trend: {
+        Args: {
+          p_days?: number;
+          p_end_date?: string;
+        };
+        Returns: {
+          snapshot_date: string;
+          total_listings: number;
+          available_listings: number;
+          sold_listings: number;
+          total_market_value_jpy: number;
+          median_price_jpy: number | null;
+          new_listings_24h: number;
+          sold_24h: number;
+          price_changes_24h: number;
+        }[];
+      };
+      get_category_comparison: {
+        Args: {
+          p_item_types?: string[] | null;
+        };
+        Returns: {
+          item_type: string | null;
+          total_count: number;
+          available_count: number;
+          sold_count: number;
+          total_value_jpy: number;
+          median_price_jpy: number | null;
+          avg_price_jpy: number | null;
+          min_price_jpy: number | null;
+          max_price_jpy: number | null;
+        }[];
+      };
+      get_dealer_rankings: {
+        Args: {
+          p_order_by?: string;
+          p_limit?: number;
+        };
+        Returns: {
+          dealer_id: number;
+          dealer_name: string;
+          dealer_domain: string;
+          dealer_country: string;
+          total_count: number;
+          available_count: number;
+          sold_count: number;
+          total_value_jpy: number;
+          median_price_jpy: number | null;
+          avg_price_jpy: number | null;
+          rank: number;
+        }[];
       };
     };
     Enums: {
