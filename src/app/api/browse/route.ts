@@ -3,7 +3,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { normalizeSearchText, expandSearchAliases } from '@/lib/search';
 import { parseNumericFilters } from '@/lib/search/numericFilters';
 import { parseSemanticQuery } from '@/lib/search/semanticQueryParser';
-import { buildFTSQuery } from '@/lib/search/ftsQueryBuilder';
 import { CACHE, PAGINATION, LISTING_FILTERS } from '@/lib/constants';
 
 // Facets are computed fresh for each request to reflect current filters
@@ -251,24 +250,36 @@ export async function GET(request: NextRequest) {
       // Uses PostgreSQL Full-Text Search with word boundary matching
       // This prevents substring pollution (e.g., "rai" matching "grained")
       if (textWords.length > 0) {
-        // Expand all words with aliases and normalize
-        const expandedTerms = textWords
-          .flatMap(word => expandSearchAliases(word))
-          .map(normalizeSearchText)
-          .filter(term => term.length >= 2);
+        // Build FTS query parts for each word, expanding aliases with OR
+        const queryParts: string[] = [];
 
-        if (expandedTerms.length > 0) {
-          // Build FTS query with prefix matching for partial word support
-          const ftsQuery = buildFTSQuery(expandedTerms.join(' '), { prefixMatch: true });
+        for (const word of textWords) {
+          // Get aliases for this word (e.g., 'koto' -> ['koto', 'kotou'])
+          const aliases = expandSearchAliases(word)
+            .map(normalizeSearchText)
+            .filter(term => term.length >= 2);
 
-          if (!ftsQuery.isEmpty && ftsQuery.tsquery) {
-            // Use PostgreSQL full-text search on the pre-computed search_vector column
-            // This uses the GIN index for fast lookups with proper word boundary matching
-            query = query.textSearch('search_vector', ftsQuery.tsquery, {
-              config: 'simple',  // 'simple' config for Japanese romanization (no stemming)
-              type: 'plain',     // plain mode for prefix matching support
-            });
+          if (aliases.length === 0) continue;
+
+          if (aliases.length === 1) {
+            // Single term - use prefix match
+            queryParts.push(`${aliases[0]}:*`);
+          } else {
+            // Multiple aliases - join with OR, wrap in parens
+            // e.g., (koto:* | kotou:*)
+            const orParts = aliases.map(a => `${a}:*`).join(' | ');
+            queryParts.push(`(${orParts})`);
           }
+        }
+
+        if (queryParts.length > 0) {
+          // Join all word groups with AND
+          // e.g., "(koto:* | kotou:*) & tanto:*"
+          const tsquery = queryParts.join(' & ');
+
+          query = query.textSearch('search_vector', tsquery, {
+            config: 'simple',  // 'simple' config for Japanese romanization (no stemming)
+          });
         }
       }
     }
