@@ -8,6 +8,7 @@
  *
  * @query limit - Max changes to return (default 50, max 200)
  * @query minChangePercent - Minimum absolute % change to include (optional)
+ * @query maxChangePercent - Maximum absolute % change to include (default 100, filters outliers)
  * @query period - Time period filter: 24h | 7d | 30d | all (default 7d)
  *
  * @returns {AnalyticsAPIResponse<PriceChangesResponse>}
@@ -76,6 +77,8 @@ export async function GET(
     const searchParams = request.nextUrl.searchParams;
     const limit = parseIntParam(searchParams, 'limit', 50, 1, 200);
     const minChangePercent = parseFloatParam(searchParams, 'minChangePercent');
+    // Default to 100% max to filter out extreme outliers (likely data quality issues)
+    const maxChangePercent = parseFloatParam(searchParams, 'maxChangePercent') ?? 100;
     const periodParam = searchParams.get('period') || '7d';
 
     // 3. Calculate date filter based on period
@@ -112,8 +115,9 @@ export async function GET(
     // Only get price changes (not status changes)
     query = query.in('change_type', ['increase', 'decrease']);
 
-    // Fetch more than limit to allow filtering by minChangePercent
-    const fetchLimit = minChangePercent !== null ? limit * 3 : limit;
+    // Fetch more than limit to allow filtering by min/max change percent
+    const hasPercentFilters = minChangePercent !== null || maxChangePercent !== null;
+    const fetchLimit = hasPercentFilters ? limit * 5 : limit;
     query = query.limit(fetchLimit);
 
     const result = await query;
@@ -145,6 +149,11 @@ export async function GET(
 
         // Apply minChangePercent filter if specified
         if (minChangePercent !== null && Math.abs(changePercent) < minChangePercent) {
+          continue;
+        }
+
+        // Apply maxChangePercent filter to exclude extreme outliers (data quality issues)
+        if (maxChangePercent !== null && Math.abs(changePercent) > maxChangePercent) {
           continue;
         }
 
