@@ -349,7 +349,7 @@ npm test -- browse
 
 ### January 2026 - Signature Status Semantic Extraction
 
-**Commit:** (pending)
+**Commit:** `14cd529`
 
 **Problem:** Searching "tokuju tachi signed" returned 0 results because "signed" was text-searched instead of filtered.
 
