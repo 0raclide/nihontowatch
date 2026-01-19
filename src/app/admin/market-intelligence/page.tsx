@@ -192,14 +192,14 @@ export default function MarketIntelligencePage() {
     }));
   }, [data.dealerBreakdown]);
 
-  // Certification options - these would typically come from the API
+  // Certification options - must match exact cert_type values in database
   const certificationOptions = useMemo(() => {
     return [
-      { value: 'juyo', label: 'Juyo' },
-      { value: 'tokubetsu_juyo', label: 'Tokubetsu Juyo' },
-      { value: 'hozon', label: 'Hozon' },
-      { value: 'tokubetsu_hozon', label: 'Tokubetsu Hozon' },
-      { value: 'nthk', label: 'NTHK' },
+      { value: 'Juyo', label: 'Juyo' },
+      { value: 'Tokuju', label: 'Tokubetsu Juyo' },
+      { value: 'Hozon', label: 'Hozon' },
+      { value: 'TokuHozon', label: 'Tokubetsu Hozon' },
+      { value: 'TokuKicho', label: 'Tokubetsu Kicho' },
     ];
   }, []);
 
