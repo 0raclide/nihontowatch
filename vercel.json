@@ -1,3 +1,21 @@
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json"
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "crons": [
+    {
+      "path": "/api/cron/process-saved-searches?frequency=instant",
+      "schedule": "*/15 * * * *"
+    },
+    {
+      "path": "/api/cron/process-saved-searches?frequency=daily",
+      "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/process-price-alerts",
+      "schedule": "*/15 * * * *"
+    },
+    {
+      "path": "/api/cron/process-stock-alerts",
+      "schedule": "*/15 * * * *"
+    }
+  ]
 }

@@ -90,7 +90,7 @@ export function SaveSearchModal({
 
   const handleGoToSavedSearches = useCallback(() => {
     onClose();
-    router.push('/saved-searches');
+    router.push('/saved');
   }, [onClose, router]);
 
   if (!isOpen) return null;

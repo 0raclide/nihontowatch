@@ -4,6 +4,14 @@ import {
   generateSavedSearchNotificationHtml,
   generateSavedSearchNotificationText,
 } from './templates/saved-search';
+import {
+  generatePriceDropNotificationHtml,
+  generatePriceDropNotificationText,
+} from './templates/price-drop';
+import {
+  generateBackInStockNotificationHtml,
+  generateBackInStockNotificationText,
+} from './templates/back-in-stock';
 
 // Initialize SendGrid with API key
 if (process.env.SENDGRID_API_KEY) {
@@ -100,4 +108,83 @@ export async function sendBatchNotifications(
   }
 
   return results;
+}
+
+/**
+ * Send a price drop notification email
+ */
+export async function sendPriceDropNotification(
+  to: string,
+  listing: Listing,
+  oldPrice: number,
+  newPrice: number
+): Promise<SendEmailResult> {
+  if (!process.env.SENDGRID_API_KEY) {
+    console.warn('SENDGRID_API_KEY not configured, skipping email');
+    return { success: false, error: 'SendGrid not configured' };
+  }
+
+  const percentChange = ((newPrice - oldPrice) / oldPrice) * 100;
+  const title = listing.title || 'an item you\'re watching';
+  const subject = `Price dropped ${Math.abs(percentChange).toFixed(0)}% on ${title}`;
+
+  try {
+    const [response] = await sgMail.send({
+      to,
+      from: {
+        email: FROM_EMAIL,
+        name: FROM_NAME,
+      },
+      subject,
+      text: generatePriceDropNotificationText(listing, oldPrice, newPrice, percentChange),
+      html: generatePriceDropNotificationHtml(listing, oldPrice, newPrice, percentChange),
+    });
+
+    return {
+      success: true,
+      messageId: response.headers['x-message-id'] as string,
+    };
+  } catch (error) {
+    console.error('SendGrid error:', error);
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return { success: false, error: message };
+  }
+}
+
+/**
+ * Send a back in stock notification email
+ */
+export async function sendBackInStockNotification(
+  to: string,
+  listing: Listing
+): Promise<SendEmailResult> {
+  if (!process.env.SENDGRID_API_KEY) {
+    console.warn('SENDGRID_API_KEY not configured, skipping email');
+    return { success: false, error: 'SendGrid not configured' };
+  }
+
+  const title = listing.title || 'An item you\'re watching';
+  const subject = `${title} is back in stock!`;
+
+  try {
+    const [response] = await sgMail.send({
+      to,
+      from: {
+        email: FROM_EMAIL,
+        name: FROM_NAME,
+      },
+      subject,
+      text: generateBackInStockNotificationText(listing),
+      html: generateBackInStockNotificationHtml(listing),
+    });
+
+    return {
+      success: true,
+      messageId: response.headers['x-message-id'] as string,
+    };
+  } catch (error) {
+    console.error('SendGrid error:', error);
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return { success: false, error: message };
+  }
 }

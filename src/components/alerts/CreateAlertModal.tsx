@@ -217,11 +217,11 @@ export function CreateAlertModal({
                         type="button"
                         onClick={() => {
                           onClose();
-                          router.push('/saved-searches');
+                          router.push('/saved');
                         }}
                         className="text-[13px] font-medium text-gold hover:underline"
                       >
-                        Go to Saved Searches →
+                        Go to Saved →
                       </button>
                     </div>
                   )}

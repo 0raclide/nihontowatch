@@ -70,28 +70,12 @@ export function MobileNavDrawer() {
                     Profile
                   </Link>
                   <Link
-                    href="/favorites"
-                    onClick={closeNavDrawer}
-                    className="flex items-center gap-3 px-4 py-3 text-[13px] text-text-secondary hover:bg-hover rounded-lg transition-colors"
-                  >
-                    <HeartIcon />
-                    Favorites
-                  </Link>
-                  <Link
-                    href="/saved-searches"
+                    href="/saved"
                     onClick={closeNavDrawer}
                     className="flex items-center gap-3 px-4 py-3 text-[13px] text-text-secondary hover:bg-hover rounded-lg transition-colors"
                   >
                     <BookmarkIcon />
-                    Saved Searches
-                  </Link>
-                  <Link
-                    href="/alerts"
-                    onClick={closeNavDrawer}
-                    className="flex items-center gap-3 px-4 py-3 text-[13px] text-text-secondary hover:bg-hover rounded-lg transition-colors"
-                  >
-                    <BellIcon />
-                    Alerts
+                    Saved
                   </Link>
 
                   {isAdmin && (
