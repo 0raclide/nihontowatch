@@ -68,12 +68,14 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
   const [currentListing, setCurrentListing] = useState<Listing | null>(null);
   const [listings, setListingsState] = useState<Listing[]>([]);
   const [currentIndex, setCurrentIndex] = useState(-1);
+  // Store scroll position as STATE so it's properly passed through context
+  const [savedScrollPosition, setSavedScrollPosition] = useState(0);
 
   // Cooldown to prevent immediate re-opening after close
   const closeCooldown = useRef(false);
 
-  // Store scroll position at the moment of opening (before any React state changes)
-  const savedScrollPosition = useRef(0);
+  // Ref to capture scroll position on mousedown (before any state changes)
+  const mousedownScrollPosition = useRef(0);
 
   // Track isOpen state in a ref for use in event handlers
   const isOpenRef = useRef(false);
@@ -87,7 +89,7 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
     const captureScrollOnMouseDown = () => {
       // Only capture when modal is closed - when open, scrollY is 0 due to overflow:hidden
       if (!isOpenRef.current) {
-        savedScrollPosition.current = window.scrollY;
+        mousedownScrollPosition.current = window.scrollY;
       }
     };
     document.addEventListener('mousedown', captureScrollOnMouseDown);
@@ -127,6 +129,10 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
     if (typeof window !== 'undefined') {
       window.__scrollLockActive = true;
     }
+
+    // Transfer the mousedown-captured scroll position to state
+    // This ensures it's properly passed through context to useBodyScrollLock
+    setSavedScrollPosition(mousedownScrollPosition.current);
 
     setCurrentListing(listing);
     setIsOpen(true);
@@ -288,7 +294,7 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
       currentListing,
       openQuickView,
       closeQuickView,
-      savedScrollPosition: savedScrollPosition.current,
+      savedScrollPosition, // Now a state variable, properly triggers re-render
       listings,
       currentIndex,
       goToNext,
@@ -302,6 +308,7 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
       currentListing,
       openQuickView,
       closeQuickView,
+      savedScrollPosition, // Added to dependencies
       listings,
       currentIndex,
       goToNext,
