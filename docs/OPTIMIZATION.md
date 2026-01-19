@@ -8,6 +8,7 @@ The key optimizations focus on:
 1. **Staggered image loading** - Only load images near the viewport
 2. **API caching** - Edge caching and in-memory facet cache
 3. **Next.js Image optimization** - AVIF/WebP conversion, proper sizing
+4. **QuickView preloading** - Hover preloading and navigation prefetching
 
 ---
 
@@ -60,6 +61,91 @@ The modal image viewer uses Next.js Image component:
 - Subsequent images load lazily
 - Blur placeholder shown during load
 - AVIF/WebP format conversion enabled
+- **Uses `getAllImages()` to prefer CDN URLs** over dealer URLs
+
+#### CDN-First Image Loading
+
+QuickView uses `getAllImages()` from `src/lib/images.ts` to prioritize:
+1. `stored_images` - Supabase Storage CDN (fast, reliable)
+2. `images` - Original dealer URLs (fallback)
+
+```typescript
+// QuickView.tsx
+import { getAllImages } from '@/lib/images';
+
+const images = getAllImages(currentListing);
+```
+
+This ensures consistent fast loading between grid cards and QuickView modal.
+
+---
+
+## QuickView Preloading
+
+### Hover Preloading
+
+**Files**: `src/hooks/useImagePreloader.ts`, `src/components/browse/ListingCard.tsx`
+
+When a user hovers over a listing card for 150ms+, the first 3 QuickView images are preloaded in the background.
+
+```typescript
+// ListingCard.tsx
+const handleMouseEnter = useCallback(() => {
+  hoverTimerRef.current = setTimeout(() => {
+    preloadListing(listing);
+  }, 150);
+}, []);
+```
+
+**Benefits:**
+- Images ready before modal opens
+- Near-instant QuickView display for intentional clicks
+- Cancelled if user moves away quickly (no wasted bandwidth)
+
+### Navigation Prefetching
+
+**File**: `src/contexts/QuickViewContext.tsx`
+
+When viewing a listing in QuickView, images for adjacent listings (prev/next) are automatically preloaded.
+
+```typescript
+// Preload adjacent listings for J/K navigation
+useEffect(() => {
+  if (!isOpen || currentIndex === -1) return;
+
+  if (currentIndex > 0) {
+    preloadImages(listings[currentIndex - 1]);
+  }
+  if (currentIndex < listings.length - 1) {
+    preloadImages(listings[currentIndex + 1]);
+  }
+}, [currentIndex, isOpen, listings]);
+```
+
+**Benefits:**
+- Instant J/K keyboard navigation
+- Smooth browsing experience when flipping through listings
+
+### useImagePreloader Hook
+
+**File**: `src/hooks/useImagePreloader.ts`
+
+A reusable hook for browser-level image preloading:
+
+```typescript
+const { preloadListing, cancelPreloads } = useImagePreloader();
+
+// Preload first 3 images from a listing
+preloadListing(listing);
+
+// Cancel active preloads (e.g., on mouse leave)
+cancelPreloads();
+```
+
+Features:
+- Deduplication (won't re-preload cached URLs)
+- Cancellation support
+- Uses `getAllImages()` to prefer CDN URLs
 
 ---
 
@@ -219,8 +305,11 @@ If mobile devices crash on long scroll:
 ## Related Files
 
 - `src/components/browse/ListingGrid.tsx` - Intersection observer hook
-- `src/components/browse/ListingCard.tsx` - Visibility-based image loading
-- `src/components/listing/QuickView.tsx` - Modal image optimization
+- `src/components/browse/ListingCard.tsx` - Visibility-based image loading, hover preloading
+- `src/components/listing/QuickView.tsx` - Modal image optimization, CDN-first loading
+- `src/contexts/QuickViewContext.tsx` - Navigation prefetching for J/K keys
+- `src/hooks/useImagePreloader.ts` - Reusable image preloading hook
+- `src/lib/images.ts` - Image URL resolution with CDN fallback
 - `src/app/api/browse/route.ts` - API caching and facet cache
 - `src/lib/constants.ts` - Cache configuration values
 - `next.config.ts` - Image optimization settings

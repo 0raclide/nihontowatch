@@ -137,8 +137,8 @@ describe('useAdaptiveVirtualScroll', () => {
         vi.runAllTimers();
       });
 
-      // Mobile should have taller rows (360px)
-      expect(result.current.rowHeight).toBe(360);
+      // Mobile should have taller rows (437px)
+      expect(result.current.rowHeight).toBe(437);
     });
 
     it('uses shorter rows for desktop (2+ columns)', () => {
@@ -152,8 +152,8 @@ describe('useAdaptiveVirtualScroll', () => {
         vi.runAllTimers();
       });
 
-      // Desktop should have shorter rows (310px)
-      expect(result.current.rowHeight).toBe(310);
+      // Desktop xl (4 columns) should have 372px rows
+      expect(result.current.rowHeight).toBe(372);
     });
   });
 
@@ -170,8 +170,8 @@ describe('useAdaptiveVirtualScroll', () => {
       });
 
       // 100 items / 4 columns = 25 rows
-      // 25 rows * 310px = 7750px
-      expect(result.current.totalHeight).toBe(7750);
+      // 25 rows * 372px = 9300px
+      expect(result.current.totalHeight).toBe(9300);
     });
 
     it('includes overscan in visible items', () => {
@@ -185,8 +185,8 @@ describe('useAdaptiveVirtualScroll', () => {
         vi.runAllTimers();
       });
 
-      // With 800px viewport, 310px rows, and 2 overscan
-      // visible rows = ceil(800/310) + 4 = 7 rows
+      // With 800px viewport, 372px rows, and 2 overscan
+      // visible rows = ceil(800/372) + 4 = 7 rows
       // 7 rows * 4 columns = 28 items
       expect(result.current.visibleItems.length).toBeGreaterThan(8);
     });
@@ -315,8 +315,8 @@ describe('useAdaptiveVirtualScroll', () => {
 
       // Height should be based on totalCount (200), not items.length (50)
       // 200 items / 4 columns = 50 rows
-      // 50 rows * 310px = 15500px
-      expect(result.current.totalHeight).toBe(15500);
+      // 50 rows * 372px = 18600px
+      expect(result.current.totalHeight).toBe(18600);
     });
 
     it('falls back to items.length when totalCount not provided', () => {
@@ -333,8 +333,8 @@ describe('useAdaptiveVirtualScroll', () => {
 
       // Height should be based on items.length (50)
       // 50 items / 4 columns = 13 rows (ceil)
-      // 13 rows * 310px = 4030px
-      expect(result.current.totalHeight).toBe(4030);
+      // 13 rows * 372px = 4836px
+      expect(result.current.totalHeight).toBe(4836);
     });
 
     it('keeps height stable when more items load with totalCount', () => {

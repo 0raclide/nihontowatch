@@ -382,14 +382,6 @@ export function ListingCard({
               {certInfo.label}
             </span>
           )}
-          {shouldShowNewBadge(listing.first_seen_at, listing.dealer_earliest_seen_at) && (
-            <span
-              data-testid="new-listing-badge"
-              className="text-[9px] lg:text-[10px] uppercase tracking-wider font-semibold px-1.5 lg:px-2 py-0.5 lg:py-1 bg-new-listing-bg text-new-listing"
-            >
-              New this week
-            </span>
-          )}
         </div>
 
         {/* Item Type - Primary identifier (always English), fallback to cleaned title */}
@@ -406,8 +398,8 @@ export function ListingCard({
           )}
         </div>
 
-        {/* Price - always at bottom */}
-        <div className="pt-2.5 mt-auto border-t border-border/50">
+        {/* Price row - always at bottom */}
+        <div className="pt-2.5 mt-auto border-t border-border/50 flex items-center justify-between">
           <span className={`text-[15px] lg:text-base tabular-nums ${
             isAskPrice
               ? 'text-charcoal'
@@ -415,6 +407,14 @@ export function ListingCard({
           }`}>
             {formatPrice(listing.price_value, listing.price_currency, currency, exchangeRates)}
           </span>
+          {shouldShowNewBadge(listing.first_seen_at, listing.dealer_earliest_seen_at) && (
+            <span
+              data-testid="new-listing-badge"
+              className="text-[9px] lg:text-[10px] uppercase tracking-wider font-semibold px-1.5 lg:px-2 py-0.5 lg:py-1 bg-new-listing-bg text-new-listing"
+            >
+              New
+            </span>
+          )}
         </div>
       </div>
     </div>

@@ -235,31 +235,66 @@ export function VirtualListingGrid({
     }
   }, [quickViewListings, quickView]);
 
-  // Infinite scroll trigger - load more when approaching bottom
-  // Uses time-based throttle to prevent rapid re-triggering
+  // Use ref for isLoadingMore to avoid effect re-runs during loading
+  const isLoadingMoreRef = useRef(isLoadingMore);
   useEffect(() => {
-    if (!infiniteScroll || !onLoadMore || !hasMore || isLoadingMore) return;
+    isLoadingMoreRef.current = isLoadingMore;
+  }, [isLoadingMore]);
+
+  // Infinite scroll trigger - load more when approaching bottom
+  // Uses BOTH IntersectionObserver (for visibility) AND scroll position (for early loading)
+  // This ensures we start loading well before users reach the end
+  useEffect(() => {
+    if (!infiniteScroll || !onLoadMore || !hasMore) return;
 
     const trigger = loadMoreTriggerRef.current;
     if (!trigger) return;
 
+    const triggerLoad = () => {
+      // Skip if already loading (use ref to get current value)
+      if (isLoadingMoreRef.current) return;
+
+      const now = Date.now();
+      // Throttle: minimum 500ms between load triggers (fast enough to keep up with scrolling)
+      if (now - lastLoadTimeRef.current > 500) {
+        lastLoadTimeRef.current = now;
+        onLoadMore();
+      }
+    };
+
+    // IntersectionObserver with very large margin (3000px) for early trigger
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting) {
-          const now = Date.now();
-          // Throttle: minimum 1 second between load triggers
-          if (now - lastLoadTimeRef.current > 1000) {
-            lastLoadTimeRef.current = now;
-            onLoadMore();
-          }
+          triggerLoad();
         }
       },
-      { rootMargin: '400px' }
+      { rootMargin: '3000px' }
     );
-
     observer.observe(trigger);
-    return () => observer.disconnect();
-  }, [infiniteScroll, onLoadMore, hasMore, isLoadingMore]);
+
+    // Backup: scroll position based trigger
+    // Trigger loading when scrolled past 40% of the content height
+    // This ensures we start loading well before reaching the end
+    const handleScroll = () => {
+      const scrollY = window.scrollY;
+      const viewportHeight = window.innerHeight;
+      const documentHeight = document.documentElement.scrollHeight;
+
+      // Load more when user has scrolled past 40% of the current content
+      const scrollPercent = (scrollY + viewportHeight) / documentHeight;
+      if (scrollPercent > 0.4) {
+        triggerLoad();
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, [infiniteScroll, onLoadMore, hasMore]);
 
   // Track listing count for debugging
   useEffect(() => {
