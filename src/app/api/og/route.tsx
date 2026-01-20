@@ -125,11 +125,10 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  // DEBUG: Return simple image first to test the route works
   // Fetch listing data using REST API (edge-compatible)
   try {
     const listingResponse = await fetch(
-      `${SUPABASE_URL}/rest/v1/listings?id=eq.${listingId}&select=id,title,price_value,price_currency,item_type,cert_type,smith,tosogu_maker,dealers(name)`,
+      `${SUPABASE_URL}/rest/v1/listings?id=eq.${listingId}&select=id,title,price_value,price_currency,item_type,cert_type,smith,tosogu_maker,stored_images,images,dealers(name)`,
       {
         headers: {
           apikey: SUPABASE_ANON_KEY,
@@ -167,7 +166,11 @@ export async function GET(request: NextRequest) {
     // Dealer name
     const dealerName = listing.dealers?.name || 'Unknown Dealer';
 
-    // Return a simple image with title and price
+    // Get image URL
+    const imageUrls = listing.stored_images || listing.images || [];
+    const imageUrl = imageUrls[0] || null;
+
+    // Return OG image with product image, title, price, and cert
     return new ImageResponse(
       (
         <div
@@ -175,54 +178,139 @@ export async function GET(request: NextRequest) {
             height: '100%',
             width: '100%',
             display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
             backgroundColor: '#1a1a1a',
-            padding: 40,
           }}
         >
-          <span
+          {/* Left side - Product Image */}
+          <div
             style={{
-              fontSize: 28,
-              fontWeight: 700,
-              color: '#c9a962',
-              textAlign: 'center',
-              maxWidth: '90%',
+              width: '50%',
+              height: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: '#0f0f0f',
+              padding: 30,
             }}
           >
-            {String(listing.title || 'Listing').substring(0, 80)}
-          </span>
-          <span
+            {imageUrl ? (
+              <img
+                src={imageUrl}
+                alt=""
+                style={{
+                  maxWidth: '100%',
+                  maxHeight: '100%',
+                  objectFit: 'contain',
+                }}
+              />
+            ) : (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#444',
+                  fontSize: 24,
+                }}
+              >
+                No Image
+              </div>
+            )}
+          </div>
+
+          {/* Right side - Details */}
+          <div
             style={{
-              fontSize: 48,
-              fontWeight: 700,
-              color: '#ffffff',
-              marginTop: 20,
+              width: '50%',
+              height: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              padding: 40,
+              justifyContent: 'space-between',
             }}
           >
-            {priceDisplay}
-          </span>
-          {certLabel && (
-            <span
-              style={{
-                fontSize: 20,
-                color: '#a0a0a0',
-                marginTop: 16,
-              }}
-            >
-              {certLabel}
-            </span>
-          )}
-          <span
-            style={{
-              fontSize: 18,
-              color: '#737373',
-              marginTop: 30,
-            }}
-          >
-            nihontowatch.com
-          </span>
+            {/* Top: Cert badge + Title */}
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              {certLabel && (
+                <div
+                  style={{
+                    display: 'flex',
+                    alignSelf: 'flex-start',
+                    backgroundColor: certColors?.bg || '#1e40af',
+                    color: '#ffffff',
+                    padding: '8px 16px',
+                    borderRadius: 6,
+                    fontSize: 14,
+                    fontWeight: 600,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                    marginBottom: 16,
+                  }}
+                >
+                  {certLabel}
+                </div>
+              )}
+              <div
+                style={{
+                  fontSize: 32,
+                  fontWeight: 700,
+                  color: '#ffffff',
+                  lineHeight: 1.3,
+                }}
+              >
+                {String(listing.title || 'Listing').substring(0, 100)}
+              </div>
+              {artisan && (
+                <div
+                  style={{
+                    fontSize: 20,
+                    color: '#a0a0a0',
+                    marginTop: 12,
+                  }}
+                >
+                  {artisan}
+                </div>
+              )}
+            </div>
+
+            {/* Bottom: Price + Branding */}
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <div
+                style={{
+                  fontSize: 48,
+                  fontWeight: 700,
+                  color: '#c9a962',
+                  marginBottom: 16,
+                }}
+              >
+                {priceDisplay}
+              </div>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                }}
+              >
+                <div
+                  style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: '50%',
+                    backgroundColor: '#c9a962',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <span style={{ color: '#1a1a1a', fontSize: 16, fontWeight: 700 }}>N</span>
+                </div>
+                <span style={{ fontSize: 18, color: '#737373' }}>
+                  nihontowatch.com
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
       ),
       { width: 1200, height: 630 }
