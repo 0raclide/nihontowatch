@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+import { createServiceClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import type {
   CreateSessionPayload,
@@ -79,14 +79,15 @@ export async function POST(request: NextRequest) {
       language,
     } = body;
 
-    // Insert session into database
-    const supabase = await createClient();
+    // Insert session into database using service client to bypass RLS
+    const supabase = createServiceClient();
 
     // Use type assertion since user_sessions table may not be in generated types yet
+    // Note: id is auto-generated UUID, session_id is the TEXT identifier we track
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase as any).from('user_sessions').insert({
-      id: sessionId,
-      user_id: null, // Anonymous session - will be updated if user authenticates
+      session_id: sessionId,
+      // user_id left null for anonymous sessions (requires migration to allow NULL)
       started_at: new Date().toISOString(),
       page_views: 0,
       user_agent: userAgent || null,
@@ -171,8 +172,8 @@ export async function PATCH(request: NextRequest) {
       pageViews,
     } = body;
 
-    // Update session in database
-    const supabase = await createClient();
+    // Update session in database using service client to bypass RLS
+    const supabase = createServiceClient();
 
     // Use type assertion since user_sessions table may not be in generated types yet
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -183,7 +184,7 @@ export async function PATCH(request: NextRequest) {
         total_duration_ms: totalDurationMs,
         page_views: pageViews,
       })
-      .eq('id', sessionId);
+      .eq('session_id', sessionId);
 
     if (error) {
       // Log error but don't fail - session tracking is best-effort

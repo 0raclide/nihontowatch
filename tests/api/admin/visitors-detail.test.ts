@@ -183,7 +183,7 @@ describe('GET /api/admin/visitors/[visitorId]', () => {
 
       const mockSessions = [
         {
-          id: 'sess_123',
+          session_id: 'sess_123',
           started_at: '2026-01-20T09:00:00Z',
           ended_at: '2026-01-20T10:30:00Z',
           total_duration_ms: 5400000,
@@ -273,8 +273,8 @@ describe('GET /api/admin/visitors/[visitorId]', () => {
       ];
 
       const mockSessions = [
-        { id: 'sess_1', started_at: '2026-01-20T09:00:00Z', ended_at: '2026-01-20T10:00:00Z', total_duration_ms: 60000, page_views: 3, user_agent: null, screen_width: null, screen_height: null },
-        { id: 'sess_2', started_at: '2026-01-21T09:00:00Z', ended_at: '2026-01-21T10:00:00Z', total_duration_ms: 120000, page_views: 5, user_agent: null, screen_width: null, screen_height: null },
+        { session_id: 'sess_1', started_at: '2026-01-20T09:00:00Z', ended_at: '2026-01-20T10:00:00Z', total_duration_ms: 60000, page_views: 3, user_agent: null, screen_width: null, screen_height: null },
+        { session_id: 'sess_2', started_at: '2026-01-21T09:00:00Z', ended_at: '2026-01-21T10:00:00Z', total_duration_ms: 120000, page_views: 5, user_agent: null, screen_width: null, screen_height: null },
       ];
 
       const eventsBuilder = createMockQueryBuilder(mockEvents);
@@ -498,7 +498,7 @@ describe('GET /api/admin/visitors/[visitorId]', () => {
       ];
 
       const mockSessions = [
-        { id: 'sess_1', started_at: '2026-01-20T09:00:00Z', ended_at: null, total_duration_ms: null, page_views: 1, user_agent: null, screen_width: null, screen_height: null },
+        { session_id: 'sess_1', started_at: '2026-01-20T09:00:00Z', ended_at: null, total_duration_ms: null, page_views: 1, user_agent: null, screen_width: null, screen_height: null },
       ];
 
       const eventsBuilder = createMockQueryBuilder(mockEvents);

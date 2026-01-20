@@ -114,18 +114,18 @@ export async function GET(
     // Get unique session IDs
     const sessionIds = [...new Set(events.map((e: { session_id: string }) => e.session_id))];
 
-    // Fetch session data
+    // Fetch session data by session_id (TEXT), not id (UUID)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: sessionsData } = await (serviceSupabase as any)
       .from('user_sessions')
-      .select('id, started_at, ended_at, total_duration_ms, page_views, user_agent, screen_width, screen_height')
-      .in('id', sessionIds);
+      .select('session_id, started_at, ended_at, total_duration_ms, page_views, user_agent, screen_width, screen_height')
+      .in('session_id', sessionIds);
 
-    // Build session map
+    // Build session map using session_id as the key
     const sessionMap = new Map<string, VisitorSession>();
     for (const session of sessionsData || []) {
-      sessionMap.set(session.id, {
-        sessionId: session.id,
+      sessionMap.set(session.session_id, {
+        sessionId: session.session_id,
         startedAt: session.started_at,
         endedAt: session.ended_at,
         durationMs: session.total_duration_ms,
