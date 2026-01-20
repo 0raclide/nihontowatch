@@ -4,6 +4,89 @@ import type { Listing } from '@/types';
 import { isBlade, isTosogu } from '@/types';
 
 // =============================================================================
+// HELPERS - Japanese text detection and romanization
+// =============================================================================
+
+// Check if string contains Japanese characters (hiragana, katakana, kanji)
+function containsJapanese(str: string): boolean {
+  return /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(str);
+}
+
+// Item type prefixes to strip from title_en when extracting artisan name
+const ITEM_TYPE_PREFIXES = [
+  'Katana:', 'Wakizashi:', 'Tanto:', 'Tachi:', 'Kodachi:',
+  'Naginata:', 'Yari:', 'Ken:', 'Daisho:',
+  'Tsuba:', 'Fuchi-Kashira:', 'Kozuka:', 'Kogai:', 'Menuki:',
+  'Koshirae:', 'Armor:', 'Helmet:',
+  // Without colons (some titles use space instead)
+  'Katana ', 'Wakizashi ', 'Tanto ', 'Tachi ',
+];
+
+/**
+ * Extract romanized artisan name from title_en when smith/maker is in Japanese.
+ *
+ * For example:
+ * - title_en: "Katana: Soshu Yukimitsu", school: "Soshu" → returns "Yukimitsu"
+ * - title_en: "Wakizashi: Bizen Osafune Sukesada", school: "Osafune" → returns "Sukesada"
+ * - title_en: "Tsuba: Nobuie" → returns "Nobuie"
+ */
+function extractArtisanFromTitleEn(
+  titleEn: string | null | undefined,
+  school: string | null | undefined
+): string | null {
+  if (!titleEn) return null;
+
+  let cleaned = titleEn.trim();
+
+  // Remove item type prefix (e.g., "Katana: " or "Katana ")
+  for (const prefix of ITEM_TYPE_PREFIXES) {
+    if (cleaned.toLowerCase().startsWith(prefix.toLowerCase())) {
+      cleaned = cleaned.slice(prefix.length).trim();
+      break;
+    }
+  }
+
+  // If we have a romanized school name, try to extract artisan after it
+  if (school && !containsJapanese(school)) {
+    const schoolLower = school.toLowerCase();
+    const cleanedLower = cleaned.toLowerCase();
+
+    // Check if title starts with school name (e.g., "Soshu Yukimitsu")
+    if (cleanedLower.startsWith(schoolLower + ' ')) {
+      const artisan = cleaned.slice(school.length).trim();
+      if (artisan && !containsJapanese(artisan)) {
+        return artisan;
+      }
+    }
+
+    // Check for province + school pattern (e.g., "Bizen Osafune Sukesada")
+    // Common provinces that appear in titles
+    const provinces = ['Bizen', 'Yamashiro', 'Yamato', 'Sagami', 'Mino', 'Settsu', 'Hizen', 'Satsuma', 'Echizen'];
+    for (const province of provinces) {
+      const pattern = province.toLowerCase() + ' ' + schoolLower + ' ';
+      if (cleanedLower.startsWith(pattern)) {
+        const artisan = cleaned.slice(pattern.length - 1).trim(); // -1 to account for trailing space
+        if (artisan && !containsJapanese(artisan)) {
+          return artisan;
+        }
+      }
+    }
+  }
+
+  // If no school or couldn't extract, return the cleaned title if it looks like an artisan name
+  // (single word or two words, no Japanese)
+  const words = cleaned.split(/\s+/);
+  if (words.length <= 3 && !containsJapanese(cleaned)) {
+    // Skip if it looks like a full title rather than just a name
+    if (!cleaned.includes('(') && !cleaned.includes('NBTHK') && !cleaned.includes('Hozon')) {
+      return cleaned;
+    }
+  }
+
+  return null;
+}
+
+// =============================================================================
 // TYPES
 // =============================================================================
 
@@ -56,15 +139,38 @@ export function getArtisanInfo(listing: Listing): {
   artisanLabel: string;
 } {
   if (isTosogu(listing.item_type)) {
+    const rawMaker = listing.tosogu_maker;
+    const school = listing.tosogu_school;
+
+    // If maker is in Japanese, try to extract romanized name from title_en
+    let artisan: string | null = null;
+    if (rawMaker && containsJapanese(rawMaker)) {
+      artisan = extractArtisanFromTitleEn(listing.title_en, school);
+    } else {
+      artisan = rawMaker || null;
+    }
+
     return {
-      artisan: listing.tosogu_maker || null,
-      school: listing.tosogu_school || null,
+      artisan,
+      school: school && !containsJapanese(school) ? school : null,
       artisanLabel: 'Maker',
     };
   }
+
+  const rawSmith = listing.smith;
+  const school = listing.school;
+
+  // If smith is in Japanese, try to extract romanized name from title_en
+  let artisan: string | null = null;
+  if (rawSmith && containsJapanese(rawSmith)) {
+    artisan = extractArtisanFromTitleEn(listing.title_en, school);
+  } else {
+    artisan = rawSmith || null;
+  }
+
   return {
-    artisan: listing.smith || null,
-    school: listing.school || null,
+    artisan,
+    school: school && !containsJapanese(school) ? school : null,
     artisanLabel: 'Smith',
   };
 }
