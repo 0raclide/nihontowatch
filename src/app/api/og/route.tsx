@@ -162,26 +162,38 @@ async function generateDefaultOG(font: ArrayBuffer): Promise<ImageResponse> {
           fontFamily: 'Inter',
         }}
       >
-        {/* Tokugawa Mon */}
-        <img
-          src={`${BASE_URL}/logo-mon.png`}
-          width={120}
-          height={120}
-          style={{ marginBottom: 32 }}
-        />
+        {/* Tokugawa Mon - Large with elegant glow */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 160,
+            height: 160,
+            borderRadius: 80,
+            backgroundColor: `${OPUS.accent}12`,
+            marginBottom: 40,
+          }}
+        >
+          <img
+            src={`${BASE_URL}/logo-mon.png`}
+            width={140}
+            height={140}
+          />
+        </div>
 
         {/* Brand Name */}
-        <div style={{ fontSize: 64, fontWeight: 700, color: OPUS.accent, letterSpacing: '-0.02em' }}>
+        <div style={{ fontSize: 72, fontWeight: 700, color: OPUS.accent, letterSpacing: '-0.02em' }}>
           Nihontowatch
         </div>
 
         {/* Tagline */}
-        <div style={{ fontSize: 24, color: OPUS.textSecondary, marginTop: 16 }}>
+        <div style={{ fontSize: 26, color: OPUS.textSecondary, marginTop: 20, letterSpacing: '0.02em' }}>
           Compare. Decide. Acquire.
         </div>
 
         {/* Subtext */}
-        <div style={{ fontSize: 18, color: OPUS.textMuted, marginTop: 8 }}>
+        <div style={{ fontSize: 18, color: OPUS.textMuted, marginTop: 12 }}>
           All the dealers, one search.
         </div>
       </div>
@@ -408,32 +420,45 @@ export async function GET(request: NextRequest) {
             </div>
           </div>
 
-          {/* Footer - Branding */}
+          {/* Footer - Elegant Branding */}
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '20px 56px',
+              justifyContent: 'center',
+              padding: '24px 56px',
               backgroundColor: OPUS.surface,
               borderTop: `1px solid ${OPUS.surfaceElevated}`,
+              gap: 20,
             }}
           >
-            {/* Mon + Brand */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            {/* Mon - Larger, with subtle glow effect via background */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 52,
+                height: 52,
+                borderRadius: 26,
+                backgroundColor: `${OPUS.accent}15`,
+              }}
+            >
               <img
                 src={`${BASE_URL}/logo-mon.png`}
-                width={36}
-                height={36}
+                width={44}
+                height={44}
               />
-              <span style={{ fontSize: 20, fontWeight: 600, color: OPUS.accent, letterSpacing: '-0.01em' }}>
-                nihontowatch.com
-              </span>
             </div>
 
-            {/* Tagline */}
-            <div style={{ display: 'flex', fontSize: 14, color: OPUS.textMuted }}>
-              Compare. Decide. Acquire.
+            {/* Brand text */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+              <span style={{ fontSize: 22, fontWeight: 600, color: OPUS.accent, letterSpacing: '-0.01em' }}>
+                nihontowatch.com
+              </span>
+              <span style={{ fontSize: 13, color: OPUS.textMuted, marginTop: 2 }}>
+                Compare. Decide. Acquire.
+              </span>
             </div>
           </div>
         </div>
