@@ -37,24 +37,31 @@ export function ShareButton({
     e.stopPropagation();
 
     const shareUrl = buildShareUrl();
-    const shareData = {
-      title: 'Nihontowatch',
-      text: title,
-      url: shareUrl,
-    };
 
-    // Try native Web Share API first (mobile browsers)
-    if (navigator.share && navigator.canShare?.(shareData)) {
-      try {
-        await navigator.share(shareData);
-        return; // Native share handles its own feedback
-      } catch (err) {
-        // User cancelled or error - fall through to clipboard
-        if ((err as Error).name === 'AbortError') return;
+    // Detect mobile device (not just touch support, but actual mobile)
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+    // Only use native Web Share API on actual mobile devices
+    // (macOS Safari has navigator.share but opens a sheet instead of sharing)
+    if (isMobile && navigator.share) {
+      const shareData = {
+        title: 'Nihontowatch',
+        text: title,
+        url: shareUrl,
+      };
+
+      if (navigator.canShare?.(shareData)) {
+        try {
+          await navigator.share(shareData);
+          return; // Native share handles its own feedback
+        } catch (err) {
+          // User cancelled or error - fall through to clipboard
+          if ((err as Error).name === 'AbortError') return;
+        }
       }
     }
 
-    // Fallback: copy to clipboard
+    // Desktop and fallback: copy to clipboard
     try {
       await navigator.clipboard.writeText(shareUrl);
       setToastMessage('Link copied!');
@@ -83,7 +90,6 @@ export function ShareButton({
     <div className="relative">
       <button
         onClick={handleShare}
-        onTouchEnd={handleShare}
         data-share-button
         className={`
           ${sizeClasses[size]}
