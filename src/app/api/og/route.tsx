@@ -182,18 +182,19 @@ async function generateDefaultOG(font: ArrayBuffer): Promise<ImageResponse> {
           />
         </div>
 
-        {/* Brand Name */}
-        <div style={{ fontSize: 72, fontWeight: 700, color: OPUS.accent, letterSpacing: '-0.02em' }}>
-          Nihontowatch
+        {/* Brand Name - Nihonto in parchment, Watch in gold */}
+        <div style={{ display: 'flex', fontSize: 72, fontWeight: 700, letterSpacing: '-0.02em' }}>
+          <span style={{ color: OPUS.textPrimary }}>Nihonto</span>
+          <span style={{ color: OPUS.accent }}>Watch</span>
         </div>
 
-        {/* Tagline */}
-        <div style={{ fontSize: 26, color: OPUS.textSecondary, marginTop: 20, letterSpacing: '0.02em' }}>
+        {/* Tagline - HIGH CONTRAST */}
+        <div style={{ fontSize: 28, color: OPUS.textPrimary, marginTop: 24, letterSpacing: '0.03em', fontWeight: 500 }}>
           Compare. Decide. Acquire.
         </div>
 
         {/* Subtext */}
-        <div style={{ fontSize: 18, color: OPUS.textMuted, marginTop: 12 }}>
+        <div style={{ fontSize: 20, color: OPUS.textSecondary, marginTop: 12 }}>
           All the dealers, one search.
         </div>
       </div>
@@ -451,12 +452,13 @@ export async function GET(request: NextRequest) {
               />
             </div>
 
-            {/* Brand text */}
+            {/* Brand text - NihontoWatch with split colors */}
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-              <span style={{ fontSize: 22, fontWeight: 600, color: OPUS.accent, letterSpacing: '-0.01em' }}>
-                nihontowatch.com
-              </span>
-              <span style={{ fontSize: 13, color: OPUS.textMuted, marginTop: 2 }}>
+              <div style={{ display: 'flex', fontSize: 22, fontWeight: 600, letterSpacing: '-0.01em' }}>
+                <span style={{ color: OPUS.textPrimary }}>Nihonto</span>
+                <span style={{ color: OPUS.accent }}>Watch</span>
+              </div>
+              <span style={{ fontSize: 13, color: OPUS.textSecondary, marginTop: 2 }}>
                 Compare. Decide. Acquire.
               </span>
             </div>
