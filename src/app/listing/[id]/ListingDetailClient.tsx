@@ -10,7 +10,6 @@ import { CreateAlertModal } from '@/components/alerts/CreateAlertModal';
 import { LoginModal } from '@/components/auth/LoginModal';
 import { useAlerts } from '@/hooks/useAlerts';
 import { useAuth } from '@/lib/auth/AuthContext';
-import { createClient } from '@/lib/supabase/client';
 import { getAllImages } from '@/lib/images';
 import { useValidatedImages } from '@/hooks/useValidatedImages';
 import { shouldShowNewBadge } from '@/lib/newListing';
@@ -86,7 +85,7 @@ export default function ListingDetailPage() {
     }
   }, [validatedImages.length, selectedImageIndex]);
 
-  // Fetch listing data
+  // Fetch listing data via API route (enables edge caching)
   useEffect(() => {
     const fetchListing = async () => {
       if (!listingId) return;
@@ -95,48 +94,20 @@ export default function ListingDetailPage() {
       setError(null);
 
       try {
-        const supabase = createClient();
-        const { data, error: fetchError } = await supabase
-          .from('listings')
-          .select(`
-            *,
-            dealers (
-              id,
-              name,
-              domain
-            )
-          `)
-          .eq('id', parseInt(listingId))
-          .single();
+        const response = await fetch(`/api/listing/${listingId}`);
 
-        if (fetchError) {
-          throw new Error(fetchError.message);
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to load listing');
         }
 
-        if (!data) {
+        const data = await response.json();
+
+        if (!data.listing) {
           throw new Error('Listing not found');
         }
 
-        // Get dealer baseline for "New this week" badge
-        let dealer_earliest_seen_at: string | null = null;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const listingData = data as any;
-        if (listingData.dealer_id) {
-          const { data: baselineData } = await supabase
-            .from('listings')
-            .select('first_seen_at')
-            .eq('dealer_id', listingData.dealer_id)
-            .order('first_seen_at', { ascending: true })
-            .limit(1)
-            .single();
-
-          if (baselineData) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            dealer_earliest_seen_at = (baselineData as any).first_seen_at;
-          }
-        }
-
-        setListing({ ...listingData, dealer_earliest_seen_at } as ListingDetail);
+        setListing(data.listing as ListingDetail);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load listing');
       } finally {

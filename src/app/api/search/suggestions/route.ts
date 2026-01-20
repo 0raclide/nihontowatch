@@ -4,7 +4,9 @@ import { normalizeSearchText } from '@/lib/search';
 import { LISTING_FILTERS } from '@/lib/constants';
 import type { SearchSuggestion, SearchSuggestionsResponse } from '@/lib/search/types';
 
-export const dynamic = 'force-dynamic';
+// Enable edge caching for search suggestions
+// 60s cache + 5min stale-while-revalidate reduces DB load significantly
+export const revalidate = 60;
 
 // Type for the raw Supabase query result
 interface ListingQueryResult {
@@ -40,11 +42,14 @@ export async function GET(request: NextRequest) {
 
   // Return empty for short queries
   if (!query || query.trim().length < 2) {
-    return NextResponse.json({
+    const response = NextResponse.json({
       suggestions: [],
       total: 0,
       query: query || '',
     } satisfies SearchSuggestionsResponse);
+    // Cache empty responses too
+    response.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
+    return response;
   }
 
   try {
@@ -120,11 +125,19 @@ export async function GET(request: NextRequest) {
       tosogu_maker: item.tosogu_maker,
     }));
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       suggestions,
       total: count || 0,
       query,
     } satisfies SearchSuggestionsResponse);
+
+    // Cache for 60 seconds at edge, serve stale for 5 minutes while revalidating
+    response.headers.set(
+      'Cache-Control',
+      'public, s-maxage=60, stale-while-revalidate=300'
+    );
+
+    return response;
   } catch (error) {
     console.error('Search suggestions API error:', error);
     return NextResponse.json(
