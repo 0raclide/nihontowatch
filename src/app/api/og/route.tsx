@@ -66,6 +66,16 @@ function formatPrice(value: number | null, currency: string | null): string {
   return formatter.format(value);
 }
 
+// Convert ArrayBuffer to base64 (Edge Runtime compatible)
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
 // Fetch image and convert to base64 data URL for edge compatibility
 async function fetchImageAsDataUrl(url: string): Promise<string | null> {
   try {
@@ -79,7 +89,7 @@ async function fetchImageAsDataUrl(url: string): Promise<string | null> {
 
     const contentType = response.headers.get('content-type') || 'image/jpeg';
     const arrayBuffer = await response.arrayBuffer();
-    const base64 = Buffer.from(arrayBuffer).toString('base64');
+    const base64 = arrayBufferToBase64(arrayBuffer);
 
     return `data:${contentType};base64,${base64}`;
   } catch {
