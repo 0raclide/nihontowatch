@@ -21,8 +21,6 @@ interface ListingMetadata {
   cert_type: string | null;
   smith: string | null;
   tosogu_maker: string | null;
-  stored_images: string[] | null;
-  images: string[] | null;
   dealers: { name: string; domain: string } | null;
 }
 
@@ -83,8 +81,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         cert_type,
         smith,
         tosogu_maker,
-        stored_images,
-        images,
         dealers (
           name,
           domain
@@ -119,10 +115,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     if (listing.cert_type) description += ` (${listing.cert_type})`;
     description += `. ${price}. Available from ${dealerName} on Nihontowatch.`;
 
-    // Get first image for OG
-    const images = listing.stored_images || listing.images || [];
-    const firstImage = images[0];
-
     // Build OG image URL (our dynamic OG image endpoint)
     const ogImageUrl = `${baseUrl}/api/og?id=${listingId}`;
 
@@ -145,15 +137,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
             height: 630,
             alt: listing.title,
           },
-          // Also include the actual product image as fallback
-          ...(firstImage
-            ? [
-                {
-                  url: firstImage,
-                  alt: listing.title,
-                },
-              ]
-            : []),
         ],
       },
       twitter: {
