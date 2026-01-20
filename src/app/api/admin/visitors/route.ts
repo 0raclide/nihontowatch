@@ -25,7 +25,8 @@ interface VisitorStats {
 
   // Visitor details (only tracked visitors)
   visitors: {
-    visitorId: string;
+    visitorId: string;       // Full ID for API calls
+    visitorIdShort: string;  // Truncated for display
     ip: string | null;
     events: number;
     firstSeen: string;
@@ -263,7 +264,8 @@ export async function GET(request: NextRequest) {
         });
 
         return {
-          visitorId: visitorId.length > 30 ? visitorId.slice(0, 30) + '...' : visitorId,
+          visitorId,
+          visitorIdShort: visitorId.length > 30 ? visitorId.slice(0, 30) + '...' : visitorId,
           ip: data.ip,
           events: data.events,
           firstSeen: data.firstSeen,

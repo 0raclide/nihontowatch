@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { VisitorDetailModal } from '@/components/admin/VisitorDetailModal';
 
 // Country code to flag emoji
 function getFlag(countryCode: string): string {
@@ -58,6 +59,7 @@ interface VisitorStats {
   // Visitor details
   visitors: {
     visitorId: string;
+    visitorIdShort: string;
     ip: string | null;
     events: number;
     firstSeen: string;
@@ -110,6 +112,7 @@ export default function VisitorsPage() {
   const [isLoadingGeo, setIsLoadingGeo] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [timeRange, setTimeRange] = useState<TimeRange>('7d');
+  const [selectedVisitorId, setSelectedVisitorId] = useState<string | null>(null);
 
   const fetchStats = useCallback(async () => {
     setIsLoading(true);
@@ -389,7 +392,10 @@ export default function VisitorsPage() {
       {/* Visitor List */}
       <div className="bg-cream rounded-xl border border-border">
         <div className="px-5 py-4 border-b border-border flex items-center justify-between">
-          <h2 className="font-medium text-ink">Recent Visitors</h2>
+          <div>
+            <h2 className="font-medium text-ink">Recent Visitors</h2>
+            <p className="text-xs text-muted mt-0.5">Click a visitor to see their full activity</p>
+          </div>
           <span className="text-xs text-muted">{stats?.visitors?.length || 0} visitors</span>
         </div>
         <div className="overflow-x-auto">
@@ -408,10 +414,14 @@ export default function VisitorsPage() {
                 stats.visitors.slice(0, 20).map((visitor) => {
                   const geo = visitor.ip ? geoData?.geoData?.[visitor.ip] : null;
                   return (
-                    <tr key={visitor.visitorId} className="hover:bg-linen/30">
+                    <tr
+                      key={visitor.visitorId}
+                      className="hover:bg-linen/30 cursor-pointer transition-colors"
+                      onClick={() => setSelectedVisitorId(visitor.visitorId)}
+                    >
                       <td className="px-5 py-3">
                         <code className="text-xs bg-linen px-2 py-1 rounded text-charcoal">
-                          {visitor.visitorId}
+                          {visitor.visitorIdShort}
                         </code>
                       </td>
                       <td className="px-5 py-3">
@@ -451,6 +461,14 @@ export default function VisitorsPage() {
           </table>
         </div>
       </div>
+
+      {/* Visitor Detail Modal */}
+      {selectedVisitorId && (
+        <VisitorDetailModal
+          visitorId={selectedVisitorId}
+          onClose={() => setSelectedVisitorId(null)}
+        />
+      )}
     </div>
   );
 }
