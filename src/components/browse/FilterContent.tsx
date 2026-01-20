@@ -15,6 +15,8 @@ interface DealerFacet {
 
 type Currency = 'USD' | 'JPY' | 'EUR';
 
+export type AvailabilityStatus = 'available' | 'sold' | 'all';
+
 export interface FilterContentProps {
   facets: {
     itemTypes: Facet[];
@@ -36,11 +38,13 @@ export interface FilterContentProps {
   onFilterChange: (key: string, value: unknown) => void;
   onClose?: () => void;
   isUpdating?: boolean;
-  // Sort and currency for mobile drawer
+  // Sort, currency, and availability for mobile drawer
   sort?: string;
   onSortChange?: (sort: string) => void;
   currency?: Currency;
   onCurrencyChange?: (currency: Currency) => void;
+  availability?: AvailabilityStatus;
+  onAvailabilityChange?: (status: AvailabilityStatus) => void;
 }
 
 function FilterSection({
@@ -261,6 +265,8 @@ export function FilterContent({
   onSortChange,
   currency,
   onCurrencyChange,
+  availability,
+  onAvailabilityChange,
 }: FilterContentProps) {
   // Normalize and aggregate item types
   const normalizedItemTypes = useMemo(() => {
@@ -482,6 +488,23 @@ export function FilterContent({
           </button>
         )}
       </div>
+
+      {/* Availability - Mobile only */}
+      {onAvailabilityChange && (
+        <div className="lg:hidden mb-3">
+          <label htmlFor="availability-select" className="text-[12px] text-muted mb-2 block">Show</label>
+          <select
+            id="availability-select"
+            value={availability}
+            onChange={(e) => onAvailabilityChange(e.target.value as AvailabilityStatus)}
+            className="w-full px-3 py-3 bg-paper border-2 border-border rounded-lg text-[15px] text-ink focus:outline-none focus:border-gold"
+          >
+            <option value="available">For sale</option>
+            <option value="sold">Sold</option>
+            <option value="all">All</option>
+          </select>
+        </div>
+      )}
 
       {/* Sort & Currency - Mobile only */}
       {onSortChange && onCurrencyChange && (

@@ -193,7 +193,7 @@ describe('FilterContent Component', () => {
     expect(mockOnFilterChange).toHaveBeenCalledWith('dealers', []);
   });
 
-  it('renders dealer dropdown', () => {
+  it('renders dealer section', () => {
     render(
       <FilterContent
         facets={mockFacets}
@@ -202,10 +202,11 @@ describe('FilterContent Component', () => {
       />
     );
 
-    expect(screen.getByText('All dealers')).toBeInTheDocument();
+    // Dealer section title should be present
+    expect(screen.getByText('Dealer')).toBeInTheDocument();
   });
 
-  it('opens dealer dropdown on click', () => {
+  it('shows dealer checkboxes when section is expanded', () => {
     render(
       <FilterContent
         facets={mockFacets}
@@ -214,9 +215,10 @@ describe('FilterContent Component', () => {
       />
     );
 
-    fireEvent.click(screen.getByText('All dealers'));
+    // Click the Dealer section header to expand (defaultOpen is false)
+    fireEvent.click(screen.getByText('Dealer'));
 
-    // Should show dealers
+    // Should show dealers as checkboxes
     expect(screen.getByText('Aoi Art')).toBeInTheDocument();
     expect(screen.getByText('Eirakudo')).toBeInTheDocument();
   });
@@ -320,6 +322,131 @@ describe('FilterContent Component', () => {
       const categoryButtons = document.querySelectorAll('.py-3');
       expect(categoryButtons.length).toBeGreaterThan(0);
     });
+  });
+});
+
+describe('Mobile Availability Select', () => {
+  const mockFacets = {
+    itemTypes: [],
+    certifications: [],
+    dealers: [],
+    historicalPeriods: [],
+    signatureStatuses: [],
+  };
+
+  const defaultFilters = {
+    category: 'all' as 'all' | 'nihonto' | 'tosogu' | 'armor',
+    itemTypes: [] as string[],
+    certifications: [] as string[],
+    schools: [] as string[],
+    dealers: [] as number[],
+    historicalPeriods: [] as string[],
+    signatureStatuses: [] as string[],
+    askOnly: false,
+  };
+
+  const mockOnFilterChange = vi.fn();
+  const mockOnAvailabilityChange = vi.fn();
+
+  beforeEach(() => {
+    mockOnFilterChange.mockClear();
+    mockOnAvailabilityChange.mockClear();
+  });
+
+  it('renders availability select when onAvailabilityChange is provided', () => {
+    render(
+      <FilterContent
+        facets={mockFacets}
+        filters={defaultFilters}
+        onFilterChange={mockOnFilterChange}
+        availability="available"
+        onAvailabilityChange={mockOnAvailabilityChange}
+      />
+    );
+
+    expect(screen.getByLabelText(/show/i)).toBeInTheDocument();
+  });
+
+  it('does not render availability select when onAvailabilityChange is not provided', () => {
+    render(
+      <FilterContent
+        facets={mockFacets}
+        filters={defaultFilters}
+        onFilterChange={mockOnFilterChange}
+      />
+    );
+
+    expect(screen.queryByLabelText(/show/i)).not.toBeInTheDocument();
+  });
+
+  it('shows all three availability options', () => {
+    render(
+      <FilterContent
+        facets={mockFacets}
+        filters={defaultFilters}
+        onFilterChange={mockOnFilterChange}
+        availability="available"
+        onAvailabilityChange={mockOnAvailabilityChange}
+      />
+    );
+
+    const select = screen.getByLabelText(/show/i);
+    expect(select).toBeInTheDocument();
+
+    // Check all options exist
+    expect(screen.getByRole('option', { name: /for sale/i })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: /sold/i })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: /^all$/i })).toBeInTheDocument();
+  });
+
+  it('displays correct value based on availability prop', () => {
+    render(
+      <FilterContent
+        facets={mockFacets}
+        filters={defaultFilters}
+        onFilterChange={mockOnFilterChange}
+        availability="sold"
+        onAvailabilityChange={mockOnAvailabilityChange}
+      />
+    );
+
+    const select = screen.getByLabelText(/show/i) as HTMLSelectElement;
+    expect(select.value).toBe('sold');
+  });
+
+  it('calls onAvailabilityChange when selection changes', () => {
+    render(
+      <FilterContent
+        facets={mockFacets}
+        filters={defaultFilters}
+        onFilterChange={mockOnFilterChange}
+        availability="available"
+        onAvailabilityChange={mockOnAvailabilityChange}
+      />
+    );
+
+    const select = screen.getByLabelText(/show/i);
+    fireEvent.change(select, { target: { value: 'sold' } });
+
+    expect(mockOnAvailabilityChange).toHaveBeenCalledTimes(1);
+    expect(mockOnAvailabilityChange).toHaveBeenCalledWith('sold');
+  });
+
+  it('calls onAvailabilityChange with "all" when All is selected', () => {
+    render(
+      <FilterContent
+        facets={mockFacets}
+        filters={defaultFilters}
+        onFilterChange={mockOnFilterChange}
+        availability="available"
+        onAvailabilityChange={mockOnAvailabilityChange}
+      />
+    );
+
+    const select = screen.getByLabelText(/show/i);
+    fireEvent.change(select, { target: { value: 'all' } });
+
+    expect(mockOnAvailabilityChange).toHaveBeenCalledWith('all');
   });
 });
 

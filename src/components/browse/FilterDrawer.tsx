@@ -2,7 +2,7 @@
 
 import { Drawer } from '@/components/ui/Drawer';
 import { useMobileUI } from '@/contexts/MobileUIContext';
-import { FilterContent, FilterContentProps } from './FilterContent';
+import { FilterContent, FilterContentProps, AvailabilityStatus } from './FilterContent';
 
 type Currency = 'USD' | 'JPY' | 'EUR';
 
@@ -15,6 +15,8 @@ interface FilterDrawerProps {
   onSortChange?: (sort: string) => void;
   currency?: Currency;
   onCurrencyChange?: (currency: Currency) => void;
+  availability?: AvailabilityStatus;
+  onAvailabilityChange?: (status: AvailabilityStatus) => void;
 }
 
 export function FilterDrawer({
@@ -26,6 +28,8 @@ export function FilterDrawer({
   onSortChange,
   currency,
   onCurrencyChange,
+  availability,
+  onAvailabilityChange,
 }: FilterDrawerProps) {
   const { filterDrawerOpen, closeFilterDrawer } = useMobileUI();
 
@@ -41,6 +45,8 @@ export function FilterDrawer({
         onSortChange={onSortChange}
         currency={currency}
         onCurrencyChange={onCurrencyChange}
+        availability={availability}
+        onAvailabilityChange={onAvailabilityChange}
       />
     </Drawer>
   );

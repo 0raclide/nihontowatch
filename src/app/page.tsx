@@ -9,6 +9,7 @@ import { FilterSidebar } from '@/components/browse/FilterSidebar';
 import { FilterDrawer } from '@/components/browse/FilterDrawer';
 import { ListingGrid } from '@/components/browse/ListingGrid';
 import { CurrencySelector } from '@/components/ui/CurrencySelector';
+import { AvailabilityToggle, type AvailabilityStatus } from '@/components/ui/AvailabilityToggle';
 import { getActiveFilterCount } from '@/components/browse/FilterContent';
 import { SaveSearchButton } from '@/components/browse/SaveSearchButton';
 import type { SavedSearchCriteria } from '@/types';
@@ -136,7 +137,9 @@ function HomeContent() {
   const filtersChangedRef = useRef(false);
   const activity = useActivityOptional();
 
-  const activeTab = 'available'; // Only show available items
+  const [activeTab, setActiveTab] = useState<AvailabilityStatus>(
+    (searchParams.get('tab') as AvailabilityStatus) || 'available'
+  );
   const [filters, setFilters] = useState<Filters>({
     category: (searchParams.get('cat') as 'all' | 'nihonto' | 'tosogu' | 'armor') || 'all',
     itemTypes: searchParams.get('type')?.split(',').filter(Boolean) || [],
@@ -198,11 +201,17 @@ function HomeContent() {
     }
   }, []);
 
+  // Handle availability status change
+  const handleAvailabilityChange = useCallback((status: AvailabilityStatus) => {
+    setActiveTab(status);
+    setPage(1); // Reset to page 1 when changing availability filter
+  }, []);
+
   // Build URL params from state (for URL sync - filters and sort only, not page)
   const buildUrlParams = useCallback(() => {
     const params = new URLSearchParams();
 
-    params.set('tab', 'available');
+    params.set('tab', activeTab);
     if (filters.category !== 'all') params.set('cat', filters.category);
     if (filters.itemTypes.length) params.set('type', filters.itemTypes.join(','));
     if (filters.certifications.length) params.set('cert', filters.certifications.join(','));
@@ -222,7 +231,7 @@ function HomeContent() {
   const buildFetchParams = useCallback(() => {
     const params = new URLSearchParams();
 
-    params.set('tab', 'available');
+    params.set('tab', activeTab);
     if (filters.category !== 'all') params.set('cat', filters.category);
     if (filters.itemTypes.length) params.set('type', filters.itemTypes.join(','));
     if (filters.certifications.length) params.set('cert', filters.certifications.join(','));
@@ -401,6 +410,7 @@ function HomeContent() {
 
           {/* Controls row - Desktop only, mobile uses filter drawer */}
           <div className="hidden lg:flex items-center gap-6">
+            <AvailabilityToggle value={activeTab} onChange={handleAvailabilityChange} />
             <CurrencySelector value={currency} onChange={handleCurrencyChange} />
 
             <select
@@ -426,7 +436,7 @@ function HomeContent() {
             {/* Save Search Button */}
             <SaveSearchButton
               criteria={{
-                tab: 'available',
+                tab: activeTab,
                 category: filters.category,
                 itemTypes: filters.itemTypes,
                 certifications: filters.certifications,
@@ -514,6 +524,8 @@ function HomeContent() {
           }}
           currency={currency}
           onCurrencyChange={handleCurrencyChange}
+          availability={activeTab}
+          onAvailabilityChange={handleAvailabilityChange}
         />
 
         {/* Mobile Bottom Tab Bar */}
