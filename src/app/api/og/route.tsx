@@ -128,7 +128,7 @@ export async function GET(request: NextRequest) {
   // Fetch listing data using REST API (edge-compatible)
   try {
     const listingResponse = await fetch(
-      `${SUPABASE_URL}/rest/v1/listings?id=eq.${listingId}&select=id,title,price_value,price_currency,item_type,cert_type,smith,tosogu_maker,stored_images,images,dealers(name)`,
+      `${SUPABASE_URL}/rest/v1/listings?id=eq.${listingId}&select=id,title,price_value,price_currency,item_type,cert_type,smith,tosogu_maker,dealers(name)`,
       {
         headers: {
           apikey: SUPABASE_ANON_KEY,
@@ -149,12 +149,12 @@ export async function GET(request: NextRequest) {
     }
 
     // Get certification info
-    const certType = listing.cert_type;
+    const certType = listing.cert_type as string | null;
     const certColors = certType ? CERT_COLORS[certType] : null;
     const certLabel = certType ? CERT_LABELS[certType] || certType : null;
 
     // Get item type label
-    const itemType = listing.item_type;
+    const itemType = listing.item_type as string | null;
     const itemTypeLabel = itemType ? ITEM_TYPE_LABELS[itemType.toLowerCase()] || itemType : null;
 
     // Get artisan name
@@ -164,8 +164,7 @@ export async function GET(request: NextRequest) {
     const priceDisplay = formatPrice(listing.price_value, listing.price_currency);
 
     // Dealer name
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const dealerName = (listing.dealers as any)?.name || 'Unknown Dealer';
+    const dealerName = listing.dealers?.name || 'Unknown Dealer';
 
     return new ImageResponse(
       (

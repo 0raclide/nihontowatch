@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 
-export const dynamic = 'force-dynamic';
+// Enable ISR caching - rates don't change frequently
+// Removed force-dynamic which was conflicting with revalidate
 export const revalidate = 3600; // Cache for 1 hour
 
 interface ExchangeRates {
@@ -20,7 +21,9 @@ export async function GET() {
 
     // Return cached rates if still valid
     if (cachedRates && now - cacheTimestamp < CACHE_DURATION) {
-      return NextResponse.json(cachedRates);
+      const response = NextResponse.json(cachedRates);
+      response.headers.set('Cache-Control', 'public, max-age=3600, s-maxage=3600');
+      return response;
     }
 
     // Fetch fresh rates from Frankfurter API (free, no API key needed)
@@ -51,7 +54,9 @@ export async function GET() {
     cachedRates = rates;
     cacheTimestamp = now;
 
-    return NextResponse.json(rates);
+    const jsonResponse = NextResponse.json(rates);
+    jsonResponse.headers.set('Cache-Control', 'public, max-age=3600, s-maxage=3600');
+    return jsonResponse;
   } catch (error) {
     console.error('Exchange rate fetch error:', error);
 

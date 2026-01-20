@@ -1,0 +1,388 @@
+import type { Metadata } from 'next';
+import Link from 'next/link';
+import { notFound, redirect } from 'next/navigation';
+import { createServiceClient } from '@/lib/supabase/server';
+import { Header } from '@/components/layout/Header';
+import { BottomTabBar } from '@/components/navigation/BottomTabBar';
+import {
+  generateDealerJsonLd,
+  generateBreadcrumbJsonLd,
+  jsonLdScriptProps,
+} from '@/lib/seo/jsonLd';
+import type { Dealer, Listing } from '@/types';
+
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://nihontowatch.com';
+
+// Helper to create URL-friendly slug from dealer name
+function createDealerSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
+// Country flag emoji
+function getCountryFlag(country: string): string {
+  const flags: Record<string, string> = {
+    JP: '🇯🇵',
+    Japan: '🇯🇵',
+    US: '🇺🇸',
+    USA: '🇺🇸',
+    UK: '🇬🇧',
+    DE: '🇩🇪',
+    Germany: '🇩🇪',
+  };
+  return flags[country] || '🌐';
+}
+
+// Find dealer by slug
+async function findDealerBySlug(slug: string) {
+  const supabase = createServiceClient();
+
+  // Fetch all dealers and find the one whose slug matches
+  const { data: dealers } = await supabase
+    .from('dealers')
+    .select('*')
+    .eq('is_active', true);
+
+  if (!dealers || dealers.length === 0) return null;
+
+  type DealerRow = { id: number; name: string; domain: string; country: string; is_active: boolean; created_at: string };
+  return (dealers as DealerRow[]).find((d) => createDealerSlug(d.name) === slug) || null;
+}
+
+type Props = {
+  params: Promise<{ slug: string }>;
+};
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { slug } = await params;
+  const dealer = await findDealerBySlug(slug);
+
+  if (!dealer) {
+    return {
+      title: 'Dealer Not Found | Nihontowatch',
+      description: 'The requested dealer could not be found.',
+    };
+  }
+
+  const supabase = createServiceClient();
+  const { count } = await supabase
+    .from('listings')
+    .select('*', { count: 'exact', head: true })
+    .eq('dealer_id', dealer.id)
+    .eq('is_available', true);
+
+  const listingCount = count || 0;
+  const flag = getCountryFlag(dealer.country);
+
+  return {
+    title: `${dealer.name} ${flag} | Japanese Sword Dealer | Nihontowatch`,
+    description: `Browse ${listingCount} Japanese swords and tosogu from ${dealer.name}. Find authentic katana, wakizashi, tanto, and sword fittings from this trusted dealer.`,
+    alternates: {
+      canonical: `${baseUrl}/dealers/${slug}`,
+    },
+    openGraph: {
+      title: `${dealer.name} | Japanese Sword Dealer`,
+      description: `Browse ${listingCount} Japanese swords and tosogu from ${dealer.name}.`,
+      type: 'website',
+      url: `${baseUrl}/dealers/${slug}`,
+      siteName: 'Nihontowatch',
+    },
+    twitter: {
+      card: 'summary',
+      title: `${dealer.name} | Nihontowatch`,
+      description: `Browse ${listingCount} listings from ${dealer.name}.`,
+    },
+  };
+}
+
+export default async function DealerPage({ params }: Props) {
+  const { slug } = await params;
+  const dealer = await findDealerBySlug(slug);
+
+  if (!dealer) {
+    notFound();
+  }
+
+  const supabase = createServiceClient();
+
+  // Fetch listing count
+  const { count: totalCount } = await supabase
+    .from('listings')
+    .select('*', { count: 'exact', head: true })
+    .eq('dealer_id', dealer.id)
+    .eq('is_available', true);
+
+  // Fetch sample listings (first 12)
+  type ListingRow = { id: number; title: string; price_value: number | null; price_currency: string; item_type: string | null; cert_type: string | null; stored_images: string[] | null; images: string[] | null };
+  const { data: sampleListingsRaw } = await supabase
+    .from('listings')
+    .select(`
+      id,
+      title,
+      price_value,
+      price_currency,
+      item_type,
+      cert_type,
+      stored_images,
+      images
+    `)
+    .eq('dealer_id', dealer.id)
+    .eq('is_available', true)
+    .order('price_value', { ascending: false, nullsFirst: false })
+    .limit(12);
+  const sampleListings = sampleListingsRaw as ListingRow[] | null;
+
+  // Fetch item type breakdown
+  const { data: typeBreakdown } = await supabase
+    .from('listings')
+    .select('item_type')
+    .eq('dealer_id', dealer.id)
+    .eq('is_available', true);
+
+  // Count by type
+  const typeCounts: Record<string, number> = {};
+  (typeBreakdown as Array<{ item_type: string | null }> | null)?.forEach((listing) => {
+    if (listing.item_type) {
+      typeCounts[listing.item_type] = (typeCounts[listing.item_type] || 0) + 1;
+    }
+  });
+
+  // Sort by count
+  const sortedTypes = Object.entries(typeCounts)
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, 6);
+
+  const listingCount = totalCount || 0;
+  const flag = getCountryFlag(dealer.country);
+
+  // Generate JSON-LD
+  const dealerJsonLd = generateDealerJsonLd(dealer as Dealer);
+  const breadcrumbJsonLd = generateBreadcrumbJsonLd([
+    { name: 'Home', url: baseUrl },
+    { name: 'Dealers', url: `${baseUrl}/dealers` },
+    { name: dealer.name },
+  ]);
+
+  return (
+    <>
+      {/* JSON-LD Structured Data */}
+      <script {...jsonLdScriptProps(dealerJsonLd)} />
+      <script {...jsonLdScriptProps(breadcrumbJsonLd)} />
+
+      <div className="min-h-screen bg-linen dark:bg-ink">
+        <Header />
+
+        <main className="max-w-6xl mx-auto px-4 py-8 pb-24 md:pb-8">
+          {/* Breadcrumb */}
+          <nav className="mb-6 text-sm">
+            <ol className="flex items-center gap-2 text-muted dark:text-muted-dark">
+              <li>
+                <Link href="/" className="hover:text-gold transition-colors">
+                  Home
+                </Link>
+              </li>
+              <li>/</li>
+              <li>
+                <Link href="/dealers" className="hover:text-gold transition-colors">
+                  Dealers
+                </Link>
+              </li>
+              <li>/</li>
+              <li className="text-ink dark:text-cream">{dealer.name}</li>
+            </ol>
+          </nav>
+
+          {/* Dealer Header */}
+          <div className="mb-8">
+            <div className="flex items-center gap-3 mb-2">
+              <h1 className="font-serif text-3xl md:text-4xl text-ink dark:text-cream">
+                {dealer.name}
+              </h1>
+              <span className="text-3xl" title={dealer.country}>
+                {flag}
+              </span>
+            </div>
+            <div className="flex flex-wrap items-center gap-4 text-muted dark:text-muted-dark">
+              <a
+                href={`https://${dealer.domain}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-gold transition-colors flex items-center gap-1"
+              >
+                {dealer.domain}
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                  />
+                </svg>
+              </a>
+              <span>•</span>
+              <span>{listingCount.toLocaleString()} listings available</span>
+            </div>
+          </div>
+
+          {/* Stats Row */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <div className="bg-cream dark:bg-charcoal rounded-lg p-4 border border-border dark:border-border-dark">
+              <div className="text-2xl font-serif text-ink dark:text-cream">
+                {listingCount.toLocaleString()}
+              </div>
+              <div className="text-sm text-muted dark:text-muted-dark">Available Items</div>
+            </div>
+            {sortedTypes.slice(0, 3).map(([type, count]) => (
+              <div
+                key={type}
+                className="bg-cream dark:bg-charcoal rounded-lg p-4 border border-border dark:border-border-dark"
+              >
+                <div className="text-2xl font-serif text-ink dark:text-cream">
+                  {count.toLocaleString()}
+                </div>
+                <div className="text-sm text-muted dark:text-muted-dark capitalize">
+                  {type.replace(/_/g, ' ')}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Browse All Button */}
+          <div className="mb-8">
+            <Link
+              href={`/?dealer=${dealer.id}`}
+              className="inline-flex items-center gap-2 bg-gold hover:bg-gold/90 text-ink px-6 py-3 rounded-lg font-medium transition-colors"
+            >
+              Browse All {listingCount.toLocaleString()} Listings
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M14 5l7 7m0 0l-7 7m7-7H3"
+                />
+              </svg>
+            </Link>
+          </div>
+
+          {/* Sample Listings */}
+          {sampleListings && sampleListings.length > 0 && (
+            <section>
+              <h2 className="font-serif text-2xl text-ink dark:text-cream mb-4">
+                Featured Items
+              </h2>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {sampleListings.map((listing) => (
+                  <ListingPreviewCard key={listing.id} listing={listing} />
+                ))}
+              </div>
+              {listingCount > 12 && (
+                <div className="mt-6 text-center">
+                  <Link
+                    href={`/?dealer=${dealer.id}`}
+                    className="text-gold hover:underline"
+                  >
+                    View all {listingCount.toLocaleString()} listings →
+                  </Link>
+                </div>
+              )}
+            </section>
+          )}
+        </main>
+
+        <BottomTabBar />
+      </div>
+    </>
+  );
+}
+
+interface ListingPreview {
+  id: number;
+  title: string;
+  price_value: number | null;
+  price_currency: string | null;
+  item_type: string | null;
+  cert_type: string | null;
+  stored_images: string[] | null;
+  images: string[] | null;
+}
+
+function ListingPreviewCard({ listing }: { listing: ListingPreview }) {
+  const images = listing.stored_images || listing.images || [];
+  const firstImage = images[0];
+
+  const formatPrice = (value: number | null, currency: string | null) => {
+    if (!value) return 'Ask';
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: currency || 'JPY',
+      maximumFractionDigits: 0,
+    }).format(value);
+  };
+
+  return (
+    <Link
+      href={`/listing/${listing.id}`}
+      className="block bg-cream dark:bg-charcoal rounded-lg overflow-hidden border border-border dark:border-border-dark hover:border-gold dark:hover:border-gold transition-colors group"
+    >
+      {/* Image */}
+      <div className="aspect-square bg-linen dark:bg-ink relative overflow-hidden">
+        {firstImage ? (
+          <img
+            src={firstImage}
+            alt={listing.title}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            loading="lazy"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-muted dark:text-muted-dark">
+            <svg
+              className="w-12 h-12"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1}
+                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+              />
+            </svg>
+          </div>
+        )}
+        {/* Certification badge */}
+        {listing.cert_type && (
+          <div className="absolute top-2 left-2 bg-ink/80 text-cream text-xs px-2 py-1 rounded">
+            {listing.cert_type}
+          </div>
+        )}
+      </div>
+
+      {/* Info */}
+      <div className="p-3">
+        <h3 className="font-serif text-sm text-ink dark:text-cream line-clamp-2 mb-1 group-hover:text-gold transition-colors">
+          {listing.title}
+        </h3>
+        <div className="text-sm text-gold font-medium">
+          {formatPrice(listing.price_value, listing.price_currency)}
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+// Revalidate every hour
+export const revalidate = 3600;
