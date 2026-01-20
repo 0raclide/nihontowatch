@@ -107,10 +107,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
     if (!listing || error) {
       return {
-        title: 'Listing Not Found | Nihontowatch',
+        title: 'Listing Not Found | NihontoWatch',
         description: 'The requested listing could not be found.',
       };
     }
+
+    // Use English title if available, fall back to original title
+    const displayTitle = listing.title_en || listing.title;
 
     // Build enticing description - price is on the image, not here
     const artisan = listing.smith || listing.tosogu_maker;
@@ -119,7 +122,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const tagline = 'Compare. Decide. Acquire. All the dealers, one search.';
 
     // Page description includes item details
-    let description = listing.title;
+    let description = displayTitle;
     if (artisan) description += ` by ${artisan}`;
     if (listing.cert_type) description += ` • ${listing.cert_type}`;
     description += ` — ${tagline}`;
@@ -135,30 +138,30 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const shareUrl = `${baseUrl}/s/${listingId}?v=${version}`;
 
     return {
-      title: `${listing.title} | Nihontowatch`,
+      title: `${displayTitle} | NihontoWatch`,
       description,
       alternates: {
         // Canonical points to the real listing page for SEO
         canonical: `${baseUrl}/listing/${listingId}`,
       },
       openGraph: {
-        title: listing.title,
+        title: displayTitle,
         description: tagline,
         type: 'website',
         url: shareUrl,
-        siteName: 'Nihontowatch',
+        siteName: 'NihontoWatch',
         images: [
           {
             url: ogImageUrl,
             width: 1200,
             height: 630,
-            alt: listing.title,
+            alt: displayTitle,
           },
         ],
       },
       twitter: {
         card: 'summary_large_image',
-        title: listing.title,
+        title: displayTitle,
         description: tagline,
         images: [ogImageUrl],
       },
@@ -174,8 +177,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
   } catch {
     return {
-      title: 'Share | Nihontowatch',
-      description: 'View Japanese sword and tosogu listings on Nihontowatch.',
+      title: 'Share | NihontoWatch',
+      description: 'View Japanese sword and tosogu listings on NihontoWatch.',
     };
   }
 }
