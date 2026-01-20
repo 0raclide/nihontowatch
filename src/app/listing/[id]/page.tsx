@@ -72,7 +72,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   try {
     const supabase = await createClient();
-    const { data: listing } = await supabase
+    const { data: listingData, error } = await supabase
       .from('listings')
       .select(`
         id,
@@ -94,33 +94,34 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       .eq('id', listingId)
       .single();
 
-    if (!listing) {
+    // Type assertion to fix Supabase type inference issue
+    const listing = listingData as ListingMetadata | null;
+
+    if (!listing || error) {
       return {
         title: 'Listing Not Found | Nihontowatch',
         description: 'The requested listing could not be found.',
       };
     }
 
-    const typedListing = listing as unknown as ListingMetadata;
-
     // Build title
-    const itemType = typedListing.item_type
-      ? ITEM_TYPE_LABELS[typedListing.item_type.toLowerCase()] || typedListing.item_type
+    const itemType = listing.item_type
+      ? ITEM_TYPE_LABELS[listing.item_type.toLowerCase()] || listing.item_type
       : null;
-    const title = `${typedListing.title}${itemType ? ` - ${itemType}` : ''} | Nihontowatch`;
+    const title = `${listing.title}${itemType ? ` - ${itemType}` : ''} | Nihontowatch`;
 
     // Build description
-    const artisan = typedListing.smith || typedListing.tosogu_maker;
-    const price = formatPrice(typedListing.price_value, typedListing.price_currency);
-    const dealerName = typedListing.dealers?.name || 'Unknown Dealer';
+    const artisan = listing.smith || listing.tosogu_maker;
+    const price = formatPrice(listing.price_value, listing.price_currency);
+    const dealerName = listing.dealers?.name || 'Unknown Dealer';
 
-    let description = typedListing.title;
+    let description = listing.title;
     if (artisan) description += ` by ${artisan}`;
-    if (typedListing.cert_type) description += ` (${typedListing.cert_type})`;
+    if (listing.cert_type) description += ` (${listing.cert_type})`;
     description += `. ${price}. Available from ${dealerName} on Nihontowatch.`;
 
     // Get first image for OG
-    const images = typedListing.stored_images || typedListing.images || [];
+    const images = listing.stored_images || listing.images || [];
     const firstImage = images[0];
 
     // Build OG image URL (our dynamic OG image endpoint)
@@ -133,8 +134,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         canonical: `${baseUrl}/listing/${listingId}`,
       },
       openGraph: {
-        title: typedListing.title,
-        description: `${price}${artisan ? ` - ${artisan}` : ''}${typedListing.cert_type ? ` - ${typedListing.cert_type}` : ''}`,
+        title: listing.title,
+        description: `${price}${artisan ? ` - ${artisan}` : ''}${listing.cert_type ? ` - ${listing.cert_type}` : ''}`,
         type: 'website',
         url: `${baseUrl}/listing/${listingId}`,
         siteName: 'Nihontowatch',
@@ -143,14 +144,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
             url: ogImageUrl,
             width: 1200,
             height: 630,
-            alt: typedListing.title,
+            alt: listing.title,
           },
           // Also include the actual product image as fallback
           ...(firstImage
             ? [
                 {
                   url: firstImage,
-                  alt: typedListing.title,
+                  alt: listing.title,
                 },
               ]
             : []),
@@ -158,7 +159,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       },
       twitter: {
         card: 'summary_large_image',
-        title: typedListing.title,
+        title: listing.title,
         description: `${price}${artisan ? ` - ${artisan}` : ''}`,
         images: [ogImageUrl],
       },
