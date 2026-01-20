@@ -29,14 +29,35 @@ interface Listing {
   item_type: string | null;
   price_value: number | null;
   price_currency: string | null;
+  price_jpy?: number | null;
   smith: string | null;
   tosogu_maker: string | null;
   school: string | null;
   tosogu_school: string | null;
   cert_type: string | null;
+  cert_session?: number | null;
+  cert_organization?: string | null;
+  era?: string | null;
+  province?: string | null;
+  mei_type?: string | null;
   nagasa_cm: number | null;
+  sori_cm?: number | null;
+  motohaba_cm?: number | null;
+  sakihaba_cm?: number | null;
+  kasane_cm?: number | null;
+  weight_g?: number | null;
+  description?: string | null;
+  description_en?: string | null;
+  title_en?: string | null;
+  setsumei_text_en?: string | null;
+  setsumei_text_ja?: string | null;
+  setsumei_metadata?: Record<string, unknown> | null;
+  setsumei_processed_at?: string | null;
   images: string[] | null;
+  stored_images?: string[] | null;  // Supabase Storage URLs (preferred)
+  images_stored_at?: string | null;
   first_seen_at: string;
+  last_scraped_at?: string;
   status: string;
   is_available: boolean;
   is_sold: boolean;
@@ -46,6 +67,7 @@ interface Listing {
     name: string;
     domain: string;
   };
+  dealer_earliest_seen_at?: string | null;
 }
 
 interface ExchangeRates {
