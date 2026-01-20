@@ -108,15 +108,22 @@ export async function GET(request: NextRequest) {
     const dealerName = listing.dealers?.name || 'Unknown Dealer';
     const title = String(listing.title || 'Listing').substring(0, 80);
 
-    // Get image URL
+    // Get image URL - use Supabase transform for optimized delivery
     let imageUrl: string | null = null;
     const storedImages = listing.stored_images as string[] | null;
 
     if (storedImages && storedImages.length > 0) {
-      imageUrl = storedImages[0];
+      // Use Supabase image transform to resize for OG (600px width is enough for half the card)
+      const originalUrl = storedImages[0];
+      // Transform URL: add /render/image/public with transform params
+      imageUrl = originalUrl.replace(
+        '/storage/v1/object/public/',
+        '/storage/v1/render/image/public/'
+      ) + '?width=660&height=630&resize=cover';
     } else if (dealerName && dealerName !== 'Unknown Dealer') {
       const dealerSlug = dealerName.toLowerCase().replace(/\s+/g, '-');
-      imageUrl = `${SUPABASE_URL}/storage/v1/object/public/listing-images/${dealerSlug}/L${listingId}/00.jpg`;
+      const basePath = `listing-images/${dealerSlug}/L${listingId}/00.jpg`;
+      imageUrl = `${SUPABASE_URL}/storage/v1/render/image/public/${basePath}?width=660&height=630&resize=cover`;
     }
 
     return new ImageResponse(
