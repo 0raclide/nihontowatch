@@ -33,6 +33,26 @@ export interface ImageSource {
 const UNSUPPORTED_EXTENSIONS = ['.tif', '.tiff', '.bmp', '.psd', '.raw', '.cr2', '.nef'];
 
 /**
+ * Extract the original image index from a stored image URL.
+ *
+ * Stored images follow the pattern: {dealer-slug}/L{listing_id}/{index}.{ext}
+ * Example: aoi-art/L00204/00.jpg → 0
+ *          aoi-art/L00204/05.webp → 5
+ *
+ * @param url - The stored image URL
+ * @returns The index number, or null if not parseable
+ */
+function extractStoredImageIndex(url: string): number | null {
+  // Match pattern: /00.jpg, /05.webp, etc. at end of URL path
+  // Must be exactly 2 digits before the extension
+  const match = url.match(/\/(\d{2})\.[a-z]+$/i);
+  if (match) {
+    return parseInt(match[1], 10);
+  }
+  return null;
+}
+
+/**
  * Check if an image URL has a supported file format.
  * Filters out formats like .tif that browsers cannot display.
  */
@@ -130,24 +150,31 @@ export function getImageUrl(
 }
 
 /**
- * Get all available images, combining stored and original images.
+ * Get all available images, merging stored and original images by index.
  *
  * Strategy:
- * 1. Include all stored images first (CDN-optimized, faster loading)
- * 2. Then include all original images (for completeness)
- * 3. Filter out unsupported formats (e.g., .tif files that browsers can't display)
- * 4. Deduplicate by URL
+ * Stored images are CDN copies of original images, named by their original index:
+ * - stored `00.jpg` is a copy of `images[0]`
+ * - stored `05.jpg` is a copy of `images[5]`
  *
- * Note: We don't try to merge by index because stored_images may be sparse
- * (only some original images get stored) and their filenames indicate the
- * original index, not their position in the stored_images array.
+ * For each image position, we show either the stored version (preferred) or
+ * the original - never both. This eliminates duplicates while preserving all
+ * unique photos.
+ *
+ * Algorithm:
+ * 1. Build a map of stored images by their original index
+ * 2. For each position (0 to max index), prefer stored version if available
+ * 3. Filter out unsupported formats (e.g., .tif files)
+ * 4. Deduplicate any remaining duplicates by URL
  *
  * @param listing - Object with stored_images and/or images arrays
- * @returns Array of all available image URLs (deduplicated, supported formats only)
+ * @returns Array of all available image URLs (merged, supported formats only)
  *
  * @example
- * const allImages = getAllImages(listing);
- * // Returns all stored images first, then original images, deduplicated
+ * // stored_images: ['supabase/01.jpg', 'supabase/02.jpg']
+ * // images: ['dealer/img0.jpg', 'dealer/img1.jpg', 'dealer/img2.jpg']
+ * // Returns: ['dealer/img0.jpg', 'supabase/01.jpg', 'supabase/02.jpg']
+ * // (img0 has no stored version, img1 and img2 use stored versions)
  */
 export function getAllImages(listing: ImageSource | null | undefined): string[] {
   if (!listing) return [];
@@ -155,14 +182,59 @@ export function getAllImages(listing: ImageSource | null | undefined): string[] 
   const stored = listing.stored_images || [];
   const original = listing.images || [];
 
-  // Combine stored first (optimized), then original (fallback)
-  const allUrls = [...stored, ...original];
+  // If no stored images, just return originals (with filtering)
+  if (stored.length === 0) {
+    return original.filter(url => url && isSupportedImageFormat(url));
+  }
 
-  // Filter unsupported formats and deduplicate
-  const seen = new Set<string>();
+  // If no originals, just return stored (with filtering)
+  if (original.length === 0) {
+    return stored.filter(url => url && isSupportedImageFormat(url));
+  }
+
+  // Build a map of stored images by their original index
+  const storedByIndex = new Map<number, string>();
+  for (const url of stored) {
+    if (!url || !isSupportedImageFormat(url)) continue;
+    const index = extractStoredImageIndex(url);
+    if (index !== null) {
+      storedByIndex.set(index, url);
+    }
+  }
+
+  // If we couldn't parse any stored image indices, fall back to old behavior
+  // (show all stored + all original, deduplicated by URL)
+  if (storedByIndex.size === 0) {
+    const seen = new Set<string>();
+    const result: string[] = [];
+    for (const url of [...stored, ...original]) {
+      if (url && !seen.has(url) && isSupportedImageFormat(url)) {
+        seen.add(url);
+        result.push(url);
+      }
+    }
+    return result;
+  }
+
+  // Merge by index: for each position, prefer stored version if available
   const result: string[] = [];
+  const seen = new Set<string>();
 
-  for (const url of allUrls) {
+  // Find the maximum index we need to cover
+  const maxStoredIndex = Math.max(...storedByIndex.keys());
+  const maxIndex = Math.max(maxStoredIndex, original.length - 1);
+
+  for (let i = 0; i <= maxIndex; i++) {
+    let url: string | undefined;
+
+    // Prefer stored version if available for this index
+    if (storedByIndex.has(i)) {
+      url = storedByIndex.get(i);
+    } else if (i < original.length && original[i]) {
+      url = original[i];
+    }
+
+    // Add to result if valid and not already seen
     if (url && !seen.has(url) && isSupportedImageFormat(url)) {
       seen.add(url);
       result.push(url);

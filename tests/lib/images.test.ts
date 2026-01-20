@@ -165,12 +165,14 @@ describe('getAllImages', () => {
       ]);
     });
 
-    it('returns stored first, then original (deduplicated)', () => {
+    it('falls back to all images when stored URLs are unparseable', () => {
+      // When stored URLs don't match the /XX.jpg pattern, we can't determine indices
+      // so we fall back to showing all stored + all original (deduplicated by URL)
       const listing = {
         stored_images: ['https://supabase.co/stored1.jpg', 'https://supabase.co/stored2.jpg'],
         images: ['https://dealer.com/original1.jpg', 'https://dealer.com/original2.jpg'],
       };
-      // New behavior: stored first, then original (all unique)
+      // Fallback behavior: stored first, then original (all unique)
       expect(getAllImages(listing)).toEqual([
         'https://supabase.co/stored1.jpg',
         'https://supabase.co/stored2.jpg',
@@ -179,12 +181,28 @@ describe('getAllImages', () => {
       ]);
     });
 
-    it('combines all images from both arrays', () => {
+    it('merges by index when stored URLs are parseable', () => {
+      // When stored URLs match the /XX.jpg pattern, merge by index
+      const listing = {
+        stored_images: [
+          'https://supabase.co/dealer/L00001/00.jpg',
+          'https://supabase.co/dealer/L00001/01.jpg',
+        ],
+        images: ['https://dealer.com/original1.jpg', 'https://dealer.com/original2.jpg'],
+      };
+      // Merged: stored replaces original at same indices
+      expect(getAllImages(listing)).toEqual([
+        'https://supabase.co/dealer/L00001/00.jpg',
+        'https://supabase.co/dealer/L00001/01.jpg',
+      ]);
+    });
+
+    it('combines unparseable stored with all originals', () => {
       const listing = {
         stored_images: ['https://supabase.co/stored1.jpg'],
         images: ['https://dealer.com/original1.jpg', 'https://dealer.com/original2.jpg', 'https://dealer.com/original3.jpg'],
       };
-      // New behavior: stored first, then all original
+      // Fallback: stored + all original
       expect(getAllImages(listing)).toEqual([
         'https://supabase.co/stored1.jpg',
         'https://dealer.com/original1.jpg',
@@ -470,19 +488,19 @@ describe('real-world scenarios', () => {
       ],
     };
     expect(getImageUrl(listing)).toBe('https://supabase.co/storage/aoi-art/L00001/00.jpg');
-    // New behavior: returns all stored, then all original (4 total)
+    // Merged by index: stored versions replace originals at same indices
+    // 00.jpg replaces sword1.jpg (index 0), 01.jpg replaces sword2.jpg (index 1)
+    // Result: only 2 unique images (no duplicates)
     expect(getAllImages(listing)).toEqual([
       'https://supabase.co/storage/aoi-art/L00001/00.jpg',
       'https://supabase.co/storage/aoi-art/L00001/01.jpg',
-      'https://aoijapan.com/images/sword1.jpg',
-      'https://aoijapan.com/images/sword2.jpg',
     ]);
     expect(hasStoredImages(listing)).toBe(true);
     expect(getImageSource(listing)).toBe('stored');
   });
 
   it('handles partially migrated listing (sparse stored_images)', () => {
-    // Real case: stored_images named by original index (02.gif = original[2])
+    // Real case: stored_images named by original index (02.jpg = stored copy of original[2])
     // stored_images array only has some images, not all
     const listing = {
       stored_images: [
@@ -490,23 +508,22 @@ describe('real-world scenarios', () => {
         'https://supabase.co/storage/aoi-art/L00001/04.jpg',
       ],
       images: [
-        'https://aoijapan.com/images/sword1.jpg',
-        'https://aoijapan.com/images/sword2.tif', // TIF will be filtered
-        'https://aoijapan.com/images/sword3.jpg',
-        'https://aoijapan.com/images/sword4.jpg',
-        'https://aoijapan.com/images/sword5.jpg',
+        'https://aoijapan.com/images/sword1.jpg', // index 0 - no stored, use original
+        'https://aoijapan.com/images/sword2.tif', // index 1 - TIF filtered out
+        'https://aoijapan.com/images/sword3.jpg', // index 2 - replaced by stored 02.jpg
+        'https://aoijapan.com/images/sword4.jpg', // index 3 - no stored, use original
+        'https://aoijapan.com/images/sword5.jpg', // index 4 - replaced by stored 04.jpg
       ],
     };
-    // New behavior: stored first, then original (minus tif)
+    // Merged by index: stored versions replace originals at indices 2 and 4
+    // Index 1 (TIF) is filtered, indices 0 and 3 use originals
     expect(getAllImages(listing)).toEqual([
-      'https://supabase.co/storage/aoi-art/L00001/02.jpg',
-      'https://supabase.co/storage/aoi-art/L00001/04.jpg',
-      'https://aoijapan.com/images/sword1.jpg',
-      'https://aoijapan.com/images/sword3.jpg',
-      'https://aoijapan.com/images/sword4.jpg',
-      'https://aoijapan.com/images/sword5.jpg',
+      'https://aoijapan.com/images/sword1.jpg',   // index 0
+      'https://supabase.co/storage/aoi-art/L00001/02.jpg', // index 2
+      'https://aoijapan.com/images/sword4.jpg',   // index 3
+      'https://supabase.co/storage/aoi-art/L00001/04.jpg', // index 4
     ]);
-    expect(getImageCount(listing)).toBe(6);
+    expect(getImageCount(listing)).toBe(4);
   });
 
   it('handles listing with no images', () => {
@@ -529,24 +546,134 @@ describe('real-world scenarios', () => {
         'https://supabase.co/storage/listing-images/iida-koendo/L09340/04.gif',
       ],
       images: [
-        'https://iidakoendo.com/wp-content/uploads/2025/01/IMG_3879.gif',
-        'https://iidakoendo.com/wp-content/uploads/2025/01/m543.tif',  // Should be filtered
-        'https://iidakoendo.com/wp-content/uploads/2025/01/IMG_3873-1.gif',
-        'https://iidakoendo.com/wp-content/uploads/2025/01/IMG_3875-2-1.gif',
-        'https://iidakoendo.com/wp-content/uploads/2025/01/IMG_3876.gif',
-        'https://iidakoendo.com/wp-content/uploads/2025/01/IMG_3877.gif',
+        'https://iidakoendo.com/wp-content/uploads/2025/01/IMG_3879.gif',      // index 0 - no stored
+        'https://iidakoendo.com/wp-content/uploads/2025/01/m543.tif',           // index 1 - TIF filtered
+        'https://iidakoendo.com/wp-content/uploads/2025/01/IMG_3873-1.gif',     // index 2 - replaced by 02.gif
+        'https://iidakoendo.com/wp-content/uploads/2025/01/IMG_3875-2-1.gif',   // index 3 - no stored
+        'https://iidakoendo.com/wp-content/uploads/2025/01/IMG_3876.gif',       // index 4 - replaced by 04.gif
+        'https://iidakoendo.com/wp-content/uploads/2025/01/IMG_3877.gif',       // index 5 - no stored
       ],
     };
     const result = getAllImages(listing);
     // TIF should be filtered out
     expect(result).not.toContain('https://iidakoendo.com/wp-content/uploads/2025/01/m543.tif');
-    // Should have stored images first
-    expect(result[0]).toBe('https://supabase.co/storage/listing-images/iida-koendo/L09340/02.gif');
-    expect(result[1]).toBe('https://supabase.co/storage/listing-images/iida-koendo/L09340/04.gif');
-    // Should include all GIF images
+    // Replaced originals should not be in result
+    expect(result).not.toContain('https://iidakoendo.com/wp-content/uploads/2025/01/IMG_3873-1.gif');
+    expect(result).not.toContain('https://iidakoendo.com/wp-content/uploads/2025/01/IMG_3876.gif');
+    // Stored images should be present (replacing originals at indices 2 and 4)
+    expect(result).toContain('https://supabase.co/storage/listing-images/iida-koendo/L09340/02.gif');
+    expect(result).toContain('https://supabase.co/storage/listing-images/iida-koendo/L09340/04.gif');
+    // Originals without stored versions should be present
     expect(result).toContain('https://iidakoendo.com/wp-content/uploads/2025/01/IMG_3879.gif');
-    // Total count: 2 stored + 5 original GIFs = 7
-    expect(result.length).toBe(7);
+    expect(result).toContain('https://iidakoendo.com/wp-content/uploads/2025/01/IMG_3875-2-1.gif');
+    expect(result).toContain('https://iidakoendo.com/wp-content/uploads/2025/01/IMG_3877.gif');
+    // Total: 5 unique images (index 1 TIF filtered, indices 2 and 4 replaced by stored)
+    expect(result.length).toBe(5);
+    // Verify order: merged by index (0, 2, 3, 4, 5 - index 1 filtered)
+    expect(result).toEqual([
+      'https://iidakoendo.com/wp-content/uploads/2025/01/IMG_3879.gif',      // index 0
+      'https://supabase.co/storage/listing-images/iida-koendo/L09340/02.gif', // index 2
+      'https://iidakoendo.com/wp-content/uploads/2025/01/IMG_3875-2-1.gif',   // index 3
+      'https://supabase.co/storage/listing-images/iida-koendo/L09340/04.gif', // index 4
+      'https://iidakoendo.com/wp-content/uploads/2025/01/IMG_3877.gif',       // index 5
+    ]);
+  });
+
+  it('handles nearly complete migration with one missing index (listing 10751 case)', () => {
+    // Simulates listing 10751: 19 stored images covering 0-16, 18, 19 (missing 17)
+    // 20 original images at indices 0-19
+    const stored_images = [];
+    for (let i = 0; i <= 19; i++) {
+      if (i !== 17) { // Missing index 17
+        stored_images.push(`https://supabase.co/storage/nipponto/L10751/${String(i).padStart(2, '0')}.jpg`);
+      }
+    }
+    const images = [];
+    for (let i = 1; i <= 20; i++) {
+      images.push(`https://www.nipponto.co.jp/upload/img97/2950_${String(i).padStart(2, '0')}.jpg`);
+    }
+
+    const listing = { stored_images, images };
+    const result = getAllImages(listing);
+
+    // Should have 20 images total (19 stored + 1 original at index 17)
+    expect(result.length).toBe(20);
+
+    // Index 17 should be original since no stored version exists
+    expect(result[17]).toBe('https://www.nipponto.co.jp/upload/img97/2950_18.jpg');
+
+    // Other indices should be stored versions
+    expect(result[0]).toBe('https://supabase.co/storage/nipponto/L10751/00.jpg');
+    expect(result[16]).toBe('https://supabase.co/storage/nipponto/L10751/16.jpg');
+    expect(result[18]).toBe('https://supabase.co/storage/nipponto/L10751/18.jpg');
+
+    // Originals at covered indices should NOT be present
+    expect(result).not.toContain('https://www.nipponto.co.jp/upload/img97/2950_01.jpg');
+  });
+
+  it('handles single stored image (listing 9637 case)', () => {
+    // Simulates listing 9637: 1 stored image (00.jpg), 2 originals
+    const listing = {
+      stored_images: [
+        'https://supabase.co/storage/eirakudo/L09637/00.jpg',
+      ],
+      images: [
+        'https://eirakudo.shop/images/kunimune_b.jpg', // index 0 - replaced by 00.jpg
+        'https://eirakudo.shop/images/kunimune_z.jpg', // index 1 - no stored
+      ],
+    };
+    const result = getAllImages(listing);
+
+    // Should have 2 images (1 stored replacing index 0, 1 original at index 1)
+    expect(result.length).toBe(2);
+    expect(result[0]).toBe('https://supabase.co/storage/eirakudo/L09637/00.jpg');
+    expect(result[1]).toBe('https://eirakudo.shop/images/kunimune_z.jpg');
+
+    // Original at index 0 should NOT be present (replaced by stored)
+    expect(result).not.toContain('https://eirakudo.shop/images/kunimune_b.jpg');
+  });
+
+  it('handles sparse stored images (listing 204 case)', () => {
+    // Simulates listing 204: stored has indices 1,2,3,5,6,7 (missing 0,4,8)
+    // originals have indices 0-8
+    const listing = {
+      stored_images: [
+        'https://supabase.co/storage/aoi-art/L00204/01.jpg',
+        'https://supabase.co/storage/aoi-art/L00204/02.jpg',
+        'https://supabase.co/storage/aoi-art/L00204/03.jpg',
+        'https://supabase.co/storage/aoi-art/L00204/05.jpg',
+        'https://supabase.co/storage/aoi-art/L00204/06.jpg',
+        'https://supabase.co/storage/aoi-art/L00204/07.jpg',
+      ],
+      images: [
+        'https://www.aoijapan.com/img/sword/2025/25267-2.jpg',       // index 0 - no stored
+        'https://www.aoijapan.com/img/sword/2025/25267-3.jpg',       // index 1 - replaced by 01.jpg
+        'https://www.aoijapan.com/img/sword/2025/25267-4.jpg',       // index 2 - replaced by 02.jpg
+        'https://www.aoijapan.com/img/sword/2025/25267paper-1.jpg',  // index 3 - replaced by 03.jpg
+        'https://www.aoijapan.com/img/sword/2025/25267paper-2.jpg',  // index 4 - no stored
+        'https://www.aoijapan.com/img/sword/2025/25267paper-4.jpg',  // index 5 - replaced by 05.jpg
+        'https://www.aoijapan.com/img/sword/2025/25267paper-3.jpg',  // index 6 - replaced by 06.jpg
+        'https://www.aoijapan.com/img/sword/2025/25267sayagaki.jpg', // index 7 - replaced by 07.jpg
+        'https://www.aoijapan.com/img/sword/2025/25267_p.jpg',       // index 8 - no stored
+      ],
+    };
+    const result = getAllImages(listing);
+
+    // Should have 9 images (6 stored + 3 original at indices 0, 4, 8)
+    expect(result.length).toBe(9);
+
+    // Originals without stored should be present
+    expect(result).toContain('https://www.aoijapan.com/img/sword/2025/25267-2.jpg');       // index 0
+    expect(result).toContain('https://www.aoijapan.com/img/sword/2025/25267paper-2.jpg');  // index 4
+    expect(result).toContain('https://www.aoijapan.com/img/sword/2025/25267_p.jpg');       // index 8
+
+    // Stored images should be present
+    expect(result).toContain('https://supabase.co/storage/aoi-art/L00204/01.jpg');
+    expect(result).toContain('https://supabase.co/storage/aoi-art/L00204/07.jpg');
+
+    // Replaced originals should NOT be present
+    expect(result).not.toContain('https://www.aoijapan.com/img/sword/2025/25267-3.jpg');
+    expect(result).not.toContain('https://www.aoijapan.com/img/sword/2025/25267sayagaki.jpg');
   });
 });
 
