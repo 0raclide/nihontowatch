@@ -66,6 +66,27 @@ function formatPrice(value: number | null, currency: string | null): string {
   return formatter.format(value);
 }
 
+// Fetch image and convert to base64 data URL for edge compatibility
+async function fetchImageAsDataUrl(url: string): Promise<string | null> {
+  try {
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; Nihontowatch/1.0)',
+      },
+    });
+
+    if (!response.ok) return null;
+
+    const contentType = response.headers.get('content-type') || 'image/jpeg';
+    const arrayBuffer = await response.arrayBuffer();
+    const base64 = Buffer.from(arrayBuffer).toString('base64');
+
+    return `data:${contentType};base64,${base64}`;
+  } catch {
+    return null;
+  }
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const listingId = searchParams.get('id');
@@ -147,9 +168,10 @@ export async function GET(request: NextRequest) {
       throw new Error('Listing not found');
     }
 
-    // Get the first available image
+    // Get the first available image and fetch it as base64
     const images = listing.stored_images || listing.images || [];
-    const imageUrl = images[0] || null;
+    const rawImageUrl = images[0] || null;
+    const imageDataUrl = rawImageUrl ? await fetchImageAsDataUrl(rawImageUrl) : null;
 
     // Get certification info
     const certType = listing.cert_type;
@@ -192,10 +214,10 @@ export async function GET(request: NextRequest) {
               padding: 40,
             }}
           >
-            {imageUrl ? (
+            {imageDataUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
-                src={imageUrl}
+                src={imageDataUrl}
                 alt={listing.title}
                 style={{
                   maxWidth: '100%',
