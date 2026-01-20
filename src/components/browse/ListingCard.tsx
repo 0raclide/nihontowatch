@@ -321,6 +321,14 @@ export function ListingCard({
   const certInfo = listing.cert_type ? CERT_LABELS[listing.cert_type] : null;
   const isAskPrice = listing.price_value === null;
 
+  // Build SEO-optimized alt text
+  const altText = [
+    itemType,
+    certInfo?.label,
+    artisan ? `by ${artisan}` : null,
+    cleanedTitle !== itemType ? cleanedTitle : null,
+  ].filter(Boolean).join(' - ') || listing.title || 'Japanese sword listing';
+
   // Handle card click - open quick view or track activity
   const handleClick = useCallback((e: React.MouseEvent) => {
     // Don't handle if clicking on the favorite button
@@ -415,7 +423,7 @@ export function ListingCard({
         ) : isNearViewport ? (
           <Image
             src={imageUrl}
-            alt={listing.title || 'Listing image'}
+            alt={altText}
             fill
             className={`object-cover group-hover:scale-105 transition-all duration-500 ${
               isLoading ? 'opacity-0' : 'opacity-100'

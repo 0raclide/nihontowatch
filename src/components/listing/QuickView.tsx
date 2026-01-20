@@ -188,6 +188,9 @@ export function QuickView() {
                     onVisible={handleImageVisible}
                     isFirst={index === 0}
                     showScrollHint={index === 0 && images.length > 1 && !hasScrolled}
+                    listingTitle={currentListing.title}
+                    itemType={currentListing.item_type}
+                    certType={currentListing.cert_type}
                   />
                 ))
               )}
@@ -250,6 +253,9 @@ export function QuickView() {
                     onVisible={handleImageVisible}
                     isFirst={index === 0}
                     showScrollHint={index === 0 && images.length > 1 && !hasScrolled}
+                    listingTitle={currentListing.title}
+                    itemType={currentListing.item_type}
+                    certType={currentListing.cert_type}
                   />
                 ))
               )}
@@ -361,7 +367,10 @@ function LazyImage({
   isVisible,
   onVisible,
   isFirst,
-  showScrollHint
+  showScrollHint,
+  listingTitle,
+  itemType,
+  certType,
 }: {
   src: string;
   index: number;
@@ -370,6 +379,9 @@ function LazyImage({
   onVisible: (index: number) => void;
   isFirst: boolean;
   showScrollHint: boolean;
+  listingTitle?: string;
+  itemType?: string;
+  certType?: string | null;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [loaded, setLoaded] = useState(false);
@@ -445,7 +457,12 @@ function LazyImage({
             <Image
               key={`${src}-${retryCount}`}
               src={src}
-              alt={`Image ${index + 1}`}
+              alt={[
+                itemType,
+                certType,
+                listingTitle,
+                `Photo ${index + 1} of ${totalImages}`,
+              ].filter(Boolean).join(' - ')}
               width={800}
               height={600}
               className={`w-full h-auto transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}

@@ -9,6 +9,11 @@ import { AuthProvider } from "@/lib/auth/AuthContext";
 import { FavoritesProvider } from "@/contexts/FavoritesContext";
 import { ActivityWrapper } from "@/components/activity/ActivityWrapper";
 import { SignupPressureWrapper } from "@/components/signup";
+import {
+  generateOrganizationJsonLd,
+  generateWebsiteJsonLd,
+  jsonLdScriptProps,
+} from "@/lib/seo/jsonLd";
 
 const cormorant = Cormorant_Garamond({
   variable: "--font-serif",
@@ -30,6 +35,13 @@ export const metadata: Metadata = {
   title: "Nihontowatch | Japanese Sword & Tosogu Marketplace",
   description: "The premier aggregator for Japanese swords (nihonto) and sword fittings (tosogu) from dealers worldwide. Find katana, wakizashi, tsuba, and more.",
   keywords: ["nihonto", "japanese sword", "katana", "tosogu", "tsuba", "samurai sword", "antique sword"],
+  alternates: {
+    canonical: baseUrl,
+  },
+  formatDetection: {
+    telephone: false,
+  },
+  category: "shopping",
   icons: {
     icon: "/logo-mon.png",
     apple: "/logo-mon.png",
@@ -57,6 +69,10 @@ export const metadata: Metadata = {
   },
 };
 
+// Generate JSON-LD schemas once (they're static)
+const organizationJsonLd = generateOrganizationJsonLd();
+const websiteJsonLd = generateWebsiteJsonLd();
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -67,6 +83,9 @@ export default function RootLayout({
       <head>
         <meta name="theme-color" content="#121212" />
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+        {/* JSON-LD Structured Data */}
+        <script {...jsonLdScriptProps(organizationJsonLd)} />
+        <script {...jsonLdScriptProps(websiteJsonLd)} />
       </head>
       <body className="antialiased font-sans" suppressHydrationWarning>
         <AuthProvider>
