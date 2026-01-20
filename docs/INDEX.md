@@ -17,13 +17,15 @@
 | [SEARCH_FEATURES.md](./SEARCH_FEATURES.md) | Natural language search, filters, query syntax |
 | [NEW_LISTING_INDICATOR.md](./NEW_LISTING_INDICATOR.md) | "New" badge for recently discovered listings |
 | [OPTIMIZATION.md](./OPTIMIZATION.md) | Performance optimization, image loading, caching strategies |
+| [SEO.md](./SEO.md) | SEO optimization, structured data, sitemap, robots.txt |
 | [TESTING.md](./TESTING.md) | Test suite docs, concordance tests, CI/CD integration |
 
 ## Postmortems
 
 | Document | Date | Issue |
 |----------|------|-------|
-| [POSTMORTEM_TRAILING_SLASH_DUPLICATES.md](./POSTMORTEM_TRAILING_SLASH_DUPLICATES.md) | 2026-01-19 | Duplicate listings from URL trailing slash variants |
+| [POSTMORTEM_TOUKEN_MATSUMOTO_SOLD.md](./POSTMORTEM_TOUKEN_MATSUMOTO_SOLD.md) | 2025-01-20 | Touken Matsumoto listings incorrectly marked as sold (LLM hallucination) |
+| [POSTMORTEM_TRAILING_SLASH_DUPLICATES.md](./POSTMORTEM_TRAILING_SLASH_DUPLICATES.md) | 2025-01-19 | Duplicate listings from URL trailing slash variants |
 | [POSTMORTEM_SEARCH_DEBUG.md](./POSTMORTEM_SEARCH_DEBUG.md) | - | Search functionality debugging |
 | [POSTMORTEM_NAVIGATION_CRASH.md](./POSTMORTEM_NAVIGATION_CRASH.md) | - | Navigation crash issue |
 | [AUTH_SYSTEM_POSTMORTEM.md](./AUTH_SYSTEM_POSTMORTEM.md) | - | Auth system issues |
@@ -165,6 +167,14 @@
 5. Run `npx playwright test` - E2E tests
 6. Check `.github/workflows/test.yml` - CI configuration
 
+### "I need to work on SEO"
+1. Read [SEO.md](./SEO.md) - Complete SEO documentation
+2. Check `src/app/robots.ts` - robots.txt generation
+3. Check `src/app/sitemap.ts` - Dynamic sitemap
+4. Check `src/lib/seo/jsonLd.ts` - JSON-LD schema generators
+5. Validate at https://search.google.com/test/rich-results
+6. Monitor at Google Search Console
+
 ---
 
 ## Architecture Diagrams
@@ -193,4 +203,5 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for:
 | Search features | [SEARCH_FEATURES.md](./SEARCH_FEATURES.md) |
 | Email alerts | [EMAIL_ALERTS.md](./EMAIL_ALERTS.md) - Saved search, price drop, back-in-stock |
 | Testing | [TESTING.md](./TESTING.md) - Unit, concordance, integration tests |
+| SEO & Structured Data | [SEO.md](./SEO.md) - sitemap, robots.txt, JSON-LD schemas |
 | Deployment | [CLAUDE.md](../CLAUDE.md#deployment) |
