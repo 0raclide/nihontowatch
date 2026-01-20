@@ -23,7 +23,7 @@ interface ListingMetadata {
   tosogu_maker: string | null;
   stored_images: string[] | null;
   images: string[] | null;
-  dealers: { name: string; domain: string; country: string } | null;
+  dealers: { name: string; domain: string } | null;
 }
 
 // Item type labels for meta description
@@ -87,8 +87,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         images,
         dealers (
           name,
-          domain,
-          country
+          domain
         )
       `)
       .eq('id', listingId)
@@ -194,7 +193,7 @@ interface ListingForJsonLd {
   images: string[] | null;
   is_sold: boolean;
   is_available: boolean;
-  dealers: { name: string; domain: string; country: string } | null;
+  dealers: { name: string; domain: string } | null;
 }
 
 export default async function ListingPage({ params }: Props) {
@@ -232,8 +231,7 @@ export default async function ListingPage({ params }: Props) {
           is_available,
           dealers (
             name,
-            domain,
-            country
+            domain
           )
         `)
         .eq('id', listingId)
@@ -270,7 +268,6 @@ export default async function ListingPage({ params }: Props) {
           ? {
               name: typedListing.dealers.name,
               domain: typedListing.dealers.domain,
-              country: typedListing.dealers.country,
             }
           : undefined;
 
@@ -307,12 +304,12 @@ export default async function ListingPage({ params }: Props) {
 
   return (
     <>
-      {/* JSON-LD Structured Data */}
+      {/* JSON-LD Structured Data - must be in head for Google to detect */}
       {jsonLdData && (
-        <>
+        <head>
           <script {...jsonLdScriptProps(jsonLdData.product)} />
           <script {...jsonLdScriptProps(jsonLdData.breadcrumb)} />
-        </>
+        </head>
       )}
       <ListingDetailClient />
     </>
