@@ -1,0 +1,313 @@
+/**
+ * MobileSearchSheet Component Tests
+ *
+ * Tests the mobile search sheet component functionality including:
+ * - Search submission and navigation
+ * - Quick search button clicks
+ * - Activity tracking for search events
+ */
+
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { MobileSearchSheet } from '@/components/layout/MobileSearchSheet';
+import { MobileUIProvider } from '@/contexts/MobileUIContext';
+
+// Mock router with trackable push
+const mockPush = vi.fn();
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: mockPush,
+    replace: vi.fn(),
+    back: vi.fn(),
+    forward: vi.fn(),
+    refresh: vi.fn(),
+    prefetch: vi.fn(),
+  }),
+  useSearchParams: () => ({
+    get: () => null,
+    getAll: () => [],
+    has: () => false,
+    keys: () => [],
+    values: () => [],
+    entries: () => [],
+    toString: () => '',
+  }),
+}));
+
+// Mock activity tracker
+const mockTrackSearch = vi.fn();
+vi.mock('@/components/activity/ActivityProvider', () => ({
+  useActivityOptional: () => ({
+    trackSearch: mockTrackSearch,
+    trackFilterChange: vi.fn(),
+    trackPageView: vi.fn(),
+    trackListingView: vi.fn(),
+    trackFavoriteAction: vi.fn(),
+    trackAlertAction: vi.fn(),
+    trackExternalLinkClick: vi.fn(),
+  }),
+}));
+
+// Mock the Drawer component
+vi.mock('@/components/ui/Drawer', () => ({
+  Drawer: ({ children, isOpen }: { children: React.ReactNode; isOpen: boolean }) =>
+    isOpen ? <div data-testid="drawer">{children}</div> : null,
+}));
+
+// Mock MobileUIContext to control drawer state
+const mockCloseSearch = vi.fn();
+vi.mock('@/contexts/MobileUIContext', async () => {
+  const actual = await vi.importActual('@/contexts/MobileUIContext');
+  return {
+    ...actual,
+    useMobileUI: () => ({
+      searchOpen: true, // Always open for testing
+      closeSearch: mockCloseSearch,
+      openSearch: vi.fn(),
+      openNavDrawer: vi.fn(),
+      filterDrawerOpen: false,
+      navDrawerOpen: false,
+    }),
+  };
+});
+
+describe('MobileSearchSheet Component', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockPush.mockClear();
+    mockTrackSearch.mockClear();
+    mockCloseSearch.mockClear();
+  });
+
+  describe('Search Form Submission', () => {
+    it('tracks search event when form is submitted', () => {
+      render(
+        <MobileUIProvider>
+          <MobileSearchSheet />
+        </MobileUIProvider>
+      );
+
+      const searchInput = screen.getByPlaceholderText(/search swords, smiths, dealers/i);
+      fireEvent.change(searchInput, { target: { value: 'katana' } });
+
+      const form = searchInput.closest('form');
+      fireEvent.submit(form!);
+
+      // Should track the search
+      expect(mockTrackSearch).toHaveBeenCalledTimes(1);
+      expect(mockTrackSearch).toHaveBeenCalledWith('katana');
+    });
+
+    it('navigates to search results on submit', () => {
+      render(
+        <MobileUIProvider>
+          <MobileSearchSheet />
+        </MobileUIProvider>
+      );
+
+      const searchInput = screen.getByPlaceholderText(/search swords, smiths, dealers/i);
+      fireEvent.change(searchInput, { target: { value: 'wakizashi' } });
+
+      const form = searchInput.closest('form');
+      fireEvent.submit(form!);
+
+      expect(mockPush).toHaveBeenCalledWith('/?q=wakizashi');
+    });
+
+    it('closes the search sheet after submit', () => {
+      render(
+        <MobileUIProvider>
+          <MobileSearchSheet />
+        </MobileUIProvider>
+      );
+
+      const searchInput = screen.getByPlaceholderText(/search swords, smiths, dealers/i);
+      fireEvent.change(searchInput, { target: { value: 'tanto' } });
+
+      const form = searchInput.closest('form');
+      fireEvent.submit(form!);
+
+      expect(mockCloseSearch).toHaveBeenCalled();
+    });
+
+    it('does not track or navigate on empty search', () => {
+      render(
+        <MobileUIProvider>
+          <MobileSearchSheet />
+        </MobileUIProvider>
+      );
+
+      const searchInput = screen.getByPlaceholderText(/search swords, smiths, dealers/i);
+      const form = searchInput.closest('form');
+      fireEvent.submit(form!);
+
+      expect(mockTrackSearch).not.toHaveBeenCalled();
+      expect(mockPush).not.toHaveBeenCalled();
+    });
+
+    it('trims whitespace from search query before tracking', () => {
+      render(
+        <MobileUIProvider>
+          <MobileSearchSheet />
+        </MobileUIProvider>
+      );
+
+      const searchInput = screen.getByPlaceholderText(/search swords, smiths, dealers/i);
+      fireEvent.change(searchInput, { target: { value: '  tsuba  ' } });
+
+      const form = searchInput.closest('form');
+      fireEvent.submit(form!);
+
+      expect(mockTrackSearch).toHaveBeenCalledWith('tsuba');
+      expect(mockPush).toHaveBeenCalledWith('/?q=tsuba');
+    });
+  });
+
+  describe('Quick Search Buttons', () => {
+    it('tracks search event when quick search is clicked', () => {
+      render(
+        <MobileUIProvider>
+          <MobileSearchSheet />
+        </MobileUIProvider>
+      );
+
+      // Find and click a quick search button
+      const katanaButton = screen.getByRole('button', { name: 'Katana' });
+      fireEvent.click(katanaButton);
+
+      expect(mockTrackSearch).toHaveBeenCalledTimes(1);
+      expect(mockTrackSearch).toHaveBeenCalledWith('Katana');
+    });
+
+    it('navigates on quick search click', () => {
+      render(
+        <MobileUIProvider>
+          <MobileSearchSheet />
+        </MobileUIProvider>
+      );
+
+      const wakizashiButton = screen.getByRole('button', { name: 'Wakizashi' });
+      fireEvent.click(wakizashiButton);
+
+      expect(mockPush).toHaveBeenCalledWith('/?q=Wakizashi');
+    });
+
+    it('closes the sheet on quick search click', () => {
+      render(
+        <MobileUIProvider>
+          <MobileSearchSheet />
+        </MobileUIProvider>
+      );
+
+      const tantoButton = screen.getByRole('button', { name: 'Tanto' });
+      fireEvent.click(tantoButton);
+
+      expect(mockCloseSearch).toHaveBeenCalled();
+    });
+
+    it('tracks different quick search terms correctly', () => {
+      const { unmount } = render(
+        <MobileUIProvider>
+          <MobileSearchSheet />
+        </MobileUIProvider>
+      );
+
+      // Test first quick search button
+      const juyo = screen.getByRole('button', { name: 'Juyo' });
+      fireEvent.click(juyo);
+      expect(mockTrackSearch).toHaveBeenCalledWith('Juyo');
+
+      // Unmount and remount to test another button
+      unmount();
+      mockTrackSearch.mockClear();
+
+      render(
+        <MobileUIProvider>
+          <MobileSearchSheet />
+        </MobileUIProvider>
+      );
+
+      const tsuba = screen.getByRole('button', { name: 'Tsuba' });
+      fireEvent.click(tsuba);
+      expect(mockTrackSearch).toHaveBeenCalledWith('Tsuba');
+    });
+  });
+
+  describe('Activity Tracker Resilience', () => {
+    it('still navigates when activity tracker is null', () => {
+      // Override the mock to return null
+      vi.doMock('@/components/activity/ActivityProvider', () => ({
+        useActivityOptional: () => null,
+      }));
+
+      render(
+        <MobileUIProvider>
+          <MobileSearchSheet />
+        </MobileUIProvider>
+      );
+
+      const searchInput = screen.getByPlaceholderText(/search swords, smiths, dealers/i);
+      fireEvent.change(searchInput, { target: { value: 'yari' } });
+
+      const form = searchInput.closest('form');
+      fireEvent.submit(form!);
+
+      // Should still navigate even without tracker
+      expect(mockPush).toHaveBeenCalledWith('/?q=yari');
+    });
+  });
+
+  describe('UI Elements', () => {
+    it('renders search input', () => {
+      render(
+        <MobileUIProvider>
+          <MobileSearchSheet />
+        </MobileUIProvider>
+      );
+
+      expect(screen.getByPlaceholderText(/search swords, smiths, dealers/i)).toBeInTheDocument();
+    });
+
+    it('renders quick search buttons', () => {
+      render(
+        <MobileUIProvider>
+          <MobileSearchSheet />
+        </MobileUIProvider>
+      );
+
+      // Check for expected quick search terms
+      expect(screen.getByRole('button', { name: 'Katana' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Wakizashi' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Tanto' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Tsuba' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Juyo' })).toBeInTheDocument();
+    });
+
+    it('renders search tips section', () => {
+      render(
+        <MobileUIProvider>
+          <MobileSearchSheet />
+        </MobileUIProvider>
+      );
+
+      expect(screen.getByText('Search Tips')).toBeInTheDocument();
+    });
+
+    it('has clear button that clears input', () => {
+      render(
+        <MobileUIProvider>
+          <MobileSearchSheet />
+        </MobileUIProvider>
+      );
+
+      const searchInput = screen.getByPlaceholderText(/search swords, smiths, dealers/i);
+      fireEvent.change(searchInput, { target: { value: 'test query' } });
+
+      // Clear button should appear
+      const clearButton = screen.getByRole('button', { name: /clear/i });
+      fireEvent.click(clearButton);
+
+      expect(searchInput).toHaveValue('');
+    });
+  });
+});

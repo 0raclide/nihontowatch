@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/ban-ts-comment */
 // @ts-nocheck
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -123,15 +123,19 @@ export async function GET(request: NextRequest) {
 
     // If detailed analytics requested
     if (detailed) {
+      // Use service role client for activity data to bypass RLS
+      // (RLS policies make anonymous events invisible to regular queries)
+      const serviceSupabase = createServiceClient();
+
       const [sessionsResult, searchTermsResult, alertsResult] = await Promise.all([
         // Session stats (if user_sessions table exists)
-        supabase
+        serviceSupabase
           .from('user_sessions')
           .select('total_duration_ms, page_views')
           .gte('started_at', startDate.toISOString())
           .limit(1000),
         // Search terms from activity_events
-        supabase
+        serviceSupabase
           .from('activity_events')
           .select('event_data')
           .eq('event_type', 'search')

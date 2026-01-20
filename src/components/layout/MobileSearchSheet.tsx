@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Drawer } from '@/components/ui/Drawer';
 import { useMobileUI } from '@/contexts/MobileUIContext';
+import { useActivityOptional } from '@/components/activity/ActivityProvider';
 
 const QUICK_SEARCHES = [
   'Katana',
@@ -22,6 +23,7 @@ export function MobileSearchSheet() {
   const [isSearching, setIsSearching] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
+  const activity = useActivityOptional();
 
   // Auto-focus input when opened
   useEffect(() => {
@@ -47,6 +49,10 @@ export function MobileSearchSheet() {
       if (query !== currentQuery) {
         setIsSearching(true);
       }
+      // Track search event
+      if (activity) {
+        activity.trackSearch(query);
+      }
       closeSearch();
       // Use router.push to create history entry (allows back button)
       router.push(`/?q=${encodeURIComponent(query)}`);
@@ -57,6 +63,10 @@ export function MobileSearchSheet() {
     // Only show spinner if query is different (otherwise URL won't change and spinner gets stuck)
     if (term !== currentQuery) {
       setIsSearching(true);
+    }
+    // Track search event
+    if (activity) {
+      activity.trackSearch(term);
     }
     closeSearch();
     // Use router.push to create history entry
