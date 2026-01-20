@@ -12,13 +12,17 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { LoginModal } from '@/components/auth/LoginModal';
+
+// Hoist mock functions for better test isolation
+const { mockSignInWithEmail, mockVerifyOtp, mockSignInWithPassword, mockRouterRefresh, mockRouterPush } = vi.hoisted(() => ({
+  mockSignInWithEmail: vi.fn(),
+  mockVerifyOtp: vi.fn(),
+  mockSignInWithPassword: vi.fn(),
+  mockRouterRefresh: vi.fn(),
+  mockRouterPush: vi.fn(),
+}));
 
 // Mock useAuth hook
-const mockSignInWithEmail = vi.fn();
-const mockVerifyOtp = vi.fn();
-const mockSignInWithPassword = vi.fn();
-
 vi.mock('@/lib/auth/AuthContext', () => ({
   useAuth: () => ({
     signInWithEmail: mockSignInWithEmail,
@@ -28,15 +32,14 @@ vi.mock('@/lib/auth/AuthContext', () => ({
 }));
 
 // Mock useRouter from next/navigation
-const mockRouterRefresh = vi.fn();
-const mockRouterPush = vi.fn();
-
 vi.mock('next/navigation', () => ({
   useRouter: () => ({
     refresh: mockRouterRefresh,
     push: mockRouterPush,
   }),
 }));
+
+import { LoginModal } from '@/components/auth/LoginModal';
 
 // Mock useBodyScrollLock hook
 vi.mock('@/hooks/useBodyScrollLock', () => ({
