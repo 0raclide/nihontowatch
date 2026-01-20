@@ -25,11 +25,9 @@ export function ShareButton({
   const buildShareUrl = useCallback(() => {
     if (typeof window === 'undefined') return '';
 
-    // Start from current URL (preserves filters like ?type=katana&dealer=aoi-art)
-    const url = new URL(window.location.href);
-    // Add/update listing parameter
-    url.searchParams.set('listing', String(listingId));
-    return url.toString();
+    // Use canonical listing URL for proper OG image support on social platforms
+    const baseUrl = window.location.origin;
+    return `${baseUrl}/listing/${listingId}`;
   }, [listingId]);
 
   const handleShare = useCallback(async (e: React.MouseEvent | React.TouchEvent) => {
