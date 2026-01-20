@@ -199,23 +199,23 @@ export async function GET(request: NextRequest) {
           {/* Left side - Product Image */}
           <div
             style={{
-              width: '50%',
-              height: '100%',
+              width: 600,
+              height: 630,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               backgroundColor: '#0f0f0f',
-              padding: 30,
+              overflow: 'hidden',
             }}
           >
             {imageUrl ? (
               <img
                 src={imageUrl}
-                alt=""
+                width={540}
+                height={570}
                 style={{
-                  maxWidth: '100%',
-                  maxHeight: '100%',
                   objectFit: 'contain',
+                  objectPosition: 'center',
                 }}
               />
             ) : (
