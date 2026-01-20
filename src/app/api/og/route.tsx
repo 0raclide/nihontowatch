@@ -148,10 +148,6 @@ export async function GET(request: NextRequest) {
       throw new Error('Listing not found');
     }
 
-    // Get the first available image URL
-    const images = listing.stored_images || listing.images || [];
-    const imageUrl = images[0] || null;
-
     // Get certification info
     const certType = listing.cert_type;
     const certColors = certType ? CERT_COLORS[certType] : null;
@@ -181,7 +177,7 @@ export async function GET(request: NextRequest) {
             backgroundColor: '#faf8f5',
           }}
         >
-          {/* Left side - Image */}
+          {/* Left side - Image placeholder (external images not reliable in edge) */}
           <div
             style={{
               width: '50%',
@@ -193,32 +189,31 @@ export async function GET(request: NextRequest) {
               padding: 40,
             }}
           >
-            {imageUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={imageUrl}
-                alt={listing.title}
-                style={{
-                  maxWidth: '100%',
-                  maxHeight: '100%',
-                  objectFit: 'contain',
-                }}
-              />
-            ) : (
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  width: '100%',
-                  height: '100%',
-                  color: '#a0a0a0',
-                  fontSize: 24,
-                }}
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '100%',
+                height: '100%',
+                color: '#737373',
+              }}
+            >
+              <svg
+                width="120"
+                height="120"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1"
               >
-                No Image Available
-              </div>
-            )}
+                <path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              <span style={{ marginTop: 16, fontSize: 18 }}>
+                View on nihontowatch.com
+              </span>
+            </div>
           </div>
 
           {/* Right side - Details */}
