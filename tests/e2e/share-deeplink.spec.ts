@@ -94,4 +94,48 @@ test.describe('Share URL deep linking', () => {
     expect(clipboardText).toContain(`/s/${listingId}`);
     expect(clipboardText).toMatch(/\?v=[a-zA-Z0-9]+/);
   });
+
+  test('share proxy /s/{id} redirects to home with ?listing= and opens QuickView', async ({ page }) => {
+    // This test verifies the complete share flow:
+    // 1. User shares a listing (copies /s/{id}?v=xxx URL)
+    // 2. Recipient visits that URL
+    // 3. Share proxy redirects to /?listing={id}
+    // 4. QuickView opens automatically
+    //
+    // This prevents regression where /s/{id} was redirecting to /listing/{id}
+    // (full page) instead of /?listing={id} (quickview)
+
+    // First, get a real listing ID
+    await page.goto('/');
+    await page.waitForSelector('[data-testid="virtual-listing-grid"]', { timeout: 15000 });
+
+    await page.locator('[data-testid="listing-card"]').first().click();
+    await page.waitForSelector('[data-testid="quickview-modal"]', { timeout: 5000 });
+
+    const url = new URL(page.url());
+    const listingId = url.searchParams.get('listing');
+    expect(listingId).toBeTruthy();
+
+    // Close QuickView and go back to clean state
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(300);
+
+    // Now simulate recipient visiting a shared URL
+    // Visit the share proxy URL directly (what gets copied to clipboard)
+    await page.goto(`/s/${listingId}?v=test123`);
+
+    // Should redirect to home page with ?listing= param (NOT /listing/{id})
+    await page.waitForURL((url) => url.pathname === '/' && url.searchParams.has('listing'), {
+      timeout: 10000,
+    });
+
+    // Verify we're on the home page, not /listing/{id}
+    const finalUrl = new URL(page.url());
+    expect(finalUrl.pathname).toBe('/');
+    expect(finalUrl.searchParams.get('listing')).toBe(listingId);
+
+    // QuickView should open automatically via DeepLinkHandler
+    await page.waitForSelector('[data-testid="quickview-modal"]', { timeout: 10000 });
+    await expect(page.locator('[data-testid="quickview-modal"]')).toBeVisible();
+  });
 });

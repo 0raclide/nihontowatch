@@ -27,6 +27,7 @@ const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://nihontowatch.com';
 interface ListingForShare {
   id: number;
   title: string;
+  title_en: string | null;
   price_value: number | null;
   price_currency: string | null;
   item_type: string | null;
@@ -86,6 +87,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       .select(`
         id,
         title,
+        title_en,
         price_value,
         price_currency,
         item_type,
@@ -199,7 +201,7 @@ export default async function ShareProxyPage({ params }: Props) {
   const { id } = await params;
   const listingId = parseInt(id);
 
-  const targetUrl = isNaN(listingId) ? '/' : `/listing/${listingId}`;
+  const targetUrl = isNaN(listingId) ? '/' : `/?listing=${listingId}`;
 
   return (
     <>
