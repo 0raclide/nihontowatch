@@ -193,6 +193,7 @@ export function VisitorDetailModal({ visitorId, onClose }: VisitorDetailModalPro
       <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         onClick={onClose}
+        data-testid="modal-backdrop"
       />
 
       {/* Modal */}
@@ -201,7 +202,7 @@ export function VisitorDetailModal({ visitorId, onClose }: VisitorDetailModalPro
         <div className="flex items-center justify-between px-6 py-4 border-b border-linen dark:border-charcoal/50">
           <div>
             <h2 className="text-lg font-semibold text-ink dark:text-paper">
-              Visitor Activity
+              Visitor Details
             </h2>
             <p className="text-sm text-muted font-mono truncate max-w-md">
               {visitorId}
@@ -210,6 +211,7 @@ export function VisitorDetailModal({ visitorId, onClose }: VisitorDetailModalPro
           <button
             onClick={onClose}
             className="p-2 hover:bg-linen dark:hover:bg-charcoal/50 rounded-lg transition-colors"
+            aria-label="Close"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -221,7 +223,7 @@ export function VisitorDetailModal({ visitorId, onClose }: VisitorDetailModalPro
         <div className="flex-1 overflow-y-auto">
           {loading ? (
             <div className="flex items-center justify-center h-64">
-              <div className="animate-spin rounded-full h-8 w-8 border-2 border-gold border-t-transparent" />
+              <div role="status" className="animate-spin rounded-full h-8 w-8 border-2 border-gold border-t-transparent" />
             </div>
           ) : error ? (
             <div className="flex items-center justify-center h-64 text-red-500">
@@ -271,18 +273,20 @@ export function VisitorDetailModal({ visitorId, onClose }: VisitorDetailModalPro
               </div>
 
               {/* Tab content */}
-              {activeTab === 'timeline' && (
-                <TimelineTab activity={data.recentActivity} />
-              )}
-              {activeTab === 'sessions' && (
-                <SessionsTab sessions={data.sessions} />
-              )}
-              {activeTab === 'searches' && (
-                <SearchesTab searches={data.topSearches} />
-              )}
-              {activeTab === 'filters' && (
-                <FiltersTab patterns={data.filterPatterns} dealers={data.dealersClicked} pages={data.pagesViewed} />
-              )}
+              <div role="tabpanel">
+                {activeTab === 'timeline' && (
+                  <TimelineTab activity={data.recentActivity} />
+                )}
+                {activeTab === 'sessions' && (
+                  <SessionsTab sessions={data.sessions} />
+                )}
+                {activeTab === 'searches' && (
+                  <SearchesTab searches={data.topSearches} />
+                )}
+                {activeTab === 'filters' && (
+                  <FiltersTab patterns={data.filterPatterns} dealers={data.dealersClicked} pages={data.pagesViewed} />
+                )}
+              </div>
             </div>
           ) : null}
         </div>

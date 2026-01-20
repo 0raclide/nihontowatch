@@ -295,5 +295,277 @@ describe('GET /api/admin/visitors/[visitorId]', () => {
       expect(json.totalSessions).toBe(2);
       expect(json.totalDurationMs).toBe(180000); // 60000 + 120000
     });
+
+    it('tracks filter_change events and aggregates patterns', async () => {
+      const mockEvents = [
+        { id: 1, session_id: 'sess_1', event_type: 'filter_change', event_data: { newFilters: { category: 'swords', itemTypes: ['katana'] } }, ip_address: null, created_at: '2026-01-20T10:00:00Z' },
+        { id: 2, session_id: 'sess_1', event_type: 'filter_change', event_data: { newFilters: { category: 'swords', itemTypes: ['katana'] } }, ip_address: null, created_at: '2026-01-20T10:01:00Z' },
+        { id: 3, session_id: 'sess_1', event_type: 'filter_change', event_data: { newFilters: { category: 'tosogu', certifications: ['NBTHK'] } }, ip_address: null, created_at: '2026-01-20T10:02:00Z' },
+      ];
+
+      const eventsBuilder = createMockQueryBuilder(mockEvents);
+      const sessionsBuilder = createMockQueryBuilder([]);
+
+      mockServiceClient.from.mockImplementation((table: string) => {
+        if (table === 'activity_events') return eventsBuilder;
+        if (table === 'user_sessions') return sessionsBuilder;
+        return createMockQueryBuilder();
+      });
+
+      const request = createMockRequest('vis_test_123');
+      const params = Promise.resolve({ visitorId: 'vis_test_123' });
+      const response = await GET(request, { params });
+      const json = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(json.filterChangeCount).toBe(3);
+      expect(json.filterPatterns).toHaveLength(2);
+
+      // First pattern should be the one used twice
+      expect(json.filterPatterns[0].count).toBe(2);
+      expect(json.filterPatterns[0].filters.category).toBe('swords');
+    });
+
+    it('tracks external_link_click events for dealer clicks', async () => {
+      const mockEvents = [
+        { id: 1, session_id: 'sess_1', event_type: 'external_link_click', event_data: { dealerName: 'Aoi Art' }, ip_address: null, created_at: '2026-01-20T10:00:00Z' },
+        { id: 2, session_id: 'sess_1', event_type: 'external_link_click', event_data: { dealerName: 'Aoi Art' }, ip_address: null, created_at: '2026-01-20T10:01:00Z' },
+        { id: 3, session_id: 'sess_1', event_type: 'external_link_click', event_data: { dealerName: 'Nipponto' }, ip_address: null, created_at: '2026-01-20T10:02:00Z' },
+      ];
+
+      const eventsBuilder = createMockQueryBuilder(mockEvents);
+      const sessionsBuilder = createMockQueryBuilder([]);
+
+      mockServiceClient.from.mockImplementation((table: string) => {
+        if (table === 'activity_events') return eventsBuilder;
+        if (table === 'user_sessions') return sessionsBuilder;
+        return createMockQueryBuilder();
+      });
+
+      const request = createMockRequest('vis_test_123');
+      const params = Promise.resolve({ visitorId: 'vis_test_123' });
+      const response = await GET(request, { params });
+      const json = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(json.dealerClickCount).toBe(3);
+      expect(json.dealersClicked).toHaveLength(2);
+      expect(json.dealersClicked[0].name).toBe('Aoi Art');
+      expect(json.dealersClicked[0].count).toBe(2);
+      expect(json.dealersClicked[1].name).toBe('Nipponto');
+      expect(json.dealersClicked[1].count).toBe(1);
+    });
+
+    it('tracks favorite_add and favorite_remove events', async () => {
+      const mockEvents = [
+        { id: 1, session_id: 'sess_1', event_type: 'favorite_add', event_data: { listingId: 123 }, ip_address: null, created_at: '2026-01-20T10:00:00Z' },
+        { id: 2, session_id: 'sess_1', event_type: 'favorite_remove', event_data: { listingId: 123 }, ip_address: null, created_at: '2026-01-20T10:01:00Z' },
+        { id: 3, session_id: 'sess_1', event_type: 'favorite_add', event_data: { listingId: 456 }, ip_address: null, created_at: '2026-01-20T10:02:00Z' },
+      ];
+
+      const eventsBuilder = createMockQueryBuilder(mockEvents);
+      const sessionsBuilder = createMockQueryBuilder([]);
+
+      mockServiceClient.from.mockImplementation((table: string) => {
+        if (table === 'activity_events') return eventsBuilder;
+        if (table === 'user_sessions') return sessionsBuilder;
+        return createMockQueryBuilder();
+      });
+
+      const request = createMockRequest('vis_test_123');
+      const params = Promise.resolve({ visitorId: 'vis_test_123' });
+      const response = await GET(request, { params });
+      const json = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(json.favoriteCount).toBe(3);
+    });
+
+    it('aggregates page views by path', async () => {
+      const mockEvents = [
+        { id: 1, session_id: 'sess_1', event_type: 'page_view', event_data: { path: '/browse' }, ip_address: null, created_at: '2026-01-20T10:00:00Z' },
+        { id: 2, session_id: 'sess_1', event_type: 'page_view', event_data: { path: '/browse' }, ip_address: null, created_at: '2026-01-20T10:01:00Z' },
+        { id: 3, session_id: 'sess_1', event_type: 'page_view', event_data: { path: '/listing/123' }, ip_address: null, created_at: '2026-01-20T10:02:00Z' },
+      ];
+
+      const eventsBuilder = createMockQueryBuilder(mockEvents);
+      const sessionsBuilder = createMockQueryBuilder([]);
+
+      mockServiceClient.from.mockImplementation((table: string) => {
+        if (table === 'activity_events') return eventsBuilder;
+        if (table === 'user_sessions') return sessionsBuilder;
+        return createMockQueryBuilder();
+      });
+
+      const request = createMockRequest('vis_test_123');
+      const params = Promise.resolve({ visitorId: 'vis_test_123' });
+      const response = await GET(request, { params });
+      const json = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(json.pageViewCount).toBe(3);
+      expect(json.pagesViewed).toHaveLength(2);
+      expect(json.pagesViewed[0].path).toBe('/browse');
+      expect(json.pagesViewed[0].count).toBe(2);
+    });
+
+    it('collects multiple IP addresses from events', async () => {
+      const mockEvents = [
+        { id: 1, session_id: 'sess_1', event_type: 'page_view', event_data: {}, ip_address: '1.2.3.4', created_at: '2026-01-20T10:00:00Z' },
+        { id: 2, session_id: 'sess_1', event_type: 'page_view', event_data: {}, ip_address: '1.2.3.4', created_at: '2026-01-20T10:01:00Z' },
+        { id: 3, session_id: 'sess_2', event_type: 'page_view', event_data: {}, ip_address: '5.6.7.8', created_at: '2026-01-20T10:02:00Z' },
+      ];
+
+      const eventsBuilder = createMockQueryBuilder(mockEvents);
+      const sessionsBuilder = createMockQueryBuilder([]);
+
+      mockServiceClient.from.mockImplementation((table: string) => {
+        if (table === 'activity_events') return eventsBuilder;
+        if (table === 'user_sessions') return sessionsBuilder;
+        return createMockQueryBuilder();
+      });
+
+      const request = createMockRequest('vis_test_123');
+      const params = Promise.resolve({ visitorId: 'vis_test_123' });
+      const response = await GET(request, { params });
+      const json = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(json.ipAddresses).toHaveLength(2);
+      expect(json.ipAddresses).toContain('1.2.3.4');
+      expect(json.ipAddresses).toContain('5.6.7.8');
+    });
+
+    it('calculates firstSeen and lastSeen correctly', async () => {
+      const mockEvents = [
+        { id: 1, session_id: 'sess_1', event_type: 'page_view', event_data: {}, ip_address: null, created_at: '2026-01-18T08:00:00Z' },
+        { id: 2, session_id: 'sess_1', event_type: 'page_view', event_data: {}, ip_address: null, created_at: '2026-01-20T15:00:00Z' },
+        { id: 3, session_id: 'sess_1', event_type: 'page_view', event_data: {}, ip_address: null, created_at: '2026-01-19T12:00:00Z' },
+      ];
+
+      const eventsBuilder = createMockQueryBuilder(mockEvents);
+      const sessionsBuilder = createMockQueryBuilder([]);
+
+      mockServiceClient.from.mockImplementation((table: string) => {
+        if (table === 'activity_events') return eventsBuilder;
+        if (table === 'user_sessions') return sessionsBuilder;
+        return createMockQueryBuilder();
+      });
+
+      const request = createMockRequest('vis_test_123');
+      const params = Promise.resolve({ visitorId: 'vis_test_123' });
+      const response = await GET(request, { params });
+      const json = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(json.firstSeen).toBe('2026-01-18T08:00:00Z');
+      expect(json.lastSeen).toBe('2026-01-20T15:00:00Z');
+    });
+
+    it('limits recent activity to 100 events', async () => {
+      // Create 150 mock events
+      const mockEvents = Array.from({ length: 150 }, (_, i) => ({
+        id: i + 1,
+        session_id: 'sess_1',
+        event_type: 'page_view',
+        event_data: { path: `/page/${i}` },
+        ip_address: null,
+        created_at: `2026-01-20T10:${String(i % 60).padStart(2, '0')}:00Z`,
+      }));
+
+      const eventsBuilder = createMockQueryBuilder(mockEvents);
+      const sessionsBuilder = createMockQueryBuilder([]);
+
+      mockServiceClient.from.mockImplementation((table: string) => {
+        if (table === 'activity_events') return eventsBuilder;
+        if (table === 'user_sessions') return sessionsBuilder;
+        return createMockQueryBuilder();
+      });
+
+      const request = createMockRequest('vis_test_123');
+      const params = Promise.resolve({ visitorId: 'vis_test_123' });
+      const response = await GET(request, { params });
+      const json = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(json.totalEvents).toBe(150);
+      expect(json.recentActivity).toHaveLength(100);
+    });
+
+    it('handles sessions with null duration', async () => {
+      const mockEvents = [
+        { id: 1, session_id: 'sess_1', event_type: 'page_view', event_data: {}, ip_address: null, created_at: '2026-01-20T10:00:00Z' },
+      ];
+
+      const mockSessions = [
+        { id: 'sess_1', started_at: '2026-01-20T09:00:00Z', ended_at: null, total_duration_ms: null, page_views: 1, user_agent: null, screen_width: null, screen_height: null },
+      ];
+
+      const eventsBuilder = createMockQueryBuilder(mockEvents);
+      const sessionsBuilder = createMockQueryBuilder(mockSessions);
+
+      mockServiceClient.from.mockImplementation((table: string) => {
+        if (table === 'activity_events') return eventsBuilder;
+        if (table === 'user_sessions') return sessionsBuilder;
+        return createMockQueryBuilder();
+      });
+
+      const request = createMockRequest('vis_test_123');
+      const params = Promise.resolve({ visitorId: 'vis_test_123' });
+      const response = await GET(request, { params });
+      const json = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(json.totalDurationMs).toBe(0);
+      expect(json.sessions[0].durationMs).toBeNull();
+    });
+  });
+
+  // ===========================================================================
+  // ERROR HANDLING TESTS
+  // ===========================================================================
+
+  describe('error handling', () => {
+    beforeEach(() => {
+      setupAdminAuth();
+    });
+
+    it('returns 500 on database error', async () => {
+      const eventsBuilder = createMockQueryBuilder(null, { message: 'Database connection failed' });
+      mockServiceClient.from.mockImplementation(() => eventsBuilder);
+
+      const request = createMockRequest('vis_test_123');
+      const params = Promise.resolve({ visitorId: 'vis_test_123' });
+      const response = await GET(request, { params });
+      const json = await response.json();
+
+      expect(response.status).toBe(500);
+      expect(json.error).toBe('Database error');
+    });
+
+    it('handles events with missing event_data gracefully', async () => {
+      const mockEvents = [
+        { id: 1, session_id: 'sess_1', event_type: 'search', event_data: null, ip_address: null, created_at: '2026-01-20T10:00:00Z' },
+        { id: 2, session_id: 'sess_1', event_type: 'page_view', event_data: undefined, ip_address: null, created_at: '2026-01-20T10:01:00Z' },
+      ];
+
+      const eventsBuilder = createMockQueryBuilder(mockEvents);
+      const sessionsBuilder = createMockQueryBuilder([]);
+
+      mockServiceClient.from.mockImplementation((table: string) => {
+        if (table === 'activity_events') return eventsBuilder;
+        if (table === 'user_sessions') return sessionsBuilder;
+        return createMockQueryBuilder();
+      });
+
+      const request = createMockRequest('vis_test_123');
+      const params = Promise.resolve({ visitorId: 'vis_test_123' });
+      const response = await GET(request, { params });
+      const json = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(json.searchCount).toBe(1);
+      expect(json.topSearches).toHaveLength(0); // No query extracted from null data
+    });
   });
 });
