@@ -166,9 +166,24 @@ export async function GET(request: NextRequest) {
     // Dealer name
     const dealerName = listing.dealers?.name || 'Unknown Dealer';
 
-    // Get image URL
-    const imageUrls = listing.stored_images || listing.images || [];
-    const imageUrl = imageUrls[0] || null;
+    // Get image URL - prefer stored_images, then try constructed storage URL, then fall back to external images
+    let imageUrl: string | null = null;
+    const storedImages = listing.stored_images as string[] | null;
+    const externalImages = listing.images as string[] | null;
+
+    if (storedImages && storedImages.length > 0) {
+      // Use stored_images if available
+      imageUrl = storedImages[0];
+    } else if (dealerName && dealerName !== 'Unknown Dealer') {
+      // Try to construct storage URL from dealer name and listing ID
+      // Storage pattern: listing-images/{dealer-slug}/L{listing_id}/00.jpg
+      const dealerSlug = dealerName.toLowerCase().replace(/\s+/g, '-');
+      const constructedUrl = `${SUPABASE_URL}/storage/v1/object/public/listing-images/${dealerSlug}/L${listingId}/00.jpg`;
+      imageUrl = constructedUrl;
+    } else if (externalImages && externalImages.length > 0) {
+      // Fall back to external images (may not work due to CORS)
+      imageUrl = externalImages[0];
+    }
 
     // Return OG image with product image, title, price, and cert
     return new ImageResponse(
