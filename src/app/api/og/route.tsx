@@ -108,22 +108,39 @@ export async function GET(request: NextRequest) {
     const dealerName = listing.dealers?.name || 'Unknown Dealer';
     const title = String(listing.title || 'Listing').substring(0, 80);
 
-    // Get image URL - use Supabase transform for optimized delivery
-    let imageUrl: string | null = null;
+    // Get image as base64 data URL to avoid Satori remote fetch issues
+    let imageDataUrl: string | null = null;
     const storedImages = listing.stored_images as string[] | null;
 
-    if (storedImages && storedImages.length > 0) {
-      // Use Supabase image transform to resize for OG (600px width is enough for half the card)
-      const originalUrl = storedImages[0];
-      // Transform URL: add /render/image/public with transform params
-      imageUrl = originalUrl.replace(
-        '/storage/v1/object/public/',
-        '/storage/v1/render/image/public/'
-      ) + '?width=660&height=630&resize=cover';
-    } else if (dealerName && dealerName !== 'Unknown Dealer') {
-      const dealerSlug = dealerName.toLowerCase().replace(/\s+/g, '-');
-      const basePath = `listing-images/${dealerSlug}/L${listingId}/00.jpg`;
-      imageUrl = `${SUPABASE_URL}/storage/v1/render/image/public/${basePath}?width=660&height=630&resize=cover`;
+    try {
+      let imageUrl: string | null = null;
+
+      if (storedImages && storedImages.length > 0) {
+        // Use Supabase image transform for smaller size
+        imageUrl = storedImages[0].replace(
+          '/storage/v1/object/public/',
+          '/storage/v1/render/image/public/'
+        ) + '?width=660&height=630&resize=cover&quality=80';
+      } else if (dealerName && dealerName !== 'Unknown Dealer') {
+        const dealerSlug = dealerName.toLowerCase().replace(/\s+/g, '-');
+        const basePath = `listing-images/${dealerSlug}/L${listingId}/00.jpg`;
+        imageUrl = `${SUPABASE_URL}/storage/v1/render/image/public/${basePath}?width=660&height=630&resize=cover&quality=80`;
+      }
+
+      if (imageUrl) {
+        // Fetch image and convert to base64
+        const imageResponse = await fetch(imageUrl);
+        if (imageResponse.ok) {
+          const imageBuffer = await imageResponse.arrayBuffer();
+          const base64 = btoa(
+            new Uint8Array(imageBuffer).reduce((data, byte) => data + String.fromCharCode(byte), '')
+          );
+          const contentType = imageResponse.headers.get('content-type') || 'image/jpeg';
+          imageDataUrl = `data:${contentType};base64,${base64}`;
+        }
+      }
+    } catch {
+      // Silently fail - image is optional
     }
 
     return new ImageResponse(
@@ -148,9 +165,9 @@ export async function GET(request: NextRequest) {
               position: 'relative',
             }}
           >
-            {imageUrl && (
+            {imageDataUrl && (
               <img
-                src={imageUrl}
+                src={imageDataUrl}
                 style={{
                   width: '100%',
                   height: '100%',
