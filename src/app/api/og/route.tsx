@@ -125,6 +125,7 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  // DEBUG: Return simple image first to test the route works
   // Fetch listing data using REST API (edge-compatible)
   try {
     const listingResponse = await fetch(
@@ -138,7 +139,7 @@ export async function GET(request: NextRequest) {
     );
 
     if (!listingResponse.ok) {
-      throw new Error('Failed to fetch listing');
+      throw new Error(`Supabase error: ${listingResponse.status}`);
     }
 
     const listings = await listingResponse.json();
@@ -166,6 +167,7 @@ export async function GET(request: NextRequest) {
     // Dealer name
     const dealerName = listing.dealers?.name || 'Unknown Dealer';
 
+    // Return a simple image with title and price
     return new ImageResponse(
       (
         <div
@@ -173,174 +175,57 @@ export async function GET(request: NextRequest) {
             height: '100%',
             width: '100%',
             display: 'flex',
-            backgroundColor: '#faf8f5',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: '#1a1a1a',
+            padding: 40,
           }}
         >
-          {/* Left side - Branding placeholder */}
-          <div
+          <span
             style={{
-              width: '50%',
-              height: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: '#1a1a1a',
+              fontSize: 28,
+              fontWeight: 700,
+              color: '#c9a962',
+              textAlign: 'center',
+              maxWidth: '90%',
             }}
           >
+            {String(listing.title || 'Listing').substring(0, 80)}
+          </span>
+          <span
+            style={{
+              fontSize: 48,
+              fontWeight: 700,
+              color: '#ffffff',
+              marginTop: 20,
+            }}
+          >
+            {priceDisplay}
+          </span>
+          {certLabel && (
             <span
               style={{
-                fontSize: 48,
-                fontWeight: 700,
-                color: '#c9a962',
+                fontSize: 20,
+                color: '#a0a0a0',
+                marginTop: 16,
               }}
             >
-              N
+              {certLabel}
             </span>
-          </div>
-
-          {/* Right side - Details */}
-          <div
+          )}
+          <span
             style={{
-              width: '50%',
-              height: '100%',
-              display: 'flex',
-              flexDirection: 'column',
-              padding: 48,
-              justifyContent: 'space-between',
+              fontSize: 18,
+              color: '#737373',
+              marginTop: 30,
             }}
           >
-            {/* Top section */}
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              {/* Badges row */}
-              <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
-                {certLabel && certColors && (
-                  <div
-                    style={{
-                      display: 'flex',
-                      backgroundColor: certColors.bg,
-                      color: certColors.text,
-                      padding: '8px 16px',
-                      borderRadius: 6,
-                      fontSize: 16,
-                      fontWeight: 600,
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em',
-                    }}
-                  >
-                    {certLabel}
-                  </div>
-                )}
-                {itemTypeLabel && (
-                  <div
-                    style={{
-                      display: 'flex',
-                      backgroundColor: '#e5e5e5',
-                      color: '#525252',
-                      padding: '8px 16px',
-                      borderRadius: 6,
-                      fontSize: 16,
-                      fontWeight: 500,
-                    }}
-                  >
-                    {itemTypeLabel}
-                  </div>
-                )}
-              </div>
-
-              {/* Title */}
-              <div
-                style={{
-                  fontSize: 36,
-                  fontWeight: 700,
-                  color: '#1a1a1a',
-                  lineHeight: 1.2,
-                  marginBottom: 16,
-                  display: '-webkit-box',
-                  WebkitLineClamp: 3,
-                  WebkitBoxOrient: 'vertical',
-                  overflow: 'hidden',
-                }}
-              >
-                {listing.title}
-              </div>
-
-              {/* Artisan */}
-              {artisan && (
-                <div
-                  style={{
-                    fontSize: 22,
-                    color: '#525252',
-                    marginBottom: 8,
-                  }}
-                >
-                  {artisan}
-                </div>
-              )}
-
-              {/* Dealer */}
-              <div
-                style={{
-                  fontSize: 18,
-                  color: '#737373',
-                }}
-              >
-                via {dealerName}
-              </div>
-            </div>
-
-            {/* Bottom section */}
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              {/* Price */}
-              <div
-                style={{
-                  fontSize: 42,
-                  fontWeight: 700,
-                  color: '#c9a962',
-                  marginBottom: 24,
-                }}
-              >
-                {priceDisplay}
-              </div>
-
-              {/* Branding */}
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 12,
-                }}
-              >
-                <div
-                  style={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: '50%',
-                    backgroundColor: '#1a1a1a',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <span style={{ color: '#c9a962', fontSize: 18, fontWeight: 700 }}>N</span>
-                </div>
-                <span
-                  style={{
-                    fontSize: 20,
-                    fontWeight: 600,
-                    color: '#1a1a1a',
-                  }}
-                >
-                  nihontowatch.com
-                </span>
-              </div>
-            </div>
-          </div>
+            nihontowatch.com
+          </span>
         </div>
       ),
-      {
-        width: 1200,
-        height: 630,
-      }
+      { width: 1200, height: 630 }
     );
   } catch (error) {
     // Fallback to default OG image on error - show error message for debugging
