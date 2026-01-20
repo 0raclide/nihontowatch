@@ -421,44 +421,24 @@ export async function GET(request: NextRequest) {
             </div>
           </div>
 
-          {/* Footer - Elegant Branding */}
+          {/* Footer - Clean Branding (no mon - doesn't scale well) */}
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              padding: '24px 56px',
+              padding: '20px 56px',
               backgroundColor: OPUS.surface,
               borderTop: `1px solid ${OPUS.surfaceElevated}`,
-              gap: 20,
             }}
           >
-            {/* Mon - Larger, with subtle glow effect via background */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: 52,
-                height: 52,
-                borderRadius: 26,
-                backgroundColor: `${OPUS.accent}15`,
-              }}
-            >
-              <img
-                src={`${BASE_URL}/logo-mon.png`}
-                width={44}
-                height={44}
-              />
-            </div>
-
             {/* Brand text - NihontoWatch with split colors */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-              <div style={{ display: 'flex', fontSize: 22, fontWeight: 600, letterSpacing: '-0.01em' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <div style={{ display: 'flex', fontSize: 20, fontWeight: 600, letterSpacing: '-0.01em' }}>
                 <span style={{ color: OPUS.textPrimary }}>Nihonto</span>
                 <span style={{ color: OPUS.accent }}>Watch</span>
               </div>
-              <span style={{ fontSize: 13, color: OPUS.textSecondary, marginTop: 2 }}>
+              <span style={{ fontSize: 12, color: OPUS.textSecondary, marginTop: 4 }}>
                 Compare. Decide. Acquire.
               </span>
             </div>
