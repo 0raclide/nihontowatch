@@ -6,6 +6,7 @@ import { isTosogu, getItemTypeLabel } from '@/types';
 import { useCurrency, formatPriceWithConversion } from '@/hooks/useCurrency';
 import { shouldShowNewBadge } from '@/lib/newListing';
 import { FavoriteButton } from '@/components/favorites/FavoriteButton';
+import { ShareButton } from '@/components/share/ShareButton';
 import { MetadataGrid, getCertInfo, getArtisanInfo } from './MetadataGrid';
 import { TranslatedDescription } from './TranslatedDescription';
 import { TranslatedTitle } from './TranslatedTitle';
@@ -264,8 +265,18 @@ export function QuickViewMobileSheet({
               {priceDisplay}
             </span>
 
-            {/* Right side: Favorite + Close button */}
+            {/* Right side: Share + Favorite + Close button */}
             <div className="flex items-center gap-2">
+              <div
+                onClick={(e) => e.stopPropagation()}
+                onTouchStart={(e) => e.stopPropagation()}
+              >
+                <ShareButton
+                  listingId={listing.id}
+                  title={listing.title}
+                  size="sm"
+                />
+              </div>
               <div
                 onClick={(e) => e.stopPropagation()}
                 onTouchStart={(e) => e.stopPropagation()}

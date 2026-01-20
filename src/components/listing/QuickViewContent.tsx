@@ -1,6 +1,7 @@
 'use client';
 
 import { FavoriteButton } from '@/components/favorites/FavoriteButton';
+import { ShareButton } from '@/components/share/ShareButton';
 import { useCurrency, formatPriceWithConversion } from '@/hooks/useCurrency';
 import { shouldShowNewBadge } from '@/lib/newListing';
 import type { Listing } from '@/types';
@@ -69,7 +70,10 @@ export function QuickViewContent({ listing }: QuickViewContentProps) {
                 </span>
               )}
             </div>
-            <FavoriteButton listingId={listing.id} size="sm" />
+            <div className="flex items-center gap-2">
+              <ShareButton listingId={listing.id} title={listing.title} size="sm" />
+              <FavoriteButton listingId={listing.id} size="sm" />
+            </div>
           </div>
 
           {/* Price - Large and prominent */}
