@@ -342,8 +342,9 @@ export async function GET(request: NextRequest) {
         height: 630,
       }
     );
-  } catch {
-    // Fallback to default OG image on error
+  } catch (error) {
+    // Fallback to default OG image on error - show error message for debugging
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return new ImageResponse(
       (
         <div
@@ -374,6 +375,15 @@ export async function GET(request: NextRequest) {
             }}
           >
             Japanese Sword & Tosogu Marketplace
+          </span>
+          <span
+            style={{
+              fontSize: 14,
+              color: '#ff6b6b',
+              marginTop: 20,
+            }}
+          >
+            Debug: {errorMessage}
           </span>
         </div>
       ),
