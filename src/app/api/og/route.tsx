@@ -7,6 +7,20 @@ export const runtime = 'edge';
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
+// Cache the font fetch to avoid repeated requests
+let fontCache: ArrayBuffer | null = null;
+
+async function getFont(): Promise<ArrayBuffer> {
+  if (fontCache) return fontCache;
+
+  // Fetch Inter font from Google Fonts (supports Latin characters well)
+  const fontResponse = await fetch(
+    'https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hjp-Ek-_EeA.woff2'
+  );
+  fontCache = await fontResponse.arrayBuffer();
+  return fontCache;
+}
+
 // Certification tier colors
 const CERT_COLORS: Record<string, string> = {
   tokuju: '#7c3aed',
@@ -37,6 +51,28 @@ const CERT_LABELS: Record<string, string> = {
   Hozon: 'HOZON',
 };
 
+// Item type display names
+const ITEM_TYPE_LABELS: Record<string, string> = {
+  katana: 'KATANA',
+  wakizashi: 'WAKIZASHI',
+  tanto: 'TANTO',
+  tachi: 'TACHI',
+  naginata: 'NAGINATA',
+  yari: 'YARI',
+  ken: 'KEN',
+  tsuba: 'TSUBA',
+  menuki: 'MENUKI',
+  kozuka: 'KOZUKA',
+  kogai: 'KOGAI',
+  fuchi: 'FUCHI',
+  kashira: 'KASHIRA',
+  fuchi_kashira: 'FUCHI-KASHIRA',
+  'fuchi-kashira': 'FUCHI-KASHIRA',
+  koshirae: 'KOSHIRAE',
+  armor: 'ARMOR',
+  helmet: 'HELMET',
+};
+
 function formatPrice(value: number | null, currency: string | null): string {
   if (!value) return 'Price on Request';
   const curr = currency || 'JPY';
@@ -47,12 +83,75 @@ function formatPrice(value: number | null, currency: string | null): string {
   }).format(value);
 }
 
-export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const listingId = searchParams.get('id');
+/**
+ * Sanitize text for safe rendering in Satori.
+ * Removes or replaces characters that might cause rendering issues.
+ * Keeps ASCII, common punctuation, and romanized Japanese (romaji).
+ */
+function sanitizeText(text: string | null | undefined, maxLength = 100): string {
+  if (!text) return '';
 
-  // Default OG image for non-listing pages
-  if (!listingId) {
+  // Convert to string and trim
+  let safe = String(text).trim();
+
+  // Replace Japanese characters with empty string for now
+  // (Future: could add Japanese font support)
+  // Keep: ASCII letters, numbers, spaces, common punctuation
+  safe = safe.replace(/[^\x20-\x7E]/g, '');
+
+  // Clean up multiple spaces
+  safe = safe.replace(/\s+/g, ' ').trim();
+
+  // Truncate if needed
+  if (safe.length > maxLength) {
+    safe = safe.substring(0, maxLength - 3) + '...';
+  }
+
+  return safe;
+}
+
+/**
+ * Generate the default/fallback OG image (used when no listing ID or on error)
+ */
+async function generateDefaultOG(font: ArrayBuffer): Promise<ImageResponse> {
+  return new ImageResponse(
+    (
+      <div
+        style={{
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: '#0f0f0f',
+          backgroundImage: 'linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%)',
+          fontFamily: 'Inter',
+        }}
+      >
+        <div style={{ fontSize: 72, fontWeight: 700, color: '#c9a962' }}>
+          Nihontowatch
+        </div>
+        <div style={{ fontSize: 28, color: '#6b7280', marginTop: 24 }}>
+          Japanese Swords & Tosogu from Dealers Worldwide
+        </div>
+      </div>
+    ),
+    {
+      width: 1200,
+      height: 630,
+      fonts: [{ name: 'Inter', data: font, style: 'normal', weight: 400 }],
+    }
+  );
+}
+
+export async function GET(request: NextRequest) {
+  // Load font first - this is critical for Edge runtime
+  let font: ArrayBuffer;
+  try {
+    font = await getFont();
+  } catch {
+    // If font fails to load, return a simple fallback without custom font
     return new ImageResponse(
       (
         <div
@@ -60,27 +159,37 @@ export async function GET(request: NextRequest) {
             width: '100%',
             height: '100%',
             display: 'flex',
-            flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            backgroundColor: '#111111',
+            backgroundColor: '#0f0f0f',
+            color: '#c9a962',
+            fontSize: 64,
           }}
         >
-          <div style={{ fontSize: 64, fontWeight: 700, color: '#c9a962' }}>
-            Nihontowatch
-          </div>
-          <div style={{ fontSize: 28, color: '#888888', marginTop: 20 }}>
-            The premier aggregator for Japanese swords and sword fittings
-          </div>
+          Nihontowatch
         </div>
       ),
       { width: 1200, height: 630 }
     );
   }
 
+  const { searchParams } = new URL(request.url);
+  const listingId = searchParams.get('id');
+
+  // Default OG image for non-listing pages
+  if (!listingId) {
+    return generateDefaultOG(font);
+  }
+
+  // Validate listing ID is a positive integer
+  const parsedId = parseInt(listingId, 10);
+  if (isNaN(parsedId) || parsedId <= 0) {
+    return generateDefaultOG(font);
+  }
+
   try {
     const listingResponse = await fetch(
-      `${SUPABASE_URL}/rest/v1/listings?id=eq.${listingId}&select=id,title,price_value,price_currency,item_type,cert_type,smith,tosogu_maker,stored_images,images,dealers(name)`,
+      `${SUPABASE_URL}/rest/v1/listings?id=eq.${parsedId}&select=id,title,title_en,price_value,price_currency,item_type,cert_type,smith,tosogu_maker,dealers(name)`,
       {
         headers: {
           apikey: SUPABASE_ANON_KEY,
@@ -90,60 +199,37 @@ export async function GET(request: NextRequest) {
     );
 
     if (!listingResponse.ok) {
-      throw new Error(`Supabase error: ${listingResponse.status}`);
+      return generateDefaultOG(font);
     }
 
     const listings = await listingResponse.json();
     const listing = listings[0];
 
     if (!listing) {
-      throw new Error('Listing not found');
+      return generateDefaultOG(font);
     }
 
+    // Extract and sanitize all text fields
     const certType = listing.cert_type as string | null;
     const certColor = certType ? CERT_COLORS[certType] || '#374151' : null;
-    const certLabel = certType ? CERT_LABELS[certType] || certType.toUpperCase() : null;
-    const artisan = listing.smith || listing.tosogu_maker || '';
+    const certLabel = certType ? CERT_LABELS[certType] || sanitizeText(certType, 30).toUpperCase() : null;
+
+    // Prefer English title, fall back to sanitized original title
+    const rawTitle = listing.title_en || listing.title || 'Japanese Sword';
+    const title = sanitizeText(rawTitle, 80) || 'Japanese Sword';
+
+    // Sanitize artisan name (remove Japanese characters for now)
+    const rawArtisan = listing.smith || listing.tosogu_maker || '';
+    const artisan = sanitizeText(rawArtisan, 40);
+
     const priceDisplay = formatPrice(listing.price_value, listing.price_currency);
-    const dealerName = listing.dealers?.name || 'Unknown Dealer';
-    const title = String(listing.title || 'Listing').substring(0, 80);
+    const dealerName = sanitizeText(listing.dealers?.name, 30) || 'Dealer';
 
-    // Get image as base64 data URL to avoid Satori remote fetch issues
-    let imageDataUrl: string | null = null;
-    const storedImages = listing.stored_images as string[] | null;
+    // Get item type label
+    const itemType = listing.item_type as string | null;
+    const itemTypeLabel = itemType ? ITEM_TYPE_LABELS[itemType.toLowerCase()] || null : null;
 
-    try {
-      let imageUrl: string | null = null;
-
-      if (storedImages && storedImages.length > 0) {
-        // Use Supabase image transform for smaller size
-        imageUrl = storedImages[0].replace(
-          '/storage/v1/object/public/',
-          '/storage/v1/render/image/public/'
-        ) + '?width=660&height=630&resize=cover&quality=80';
-      } else if (dealerName && dealerName !== 'Unknown Dealer') {
-        const dealerSlug = dealerName.toLowerCase().replace(/\s+/g, '-');
-        const basePath = `listing-images/${dealerSlug}/L${listingId}/00.jpg`;
-        imageUrl = `${SUPABASE_URL}/storage/v1/render/image/public/${basePath}?width=660&height=630&resize=cover&quality=80`;
-      }
-
-      if (imageUrl) {
-        // Fetch image and convert to base64
-        const imageResponse = await fetch(imageUrl);
-        if (imageResponse.ok) {
-          const imageBuffer = await imageResponse.arrayBuffer();
-          const base64 = btoa(
-            new Uint8Array(imageBuffer).reduce((data, byte) => data + String.fromCharCode(byte), '')
-          );
-          const contentType = imageResponse.headers.get('content-type') || 'image/jpeg';
-          imageDataUrl = `data:${contentType};base64,${base64}`;
-        }
-      }
-    } catch {
-      // Silently fail - image is optional
-    }
-
-    // Clean text-focused design - no external images to avoid rendering issues
+    // Generate the listing OG image
     return new ImageResponse(
       (
         <div
@@ -156,53 +242,72 @@ export async function GET(request: NextRequest) {
             padding: 60,
             backgroundColor: '#0f0f0f',
             backgroundImage: 'linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%)',
+            fontFamily: 'Inter',
           }}
         >
-          {/* Top: Cert Badge */}
-          <div style={{ display: 'flex' }}>
+          {/* Top Row: Badges */}
+          <div style={{ display: 'flex', gap: 12 }}>
             {certLabel && (
               <div
                 style={{
                   display: 'flex',
                   backgroundColor: certColor || '#374151',
                   color: 'white',
-                  padding: '12px 24px',
-                  borderRadius: 8,
-                  fontSize: 18,
-                  fontWeight: 700,
-                  letterSpacing: '0.1em',
+                  padding: '10px 20px',
+                  borderRadius: 6,
+                  fontSize: 16,
+                  fontWeight: 600,
+                  letterSpacing: '0.05em',
                 }}
               >
                 {certLabel}
               </div>
             )}
+            {itemTypeLabel && (
+              <div
+                style={{
+                  display: 'flex',
+                  backgroundColor: '#374151',
+                  color: '#d1d5db',
+                  padding: '10px 20px',
+                  borderRadius: 6,
+                  fontSize: 16,
+                  fontWeight: 600,
+                  letterSpacing: '0.05em',
+                }}
+              >
+                {itemTypeLabel}
+              </div>
+            )}
           </div>
 
-          {/* Middle: Title + Artisan */}
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
+          {/* Middle: Title + Artisan + Dealer */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <div
               style={{
-                fontSize: 48,
+                fontSize: 44,
                 fontWeight: 700,
                 color: '#ffffff',
                 lineHeight: 1.2,
-                marginBottom: 16,
               }}
             >
               {title}
             </div>
             {artisan && (
-              <div style={{ fontSize: 28, color: '#9ca3af' }}>
+              <div style={{ display: 'flex', fontSize: 26, color: '#9ca3af' }}>
                 by {artisan}
               </div>
             )}
+            <div style={{ display: 'flex', fontSize: 20, color: '#6b7280', marginTop: 4 }}>
+              Available at {dealerName}
+            </div>
           </div>
 
           {/* Bottom: Price + Branding */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
             <div
               style={{
-                fontSize: 64,
+                fontSize: 56,
                 fontWeight: 700,
                 color: '#c9a962',
               }}
@@ -212,52 +317,31 @@ export async function GET(request: NextRequest) {
             <div style={{ display: 'flex', alignItems: 'center' }}>
               <div
                 style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 22,
+                  width: 40,
+                  height: 40,
+                  borderRadius: 20,
                   backgroundColor: '#c9a962',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  marginRight: 14,
+                  marginRight: 12,
                 }}
               >
-                <span style={{ color: '#0f0f0f', fontSize: 24, fontWeight: 700 }}>N</span>
+                <span style={{ color: '#0f0f0f', fontSize: 22, fontWeight: 700 }}>N</span>
               </div>
-              <span style={{ fontSize: 24, color: '#6b7280' }}>nihontowatch.com</span>
+              <span style={{ fontSize: 22, color: '#6b7280' }}>nihontowatch.com</span>
             </div>
           </div>
         </div>
       ),
-      { width: 1200, height: 630 }
+      {
+        width: 1200,
+        height: 630,
+        fonts: [{ name: 'Inter', data: font, style: 'normal', weight: 400 }],
+      }
     );
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    return new ImageResponse(
-      (
-        <div
-          style={{
-            width: '100%',
-            height: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: '#111111',
-          }}
-        >
-          <div style={{ fontSize: 64, fontWeight: 700, color: '#c9a962' }}>
-            Nihontowatch
-          </div>
-          <div style={{ fontSize: 28, color: '#888888', marginTop: 20 }}>
-            Japanese Sword & Tosogu Marketplace
-          </div>
-          <div style={{ fontSize: 14, color: '#ef4444', marginTop: 16 }}>
-            {errorMessage}
-          </div>
-        </div>
-      ),
-      { width: 1200, height: 630 }
-    );
+  } catch {
+    // On any error, return the default OG image
+    return generateDefaultOG(font);
   }
 }
