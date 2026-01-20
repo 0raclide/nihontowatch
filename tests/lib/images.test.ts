@@ -49,14 +49,26 @@ describe('getImageUrl', () => {
       expect(getImageUrl(listing, 1)).toBe('https://supabase.co/storage/stored2.jpg');
     });
 
-    it('returns original images after stored images', () => {
+    it('returns original images when stored URLs are unparseable', () => {
       const listing = {
         stored_images: ['https://supabase.co/storage/stored1.jpg', 'https://supabase.co/storage/stored2.jpg'],
         images: ['https://dealer.com/original1.jpg', 'https://dealer.com/original2.jpg'],
       };
+      // When stored URLs aren't parseable, all images are included
       // Index 2 is first original image (after 2 stored images)
       expect(getImageUrl(listing, 2)).toBe('https://dealer.com/original1.jpg');
       expect(getImageUrl(listing, 3)).toBe('https://dealer.com/original2.jpg');
+    });
+
+    it('returns null for covered original indices', () => {
+      const listing = {
+        stored_images: ['https://supabase.co/dealer/L00001/00.jpg', 'https://supabase.co/dealer/L00001/01.jpg'],
+        images: ['https://dealer.com/original1.jpg', 'https://dealer.com/original2.jpg'],
+      };
+      // Stored images cover indices 0 and 1, so only stored images exist
+      expect(getImageUrl(listing, 0)).toBe('https://supabase.co/dealer/L00001/00.jpg');
+      expect(getImageUrl(listing, 1)).toBe('https://supabase.co/dealer/L00001/01.jpg');
+      expect(getImageUrl(listing, 2)).toBeNull(); // No third image
     });
   });
 
@@ -84,16 +96,28 @@ describe('getImageUrl', () => {
       expect(getImageUrl(listing)).toBe('https://dealer.com/original1.jpg');
     });
 
-    it('returns combined list at specific index when stored is shorter', () => {
+    it('returns combined list at specific index when stored is shorter (unparseable URL)', () => {
       const listing = {
         stored_images: ['https://supabase.co/storage/stored1.jpg'],
         images: ['https://dealer.com/original1.jpg', 'https://dealer.com/original2.jpg', 'https://dealer.com/original3.jpg'],
       };
-      // New behavior: stored first, then original
+      // Stored URL isn't parseable, so all images are included
       // Index 0: stored1, Index 1: original1, Index 2: original2, Index 3: original3
       expect(getImageUrl(listing, 0)).toBe('https://supabase.co/storage/stored1.jpg');
       expect(getImageUrl(listing, 2)).toBe('https://dealer.com/original2.jpg');
       expect(getImageUrl(listing, 3)).toBe('https://dealer.com/original3.jpg');
+    });
+
+    it('returns only uncovered originals when stored has parseable URL', () => {
+      const listing = {
+        stored_images: ['https://supabase.co/dealer/L00001/00.jpg'],
+        images: ['https://dealer.com/original1.jpg', 'https://dealer.com/original2.jpg', 'https://dealer.com/original3.jpg'],
+      };
+      // Stored covers index 0, so original[0] is skipped
+      // Index 0: stored/00.jpg, Index 1: original2, Index 2: original3
+      expect(getImageUrl(listing, 0)).toBe('https://supabase.co/dealer/L00001/00.jpg');
+      expect(getImageUrl(listing, 1)).toBe('https://dealer.com/original2.jpg');
+      expect(getImageUrl(listing, 2)).toBe('https://dealer.com/original3.jpg');
     });
   });
 
@@ -111,9 +135,11 @@ describe('getImageUrl', () => {
         stored_images: ['https://supabase.co/storage/stored1.jpg', '', 'https://supabase.co/storage/stored3.jpg'],
         images: ['https://dealer.com/original1.jpg', 'https://dealer.com/original2.jpg', 'https://dealer.com/original3.jpg'],
       };
-      // New behavior: empty strings are skipped, so index 1 is stored3.jpg
+      // Stored URLs aren't parseable, so all images are included
+      // Empty strings are skipped, so stored + all originals = stored1, stored3, orig1, orig2, orig3
       expect(getImageUrl(listing, 0)).toBe('https://supabase.co/storage/stored1.jpg');
       expect(getImageUrl(listing, 1)).toBe('https://supabase.co/storage/stored3.jpg');
+      expect(getImageUrl(listing, 2)).toBe('https://dealer.com/original1.jpg');
     });
 
     it('filters out unsupported formats', () => {
@@ -165,12 +191,28 @@ describe('getAllImages', () => {
       ]);
     });
 
-    it('returns stored first, then original (deduplicated)', () => {
+    it('returns stored images only when stored URLs have parseable indices', () => {
+      // When stored images have parseable indices (00.jpg, 01.jpg format),
+      // original images at those indices are considered duplicates and skipped
+      const listing = {
+        stored_images: ['https://supabase.co/dealer/L00001/00.jpg', 'https://supabase.co/dealer/L00001/01.jpg'],
+        images: ['https://dealer.com/original1.jpg', 'https://dealer.com/original2.jpg'],
+      };
+      // Stored images cover indices 0 and 1, so original images are skipped
+      expect(getAllImages(listing)).toEqual([
+        'https://supabase.co/dealer/L00001/00.jpg',
+        'https://supabase.co/dealer/L00001/01.jpg',
+      ]);
+    });
+
+    it('returns stored and original when stored URLs dont have parseable indices', () => {
+      // When stored image URLs don't match the {index:02d}.{ext} pattern,
+      // we can't determine which originals they cover, so include all
       const listing = {
         stored_images: ['https://supabase.co/stored1.jpg', 'https://supabase.co/stored2.jpg'],
         images: ['https://dealer.com/original1.jpg', 'https://dealer.com/original2.jpg'],
       };
-      // New behavior: stored first, then original (all unique)
+      // Stored URLs aren't parseable, so all images are included
       expect(getAllImages(listing)).toEqual([
         'https://supabase.co/stored1.jpg',
         'https://supabase.co/stored2.jpg',
@@ -179,15 +221,28 @@ describe('getAllImages', () => {
       ]);
     });
 
-    it('combines all images from both arrays', () => {
+    it('includes uncovered original images when stored is partial (unparseable URLs)', () => {
       const listing = {
         stored_images: ['https://supabase.co/stored1.jpg'],
         images: ['https://dealer.com/original1.jpg', 'https://dealer.com/original2.jpg', 'https://dealer.com/original3.jpg'],
       };
-      // New behavior: stored first, then all original
+      // Stored URL isn't parseable, so all original images are included
       expect(getAllImages(listing)).toEqual([
         'https://supabase.co/stored1.jpg',
         'https://dealer.com/original1.jpg',
+        'https://dealer.com/original2.jpg',
+        'https://dealer.com/original3.jpg',
+      ]);
+    });
+
+    it('includes uncovered original images when stored is partial (parseable URLs)', () => {
+      const listing = {
+        stored_images: ['https://supabase.co/dealer/L00001/00.jpg'],
+        images: ['https://dealer.com/original1.jpg', 'https://dealer.com/original2.jpg', 'https://dealer.com/original3.jpg'],
+      };
+      // Stored covers index 0 only, so images[1] and images[2] are included
+      expect(getAllImages(listing)).toEqual([
+        'https://supabase.co/dealer/L00001/00.jpg',
         'https://dealer.com/original2.jpg',
         'https://dealer.com/original3.jpg',
       ]);
@@ -386,18 +441,27 @@ describe('getImageCount', () => {
     expect(getImageCount({ stored_images: [], images: [] })).toBe(0);
   });
 
-  it('returns total unique count (stored + original)', () => {
+  it('returns total unique count (stored + uncovered original)', () => {
+    // Stored URLs aren't parseable, so all images are included
     expect(getImageCount({
       stored_images: ['a.jpg', 'b.jpg', 'c.jpg'],
       images: ['x.jpg'],
-    })).toBe(4); // New behavior: 3 + 1 = 4
+    })).toBe(4); // 3 stored + 1 original (unparseable)
   });
 
-  it('returns total unique count when original is larger', () => {
+  it('returns total unique count when stored has parseable URLs', () => {
+    // Stored URL covers index 0, so original[0] is skipped
+    expect(getImageCount({
+      stored_images: ['https://supabase.co/dealer/L00001/00.jpg'],
+      images: ['x.jpg', 'y.jpg', 'z.jpg'],
+    })).toBe(3); // 1 stored + 2 uncovered originals (indices 1 and 2)
+  });
+
+  it('returns total unique count when original is larger (unparseable)', () => {
     expect(getImageCount({
       stored_images: ['a.jpg'],
       images: ['x.jpg', 'y.jpg', 'z.jpg'],
-    })).toBe(4); // New behavior: 1 + 3 = 4
+    })).toBe(4); // 1 stored + 3 original (unparseable)
   });
 
   it('deduplicates when counting', () => {
@@ -470,19 +534,18 @@ describe('real-world scenarios', () => {
       ],
     };
     expect(getImageUrl(listing)).toBe('https://supabase.co/storage/aoi-art/L00001/00.jpg');
-    // New behavior: returns all stored, then all original (4 total)
+    // Smart deduplication: stored images cover indices 0 and 1,
+    // so original images are considered duplicates and skipped
     expect(getAllImages(listing)).toEqual([
       'https://supabase.co/storage/aoi-art/L00001/00.jpg',
       'https://supabase.co/storage/aoi-art/L00001/01.jpg',
-      'https://aoijapan.com/images/sword1.jpg',
-      'https://aoijapan.com/images/sword2.jpg',
     ]);
     expect(hasStoredImages(listing)).toBe(true);
     expect(getImageSource(listing)).toBe('stored');
   });
 
   it('handles partially migrated listing (sparse stored_images)', () => {
-    // Real case: stored_images named by original index (02.gif = original[2])
+    // Real case: stored_images named by original index (02.jpg = original[2])
     // stored_images array only has some images, not all
     const listing = {
       stored_images: [
@@ -490,23 +553,22 @@ describe('real-world scenarios', () => {
         'https://supabase.co/storage/aoi-art/L00001/04.jpg',
       ],
       images: [
-        'https://aoijapan.com/images/sword1.jpg',
-        'https://aoijapan.com/images/sword2.tif', // TIF will be filtered
-        'https://aoijapan.com/images/sword3.jpg',
-        'https://aoijapan.com/images/sword4.jpg',
-        'https://aoijapan.com/images/sword5.jpg',
+        'https://aoijapan.com/images/sword1.jpg', // index 0 - not covered
+        'https://aoijapan.com/images/sword2.tif', // index 1 - TIF filtered
+        'https://aoijapan.com/images/sword3.jpg', // index 2 - covered by 02.jpg
+        'https://aoijapan.com/images/sword4.jpg', // index 3 - not covered
+        'https://aoijapan.com/images/sword5.jpg', // index 4 - covered by 04.jpg
       ],
     };
-    // New behavior: stored first, then original (minus tif)
+    // Smart deduplication: stored images cover indices 2 and 4
+    // Original images at those indices are skipped
     expect(getAllImages(listing)).toEqual([
       'https://supabase.co/storage/aoi-art/L00001/02.jpg',
       'https://supabase.co/storage/aoi-art/L00001/04.jpg',
-      'https://aoijapan.com/images/sword1.jpg',
-      'https://aoijapan.com/images/sword3.jpg',
-      'https://aoijapan.com/images/sword4.jpg',
-      'https://aoijapan.com/images/sword5.jpg',
+      'https://aoijapan.com/images/sword1.jpg',   // index 0 - not covered
+      'https://aoijapan.com/images/sword4.jpg',   // index 3 - not covered
     ]);
-    expect(getImageCount(listing)).toBe(6);
+    expect(getImageCount(listing)).toBe(4);
   });
 
   it('handles listing with no images', () => {
@@ -529,24 +591,29 @@ describe('real-world scenarios', () => {
         'https://supabase.co/storage/listing-images/iida-koendo/L09340/04.gif',
       ],
       images: [
-        'https://iidakoendo.com/wp-content/uploads/2025/01/IMG_3879.gif',
-        'https://iidakoendo.com/wp-content/uploads/2025/01/m543.tif',  // Should be filtered
-        'https://iidakoendo.com/wp-content/uploads/2025/01/IMG_3873-1.gif',
-        'https://iidakoendo.com/wp-content/uploads/2025/01/IMG_3875-2-1.gif',
-        'https://iidakoendo.com/wp-content/uploads/2025/01/IMG_3876.gif',
-        'https://iidakoendo.com/wp-content/uploads/2025/01/IMG_3877.gif',
+        'https://iidakoendo.com/wp-content/uploads/2025/01/IMG_3879.gif',      // index 0 - not covered
+        'https://iidakoendo.com/wp-content/uploads/2025/01/m543.tif',           // index 1 - TIF filtered
+        'https://iidakoendo.com/wp-content/uploads/2025/01/IMG_3873-1.gif',     // index 2 - covered by 02.gif
+        'https://iidakoendo.com/wp-content/uploads/2025/01/IMG_3875-2-1.gif',   // index 3 - not covered
+        'https://iidakoendo.com/wp-content/uploads/2025/01/IMG_3876.gif',       // index 4 - covered by 04.gif
+        'https://iidakoendo.com/wp-content/uploads/2025/01/IMG_3877.gif',       // index 5 - not covered
       ],
     };
     const result = getAllImages(listing);
     // TIF should be filtered out
     expect(result).not.toContain('https://iidakoendo.com/wp-content/uploads/2025/01/m543.tif');
+    // Covered originals should be filtered out (indices 2 and 4)
+    expect(result).not.toContain('https://iidakoendo.com/wp-content/uploads/2025/01/IMG_3873-1.gif');
+    expect(result).not.toContain('https://iidakoendo.com/wp-content/uploads/2025/01/IMG_3876.gif');
     // Should have stored images first
     expect(result[0]).toBe('https://supabase.co/storage/listing-images/iida-koendo/L09340/02.gif');
     expect(result[1]).toBe('https://supabase.co/storage/listing-images/iida-koendo/L09340/04.gif');
-    // Should include all GIF images
+    // Should include uncovered GIF images
     expect(result).toContain('https://iidakoendo.com/wp-content/uploads/2025/01/IMG_3879.gif');
-    // Total count: 2 stored + 5 original GIFs = 7
-    expect(result.length).toBe(7);
+    expect(result).toContain('https://iidakoendo.com/wp-content/uploads/2025/01/IMG_3875-2-1.gif');
+    expect(result).toContain('https://iidakoendo.com/wp-content/uploads/2025/01/IMG_3877.gif');
+    // Total count: 2 stored + 3 uncovered original GIFs = 5
+    expect(result.length).toBe(5);
   });
 });
 

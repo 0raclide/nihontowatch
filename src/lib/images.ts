@@ -33,6 +33,25 @@ export interface ImageSource {
 const UNSUPPORTED_EXTENSIONS = ['.tif', '.tiff', '.bmp', '.psd', '.raw', '.cr2', '.nef'];
 
 /**
+ * Extract the original image index from a stored image URL.
+ *
+ * Stored images follow the pattern: {dealer-slug}/L{listing_id}/{index}.{ext}
+ * Example: aoi-art/L00204/00.jpg → 0
+ *          aoi-art/L00204/05.webp → 5
+ *
+ * @param url - The stored image URL
+ * @returns The index number, or null if not parseable
+ */
+function extractStoredImageIndex(url: string): number | null {
+  // Match pattern: /00.jpg, /05.webp, etc. at end of URL
+  const match = url.match(/\/(\d{2})\.[a-z]+$/i);
+  if (match) {
+    return parseInt(match[1], 10);
+  }
+  return null;
+}
+
+/**
  * Check if an image URL has a supported file format.
  * Filters out formats like .tif that browsers cannot display.
  */
@@ -130,24 +149,25 @@ export function getImageUrl(
 }
 
 /**
- * Get all available images, combining stored and original images.
+ * Get all available images, combining stored and original images with smart deduplication.
  *
  * Strategy:
- * 1. Include all stored images first (CDN-optimized, faster loading)
- * 2. Then include all original images (for completeness)
- * 3. Filter out unsupported formats (e.g., .tif files that browsers can't display)
- * 4. Deduplicate by URL
+ * 1. Parse stored image filenames to determine which original indices they cover
+ *    (stored images are named {index:02d}.{ext}, e.g., 00.jpg = images[0])
+ * 2. Include all stored images first (CDN-optimized, faster loading)
+ * 3. Include original images only if their index isn't covered by a stored version
+ * 4. Filter out unsupported formats (e.g., .tif files that browsers can't display)
+ * 5. Deduplicate by URL
  *
- * Note: We don't try to merge by index because stored_images may be sparse
- * (only some original images get stored) and their filenames indicate the
- * original index, not their position in the stored_images array.
+ * This prevents duplicate images when both stored_images and images contain
+ * the same photos (just with different URLs).
  *
  * @param listing - Object with stored_images and/or images arrays
  * @returns Array of all available image URLs (deduplicated, supported formats only)
  *
  * @example
  * const allImages = getAllImages(listing);
- * // Returns all stored images first, then original images, deduplicated
+ * // Returns stored images, plus original images that don't have stored versions
  */
 export function getAllImages(listing: ImageSource | null | undefined): string[] {
   if (!listing) return [];
@@ -155,15 +175,31 @@ export function getAllImages(listing: ImageSource | null | undefined): string[] 
   const stored = listing.stored_images || [];
   const original = listing.images || [];
 
-  // Combine stored first (optimized), then original (fallback)
-  const allUrls = [...stored, ...original];
+  // Track which original indices are covered by stored versions
+  const coveredIndices = new Set<number>();
+  for (const url of stored) {
+    const index = extractStoredImageIndex(url);
+    if (index !== null) {
+      coveredIndices.add(index);
+    }
+  }
 
-  // Filter unsupported formats and deduplicate
+  // Build result: stored first (preferred), then originals that aren't covered
   const seen = new Set<string>();
   const result: string[] = [];
 
-  for (const url of allUrls) {
+  // Add all stored images first
+  for (const url of stored) {
     if (url && !seen.has(url) && isSupportedImageFormat(url)) {
+      seen.add(url);
+      result.push(url);
+    }
+  }
+
+  // Add original images only if their index isn't covered by a stored version
+  for (let i = 0; i < original.length; i++) {
+    const url = original[i];
+    if (url && !seen.has(url) && isSupportedImageFormat(url) && !coveredIndices.has(i)) {
       seen.add(url);
       result.push(url);
     }
