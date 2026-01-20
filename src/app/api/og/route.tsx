@@ -1,8 +1,7 @@
 import { ImageResponse } from 'next/og';
 import { NextRequest } from 'next/server';
 
-// Use Node.js runtime for better compatibility with image fetching
-export const runtime = 'nodejs';
+export const runtime = 'edge';
 
 // Supabase config
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -67,26 +66,6 @@ function formatPrice(value: number | null, currency: string | null): string {
   return formatter.format(value);
 }
 
-// Fetch image and convert to base64 data URL
-async function fetchImageAsDataUrl(url: string): Promise<string | null> {
-  try {
-    const response = await fetch(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; Nihontowatch/1.0)',
-      },
-    });
-
-    if (!response.ok) return null;
-
-    const contentType = response.headers.get('content-type') || 'image/jpeg';
-    const arrayBuffer = await response.arrayBuffer();
-    const base64 = Buffer.from(arrayBuffer).toString('base64');
-
-    return `data:${contentType};base64,${base64}`;
-  } catch {
-    return null;
-  }
-}
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -169,10 +148,9 @@ export async function GET(request: NextRequest) {
       throw new Error('Listing not found');
     }
 
-    // Get the first available image and fetch it as base64
+    // Get the first available image URL
     const images = listing.stored_images || listing.images || [];
-    const rawImageUrl = images[0] || null;
-    const imageDataUrl = rawImageUrl ? await fetchImageAsDataUrl(rawImageUrl) : null;
+    const imageUrl = images[0] || null;
 
     // Get certification info
     const certType = listing.cert_type;
@@ -215,10 +193,10 @@ export async function GET(request: NextRequest) {
               padding: 40,
             }}
           >
-            {imageDataUrl ? (
+            {imageUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
-                src={imageDataUrl}
+                src={imageUrl}
                 alt={listing.title}
                 style={{
                   maxWidth: '100%',
