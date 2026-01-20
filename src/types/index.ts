@@ -181,6 +181,7 @@ export interface Listing {
   images: string[];
   stored_images?: string[] | null;  // Supabase Storage URLs (preferred)
   images_stored_at?: string | null; // When images were uploaded to storage
+  og_image_url?: string | null;  // Pre-generated OG image URL in Supabase Storage
   raw_page_text?: string;
   description_en?: string; // Cached English translation of description
   title_en?: string; // Cached English translation of title

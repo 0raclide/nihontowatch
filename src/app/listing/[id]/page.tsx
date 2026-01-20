@@ -21,6 +21,7 @@ interface ListingMetadata {
   cert_type: string | null;
   smith: string | null;
   tosogu_maker: string | null;
+  og_image_url: string | null;  // Pre-generated OG image URL
   dealers: { name: string; domain: string } | null;
 }
 
@@ -81,6 +82,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         cert_type,
         smith,
         tosogu_maker,
+        og_image_url,
         dealers (
           name,
           domain
@@ -115,8 +117,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     if (listing.cert_type) description += ` (${listing.cert_type})`;
     description += `. ${price}. Available from ${dealerName} on Nihontowatch.`;
 
-    // Build OG image URL (our dynamic OG image endpoint)
-    const ogImageUrl = `${baseUrl}/api/og?id=${listingId}`;
+    // Use pre-generated OG image if available, otherwise fall back to dynamic generation
+    const ogImageUrl = listing.og_image_url || `${baseUrl}/api/og?id=${listingId}`;
 
     return {
       title,
