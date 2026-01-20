@@ -11,7 +11,7 @@ import { isValidItemImage } from '@/lib/images';
  *
  * Uses a two-phase approach:
  * 1. Initially returns all images (assumes valid)
- * 2. As images are validated, removes invalid ones
+ * 2. As images are validated in parallel, removes invalid ones
  *
  * This prevents layout shifts while still filtering bad images.
  *
@@ -49,91 +49,66 @@ export function useValidatedImages(imageUrls: string[]) {
       return;
     }
 
-    // Validate each image
+    // Validate all images in PARALLEL (not sequentially)
+    // This prevents race conditions where component re-renders interrupt validation
     let mounted = true;
-    const validateImages = async () => {
-      for (let i = 0; i < imageUrls.length; i++) {
-        if (!mounted) break;
 
-        const url = imageUrls[i];
+    const validateImage = (url: string, index: number): Promise<void> => {
+      return new Promise((resolve) => {
         if (!url) {
-          setCheckedIndices(prev => new Set(prev).add(i));
-          continue;
+          if (mounted) {
+            setCheckedIndices(prev => new Set(prev).add(index));
+          }
+          resolve();
+          return;
         }
 
-        try {
-          const img = new Image();
+        const img = new Image();
+        let resolved = false;
 
-          await new Promise<void>((resolve) => {
-            img.onload = () => {
-              if (!mounted) {
-                resolve();
-                return;
-              }
+        const finish = (isValid: boolean) => {
+          if (resolved || !mounted) return;
+          resolved = true;
 
-              const validation = isValidItemImage({
-                width: img.naturalWidth,
-                height: img.naturalHeight,
-              });
+          if (isValid) {
+            setValidIndices(prev => new Set(prev).add(index));
+          }
+          setCheckedIndices(prev => new Set(prev).add(index));
+          resolve();
+        };
 
-              if (validation.isValid) {
-                setValidIndices(prev => new Set(prev).add(i));
-              }
+        // Set a timeout for slow images (5 seconds)
+        const timeout = setTimeout(() => {
+          // If image takes too long, assume it's valid (benefit of the doubt)
+          finish(true);
+        }, 5000);
 
-              setCheckedIndices(prev => new Set(prev).add(i));
-              resolve();
-            };
-
-            img.onerror = () => {
-              // Treat load errors as invalid
-              setCheckedIndices(prev => new Set(prev).add(i));
-              resolve();
-            };
-
-            // Set a timeout for slow images
-            const timeout = setTimeout(() => {
-              // If image takes too long, assume it's valid (benefit of the doubt)
-              if (!mounted) return;
-              setValidIndices(prev => new Set(prev).add(i));
-              setCheckedIndices(prev => new Set(prev).add(i));
-              resolve();
-            }, 5000);
-
-            img.src = url;
-
-            // Clean up timeout if image loads
-            img.onload = () => {
-              clearTimeout(timeout);
-              if (!mounted) {
-                resolve();
-                return;
-              }
-
-              const validation = isValidItemImage({
-                width: img.naturalWidth,
-                height: img.naturalHeight,
-              });
-
-              if (validation.isValid) {
-                setValidIndices(prev => new Set(prev).add(i));
-              }
-
-              setCheckedIndices(prev => new Set(prev).add(i));
-              resolve();
-            };
+        img.onload = () => {
+          clearTimeout(timeout);
+          const validation = isValidItemImage({
+            width: img.naturalWidth,
+            height: img.naturalHeight,
           });
-        } catch {
-          // On error, mark as checked but not valid
-          setCheckedIndices(prev => new Set(prev).add(i));
-        }
-      }
+          finish(validation.isValid);
+        };
 
-      if (mounted) {
-        setIsValidating(false);
-      }
+        img.onerror = () => {
+          clearTimeout(timeout);
+          // Treat load errors as invalid
+          finish(false);
+        };
+
+        img.src = url;
+      });
     };
 
-    validateImages();
+    // Validate all images in parallel
+    Promise.all(imageUrls.map((url, index) => validateImage(url, index)))
+      .then(() => {
+        if (mounted) {
+          setIsValidating(false);
+        }
+      });
 
     return () => {
       mounted = false;
