@@ -13,10 +13,15 @@ let fontCache: ArrayBuffer | null = null;
 async function getFont(): Promise<ArrayBuffer> {
   if (fontCache) return fontCache;
 
-  // Fetch Inter font from Google Fonts (supports Latin characters well)
+  // Fetch Inter font from Fontsource CDN (stable, reliable)
   const fontResponse = await fetch(
-    'https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hjp-Ek-_EeA.woff2'
+    'https://cdn.jsdelivr.net/fontsource/fonts/inter@latest/latin-400-normal.woff2'
   );
+
+  if (!fontResponse.ok) {
+    throw new Error(`Font fetch failed: ${fontResponse.status}`);
+  }
+
   fontCache = await fontResponse.arrayBuffer();
   return fontCache;
 }
