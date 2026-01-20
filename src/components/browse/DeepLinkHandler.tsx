@@ -43,7 +43,6 @@ export function DeepLinkHandler() {
               id,
               name,
               domain,
-              country,
               is_active,
               created_at
             )
@@ -91,7 +90,6 @@ export function DeepLinkHandler() {
             id: listingData.dealers.id,
             name: listingData.dealers.name,
             domain: listingData.dealers.domain,
-            country: listingData.dealers.country,
             is_active: listingData.dealers.is_active,
             created_at: listingData.dealers.created_at,
           } : undefined,
