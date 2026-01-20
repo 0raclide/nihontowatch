@@ -13,9 +13,10 @@ let fontCache: ArrayBuffer | null = null;
 async function getFont(): Promise<ArrayBuffer> {
   if (fontCache) return fontCache;
 
-  // Fetch Inter font from Fontsource CDN (stable, reliable)
+  // Fetch Inter font as TTF from Google Fonts (Satori requires TTF/OTF, not woff2)
+  // URL obtained from: https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap
   const fontResponse = await fetch(
-    'https://cdn.jsdelivr.net/fontsource/fonts/inter@latest/latin-400-normal.woff2'
+    'https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuLyfMZg.ttf'
   );
 
   if (!fontResponse.ok) {
