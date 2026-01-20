@@ -72,7 +72,7 @@ export function QuickViewContent({ listing }: QuickViewContentProps) {
               )}
             </div>
             <div className="flex items-center gap-2">
-              <ShareButton listingId={listing.id} title={listing.title} size="sm" />
+              <ShareButton listingId={listing.id} title={listing.title} size="sm" ogImageUrl={listing.og_image_url} />
               <FavoriteButton listingId={listing.id} size="sm" />
             </div>
           </div>

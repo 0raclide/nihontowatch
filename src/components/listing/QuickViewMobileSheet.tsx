@@ -276,6 +276,7 @@ export function QuickViewMobileSheet({
                   listingId={listing.id}
                   title={listing.title}
                   size="sm"
+                  ogImageUrl={listing.og_image_url}
                 />
               </div>
               <div

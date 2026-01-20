@@ -7,17 +7,48 @@ interface ShareButtonProps {
   title?: string;
   className?: string;
   size?: 'sm' | 'md' | 'lg';
+  /** OG image URL from the listing - used to extract version for cache-busting */
+  ogImageUrl?: string | null;
+}
+
+/**
+ * Extract version from og_image_url for cache-busting
+ * Filename format: dealer/LISTING_TIMESTAMP.png
+ * Example: aoi-art/L00007_1768921557.png → returns "1768921557"
+ */
+function extractVersion(ogImageUrl: string | null | undefined): string {
+  if (!ogImageUrl) return 'v1';
+
+  // Try to extract timestamp from filename
+  const match = ogImageUrl.match(/_(\d+)\.png/);
+  if (match && match[1]) {
+    return match[1];
+  }
+
+  // Fallback: hash the URL for consistency
+  let hash = 0;
+  for (let i = 0; i < ogImageUrl.length; i++) {
+    const char = ogImageUrl.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  return Math.abs(hash).toString(36);
 }
 
 /**
  * Share button for copying listing URLs or using native share on mobile.
  * Shows a toast notification on successful copy.
+ *
+ * Uses the /s/[id]?v=[version] share proxy route to solve Discord's
+ * OG image caching problem. Discord caches by page URL, so changing
+ * the version creates a fresh cache entry.
  */
 export function ShareButton({
   listingId,
   title = 'Check out this listing on Nihontowatch',
   className = '',
   size = 'md',
+  ogImageUrl,
 }: ShareButtonProps) {
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
@@ -25,10 +56,13 @@ export function ShareButton({
   const buildShareUrl = useCallback(() => {
     if (typeof window === 'undefined') return '';
 
-    // Use canonical listing URL for proper OG image support on social platforms
     const baseUrl = window.location.origin;
-    return `${baseUrl}/listing/${listingId}`;
-  }, [listingId]);
+
+    // Use the share proxy route with version for social sharing
+    // This solves Discord's OG image caching problem
+    const version = extractVersion(ogImageUrl);
+    return `${baseUrl}/s/${listingId}?v=${version}`;
+  }, [listingId, ogImageUrl]);
 
   const handleShare = useCallback(async (e: React.MouseEvent | React.TouchEvent) => {
     e.preventDefault();

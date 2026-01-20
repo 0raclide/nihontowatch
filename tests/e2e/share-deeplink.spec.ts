@@ -89,7 +89,9 @@ test.describe('Share URL deep linking', () => {
     // Read clipboard
     const clipboardText = await page.evaluate(() => navigator.clipboard.readText());
 
-    // Verify clipboard contains the listing URL
-    expect(clipboardText).toContain(`listing=${listingId}`);
+    // Verify clipboard contains the share proxy URL with listing ID
+    // Format: /s/{listingId}?v={version}
+    expect(clipboardText).toContain(`/s/${listingId}`);
+    expect(clipboardText).toMatch(/\?v=[a-zA-Z0-9]+/);
   });
 });
