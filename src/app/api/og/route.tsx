@@ -143,6 +143,7 @@ export async function GET(request: NextRequest) {
       // Silently fail - image is optional
     }
 
+    // Clean text-focused design - no external images to avoid rendering issues
     return new ImageResponse(
       (
         <div
@@ -150,132 +151,80 @@ export async function GET(request: NextRequest) {
             width: '100%',
             height: '100%',
             display: 'flex',
-            backgroundColor: '#0a0a0a',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            padding: 60,
+            backgroundColor: '#0f0f0f',
+            backgroundImage: 'linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%)',
           }}
         >
-          {/* Image Section - Left 55% */}
-          <div
-            style={{
-              width: '55%',
-              height: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: '#141414',
-              position: 'relative',
-            }}
-          >
-            {imageDataUrl && (
-              <img
-                src={imageDataUrl}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                }}
-              />
-            )}
-          </div>
-
-          {/* Content Section - Right 45% */}
-          <div
-            style={{
-              width: '45%',
-              height: '100%',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between',
-              padding: '48px 40px',
-              backgroundColor: '#0a0a0a',
-            }}
-          >
-            {/* Top section */}
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              {/* Cert Badge */}
-              {certLabel && (
-                <div
-                  style={{
-                    display: 'flex',
-                    backgroundColor: certColor || '#374151',
-                    color: 'white',
-                    padding: '10px 18px',
-                    borderRadius: 8,
-                    fontSize: 16,
-                    fontWeight: 700,
-                    letterSpacing: '0.1em',
-                    marginBottom: 24,
-                    alignSelf: 'flex-start',
-                  }}
-                >
-                  {certLabel}
-                </div>
-              )}
-
-              {/* Title */}
-              <div
-                style={{
-                  fontSize: 36,
-                  fontWeight: 700,
-                  color: '#ffffff',
-                  lineHeight: 1.2,
-                  marginBottom: 16,
-                }}
-              >
-                {title}
-              </div>
-
-              {/* Artisan */}
-              {artisan && (
-                <div
-                  style={{
-                    fontSize: 22,
-                    color: '#9ca3af',
-                  }}
-                >
-                  {artisan}
-                </div>
-              )}
-            </div>
-
-            {/* Bottom section */}
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              {/* Price */}
-              <div
-                style={{
-                  fontSize: 52,
-                  fontWeight: 700,
-                  color: '#c9a962',
-                  marginBottom: 24,
-                }}
-              >
-                {priceDisplay}
-              </div>
-
-              {/* Branding */}
+          {/* Top: Cert Badge */}
+          <div style={{ display: 'flex' }}>
+            {certLabel && (
               <div
                 style={{
                   display: 'flex',
-                  alignItems: 'center',
+                  backgroundColor: certColor || '#374151',
+                  color: 'white',
+                  padding: '12px 24px',
+                  borderRadius: 8,
+                  fontSize: 18,
+                  fontWeight: 700,
+                  letterSpacing: '0.1em',
                 }}
               >
-                <div
-                  style={{
-                    width: 36,
-                    height: 36,
-                    borderRadius: 18,
-                    backgroundColor: '#c9a962',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: 12,
-                  }}
-                >
-                  <span style={{ color: '#0a0a0a', fontSize: 20, fontWeight: 700 }}>N</span>
-                </div>
-                <span style={{ fontSize: 20, color: '#6b7280' }}>
-                  nihontowatch.com
-                </span>
+                {certLabel}
               </div>
+            )}
+          </div>
+
+          {/* Middle: Title + Artisan */}
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <div
+              style={{
+                fontSize: 48,
+                fontWeight: 700,
+                color: '#ffffff',
+                lineHeight: 1.2,
+                marginBottom: 16,
+              }}
+            >
+              {title}
+            </div>
+            {artisan && (
+              <div style={{ fontSize: 28, color: '#9ca3af' }}>
+                by {artisan}
+              </div>
+            )}
+          </div>
+
+          {/* Bottom: Price + Branding */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+            <div
+              style={{
+                fontSize: 64,
+                fontWeight: 700,
+                color: '#c9a962',
+              }}
+            >
+              {priceDisplay}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <div
+                style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: 22,
+                  backgroundColor: '#c9a962',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginRight: 14,
+                }}
+              >
+                <span style={{ color: '#0f0f0f', fontSize: 24, fontWeight: 700 }}>N</span>
+              </div>
+              <span style={{ fontSize: 24, color: '#6b7280' }}>nihontowatch.com</span>
             </div>
           </div>
         </div>
