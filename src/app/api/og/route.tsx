@@ -1,9 +1,10 @@
 import { ImageResponse } from 'next/og';
 import { NextRequest } from 'next/server';
 
-export const runtime = 'edge';
+// Use Node.js runtime for better compatibility with image fetching
+export const runtime = 'nodejs';
 
-// Supabase config for edge
+// Supabase config
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
@@ -66,17 +67,7 @@ function formatPrice(value: number | null, currency: string | null): string {
   return formatter.format(value);
 }
 
-// Convert ArrayBuffer to base64 (Edge Runtime compatible)
-function arrayBufferToBase64(buffer: ArrayBuffer): string {
-  const bytes = new Uint8Array(buffer);
-  let binary = '';
-  for (let i = 0; i < bytes.byteLength; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  return btoa(binary);
-}
-
-// Fetch image and convert to base64 data URL for edge compatibility
+// Fetch image and convert to base64 data URL
 async function fetchImageAsDataUrl(url: string): Promise<string | null> {
   try {
     const response = await fetch(url, {
@@ -89,7 +80,7 @@ async function fetchImageAsDataUrl(url: string): Promise<string | null> {
 
     const contentType = response.headers.get('content-type') || 'image/jpeg';
     const arrayBuffer = await response.arrayBuffer();
-    const base64 = arrayBufferToBase64(arrayBuffer);
+    const base64 = Buffer.from(arrayBuffer).toString('base64');
 
     return `data:${contentType};base64,${base64}`;
   } catch {
