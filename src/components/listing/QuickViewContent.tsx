@@ -7,6 +7,7 @@ import { shouldShowNewBadge } from '@/lib/newListing';
 import type { Listing } from '@/types';
 import { getItemTypeLabel } from '@/types';
 import { MetadataGrid, getCertInfo } from './MetadataGrid';
+import { SetsumeiSection } from './SetsumeiSection';
 import { TranslatedDescription } from './TranslatedDescription';
 import { TranslatedTitle } from './TranslatedTitle';
 
@@ -111,6 +112,14 @@ export function QuickViewContent({ listing }: QuickViewContentProps) {
 
         {/* Translated Description */}
         <TranslatedDescription listing={listing} maxLines={6} />
+
+        {/* Official NBTHK Evaluation (Juyo/Tokuju only) */}
+        <SetsumeiSection
+          listing={listing}
+          variant="preview"
+          previewLength={300}
+          onReadMore={() => window.open(listing.url, '_blank')}
+        />
       </div>
 
       {/* Sticky CTA Button */}

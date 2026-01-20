@@ -8,6 +8,7 @@ import { shouldShowNewBadge } from '@/lib/newListing';
 import { FavoriteButton } from '@/components/favorites/FavoriteButton';
 import { ShareButton } from '@/components/share/ShareButton';
 import { MetadataGrid, getCertInfo, getArtisanInfo } from './MetadataGrid';
+import { SetsumeiSection } from './SetsumeiSection';
 import { TranslatedDescription } from './TranslatedDescription';
 import { TranslatedTitle } from './TranslatedTitle';
 import { QuickMeasurement } from './QuickMeasurement';
@@ -379,6 +380,14 @@ export function QuickViewMobileSheet({
 
             {/* Description */}
             <TranslatedDescription listing={listing} maxLines={12} />
+
+            {/* Official NBTHK Evaluation (Juyo/Tokuju only) */}
+            <SetsumeiSection
+              listing={listing}
+              variant="preview"
+              previewLength={300}
+              onReadMore={() => window.open(listing.url, '_blank')}
+            />
           </div>
 
           {/* Sticky CTA - extra padding for iOS browser chrome */}

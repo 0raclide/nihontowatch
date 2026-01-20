@@ -64,6 +64,48 @@ export type CertificationType =
 export type Currency = 'JPY' | 'USD' | 'EUR' | 'GBP';
 
 // =============================================================================
+// SETSUMEI METADATA (from Oshi-scrapper setsumei pipeline)
+// =============================================================================
+
+export interface SetsumeiMetadata {
+  designation?: {
+    classification?: string; // "juyo", "tokubetsu_juyo"
+    session_number?: number; // e.g., 70
+    date?: string;
+  };
+  smith?: {
+    name_romaji?: string;
+    name_kanji?: string;
+    school?: string;
+    province?: string;
+    era?: string;
+  };
+  maker?: {
+    name_romaji?: string;
+    name_kanji?: string;
+    school?: string;
+  };
+  measurements?: {
+    nagasa?: number;
+    sori?: number;
+    motohaba?: number;
+    sakihaba?: number;
+    kasane?: number;
+    nakago?: number;
+  };
+  attribution?: {
+    mei_type?: string; // "mei", "mumei", etc.
+    description?: string;
+  };
+  pipeline_info?: {
+    refusal_detected?: boolean;
+    source?: string;
+  };
+  // Allow additional fields
+  [key: string]: unknown;
+}
+
+// =============================================================================
 // DEALER
 // =============================================================================
 
@@ -142,6 +184,14 @@ export interface Listing {
   raw_page_text?: string;
   description_en?: string; // Cached English translation of description
   title_en?: string; // Cached English translation of title
+
+  // Setsumei (Official NBTHK/NTHK certification translations - Juyo/Tokuju only)
+  setsumei_image_url?: string;       // URL of the detected setsumei image
+  setsumei_text_ja?: string;         // Original Japanese OCR text
+  setsumei_text_en?: string;         // English translation (Markdown format)
+  setsumei_metadata?: SetsumeiMetadata; // Structured metadata from translation
+  setsumei_processed_at?: string;    // When setsumei was processed
+  setsumei_error?: string;           // Error message if processing failed
 
   // Timestamps
   first_seen_at: string;

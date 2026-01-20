@@ -14,6 +14,7 @@ import { createClient } from '@/lib/supabase/client';
 import { getAllImages } from '@/lib/images';
 import { useValidatedImages } from '@/hooks/useValidatedImages';
 import { shouldShowNewBadge } from '@/lib/newListing';
+import { SetsumeiSection } from '@/components/listing/SetsumeiSection';
 import type { Listing, CreateAlertInput } from '@/types';
 
 // Extended listing type for this page
@@ -393,6 +394,13 @@ export default function ListingDetailPage() {
                 </div>
               </div>
             )}
+
+            {/* Official NBTHK Evaluation (Juyo/Tokuju only) */}
+            <SetsumeiSection
+              listing={listing as unknown as Listing}
+              variant="full"
+              className="mb-6 pb-6 border-b border-border px-0"
+            />
 
             {/* Dealer */}
             <div className="mb-6 pb-6 border-b border-border">

@@ -64,6 +64,14 @@ export interface Database {
           images: string[];
           raw_page_text: string | null;
           description_en: string | null;
+          title_en: string | null;
+          // Setsumei (Juyo/Tokuju certification translations)
+          setsumei_image_url: string | null;
+          setsumei_text_ja: string | null;
+          setsumei_text_en: string | null;
+          setsumei_metadata: Record<string, unknown> | null;
+          setsumei_processed_at: string | null;
+          setsumei_error: string | null;
           first_seen_at: string;
           last_scraped_at: string;
           scrape_count: number;
