@@ -37,16 +37,7 @@ interface ListingForShare {
   dealers: { name: string; domain: string } | null;
 }
 
-function formatPrice(value: number | null, currency: string | null): string {
-  if (!value) return 'Price on Request';
-  const curr = currency || 'JPY';
-  const formatter = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: curr,
-    maximumFractionDigits: 0,
-  });
-  return formatter.format(value);
-}
+// Price formatting moved to OG image - description uses tagline instead
 
 /**
  * Extract version from og_image_url
@@ -119,15 +110,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       };
     }
 
-    // Build description
+    // Build enticing description - price is on the image, not here
     const artisan = listing.smith || listing.tosogu_maker;
-    const price = formatPrice(listing.price_value, listing.price_currency);
-    const dealerName = listing.dealers?.name || 'Unknown Dealer';
 
+    // Enticing tagline that drives clicks
+    const tagline = 'Compare. Decide. Acquire. All the dealers, one search.';
+
+    // Page description includes item details
     let description = listing.title;
     if (artisan) description += ` by ${artisan}`;
-    if (listing.cert_type) description += ` (${listing.cert_type})`;
-    description += `. ${price}. Available from ${dealerName} on Nihontowatch.`;
+    if (listing.cert_type) description += ` • ${listing.cert_type}`;
+    description += ` — ${tagline}`;
 
     // Get OG image URL - use pre-generated if available, else fallback to dynamic
     const ogImageUrl = listing.og_image_url || `${baseUrl}/api/og?id=${listingId}`;
@@ -148,7 +141,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       },
       openGraph: {
         title: listing.title,
-        description: `${price}${artisan ? ` - ${artisan}` : ''}${listing.cert_type ? ` - ${listing.cert_type}` : ''}`,
+        description: tagline,
         type: 'website',
         url: shareUrl,
         siteName: 'Nihontowatch',
@@ -164,7 +157,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       twitter: {
         card: 'summary_large_image',
         title: listing.title,
-        description: `${price}${artisan ? ` - ${artisan}` : ''}`,
+        description: tagline,
         images: [ogImageUrl],
       },
       // Robots: index the share page but tell crawlers the canonical is /listing/[id]

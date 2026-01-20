@@ -3,9 +3,37 @@ import { NextRequest } from 'next/server';
 
 export const runtime = 'edge';
 
+// =============================================================================
+// OPUS THEME COLORS
+// Deep sapphire with warm amber accents - elevated, contemplative
+// =============================================================================
+const OPUS = {
+  // Backgrounds
+  bg: '#0c1220',           // Deep sapphire
+  bgWarm: '#101828',       // Slightly warmer
+  surface: '#141c2c',      // Card surface
+  surfaceElevated: '#1c2538',
+
+  // Accent - warm amber
+  accent: '#daa55a',
+  accentLight: '#e8c080',
+
+  // Text
+  textPrimary: '#e8e4dc',   // Warm parchment
+  textSecondary: '#c0b8a8',
+  textMuted: '#8a847c',
+
+  // Certification colors - Opus variants
+  certTokuju: '#c090e0',
+  certJuyo: '#70b0e8',
+  certTokuHozon: '#e0a858',
+  certHozon: '#e0d048',
+};
+
 // Supabase config
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://nihontowatch.com';
 
 // Cache the font fetch to avoid repeated requests
 let fontCache: ArrayBuffer | null = null;
@@ -14,7 +42,6 @@ async function getFont(): Promise<ArrayBuffer> {
   if (fontCache) return fontCache;
 
   // Fetch Inter font as TTF from Google Fonts (Satori requires TTF/OTF, not woff2)
-  // URL obtained from: https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap
   const fontResponse = await fetch(
     'https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuLyfMZg.ttf'
   );
@@ -27,19 +54,19 @@ async function getFont(): Promise<ArrayBuffer> {
   return fontCache;
 }
 
-// Certification tier colors
+// Certification colors - Opus theme
 const CERT_COLORS: Record<string, string> = {
-  tokuju: '#7c3aed',
-  tokubetsu_juyo: '#7c3aed',
-  'Tokubetsu Juyo': '#7c3aed',
-  juyo: '#2563eb',
-  Juyo: '#2563eb',
-  tokuho: '#b45309',
-  tokubetsu_hozon: '#b45309',
-  'Tokubetsu Hozon': '#b45309',
-  TokuHozon: '#b45309',
-  hozon: '#ca8a04',
-  Hozon: '#ca8a04',
+  tokuju: OPUS.certTokuju,
+  tokubetsu_juyo: OPUS.certTokuju,
+  'Tokubetsu Juyo': OPUS.certTokuju,
+  juyo: OPUS.certJuyo,
+  Juyo: OPUS.certJuyo,
+  tokuho: OPUS.certTokuHozon,
+  tokubetsu_hozon: OPUS.certTokuHozon,
+  'Tokubetsu Hozon': OPUS.certTokuHozon,
+  TokuHozon: OPUS.certTokuHozon,
+  hozon: OPUS.certHozon,
+  Hozon: OPUS.certHozon,
 };
 
 // Human-readable certification labels
@@ -59,24 +86,24 @@ const CERT_LABELS: Record<string, string> = {
 
 // Item type display names
 const ITEM_TYPE_LABELS: Record<string, string> = {
-  katana: 'KATANA',
-  wakizashi: 'WAKIZASHI',
-  tanto: 'TANTO',
-  tachi: 'TACHI',
-  naginata: 'NAGINATA',
-  yari: 'YARI',
-  ken: 'KEN',
-  tsuba: 'TSUBA',
-  menuki: 'MENUKI',
-  kozuka: 'KOZUKA',
-  kogai: 'KOGAI',
-  fuchi: 'FUCHI',
-  kashira: 'KASHIRA',
-  fuchi_kashira: 'FUCHI-KASHIRA',
-  'fuchi-kashira': 'FUCHI-KASHIRA',
-  koshirae: 'KOSHIRAE',
-  armor: 'ARMOR',
-  helmet: 'HELMET',
+  katana: 'Katana',
+  wakizashi: 'Wakizashi',
+  tanto: 'Tantō',
+  tachi: 'Tachi',
+  naginata: 'Naginata',
+  yari: 'Yari',
+  ken: 'Ken',
+  tsuba: 'Tsuba',
+  menuki: 'Menuki',
+  kozuka: 'Kōzuka',
+  kogai: 'Kōgai',
+  fuchi: 'Fuchi',
+  kashira: 'Kashira',
+  fuchi_kashira: 'Fuchi-Kashira',
+  'fuchi-kashira': 'Fuchi-Kashira',
+  koshirae: 'Koshirae',
+  armor: 'Armor',
+  helmet: 'Helmet',
 };
 
 function formatPrice(value: number | null, currency: string | null): string {
@@ -118,6 +145,7 @@ function sanitizeText(text: string | null | undefined, maxLength = 100): string 
 
 /**
  * Generate the default/fallback OG image (used when no listing ID or on error)
+ * Uses Opus theme - deep sapphire with warm amber accents
  */
 async function generateDefaultOG(font: ArrayBuffer): Promise<ImageResponse> {
   return new ImageResponse(
@@ -130,16 +158,31 @@ async function generateDefaultOG(font: ArrayBuffer): Promise<ImageResponse> {
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          backgroundColor: '#0f0f0f',
-          backgroundImage: 'linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%)',
+          backgroundColor: OPUS.bg,
           fontFamily: 'Inter',
         }}
       >
-        <div style={{ fontSize: 72, fontWeight: 700, color: '#c9a962' }}>
+        {/* Tokugawa Mon */}
+        <img
+          src={`${BASE_URL}/logo-mon.png`}
+          width={120}
+          height={120}
+          style={{ marginBottom: 32 }}
+        />
+
+        {/* Brand Name */}
+        <div style={{ fontSize: 64, fontWeight: 700, color: OPUS.accent, letterSpacing: '-0.02em' }}>
           Nihontowatch
         </div>
-        <div style={{ fontSize: 28, color: '#6b7280', marginTop: 24 }}>
-          Japanese Swords & Tosogu from Dealers Worldwide
+
+        {/* Tagline */}
+        <div style={{ fontSize: 24, color: OPUS.textSecondary, marginTop: 16 }}>
+          Compare. Decide. Acquire.
+        </div>
+
+        {/* Subtext */}
+        <div style={{ fontSize: 18, color: OPUS.textMuted, marginTop: 8 }}>
+          All the dealers, one search.
         </div>
       </div>
     ),
@@ -167,8 +210,8 @@ export async function GET(request: NextRequest) {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            backgroundColor: '#0f0f0f',
-            color: '#c9a962',
+            backgroundColor: OPUS.bg,
+            color: OPUS.accent,
             fontSize: 64,
           }}
         >
@@ -235,7 +278,7 @@ export async function GET(request: NextRequest) {
     const itemType = listing.item_type as string | null;
     const itemTypeLabel = itemType ? ITEM_TYPE_LABELS[itemType.toLowerCase()] || null : null;
 
-    // Generate the listing OG image
+    // Generate the listing OG image - Opus theme, elegant design
     return new ImageResponse(
       (
         <div
@@ -244,98 +287,153 @@ export async function GET(request: NextRequest) {
             height: '100%',
             display: 'flex',
             flexDirection: 'column',
-            justifyContent: 'space-between',
-            padding: 60,
-            backgroundColor: '#0f0f0f',
-            backgroundImage: 'linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%)',
+            backgroundColor: OPUS.bg,
             fontFamily: 'Inter',
+            padding: 0,
           }}
         >
-          {/* Top Row: Badges */}
-          <div style={{ display: 'flex', gap: 12 }}>
-            {certLabel && (
-              <div
-                style={{
-                  display: 'flex',
-                  backgroundColor: certColor || '#374151',
-                  color: 'white',
-                  padding: '10px 20px',
-                  borderRadius: 6,
-                  fontSize: 16,
-                  fontWeight: 600,
-                  letterSpacing: '0.05em',
-                }}
-              >
-                {certLabel}
-              </div>
-            )}
+          {/* Main Content Area */}
+          <div
+            style={{
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              padding: '48px 56px',
+            }}
+          >
+            {/* Item Type - subtle, elegant */}
             {itemTypeLabel && (
               <div
                 style={{
                   display: 'flex',
-                  backgroundColor: '#374151',
-                  color: '#d1d5db',
-                  padding: '10px 20px',
-                  borderRadius: 6,
-                  fontSize: 16,
-                  fontWeight: 600,
-                  letterSpacing: '0.05em',
+                  fontSize: 14,
+                  fontWeight: 500,
+                  color: OPUS.textMuted,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.15em',
+                  marginBottom: 16,
                 }}
               >
                 {itemTypeLabel}
               </div>
             )}
-          </div>
 
-          {/* Middle: Title + Artisan + Dealer */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {/* Title - Large, commanding */}
             <div
               style={{
-                fontSize: 44,
+                fontSize: 48,
                 fontWeight: 700,
-                color: '#ffffff',
-                lineHeight: 1.2,
+                color: OPUS.textPrimary,
+                lineHeight: 1.15,
+                letterSpacing: '-0.02em',
+                marginBottom: 12,
               }}
             >
               {title}
             </div>
+
+            {/* Artisan - Secondary emphasis */}
             {artisan && (
-              <div style={{ display: 'flex', fontSize: 26, color: '#9ca3af' }}>
-                by {artisan}
+              <div
+                style={{
+                  display: 'flex',
+                  fontSize: 24,
+                  color: OPUS.textSecondary,
+                  marginBottom: 24,
+                }}
+              >
+                {artisan}
               </div>
             )}
-            <div style={{ display: 'flex', fontSize: 20, color: '#6b7280', marginTop: 4 }}>
-              Available at {dealerName}
+
+            {/* Certification Badge - Prominent if present */}
+            {certLabel && (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 12,
+                  marginBottom: 32,
+                }}
+              >
+                <div
+                  style={{
+                    display: 'flex',
+                    backgroundColor: `${certColor}20`,
+                    border: `2px solid ${certColor}`,
+                    color: certColor || OPUS.accent,
+                    padding: '8px 16px',
+                    borderRadius: 6,
+                    fontSize: 13,
+                    fontWeight: 600,
+                    letterSpacing: '0.1em',
+                  }}
+                >
+                  {certLabel}
+                </div>
+              </div>
+            )}
+
+            {/* Price - Elegant, prominent */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'baseline',
+                gap: 8,
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 52,
+                  fontWeight: 700,
+                  color: OPUS.accent,
+                  letterSpacing: '-0.02em',
+                }}
+              >
+                {priceDisplay}
+              </div>
+            </div>
+
+            {/* Dealer */}
+            <div
+              style={{
+                display: 'flex',
+                fontSize: 16,
+                color: OPUS.textMuted,
+                marginTop: 12,
+              }}
+            >
+              via {dealerName}
             </div>
           </div>
 
-          {/* Bottom: Price + Branding */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-            <div
-              style={{
-                fontSize: 56,
-                fontWeight: 700,
-                color: '#c9a962',
-              }}
-            >
-              {priceDisplay}
+          {/* Footer - Branding */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '20px 56px',
+              backgroundColor: OPUS.surface,
+              borderTop: `1px solid ${OPUS.surfaceElevated}`,
+            }}
+          >
+            {/* Mon + Brand */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+              <img
+                src={`${BASE_URL}/logo-mon.png`}
+                width={36}
+                height={36}
+              />
+              <span style={{ fontSize: 20, fontWeight: 600, color: OPUS.accent, letterSpacing: '-0.01em' }}>
+                nihontowatch.com
+              </span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              <div
-                style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: 20,
-                  backgroundColor: '#c9a962',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginRight: 12,
-                }}
-              >
-                <span style={{ color: '#0f0f0f', fontSize: 22, fontWeight: 700 }}>N</span>
-              </div>
-              <span style={{ fontSize: 22, color: '#6b7280' }}>nihontowatch.com</span>
+
+            {/* Tagline */}
+            <div style={{ display: 'flex', fontSize: 14, color: OPUS.textMuted }}>
+              Compare. Decide. Acquire.
             </div>
           </div>
         </div>
