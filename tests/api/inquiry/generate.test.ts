@@ -158,6 +158,14 @@ John Smith
 United States`,
 };
 
+// Valid test input matching current API schema
+const VALID_INPUT = {
+  listingId: 123,
+  buyerName: 'John Smith',
+  buyerCountry: 'United States',
+  message: 'I am interested in purchasing this sword. Can you tell me more about its condition?',
+};
+
 // Reset all mocks before each test
 beforeEach(() => {
   supabaseTracker = {
@@ -213,12 +221,7 @@ describe('Inquiry API - Authentication', () => {
   it('returns 401 when not authenticated', async () => {
     mockAuthUser = null;
 
-    const request = createMockRequest({
-      listingId: 123,
-      intent: 'purchase',
-      buyerName: 'John Smith',
-      buyerCountry: 'United States',
-    });
+    const request = createMockRequest(VALID_INPUT);
     const response = await POST(request as never);
 
     expect(response.status).toBe(401);
@@ -258,12 +261,7 @@ describe('Inquiry API - Authentication', () => {
 
     vi.stubEnv('OPENROUTER_API_KEY', 'test-api-key');
 
-    const request = createMockRequest({
-      listingId: 123,
-      intent: 'purchase',
-      buyerName: 'John Smith',
-      buyerCountry: 'United States',
-    });
+    const request = createMockRequest(VALID_INPUT);
     const response = await POST(request as never);
 
     expect(response.status).toBe(200);
@@ -281,9 +279,9 @@ describe('Inquiry API - Input Validation', () => {
 
   it('returns 400 for missing listingId', async () => {
     const request = createMockRequest({
-      intent: 'purchase',
       buyerName: 'John Smith',
       buyerCountry: 'United States',
+      message: 'I am interested in this sword.',
     });
     const response = await POST(request as never);
 
@@ -295,9 +293,9 @@ describe('Inquiry API - Input Validation', () => {
   it('returns 400 for invalid listingId type', async () => {
     const request = createMockRequest({
       listingId: 'not-a-number',
-      intent: 'purchase',
       buyerName: 'John Smith',
       buyerCountry: 'United States',
+      message: 'I am interested in this sword.',
     });
     const response = await POST(request as never);
 
@@ -306,7 +304,7 @@ describe('Inquiry API - Input Validation', () => {
     expect(json.error).toContain('listingId');
   });
 
-  it('returns 400 for missing intent', async () => {
+  it('returns 400 for missing message', async () => {
     const request = createMockRequest({
       listingId: 123,
       buyerName: 'John Smith',
@@ -316,28 +314,28 @@ describe('Inquiry API - Input Validation', () => {
 
     expect(response.status).toBe(400);
     const json = await response.json();
-    expect(json.error).toContain('intent');
+    expect(json.error).toContain('message');
   });
 
-  it('returns 400 for invalid intent value', async () => {
+  it('returns 400 for empty message', async () => {
     const request = createMockRequest({
       listingId: 123,
-      intent: 'invalid-intent',
       buyerName: 'John Smith',
       buyerCountry: 'United States',
+      message: '   ',
     });
     const response = await POST(request as never);
 
     expect(response.status).toBe(400);
     const json = await response.json();
-    expect(json.error).toContain('intent');
+    expect(json.error).toContain('message');
   });
 
   it('returns 400 for missing buyerName', async () => {
     const request = createMockRequest({
       listingId: 123,
-      intent: 'purchase',
       buyerCountry: 'United States',
+      message: 'I am interested in this sword.',
     });
     const response = await POST(request as never);
 
@@ -349,9 +347,9 @@ describe('Inquiry API - Input Validation', () => {
   it('returns 400 for empty buyerName', async () => {
     const request = createMockRequest({
       listingId: 123,
-      intent: 'purchase',
       buyerName: '   ',
       buyerCountry: 'United States',
+      message: 'I am interested in this sword.',
     });
     const response = await POST(request as never);
 
@@ -363,8 +361,8 @@ describe('Inquiry API - Input Validation', () => {
   it('returns 400 for missing buyerCountry', async () => {
     const request = createMockRequest({
       listingId: 123,
-      intent: 'purchase',
       buyerName: 'John Smith',
+      message: 'I am interested in this sword.',
     });
     const response = await POST(request as never);
 
@@ -373,53 +371,7 @@ describe('Inquiry API - Input Validation', () => {
     expect(json.error).toContain('buyerCountry');
   });
 
-  it('accepts all valid intent types', async () => {
-    const validIntents = ['purchase', 'questions', 'photos', 'shipping', 'other'];
-
-    for (const intent of validIntents) {
-      mockListingData = {
-        id: 123,
-        title: 'Test',
-        url: 'https://test.com',
-        price_value: null,
-        price_currency: null,
-        item_type: 'katana',
-        cert_type: null,
-        smith: null,
-        tosogu_maker: null,
-        school: null,
-        tosogu_school: null,
-        era: null,
-        dealers: {
-          id: 1,
-          name: 'Test',
-          domain: 'test.com',
-          contact_email: null,
-          ships_international: null,
-          accepts_wire_transfer: null,
-          accepts_paypal: null,
-          accepts_credit_card: null,
-          requires_deposit: null,
-          deposit_percentage: null,
-          english_support: null,
-        },
-      };
-
-      vi.stubEnv('OPENROUTER_API_KEY', 'test-api-key');
-
-      const request = createMockRequest({
-        listingId: 123,
-        intent,
-        buyerName: 'John Smith',
-        buyerCountry: 'United States',
-      });
-      const response = await POST(request as never);
-
-      expect(response.status).toBe(200);
-    }
-  });
-
-  it('accepts optional specificQuestions', async () => {
+  it('accepts valid input with all required fields', async () => {
     mockListingData = {
       id: 123,
       title: 'Test',
@@ -450,13 +402,7 @@ describe('Inquiry API - Input Validation', () => {
 
     vi.stubEnv('OPENROUTER_API_KEY', 'test-api-key');
 
-    const request = createMockRequest({
-      listingId: 123,
-      intent: 'questions',
-      buyerName: 'John Smith',
-      buyerCountry: 'United States',
-      specificQuestions: 'Is there any active rust on the blade?',
-    });
+    const request = createMockRequest(VALID_INPUT);
     const response = await POST(request as never);
 
     expect(response.status).toBe(200);
@@ -476,10 +422,8 @@ describe('Inquiry API - Listing Lookup', () => {
     mockListingData = null;
 
     const request = createMockRequest({
+      ...VALID_INPUT,
       listingId: 999999,
-      intent: 'purchase',
-      buyerName: 'John Smith',
-      buyerCountry: 'United States',
     });
     const response = await POST(request as never);
 
@@ -519,12 +463,7 @@ describe('Inquiry API - Listing Lookup', () => {
 
     vi.stubEnv('OPENROUTER_API_KEY', 'test-api-key');
 
-    const request = createMockRequest({
-      listingId: 123,
-      intent: 'purchase',
-      buyerName: 'John Smith',
-      buyerCountry: 'United States',
-    });
+    const request = createMockRequest(VALID_INPUT);
     await POST(request as never);
 
     // Should have queried listings table
@@ -575,12 +514,7 @@ describe('Inquiry API - OpenRouter Integration', () => {
   it('returns error when OPENROUTER_API_KEY is not configured', async () => {
     vi.stubEnv('OPENROUTER_API_KEY', '');
 
-    const request = createMockRequest({
-      listingId: 123,
-      intent: 'purchase',
-      buyerName: 'John Smith',
-      buyerCountry: 'United States',
-    });
+    const request = createMockRequest(VALID_INPUT);
     const response = await POST(request as never);
 
     expect(response.status).toBe(500);
@@ -591,12 +525,7 @@ describe('Inquiry API - OpenRouter Integration', () => {
   it('calls OpenRouter with correct model', async () => {
     vi.stubEnv('OPENROUTER_API_KEY', 'test-api-key');
 
-    const request = createMockRequest({
-      listingId: 123,
-      intent: 'purchase',
-      buyerName: 'John Smith',
-      buyerCountry: 'United States',
-    });
+    const request = createMockRequest(VALID_INPUT);
     await POST(request as never);
 
     const openRouterCall = fetchCalls.find(c => c.url.includes('openrouter'));
@@ -609,12 +538,7 @@ describe('Inquiry API - OpenRouter Integration', () => {
   it('includes item details in prompt', async () => {
     vi.stubEnv('OPENROUTER_API_KEY', 'test-api-key');
 
-    const request = createMockRequest({
-      listingId: 123,
-      intent: 'purchase',
-      buyerName: 'John Smith',
-      buyerCountry: 'United States',
-    });
+    const request = createMockRequest(VALID_INPUT);
     await POST(request as never);
 
     const openRouterCall = fetchCalls.find(c => c.url.includes('openrouter'));
@@ -629,12 +553,7 @@ describe('Inquiry API - OpenRouter Integration', () => {
   it('includes buyer information in prompt', async () => {
     vi.stubEnv('OPENROUTER_API_KEY', 'test-api-key');
 
-    const request = createMockRequest({
-      listingId: 123,
-      intent: 'purchase',
-      buyerName: 'John Smith',
-      buyerCountry: 'United States',
-    });
+    const request = createMockRequest(VALID_INPUT);
     await POST(request as never);
 
     const openRouterCall = fetchCalls.find(c => c.url.includes('openrouter'));
@@ -645,15 +564,12 @@ describe('Inquiry API - OpenRouter Integration', () => {
     expect(userMessage.content).toContain('United States');
   });
 
-  it('includes specific questions in prompt when provided', async () => {
+  it('includes message in prompt', async () => {
     vi.stubEnv('OPENROUTER_API_KEY', 'test-api-key');
 
     const request = createMockRequest({
-      listingId: 123,
-      intent: 'questions',
-      buyerName: 'John Smith',
-      buyerCountry: 'United States',
-      specificQuestions: 'Is there any active rust? Has it been recently polished?',
+      ...VALID_INPUT,
+      message: 'Is there any active rust? Has it been recently polished?',
     });
     await POST(request as never);
 
@@ -668,12 +584,7 @@ describe('Inquiry API - OpenRouter Integration', () => {
   it('includes dealer policies in prompt when available', async () => {
     vi.stubEnv('OPENROUTER_API_KEY', 'test-api-key');
 
-    const request = createMockRequest({
-      listingId: 123,
-      intent: 'purchase',
-      buyerName: 'John Smith',
-      buyerCountry: 'United States',
-    });
+    const request = createMockRequest(VALID_INPUT);
     await POST(request as never);
 
     const openRouterCall = fetchCalls.find(c => c.url.includes('openrouter'));
@@ -691,12 +602,7 @@ describe('Inquiry API - OpenRouter Integration', () => {
       status: 500,
     });
 
-    const request = createMockRequest({
-      listingId: 123,
-      intent: 'purchase',
-      buyerName: 'John Smith',
-      buyerCountry: 'United States',
-    });
+    const request = createMockRequest(VALID_INPUT);
     const response = await POST(request as never);
 
     expect(response.status).toBe(500);
@@ -718,12 +624,7 @@ describe('Inquiry API - OpenRouter Integration', () => {
       headers: { 'Content-Type': 'application/json' },
     });
 
-    const request = createMockRequest({
-      listingId: 123,
-      intent: 'purchase',
-      buyerName: 'John Smith',
-      buyerCountry: 'United States',
-    });
+    const request = createMockRequest(VALID_INPUT);
     const response = await POST(request as never);
 
     expect(response.status).toBe(500);
@@ -771,12 +672,7 @@ describe('Inquiry API - Response Format', () => {
   it('returns complete email data structure', async () => {
     vi.stubEnv('OPENROUTER_API_KEY', 'test-api-key');
 
-    const request = createMockRequest({
-      listingId: 123,
-      intent: 'purchase',
-      buyerName: 'John Smith',
-      buyerCountry: 'United States',
-    });
+    const request = createMockRequest(VALID_INPUT);
     const response = await POST(request as never);
 
     expect(response.status).toBe(200);
@@ -795,12 +691,7 @@ describe('Inquiry API - Response Format', () => {
   it('includes dealer email when available', async () => {
     vi.stubEnv('OPENROUTER_API_KEY', 'test-api-key');
 
-    const request = createMockRequest({
-      listingId: 123,
-      intent: 'purchase',
-      buyerName: 'John Smith',
-      buyerCountry: 'United States',
-    });
+    const request = createMockRequest(VALID_INPUT);
     const response = await POST(request as never);
 
     const json = await response.json();
@@ -820,12 +711,7 @@ describe('Inquiry API - Response Format', () => {
 
     vi.stubEnv('OPENROUTER_API_KEY', 'test-api-key');
 
-    const request = createMockRequest({
-      listingId: 123,
-      intent: 'purchase',
-      buyerName: 'John Smith',
-      buyerCountry: 'United States',
-    });
+    const request = createMockRequest(VALID_INPUT);
     const response = await POST(request as never);
 
     const json = await response.json();
@@ -835,12 +721,7 @@ describe('Inquiry API - Response Format', () => {
   it('includes dealer policies in response', async () => {
     vi.stubEnv('OPENROUTER_API_KEY', 'test-api-key');
 
-    const request = createMockRequest({
-      listingId: 123,
-      intent: 'purchase',
-      buyerName: 'John Smith',
-      buyerCountry: 'United States',
-    });
+    const request = createMockRequest(VALID_INPUT);
     const response = await POST(request as never);
 
     const json = await response.json();
@@ -890,15 +771,11 @@ describe('Inquiry API - History Tracking', () => {
   it('logs inquiry to history table', async () => {
     vi.stubEnv('OPENROUTER_API_KEY', 'test-api-key');
 
-    const request = createMockRequest({
-      listingId: 123,
-      intent: 'purchase',
-      buyerName: 'John Smith',
-      buyerCountry: 'United States',
-    });
+    const request = createMockRequest(VALID_INPUT);
     await POST(request as never);
 
     // Should have attempted to insert into inquiry_history
+    // Note: Uses type assertion 'inquiry_history' as 'dealers' due to missing types
     const historyInsert = supabaseTracker.fromCalls.find(c => c.table === 'inquiry_history');
     expect(historyInsert).toBeDefined();
   });
@@ -907,34 +784,28 @@ describe('Inquiry API - History Tracking', () => {
     vi.stubEnv('OPENROUTER_API_KEY', 'test-api-key');
 
     const request = createMockRequest({
-      listingId: 123,
-      intent: 'shipping',
-      buyerName: 'John Smith',
+      ...VALID_INPUT,
       buyerCountry: 'Germany',
     });
     await POST(request as never);
 
     // Check insert was called with correct data
     const insertCall = supabaseTracker.insertCalls.find(c =>
-      c.data && 'intent' in c.data
+      c.data && 'user_id' in c.data
     );
     expect(insertCall).toBeDefined();
-    expect(insertCall?.data.intent).toBe('shipping');
+    expect(insertCall?.data.intent).toBe('other'); // Default intent since form is freeform
     expect(insertCall?.data.user_id).toBe('user-123');
     expect(insertCall?.data.listing_id).toBe(123);
     expect(insertCall?.data.dealer_id).toBe(1);
+    expect(insertCall?.data.buyer_country).toBe('Germany');
   });
 
   it('still returns success even if history logging fails', async () => {
     vi.stubEnv('OPENROUTER_API_KEY', 'test-api-key');
     mockInsertError = new Error('Database insert failed');
 
-    const request = createMockRequest({
-      listingId: 123,
-      intent: 'purchase',
-      buyerName: 'John Smith',
-      buyerCountry: 'United States',
-    });
+    const request = createMockRequest(VALID_INPUT);
     const response = await POST(request as never);
 
     // Should still return 200 - history logging is non-blocking
@@ -981,12 +852,7 @@ describe('Inquiry API - Seasonal Greetings', () => {
   it('includes seasonal context in prompt', async () => {
     vi.stubEnv('OPENROUTER_API_KEY', 'test-api-key');
 
-    const request = createMockRequest({
-      listingId: 123,
-      intent: 'purchase',
-      buyerName: 'John Smith',
-      buyerCountry: 'United States',
-    });
+    const request = createMockRequest(VALID_INPUT);
     await POST(request as never);
 
     const openRouterCall = fetchCalls.find(c => c.url.includes('openrouter'));
