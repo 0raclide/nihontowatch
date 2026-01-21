@@ -64,7 +64,7 @@ describe('SetsumeiZufuBadge Component', () => {
       render(<SetsumeiZufuBadge />);
 
       const badge = screen.getByTestId('setsumei-zufu-badge');
-      expect(badge).toHaveAttribute('title', 'Official NBTHK evaluation translated');
+      expect(badge).toHaveAttribute('title', 'NBTHK Zufu commentary translated');
     });
 
     it('contains document icon with aria-hidden', () => {

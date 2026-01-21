@@ -75,15 +75,15 @@ export function SetsumeiSection({
       <div className={`${baseClasses} ${className}`}>
         <div className="flex items-center gap-2 mb-2">
           <h3 className="text-[10px] uppercase tracking-wider text-gold font-medium">
-            Official NBTHK Evaluation
+            NBTHK Zufu Commentary
           </h3>
         </div>
         <div className="bg-surface-elevated/50 border border-border rounded-lg p-4 text-center">
           <p className="text-sm text-muted">
-            Official evaluation translation coming soon
+            Translation coming soon
           </p>
           <p className="text-[10px] text-muted/70 mt-1">
-            This {listing.cert_type} designation includes an official commentary that will be translated.
+            This {listing.cert_type} designation includes Zufu commentary that will be translated.
           </p>
         </div>
       </div>
@@ -105,10 +105,10 @@ export function SetsumeiSection({
   return (
     <div className={`${baseClasses} ${className}`}>
       {/* Header */}
-      <div className="flex items-center justify-between mb-2">
+      <div className="flex items-center justify-between mb-1">
         <div className="flex items-center gap-2">
           <h3 className="text-[10px] uppercase tracking-wider text-gold font-medium">
-            Official NBTHK Evaluation
+            NBTHK Zufu Commentary
           </h3>
           <span className="text-[9px] px-1.5 py-0.5 bg-gold/10 text-gold rounded">
             {listing.cert_type}
@@ -125,6 +125,16 @@ export function SetsumeiSection({
           </button>
         )}
       </div>
+
+      {/* AI translation disclaimer - only show when viewing English translation */}
+      {!showOriginal && (
+        <p className="text-[10px] text-muted/70 mb-2 flex items-center gap-1">
+          <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span>AI translation — may contain errors</span>
+        </p>
+      )}
 
       {/* Content */}
       <div className="bg-surface-elevated/30 border border-gold/20 rounded-lg p-4">

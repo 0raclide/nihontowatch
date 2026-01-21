@@ -24,7 +24,7 @@ export function SetsumeiZufuBadge({
           bg-gold/15 text-gold border border-gold/30
           ${className}
         `.trim()}
-        title="Official NBTHK evaluation translated"
+        title="NBTHK Zufu commentary translated"
       >
         Zufu
       </span>
@@ -41,7 +41,7 @@ export function SetsumeiZufuBadge({
         inline-flex items-center gap-1
         ${className}
       `.trim()}
-      title="Official NBTHK evaluation translated"
+      title="NBTHK Zufu commentary translated"
     >
       <svg
         className="w-3 h-3"

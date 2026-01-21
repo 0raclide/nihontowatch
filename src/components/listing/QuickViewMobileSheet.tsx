@@ -384,7 +384,7 @@ export function QuickViewMobileSheet({
             {/* Description */}
             <TranslatedDescription listing={listing} maxLines={12} />
 
-            {/* Official NBTHK Evaluation (Juyo/Tokuju only) - expands in-place */}
+            {/* NBTHK Zufu Commentary (Juyo/Tokuju only) - expands in-place */}
             <SetsumeiSection
               listing={listing}
               variant="preview"

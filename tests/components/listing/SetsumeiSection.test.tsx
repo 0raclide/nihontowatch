@@ -69,8 +69,8 @@ describe('SetsumeiSection', () => {
       });
       render(<SetsumeiSection listing={listing} />);
 
-      expect(screen.getByText('Official NBTHK Evaluation')).toBeInTheDocument();
-      expect(screen.getByText('Official evaluation translation coming soon')).toBeInTheDocument();
+      expect(screen.getByText('NBTHK Zufu Commentary')).toBeInTheDocument();
+      expect(screen.getByText('Translation coming soon')).toBeInTheDocument();
     });
 
     it('renders "coming soon" for Tokubetsu Juyo items without setsumei', () => {
@@ -80,7 +80,7 @@ describe('SetsumeiSection', () => {
       });
       render(<SetsumeiSection listing={listing} />);
 
-      expect(screen.getByText(/Official evaluation translation coming soon/)).toBeInTheDocument();
+      expect(screen.getByText(/Translation coming soon/)).toBeInTheDocument();
     });
 
     it('renders setsumei content when available', () => {
@@ -90,7 +90,7 @@ describe('SetsumeiSection', () => {
       });
       render(<SetsumeiSection listing={listing} />);
 
-      expect(screen.getByText('Official NBTHK Evaluation')).toBeInTheDocument();
+      expect(screen.getByText('NBTHK Zufu Commentary')).toBeInTheDocument();
       expect(screen.getByText('Juyo')).toBeInTheDocument(); // Badge
       expect(screen.getByText('Juyo Token')).toBeInTheDocument(); // H2 from markdown
     });

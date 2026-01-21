@@ -1,7 +1,11 @@
 'use client';
 
+import { useState } from 'react';
 import { FavoriteButton } from '@/components/favorites/FavoriteButton';
 import { ShareButton } from '@/components/share/ShareButton';
+import { InquiryModal } from '@/components/inquiry';
+import { LoginModal } from '@/components/auth/LoginModal';
+import { useAuth } from '@/lib/auth/AuthContext';
 import { useCurrency, formatPriceWithConversion } from '@/hooks/useCurrency';
 import { shouldShowNewBadge } from '@/lib/newListing';
 import type { Listing } from '@/types';
@@ -26,6 +30,10 @@ interface QuickViewContentProps {
 
 export function QuickViewContent({ listing }: QuickViewContentProps) {
   const { currency, exchangeRates } = useCurrency();
+  const { user } = useAuth();
+  const [isInquiryModalOpen, setIsInquiryModalOpen] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+
   const certInfo = getCertInfo(listing.cert_type);
   const itemTypeLabel = getItemTypeLabel(listing.item_type);
   // Note: Supabase returns 'dealers' (plural) from the join, not 'dealer' (singular)
@@ -36,6 +44,14 @@ export function QuickViewContent({ listing }: QuickViewContentProps) {
     currency,
     exchangeRates
   );
+
+  const handleInquire = () => {
+    if (!user) {
+      setShowLoginModal(true);
+      return;
+    }
+    setIsInquiryModalOpen(true);
+  };
 
   return (
     <div className="flex flex-col h-full min-h-0">
@@ -114,7 +130,7 @@ export function QuickViewContent({ listing }: QuickViewContentProps) {
         {/* Translated Description */}
         <TranslatedDescription listing={listing} maxLines={6} />
 
-        {/* Official NBTHK Evaluation - expands in-place */}
+        {/* NBTHK Zufu Commentary - expands in-place */}
         <SetsumeiSection
           listing={listing}
           variant="preview"
@@ -122,21 +138,49 @@ export function QuickViewContent({ listing }: QuickViewContentProps) {
         />
       </div>
 
-      {/* Sticky CTA Button */}
+      {/* Sticky CTA Buttons */}
       <div className="px-4 py-3 lg:px-5 lg:py-4 bg-cream border-t border-border safe-area-bottom shrink-0">
-        <a
-          href={listing.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          data-testid="cta-button"
-          className="flex items-center justify-center gap-2 w-full px-5 py-3 text-[13px] lg:text-[14px] font-medium text-white bg-gold hover:bg-gold-light rounded-lg transition-colors"
-        >
-          View on {dealerName}
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-          </svg>
-        </a>
+        <div className="flex gap-2">
+          {/* Inquire Button */}
+          <button
+            onClick={handleInquire}
+            data-testid="inquire-button"
+            className="flex items-center justify-center gap-2 px-4 py-3 text-[13px] lg:text-[14px] font-medium text-charcoal bg-linen hover:bg-hover border border-border rounded-lg transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+            Inquire
+          </button>
+
+          {/* View on Dealer Button */}
+          <a
+            href={listing.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            data-testid="cta-button"
+            className="flex-1 flex items-center justify-center gap-2 px-5 py-3 text-[13px] lg:text-[14px] font-medium text-white bg-gold hover:bg-gold-light rounded-lg transition-colors"
+          >
+            View on {dealerName}
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+            </svg>
+          </a>
+        </div>
       </div>
+
+      {/* Inquiry Modal */}
+      <InquiryModal
+        isOpen={isInquiryModalOpen}
+        onClose={() => setIsInquiryModalOpen(false)}
+        listing={listing}
+      />
+
+      {/* Login Modal */}
+      <LoginModal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+      />
     </div>
   );
 }

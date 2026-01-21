@@ -38,6 +38,27 @@ vi.mock('@/components/listing/SetsumeiSection', () => ({
   ),
 }));
 
+// Mock the useAuth hook
+vi.mock('@/lib/auth/AuthContext', () => ({
+  useAuth: () => ({
+    user: null,
+    profile: null,
+    session: null,
+    isLoading: false,
+    isAdmin: false,
+  }),
+}));
+
+// Mock the InquiryModal component
+vi.mock('@/components/inquiry', () => ({
+  InquiryModal: () => null,
+}));
+
+// Mock the LoginModal component
+vi.mock('@/components/auth/LoginModal', () => ({
+  LoginModal: () => null,
+}));
+
 // Mock the TranslatedTitle component
 vi.mock('@/components/listing/TranslatedTitle', () => ({
   TranslatedTitle: ({ listing }: { listing: Listing }) => (
