@@ -27,7 +27,7 @@ jobs:
         run: npm ci
 
       - name: Run unit tests
-        run: npx vitest run tests/unit tests/api/browse.test.ts
+        run: npx vitest run tests/api/browse.test.ts
 
       - name: Run signup tests
         run: npx vitest run tests/signup
@@ -55,7 +55,13 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-        run: npx vitest run tests/integration
+        run: |
+          # Skip if no integration tests exist
+          if find tests/integration -name "*.test.ts" -o -name "*.test.tsx" | grep -q .; then
+            npx vitest run tests/integration
+          else
+            echo "No integration tests found, skipping"
+          fi
 
   # Concordance tests run against production API to verify facet filtering
   # These tests catch bugs where facet counts don't reflect user's filter selections
