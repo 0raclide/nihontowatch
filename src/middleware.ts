@@ -1,3 +1,11 @@
+/**
+ * Middleware for authentication and authorization.
+ *
+ * NOTE: Next.js 16+ deprecates the "middleware" file convention in favor of "proxy".
+ * This is a known warning that will be addressed in a future refactor. The current
+ * implementation continues to work correctly.
+ * See: https://nextjs.org/docs/messages/middleware-to-proxy
+ */
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 

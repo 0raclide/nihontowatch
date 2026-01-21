@@ -115,6 +115,18 @@ function renderModal(props: Partial<React.ComponentProps<typeof InquiryModal>> =
   return render(<InquiryModal {...defaultProps} {...props} />);
 }
 
+// Helper to fill the form and submit
+async function fillFormAndSubmit(user: ReturnType<typeof userEvent.setup>, options?: { message?: string }) {
+  await user.type(screen.getByLabelText(/your name/i), 'John Smith');
+  await user.type(screen.getByLabelText(/your country/i), 'United States');
+  if (options?.message) {
+    await user.type(screen.getByLabelText(/your message/i), options.message);
+  } else {
+    await user.type(screen.getByLabelText(/your message/i), 'I am interested in this item.');
+  }
+  await user.click(screen.getByRole('button', { name: /generate email/i }));
+}
+
 // =============================================================================
 // TEST SUITES
 // =============================================================================
@@ -141,14 +153,6 @@ describe('InquiryModal', () => {
       expect(screen.getByText(/Katana by Bizen Osafune Sukesada/i)).toBeInTheDocument();
     });
 
-    it('displays all intent options', () => {
-      renderModal();
-      expect(screen.getByLabelText(/I want to purchase/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/I have questions/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/I need more photos/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/I need shipping information/i)).toBeInTheDocument();
-    });
-
     it('displays buyer name input', () => {
       renderModal();
       expect(screen.getByLabelText(/your name/i)).toBeInTheDocument();
@@ -159,9 +163,9 @@ describe('InquiryModal', () => {
       expect(screen.getByLabelText(/your country/i)).toBeInTheDocument();
     });
 
-    it('displays specific questions textarea', () => {
+    it('displays message textarea', () => {
       renderModal();
-      expect(screen.getByLabelText(/specific questions/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/your message/i)).toBeInTheDocument();
     });
   });
 
@@ -215,22 +219,6 @@ describe('InquiryModal', () => {
   // ===========================================================================
 
   describe('form input', () => {
-    it('defaults to purchase intent', () => {
-      renderModal();
-      const purchaseRadio = screen.getByLabelText(/I want to purchase/i);
-      expect(purchaseRadio).toBeChecked();
-    });
-
-    it('allows selecting different intents', async () => {
-      renderModal();
-      const user = userEvent.setup();
-
-      const questionsRadio = screen.getByLabelText(/I have questions/i);
-      await user.click(questionsRadio);
-
-      expect(questionsRadio).toBeChecked();
-    });
-
     it('allows entering buyer name', async () => {
       renderModal();
       const user = userEvent.setup();
@@ -251,14 +239,14 @@ describe('InquiryModal', () => {
       expect(countryInput).toHaveValue('United States');
     });
 
-    it('allows entering specific questions', async () => {
+    it('allows entering message', async () => {
       renderModal();
       const user = userEvent.setup();
 
-      const questionsInput = screen.getByLabelText(/specific questions/i);
-      await user.type(questionsInput, 'Is there any active rust?');
+      const messageInput = screen.getByLabelText(/your message/i);
+      await user.type(messageInput, 'Is there any active rust?');
 
-      expect(questionsInput).toHaveValue('Is there any active rust?');
+      expect(messageInput).toHaveValue('Is there any active rust?');
     });
   });
 
@@ -271,9 +259,9 @@ describe('InquiryModal', () => {
       renderModal();
       const user = userEvent.setup();
 
-      // Fill country but not name
-      const countryInput = screen.getByLabelText(/your country/i);
-      await user.type(countryInput, 'United States');
+      // Fill country and message but not name
+      await user.type(screen.getByLabelText(/your country/i), 'United States');
+      await user.type(screen.getByLabelText(/your message/i), 'Test message');
 
       const submitButton = screen.getByRole('button', { name: /generate email/i });
       await user.click(submitButton);
@@ -285,14 +273,28 @@ describe('InquiryModal', () => {
       renderModal();
       const user = userEvent.setup();
 
-      // Fill name but not country
-      const nameInput = screen.getByLabelText(/your name/i);
-      await user.type(nameInput, 'John Smith');
+      // Fill name and message but not country
+      await user.type(screen.getByLabelText(/your name/i), 'John Smith');
+      await user.type(screen.getByLabelText(/your message/i), 'Test message');
 
       const submitButton = screen.getByRole('button', { name: /generate email/i });
       await user.click(submitButton);
 
       expect(screen.getByText(/country is required/i)).toBeInTheDocument();
+    });
+
+    it('shows error when message is empty', async () => {
+      renderModal();
+      const user = userEvent.setup();
+
+      // Fill name and country but not message
+      await user.type(screen.getByLabelText(/your name/i), 'John Smith');
+      await user.type(screen.getByLabelText(/your country/i), 'United States');
+
+      const submitButton = screen.getByRole('button', { name: /generate email/i });
+      await user.click(submitButton);
+
+      expect(screen.getByText(/message is required/i)).toBeInTheDocument();
     });
 
     it('does not submit when validation fails', async () => {
@@ -318,17 +320,16 @@ describe('InquiryModal', () => {
       // Fill form
       await user.type(screen.getByLabelText(/your name/i), 'John Smith');
       await user.type(screen.getByLabelText(/your country/i), 'United States');
-      await user.type(screen.getByLabelText(/specific questions/i), 'Is this item available?');
+      await user.type(screen.getByLabelText(/your message/i), 'Is this item available?');
 
       // Submit
       await user.click(screen.getByRole('button', { name: /generate email/i }));
 
       expect(mockGenerateEmail).toHaveBeenCalledWith({
         listingId: 123,
-        intent: 'purchase',
         buyerName: 'John Smith',
         buyerCountry: 'United States',
-        specificQuestions: 'Is this item available?',
+        message: 'Is this item available?',
       });
     });
 
@@ -353,12 +354,8 @@ describe('InquiryModal', () => {
       renderModal();
       const user = userEvent.setup();
 
-      // Fill form
-      await user.type(screen.getByLabelText(/your name/i), 'John Smith');
-      await user.type(screen.getByLabelText(/your country/i), 'United States');
-
-      // Submit
-      await user.click(screen.getByRole('button', { name: /generate email/i }));
+      // Fill form with all required fields
+      await fillFormAndSubmit(user);
 
       // Wait for result view
       await waitFor(() => {
@@ -376,9 +373,7 @@ describe('InquiryModal', () => {
       renderModal();
       const user = userEvent.setup();
 
-      await user.type(screen.getByLabelText(/your name/i), 'John Smith');
-      await user.type(screen.getByLabelText(/your country/i), 'United States');
-      await user.click(screen.getByRole('button', { name: /generate email/i }));
+      await fillFormAndSubmit(user);
 
       await waitFor(() => {
         expect(screen.getByText(/generated email/i)).toBeInTheDocument();
@@ -442,6 +437,7 @@ describe('InquiryModal', () => {
       // Use fireEvent for faster and more reliable form filling
       fireEvent.change(screen.getByLabelText(/your name/i), { target: { value: 'John Smith' } });
       fireEvent.change(screen.getByLabelText(/your country/i), { target: { value: 'United States' } });
+      fireEvent.change(screen.getByLabelText(/your message/i), { target: { value: 'I am interested in this item.' } });
       fireEvent.click(screen.getByRole('button', { name: /generate email/i }));
 
       await waitFor(() => {
@@ -525,9 +521,7 @@ describe('InquiryModal', () => {
         }),
       }));
 
-      await user.type(screen.getByLabelText(/your name/i), 'John Smith');
-      await user.type(screen.getByLabelText(/your country/i), 'United States');
-      await user.click(screen.getByRole('button', { name: /generate email/i }));
+      await fillFormAndSubmit(user);
 
       // The component should stay on form view and show error
       await waitFor(() => {
@@ -539,9 +533,7 @@ describe('InquiryModal', () => {
       renderModal();
       const user = userEvent.setup();
 
-      await user.type(screen.getByLabelText(/your name/i), 'John Smith');
-      await user.type(screen.getByLabelText(/your country/i), 'United States');
-      await user.click(screen.getByRole('button', { name: /generate email/i }));
+      await fillFormAndSubmit(user);
 
       expect(mockClearError).toHaveBeenCalled();
     });
@@ -561,9 +553,7 @@ describe('InquiryModal', () => {
       renderModal();
       const user = userEvent.setup();
 
-      await user.type(screen.getByLabelText(/your name/i), 'John Smith');
-      await user.type(screen.getByLabelText(/your country/i), 'United States');
-      await user.click(screen.getByRole('button', { name: /generate email/i }));
+      await fillFormAndSubmit(user);
 
       await waitFor(() => {
         expect(screen.getByText(/generated email/i)).toBeInTheDocument();
@@ -582,9 +572,7 @@ describe('InquiryModal', () => {
       renderModal();
       const user = userEvent.setup();
 
-      await user.type(screen.getByLabelText(/your name/i), 'John Smith');
-      await user.type(screen.getByLabelText(/your country/i), 'United States');
-      await user.click(screen.getByRole('button', { name: /generate email/i }));
+      await fillFormAndSubmit(user);
 
       await waitFor(() => {
         expect(screen.getByText(/generated email/i)).toBeInTheDocument();
@@ -610,7 +598,7 @@ describe('InquiryModal', () => {
       expect(screen.getByLabelText(/your name/i)).toHaveValue('');
     });
 
-    it('handles very long specific questions', async () => {
+    it('handles very long message', async () => {
       renderModal();
 
       const longText = 'A'.repeat(2000);
@@ -618,11 +606,11 @@ describe('InquiryModal', () => {
       // Use fireEvent for faster input on long text
       const nameInput = screen.getByLabelText(/your name/i);
       const countryInput = screen.getByLabelText(/your country/i);
-      const questionsInput = screen.getByLabelText(/specific questions/i);
+      const messageInput = screen.getByLabelText(/your message/i);
 
       fireEvent.change(nameInput, { target: { value: 'John Smith' } });
       fireEvent.change(countryInput, { target: { value: 'United States' } });
-      fireEvent.change(questionsInput, { target: { value: longText } });
+      fireEvent.change(messageInput, { target: { value: longText } });
 
       const submitButton = screen.getByRole('button', { name: /generate email/i });
       fireEvent.click(submitButton);
@@ -655,7 +643,7 @@ describe('InquiryModal', () => {
       // All inputs should be properly labeled
       expect(screen.getByLabelText(/your name/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/your country/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/specific questions/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/your message/i)).toBeInTheDocument();
     });
 
     it('traps focus within modal', () => {
