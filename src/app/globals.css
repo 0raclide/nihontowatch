@@ -261,32 +261,31 @@ html.theme-light {
 html.theme-yuhindo {
   color-scheme: dark;
 
-  /* Core palette - the black velvet foundation
-     Not pure black, but the deep purple-black of lacquer */
-  --background: #08060a;
-  --background-warm: #0c0a0e;
-  --foreground: #d4c8d8;
+  /* Core palette - pure black foundation */
+  --background: #000000;
+  --background-warm: #080608;
+  --foreground: #9585a5;
 
-  /* Surfaces - layered like paulownia presentation boxes */
-  --surface: #12101a;
-  --surface-elevated: #1c1824;
-  --surface-overlay: rgba(18, 16, 26, 0.97);
+  /* Surfaces - subtle elevation from black */
+  --surface: #0a080c;
+  --surface-elevated: #121014;
+  --surface-overlay: rgba(10, 8, 12, 0.97);
 
-  /* Borders - the faint gleam of polished wood edges */
-  --border: #2a2436;
-  --border-subtle: #1e1a28;
-  --border-accent: rgba(200, 160, 80, 0.40);
+  /* Borders - barely visible structure */
+  --border: #1e1a22;
+  --border-subtle: #141218;
+  --border-accent: rgba(180, 150, 70, 0.35);
 
   /* Interactive - subtle shifts in shadow */
-  --hover: #1e1a28;
-  --active: #2a2436;
+  --hover: #141218;
+  --active: #1e1a22;
 
-  /* Primary accent - soft lavender, like the text in Yuhindo cards
-     The gentle purple that makes information feel precious */
-  --accent: #b8a0c8;
-  --accent-light: #d0c0e0;
-  --accent-dark: #9080a8;
-  --accent-glow: rgba(184, 160, 200, 0.20);
+  /* Primary accent - the exact Yuhindo dusty lavender
+     Extracted from their card typography */
+  --accent: #9585a5;
+  --accent-light: #a898b8;
+  --accent-dark: #7a6a8a;
+  --accent-glow: rgba(149, 133, 165, 0.18);
 
   /* Secondary accent - warm matte gold
      The color of shakudo inlay catching light */
@@ -294,13 +293,13 @@ html.theme-yuhindo {
   --gold-accent-light: #e0c070;
   --gold-accent-dark: #a08030;
 
-  /* Text hierarchy - lavender-gray palette
-     Soft, readable, precious like inscribed oshigata */
-  --text-primary: #e0d4e8;
-  --text-secondary: #b8a8c0;
-  --text-tertiary: #8878a0;
-  --text-muted: #605470;
-  --text-accent: #d0c0e0;
+  /* Text hierarchy - the muted dusty lavender palette
+     Matches Yuhindo's understated elegance */
+  --text-primary: #9585a5;
+  --text-secondary: #7a6a8a;
+  --text-tertiary: #5a4a6a;
+  --text-muted: #3a2a4a;
+  --text-accent: #a898b8;
 
   /* Semantic - tinted to complement the purple palette */
   --success: #70a890;
