@@ -20,10 +20,13 @@
 | [SEO.md](./SEO.md) | SEO optimization, structured data, sitemap, robots.txt |
 | [TESTING.md](./TESTING.md) | Test suite docs, concordance tests, CI/CD integration |
 
-## Postmortems
+## Postmortems & QA Audits
 
 | Document | Date | Issue |
 |----------|------|-------|
+| [POSTMORTEM_SWORD_SETSUMEI_MISSING.md](./POSTMORTEM_SWORD_SETSUMEI_MISSING.md) | 2026-01-21 | Sword enrichments missing setsumei_en (translation_md not fetched) |
+| [QA_PRICE_DATA_AUDIT_20260121.md](./QA_PRICE_DATA_AUDIT_20260121.md) | 2026-01-21 | **Comprehensive price data audit** - E-sword bug, parser bugs, sold transitions |
+| [POSTMORTEM_PRICE_HISTORY_DATA_QUALITY.md](./POSTMORTEM_PRICE_HISTORY_DATA_QUALITY.md) | 2026-01-21 | price_history cleanup (178 bad records removed) |
 | [POSTMORTEM_TOUKEN_MATSUMOTO_SOLD.md](./POSTMORTEM_TOUKEN_MATSUMOTO_SOLD.md) | 2025-01-20 | Touken Matsumoto listings incorrectly marked as sold (LLM hallucination) |
 | [POSTMORTEM_TRAILING_SLASH_DUPLICATES.md](./POSTMORTEM_TRAILING_SLASH_DUPLICATES.md) | 2025-01-19 | Duplicate listings from URL trailing slash variants |
 | [POSTMORTEM_SEARCH_DEBUG.md](./POSTMORTEM_SEARCH_DEBUG.md) | - | Search functionality debugging |
@@ -158,6 +161,14 @@
 3. Check `src/lib/email/` - SendGrid integration and templates
 4. Test with `POST /api/test/send-email` endpoint
 5. Monitor at https://app.sendgrid.com/email_activity
+
+### "I need to work on Yuhinkai enrichment"
+1. Read [YUHINKAI_ENRICHMENT.md](./YUHINKAI_ENRICHMENT.md) - Feature overview
+2. Check `src/hooks/useListingEnrichment.ts` - On-demand enrichment fetching
+3. Check `src/components/listing/YuhinkaiEnrichmentSection.tsx` - Display component
+4. Check `Oshi-scrapper/setsumei/enrichment/` - Backend enrichment logic
+5. Check `Oshi-scrapper/run_sword_backfill.py` - Sword enrichment pipeline
+6. **Critical**: Always include `translation_md` when fetching catalog_records!
 
 ### "I need to run or write tests"
 1. Read [TESTING.md](./TESTING.md) - Complete testing documentation

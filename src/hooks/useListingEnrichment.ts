@@ -3,13 +3,13 @@
 import { useMemo } from 'react';
 import { useApiCache } from './useApiCache';
 import type { YuhinkaiEnrichment, ItemType } from '@/types';
-import { isTosogu } from '@/types';
+import { isTosogu, isBlade } from '@/types';
 
 /**
  * Hook for fetching Yuhinkai catalog enrichment data on-demand.
  *
  * Only fetches if the listing is eligible for enrichment:
- * - Item type is tosogu (tsuba, fuchi-kashira, etc.)
+ * - Item type is tosogu (tsuba, fuchi-kashira, etc.) or blade (katana, wakizashi, etc.)
  * - Certification is Juyo or Tokubetsu Juyo (where enrichment exists)
  *
  * Uses aggressive caching since enrichment data rarely changes.
@@ -69,14 +69,14 @@ const ENRICHMENT_CERT_TYPES = [
 
 /**
  * Check if a listing is eligible for Yuhinkai enrichment.
- * Currently only tosogu items with Juyo/Tokuju certification.
+ * Supports both blades (swords) and tosogu with Juyo/Tokuju certification.
  */
 function isEligibleForEnrichment(
   itemType: ItemType | string | undefined,
   certType: string | undefined
 ): boolean {
-  // Must be tosogu type
-  if (!itemType || !isTosogu(itemType as ItemType)) {
+  // Must be tosogu or blade type
+  if (!itemType || (!isTosogu(itemType as ItemType) && !isBlade(itemType as ItemType))) {
     return false;
   }
 

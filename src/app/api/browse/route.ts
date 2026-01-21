@@ -163,12 +163,13 @@ const STATUS_SOLD = 'status.eq.sold,status.eq.presumed_sold,is_sold.eq.true';
 
 // Helper to apply minimum price filter to queries
 // Uses price_jpy (normalized JPY price) to filter consistently regardless of original currency
-// Allows NULL price_jpy (ASK listings) while filtering out low-price items
+// ASK listings (price_value IS NULL) are allowed through; priced items must meet minimum
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function applyMinPriceFilter<T extends { or: (condition: string) => T }>(query: T): T {
   if (LISTING_FILTERS.MIN_PRICE_JPY > 0) {
-    // Allow ASK listings (NULL) OR items with price >= minimum
-    return query.or(`price_jpy.is.null,price_jpy.gte.${LISTING_FILTERS.MIN_PRICE_JPY}`);
+    // Allow ASK listings (no price_value) OR items with price_jpy >= minimum
+    // Using price_value.is.null (not price_jpy) ensures we only allow true ASK listings
+    return query.or(`price_value.is.null,price_jpy.gte.${LISTING_FILTERS.MIN_PRICE_JPY}`);
   }
   return query;
 }

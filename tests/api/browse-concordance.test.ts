@@ -86,13 +86,15 @@ describe('Browse API Concordance Tests', () => {
   let allResponse: BrowseResponse;
   let nihontoResponse: BrowseResponse;
   let tosoguResponse: BrowseResponse;
+  let armorResponse: BrowseResponse;
 
   beforeAll(async () => {
-    // Fetch all three category responses in parallel
-    [allResponse, nihontoResponse, tosoguResponse] = await Promise.all([
+    // Fetch all four category responses in parallel
+    [allResponse, nihontoResponse, tosoguResponse, armorResponse] = await Promise.all([
       fetchBrowse({}),
       fetchBrowse({ cat: 'nihonto' }),
       fetchBrowse({ cat: 'tosogu' }),
+      fetchBrowse({ cat: 'armor' }),
     ]);
   }, 30000); // 30 second timeout for API calls
 
@@ -162,15 +164,15 @@ describe('Browse API Concordance Tests', () => {
   });
 
   // ===========================================================================
-  // INVARIANT: Approximate additivity (nihonto + tosogu ≈ all)
+  // INVARIANT: Approximate additivity (nihonto + tosogu + armor ≈ all)
   // ===========================================================================
 
   describe('Category counts should approximately sum to all (with tolerance)', () => {
-    // Allow for items that don't fit either category (e.g., armor, stands, unknown)
+    // Allow for items that don't fit any category (e.g., unknown, tanegashima)
     const TOLERANCE_PERCENT = 0.15; // 15% tolerance for uncategorized items
 
-    it('nihonto + tosogu totals should approximately equal all total', () => {
-      const sumTotals = nihontoResponse.total + tosoguResponse.total;
+    it('nihonto + tosogu + armor totals should approximately equal all total', () => {
+      const sumTotals = nihontoResponse.total + tosoguResponse.total + armorResponse.total;
       const allTotal = allResponse.total;
 
       // Sum should be close to all (within tolerance)
@@ -182,11 +184,12 @@ describe('Browse API Concordance Tests', () => {
       expect(sumTotals).toBeLessThanOrEqual(upperBound);
     });
 
-    it('nihonto + tosogu cert counts should approximately equal all cert counts', () => {
+    it('nihonto + tosogu + armor cert counts should approximately equal all cert counts', () => {
       for (const cert of allResponse.facets.certifications) {
         const nihontoCount = getCertCount(nihontoResponse.facets.certifications, cert.value);
         const tosoguCount = getCertCount(tosoguResponse.facets.certifications, cert.value);
-        const sumCount = nihontoCount + tosoguCount;
+        const armorCount = getCertCount(armorResponse.facets.certifications, cert.value);
+        const sumCount = nihontoCount + tosoguCount + armorCount;
 
         // Allow for tolerance
         const lowerBound = cert.count * (1 - TOLERANCE_PERCENT);
@@ -568,6 +571,69 @@ describe('Browse API Edge Cases', () => {
         expect(cert.count).toBeLessThanOrEqual(allCert.count);
       }
     }
+  });
+});
+
+// =============================================================================
+// MINIMUM PRICE FILTER TESTS
+// =============================================================================
+
+describe('Minimum price filter', () => {
+  const MIN_PRICE_JPY = 100000; // Must match LISTING_FILTERS.MIN_PRICE_JPY in constants.ts
+
+  it('no priced items below minimum should appear in results', async () => {
+    const response = await fetchBrowse({});
+
+    // Check all listings for low prices
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const lowPriceItems = response.listings.filter((listing: any) => {
+      // ASK listings (null price_value) are allowed
+      if (listing.price_value === null) return false;
+
+      // Items with price_jpy should be >= minimum
+      if (listing.price_jpy !== null && listing.price_jpy < MIN_PRICE_JPY) {
+        return true;
+      }
+
+      return false;
+    });
+
+    // No low-price items should slip through the filter
+    expect(lowPriceItems.length).toBe(0);
+  });
+
+  it('ASK listings (no price) should still appear', async () => {
+    const response = await fetchBrowse({ ask: 'true' });
+
+    // If there are ASK items in the system, they should appear
+    if (response.total > 0) {
+      // All items should have null price_value
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const allAsk = response.listings.every((listing: any) => listing.price_value === null);
+      expect(allAsk).toBe(true);
+    }
+  });
+
+  it('items with price_value but missing price_jpy should not appear if low-priced', async () => {
+    // This test catches the data quality issue where price_jpy wasn't populated
+    // The filter now checks price_value IS NULL for ASK detection, not price_jpy
+    const response = await fetchBrowse({});
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const badItems = response.listings.filter((listing: any) => {
+      // If item has a price_value but it's below the minimum (in any currency),
+      // and price_jpy is null, it shouldn't have slipped through
+      if (listing.price_value !== null && listing.price_jpy === null) {
+        // This is a data quality issue - item has price but no normalized JPY
+        // For JPY items, this should never happen after the backfill
+        if (listing.price_currency === 'JPY' && listing.price_value < MIN_PRICE_JPY) {
+          return true;
+        }
+      }
+      return false;
+    });
+
+    expect(badItems.length).toBe(0);
   });
 });
 

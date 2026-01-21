@@ -1,0 +1,45 @@
+[
+  {
+    "listing_id": 738,
+    "title": "真景 刀 重要刀剣",
+    "db_cert_type": "Juyo",
+    "previous_result": "Detected hozon, could not read details",
+    "upscaled_path": "certificate-detection-results/upscaled/listing_738_4x.jpg",
+    "ocr_result": {
+      "cert_header": "日本美術刀剣保存協会",
+      "cert_type_japanese": "重要刀剣",
+      "cert_type_english": "juyo",
+      "session_text": "第四十六回",
+      "session_number": 46,
+      "date_text": "昭和五十七年七月十日",
+      "setsumei_excerpt": "刀 銘 無銘 伝真景 長さ 二尺三寸六分五厘 反り 六分五厘 元幅 一寸一分 先幅 七分五厘",
+      "confidence": "high",
+      "notes": "Text is clear and legible."
+    },
+    "success": true
+  },
+  {
+    "listing_id": 578,
+    "title": "銘 弘次 太刀 重要刀剣",
+    "db_cert_type": "Juyo",
+    "previous_result": "Detected cert, could not read type or session",
+    "upscaled_path": "certificate-detection-results/upscaled/listing_578_4x.jpg",
+    "ocr_result": {
+      "cert_header": "日本美術刀剣保存協会",
+      "cert_type_japanese": "重要刀剣",
+      "cert_type_english": "juyo",
+      "session_text": "第四十六回",
+      "session_number": 46,
+      "date_text": "平成二十五年十月十九日",
+      "setsumei_excerpt": "方 銘 弘次在住\n重要刀剣\n本作は弘次在住と銘がある。弘次は室町時代の刀工であり、その作品は非常に高く評価されている。",
+      "confidence": "high",
+      "notes": "Text is clear and legible."
+    },
+    "success": true
+  },
+  {
+    "listing_id": 1098,
+    "error": "HTTP 404",
+    "success": false
+  }
+]

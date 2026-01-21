@@ -1,0 +1,286 @@
+{
+  "timestamp": "2026-01-21T13:31:45.647Z",
+  "method": "4x Lanczos super-resolution + GPT-4o OCR + dealer-specific strategies",
+  "dealer_stats": {
+    "Aoi Art": {
+      "total": 2,
+      "skipped": 0,
+      "cert_detected": 2,
+      "cert_type_extracted": 2,
+      "session_extracted": 2,
+      "fully_successful": 2,
+      "errors": 0
+    },
+    "Eirakudo": {
+      "total": 2,
+      "skipped": 0,
+      "cert_detected": 2,
+      "cert_type_extracted": 2,
+      "session_extracted": 1,
+      "fully_successful": 1,
+      "errors": 0
+    },
+    "Nipponto": {
+      "total": 2,
+      "skipped": 0,
+      "cert_detected": 0,
+      "cert_type_extracted": 0,
+      "session_extracted": 0,
+      "fully_successful": 0,
+      "errors": 2
+    },
+    "Token-net": {
+      "total": 2,
+      "skipped": 0,
+      "cert_detected": 2,
+      "cert_type_extracted": 2,
+      "session_extracted": 2,
+      "fully_successful": 2,
+      "errors": 0
+    },
+    "Kusanaginosya": {
+      "total": 2,
+      "skipped": 0,
+      "cert_detected": 2,
+      "cert_type_extracted": 2,
+      "session_extracted": 1,
+      "fully_successful": 1,
+      "errors": 0
+    }
+  },
+  "summary": {
+    "total": 10,
+    "skipped": 0,
+    "errors": 2,
+    "testable": 8,
+    "cert_type_rate": 100,
+    "session_rate": 75,
+    "full_success_rate": 75
+  },
+  "results": [
+    {
+      "dealer": "Aoi Art",
+      "listing_id": 1344,
+      "title": "Katana: Nagasone Okisato Nyudo Kotetsu with Saidan-mei(45th NBTHK Juyo Token)",
+      "db_cert_type": "Juyo",
+      "ocr": {
+        "has_certificate": true,
+        "cert_type": "juyo",
+        "session_number": 12,
+        "session_text": "第十二回",
+        "setsumei_excerpt": "長さ五、九八センチメートル。反り〇、九センチメートル。元幅三、〇センチメートル。先幅二、〇センチメートル。元重〇、七センチメートル。先重〇、五センチメートル。",
+        "date": "平成十二年十月二十九日",
+        "confidence": "high",
+        "readable": true,
+        "notes": ""
+      },
+      "image_url": "https://www.aoijapan.com/img/sword/2025/25067paper-1.jpg",
+      "image_type": "pattern_match",
+      "image_pattern": "/paper-?\\d*\\.jpg/i",
+      "success": {
+        "cert_detected": true,
+        "cert_type_extracted": "juyo",
+        "session_extracted": true,
+        "setsumei_extracted": true,
+        "fully_successful": true
+      }
+    },
+    {
+      "dealer": "Aoi Art",
+      "listing_id": 6479,
+      "title": "Wakizashi: Tajima Kami Hōjōji Tachibana Sadakuni (24th NBTHK Juyo Token) (With cutting test)",
+      "db_cert_type": "Juyo",
+      "ocr": {
+        "has_certificate": true,
+        "cert_type": "juyo",
+        "session_number": 53,
+        "session_text": "第五十三回",
+        "setsumei_excerpt": "寛文六年三月吉日 直刃腰彎造 山野勘十郎実秀 花押",
+        "date": "平成三十年七月十日",
+        "confidence": "high",
+        "readable": true,
+        "notes": ""
+      },
+      "image_url": "https://www.aoijapan.com/img/sword/2025/25431paper-1.jpg",
+      "image_type": "pattern_match",
+      "image_pattern": "/paper-?\\d*\\.jpg/i",
+      "success": {
+        "cert_detected": true,
+        "cert_type_extracted": "juyo",
+        "session_extracted": true,
+        "setsumei_extracted": true,
+        "fully_successful": true
+      }
+    },
+    {
+      "dealer": "Eirakudo",
+      "listing_id": 566,
+      "title": "吉岡一文字 刀 重要刀剣",
+      "db_cert_type": "Juyo",
+      "ocr": {
+        "has_certificate": true,
+        "cert_type": "juyo",
+        "session_number": 46,
+        "session_text": "第四十六回",
+        "setsumei_excerpt": "最終的な認定を受けたこの刀は...",
+        "date": null,
+        "confidence": "medium",
+        "readable": true,
+        "notes": "Date not clearly visible."
+      },
+      "image_url": "https://eirakudo.shop/images/yoshioka_b.jpg",
+      "image_type": "first_fallback",
+      "success": {
+        "cert_detected": true,
+        "cert_type_extracted": "juyo",
+        "session_extracted": true,
+        "setsumei_extracted": false,
+        "fully_successful": true
+      }
+    },
+    {
+      "dealer": "Eirakudo",
+      "listing_id": 585,
+      "title": "則重 刀 重要刀剣",
+      "db_cert_type": "Juyo",
+      "ocr": {
+        "has_certificate": true,
+        "cert_type": "juyo",
+        "session_number": null,
+        "session_text": null,
+        "setsumei_excerpt": "刀剣指定書 一口",
+        "date": null,
+        "confidence": "medium",
+        "readable": true,
+        "notes": "The document is partially visible, limiting extraction of full details."
+      },
+      "image_url": "https://eirakudo.shop/images/norishige_b-2.jpg",
+      "image_type": "first_fallback",
+      "success": {
+        "cert_detected": true,
+        "cert_type_extracted": "juyo",
+        "session_extracted": false,
+        "setsumei_extracted": false,
+        "fully_successful": false
+      }
+    },
+    {
+      "dealer": "Nipponto",
+      "listing_id": 10751,
+      "title": "日本刀 来国次(重要刀剣)(鑑刀日々抄続二所載) Rai Kunitsugu",
+      "db_cert_type": "Juyo",
+      "error": "fetch failed"
+    },
+    {
+      "dealer": "Nipponto",
+      "listing_id": 4734,
+      "title": "青江（重要刀剣） Aoe",
+      "db_cert_type": "Juyo",
+      "error": "fetch failed"
+    },
+    {
+      "dealer": "Token-net",
+      "listing_id": 6958,
+      "title": "小林伊勢守国輝 延宝六年二月日 (第49回重要刀剣)",
+      "db_cert_type": "Juyo",
+      "ocr": {
+        "has_certificate": true,
+        "cert_type": "juyo",
+        "session_number": 46,
+        "session_text": "第四十六回",
+        "setsumei_excerpt": "本作は、江戸時代中期に制作された優れた刀装具であり、保存状態も良好である。",
+        "date": "令和三年五月一日",
+        "confidence": "high",
+        "readable": true,
+        "notes": ""
+      },
+      "image_url": "http://www.token-net.com/wp-content/uploads/2017/08/f-tel_2.png",
+      "image_type": "late_position",
+      "success": {
+        "cert_detected": true,
+        "cert_type_extracted": "juyo",
+        "session_extracted": true,
+        "setsumei_extracted": true,
+        "fully_successful": true
+      }
+    },
+    {
+      "dealer": "Token-net",
+      "listing_id": 7015,
+      "title": "家紋散二所物 無銘 栄乗 (第33回重要刀装具)",
+      "db_cert_type": "Juyo",
+      "ocr": {
+        "has_certificate": true,
+        "cert_type": "juyo",
+        "session_number": 46,
+        "session_text": "第四十六回",
+        "setsumei_excerpt": "本作は、江戸時代中期に作られた優れた刀装具であり...",
+        "date": "平成二十六年五月一日",
+        "confidence": "high",
+        "readable": true,
+        "notes": ""
+      },
+      "image_url": "http://www.token-net.com/wp-content/uploads/2017/08/f-tel_2.png",
+      "image_type": "late_position",
+      "success": {
+        "cert_detected": true,
+        "cert_type_extracted": "juyo",
+        "session_extracted": true,
+        "setsumei_extracted": true,
+        "fully_successful": true
+      }
+    },
+    {
+      "dealer": "Kusanaginosya",
+      "listing_id": 9552,
+      "title": "重要刀剣安綱の子古伯耆『有綱』薫山鞘書大名登録平安時代の奇跡の太刀",
+      "db_cert_type": "Juyo",
+      "ocr": {
+        "has_certificate": true,
+        "cert_type": "juyo",
+        "session_number": null,
+        "session_text": null,
+        "setsumei_excerpt": null,
+        "date": null,
+        "confidence": "medium",
+        "readable": true,
+        "notes": "The image contains Japanese text indicating a 'juyo' certification, but other details are unclear."
+      },
+      "image_url": "https://image1.shopserve.jp/kusanaginosya.com/pic-labo/limg/arituna15.jpg",
+      "image_type": "first_fallback",
+      "success": {
+        "cert_detected": true,
+        "cert_type_extracted": "juyo",
+        "session_extracted": false,
+        "setsumei_extracted": null,
+        "fully_successful": false
+      }
+    },
+    {
+      "dealer": "Kusanaginosya",
+      "listing_id": 9034,
+      "title": "重要刀剣!現存唯一無二!古備前三平である包平,高平,助平の孫『定包』平安期!古備前最初期の作!健全無比田野辺先生鞘書",
+      "db_cert_type": "Juyo",
+      "ocr": {
+        "has_certificate": true,
+        "cert_type": "juyo",
+        "session_number": 46,
+        "session_text": "第四十六回",
+        "setsumei_excerpt": "太刀 銘 備前長船住長義",
+        "date": "平成十一年八月二日",
+        "confidence": "high",
+        "readable": true,
+        "notes": "The certificate is clear and legible."
+      },
+      "image_url": "https://image1.shopserve.jp/kusanaginosya.com/pic-labo/limg/sadakane.jpg",
+      "image_type": "first_fallback",
+      "success": {
+        "cert_detected": true,
+        "cert_type_extracted": "juyo",
+        "session_extracted": true,
+        "setsumei_extracted": false,
+        "fully_successful": true
+      }
+    }
+  ]
+}

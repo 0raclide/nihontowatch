@@ -70,11 +70,6 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
   // Cooldown to prevent immediate re-opening after close
   const closeCooldown = useRef(false);
 
-  // Find index of listing in the listings array
-  const findListingIndex = useCallback((listing: Listing) => {
-    return listings.findIndex((l) => l.id === listing.id);
-  }, [listings]);
-
   // Update URL synchronously using history API (no React re-renders)
   const updateUrl = useCallback((listingId: number | null) => {
     if (typeof window === 'undefined') return;
@@ -104,10 +99,15 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
       window.__scrollLockActive = true;
     }
 
-    setCurrentListing(listing);
-    setIsOpen(true);
+    // Use the listing from our pre-mapped array if available.
+    // This ensures we get the properly mapped `dealer` property (singular)
+    // instead of `dealers` (plural) from the raw Supabase response.
+    // The listings array is set by VirtualListingGrid with correct mapping.
+    const index = listings.findIndex((l) => l.id === listing.id);
+    const mappedListing = index !== -1 ? listings[index] : listing;
 
-    const index = findListingIndex(listing);
+    setCurrentListing(mappedListing);
+    setIsOpen(true);
     setCurrentIndex(index);
 
     // Update URL
@@ -115,7 +115,7 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
 
     // Track for signup pressure system
     signupPressure?.trackQuickView();
-  }, [findListingIndex, updateUrl, signupPressure]);
+  }, [listings, updateUrl, signupPressure]);
 
   // Close quick view
   const closeQuickView = useCallback(() => {

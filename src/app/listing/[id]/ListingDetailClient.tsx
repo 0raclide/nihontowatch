@@ -8,6 +8,7 @@ import { Header } from '@/components/layout/Header';
 import { BottomTabBar } from '@/components/navigation/BottomTabBar';
 import { CreateAlertModal } from '@/components/alerts/CreateAlertModal';
 import { LoginModal } from '@/components/auth/LoginModal';
+import { InquiryModal } from '@/components/inquiry/InquiryModal';
 import { useAlerts } from '@/hooks/useAlerts';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { getAllImages } from '@/lib/images';
@@ -71,6 +72,7 @@ export default function ListingDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
+  const [isInquiryModalOpen, setIsInquiryModalOpen] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
 
   const { createAlert, isCreating } = useAlerts({ autoFetch: false });
@@ -130,6 +132,14 @@ export default function ListingDetailPage() {
       return;
     }
     setIsAlertModalOpen(true);
+  };
+
+  const handleInquire = () => {
+    if (!user) {
+      setShowLoginModal(true);
+      return;
+    }
+    setIsInquiryModalOpen(true);
   };
 
   // Loading state
@@ -405,6 +415,17 @@ export default function ListingDetailPage() {
                 </svg>
               </a>
 
+              {/* Inquire Button */}
+              <button
+                onClick={handleInquire}
+                className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 text-[14px] font-medium text-charcoal bg-paper border border-border hover:border-gold hover:text-gold rounded-lg transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+                Inquire
+              </button>
+
               {/* Set Alert Button */}
               <button
                 onClick={handleSetAlert}
@@ -426,6 +447,13 @@ export default function ListingDetailPage() {
         onClose={() => setIsAlertModalOpen(false)}
         onSubmit={handleCreateAlert}
         isSubmitting={isCreating}
+        listing={listing as unknown as Listing}
+      />
+
+      {/* Inquiry Modal */}
+      <InquiryModal
+        isOpen={isInquiryModalOpen}
+        onClose={() => setIsInquiryModalOpen(false)}
         listing={listing as unknown as Listing}
       />
 

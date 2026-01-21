@@ -7,6 +7,7 @@ This document tracks dealer-specific customizations, quirks, and maintenance not
 ## Table of Contents
 
 - [Aoi Art](#aoi-art)
+- [Touken Matsumoto](#touken-matsumoto)
 - [Adding New Dealer Notes](#adding-new-dealer-notes)
 
 ---
@@ -55,6 +56,35 @@ Aoi Art uses a multi-strategy approach for image extraction:
 - Some listings have the shop owner image mixed in with product images
 - Price can be in JSON-LD, meta tags, or text patterns
 - Certification data often in title or description text
+
+---
+
+## Touken Matsumoto
+
+**Domain:** touken-matsumoto.jp
+**Scraper:** `Oshi-scrapper/scrapers/touken_matsumoto.py`
+**Status:** Active
+**Dealer ID:** 24
+
+### Sold Detection
+
+Uses "売却済" (baikyaku-zumi) as the primary sold indicator.
+
+**Implementation (2025-01-20):**
+- Added "売却済" pattern to `utils/price_parser.py`
+- Updated LLM prompt in `utils/llm_extractor.py`
+- Added dealer hints in `prompts/dealers/touken_matsumoto.py`
+- Post-LLM validation in `scrapers/base.py` overrides hallucinations
+
+### Known Quirks
+
+- All pages have "All Rights Reserved" in footer (was triggering false "reserved" status)
+- Specializes in tosogu (fittings) - mostly tsuba
+- Many items priced under ¥100k (filtered by browse MIN_PRICE_JPY threshold)
+
+### Incident History
+
+- **2025-01-20:** All 77 listings incorrectly marked as sold due to LLM hallucination. Fixed with post-LLM validation layer. See [POSTMORTEM_TOUKEN_MATSUMOTO_SOLD.md](./POSTMORTEM_TOUKEN_MATSUMOTO_SOLD.md)
 
 ---
 
@@ -112,6 +142,7 @@ See [CLAUDE.md](../CLAUDE.md#current-dealers-27-total) for the complete dealer l
 | Dealer | Domain | Has Custom Notes |
 |--------|--------|------------------|
 | Aoi Art | aoijapan.com | Yes |
+| Touken Matsumoto | touken-matsumoto.jp | Yes |
 | Eirakudo | eirakudo.com | No |
 | Nipponto | nipponto.co.jp | No |
 | E-sword | e-sword.jp | No |

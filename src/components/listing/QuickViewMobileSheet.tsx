@@ -79,7 +79,8 @@ export function QuickViewMobileSheet({
   const certInfo = getCertInfo(listing.cert_type);
   const { artisan, school } = getArtisanInfo(listing);
   const itemTypeLabel = getItemTypeLabel(listing.item_type);
-  const dealerName = listing.dealer?.name || 'Dealer';
+  // Note: Supabase returns 'dealers' (plural) from the join, not 'dealer' (singular)
+  const dealerName = listing.dealers?.name || listing.dealer?.name || 'Dealer';
   const priceDisplay = formatPriceWithConversion(
     listing.price_value,
     listing.price_currency,
@@ -231,7 +232,8 @@ export function QuickViewMobileSheet({
   const showExpandedContent = progress > 0.1;
 
   // Check if we have a real dealer name (not just the fallback)
-  const hasRealDealerName = listing.dealer?.name && listing.dealer.name !== 'Dealer';
+  const hasRealDealerName = (listing.dealers?.name || listing.dealer?.name) &&
+    (listing.dealers?.name || listing.dealer?.name) !== 'Dealer';
 
   return (
     <div

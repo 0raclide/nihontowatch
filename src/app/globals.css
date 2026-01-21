@@ -262,8 +262,8 @@ html.theme-opus {
   --border-dark: #2a3448;
 }
 
-/* Light mode explicit class */
-html.theme-light {
+/* Sothebys - Light mode explicit class */
+html.theme-sothebys {
   color-scheme: light;
 }
 
@@ -280,6 +280,16 @@ html.theme-yuhindo .hover\:bg-gold-light:hover {
   background-color: var(--button-bg-hover) !important;
 }
 
+/* Card header - deep saturated purple instead of grey */
+html.theme-yuhindo .dark\:bg-white\/10 {
+  background-color: #1a0a28 !important;
+}
+
+/* Text gold - actual gold color for "Watch" in logo */
+html.theme-yuhindo .text-gold {
+  color: var(--gold-accent) !important;
+}
+
 /* ==========================================================================
    YUHINDO - The Art of Precious Metal
    Inspired by the legendary tosogu dealer's presentation aesthetic
@@ -291,17 +301,17 @@ html.theme-yuhindo {
 
   /* Core palette - Yuhindo exact colors */
   --background: #010000;
-  --background-warm: #060304;
+  --background-warm: #04030a;
   --foreground: #ffffff;
 
-  /* Surfaces - subtle warm-black elevation */
-  --surface: #0a0506;
-  --surface-elevated: #120a0c;
-  --surface-overlay: rgba(10, 5, 6, 0.97);
+  /* Surfaces - deep purple velvet (presentation case feel) */
+  --surface: #04020a;
+  --surface-elevated: #06040e;
+  --surface-overlay: rgba(4, 2, 10, 0.97);
 
-  /* Borders - warm dark edges */
-  --border: #1e1418;
-  --border-subtle: #140c10;
+  /* Borders - purple-tinted dark edges */
+  --border: #1a1824;
+  --border-subtle: #12101a;
   --border-accent: rgba(170, 152, 221, 0.35);
 
   /* Interactive - subtle shifts */
@@ -314,9 +324,9 @@ html.theme-yuhindo {
   --accent-dark: #7c5cb8;
   --accent-glow: rgba(170, 152, 221, 0.18);
 
-  /* Button color - rich violet with white text */
-  --button-bg: #6b4c9a;
-  --button-bg-hover: #7d5cb0;
+  /* Button color - deep violet with white text */
+  --button-bg: #4a3670;
+  --button-bg-hover: #5a4485;
   --button-text: #ffffff;
 
   /* Secondary accent - warm matte gold */

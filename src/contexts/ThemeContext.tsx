@@ -23,7 +23,7 @@ import {
  *
  * Extensible: Add new themes to THEME_NAMES and THEMES record
  */
-export const THEME_NAMES = ['dark', 'light', 'opus', 'yuhindo'] as const;
+export const THEME_NAMES = ['opus', 'sothebys', 'yuhindo'] as const;
 export type ThemeName = (typeof THEME_NAMES)[number];
 
 export type ThemeMode = 'light' | 'dark';
@@ -49,22 +49,6 @@ export interface ThemeDefinition {
  * 3. Add corresponding CSS variables in your global styles
  */
 export const THEMES: Record<ThemeName, ThemeDefinition> = {
-  dark: {
-    name: 'dark',
-    label: 'Dark mode',
-    mode: 'dark',
-    previewAccent: '#5d8aa8',
-    previewBg: '#121212',
-    metaColor: '#121212',
-  },
-  light: {
-    name: 'light',
-    label: 'Light mode',
-    mode: 'light',
-    previewAccent: '#B8860B',
-    previewBg: '#FAF9F6',
-    metaColor: '#FAF9F6',
-  },
   opus: {
     name: 'opus',
     label: 'Opus',
@@ -72,6 +56,14 @@ export const THEMES: Record<ThemeName, ThemeDefinition> = {
     previewAccent: '#daa55a',
     previewBg: '#0c1220',
     metaColor: '#0c1220',
+  },
+  sothebys: {
+    name: 'sothebys',
+    label: 'Sothebys',
+    mode: 'light',
+    previewAccent: '#B8860B',
+    previewBg: '#FAF9F6',
+    metaColor: '#FAF9F6',
   },
   yuhindo: {
     name: 'yuhindo',
@@ -124,7 +116,7 @@ const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 function getSystemTheme(): ThemeName {
   if (typeof window === 'undefined') return DEFAULT_THEME;
   return window.matchMedia('(prefers-color-scheme: light)').matches
-    ? 'light'
+    ? 'sothebys'
     : 'opus';
 }
 
@@ -308,18 +300,17 @@ export const themeInitScript = `
 (function() {
   try {
     var stored = localStorage.getItem('nihontowatch-theme');
-    var themes = ['dark', 'light', 'opus', 'yuhindo'];
+    var themes = ['opus', 'sothebys', 'yuhindo'];
     var themeData = {
-      dark: { mode: 'dark', metaColor: '#121212' },
-      light: { mode: 'light', metaColor: '#FAF9F6' },
       opus: { mode: 'dark', metaColor: '#0c1220' },
+      sothebys: { mode: 'light', metaColor: '#FAF9F6' },
       yuhindo: { mode: 'dark', metaColor: '#010000' }
     };
 
     var theme = themes.includes(stored) ? stored : null;
 
     if (stored === 'system' || !theme) {
-      theme = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'opus';
+      theme = window.matchMedia('(prefers-color-scheme: light)').matches ? 'sothebys' : 'opus';
     }
 
     var data = themeData[theme] || themeData.opus;

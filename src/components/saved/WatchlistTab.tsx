@@ -92,7 +92,7 @@ function WatchlistItem({
                 </h3>
               </a>
               <p className="text-[12px] text-muted mt-0.5">
-                {listing.dealer?.name || 'Unknown dealer'}
+                {listing.dealers?.name || listing.dealer?.name || 'Unknown dealer'}
               </p>
             </div>
 

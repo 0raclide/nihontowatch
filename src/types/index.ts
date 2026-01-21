@@ -309,6 +309,9 @@ export interface Listing {
 
   // Relations (when joined)
   dealer?: Dealer;
+  // Supabase returns 'dealers' (plural) from single-row joins
+  // Partial allows extended interfaces to use a subset of Dealer fields
+  dealers?: Partial<Dealer> & { id: number; name: string; domain: string };
 }
 
 // =============================================================================
@@ -665,3 +668,30 @@ export function getNotificationFrequencyDescription(freq: NotificationFrequency)
   };
   return descriptions[freq] || '';
 }
+
+// =============================================================================
+// INQUIRY EMAIL GENERATION
+// =============================================================================
+
+// Re-export inquiry types from dedicated module
+export type {
+  InquiryIntent,
+  InquiryInput,
+  ValidatedInquiryInput,
+  GeneratedEmail,
+  DealerPolicies,
+  ListingContext,
+  DealerContext,
+  InquiryContext,
+  InquiryApiResponse,
+  InquiryApiError,
+  InquiryResponse,
+  ValidationResult,
+} from '@/lib/inquiry/types';
+
+export {
+  INTENT_LABELS,
+  INTENT_DESCRIPTIONS,
+  VALID_INTENTS,
+  isValidIntent,
+} from '@/lib/inquiry/types';
