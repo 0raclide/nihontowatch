@@ -9,6 +9,7 @@
 | [CROSS_REPO_REFERENCE.md](./CROSS_REPO_REFERENCE.md) | What lives where across all repos |
 | [DEALERS.md](./DEALERS.md) | Dealer-specific quirks, exclusions, maintenance notes |
 | [USER_ACCOUNTS_SYSTEM.md](./USER_ACCOUNTS_SYSTEM.md) | Auth, profiles, favorites, alerts, activity tracking, admin |
+| [INQUIRY_EMAIL_SYSTEM.md](./INQUIRY_EMAIL_SYSTEM.md) | AI-powered dealer inquiry emails (keigo, seasonal greetings, collector etiquette) |
 | [EMAIL_ALERTS.md](./EMAIL_ALERTS.md) | Email notification system (saved searches, price drops, back-in-stock) |
 | [SIGNUP_PRESSURE.md](./SIGNUP_PRESSURE.md) | Signup modal triggers, thresholds, copy variants, testing |
 | [MOBILE_UX.md](./MOBILE_UX.md) | Mobile interaction patterns, QuickView bottom sheet |
@@ -154,6 +155,15 @@
 3. Check `src/lib/activity/types.ts` - Event type definitions
 4. Check `src/app/api/activity/` - API routes
 5. Check `src/app/admin/analytics/` - Analytics dashboard
+
+### "I need to work on dealer inquiry emails"
+1. Read [INQUIRY_EMAIL_SYSTEM.md](./INQUIRY_EMAIL_SYSTEM.md) - Complete system docs
+2. Check `src/lib/inquiry/` - Prompts, validation, seasonal greetings
+3. Check `src/app/api/inquiry/generate/route.ts` - API endpoint
+4. Check `src/components/inquiry/` - Modal and form components
+5. Test locally with `node scripts/test-inquiry-api.mjs`
+6. Run `npm test -- tests/api/inquiry` - 28 unit tests
+7. See [DEALER_CONTACT_RESEARCH.md](./DEALER_CONTACT_RESEARCH.md) for dealer data spec
 
 ### "I need to work on email alerts"
 1. Read [EMAIL_ALERTS.md](./EMAIL_ALERTS.md) - Complete email system docs
