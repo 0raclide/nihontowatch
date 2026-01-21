@@ -106,7 +106,12 @@ export function useListingEnrichment(
   const shouldFetch = enabled && isEligible && !!listingId;
 
   // Build URL only if we should fetch
-  const url = shouldFetch ? `/api/listing/${listingId}/enrichment` : null;
+  // Check for ?nocache=1 in the page URL to bust client cache too
+  const nocache = typeof window !== 'undefined' &&
+    new URLSearchParams(window.location.search).get('nocache') === '1';
+  const url = shouldFetch
+    ? `/api/listing/${listingId}/enrichment${nocache ? '?nocache=1' : ''}`
+    : null;
 
   // Use the cached API fetcher with long TTL (enrichment rarely changes)
   const { data, isLoading, error } = useApiCache<EnrichmentResponse>(url, {
