@@ -333,28 +333,40 @@ async function generateEmailWithAI(
  */
 function parseEmailJson(content: string): GeneratedEmailJson {
   console.log('[Inquiry API] Raw AI response length:', content.length);
-  console.log('[Inquiry API] Raw AI response preview:', content.substring(0, 500));
+  console.log('[Inquiry API] Raw AI response preview:', content.substring(0, 1000));
 
-  // Step 1: Strip markdown code fences if present
+  // Step 1: Strip markdown code fences if present (multiple patterns)
   let cleaned = content;
 
-  // Remove ```json ... ``` or ``` ... ``` wrappers
-  const codeBlockMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
-  if (codeBlockMatch) {
-    cleaned = codeBlockMatch[1].trim();
-    console.log('[Inquiry API] Extracted from code block');
+  // Try various code block patterns
+  const codeBlockPatterns = [
+    /```json\s*([\s\S]*?)```/,      // ```json ... ```
+    /```\s*([\s\S]*?)```/,           // ``` ... ```
+    /`([\s\S]*?)`/,                   // ` ... ` (single backticks)
+  ];
+
+  for (const pattern of codeBlockPatterns) {
+    const match = content.match(pattern);
+    if (match && match[1].includes('{')) {
+      cleaned = match[1].trim();
+      console.log('[Inquiry API] Extracted from code block using pattern:', pattern.source);
+      break;
+    }
   }
 
-  // Step 2: Try to find JSON object
-  const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+  // Step 2: Try to find the outermost JSON object
+  // Find the first { and last } to get the complete JSON
+  const firstBrace = cleaned.indexOf('{');
+  const lastBrace = cleaned.lastIndexOf('}');
 
-  if (!jsonMatch) {
-    console.error('[Inquiry API] No JSON found in response:', cleaned.substring(0, 500));
+  if (firstBrace === -1 || lastBrace === -1 || lastBrace <= firstBrace) {
+    console.error('[Inquiry API] No JSON braces found in response:', cleaned.substring(0, 500));
     throw new Error('Invalid AI response format');
   }
 
-  const jsonStr = jsonMatch[0];
+  const jsonStr = cleaned.substring(firstBrace, lastBrace + 1);
   console.log('[Inquiry API] JSON string length:', jsonStr.length);
+  console.log('[Inquiry API] JSON string start:', jsonStr.substring(0, 200));
 
   try {
     const parsed = JSON.parse(jsonStr) as GeneratedEmailJson;
@@ -369,7 +381,8 @@ function parseEmailJson(content: string): GeneratedEmailJson {
     return parsed;
   } catch (parseError) {
     console.error('[Inquiry API] JSON parse error:', parseError);
-    console.error('[Inquiry API] Attempted to parse:', jsonStr.substring(0, 300));
+    console.error('[Inquiry API] Attempted to parse:', jsonStr.substring(0, 500));
+    console.error('[Inquiry API] Full content was:', content);
     throw new Error('Failed to parse AI response');
   }
 }
