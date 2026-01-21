@@ -14,6 +14,7 @@ import { getAllImages } from '@/lib/images';
 import { useValidatedImages } from '@/hooks/useValidatedImages';
 import { shouldShowNewBadge } from '@/lib/newListing';
 import { SetsumeiSection } from '@/components/listing/SetsumeiSection';
+import { SetsumeiZufuBadge } from '@/components/ui/SetsumeiZufuBadge';
 import type { Listing, CreateAlertInput } from '@/types';
 
 // Extended listing type for this page
@@ -174,6 +175,8 @@ export default function ListingDetailPage() {
   const itemType = listing.item_type ? (ITEM_TYPE_LABELS[listing.item_type.toLowerCase()] || listing.item_type) : null;
   const certInfo = listing.cert_type ? CERT_LABELS[listing.cert_type] : null;
   const images = validatedImages; // Use validated images (filtered for minimum dimensions)
+
+  // Artisan and school from listing data
   const artisan = listing.smith || listing.tosogu_maker;
   const school = listing.school || listing.tosogu_school;
 
@@ -258,7 +261,7 @@ export default function ListingDetailPage() {
           {/* Details */}
           <div>
             {/* Status & Certification */}
-            <div className="flex items-center gap-3 mb-4">
+            <div className="flex items-center flex-wrap gap-3 mb-4">
               {certInfo && (
                 <span className={`text-[11px] uppercase tracking-wider font-medium px-2.5 py-1 rounded ${
                   certInfo.tier === 'tokuju'
@@ -271,6 +274,9 @@ export default function ListingDetailPage() {
                 }`}>
                   {certInfo.label}
                 </span>
+              )}
+              {listing.setsumei_text_en && (
+                <SetsumeiZufuBadge />
               )}
               {shouldShowNewBadge(listing.first_seen_at, listing.dealer_earliest_seen_at) && (
                 <span className="text-[11px] uppercase tracking-wider font-medium px-2.5 py-1 rounded bg-new-listing-bg text-new-listing">
@@ -319,13 +325,17 @@ export default function ListingDetailPage() {
                     <span className="text-[11px] uppercase tracking-wider text-muted">
                       {listing.smith ? 'Smith' : 'Maker'}
                     </span>
-                    <p className="text-[15px] text-ink font-medium">{artisan}</p>
+                    <p className="text-[15px] text-ink font-medium">
+                      {artisan}
+                    </p>
                   </div>
                 )}
                 {school && (
                   <div>
                     <span className="text-[11px] uppercase tracking-wider text-muted">School</span>
-                    <p className="text-[15px] text-ink font-medium">{school}</p>
+                    <p className="text-[15px] text-ink font-medium">
+                      {school}
+                    </p>
                   </div>
                 )}
               </div>
@@ -366,7 +376,7 @@ export default function ListingDetailPage() {
               </div>
             )}
 
-            {/* Official NBTHK Evaluation (Juyo/Tokuju only) */}
+            {/* Official NBTHK Zufu Translation (Juyo/Tokuju only) */}
             <SetsumeiSection
               listing={listing as unknown as Listing}
               variant="full"

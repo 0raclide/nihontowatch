@@ -314,28 +314,9 @@ export async function GET(request: NextRequest) {
       query = query.in('signature_status', params.signatureStatuses);
     }
 
-    // Catalog enriched filter - only show listings with Yuhinkai enrichment
-    // Uses a subquery to check if listing exists in the enrichment view
+    // NBTHK Zufu translation filter - only show listings with OCR setsumei
     if (params.enriched) {
-      // Get enriched listing IDs first, then filter
-      const { data: enrichedIds } = await supabase
-        .from('listing_yuhinkai_enrichment')
-        .select('listing_id');
-
-      if (enrichedIds && enrichedIds.length > 0) {
-        const ids = enrichedIds.map((e: { listing_id: number }) => e.listing_id);
-        query = query.in('id', ids);
-      } else {
-        // No enriched listings exist yet - return empty result
-        return NextResponse.json({
-          listings: [],
-          total: 0,
-          page: safePage,
-          totalPages: 0,
-          facets: { itemTypes: [], certifications: [], dealers: [], historicalPeriods: [], signatureStatuses: [] },
-          lastUpdated: new Date().toISOString(),
-        });
-      }
+      query = query.not('setsumei_text_en', 'is', null);
     }
 
     // Process query with semantic extraction, numeric filters, and text search
