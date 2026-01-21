@@ -434,4 +434,57 @@ describe('ListingCard Component', () => {
       expect(badgeContainer).toBeInTheDocument();
     });
   });
+
+  describe('Setsumei badge', () => {
+    it('shows Zufu badge when listing has setsumei_text_en', () => {
+      const listingWithSetsumei = {
+        ...mockListing,
+        setsumei_text_en: '## Juyo-Token, 45th Session\n\nThis is a test setsumei translation.',
+      };
+      render(<ListingCard {...defaultProps} listing={listingWithSetsumei} />);
+
+      expect(screen.getByTestId('setsumei-zufu-badge')).toBeInTheDocument();
+    });
+
+    it('does NOT show Zufu badge when setsumei_text_en is null', () => {
+      const listingNoSetsumei = {
+        ...mockListing,
+        setsumei_text_en: null,
+      };
+      render(<ListingCard {...defaultProps} listing={listingNoSetsumei} />);
+
+      expect(screen.queryByTestId('setsumei-zufu-badge')).not.toBeInTheDocument();
+    });
+
+    it('does NOT show Zufu badge when setsumei_text_en is undefined', () => {
+      // mockListing doesn't have setsumei_text_en, so it's undefined
+      render(<ListingCard {...defaultProps} />);
+
+      expect(screen.queryByTestId('setsumei-zufu-badge')).not.toBeInTheDocument();
+    });
+
+    it('shows both certification and Zufu badges together', () => {
+      const certifiedWithSetsumei = {
+        ...mockListing,
+        cert_type: 'Juyo',
+        setsumei_text_en: '## Test setsumei',
+      };
+      render(<ListingCard {...defaultProps} listing={certifiedWithSetsumei} />);
+
+      expect(screen.getByText('Jūyō')).toBeInTheDocument();
+      expect(screen.getByTestId('setsumei-zufu-badge')).toBeInTheDocument();
+    });
+
+    it('shows Zufu badge even without certification', () => {
+      const noCertWithSetsumei = {
+        ...mockListing,
+        cert_type: null,
+        setsumei_text_en: '## Test setsumei',
+      };
+      render(<ListingCard {...defaultProps} listing={noCertWithSetsumei} />);
+
+      expect(screen.queryByText('Jūyō')).not.toBeInTheDocument();
+      expect(screen.getByTestId('setsumei-zufu-badge')).toBeInTheDocument();
+    });
+  });
 });

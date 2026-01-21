@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { FavoriteButton } from '@/components/favorites/FavoriteButton';
+import { SetsumeiZufuBadge } from '@/components/ui/SetsumeiZufuBadge';
 import { useActivityOptional } from '@/components/activity/ActivityProvider';
 import { useQuickViewOptional } from '@/contexts/QuickViewContext';
 import { useViewportTrackingOptional } from '@/lib/viewport';
@@ -39,6 +40,7 @@ interface Listing {
   is_available: boolean;
   is_sold: boolean;
   sold_data?: SoldData | null; // Sold item data with confidence
+  setsumei_text_en?: string | null; // Official NBTHK evaluation translation
   dealer_id: number;
   dealers: {
     id: number;
@@ -489,7 +491,7 @@ export function ListingCard({
 
       {/* Content - Fixed height with flex layout for consistent card sizes */}
       <div className="p-2.5 lg:p-4 flex flex-col h-[130px] lg:h-[140px]">
-        {/* Certification & New badges - fixed height slot */}
+        {/* Certification & Setsumei badges - fixed height slot */}
         <div className="h-[24px] lg:h-[28px] flex items-center gap-1.5">
           {certInfo && (
             <span className={`text-[9px] lg:text-[10px] uppercase tracking-wider font-semibold px-1.5 lg:px-2 py-0.5 lg:py-1 ${
@@ -503,6 +505,9 @@ export function ListingCard({
             }`}>
               {certInfo.label}
             </span>
+          )}
+          {listing.setsumei_text_en && (
+            <SetsumeiZufuBadge compact />
           )}
         </div>
 

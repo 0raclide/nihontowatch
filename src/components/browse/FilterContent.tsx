@@ -34,6 +34,7 @@ export interface FilterContentProps {
     historicalPeriods: string[];
     signatureStatuses: string[];
     askOnly?: boolean;
+    enriched?: boolean;
   };
   onFilterChange: (key: string, value: unknown) => void;
   onClose?: () => void;
@@ -418,6 +419,7 @@ export function FilterContent({
     onFilterChange('historicalPeriods', []);
     onFilterChange('signatureStatuses', []);
     onFilterChange('askOnly', false);
+    onFilterChange('enriched', false);
   }, [onFilterChange]);
 
   const hasActiveFilters =
@@ -428,7 +430,8 @@ export function FilterContent({
     filters.schools.length > 0 ||
     filters.historicalPeriods.length > 0 ||
     filters.signatureStatuses.length > 0 ||
-    filters.askOnly;
+    filters.askOnly ||
+    filters.enriched;
 
   const activeFilterCount =
     (filters.category !== 'all' ? 1 : 0) +
@@ -437,7 +440,8 @@ export function FilterContent({
     filters.dealers.length +
     filters.historicalPeriods.length +
     filters.signatureStatuses.length +
-    (filters.askOnly ? 1 : 0);
+    (filters.askOnly ? 1 : 0) +
+    (filters.enriched ? 1 : 0);
 
   return (
     <div className="px-4 lg:px-0 pb-6">
@@ -662,7 +666,41 @@ export function FilterContent({
           </div>
         </FilterSection>
 
-        {/* 5. Price on Request - Last, least important */}
+        {/* 5. Catalog Enriched - Premium feature with professional translations */}
+        <div className="py-5">
+          <label className="flex items-center justify-between cursor-pointer group min-h-[48px]">
+            <div className="flex items-center gap-2">
+              <span className="text-[15px] lg:text-[14px] text-charcoal group-hover:text-ink transition-colors">
+                Setsumei translated
+              </span>
+              <span className="text-[9px] uppercase tracking-wider font-medium px-1.5 py-0.5 bg-gold/15 text-gold rounded border border-gold/30">
+                Pro
+              </span>
+            </div>
+            <div className="relative">
+              <input
+                type="checkbox"
+                checked={filters.enriched || false}
+                onChange={(e) => onFilterChange('enriched', e.target.checked)}
+                className="peer sr-only"
+              />
+              <div className={`w-12 h-7 lg:w-11 lg:h-6 rounded-full transition-colors ${
+                filters.enriched
+                  ? 'bg-gold'
+                  : 'bg-border-dark'
+              }`}>
+                <div className={`absolute top-1 w-5 h-5 lg:w-4 lg:h-4 bg-white rounded-full shadow transition-transform ${
+                  filters.enriched ? 'translate-x-6 lg:translate-x-6' : 'translate-x-1'
+                }`} />
+              </div>
+            </div>
+          </label>
+          <p className="text-[11px] text-muted mt-1">
+            Juyo/Tokuju items with official evaluation translations
+          </p>
+        </div>
+
+        {/* 6. Price on Request - Last, least important */}
         <div className="py-5">
           <label className="flex items-center justify-between cursor-pointer group min-h-[48px]">
             <span className="text-[15px] lg:text-[14px] text-charcoal group-hover:text-ink transition-colors">
@@ -711,6 +749,7 @@ export function getActiveFilterCount(filters: FilterContentProps['filters']): nu
     filters.dealers.length +
     filters.historicalPeriods.length +
     filters.signatureStatuses.length +
-    (filters.askOnly ? 1 : 0)
+    (filters.askOnly ? 1 : 0) +
+    (filters.enriched ? 1 : 0)
   );
 }
