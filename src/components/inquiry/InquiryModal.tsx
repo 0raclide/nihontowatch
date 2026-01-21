@@ -5,9 +5,10 @@
  *
  * A two-step modal for generating AI-powered inquiry emails to Japanese dealers.
  *
- * Value proposition: Japanese dealers often give ~10% discount when contacted
- * directly in polite Japanese (keigo). This tool drafts professional Japanese
- * business emails that users can copy/paste to send.
+ * Value proposition: Foreign buyers can request exemption from Japan's 10%
+ * consumption tax (消費税) when purchasing for export. This tool drafts
+ * professional Japanese business emails (keigo) that properly request
+ * tax-exempt pricing.
  *
  * Step 1: Form input - user describes what they want in English
  * Step 2: Generated email display with clear copy-and-send instructions
@@ -273,10 +274,15 @@ function FormStep({
             </div>
             <div>
               <p className="text-[13px] font-medium text-ink">
-                Skip the middleman, save ~10%
+                Save 10% with tax-free export pricing
+                {listing.price_value && listing.price_currency === 'JPY' && (
+                  <span className="text-gold ml-1">
+                    (¥{Math.round(listing.price_value * 0.1).toLocaleString()})
+                  </span>
+                )}
               </p>
               <p className="text-[12px] text-muted mt-1">
-                Japanese dealers often offer better prices when you contact them directly in polite Japanese. We&apos;ll draft a professional business email for you.
+                Foreign buyers can request exemption from Japan&apos;s 10% consumption tax (消費税). We&apos;ll draft a professional keigo email that asks the right way.
               </p>
             </div>
           </div>
