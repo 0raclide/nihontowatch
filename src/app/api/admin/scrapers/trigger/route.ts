@@ -166,41 +166,10 @@ export async function POST(request: NextRequest) {
       }, { status: 500 });
     }
 
-    // Record that we triggered a workflow (optional - Oshi-scrapper will create its own record)
-    const serviceClient = createServiceClient();
-    let runId = null;
-
-    try {
-      const { data: dealerData } = dealer
-        ? await serviceClient
-            .from('dealers')
-            .select('id')
-            .eq('name', dealer)
-            .single()
-        : { data: null };
-
-      const runType = discoverOnly ? 'discovery'
-        : scrapeOnly ? 'scrape'
-        : extractOnly ? 'extract'
-        : 'full';
-
-      const { data: run } = await serviceClient
-        .from('scrape_runs')
-        .insert({
-          dealer_id: dealerData?.id || null,
-          run_type: runType,
-          status: 'running', // Will be updated by Oshi-scrapper
-          urls_processed: 0,
-          errors: 0,
-        })
-        .select('id')
-        .single();
-
-      runId = run?.id;
-    } catch (e) {
-      // Table might not exist, that's ok - Oshi-scrapper will create its own record
-      console.log('Could not create scrape_runs record:', e);
-    }
+    // NOTE: We do NOT create a scrape_run record here.
+    // The Oshi-scrapper Python script creates its own run when it starts.
+    // Creating one here caused duplicate/orphaned "running" records.
+    const runId = null;
 
     const targetDesc = dealer ? `dealer "${dealer}"` : 'all dealers';
     const modeDesc = discoverOnly ? 'discovery only'
