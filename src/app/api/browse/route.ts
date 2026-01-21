@@ -18,6 +18,8 @@ interface BrowseParams {
   historicalPeriods?: string[];
   signatureStatuses?: string[];
   askOnly?: boolean;
+  /** Filter to only show catalog-enriched listings */
+  enriched?: boolean;
   query?: string;
   sort?: string;
   page?: number;
@@ -60,6 +62,69 @@ const ARMOR_TYPES = [
 // Types to exclude from browse results (non-collectibles)
 const EXCLUDED_TYPES = ['stand', 'book', 'other'];
 
+// Compute sold data with confidence indicator for sold items
+// Items with 0-3 days between first_seen and status_changed are treated as
+// "unreliable" because they were likely already sold when discovered.
+function computeSoldData(listing: { is_sold: boolean; status_changed_at?: string | null; first_seen_at?: string | null }) {
+  if (!listing.is_sold) {
+    return null;
+  }
+
+  const statusChangedAt = listing.status_changed_at ? new Date(listing.status_changed_at) : null;
+  const firstSeenAt = listing.first_seen_at ? new Date(listing.first_seen_at) : null;
+
+  // Format sale date
+  const saleDate = statusChangedAt
+    ? statusChangedAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    : null;
+
+  // Calculate days on market
+  if (!firstSeenAt || !statusChangedAt) {
+    return {
+      sale_date: saleDate,
+      days_on_market: null,
+      days_on_market_display: null,
+      confidence: 'unknown' as const
+    };
+  }
+
+  const days = Math.floor((statusChangedAt.getTime() - firstSeenAt.getTime()) / (1000 * 60 * 60 * 24));
+  const daysPositive = Math.max(0, days);
+
+  // 0-3 days: Unreliable - likely discovered as already sold
+  // Don't show DOM as it would be misleading
+  if (daysPositive < 4) {
+    return {
+      sale_date: saleDate,
+      days_on_market: null,
+      days_on_market_display: null,
+      confidence: 'unknown' as const
+    };
+  }
+
+  let confidence: 'high' | 'medium' | 'low';
+  let display: string;
+
+  if (daysPositive >= 30) {
+    confidence = 'high';
+    display = `${daysPositive} days`;
+  } else if (daysPositive >= 7) {
+    confidence = 'medium';
+    display = `~${daysPositive} days`;
+  } else {
+    // 4-6 days: low confidence
+    confidence = 'low';
+    display = `${daysPositive}+ days`;
+  }
+
+  return {
+    sale_date: saleDate,
+    days_on_market: daysPositive,
+    days_on_market_display: display,
+    confidence
+  };
+}
+
 function parseParams(searchParams: URLSearchParams): BrowseParams {
   const itemTypesRaw = searchParams.get('type');
   const certificationsRaw = searchParams.get('cert');
@@ -83,6 +148,7 @@ function parseParams(searchParams: URLSearchParams): BrowseParams {
     historicalPeriods: historicalPeriodsRaw ? historicalPeriodsRaw.split(',') : undefined,
     signatureStatuses: signatureStatusesRaw ? signatureStatusesRaw.split(',') : undefined,
     askOnly: searchParams.get('ask') === 'true',
+    enriched: searchParams.get('enriched') === 'true',
     query: searchParams.get('q') || undefined,
     sort: searchParams.get('sort') || 'recent',
     page: Number(searchParams.get('page')) || 1,
@@ -168,6 +234,7 @@ export async function GET(request: NextRequest) {
         stored_images,
         images_stored_at,
         first_seen_at,
+        status_changed_at,
         last_scraped_at,
         status,
         is_available,
@@ -240,6 +307,30 @@ export async function GET(request: NextRequest) {
     // Signature status filter (mei_type: signed = has mei, unsigned/mumei = no mei)
     if (params.signatureStatuses?.length) {
       query = query.in('signature_status', params.signatureStatuses);
+    }
+
+    // Catalog enriched filter - only show listings with Yuhinkai enrichment
+    // Uses a subquery to check if listing exists in the enrichment view
+    if (params.enriched) {
+      // Get enriched listing IDs first, then filter
+      const { data: enrichedIds } = await supabase
+        .from('listing_yuhinkai_enrichment')
+        .select('listing_id');
+
+      if (enrichedIds && enrichedIds.length > 0) {
+        const ids = enrichedIds.map((e: { listing_id: number }) => e.listing_id);
+        query = query.in('id', ids);
+      } else {
+        // No enriched listings exist yet - return empty result
+        return NextResponse.json({
+          listings: [],
+          total: 0,
+          page: safePage,
+          totalPages: 0,
+          facets: { itemTypes: [], certifications: [], dealers: [], historicalPeriods: [], signatureStatuses: [] },
+          lastUpdated: new Date().toISOString(),
+        });
+      }
     }
 
     // Process query with semantic extraction, numeric filters, and text search
@@ -388,11 +479,12 @@ export async function GET(request: NextRequest) {
         }
       }
 
-      // Enrich listings with dealer baseline
+      // Enrich listings with dealer baseline and sold data
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       enrichedListings = listings.map((listing: any) => ({
         ...listing,
         dealer_earliest_seen_at: baselineMap[listing.dealer_id] || null,
+        sold_data: computeSoldData(listing),
       }));
     }
 

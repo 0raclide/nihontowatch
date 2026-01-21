@@ -10,6 +10,13 @@ import { getImageUrl } from '@/lib/images';
 import { shouldShowNewBadge } from '@/lib/newListing';
 import { useImagePreloader } from '@/hooks/useImagePreloader';
 
+interface SoldData {
+  sale_date: string | null;
+  days_on_market: number | null;
+  days_on_market_display: string | null;
+  confidence: 'high' | 'medium' | 'low' | 'unknown';
+}
+
 interface Listing {
   id: string;
   url: string;
@@ -31,6 +38,7 @@ interface Listing {
   status: string;
   is_available: boolean;
   is_sold: boolean;
+  sold_data?: SoldData | null; // Sold item data with confidence
   dealer_id: number;
   dealers: {
     id: number;
@@ -444,10 +452,24 @@ export function ListingCard({
           <div className="absolute inset-0 bg-linen" />
         )}
 
-        {/* Sold overlay */}
+        {/* Sold overlay with sale data */}
         {isSold && (
-          <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center">
             <span className="text-[10px] uppercase tracking-widest text-white/90 font-medium">Sold</span>
+            {listing.sold_data?.sale_date && (
+              <span className="text-[9px] text-white/80 mt-0.5">
+                {listing.sold_data.sale_date}
+              </span>
+            )}
+            {listing.sold_data?.days_on_market_display && (
+              <span className={`text-[8px] mt-0.5 font-medium ${
+                listing.sold_data.confidence === 'high' ? 'text-green-400' :
+                listing.sold_data.confidence === 'medium' ? 'text-yellow-400' :
+                'text-white/60'
+              }`}>
+                Listed {listing.sold_data.days_on_market_display}
+              </span>
+            )}
           </div>
         )}
 
