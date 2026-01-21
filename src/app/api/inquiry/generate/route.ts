@@ -287,7 +287,7 @@ async function generateEmailWithAI(
       'X-Title': 'Nihontowatch Inquiry',
     },
     body: JSON.stringify({
-      model: 'anthropic/claude-3.5-sonnet',
+      model: 'google/gemini-2.0-flash-001',
       messages: [
         {
           role: 'system',
