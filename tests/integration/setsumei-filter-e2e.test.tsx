@@ -2,7 +2,7 @@
  * Integration test for setsumei filter flow
  *
  * This test verifies the complete data flow:
- * 1. User clicks "Setsumei translated" toggle
+ * 1. User clicks "Setsumei EN" toggle
  * 2. onFilterChange is called with ('enriched', true)
  * 3. filters state is updated
  * 4. buildFetchParams includes enriched=true
@@ -48,7 +48,7 @@ describe('Setsumei Filter Integration', () => {
       );
 
       // Find the setsumei toggle by its label text
-      const toggle = screen.getByText('Setsumei translated')
+      const toggle = screen.getByText('Setsumei EN')
         .closest('label')
         ?.querySelector('input[type="checkbox"]');
 
@@ -83,7 +83,7 @@ describe('Setsumei Filter Integration', () => {
         />
       );
 
-      const toggle = screen.getByText('Setsumei translated')
+      const toggle = screen.getByText('Setsumei EN')
         .closest('label')
         ?.querySelector('input[type="checkbox"]');
 
@@ -113,7 +113,7 @@ describe('Setsumei Filter Integration', () => {
         />
       );
 
-      const toggle = screen.getByText('Setsumei translated')
+      const toggle = screen.getByText('Setsumei EN')
         .closest('label')
         ?.querySelector('input[type="checkbox"]') as HTMLInputElement;
 
@@ -140,7 +140,7 @@ describe('Setsumei Filter Integration', () => {
         />
       );
 
-      const toggle = screen.getByText('Setsumei translated')
+      const toggle = screen.getByText('Setsumei EN')
         .closest('label')
         ?.querySelector('input[type="checkbox"]') as HTMLInputElement;
 

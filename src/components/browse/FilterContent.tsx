@@ -671,10 +671,7 @@ export function FilterContent({
           <label className="flex items-center justify-between cursor-pointer group min-h-[48px]">
             <div className="flex items-center gap-2">
               <span className="text-[15px] lg:text-[14px] text-charcoal group-hover:text-ink transition-colors">
-                Setsumei translated
-              </span>
-              <span className="text-[9px] uppercase tracking-wider font-medium px-1.5 py-0.5 bg-gold/15 text-gold rounded border border-gold/30">
-                Pro
+                Setsumei EN
               </span>
             </div>
             <div className="relative">
