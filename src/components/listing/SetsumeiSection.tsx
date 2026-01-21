@@ -149,25 +149,33 @@ export function SetsumeiSection({
           </div>
         )}
 
-        {/* Read more / Show less buttons */}
-        {variant === 'full' && displayText && displayText.length > 1000 && (
+        {/* Read more / Show less buttons - works in both preview and full modes */}
+        {needsTruncation && (
           <button
             type="button"
-            onClick={() => setIsExpanded(!isExpanded)}
+            onClick={() => {
+              if (onReadMore && !isExpanded) {
+                // If callback provided and not yet expanded, use callback
+                onReadMore();
+              } else {
+                // Otherwise toggle in-place expansion
+                setIsExpanded(!isExpanded);
+              }
+            }}
             className="text-[12px] text-gold hover:text-gold-light transition-colors mt-3 font-medium"
           >
             {isExpanded ? 'Show less' : 'Read full evaluation'}
           </button>
         )}
 
-        {/* Preview mode "Read more" link */}
-        {isPreview && needsTruncation && onReadMore && (
+        {/* Full mode: also show expand for long text even if not truncated by previewLength */}
+        {variant === 'full' && !needsTruncation && displayText && displayText.length > 1000 && (
           <button
             type="button"
-            onClick={onReadMore}
+            onClick={() => setIsExpanded(!isExpanded)}
             className="text-[12px] text-gold hover:text-gold-light transition-colors mt-3 font-medium"
           >
-            Read full evaluation
+            {isExpanded ? 'Show less' : 'Read full evaluation'}
           </button>
         )}
       </div>

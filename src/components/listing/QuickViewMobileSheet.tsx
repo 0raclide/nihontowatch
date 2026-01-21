@@ -382,12 +382,11 @@ export function QuickViewMobileSheet({
             {/* Description */}
             <TranslatedDescription listing={listing} maxLines={12} />
 
-            {/* Official NBTHK Evaluation (Juyo/Tokuju only) */}
+            {/* Official NBTHK Evaluation (Juyo/Tokuju only) - expands in-place */}
             <SetsumeiSection
               listing={listing}
               variant="preview"
               previewLength={300}
-              onReadMore={() => window.location.href = `/listing/${listing.id}`}
             />
           </div>
 
