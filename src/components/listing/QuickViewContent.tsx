@@ -2,14 +2,17 @@
 
 import { FavoriteButton } from '@/components/favorites/FavoriteButton';
 import { ShareButton } from '@/components/share/ShareButton';
+import { CatalogEnrichedBadge } from '@/components/ui/CatalogEnrichedBadge';
 import { useCurrency, formatPriceWithConversion } from '@/hooks/useCurrency';
+import { useListingEnrichment } from '@/hooks/useListingEnrichment';
 import { shouldShowNewBadge } from '@/lib/newListing';
-import type { Listing } from '@/types';
+import type { Listing, ListingWithEnrichment } from '@/types';
 import { getItemTypeLabel } from '@/types';
 import { MetadataGrid, getCertInfo } from './MetadataGrid';
 import { SetsumeiSection } from './SetsumeiSection';
 import { TranslatedDescription } from './TranslatedDescription';
 import { TranslatedTitle } from './TranslatedTitle';
+import { YuhinkaiEnrichmentSection } from './YuhinkaiEnrichmentSection';
 
 // =============================================================================
 // TYPES
@@ -35,6 +38,19 @@ export function QuickViewContent({ listing }: QuickViewContentProps) {
     currency,
     exchangeRates
   );
+
+  // Fetch enrichment data on-demand for eligible listings
+  const { enrichment, isLoading: isEnrichmentLoading, isEligible } = useListingEnrichment(
+    listing.id,
+    listing.item_type,
+    listing.cert_type
+  );
+
+  // Create enriched listing object for YuhinkaiEnrichmentSection
+  const enrichedListing: ListingWithEnrichment = {
+    ...listing,
+    yuhinkai_enrichment: enrichment,
+  };
 
   return (
     <div className="flex flex-col h-full min-h-0">
@@ -69,6 +85,9 @@ export function QuickViewContent({ listing }: QuickViewContentProps) {
                 >
                   New this week
                 </span>
+              )}
+              {enrichment && (
+                <CatalogEnrichedBadge enrichment={enrichment} compact />
               )}
             </div>
             <div className="flex items-center gap-2">
@@ -113,13 +132,37 @@ export function QuickViewContent({ listing }: QuickViewContentProps) {
         {/* Translated Description */}
         <TranslatedDescription listing={listing} maxLines={6} />
 
-        {/* Official NBTHK Evaluation (Juyo/Tokuju only) */}
-        <SetsumeiSection
-          listing={listing}
-          variant="preview"
-          previewLength={300}
-          onReadMore={() => window.open(listing.url, '_blank')}
-        />
+        {/* Catalog Enrichment or Official NBTHK Evaluation */}
+        {isEnrichmentLoading && isEligible ? (
+          // Loading skeleton for enrichment
+          <div className="px-4 py-3 lg:px-5" data-testid="enrichment-skeleton">
+            <div className="animate-pulse">
+              <div className="h-3 w-32 bg-gold/10 rounded mb-3" />
+              <div className="bg-gold/5 border border-gold/20 rounded-lg p-4">
+                <div className="h-3 w-full bg-gold/10 rounded mb-2" />
+                <div className="h-3 w-3/4 bg-gold/10 rounded mb-2" />
+                <div className="h-3 w-1/2 bg-gold/10 rounded" />
+              </div>
+            </div>
+          </div>
+        ) : enrichment ? (
+          // Catalog enrichment with slide-up reveal animation
+          <div className="animate-slideUpReveal" data-testid="enrichment-section">
+            <YuhinkaiEnrichmentSection
+              listing={enrichedListing}
+              variant="preview"
+              previewLength={400}
+            />
+          </div>
+        ) : (
+          // Fallback to SetsumeiSection for items without enrichment
+          <SetsumeiSection
+            listing={listing}
+            variant="preview"
+            previewLength={300}
+            onReadMore={() => window.open(listing.url, '_blank')}
+          />
+        )}
       </div>
 
       {/* Sticky CTA Button */}
