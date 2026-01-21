@@ -103,10 +103,19 @@ describe('ListingCard Component', () => {
   });
 
   it('shows sold overlay when item is sold', () => {
-    const soldListing = { ...mockListing, is_sold: true };
+    // Sold items have both is_sold: true AND is_available: false
+    const soldListing = { ...mockListing, is_sold: true, is_available: false, status: 'sold' };
     render(<ListingCard {...defaultProps} listing={soldListing} />);
 
     expect(screen.getByText('Sold')).toBeInTheDocument();
+  });
+
+  it('shows unavailable overlay for reserved items', () => {
+    // Reserved items have is_available: false but is_sold: false
+    const reservedListing = { ...mockListing, is_sold: false, is_available: false, status: 'reserved' };
+    render(<ListingCard {...defaultProps} listing={reservedListing} />);
+
+    expect(screen.getByText('Unavailable')).toBeInTheDocument();
   });
 
   it('is clickable with correct data attributes', () => {
@@ -278,7 +287,7 @@ describe('ListingCard Component', () => {
       vi.useRealTimers();
     });
 
-    it('shows "New this week" badge for recently discovered listing (after baseline)', () => {
+    it('shows "New" badge for recently discovered listing (after baseline)', () => {
       const newListing = {
         ...mockListing,
         first_seen_at: '2026-01-12T12:00:00Z', // 3 days ago, well after baseline
@@ -288,7 +297,7 @@ describe('ListingCard Component', () => {
 
       const newBadge = screen.getByTestId('new-listing-badge');
       expect(newBadge).toBeInTheDocument();
-      expect(newBadge).toHaveTextContent('New this week');
+      expect(newBadge).toHaveTextContent('New');
     });
 
     it('shows badge for listing discovered today', () => {
@@ -359,8 +368,9 @@ describe('ListingCard Component', () => {
       expect(screen.queryByTestId('new-listing-badge')).not.toBeInTheDocument();
     });
 
-    it('shows badge for newly onboarded dealer ONLY for items added AFTER 24h window', () => {
-      // Dealer onboarded 3 days ago
+    it('does NOT show badge for newly onboarded dealer (dealer must be 7+ days old)', () => {
+      // Dealer onboarded 3 days ago - NOT yet "established"
+      // Dealers must be in system for 7+ days before new listings get badges
       const recentDealerBaseline = '2026-01-12T10:00:00Z';
 
       // New item added today (outside 24h initial import window)
@@ -371,11 +381,11 @@ describe('ListingCard Component', () => {
       };
       render(<ListingCard {...defaultProps} listing={genuinelyNewItem} />);
 
-      // Should show badge because it's after the 24h import window
-      expect(screen.getByTestId('new-listing-badge')).toBeInTheDocument();
+      // Should NOT show badge because dealer is not established yet (< 7 days)
+      expect(screen.queryByTestId('new-listing-badge')).not.toBeInTheDocument();
     });
 
-    it('shows both certification and "New this week" badges together', () => {
+    it('shows both certification and "New" badges together', () => {
       const certifiedNewListing = {
         ...mockListing,
         cert_type: 'Juyo',
@@ -389,7 +399,7 @@ describe('ListingCard Component', () => {
       expect(screen.getByTestId('new-listing-badge')).toBeInTheDocument();
     });
 
-    it('shows only "New this week" badge when no certification', () => {
+    it('shows only "New" badge when no certification', () => {
       const noCertNewListing = {
         ...mockListing,
         cert_type: null,
@@ -402,7 +412,7 @@ describe('ListingCard Component', () => {
       expect(screen.getByTestId('new-listing-badge')).toBeInTheDocument();
     });
 
-    it('"New this week" badge has correct styling classes', () => {
+    it('"New" badge has correct styling classes', () => {
       const newListing = {
         ...mockListing,
         first_seen_at: '2026-01-12T12:00:00Z',

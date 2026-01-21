@@ -324,7 +324,11 @@ export function ListingCard({
   const artisan = getArtisanName(listing.smith, listing.school, listing.title_en)
     || getArtisanName(listing.tosogu_maker, listing.tosogu_school, listing.title_en);
   const itemType = normalizeItemType(listing.item_type);
+  // Check if item is definitively sold (for showing sale data)
   const isSold = listing.is_sold || listing.status === 'sold' || listing.status === 'presumed_sold';
+  // Check if item is unavailable for any reason (sold, reserved, withdrawn, etc.)
+  // This catches reserved items that were slipping through without visual indicator
+  const isUnavailable = !listing.is_available;
   const cleanedTitle = cleanTitle(listing.title, listing.smith, listing.tosogu_maker);
   const certInfo = listing.cert_type ? CERT_LABELS[listing.cert_type] : null;
   const isAskPrice = listing.price_value === null;
@@ -452,16 +456,18 @@ export function ListingCard({
           <div className="absolute inset-0 bg-linen" />
         )}
 
-        {/* Sold overlay with sale data */}
-        {isSold && (
+        {/* Unavailable overlay - shows for sold, reserved, withdrawn items */}
+        {isUnavailable && (
           <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center">
-            <span className="text-[10px] uppercase tracking-widest text-white/90 font-medium">Sold</span>
-            {listing.sold_data?.sale_date && (
+            <span className="text-[10px] uppercase tracking-widest text-white/90 font-medium">
+              {isSold ? 'Sold' : 'Unavailable'}
+            </span>
+            {isSold && listing.sold_data?.sale_date && (
               <span className="text-[9px] text-white/80 mt-0.5">
                 {listing.sold_data.sale_date}
               </span>
             )}
-            {listing.sold_data?.days_on_market_display && (
+            {isSold && listing.sold_data?.days_on_market_display && (
               <span className={`text-[8px] mt-0.5 font-medium ${
                 listing.sold_data.confidence === 'high' ? 'text-green-400' :
                 listing.sold_data.confidence === 'medium' ? 'text-yellow-400' :
@@ -473,8 +479,8 @@ export function ListingCard({
           </div>
         )}
 
-        {/* Favorite button */}
-        {showFavoriteButton && !isSold && (
+        {/* Favorite button - hidden for unavailable items */}
+        {showFavoriteButton && !isUnavailable && (
           <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
             <FavoriteButton listingId={Number(listing.id)} size="sm" />
           </div>
