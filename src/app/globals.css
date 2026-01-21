@@ -50,6 +50,11 @@
   --warning: #c9a857;
   --error: #c97070;
 
+  /* Button defaults */
+  --button-bg: var(--accent);
+  --button-bg-hover: var(--accent-dark);
+  --button-text: #ffffff;
+
   /* Certification colors - light mode */
   --tokuju: #5B3D8A;
   --tokuju-bg: rgba(91, 61, 138, 0.12);
@@ -132,6 +137,11 @@ html.dark {
   --warning: #c9a857;
   --error: #c97070;
 
+  /* Button defaults */
+  --button-bg: var(--accent);
+  --button-bg-hover: var(--accent-dark);
+  --button-text: #ffffff;
+
   /* Certification colors - bright for dark mode contrast */
   --tokuju: #b088d0;
   --tokuju-bg: rgba(176, 136, 208, 0.20);
@@ -212,6 +222,11 @@ html.theme-opus {
   --warning: #daa55a;
   --error: #c87070;
 
+  /* Button defaults */
+  --button-bg: var(--accent);
+  --button-bg-hover: var(--accent-dark);
+  --button-text: #ffffff;
+
   /* Certification colors - warm tints for Opus */
   --tokuju: #c090e0;
   --tokuju-bg: rgba(192, 144, 224, 0.20);
@@ -264,7 +279,7 @@ html.theme-yuhindo {
   /* Core palette - Yuhindo exact colors */
   --background: #010000;
   --background-warm: #060304;
-  --foreground: #aa98dd;
+  --foreground: #ffffff;
 
   /* Surfaces - subtle warm-black elevation */
   --surface: #0a0506;
@@ -280,23 +295,28 @@ html.theme-yuhindo {
   --hover: #140c10;
   --active: #1e1418;
 
-  /* Primary accent - exact Yuhindo lavender #aa98dd */
+  /* Primary accent - Yuhindo lavender for hero text */
   --accent: #aa98dd;
   --accent-light: #c0b0ee;
-  --accent-dark: #8878bb;
+  --accent-dark: #7c5cb8;
   --accent-glow: rgba(170, 152, 221, 0.18);
+
+  /* Button color - rich violet with white text */
+  --button-bg: #6b4c9a;
+  --button-bg-hover: #7d5cb0;
+  --button-text: #ffffff;
 
   /* Secondary accent - warm matte gold */
   --gold-accent: #c9a040;
   --gold-accent-light: #e0c070;
   --gold-accent-dark: #a08030;
 
-  /* Text hierarchy - based on #aa98dd */
-  --text-primary: #aa98dd;
-  --text-secondary: #8878bb;
-  --text-tertiary: #665899;
-  --text-muted: #443866;
-  --text-accent: #c0b0ee;
+  /* Text hierarchy - white and light grey */
+  --text-primary: #ffffff;
+  --text-secondary: #b8b8b8;
+  --text-tertiary: #888888;
+  --text-muted: #555555;
+  --text-accent: #aa98dd;
 
   /* Semantic - tinted to complement the purple palette */
   --success: #70a890;
@@ -411,6 +431,9 @@ html.theme-yuhindo {
   --color-silk-plum-light: var(--silk-plum-light);
   --color-gold-accent: var(--gold-accent);
   --color-gold-accent-light: var(--gold-accent-light);
+  --color-button-bg: var(--button-bg);
+  --color-button-bg-hover: var(--button-bg-hover);
+  --color-button-text: var(--button-text);
 
   /* Fonts */
   --font-serif: var(--font-serif);
