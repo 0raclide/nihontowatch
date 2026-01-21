@@ -7,7 +7,7 @@ interface SetsumeiZufuBadgeProps {
 }
 
 /**
- * Badge indicating a listing has NBTHK Zufu translation available.
+ * Badge indicating a listing has English translation available.
  * Shown for Juyo/Tokubetsu Juyo items with OCR-extracted setsumei.
  */
 export function SetsumeiZufuBadge({
@@ -24,9 +24,9 @@ export function SetsumeiZufuBadge({
           bg-gold/15 text-gold border border-gold/30
           ${className}
         `.trim()}
-        title="NBTHK Zufu commentary translated"
+        title="English translation available"
       >
-        Zufu
+        English
       </span>
     );
   }
@@ -41,7 +41,7 @@ export function SetsumeiZufuBadge({
         inline-flex items-center gap-1
         ${className}
       `.trim()}
-      title="NBTHK Zufu commentary translated"
+      title="English translation available"
     >
       <svg
         className="w-3 h-3"
@@ -55,7 +55,7 @@ export function SetsumeiZufuBadge({
           clipRule="evenodd"
         />
       </svg>
-      NBTHK Zufu
+      English
     </span>
   );
 }

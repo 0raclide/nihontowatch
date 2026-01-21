@@ -14,13 +14,13 @@ describe('SetsumeiZufuBadge Component', () => {
     it('renders with correct text in default mode', () => {
       render(<SetsumeiZufuBadge />);
 
-      expect(screen.getByText('NBTHK Zufu')).toBeInTheDocument();
+      expect(screen.getByText('English')).toBeInTheDocument();
     });
 
     it('renders with correct text in compact mode', () => {
       render(<SetsumeiZufuBadge compact />);
 
-      expect(screen.getByText('Zufu')).toBeInTheDocument();
+      expect(screen.getByText('English')).toBeInTheDocument();
     });
 
     it('has correct data-testid', () => {
@@ -64,7 +64,7 @@ describe('SetsumeiZufuBadge Component', () => {
       render(<SetsumeiZufuBadge />);
 
       const badge = screen.getByTestId('setsumei-zufu-badge');
-      expect(badge).toHaveAttribute('title', 'NBTHK Zufu commentary translated');
+      expect(badge).toHaveAttribute('title', 'English translation available');
     });
 
     it('contains document icon with aria-hidden', () => {
@@ -88,21 +88,24 @@ describe('SetsumeiZufuBadge Component', () => {
 describe('Badge Text Regression', () => {
   /**
    * CRITICAL: These tests catch if someone changes the badge text.
-   * The text "NBTHK Zufu" was specifically chosen to replace "Catalog Enriched".
+   * The text "English" was chosen to clearly indicate translation availability.
    */
 
-  it('MUST display "NBTHK Zufu" not "Catalog Enriched"', () => {
+  it('MUST display "English" not old labels', () => {
     render(<SetsumeiZufuBadge />);
 
-    expect(screen.getByText('NBTHK Zufu')).toBeInTheDocument();
+    expect(screen.getByText('English')).toBeInTheDocument();
     expect(screen.queryByText('Catalog Enriched')).not.toBeInTheDocument();
     expect(screen.queryByText('Catalog')).not.toBeInTheDocument();
+    expect(screen.queryByText('Zufu')).not.toBeInTheDocument();
+    expect(screen.queryByText('NBTHK Zufu')).not.toBeInTheDocument();
   });
 
-  it('MUST display "Zufu" in compact mode not "Catalog"', () => {
+  it('MUST display "English" in compact mode', () => {
     render(<SetsumeiZufuBadge compact />);
 
-    expect(screen.getByText('Zufu')).toBeInTheDocument();
+    expect(screen.getByText('English')).toBeInTheDocument();
     expect(screen.queryByText('Catalog')).not.toBeInTheDocument();
+    expect(screen.queryByText('Zufu')).not.toBeInTheDocument();
   });
 });
