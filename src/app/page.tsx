@@ -120,6 +120,7 @@ interface Filters {
   historicalPeriods: string[];
   signatureStatuses: string[];
   askOnly?: boolean;
+  enriched?: boolean;
 }
 
 interface ExchangeRates {
@@ -149,6 +150,7 @@ function HomeContent() {
     historicalPeriods: searchParams.get('period')?.split(',').filter(Boolean) || [],
     signatureStatuses: searchParams.get('sig')?.split(',').filter(Boolean) || [],
     askOnly: searchParams.get('ask') === 'true',
+    enriched: searchParams.get('enriched') === 'true',
   });
   const [sort, setSort] = useState(searchParams.get('sort') || 'price_desc');
   const [page, setPage] = useState(Number(searchParams.get('page')) || 1);
@@ -161,6 +163,14 @@ function HomeContent() {
       setSearchQuery(urlQuery);
     }
   }, [urlQuery]); // Only depend on urlQuery, not searchQuery to avoid loops
+
+  // Sync enriched filter from URL (needed for SSR hydration - useSearchParams is empty on server)
+  const urlEnriched = searchParams.get('enriched') === 'true';
+  useEffect(() => {
+    if (urlEnriched !== filters.enriched) {
+      setFilters(prev => ({ ...prev, enriched: urlEnriched }));
+    }
+  }, [urlEnriched]); // Only depend on urlEnriched to avoid loops
 
   const [data, setData] = useState<BrowseResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -220,6 +230,7 @@ function HomeContent() {
     if (filters.historicalPeriods.length) params.set('period', filters.historicalPeriods.join(','));
     if (filters.signatureStatuses.length) params.set('sig', filters.signatureStatuses.join(','));
     if (filters.askOnly) params.set('ask', 'true');
+    if (filters.enriched) params.set('enriched', 'true');
     if (sort !== 'recent') params.set('sort', sort);
     // Note: page not synced to URL - infinite scroll manages page internally
     if (searchQuery) params.set('q', searchQuery);
@@ -240,6 +251,7 @@ function HomeContent() {
     if (filters.historicalPeriods.length) params.set('period', filters.historicalPeriods.join(','));
     if (filters.signatureStatuses.length) params.set('sig', filters.signatureStatuses.join(','));
     if (filters.askOnly) params.set('ask', 'true');
+    if (filters.enriched) params.set('enriched', 'true');
     if (sort !== 'recent') params.set('sort', sort);
     // Note: page is NOT included - handled by loadMore
     if (searchQuery) params.set('q', searchQuery);
