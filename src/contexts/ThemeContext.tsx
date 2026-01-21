@@ -77,9 +77,9 @@ export const THEMES: Record<ThemeName, ThemeDefinition> = {
     name: 'yuhindo',
     label: 'Yuhindo',
     mode: 'dark',
-    previewAccent: '#9585a5',
-    previewBg: '#000000',
-    metaColor: '#000000',
+    previewAccent: '#aa98dd',
+    previewBg: '#010000',
+    metaColor: '#010000',
   },
 };
 
@@ -313,7 +313,7 @@ export const themeInitScript = `
       dark: { mode: 'dark', metaColor: '#121212' },
       light: { mode: 'light', metaColor: '#FAF9F6' },
       opus: { mode: 'dark', metaColor: '#0c1220' },
-      yuhindo: { mode: 'dark', metaColor: '#000000' }
+      yuhindo: { mode: 'dark', metaColor: '#010000' }
     };
 
     var theme = themes.includes(stored) ? stored : null;

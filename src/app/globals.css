@@ -261,45 +261,42 @@ html.theme-light {
 html.theme-yuhindo {
   color-scheme: dark;
 
-  /* Core palette - pure black foundation */
-  --background: #000000;
-  --background-warm: #080608;
-  --foreground: #9585a5;
+  /* Core palette - Yuhindo exact colors */
+  --background: #010000;
+  --background-warm: #060304;
+  --foreground: #aa98dd;
 
-  /* Surfaces - subtle elevation from black */
-  --surface: #0a080c;
-  --surface-elevated: #121014;
-  --surface-overlay: rgba(10, 8, 12, 0.97);
+  /* Surfaces - subtle warm-black elevation */
+  --surface: #0a0506;
+  --surface-elevated: #120a0c;
+  --surface-overlay: rgba(10, 5, 6, 0.97);
 
-  /* Borders - barely visible structure */
-  --border: #1e1a22;
-  --border-subtle: #141218;
-  --border-accent: rgba(180, 150, 70, 0.35);
+  /* Borders - warm dark edges */
+  --border: #1e1418;
+  --border-subtle: #140c10;
+  --border-accent: rgba(170, 152, 221, 0.35);
 
-  /* Interactive - subtle shifts in shadow */
-  --hover: #141218;
-  --active: #1e1a22;
+  /* Interactive - subtle shifts */
+  --hover: #140c10;
+  --active: #1e1418;
 
-  /* Primary accent - the exact Yuhindo dusty lavender
-     Extracted from their card typography */
-  --accent: #9585a5;
-  --accent-light: #a898b8;
-  --accent-dark: #7a6a8a;
-  --accent-glow: rgba(149, 133, 165, 0.18);
+  /* Primary accent - exact Yuhindo lavender #aa98dd */
+  --accent: #aa98dd;
+  --accent-light: #c0b0ee;
+  --accent-dark: #8878bb;
+  --accent-glow: rgba(170, 152, 221, 0.18);
 
-  /* Secondary accent - warm matte gold
-     The color of shakudo inlay catching light */
+  /* Secondary accent - warm matte gold */
   --gold-accent: #c9a040;
   --gold-accent-light: #e0c070;
   --gold-accent-dark: #a08030;
 
-  /* Text hierarchy - the muted dusty lavender palette
-     Matches Yuhindo's understated elegance */
-  --text-primary: #9585a5;
-  --text-secondary: #7a6a8a;
-  --text-tertiary: #5a4a6a;
-  --text-muted: #3a2a4a;
-  --text-accent: #a898b8;
+  /* Text hierarchy - based on #aa98dd */
+  --text-primary: #aa98dd;
+  --text-secondary: #8878bb;
+  --text-tertiary: #665899;
+  --text-muted: #443866;
+  --text-accent: #c0b0ee;
 
   /* Semantic - tinted to complement the purple palette */
   --success: #70a890;
