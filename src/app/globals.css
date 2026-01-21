@@ -268,6 +268,19 @@ html.theme-light {
 }
 
 /* ==========================================================================
+   Yuhindo Button Overrides
+   Forces bg-gold buttons to use rich violet in Yuhindo theme
+   ========================================================================== */
+html.theme-yuhindo .bg-gold {
+  background-color: var(--button-bg) !important;
+}
+
+html.theme-yuhindo .bg-gold:hover,
+html.theme-yuhindo .hover\:bg-gold-light:hover {
+  background-color: var(--button-bg-hover) !important;
+}
+
+/* ==========================================================================
    YUHINDO - The Art of Precious Metal
    Inspired by the legendary tosogu dealer's presentation aesthetic
    Deep velvet blacks, soft lavender light, warm matte gold
