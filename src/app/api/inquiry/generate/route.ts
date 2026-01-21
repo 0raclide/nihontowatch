@@ -142,6 +142,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     const typedListing = listing as unknown as ListingWithDealer;
 
+    // Verify dealer data was fetched
+    if (!typedListing.dealers) {
+      console.error('[Inquiry API] Dealer data not found for listing:', input.listingId);
+      return NextResponse.json(
+        { error: 'Dealer information not available' },
+        { status: 500 }
+      );
+    }
+
     // ---------------------------------------------------------------------
     // 4. Check for API key
     // ---------------------------------------------------------------------
@@ -184,9 +193,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     return NextResponse.json(response);
   } catch (error) {
-    console.error('[Inquiry API] Error:', error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    console.error('[Inquiry API] Error:', errorMessage);
+    if (errorStack) console.error('[Inquiry API] Stack:', errorStack);
     return NextResponse.json(
-      { error: 'Failed to generate inquiry email' },
+      { error: `Failed to generate inquiry email: ${errorMessage}` },
       { status: 500 }
     );
   }
