@@ -332,26 +332,44 @@ async function generateEmailWithAI(
  * Parse the JSON email response from the AI
  */
 function parseEmailJson(content: string): GeneratedEmailJson {
-  // Try to extract JSON from the response
-  // The AI might return just JSON or JSON wrapped in other text
-  const jsonMatch = content.match(/\{[\s\S]*\}/);
+  console.log('[Inquiry API] Raw AI response length:', content.length);
+  console.log('[Inquiry API] Raw AI response preview:', content.substring(0, 500));
+
+  // Step 1: Strip markdown code fences if present
+  let cleaned = content;
+
+  // Remove ```json ... ``` or ``` ... ``` wrappers
+  const codeBlockMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (codeBlockMatch) {
+    cleaned = codeBlockMatch[1].trim();
+    console.log('[Inquiry API] Extracted from code block');
+  }
+
+  // Step 2: Try to find JSON object
+  const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
 
   if (!jsonMatch) {
-    console.error('[Inquiry API] No JSON found in response:', content.substring(0, 200));
+    console.error('[Inquiry API] No JSON found in response:', cleaned.substring(0, 500));
     throw new Error('Invalid AI response format');
   }
 
+  const jsonStr = jsonMatch[0];
+  console.log('[Inquiry API] JSON string length:', jsonStr.length);
+
   try {
-    const parsed = JSON.parse(jsonMatch[0]) as GeneratedEmailJson;
+    const parsed = JSON.parse(jsonStr) as GeneratedEmailJson;
 
     // Validate required fields
     if (!parsed.email_ja || !parsed.email_en || !parsed.subject_ja || !parsed.subject_en) {
+      console.error('[Inquiry API] Missing fields. Got keys:', Object.keys(parsed));
       throw new Error('Missing required fields in AI response');
     }
 
+    console.log('[Inquiry API] Successfully parsed email');
     return parsed;
   } catch (parseError) {
     console.error('[Inquiry API] JSON parse error:', parseError);
+    console.error('[Inquiry API] Attempted to parse:', jsonStr.substring(0, 300));
     throw new Error('Failed to parse AI response');
   }
 }
