@@ -222,6 +222,25 @@ export interface Dealer {
   country: string;
   is_active: boolean;
   created_at: string;
+
+  // Contact information
+  contact_email?: string | null;
+  contact_page_url?: string | null;
+  sales_policy_url?: string | null;
+
+  // Shipping & payment policies
+  ships_international?: boolean | null;
+  accepts_wire_transfer?: boolean | null;
+  accepts_paypal?: boolean | null;
+  accepts_credit_card?: boolean | null;
+
+  // Deposit requirements
+  requires_deposit?: boolean | null;
+  deposit_percentage?: number | null;
+
+  // Language support
+  english_support?: boolean | null;
+
   // Computed fields
   listing_count?: number;
   slug?: string;
