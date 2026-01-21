@@ -387,7 +387,7 @@ export function QuickViewMobileSheet({
               listing={listing}
               variant="preview"
               previewLength={300}
-              onReadMore={() => window.open(listing.url, '_blank')}
+              onReadMore={() => window.location.href = `/listing/${listing.id}`}
             />
           </div>
 

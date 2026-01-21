@@ -155,12 +155,12 @@ export function QuickViewContent({ listing }: QuickViewContentProps) {
             />
           </div>
         ) : (
-          // Fallback to SetsumeiSection for items without enrichment
+          // Show SetsumeiSection - "Read full" navigates to listing detail
           <SetsumeiSection
             listing={listing}
             variant="preview"
             previewLength={300}
-            onReadMore={() => window.open(listing.url, '_blank')}
+            onReadMore={() => window.location.href = `/listing/${listing.id}`}
           />
         )}
       </div>
