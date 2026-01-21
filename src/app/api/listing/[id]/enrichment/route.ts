@@ -49,6 +49,9 @@ export async function GET(
   const { id } = await params;
   const listingId = parseInt(id);
 
+  // Allow cache bypass with ?nocache=1 for debugging
+  const nocache = request.nextUrl.searchParams.get('nocache') === '1';
+
   if (isNaN(listingId)) {
     return NextResponse.json(
       { error: 'Invalid listing ID' },
@@ -105,10 +108,15 @@ export async function GET(
 
     // Aggressive caching - enrichment rarely changes
     // Cache for 1 hour at edge, serve stale for 24 hours while revalidating
-    response.headers.set(
-      'Cache-Control',
-      'public, s-maxage=3600, stale-while-revalidate=86400'
-    );
+    // Unless nocache=1 is passed for debugging
+    if (nocache) {
+      response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+    } else {
+      response.headers.set(
+        'Cache-Control',
+        'public, s-maxage=3600, stale-while-revalidate=86400'
+      );
+    }
 
     return response;
   } catch (error) {
