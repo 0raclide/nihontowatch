@@ -329,6 +329,55 @@ async function generateEmailWithAI(
 }
 
 /**
+ * Fix literal newlines inside JSON string values
+ * AI models sometimes return newlines as actual line breaks instead of \n
+ */
+function fixJsonNewlines(jsonStr: string): string {
+  // Strategy: Find all string values and escape newlines within them
+  // This regex matches strings in JSON (handling escaped quotes)
+  let result = '';
+  let inString = false;
+  let escaped = false;
+
+  for (let i = 0; i < jsonStr.length; i++) {
+    const char = jsonStr[i];
+
+    if (escaped) {
+      result += char;
+      escaped = false;
+      continue;
+    }
+
+    if (char === '\\') {
+      result += char;
+      escaped = true;
+      continue;
+    }
+
+    if (char === '"') {
+      inString = !inString;
+      result += char;
+      continue;
+    }
+
+    // If we're inside a string and hit a newline, escape it
+    if (inString && (char === '\n' || char === '\r')) {
+      if (char === '\r' && jsonStr[i + 1] === '\n') {
+        result += '\\n';
+        i++; // Skip the \n
+      } else {
+        result += '\\n';
+      }
+      continue;
+    }
+
+    result += char;
+  }
+
+  return result;
+}
+
+/**
  * Parse the JSON email response from the AI
  */
 function parseEmailJson(content: string): GeneratedEmailJson {
@@ -364,9 +413,14 @@ function parseEmailJson(content: string): GeneratedEmailJson {
     throw new Error('Invalid AI response format');
   }
 
-  const jsonStr = cleaned.substring(firstBrace, lastBrace + 1);
+  let jsonStr = cleaned.substring(firstBrace, lastBrace + 1);
+
+  // Step 3: Fix common JSON issues from AI responses
+  // Claude sometimes returns literal newlines inside strings instead of \n
+  // We need to escape them, but only inside string values
+  jsonStr = fixJsonNewlines(jsonStr);
+
   console.log('[Inquiry API] JSON string length:', jsonStr.length);
-  console.log('[Inquiry API] JSON string start:', jsonStr.substring(0, 200));
 
   try {
     const parsed = JSON.parse(jsonStr) as GeneratedEmailJson;
