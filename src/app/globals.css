@@ -253,6 +253,101 @@ html.theme-light {
 }
 
 /* ==========================================================================
+   YUHINDO - The Art of Precious Metal
+   Inspired by the legendary tosogu dealer's presentation aesthetic
+   Deep velvet blacks, soft lavender light, warm matte gold
+   Where shakudo meets silk, and gold whispers from shadow
+   ========================================================================== */
+html.theme-yuhindo {
+  color-scheme: dark;
+
+  /* Core palette - the black velvet foundation
+     Not pure black, but the deep purple-black of lacquer */
+  --background: #08060a;
+  --background-warm: #0c0a0e;
+  --foreground: #d4c8d8;
+
+  /* Surfaces - layered like paulownia presentation boxes */
+  --surface: #12101a;
+  --surface-elevated: #1c1824;
+  --surface-overlay: rgba(18, 16, 26, 0.97);
+
+  /* Borders - the faint gleam of polished wood edges */
+  --border: #2a2436;
+  --border-subtle: #1e1a28;
+  --border-accent: rgba(200, 160, 80, 0.40);
+
+  /* Interactive - subtle shifts in shadow */
+  --hover: #1e1a28;
+  --active: #2a2436;
+
+  /* Primary accent - soft lavender, like the text in Yuhindo cards
+     The gentle purple that makes information feel precious */
+  --accent: #b8a0c8;
+  --accent-light: #d0c0e0;
+  --accent-dark: #9080a8;
+  --accent-glow: rgba(184, 160, 200, 0.20);
+
+  /* Secondary accent - warm matte gold
+     The color of shakudo inlay catching light */
+  --gold-accent: #c9a040;
+  --gold-accent-light: #e0c070;
+  --gold-accent-dark: #a08030;
+
+  /* Text hierarchy - lavender-gray palette
+     Soft, readable, precious like inscribed oshigata */
+  --text-primary: #e0d4e8;
+  --text-secondary: #b8a8c0;
+  --text-tertiary: #8878a0;
+  --text-muted: #605470;
+  --text-accent: #d0c0e0;
+
+  /* Semantic - tinted to complement the purple palette */
+  --success: #70a890;
+  --warning: #c9a040;
+  --error: #c08080;
+
+  /* Certification colors - jewel tones for Yuhindo
+     Rich and saturated like precious stones */
+  --tokuju: #c898e0;
+  --tokuju-bg: rgba(200, 152, 224, 0.22);
+  --juyo: #90b8e8;
+  --juyo-bg: rgba(144, 184, 232, 0.20);
+  --toku-hozon: #e0b060;
+  --toku-hozon-bg: rgba(224, 176, 96, 0.20);
+  --hozon: #d8c860;
+  --hozon-bg: rgba(216, 200, 96, 0.20);
+  --sage: #98c090;
+  --burgundy: #c090b0;
+
+  /* New listing badge - soft mint against the purple */
+  --new-listing: #80d0a0;
+  --new-listing-bg: rgba(128, 208, 160, 0.20);
+
+  /* Shadows - deep and soft, like velvet folds */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.45);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.55);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.65);
+  --shadow-glow: 0 0 40px rgba(184, 160, 200, 0.12);
+
+  /* Special: plum silk accent for featured elements */
+  --silk-plum: #3d2040;
+  --silk-plum-light: #4a2850;
+
+  /* Legacy aliases */
+  --cream: var(--background);
+  --ivory: var(--background-warm);
+  --linen: var(--surface);
+  --paper: var(--surface-elevated);
+  --charcoal: var(--text-secondary);
+  --ink: var(--text-primary);
+  --gold: var(--gold-accent);
+  --gold-light: var(--gold-accent-light);
+  --muted: var(--text-muted);
+  --border-dark: #2a2436;
+}
+
+/* ==========================================================================
    Tailwind Theme Integration
    Maps CSS variables to Tailwind color classes
    ========================================================================== */
@@ -314,6 +409,12 @@ html.theme-light {
   /* New listing badge */
   --color-new-listing: var(--new-listing);
   --color-new-listing-bg: var(--new-listing-bg);
+
+  /* Yuhindo theme specific */
+  --color-silk-plum: var(--silk-plum);
+  --color-silk-plum-light: var(--silk-plum-light);
+  --color-gold-accent: var(--gold-accent);
+  --color-gold-accent-light: var(--gold-accent-light);
 
   /* Fonts */
   --font-serif: var(--font-serif);
@@ -689,6 +790,22 @@ body.drawer-open {
 
 .animate-bounce-subtle {
   animation: bounce-subtle 1.5s ease-in-out infinite;
+}
+
+/* Slide-up reveal for enrichment section */
+@keyframes slideUpReveal {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slideUpReveal {
+  animation: slideUpReveal 300ms ease-out forwards;
 }
 
 /* ==========================================================================

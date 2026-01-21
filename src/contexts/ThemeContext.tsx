@@ -23,7 +23,7 @@ import {
  *
  * Extensible: Add new themes to THEME_NAMES and THEMES record
  */
-export const THEME_NAMES = ['dark', 'light', 'opus'] as const;
+export const THEME_NAMES = ['dark', 'light', 'opus', 'yuhindo'] as const;
 export type ThemeName = (typeof THEME_NAMES)[number];
 
 export type ThemeMode = 'light' | 'dark';
@@ -72,6 +72,14 @@ export const THEMES: Record<ThemeName, ThemeDefinition> = {
     previewAccent: '#daa55a',
     previewBg: '#0c1220',
     metaColor: '#0c1220',
+  },
+  yuhindo: {
+    name: 'yuhindo',
+    label: 'Yuhindo',
+    mode: 'dark',
+    previewAccent: '#b8a0c8',
+    previewBg: '#08060a',
+    metaColor: '#08060a',
   },
 };
 
@@ -300,11 +308,12 @@ export const themeInitScript = `
 (function() {
   try {
     var stored = localStorage.getItem('nihontowatch-theme');
-    var themes = ['dark', 'light', 'opus'];
+    var themes = ['dark', 'light', 'opus', 'yuhindo'];
     var themeData = {
       dark: { mode: 'dark', metaColor: '#121212' },
       light: { mode: 'light', metaColor: '#FAF9F6' },
-      opus: { mode: 'dark', metaColor: '#0c1220' }
+      opus: { mode: 'dark', metaColor: '#0c1220' },
+      yuhindo: { mode: 'dark', metaColor: '#08060a' }
     };
 
     var theme = themes.includes(stored) ? stored : null;
