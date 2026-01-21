@@ -1,8 +1,11 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 
-// Aggressive caching - enrichment data rarely changes
-export const revalidate = 3600; // 1 hour
+// Disable ISR caching - use HTTP Cache-Control instead
+// This allows ?nocache=1 to properly bypass all caching layers
+// See docs/POSTMORTEM_YUHINKAI_DATA_QUALITY.md for details
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 
 /**
  * Yuhinkai enrichment data from listing_yuhinkai_enrichment view

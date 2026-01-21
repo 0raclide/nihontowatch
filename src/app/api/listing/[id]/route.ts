@@ -2,8 +2,39 @@ import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { CACHE } from '@/lib/constants';
 
-// Enable ISR caching for listing details
-export const revalidate = 600; // 10 minutes
+// Disable ISR caching - use HTTP Cache-Control instead
+// This allows ?nocache=1 to properly bypass all caching layers for debugging
+// See docs/POSTMORTEM_YUHINKAI_DATA_QUALITY.md for details
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
+
+// Yuhinkai enrichment type (from listing_yuhinkai_enrichment view)
+interface YuhinkaiEnrichment {
+  enrichment_id: number;
+  listing_id: number;
+  yuhinkai_uuid: string;
+  yuhinkai_collection: string | null;
+  yuhinkai_volume: number | null;
+  yuhinkai_item_number: number | null;
+  match_score: number;
+  match_confidence: string;
+  match_signals: Record<string, unknown> | null;
+  matched_fields: string[] | null;
+  enriched_maker: string | null;
+  enriched_maker_kanji: string | null;
+  enriched_school: string | null;
+  enriched_period: string | null;
+  enriched_form_type: string | null;
+  setsumei_ja: string | null;
+  setsumei_en: string | null;
+  setsumei_en_format: string | null;
+  enriched_cert_type: string | null;
+  enriched_cert_session: number | null;
+  item_category: string | null;
+  verification_status: string;
+  enriched_at: string;
+  updated_at: string;
+}
 
 // Extended listing type with dealer info
 interface ListingWithDealer {
@@ -50,6 +81,8 @@ interface ListingWithDealer {
     name: string;
     domain: string;
   };
+  // Yuhinkai enrichment (from view, returns array but we want first item)
+  listing_yuhinkai_enrichment?: YuhinkaiEnrichment[];
 }
 
 /**
@@ -65,6 +98,9 @@ export async function GET(
   const { id } = await params;
   const listingId = parseInt(id);
 
+  // Allow cache bypass with ?nocache=1 for debugging
+  const nocache = request.nextUrl.searchParams.get('nocache') === '1';
+
   if (isNaN(listingId)) {
     return NextResponse.json(
       { error: 'Invalid listing ID' },
@@ -75,7 +111,7 @@ export async function GET(
   try {
     const supabase = await createClient();
 
-    // Fetch listing with dealer info
+    // Fetch listing with dealer info and Yuhinkai enrichment
     const { data: listing, error } = await supabase
       .from('listings')
       .select(`
@@ -121,6 +157,32 @@ export async function GET(
           id,
           name,
           domain
+        ),
+        listing_yuhinkai_enrichment (
+          enrichment_id,
+          listing_id,
+          yuhinkai_uuid,
+          yuhinkai_collection,
+          yuhinkai_volume,
+          yuhinkai_item_number,
+          match_score,
+          match_confidence,
+          match_signals,
+          matched_fields,
+          enriched_maker,
+          enriched_maker_kanji,
+          enriched_school,
+          enriched_period,
+          enriched_form_type,
+          setsumei_ja,
+          setsumei_en,
+          setsumei_en_format,
+          enriched_cert_type,
+          enriched_cert_session,
+          item_category,
+          verification_status,
+          enriched_at,
+          updated_at
         )
       `)
       .eq('id', listingId)
@@ -154,19 +216,31 @@ export async function GET(
       }
     }
 
-    // Enrich listing with dealer baseline
+    // Extract Yuhinkai enrichment (view returns array, we want first item or null)
+    const yuhinkai_enrichment = typedListing.listing_yuhinkai_enrichment?.[0] || null;
+
+    // Enrich listing with dealer baseline and Yuhinkai enrichment
     const enrichedListing = {
       ...typedListing,
       dealer_earliest_seen_at: dealerEarliestSeenAt,
+      // Replace array with single object (or null)
+      yuhinkai_enrichment,
+      // Remove the array version
+      listing_yuhinkai_enrichment: undefined,
     };
 
     const response = NextResponse.json({ listing: enrichedListing });
 
-    // Cache for 10 minutes at edge, serve stale for 30 minutes while revalidating
-    response.headers.set(
-      'Cache-Control',
-      `public, s-maxage=${CACHE.LISTING_DETAIL}, stale-while-revalidate=1800`
-    );
+    // Cache headers - bypass with ?nocache=1 for debugging
+    if (nocache) {
+      response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+    } else {
+      // Cache for 10 minutes at edge, serve stale for 30 minutes while revalidating
+      response.headers.set(
+        'Cache-Control',
+        `public, s-maxage=${CACHE.LISTING_DETAIL}, stale-while-revalidate=1800`
+      );
+    }
 
     return response;
   } catch (error) {
