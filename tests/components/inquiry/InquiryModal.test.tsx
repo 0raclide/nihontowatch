@@ -120,9 +120,9 @@ async function fillFormAndSubmit(user: ReturnType<typeof userEvent.setup>, optio
   await user.type(screen.getByLabelText(/your name/i), 'John Smith');
   await user.type(screen.getByLabelText(/your country/i), 'United States');
   if (options?.message) {
-    await user.type(screen.getByLabelText(/your message/i), options.message);
+    await user.type(screen.getByLabelText(/what would you like to say/i), options.message);
   } else {
-    await user.type(screen.getByLabelText(/your message/i), 'I am interested in this item.');
+    await user.type(screen.getByLabelText(/what would you like to say/i), 'I am interested in this item.');
   }
   await user.click(screen.getByRole('button', { name: /generate email/i }));
 }
@@ -145,7 +145,7 @@ describe('InquiryModal', () => {
     it('renders modal when isOpen is true', () => {
       renderModal();
       expect(screen.getByRole('dialog')).toBeInTheDocument();
-      expect(screen.getByText(/contact dealer/i)).toBeInTheDocument();
+      expect(screen.getByText(/draft a japanese email/i)).toBeInTheDocument();
     });
 
     it('displays listing title', () => {
@@ -165,7 +165,7 @@ describe('InquiryModal', () => {
 
     it('displays message textarea', () => {
       renderModal();
-      expect(screen.getByLabelText(/your message/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/what would you like to say/i)).toBeInTheDocument();
     });
   });
 
@@ -243,7 +243,7 @@ describe('InquiryModal', () => {
       renderModal();
       const user = userEvent.setup();
 
-      const messageInput = screen.getByLabelText(/your message/i);
+      const messageInput = screen.getByLabelText(/what would you like to say/i);
       await user.type(messageInput, 'Is there any active rust?');
 
       expect(messageInput).toHaveValue('Is there any active rust?');
@@ -261,7 +261,7 @@ describe('InquiryModal', () => {
 
       // Fill country and message but not name
       await user.type(screen.getByLabelText(/your country/i), 'United States');
-      await user.type(screen.getByLabelText(/your message/i), 'Test message');
+      await user.type(screen.getByLabelText(/what would you like to say/i), 'Test message');
 
       const submitButton = screen.getByRole('button', { name: /generate email/i });
       await user.click(submitButton);
@@ -275,7 +275,7 @@ describe('InquiryModal', () => {
 
       // Fill name and message but not country
       await user.type(screen.getByLabelText(/your name/i), 'John Smith');
-      await user.type(screen.getByLabelText(/your message/i), 'Test message');
+      await user.type(screen.getByLabelText(/what would you like to say/i), 'Test message');
 
       const submitButton = screen.getByRole('button', { name: /generate email/i });
       await user.click(submitButton);
@@ -320,7 +320,7 @@ describe('InquiryModal', () => {
       // Fill form
       await user.type(screen.getByLabelText(/your name/i), 'John Smith');
       await user.type(screen.getByLabelText(/your country/i), 'United States');
-      await user.type(screen.getByLabelText(/your message/i), 'Is this item available?');
+      await user.type(screen.getByLabelText(/what would you like to say/i), 'Is this item available?');
 
       // Submit
       await user.click(screen.getByRole('button', { name: /generate email/i }));
@@ -359,7 +359,7 @@ describe('InquiryModal', () => {
 
       // Wait for result view
       await waitFor(() => {
-        expect(screen.getByText(/generated email/i)).toBeInTheDocument();
+        expect(screen.getByText(/your email is ready/i)).toBeInTheDocument();
       });
     });
   });
@@ -376,7 +376,7 @@ describe('InquiryModal', () => {
       await fillFormAndSubmit(user);
 
       await waitFor(() => {
-        expect(screen.getByText(/generated email/i)).toBeInTheDocument();
+        expect(screen.getByText(/your email is ready/i)).toBeInTheDocument();
       });
 
       return user;
@@ -384,7 +384,8 @@ describe('InquiryModal', () => {
 
     it('displays dealer email when available', async () => {
       await goToResultView();
-      expect(screen.getByText('info@test-dealer.com')).toBeInTheDocument();
+      // Dealer email is shown inline as "To: email"
+      expect(screen.getByText(/info@test-dealer.com/)).toBeInTheDocument();
     });
 
     it('displays Japanese subject line', async () => {
@@ -398,15 +399,15 @@ describe('InquiryModal', () => {
       expect(screen.getByText(/敬具/)).toBeInTheDocument();
     });
 
-    it('displays English translation section', async () => {
+    it('displays English translation toggle', async () => {
       await goToResultView();
-      expect(screen.getByText(/english translation/i)).toBeInTheDocument();
+      expect(screen.getByText(/see english translation/i)).toBeInTheDocument();
     });
 
     it('shows dealer policies when available', async () => {
       await goToResultView();
 
-      // Check for ships international
+      // Check for ships international badge
       expect(screen.getByText(/ships international/i)).toBeInTheDocument();
     });
 
@@ -437,66 +438,47 @@ describe('InquiryModal', () => {
       // Use fireEvent for faster and more reliable form filling
       fireEvent.change(screen.getByLabelText(/your name/i), { target: { value: 'John Smith' } });
       fireEvent.change(screen.getByLabelText(/your country/i), { target: { value: 'United States' } });
-      fireEvent.change(screen.getByLabelText(/your message/i), { target: { value: 'I am interested in this item.' } });
+      fireEvent.change(screen.getByLabelText(/what would you like to say/i), { target: { value: 'I am interested in this item.' } });
       fireEvent.click(screen.getByRole('button', { name: /generate email/i }));
 
       await waitFor(() => {
-        expect(screen.getByText(/generated email/i)).toBeInTheDocument();
+        expect(screen.getByText(/your email is ready/i)).toBeInTheDocument();
       });
     }
 
-    it('has copy button for dealer email', async () => {
+    it('has primary copy email button', async () => {
       await goToResultView();
-      const copyButtons = screen.getAllByRole('button', { name: /copy/i });
-      expect(copyButtons.length).toBeGreaterThan(0);
+      const copyButton = screen.getByRole('button', { name: /copy email/i });
+      expect(copyButton).toBeInTheDocument();
     });
 
-    it('copies dealer email to clipboard and shows feedback', async () => {
+    it('copies email to clipboard and shows copied feedback', async () => {
       await goToResultView();
 
-      const copyButton = screen.getByTestId('copy-dealer-email');
+      const copyButton = screen.getByRole('button', { name: /copy email/i });
       fireEvent.click(copyButton);
 
-      // Verify the button shows copied feedback
-      await waitFor(() => {
-        // The icon button changes its aria-label when copied
-        expect(copyButton).toHaveAttribute('aria-label', 'Copied');
-      });
-    });
-
-    it('copies subject line to clipboard and shows feedback', async () => {
-      await goToResultView();
-
-      const copyButton = screen.getByTestId('copy-subject');
-      fireEvent.click(copyButton);
-
-      // Verify the button shows copied feedback
-      await waitFor(() => {
-        expect(copyButton).toHaveAttribute('aria-label', 'Copied');
-      });
-    });
-
-    it('copies email body to clipboard and shows feedback', async () => {
-      await goToResultView();
-
-      const copyEmailButton = screen.getByTestId('copy-email-body');
-      fireEvent.click(copyEmailButton);
-
-      // Verify button shows copied feedback
-      await waitFor(() => {
-        expect(screen.getByTestId('copy-email-body')).toHaveTextContent('Copied');
-      });
-    });
-
-    it('shows copied confirmation feedback', async () => {
-      await goToResultView();
-
-      const copyEmailButton = screen.getByTestId('copy-email-body');
-      fireEvent.click(copyEmailButton);
-
+      // Verify the button shows "Copied!" feedback
       await waitFor(() => {
         expect(screen.getByText(/copied/i)).toBeInTheDocument();
       });
+    });
+
+    it('has mailto link when dealer email is available', async () => {
+      await goToResultView();
+
+      // Look for the mailto link (envelope icon button)
+      const mailtoLink = screen.getByTitle(/open in your default email app/i);
+      expect(mailtoLink).toBeInTheDocument();
+      expect(mailtoLink).toHaveAttribute('href', expect.stringContaining('mailto:'));
+    });
+
+    it('displays email content before copying', async () => {
+      await goToResultView();
+
+      // Verify the Japanese email content is visible in the modal
+      expect(screen.getByText(/拝啓/)).toBeInTheDocument();
+      expect(screen.getByText(/敬具/)).toBeInTheDocument();
     });
   });
 
@@ -556,11 +538,14 @@ describe('InquiryModal', () => {
       await fillFormAndSubmit(user);
 
       await waitFor(() => {
-        expect(screen.getByText(/generated email/i)).toBeInTheDocument();
+        expect(screen.getByText(/your email is ready/i)).toBeInTheDocument();
       });
 
-      // Should show message about finding email on dealer site
-      expect(screen.getByText(/contact.*dealer.*website/i)).toBeInTheDocument();
+      // Should not show mailto link when dealer email is missing
+      // The Copy Email button should still work
+      expect(screen.getByRole('button', { name: /copy email/i })).toBeInTheDocument();
+      // No mailto link should be present
+      expect(screen.queryByTitle(/open in your default email app/i)).not.toBeInTheDocument();
     });
 
     it('handles listing without dealer policies', async () => {
@@ -575,7 +560,7 @@ describe('InquiryModal', () => {
       await fillFormAndSubmit(user);
 
       await waitFor(() => {
-        expect(screen.getByText(/generated email/i)).toBeInTheDocument();
+        expect(screen.getByText(/your email is ready/i)).toBeInTheDocument();
       });
 
       // Should not crash, policies section should be hidden or show unknown
@@ -606,7 +591,7 @@ describe('InquiryModal', () => {
       // Use fireEvent for faster input on long text
       const nameInput = screen.getByLabelText(/your name/i);
       const countryInput = screen.getByLabelText(/your country/i);
-      const messageInput = screen.getByLabelText(/your message/i);
+      const messageInput = screen.getByLabelText(/what would you like to say/i);
 
       fireEvent.change(nameInput, { target: { value: 'John Smith' } });
       fireEvent.change(countryInput, { target: { value: 'United States' } });
@@ -643,7 +628,7 @@ describe('InquiryModal', () => {
       // All inputs should be properly labeled
       expect(screen.getByLabelText(/your name/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/your country/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/your message/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/what would you like to say/i)).toBeInTheDocument();
     });
 
     it('traps focus within modal', () => {

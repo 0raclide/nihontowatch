@@ -27,6 +27,24 @@ vi.mock('@/hooks/useCurrency', () => ({
     value ? `¥${value.toLocaleString()}` : 'Ask',
 }));
 
+// Mock the useAuth hook
+vi.mock('@/lib/auth/AuthContext', () => ({
+  useAuth: () => ({
+    user: null,
+    loading: false,
+  }),
+}));
+
+// Mock the InquiryModal component
+vi.mock('@/components/inquiry', () => ({
+  InquiryModal: () => null,
+}));
+
+// Mock the LoginModal component
+vi.mock('@/components/auth/LoginModal', () => ({
+  LoginModal: () => null,
+}));
+
 // Sample listing data for testing
 // Note: Item types should be lowercase to match the getItemTypeLabel function
 const createMockListing = (overrides: Partial<Listing> = {}): Listing => ({
