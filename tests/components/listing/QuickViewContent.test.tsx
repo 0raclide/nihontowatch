@@ -81,7 +81,9 @@ const createMockListing = (overrides: Partial<Listing> = {}): Listing => ({
   is_available: true,
   is_sold: false,
   dealer_id: 1,
-  dealer: {
+  // Note: Supabase returns 'dealers' (plural) from the join, not 'dealer' (singular)
+  // This test must use 'dealers' to match real production data
+  dealers: {
     id: 1,
     name: 'Test Dealer',
     domain: 'testdealer.com',

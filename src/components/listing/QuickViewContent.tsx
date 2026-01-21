@@ -28,7 +28,8 @@ export function QuickViewContent({ listing }: QuickViewContentProps) {
   const { currency, exchangeRates } = useCurrency();
   const certInfo = getCertInfo(listing.cert_type);
   const itemTypeLabel = getItemTypeLabel(listing.item_type);
-  const dealerName = listing.dealer?.name || 'Dealer';
+  // Note: Supabase returns 'dealers' (plural) from the join, not 'dealer' (singular)
+  const dealerName = listing.dealers?.name || listing.dealer?.name || 'Dealer';
   const priceDisplay = formatPriceWithConversion(
     listing.price_value,
     listing.price_currency,
