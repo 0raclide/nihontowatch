@@ -106,6 +106,111 @@ export interface SetsumeiMetadata {
 }
 
 // =============================================================================
+// YUHINKAI ENRICHMENT
+// =============================================================================
+
+export type EnrichmentConfidence = 'DEFINITIVE' | 'HIGH' | 'MEDIUM' | 'LOW';
+export type VerificationStatus = 'auto' | 'confirmed' | 'rejected' | 'review_needed';
+
+/**
+ * Match signals from SOTA matcher
+ */
+export interface EnrichmentMatchSignals {
+  ocr?: number;        // OCR text match score (0-1)
+  session?: boolean;   // Session number matched
+  maker?: number;      // Maker name match score (0-1)
+}
+
+/**
+ * Yuhinkai catalog enrichment data
+ * Pulled from Yuhinkai when SOTA matcher produces DEFINITIVE match
+ */
+export interface YuhinkaiEnrichment {
+  // Database fields
+  enrichment_id: number;
+  listing_id: number;
+
+  // Yuhinkai reference
+  yuhinkai_uuid: string;
+  yuhinkai_collection?: string;
+  yuhinkai_volume?: number;
+  yuhinkai_item_number?: number;
+
+  // Match metadata
+  match_score: number;
+  match_confidence: EnrichmentConfidence;
+  match_signals?: EnrichmentMatchSignals;
+  matched_fields?: string[];
+
+  // Enriched artisan info
+  enriched_maker?: string;
+  enriched_maker_kanji?: string;
+  enriched_school?: string;
+  enriched_period?: string;
+  enriched_form_type?: string;
+
+  // Translations - the "magic" value add
+  setsumei_ja?: string;
+  setsumei_en?: string;
+  setsumei_en_format?: 'markdown' | 'plain';
+
+  // Certification info
+  enriched_cert_type?: string;
+  enriched_cert_session?: number;
+
+  // Item category (for extensibility: 'tosogu' now, 'blade' later)
+  item_category?: string;
+
+  // Verification
+  verification_status: VerificationStatus;
+
+  // Timestamps
+  enriched_at: string;
+  updated_at: string;
+}
+
+/**
+ * Listing with Yuhinkai enrichment data
+ */
+export interface ListingWithEnrichment extends Listing {
+  yuhinkai_enrichment?: YuhinkaiEnrichment | null;
+}
+
+/**
+ * Check if listing has verified Yuhinkai enrichment
+ * Only returns true for DEFINITIVE matches with auto/confirmed status
+ */
+export function hasVerifiedEnrichment(listing: ListingWithEnrichment): boolean {
+  const enrichment = listing.yuhinkai_enrichment;
+  if (!enrichment) return false;
+
+  return (
+    enrichment.match_confidence === 'DEFINITIVE' &&
+    ['auto', 'confirmed'].includes(enrichment.verification_status)
+  );
+}
+
+/**
+ * Get enriched artisan name (prefers Yuhinkai if available)
+ */
+export function getEnrichedArtisanName(listing: ListingWithEnrichment): string | undefined {
+  if (hasVerifiedEnrichment(listing)) {
+    return listing.yuhinkai_enrichment?.enriched_maker;
+  }
+  return getArtisanName(listing);
+}
+
+/**
+ * Get enriched school name (prefers Yuhinkai if available)
+ */
+export function getEnrichedSchoolName(listing: ListingWithEnrichment): string | undefined {
+  if (hasVerifiedEnrichment(listing)) {
+    return listing.yuhinkai_enrichment?.enriched_school;
+  }
+  return getSchoolName(listing);
+}
+
+// =============================================================================
 // DEALER
 // =============================================================================
 
@@ -486,7 +591,7 @@ export type NotificationFrequency = 'instant' | 'daily' | 'none';
  * Full search criteria matching browse page filter state
  */
 export interface SavedSearchCriteria {
-  tab?: 'available' | 'sold';
+  tab?: 'available' | 'sold' | 'all';
   category?: 'all' | 'nihonto' | 'tosogu';
   itemTypes?: string[];
   certifications?: string[];

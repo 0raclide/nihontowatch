@@ -243,7 +243,7 @@ export interface Database {
           user_id: string;
           name: string | null;
           search_criteria: {
-            tab?: 'available' | 'sold';
+            tab?: 'available' | 'sold' | 'all';
             category?: 'all' | 'nihonto' | 'tosogu';
             itemTypes?: string[];
             certifications?: string[];

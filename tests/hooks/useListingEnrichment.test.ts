@@ -47,11 +47,11 @@ describe('useListingEnrichment', () => {
       expect(result.current.isEligible).toBe(true);
     });
 
-    it('should NOT be eligible for katana (nihonto)', () => {
+    it('should be eligible for katana (nihonto) with Juyo', () => {
       const { result } = renderHook(() =>
         useListingEnrichment(123, 'katana', 'Juyo')
       );
-      expect(result.current.isEligible).toBe(false);
+      expect(result.current.isEligible).toBe(true);
     });
 
     it('should NOT be eligible for Hozon tsuba (lower certification)', () => {
@@ -151,9 +151,9 @@ describe('useListingEnrichment', () => {
         json: () => Promise.resolve({ enrichment: null }),
       });
 
-      // Non-eligible should not be loading
+      // Non-eligible (Hozon cert) should not be loading
       const { result: nonEligible } = renderHook(() =>
-        useListingEnrichment(123, 'katana', 'Juyo')
+        useListingEnrichment(123, 'katana', 'Hozon')
       );
       expect(nonEligible.current.isLoading).toBe(false);
 

@@ -9,7 +9,7 @@ import { CACHE, PAGINATION, LISTING_FILTERS } from '@/lib/constants';
 // No caching - facet counts must accurately reflect user's filter selections
 
 interface BrowseParams {
-  tab: 'available' | 'sold';
+  tab: 'available' | 'sold' | 'all';
   category?: 'all' | 'nihonto' | 'tosogu' | 'armor';
   itemTypes?: string[];
   certifications?: string[];
@@ -194,7 +194,10 @@ export async function GET(request: NextRequest) {
     const offset = params.offset !== undefined
       ? Math.max(0, params.offset)
       : (safePage - 1) * params.limit!;
-    const statusFilter = params.tab === 'available' ? STATUS_AVAILABLE : STATUS_SOLD;
+    // Status filter: 'all' = no filter, 'sold' = sold only, otherwise available only (default)
+    const statusFilter = params.tab === 'all'
+      ? null
+      : (params.tab === 'sold' ? STATUS_SOLD : STATUS_AVAILABLE);
 
     // Build query
     let query = supabase
@@ -243,8 +246,10 @@ export async function GET(request: NextRequest) {
         dealers:dealers!inner(id, name, domain)
       `, { count: 'exact' });
 
-    // Status filter
-    query = query.or(statusFilter);
+    // Status filter (only apply if not 'all' - null means show both available and sold)
+    if (statusFilter) {
+      query = query.or(statusFilter);
+    }
 
     // Minimum price filter (excludes books, accessories, low-quality items)
     query = applyMinPriceFilter(query);
@@ -543,10 +548,13 @@ export async function GET(request: NextRequest) {
     ]);
 
     // Get the most recent scrape timestamp for freshness indicator
-    const { data: freshnessData } = await supabase
+    let freshnessQuery = supabase
       .from('listings')
-      .select('last_scraped_at')
-      .or(statusFilter)
+      .select('last_scraped_at');
+    if (statusFilter) {
+      freshnessQuery = freshnessQuery.or(statusFilter);
+    }
+    const { data: freshnessData } = await freshnessQuery
       .order('last_scraped_at', { ascending: false })
       .limit(1)
       .single();
@@ -605,7 +613,7 @@ const FACET_PAGE_SIZE = 1000;
 
 async function getItemTypeFacets(
   supabase: Awaited<ReturnType<typeof createClient>>,
-  statusFilter: string,
+  statusFilter: string | null,
   options: FacetFilterOptions
 ) {
   // Aggregate counts with pagination
@@ -618,10 +626,14 @@ async function getItemTypeFacets(
     let query = supabase
       .from('listings')
       .select('item_type')
-      .or(statusFilter)
       .not('item_type', 'ilike', 'stand')  // Exclude non-collectibles to match main query
       .not('item_type', 'ilike', 'book')
       .not('item_type', 'ilike', 'other');
+
+    // Status filter (only apply if not 'all')
+    if (statusFilter) {
+      query = query.or(statusFilter);
+    }
 
     // Apply minimum price filter
     query = applyMinPriceFilter(query);
@@ -665,7 +677,7 @@ async function getItemTypeFacets(
 
 async function getCertificationFacets(
   supabase: Awaited<ReturnType<typeof createClient>>,
-  statusFilter: string,
+  statusFilter: string | null,
   options: FacetFilterOptions
 ) {
   // Determine which item types to include based on category
@@ -700,10 +712,14 @@ async function getCertificationFacets(
     let query = supabase
       .from('listings')
       .select('cert_type, item_type')
-      .or(statusFilter)
       .not('item_type', 'ilike', 'stand')  // Exclude non-collectibles to match main query
       .not('item_type', 'ilike', 'book')
       .not('item_type', 'ilike', 'other');
+
+    // Status filter (only apply if not 'all')
+    if (statusFilter) {
+      query = query.or(statusFilter);
+    }
 
     // Apply minimum price filter
     query = applyMinPriceFilter(query);
@@ -751,7 +767,7 @@ async function getCertificationFacets(
 
 async function getDealerFacets(
   supabase: Awaited<ReturnType<typeof createClient>>,
-  statusFilter: string,
+  statusFilter: string | null,
   options: FacetFilterOptions
 ) {
   // Determine which item types to include based on category
@@ -775,10 +791,14 @@ async function getDealerFacets(
     let query = supabase
       .from('listings')
       .select('dealer_id, dealers!inner(name), item_type')
-      .or(statusFilter)
       .not('item_type', 'ilike', 'stand')  // Exclude non-collectibles to match main query
       .not('item_type', 'ilike', 'book')
       .not('item_type', 'ilike', 'other');
+
+    // Status filter (only apply if not 'all')
+    if (statusFilter) {
+      query = query.or(statusFilter);
+    }
 
     // Apply minimum price filter
     query = applyMinPriceFilter(query);
@@ -832,7 +852,7 @@ const HISTORICAL_PERIOD_ORDER = [
 
 async function getHistoricalPeriodFacets(
   supabase: Awaited<ReturnType<typeof createClient>>,
-  statusFilter: string,
+  statusFilter: string | null,
   options: FacetFilterOptions
 ) {
   // Determine which item types to include based on category
@@ -855,10 +875,14 @@ async function getHistoricalPeriodFacets(
     let query = supabase
       .from('listings')
       .select('historical_period, item_type')
-      .or(statusFilter)
       .not('item_type', 'ilike', 'stand')  // Exclude non-collectibles
       .not('item_type', 'ilike', 'book')
       .not('item_type', 'ilike', 'other');
+
+    // Status filter (only apply if not 'all')
+    if (statusFilter) {
+      query = query.or(statusFilter);
+    }
 
     // Apply minimum price filter
     query = applyMinPriceFilter(query);
@@ -913,7 +937,7 @@ async function getHistoricalPeriodFacets(
 
 async function getSignatureStatusFacets(
   supabase: Awaited<ReturnType<typeof createClient>>,
-  statusFilter: string,
+  statusFilter: string | null,
   options: FacetFilterOptions
 ) {
   // Determine which item types to include based on category
@@ -936,10 +960,14 @@ async function getSignatureStatusFacets(
     let query = supabase
       .from('listings')
       .select('signature_status, item_type')
-      .or(statusFilter)
       .not('item_type', 'ilike', 'stand')  // Exclude non-collectibles
       .not('item_type', 'ilike', 'book')
       .not('item_type', 'ilike', 'other');
+
+    // Status filter (only apply if not 'all')
+    if (statusFilter) {
+      query = query.or(statusFilter);
+    }
 
     // Apply minimum price filter
     query = applyMinPriceFilter(query);
