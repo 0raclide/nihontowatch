@@ -675,7 +675,6 @@ export function getNotificationFrequencyDescription(freq: NotificationFrequency)
 
 // Re-export inquiry types from dedicated module
 export type {
-  InquiryIntent,
   InquiryInput,
   ValidatedInquiryInput,
   GeneratedEmail,
@@ -687,11 +686,4 @@ export type {
   InquiryApiError,
   InquiryResponse,
   ValidationResult,
-} from '@/lib/inquiry/types';
-
-export {
-  INTENT_LABELS,
-  INTENT_DESCRIPTIONS,
-  VALID_INTENTS,
-  isValidIntent,
 } from '@/lib/inquiry/types';

@@ -6,37 +6,6 @@
  */
 
 // =============================================================================
-// Intent Types
-// =============================================================================
-
-/**
- * The purpose of the inquiry email
- */
-export type InquiryIntent = 'purchase' | 'questions' | 'photos' | 'shipping' | 'other';
-
-/**
- * Human-readable labels for each intent
- */
-export const INTENT_LABELS: Record<InquiryIntent, string> = {
-  purchase: 'I want to purchase this item',
-  questions: 'I have questions about this item',
-  photos: 'I need more photos',
-  shipping: 'I need shipping information',
-  other: 'Other inquiry',
-};
-
-/**
- * Descriptions for AI context
- */
-export const INTENT_DESCRIPTIONS: Record<InquiryIntent, string> = {
-  purchase: 'Expressing strong interest in purchasing. Asking about availability, purchase process, payment options, and international shipping.',
-  questions: 'Asking specific questions about the item (condition, history, authenticity, provenance, measurements, etc.)',
-  photos: 'Requesting additional photographs of the item (specific angles, close-ups, nakago, condition details)',
-  shipping: 'Asking about international shipping options, costs, packaging methods, and delivery timeframes',
-  other: 'General inquiry about the item',
-};
-
-// =============================================================================
 // Input Types
 // =============================================================================
 
@@ -46,14 +15,12 @@ export const INTENT_DESCRIPTIONS: Record<InquiryIntent, string> = {
 export interface InquiryInput {
   /** The listing ID to inquire about */
   listingId: number;
-  /** The purpose of the inquiry */
-  intent: InquiryIntent;
   /** Buyer's name (for email signature) */
   buyerName: string;
   /** Buyer's country (for shipping context) */
   buyerCountry: string;
-  /** Optional specific questions to include */
-  specificQuestions?: string;
+  /** The buyer's message (what they want to communicate) */
+  message: string;
 }
 
 /**
@@ -61,10 +28,9 @@ export interface InquiryInput {
  */
 export interface ValidatedInquiryInput {
   listingId: number;
-  intent: InquiryIntent;
   buyerName: string;
   buyerCountry: string;
-  specificQuestions: string | null;
+  message: string;
 }
 
 // =============================================================================
@@ -155,8 +121,8 @@ export interface InquiryContext {
     name: string;
     country: string;
   };
-  intent: InquiryIntent;
-  specificQuestions: string | null;
+  /** The buyer's message/request in their own words */
+  message: string;
 }
 
 // =============================================================================
@@ -196,22 +162,4 @@ export interface ValidationResult {
   valid: boolean;
   errors: string[];
   data?: ValidatedInquiryInput;
-}
-
-/**
- * Valid intent values for runtime checking
- */
-export const VALID_INTENTS: readonly InquiryIntent[] = [
-  'purchase',
-  'questions',
-  'photos',
-  'shipping',
-  'other',
-] as const;
-
-/**
- * Check if a value is a valid intent
- */
-export function isValidIntent(value: unknown): value is InquiryIntent {
-  return typeof value === 'string' && VALID_INTENTS.includes(value as InquiryIntent);
 }

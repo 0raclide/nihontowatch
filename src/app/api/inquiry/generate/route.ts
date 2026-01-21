@@ -176,7 +176,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       userId: user.id,
       listingId: input.listingId,
       dealerId: typedListing.dealers.id,
-      intent: input.intent,
       buyerCountry: input.buyerCountry,
     });
 
@@ -251,8 +250,7 @@ function buildInquiryContext(
       name: input.buyerName,
       country: input.buyerCountry,
     },
-    intent: input.intent,
-    specificQuestions: input.specificQuestions,
+    message: input.message,
   };
 }
 
@@ -367,7 +365,6 @@ function logInquiryHistory(
     userId: string;
     listingId: number;
     dealerId: number;
-    intent: string;
     buyerCountry: string;
   }
 ): void {
@@ -380,7 +377,7 @@ function logInquiryHistory(
       user_id: data.userId,
       listing_id: data.listingId,
       dealer_id: data.dealerId,
-      intent: data.intent,
+      intent: 'other', // Default intent since form is now freeform
       buyer_country: data.buyerCountry,
     })
     .then(() => {

@@ -18,7 +18,7 @@ export {
   formatValidationErrors,
   MAX_NAME_LENGTH,
   MAX_COUNTRY_LENGTH,
-  MAX_QUESTIONS_LENGTH,
+  MAX_MESSAGE_LENGTH,
 } from './validation';
 
 // Seasonal greetings
@@ -34,5 +34,4 @@ export {
 export {
   SYSTEM_PROMPT,
   buildUserPrompt,
-  getIntentInstructions,
 } from './prompts';

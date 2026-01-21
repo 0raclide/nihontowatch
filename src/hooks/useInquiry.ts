@@ -11,9 +11,9 @@
  * const handleSubmit = async () => {
  *   const result = await generateEmail({
  *     listingId: 123,
- *     intent: 'purchase',
  *     buyerName: 'John Smith',
  *     buyerCountry: 'United States',
+ *     message: 'I am interested in purchasing this sword...',
  *   });
  *
  *   if (result) {

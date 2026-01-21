@@ -25,8 +25,7 @@ interface ListingWithDealer extends Listing {
   dealer_name?: string;
   dealer_domain?: string;
 }
-import type { InquiryIntent, GeneratedEmail } from '@/lib/inquiry/types';
-import { INTENT_LABELS } from '@/lib/inquiry/types';
+import type { GeneratedEmail } from '@/lib/inquiry/types';
 
 // =============================================================================
 // Types
@@ -41,22 +40,15 @@ interface InquiryModalProps {
 type Step = 'form' | 'result';
 
 // =============================================================================
-// Constants
-// =============================================================================
-
-const INTENT_OPTIONS: InquiryIntent[] = ['purchase', 'questions', 'photos', 'shipping'];
-
-// =============================================================================
 // Component
 // =============================================================================
 
 export function InquiryModal({ isOpen, onClose, listing }: InquiryModalProps) {
   // Form state
   const [step, setStep] = useState<Step>('form');
-  const [intent, setIntent] = useState<InquiryIntent>('purchase');
   const [buyerName, setBuyerName] = useState('');
   const [buyerCountry, setBuyerCountry] = useState('');
-  const [specificQuestions, setSpecificQuestions] = useState('');
+  const [message, setMessage] = useState('');
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
   // Generated email state
@@ -72,10 +64,9 @@ export function InquiryModal({ isOpen, onClose, listing }: InquiryModalProps) {
   useEffect(() => {
     if (isOpen) {
       setStep('form');
-      setIntent('purchase');
       setBuyerName('');
       setBuyerCountry('');
-      setSpecificQuestions('');
+      setMessage('');
       setValidationErrors([]);
       setGeneratedEmail(null);
       clearError();
@@ -103,10 +94,13 @@ export function InquiryModal({ isOpen, onClose, listing }: InquiryModalProps) {
     if (!buyerCountry.trim()) {
       errors.push('Country is required');
     }
+    if (!message.trim()) {
+      errors.push('Message is required');
+    }
 
     setValidationErrors(errors);
     return errors.length === 0;
-  }, [buyerName, buyerCountry]);
+  }, [buyerName, buyerCountry, message]);
 
   // Handle form submission
   const handleSubmit = useCallback(
@@ -121,10 +115,9 @@ export function InquiryModal({ isOpen, onClose, listing }: InquiryModalProps) {
 
       const result = await generateEmail({
         listingId: listing.id,
-        intent,
         buyerName: buyerName.trim(),
         buyerCountry: buyerCountry.trim(),
-        specificQuestions: specificQuestions.trim() || undefined,
+        message: message.trim(),
       });
 
       if (result) {
@@ -137,10 +130,9 @@ export function InquiryModal({ isOpen, onClose, listing }: InquiryModalProps) {
       clearError,
       generateEmail,
       listing.id,
-      intent,
       buyerName,
       buyerCountry,
-      specificQuestions,
+      message,
     ]
   );
 
@@ -198,14 +190,12 @@ export function InquiryModal({ isOpen, onClose, listing }: InquiryModalProps) {
             {step === 'form' ? (
               <FormStep
                 listing={listing}
-                intent={intent}
-                setIntent={setIntent}
                 buyerName={buyerName}
                 setBuyerName={setBuyerName}
                 buyerCountry={buyerCountry}
                 setBuyerCountry={setBuyerCountry}
-                specificQuestions={specificQuestions}
-                setSpecificQuestions={setSpecificQuestions}
+                message={message}
+                setMessage={setMessage}
                 validationErrors={validationErrors}
                 apiError={error}
                 isGenerating={isGenerating}
@@ -232,14 +222,12 @@ export function InquiryModal({ isOpen, onClose, listing }: InquiryModalProps) {
 
 interface FormStepProps {
   listing: ListingWithDealer;
-  intent: InquiryIntent;
-  setIntent: (intent: InquiryIntent) => void;
   buyerName: string;
   setBuyerName: (name: string) => void;
   buyerCountry: string;
   setBuyerCountry: (country: string) => void;
-  specificQuestions: string;
-  setSpecificQuestions: (questions: string) => void;
+  message: string;
+  setMessage: (message: string) => void;
   validationErrors: string[];
   apiError: string | null;
   isGenerating: boolean;
@@ -249,14 +237,12 @@ interface FormStepProps {
 
 function FormStep({
   listing,
-  intent,
-  setIntent,
   buyerName,
   setBuyerName,
   buyerCountry,
   setBuyerCountry,
-  specificQuestions,
-  setSpecificQuestions,
+  message,
+  setMessage,
   validationErrors,
   apiError,
   isGenerating,
@@ -272,42 +258,6 @@ function FormStep({
           <p className="text-[12px] text-muted mt-1">
             {listing.dealers?.name || listing.dealer_name} • {listing.dealers?.domain || listing.dealer_domain}
           </p>
-        </div>
-
-        {/* Intent Selection */}
-        <div>
-          <label className="block text-[12px] uppercase tracking-wider text-muted mb-3">
-            What would you like to do?
-          </label>
-          <div className="space-y-2">
-            {INTENT_OPTIONS.map((option) => (
-              <label
-                key={option}
-                className={`flex items-center p-3 rounded-lg border cursor-pointer transition-all ${
-                  intent === option
-                    ? 'border-gold bg-gold/5'
-                    : 'border-border bg-paper hover:bg-hover'
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="intent"
-                  value={option}
-                  checked={intent === option}
-                  onChange={() => setIntent(option)}
-                  className="sr-only"
-                />
-                <div
-                  className={`w-4 h-4 rounded-full border-2 mr-3 flex items-center justify-center ${
-                    intent === option ? 'border-gold' : 'border-muted'
-                  }`}
-                >
-                  {intent === option && <div className="w-2 h-2 rounded-full bg-gold" />}
-                </div>
-                <span className="text-[14px] text-ink">{INTENT_LABELS[option]}</span>
-              </label>
-            ))}
-          </div>
         </div>
 
         {/* Buyer Name */}
@@ -340,19 +290,22 @@ function FormStep({
           />
         </div>
 
-        {/* Specific Questions */}
+        {/* Message */}
         <div>
-          <label htmlFor="specificQuestions" className="block text-[12px] uppercase tracking-wider text-muted mb-2">
-            Specific Questions (Optional)
+          <label htmlFor="message" className="block text-[12px] uppercase tracking-wider text-muted mb-2">
+            Your Message
           </label>
           <textarea
-            id="specificQuestions"
-            value={specificQuestions}
-            onChange={(e) => setSpecificQuestions(e.target.value)}
-            placeholder="Any specific questions about condition, history, or details..."
-            rows={3}
+            id="message"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            placeholder="I'm interested in this item and would like to know more about..."
+            rows={5}
             className="w-full px-4 py-3 bg-paper border-2 border-border rounded-lg text-[14px] text-ink placeholder:text-muted/50 focus:outline-none focus:border-gold resize-none"
           />
+          <p className="mt-2 text-[11px] text-muted">
+            Write in English — we'll draft a polite Japanese business email for you.
+          </p>
         </div>
 
         {/* Errors */}

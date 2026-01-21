@@ -10,7 +10,6 @@ import type {
   ValidatedInquiryInput,
   ValidationResult,
 } from './types';
-import { isValidIntent } from './types';
 
 // =============================================================================
 // Constants
@@ -22,8 +21,8 @@ export const MAX_NAME_LENGTH = 100;
 /** Maximum length for country */
 export const MAX_COUNTRY_LENGTH = 100;
 
-/** Maximum length for specific questions */
-export const MAX_QUESTIONS_LENGTH = 2000;
+/** Maximum length for message */
+export const MAX_MESSAGE_LENGTH = 2000;
 
 /** Minimum listing ID */
 export const MIN_LISTING_ID = 1;
@@ -60,13 +59,6 @@ export function validateInquiryInput(input: unknown): ValidationResult {
     errors.push(`listingId must be a positive integer (minimum ${MIN_LISTING_ID})`);
   }
 
-  // Validate intent
-  if (!data.intent) {
-    errors.push('intent is required');
-  } else if (!isValidIntent(data.intent)) {
-    errors.push('intent must be one of: purchase, questions, photos, shipping, other');
-  }
-
   // Validate buyerName
   if (!data.buyerName) {
     errors.push('buyerName is required');
@@ -95,12 +87,17 @@ export function validateInquiryInput(input: unknown): ValidationResult {
     }
   }
 
-  // Validate specificQuestions (optional)
-  if (data.specificQuestions !== undefined && data.specificQuestions !== null) {
-    if (typeof data.specificQuestions !== 'string') {
-      errors.push('specificQuestions must be a string');
-    } else if (data.specificQuestions.length > MAX_QUESTIONS_LENGTH) {
-      errors.push(`specificQuestions cannot exceed ${MAX_QUESTIONS_LENGTH} characters`);
+  // Validate message (required)
+  if (!data.message) {
+    errors.push('message is required');
+  } else if (typeof data.message !== 'string') {
+    errors.push('message must be a string');
+  } else {
+    const trimmedMessage = data.message.trim();
+    if (trimmedMessage.length === 0) {
+      errors.push('message cannot be empty');
+    } else if (trimmedMessage.length > MAX_MESSAGE_LENGTH) {
+      errors.push(`message cannot exceed ${MAX_MESSAGE_LENGTH} characters`);
     }
   }
 
@@ -113,10 +110,9 @@ export function validateInquiryInput(input: unknown): ValidationResult {
   const typedInput = data as unknown as InquiryInput;
   const validated: ValidatedInquiryInput = {
     listingId: typedInput.listingId,
-    intent: typedInput.intent,
     buyerName: typedInput.buyerName.trim(),
     buyerCountry: typedInput.buyerCountry.trim(),
-    specificQuestions: typedInput.specificQuestions?.trim() || null,
+    message: typedInput.message.trim(),
   };
 
   return {

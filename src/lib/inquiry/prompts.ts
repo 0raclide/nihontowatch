@@ -5,8 +5,7 @@
  * Japanese business emails for nihonto collectors.
  */
 
-import type { InquiryContext, InquiryIntent } from './types';
-import { INTENT_DESCRIPTIONS } from './types';
+import type { InquiryContext } from './types';
 import { getGreetingContext } from './seasonal';
 
 // =============================================================================
@@ -79,7 +78,7 @@ Do not include markdown code fences.`;
  * @returns Formatted user prompt string
  */
 export function buildUserPrompt(context: InquiryContext): string {
-  const { listing, dealer, buyer, intent, specificQuestions } = context;
+  const { listing, dealer, buyer, message } = context;
 
   // Build item description
   const itemParts: string[] = [
@@ -143,16 +142,8 @@ export function buildUserPrompt(context: InquiryContext): string {
     ? `\n\n## KNOWN DEALER POLICIES\n${policyParts.join('\n')}`
     : '';
 
-  // Build specific questions section
-  const questionsSection = specificQuestions
-    ? `\n\n## SPECIFIC QUESTIONS TO INCLUDE\n${specificQuestions}`
-    : '';
-
   // Get seasonal greeting context
   const seasonalContext = getGreetingContext();
-
-  // Get intent description
-  const intentDescription = INTENT_DESCRIPTIONS[intent];
 
   return `Generate a formal Japanese business email with the following context:
 
@@ -169,72 +160,16 @@ ${dealerInfo}${policySection}
 Name: ${buyer.name}
 Country: ${buyer.country}
 
-## INQUIRY PURPOSE
-${intentDescription}${questionsSection}
+## BUYER'S MESSAGE (translate this intent into a polite Japanese business email)
+${message}
 
 Please generate a culturally-appropriate Japanese business email that:
 1. Uses proper keigo throughout
 2. Includes an appropriate seasonal greeting
 3. Introduces the buyer politely
-4. Clearly states the inquiry purpose
+4. Clearly communicates the buyer's message/request
 5. Thanks the dealer for their time
 6. Uses proper formal closings
 
 Return the result as a JSON object with: subject_ja, subject_en, email_ja, email_en`;
-}
-
-// =============================================================================
-// Intent-Specific Additions
-// =============================================================================
-
-/**
- * Get additional prompt instructions based on intent
- *
- * @param intent - The inquiry intent
- * @returns Additional prompt text
- */
-export function getIntentInstructions(intent: InquiryIntent): string {
-  const instructions: Record<InquiryIntent, string> = {
-    purchase: `
-For purchase inquiries:
-- Express strong but polite interest
-- Ask about current availability
-- Inquire about the purchase process
-- Ask about payment methods accepted
-- Ask about international shipping (if buyer is overseas)
-- Do NOT haggle or ask for discounts in the initial email`,
-
-    questions: `
-For condition/detail inquiries:
-- Be specific about what information you need
-- Show that you understand nihonto basics
-- Ask about kizu (flaws), condition, any restorations
-- Ask about provenance if relevant
-- Be respectful of the dealer's expertise`,
-
-    photos: `
-For photo requests:
-- Explain why additional photos would help
-- Suggest specific views: nakago (tang), kissaki (tip), hamon (temper line)
-- For tosogu: ask for multiple angles, close-ups of details
-- Thank them for the existing photos
-- Acknowledge this takes their time`,
-
-    shipping: `
-For shipping inquiries:
-- Mention your country clearly
-- Ask about shipping methods available
-- Ask about packaging (for valuable items)
-- Inquire about insurance options
-- Ask about estimated delivery time
-- Ask about any export procedures`,
-
-    other: `
-For general inquiries:
-- Be clear about what you're asking
-- Provide context for why you're asking
-- Keep the email focused and not too long`,
-  };
-
-  return instructions[intent] || instructions.other;
 }
