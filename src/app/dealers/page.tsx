@@ -45,6 +45,15 @@ function createDealerSlug(name: string): string {
     .replace(/^-|-$/g, '');
 }
 
+// Derive country from domain TLD (fallback when country column doesn't exist)
+function getCountryFromDomain(domain: string): string {
+  if (domain.endsWith('.jp') || domain.endsWith('.co.jp')) return 'JP';
+  if (domain.endsWith('.com') || domain.endsWith('.net')) return 'USA';
+  if (domain.endsWith('.uk') || domain.endsWith('.co.uk')) return 'UK';
+  if (domain.endsWith('.de')) return 'DE';
+  return 'JP'; // Default to Japan for nihonto dealers
+}
+
 // Country flag emoji
 function getCountryFlag(country: string): string {
   const flags: Record<string, string> = {
@@ -63,13 +72,13 @@ export default async function DealersPage() {
   const supabase = createServiceClient();
 
   // Fetch all active dealers with their listing counts
+  // Note: country column may not exist in all environments, handled with fallback
   const { data: dealers, error } = await supabase
     .from('dealers')
     .select(`
       id,
       name,
       domain,
-      country,
       is_active,
       created_at
     `)
@@ -84,7 +93,7 @@ export default async function DealersPage() {
   const dealersWithCounts: DealerWithCount[] = [];
 
   if (dealers && dealers.length > 0) {
-    for (const dealer of dealers as Array<{ id: number; name: string; domain: string; country: string; is_active: boolean; created_at: string }>) {
+    for (const dealer of dealers as Array<{ id: number; name: string; domain: string; is_active: boolean; created_at: string }>) {
       const { count } = await supabase
         .from('listings')
         .select('*', { count: 'exact', head: true })
@@ -93,8 +102,9 @@ export default async function DealersPage() {
 
       dealersWithCounts.push({
         ...dealer,
+        country: getCountryFromDomain(dealer.domain),
         listing_count: count || 0,
-      });
+      } as DealerWithCount);
     }
   }
 

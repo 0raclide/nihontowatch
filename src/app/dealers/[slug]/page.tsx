@@ -21,6 +21,15 @@ function createDealerSlug(name: string): string {
     .replace(/^-|-$/g, '');
 }
 
+// Derive country from domain TLD (fallback when country column doesn't exist)
+function getCountryFromDomain(domain: string): string {
+  if (domain.endsWith('.jp') || domain.endsWith('.co.jp')) return 'JP';
+  if (domain.endsWith('.com') || domain.endsWith('.net')) return 'USA';
+  if (domain.endsWith('.uk') || domain.endsWith('.co.uk')) return 'UK';
+  if (domain.endsWith('.de')) return 'DE';
+  return 'JP'; // Default to Japan for nihonto dealers
+}
+
 // Country flag emoji
 function getCountryFlag(country: string): string {
   const flags: Record<string, string> = {
@@ -47,8 +56,12 @@ async function findDealerBySlug(slug: string) {
 
   if (!dealers || dealers.length === 0) return null;
 
-  type DealerRow = { id: number; name: string; domain: string; country: string; is_active: boolean; created_at: string };
-  return (dealers as DealerRow[]).find((d) => createDealerSlug(d.name) === slug) || null;
+  type DealerRow = { id: number; name: string; domain: string; is_active: boolean; created_at: string };
+  const dealer = (dealers as DealerRow[]).find((d) => createDealerSlug(d.name) === slug);
+  if (!dealer) return null;
+
+  // Add country derived from domain
+  return { ...dealer, country: getCountryFromDomain(dealer.domain) };
 }
 
 type Props = {
