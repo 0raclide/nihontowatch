@@ -586,9 +586,10 @@ export default function ConnoisseurPage() {
           </p>
 
           <p className="mb-7">
-            This is simply how the market works. There are people who collect that tax—not out
-            of malice, but because uninformed buyers are part of the ecosystem. It&apos;s not
-            personal. It&apos;s commerce.
+            This is simply how the market works—not just in nihonto, but in every art field
+            where information asymmetry dominates. There are people who collect that tax. Not
+            out of malice, but because uninformed buyers are part of the ecosystem. It&apos;s
+            not personal. It&apos;s commerce.
           </p>
 
           <p className="mb-7">
