@@ -209,10 +209,6 @@ export default function ConnoisseurPage() {
               <span className="text-gold mt-1.5">&#8226;</span>
               <span><strong className="text-ink">Your transaction history</strong> through the platform</span>
             </li>
-            <li className="flex gap-3">
-              <span className="text-gold mt-1.5">&#8226;</span>
-              <span><strong className="text-ink">Reviews from other dealers</strong> you&apos;ve worked with</span>
-            </li>
           </ul>
 
           <p>
@@ -226,10 +222,6 @@ export default function ConnoisseurPage() {
             Your reputation in this community matters. A strong track record opens doors. A poor
             one closes them—not just with one dealer, but potentially with all of them.
           </p>
-
-          <blockquote className="border-l-2 border-gold/40 pl-6 my-8 italic text-ink/80">
-            The dealers talk to each other. Word travels.
-          </blockquote>
 
           <Divider />
 
@@ -274,10 +266,20 @@ export default function ConnoisseurPage() {
 
           <p>
             What matters is trust. The items shared with you are <strong className="text-ink">for
-            your eyes only</strong>. This is a closed circle. When a dealer shares something
-            privately through me, they&apos;re trusting that it won&apos;t be screenshot and
-            posted elsewhere, that it won&apos;t be used to undercut them, that the information
-            stays within this community.
+            your eyes only</strong>. This is a closed circle.
+          </p>
+
+          <p>
+            Private offerings cannot be shared under any circumstance. Not with friends. Not on
+            forums. Not anywhere. All listing data is watermarked—if a leak happens, we will
+            know where it came from. The result is an immediate and permanent ban.
+          </p>
+
+          <p>
+            Private offerings also expire. After a set period, the listing details are no longer
+            accessible to you. You are not permitted to save, screenshot, or retain the information.
+            This protects the dealers who trust us with their inventory, and it protects the
+            integrity of this community.
           </p>
 
           <p>
