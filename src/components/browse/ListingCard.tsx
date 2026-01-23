@@ -11,6 +11,19 @@ import { getImageUrl } from '@/lib/images';
 import { shouldShowNewBadge } from '@/lib/newListing';
 import { useImagePreloader } from '@/hooks/useImagePreloader';
 
+// 72 hours in milliseconds - matches the data delay for free tier
+const EARLY_ACCESS_WINDOW_MS = 72 * 60 * 60 * 1000;
+
+/**
+ * Check if a listing is within the "early access" window (72 hours)
+ * This means free tier users can't see this listing yet
+ */
+function isEarlyAccessListing(firstSeenAt: string): boolean {
+  const listingDate = new Date(firstSeenAt).getTime();
+  const cutoff = Date.now() - EARLY_ACCESS_WINDOW_MS;
+  return listingDate > cutoff;
+}
+
 interface SoldData {
   sale_date: string | null;
   days_on_market: number | null;
@@ -537,9 +550,13 @@ export function ListingCard({
           {shouldShowNewBadge(listing.first_seen_at, listing.dealer_earliest_seen_at) && (
             <span
               data-testid="new-listing-badge"
-              className="text-[9px] lg:text-[10px] uppercase tracking-wider font-semibold px-1.5 lg:px-2 py-0.5 lg:py-1 bg-new-listing-bg text-new-listing"
+              className={`text-[9px] lg:text-[10px] uppercase tracking-wider font-semibold px-1.5 lg:px-2 py-0.5 lg:py-1 ${
+                isEarlyAccessListing(listing.first_seen_at)
+                  ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white'
+                  : 'bg-new-listing-bg text-new-listing'
+              }`}
             >
-              New
+              {isEarlyAccessListing(listing.first_seen_at) ? 'Early Access' : 'New'}
             </span>
           )}
         </div>
