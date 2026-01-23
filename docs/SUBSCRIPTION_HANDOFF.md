@@ -41,11 +41,11 @@ Implementation status and handoff notes for the Nihontowatch Pro Tier system.
 | Feature gating tests | `tests/subscription/feature-gating.test.tsx` | 12 tests for component gating behavior |
 | Data delay tests | `tests/subscription/data-delay.test.ts` | 22 tests for auth, caching, admin bypass |
 
-### ⏳ REMAINING (Phase 1)
+### ✅ COMPLETED (Phase 1 - Pricing Page)
 
-| Task | Priority | Notes |
-|------|----------|-------|
-| Pricing page | HIGH | Full pricing table + page at `/pricing` with checkout CTAs |
+| Component | File(s) | Notes |
+|-----------|---------|-------|
+| Pricing Page | `src/app/pricing/page.tsx` | 3-tier comparison (Free/Enthusiast/Connoisseur), billing toggle, feature matrix, checkout integration |
 
 ### 🔮 FUTURE (Phase 2+)
 
@@ -202,16 +202,7 @@ Migration `039_subscription_tiers.sql` adds:
 
 ## Next Steps
 
-### 1. Create Pricing Page (HIGH PRIORITY)
-
-Create `src/app/pricing/page.tsx` with:
-- PricingTable component (3 tiers: Free, Enthusiast, Connoisseur)
-- Feature comparison matrix
-- Monthly/Annual billing toggle
-- Checkout CTAs that call `checkout()` from SubscriptionContext
-- SEO meta tags
-
-### 2. Future: On-Demand Setsumei Translation API
+### 1. Future: On-Demand Setsumei Translation API
 
 For items without pre-translated setsumei, create `src/app/api/setsumei/translate/route.ts`:
 
