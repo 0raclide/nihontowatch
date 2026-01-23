@@ -439,9 +439,10 @@ export default function ConnoisseurPage() {
           </p>
 
           <p className="mb-7">
-            I am staking my reputation—relationships I&apos;ve built over many years—to help you
-            access this market. If that trust is violated, the membership ends. No refunds, no
-            second chances.
+            When you join, it&apos;s not just my reputation at stake—it&apos;s the entire
+            community&apos;s. Every member benefits from the trust we&apos;ve collectively built
+            with these dealers. A single violation damages that trust for everyone. If that happens,
+            the membership ends. No refunds, no second chances.
           </p>
 
           <p className="mb-7">
