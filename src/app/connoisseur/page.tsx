@@ -206,6 +206,38 @@ export default function ConnoisseurPage() {
 
           <hr className="my-10 border-border" />
 
+          <h2 className="text-2xl">A Word on Trust</h2>
+
+          <p>
+            I need to be direct about something: membership in this tier can be revoked.
+          </p>
+
+          <p>
+            This isn&apos;t about the money. The subscription fee is simply an honest signal—it
+            shows you&apos;re serious, that you care enough to commit. Nothing more.
+          </p>
+
+          <p>
+            What matters is trust. The items shared with you are for your eyes only. This is a
+            closed circle. When a dealer shares something privately through me, they&apos;re trusting
+            that it won&apos;t be screenshot and posted elsewhere, that it won&apos;t be used to
+            undercut them, that the information stays within this community.
+          </p>
+
+          <p>
+            I am staking my reputation—relationships I&apos;ve built over many years—to help you
+            access this market. If that trust is violated, the membership ends. No refunds, no
+            second chances.
+          </p>
+
+          <p>
+            I say this not to be harsh, but to be clear about what you&apos;re joining. This works
+            because everyone in it understands the rules. The dealers trust me. I need to be able
+            to trust you.
+          </p>
+
+          <hr className="my-10 border-border" />
+
           <h2 className="text-2xl">Is This For You?</h2>
 
           <p>
