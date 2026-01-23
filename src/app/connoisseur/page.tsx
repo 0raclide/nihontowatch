@@ -586,14 +586,20 @@ export default function ConnoisseurPage() {
           </p>
 
           <p className="mb-7">
-            This doesn&apos;t have to be your story. The beginner&apos;s tax is not a fatality.
-            It&apos;s what happens when you enter a specialized market alone, without guidance,
-            without access to honest opinions, without someone who has no financial stake in
-            your decisions.
+            This is simply how the market works. There are people who collect that tax—not out
+            of malice, but because uninformed buyers are part of the ecosystem. It&apos;s not
+            personal. It&apos;s commerce.
           </p>
 
-          <p className="mb-7 text-ink font-medium">
-            Avoiding that tax entirely is what this membership does.
+          <p className="mb-7">
+            You have options. You can pay the tax and eventually grow out of it on your own—most
+            serious collectors do, given enough time and enough mistakes. You can decide the
+            stakes are too high and step back from the hobby. Or you can learn smartly, with
+            guidance, and skip the expensive lessons altogether.
+          </p>
+
+          <p className="mb-7">
+            This membership is an invitation to take that third path.
           </p>
 
           <p className="mb-7">
