@@ -159,28 +159,49 @@ export default function ConnoisseurPage() {
             getting introduced. I vouch for you. My relationships become your access.
           </p>
 
+          <hr className="my-10 border-border" />
+
+          <h2 className="text-2xl">How Private Offerings Work</h2>
+
           <p>
-            This means:
+            When you join, you&apos;ll set up search alerts for what you&apos;re looking for—specific
+            smiths, schools, certification levels, price ranges. But here&apos;s what&apos;s different
+            from the public side of the platform:
           </p>
 
-          <ul className="space-y-2">
-            <li>
-              <strong>Private offerings</strong> from top Japanese dealers, shared before they go
-              public (if they ever do)
-            </li>
-            <li>
-              <strong>Direct introductions</strong> when you&apos;re ready to pursue a specific piece
-              or build a relationship with a particular dealer
-            </li>
-            <li>
-              <strong>Guidance on transactions</strong>—what to say, how to negotiate, what&apos;s
-              reasonable to ask for
-            </li>
-            <li>
-              <strong>Honest opinions</strong> on pieces you&apos;re considering, from someone who
-              has no stake in the sale
-            </li>
-          </ul>
+          <p>
+            <strong>Japanese dealers can see your search criteria.</strong>
+          </p>
+
+          <p>
+            When a dealer has something that matches what you&apos;re looking for, they see more than
+            just an anonymous alert. They see your name. They see a presentation card that you write
+            yourself—describing your collecting interests, what you&apos;re building, what speaks to you.
+          </p>
+
+          <p>
+            They also see your history: successful transactions through the platform, and reviews from
+            other dealers you&apos;ve worked with. This is how trust gets built. A dealer considering
+            whether to offer you something privately can see that you&apos;re a serious collector who
+            follows through, communicates professionally, and treats transactions with respect.
+          </p>
+
+          <p>
+            This works both ways. Just as you&apos;re evaluating pieces, dealers are evaluating you.
+            Your reputation in this community matters. A strong track record opens doors. A poor one
+            closes them—not just with one dealer, but potentially with all of them.
+          </p>
+
+          <p>
+            This is why maintaining your reputation is essential. It&apos;s not just about completing
+            transactions—it&apos;s about how you conduct yourself throughout. Respond promptly. Be
+            decisive. If you commit to something, follow through. If you need to pass, do so gracefully.
+          </p>
+
+          <p>
+            The collectors who thrive in this community understand that every interaction is building
+            (or eroding) their standing. The dealers talk to each other. Word travels.
+          </p>
 
           <hr className="my-10 border-border" />
 
