@@ -307,11 +307,11 @@ export default function ConnoisseurPage() {
           </p>
 
           <p className="mb-7">
-            Private offers are presented for <span className="text-ink font-medium">seven days</span> before
-            being rescinded. After that window closes, the opportunity is gone. Note also that offers
-            operate on a first come, first served basis—a piece may be presented to multiple collectors
-            simultaneously. If you see something you want, act decisively. Hesitation means someone
-            else may secure it first.
+            Private offers are presented for <span className="text-ink font-medium">seven days</span>,
+            after which they are retracted automatically. Note also that offers operate on a first
+            come, first served basis—a piece may be presented to multiple collectors simultaneously.
+            If you see something you want, act decisively. Hesitation means someone else may secure
+            it first.
           </p>
 
           {/* Divider */}
