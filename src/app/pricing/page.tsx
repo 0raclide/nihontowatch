@@ -40,23 +40,17 @@ interface FeatureRow {
   name: string;
   free: boolean | string;
   enthusiast: boolean | string;
-  connoisseur: boolean | string;
 }
 
 const FEATURE_MATRIX: FeatureRow[] = [
-  { name: 'Browse all listings', free: '72h delay', enthusiast: 'Real-time', connoisseur: 'Real-time' },
-  { name: 'Basic filters & search', free: true, enthusiast: true, connoisseur: true },
-  { name: 'Unlimited favorites', free: true, enthusiast: true, connoisseur: true },
-  { name: 'Currency conversion', free: true, enthusiast: true, connoisseur: true },
-  { name: 'NBTHK Zufu translations', free: false, enthusiast: true, connoisseur: true },
-  { name: 'AI inquiry email drafts', free: false, enthusiast: true, connoisseur: true },
-  { name: 'Saved searches', free: false, enthusiast: true, connoisseur: true },
-  { name: 'Data exports', free: false, enthusiast: true, connoisseur: true },
-  { name: 'Private dealer offerings', free: false, enthusiast: false, connoisseur: true },
-  { name: 'Instant search alerts', free: false, enthusiast: false, connoisseur: true },
-  { name: 'Artist certification stats', free: false, enthusiast: false, connoisseur: true },
-  { name: 'Exclusive collector community', free: false, enthusiast: false, connoisseur: true },
-  { name: 'Direct LINE support', free: false, enthusiast: false, connoisseur: true },
+  { name: 'Browse all listings', free: '72h delay', enthusiast: 'Real-time' },
+  { name: 'Basic filters & search', free: true, enthusiast: true },
+  { name: 'Unlimited favorites', free: true, enthusiast: true },
+  { name: 'Currency conversion', free: true, enthusiast: true },
+  { name: 'NBTHK Zufu translations', free: false, enthusiast: true },
+  { name: 'AI inquiry email drafts', free: false, enthusiast: true },
+  { name: 'Saved searches', free: false, enthusiast: true },
+  { name: 'Data exports', free: false, enthusiast: true },
 ];
 
 // =============================================================================
@@ -162,15 +156,6 @@ function PricingCard({ tier, billingPeriod, isCurrentTier, onSelect, isLoading }
         </button>
       )}
 
-      {/* Learn more link for Connoisseur */}
-      {tier === 'connoisseur' && !isCurrentTier && (
-        <Link
-          href="/connoisseur"
-          className="block text-center text-sm text-muted hover:text-gold mt-3 transition-colors"
-        >
-          Learn more
-        </Link>
-      )}
     </div>
   );
 }
@@ -182,13 +167,12 @@ function PricingCard({ tier, billingPeriod, isCurrentTier, onSelect, isLoading }
 function FeatureComparisonTable() {
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[600px]">
+      <table className="w-full">
         <thead>
           <tr className="border-b border-border">
             <th className="text-left py-4 px-4 text-sm font-medium text-muted">Feature</th>
             <th className="text-center py-4 px-4 text-sm font-medium text-ink">Free</th>
             <th className="text-center py-4 px-4 text-sm font-medium text-gold">Enthusiast</th>
-            <th className="text-center py-4 px-4 text-sm font-medium text-ink">Connoisseur</th>
           </tr>
         </thead>
         <tbody>
@@ -200,9 +184,6 @@ function FeatureComparisonTable() {
               </td>
               <td className="py-3 px-4 text-center bg-gold/5">
                 <FeatureCell value={row.enthusiast} />
-              </td>
-              <td className="py-3 px-4 text-center">
-                <FeatureCell value={row.connoisseur} />
               </td>
             </tr>
           ))}
@@ -318,7 +299,7 @@ export default function PricingPage() {
         </div>
 
         {/* Pricing Cards */}
-        <div className="grid md:grid-cols-3 gap-6 lg:gap-8 mb-20">
+        <div className="grid md:grid-cols-2 gap-6 lg:gap-8 max-w-3xl mx-auto mb-20">
           <PricingCard
             tier="free"
             billingPeriod={billingPeriod}
@@ -332,13 +313,6 @@ export default function PricingPage() {
             isCurrentTier={currentTier === 'enthusiast'}
             onSelect={() => handleSelectTier('enthusiast')}
             isLoading={isLoading === 'enthusiast'}
-          />
-          <PricingCard
-            tier="connoisseur"
-            billingPeriod={billingPeriod}
-            isCurrentTier={currentTier === 'connoisseur'}
-            onSelect={() => handleSelectTier('connoisseur')}
-            isLoading={isLoading === 'connoisseur'}
           />
         </div>
 
