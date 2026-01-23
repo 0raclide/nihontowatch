@@ -24,9 +24,12 @@ export async function getUserSubscription(): Promise<{
 }> {
   try {
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    console.log('[Subscription] Auth check:', user?.id || 'no user', authError?.message || 'no error');
 
     if (!user) {
+      console.log('[Subscription] No user found, returning free tier');
       return {
         tier: 'free',
         status: 'inactive',
@@ -51,7 +54,9 @@ export async function getUserSubscription(): Promise<{
 
     // Admins get full access (connoisseur tier)
     const isAdmin = profile?.role === 'admin';
+    console.log('[Subscription] User:', user.id, 'Role:', profile?.role, 'IsAdmin:', isAdmin);
     if (isAdmin) {
+      console.log('[Subscription] Admin detected, granting full access');
       return {
         tier: 'connoisseur',
         status: 'active',
