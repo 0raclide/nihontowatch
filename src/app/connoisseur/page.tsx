@@ -321,7 +321,7 @@ export default function ConnoisseurPage() {
             negotiate is considered extremely poor form. It signals that you don&apos;t understand
             how this market works—or worse, that you don&apos;t respect the relationship. The
             dealer has already given you access to something special. Trying to squeeze them
-            on price is a good way to ensure you never receive another offer.
+            on price could jeopardize your chances of receiving offers in the future.
           </p>
 
           <p className="mb-7">
