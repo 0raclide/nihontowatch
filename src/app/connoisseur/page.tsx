@@ -155,13 +155,14 @@ export default function ConnoisseurPage() {
           </h2>
 
           <p className="mb-7">
-            Nihontowatch started as a way to aggregate public listings—to make it easier to find
-            what&apos;s available across dozens of dealer sites. That&apos;s useful, and the
-            Enthusiast tier does that well.
+            Nihontowatch aggregates public listings from dozens of dealers, and there are genuine
+            opportunities to be found there. Rare gems do appear online. Truly exceptional pieces
+            sometimes surface in public inventory—and with the Enthusiast tier, you&apos;ll see
+            them the moment they&apos;re listed.
           </p>
 
           <p className="mb-7">
-            But Connoisseur is something different.
+            But Connoisseur unlocks a different level of access entirely.
           </p>
 
           <p className="my-10 text-ink text-[1.25rem] font-medium leading-relaxed">

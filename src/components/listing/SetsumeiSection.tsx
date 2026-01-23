@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { useSubscription } from '@/contexts/SubscriptionContext';
+import { HighlightedMarkdown } from '@/components/glossary/HighlightedMarkdown';
 import type { Listing, CertificationType } from '@/types';
 
 // =============================================================================
@@ -133,7 +134,7 @@ export function SetsumeiSection({
             prose-p:text-[13px] prose-p:leading-relaxed prose-p:mb-2
             prose-strong:text-ink prose-strong:font-medium
           ">
-            <ReactMarkdown>{cleanPreview}</ReactMarkdown>
+            <HighlightedMarkdown content={cleanPreview} />
           </div>
 
           {/* Fade overlay with CTA */}
@@ -211,7 +212,7 @@ export function SetsumeiSection({
             {visibleText}
           </p>
         ) : (
-          // English markdown
+          // English markdown with glossary term highlighting
           <div className="prose prose-sm prose-invert max-w-none text-ink/80
             prose-headings:text-ink prose-headings:font-medium prose-headings:mb-2 prose-headings:mt-4 first:prose-headings:mt-0
             prose-h2:text-[15px] prose-h3:text-[13px]
@@ -222,7 +223,7 @@ export function SetsumeiSection({
             [&_table]:border-collapse [&_th]:border [&_th]:border-border [&_th]:px-2 [&_th]:py-1 [&_th]:bg-surface
             [&_td]:border [&_td]:border-border [&_td]:px-2 [&_td]:py-1
           ">
-            <ReactMarkdown>{visibleText || ''}</ReactMarkdown>
+            <HighlightedMarkdown content={visibleText || ''} />
           </div>
         )}
 
