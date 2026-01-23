@@ -415,8 +415,20 @@ export default function ConnoisseurPage() {
 
           <p className="mb-7">
             Private offerings cannot be shared under any circumstance. Not with friends. Not on
-            forums. Not anywhere. All listing data is watermarked—if a leak happens, we will
-            know where it came from. The result is an immediate and permanent ban.
+            forums. Not even with me. All private listing data is encrypted. When a dealer sends
+            you an offer, that offer is for your eyes only—I cannot see it, and I will not comment
+            on it. It is your responsibility to conduct your own due diligence.
+          </p>
+
+          <p className="mb-7">
+            This is by design. Private means private. I cannot maintain trust with top-tier dealers
+            if I&apos;m in a position to critique their inventory. The platform provides you with
+            intelligence and access; the decisions are yours alone.
+          </p>
+
+          <p className="mb-7">
+            All listing data is watermarked. If a leak happens, we will know where it came from.
+            The result is an immediate and permanent ban.
           </p>
 
           <p className="mb-7">
