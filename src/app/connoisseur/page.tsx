@@ -455,9 +455,8 @@ export default function ConnoisseurPage() {
 
           <p className="mb-7">
             Frankly, I do this because I enjoy it. I&apos;ve spent my collecting years acquiring
-            pieces. Now I find myself <span className="text-ink font-medium">collecting collectors</span>—finding
-            serious students of the craft, helping them develop their eye, watching them build
-            collections I can be proud to have influenced.
+            pieces. Now I take more joy in building a community and guiding others through this
+            esoteric but rewarding field.
           </p>
 
           <p className="mb-7">
