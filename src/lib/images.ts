@@ -15,7 +15,7 @@
  * out after loading images and checking their natural dimensions.
  */
 
-import { IMAGE_QUALITY } from './constants';
+import { IMAGE_QUALITY, DEALERS_WITHOUT_IMAGES } from './constants';
 
 /**
  * Minimal interface for image source fields.
@@ -291,4 +291,19 @@ export function getImageCount(listing: ImageSource | null | undefined): number {
  */
 export function hasAnyImages(listing: ImageSource | null | undefined): boolean {
   return getImageCount(listing) > 0;
+}
+
+/**
+ * Check if a dealer is known to never publish product images.
+ *
+ * Some dealers (e.g., Katana Ando) operate without listing photos.
+ * This function identifies such dealers so we can show an appropriate
+ * placeholder message instead of a generic "no image" icon.
+ *
+ * @param dealerDomain - The dealer's domain (e.g., 'katana-ando.com')
+ * @returns True if the dealer is known to not publish images
+ */
+export function dealerDoesNotPublishImages(dealerDomain: string | undefined): boolean {
+  if (!dealerDomain) return false;
+  return DEALERS_WITHOUT_IMAGES.includes(dealerDomain.toLowerCase());
 }

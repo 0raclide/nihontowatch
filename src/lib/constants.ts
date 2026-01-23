@@ -312,3 +312,16 @@ export const ROUTES = {
   ALERTS: '/alerts',
   ABOUT: '/about',
 } as const;
+
+// =============================================================================
+// DEALER CONFIGURATION
+// =============================================================================
+
+/**
+ * Dealers that are known to never publish product images.
+ * Listings from these dealers will show a custom placeholder
+ * instead of the generic "no image" icon.
+ */
+export const DEALERS_WITHOUT_IMAGES: string[] = [
+  'katana-ando.com',
+];

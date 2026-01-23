@@ -384,8 +384,10 @@ export default function ConnoisseurPage() {
           <h2 className="font-serif text-[1.75rem] text-ink tracking-tight mb-8">The Community</h2>
 
           <p className="mb-7">
-            Beyond the dealer access, there&apos;s the community itself—a small group of serious
-            collectors who share knowledge, discuss pieces, and help each other navigate this market.
+            Beyond the dealer access, there&apos;s the community itself:{' '}
+            <span className="text-ink font-medium">Yuhinkai</span>—the &ldquo;Masterpiece Society.&rdquo;
+            It&apos;s an international community of collectors and diligent students that Darcy and
+            I established together. Think of it as a country club for serious students of nihonto.
           </p>
 
           <p className="mb-7">
@@ -454,12 +456,6 @@ export default function ConnoisseurPage() {
             community&apos;s. Every member benefits from the trust we&apos;ve collectively built
             with these dealers. A single violation damages that trust for everyone. If that happens,
             the membership ends. No refunds, no second chances.
-          </p>
-
-          <p className="mb-7">
-            I say this not to be harsh, but to be clear about what you&apos;re joining. This works
-            because everyone in it understands the rules. Violations don&apos;t just affect one
-            person—they harm the entire community and the access we&apos;ve collectively built.
           </p>
 
           {/* Divider */}
@@ -603,12 +599,21 @@ export default function ConnoisseurPage() {
             This membership is an invitation to take that third path.
           </p>
 
+          {/* Divider */}
+          <div className="my-16 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+
+          <h2 className="font-serif text-[1.75rem] text-ink tracking-tight mb-8">Beyond Acquisition</h2>
+
           <p className="mb-7">
-            Beyond protection, there&apos;s elevation. Members receive guidance on upgrading
-            items—submitting Tokubetsu Hozon pieces for Juyo shinsa, or Juyo for Tokubetsu
-            Juyo. We facilitate professional services in Japan: commissioning sayagaki from
-            respected scholars, arranging proper restoration work, conducting thorough due
-            diligence on significant pieces before purchase.
+            Collecting at this level isn&apos;t just about buying pieces—it&apos;s about building
+            and elevating a collection over time.
+          </p>
+
+          <p className="mb-7">
+            Members receive guidance on upgrading items: submitting Tokubetsu Hozon pieces for
+            Juyo shinsa, or Juyo for Tokubetsu Juyo. We facilitate professional services in Japan—commissioning
+            sayagaki from respected scholars, arranging proper restoration work, conducting thorough
+            due diligence on significant pieces before purchase.
           </p>
 
           <p className="mb-7">
