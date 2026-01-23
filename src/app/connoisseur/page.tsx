@@ -195,6 +195,27 @@ export default function ConnoisseurPage() {
           </p>
 
           <p className="mb-7">
+            Let me give you an example. Say you collect the work of Kano Natsuo—one of the
+            most celebrated metalworkers in Japanese history. You set your search alert to
+            &ldquo;Natsuo.&rdquo; That signal goes out to our dealer network.
+          </p>
+
+          <p className="mb-7">
+            Now, here&apos;s what makes this different from posting on a forum or sending
+            emails to dealers: you&apos;re paying a significant membership fee. That fee
+            is a credibility signal. It tells the dealer that your interest is serious,
+            that you have the means to act, that you&apos;re not a tire-kicker who will
+            waste their time.
+          </p>
+
+          <p className="mb-7">
+            This is the key. Dealers receive countless inquiries from people who will never
+            buy. They&apos;ve learned to ignore most of them. But when they see a Connoisseur
+            member searching for Natsuo, they know this is someone worth contacting when
+            they acquire a piece. Your membership has already demonstrated your seriousness.
+          </p>
+
+          <p className="mb-7">
             When a dealer has something that matches what you&apos;re looking for, they see more
             than just an anonymous alert. They see:
           </p>
