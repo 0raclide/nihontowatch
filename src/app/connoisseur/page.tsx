@@ -482,6 +482,38 @@ export default function ConnoisseurPage() {
             part of this tier.
           </p>
 
+          <p className="mb-7 text-ink font-medium">
+            What if you already have dealer relationships?
+          </p>
+
+          <p className="mb-7">
+            Even better. This membership isn&apos;t just for collectors starting out at the
+            high end—it&apos;s equally valuable for those who are already there.
+          </p>
+
+          <p className="mb-7">
+            No collector has relationships with <em className="not-italic text-ink">every</em> top
+            dealer. You may have cultivated three or four excellent sources over the years, but
+            there are others you haven&apos;t connected with yet—dealers who handle exactly what
+            you&apos;re looking for but don&apos;t know you exist. This platform introduces you
+            to them, with your credentials already established.
+          </p>
+
+          <p className="mb-7">
+            The platform intelligence is another dimension entirely. Even experienced collectors
+            rarely have comprehensive data on an artist&apos;s corpus—how many works exist at each
+            certification level, what has traded recently, how a particular piece compares to
+            others by the same hand. This is the kind of information that informs
+            whether a price is fair, whether a piece is exceptional or merely good.
+          </p>
+
+          <p className="mb-7">
+            And then there&apos;s the community. At this level, your peers are scattered around
+            the world. Having a space to discuss pieces, share knowledge, and get second opinions
+            from collectors who understand what you&apos;re looking at—that has value regardless
+            of how long you&apos;ve been collecting.
+          </p>
+
           <p className="mb-7">
             Mistakes at this level are incredibly expensive. Overpaying by 20% on a $50,000
             piece costs you $10,000. Buying something with condition issues you didn&apos;t
