@@ -321,8 +321,30 @@ export default function ConnoisseurPage() {
             the sale costs you everything.
           </p>
 
+          <p className="mb-7">
+            There&apos;s a phenomenon in this market called the <span className="text-ink font-medium">beginner&apos;s
+            tax</span>. It happens when collectors with significant budgets enter a field they
+            don&apos;t yet understand. They have the means to acquire serious pieces, but not
+            the knowledge to evaluate them properly. The result is predictable: they overpay,
+            they buy pieces with hidden problems, they trust the wrong dealers.
+          </p>
+
+          <p className="mb-7">
+            I&apos;ve watched this pattern repeat countless times. A successful professional
+            decides to build a collection. They have $100,000 or $200,000 to spend. Within
+            a year, they&apos;ve made $30,000 or $40,000 in mistakes—pieces they overpaid for,
+            pieces they can&apos;t resell, pieces that turned out to be less than represented.
+          </p>
+
+          <p className="mb-7">
+            This doesn&apos;t have to be your story. The beginner&apos;s tax is not a fatality.
+            It&apos;s what happens when you enter a specialized market alone, without guidance,
+            without access to honest opinions, without someone who has no financial stake in
+            your decisions.
+          </p>
+
           <p className="mb-7 text-ink font-medium">
-            Saving you from those mistakes is what this membership does.
+            Avoiding that tax entirely is what this membership does.
           </p>
 
           <p className="mb-7">
