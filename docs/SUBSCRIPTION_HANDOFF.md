@@ -35,16 +35,26 @@ Implementation status and handoff notes for the Nihontowatch Pro Tier system.
 | 72h data delay | `src/app/api/browse/route.ts`, `src/lib/subscription/server.ts` | Filters listings >72h old for free tier, private cache for authenticated users |
 | Gate inquiry emails | `src/components/inquiry/InquiryModal.tsx`, `src/components/listing/QuickViewContent.tsx` | requireFeature check, shows paywall before login for anonymous |
 | Gate saved searches | `src/app/api/saved-searches/route.ts`, `src/components/browse/SaveSearchButton.tsx` | API + UI gating, shows paywall before login for anonymous |
+| Gate setsumei translations | `src/components/listing/SetsumeiSection.tsx` | Shows 1/3 preview with fade, "Unlock Full Translation" CTA |
 | Admin full access | `src/contexts/SubscriptionContext.tsx`, `src/lib/subscription/server.ts` | Admins (role='admin') get connoisseur tier access automatically |
 | Value-prop paywall messages | `src/types/subscription.ts` | Inquiry emails mention 10% export discount, saved searches highlight watchlist value |
+| Feature gating tests | `tests/subscription/feature-gating.test.tsx` | 12 tests for component gating behavior |
+| Data delay tests | `tests/subscription/data-delay.test.ts` | 22 tests for auth, caching, admin bypass |
 
 ### ⏳ REMAINING (Phase 1)
 
 | Task | Priority | Notes |
 |------|----------|-------|
-| Setsumei translation API | MEDIUM | Claude API integration for NBTHK zufu translations |
-| Setsumei component | MEDIUM | UI for listing detail with translate button |
-| Pricing page | MEDIUM | Full pricing table + page at `/pricing` |
+| Pricing page | HIGH | Full pricing table + page at `/pricing` with checkout CTAs |
+
+### 🔮 FUTURE (Phase 2+)
+
+| Task | Priority | Notes |
+|------|----------|-------|
+| Search alerts | MEDIUM | Email notifications for matching listings (Connoisseur feature) |
+| Private listings | MEDIUM | Exclusive dealer items (Connoisseur feature) |
+| Artist stats | LOW | Certification statistics by smith/school |
+| Setsumei on-demand translation | LOW | Claude API for items without pre-translated setsumei |
 
 ---
 
@@ -190,11 +200,20 @@ Migration `039_subscription_tiers.sql` adds:
 
 ---
 
-## Next Steps (Recommended Order)
+## Next Steps
 
-### 1. Setsumei Translation API
+### 1. Create Pricing Page (HIGH PRIORITY)
 
-Create `src/app/api/setsumei/translate/route.ts`:
+Create `src/app/pricing/page.tsx` with:
+- PricingTable component (3 tiers: Free, Enthusiast, Connoisseur)
+- Feature comparison matrix
+- Monthly/Annual billing toggle
+- Checkout CTAs that call `checkout()` from SubscriptionContext
+- SEO meta tags
+
+### 2. Future: On-Demand Setsumei Translation API
+
+For items without pre-translated setsumei, create `src/app/api/setsumei/translate/route.ts`:
 
 ```typescript
 // POST with listingId
@@ -204,20 +223,39 @@ Create `src/app/api/setsumei/translate/route.ts`:
 // Gate behind 'setsumei_translation' feature
 ```
 
-### 2. Setsumei Translation Component
+---
 
-Create component for listing detail page:
-- Show Japanese setsumei with "Translate" button
-- On click, check subscription and call translation API
-- Display translated text with source attribution
+## Test Coverage
 
-### 3. Create Pricing Page
+**34 total subscription tests** in `tests/subscription/`:
 
-Create `src/app/pricing/page.tsx` with:
-- PricingTable component (3 columns)
-- Feature comparison
-- Monthly/Annual toggle
-- Checkout CTAs
+| Test File | Tests | Coverage |
+|-----------|-------|----------|
+| `data-delay.test.ts` | 22 | Server auth, 72h cutoff, admin bypass, client fallback, credentials |
+| `feature-gating.test.tsx` | 12 | Component gating, paywall triggers, feature access matrix |
+
+### What Tests Catch
+
+- Removing `useSubscription` from gated components
+- Removing `canAccess`/`requireFeature`/`showPaywall` calls
+- Breaking the feature access matrix (free vs paid)
+- Breaking admin bypass logic
+- Breaking auth client fallback
+- Missing `credentials: 'include'` in fetch calls
+- Missing `force-dynamic` or `no-store` cache headers
+
+### Running Tests
+
+```bash
+# All subscription tests
+npm test -- tests/subscription
+
+# Just feature gating
+npm test -- tests/subscription/feature-gating.test.tsx
+
+# Just data delay auth
+npm test -- tests/subscription/data-delay.test.ts
+```
 
 ---
 
