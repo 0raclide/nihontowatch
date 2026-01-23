@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { LoginModal } from '@/components/auth/LoginModal';
@@ -66,24 +67,15 @@ export default function ConnoisseurPage() {
       <main className="max-w-[680px] mx-auto px-6 py-20">
         {/* Title */}
         <header className="mb-20 text-center">
-          {/* Tokugawa Mon */}
+          {/* Logo Mon */}
           <div className="mb-8 flex justify-center">
-            <svg
-              viewBox="0 0 100 100"
-              className="w-16 h-16 text-gold/70"
-              fill="currentColor"
-            >
-              <circle cx="50" cy="50" r="48" fill="none" stroke="currentColor" strokeWidth="2" />
-              {/* Three hollyhock leaves (Mitsuba Aoi) */}
-              <path d="M50 12 C50 12, 62 28, 50 38 C38 28, 50 12, 50 12" />
-              <path d="M50 12 C50 12, 62 28, 50 38 C38 28, 50 12, 50 12" transform="rotate(120 50 50)" />
-              <path d="M50 12 C50 12, 62 28, 50 38 C38 28, 50 12, 50 12" transform="rotate(240 50 50)" />
-              {/* Leaf stems meeting at center */}
-              <circle cx="50" cy="50" r="6" />
-              <line x1="50" y1="38" x2="50" y2="44" stroke="currentColor" strokeWidth="3" />
-              <line x1="50" y1="38" x2="50" y2="44" stroke="currentColor" strokeWidth="3" transform="rotate(120 50 50)" />
-              <line x1="50" y1="38" x2="50" y2="44" stroke="currentColor" strokeWidth="3" transform="rotate(240 50 50)" />
-            </svg>
+            <Image
+              src="/logo-mon.png"
+              alt="Nihontowatch Mon"
+              width={64}
+              height={64}
+              className="opacity-80"
+            />
           </div>
           <p className="text-gold text-[11px] tracking-[0.2em] uppercase mb-5 font-medium">
             Connoisseur Membership
