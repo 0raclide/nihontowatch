@@ -419,8 +419,8 @@ export default function ConnoisseurPage() {
 
           <p className="mb-7">
             I say this not to be harsh, but to be clear about what you&apos;re joining. This works
-            because everyone in it understands the rules. The dealers trust me. I need to be able
-            to trust you.
+            because everyone in it understands the rules. Violations don&apos;t just affect one
+            person—they harm the entire community and the access we&apos;ve collectively built.
           </p>
 
           {/* Divider */}
