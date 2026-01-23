@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 import type { Listing, CertificationType } from '@/types';
 
 // =============================================================================
@@ -57,6 +58,7 @@ export function SetsumeiSection({
 }: SetsumeiSectionProps) {
   const [showOriginal, setShowOriginal] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const { canAccess, showPaywall } = useSubscription();
 
   // Only show for Juyo/Tokubetsu Juyo items
   if (!hasSetsumeiCertification(listing.cert_type)) {
@@ -65,6 +67,7 @@ export function SetsumeiSection({
 
   const hasSetsumei = !!listing.setsumei_text_en;
   const hasOriginal = !!listing.setsumei_text_ja;
+  const hasAccess = canAccess('setsumei_translation');
 
   // Default padding classes (can be overridden via className)
   const baseClasses = className.includes('px-0') ? 'py-3' : 'px-4 py-3 lg:px-5';
@@ -85,6 +88,60 @@ export function SetsumeiSection({
           <p className="text-[10px] text-muted/70 mt-1">
             This {listing.cert_type} designation includes Zufu commentary that will be translated.
           </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Gated state - show teaser for users without access
+  if (!hasAccess) {
+    // Get first ~100 chars as teaser
+    const teaserText = listing.setsumei_text_en?.slice(0, 100) || '';
+
+    return (
+      <div className={`${baseClasses} ${className}`}>
+        {/* Header */}
+        <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center gap-2">
+            <h3 className="text-[10px] uppercase tracking-wider text-gold font-medium">
+              NBTHK Zufu Commentary
+            </h3>
+            <span className="text-[9px] px-1.5 py-0.5 bg-gold/10 text-gold rounded">
+              {listing.cert_type}
+            </span>
+          </div>
+        </div>
+
+        <p className="text-[10px] text-muted/70 mb-2 flex items-center gap-1">
+          <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span>AI translation — may contain errors</span>
+        </p>
+
+        {/* Gated Content */}
+        <div className="bg-surface-elevated/30 border border-gold/20 rounded-lg p-4 relative overflow-hidden">
+          {/* Blurred teaser text */}
+          <div className="text-[13px] text-ink/80 leading-relaxed blur-[6px] select-none pointer-events-none">
+            {teaserText}...
+          </div>
+
+          {/* Upgrade overlay */}
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-surface/80 to-surface flex flex-col items-center justify-end pb-4">
+            <p className="text-[11px] text-muted mb-2 text-center px-4">
+              Expert NBTHK evaluations translated for collectors
+            </p>
+            <button
+              type="button"
+              onClick={() => showPaywall('setsumei_translation')}
+              className="px-4 py-2 text-[12px] font-medium text-white bg-gold hover:bg-gold-light rounded-lg transition-colors flex items-center gap-1.5"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+              Unlock Translation
+            </button>
+          </div>
         </div>
       </div>
     );

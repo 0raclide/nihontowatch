@@ -1,4 +1,27 @@
 import '@testing-library/jest-dom';
+import { vi } from 'vitest';
+
+// =============================================================================
+// Mock SubscriptionContext for all tests
+// =============================================================================
+
+vi.mock('@/contexts/SubscriptionContext', () => ({
+  useSubscription: () => ({
+    tier: 'connoisseur',
+    status: 'active',
+    isFree: false,
+    isEnthusiast: false,
+    isConnoisseur: true,
+    canAccess: () => true,
+    requireFeature: () => true,
+    checkout: vi.fn(),
+    openPortal: vi.fn(),
+    paywallInfo: null,
+    showPaywall: vi.fn(),
+    hidePaywall: vi.fn(),
+  }),
+  SubscriptionProvider: ({ children }: { children: React.ReactNode }) => children,
+}));
 
 // =============================================================================
 // Warning Suppression for Known Harmless Test Environment Warnings
