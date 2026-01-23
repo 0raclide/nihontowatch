@@ -137,15 +137,15 @@ export function SetsumeiSection({
             <HighlightedMarkdown content={cleanPreview} />
           </div>
 
-          {/* Fade overlay with CTA */}
-          <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-surface via-surface/95 to-transparent flex flex-col items-center justify-end pb-4">
+          {/* Fade overlay with CTA - pointer-events-none allows clicking glossary terms through the gradient */}
+          <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-surface via-surface/95 to-transparent flex flex-col items-center justify-end pb-4 pointer-events-none">
             <p className="text-[11px] text-muted mb-2 text-center">
               Continue reading the full NBTHK evaluation...
             </p>
             <button
               type="button"
               onClick={() => showPaywall('setsumei_translation')}
-              className="px-4 py-2 text-[12px] font-medium text-white bg-gold hover:bg-gold-light rounded-lg transition-colors flex items-center gap-1.5 shadow-lg"
+              className="px-4 py-2 text-[12px] font-medium text-white bg-gold hover:bg-gold-light rounded-lg transition-colors flex items-center gap-1.5 shadow-lg pointer-events-auto"
             >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
