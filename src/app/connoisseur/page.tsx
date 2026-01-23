@@ -297,6 +297,45 @@ export default function ConnoisseurPage() {
           {/* Divider */}
           <div className="my-16 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
 
+          <h2 className="font-serif text-[1.75rem] text-ink tracking-tight mb-8">Why a Subscription</h2>
+
+          <p className="mb-7">
+            I don&apos;t take commissions on transactions. Not from you, not from dealers, not
+            from anyone.
+          </p>
+
+          <p className="mb-7">
+            Commissions create bad incentives. If I earned a percentage on every sale, my
+            advice would be biased—consciously or not—toward closing deals rather than
+            protecting your interests. I&apos;d have reason to encourage purchases I shouldn&apos;t,
+            to downplay concerns I should raise, to push you toward decisions that benefit
+            me rather than you.
+          </p>
+
+          <p className="mb-7">
+            The subscription model keeps it honest. You pay a flat fee. My only incentive is
+            to provide enough value that you stay. That means giving you my genuine opinion,
+            even when it&apos;s not what you want to hear.
+          </p>
+
+          <p className="mb-7">
+            Frankly, I do this because I enjoy it. I&apos;ve spent my collecting years acquiring
+            pieces. Now I find myself <span className="text-ink font-medium">collecting collectors</span>—finding
+            serious students of the craft, helping them develop their eye, watching them build
+            collections I can be proud to have influenced.
+          </p>
+
+          <p className="mb-7">
+            But this also means the relationship matters to me. If we don&apos;t get along—if
+            the fit isn&apos;t right, if the communication doesn&apos;t work, if for any reason
+            I feel the relationship isn&apos;t productive—I&apos;ll revoke your membership at
+            my discretion. This isn&apos;t a service you&apos;re entitled to. It&apos;s a
+            community you&apos;re invited into.
+          </p>
+
+          {/* Divider */}
+          <div className="my-16 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+
           <h2 className="font-serif text-[1.75rem] text-ink tracking-tight mb-8">Is This For You?</h2>
 
           <p className="mb-7">
