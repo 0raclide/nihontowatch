@@ -125,6 +125,13 @@ export default function ConnoisseurPage() {
           </p>
 
           <p className="mb-7">
+            Darcy passed away far too young. The field lost one of its great teachers, and I lost
+            a mentor. Much of what I know—and much of what I hope to pass on through this
+            community—traces back to what he taught me. This work is, in part, a way of honoring
+            that legacy.
+          </p>
+
+          <p className="mb-7">
             If you want a sense of how I approach this field, you can read some of my{' '}
             <a
               href="https://nihontology.substack.com/p/grandmaster-mitsutada"
