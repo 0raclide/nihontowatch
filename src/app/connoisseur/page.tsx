@@ -306,11 +306,11 @@ export default function ConnoisseurPage() {
 
           <p className="mb-7">
             I should also set expectations about what you&apos;ll receive. Most Japanese dealers
-            are not skilled photographers. Do not expect polished, studio-quality images. What
-            you <span className="text-ink font-medium">will</span> receive is what matters: the
-            expertly translated setsumei, comprehensive statistics on the maker, and advanced
-            intelligence on the artist&apos;s corpus—how many certified works exist, what has
-            sold recently, where this piece fits in the broader context.
+            are not skilled photographers. Do not expect polished, studio-quality images. The
+            platform will help you make an informed choice: the expertly translated setsumei,
+            comprehensive statistics on the maker, and advanced intelligence on the artist&apos;s
+            corpus—how many certified works exist, what has sold recently, where this piece fits
+            in the broader context.
           </p>
 
           <p className="mb-7">
