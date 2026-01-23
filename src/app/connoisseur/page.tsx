@@ -619,6 +619,12 @@ export default function ConnoisseurPage() {
           </p>
 
           <p className="mb-7">
+            What you get: private dealer offerings, instant alerts when pieces hit the market so
+            you can be first to act, artist certification statistics, and direct support for
+            questions and guidance.
+          </p>
+
+          <p className="mb-7">
             Membership is <span className="text-ink font-medium">$200/month</span>, billed annually.
             Renewals fall just before the{' '}
             <span className="text-ink font-medium">Dai Token Ichi</span> each November.
