@@ -517,10 +517,10 @@ export default function ConnoisseurPage() {
           </p>
 
           <p className="mb-7">
-            Mistakes at this level are incredibly expensive. Overpaying by 20% on a $50,000
-            piece costs you $10,000. Buying something with condition issues you didn&apos;t
-            notice costs you even more. Purchasing from a dealer who won&apos;t stand behind
-            the sale costs you everything.
+            Mistakes at this level are incredibly expensive. Buying a Juyo blade can become
+            a costly error if it&apos;s &ldquo;Juyo in name only&rdquo;—a piece that represents
+            the bottom lot of one of the weaker sessions. You can easily lose tens of thousands
+            of dollars on a wrong purchase. This is why you want maximum information.
           </p>
 
           <p className="mb-7">
