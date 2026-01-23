@@ -269,9 +269,94 @@ stripe listen --forward-to localhost:3000/api/subscription/webhook
 
 ## Recent Fixes
 
-1. **Edge Cache Issue (2026-01-23)**: Fixed issue where admins saw delayed data because Vercel edge was caching responses before auth check ran. Added `dynamic = 'force-dynamic'` to browse API route and `no-store` cache header for authenticated users.
+### 1. Edge Cache Issue (2026-01-23)
+Fixed issue where admins saw delayed data because Vercel edge was caching responses before auth check ran.
+- Added `dynamic = 'force-dynamic'` to browse API route
+- Added `no-store` cache header for authenticated users
 
-2. **Paywall-before-Login UX (2026-01-23)**: Anonymous users now see paywall with value proposition before being prompted to sign in. Previously showed generic login modal which didn't explain the feature value.
+### 2. Paywall-before-Login UX (2026-01-23)
+Anonymous users now see paywall with value proposition before being prompted to sign in. Previously showed generic login modal which didn't explain the feature value.
+
+### 3. Auth Cookies Not Sent (2026-01-23)
+**Problem:** `fetch()` calls to `/api/browse` were missing `credentials: 'include'`, so auth cookies weren't sent and all users were treated as free tier.
+**Fix:** Added `credentials: 'include'` to all browse API fetch calls in `src/app/page.tsx`.
+
+### 4. Service Client Fallback (2026-01-23)
+**Problem:** `getUserSubscription()` silently failed when service client couldn't fetch profile (e.g., if `SUPABASE_SERVICE_ROLE_KEY` was missing or query failed).
+**Fix:** Added fallback to authenticated client in `src/lib/subscription/server.ts`:
+```typescript
+// Try service client first, fall back to auth client
+const { data: serviceProfile, error: serviceError } = await serviceClient...
+if (serviceProfile) {
+  profile = serviceProfile;
+} else {
+  // Fall back to authenticated client
+  const { data: authProfile } = await supabase...
+  profile = authProfile;
+}
+```
+
+### 5. Migration Not Applied (2026-01-23) - ROOT CAUSE
+**Problem:** The subscription migration `039_subscription_tiers.sql` was never pushed to production. The `subscription_tier` column didn't exist, causing all profile queries to fail with "column profiles.subscription_tier does not exist".
+**Fix:** Ran `supabase db push --include-all` to apply the migration.
+**Lesson:** Always verify migrations are applied after deployment. Use debug endpoints to diagnose database issues.
+
+### 6. Early Access Badge Styling (2026-01-23)
+Changed "Early Access" badge from orange gradient to green (matching "New" badge styling) per user feedback.
+
+---
+
+## Critical Tests
+
+22 tests in `tests/subscription/data-delay.test.ts` guard against regression:
+
+| Test | What it catches |
+|------|-----------------|
+| `CRITICAL: falls back to auth client when service client fails` | Service client returns error |
+| `CRITICAL: admin with failed service client must NOT be treated as free` | Silent service client failure |
+| `server subscription util has auth client fallback` | Verifies fallback code exists |
+| `browse API fetch must include credentials` | Missing `credentials: 'include'` |
+| `browse API route has force-dynamic export` | CDN caching authenticated responses |
+| `browse API uses no-store cache` | Cache-Control header missing |
+
+Run tests before every deploy:
+```bash
+npm test -- tests/subscription/data-delay.test.ts
+```
+
+---
+
+## Debug Endpoint
+
+A debug endpoint exists at `/api/debug/subscription` for diagnosing auth issues:
+
+```typescript
+// Returns:
+{
+  subscription: { tier, status, userId, isDelayed },
+  profileDebug: {
+    serviceClient: { profile, error, isAdmin },
+    regularClient: { profile, error, isAdmin },
+    serviceKeyConfigured: boolean
+  },
+  counts: { totalAvailable, freshListings, delayedListings }
+}
+```
+
+**DELETE THIS ENDPOINT** after debugging is complete (contains sensitive info).
+
+---
+
+## Deployment Checklist
+
+Before deploying subscription changes:
+
+1. [ ] Run `npm test` - all 22 subscription tests must pass
+2. [ ] Verify migration is applied: `supabase db push`
+3. [ ] Check env vars in Vercel: `SUPABASE_SERVICE_ROLE_KEY`, Stripe keys
+4. [ ] After deploy, test `/api/debug/subscription` while logged in as admin
+5. [ ] Verify `isDelayed: false` and `tier: "connoisseur"` for admin
+6. [ ] Hard refresh main site, confirm fresh listings visible
 
 ---
 
