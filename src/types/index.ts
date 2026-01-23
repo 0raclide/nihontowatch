@@ -706,3 +706,32 @@ export type {
   InquiryResponse,
   ValidationResult,
 } from '@/lib/inquiry/types';
+
+// =============================================================================
+// SUBSCRIPTION TYPES
+// =============================================================================
+
+export type {
+  SubscriptionTier,
+  SubscriptionStatus,
+  Feature,
+  BillingPeriod,
+  StripeCheckoutRequest,
+  StripeCheckoutResponse,
+  StripePortalResponse,
+  SubscriptionState,
+  SubscriptionFields,
+  TierPricing,
+  TierInfo,
+} from './subscription';
+
+export {
+  TIER_RANK,
+  FEATURE_MIN_TIER,
+  TIER_PRICING,
+  TIER_INFO,
+  FEATURE_PAYWALL_MESSAGES,
+  canAccessFeature,
+  getTierFeatures,
+  createSubscriptionState,
+} from './subscription';

@@ -6,6 +6,8 @@ import { ThemeProvider, themeInitScript } from "@/contexts/ThemeContext";
 import { QuickViewProvider } from "@/contexts/QuickViewContext";
 import { QuickView } from "@/components/listing/QuickView";
 import { AuthProvider } from "@/lib/auth/AuthContext";
+import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
+import { PaywallModal } from "@/components/subscription/PaywallModal";
 import { FavoritesProvider } from "@/contexts/FavoritesContext";
 import { ActivityWrapper } from "@/components/activity/ActivityWrapper";
 import { SignupPressureWrapper } from "@/components/signup";
@@ -89,20 +91,23 @@ export default function RootLayout({
       </head>
       <body className="antialiased font-sans" suppressHydrationWarning>
         <AuthProvider>
-          <FavoritesProvider>
-            <SignupPressureWrapper>
-              <MobileUIProvider>
-                <ThemeProvider>
-                  <QuickViewProvider>
-                    <ActivityWrapper>
-                      {children}
-                    </ActivityWrapper>
-                    <QuickView />
-                  </QuickViewProvider>
-                </ThemeProvider>
-              </MobileUIProvider>
-            </SignupPressureWrapper>
-          </FavoritesProvider>
+          <SubscriptionProvider>
+            <PaywallModal />
+            <FavoritesProvider>
+              <SignupPressureWrapper>
+                <MobileUIProvider>
+                  <ThemeProvider>
+                    <QuickViewProvider>
+                      <ActivityWrapper>
+                        {children}
+                      </ActivityWrapper>
+                      <QuickView />
+                    </QuickViewProvider>
+                  </ThemeProvider>
+                </MobileUIProvider>
+              </SignupPressureWrapper>
+            </FavoritesProvider>
+          </SubscriptionProvider>
         </AuthProvider>
       </body>
     </html>

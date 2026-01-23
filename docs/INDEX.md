@@ -18,6 +18,10 @@
 | [SEARCH_FEATURES.md](./SEARCH_FEATURES.md) | Natural language search, filters, query syntax |
 | [NEW_LISTING_INDICATOR.md](./NEW_LISTING_INDICATOR.md) | "New" badge for recently discovered listings |
 | [OPTIMIZATION.md](./OPTIMIZATION.md) | Performance optimization, image loading, caching strategies |
+| [PRO_TIER_STRATEGY.md](./PRO_TIER_STRATEGY.md) | Subscription business strategy, tier features, pricing |
+| [PRO_TIER_IMPLEMENTATION.md](./PRO_TIER_IMPLEMENTATION.md) | Full implementation checklist for subscription system |
+| [PHASE_1_BREAKDOWN.md](./PHASE_1_BREAKDOWN.md) | Detailed Phase 1 task breakdown with estimates |
+| [SUBSCRIPTION_HANDOFF.md](./SUBSCRIPTION_HANDOFF.md) | **Current status & handoff notes for subscription implementation** |
 | [SEO.md](./SEO.md) | SEO optimization, structured data, sitemap, robots.txt |
 | [TESTING.md](./TESTING.md) | Test suite docs, concordance tests, CI/CD integration |
 
@@ -187,6 +191,16 @@
 4. Run `npm test -- browse` - Browse API unit tests
 5. Run `npx playwright test` - E2E tests
 6. Check `.github/workflows/test.yml` - CI configuration
+
+### "I need to work on subscription/Pro tiers"
+1. **Start here:** Read [SUBSCRIPTION_HANDOFF.md](./SUBSCRIPTION_HANDOFF.md) - Current status & next steps
+2. Read [PRO_TIER_STRATEGY.md](./PRO_TIER_STRATEGY.md) - Business strategy and tier features
+3. Read [PRO_TIER_IMPLEMENTATION.md](./PRO_TIER_IMPLEMENTATION.md) - Full implementation checklist
+4. Read [PHASE_1_BREAKDOWN.md](./PHASE_1_BREAKDOWN.md) - Detailed task breakdown
+5. Check `src/types/subscription.ts` - Type definitions and feature access
+6. Check `src/contexts/SubscriptionContext.tsx` - Subscription state management
+7. Check `src/lib/stripe/` - Stripe integration (server + client)
+8. Check `src/app/api/subscription/` - API routes (checkout, webhook, portal)
 
 ### "I need to work on SEO"
 1. Read [SEO.md](./SEO.md) - Complete SEO documentation

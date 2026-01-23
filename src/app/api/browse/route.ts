@@ -4,6 +4,7 @@ import { normalizeSearchText, expandSearchAliases } from '@/lib/search';
 import { parseNumericFilters } from '@/lib/search/numericFilters';
 import { parseSemanticQuery } from '@/lib/search/semanticQueryParser';
 import { CACHE, PAGINATION, LISTING_FILTERS } from '@/lib/constants';
+import { getUserSubscription, getDataDelayCutoff } from '@/lib/subscription/server';
 
 // Facets are computed fresh for each request to reflect current filters
 // No caching - facet counts must accurately reflect user's filter selections
@@ -188,6 +189,9 @@ export async function GET(request: NextRequest) {
     const supabase = await createClient();
     const params = parseParams(request.nextUrl.searchParams);
 
+    // Get user subscription to determine data delay
+    const subscription = await getUserSubscription();
+
     // Ensure page is reasonable
     const safePage = Math.max(1, Math.min(params.page || 1, 1000));
     // Use explicit offset if provided, otherwise calculate from page
@@ -251,6 +255,13 @@ export async function GET(request: NextRequest) {
     // Status filter (only apply if not 'all' - null means show both available and sold)
     if (statusFilter) {
       query = query.or(statusFilter);
+    }
+
+    // 72h data delay for free tier users
+    // Free users only see listings discovered more than 72 hours ago
+    if (subscription.isDelayed) {
+      const delayCutoff = getDataDelayCutoff();
+      query = query.lte('first_seen_at', delayCutoff);
     }
 
     // Minimum price filter (excludes books, accessories, low-quality items)
@@ -481,6 +492,9 @@ export async function GET(request: NextRequest) {
       }));
     }
 
+    // Get data delay cutoff for free tier (used by facets too)
+    const delayCutoff = subscription.isDelayed ? getDataDelayCutoff() : undefined;
+
     // Get facet counts - computed fresh to reflect current filter state
     // Each facet is filtered by all OTHER active filters (standard faceted search pattern)
     const [typesFacet, certsFacet, dealersFacet, periodsFacet, signatureFacet] = await Promise.all([
@@ -492,6 +506,7 @@ export async function GET(request: NextRequest) {
         signatureStatuses: params.signatureStatuses,
         askOnly: params.askOnly,
         query: params.query,
+        delayCutoff,
       }),
       // Certification facets: filtered by category/itemTypes, dealers, askOnly
       getCertificationFacets(supabase, statusFilter, {
@@ -502,6 +517,7 @@ export async function GET(request: NextRequest) {
         signatureStatuses: params.signatureStatuses,
         askOnly: params.askOnly,
         query: params.query,
+        delayCutoff,
       }),
       // Dealer facets: filtered by category/itemTypes, certifications, askOnly
       getDealerFacets(supabase, statusFilter, {
@@ -512,6 +528,7 @@ export async function GET(request: NextRequest) {
         signatureStatuses: params.signatureStatuses,
         askOnly: params.askOnly,
         query: params.query,
+        delayCutoff,
       }),
       // Historical period facets
       getHistoricalPeriodFacets(supabase, statusFilter, {
@@ -522,6 +539,7 @@ export async function GET(request: NextRequest) {
         signatureStatuses: params.signatureStatuses,
         askOnly: params.askOnly,
         query: params.query,
+        delayCutoff,
       }),
       // Signature status facets
       getSignatureStatusFacets(supabase, statusFilter, {
@@ -531,6 +549,7 @@ export async function GET(request: NextRequest) {
         dealers: params.dealers,
         historicalPeriods: params.historicalPeriods,
         askOnly: params.askOnly,
+        delayCutoff,
         query: params.query,
       }),
     ]);
@@ -563,6 +582,9 @@ export async function GET(request: NextRequest) {
         signatureStatuses: signatureFacet,
       },
       lastUpdated,
+      // Data freshness indicator for subscription tier
+      isDelayed: subscription.isDelayed,
+      subscriptionTier: subscription.tier,
     });
 
     // Cache for short duration with SWR for quick invalidation
@@ -588,6 +610,8 @@ interface FacetFilterOptions {
   signatureStatuses?: string[];
   askOnly?: boolean;
   query?: string;
+  /** Data delay cutoff for free tier (ISO string) */
+  delayCutoff?: string;
 }
 
 // Facet functions - apply filters to reflect user's current selection
@@ -636,6 +660,10 @@ async function getItemTypeFacets(
     }
     if (options.askOnly) {
       query = query.is('price_value', null);
+    }
+    // Apply data delay for free tier
+    if (options.delayCutoff) {
+      query = query.lte('first_seen_at', options.delayCutoff);
     }
 
     // Fetch page
@@ -719,6 +747,10 @@ async function getCertificationFacets(
     if (options.askOnly) {
       query = query.is('price_value', null);
     }
+    // Apply data delay for free tier
+    if (options.delayCutoff) {
+      query = query.lte('first_seen_at', options.delayCutoff);
+    }
 
     // Fetch page
     const { data, error } = await query.range(offset, offset + FACET_PAGE_SIZE - 1);
@@ -798,6 +830,10 @@ async function getDealerFacets(
     }
     if (options.askOnly) {
       query = query.is('price_value', null);
+    }
+    // Apply data delay for free tier
+    if (options.delayCutoff) {
+      query = query.lte('first_seen_at', options.delayCutoff);
     }
 
     // Fetch page
@@ -889,6 +925,10 @@ async function getHistoricalPeriodFacets(
     if (options.askOnly) {
       query = query.is('price_value', null);
     }
+    // Apply data delay for free tier
+    if (options.delayCutoff) {
+      query = query.lte('first_seen_at', options.delayCutoff);
+    }
 
     const { data, error } = await query.range(offset, offset + FACET_PAGE_SIZE - 1);
     if (error || !data) break;
@@ -973,6 +1013,10 @@ async function getSignatureStatusFacets(
     }
     if (options.askOnly) {
       query = query.is('price_value', null);
+    }
+    // Apply data delay for free tier
+    if (options.delayCutoff) {
+      query = query.lte('first_seen_at', options.delayCutoff);
     }
 
     const { data, error } = await query.range(offset, offset + FACET_PAGE_SIZE - 1);

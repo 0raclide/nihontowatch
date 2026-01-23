@@ -1,5 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+import { getUserSubscription } from '@/lib/subscription/server';
+import { canAccessFeature } from '@/types/subscription';
 import type {
   CreateSavedSearchInput,
   UpdateSavedSearchInput,
@@ -123,6 +125,20 @@ export async function POST(request: NextRequest) {
     } = await supabase.auth.getUser();
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Check subscription tier for saved searches feature
+    const subscription = await getUserSubscription();
+    if (!canAccessFeature(subscription.tier, 'saved_searches')) {
+      return NextResponse.json(
+        {
+          error: 'Upgrade required',
+          feature: 'saved_searches',
+          requiredTier: 'enthusiast',
+          message: 'Saved searches require an Enthusiast subscription or higher.',
+        },
+        { status: 403 }
+      );
     }
 
     const body: CreateSavedSearchInput = await request.json();

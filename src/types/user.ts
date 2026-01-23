@@ -54,6 +54,8 @@ export interface UserPreferences {
 // PROFILES TABLE
 // =============================================================================
 
+import type { SubscriptionTier, SubscriptionStatus } from './subscription';
+
 export interface Profile {
   id: string; // UUID
   email: string | null;
@@ -63,6 +65,13 @@ export interface Profile {
   preferences: UserPreferences | null;
   created_at: string; // ISO timestamp
   updated_at: string; // ISO timestamp
+  // Subscription fields
+  subscription_tier: SubscriptionTier;
+  subscription_status: SubscriptionStatus;
+  subscription_started_at: string | null;
+  subscription_expires_at: string | null;
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
 }
 
 export interface ProfileInsert {
@@ -80,6 +89,13 @@ export interface ProfileUpdate {
   avatar_url?: string | null;
   role?: UserRole;
   preferences?: UserPreferences | null;
+  // Subscription updates (admin only typically)
+  subscription_tier?: SubscriptionTier;
+  subscription_status?: SubscriptionStatus;
+  subscription_started_at?: string | null;
+  subscription_expires_at?: string | null;
+  stripe_customer_id?: string | null;
+  stripe_subscription_id?: string | null;
 }
 
 // =============================================================================

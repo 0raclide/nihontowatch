@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useAuth } from '@/lib/auth/AuthContext';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 import { LoginModal } from '@/components/auth/LoginModal';
 import { SaveSearchModal } from './SaveSearchModal';
 import type { SavedSearchCriteria } from '@/types';
@@ -23,6 +24,7 @@ export function SaveSearchButton({
   className = '',
 }: SaveSearchButtonProps) {
   const { user } = useAuth();
+  const { requireFeature } = useSubscription();
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showSaveModal, setShowSaveModal] = useState(false);
 
@@ -42,11 +44,19 @@ export function SaveSearchButton({
   }
 
   const handleClick = () => {
+    // First check if user is logged in
     if (!user) {
       setShowLoginModal(true);
-    } else {
-      setShowSaveModal(true);
+      return;
     }
+
+    // Then check subscription access - shows paywall if not authorized
+    if (!requireFeature('saved_searches')) {
+      return;
+    }
+
+    // If both checks pass, show save modal
+    setShowSaveModal(true);
   };
 
   return (

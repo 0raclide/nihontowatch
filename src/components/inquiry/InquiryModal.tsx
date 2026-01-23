@@ -17,6 +17,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { useInquiry } from '@/hooks/useInquiry';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 import { CopyButton } from './CopyButton';
 import type { Listing } from '@/types';
 
@@ -59,8 +60,9 @@ export function InquiryModal({ isOpen, onClose, listing }: InquiryModalProps) {
   // Generated email state
   const [generatedEmail, setGeneratedEmail] = useState<GeneratedEmail | null>(null);
 
-  // Hook
+  // Hooks
   const { generateEmail, isGenerating, error, clearError } = useInquiry();
+  const { requireFeature } = useSubscription();
 
   // Body scroll lock
   useBodyScrollLock(isOpen);
@@ -112,6 +114,11 @@ export function InquiryModal({ isOpen, onClose, listing }: InquiryModalProps) {
     async (e: React.FormEvent) => {
       e.preventDefault();
 
+      // Check feature access - shows paywall if not authorized
+      if (!requireFeature('inquiry_emails')) {
+        return;
+      }
+
       if (!validateForm()) {
         return;
       }
@@ -131,6 +138,7 @@ export function InquiryModal({ isOpen, onClose, listing }: InquiryModalProps) {
       }
     },
     [
+      requireFeature,
       validateForm,
       clearError,
       generateEmail,

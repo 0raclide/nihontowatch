@@ -8,7 +8,7 @@ Actionable implementation guide for Nihontowatch subscription tiers.
 
 ### 1.1 Database Schema
 
-- [ ] **Migration: Add subscription fields to profiles**
+- [x] **Migration: Add subscription fields to profiles** ✅ (039_subscription_tiers.sql)
   ```sql
   -- supabase/migrations/037_subscription_fields.sql
   ALTER TABLE profiles ADD COLUMN subscription_tier TEXT DEFAULT 'free'
@@ -24,7 +24,7 @@ Actionable implementation guide for Nihontowatch subscription tiers.
   CREATE INDEX idx_profiles_subscription_tier ON profiles(subscription_tier);
   ```
 
-- [ ] **Migration: Setsumei translations table**
+- [x] **Migration: Setsumei translations table** ✅ (039_subscription_tiers.sql - combined)
   ```sql
   -- supabase/migrations/038_setsumei_translations.sql
   CREATE TABLE setsumei_translations (
@@ -43,7 +43,7 @@ Actionable implementation guide for Nihontowatch subscription tiers.
 
 ### 1.2 Stripe Integration
 
-- [ ] **Install Stripe SDK**
+- [x] **Install Stripe SDK** ✅
   ```bash
   npm install stripe @stripe/stripe-js
   ```
@@ -62,7 +62,7 @@ Actionable implementation guide for Nihontowatch subscription tiers.
   STRIPE_PRICE_CONNOISSEUR_ANNUAL=price_xxx
   ```
 
-- [ ] **Create: `src/lib/stripe.ts`**
+- [x] **Create: `src/lib/stripe/server.ts` + `src/lib/stripe/client.ts`** ✅
   ```typescript
   import Stripe from 'stripe';
 
@@ -82,30 +82,30 @@ Actionable implementation guide for Nihontowatch subscription tiers.
   } as const;
   ```
 
-- [ ] **Create: `src/app/api/subscription/checkout/route.ts`**
+- [x] **Create: `src/app/api/subscription/checkout/route.ts`** ✅
   - Accept tier + billing period
   - Create Stripe checkout session
   - Include user email, metadata
   - Redirect to Stripe hosted checkout
 
-- [ ] **Create: `src/app/api/subscription/portal/route.ts`**
+- [x] **Create: `src/app/api/subscription/portal/route.ts`** ✅
   - Create Stripe billing portal session
   - Allow subscription management
 
-- [ ] **Create: `src/app/api/subscription/webhook/route.ts`**
+- [x] **Create: `src/app/api/subscription/webhook/route.ts`** ✅
   - Handle `checkout.session.completed`
   - Handle `customer.subscription.updated`
   - Handle `customer.subscription.deleted`
   - Handle `invoice.payment_failed`
   - Update profiles table accordingly
 
-- [ ] **Create: `src/app/api/subscription/status/route.ts`**
+- [ ] **Create: `src/app/api/subscription/status/route.ts`** (Not needed - context derives from profile)
   - Return current subscription tier/status
   - Cache for performance
 
 ### 1.3 Subscription Context & Hooks
 
-- [ ] **Create: `src/contexts/SubscriptionContext.tsx`**
+- [x] **Create: `src/contexts/SubscriptionContext.tsx`** ✅
   ```typescript
   type SubscriptionTier = 'free' | 'enthusiast' | 'connoisseur' | 'dealer';
 
@@ -119,7 +119,7 @@ Actionable implementation guide for Nihontowatch subscription tiers.
   }
   ```
 
-- [ ] **Create: `src/lib/subscription.ts`**
+- [x] **Create: `src/types/subscription.ts`** ✅ (moved to types dir)
   ```typescript
   export type Feature =
     | 'fresh_data'
@@ -148,7 +148,7 @@ Actionable implementation guide for Nihontowatch subscription tiers.
   // Favorites are NOT gated - available to all users (valuable intent data)
   ```
 
-- [ ] **Create: `src/hooks/useSubscription.ts`**
+- [x] **Create: `src/hooks/useSubscription.ts`** ✅
   - Wrap context for easy access
   - Memoize canAccess checks
 

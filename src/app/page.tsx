@@ -18,6 +18,7 @@ import { BottomTabBar } from '@/components/navigation/BottomTabBar';
 import { PAGINATION } from '@/lib/constants';
 import { useActivityOptional } from '@/components/activity/ActivityProvider';
 import { DeepLinkHandler } from '@/components/browse/DeepLinkHandler';
+import { DataDelayBanner } from '@/components/subscription/DataDelayBanner';
 
 interface Listing {
   id: string;
@@ -392,6 +393,7 @@ function HomeContent() {
   return (
     <div className="min-h-screen bg-cream transition-colors">
       <Header />
+      <DataDelayBanner />
 
       {/* Handle deep links to specific listings via ?listing= URL param */}
       <DeepLinkHandler />
