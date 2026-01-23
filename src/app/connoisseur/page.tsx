@@ -180,16 +180,9 @@ export default function ConnoisseurPage() {
           </p>
 
           <p className="mb-7">
-            But Connoisseur unlocks a different level of access entirely.
-          </p>
-
-          <p className="my-10 text-ink text-[1.25rem] font-medium leading-relaxed">
-            It&apos;s access to the private market.
-          </p>
-
-          <p className="mb-7">
-            The pieces that never hit public listings. The offerings that go to established
-            collectors first. The inventory that dealers reserve for their best clients.
+            But Connoisseur unlocks a different level of access entirely—the pieces that never
+            hit public listings, the offerings that go to established collectors first, the
+            inventory that dealers reserve for their best clients.
           </p>
 
           <p className="mb-7">

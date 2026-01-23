@@ -18,6 +18,20 @@ vi.mock('next/headers', () => ({
   }),
 }));
 
+// Mock subscription server to avoid data delay filter
+// This prevents the .lte() call that the mock query builder doesn't support
+vi.mock('@/lib/subscription/server', () => ({
+  getUserSubscription: vi.fn(() =>
+    Promise.resolve({
+      tier: 'connoisseur',
+      status: 'active',
+      userId: null,
+      isDelayed: false, // KEY: Prevents .lte() code path
+    })
+  ),
+  getDataDelayCutoff: vi.fn(() => new Date().toISOString()),
+}));
+
 // Track Supabase query calls
 interface QueryTracker {
   notCalls: Array<{ column: string; operator: string; value: unknown }>;
