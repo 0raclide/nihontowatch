@@ -161,6 +161,16 @@ function PricingCard({ tier, billingPeriod, isCurrentTier, onSelect, isLoading }
           {isLoading ? 'Redirecting...' : `Get ${info.name}`}
         </button>
       )}
+
+      {/* Learn more link for Connoisseur */}
+      {tier === 'connoisseur' && !isCurrentTier && (
+        <Link
+          href="/connoisseur"
+          className="block text-center text-sm text-muted hover:text-gold mt-3 transition-colors"
+        >
+          Learn more
+        </Link>
+      )}
     </div>
   );
 }
