@@ -97,14 +97,46 @@ export default function ConnoisseurPage() {
             treat the transaction with the respect it deserves.
           </p>
 
+          <hr className="my-10 border-border" />
+
+          <h2 className="text-2xl">My Story</h2>
+
           <p>
-            I&apos;ve spent years building these relationships myself. Learning the etiquette.
-            Understanding what dealers need to hear. Proving my credibility one transaction at a time.
+            Years ago, I was fortunate to become a client of Darcy Brockbank. Over time, he took
+            me under his wing—teaching me how to truly see a blade, how to navigate the Japanese
+            market, how to build relationships with dealers who would otherwise never give a
+            Western collector the time of day.
+          </p>
+
+          <p>
+            Everything I know about collecting at this level, I learned from him.
+          </p>
+
+          <p>
+            At a certain point in this hobby, collectors often become part-time dealers. It&apos;s
+            almost inevitable—you develop the eye, you build the relationships, and opportunities
+            start coming to you. But that&apos;s not the path I want to take.
+          </p>
+
+          <p>
+            Personally, my collecting days are largely behind me. It may be years before I find
+            something that truly interests me at this point. What I want now is to teach others
+            how to fish—to share what I&apos;ve learned without being directly involved in dealing.
+          </p>
+
+          <p>
+            I want to help serious students of nihonto ascend to the level where they can navigate
+            this market themselves. Where dealers recognize them as knowledgeable collectors worth
+            cultivating. Where the private offerings start coming to them directly.
+          </p>
+
+          <p>
+            That&apos;s what Connoisseur membership is really about.
           </p>
 
           <hr className="my-10 border-border" />
 
-          <h2 className="text-2xl">What Connoisseur Membership Actually Is</h2>
+          <h2 className="text-2xl">What This Membership Actually Is</h2>
 
           <p>
             Nihontowatch started as a way to aggregate public listings—to make it easier to find
