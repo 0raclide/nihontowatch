@@ -277,8 +277,12 @@ export default function ConnoisseurPage() {
           <p className="mb-7">
             The sweet spot is focused but realistic. &ldquo;Bizen Osafune from the height of the
             Kamakura period&rdquo; tells a dealer exactly what you want. &ldquo;Anything from
-            Bizen&rdquo; tells them nothing. &ldquo;Only Mitsutada tanto with horimono in perfect
-            polish&rdquo; means they may never find anything to offer you.
+            Bizen&rdquo; tells them nothing. &ldquo;Only signed pieces by Masamune&rdquo; is not
+            going to yield any offers—there are none that will ever be sold.
+          </p>
+
+          <p className="mb-7">
+            The same applies to tosogu. Not too wide, not too specific.
           </p>
 
           <p className="mb-7">
