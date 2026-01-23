@@ -605,52 +605,23 @@ export default function ConnoisseurPage() {
           {/* Divider */}
           <div className="my-16 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
 
-          <h2 className="font-serif text-[1.75rem] text-ink tracking-tight mb-8">The Details</h2>
+          <h2 className="font-serif text-[1.75rem] text-ink tracking-tight mb-8">Are You Ready?</h2>
 
           <p className="mb-7">
-            Connoisseur membership is <span className="text-ink font-medium">$200/month</span> when
-            billed annually. Monthly subscriptions are available at a higher rate for those who
-            prefer flexibility.
+            If you&apos;re not sure whether this is for you, it probably isn&apos;t. If you think
+            you can navigate this market on your own, you may be right—browse the public listings,
+            buy from established dealers, learn as you go. There&apos;s no shame in that path.
           </p>
 
           <p className="mb-7">
-            Annual memberships renew each year just before the{' '}
-            <span className="text-ink font-medium">Dai Token Ichi</span>—the largest sword fair in
-            Japan, held every November.
+            But if you have conviction—if you know where you want your collection to go and
+            you&apos;re ready to operate at this level—then proceed.
           </p>
 
           <p className="mb-7">
-            This isn&apos;t a casual commitment, and it&apos;s not meant to be.
-          </p>
-
-          <div className="my-12 py-8 px-8 bg-[#f8f7f5] dark:bg-[#222220] rounded-sm border-l-2 border-gold/40">
-            <p className="text-ink font-medium mb-5 text-[15px] tracking-wide uppercase">What you get</p>
-            <ul className="space-y-3 text-[16px]">
-              <li className="pl-6 relative before:content-['✓'] before:absolute before:left-0 before:text-gold before:font-medium">
-                Everything in Enthusiast (real-time listings, translations, inquiry drafts, saved searches)
-              </li>
-              <li className="pl-6 relative before:content-['✓'] before:absolute before:left-0 before:text-gold before:font-medium">
-                Private dealer offerings shared directly with members
-              </li>
-              <li className="pl-6 relative before:content-['✓'] before:absolute before:left-0 before:text-gold before:font-medium">
-                Instant alerts when new pieces match your criteria
-              </li>
-              <li className="pl-6 relative before:content-['✓'] before:absolute before:left-0 before:text-gold before:font-medium">
-                Artist certification statistics (Juyo/Tokuju/Bunkazai counts by smith)
-              </li>
-              <li className="pl-6 relative before:content-['✓'] before:absolute before:left-0 before:text-gold before:font-medium">
-                Access to our private collector community
-              </li>
-              <li className="pl-6 relative before:content-['✓'] before:absolute before:left-0 before:text-gold before:font-medium">
-                Direct LINE support for questions and guidance
-              </li>
-            </ul>
-          </div>
-
-          <p className="mb-7">
-            You can cancel anytime. But in my experience, collectors who join at this level tend
-            to stay—because the value becomes obvious the first time a truly exceptional piece
-            lands in your inbox before anyone else sees it.
+            Membership is <span className="text-ink font-medium">$200/month</span>, billed annually.
+            Renewals fall just before the{' '}
+            <span className="text-ink font-medium">Dai Token Ichi</span> each November.
           </p>
 
         </article>
