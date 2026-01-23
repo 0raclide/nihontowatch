@@ -269,7 +269,7 @@ stripe listen --forward-to localhost:3000/api/subscription/webhook
 
 ## Recent Fixes
 
-1. **CDN Cache Issue (2026-01-23)**: Fixed issue where admins saw delayed data because browse API used `public` cache. Now uses `private` cache for authenticated users to ensure personalized responses.
+1. **Edge Cache Issue (2026-01-23)**: Fixed issue where admins saw delayed data because Vercel edge was caching responses before auth check ran. Added `dynamic = 'force-dynamic'` to browse API route and `no-store` cache header for authenticated users.
 
 2. **Paywall-before-Login UX (2026-01-23)**: Anonymous users now see paywall with value proposition before being prompted to sign in. Previously showed generic login modal which didn't explain the feature value.
 
