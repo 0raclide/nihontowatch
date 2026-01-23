@@ -4,7 +4,7 @@ Actionable implementation guide for Nihontowatch subscription tiers.
 
 ---
 
-## Phase 1: Foundation + Collector Tier
+## Phase 1: Foundation + Enthusiast Tier
 
 ### 1.1 Database Schema
 
@@ -12,7 +12,7 @@ Actionable implementation guide for Nihontowatch subscription tiers.
   ```sql
   -- supabase/migrations/037_subscription_fields.sql
   ALTER TABLE profiles ADD COLUMN subscription_tier TEXT DEFAULT 'free'
-    CHECK (subscription_tier IN ('free', 'collector', 'connoisseur', 'dealer'));
+    CHECK (subscription_tier IN ('free', 'enthusiast', 'connoisseur', 'dealer'));
   ALTER TABLE profiles ADD COLUMN subscription_status TEXT DEFAULT 'inactive'
     CHECK (subscription_status IN ('active', 'inactive', 'cancelled', 'past_due'));
   ALTER TABLE profiles ADD COLUMN subscription_started_at TIMESTAMPTZ;
@@ -71,7 +71,7 @@ Actionable implementation guide for Nihontowatch subscription tiers.
   });
 
   export const PRICES = {
-    collector: {
+    enthusiast: {
       monthly: process.env.STRIPE_PRICE_COLLECTOR_MONTHLY!,
       annual: process.env.STRIPE_PRICE_COLLECTOR_ANNUAL!,
     },
@@ -107,12 +107,12 @@ Actionable implementation guide for Nihontowatch subscription tiers.
 
 - [ ] **Create: `src/contexts/SubscriptionContext.tsx`**
   ```typescript
-  type SubscriptionTier = 'free' | 'collector' | 'connoisseur' | 'dealer';
+  type SubscriptionTier = 'free' | 'enthusiast' | 'connoisseur' | 'dealer';
 
   interface SubscriptionContext {
     tier: SubscriptionTier;
     status: 'active' | 'inactive' | 'cancelled' | 'past_due';
-    isCollector: boolean;
+    isEnthusiast: boolean;
     isConnoisseur: boolean;
     canAccess: (feature: Feature) => boolean;
     openUpgradeModal: (feature?: Feature) => void;
@@ -128,20 +128,21 @@ Actionable implementation guide for Nihontowatch subscription tiers.
     | 'saved_searches'
     | 'search_alerts'
     | 'private_listings'
-    | 'smith_stats'
+    | 'artist_stats'
     | 'line_access'
     | 'export_data';
 
   export const FEATURE_ACCESS: Record<Feature, SubscriptionTier[]> = {
-    fresh_data: ['collector', 'connoisseur', 'dealer'],
-    setsumei_translation: ['collector', 'connoisseur', 'dealer'],
-    inquiry_emails: ['collector', 'connoisseur', 'dealer'],
-    saved_searches: ['collector', 'connoisseur', 'dealer'],
+    fresh_data: ['enthusiast', 'connoisseur', 'dealer'],
+    setsumei_translation: ['enthusiast', 'connoisseur', 'dealer'],
+    inquiry_emails: ['enthusiast', 'connoisseur', 'dealer'],
+    saved_searches: ['enthusiast', 'connoisseur', 'dealer'],
     search_alerts: ['connoisseur'],
     private_listings: ['connoisseur'],
-    smith_stats: ['connoisseur'],  // Juyo/Tokuju/Bunkazai/Bijutsuhin/Kokuho
+    artist_stats: ['connoisseur'],  // Juyo/Tokuju/Bunkazai/Bijutsuhin/Kokuho
+    yuhinkai_discord: ['connoisseur'],  // Private community
     line_access: ['connoisseur'],
-    export_data: ['collector', 'connoisseur', 'dealer'],
+    export_data: ['enthusiast', 'connoisseur', 'dealer'],
   };
 
   // Favorites are NOT gated - available to all users (valuable intent data)
@@ -191,7 +192,7 @@ Actionable implementation guide for Nihontowatch subscription tiers.
   }
   ```
 
-- [ ] **Create: `src/components/collector/DataFreshnessIndicator.tsx`**
+- [ ] **Create: `src/components/enthusiast/DataFreshnessIndicator.tsx`**
   - Show "Listed 3 days ago" on listings for free users
   - "Real-time data" badge for paid users
   - Upgrade prompt on hover/click
@@ -208,9 +209,9 @@ Actionable implementation guide for Nihontowatch subscription tiers.
   - If not, generate with Claude API
   - Store in setsumei_translations table
   - Return translated text
-  - Gate behind Collector+ tier
+  - Gate behind Enthusiast+ tier
 
-- [ ] **Create: `src/components/collector/SetsumeiTranslation.tsx`**
+- [ ] **Create: `src/components/enthusiast/SetsumeiTranslation.tsx`**
   - Display translated setsumei
   - Toggle between Japanese/English
   - Loading state while translating
@@ -219,14 +220,14 @@ Actionable implementation guide for Nihontowatch subscription tiers.
 - [ ] **Modify: Listing detail page**
   - Add SetsumeiTranslation component
   - Show lock icon for free users
-  - "Unlock with Collector" prompt
+  - "Unlock with Enthusiast" prompt
 
 ### 1.7 Gate Inquiry Emails
 
 - [ ] **Modify: `src/components/InquiryModal.tsx`**
   - Check subscription tier before generating
   - Show PaywallModal if free
-  - Allow full access for Collector+
+  - Allow full access for Enthusiast+
 
 - [ ] **Alternative for free users**
   - Show "Contact dealer directly" with link
@@ -241,10 +242,10 @@ Actionable implementation guide for Nihontowatch subscription tiers.
 
 - [ ] **Modify: Saved searches logic**
   - Free tier: max 1 saved search
-  - Collector: unlimited, but no alerts
+  - Enthusiast: unlimited, but no alerts
   - Connoisseur: unlimited + alerts
 
-- [ ] **Disable alerts for Collector**
+- [ ] **Disable alerts for Enthusiast**
   - Save search works
   - Alert toggle hidden/disabled
   - "Upgrade to Connoisseur for alerts"
@@ -407,7 +408,47 @@ Actionable implementation guide for Nihontowatch subscription tiers.
   - "Connect with Hoshi on LINE"
   - Status indicator (connected/not connected)
 
-### 2.4 Search Alerts (Connoisseur Only)
+### 2.4 Yuhinkai Discord Access
+
+Private Discord community of serious collectors — gated to Connoisseur tier.
+
+- [ ] **Create Discord invite system**
+  - Generate unique invite links per user (or use single gated invite)
+  - Track who has joined
+  - Revoke access on subscription cancellation
+
+- [ ] **Create: `src/components/connoisseur/YuhinkaiDiscordCard.tsx`**
+  - Show Discord invite button/link
+  - Only visible to active Connoisseur members
+  - "Join the Yuhinkai" CTA
+  - Status indicator (joined/not joined)
+
+- [ ] **Add to Connoisseur dashboard**
+  - Prominent placement alongside LINE
+  - Brief description of community value
+
+- [ ] **Discord bot (optional)**
+  - Verify membership status
+  - Auto-kick on subscription cancellation
+  - Or: manual review is fine for small numbers
+
+- [ ] **Teaser for non-Connoisseurs**
+  ```
+  ┌─────────────────────────────────────────┐
+  │ YUHINKAI COMMUNITY                      │
+  │                                         │
+  │ 🔒 Private Discord for serious          │
+  │    collectors. Connoisseur only.        │
+  │                                         │
+  │ • Market discussions                    │
+  │ • Piece evaluations                     │
+  │ • Direct access to experts              │
+  │                                         │
+  │ [Upgrade to Join]                       │
+  └─────────────────────────────────────────┘
+  ```
+
+### 2.6 Search Alerts (Connoisseur Only)
 
 - [ ] **Modify: Saved search alert toggle**
   - Hide alert options for non-Connoisseur
@@ -418,17 +459,18 @@ Actionable implementation guide for Nihontowatch subscription tiers.
   - Only process alerts for Connoisseur users
   - Or: downgrade alerts to weekly digest for others
 
-### 2.5 Smith Certification Statistics
+### 2.7 Artist Certification Statistics
 
-Research-grade data: Juyo, Tokuju, Juyo Bunkazai, Juyo Bijutsuhin, and Kokuho counts for every smith capable of receiving these designations.
+Research-grade data: Juyo, Tokuju, Juyo Bunkazai, Juyo Bijutsuhin, and Kokuho counts for every artist (swordsmiths and tosogu makers) capable of receiving these designations.
 
-- [ ] **Migration: Smith stats table**
+- [ ] **Migration: Artist stats table**
   ```sql
-  -- supabase/migrations/042_smith_certification_stats.sql
-  CREATE TABLE smith_certification_stats (
+  -- supabase/migrations/042_artist_certification_stats.sql
+  CREATE TABLE artist_certification_stats (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    smith_name TEXT NOT NULL,
-    smith_name_kanji TEXT,
+    artist_name TEXT NOT NULL,
+    artist_name_kanji TEXT,
+    artist_type TEXT CHECK (artist_type IN ('smith', 'tosogu', 'both')),
     school TEXT,
     province TEXT,
     era TEXT,
@@ -443,43 +485,48 @@ Research-grade data: Juyo, Tokuju, Juyo Bunkazai, Juyo Bijutsuhin, and Kokuho co
     notes TEXT,
     data_source TEXT,
     last_updated TIMESTAMPTZ DEFAULT NOW(),
-    UNIQUE(smith_name, school, era)
+    UNIQUE(artist_name, school, era)
   );
 
-  CREATE INDEX idx_smith_stats_name ON smith_certification_stats(smith_name);
-  CREATE INDEX idx_smith_stats_school ON smith_certification_stats(school);
+  CREATE INDEX idx_artist_stats_name ON artist_certification_stats(artist_name);
+  CREATE INDEX idx_artist_stats_school ON artist_certification_stats(school);
+  CREATE INDEX idx_artist_stats_type ON artist_certification_stats(artist_type);
   ```
 
-- [ ] **Create: `src/app/api/smith-stats/route.ts`**
-  - GET: List all smiths with stats (paginated, searchable)
+- [ ] **Create: `src/app/api/artist-stats/route.ts`**
+  - GET: List all artists with stats (paginated, searchable)
+  - Filter by artist_type (smith/tosogu)
   - Gate behind Connoisseur tier
 
-- [ ] **Create: `src/app/api/smith-stats/[name]/route.ts`**
-  - GET: Single smith detail with full stats
+- [ ] **Create: `src/app/api/artist-stats/[name]/route.ts`**
+  - GET: Single artist detail with full stats
   - Gate behind Connoisseur tier
 
-- [ ] **Create: `src/components/connoisseur/SmithStatsCard.tsx`**
+- [ ] **Create: `src/components/connoisseur/ArtistStatsCard.tsx`**
   - Display certification counts
   - Visual breakdown (bar chart or badges)
   - Link to related listings
 
-- [ ] **Create: `src/app/smiths/page.tsx`**
-  - Searchable smith database
-  - Filter by school, era, certification level
+- [ ] **Create: `src/app/artists/page.tsx`**
+  - Searchable artist database
+  - Filter by type (smiths/tosogu), school, era, certification level
   - Connoisseur-only access
 
 - [ ] **Integrate into listing detail**
-  - Show smith stats on listing page when smith is known
-  - "This smith has 23 Juyo, 4 Tokuju"
-  - Teaser for non-Connoisseurs: "Unlock smith statistics"
+  - Show artist stats on listing page when artist is known
+  - Works for both smith (swords) and tosogu_maker (fittings)
+  - "This artist has 23 Juyo, 4 Tokuju"
+  - Teaser for non-Connoisseurs: "Unlock artist statistics"
 
 - [ ] **Data population**
   - Source: NBTHK records, published references
+  - Juyo Token Nado Zufu (swords)
+  - Juyo Tosogu Nado Zufu (fittings)
   - Manual entry initially, potential for automation
 
-### 2.6 Private Listings Teaser
+### 2.8 Private Listings Teaser
 
-- [ ] **Create teaser for Collector users**
+- [ ] **Create teaser for Enthusiast users**
   - "X private listings shared this week"
   - No details, just count
   - Link to Connoisseur upgrade
@@ -496,15 +543,15 @@ Research-grade data: Juyo, Tokuju, Juyo Bunkazai, Juyo Bijutsuhin, and Kokuho co
 
 - [ ] **Sold item click prompt**
   - When free user clicks listing that's sold
-  - "This sold 2 days ago. With Collector, you'd have seen it first."
+  - "This sold 2 days ago. With Enthusiast, you'd have seen it first."
 
 - [ ] **Setsumei paywall**
   - Blur/hide translated setsumei
-  - "Unlock translation with Collector"
+  - "Unlock translation with Enthusiast"
 
 - [ ] **Inquiry email paywall**
   - Show preview of what email would look like
-  - "Generate emails like this with Collector"
+  - "Generate emails like this with Enthusiast"
 
 - [ ] **Favorites limit**
   - "You've saved 10 items. Upgrade for unlimited."
@@ -590,7 +637,7 @@ Research-grade data: Juyo, Tokuju, Juyo Bunkazai, Juyo Bijutsuhin, and Kokuho co
 ### Manual Testing
 
 - [ ] Free user experience
-- [ ] Collector feature access
+- [ ] Enthusiast feature access
 - [ ] Connoisseur feature access
 - [ ] Paywall modals appear correctly
 - [ ] Stripe checkout works
@@ -646,7 +693,7 @@ src/
 │   │   │   └── inquiry/route.ts
 │   │   ├── setsumei/
 │   │   │   └── [listingId]/route.ts
-│   │   └── smith-stats/
+│   │   └── artist-stats/
 │   │       ├── route.ts
 │   │       └── [name]/route.ts
 │   ├── pricing/
@@ -656,7 +703,7 @@ src/
 │   │   └── apply/page.tsx
 │   ├── private/
 │   │   └── page.tsx
-│   └── smiths/
+│   └── artists/
 │       └── page.tsx
 ├── components/
 │   ├── subscription/
@@ -664,7 +711,7 @@ src/
 │   │   ├── PaywallModal.tsx
 │   │   ├── UpgradePrompt.tsx
 │   │   └── SubscriptionBadge.tsx
-│   ├── collector/
+│   ├── enthusiast/
 │   │   ├── SetsumeiTranslation.tsx
 │   │   └── DataFreshnessIndicator.tsx
 │   └── connoisseur/
@@ -673,8 +720,9 @@ src/
 │       ├── PrivateListingCard.tsx
 │       ├── PrivateInquiryModal.tsx
 │       ├── LineConnectCard.tsx
-│       ├── SmithStatsCard.tsx
-│       └── SmithStatsTeaser.tsx
+│       ├── YuhinkaiDiscordCard.tsx
+│       ├── ArtistStatsCard.tsx
+│       └── ArtistStatsTeaser.tsx
 ├── contexts/
 │   └── SubscriptionContext.tsx
 ├── hooks/

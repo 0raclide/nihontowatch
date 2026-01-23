@@ -1,4 +1,4 @@
-# Phase 1: Foundation + Collector Tier
+# Phase 1: Foundation + Enthusiast Tier
 
 Detailed task breakdown with dependencies and estimates.
 
@@ -6,7 +6,7 @@ Detailed task breakdown with dependencies and estimates.
 
 ## Overview
 
-**Goal:** Launch Collector tier ($25/mo) with core value props:
+**Goal:** Launch Enthusiast tier ($25/mo) with core value props:
 - Fresh data (no 72h delay)
 - Setsumei translations
 - Inquiry email drafts
@@ -57,7 +57,7 @@ Detailed task breakdown with dependencies and estimates.
 -- supabase/migrations/037_subscription_fields.sql
 ALTER TABLE profiles
   ADD COLUMN subscription_tier TEXT DEFAULT 'free'
-    CHECK (subscription_tier IN ('free', 'collector', 'connoisseur', 'dealer')),
+    CHECK (subscription_tier IN ('free', 'enthusiast', 'connoisseur', 'dealer')),
   ADD COLUMN subscription_status TEXT DEFAULT 'inactive'
     CHECK (subscription_status IN ('active', 'inactive', 'cancelled', 'past_due')),
   ADD COLUMN subscription_started_at TIMESTAMPTZ,
@@ -96,7 +96,7 @@ CREATE TABLE setsumei_translations (
 
 ```typescript
 // src/types/subscription.ts
-export type SubscriptionTier = 'free' | 'collector' | 'connoisseur' | 'dealer';
+export type SubscriptionTier = 'free' | 'enthusiast' | 'connoisseur' | 'dealer';
 export type SubscriptionStatus = 'active' | 'inactive' | 'cancelled' | 'past_due';
 
 export interface UserSubscription {
@@ -141,8 +141,8 @@ STRIPE_PRICE_COLLECTOR_ANNUAL=price_xxx
 ```
 
 Create products in Stripe Dashboard:
-- Collector Monthly: $25/mo
-- Collector Annual: $225/yr
+- Enthusiast Monthly: $25/mo
+- Enthusiast Annual: $225/yr
 
 **Deliverable:** Stripe SDK installed, env vars set, products created
 
@@ -160,7 +160,7 @@ export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 });
 
 export const PRICES = {
-  collector: {
+  enthusiast: {
     monthly: process.env.STRIPE_PRICE_COLLECTOR_MONTHLY!,
     annual: process.env.STRIPE_PRICE_COLLECTOR_ANNUAL!,
   },
@@ -254,20 +254,20 @@ export type Feature =
 
 const TIER_RANK: Record<SubscriptionTier, number> = {
   free: 0,
-  collector: 1,
+  enthusiast: 1,
   connoisseur: 2,
-  dealer: 1, // Same as collector for features
+  dealer: 1, // Same as enthusiast for features
 };
 
 const FEATURE_MIN_TIER: Record<Feature, SubscriptionTier> = {
-  fresh_data: 'collector',
-  setsumei_translation: 'collector',
-  inquiry_emails: 'collector',
-  unlimited_favorites: 'collector',
+  fresh_data: 'enthusiast',
+  setsumei_translation: 'enthusiast',
+  inquiry_emails: 'enthusiast',
+  unlimited_favorites: 'enthusiast',
   search_alerts: 'connoisseur',
   private_listings: 'connoisseur',
   line_access: 'connoisseur',
-  export_data: 'collector',
+  export_data: 'enthusiast',
 };
 
 export function canAccess(tier: SubscriptionTier, feature: Feature): boolean {
@@ -294,7 +294,7 @@ interface SubscriptionContextType {
   tier: SubscriptionTier;
   status: SubscriptionStatus;
   isActive: boolean;
-  isCollector: boolean;
+  isEnthusiast: boolean;
   isConnoisseur: boolean;
   canAccess: (feature: Feature) => boolean;
   openUpgrade: (feature?: Feature) => void;
@@ -389,7 +389,7 @@ Inline, non-modal upgrade prompts for contextual placement.
 ```
 
 Design:
-- 3 columns: Free / Collector / Connoisseur
+- 3 columns: Free / Enthusiast / Connoisseur
 - Feature comparison rows with checkmarks
 - Monthly/Annual toggle
 - "Current plan" indicator if logged in
@@ -422,7 +422,7 @@ Design:
 // src/components/subscription/SubscriptionBadge.tsx
 ```
 
-Small badge showing tier (Collector/Connoisseur) for header/profile.
+Small badge showing tier (Enthusiast/Connoisseur) for header/profile.
 
 **Deliverable:** Visual tier indicator
 
@@ -446,7 +446,7 @@ if (userTier === 'free') {
 
 **Frontend indicator:**
 ```typescript
-// src/components/collector/DataFreshnessIndicator.tsx
+// src/components/enthusiast/DataFreshnessIndicator.tsx
 // Shows "Listed 3 days ago" for free users
 // "Real-time" badge for paid
 ```
@@ -467,7 +467,7 @@ if (userTier === 'free') {
 - If false, show PaywallModal instead of generating
 - For free users, show "Contact dealer directly" with link
 
-**Deliverable:** Inquiry emails require Collector
+**Deliverable:** Inquiry emails require Enthusiast
 
 ---
 
@@ -487,7 +487,7 @@ if (userTier === 'free') {
 - Or show it but trigger PaywallModal on click
 - Saved searches page shows upgrade prompt if free
 
-**Deliverable:** Saved searches require Collector+
+**Deliverable:** Saved searches require Enthusiast+
 
 ---
 
@@ -495,7 +495,7 @@ if (userTier === 'free') {
 **Estimate:** 30 min | **Depends on:** C2 | **Blocks:** Nothing
 
 **Modify:** Saved search form / alert toggle
-- Hide or disable alert options for free/collector
+- Hide or disable alert options for free/enthusiast
 - Show "Alerts require Connoisseur" tooltip
 - Link to upgrade
 
@@ -513,7 +513,7 @@ if (userTier === 'free') {
 ```
 
 Logic:
-1. Check user has Collector+ tier
+1. Check user has Enthusiast+ tier
 2. Check if translation exists in cache table
 3. If not, fetch listing's setsumei text
 4. Call Claude API to translate
@@ -528,7 +528,7 @@ Logic:
 **Estimate:** 1.5 hours | **Depends on:** F1, D1 | **Blocks:** Nothing
 
 ```typescript
-// src/components/collector/SetsumeiTranslation.tsx
+// src/components/enthusiast/SetsumeiTranslation.tsx
 interface Props {
   listingId: string;
   originalText: string;
@@ -584,7 +584,7 @@ Add SetsumeiTranslation component to listing detail page where setsumei data exi
 ### G3. Email templates
 **Estimate:** 1 hour | **Depends on:** Nothing | **Blocks:** Nothing (nice to have)
 
-- Welcome email for new Collector
+- Welcome email for new Enthusiast
 - Subscription cancelled
 - Payment failed warning
 
@@ -672,7 +672,7 @@ Phase 1 is complete when:
 - [ ] Free user cannot save searches
 - [ ] Free user cannot enable alerts
 - [ ] Free user sees locked setsumei translation
-- [ ] Collector can access all above features
+- [ ] Enthusiast can access all above features
 - [ ] /pricing page shows tier comparison
 - [ ] Stripe checkout flow works end-to-end
 - [ ] Webhooks update user subscription status
@@ -697,13 +697,13 @@ Phase 1 is complete when:
    - See locked setsumei
    - Can start checkout flow
 
-3. **Complete checkout as Collector:**
+3. **Complete checkout as Enthusiast:**
    - Stripe checkout works
    - Redirected to success page
-   - Profile shows Collector tier
+   - Profile shows Enthusiast tier
    - All gated features now accessible
 
-4. **As Collector:**
+4. **As Enthusiast:**
    - See real-time listings
    - Can save searches (no alerts)
    - Can generate inquiry emails

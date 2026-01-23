@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-This document outlines the monetization strategy for Nihontowatch through a tiered subscription model. The strategy is designed for a niche market with a small TAM but high-value customers (collectors spending $50-100K/year on nihonto).
+This document outlines the monetization strategy for Nihontowatch through a tiered subscription model. The strategy is designed for a niche market with a small TAM but high-value customers (enthusiasts spending $50-100K/year on nihonto).
 
 **Target Revenue:** $10-15K/month at maturity (~$150K ARR)
 
@@ -31,8 +31,8 @@ This document outlines the monetization strategy for Nihontowatch through a tier
 ### Key Assets to Leverage
 
 1. **Existing alert infrastructure** → Gate behind tiers
-2. **Inquiry email generator** → Already built, gate behind Collector tier
-3. **Setsumei data in DB** → Add translation layer, gate behind Collector tier
+2. **Inquiry email generator** → Already built, gate behind Enthusiast tier
+3. **Setsumei data in DB** → Add translation layer, gate behind Enthusiast tier
 4. **User/auth system** → Add subscription_tier to profiles
 
 ---
@@ -41,7 +41,7 @@ This document outlines the monetization strategy for Nihontowatch through a tier
 
 ### Free Tier — *Window Shopping*
 
-**Target:** Casual browsers, new collectors, tire-kickers
+**Target:** Casual browsers, new enthusiasts, tire-kickers
 
 | Feature | Implementation |
 |---------|----------------|
@@ -63,9 +63,9 @@ This document outlines the monetization strategy for Nihontowatch through a tier
 
 ---
 
-### Collector Tier — $25/month ($225/year)
+### Enthusiast Tier — $25/month ($225/year)
 
-**Target:** Active collectors who buy 2-10 pieces/year
+**Target:** Active enthusiasts who buy 2-10 pieces/year
 
 | Feature | Implementation |
 |---------|----------------|
@@ -86,22 +86,24 @@ This document outlines the monetization strategy for Nihontowatch through a tier
 
 ### Connoisseur Tier — $200/month ($1,800/year)
 
-**Target:** Serious collectors spending $50K+/year
+**Target:** Serious enthusiasts spending $50K+/year
 
 | Feature | Implementation |
 |---------|----------------|
-| Everything in Collector | All Collector features |
+| Everything in Enthusiast | All Enthusiast features |
 | Search alerts | Instant notifications on new matches |
 | Private dealer offerings | Exclusive inventory not shown publicly |
-| Smith certification stats | Juyo/Tokuju/Bunkazai/Bijutsuhin/Kokuho counts per smith |
+| Artist certification stats | Juyo/Tokuju/Bunkazai/Bijutsuhin/Kokuho counts per artist |
+| Yuhinkai Discord | Private community of serious collectors |
 | LINE with Hoshi | Direct access to expert guidance |
-| Early access | See new listings before Collector tier (optional) |
+| Early access | See new listings before Enthusiast tier (optional) |
 | Collection tracker | Private collection management (Phase 2) |
 
-**Value proposition:** Access, expertise, and rare data
+**Value proposition:** Access, expertise, rare data, and community
 - Get notified instantly when your target appears
 - See items that never go public
-- Research-grade certification statistics by smith
+- Research-grade certification statistics by artist
+- Join the Yuhinkai — private community of serious collectors
 - Talk to someone who knows the market
 
 ---
@@ -127,7 +129,7 @@ This document outlines the monetization strategy for Nihontowatch through a tier
 | Tier | Users | Rate | Monthly | Annual |
 |------|-------|------|---------|--------|
 | Free | 3,000 | $0 | $0 | $0 |
-| Collector | 100 | $25 | $2,500 | $30,000 |
+| Enthusiast | 100 | $25 | $2,500 | $30,000 |
 | Connoisseur | 15 | $200 | $3,000 | $36,000 |
 | **Total** | | | **$5,500** | **$66,000** |
 
@@ -136,7 +138,7 @@ This document outlines the monetization strategy for Nihontowatch through a tier
 | Tier | Users | Rate | Monthly | Annual |
 |------|-------|------|---------|--------|
 | Free | 8,000 | $0 | $0 | $0 |
-| Collector | 300 | $25 | $7,500 | $90,000 |
+| Enthusiast | 300 | $25 | $7,500 | $90,000 |
 | Connoisseur | 40 | $200 | $8,000 | $96,000 |
 | Dealer | 10 | $150 | $1,500 | $18,000 |
 | **Total** | | | **$17,000** | **$204,000** |
@@ -150,7 +152,7 @@ This document outlines the monetization strategy for Nihontowatch through a tier
 ```sql
 -- Add subscription fields to profiles
 ALTER TABLE profiles ADD COLUMN subscription_tier TEXT DEFAULT 'free'
-  CHECK (subscription_tier IN ('free', 'collector', 'connoisseur', 'dealer'));
+  CHECK (subscription_tier IN ('free', 'enthusiast', 'connoisseur', 'dealer'));
 ALTER TABLE profiles ADD COLUMN subscription_status TEXT DEFAULT 'inactive'
   CHECK (subscription_status IN ('active', 'inactive', 'cancelled', 'past_due'));
 ALTER TABLE profiles ADD COLUMN subscription_started_at TIMESTAMPTZ;
@@ -239,7 +241,7 @@ POST   /api/subscription/webhook      # Stripe webhook handler
 GET    /api/subscription/status       # Current subscription status
 
 # Tier-gated Features
-GET    /api/setsumei/[listingId]      # Translated setsumei (Collector+)
+GET    /api/setsumei/[listingId]      # Translated setsumei (Enthusiast+)
 GET    /api/private-listings          # Private offerings (Connoisseur)
 POST   /api/private-listings/inquiry  # Send inquiry (Connoisseur)
 
@@ -274,7 +276,7 @@ src/components/
 │   ├── PrivateListingCard.tsx     # Individual private item
 │   ├── PrivateInquiryModal.tsx    # Send inquiry
 │   └── LineConnectCard.tsx        # Connect LINE account
-├── collector/
+├── enthusiast/
 │   ├── SetsumeiTranslation.tsx    # Translated setsumei display
 │   └── DataFreshnessIndicator.tsx # Show data delay for free
 └── dealer/  (Phase 2)
@@ -289,7 +291,7 @@ src/components/
 
 ### Phase 1: Foundation (Week 1-2)
 
-**Goal:** Subscription infrastructure + Collector tier launch
+**Goal:** Subscription infrastructure + Enthusiast tier launch
 
 | Task | Priority | Effort |
 |------|----------|--------|
@@ -299,7 +301,7 @@ src/components/
 | Build PaywallModal for gated features | P0 | 2h |
 | Implement 72h data delay for free tier | P0 | 2h |
 | Build SetsumeiTranslation component | P0 | 3h |
-| Gate inquiry email behind Collector | P0 | 1h |
+| Gate inquiry email behind Enthusiast | P0 | 1h |
 | Gate alerts behind tiers | P0 | 2h |
 | Add SubscriptionBadge to header/profile | P1 | 1h |
 | Upgrade prompts at conversion points | P1 | 3h |
@@ -308,7 +310,7 @@ src/components/
 
 **Deliverables:**
 - Stripe integration working
-- Free vs Collector tier enforcement
+- Free vs Enthusiast tier enforcement
 - Setsumei translations live
 - Inquiry emails gated
 - 72h delay for free users
@@ -379,7 +381,7 @@ src/components/
 
 ### Feature Access Matrix
 
-| Feature | Free | Collector | Connoisseur | Dealer |
+| Feature | Free | Enthusiast | Connoisseur | Dealer |
 |---------|------|-----------|-------------|--------|
 | Browse listings | 72h delay | Real-time | Real-time | Real-time |
 | Listing detail | ✓ | ✓ | ✓ | ✓ |
@@ -389,7 +391,8 @@ src/components/
 | Favorites | Unlimited | Unlimited | Unlimited | Unlimited |
 | Saved searches | ✗ | Unlimited, no alerts | Unlimited + alerts | Unlimited |
 | Search alerts | ✗ | ✗ | ✓ | ✓ |
-| Smith certification stats | ✗ | ✗ | ✓ | ✗ |
+| Artist certification stats | ✗ | ✗ | ✓ | ✗ |
+| Yuhinkai Discord | ✗ | ✗ | ✓ | ✗ |
 | Price history | Basic | Full | Full | Full |
 | Export data | ✗ | ✓ | ✓ | ✓ |
 | Private listings | ✗ | ✗ | ✓ | Submit only |
@@ -400,23 +403,24 @@ src/components/
 
 ```typescript
 // lib/subscription.ts
-export type SubscriptionTier = 'free' | 'collector' | 'connoisseur' | 'dealer';
+export type SubscriptionTier = 'free' | 'enthusiast' | 'connoisseur' | 'dealer';
 
 export function canAccess(
   userTier: SubscriptionTier,
   feature: string
 ): boolean {
   const access: Record<string, SubscriptionTier[]> = {
-    'fresh_data': ['collector', 'connoisseur', 'dealer'],
-    'setsumei_translation': ['collector', 'connoisseur', 'dealer'],
-    'inquiry_emails': ['collector', 'connoisseur', 'dealer'],
-    'saved_searches': ['collector', 'connoisseur', 'dealer'],
+    'fresh_data': ['enthusiast', 'connoisseur', 'dealer'],
+    'setsumei_translation': ['enthusiast', 'connoisseur', 'dealer'],
+    'inquiry_emails': ['enthusiast', 'connoisseur', 'dealer'],
+    'saved_searches': ['enthusiast', 'connoisseur', 'dealer'],
     'search_alerts': ['connoisseur'],
     'private_listings': ['connoisseur'],
-    'smith_stats': ['connoisseur'],  // Juyo/Tokuju/Bunkazai/Kokuho counts
+    'artist_stats': ['connoisseur'],  // Juyo/Tokuju/Bunkazai/Kokuho counts
+    'yuhinkai_discord': ['connoisseur'],  // Private community access
     'line_access': ['connoisseur'],
     'dealer_analytics': ['dealer'],
-    'export_data': ['collector', 'connoisseur', 'dealer'],
+    'export_data': ['enthusiast', 'connoisseur', 'dealer'],
   };
 
   return access[feature]?.includes(userTier) ?? false;
@@ -429,7 +433,7 @@ export function useSubscription() {
 
   return {
     tier,
-    isCollector: tier === 'collector' || tier === 'connoisseur',
+    isEnthusiast: tier === 'enthusiast' || tier === 'connoisseur',
     isConnoisseur: tier === 'connoisseur',
     isDealer: tier === 'dealer',
     canAccess: (feature: string) => canAccess(tier, feature),
@@ -445,8 +449,8 @@ export function useSubscription() {
 
 | Product | Price ID | Billing |
 |---------|----------|---------|
-| Collector Monthly | price_collector_monthly | $25/mo |
-| Collector Annual | price_collector_annual | $225/yr (25% off) |
+| Enthusiast Monthly | price_enthusiast_monthly | $25/mo |
+| Enthusiast Annual | price_enthusiast_annual | $225/yr (25% off) |
 | Connoisseur Monthly | price_connoisseur_monthly | $200/mo |
 | Connoisseur Annual | price_connoisseur_annual | $1,800/yr (25% off) |
 | Dealer Monthly | price_dealer_monthly | $150/mo |
@@ -479,18 +483,18 @@ switch (event.type) {
 
 | Trigger | Message | CTA |
 |---------|---------|-----|
-| Click sold listing | "This sold 2 days ago. See listings in real-time." | Upgrade to Collector |
-| View setsumei | "Translation available for Collectors" | Unlock Translation |
-| Try inquiry email | "Draft emails with Collector" | Upgrade to Collector |
-| Try to save search | "Save searches with Collector" | Upgrade to Collector |
+| Click sold listing | "This sold 2 days ago. See listings in real-time." | Upgrade to Enthusiast |
+| View setsumei | "Translation available for Enthusiasts" | Unlock Translation |
+| Try inquiry email | "Draft emails with Enthusiast" | Upgrade to Enthusiast |
+| Try to save search | "Save searches with Enthusiast" | Upgrade to Enthusiast |
 | Try to set alert | "Alerts require Connoisseur" | Upgrade to Connoisseur |
-| View smith on listing | "This smith has 23 Juyo. See full stats." | Upgrade to Connoisseur |
+| View artist on listing | "This artist has 23 Juyo. See full stats." | Upgrade to Connoisseur |
 | View private listing teaser | "3 private offerings this week" | Apply for Connoisseur |
 
-### Teaser Content for Free/Collector
+### Teaser Content for Free/Enthusiast
 
 ```tsx
-// On browse page for Collector users
+// On browse page for Enthusiast users
 <div className="bg-gold/10 p-4 rounded-lg">
   <p className="text-sm">
     <strong>5 private offerings</strong> were shared with Connoisseur
@@ -502,26 +506,33 @@ switch (event.type) {
 
 ---
 
-## Smith Certification Statistics (Connoisseur Feature)
+## Artist Certification Statistics (Connoisseur Feature)
 
 ### What This Is
 
-A database of certification counts for every Juyo-capable smith:
+A database of certification counts for every Juyo-capable artist — both swordsmiths and tosogu makers:
 
-| Smith | School | Era | Juyo | Tokuju | Bunkazai | Kokuho |
-|-------|--------|-----|------|--------|----------|--------|
+**Swordsmiths:**
+| Artist | School | Era | Juyo | Tokuju | Bunkazai | Kokuho |
+|--------|--------|-----|------|--------|----------|--------|
 | Osafune Kanemitsu | Bizen | Nanbokucho | 45 | 12 | 2 | 0 |
 | Awataguchi Yoshimitsu | Yamashiro | Kamakura | 8 | 5 | 1 | 1 |
 | Masamune | Soshu | Kamakura | 12 | 8 | 3 | 2 |
-| Muramasa | Ise | Muromachi | 15 | 3 | 0 | 0 |
+
+**Tosogu Artists:**
+| Artist | School | Era | Juyo | Tokuju | Bunkazai | Kokuho |
+|--------|--------|-----|------|--------|----------|--------|
+| Goto Yujo | Goto | Muromachi | 38 | 15 | 4 | 0 |
+| Yokoya Somin | Yokoya | Edo | 22 | 8 | 1 | 0 |
+| Natsuo | — | Meiji | 12 | 3 | 0 | 0 |
 
 ### Why This Is Valuable
 
 1. **Research-grade data** — This information is scattered across Japanese publications, auction records, and NBTHK archives. No single English source compiles it.
 
-2. **Purchase decisions** — "Is this smith's work regularly recognized at Juyo level?" helps evaluate if a piece is from a proven maker.
+2. **Purchase decisions** — "Is this artist's work regularly recognized at Juyo level?" helps evaluate if a piece is from a proven maker.
 
-3. **Collection planning** — Understand which smiths have museum-quality recognition vs. emerging appreciation.
+3. **Collection planning** — Understand which artists have museum-quality recognition vs. emerging appreciation.
 
 4. **Market intelligence** — Tokuju count indicates scarcity and demand for top-tier examples.
 
@@ -530,29 +541,29 @@ A database of certification counts for every Juyo-capable smith:
 **On listing detail page (Connoisseur):**
 ```
 ┌─────────────────────────────────────────┐
-│ SMITH: Osafune Kanemitsu (長船兼光)      │
-│ School: Bizen | Era: Nanbokucho         │
+│ ARTIST: Goto Yujo (後藤祐乗)             │
+│ School: Goto | Era: Muromachi           │
 │                                         │
 │ Certification Record:                   │
-│ ████████████████████ Juyo: 45           │
-│ ██████             Tokuju: 12           │
-│ ██                 Bunkazai: 2          │
+│ ████████████████████ Juyo: 38           │
+│ ██████             Tokuju: 15           │
+│ ████               Bunkazai: 4          │
 │                                         │
-│ This smith is among the most recognized │
-│ Bizen masters with exceptional Tokuju   │
-│ representation.                         │
+│ Founder of the Goto school. Among the   │
+│ most recognized tosogu artists with     │
+│ exceptional Tokuju representation.      │
 └─────────────────────────────────────────┘
 ```
 
-**On listing detail page (Free/Collector):**
+**On listing detail page (Free/Enthusiast):**
 ```
 ┌─────────────────────────────────────────┐
-│ SMITH: Osafune Kanemitsu                │
+│ ARTIST: Goto Yujo                       │
 │                                         │
 │ 🔒 Certification statistics available   │
 │    for Connoisseur members              │
 │                                         │
-│ This smith has 45+ Juyo certifications. │
+│ This artist has 38+ Juyo certifications.│
 │ [Unlock Full Stats]                     │
 └─────────────────────────────────────────┘
 ```
@@ -560,6 +571,7 @@ A database of certification counts for every Juyo-capable smith:
 ### Data Sources
 
 - NBTHK Juyo Token Nado Zufu (published volumes)
+- NBTHK Juyo Tosogu Nado Zufu (tosogu volumes)
 - Token Bijutsu magazine archives
 - Agency for Cultural Affairs Bunkazai database
 - Published auction records (Bonhams, Christie's)
@@ -573,11 +585,11 @@ A database of certification counts for every Juyo-capable smith:
 
 | Metric | Target |
 |--------|--------|
-| Collector subscribers | 50 |
+| Enthusiast subscribers | 50 |
 | Connoisseur subscribers | 10 |
 | MRR | $3,250 |
-| Free → Collector conversion | 3% |
-| Collector → Connoisseur conversion | 15% |
+| Free → Enthusiast conversion | 3% |
+| Enthusiast → Connoisseur conversion | 15% |
 
 ### Tracking
 
@@ -603,7 +615,7 @@ A database of certification counts for every Juyo-capable smith:
 ## Open Questions
 
 1. **Founding member pricing?** Lock in early adopters at discounted rate?
-2. **Trial period?** 7-day free trial for Collector?
+2. **Trial period?** 7-day free trial for Enthusiast?
 3. **Refund policy?** Pro-rated refunds or none?
 4. **Geographic pricing?** Different rates for Japan vs US vs EU?
 5. **Team/family plans?** Multiple users on one Connoisseur subscription?
@@ -614,8 +626,8 @@ A database of certification counts for every Juyo-capable smith:
 
 1. **Approve this strategy** — Finalize tier features and pricing
 2. **Set up Stripe account** — Create products and prices
-3. **Start Phase 1** — Foundation + Collector tier
-4. **Recruit beta Connoisseurs** — 5-10 serious collectors for launch
+3. **Start Phase 1** — Foundation + Enthusiast tier
+4. **Recruit beta Connoisseurs** — 5-10 serious enthusiasts for launch
 
 ---
 

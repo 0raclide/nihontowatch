@@ -166,7 +166,8 @@ CREATE TABLE dealers (
   catalog_url TEXT,
   country TEXT DEFAULT 'JP',
   is_active BOOLEAN DEFAULT true,
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  earliest_listing_at TIMESTAMPTZ  -- When dealer's first listing was discovered
 );
 
 -- Listings (scraped items)
@@ -227,6 +228,9 @@ CREATE TABLE listings (
   first_seen_at TIMESTAMPTZ DEFAULT NOW(),
   last_scraped_at TIMESTAMPTZ DEFAULT NOW(),
   scrape_count INTEGER DEFAULT 1,
+
+  -- Sorting
+  is_initial_import BOOLEAN DEFAULT TRUE,  -- TRUE = bulk import, FALSE = genuine new
 
   -- Indexes
   INDEX idx_listings_dealer (dealer_id),

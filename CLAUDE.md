@@ -133,6 +133,7 @@ nihontowatch/
 **dealers**
 ```sql
 id, name (UNIQUE), domain, catalog_url, is_active, country, created_at
+earliest_listing_at  -- When dealer's first listing was discovered (for initial import detection)
 ```
 
 **listings**
@@ -156,6 +157,8 @@ cert_type, cert_session, cert_organization
 images (JSONB), raw_page_text
 -- Timestamps
 first_seen_at, last_scraped_at, scrape_count
+-- Sorting
+is_initial_import  -- TRUE = bulk import, FALSE = genuine new inventory (for "Newest" sort)
 ```
 
 **price_history**
