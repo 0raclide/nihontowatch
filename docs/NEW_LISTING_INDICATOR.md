@@ -203,11 +203,73 @@ npm test -- --run tests/lib/newListing.test.ts tests/components/browse/ListingCa
 | `tests/lib/newListing.test.ts` | Unit tests |
 | `tests/components/browse/ListingCard.test.tsx` | Component tests |
 
+## "Newest" Sort Prioritization
+
+As of January 2026, the "Newest" sort prioritizes genuine new inventory over bulk imports.
+
+### How It Works
+
+The sort uses two columns:
+1. **`is_initial_import`** (boolean) - `FALSE` = genuine new inventory, `TRUE` = bulk import
+2. **`first_seen_at`** (timestamp) - when the listing was discovered
+
+```sql
+ORDER BY is_initial_import ASC, first_seen_at DESC
+```
+
+This means:
+1. **Tier 1**: Genuine new inventory (not part of initial import), sorted by discovery date
+2. **Tier 2**: Bulk imports, sorted by discovery date
+
+### Database Schema
+
+**`dealers.earliest_listing_at`** - Tracks when the dealer's first listing was discovered (baseline)
+
+**`listings.is_initial_import`** - Static boolean set at insert time:
+- `TRUE` if `first_seen_at <= dealer.earliest_listing_at + 24 hours`
+- `FALSE` if discovered after the 24-hour import window
+
+### Triggers
+
+Two triggers maintain this data automatically:
+
+1. **`trigger_update_dealer_earliest_listing`** - Updates dealer baseline when new listing is earlier
+2. **`trigger_set_is_initial_import`** - Sets `is_initial_import` on new listings
+
+### Example Sort Order
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ TIER 1: Genuine New Inventory (is_initial_import = FALSE)       │
+├─────────────────────────────────────────────────────────────────┤
+│ 1. Katana from Aoi Art (discovered today)                       │
+│ 2. Tsuba from Eirakudo (discovered 2 days ago)                  │
+│ 3. Wakizashi from Nipponto (discovered 5 days ago)              │
+├─────────────────────────────────────────────────────────────────┤
+│ TIER 2: Bulk Imports (is_initial_import = TRUE)                 │
+├─────────────────────────────────────────────────────────────────┤
+│ 4. Katana from NewDealer (discovered today, part of onboarding) │
+│ 5. Tsuba from NewDealer (discovered today, part of onboarding)  │
+│ 6. Wakizashi from OldDealer (discovered 2 years ago)            │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Related Files
+
+| File | Purpose |
+|------|---------|
+| `supabase/migrations/037_dealer_earliest_listing.sql` | Adds `earliest_listing_at` to dealers |
+| `supabase/migrations/038_listing_is_initial_import.sql` | Adds `is_initial_import` to listings |
+| `src/app/api/browse/route.ts` | Sort implementation |
+| `tests/sql/initial-import.test.ts` | Trigger tests |
+| `tests/api/browse.test.ts` | Sort behavior tests |
+
+---
+
 ## Future Enhancements
 
 Potential improvements:
 
 1. **Filter by new**: Add a "New arrivals" filter to the browse page
-2. **Sort by new**: Add "Newest first" sort option (already default)
-3. **Tooltip**: Show "Added X days ago" on hover
-4. **Email alerts**: Notify users about new items matching their saved searches
+2. **Tooltip**: Show "Added X days ago" on hover
+3. **Email alerts**: Notify users about new items matching their saved searches
