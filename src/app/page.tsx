@@ -292,7 +292,7 @@ function HomeContent() {
         // Always fetch page 1 on initial/filter change
         const params = buildFetchParams();
         params.set('page', '1');
-        const res = await fetch(`/api/browse?${params.toString()}`);
+        const res = await fetch(`/api/browse?${params.toString()}`, { credentials: 'include' });
         const json = await res.json();
         setData(json);
 
@@ -330,7 +330,7 @@ function HomeContent() {
       params.set('offset', String(allListings.length));
       params.set('limit', String(PAGINATION.INFINITE_SCROLL_BATCH_SIZE));
 
-      const res = await fetch(`/api/browse?${params.toString()}`);
+      const res = await fetch(`/api/browse?${params.toString()}`, { credentials: 'include' });
       const json = await res.json();
 
       // Deduplicate items as a safety net
