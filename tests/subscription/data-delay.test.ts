@@ -319,4 +319,254 @@ describe('REGRESSION GUARD: Data delay auth fix', () => {
     // Admin should get isDelayed: false
     expect(serverContent).toContain('isDelayed: false');
   });
+
+  it('CRITICAL: server subscription util has auth client fallback', async () => {
+    const fs = await import('fs');
+    const path = await import('path');
+
+    const serverPath = path.resolve(process.cwd(), 'src/lib/subscription/server.ts');
+    const serverContent = fs.readFileSync(serverPath, 'utf-8');
+
+    // Must have fallback logic when service client fails
+    // This catches the bug where service client silently fails and admin isn't detected
+    expect(serverContent).toContain('Service client failed');
+    expect(serverContent).toContain('Got profile via auth client');
+
+    // Must query profile with BOTH clients
+    expect(serverContent).toContain('serviceClient');
+    expect(serverContent).toContain('authProfile');
+  });
+});
+
+// =============================================================================
+// CRITICAL: getUserSubscription BEHAVIOR TESTS
+// These tests verify actual function behavior, not just string presence
+// =============================================================================
+
+describe('CRITICAL: getUserSubscription behavior', () => {
+  // Mock modules
+  let mockCreateClient: ReturnType<typeof vi.fn>;
+  let mockCreateServiceClient: ReturnType<typeof vi.fn>;
+  let mockAuthClient: {
+    auth: { getUser: ReturnType<typeof vi.fn> };
+    from: ReturnType<typeof vi.fn>;
+  };
+  let mockServiceClient: {
+    from: ReturnType<typeof vi.fn>;
+  };
+
+  beforeEach(() => {
+    vi.resetModules();
+
+    // Create mock clients
+    mockAuthClient = {
+      auth: {
+        getUser: vi.fn(),
+      },
+      from: vi.fn(),
+    };
+
+    mockServiceClient = {
+      from: vi.fn(),
+    };
+
+    mockCreateClient = vi.fn().mockResolvedValue(mockAuthClient);
+    mockCreateServiceClient = vi.fn().mockReturnValue(mockServiceClient);
+
+    // Mock the supabase module
+    vi.doMock('@/lib/supabase/server', () => ({
+      createClient: mockCreateClient,
+      createServiceClient: mockCreateServiceClient,
+    }));
+  });
+
+  afterEach(() => {
+    vi.resetAllMocks();
+    vi.resetModules();
+  });
+
+  it('returns free tier for anonymous users', async () => {
+    // No user logged in
+    mockAuthClient.auth.getUser.mockResolvedValue({
+      data: { user: null },
+      error: null,
+    });
+
+    const { getUserSubscription } = await import('@/lib/subscription/server');
+    const result = await getUserSubscription();
+
+    expect(result.tier).toBe('free');
+    expect(result.isDelayed).toBe(true);
+    expect(result.userId).toBeNull();
+  });
+
+  it('detects admin via service client and returns isDelayed=false', async () => {
+    const userId = 'admin-user-123';
+
+    // User is logged in
+    mockAuthClient.auth.getUser.mockResolvedValue({
+      data: { user: { id: userId, email: 'admin@test.com' } },
+      error: null,
+    });
+
+    // Service client returns admin profile
+    mockServiceClient.from.mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          single: vi.fn().mockResolvedValue({
+            data: { role: 'admin', subscription_tier: null, subscription_status: null },
+            error: null,
+          }),
+        }),
+      }),
+    });
+
+    const { getUserSubscription } = await import('@/lib/subscription/server');
+    const result = await getUserSubscription();
+
+    expect(result.tier).toBe('connoisseur');
+    expect(result.isDelayed).toBe(false);
+    expect(result.userId).toBe(userId);
+  });
+
+  it('CRITICAL: falls back to auth client when service client fails', async () => {
+    const userId = 'admin-user-456';
+
+    // User is logged in
+    mockAuthClient.auth.getUser.mockResolvedValue({
+      data: { user: { id: userId, email: 'admin@test.com' } },
+      error: null,
+    });
+
+    // SERVICE CLIENT FAILS (simulates missing SUPABASE_SERVICE_ROLE_KEY)
+    mockServiceClient.from.mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          single: vi.fn().mockResolvedValue({
+            data: null,
+            error: { message: 'Invalid API key' },
+          }),
+        }),
+      }),
+    });
+
+    // Auth client succeeds with admin profile
+    mockAuthClient.from.mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          single: vi.fn().mockResolvedValue({
+            data: { role: 'admin', subscription_tier: null, subscription_status: null },
+            error: null,
+          }),
+        }),
+      }),
+    });
+
+    const { getUserSubscription } = await import('@/lib/subscription/server');
+    const result = await getUserSubscription();
+
+    // MUST detect admin via fallback
+    expect(result.tier).toBe('connoisseur');
+    expect(result.isDelayed).toBe(false);
+    expect(result.userId).toBe(userId);
+
+    // Verify auth client was called as fallback
+    expect(mockAuthClient.from).toHaveBeenCalledWith('profiles');
+  });
+
+  it('CRITICAL: admin with failed service client must NOT be treated as free', async () => {
+    const userId = 'admin-user-789';
+
+    // User is logged in
+    mockAuthClient.auth.getUser.mockResolvedValue({
+      data: { user: { id: userId, email: 'admin@test.com' } },
+      error: null,
+    });
+
+    // Service client returns null (no error, just no data - silent failure)
+    mockServiceClient.from.mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          single: vi.fn().mockResolvedValue({
+            data: null,
+            error: null,
+          }),
+        }),
+      }),
+    });
+
+    // Auth client returns admin
+    mockAuthClient.from.mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          single: vi.fn().mockResolvedValue({
+            data: { role: 'admin', subscription_tier: null, subscription_status: null },
+            error: null,
+          }),
+        }),
+      }),
+    });
+
+    const { getUserSubscription } = await import('@/lib/subscription/server');
+    const result = await getUserSubscription();
+
+    // This is THE bug we're testing for:
+    // If service client silently fails (returns null), we MUST still detect admin
+    expect(result.tier).not.toBe('free');
+    expect(result.isDelayed).toBe(false);
+  });
+
+  it('returns paid tier for enthusiast subscription', async () => {
+    const userId = 'paid-user-123';
+
+    mockAuthClient.auth.getUser.mockResolvedValue({
+      data: { user: { id: userId, email: 'user@test.com' } },
+      error: null,
+    });
+
+    mockServiceClient.from.mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          single: vi.fn().mockResolvedValue({
+            data: { role: 'user', subscription_tier: 'enthusiast', subscription_status: 'active' },
+            error: null,
+          }),
+        }),
+      }),
+    });
+
+    const { getUserSubscription } = await import('@/lib/subscription/server');
+    const result = await getUserSubscription();
+
+    expect(result.tier).toBe('enthusiast');
+    expect(result.isDelayed).toBe(false);
+    expect(result.status).toBe('active');
+  });
+
+  it('treats inactive subscription as free tier', async () => {
+    const userId = 'lapsed-user-123';
+
+    mockAuthClient.auth.getUser.mockResolvedValue({
+      data: { user: { id: userId, email: 'user@test.com' } },
+      error: null,
+    });
+
+    mockServiceClient.from.mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          single: vi.fn().mockResolvedValue({
+            data: { role: 'user', subscription_tier: 'enthusiast', subscription_status: 'inactive' },
+            error: null,
+          }),
+        }),
+      }),
+    });
+
+    const { getUserSubscription } = await import('@/lib/subscription/server');
+    const result = await getUserSubscription();
+
+    // Inactive subscription = free tier
+    expect(result.tier).toBe('free');
+    expect(result.isDelayed).toBe(true);
+  });
 });
