@@ -7,7 +7,6 @@ import { segmentText, type TextSegment } from '@/lib/glossary/highlighter';
 
 interface HighlightedMarkdownProps {
   content: string;
-  className?: string;
 }
 
 /**
@@ -43,12 +42,12 @@ function highlightChildren(children: React.ReactNode): React.ReactNode {
     }
 
     // If it's a valid React element with children, recurse
-    if (React.isValidElement(child) && child.props.children) {
+    if (React.isValidElement<{ children?: React.ReactNode }>(child) && child.props.children) {
       return React.cloneElement(child, {
         ...child.props,
         key: index,
         children: highlightChildren(child.props.children),
-      });
+      } as React.Attributes & { children?: React.ReactNode });
     }
 
     // Otherwise return as-is (numbers, null, undefined, etc.)
@@ -60,13 +59,9 @@ function highlightChildren(children: React.ReactNode): React.ReactNode {
  * HighlightedMarkdown component
  * Renders markdown with glossary term highlighting
  */
-export function HighlightedMarkdown({
-  content,
-  className = '',
-}: HighlightedMarkdownProps) {
+export function HighlightedMarkdown({ content }: HighlightedMarkdownProps) {
   return (
     <ReactMarkdown
-      className={className}
       components={{
         // Text-containing elements that need highlighting
         p: ({ children, ...props }) => (

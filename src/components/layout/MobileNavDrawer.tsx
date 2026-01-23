@@ -116,6 +116,13 @@ export function MobileNavDrawer() {
           >
             Browse Collection
           </Link>
+          <Link
+            href="/glossary"
+            onClick={closeNavDrawer}
+            className="flex items-center px-4 py-3 text-[13px] uppercase tracking-[0.15em] text-text-secondary hover:bg-hover rounded-lg transition-colors"
+          >
+            Glossary
+          </Link>
 
           <div className="h-px bg-border/50 my-4" />
 

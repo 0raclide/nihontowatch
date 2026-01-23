@@ -91,8 +91,10 @@ describe('SetsumeiSection', () => {
       render(<SetsumeiSection listing={listing} />);
 
       expect(screen.getByText('NBTHK Zufu Commentary')).toBeInTheDocument();
-      expect(screen.getByText('Juyo')).toBeInTheDocument(); // Badge
-      expect(screen.getByText('Juyo Token')).toBeInTheDocument(); // H2 from markdown
+      // Badge shows cert_type, and "Juyo" also appears as highlighted glossary term
+      expect(screen.getAllByText('Juyo').length).toBeGreaterThanOrEqual(1);
+      // "Token" appears as a highlighted glossary term in the heading
+      expect(screen.getByText('Token')).toBeInTheDocument();
     });
   });
 

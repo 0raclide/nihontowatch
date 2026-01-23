@@ -137,8 +137,9 @@ describe('SetsumeiSection feature gating', () => {
     // Should NOT show unlock button
     expect(screen.queryByRole('button', { name: /unlock/i })).not.toBeInTheDocument();
 
-    // Should show full text
-    expect(screen.getByText(/soshu tradition/i)).toBeInTheDocument();
+    // Should show full text (note: "Soshu" is now a glossary term in a button)
+    // Check for text that appears at the end of the content, confirming full text is shown
+    expect(screen.getByText(/craftsmanship/i)).toBeInTheDocument();
   });
 
   it('renders nothing for non-Juyo items regardless of subscription', async () => {

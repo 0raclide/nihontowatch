@@ -344,9 +344,16 @@ export default function ConnoisseurPage() {
           </p>
 
           <p className="mb-7">
-            If you ever decide to sell a piece, the expectation is that you first offer it back
-            to the dealer who sold it to you. This is how relationships work in this market.
-            It&apos;s part of the mutual respect that makes the system function.
+            Buy only what you intend to keep. In the world of fine art, flipping a piece shortly
+            after purchase is considered poor form—it diminishes the object&apos;s standing and
+            creates discomfort for everyone involved. When a dealer offers you something privately,
+            the expectation is that you&apos;re acquiring it for your collection, not for resale.
+          </p>
+
+          <p className="mb-7">
+            If circumstances change and you do decide to sell, the expectation is that you first
+            offer it back to the dealer who sold it to you. This is how relationships work in
+            this market. It&apos;s part of the mutual respect that makes the system function.
           </p>
 
           <p className="mb-7">
