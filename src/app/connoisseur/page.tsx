@@ -126,6 +126,18 @@ export default function ConnoisseurPage() {
           </blockquote>
 
           <p>
+            If you want a sense of how I approach this field, you can read some of my{' '}
+            <a
+              href="https://nihontology.substack.com/p/grandmaster-mitsutada"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-gold hover:underline"
+            >
+              scholarly work on nihonto
+            </a>.
+          </p>
+
+          <p>
             At a certain point in this hobby, collectors often become part-time dealers. It&apos;s
             almost inevitable—you develop the eye, you build the relationships, and opportunities
             start coming to you. But that&apos;s not the path I want to take.
