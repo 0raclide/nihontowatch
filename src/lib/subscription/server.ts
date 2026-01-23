@@ -35,18 +35,30 @@ export async function getUserSubscription(): Promise<{
       };
     }
 
-    // Get user's subscription from profile
+    // Get user's subscription and role from profile
     const serviceClient = createServiceClient();
     const { data: profile } = await serviceClient
       .from('profiles')
-      .select('subscription_tier, subscription_status')
+      .select('subscription_tier, subscription_status, role')
       .eq('id', user.id)
       .single() as {
         data: {
           subscription_tier: SubscriptionTier | null;
           subscription_status: SubscriptionStatus | null;
+          role: string | null;
         } | null;
       };
+
+    // Admins get full access (connoisseur tier)
+    const isAdmin = profile?.role === 'admin';
+    if (isAdmin) {
+      return {
+        tier: 'connoisseur',
+        status: 'active',
+        userId: user.id,
+        isDelayed: false,
+      };
+    }
 
     const tier = profile?.subscription_tier ?? 'free';
     const status = profile?.subscription_status ?? 'inactive';

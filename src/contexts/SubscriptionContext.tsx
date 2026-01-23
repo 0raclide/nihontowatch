@@ -65,13 +65,29 @@ interface SubscriptionProviderProps {
 }
 
 export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
-  const { profile, isLoading: authLoading, refreshProfile } = useAuth();
+  const { profile, isLoading: authLoading, refreshProfile, isAdmin } = useAuth();
 
   const [paywallInfo, setPaywallInfo] = useState<PaywallInfo | null>(null);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
 
   // Derive subscription state from profile
+  // Admins get full access (connoisseur tier) regardless of actual subscription
   const subscriptionState = useMemo(() => {
+    // Admins always have full access
+    if (isAdmin) {
+      return {
+        tier: 'connoisseur' as SubscriptionTier,
+        status: 'active' as SubscriptionStatus,
+        isActive: true,
+        expiresAt: null,
+        isFree: false,
+        isEnthusiast: true,
+        isConnoisseur: true,
+        isDealer: false,
+        canAccess: () => true, // Admins can access everything
+      };
+    }
+
     if (!profile) {
       return createSubscriptionState(null);
     }
@@ -83,7 +99,7 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
       stripe_customer_id: profile.stripe_customer_id,
       stripe_subscription_id: profile.stripe_subscription_id,
     });
-  }, [profile]);
+  }, [profile, isAdmin]);
 
   // Show paywall for a feature
   const showPaywall = useCallback((feature: Feature) => {
