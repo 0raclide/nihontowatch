@@ -30,19 +30,21 @@ Implementation status and handoff notes for the Nihontowatch Pro Tier system.
 
 | Component | File(s) | Notes |
 |-----------|---------|-------|
-| PaywallModal | `src/components/subscription/PaywallModal.tsx` | Desktop modal + mobile sheet, billing toggle |
+| PaywallModal | `src/components/subscription/PaywallModal.tsx` | Desktop modal + mobile sheet, billing toggle, sign-in flow for anonymous users |
 | DataDelayBanner | `src/components/subscription/DataDelayBanner.tsx` | Banner for free tier users |
-| 72h data delay | `src/app/api/browse/route.ts`, `src/lib/subscription/server.ts` | Filters listings >72h old for free tier |
-| Gate inquiry emails | `src/components/inquiry/InquiryModal.tsx` | requireFeature check before generation |
-| Gate saved searches | `src/app/api/saved-searches/route.ts`, `src/components/browse/SaveSearchButton.tsx` | API + UI gating |
+| 72h data delay | `src/app/api/browse/route.ts`, `src/lib/subscription/server.ts` | Filters listings >72h old for free tier, private cache for authenticated users |
+| Gate inquiry emails | `src/components/inquiry/InquiryModal.tsx`, `src/components/listing/QuickViewContent.tsx` | requireFeature check, shows paywall before login for anonymous |
+| Gate saved searches | `src/app/api/saved-searches/route.ts`, `src/components/browse/SaveSearchButton.tsx` | API + UI gating, shows paywall before login for anonymous |
+| Admin full access | `src/contexts/SubscriptionContext.tsx`, `src/lib/subscription/server.ts` | Admins (role='admin') get connoisseur tier access automatically |
+| Value-prop paywall messages | `src/types/subscription.ts` | Inquiry emails mention 10% export discount, saved searches highlight watchlist value |
 
 ### ⏳ REMAINING (Phase 1)
 
-| Task | Priority | Estimate | Notes |
-|------|----------|----------|-------|
-| Setsumei translation API | MEDIUM | 1.5h | Claude API integration |
-| Setsumei component | MEDIUM | 1.5h | UI for listing detail |
-| Pricing page | MEDIUM | 2h | Full pricing table + page |
+| Task | Priority | Notes |
+|------|----------|-------|
+| Setsumei translation API | MEDIUM | Claude API integration for NBTHK zufu translations |
+| Setsumei component | MEDIUM | UI for listing detail with translate button |
+| Pricing page | MEDIUM | Full pricing table + page at `/pricing` |
 
 ---
 
@@ -234,13 +236,26 @@ stripe listen --forward-to localhost:3000/api/subscription/webhook
 
 ### Manual Test Flow
 
+**Anonymous User:**
+1. Visit nihontowatch.com (not logged in)
+2. Open a listing quick view → Click "Inquire"
+3. Should see paywall with "Professional Inquiry Emails" and 10% export discount message
+4. Click "Sign in to upgrade" → Login modal appears
+5. Similarly test "Save Search" button with active filters
+
+**Logged-in Free User:**
 1. Create account (free tier)
-2. Try accessing gated feature → should show paywall
+2. Try accessing gated feature → should show paywall with "Upgrade to Enthusiast"
 3. Click upgrade → Stripe checkout
 4. Complete payment → webhook updates profile
 5. Verify feature now accessible
 6. Open billing portal → manage subscription
 7. Cancel → verify downgrade to free
+
+**Admin User:**
+1. Log in as admin (role='admin' in profiles)
+2. Should see fresh listings (no 72h delay banner)
+3. All premium features accessible without subscription
 
 ---
 
@@ -251,6 +266,12 @@ stripe listen --forward-to localhost:3000/api/subscription/webhook
 2. **Stripe API Version**: Using `2025-12-15.clover`. The `current_period_end` is now on `subscription.items.data[0]` instead of directly on subscription.
 
 3. **Lazy Stripe Initialization**: The Stripe client uses a Proxy for lazy initialization to avoid build-time errors when env vars aren't set.
+
+## Recent Fixes
+
+1. **CDN Cache Issue (2026-01-23)**: Fixed issue where admins saw delayed data because browse API used `public` cache. Now uses `private` cache for authenticated users to ensure personalized responses.
+
+2. **Paywall-before-Login UX (2026-01-23)**: Anonymous users now see paywall with value proposition before being prompted to sign in. Previously showed generic login modal which didn't explain the feature value.
 
 ---
 
