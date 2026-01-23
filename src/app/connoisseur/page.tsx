@@ -275,10 +275,10 @@ export default function ConnoisseurPage() {
           </p>
 
           <p className="mb-7">
-            The sweet spot is focused but realistic. &ldquo;Bizen works by Osafune smiths, Muromachi
-            period, Juyo or higher&rdquo; tells a dealer exactly what you want. &ldquo;Anything
-            from Bizen&rdquo; tells them nothing. &ldquo;Only Mitsutada tanto with horimono in
-            perfect polish&rdquo; means they may never find anything to offer you.
+            The sweet spot is focused but realistic. &ldquo;Bizen Osafune from the height of the
+            Kamakura period&rdquo; tells a dealer exactly what you want. &ldquo;Anything from
+            Bizen&rdquo; tells them nothing. &ldquo;Only Mitsutada tanto with horimono in perfect
+            polish&rdquo; means they may never find anything to offer you.
           </p>
 
           <p className="mb-7">
