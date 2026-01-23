@@ -325,10 +325,14 @@ export default function ConnoisseurPage() {
           </p>
 
           <p className="mb-7">
-            You will receive the <span className="text-ink font-medium">10% foreign export
-            discount</span>—this is standard for international buyers and accounts for the
-            consumption tax that doesn&apos;t apply to exports. But this is extended on the
-            dealer&apos;s terms, not negotiated. Accept it graciously. Don&apos;t ask for more.
+            You will typically receive the <span className="text-ink font-medium">10% foreign export
+            discount</span>—this accounts for the Japanese consumption tax that doesn&apos;t apply
+            to exports. However, this discount comes with conditions. Dealers may require specific
+            shipping arrangements, accurate value declarations on customs forms, or other terms
+            that allow them to properly document the tax-exempt export. If you cannot meet these
+            conditions—for instance, if you insist on a lower declared value for customs—you may
+            not be eligible for the discount. This is extended on the dealer&apos;s terms, not
+            negotiated. Accept it graciously. Don&apos;t ask for more.
           </p>
 
           <p className="mb-7">
