@@ -204,7 +204,7 @@ export default function ConnoisseurPage() {
           </p>
 
           <p className="my-10 text-ink text-[1.25rem] font-medium leading-relaxed">
-            Selected Japanese dealers can see your search criteria.
+            Selected Japanese dealers can see your search alerts.
           </p>
 
           <p className="mb-7">
