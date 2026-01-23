@@ -6,6 +6,10 @@ import { parseSemanticQuery } from '@/lib/search/semanticQueryParser';
 import { CACHE, PAGINATION, LISTING_FILTERS } from '@/lib/constants';
 import { getUserSubscription, getDataDelayCutoff } from '@/lib/subscription/server';
 
+// Force dynamic rendering - needed for subscription-based data filtering
+// Without this, Vercel edge might cache responses before auth check runs
+export const dynamic = 'force-dynamic';
+
 // Facets are computed fresh for each request to reflect current filters
 // No caching - facet counts must accurately reflect user's filter selections
 
@@ -588,11 +592,11 @@ export async function GET(request: NextRequest) {
     });
 
     // Cache settings based on user authentication
-    // Authenticated users get private cache (not shared via CDN) to respect their tier
-    // Anonymous users get public cache for performance
+    // Authenticated users: no caching to ensure fresh personalized data
+    // Anonymous users: public cache for performance
     if (subscription.userId) {
-      // Private cache for authenticated users - respects their subscription tier
-      response.headers.set('Cache-Control', `private, max-age=${CACHE.BROWSE_RESULTS}`);
+      // No caching for authenticated users - ensures subscription tier is respected
+      response.headers.set('Cache-Control', 'private, no-store, must-revalidate');
     } else {
       // Public cache for anonymous users - can be shared via CDN
       response.headers.set('Cache-Control', `public, s-maxage=${CACHE.BROWSE_RESULTS}, stale-while-revalidate=${CACHE.SWR_WINDOW}`);
