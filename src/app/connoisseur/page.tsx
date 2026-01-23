@@ -300,36 +300,33 @@ export default function ConnoisseurPage() {
           <h2 className="font-serif text-2xl text-ink pt-4">Is This For You?</h2>
 
           <p>
-            Honestly, for most collectors, the Enthusiast tier is more than enough. Real-time
-            listings, saved searches, inquiry assistance—that covers 90% of what you need to
-            collect effectively.
+            If you&apos;re contemplating collecting at the Juyo level, yes. Otherwise, no.
           </p>
 
           <p>
-            Connoisseur is for collectors who:
+            For most collectors, the Enthusiast tier is more than enough. Real-time listings,
+            saved searches, inquiry assistance—that covers what you need to collect Hozon and
+            Tokubetsu Hozon pieces effectively.
           </p>
 
-          <ul className="my-8 space-y-3 pl-1">
-            <li className="flex gap-3">
-              <span className="text-gold mt-1.5">&#8226;</span>
-              <span>Are actively building a collection at the Juyo level or above</span>
-            </li>
-            <li className="flex gap-3">
-              <span className="text-gold mt-1.5">&#8226;</span>
-              <span>Have the budget to act when exceptional pieces appear</span>
-            </li>
-            <li className="flex gap-3">
-              <span className="text-gold mt-1.5">&#8226;</span>
-              <span>Want access to inventory that never reaches public listings</span>
-            </li>
-            <li className="flex gap-3">
-              <span className="text-gold mt-1.5">&#8226;</span>
-              <span>Value relationships and community over pure transactions</span>
-            </li>
-          </ul>
+          <p>
+            But if you&apos;re considering spending tens of thousands of dollars on a Juyo sword,
+            it would be short-sighted to do so without being part of this tier.
+          </p>
 
           <p>
-            If that sounds like you, I&apos;d be honored to have you join us.
+            Mistakes at this level are incredibly expensive. Overpaying by 20% on a $50,000
+            blade costs you $10,000. Buying a piece with condition issues you didn&apos;t
+            notice costs you even more. Purchasing from a dealer who won&apos;t stand behind
+            the sale costs you everything.
+          </p>
+
+          <p className="text-ink font-medium">
+            Saving you from those mistakes is what this membership does.
+          </p>
+
+          <p>
+            If that&apos;s where you&apos;re headed, I&apos;d be honored to have you join us.
           </p>
 
           <Divider />
