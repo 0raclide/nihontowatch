@@ -87,10 +87,11 @@ export default function ConnoisseurPage() {
           </p>
 
           <p className="mb-7">
-            The best dealers in Japan—the ones who handle Juyo, Tokubetsu Juyo, and museum-quality
-            pieces—don&apos;t post their finest inventory online for the world to see. They offer
-            these pieces privately, to collectors they know and trust. Collectors who understand
-            what they&apos;re looking at. Collectors who won&apos;t waste their time.
+            The best dealers in Japan—the ones who handle the finest and most precious pieces,
+            the pinnacle of high art in this field—don&apos;t post their best inventory online
+            for the world to see. They offer these pieces privately, to collectors they know and
+            trust. Collectors who understand what they&apos;re looking at. Collectors who won&apos;t
+            waste their time.
           </p>
 
           <p className="mb-7">
