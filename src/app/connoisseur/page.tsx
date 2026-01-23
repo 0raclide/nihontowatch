@@ -594,9 +594,7 @@ export default function ConnoisseurPage() {
           <p className="mb-7">
             Annual memberships renew each year just before the{' '}
             <span className="text-ink font-medium">Dai Token Ichi</span>—the largest sword fair in
-            Japan, held every November. This timing is intentional: your membership ensures you&apos;re
-            positioned to receive private offerings as dealers prepare their finest inventory for
-            the year&apos;s most important event.
+            Japan, held every November.
           </p>
 
           <p className="mb-7">
