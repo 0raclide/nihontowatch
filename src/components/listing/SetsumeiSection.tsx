@@ -93,10 +93,17 @@ export function SetsumeiSection({
     );
   }
 
-  // Gated state - show teaser for users without access
+  // Gated state - show preview for users without access
   if (!hasAccess) {
-    // Get first ~100 chars as teaser
-    const teaserText = listing.setsumei_text_en?.slice(0, 100) || '';
+    const fullText = listing.setsumei_text_en || '';
+    // Show ~1/3 of content as readable preview
+    const previewLength = Math.min(Math.floor(fullText.length / 3), 400);
+    const previewText = fullText.slice(0, previewLength);
+    // Find a good break point (end of sentence or word)
+    const lastPeriod = previewText.lastIndexOf('.');
+    const lastSpace = previewText.lastIndexOf(' ');
+    const breakPoint = lastPeriod > previewLength * 0.7 ? lastPeriod + 1 : lastSpace;
+    const cleanPreview = breakPoint > 0 ? previewText.slice(0, breakPoint) : previewText;
 
     return (
       <div className={`${baseClasses} ${className}`}>
@@ -119,27 +126,30 @@ export function SetsumeiSection({
           <span>AI translation — may contain errors</span>
         </p>
 
-        {/* Gated Content */}
+        {/* Gated Content - readable preview that fades */}
         <div className="bg-surface-elevated/30 border border-gold/20 rounded-lg p-4 relative overflow-hidden">
-          {/* Blurred teaser text */}
-          <div className="text-[13px] text-ink/80 leading-relaxed blur-[6px] select-none pointer-events-none">
-            {teaserText}...
+          {/* Readable preview text */}
+          <div className="prose prose-sm prose-invert max-w-none text-ink/80
+            prose-p:text-[13px] prose-p:leading-relaxed prose-p:mb-2
+            prose-strong:text-ink prose-strong:font-medium
+          ">
+            <ReactMarkdown>{cleanPreview}</ReactMarkdown>
           </div>
 
-          {/* Upgrade overlay */}
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-surface/80 to-surface flex flex-col items-center justify-end pb-4">
-            <p className="text-[11px] text-muted mb-2 text-center px-4">
-              Expert NBTHK evaluations translated for collectors
+          {/* Fade overlay with CTA */}
+          <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-surface via-surface/95 to-transparent flex flex-col items-center justify-end pb-4">
+            <p className="text-[11px] text-muted mb-2 text-center">
+              Continue reading the full NBTHK evaluation...
             </p>
             <button
               type="button"
               onClick={() => showPaywall('setsumei_translation')}
-              className="px-4 py-2 text-[12px] font-medium text-white bg-gold hover:bg-gold-light rounded-lg transition-colors flex items-center gap-1.5"
+              className="px-4 py-2 text-[12px] font-medium text-white bg-gold hover:bg-gold-light rounded-lg transition-colors flex items-center gap-1.5 shadow-lg"
             >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
               </svg>
-              Unlock Translation
+              Unlock Full Translation
             </button>
           </div>
         </div>
