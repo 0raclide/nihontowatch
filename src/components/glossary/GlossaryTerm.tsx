@@ -62,7 +62,7 @@ export function GlossaryTerm({ entry, children }: GlossaryTermProps) {
     }
   }, [isOpen]);
 
-  // Close on click outside and scroll
+  // Close on click outside, window scroll, and escape key
   useEffect(() => {
     if (!isOpen) return;
 
@@ -77,19 +77,26 @@ export function GlossaryTerm({ entry, children }: GlossaryTermProps) {
       }
     };
 
-    const handleScroll = () => setIsOpen(false);
+    // Only close on window/document scroll, not scroll inside modals
+    const handleScroll = (e: Event) => {
+      // Only close if scrolling the document/window itself
+      if (e.target === document || e.target === document.documentElement) {
+        setIsOpen(false);
+      }
+    };
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setIsOpen(false);
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     document.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('scroll', handleScroll, true);
+    document.addEventListener('scroll', handleScroll, true);
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('scroll', handleScroll, true);
+      document.removeEventListener('scroll', handleScroll, true);
     };
   }, [isOpen]);
 
