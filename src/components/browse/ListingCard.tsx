@@ -550,11 +550,7 @@ export function ListingCard({
           {shouldShowNewBadge(listing.first_seen_at, listing.dealer_earliest_seen_at) && (
             <span
               data-testid="new-listing-badge"
-              className={`text-[9px] lg:text-[10px] uppercase tracking-wider font-semibold px-1.5 lg:px-2 py-0.5 lg:py-1 ${
-                isEarlyAccessListing(listing.first_seen_at)
-                  ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white'
-                  : 'bg-new-listing-bg text-new-listing'
-              }`}
+              className="text-[9px] lg:text-[10px] uppercase tracking-wider font-semibold px-1.5 lg:px-2 py-0.5 lg:py-1 bg-new-listing-bg text-new-listing"
             >
               {isEarlyAccessListing(listing.first_seen_at) ? 'Early Access' : 'New'}
             </span>
