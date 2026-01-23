@@ -944,14 +944,59 @@ describe('Sorting Query Building', () => {
   });
 
   describe('Recent sorting (default)', () => {
-    it('builds descending first_seen_at sort', () => {
+    it('sorts by is_initial_import first (genuine new inventory prioritized)', () => {
+      // New "Newest" sort: genuine new inventory appears before bulk imports
+      // is_initial_import: FALSE (genuine new) sorts before TRUE (bulk import)
       const sort = 'recent';
-      const column = 'first_seen_at';
-      const options = { ascending: false };
+      const primaryColumn = 'is_initial_import';
+      const primaryOptions = { ascending: true, nullsFirst: false };
 
       expect(sort).toBe('recent');
-      expect(column).toBe('first_seen_at');
-      expect(options.ascending).toBe(false);
+      expect(primaryColumn).toBe('is_initial_import');
+      expect(primaryOptions.ascending).toBe(true); // FALSE sorts before TRUE
+    });
+
+    it('uses first_seen_at as secondary sort', () => {
+      // Within each group (genuine new vs bulk import), sort by discovery date
+      const secondaryColumn = 'first_seen_at';
+      const secondaryOptions = { ascending: false };
+
+      expect(secondaryColumn).toBe('first_seen_at');
+      expect(secondaryOptions.ascending).toBe(false);
+    });
+
+    it('prioritizes genuine new inventory over bulk imports', () => {
+      // Test case: Two listings with different is_initial_import values
+      // The one with is_initial_import=FALSE should appear first
+      const listingA = { is_initial_import: false, first_seen_at: '2026-01-15' };
+      const listingB = { is_initial_import: true, first_seen_at: '2026-01-20' };
+
+      // Sort: is_initial_import ASC (false before true), then first_seen_at DESC
+      const sorted = [listingA, listingB].sort((a, b) => {
+        if (a.is_initial_import !== b.is_initial_import) {
+          return a.is_initial_import ? 1 : -1; // false comes first
+        }
+        return new Date(b.first_seen_at).getTime() - new Date(a.first_seen_at).getTime();
+      });
+
+      expect(sorted[0]).toBe(listingA); // Genuine new inventory first
+      expect(sorted[1]).toBe(listingB); // Bulk import second
+    });
+
+    it('sorts within groups by discovery date', () => {
+      // Test case: Two genuine new listings (both is_initial_import=false)
+      const listingA = { is_initial_import: false, first_seen_at: '2026-01-15' };
+      const listingB = { is_initial_import: false, first_seen_at: '2026-01-20' };
+
+      const sorted = [listingA, listingB].sort((a, b) => {
+        if (a.is_initial_import !== b.is_initial_import) {
+          return a.is_initial_import ? 1 : -1;
+        }
+        return new Date(b.first_seen_at).getTime() - new Date(a.first_seen_at).getTime();
+      });
+
+      expect(sorted[0]).toBe(listingB); // More recent first
+      expect(sorted[1]).toBe(listingA);
     });
   });
 });

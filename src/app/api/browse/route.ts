@@ -243,6 +243,7 @@ export async function GET(request: NextRequest) {
         status,
         is_available,
         is_sold,
+        is_initial_import,
         dealer_id,
         dealers:dealers!inner(id, name, domain)
       `, { count: 'exact' });
@@ -408,7 +409,12 @@ export async function GET(request: NextRequest) {
         query = query.order('title', { ascending: true });
         break;
       default:
-        query = query.order('first_seen_at', { ascending: false });
+        // "Newest" sort: Genuine new inventory first, then bulk imports
+        // is_initial_import: FALSE (genuine new) sorts before TRUE (bulk import)
+        // Within each group, sort by discovery date (newest first)
+        query = query
+          .order('is_initial_import', { ascending: true, nullsFirst: false })
+          .order('first_seen_at', { ascending: false });
     }
 
     // Pagination
