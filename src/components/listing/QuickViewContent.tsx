@@ -6,6 +6,7 @@ import { ShareButton } from '@/components/share/ShareButton';
 import { InquiryModal } from '@/components/inquiry';
 import { LoginModal } from '@/components/auth/LoginModal';
 import { useAuth } from '@/lib/auth/AuthContext';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 import { useCurrency, formatPriceWithConversion } from '@/hooks/useCurrency';
 import { shouldShowNewBadge } from '@/lib/newListing';
 import type { Listing } from '@/types';
@@ -31,6 +32,7 @@ interface QuickViewContentProps {
 export function QuickViewContent({ listing }: QuickViewContentProps) {
   const { currency, exchangeRates } = useCurrency();
   const { user } = useAuth();
+  const { showPaywall, canAccess } = useSubscription();
   const [isInquiryModalOpen, setIsInquiryModalOpen] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
 
@@ -46,6 +48,12 @@ export function QuickViewContent({ listing }: QuickViewContentProps) {
   );
 
   const handleInquire = () => {
+    // First check subscription access - show paywall with value proposition
+    if (!canAccess('inquiry_emails')) {
+      showPaywall('inquiry_emails');
+      return;
+    }
+    // User has subscription but not logged in - prompt login
     if (!user) {
       setShowLoginModal(true);
       return;

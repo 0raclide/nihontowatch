@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useSubscription } from '@/contexts/SubscriptionContext';
+import { useAuth } from '@/lib/auth/AuthContext';
+import { LoginModal } from '@/components/auth/LoginModal';
 import {
   type SubscriptionTier,
   type BillingPeriod,
@@ -88,6 +90,8 @@ interface PaywallModalContentProps {
   requiredTier: SubscriptionTier;
   onDismiss: () => void;
   onCheckout: (tier: Exclude<SubscriptionTier, 'free'>, billingPeriod: BillingPeriod) => Promise<void>;
+  isLoggedIn: boolean;
+  onSignIn: () => void;
 }
 
 function PaywallModalContent({
@@ -96,6 +100,8 @@ function PaywallModalContent({
   requiredTier,
   onDismiss,
   onCheckout,
+  isLoggedIn,
+  onSignIn,
 }: PaywallModalContentProps) {
   const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>('annual');
   const [isLoading, setIsLoading] = useState(false);
@@ -108,6 +114,12 @@ function PaywallModalContent({
 
   const handleUpgrade = async () => {
     if (isLoading) return;
+
+    // If not logged in, show sign-in modal
+    if (!isLoggedIn) {
+      onSignIn();
+      return;
+    }
 
     setIsLoading(true);
     try {
@@ -215,7 +227,11 @@ function PaywallModalContent({
         disabled={isLoading}
         className="w-full max-w-xs px-6 py-3 rounded-lg bg-ink text-cream font-medium tracking-wide hover:bg-ink/90 focus:outline-none focus:ring-2 focus:ring-accent/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98]"
       >
-        {isLoading ? 'Redirecting...' : `Upgrade to ${tierInfo.name}`}
+        {isLoading
+          ? 'Redirecting...'
+          : isLoggedIn
+          ? `Upgrade to ${tierInfo.name}`
+          : 'Sign in to upgrade'}
       </button>
 
       {/* Dismiss link */}
@@ -246,6 +262,8 @@ interface DesktopModalProps {
   onDismiss: () => void;
   onCheckout: (tier: Exclude<SubscriptionTier, 'free'>, billingPeriod: BillingPeriod) => Promise<void>;
   isClosing: boolean;
+  isLoggedIn: boolean;
+  onSignIn: () => void;
 }
 
 function DesktopModal({
@@ -255,6 +273,8 @@ function DesktopModal({
   onDismiss,
   onCheckout,
   isClosing,
+  isLoggedIn,
+  onSignIn,
 }: DesktopModalProps) {
   return (
     <div
@@ -295,6 +315,8 @@ function DesktopModal({
           requiredTier={requiredTier}
           onDismiss={onDismiss}
           onCheckout={onCheckout}
+          isLoggedIn={isLoggedIn}
+          onSignIn={onSignIn}
         />
       </div>
     </div>
@@ -312,6 +334,8 @@ interface MobileSheetProps {
   onDismiss: () => void;
   onCheckout: (tier: Exclude<SubscriptionTier, 'free'>, billingPeriod: BillingPeriod) => Promise<void>;
   isClosing: boolean;
+  isLoggedIn: boolean;
+  onSignIn: () => void;
 }
 
 function MobileSheet({
@@ -321,6 +345,8 @@ function MobileSheet({
   onDismiss,
   onCheckout,
   isClosing,
+  isLoggedIn,
+  onSignIn,
 }: MobileSheetProps) {
   const sheetRef = useRef<HTMLDivElement>(null);
   const startY = useRef<number>(0);
@@ -404,6 +430,8 @@ function MobileSheet({
             requiredTier={requiredTier}
             onDismiss={onDismiss}
             onCheckout={onCheckout}
+            isLoggedIn={isLoggedIn}
+            onSignIn={onSignIn}
           />
         </div>
       </div>
@@ -417,12 +445,21 @@ function MobileSheet({
 
 export function PaywallModal() {
   const { paywallInfo, hidePaywall, checkout } = useSubscription();
+  const { user } = useAuth();
   const [isClosing, setIsClosing] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+
+  const isLoggedIn = !!user;
 
   // Handle hydration
   useEffect(() => {
     setMounted(true);
+  }, []);
+
+  // Handle sign in click
+  const handleSignIn = useCallback(() => {
+    setShowLoginModal(true);
   }, []);
 
   // Lock body scroll when modal is open
@@ -481,6 +518,8 @@ export function PaywallModal() {
       onDismiss={handleDismiss}
       onCheckout={handleCheckout}
       isClosing={isClosing}
+      isLoggedIn={isLoggedIn}
+      onSignIn={handleSignIn}
     />
   ) : (
     <DesktopModal
@@ -490,8 +529,18 @@ export function PaywallModal() {
       onDismiss={handleDismiss}
       onCheckout={handleCheckout}
       isClosing={isClosing}
+      isLoggedIn={isLoggedIn}
+      onSignIn={handleSignIn}
     />
   );
 
-  return createPortal(modal, document.body);
+  return (
+    <>
+      {createPortal(modal, document.body)}
+      <LoginModal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+      />
+    </>
+  );
 }

@@ -44,14 +44,14 @@ export function SaveSearchButton({
   }
 
   const handleClick = () => {
-    // First check if user is logged in
-    if (!user) {
-      setShowLoginModal(true);
+    // First check subscription access - show paywall with value proposition
+    if (!requireFeature('saved_searches')) {
       return;
     }
 
-    // Then check subscription access - shows paywall if not authorized
-    if (!requireFeature('saved_searches')) {
+    // User has subscription but not logged in - prompt login
+    if (!user) {
+      setShowLoginModal(true);
       return;
     }
 

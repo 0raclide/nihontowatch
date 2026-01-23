@@ -267,13 +267,13 @@ export const FEATURE_PAYWALL_MESSAGES: Record<Feature, { title: string; message:
     requiredTier: 'enthusiast',
   },
   inquiry_emails: {
-    title: 'Inquiry Email Drafts',
-    message: 'Generate professional Japanese inquiry emails with proper business etiquette.',
+    title: 'Professional Inquiry Emails',
+    message: 'Send professional emails in Japanese with proper business etiquette. Learn how to request the 10% tax-free export discount that most collectors miss.',
     requiredTier: 'enthusiast',
   },
   saved_searches: {
     title: 'Saved Searches',
-    message: 'Save your search criteria to quickly access later.',
+    message: 'Save your search criteria and never miss a matching listing. Build your personal watchlist of exactly what you\'re looking for.',
     requiredTier: 'enthusiast',
   },
   search_alerts: {
