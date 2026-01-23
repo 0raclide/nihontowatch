@@ -261,6 +261,27 @@ export default function ConnoisseurPage() {
           </ul>
 
           <p className="mb-7">
+            Dealers see all of this through a Japanese-language app designed to make their lives
+            easy. They can browse collector profiles, read about your background, view your
+            collection, and decide whether you&apos;re someone worth contacting when they acquire
+            something special.
+          </p>
+
+          <p className="mb-7">
+            A word on search criteria: precision matters. Dealers are looking for collectors with
+            <span className="text-ink font-medium"> serious, well-defined interests</span>. Not
+            too vague—&ldquo;Do you have anything good?&rdquo; is not a credible ask. But also not
+            so specific that you never attract any offers.
+          </p>
+
+          <p className="mb-7">
+            The sweet spot is focused but realistic. &ldquo;Bizen works by Osafune smiths, Muromachi
+            period, Juyo or higher&rdquo; tells a dealer exactly what you want. &ldquo;Anything
+            from Bizen&rdquo; tells them nothing. &ldquo;Only Mitsutada tanto with horimono in
+            perfect polish&rdquo; means they may never find anything to offer you.
+          </p>
+
+          <p className="mb-7">
             This is how trust gets built. A dealer considering whether to offer you something
             privately can see that you&apos;re a serious collector who follows through, communicates
             professionally, and treats transactions with respect.
