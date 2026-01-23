@@ -298,13 +298,6 @@ export default function ConnoisseurPage() {
           </p>
 
           <p className="mb-7">
-            A note on Japanese customs: if you ever decide to sell a piece, the expectation is
-            that you first offer it back to the dealer who sold it to you. This is how
-            relationships work in this market. It&apos;s part of the mutual respect that makes
-            the system function.
-          </p>
-
-          <p className="mb-7">
             I should also set expectations about what you&apos;ll receive. Most Japanese dealers
             are not skilled photographers. Do not expect polished, studio-quality images. The
             platform will help you make an informed choice: the expertly translated setsumei,
@@ -313,14 +306,45 @@ export default function ConnoisseurPage() {
             in the broader context.
           </p>
 
+          {/* Divider */}
+          <div className="my-16 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+
+          <h2 className="font-serif text-[1.75rem] text-ink tracking-tight mb-8">Etiquette</h2>
+
           <p className="mb-7">
-            Armed with this information, it is for you to make the decision. Do not expect
-            Western-style customer service. There will be no hand-holding, no salesmanship,
-            no follow-up calls asking if you&apos;re ready to buy. A piece is offered. You
-            evaluate it with the information provided. You decide.
+            When you receive a private offer, understand that <span className="text-ink font-medium">you
+            are a price taker</span>. The dealer has set a price. That is the price.
           </p>
 
           <p className="mb-7">
+            Do not haggle. On a private offering extended specifically to you, attempting to
+            negotiate is considered extremely poor form. It signals that you don&apos;t understand
+            how this market works—or worse, that you don&apos;t respect the relationship. The
+            dealer has already given you access to something special. Trying to squeeze them
+            on price is a good way to ensure you never receive another offer.
+          </p>
+
+          <p className="mb-7">
+            You will receive the <span className="text-ink font-medium">10% foreign export
+            discount</span>—this is standard for international buyers and accounts for the
+            consumption tax that doesn&apos;t apply to exports. But this is extended on the
+            dealer&apos;s terms, not negotiated. Accept it graciously. Don&apos;t ask for more.
+          </p>
+
+          <p className="mb-7">
+            If you ever decide to sell a piece, the expectation is that you first offer it back
+            to the dealer who sold it to you. This is how relationships work in this market.
+            It&apos;s part of the mutual respect that makes the system function.
+          </p>
+
+          <p className="mb-7">
+            Do not expect Western-style customer service. There will be no hand-holding, no
+            salesmanship, no follow-up calls asking if you&apos;re ready to buy. A piece is
+            offered. You evaluate it with the information provided. You decide.
+          </p>
+
+          <p className="mb-7">
+            Armed with the intelligence the platform provides, it is for you to make the decision.
             This is a privilege extended to you, not a service owed to you.
           </p>
 
