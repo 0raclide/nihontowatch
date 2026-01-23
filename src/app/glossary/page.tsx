@@ -3,22 +3,23 @@ import { GlossaryPageClient } from './GlossaryPageClient';
 import { getMetadata, getTermCount } from '@/lib/glossary';
 
 export const metadata: Metadata = {
-  title: 'Japanese Sword Glossary | NihontoWatch',
-  description: `Comprehensive glossary of ${getTermCount().toLocaleString()}+ Japanese sword (nihonto) terms. Learn about hamon, kitae, sugata, nakago, and other technical terminology used in sword appraisals and documentation.`,
+  title: 'Japanese Sword & Fittings Glossary | NihontoWatch',
+  description: `Comprehensive glossary of ${getTermCount().toLocaleString()}+ Japanese sword (nihonto) and fittings (tosogu) terms. Learn about hamon, kitae, sugata, tsuba, and other technical terminology used in appraisals and documentation.`,
   keywords: [
     'Japanese sword glossary',
     'nihonto terminology',
-    'sword terms',
+    'tosogu glossary',
+    'sword fittings terms',
     'hamon',
     'kitae',
     'sugata',
-    'nakago',
+    'tsuba',
     'NBTHK',
     'sword appraisal terms',
   ],
   openGraph: {
-    title: 'Japanese Sword Glossary | NihontoWatch',
-    description: `Explore ${getTermCount().toLocaleString()}+ technical terms used in Japanese sword documentation and appraisals.`,
+    title: 'Japanese Sword & Fittings Glossary | NihontoWatch',
+    description: `Explore ${getTermCount().toLocaleString()}+ technical terms used in Japanese sword and fittings documentation and appraisals.`,
     type: 'website',
     url: 'https://nihontowatch.com/glossary',
   },
@@ -33,12 +34,12 @@ export default function GlossaryPage() {
       <div className="bg-surface border-b border-border">
         <div className="max-w-[1200px] mx-auto px-4 py-8 lg:px-6 lg:py-12">
           <h1 className="font-serif text-3xl lg:text-4xl text-ink mb-2">
-            Japanese Sword Glossary
+            Japanese Sword & Fittings Glossary
           </h1>
           <p className="text-muted text-sm lg:text-base max-w-2xl">
             {meta.total_terms.toLocaleString()} technical terms used in Japanese sword
-            (nihonto) documentation, appraisals, and collecting. Click any term to see
-            its definition and Japanese characters.
+            (nihonto) and fittings (tosogu) documentation, appraisals, and collecting.
+            Click any term to see its definition and Japanese characters.
           </p>
           <p className="text-muted/60 text-xs mt-2">
             Version {meta.version} &middot; Updated {meta.updated}
