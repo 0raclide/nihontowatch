@@ -587,8 +587,16 @@ export async function GET(request: NextRequest) {
       subscriptionTier: subscription.tier,
     });
 
-    // Cache for short duration with SWR for quick invalidation
-    response.headers.set('Cache-Control', `public, s-maxage=${CACHE.BROWSE_RESULTS}, stale-while-revalidate=${CACHE.SWR_WINDOW}`);
+    // Cache settings based on user authentication
+    // Authenticated users get private cache (not shared via CDN) to respect their tier
+    // Anonymous users get public cache for performance
+    if (subscription.userId) {
+      // Private cache for authenticated users - respects their subscription tier
+      response.headers.set('Cache-Control', `private, max-age=${CACHE.BROWSE_RESULTS}`);
+    } else {
+      // Public cache for anonymous users - can be shared via CDN
+      response.headers.set('Cache-Control', `public, s-maxage=${CACHE.BROWSE_RESULTS}, stale-while-revalidate=${CACHE.SWR_WINDOW}`);
+    }
 
     return response;
   } catch (error) {
