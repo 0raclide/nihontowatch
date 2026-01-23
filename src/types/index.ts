@@ -316,6 +316,7 @@ export interface Listing {
   setsumei_text_en?: string;         // English translation (Markdown format)
   setsumei_metadata?: SetsumeiMetadata; // Structured metadata from translation
   setsumei_processed_at?: string;    // When setsumei was processed
+  setsumei_pipeline_version?: string; // Pipeline version (e.g., "3.6.0")
   setsumei_error?: string;           // Error message if processing failed
 
   // Timestamps

@@ -440,6 +440,13 @@ export default function ConnoisseurPage() {
           </p>
 
           <p className="mb-7">
+            This matters more than you might think. In the art advisory world, the standard model
+            is to charge 5-15% of each purchase price. Some advisors charge the buyer a fee{' '}
+            <em className="not-italic text-ink">and</em> take kickbacks from sellers. The conflicts
+            of interest are obvious, yet this is how most of the industry operates.
+          </p>
+
+          <p className="mb-7">
             Commissions create bad incentives. If I earned a percentage on every sale, my
             advice would be biased—consciously or not—toward closing deals rather than
             protecting your interests. I&apos;d have reason to encourage purchases I shouldn&apos;t,
@@ -448,9 +455,9 @@ export default function ConnoisseurPage() {
           </p>
 
           <p className="mb-7">
-            The subscription model keeps it honest. You pay a flat fee. My only incentive is
-            to provide enough value that you stay. That means giving you my genuine opinion,
-            even when it&apos;s not what you want to hear.
+            The flat subscription model is the most ethical structure in advisory. You pay a fixed
+            fee. My only incentive is to provide enough value that you stay—which means giving you
+            my genuine opinion, even when it&apos;s &ldquo;don&apos;t buy this.&rdquo;
           </p>
 
           <p className="mb-7">
@@ -579,9 +586,21 @@ export default function ConnoisseurPage() {
           <h2 className="font-serif text-[1.75rem] text-ink tracking-tight mb-8">The Details</h2>
 
           <p className="mb-7">
-            Connoisseur membership is <span className="text-ink font-medium">${monthlyPrice}/month</span>,
-            billed annually at ${pricing.annual}/year. This isn&apos;t a casual commitment, and
-            it&apos;s not meant to be.
+            Connoisseur membership is <span className="text-ink font-medium">$200/month</span> when
+            billed annually. Monthly subscriptions are available at a higher rate for those who
+            prefer flexibility.
+          </p>
+
+          <p className="mb-7">
+            Annual memberships renew each year just before the{' '}
+            <span className="text-ink font-medium">Dai Token Ichi</span>—the largest sword fair in
+            Japan, held every November. This timing is intentional: your membership ensures you&apos;re
+            positioned to receive private offerings as dealers prepare their finest inventory for
+            the year&apos;s most important event.
+          </p>
+
+          <p className="mb-7">
+            This isn&apos;t a casual commitment, and it&apos;s not meant to be.
           </p>
 
           <div className="my-12 py-8 px-8 bg-[#f8f7f5] dark:bg-[#222220] rounded-sm border-l-2 border-gold/40">
@@ -635,7 +654,7 @@ export default function ConnoisseurPage() {
                 {isLoading ? 'Redirecting...' : 'Join as Connoisseur'}
               </button>
               <p className="text-[13px] text-muted mt-5">
-                ${monthlyPrice}/month billed annually · Cancel anytime
+                $200/month billed annually · Renews before Dai Token Ichi
               </p>
             </>
           )}

@@ -64,10 +64,12 @@ interface ListingWithDealer {
   weight_g: number | null;
   description: string | null;
   description_en: string | null;
+  setsumei_image_url: string | null;
   setsumei_text_en: string | null;
   setsumei_text_ja: string | null;
   setsumei_metadata: Record<string, unknown> | null;
   setsumei_processed_at: string | null;
+  setsumei_pipeline_version: string | null;
   images: string[] | null;
   stored_images: string[] | null;
   first_seen_at: string;
@@ -141,10 +143,12 @@ export async function GET(
         weight_g,
         description,
         description_en,
+        setsumei_image_url,
         setsumei_text_en,
         setsumei_text_ja,
         setsumei_metadata,
         setsumei_processed_at,
+        setsumei_pipeline_version,
         images,
         stored_images,
         first_seen_at,
