@@ -39,8 +39,15 @@ export async function getUserSubscription(): Promise<{
     }
 
     // Get user's subscription and role from profile
+    // Try service client first (bypasses RLS), fall back to auth client
+    let profile: {
+      subscription_tier: SubscriptionTier | null;
+      subscription_status: SubscriptionStatus | null;
+      role: string | null;
+    } | null = null;
+
     const serviceClient = createServiceClient();
-    const { data: profile } = await serviceClient
+    const { data: serviceProfile, error: serviceError } = await serviceClient
       .from('profiles')
       .select('subscription_tier, subscription_status, role')
       .eq('id', user.id)
@@ -50,7 +57,35 @@ export async function getUserSubscription(): Promise<{
           subscription_status: SubscriptionStatus | null;
           role: string | null;
         } | null;
+        error: { message: string } | null;
       };
+
+    if (serviceProfile) {
+      profile = serviceProfile;
+      console.log('[Subscription] Got profile via service client');
+    } else {
+      console.log('[Subscription] Service client failed:', serviceError?.message || 'unknown error');
+      // Fall back to authenticated client (uses user's session/RLS)
+      const { data: authProfile, error: authProfileError } = await supabase
+        .from('profiles')
+        .select('subscription_tier, subscription_status, role')
+        .eq('id', user.id)
+        .single() as {
+          data: {
+            subscription_tier: SubscriptionTier | null;
+            subscription_status: SubscriptionStatus | null;
+            role: string | null;
+          } | null;
+          error: { message: string } | null;
+        };
+
+      if (authProfile) {
+        profile = authProfile;
+        console.log('[Subscription] Got profile via auth client');
+      } else {
+        console.log('[Subscription] Auth client also failed:', authProfileError?.message || 'unknown error');
+      }
+    }
 
     // Admins get full access (connoisseur tier)
     const isAdmin = profile?.role === 'admin';
