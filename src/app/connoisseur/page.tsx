@@ -528,7 +528,9 @@ export default function ConnoisseurPage() {
             tax</span>. It happens when collectors with significant budgets enter a field they
             don&apos;t yet understand. They have the means to acquire serious pieces, but not
             the knowledge to evaluate them properly. The result is predictable: they overpay,
-            they buy pieces with hidden problems, they trust the wrong dealers.
+            they buy pieces with hidden problems, they trust the wrong dealers. These mistakes
+            are then repaired at great cost—if they can be repaired at all. I&apos;ve seen this
+            happen over and over. This service exists to make sure it doesn&apos;t happen to you.
           </p>
 
           <p className="mb-7">
