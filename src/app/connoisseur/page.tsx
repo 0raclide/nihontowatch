@@ -121,10 +121,6 @@ export default function ConnoisseurPage() {
             give a Western collector the time of day.
           </p>
 
-          <blockquote className="border-l-2 border-gold/40 pl-6 my-8 italic text-ink/80">
-            Everything I know about collecting at this level, I learned from him.
-          </blockquote>
-
           <p>
             If you want a sense of how I approach this field, you can read some of my{' '}
             <a
@@ -200,7 +196,7 @@ export default function ConnoisseurPage() {
           </p>
 
           <p className="text-ink text-lg font-medium my-8">
-            Japanese dealers can see your search criteria.
+            Selected Japanese dealers can see your search criteria.
           </p>
 
           <p>
@@ -312,29 +308,42 @@ export default function ConnoisseurPage() {
           <h2 className="font-serif text-2xl text-ink pt-4">Is This For You?</h2>
 
           <p>
-            If you&apos;re contemplating collecting at the Juyo level, yes. Otherwise, no.
+            If you&apos;re contemplating collecting Juyo-grade items, yes. Otherwise, no.
           </p>
 
           <p>
             For most collectors, the Enthusiast tier is more than enough. Real-time listings,
-            saved searches, inquiry assistance—that covers what you need to collect Hozon and
-            Tokubetsu Hozon pieces effectively.
+            saved searches, inquiry assistance—that covers the essentials.
           </p>
 
           <p>
-            But if you&apos;re considering spending tens of thousands of dollars on a Juyo sword,
-            it would be short-sighted to do so without being part of this tier.
+            But if you&apos;re considering spending tens of thousands of dollars on a Juyo
+            sword or important tosogu, it would be short-sighted to do so without being
+            part of this tier.
           </p>
 
           <p>
             Mistakes at this level are incredibly expensive. Overpaying by 20% on a $50,000
-            blade costs you $10,000. Buying a piece with condition issues you didn&apos;t
+            piece costs you $10,000. Buying something with condition issues you didn&apos;t
             notice costs you even more. Purchasing from a dealer who won&apos;t stand behind
             the sale costs you everything.
           </p>
 
           <p className="text-ink font-medium">
             Saving you from those mistakes is what this membership does.
+          </p>
+
+          <p>
+            Beyond protection, there&apos;s elevation. Members receive guidance on upgrading
+            items—submitting Tokubetsu Hozon pieces for Juyo shinsa, or Juyo for Tokubetsu
+            Juyo. We facilitate professional services in Japan: commissioning sayagaki from
+            respected scholars, arranging proper restoration work, conducting thorough due
+            diligence on significant pieces before purchase.
+          </p>
+
+          <p>
+            This is how serious collections are built—not just by acquiring pieces, but by
+            understanding how to enhance and validate what you own.
           </p>
 
           <p>
