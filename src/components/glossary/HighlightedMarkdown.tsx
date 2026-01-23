@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useMemo } from 'react';
-import ReactMarkdown from 'react-markdown';
+import React, { useMemo, memo } from 'react';
+import ReactMarkdown, { Components } from 'react-markdown';
 import { GlossaryTerm } from './GlossaryTerm';
-import { segmentText, type TextSegment } from '@/lib/glossary/highlighter';
+import { segmentText } from '@/lib/glossary/highlighter';
 
 interface HighlightedMarkdownProps {
   content: string;
@@ -11,8 +11,9 @@ interface HighlightedMarkdownProps {
 
 /**
  * Render highlighted text from segments
+ * Memoized to prevent unnecessary re-renders
  */
-function HighlightedText({ text }: { text: string }) {
+const HighlightedText = memo(function HighlightedText({ text }: { text: string }) {
   const segments = useMemo(() => segmentText(text), [text]);
 
   return (
@@ -28,7 +29,7 @@ function HighlightedText({ text }: { text: string }) {
       )}
     </>
   );
-}
+});
 
 /**
  * Recursively process children, highlighting string nodes
@@ -56,47 +57,49 @@ function highlightChildren(children: React.ReactNode): React.ReactNode {
 }
 
 /**
+ * Custom components for ReactMarkdown that apply glossary highlighting
+ * Defined outside component to ensure stable reference
+ */
+const markdownComponents: Components = {
+  p: ({ children, ...props }) => (
+    <p {...props}>{highlightChildren(children)}</p>
+  ),
+  li: ({ children, ...props }) => (
+    <li {...props}>{highlightChildren(children)}</li>
+  ),
+  strong: ({ children, ...props }) => (
+    <strong {...props}>{highlightChildren(children)}</strong>
+  ),
+  em: ({ children, ...props }) => (
+    <em {...props}>{highlightChildren(children)}</em>
+  ),
+  td: ({ children, ...props }) => (
+    <td {...props}>{highlightChildren(children)}</td>
+  ),
+  th: ({ children, ...props }) => (
+    <th {...props}>{highlightChildren(children)}</th>
+  ),
+  h1: ({ children, ...props }) => (
+    <h1 {...props}>{highlightChildren(children)}</h1>
+  ),
+  h2: ({ children, ...props }) => (
+    <h2 {...props}>{highlightChildren(children)}</h2>
+  ),
+  h3: ({ children, ...props }) => (
+    <h3 {...props}>{highlightChildren(children)}</h3>
+  ),
+  h4: ({ children, ...props }) => (
+    <h4 {...props}>{highlightChildren(children)}</h4>
+  ),
+};
+
+/**
  * HighlightedMarkdown component
  * Renders markdown with glossary term highlighting
  */
 export function HighlightedMarkdown({ content }: HighlightedMarkdownProps) {
   return (
-    <ReactMarkdown
-      components={{
-        // Text-containing elements that need highlighting
-        p: ({ children, ...props }) => (
-          <p {...props}>{highlightChildren(children)}</p>
-        ),
-        li: ({ children, ...props }) => (
-          <li {...props}>{highlightChildren(children)}</li>
-        ),
-        strong: ({ children, ...props }) => (
-          <strong {...props}>{highlightChildren(children)}</strong>
-        ),
-        em: ({ children, ...props }) => (
-          <em {...props}>{highlightChildren(children)}</em>
-        ),
-        td: ({ children, ...props }) => (
-          <td {...props}>{highlightChildren(children)}</td>
-        ),
-        th: ({ children, ...props }) => (
-          <th {...props}>{highlightChildren(children)}</th>
-        ),
-        // Headings usually don't need term highlighting but included for completeness
-        h1: ({ children, ...props }) => (
-          <h1 {...props}>{highlightChildren(children)}</h1>
-        ),
-        h2: ({ children, ...props }) => (
-          <h2 {...props}>{highlightChildren(children)}</h2>
-        ),
-        h3: ({ children, ...props }) => (
-          <h3 {...props}>{highlightChildren(children)}</h3>
-        ),
-        h4: ({ children, ...props }) => (
-          <h4 {...props}>{highlightChildren(children)}</h4>
-        ),
-      }}
-    >
+    <ReactMarkdown components={markdownComponents}>
       {content}
     </ReactMarkdown>
   );

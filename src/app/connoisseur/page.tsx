@@ -47,7 +47,7 @@ export default function ConnoisseurPage() {
   };
 
   return (
-    <div className="min-h-screen bg-cream dark:bg-[#1a1a18]">
+    <div className="min-h-screen bg-gradient-to-b from-[#f5f3f0] via-[#f8f7f5] to-[#faf9f7] dark:from-[#0d1929] dark:via-[#141c28] dark:to-[#1a1a18]">
       {/* Header */}
       <header className="border-b border-border/50">
         <div className="max-w-[680px] mx-auto px-6 py-5 flex items-center justify-between">
