@@ -229,14 +229,14 @@ export const TIER_INFO: Record<SubscriptionTier, TierInfo> = {
   },
   connoisseur: {
     name: 'Connoisseur',
-    description: 'For serious collectors',
+    description: 'Join an exclusive community',
     features: [
       'Everything in Enthusiast',
-      'Instant search alerts',
       'Private dealer offerings',
+      'Instant search alerts',
       'Artist certification stats',
-      'Yuhinkai Discord access',
-      'LINE with Hoshi',
+      'Exclusive Discord community',
+      'Direct LINE support',
     ],
   },
   dealer: {

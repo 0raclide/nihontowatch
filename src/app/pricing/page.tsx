@@ -52,10 +52,10 @@ const FEATURE_MATRIX: FeatureRow[] = [
   { name: 'AI inquiry email drafts', free: false, enthusiast: true, connoisseur: true },
   { name: 'Saved searches', free: false, enthusiast: true, connoisseur: true },
   { name: 'Data exports', free: false, enthusiast: true, connoisseur: true },
-  { name: 'Instant search alerts', free: false, enthusiast: false, connoisseur: true },
   { name: 'Private dealer offerings', free: false, enthusiast: false, connoisseur: true },
+  { name: 'Instant search alerts', free: false, enthusiast: false, connoisseur: true },
   { name: 'Artist certification stats', free: false, enthusiast: false, connoisseur: true },
-  { name: 'Yuhinkai Discord access', free: false, enthusiast: false, connoisseur: true },
+  { name: 'Exclusive collector community', free: false, enthusiast: false, connoisseur: true },
   { name: 'Direct LINE support', free: false, enthusiast: false, connoisseur: true },
 ];
 
