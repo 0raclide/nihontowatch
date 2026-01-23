@@ -620,8 +620,8 @@ export default function ConnoisseurPage() {
 
           <p className="mb-7">
             What you get: private dealer offerings, instant alerts when pieces hit the market so
-            you can be first to act, artist certification statistics, and direct support for
-            questions and guidance.
+            you can be first to act, artist certification statistics, direct support for questions
+            and guidance, and a community of passionate collectors. That last part is priceless.
           </p>
 
           <p className="mb-7">
