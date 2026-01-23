@@ -202,10 +202,10 @@ export default function ConnoisseurPage() {
 
           <p className="mb-7">
             Now, here&apos;s what makes this different from posting on a forum or sending
-            emails to dealers: you&apos;re paying a significant membership fee. That fee
+            emails to dealers: you&apos;re paying a significant membership fee. <span className="text-ink font-medium">That fee
             is a credibility signal. It tells the dealer that your interest is serious,
             that you have the means to act, that you&apos;re not a tire-kicker who will
-            waste their time.
+            waste their time.</span>
           </p>
 
           <p className="mb-7">
