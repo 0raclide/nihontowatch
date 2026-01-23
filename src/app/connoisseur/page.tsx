@@ -217,12 +217,40 @@ export default function ConnoisseurPage() {
 
           <p className="mb-7">
             When a dealer has something that matches what you&apos;re looking for, they see more
-            than just an anonymous alert. They see:
+            than just an anonymous alert. They see your <span className="text-ink font-medium">collector profile</span>—a
+            complete picture of who you are in this field.
+          </p>
+
+          <p className="mb-7">
+            The platform generates a <span className="text-ink font-medium">Japanese business card</span> for
+            you—a proper <em className="not-italic">meishi</em>—that dealers can print out and keep on file.
+            This is how business works in Japan. When a dealer acquires something that might interest you,
+            they can pull your card and remember exactly who you are and what you collect.
+          </p>
+
+          <p className="mb-7">
+            Your profile includes a <span className="text-ink font-medium">homepage</span> where you can
+            post photographs of items in your collection. This is how you build credibility. When a dealer
+            sees that you already own serious pieces—Juyo swords, important tosogu—they know they&apos;re
+            dealing with a collector at their level.
+          </p>
+
+          <p className="mb-7">
+            The profile also displays your affiliations and credentials:
           </p>
 
           <ul className="mb-10 ml-1 space-y-4">
             <li className="pl-6 relative before:content-[''] before:absolute before:left-0 before:top-[0.6em] before:w-1.5 before:h-1.5 before:bg-gold/60 before:rounded-full">
-              <span className="text-ink font-medium">Your name</span> and a presentation card you write yourself
+              <span className="text-ink font-medium">NBTHK membership</span>—if you&apos;re a member, it shows
+            </li>
+            <li className="pl-6 relative before:content-[''] before:absolute before:left-0 before:top-[0.6em] before:w-1.5 before:h-1.5 before:bg-gold/60 before:rounded-full">
+              <span className="text-ink font-medium">Professional club rankings</span>—your standing in worldwide
+              organizations dedicated to the study of nihonto
+            </li>
+            <li className="pl-6 relative before:content-[''] before:absolute before:left-0 before:top-[0.6em] before:w-1.5 before:h-1.5 before:bg-gold/60 before:rounded-full">
+              <span className="text-ink font-medium">Shinsa record</span>—if you&apos;ve ever passed an item
+              to Juyo or Tokubetsu Juyo, and your name is on the papers, this appears on your profile.
+              (If your name isn&apos;t on the papers but you were the submitting owner, contact me.)
             </li>
             <li className="pl-6 relative before:content-[''] before:absolute before:left-0 before:top-[0.6em] before:w-1.5 before:h-1.5 before:bg-gold/60 before:rounded-full">
               <span className="text-ink font-medium">Your collecting interests</span>—what you&apos;re building, what speaks to you
