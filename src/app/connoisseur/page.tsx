@@ -492,11 +492,13 @@ export default function ConnoisseurPage() {
           </p>
 
           <p className="mb-7">
-            No collector has relationships with <em className="not-italic text-ink">every</em> top
-            dealer. You may have cultivated three or four excellent sources over the years, but
-            there are others you haven&apos;t connected with yet—dealers who handle exactly what
-            you&apos;re looking for but don&apos;t know you exist. This platform introduces you
-            to them, with your credentials already established.
+            Cultivating relationships at the highest levels is time-consuming. It takes years of
+            consistent engagement, travel to Japan, careful communication across language and
+            cultural barriers. We must all inevitably make choices about where to invest that
+            time—no one can pursue every relationship. This platform is designed to accelerate
+            that process, allowing you to build relationships faster and more effectively. The
+            cultural friction, while not removed entirely, is significantly reduced. Your
+            credentials are already established. Your seriousness is already demonstrated.
           </p>
 
           <p className="mb-7">
