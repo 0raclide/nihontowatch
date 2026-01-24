@@ -180,7 +180,19 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
     setCurrentIndex(nextIndex);
 
     updateUrl(nextListing.id);
-  }, [listings, currentIndex, updateUrl]);
+
+    // Fetch full listing data (with enrichment) asynchronously
+    fetchFullListing(nextListing.id).then((fullListing) => {
+      if (fullListing) {
+        setCurrentListing(fullListing);
+        setListingsState((prev) => {
+          const newListings = [...prev];
+          newListings[nextIndex] = fullListing;
+          return newListings;
+        });
+      }
+    });
+  }, [listings, currentIndex, updateUrl, fetchFullListing]);
 
   // Navigate to previous listing
   const goToPrevious = useCallback(() => {
@@ -193,7 +205,19 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
     setCurrentIndex(prevIndex);
 
     updateUrl(prevListing.id);
-  }, [listings, currentIndex, updateUrl]);
+
+    // Fetch full listing data (with enrichment) asynchronously
+    fetchFullListing(prevListing.id).then((fullListing) => {
+      if (fullListing) {
+        setCurrentListing(fullListing);
+        setListingsState((prev) => {
+          const newListings = [...prev];
+          newListings[prevIndex] = fullListing;
+          return newListings;
+        });
+      }
+    });
+  }, [listings, currentIndex, updateUrl, fetchFullListing]);
 
   // Set listings array for navigation
   const setListings = useCallback((newListings: Listing[]) => {
