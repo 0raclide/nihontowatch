@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo, memo } from 'react';
 import { FavoriteButton } from '@/components/favorites/FavoriteButton';
 import { SetsumeiZufuBadge } from '@/components/ui/SetsumeiZufuBadge';
 import { useActivityOptional } from '@/components/activity/ActivityProvider';
@@ -305,7 +305,9 @@ function cleanTitle(title: string | null, smith: string | null, maker: string | 
 // Tiny placeholder for blur effect
 const BLUR_PLACEHOLDER = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjVmNGYwIi8+PC9zdmc+';
 
-export function ListingCard({
+// Memoized ListingCard to prevent unnecessary re-renders when parent updates
+// The comparison function checks props that actually affect rendering
+export const ListingCard = memo(function ListingCard({
   listing,
   currency,
   exchangeRates,
@@ -333,28 +335,46 @@ export function ListingCard({
     };
   }, [listing.id, viewportTracking]);
 
-  const imageUrl = getImageUrl(listing);
-  // Extract romanized artisan name, using title_en as fallback for Japanese names
-  const school = getSchoolName(listing.school) || getSchoolName(listing.tosogu_school);
-  const artisan = getArtisanName(listing.smith, listing.school, listing.title_en)
-    || getArtisanName(listing.tosogu_maker, listing.tosogu_school, listing.title_en);
-  const itemType = normalizeItemType(listing.item_type);
+  // Memoize expensive computations that derive from listing data
+  // These run on every render otherwise, and with 100 cards that's significant
+  const { imageUrl, school, artisan, itemType, cleanedTitle, certInfo } = useMemo(() => ({
+    imageUrl: getImageUrl(listing),
+    school: getSchoolName(listing.school) || getSchoolName(listing.tosogu_school),
+    artisan: getArtisanName(listing.smith, listing.school, listing.title_en)
+      || getArtisanName(listing.tosogu_maker, listing.tosogu_school, listing.title_en),
+    itemType: normalizeItemType(listing.item_type),
+    cleanedTitle: cleanTitle(listing.title, listing.smith, listing.tosogu_maker),
+    certInfo: listing.cert_type ? CERT_LABELS[listing.cert_type] : null,
+  }), [
+    listing.id,
+    listing.images,
+    listing.stored_images,
+    listing.school,
+    listing.tosogu_school,
+    listing.smith,
+    listing.tosogu_maker,
+    listing.title,
+    listing.title_en,
+    listing.item_type,
+    listing.cert_type,
+  ]);
+
   // Check if item is definitively sold (for showing sale data)
   const isSold = listing.is_sold || listing.status === 'sold' || listing.status === 'presumed_sold';
   // Check if item is unavailable for any reason (sold, reserved, withdrawn, etc.)
   // This catches reserved items that were slipping through without visual indicator
   const isUnavailable = !listing.is_available;
-  const cleanedTitle = cleanTitle(listing.title, listing.smith, listing.tosogu_maker);
-  const certInfo = listing.cert_type ? CERT_LABELS[listing.cert_type] : null;
   const isAskPrice = listing.price_value === null;
 
-  // Build SEO-optimized alt text
-  const altText = [
-    itemType,
-    certInfo?.label,
-    artisan ? `by ${artisan}` : null,
-    cleanedTitle !== itemType ? cleanedTitle : null,
-  ].filter(Boolean).join(' - ') || listing.title || 'Japanese sword listing';
+  // Build SEO-optimized alt text (memoized since it depends on memoized values)
+  const altText = useMemo(() => {
+    return [
+      itemType,
+      certInfo?.label,
+      artisan ? `by ${artisan}` : null,
+      cleanedTitle !== itemType ? cleanedTitle : null,
+    ].filter(Boolean).join(' - ') || listing.title || 'Japanese sword listing';
+  }, [itemType, certInfo?.label, artisan, cleanedTitle, listing.title]);
 
   // Handle card click - open quick view or track activity
   const handleClick = useCallback((e: React.MouseEvent) => {
@@ -390,6 +410,13 @@ export function ListingCard({
     }, 150);
   }, [quickView, preloadListing, listing]);
 
+  // Preload QuickView images on touch (immediately, no delay)
+  // Mobile devices don't hover, so we preload on touchstart for instant QuickView
+  const handleTouchStart = useCallback(() => {
+    if (!quickView) return;
+    preloadListing(listing);
+  }, [quickView, preloadListing, listing]);
+
   // Cancel preload if user moves away before delay
   const handleMouseLeave = useCallback(() => {
     if (hoverTimerRef.current) {
@@ -418,6 +445,7 @@ export function ListingCard({
       onClick={handleClick}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
+      onTouchStart={handleTouchStart}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
@@ -466,6 +494,9 @@ export function ListingCard({
             }`}
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
             priority={priority}
+            // fetchPriority hints to browser which images to load first
+            // This improves LCP for above-the-fold images
+            fetchPriority={priority ? 'high' : undefined}
             loading={priority ? undefined : 'lazy'}
             placeholder="blur"
             blurDataURL={BLUR_PLACEHOLDER}
@@ -568,4 +599,16 @@ export function ListingCard({
       </div>
     </div>
   );
-}
+}, (prevProps, nextProps) => {
+  // Custom comparison for React.memo
+  // Only re-render if something that affects display has changed
+  return (
+    prevProps.listing.id === nextProps.listing.id &&
+    prevProps.currency === nextProps.currency &&
+    prevProps.priority === nextProps.priority &&
+    prevProps.isNearViewport === nextProps.isNearViewport &&
+    prevProps.showFavoriteButton === nextProps.showFavoriteButton &&
+    // Compare exchange rates by timestamp (cheaper than deep compare)
+    prevProps.exchangeRates?.timestamp === nextProps.exchangeRates?.timestamp
+  );
+});

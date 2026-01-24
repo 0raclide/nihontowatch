@@ -19,6 +19,19 @@ vi.mock('@/contexts/QuickViewContext', () => ({
   useQuickViewOptional: () => null,
 }));
 
+// Mock viewport tracking (optional, returns null when not provided)
+vi.mock('@/lib/viewport', () => ({
+  useViewportTrackingOptional: () => null,
+}));
+
+// Mock image preloader
+vi.mock('@/hooks/useImagePreloader', () => ({
+  useImagePreloader: () => ({
+    preloadListing: () => {},
+    cancelPreloads: () => {},
+  }),
+}));
+
 // Mock freshness helper
 vi.mock('@/lib/freshness', () => ({
   getMarketTimeDisplay: () => null,
@@ -27,6 +40,7 @@ vi.mock('@/lib/freshness', () => ({
 // Mock images helper
 vi.mock('@/lib/images', () => ({
   getImageUrl: (listing: { images?: string[] | null }) => listing.images?.[0] || null,
+  dealerDoesNotPublishImages: () => false,
 }));
 
 // We DON'T mock newListing - we want to test the real integration

@@ -324,11 +324,15 @@ export function VirtualListingGrid({
   }, [listings.length]);
 
   // Render the grid
-  // On iOS, add ios-native-virtualize class for CSS content-visibility virtualization
+  // On mobile (when JS virtualization is disabled), add ios-native-virtualize class
+  // for CSS content-visibility virtualization - this enables native browser virtualization
+  // without the transform timing issues that cause "teleport" glitches on iOS
   const renderGrid = () => (
     <div
       data-testid="virtual-listing-grid"
-      className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5"
+      className={`grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5${
+        !isVirtualized && isMobileDevice ? ' ios-native-virtualize' : ''
+      }`}
     >
       {visibleItems.map((listing, idx) => (
         <ListingCard
