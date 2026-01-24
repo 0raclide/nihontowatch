@@ -137,7 +137,7 @@ Actionable implementation guide for Nihontowatch subscription tiers.
     setsumei_translation: ['enthusiast', 'connoisseur', 'dealer'],
     inquiry_emails: ['enthusiast', 'connoisseur', 'dealer'],
     saved_searches: ['enthusiast', 'connoisseur', 'dealer'],
-    search_alerts: ['connoisseur'],
+    search_alerts: ['enthusiast', 'connoisseur', 'dealer'],
     private_listings: ['connoisseur'],
     artist_stats: ['connoisseur'],  // Juyo/Tokuju/Bunkazai/Bijutsuhin/Kokuho
     yuhinkai_discord: ['connoisseur'],  // Private community
@@ -240,15 +240,12 @@ Actionable implementation guide for Nihontowatch subscription tiers.
   - Show count "7/10 favorites used"
   - PaywallModal when hitting limit
 
-- [ ] **Modify: Saved searches logic**
-  - Free tier: max 1 saved search
-  - Enthusiast: unlimited, but no alerts
-  - Connoisseur: unlimited + alerts
-
-- [ ] **Disable alerts for Enthusiast**
-  - Save search works
-  - Alert toggle hidden/disabled
-  - "Upgrade to Connoisseur for alerts"
+- [x] **Saved searches with alerts (Enthusiast+)** ✅
+  - Free tier: no saved searches
+  - Enthusiast: unlimited saved searches + instant/daily alerts
+  - Connoisseur: same as Enthusiast + private listings
+  - Cron jobs: every 15 min (instant), 8am UTC (daily)
+  - SendGrid email delivery configured
 
 ---
 
@@ -448,16 +445,13 @@ Private Discord community of serious collectors — gated to Connoisseur tier.
   └─────────────────────────────────────────┘
   ```
 
-### 2.6 Search Alerts (Connoisseur Only)
+### 2.6 Search Alerts (Enthusiast+) ✅ COMPLETED
 
-- [ ] **Modify: Saved search alert toggle**
-  - Hide alert options for non-Connoisseur
-  - Show upgrade prompt instead
-  - "Get instant alerts with Connoisseur"
-
-- [ ] **Modify: Alert processing cron**
-  - Only process alerts for Connoisseur users
-  - Or: downgrade alerts to weekly digest for others
+- [x] **Search alerts available to Enthusiast tier**
+  - Instant alerts (every 15 min) for matching listings
+  - Daily digest option (8am UTC)
+  - Cron jobs processing all Enthusiast+ users
+  - SendGrid email delivery configured
 
 ### 2.7 Artist Certification Statistics
 

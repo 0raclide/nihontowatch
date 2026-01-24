@@ -73,7 +73,7 @@ This document outlines the monetization strategy for Nihontowatch through a tier
 | Setsumei translation | AI-translated certification descriptions |
 | Inquiry email drafts | Full access to AI email generator |
 | Unlimited favorites | No cap |
-| Unlimited saved searches | Multiple saved searches |
+| Saved searches with alerts | Multiple saved searches + instant/daily notifications |
 | Price history | Full historical data |
 | Export data | CSV/Excel exports |
 
@@ -91,7 +91,6 @@ This document outlines the monetization strategy for Nihontowatch through a tier
 | Feature | Implementation |
 |---------|----------------|
 | Everything in Enthusiast | All Enthusiast features |
-| Search alerts | Instant notifications on new matches |
 | Private dealer offerings | Exclusive inventory not shown publicly |
 | Artist certification stats | Juyo/Tokuju/Bunkazai/Bijutsuhin/Kokuho counts per artist |
 | Yuhinkai Discord | Private community of serious collectors |
@@ -328,7 +327,6 @@ src/components/
 | Admin interface for reviewing applications | P0 | 3h |
 | PrivateListingFeed component | P0 | 4h |
 | PrivateInquiryModal | P0 | 2h |
-| Gate search alerts to Connoisseur | P0 | 1h |
 | LINE connection flow + storage | P1 | 3h |
 | LINE QR/link reveal for Connoisseurs | P1 | 1h |
 | Private listing notification emails | P1 | 2h |
@@ -339,7 +337,6 @@ src/components/
 - Private listings visible to Connoisseurs
 - Inquiry system for private items
 - LINE access gated to tier
-- Alerts gated to Connoisseur
 
 ---
 
@@ -389,8 +386,8 @@ src/components/
 | Setsumei (translated) | ✗ | ✓ | ✓ | ✓ |
 | Inquiry email drafts | ✗ | ✓ | ✓ | ✓ |
 | Favorites | Unlimited | Unlimited | Unlimited | Unlimited |
-| Saved searches | ✗ | Unlimited, no alerts | Unlimited + alerts | Unlimited |
-| Search alerts | ✗ | ✗ | ✓ | ✓ |
+| Saved searches | ✗ | Unlimited + alerts | Unlimited + alerts | Unlimited |
+| Search alerts | ✗ | ✓ | ✓ | ✓ |
 | Artist certification stats | ✗ | ✗ | ✓ | ✗ |
 | Yuhinkai Discord | ✗ | ✗ | ✓ | ✗ |
 | Price history | Basic | Full | Full | Full |
@@ -414,7 +411,7 @@ export function canAccess(
     'setsumei_translation': ['enthusiast', 'connoisseur', 'dealer'],
     'inquiry_emails': ['enthusiast', 'connoisseur', 'dealer'],
     'saved_searches': ['enthusiast', 'connoisseur', 'dealer'],
-    'search_alerts': ['connoisseur'],
+    'search_alerts': ['enthusiast', 'connoisseur', 'dealer'],
     'private_listings': ['connoisseur'],
     'artist_stats': ['connoisseur'],  // Juyo/Tokuju/Bunkazai/Kokuho counts
     'yuhinkai_discord': ['connoisseur'],  // Private community access
@@ -486,8 +483,7 @@ switch (event.type) {
 | Click sold listing | "This sold 2 days ago. See listings in real-time." | Upgrade to Enthusiast |
 | View setsumei | "Translation available for Enthusiasts" | Unlock Translation |
 | Try inquiry email | "Draft emails with Enthusiast" | Upgrade to Enthusiast |
-| Try to save search | "Save searches with Enthusiast" | Upgrade to Enthusiast |
-| Try to set alert | "Alerts require Connoisseur" | Upgrade to Connoisseur |
+| Try to save search | "Save searches with alerts for Enthusiasts" | Upgrade to Enthusiast |
 | View artist on listing | "This artist has 23 Juyo. See full stats." | Upgrade to Connoisseur |
 | View private listing teaser | "3 private offerings this week" | Apply for Connoisseur |
 

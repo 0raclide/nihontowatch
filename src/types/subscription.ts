@@ -49,9 +49,9 @@ export const FEATURE_MIN_TIER: Record<Feature, SubscriptionTier> = {
   setsumei_translation: 'enthusiast',
   inquiry_emails: 'enthusiast',
   saved_searches: 'enthusiast',
+  search_alerts: 'enthusiast',
   export_data: 'enthusiast',
   // Connoisseur features
-  search_alerts: 'connoisseur',
   private_listings: 'connoisseur',
   artist_stats: 'connoisseur',
   yuhinkai_discord: 'connoisseur',
@@ -222,7 +222,7 @@ export const TIER_INFO: Record<SubscriptionTier, TierInfo> = {
       'Real-time listings',
       'Setsumei translations',
       'AI inquiry email drafts',
-      'Saved searches',
+      'Saved searches with alerts',
       'Data exports',
     ],
     highlighted: true,
@@ -233,7 +233,6 @@ export const TIER_INFO: Record<SubscriptionTier, TierInfo> = {
     features: [
       'Everything in Enthusiast',
       'Private dealer offerings',
-      'Instant search alerts',
       'Artist certification stats',
       'Exclusive Discord community',
       'Direct LINE support',
@@ -279,7 +278,7 @@ export const FEATURE_PAYWALL_MESSAGES: Record<Feature, { title: string; message:
   search_alerts: {
     title: 'Search Alerts',
     message: 'Get notified instantly when new items match your saved searches.',
-    requiredTier: 'connoisseur',
+    requiredTier: 'enthusiast',
   },
   private_listings: {
     title: 'Private Listings',

@@ -2,7 +2,7 @@
 
 Implementation status and handoff notes for the Nihontowatch Pro Tier system.
 
-**Last Updated:** 2026-01-23
+**Last Updated:** 2026-01-24
 
 ---
 
@@ -47,11 +47,25 @@ Implementation status and handoff notes for the Nihontowatch Pro Tier system.
 |-----------|---------|-------|
 | Pricing Page | `src/app/pricing/page.tsx` | 3-tier comparison (Free/Enthusiast/Connoisseur), billing toggle, feature matrix, checkout integration |
 
+### ✅ COMPLETED (Phase 1 - Search Alerts)
+
+| Component | File(s) | Notes |
+|-----------|---------|-------|
+| Saved searches DB | `supabase/migrations/018_saved_searches.sql` | saved_searches + saved_search_notifications tables |
+| Saved searches API | `src/app/api/saved-searches/route.ts` | Full CRUD, tier gating |
+| Cron: instant alerts | `src/app/api/cron/process-saved-searches/route.ts` | Every 15 min for instant frequency |
+| Cron: daily digest | `src/app/api/cron/process-saved-searches/route.ts` | 8am UTC for daily frequency |
+| Email sending | `src/lib/email/sendgrid.ts` | SendGrid integration |
+| Email templates | `src/lib/email/templates/saved-search.ts` | HTML + plaintext templates |
+| Matcher logic | `src/lib/savedSearches/matcher.ts` | findMatchingListings() |
+| Vercel crons | `vercel.json` | 4 cron jobs configured |
+
+**Note:** Search alerts are available to **Enthusiast tier** (not Connoisseur-only).
+
 ### 🔮 FUTURE (Phase 2+)
 
 | Task | Priority | Notes |
 |------|----------|-------|
-| Search alerts | MEDIUM | Email notifications for matching listings (Connoisseur feature) |
 | Private listings | MEDIUM | Exclusive dealer items (Connoisseur feature) |
 | Artist stats | LOW | Certification statistics by smith/school |
 | Setsumei on-demand translation | LOW | Claude API for items without pre-translated setsumei |
@@ -394,8 +408,8 @@ Before deploying subscription changes:
 | Tier | Monthly | Annual | Key Features |
 |------|---------|--------|--------------|
 | Free | $0 | $0 | 72h delayed data, basic browsing |
-| Enthusiast | $25 | $225 (25% off) | Fresh data, translations, inquiry emails, saved searches |
-| Connoisseur | $200 | $1,800 (25% off) | Private listings, alerts, artist stats, LINE access, Discord |
+| Enthusiast | $25 | $225 (25% off) | Fresh data, translations, inquiry emails, saved searches with alerts |
+| Connoisseur | $200 | $1,800 (25% off) | Private listings, artist stats, LINE access, Discord |
 | Dealer | TBD | TBD | Analytics, private listing management |
 
 ---

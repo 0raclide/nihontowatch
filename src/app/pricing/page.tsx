@@ -49,7 +49,7 @@ const FEATURE_MATRIX: FeatureRow[] = [
   { name: 'Currency conversion', free: true, enthusiast: true },
   { name: 'NBTHK Zufu translations', free: false, enthusiast: true },
   { name: 'AI inquiry email drafts', free: false, enthusiast: true },
-  { name: 'Saved searches', free: false, enthusiast: true },
+  { name: 'Saved searches with alerts', free: false, enthusiast: true },
   { name: 'Data exports', free: false, enthusiast: true },
 ];
 

@@ -264,7 +264,7 @@ const FEATURE_MIN_TIER: Record<Feature, SubscriptionTier> = {
   setsumei_translation: 'enthusiast',
   inquiry_emails: 'enthusiast',
   unlimited_favorites: 'enthusiast',
-  search_alerts: 'connoisseur',
+  search_alerts: 'enthusiast',
   private_listings: 'connoisseur',
   line_access: 'connoisseur',
   export_data: 'enthusiast',
@@ -491,15 +491,16 @@ if (userTier === 'free') {
 
 ---
 
-### E4. Disable alerts for non-Connoisseur
+### E4. Enable alerts for Enthusiast+ ✅ COMPLETED
 **Estimate:** 30 min | **Depends on:** C2 | **Blocks:** Nothing
 
-**Modify:** Saved search form / alert toggle
-- Hide or disable alert options for free/enthusiast
-- Show "Alerts require Connoisseur" tooltip
-- Link to upgrade
+**Implementation:**
+- Alert options available to all Enthusiast+ users
+- Instant alerts (every 15 min) via cron
+- Daily digest option (8am UTC)
+- SendGrid email delivery
 
-**Deliverable:** Alerts are Connoisseur-only
+**Deliverable:** Alerts available to Enthusiast tier
 
 ---
 
@@ -705,10 +706,9 @@ Phase 1 is complete when:
 
 4. **As Enthusiast:**
    - See real-time listings
-   - Can save searches (no alerts)
+   - Can save searches with alerts (instant/daily)
    - Can generate inquiry emails
    - Can see translated setsumei
-   - Cannot enable alerts (Connoisseur only)
 
 5. **Cancel subscription:**
    - Use Stripe portal
