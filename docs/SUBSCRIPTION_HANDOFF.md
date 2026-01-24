@@ -6,6 +6,61 @@ Implementation status and handoff notes for the Nihontowatch Pro Tier system.
 
 ---
 
+## Changelog
+
+### 2026-01-24: Search Alerts Production Fix & Enthusiast Tier Access
+
+**Problem Identified:**
+- Search alerts cron jobs were running every 15 minutes
+- 18 saved searches had notifications enabled
+- All emails were failing with "SendGrid not configured" error
+- SendGrid env vars existed in `.env.local` but were **missing from Vercel production**
+
+**Root Cause:**
+`SENDGRID_API_KEY` and `SENDGRID_FROM_EMAIL` were never added to Vercel environment variables.
+
+**Fixes Applied:**
+
+1. **Added SendGrid env vars to Vercel production:**
+   - `SENDGRID_API_KEY`
+   - `SENDGRID_FROM_EMAIL=notifications@nihontowatch.com`
+
+2. **Fixed TypeScript build failure:**
+   - Test files were included in `tsconfig.json` causing build errors
+   - Added `"tests"` to the `exclude` array in `tsconfig.json`
+
+3. **Redeployed to production:**
+   - Verified cron endpoint returns `notificationsSent: 4, errors: 0`
+   - Confirmed notifications now showing `Status: sent` in database
+
+**Feature Change: Search Alerts → Enthusiast Tier**
+
+Per product decision, search alerts are now available to Enthusiast tier (previously Connoisseur-only):
+
+| File | Change |
+|------|--------|
+| `src/types/subscription.ts` | `FEATURE_MIN_TIER.search_alerts: 'enthusiast'` |
+| `src/types/subscription.ts` | `TIER_INFO.enthusiast.features`: "Saved searches with alerts" |
+| `src/types/subscription.ts` | `PAYWALL_MESSAGES.search_alerts.requiredTier: 'enthusiast'` |
+| `src/app/pricing/page.tsx` | Feature matrix updated |
+| `docs/PRO_TIER_*.md` | All documentation updated |
+
+**Commits:**
+- `3625b32` - fix: Exclude tests from TypeScript build check
+- `cc703f3` - feat: Make search alerts available to Enthusiast tier
+
+**Verification:**
+```bash
+# Test cron endpoint
+curl -X GET "https://nihontowatch.com/api/cron/process-saved-searches?frequency=instant" \
+  -H "Authorization: Bearer $CRON_SECRET"
+
+# Response
+{"processed":11,"notificationsSent":4,"errors":0}
+```
+
+---
+
 ## Implementation Status
 
 ### ✅ COMPLETED

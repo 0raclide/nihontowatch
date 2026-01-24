@@ -9,6 +9,12 @@
 - Currency conversion (JPY/USD/EUR)
 - Image optimization with skeleton loaders
 - Dark mode support
+- User authentication (magic link + password)
+- Subscription tiers (Free / Enthusiast / Connoisseur)
+- Saved searches with email alerts (Enthusiast+)
+- AI inquiry email drafts (Enthusiast+)
+- Setsumei translations (Enthusiast+)
+- 72h data delay for free tier
 
 **Defaults:**
 - Currency: JPY
@@ -260,17 +266,20 @@ id, url (UNIQUE), dealer_id, discovered_at, is_scraped, scrape_priority
 3. **Listing Detail** - Images, specs, price, dealer info
 4. **Dealer Directory** - All dealers with inventory counts
 
-### Phase 2 Features
-1. **Price Alerts** - Email when price drops
-2. **New Listing Alerts** - Email for matching criteria
-3. **Saved Searches** - Bookmark search queries
-4. **Price History** - See historical prices
+### Completed Features (Phase 1)
+1. **User Accounts** - Magic link + password auth
+2. **Subscription Tiers** - Free / Enthusiast ($25/mo) / Connoisseur ($200/mo)
+3. **Saved Searches with Alerts** - Instant (15 min) or daily digest emails
+4. **Price Drop Alerts** - Email when watched items decrease in price
+5. **AI Inquiry Emails** - Japanese business email drafts
+6. **Setsumei Translations** - NBTHK certification descriptions in English
+7. **72h Data Delay** - Free users see listings 72h late
 
-### Phase 3 Features
-1. **User Accounts** - Save favorites, watchlists
-2. **Comparison** - Compare similar items
+### Future Features (Phase 2+)
+1. **Private Listings** - Exclusive dealer items (Connoisseur)
+2. **Artist Stats** - Juyo/Tokuju certification counts by smith
 3. **Market Analytics** - Price trends, inventory levels
-4. **API Access** - For power users
+4. **Dealer Tier** - Analytics and listing management for dealers
 
 ---
 
@@ -299,11 +308,118 @@ git push  # Auto-deploys to Vercel → nihontowatch.com
 ## Environment Variables
 
 ```bash
-# .env.local
+# .env.local (and Vercel production)
+
+# Supabase
 NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=xxx
 SUPABASE_SERVICE_ROLE_KEY=xxx  # Server-side only
+
+# SendGrid (for email alerts)
+SENDGRID_API_KEY=SG.xxx
+SENDGRID_FROM_EMAIL=notifications@nihontowatch.com
+
+# Cron job security
+CRON_SECRET=xxx  # Used to authenticate cron endpoints
+
+# Stripe (for subscriptions)
+STRIPE_SECRET_KEY=sk_live_xxx
+STRIPE_WEBHOOK_SECRET=whsec_xxx
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_xxx
+
+# OpenRouter (for AI features)
+OPENROUTER_API_KEY=xxx
 ```
+
+**Important:** When adding env vars to Vercel, you must **redeploy** for changes to take effect.
+
+---
+
+## Subscription & Alerts System
+
+### Subscription Tiers
+
+| Tier | Price | Key Features |
+|------|-------|--------------|
+| Free | $0 | 72h delayed data, basic browsing, unlimited favorites |
+| Enthusiast | $25/mo | Real-time data, setsumei translations, inquiry emails, saved searches with alerts |
+| Connoisseur | $200/mo | Everything + private listings, artist stats, LINE access, Discord |
+
+### Search Alerts Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    SEARCH ALERTS FLOW                           │
+│                                                                 │
+│  User saves search          Vercel Cron (*/15 min)             │
+│  with notification          or (8am UTC daily)                  │
+│        │                           │                            │
+│        ▼                           ▼                            │
+│  ┌───────────┐              ┌────────────────┐                 │
+│  │ saved_    │◄─────────────│ process-saved- │                 │
+│  │ searches  │              │ searches cron  │                 │
+│  └───────────┘              └───────┬────────┘                 │
+│                                     │                           │
+│                                     ▼                           │
+│                            ┌────────────────┐                  │
+│                            │   matcher.ts   │                  │
+│                            │ findMatching() │                  │
+│                            └───────┬────────┘                  │
+│                                    │                            │
+│                                    ▼                            │
+│                            ┌────────────────┐                  │
+│                            │   SendGrid     │                  │
+│                            │   Email API    │                  │
+│                            └───────┬────────┘                  │
+│                                    │                            │
+│                                    ▼                            │
+│                            ┌────────────────┐                  │
+│                            │ saved_search_  │                  │
+│                            │ notifications  │                  │
+│                            └────────────────┘                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Key Files
+
+| Component | Location |
+|-----------|----------|
+| Subscription types | `src/types/subscription.ts` |
+| Subscription context | `src/contexts/SubscriptionContext.tsx` |
+| Saved searches API | `src/app/api/saved-searches/route.ts` |
+| Alerts cron job | `src/app/api/cron/process-saved-searches/route.ts` |
+| Price drop cron | `src/app/api/cron/process-price-alerts/route.ts` |
+| Email sending | `src/lib/email/sendgrid.ts` |
+| Email templates | `src/lib/email/templates/*.ts` |
+| Matcher logic | `src/lib/savedSearches/matcher.ts` |
+| Cron config | `vercel.json` (crons section) |
+
+### Feature Gating
+
+```typescript
+// Check if user can access a feature
+const { canAccessFeature, tier } = useSubscription();
+
+if (!canAccessFeature('search_alerts')) {
+  // Show paywall
+}
+```
+
+Features and minimum tier:
+- `fresh_data`: enthusiast
+- `setsumei_translation`: enthusiast
+- `inquiry_emails`: enthusiast
+- `saved_searches`: enthusiast
+- `search_alerts`: enthusiast
+- `private_listings`: connoisseur
+- `artist_stats`: connoisseur
+
+### Documentation
+
+For detailed implementation docs, see:
+- `docs/SUBSCRIPTION_HANDOFF.md` - Current status and changelog
+- `docs/PRO_TIER_IMPLEMENTATION.md` - Implementation checklist
+- `docs/PRO_TIER_STRATEGY.md` - Business strategy
 
 ---
 
