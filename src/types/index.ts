@@ -163,6 +163,11 @@ export interface YuhinkaiEnrichment {
 
   // Verification
   verification_status: VerificationStatus;
+  verified_by?: string;
+  verified_at?: string;
+
+  // Connection source (auto = SOTA matcher, manual = admin URL paste)
+  connection_source?: 'auto' | 'manual';
 
   // Timestamps
   enriched_at: string;

@@ -16,6 +16,7 @@ import { useValidatedImages } from '@/hooks/useValidatedImages';
 import { shouldShowNewBadge } from '@/lib/newListing';
 import { SetsumeiSection } from '@/components/listing/SetsumeiSection';
 import { SetsumeiZufuBadge } from '@/components/ui/SetsumeiZufuBadge';
+import { AdminSetsumeiWidget } from '@/components/listing/AdminSetsumeiWidget';
 import type { Listing, CreateAlertInput } from '@/types';
 
 // Extended listing type for this page
@@ -65,7 +66,7 @@ export default function ListingDetailPage() {
   const params = useParams();
   const router = useRouter();
   const listingId = params.id as string;
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
 
   const [listing, setListing] = useState<ListingDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -392,6 +393,24 @@ export default function ListingDetailPage() {
               variant="full"
               className="mb-6 pb-6 border-b border-border px-0"
             />
+
+            {/* Admin: Manual Yuhinkai Connection Widget */}
+            {isAdmin && (
+              <AdminSetsumeiWidget
+                listing={listing as unknown as Listing}
+                onConnectionChanged={() => {
+                  // Refetch listing to show updated enrichment
+                  fetch(`/api/listing/${listingId}`)
+                    .then(res => res.json())
+                    .then(data => {
+                      if (data.listing) {
+                        setListing(data.listing as ListingDetail);
+                      }
+                    })
+                    .catch(console.error);
+                }}
+              />
+            )}
 
             {/* Dealer */}
             <div className="mb-6 pb-6 border-b border-border">
