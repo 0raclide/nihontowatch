@@ -10,10 +10,11 @@ import { useSubscription } from '@/contexts/SubscriptionContext';
 import { useQuickViewOptional } from '@/contexts/QuickViewContext';
 import { useCurrency, formatPriceWithConversion } from '@/hooks/useCurrency';
 import { shouldShowNewBadge } from '@/lib/newListing';
-import type { Listing } from '@/types';
+import type { Listing, ListingWithEnrichment } from '@/types';
 import { getItemTypeLabel } from '@/types';
 import { MetadataGrid, getCertInfo } from './MetadataGrid';
 import { SetsumeiSection } from './SetsumeiSection';
+import { YuhinkaiEnrichmentSection } from './YuhinkaiEnrichmentSection';
 import { AdminSetsumeiWidget } from './AdminSetsumeiWidget';
 import { TranslatedDescription } from './TranslatedDescription';
 import { TranslatedTitle } from './TranslatedTitle';
@@ -144,6 +145,13 @@ export function QuickViewContent({ listing }: QuickViewContentProps) {
         {/* NBTHK Zufu Commentary - expands in-place */}
         <SetsumeiSection
           listing={listing}
+          variant="preview"
+          previewLength={300}
+        />
+
+        {/* Yuhinkai Catalog Enrichment (from manual connection) */}
+        <YuhinkaiEnrichmentSection
+          listing={listing as ListingWithEnrichment}
           variant="preview"
           previewLength={300}
         />
