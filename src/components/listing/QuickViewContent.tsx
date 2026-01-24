@@ -7,6 +7,7 @@ import { InquiryModal } from '@/components/inquiry';
 import { LoginModal } from '@/components/auth/LoginModal';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
+import { useQuickViewOptional } from '@/contexts/QuickViewContext';
 import { useCurrency, formatPriceWithConversion } from '@/hooks/useCurrency';
 import { shouldShowNewBadge } from '@/lib/newListing';
 import type { Listing } from '@/types';
@@ -34,6 +35,7 @@ export function QuickViewContent({ listing }: QuickViewContentProps) {
   const { currency, exchangeRates } = useCurrency();
   const { user, isAdmin } = useAuth();
   const { showPaywall, canAccess } = useSubscription();
+  const quickView = useQuickViewOptional();
   const [isInquiryModalOpen, setIsInquiryModalOpen] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
 
@@ -149,7 +151,10 @@ export function QuickViewContent({ listing }: QuickViewContentProps) {
         {/* Admin: Manual Yuhinkai Connection Widget */}
         {isAdmin && (
           <div className="px-4 py-3 lg:px-5">
-            <AdminSetsumeiWidget listing={listing} />
+            <AdminSetsumeiWidget
+              listing={listing}
+              onConnectionChanged={quickView?.refreshCurrentListing}
+            />
           </div>
         )}
       </div>

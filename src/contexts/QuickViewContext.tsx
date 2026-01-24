@@ -42,6 +42,8 @@ interface QuickViewContextType {
   hasPrevious: boolean;
   /** Set the listings array for navigation */
   setListings: (listings: Listing[]) => void;
+  /** Refresh the current listing data from the API (e.g., after admin changes) */
+  refreshCurrentListing: () => Promise<void>;
 }
 
 // ============================================================================
@@ -172,6 +174,35 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
     }
   }, [currentListing]);
 
+  // Refresh the current listing from the API
+  // Used after admin actions like connecting setsumei to reload updated data
+  const refreshCurrentListing = useCallback(async () => {
+    if (!currentListing) return;
+
+    try {
+      const response = await fetch(`/api/listing/${currentListing.id}`);
+      if (!response.ok) {
+        console.error('Failed to refresh listing:', response.status);
+        return;
+      }
+
+      const data = await response.json();
+      const refreshedListing = data.listing as Listing;
+
+      // Update current listing state
+      setCurrentListing(refreshedListing);
+
+      // Also update the listing in the listings array if present
+      if (currentIndex !== -1 && listings.length > 0) {
+        const newListings = [...listings];
+        newListings[currentIndex] = refreshedListing;
+        setListingsState(newListings);
+      }
+    } catch (error) {
+      console.error('Error refreshing listing:', error);
+    }
+  }, [currentListing, currentIndex, listings]);
+
   // Handle browser back button (popstate)
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -271,6 +302,7 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
       hasNext,
       hasPrevious,
       setListings,
+      refreshCurrentListing,
     }),
     [
       isOpen,
@@ -284,6 +316,7 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
       hasNext,
       hasPrevious,
       setListings,
+      refreshCurrentListing,
     ]
   );
 

@@ -59,6 +59,20 @@ vi.mock('@/components/auth/LoginModal', () => ({
   LoginModal: () => null,
 }));
 
+// Mock the QuickViewContext
+vi.mock('@/contexts/QuickViewContext', () => ({
+  useQuickViewOptional: () => ({
+    refreshCurrentListing: vi.fn(),
+  }),
+}));
+
+// Mock the AdminSetsumeiWidget component
+vi.mock('@/components/listing/AdminSetsumeiWidget', () => ({
+  AdminSetsumeiWidget: () => (
+    <div data-testid="admin-setsumei-widget">Admin Widget</div>
+  ),
+}));
+
 // Mock the TranslatedTitle component
 vi.mock('@/components/listing/TranslatedTitle', () => ({
   TranslatedTitle: ({ listing }: { listing: Listing }) => (
