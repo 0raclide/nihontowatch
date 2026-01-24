@@ -323,7 +323,7 @@ export const ROUTES = {
  * instead of the generic "no image" icon.
  */
 export const DEALERS_WITHOUT_IMAGES: string[] = [
-  'katana-ando.com',
+  'katana-ando.co.jp',
 ];
 
 // =============================================================================
