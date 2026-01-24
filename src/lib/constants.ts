@@ -325,3 +325,21 @@ export const ROUTES = {
 export const DEALERS_WITHOUT_IMAGES: string[] = [
   'katana-ando.com',
 ];
+
+// =============================================================================
+// YUHINKAI ENRICHMENT
+// =============================================================================
+
+/**
+ * Whether to display auto-matched Yuhinkai enrichments from the SOTA matcher.
+ *
+ * Set to FALSE while the auto-matcher produces false positives (e.g., matching
+ * Tokuju listings to Juyo catalog records). Only manually connected enrichments
+ * will be displayed.
+ *
+ * Set to TRUE when the auto-matcher is production-ready and false positive rate
+ * is acceptable.
+ *
+ * @see docs/YUHINKAI_SETSUMEI_CONNECTION.md for details
+ */
+export const SHOW_AUTO_MATCHED_ENRICHMENTS = false;

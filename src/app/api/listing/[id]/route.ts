@@ -32,6 +32,7 @@ interface YuhinkaiEnrichment {
   enriched_cert_session: number | null;
   item_category: string | null;
   verification_status: string;
+  connection_source: string | null;
   enriched_at: string;
   updated_at: string;
 }
@@ -185,6 +186,7 @@ export async function GET(
           enriched_cert_session,
           item_category,
           verification_status,
+          connection_source,
           enriched_at,
           updated_at
         )

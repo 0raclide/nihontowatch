@@ -1,78 +1,85 @@
 import { test, expect } from '@playwright/test';
 
 /**
- * Debug test for QuickView YuhinkaiEnrichmentSection
+ * Tests for QuickView YuhinkaiEnrichmentSection display logic
  *
- * Issue: After connecting setsumei via AdminSetsumeiWidget,
- * the YuhinkaiEnrichmentSection doesn't show in QuickView
+ * Verifies:
+ * - Manual connections ARE displayed
+ * - Auto-matched connections are NOT displayed (SHOW_AUTO_MATCHED_ENRICHMENTS = false)
  */
 
-test.describe('QuickView Yuhinkai Enrichment Debug', () => {
-  test('should display YuhinkaiEnrichmentSection for listing with enrichment', async ({ page }) => {
-    // Listing 7057 has yuhinkai_enrichment from manual connection (user confirmed)
+test.describe('QuickView Yuhinkai Enrichment', () => {
+  test('should display YuhinkaiEnrichmentSection for MANUAL connection', async ({ page }) => {
+    // Listing 7057 has yuhinkai_enrichment from manual connection
     const listingId = 7057;
 
-    // First check the API response
+    // First check the API response to confirm it's a manual connection
     const apiResponse = await page.request.get(`http://localhost:3000/api/listing/${listingId}?nocache=1`);
     const apiData = await apiResponse.json();
+    const enrichment = apiData.listing?.yuhinkai_enrichment;
 
-    console.log('=== API Response ===');
-    console.log('Has yuhinkai_enrichment:', !!apiData.listing?.yuhinkai_enrichment);
-    if (apiData.listing?.yuhinkai_enrichment) {
-      const enrichment = apiData.listing.yuhinkai_enrichment;
-      console.log('match_confidence:', enrichment.match_confidence);
-      console.log('verification_status:', enrichment.verification_status);
-      console.log('has setsumei_en:', !!enrichment.setsumei_en);
-      console.log('setsumei_en length:', enrichment.setsumei_en?.length || 0);
-    }
-    console.log('=== End API Response ===');
+    console.log('=== Listing 7057 (Manual Connection) ===');
+    console.log('connection_source:', enrichment?.connection_source);
+    console.log('verification_status:', enrichment?.verification_status);
+    console.log('has setsumei_en:', !!enrichment?.setsumei_en);
 
-    // Go directly to browse with listing param to open QuickView
+    // Verify it's a manual connection
+    expect(enrichment?.connection_source).toBe('manual');
+
+    // Open QuickView
     await page.goto(`/?listing=${listingId}`, { timeout: 60000 });
-
-    // Wait for QuickView to open
     await page.waitForSelector('[data-testid="quickview-scrollable-content"]', { timeout: 15000 });
+    await page.waitForTimeout(2000); // Wait for async data fetch
 
-    // Wait a bit for content to load
-    await page.waitForTimeout(2000);
-
-    // Debug: Log the entire QuickView content
-    const quickViewContent = await page.locator('[data-testid="quickview-scrollable-content"]').innerHTML();
-    console.log('=== QuickView Content (first 3000 chars) ===');
-    console.log(quickViewContent.substring(0, 3000));
-    console.log('=== End QuickView Content ===');
-
-    // Check for YuhinkaiEnrichmentSection - it shows "Official Catalog Translation" header
+    // Manual connections SHOULD show "Official Catalog Translation"
     const yuhinkaiSection = page.locator('text=Official Catalog Translation');
-    const hasYuhinkai = await yuhinkaiSection.count();
-    console.log(`Has Official Catalog Translation: ${hasYuhinkai > 0}`);
-
-    // Check for "Catalog Data" (shows when enrichment has no setsumei)
-    const catalogDataSection = page.locator('text=Catalog Data');
-    const hasCatalogData = await catalogDataSection.count();
-    console.log(`Has Catalog Data: ${hasCatalogData > 0}`);
-
-    // Take screenshot
-    await page.screenshot({ path: 'tests/e2e/screenshots/quickview-yuhinkai-7057.png' });
-    console.log('Screenshot saved');
-
-    // The YuhinkaiEnrichmentSection should be visible
     await expect(yuhinkaiSection).toBeVisible({ timeout: 5000 });
+
+    console.log('✓ Manual connection displays correctly');
   });
 
-  test('debug: check what components render in QuickView', async ({ page }) => {
-    await page.goto('/?listing=5671');
+  test('should NOT display YuhinkaiEnrichmentSection for AUTO-MATCHED connection', async ({ page }) => {
+    // Listing 6758 has yuhinkai_enrichment from auto-matcher (false positive)
+    const listingId = 6758;
 
-    await page.waitForSelector('[data-testid="quickview-scrollable-content"]', { timeout: 10000 });
+    // First check the API response to confirm it's an auto connection
+    const apiResponse = await page.request.get(`http://localhost:3000/api/listing/${listingId}?nocache=1`);
+    const apiData = await apiResponse.json();
+    const enrichment = apiData.listing?.yuhinkai_enrichment;
 
-    // Get all section headers in QuickView
-    const headers = await page.locator('[data-testid="quickview-scrollable-content"] h3, [data-testid="quickview-scrollable-content"] .uppercase').allTextContents();
-    console.log('=== Section Headers in QuickView ===');
-    headers.forEach((h, i) => console.log(`${i + 1}. ${h}`));
-    console.log('=== End Section Headers ===');
+    console.log('=== Listing 6758 (Auto-Matched Connection) ===');
+    console.log('connection_source:', enrichment?.connection_source);
+    console.log('verification_status:', enrichment?.verification_status);
+    console.log('enriched_maker:', enrichment?.enriched_maker);
+    console.log('enriched_school:', enrichment?.enriched_school);
 
-    // Take a screenshot for visual debugging
-    await page.screenshot({ path: 'tests/e2e/screenshots/quickview-debug.png', fullPage: false });
-    console.log('Screenshot saved to tests/e2e/screenshots/quickview-debug.png');
+    // Verify it's an auto connection (null or 'auto')
+    expect(enrichment?.connection_source === null || enrichment?.connection_source === 'auto').toBe(true);
+
+    // Open QuickView
+    await page.goto(`/?listing=${listingId}`, { timeout: 60000 });
+    await page.waitForSelector('[data-testid="quickview-scrollable-content"]', { timeout: 15000 });
+    await page.waitForTimeout(2000); // Wait for async data fetch
+
+    // Auto-matched connections should NOT show any Yuhinkai section
+    const officialTranslation = page.locator('text=Official Catalog Translation');
+    const catalogData = page.locator('text=Catalog Data');
+
+    // Neither should be visible
+    await expect(officialTranslation).not.toBeVisible();
+    await expect(catalogData).not.toBeVisible();
+
+    console.log('✓ Auto-matched connection correctly hidden');
+  });
+
+  test('API should include connection_source field', async ({ page }) => {
+    // Verify the API returns connection_source for debugging
+    const response = await page.request.get('http://localhost:3000/api/listing/7057?nocache=1');
+    const data = await response.json();
+
+    expect(data.listing.yuhinkai_enrichment).toBeDefined();
+    expect('connection_source' in data.listing.yuhinkai_enrichment).toBe(true);
+
+    console.log('connection_source value:', data.listing.yuhinkai_enrichment.connection_source);
   });
 });

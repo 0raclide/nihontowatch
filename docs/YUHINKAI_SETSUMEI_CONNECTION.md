@@ -15,6 +15,24 @@ The automated SOTA matcher in oshi-v2 uses fuzzy matching on smith names, school
 
 Manual connections provide a 100% confidence override for these edge cases.
 
+### Auto-Match Display (Disabled)
+
+The SOTA auto-matcher in oshi-v2 can produce **false positives** (e.g., matching a Tokuju listing to a Juyo catalog record due to similar smith/school). To protect data quality:
+
+**Auto-matched enrichments are currently hidden from users.**
+
+Only manually connected enrichments (`connection_source: 'manual'`) are displayed.
+
+To re-enable auto-matches when the matcher improves:
+
+```typescript
+// src/lib/constants.ts
+export const SHOW_AUTO_MATCHED_ENRICHMENTS = true;
+
+// src/types/index.ts (hasVerifiedEnrichment function)
+const SHOW_AUTO_MATCHED_ENRICHMENTS = true;  // Must match constants.ts
+```
+
 ---
 
 ## Architecture

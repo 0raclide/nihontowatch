@@ -182,17 +182,42 @@ export interface ListingWithEnrichment extends Listing {
 }
 
 /**
- * Check if listing has verified Yuhinkai enrichment
- * Only returns true for DEFINITIVE matches with auto/confirmed status
+ * Check if listing has verified Yuhinkai enrichment that should be displayed.
+ *
+ * Only returns true for:
+ * - Manual connections (connection_source === 'manual') with 'confirmed' status
+ * - Auto connections only if SHOW_AUTO_MATCHED_ENRICHMENTS is enabled (currently disabled
+ *   because the auto-matcher produces false positives)
+ *
+ * @see SHOW_AUTO_MATCHED_ENRICHMENTS in src/lib/constants.ts
+ * @see docs/YUHINKAI_SETSUMEI_CONNECTION.md
  */
 export function hasVerifiedEnrichment(listing: ListingWithEnrichment): boolean {
   const enrichment = listing.yuhinkai_enrichment;
   if (!enrichment) return false;
 
-  return (
-    enrichment.match_confidence === 'DEFINITIVE' &&
-    ['auto', 'confirmed'].includes(enrichment.verification_status)
-  );
+  // Must have DEFINITIVE confidence
+  if (enrichment.match_confidence !== 'DEFINITIVE') return false;
+
+  // Check connection source
+  const isManual = enrichment.connection_source === 'manual';
+  const isAuto = !enrichment.connection_source || enrichment.connection_source === 'auto';
+
+  // Only show manual connections (auto-matcher is not production-ready)
+  // To enable auto-matches, set SHOW_AUTO_MATCHED_ENRICHMENTS = true in constants.ts
+  // Note: We inline the value here to avoid circular import from constants.ts
+  const SHOW_AUTO_MATCHED_ENRICHMENTS = false;
+
+  if (isAuto && !SHOW_AUTO_MATCHED_ENRICHMENTS) {
+    return false;
+  }
+
+  // Manual connections must be 'confirmed', auto must be in allowed statuses
+  if (isManual) {
+    return enrichment.verification_status === 'confirmed';
+  }
+
+  return ['auto', 'confirmed'].includes(enrichment.verification_status);
 }
 
 /**
