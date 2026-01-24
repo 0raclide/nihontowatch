@@ -13,6 +13,7 @@ import type { Listing } from '@/types';
 import { getItemTypeLabel } from '@/types';
 import { MetadataGrid, getCertInfo } from './MetadataGrid';
 import { SetsumeiSection } from './SetsumeiSection';
+import { AdminSetsumeiWidget } from './AdminSetsumeiWidget';
 import { TranslatedDescription } from './TranslatedDescription';
 import { TranslatedTitle } from './TranslatedTitle';
 
@@ -31,7 +32,7 @@ interface QuickViewContentProps {
 
 export function QuickViewContent({ listing }: QuickViewContentProps) {
   const { currency, exchangeRates } = useCurrency();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { showPaywall, canAccess } = useSubscription();
   const [isInquiryModalOpen, setIsInquiryModalOpen] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -144,6 +145,13 @@ export function QuickViewContent({ listing }: QuickViewContentProps) {
           variant="preview"
           previewLength={300}
         />
+
+        {/* Admin: Manual Yuhinkai Connection Widget */}
+        {isAdmin && (
+          <div className="px-4 py-3 lg:px-5">
+            <AdminSetsumeiWidget listing={listing} />
+          </div>
+        )}
       </div>
 
       {/* Sticky CTA Buttons */}
