@@ -241,6 +241,85 @@ export function getEnrichedSchoolName(listing: ListingWithEnrichment): string | 
 }
 
 // =============================================================================
+// SETSUMEI DATA HELPERS (for Study Mode)
+// =============================================================================
+
+/**
+ * Setsumei content returned by getSetsumeiContent
+ */
+export interface SetsumeiContent {
+  text_en: string;
+  text_ja?: string;
+  image_url?: string;
+  source: 'yuhinkai' | 'ocr';
+  cert_type?: string;
+  cert_session?: number;
+  format: 'markdown' | 'plain';
+}
+
+/**
+ * Check if listing has any setsumei data available for study mode.
+ * Returns true if listing has:
+ * - OCR setsumei (setsumei_text_en) for Juyo/Tokuju items
+ * - Verified Yuhinkai enrichment with setsumei_en
+ */
+export function hasSetsumeiData(listing: ListingWithEnrichment): boolean {
+  // Check for OCR setsumei
+  if (listing.setsumei_text_en) {
+    return true;
+  }
+
+  // Check for verified Yuhinkai enrichment with setsumei
+  if (hasVerifiedEnrichment(listing)) {
+    const enrichment = listing.yuhinkai_enrichment;
+    if (enrichment?.setsumei_en) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Get the best available setsumei content for a listing.
+ * Prefers Yuhinkai enrichment (professional translation) over OCR setsumei.
+ *
+ * @returns SetsumeiContent or null if no setsumei available
+ */
+export function getSetsumeiContent(listing: ListingWithEnrichment): SetsumeiContent | null {
+  // Prefer Yuhinkai enrichment (higher quality professional translation)
+  if (hasVerifiedEnrichment(listing)) {
+    const enrichment = listing.yuhinkai_enrichment;
+    if (enrichment?.setsumei_en) {
+      return {
+        text_en: enrichment.setsumei_en,
+        text_ja: enrichment.setsumei_ja,
+        image_url: listing.setsumei_image_url, // Use OCR image if available
+        source: 'yuhinkai',
+        cert_type: enrichment.enriched_cert_type,
+        cert_session: enrichment.enriched_cert_session,
+        format: enrichment.setsumei_en_format || 'markdown',
+      };
+    }
+  }
+
+  // Fall back to OCR setsumei
+  if (listing.setsumei_text_en) {
+    return {
+      text_en: listing.setsumei_text_en,
+      text_ja: listing.setsumei_text_ja,
+      image_url: listing.setsumei_image_url,
+      source: 'ocr',
+      cert_type: listing.cert_type,
+      cert_session: listing.cert_session,
+      format: 'markdown', // OCR always returns markdown
+    };
+  }
+
+  return null;
+}
+
+// =============================================================================
 // DEALER
 // =============================================================================
 

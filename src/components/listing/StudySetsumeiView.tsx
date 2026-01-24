@@ -1,0 +1,180 @@
+'use client';
+
+import { useState } from 'react';
+import Image from 'next/image';
+import { HighlightedMarkdown } from '@/components/glossary/HighlightedMarkdown';
+import type { ListingWithEnrichment } from '@/types';
+import { getSetsumeiContent } from '@/types';
+
+// =============================================================================
+// TYPES
+// =============================================================================
+
+interface StudySetsumeiViewProps {
+  listing: ListingWithEnrichment;
+  onBackToPhotos: () => void;
+}
+
+// =============================================================================
+// COMPONENT
+// =============================================================================
+
+/**
+ * Premium setsumei reading view for QuickView study mode.
+ * Displays the NBTHK/Yuhinkai setsumei in a beautifully formatted layout.
+ */
+export function StudySetsumeiView({ listing, onBackToPhotos }: StudySetsumeiViewProps) {
+  const [showOriginal, setShowOriginal] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
+
+  const setsumei = getSetsumeiContent(listing);
+
+  if (!setsumei) {
+    return null;
+  }
+
+  const displayText = showOriginal && setsumei.text_ja
+    ? setsumei.text_ja
+    : setsumei.text_en;
+
+  const hasOriginal = !!setsumei.text_ja;
+  const sourceLabel = setsumei.source === 'yuhinkai'
+    ? 'Yuhinkai Catalog'
+    : 'NBTHK Zufu';
+
+  return (
+    <div className="h-full flex flex-col bg-linen">
+      {/* Header */}
+      <div className="px-4 py-3 border-b border-gold/20 bg-cream/80 backdrop-blur-sm sticky top-0 z-10">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <h2 className="text-[12px] uppercase tracking-wider text-gold font-semibold">
+              NBTHK Setsumei
+            </h2>
+            {setsumei.cert_type && (
+              <span className="text-[10px] px-2 py-0.5 bg-gold/10 text-gold rounded-full border border-gold/30 font-medium">
+                {setsumei.cert_type}
+                {setsumei.cert_session && ` #${setsumei.cert_session}`}
+              </span>
+            )}
+          </div>
+          <button
+            onClick={onBackToPhotos}
+            className="flex items-center gap-1.5 text-[12px] text-gold hover:text-gold-light transition-colors font-medium"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            View Photos
+          </button>
+        </div>
+      </div>
+
+      {/* Scrollable content */}
+      <div className="flex-1 overflow-y-auto overscroll-contain">
+        {/* Setsumei image (if available) */}
+        {setsumei.image_url && !imageError && (
+          <div className="relative bg-cream border-b border-gold/10">
+            {!imageLoaded && (
+              <div className="aspect-[3/4] max-h-[400px] img-loading" />
+            )}
+            <Image
+              src={setsumei.image_url}
+              alt="NBTHK Setsumei document"
+              width={600}
+              height={800}
+              className={`w-full h-auto max-h-[400px] object-contain transition-opacity duration-300 ${
+                imageLoaded ? 'opacity-100' : 'opacity-0 absolute inset-0'
+              }`}
+              onLoad={() => setImageLoaded(true)}
+              onError={() => setImageError(true)}
+              priority
+            />
+            {imageLoaded && (
+              <div className="absolute bottom-2 right-2 px-2 py-1 bg-ink/60 backdrop-blur-sm rounded text-[10px] text-white/80">
+                Original Document
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Content section */}
+        <div className="px-4 py-5 lg:px-6">
+          {/* Language toggle */}
+          {hasOriginal && (
+            <div className="flex justify-end mb-4">
+              <button
+                type="button"
+                onClick={() => setShowOriginal(!showOriginal)}
+                className="flex items-center gap-2 px-3 py-1.5 text-[11px] text-gold hover:text-gold-light border border-gold/30 hover:border-gold/50 rounded-full transition-colors"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+                </svg>
+                {showOriginal ? 'Show English' : 'Show Japanese'}
+              </button>
+            </div>
+          )}
+
+          {/* AI translation disclaimer - only show for OCR when viewing English */}
+          {setsumei.source === 'ocr' && !showOriginal && (
+            <p className="text-[10px] text-muted/70 mb-3 flex items-center gap-1">
+              <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span>AI translation — may contain errors</span>
+            </p>
+          )}
+
+          {/* Main setsumei text */}
+          <div className="bg-cream/50 border border-gold/15 rounded-xl p-5 shadow-sm">
+            {showOriginal ? (
+              // Japanese text
+              <p className="text-[14px] lg:text-[15px] text-ink/85 leading-[1.9] whitespace-pre-line font-jp">
+                {displayText}
+              </p>
+            ) : (
+              // English markdown with glossary highlighting
+              <div className="prose prose-sm max-w-none text-ink/85
+                prose-headings:text-ink prose-headings:font-semibold prose-headings:mb-3 prose-headings:mt-5 first:prose-headings:mt-0
+                prose-h2:text-[16px] prose-h3:text-[14px]
+                prose-p:text-[14px] lg:prose-p:text-[15px] prose-p:leading-relaxed prose-p:mb-4
+                prose-li:text-[14px] lg:prose-li:text-[15px] prose-li:my-1
+                prose-strong:text-ink prose-strong:font-semibold
+                prose-table:text-[13px]
+                [&_table]:border-collapse [&_table]:w-full [&_table]:my-4
+                [&_th]:border [&_th]:border-gold/20 [&_th]:px-3 [&_th]:py-2 [&_th]:bg-gold/5 [&_th]:text-left [&_th]:font-medium
+                [&_td]:border [&_td]:border-gold/20 [&_td]:px-3 [&_td]:py-2
+              ">
+                {setsumei.format === 'markdown' ? (
+                  <HighlightedMarkdown content={displayText} />
+                ) : (
+                  <p className="whitespace-pre-line">{displayText}</p>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Source attribution */}
+          <div className="mt-4 flex items-center justify-between text-[10px] text-muted">
+            <div className="flex items-center gap-1.5">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <span>Source: {sourceLabel}</span>
+            </div>
+            {setsumei.source === 'yuhinkai' && (
+              <span className="text-gold font-medium">Official Translation</span>
+            )}
+          </div>
+        </div>
+
+        {/* Bottom padding for mobile safe area */}
+        <div className="h-4 lg:h-8" />
+      </div>
+    </div>
+  );
+}
+
+export default StudySetsumeiView;

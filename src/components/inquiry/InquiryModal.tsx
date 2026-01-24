@@ -171,7 +171,7 @@ export function InquiryModal({ isOpen, onClose, listing }: InquiryModalProps) {
       {/* Modal */}
       <div className="absolute inset-0 flex items-center justify-center p-4">
         <div
-          className="relative w-full max-w-lg bg-cream rounded-lg shadow-xl animate-slideUp max-h-[90vh] overflow-hidden flex flex-col"
+          className="relative w-full max-w-lg lg:max-w-4xl bg-cream rounded-lg shadow-xl animate-slideUp max-h-[90vh] overflow-hidden flex flex-col"
           role="dialog"
           aria-modal="true"
           aria-labelledby="inquiry-modal-title"
@@ -410,7 +410,7 @@ interface ResultStepProps {
 }
 
 function ResultStep({ generatedEmail, onStartOver, onClose }: ResultStepProps) {
-  const [showEnglish, setShowEnglish] = useState(false);
+  const [activeTab, setActiveTab] = useState<'japanese' | 'english'>('japanese');
   const [copiedEmail, setCopiedEmail] = useState(false);
 
   // Build mailto link if dealer email is available
@@ -440,7 +440,7 @@ function ResultStep({ generatedEmail, onStartOver, onClose }: ResultStepProps) {
           <ol className="space-y-2 text-[12px] text-green-700">
             <li className="flex gap-2">
               <span className="flex-shrink-0 w-5 h-5 rounded-full bg-green-200 text-green-800 flex items-center justify-center text-[11px] font-bold">1</span>
-              <span>Copy the email below using the button</span>
+              <span>Copy the Japanese email using the button below</span>
             </li>
             <li className="flex gap-2">
               <span className="flex-shrink-0 w-5 h-5 rounded-full bg-green-200 text-green-800 flex items-center justify-center text-[11px] font-bold">2</span>
@@ -453,92 +453,81 @@ function ResultStep({ generatedEmail, onStartOver, onClose }: ResultStepProps) {
           </ol>
         </div>
 
-        {/* Primary Action - Copy Email */}
-        <div className="bg-paper border-2 border-gold rounded-lg p-4">
-          <div className="flex items-center justify-between mb-3">
-            <label className="text-[12px] uppercase tracking-wider text-muted">
-              Your Email (Japanese)
-            </label>
-            {generatedEmail.dealer_email && (
-              <span className="text-[11px] text-muted">
-                To: {generatedEmail.dealer_email}
-              </span>
-            )}
-          </div>
-
-          {/* Subject */}
-          <div className="mb-3 pb-3 border-b border-border">
-            <p className="text-[11px] text-muted mb-1">Subject:</p>
-            <p className="text-[13px] text-ink">{generatedEmail.subject_ja}</p>
-          </div>
-
-          {/* Body */}
-          <div className="text-[13px] text-ink whitespace-pre-wrap leading-relaxed max-h-40 overflow-y-auto">
-            {generatedEmail.email_ja}
-          </div>
-
-          {/* Copy Button - Prominent */}
-          <div className="mt-4 flex gap-2">
-            <button
-              type="button"
-              onClick={handleCopyEmail}
-              className={`flex-1 px-4 py-3 text-[14px] font-medium rounded-lg transition-all flex items-center justify-center gap-2 ${
-                copiedEmail
-                  ? 'bg-green-500 text-white'
-                  : 'bg-gold text-white hover:bg-gold-light'
-              }`}
-            >
-              {copiedEmail ? (
-                <>
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  Copied!
-                </>
-              ) : (
-                <>
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                  </svg>
-                  Copy Email
-                </>
-              )}
-            </button>
-            {mailtoLink && (
-              <a
-                href={mailtoLink}
-                className="px-4 py-3 text-[14px] font-medium text-charcoal bg-paper border border-border rounded-lg hover:bg-hover transition-colors flex items-center gap-2"
-                title="Open in your default email app"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
-              </a>
-            )}
-          </div>
+        {/* Desktop: Side-by-side layout */}
+        <div className="hidden lg:grid lg:grid-cols-2 lg:gap-4">
+          <EmailPanel
+            label="Japanese (To Send)"
+            subject={generatedEmail.subject_ja}
+            body={generatedEmail.email_ja}
+            dealerEmail={generatedEmail.dealer_email}
+            isPrimary={true}
+          />
+          <EmailPanel
+            label="English (For Reference)"
+            subject={generatedEmail.subject_en}
+            body={generatedEmail.email_en}
+            isPrimary={false}
+          />
         </div>
 
-        {/* English Translation (Collapsible) */}
-        <div>
+        {/* Mobile: Tab-based layout */}
+        <div className="lg:hidden">
+          <TabButtons activeTab={activeTab} setActiveTab={setActiveTab} />
+          {activeTab === 'japanese' ? (
+            <EmailPanel
+              label="Japanese (To Send)"
+              subject={generatedEmail.subject_ja}
+              body={generatedEmail.email_ja}
+              dealerEmail={generatedEmail.dealer_email}
+              isPrimary={true}
+            />
+          ) : (
+            <EmailPanel
+              label="English (For Reference)"
+              subject={generatedEmail.subject_en}
+              body={generatedEmail.email_en}
+              isPrimary={false}
+            />
+          )}
+        </div>
+
+        {/* Copy Button - Always visible */}
+        <div className="flex gap-2">
           <button
             type="button"
-            onClick={() => setShowEnglish(!showEnglish)}
-            className="flex items-center gap-2 text-[13px] font-medium text-charcoal hover:text-ink transition-colors"
+            onClick={handleCopyEmail}
+            className={`flex-1 px-4 py-3 text-[14px] font-medium rounded-lg transition-all flex items-center justify-center gap-2 ${
+              copiedEmail
+                ? 'bg-green-500 text-white'
+                : 'bg-gold text-white hover:bg-gold-light'
+            }`}
           >
-            <svg
-              className={`w-4 h-4 transition-transform ${showEnglish ? 'rotate-90' : ''}`}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-            See English translation
+            {copiedEmail ? (
+              <>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                Copied!
+              </>
+            ) : (
+              <>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+                Copy Japanese Email
+              </>
+            )}
           </button>
-          {showEnglish && (
-            <div className="mt-2 px-3 py-3 bg-linen/50 border border-border rounded-lg text-[13px] text-muted whitespace-pre-wrap leading-relaxed max-h-40 overflow-y-auto">
-              {generatedEmail.email_en}
-            </div>
+          {mailtoLink && (
+            <a
+              href={mailtoLink}
+              className="px-4 py-3 text-[14px] font-medium text-charcoal bg-paper border border-border rounded-lg hover:bg-hover transition-colors flex items-center gap-2"
+              title="Open in your default email app"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+            </a>
           )}
         </div>
 
@@ -593,19 +582,77 @@ function ResultStep({ generatedEmail, onStartOver, onClose }: ResultStepProps) {
 }
 
 // =============================================================================
-// Policy Badge Component
+// Email Panel Component
 // =============================================================================
 
-function PolicyBadge({ label, value }: { label: string; value: boolean }) {
+interface EmailPanelProps {
+  label: string;
+  subject: string;
+  body: string;
+  dealerEmail?: string | null;
+  isPrimary: boolean;
+}
+
+function EmailPanel({ label, subject, body, dealerEmail, isPrimary }: EmailPanelProps) {
   return (
-    <div
-      className={`px-2 py-1 rounded text-[12px] ${
-        value
-          ? 'bg-green-100 text-green-700'
-          : 'bg-red-50 text-red-600'
-      }`}
-    >
-      {value ? '✓' : '✗'} {label}
+    <div className={`bg-paper rounded-lg p-4 ${isPrimary ? 'border-2 border-gold' : 'border border-border'}`}>
+      <div className="flex items-center justify-between mb-3">
+        <label className="text-[12px] uppercase tracking-wider text-muted">
+          {label}
+        </label>
+        {isPrimary && dealerEmail && (
+          <span className="text-[11px] text-muted">To: {dealerEmail}</span>
+        )}
+      </div>
+
+      {/* Subject */}
+      <div className="mb-3 pb-3 border-b border-border">
+        <p className="text-[11px] text-muted mb-1">Subject:</p>
+        <p className="text-[13px] text-ink">{subject}</p>
+      </div>
+
+      {/* Body - scrollable */}
+      <div className="text-[13px] text-ink whitespace-pre-wrap leading-relaxed max-h-40 overflow-y-auto">
+        {body}
+      </div>
+    </div>
+  );
+}
+
+// =============================================================================
+// Tab Buttons Component (Mobile)
+// =============================================================================
+
+interface TabButtonsProps {
+  activeTab: 'japanese' | 'english';
+  setActiveTab: (tab: 'japanese' | 'english') => void;
+}
+
+function TabButtons({ activeTab, setActiveTab }: TabButtonsProps) {
+  return (
+    <div className="flex mb-4 bg-linen rounded-lg p-1">
+      <button
+        type="button"
+        onClick={() => setActiveTab('japanese')}
+        className={`flex-1 py-2 text-[13px] font-medium rounded-md transition-colors ${
+          activeTab === 'japanese'
+            ? 'bg-paper text-ink shadow-sm'
+            : 'text-muted hover:text-ink'
+        }`}
+      >
+        Japanese
+      </button>
+      <button
+        type="button"
+        onClick={() => setActiveTab('english')}
+        className={`flex-1 py-2 text-[13px] font-medium rounded-md transition-colors ${
+          activeTab === 'english'
+            ? 'bg-paper text-ink shadow-sm'
+            : 'text-muted hover:text-ink'
+        }`}
+      >
+        English
+      </button>
     </div>
   );
 }

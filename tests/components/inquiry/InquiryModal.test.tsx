@@ -384,24 +384,75 @@ describe('InquiryModal', () => {
 
     it('displays dealer email when available', async () => {
       await goToResultView();
-      // Dealer email is shown inline as "To: email"
-      expect(screen.getByText(/info@test-dealer.com/)).toBeInTheDocument();
+      // Dealer email is shown inline as "To: email" (may appear multiple times in responsive layout)
+      expect(screen.getAllByText(/info@test-dealer.com/).length).toBeGreaterThanOrEqual(1);
     });
 
     it('displays Japanese subject line', async () => {
       await goToResultView();
-      expect(screen.getByText(/【お問い合わせ】備前長船祐定/)).toBeInTheDocument();
+      // Subject appears in both desktop and mobile layouts
+      expect(screen.getAllByText(/【お問い合わせ】備前長船祐定/).length).toBeGreaterThanOrEqual(1);
     });
 
     it('displays Japanese email body', async () => {
       await goToResultView();
-      expect(screen.getByText(/拝啓/)).toBeInTheDocument();
-      expect(screen.getByText(/敬具/)).toBeInTheDocument();
+      // Content appears in both desktop and mobile layouts
+      expect(screen.getAllByText(/拝啓/).length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText(/敬具/).length).toBeGreaterThanOrEqual(1);
     });
 
-    it('displays English translation toggle', async () => {
+    it('displays both Japanese and English email panels', async () => {
       await goToResultView();
-      expect(screen.getByText(/see english translation/i)).toBeInTheDocument();
+
+      // Both panel labels should be present
+      expect(screen.getAllByText(/japanese \(to send\)/i).length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText(/english \(for reference\)/i).length).toBeGreaterThanOrEqual(1);
+    });
+
+    it('displays English email content for verification', async () => {
+      await goToResultView();
+
+      // English email content should be visible (not hidden in collapsible)
+      // Check for distinctive English phrases from mockGeneratedEmail.email_en
+      expect(screen.getAllByText(/Dear Sir\/Madam/i).length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText(/Best regards/i).length).toBeGreaterThanOrEqual(1);
+    });
+
+    it('displays English subject line', async () => {
+      await goToResultView();
+
+      // English subject should be visible in the English panel
+      expect(screen.getAllByText(/Inquiry: Bizen Osafune Sukesada Katana/).length).toBeGreaterThanOrEqual(1);
+    });
+
+    it('displays tab buttons for mobile navigation', async () => {
+      await goToResultView();
+
+      // Tab buttons should exist for mobile view
+      const japaneseTab = screen.getByRole('button', { name: /^japanese$/i });
+      const englishTab = screen.getByRole('button', { name: /^english$/i });
+
+      expect(japaneseTab).toBeInTheDocument();
+      expect(englishTab).toBeInTheDocument();
+    });
+
+    it('switches between Japanese and English tabs on mobile', async () => {
+      await goToResultView();
+
+      // Click English tab
+      const englishTab = screen.getByRole('button', { name: /^english$/i });
+      fireEvent.click(englishTab);
+
+      // English panel should now be active (check for active styling)
+      // The English tab should have the active class (bg-paper)
+      expect(englishTab.className).toContain('bg-paper');
+
+      // Click Japanese tab back
+      const japaneseTab = screen.getByRole('button', { name: /^japanese$/i });
+      fireEvent.click(japaneseTab);
+
+      // Japanese tab should now be active
+      expect(japaneseTab.className).toContain('bg-paper');
     });
 
     it('shows dealer policies when available', async () => {
@@ -448,14 +499,15 @@ describe('InquiryModal', () => {
 
     it('has primary copy email button', async () => {
       await goToResultView();
-      const copyButton = screen.getByRole('button', { name: /copy email/i });
+      // Button now says "Copy Japanese Email" to clarify what's being copied
+      const copyButton = screen.getByRole('button', { name: /copy japanese email/i });
       expect(copyButton).toBeInTheDocument();
     });
 
     it('copies email to clipboard and shows copied feedback', async () => {
       await goToResultView();
 
-      const copyButton = screen.getByRole('button', { name: /copy email/i });
+      const copyButton = screen.getByRole('button', { name: /copy japanese email/i });
       fireEvent.click(copyButton);
 
       // Verify the button shows "Copied!" feedback
@@ -477,8 +529,9 @@ describe('InquiryModal', () => {
       await goToResultView();
 
       // Verify the Japanese email content is visible in the modal
-      expect(screen.getByText(/拝啓/)).toBeInTheDocument();
-      expect(screen.getByText(/敬具/)).toBeInTheDocument();
+      // Content appears in both desktop and mobile responsive layouts
+      expect(screen.getAllByText(/拝啓/).length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText(/敬具/).length).toBeGreaterThanOrEqual(1);
     });
   });
 
@@ -542,8 +595,8 @@ describe('InquiryModal', () => {
       });
 
       // Should not show mailto link when dealer email is missing
-      // The Copy Email button should still work
-      expect(screen.getByRole('button', { name: /copy email/i })).toBeInTheDocument();
+      // The Copy Japanese Email button should still work
+      expect(screen.getByRole('button', { name: /copy japanese email/i })).toBeInTheDocument();
       // No mailto link should be present
       expect(screen.queryByTitle(/open in your default email app/i)).not.toBeInTheDocument();
     });

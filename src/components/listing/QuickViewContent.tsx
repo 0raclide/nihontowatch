@@ -11,7 +11,7 @@ import { useQuickViewOptional } from '@/contexts/QuickViewContext';
 import { useCurrency, formatPriceWithConversion } from '@/hooks/useCurrency';
 import { shouldShowNewBadge } from '@/lib/newListing';
 import type { Listing, ListingWithEnrichment } from '@/types';
-import { getItemTypeLabel } from '@/types';
+import { getItemTypeLabel, hasSetsumeiData } from '@/types';
 import { MetadataGrid, getCertInfo } from './MetadataGrid';
 import { SetsumeiSection } from './SetsumeiSection';
 import { YuhinkaiEnrichmentSection } from './YuhinkaiEnrichmentSection';
@@ -26,13 +26,15 @@ import { TranslatedTitle } from './TranslatedTitle';
 interface QuickViewContentProps {
   listing: Listing;
   onClose?: () => void;
+  isStudyMode?: boolean;
+  onToggleStudyMode?: () => void;
 }
 
 // =============================================================================
 // COMPONENT
 // =============================================================================
 
-export function QuickViewContent({ listing }: QuickViewContentProps) {
+export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: QuickViewContentProps) {
   const { currency, exchangeRates } = useCurrency();
   const { user, isAdmin } = useAuth();
   const { showPaywall, canAccess } = useSubscription();
@@ -101,6 +103,24 @@ export function QuickViewContent({ listing }: QuickViewContentProps) {
               )}
             </div>
             <div className="flex items-center gap-2">
+              {/* Study Setsumei button - only show when setsumei data available */}
+              {hasSetsumeiData(listing as ListingWithEnrichment) && onToggleStudyMode && (
+                <button
+                  onClick={onToggleStudyMode}
+                  className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors ${
+                    isStudyMode
+                      ? 'bg-gold text-white'
+                      : 'hover:bg-ink/10 text-muted hover:text-ink'
+                  }`}
+                  aria-label={isStudyMode ? 'View photos' : 'Study setsumei'}
+                  title={isStudyMode ? 'View photos' : 'Study NBTHK setsumei'}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                      d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                  </svg>
+                </button>
+              )}
               <ShareButton listingId={listing.id} title={listing.title} size="sm" ogImageUrl={listing.og_image_url} />
               <FavoriteButton listingId={listing.id} size="sm" />
             </div>
