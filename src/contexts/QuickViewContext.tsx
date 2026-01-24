@@ -88,6 +88,22 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
     window.history.replaceState(null, '', url.toString());
   }, []);
 
+  // Fetch full listing data from API (includes enrichment)
+  const fetchFullListing = useCallback(async (listingId: number) => {
+    try {
+      const response = await fetch(`/api/listing/${listingId}`);
+      if (!response.ok) {
+        console.error('Failed to fetch full listing:', response.status);
+        return null;
+      }
+      const data = await response.json();
+      return data.listing as Listing;
+    } catch (error) {
+      console.error('Error fetching full listing:', error);
+      return null;
+    }
+  }, []);
+
   // Open quick view
   const openQuickView = useCallback((listing: Listing) => {
     // Prevent re-opening during cooldown (after close)
@@ -117,7 +133,23 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
 
     // Track for signup pressure system
     signupPressure?.trackQuickView();
-  }, [listings, updateUrl, signupPressure]);
+
+    // Fetch full listing data (with enrichment) asynchronously
+    // This ensures YuhinkaiEnrichmentSection has the data it needs
+    fetchFullListing(listing.id).then((fullListing) => {
+      if (fullListing) {
+        setCurrentListing(fullListing);
+        // Also update in listings array if present
+        if (index !== -1) {
+          setListingsState((prev) => {
+            const newListings = [...prev];
+            newListings[index] = fullListing;
+            return newListings;
+          });
+        }
+      }
+    });
+  }, [listings, updateUrl, signupPressure, fetchFullListing]);
 
   // Close quick view
   const closeQuickView = useCallback(() => {
