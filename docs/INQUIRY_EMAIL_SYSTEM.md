@@ -37,11 +37,13 @@ The Inquiry Email System helps English-speaking collectors compose culturally-ap
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│  5. User sees generated email with copy buttons:                │
+│  5. User sees generated email (side-by-side view):              │
+│     - Desktop: Japanese + English displayed side-by-side        │
+│     - Mobile: Tab buttons to switch between views               │
 │     - Dealer email address (if known)                           │
-│     - Subject line (Japanese)                                   │
-│     - Email body (Japanese)                                     │
-│     - English translation (collapsible, for reference)          │
+│     - Subject lines (both languages)                            │
+│     - Email bodies (both languages, scrollable)                 │
+│     - Copy button copies Japanese email for sending             │
 └─────────────────────────────────────────────────────────────────┘
                               │
                               ▼
@@ -49,6 +51,68 @@ The Inquiry Email System helps English-speaking collectors compose culturally-ap
 │  6. User manually sends email via their email client            │
 └─────────────────────────────────────────────────────────────────┘
 ```
+
+## Side-by-Side Email Display (v2)
+
+The result view displays Japanese and English emails side-by-side so users can verify their intent is properly conveyed before sending.
+
+### Desktop Layout (lg+ / 1024px+)
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ How to send your email: [instructions]                          │
+├────────────────────────────┬────────────────────────────────────┤
+│ Japanese (To Send)         │ English (For Reference)            │
+│ ─────────────────────────  │ ──────────────────────────────     │
+│ To: info@dealer.com        │                                    │
+│ Subject: 【お問い合わせ】...  │ Subject: Inquiry: ...              │
+├────────────────────────────┼────────────────────────────────────┤
+│ 拝啓                        │ Dear Sir/Madam,                    │
+│ 新春の候...                  │ In this season...                  │
+│ (scrollable)               │ (scrollable)                       │
+├────────────────────────────┴────────────────────────────────────┤
+│ [Copy Japanese Email]  [Open in Mail]                           │
+│                                          [Start Over] [Done]    │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Mobile Layout (<1024px)
+
+```
+┌─────────────────────────┐
+│ How to send: [...]      │
+├─────────────────────────┤
+│ [Japanese] [English]    │  ← Tab buttons (toggle)
+├─────────────────────────┤
+│ Japanese (To Send)      │
+│ Subject: 【お問い合わせ】 │
+│ 拝啓...                  │
+│ (scrollable)            │
+├─────────────────────────┤
+│ [Copy Japanese Email]   │
+│        [Start Over][Done]│
+└─────────────────────────┘
+```
+
+### Key Components
+
+| Component | Purpose |
+|-----------|---------|
+| `EmailPanel` | Reusable panel displaying subject + body with scrollable content |
+| `TabButtons` | Mobile tab interface to switch between Japanese/English views |
+| `ResultStep` | Orchestrates the responsive layout with both views |
+
+### Implementation Details
+
+**Modal Width**: `max-w-lg lg:max-w-4xl` (512px mobile, 896px desktop)
+
+**Desktop**: Uses `hidden lg:grid lg:grid-cols-2 lg:gap-4` for two equal columns
+
+**Mobile**: Uses `lg:hidden` with `TabButtons` for tab switching, `activeTab` state manages which `EmailPanel` is shown
+
+**Scroll Behavior**: Each `EmailPanel` has `max-h-40 overflow-y-auto` for independent scrolling
+
+**Copy Button**: Always copies Japanese email only (`generatedEmail.email_ja`) since that's what gets sent to dealers
 
 ## Architecture
 
@@ -295,7 +359,7 @@ function fixJsonNewlines(jsonStr: string): string {
 
 ## Testing
 
-### Unit Tests (28 tests)
+### API Unit Tests (28 tests)
 
 ```bash
 npm test -- tests/api/inquiry/generate.test.ts
@@ -311,6 +375,52 @@ Tests cover:
 - Seasonal greetings (included in prompt)
 - Error handling (API failures, malformed responses)
 
+### Component Tests (46 tests)
+
+```bash
+npm test -- -t "InquiryModal"
+```
+
+Tests cover:
+
+**Form Step**:
+- Modal rendering and visibility
+- Form field display (name, country, message)
+- Validation errors for empty fields
+- Form submission with correct data
+- Loading state during generation
+
+**Result Step (Side-by-Side)**:
+- Displays both Japanese and English email panels
+- Displays English email content for verification
+- Displays English subject line
+- Displays tab buttons for mobile navigation
+- Switches between Japanese and English tabs on mobile
+- Shows dealer policies when available
+- Start over button returns to form
+
+**Copy Functionality**:
+- Primary copy button labeled "Copy Japanese Email"
+- Copies email to clipboard with feedback
+- Mailto link with Japanese content
+
+**Edge Cases**:
+- Handles listing without dealer email
+- Handles listing without dealer policies
+
+### E2E Tests (Playwright)
+
+```bash
+npx playwright test tests/e2e/inquiry-sidebyside.spec.ts
+```
+
+Tests cover:
+- Inquire button opens inquiry modal
+- Modal has wider width on desktop for side-by-side
+- Mobile viewport shows inquiry button
+- Form has required input fields
+- Modal shows tax savings value proposition
+
 ### Local API Testing
 
 ```bash
@@ -318,14 +428,6 @@ node scripts/test-inquiry-api.mjs
 ```
 
 Tests OpenRouter directly with both Gemini and Claude models, showing raw responses and parsing results.
-
-### Component Tests
-
-```bash
-npm test -- tests/components/inquiry
-```
-
-Tests InquiryModal flow, form validation, result display.
 
 ## What's Implemented ✅
 
