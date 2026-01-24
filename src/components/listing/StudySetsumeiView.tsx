@@ -44,7 +44,7 @@ export function StudySetsumeiView({ listing, onBackToPhotos }: StudySetsumeiView
     : 'NBTHK Zufu';
 
   return (
-    <div className="h-full flex flex-col bg-linen">
+    <div className="h-full flex flex-col bg-linen" data-testid="study-setsumei-view">
       {/* Header */}
       <div className="px-4 py-3 border-b border-gold/20 bg-cream/80 backdrop-blur-sm sticky top-0 z-10">
         <div className="flex items-center justify-between">
