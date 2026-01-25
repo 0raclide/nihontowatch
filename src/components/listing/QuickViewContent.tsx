@@ -13,8 +13,6 @@ import { shouldShowNewBadge } from '@/lib/newListing';
 import type { Listing, ListingWithEnrichment } from '@/types';
 import { getItemTypeLabel, hasSetsumeiData } from '@/types';
 import { MetadataGrid, getCertInfo } from './MetadataGrid';
-import { SetsumeiSection } from './SetsumeiSection';
-import { YuhinkaiEnrichmentSection } from './YuhinkaiEnrichmentSection';
 import { AdminSetsumeiWidget } from './AdminSetsumeiWidget';
 import { TranslatedDescription } from './TranslatedDescription';
 import { TranslatedTitle } from './TranslatedTitle';
@@ -161,20 +159,6 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
 
         {/* Translated Description */}
         <TranslatedDescription listing={listing} maxLines={6} />
-
-        {/* NBTHK Zufu Commentary - expands in-place */}
-        <SetsumeiSection
-          listing={listing}
-          variant="preview"
-          previewLength={300}
-        />
-
-        {/* Yuhinkai Catalog Enrichment (from manual connection) */}
-        <YuhinkaiEnrichmentSection
-          listing={listing as ListingWithEnrichment}
-          variant="preview"
-          previewLength={300}
-        />
 
         {/* Admin: Manual Yuhinkai Connection Widget */}
         {isAdmin && (

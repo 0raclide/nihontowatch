@@ -165,20 +165,12 @@ describe('QuickViewContent', () => {
     });
   });
 
-  describe('SetsumeiSection display', () => {
-    it('always shows SetsumeiSection', () => {
+  describe('Setsumei sections removed (now in Study mode)', () => {
+    it('does NOT show inline setsumei sections', () => {
       render(<QuickViewContent listing={createMockListing()} />);
-      expect(screen.getByTestId('setsumei-section')).toBeInTheDocument();
-    });
-
-    it('shows SetsumeiSection for katana listings', () => {
-      render(<QuickViewContent listing={createMockListing({ item_type: 'katana' as any })} />);
-      expect(screen.getByTestId('setsumei-section')).toBeInTheDocument();
-    });
-
-    it('shows SetsumeiSection for tsuba listings', () => {
-      render(<QuickViewContent listing={createMockListing({ item_type: 'tsuba' as any })} />);
-      expect(screen.getByTestId('setsumei-section')).toBeInTheDocument();
+      // Setsumei content is now accessed via Study mode (book icon button)
+      expect(screen.queryByTestId('setsumei-section')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('yuhinkai-enrichment-section')).not.toBeInTheDocument();
     });
 
     it('does NOT show old enrichment elements', () => {
@@ -186,7 +178,6 @@ describe('QuickViewContent', () => {
       expect(screen.queryByTestId('enrichment-skeleton')).not.toBeInTheDocument();
       expect(screen.queryByTestId('enrichment-section')).not.toBeInTheDocument();
       expect(screen.queryByTestId('catalog-enriched-badge')).not.toBeInTheDocument();
-      expect(screen.queryByTestId('yuhinkai-enrichment-section')).not.toBeInTheDocument();
     });
   });
 
@@ -196,7 +187,7 @@ describe('QuickViewContent', () => {
 
       tosoguTypes.forEach((itemType) => {
         const { unmount } = render(<QuickViewContent listing={createMockListing({ item_type: itemType as any })} />);
-        expect(screen.getByTestId('setsumei-section')).toBeInTheDocument();
+        expect(screen.getByTestId('metadata-grid')).toBeInTheDocument();
         unmount();
       });
     });
@@ -206,7 +197,7 @@ describe('QuickViewContent', () => {
 
       swordTypes.forEach((itemType) => {
         const { unmount } = render(<QuickViewContent listing={createMockListing({ item_type: itemType as any })} />);
-        expect(screen.getByTestId('setsumei-section')).toBeInTheDocument();
+        expect(screen.getByTestId('metadata-grid')).toBeInTheDocument();
         unmount();
       });
     });

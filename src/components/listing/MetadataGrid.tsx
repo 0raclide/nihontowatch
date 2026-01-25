@@ -1,7 +1,7 @@
 'use client';
 
-import type { Listing } from '@/types';
-import { isBlade, isTosogu } from '@/types';
+import type { Listing, ListingWithEnrichment } from '@/types';
+import { isBlade, isTosogu, hasVerifiedEnrichment } from '@/types';
 
 // =============================================================================
 // HELPERS - Japanese text detection and romanization
@@ -133,11 +133,27 @@ export const CERT_CONFIG: Record<string, { label: string; shortLabel: string; ti
 // HELPERS
 // =============================================================================
 
-export function getArtisanInfo(listing: Listing): {
+export function getArtisanInfo(listing: Listing | ListingWithEnrichment): {
   artisan: string | null;
   school: string | null;
   artisanLabel: string;
+  era: string | null;
+  isEnriched: boolean;
 } {
+  // Check for enriched Yuhinkai data (manual connections only)
+  const listingWithEnrichment = listing as ListingWithEnrichment;
+  if (hasVerifiedEnrichment(listingWithEnrichment)) {
+    const enrichment = listingWithEnrichment.yuhinkai_enrichment!;
+    return {
+      artisan: enrichment.enriched_maker || null,
+      school: enrichment.enriched_school || null,
+      artisanLabel: isTosogu(listing.item_type) ? 'Maker' : 'Smith',
+      era: enrichment.enriched_period || listing.era || null,
+      isEnriched: true,
+    };
+  }
+
+  // Fall back to raw listing data
   if (isTosogu(listing.item_type)) {
     const rawMaker = listing.tosogu_maker;
     const school = listing.tosogu_school;
@@ -154,6 +170,8 @@ export function getArtisanInfo(listing: Listing): {
       artisan,
       school: school && !containsJapanese(school) ? school : null,
       artisanLabel: 'Maker',
+      era: listing.era || null,
+      isEnriched: false,
     };
   }
 
@@ -172,6 +190,8 @@ export function getArtisanInfo(listing: Listing): {
     artisan,
     school: school && !containsJapanese(school) ? school : null,
     artisanLabel: 'Smith',
+    era: listing.era || null,
+    isEnriched: false,
   };
 }
 
@@ -227,7 +247,7 @@ export function MetadataGrid({
   hideArtisan = false,
   hideSchool = false,
 }: MetadataGridProps) {
-  const { artisan, school, artisanLabel } = getArtisanInfo(listing);
+  const { artisan, school, artisanLabel, era, isEnriched } = getArtisanInfo(listing);
   const certInfo = getCertInfo(listing.cert_type);
   const itemIsBlade = isBlade(listing.item_type);
   const itemIsTosogu = isTosogu(listing.item_type);
@@ -244,7 +264,7 @@ export function MetadataGrid({
   // Check for attribution data (excluding hidden fields)
   const displayArtisan = !hideArtisan && artisan;
   const displaySchool = !hideSchool && school;
-  const hasAttribution = displayArtisan || displaySchool || listing.era || listing.province || listing.mei_type || certInfo;
+  const hasAttribution = displayArtisan || displaySchool || era || listing.province || listing.mei_type || certInfo;
 
   if (variant === 'compact') {
     // Compact variant: single row of key measurements
@@ -280,7 +300,7 @@ export function MetadataGrid({
                 </div>
               )}
 
-              <MetadataItem label="Era" value={listing.era} />
+              <MetadataItem label="Era" value={era} />
               <MetadataItem label="Province" value={listing.province} />
               <MetadataItem label="Signature" value={listing.mei_type} />
 
