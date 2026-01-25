@@ -119,6 +119,23 @@ describe('QuickViewMobileSheet', () => {
       expect(favoriteButton).toHaveAttribute('data-size', 'sm');
     });
 
+    it('renders item type badge in collapsed state (always visible)', () => {
+      render(<QuickViewMobileSheet {...defaultProps} isExpanded={false} />);
+      expect(screen.getByText('Katana')).toBeInTheDocument();
+    });
+
+    it('renders certification badge in collapsed state (always visible)', () => {
+      render(<QuickViewMobileSheet {...defaultProps} isExpanded={false} />);
+      // Cert badge should be visible even when collapsed
+      const certElements = screen.getAllByText('Juyo');
+      expect(certElements.length).toBeGreaterThanOrEqual(1);
+    });
+
+    it('renders dealer name in collapsed state (always visible)', () => {
+      render(<QuickViewMobileSheet {...defaultProps} isExpanded={false} />);
+      expect(screen.getByText('Test Dealer')).toBeInTheDocument();
+    });
+
     it('calls onToggle when header bar is clicked in collapsed state', () => {
       const onToggle = vi.fn();
       render(<QuickViewMobileSheet {...defaultProps} onToggle={onToggle} isExpanded={false} />);

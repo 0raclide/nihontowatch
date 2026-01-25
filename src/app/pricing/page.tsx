@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { useAuth } from '@/lib/auth/AuthContext';
@@ -10,6 +11,7 @@ import {
   type BillingPeriod,
   TIER_INFO,
   TIER_PRICING,
+  isTrialModeActive,
 } from '@/types/subscription';
 
 // =============================================================================
@@ -208,12 +210,20 @@ function FeatureCell({ value }: { value: boolean | string }) {
 // =============================================================================
 
 export default function PricingPage() {
+  const router = useRouter();
   const { tier: currentTier, checkout } = useSubscription();
   const { user } = useAuth();
   const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>('annual');
   const [isLoading, setIsLoading] = useState<SubscriptionTier | null>(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [pendingTier, setPendingTier] = useState<Exclude<SubscriptionTier, 'free'> | null>(null);
+
+  // Hide pricing page during trial mode
+  useEffect(() => {
+    if (isTrialModeActive()) {
+      router.replace('/');
+    }
+  }, [router]);
 
   const handleSelectTier = async (tier: Exclude<SubscriptionTier, 'free'>) => {
     if (!user) {
