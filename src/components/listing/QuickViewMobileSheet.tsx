@@ -36,7 +36,7 @@ interface QuickViewMobileSheetProps {
 // =============================================================================
 
 // Sheet heights
-const COLLAPSED_HEIGHT = 64; // Compact bar height in pixels
+const COLLAPSED_HEIGHT = 116; // Compact bar height - shows price, badges, and dealer
 const HANDLE_HEIGHT = 16; // Swipe handle area
 
 // Gesture thresholds
@@ -353,6 +353,44 @@ export function QuickViewMobileSheet({
             </div>
           </div>
         </div>
+
+        {/* Badges row: Always visible - Item type + Certification + Measurement */}
+        <div className="px-4 pb-2 flex items-center gap-2 flex-wrap">
+          <span className="text-[11px] text-muted uppercase tracking-wide font-medium px-2 py-0.5 bg-linen rounded">
+            {itemTypeLabel}
+          </span>
+          {certInfo && (
+            <span
+              className={`text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded ${
+                certInfo.tier === 'premier'
+                  ? 'bg-juyo-bg text-juyo'
+                  : certInfo.tier === 'high'
+                  ? 'bg-toku-hozon-bg text-toku-hozon'
+                  : 'bg-hozon-bg text-hozon'
+              }`}
+            >
+              {certInfo.shortLabel}
+            </span>
+          )}
+          {shouldShowNewBadge(listing.first_seen_at, listing.dealer_earliest_seen_at) && (
+            <span className="text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded bg-new-listing-bg text-new-listing">
+              New this week
+            </span>
+          )}
+          <QuickMeasurement listing={listing} />
+        </div>
+
+        {/* Dealer row - Always visible if we have a real dealer name */}
+        {hasRealDealerName && (
+          <div className="px-4 pb-2">
+            <div className="flex items-center text-[12px] text-muted">
+              <svg className="w-3 h-3 mr-1 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              </svg>
+              <span className="truncate">{dealerName}</span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Unified content structure - flex-1 to fill remaining space after header */}
@@ -366,44 +404,6 @@ export function QuickViewMobileSheet({
             pointerEvents: showExpandedContent ? 'auto' : 'none',
           }}
         >
-          {/* Badges row: Item type + Certification + Measurement */}
-          <div className="px-4 pb-2 flex items-center gap-2 flex-wrap shrink-0">
-            <span className="text-[11px] text-muted uppercase tracking-wide font-medium px-2 py-0.5 bg-linen rounded">
-              {itemTypeLabel}
-            </span>
-            {certInfo && (
-              <span
-                className={`text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded ${
-                  certInfo.tier === 'premier'
-                    ? 'bg-juyo-bg text-juyo'
-                    : certInfo.tier === 'high'
-                    ? 'bg-toku-hozon-bg text-toku-hozon'
-                    : 'bg-hozon-bg text-hozon'
-                }`}
-              >
-                {certInfo.shortLabel}
-              </span>
-            )}
-            {shouldShowNewBadge(listing.first_seen_at, listing.dealer_earliest_seen_at) && (
-              <span className="text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded bg-new-listing-bg text-new-listing">
-                New this week
-              </span>
-            )}
-            <QuickMeasurement listing={listing} />
-          </div>
-
-          {/* Dealer row - only show if we have a real dealer name */}
-          {hasRealDealerName && (
-            <div className="px-4 pb-2 shrink-0">
-              <div className="flex items-center text-[12px] text-muted">
-                <svg className="w-3 h-3 mr-1 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                </svg>
-                <span className="truncate">{dealerName}</span>
-              </div>
-            </div>
-          )}
-
           {/* Scrollable content area */}
           <div
             ref={scrollContentRef}

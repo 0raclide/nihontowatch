@@ -1,16 +1,18 @@
 'use client';
 
 import { useSubscription } from '@/contexts/SubscriptionContext';
+import { isTrialModeActive } from '@/types/subscription';
 
 /**
  * Banner shown to free tier users indicating their data is delayed 72h
  * Includes CTA to upgrade for real-time listings
+ * Hidden during trial mode when all features are free
  */
 export function DataDelayBanner() {
   const { isFree, showPaywall, isLoading } = useSubscription();
 
-  // Don't show during loading or for paid users
-  if (isLoading || !isFree) {
+  // Don't show during loading, for paid users, or during trial mode
+  if (isLoading || !isFree || isTrialModeActive()) {
     return null;
   }
 

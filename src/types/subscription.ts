@@ -61,9 +61,22 @@ export const FEATURE_MIN_TIER: Record<Feature, SubscriptionTier> = {
 };
 
 /**
+ * Check if trial mode is active (all features free)
+ * Toggle via NEXT_PUBLIC_TRIAL_MODE env var in Vercel
+ */
+export const isTrialModeActive = (): boolean => {
+  return process.env.NEXT_PUBLIC_TRIAL_MODE === 'true';
+};
+
+/**
  * Check if a tier has access to a feature
  */
 export function canAccessFeature(tier: SubscriptionTier, feature: Feature): boolean {
+  // Trial mode: everyone gets all features
+  if (isTrialModeActive()) {
+    return true;
+  }
+
   const requiredTier = FEATURE_MIN_TIER[feature];
 
   // Special case: dealer has access to enthusiast features but not connoisseur
@@ -209,8 +222,8 @@ export const TIER_INFO: Record<SubscriptionTier, TierInfo> = {
     name: 'Free',
     description: 'Browse and explore',
     features: [
-      'Browse listings (72h delay)',
-      'Basic filters and search',
+      'Browse all listings',
+      'Full filters and search',
       'Unlimited favorites',
       'Currency conversion',
     ],

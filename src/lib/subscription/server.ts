@@ -6,6 +6,7 @@
 
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import type { SubscriptionTier, SubscriptionStatus } from '@/types/subscription';
+import { isTrialModeActive } from '@/types/subscription';
 
 /**
  * 72 hours in milliseconds - data delay for free tier
@@ -34,7 +35,7 @@ export async function getUserSubscription(): Promise<{
         tier: 'free',
         status: 'inactive',
         userId: null,
-        isDelayed: true,
+        isDelayed: isTrialModeActive() ? false : true,
       };
     }
 
@@ -110,7 +111,7 @@ export async function getUserSubscription(): Promise<{
       tier: effectiveTier,
       status,
       userId: user.id,
-      isDelayed: effectiveTier === 'free',
+      isDelayed: isTrialModeActive() ? false : effectiveTier === 'free',
     };
   } catch (error) {
     console.error('Error getting user subscription:', error);
@@ -118,7 +119,7 @@ export async function getUserSubscription(): Promise<{
       tier: 'free',
       status: 'inactive',
       userId: null,
-      isDelayed: true,
+      isDelayed: isTrialModeActive() ? false : true,
     };
   }
 }
