@@ -26,6 +26,12 @@
 | [SEO.md](./SEO.md) | SEO optimization, structured data, sitemap, robots.txt |
 | [TESTING.md](./TESTING.md) | Test suite docs, concordance tests, CI/CD integration |
 
+## Sessions
+
+| Document | Date | Summary |
+|----------|------|---------|
+| [SESSION_20260125_TRIAL_MODE.md](./SESSION_20260125_TRIAL_MODE.md) | 2026-01-25 | **Trial mode & business pivot** - All features free, hybrid model (free collectors, paid dealers) |
+
 ## Postmortems & QA Audits
 
 | Document | Date | Issue |
