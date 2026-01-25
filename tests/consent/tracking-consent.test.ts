@@ -1,8 +1,11 @@
 /**
  * Tracking Consent Integration Tests
  *
- * Tests that tracking respects GDPR consent.
- * CRITICAL: Tracking without consent is a GDPR violation.
+ * Tests that tracking respects user preferences.
+ *
+ * POLICY: Tracking is ON by default, only OFF if user explicitly declines.
+ * This is a legitimate business decision - users see a cookie banner and
+ * can decline tracking at any time.
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
@@ -47,11 +50,11 @@ describe('ActivityTracker Consent', () => {
   });
 
   describe('hasOptedOutOfTracking', () => {
-    it('returns true when no consent given (GDPR default)', async () => {
+    it('returns false when no consent choice made (tracking on by default)', async () => {
       const { hasOptedOutOfTracking } = await import('@/lib/tracking/ActivityTracker');
 
-      // No consent = opted out (GDPR compliant)
-      expect(hasOptedOutOfTracking()).toBe(true);
+      // No consent choice = tracking ON (user can decline via cookie banner)
+      expect(hasOptedOutOfTracking()).toBe(false);
     });
 
     it('returns false when analytics consent given', async () => {
@@ -130,19 +133,19 @@ describe('Visitor ID Consent', () => {
   });
 
   describe('getVisitorId', () => {
-    it('returns session-only ID when no consent', async () => {
+    it('persists visitor ID when no consent choice made (default tracking on)', async () => {
       vi.resetModules();
       const { getVisitorId } = await import('@/lib/activity/visitorId');
 
       const visitorId = getVisitorId();
 
-      // Should return an ID (session-only)
+      // Should return a valid ID
       expect(visitorId).toBeDefined();
       expect(typeof visitorId).toBe('string');
       expect(visitorId.length).toBeGreaterThan(0);
 
-      // Should NOT persist to localStorage without consent
-      expect(localStorageMock['nihontowatch_visitor_id']).toBeUndefined();
+      // Should persist to localStorage (tracking on by default)
+      expect(localStorageMock['nihontowatch_visitor_id']).toBe(visitorId);
     });
 
     it('persists visitor ID when analytics consent given', async () => {
@@ -227,13 +230,13 @@ describe('Consent State Changes', () => {
     vi.resetModules();
   });
 
-  it('tracking behavior changes after consent is given', async () => {
-    // Initially no consent
+  it('tracking remains on after explicit consent is given', async () => {
+    // Initially no consent choice (tracking ON by default)
     vi.resetModules();
     let { hasOptedOutOfTracking } = await import('@/lib/tracking/ActivityTracker');
-    expect(hasOptedOutOfTracking()).toBe(true);
+    expect(hasOptedOutOfTracking()).toBe(false);
 
-    // User gives consent
+    // User explicitly gives consent (tracking stays on)
     const consent: ConsentRecord = {
       preferences: ACCEPT_ALL_PREFERENCES,
       timestamp: new Date().toISOString(),

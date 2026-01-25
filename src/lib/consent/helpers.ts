@@ -40,16 +40,21 @@ export function getStoredConsent(): ConsentRecord | null {
  * Can be called from anywhere (not just React components)
  *
  * @param category - The consent category to check
+ * @param defaultIfNoChoice - What to return if user hasn't made a choice yet
  * @returns true if consent is granted, false otherwise
  */
-export function hasConsentFor(category: ConsentCategory): boolean {
+export function hasConsentFor(
+  category: ConsentCategory,
+  defaultIfNoChoice: boolean = false
+): boolean {
   // Essential is always allowed
   if (category === 'essential') return true;
 
   const consent = getStoredConsent();
 
-  // If no consent record exists, assume no consent for optional categories
-  if (!consent) return false;
+  // If no consent record exists, return the default
+  // (allows analytics to default ON while others default OFF)
+  if (!consent) return defaultIfNoChoice;
 
   return consent.preferences[category] === true;
 }
@@ -57,9 +62,12 @@ export function hasConsentFor(category: ConsentCategory): boolean {
 /**
  * Check if analytics consent has been granted
  * Convenience function for tracking code
+ *
+ * IMPORTANT: Defaults to TRUE if user hasn't made a choice yet.
+ * Tracking is ON by default, only OFF if user explicitly declines.
  */
 export function hasAnalyticsConsent(): boolean {
-  return hasConsentFor('analytics');
+  return hasConsentFor('analytics', true);
 }
 
 /**

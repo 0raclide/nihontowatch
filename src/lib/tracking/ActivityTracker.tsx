@@ -73,7 +73,9 @@ const PRIVACY_OPT_OUT_KEY = 'nihontowatch_tracking_opt_out';
  * This checks both the legacy opt-out key AND the new GDPR consent system.
  * User is opted out if:
  * 1. Legacy opt-out is enabled, OR
- * 2. GDPR analytics consent is not granted
+ * 2. User explicitly declined analytics consent
+ *
+ * Note: Tracking is ON by default until user explicitly declines.
  */
 export function hasOptedOutOfTracking(): boolean {
   if (typeof window === 'undefined') return false;
@@ -83,8 +85,8 @@ export function hasOptedOutOfTracking(): boolean {
     const legacyOptOut = localStorage.getItem(PRIVACY_OPT_OUT_KEY) === 'true';
     if (legacyOptOut) return true;
 
-    // Check GDPR consent - if user hasn't consented to analytics, treat as opted out
-    // Note: hasAnalyticsConsent returns false if no consent record exists
+    // Check GDPR consent - hasAnalyticsConsent returns true by default
+    // Only returns false if user explicitly declined
     if (!hasAnalyticsConsent()) return true;
 
     return false;

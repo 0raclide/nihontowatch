@@ -309,17 +309,42 @@ export interface Database {
       yuhinkai_enrichments: {
         Row: {
           id: number;
-          catalog_id: string;
           listing_id: number | null;
+          catalog_id: string | null;
+          yuhinkai_uuid: string | null;
+          yuhinkai_collection: string | null;
+          yuhinkai_volume: number | null;
+          yuhinkai_item_number: number | null;
           title: string | null;
+          // Setsumei translations
+          setsumei_ja: string | null;
+          setsumei_en: string | null;
+          setsumei_en_format: string | null;
           setsumei_text_ja: string | null;
           setsumei_text_en: string | null;
-          setsumei_en: string | null;
           setsumei_image_url: string | null;
-          metadata: Record<string, unknown> | null;
-          connection_source: string | null;
-          verification_status: string | null;
+          // Match metadata
+          match_score: number | null;
           match_confidence: string | null;
+          match_signals: Record<string, unknown> | null;
+          matched_fields: string[] | null;
+          // Enriched data from catalog
+          enriched_maker: string | null;
+          enriched_maker_kanji: string | null;
+          enriched_school: string | null;
+          enriched_period: string | null;
+          enriched_form_type: string | null;
+          enriched_cert_type: string | null;
+          enriched_cert_session: string | null;
+          item_category: string | null;
+          // Verification
+          verification_status: string | null;
+          verified_by: string | null;
+          verified_at: string | null;
+          connection_source: string | null;
+          enriched_at: string | null;
+          // Metadata
+          metadata: Record<string, unknown> | null;
           created_at: string;
           updated_at: string;
         };

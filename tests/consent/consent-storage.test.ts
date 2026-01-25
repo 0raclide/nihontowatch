@@ -125,10 +125,11 @@ describe('Consent Helpers', () => {
   });
 
   describe('hasAnalyticsConsent', () => {
-    it('returns false when no consent stored', async () => {
+    it('returns true when no consent stored (tracking on by default)', async () => {
       vi.resetModules();
       const { hasAnalyticsConsent } = await import('@/lib/consent/helpers');
-      expect(hasAnalyticsConsent()).toBe(false);
+      // Analytics tracking is ON by default until user explicitly declines
+      expect(hasAnalyticsConsent()).toBe(true);
     });
 
     it('returns true when analytics consent given', async () => {
@@ -263,8 +264,9 @@ describe('Consent Edge Cases', () => {
     vi.resetModules();
     const { hasAnalyticsConsent } = await import('@/lib/consent/helpers');
 
-    // Should return false (default) rather than throwing
-    expect(hasAnalyticsConsent()).toBe(false);
+    // Should return true (default tracking on) rather than throwing
+    // Corrupted consent = no valid choice = use default
+    expect(hasAnalyticsConsent()).toBe(true);
   });
 
   it('handles missing preferences in stored consent', async () => {
@@ -278,7 +280,8 @@ describe('Consent Edge Cases', () => {
     vi.resetModules();
     const { hasAnalyticsConsent } = await import('@/lib/consent/helpers');
 
-    expect(hasAnalyticsConsent()).toBe(false);
+    // Invalid consent object = no valid choice = use default (tracking on)
+    expect(hasAnalyticsConsent()).toBe(true);
   });
 
   it('handles null preferences values', async () => {

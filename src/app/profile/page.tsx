@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-// @ts-nocheck - Supabase types have issues with profiles table updates
 'use client';
 
 import { useState, useCallback } from 'react';
@@ -39,10 +37,12 @@ export default function ProfilePage() {
 
     try {
       const supabase = createClient();
-      const { error } = await supabase
-        .from('profiles')
-        .update({ display_name: displayName.trim() || null, updated_at: new Date().toISOString() } as Record<string, unknown>)
-        .eq('id', user.id);
+      // Type assertion needed - profiles table update has partial typing issues
+      type ProfilesTable = ReturnType<typeof supabase.from>;
+      const { error } = await (supabase
+        .from('profiles') as unknown as ProfilesTable)
+        .update({ display_name: displayName.trim() || null, updated_at: new Date().toISOString() })
+        .eq('id', user.id) as { error: { message: string } | null };
 
       if (error) {
         setSaveError(error.message);

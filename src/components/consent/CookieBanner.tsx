@@ -82,45 +82,44 @@ export function CookieBanner() {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm text-ink leading-relaxed">
-                  We use cookies to enhance your experience and analyze site usage.
-                  You can customize your preferences or accept all cookies.{' '}
+                  Cookies help us remember your currency preference, save your searches,
+                  and show you relevant pieces from our 27 dealers.{' '}
                   <Link
-                    href="/cookies"
+                    href="/privacy"
                     className="text-accent hover:underline focus:underline focus:outline-none"
                   >
                     Learn more
                   </Link>
+                  {' · '}
+                  <button
+                    type="button"
+                    onClick={openPreferences}
+                    className="text-accent hover:underline focus:underline focus:outline-none"
+                  >
+                    Manage
+                  </button>
                 </p>
               </div>
             </div>
 
-            {/* Buttons - equal visual weight (non-dark pattern) */}
-            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 lg:flex-shrink-0">
-              {/* Customize - tertiary style */}
-              <button
-                type="button"
-                onClick={openPreferences}
-                className="px-4 py-2.5 text-sm font-medium text-secondary hover:text-ink border border-border hover:border-ink/30 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-accent/30 order-3 sm:order-1"
-              >
-                Customize
-              </button>
-
-              {/* Reject - secondary style */}
+            {/* Buttons - clear choices, no manipulation */}
+            <div className="flex gap-3 lg:flex-shrink-0">
+              {/* Decline - secondary style, visible and accessible */}
               <button
                 type="button"
                 onClick={rejectNonEssential}
-                className="px-4 py-2.5 text-sm font-medium text-ink bg-surface hover:bg-border/50 dark:bg-border dark:hover:bg-border/70 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-accent/30 order-2"
+                className="px-5 py-2.5 text-sm font-medium text-ink bg-surface hover:bg-border/50 dark:bg-border dark:hover:bg-border/70 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-accent/30"
               >
-                Reject Non-Essential
+                Decline
               </button>
 
-              {/* Accept All - primary style */}
+              {/* Accept - primary style */}
               <button
                 type="button"
                 onClick={acceptAll}
-                className="px-4 py-2.5 text-sm font-medium text-cream bg-ink hover:bg-ink/90 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-accent/30 order-1 sm:order-3"
+                className="px-5 py-2.5 text-sm font-medium text-cream bg-ink hover:bg-ink/90 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-accent/30"
               >
-                Accept All
+                Accept
               </button>
             </div>
           </div>

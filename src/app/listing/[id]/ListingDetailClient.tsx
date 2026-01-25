@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -17,6 +17,7 @@ import { shouldShowNewBadge } from '@/lib/newListing';
 import { SetsumeiSection } from '@/components/listing/SetsumeiSection';
 import { SetsumeiZufuBadge } from '@/components/ui/SetsumeiZufuBadge';
 import { AdminSetsumeiWidget } from '@/components/listing/AdminSetsumeiWidget';
+import { useActivityTracker } from '@/lib/tracking/ActivityTracker';
 import type { Listing, CreateAlertInput } from '@/types';
 
 // Extended listing type for this page
@@ -77,6 +78,35 @@ export default function ListingDetailPage() {
   const [showLoginModal, setShowLoginModal] = useState(false);
 
   const { createAlert, isCreating } = useAlerts({ autoFetch: false });
+  const activity = useActivityTracker();
+  const viewStartTime = useRef<number>(Date.now());
+
+  // Track listing view when page loads and dwell time when leaving
+  useEffect(() => {
+    if (!listing || !listingId) return;
+
+    viewStartTime.current = Date.now();
+
+    // Track dwell time when user leaves the page
+    return () => {
+      const dwellMs = Date.now() - viewStartTime.current;
+      if (dwellMs > 1000 && activity) {
+        // Track as viewport_dwell for consistency with browse page tracking
+        activity.trackViewportDwell(Number(listingId), dwellMs);
+      }
+    };
+  }, [listing, listingId, activity]);
+
+  // Track external link click
+  const handleExternalLinkClick = useCallback(() => {
+    if (activity && listing) {
+      activity.trackExternalLinkClick(
+        listing.url,
+        Number(listingId),
+        listing.dealers?.name
+      );
+    }
+  }, [activity, listing, listingId]);
 
   // Validate images - hook must be called unconditionally before any early returns
   const rawImages = listing ? getAllImages(listing) : [];
@@ -426,6 +456,7 @@ export default function ListingDetailPage() {
                 href={listing.url}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={handleExternalLinkClick}
                 className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 text-[14px] font-medium text-white bg-gold hover:bg-gold-light rounded-lg transition-colors"
               >
                 View on {listing.dealers?.name}
