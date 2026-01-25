@@ -165,9 +165,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         description: tagline,
         images: [ogImageUrl],
       },
-      // Robots: index the share page but tell crawlers the canonical is /listing/[id]
+      // Robots: noindex share proxy to prevent duplicate content - canonical points to /listing/[id]
       robots: {
-        index: true,
+        index: false,
         follow: true,
       },
       // Important: Add cache control hints

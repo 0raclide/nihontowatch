@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import ListingDetailClient from './ListingDetailClient';
 import {
@@ -22,6 +23,8 @@ interface ListingMetadata {
   smith: string | null;
   tosogu_maker: string | null;
   og_image_url: string | null;  // Pre-generated OG image URL
+  is_sold: boolean;
+  is_available: boolean;
   dealers: { name: string; domain: string } | null;
 }
 
@@ -83,6 +86,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         smith,
         tosogu_maker,
         og_image_url,
+        is_sold,
+        is_available,
         dealers (
           name,
           domain
@@ -111,11 +116,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const artisan = listing.smith || listing.tosogu_maker;
     const price = formatPrice(listing.price_value, listing.price_currency);
     const dealerName = listing.dealers?.name || 'Unknown Dealer';
+    const isSold = listing.is_sold || !listing.is_available;
 
     let description = listing.title;
     if (artisan) description += ` by ${artisan}`;
     if (listing.cert_type) description += ` (${listing.cert_type})`;
-    description += `. ${price}. Available from ${dealerName} on Nihontowatch.`;
+    description += isSold
+      ? `. ${price}. Previously listed by ${dealerName} on Nihontowatch.`
+      : `. ${price}. Available from ${dealerName} on Nihontowatch.`;
 
     // Use pre-generated OG image if available, otherwise fall back to dynamic generation
     const ogImageUrl = listing.og_image_url || `${baseUrl}/api/og?id=${listingId}`;
@@ -126,6 +134,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       alternates: {
         canonical: `${baseUrl}/listing/${listingId}`,
       },
+      // Noindex sold items so Google deindexes them
+      robots: isSold ? { index: false, follow: true } : { index: true, follow: true },
       openGraph: {
         title: listing.title,
         description: `${price}${artisan ? ` - ${artisan}` : ''}${listing.cert_type ? ` - ${listing.cert_type}` : ''}`,
@@ -185,107 +195,110 @@ export default async function ListingPage({ params }: Props) {
   const { id } = await params;
   const listingId = parseInt(id);
 
-  // Fetch listing data for JSON-LD
+  // Invalid ID - return 404
+  if (isNaN(listingId)) {
+    notFound();
+  }
+
+  // Fetch listing data for JSON-LD and existence check
   let jsonLdData: { product: object; breadcrumb: object } | null = null;
 
-  if (!isNaN(listingId)) {
-    try {
-      const supabase = await createClient();
-      const { data: listing } = await supabase
-        .from('listings')
-        .select(`
-          id,
-          title,
-          description,
-          price_value,
-          price_currency,
-          item_type,
-          cert_type,
-          smith,
-          tosogu_maker,
-          tosogu_school,
-          school,
-          province,
-          era,
-          mei_type,
-          nagasa_cm,
-          sori_cm,
-          stored_images,
-          images,
-          is_sold,
-          is_available,
-          dealers (
-            name,
-            domain
-          )
-        `)
-        .eq('id', listingId)
-        .single();
+  const supabase = await createClient();
+  const { data: listing, error } = await supabase
+    .from('listings')
+    .select(`
+      id,
+      title,
+      description,
+      price_value,
+      price_currency,
+      item_type,
+      cert_type,
+      smith,
+      tosogu_maker,
+      tosogu_school,
+      school,
+      province,
+      era,
+      mei_type,
+      nagasa_cm,
+      sori_cm,
+      stored_images,
+      images,
+      is_sold,
+      is_available,
+      dealers (
+        name,
+        domain
+      )
+    `)
+    .eq('id', listingId)
+    .single();
 
-      if (listing) {
-        const typedListing = listing as unknown as ListingForJsonLd;
-
-        // Convert to the format expected by JSON-LD generators
-        const listingForSchema: Partial<Listing> = {
-          id: typedListing.id,
-          title: typedListing.title,
-          description: typedListing.description || undefined,
-          price_value: typedListing.price_value || undefined,
-          price_currency: (typedListing.price_currency || 'JPY') as Currency,
-          item_type: (typedListing.item_type || 'unknown') as ItemType,
-          cert_type: typedListing.cert_type || undefined,
-          smith: typedListing.smith || undefined,
-          tosogu_maker: typedListing.tosogu_maker || undefined,
-          tosogu_school: typedListing.tosogu_school || undefined,
-          school: typedListing.school || undefined,
-          province: typedListing.province || undefined,
-          era: typedListing.era || undefined,
-          mei_type: typedListing.mei_type || undefined,
-          nagasa_cm: typedListing.nagasa_cm || undefined,
-          sori_cm: typedListing.sori_cm || undefined,
-          stored_images: typedListing.stored_images || undefined,
-          images: typedListing.images || [],
-          is_sold: typedListing.is_sold,
-          is_available: typedListing.is_available,
-        };
-
-        const dealerForSchema: Partial<Dealer> | undefined = typedListing.dealers
-          ? {
-              name: typedListing.dealers.name,
-              domain: typedListing.dealers.domain,
-            }
-          : undefined;
-
-        // Generate Product JSON-LD
-        const productJsonLd = generateProductJsonLd(
-          listingForSchema as Listing,
-          dealerForSchema as Dealer
-        );
-
-        // Generate Breadcrumb JSON-LD
-        const itemTypeLabel = typedListing.item_type
-          ? getItemTypeBreadcrumbLabel(typedListing.item_type as ItemType)
-          : null;
-
-        const breadcrumbItems = [
-          { name: 'Home', url: baseUrl },
-          ...(itemTypeLabel
-            ? [{ name: itemTypeLabel, url: `${baseUrl}/?type=${typedListing.item_type}` }]
-            : []),
-          { name: typedListing.title },
-        ];
-
-        const breadcrumbJsonLd = generateBreadcrumbJsonLd(breadcrumbItems);
-
-        jsonLdData = {
-          product: productJsonLd,
-          breadcrumb: breadcrumbJsonLd,
-        };
-      }
-    } catch {
-      // Silently fail - JSON-LD is optional
-    }
+  // Listing doesn't exist - return proper HTTP 404
+  if (!listing || error) {
+    notFound();
   }
+
+  // Generate JSON-LD for existing listings
+  const typedListing = listing as unknown as ListingForJsonLd;
+
+  // Convert to the format expected by JSON-LD generators
+  const listingForSchema: Partial<Listing> = {
+    id: typedListing.id,
+    title: typedListing.title,
+    description: typedListing.description || undefined,
+    price_value: typedListing.price_value || undefined,
+    price_currency: (typedListing.price_currency || 'JPY') as Currency,
+    item_type: (typedListing.item_type || 'unknown') as ItemType,
+    cert_type: typedListing.cert_type || undefined,
+    smith: typedListing.smith || undefined,
+    tosogu_maker: typedListing.tosogu_maker || undefined,
+    tosogu_school: typedListing.tosogu_school || undefined,
+    school: typedListing.school || undefined,
+    province: typedListing.province || undefined,
+    era: typedListing.era || undefined,
+    mei_type: typedListing.mei_type || undefined,
+    nagasa_cm: typedListing.nagasa_cm || undefined,
+    sori_cm: typedListing.sori_cm || undefined,
+    stored_images: typedListing.stored_images || undefined,
+    images: typedListing.images || [],
+    is_sold: typedListing.is_sold,
+    is_available: typedListing.is_available,
+  };
+
+  const dealerForSchema: Partial<Dealer> | undefined = typedListing.dealers
+    ? {
+        name: typedListing.dealers.name,
+        domain: typedListing.dealers.domain,
+      }
+    : undefined;
+
+  // Generate Product JSON-LD
+  const productJsonLd = generateProductJsonLd(
+    listingForSchema as Listing,
+    dealerForSchema as Dealer
+  );
+
+  // Generate Breadcrumb JSON-LD
+  const itemTypeLabel = typedListing.item_type
+    ? getItemTypeBreadcrumbLabel(typedListing.item_type as ItemType)
+    : null;
+
+  const breadcrumbItems = [
+    { name: 'Home', url: baseUrl },
+    ...(itemTypeLabel
+      ? [{ name: itemTypeLabel, url: `${baseUrl}/?type=${typedListing.item_type}` }]
+      : []),
+    { name: typedListing.title },
+  ];
+
+  const breadcrumbJsonLd = generateBreadcrumbJsonLd(breadcrumbItems);
+
+  jsonLdData = {
+    product: productJsonLd,
+    breadcrumb: breadcrumbJsonLd,
+  };
 
   return (
     <>
