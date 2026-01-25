@@ -1,37 +1,18 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/ban-ts-comment */
-// @ts-nocheck
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
+import { verifyAdmin } from '@/lib/admin/auth';
+import { apiUnauthorized, apiForbidden, apiServerError } from '@/lib/api/responses';
 
 export const dynamic = 'force-dynamic';
-
-async function verifyAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { error: 'Unauthorized', status: 401 };
-  }
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single<{ role: string }>();
-
-  if (profile?.role !== 'admin') {
-    return { error: 'Forbidden', status: 403 };
-  }
-
-  return { user };
-}
 
 export async function GET() {
   try {
     const supabase = await createClient();
     const authResult = await verifyAdmin(supabase);
 
-    if ('error' in authResult) {
-      return NextResponse.json({ error: authResult.error }, { status: authResult.status });
+    if (!authResult.isAdmin) {
+      return authResult.error === 'unauthorized' ? apiUnauthorized() : apiForbidden();
     }
 
     // Use service client to bypass RLS for scraper tables
@@ -56,7 +37,7 @@ export async function GET() {
       if (!pendingResult.error) {
         pendingUrls = pendingResult.count || 0;
       }
-    } catch (e) {
+    } catch {
       // Table doesn't exist, use default
     }
 
@@ -67,14 +48,14 @@ export async function GET() {
         .eq('status', 'completed')
         .order('completed_at', { ascending: false })
         .limit(1)
-        .single();
+        .single() as { data: { completed_at: string | null; dealers: { name: string } | null } | null; error: unknown };
       if (!lastRunResult.error && lastRunResult.data) {
         lastScrape = {
           time: lastRunResult.data.completed_at || null,
-          dealer: (lastRunResult.data.dealers as any)?.name || null,
+          dealer: lastRunResult.data.dealers?.name || null,
         };
       }
-    } catch (e) {
+    } catch {
       // Table doesn't exist, use default
     }
 
@@ -86,11 +67,11 @@ export async function GET() {
       if (!qaResult.error && qaResult.data && qaResult.data.length > 0) {
         const total = qaResult.data.length;
         const passed = qaResult.data.filter(
-          (m: any) => m.qa_status === 'passed' || m.qa_status === 'warnings'
+          (m: { qa_status: string }) => m.qa_status === 'passed' || m.qa_status === 'warnings'
         ).length;
         qaPassRate = Math.round((passed / total) * 100);
       }
-    } catch (e) {
+    } catch {
       // Table doesn't exist, use default
     }
 
@@ -102,10 +83,7 @@ export async function GET() {
       pendingUrls,
     });
   } catch (error) {
-    console.error('Scraper stats error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    logger.logError('Scraper stats error', error);
+    return apiServerError();
   }
 }

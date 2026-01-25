@@ -1,37 +1,24 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/ban-ts-comment */
-// @ts-nocheck
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
+import { verifyAdmin } from '@/lib/admin/auth';
+import {
+  apiUnauthorized,
+  apiForbidden,
+  apiBadRequest,
+  apiServerError,
+  apiSuccess,
+} from '@/lib/api/responses';
 
 export const dynamic = 'force-dynamic';
-
-async function verifyAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { error: 'Unauthorized', status: 401 };
-  }
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single<{ role: string }>();
-
-  if (profile?.role !== 'admin') {
-    return { error: 'Forbidden', status: 403 };
-  }
-
-  return { user };
-}
 
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient();
     const authResult = await verifyAdmin(supabase);
 
-    if ('error' in authResult) {
-      return NextResponse.json({ error: authResult.error }, { status: authResult.status });
+    if (!authResult.isAdmin) {
+      return authResult.error === 'unauthorized' ? apiUnauthorized() : apiForbidden();
     }
 
     const searchParams = request.nextUrl.searchParams;
@@ -54,7 +41,7 @@ export async function GET(request: NextRequest) {
       .range(offset, offset + limit - 1);
 
     if (error) {
-      console.error('Users query error:', error);
+      logger.error('Users query error', { error: error.message });
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
@@ -65,11 +52,8 @@ export async function GET(request: NextRequest) {
       totalPages: Math.ceil((count || 0) / limit),
     });
   } catch (error) {
-    console.error('Admin users error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    logger.logError('Admin users error', error);
+    return apiServerError();
   }
 }
 
@@ -78,46 +62,39 @@ export async function PATCH(request: NextRequest) {
     const supabase = await createClient();
     const authResult = await verifyAdmin(supabase);
 
-    if ('error' in authResult) {
-      return NextResponse.json({ error: authResult.error }, { status: authResult.status });
+    if (!authResult.isAdmin) {
+      return authResult.error === 'unauthorized' ? apiUnauthorized() : apiForbidden();
     }
 
     const body = await request.json();
     const { userId, isAdmin } = body;
 
     if (!userId || typeof isAdmin !== 'boolean') {
-      return NextResponse.json(
-        { error: 'userId and isAdmin are required' },
-        { status: 400 }
-      );
+      return apiBadRequest('userId and isAdmin are required');
     }
 
     // Prevent admin from removing their own admin status
     if (userId === authResult.user.id && !isAdmin) {
-      return NextResponse.json(
-        { error: 'Cannot remove your own admin status' },
-        { status: 400 }
-      );
+      return apiBadRequest('Cannot remove your own admin status');
     }
 
     // Update role column - is_admin is a GENERATED column computed from role
     const newRole = isAdmin ? 'admin' : 'user';
-    const { error } = await supabase
-      .from('profiles')
-      .update({ role: newRole, updated_at: new Date().toISOString() } as Record<string, unknown>)
-      .eq('id', userId);
+    // Type assertion needed - profiles table update has partial typing issues
+    type ProfilesTable = ReturnType<typeof supabase.from>;
+    const { error } = await (supabase
+      .from('profiles') as unknown as ProfilesTable)
+      .update({ role: newRole, updated_at: new Date().toISOString() })
+      .eq('id', userId) as { error: { message: string } | null };
 
     if (error) {
-      console.error('Update user role error:', error);
+      logger.error('Update user role error', { error: error.message, userId });
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true });
+    return apiSuccess({ success: true });
   } catch (error) {
-    console.error('Admin users PATCH error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    logger.logError('Admin users PATCH error', error);
+    return apiServerError();
   }
 }

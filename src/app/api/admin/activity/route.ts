@@ -1,37 +1,43 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/ban-ts-comment */
-// @ts-nocheck
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
+import { verifyAdmin } from '@/lib/admin/auth';
+import {
+  apiUnauthorized,
+  apiForbidden,
+  apiServerError,
+} from '@/lib/api/responses';
 
 export const dynamic = 'force-dynamic';
 
-async function verifyAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { error: 'Unauthorized', status: 401 };
-  }
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single<{ role: string }>();
-
-  if (profile?.role !== 'admin') {
-    return { error: 'Forbidden', status: 403 };
-  }
-
-  return { user };
+interface ActivityRecord {
+  id: number;
+  user_id: string;
+  action_type: string;
+  page_path: string | null;
+  listing_id: number | null;
+  search_query: string | null;
+  duration_seconds: number | null;
+  created_at: string;
+  profiles: {
+    email: string;
+    display_name: string | null;
+  } | null;
 }
+
+type ActivityQueryResult = {
+  data: ActivityRecord[] | null;
+  count: number | null;
+  error: { message: string } | null;
+};
 
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient();
     const authResult = await verifyAdmin(supabase);
 
-    if ('error' in authResult) {
-      return NextResponse.json({ error: authResult.error }, { status: authResult.status });
+    if (!authResult.isAdmin) {
+      return authResult.error === 'unauthorized' ? apiUnauthorized() : apiForbidden();
     }
 
     const searchParams = request.nextUrl.searchParams;
@@ -44,10 +50,12 @@ export async function GET(request: NextRequest) {
     const format = searchParams.get('format') || '';
     const offset = (page - 1) * limit;
 
+    // Type assertion for user_activity table
+    type UserActivityTable = ReturnType<typeof supabase.from>;
+
     // Build query for user_activity table
     // Use left join (no !inner) to include activities even if profile is missing
-    let query = supabase
-      .from('user_activity')
+    let query = (supabase.from('user_activity') as unknown as UserActivityTable)
       .select(`
         id,
         user_id,
@@ -82,10 +90,10 @@ export async function GET(request: NextRequest) {
     if (format === 'csv') {
       const { data: allActivity, error } = await query
         .order('created_at', { ascending: false })
-        .limit(10000);
+        .limit(10000) as ActivityQueryResult;
 
       if (error) {
-        console.error('Activity export error:', error);
+        logger.error('Activity export error', { error: error.message });
         return NextResponse.json({ error: error.message }, { status: 500 });
       }
 
@@ -101,16 +109,16 @@ export async function GET(request: NextRequest) {
 
     const { data: activity, count, error } = await query
       .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1);
+      .range(offset, offset + limit - 1) as ActivityQueryResult;
 
     if (error) {
-      console.error('Activity query error:', error);
+      logger.error('Activity query error', { error: error.message });
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
     // Format response
     const formattedActivity = activity?.map(record => {
-      const { profiles, ...rest } = record as Record<string, unknown>;
+      const { profiles, ...rest } = record;
       return {
         ...rest,
         user: profiles,
@@ -124,27 +132,9 @@ export async function GET(request: NextRequest) {
       totalPages: Math.ceil((count || 0) / limit),
     });
   } catch (error) {
-    console.error('Admin activity error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    logger.logError('Admin activity error', error);
+    return apiServerError();
   }
-}
-
-interface ActivityRecord {
-  id: number;
-  user_id: string;
-  action_type: string;
-  page_path: string | null;
-  listing_id: number | null;
-  search_query: string | null;
-  duration_seconds: number | null;
-  created_at: string;
-  profiles: {
-    email: string;
-    display_name: string | null;
-  } | null;
 }
 
 function convertToCSV(data: ActivityRecord[]): string {

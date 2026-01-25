@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -75,7 +76,7 @@ async function lookupIPs(ips: string[]): Promise<Record<string, GeoResult>> {
         await new Promise((r) => setTimeout(r, 200));
       }
     } catch (error) {
-      console.error('Geo lookup error:', error);
+      logger.error('Geo lookup error', { error });
       // Fill with unknown for failed batch
       batch.forEach((ip) => {
         results[ip] = {
@@ -149,7 +150,7 @@ export async function POST(request: NextRequest) {
       totalIPs: validIPs.length,
     });
   } catch (error) {
-    console.error('Geo API error:', error);
+    logger.logError('Geo API error', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 
 // Disable ISR caching - use HTTP Cache-Control instead
 // This allows ?nocache=1 to properly bypass all caching layers
@@ -98,7 +99,7 @@ export async function GET(
       .maybeSingle();
 
     if (error) {
-      console.error('Enrichment fetch error:', error);
+      logger.error('Enrichment fetch error', { error, listingId });
       return NextResponse.json(
         { error: 'Failed to fetch enrichment' },
         { status: 500 }
@@ -123,7 +124,7 @@ export async function GET(
 
     return response;
   } catch (error) {
-    console.error('Enrichment API error:', error);
+    logger.logError('Enrichment API error', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

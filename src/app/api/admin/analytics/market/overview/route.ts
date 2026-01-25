@@ -13,6 +13,8 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
+import { convertPricesToJPY } from '@/lib/currency/convert';
 import type { MarketOverview, AnalyticsAPIResponse, ChangeMetric } from '@/types/analytics';
 import type { Currency } from '@/types/index';
 import {
@@ -220,32 +222,8 @@ export async function GET(request: NextRequest): Promise<NextResponse<AnalyticsA
     // 10. Return response with 5-minute cache
     return successResponse(overview, 300);
   } catch (error) {
-    console.error('Market overview API error:', error);
+    logger.logError('Market overview API error', error);
     return errorResponse('Internal server error', 500);
   }
 }
 
-/**
- * Convert prices to JPY.
- * In production, you would use real exchange rates and the targetCurrency param.
- */
-function convertPricesToJPY(
-  listings: Array<{ price_value: number | null; price_currency: string | null }>
-): number[] {
-  // Simple conversion rates (approximate)
-  const toJPY: Record<string, number> = {
-    JPY: 1,
-    USD: 150, // Approximate rate
-    EUR: 165, // Approximate rate
-    GBP: 190, // Approximate rate
-  };
-
-  return listings
-    .filter((l): l is { price_value: number; price_currency: string } =>
-      l.price_value !== null && l.price_value > 0
-    )
-    .map((l) => {
-      const rate = toJPY[l.price_currency || 'JPY'] || 1;
-      return l.price_value * rate;
-    });
-}

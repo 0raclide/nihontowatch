@@ -1,6 +1,7 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
+import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -176,7 +177,7 @@ export async function GET(request: NextRequest) {
           .eq('user_id', userId);
 
         if (updateError) {
-          console.error('Error updating saved search:', updateError);
+          logger.error('Error updating saved search', { error: updateError });
           return redirectToPage('error', 'Failed to update subscription');
         }
 
@@ -186,7 +187,7 @@ export async function GET(request: NextRequest) {
         return redirectToPage('error', 'Invalid unsubscribe type');
     }
   } catch (error) {
-    console.error('Unsubscribe error:', error);
+    logger.logError('Unsubscribe error', error);
     return redirectToPage('error', 'An error occurred');
   }
 }
@@ -283,7 +284,7 @@ export async function POST(request: NextRequest) {
       { status: 400 }
     );
   } catch (error) {
-    console.error('Unsubscribe POST error:', error);
+    logger.logError('Unsubscribe POST error', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

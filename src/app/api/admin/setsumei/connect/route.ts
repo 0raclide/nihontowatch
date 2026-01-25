@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-// @ts-nocheck - yuhinkai_enrichments table not in generated types
 /**
  * Connect Setsumei API
  *
@@ -10,9 +8,20 @@
  * and a Yuhinkai catalog record.
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { parseYuhinkaiUrl } from '@/lib/yuhinkai/urlParser';
+import { logger } from '@/lib/logger';
+import { verifyAdmin } from '@/lib/admin/auth';
+import {
+  apiSuccess,
+  apiBadRequest,
+  apiUnauthorized,
+  apiForbidden,
+  apiNotFound,
+  apiServerError,
+  apiServiceUnavailable,
+} from '@/lib/api/responses';
 import {
   fetchCatalogRecord,
   extractArtisanName,
@@ -36,30 +45,6 @@ interface ConnectRequestBody {
 }
 
 // =============================================================================
-// ADMIN VERIFICATION
-// =============================================================================
-
-async function verifyAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { error: 'Unauthorized', status: 401 };
-  }
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single<{ role: string }>();
-
-  if (profile?.role !== 'admin') {
-    return { error: 'Forbidden', status: 403 };
-  }
-
-  return { user };
-}
-
-// =============================================================================
 // POST HANDLER
 // =============================================================================
 
@@ -67,18 +52,15 @@ export async function POST(request: NextRequest) {
   try {
     // Check if oshi-v2 is configured
     if (!isOshiV2Configured()) {
-      return NextResponse.json(
-        { error: 'Yuhinkai catalog integration is not configured' },
-        { status: 503 }
-      );
+      return apiServiceUnavailable('Yuhinkai catalog integration is not configured');
     }
 
     // Verify admin authentication
     const supabase = await createClient();
     const authResult = await verifyAdmin(supabase);
 
-    if ('error' in authResult) {
-      return NextResponse.json({ error: authResult.error }, { status: authResult.status });
+    if (!authResult.isAdmin) {
+      return authResult.error === 'unauthorized' ? apiUnauthorized() : apiForbidden();
     }
 
     const { user } = authResult;
@@ -88,36 +70,24 @@ export async function POST(request: NextRequest) {
     try {
       body = await request.json();
     } catch {
-      return NextResponse.json(
-        { error: 'Invalid JSON body' },
-        { status: 400 }
-      );
+      return apiBadRequest('Invalid JSON body');
     }
 
     const { listing_id, yuhinkai_url } = body;
 
     // Validate request body
     if (!listing_id || typeof listing_id !== 'number' || listing_id <= 0) {
-      return NextResponse.json(
-        { error: 'Invalid listing_id: must be a positive integer' },
-        { status: 400 }
-      );
+      return apiBadRequest('Invalid listing_id: must be a positive integer');
     }
 
     if (!yuhinkai_url || typeof yuhinkai_url !== 'string') {
-      return NextResponse.json(
-        { error: 'Missing required field: yuhinkai_url' },
-        { status: 400 }
-      );
+      return apiBadRequest('Missing required field: yuhinkai_url');
     }
 
     // Parse the Yuhinkai URL
     const parseResult = parseYuhinkaiUrl(yuhinkai_url);
     if (!parseResult.success) {
-      return NextResponse.json(
-        { error: parseResult.error },
-        { status: 400 }
-      );
+      return apiBadRequest(parseResult.error);
     }
 
     const { collection, volume, itemNumber } = parseResult.data;
@@ -126,10 +96,7 @@ export async function POST(request: NextRequest) {
     const catalogRecord = await fetchCatalogRecord(collection, volume, itemNumber);
 
     if (!catalogRecord) {
-      return NextResponse.json(
-        { error: `Catalog record not found: ${collection} vol.${volume} #${itemNumber}` },
-        { status: 404 }
-      );
+      return apiNotFound(`Catalog record ${collection} vol.${volume} #${itemNumber}`);
     }
 
     // Verify listing exists
@@ -140,10 +107,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (listingError || !listing) {
-      return NextResponse.json(
-        { error: `Listing not found: ${listing_id}` },
-        { status: 404 }
-      );
+      return apiNotFound(`Listing ${listing_id}`);
     }
 
     // Use service client for writing (RLS requires service_role)
@@ -196,57 +160,65 @@ export async function POST(request: NextRequest) {
     };
 
     // Check for existing enrichment
-    const { data: existingEnrichment } = await serviceClient
-      .from('yuhinkai_enrichments')
+    // Type assertion needed - yuhinkai_enrichments table not in generated types
+    type YuhinkaiEnrichmentTable = ReturnType<typeof serviceClient.from>;
+    type EnrichmentResult = { data: Record<string, unknown> | null; error: { message: string } | null };
+
+    const { data: existingEnrichment } = await (serviceClient
+      .from('yuhinkai_enrichments') as unknown as YuhinkaiEnrichmentTable)
       .select('id')
       .eq('listing_id', listing_id)
-      .single();
+      .single() as { data: { id: number } | null };
 
-    let enrichment;
+    let enrichment: Record<string, unknown> | null = null;
 
     if (existingEnrichment) {
       // Update existing enrichment
-      const { data, error } = await serviceClient
-        .from('yuhinkai_enrichments')
+      const { data, error } = await (serviceClient
+        .from('yuhinkai_enrichments') as unknown as YuhinkaiEnrichmentTable)
         .update(enrichmentData)
         .eq('listing_id', listing_id)
         .select()
-        .single();
+        .single() as EnrichmentResult;
 
       if (error) {
-        console.error('[setsumei/connect] Update error:', error);
-        return NextResponse.json(
-          { error: `Failed to update enrichment: ${error.message}` },
-          { status: 500 }
-        );
+        logger.error('Setsumei enrichment update failed', { listing_id, error: error.message });
+        return apiServerError(`Failed to update enrichment: ${error.message}`);
       }
 
       enrichment = data;
     } else {
       // Insert new enrichment
-      const { data, error } = await serviceClient
-        .from('yuhinkai_enrichments')
+      const { data, error } = await (serviceClient
+        .from('yuhinkai_enrichments') as unknown as YuhinkaiEnrichmentTable)
         .insert(enrichmentData)
         .select()
-        .single();
+        .single() as EnrichmentResult;
 
       if (error) {
-        console.error('[setsumei/connect] Insert error:', error);
-        return NextResponse.json(
-          { error: `Failed to create enrichment: ${error.message}` },
-          { status: 500 }
-        );
+        logger.error('Setsumei enrichment insert failed', { listing_id, error: error.message });
+        return apiServerError(`Failed to create enrichment: ${error.message}`);
       }
 
       enrichment = data;
     }
 
-    console.log(
-      `[setsumei/connect] Manual connection created: listing ${listing_id} → ${collection} vol.${volume} #${itemNumber} by ${user.id}`
-    );
+    // Safety check (should never happen - both branches above either set data or return early)
+    if (!enrichment) {
+      logger.error('Enrichment data unexpectedly null after operation', { listing_id });
+      return apiServerError('Failed to retrieve enrichment data');
+    }
+
+    logger.info('Manual setsumei connection created', {
+      listing_id,
+      collection,
+      volume,
+      itemNumber,
+      userId: user.id,
+    });
 
     // Return full enrichment for optimistic UI update (instant setsumei display)
-    return NextResponse.json({
+    return apiSuccess({
       success: true,
       action: existingEnrichment ? 'updated' : 'created',
       enrichment: {
@@ -279,10 +251,7 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('[setsumei/connect] Error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    logger.logError('Setsumei connect error', error);
+    return apiServerError();
   }
 }

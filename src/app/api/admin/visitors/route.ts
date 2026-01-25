@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -89,7 +90,7 @@ export async function GET(request: NextRequest) {
       .limit(10000);
 
     if (error) {
-      console.error('Error fetching events:', error);
+      logger.error('Error fetching events', { error });
       return NextResponse.json({ error: 'Database error' }, { status: 500 });
     }
 
@@ -307,7 +308,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(stats);
   } catch (error) {
-    console.error('Visitor stats error:', error);
+    logger.logError('Visitor stats error', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

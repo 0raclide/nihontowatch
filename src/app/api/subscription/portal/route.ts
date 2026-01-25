@@ -1,6 +1,7 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { createPortalSession } from '@/lib/stripe/server';
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -51,7 +52,7 @@ export async function POST(request: NextRequest) {
       url: session.url,
     });
   } catch (error) {
-    console.error('Portal API error:', error);
+    logger.logError('Portal API error', error);
     return NextResponse.json(
       { error: 'Failed to create portal session' },
       { status: 500 }

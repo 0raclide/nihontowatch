@@ -1,30 +1,11 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/ban-ts-comment */
-// @ts-nocheck
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
+import { verifyAdmin } from '@/lib/admin/auth';
+import { apiUnauthorized, apiForbidden, apiServerError } from '@/lib/api/responses';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 30; // Quick timeout - we just trigger the workflow
-
-async function verifyAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { error: 'Unauthorized', status: 401 };
-  }
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single<{ role: string }>();
-
-  if (profile?.role !== 'admin') {
-    return { error: 'Forbidden', status: 403 };
-  }
-
-  return { user };
-}
 
 /**
  * Trigger the Oshi-scrapper GitHub Actions workflow
@@ -80,7 +61,7 @@ async function triggerGitHubWorkflow(options: {
     // Handle errors
     if (!response.ok) {
       const errorBody = await response.text();
-      console.error('GitHub API error:', response.status, errorBody);
+      logger.error('GitHub API error', { status: response.status, body: errorBody });
 
       if (response.status === 401) {
         return { success: false, error: 'GitHub token is invalid or expired' };
@@ -97,7 +78,7 @@ async function triggerGitHubWorkflow(options: {
 
     return { success: true };
   } catch (error) {
-    console.error('GitHub workflow trigger error:', error);
+    logger.logError('GitHub workflow trigger error', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to trigger workflow'
@@ -110,8 +91,8 @@ export async function POST(request: NextRequest) {
     const supabase = await createClient();
     const authResult = await verifyAdmin(supabase);
 
-    if ('error' in authResult) {
-      return NextResponse.json({ error: authResult.error }, { status: authResult.status });
+    if (!authResult.isAdmin) {
+      return authResult.error === 'unauthorized' ? apiUnauthorized() : apiForbidden();
     }
 
     const body = await request.json();
@@ -137,25 +118,28 @@ export async function POST(request: NextRequest) {
       const serviceClient = createServiceClient();
 
       try {
-        const { data: dealerData } = dealer
-          ? await serviceClient
-              .from('dealers')
-              .select('id')
-              .eq('name', dealer)
-              .single()
-          : { data: null };
+        let dealerId: number | null = null;
+        if (dealer) {
+          const { data: dealerData } = await serviceClient
+            .from('dealers')
+            .select('id')
+            .eq('name', dealer)
+            .single() as { data: { id: number } | null };
+          dealerId = dealerData?.id || null;
+        }
 
-        await serviceClient
-          .from('scrape_runs')
+        // Type assertion needed as scrape_runs table may not be in generated types
+        await (serviceClient
+          .from('scrape_runs') as ReturnType<typeof serviceClient.from>)
           .insert({
-            dealer_id: dealerData?.id || null,
+            dealer_id: dealerId,
             run_type: 'scrape',
             status: 'failed',
             error_message: workflowResult.error,
             urls_processed: 0,
             errors: 0,
-          });
-      } catch (e) {
+          } as Record<string, unknown>);
+      } catch {
         // Table might not exist, ignore
       }
 
@@ -185,10 +169,7 @@ export async function POST(request: NextRequest) {
       workflowUrl: `https://github.com/${process.env.GITHUB_OWNER || 'christopherhill'}/${process.env.GITHUB_REPO || 'Oshi-scrapper'}/actions`,
     });
   } catch (error) {
-    console.error('Trigger scrape error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    logger.logError('Trigger scrape error', error);
+    return apiServerError();
   }
 }

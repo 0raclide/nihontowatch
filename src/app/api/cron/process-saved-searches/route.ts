@@ -13,6 +13,7 @@ import { createServiceClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { findMatchingListings } from '@/lib/savedSearches/matcher';
 import { sendSavedSearchNotification } from '@/lib/email/sendgrid';
+import { logger } from '@/lib/logger';
 import type { SavedSearch, SavedSearchCriteria, Listing, NotificationFrequency } from '@/types';
 import type { Database } from '@/types/database';
 
@@ -32,7 +33,7 @@ function isAuthorized(request: NextRequest): boolean {
   const cronSecret = process.env.CRON_SECRET;
 
   if (!cronSecret) {
-    console.warn('CRON_SECRET not configured - allowing unauthenticated access');
+    logger.warn('CRON_SECRET not configured - allowing unauthenticated access');
     return true;
   }
 
@@ -94,7 +95,7 @@ export async function GET(request: NextRequest) {
     const savedSearches = data as SavedSearchRow[] | null;
 
     if (fetchError) {
-      console.error('Error fetching saved searches:', fetchError);
+      logger.error('Error fetching saved searches', { error: fetchError });
       return NextResponse.json({ error: fetchError.message }, { status: 500 });
     }
 
@@ -106,7 +107,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    console.log(`Processing ${savedSearches.length} saved searches for ${frequency} notifications`);
+    logger.info('Processing saved searches', { count: savedSearches.length, frequency });
 
     // Get user emails for notifications
     const userIds = [...new Set(savedSearches.map((s) => s.user_id))];
@@ -134,7 +135,7 @@ export async function GET(request: NextRequest) {
           try {
             const email = userEmails.get(savedSearch.user_id);
             if (!email) {
-              console.warn(`No email for user ${savedSearch.user_id}`);
+              logger.warn('No email for user', { userId: savedSearch.user_id });
               return;
             }
 
@@ -196,10 +197,10 @@ export async function GET(request: NextRequest) {
               } as never);
             } else {
               errors++;
-              console.error(
-                `Failed to send notification for search ${savedSearch.id}:`,
-                result.error
-              );
+              logger.error('Failed to send notification', {
+                savedSearchId: savedSearch.id,
+                error: result.error,
+              });
 
               // Record failed notification
               await supabase.from('saved_search_notifications').insert({
@@ -211,7 +212,7 @@ export async function GET(request: NextRequest) {
             }
           } catch (err) {
             errors++;
-            console.error(`Error processing saved search ${savedSearch.id}:`, err);
+            logger.error('Error processing saved search', { savedSearchId: savedSearch.id, error: err });
           }
         })
       );
@@ -225,7 +226,7 @@ export async function GET(request: NextRequest) {
       errors,
     });
   } catch (error) {
-    console.error('Saved search cron error:', error);
+    logger.logError('Saved search cron error', error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }

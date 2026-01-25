@@ -1,5 +1,6 @@
 import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -87,7 +88,7 @@ export async function POST(request: NextRequest) {
       } as never);
 
     if (logError) {
-      console.error('Error logging deletion request:', logError);
+      logger.error('Error logging deletion request', { error: logError });
       // Continue with deletion even if logging fails
     }
 
@@ -107,7 +108,7 @@ export async function POST(request: NextRequest) {
       .in('alert_id', alertsData?.map((a) => a.id) || []);
 
     if (alertHistoryError) {
-      console.error('Error deleting alert history:', alertHistoryError);
+      logger.error('Error deleting alert history', { error: alertHistoryError });
     }
 
     // 2. Delete alerts
@@ -117,7 +118,7 @@ export async function POST(request: NextRequest) {
       .eq('user_id', user.id);
 
     if (alertsError) {
-      console.error('Error deleting alerts:', alertsError);
+      logger.error('Error deleting alerts', { error: alertsError });
     }
 
     // 3. Delete saved search notifications
@@ -136,7 +137,7 @@ export async function POST(request: NextRequest) {
         .in('saved_search_id', savedSearchIds);
 
       if (notifError) {
-        console.error('Error deleting saved search notifications:', notifError);
+        logger.error('Error deleting saved search notifications', { error: notifError });
       }
     }
 
@@ -147,7 +148,7 @@ export async function POST(request: NextRequest) {
       .eq('user_id', user.id);
 
     if (savedSearchesError) {
-      console.error('Error deleting saved searches:', savedSearchesError);
+      logger.error('Error deleting saved searches', { error: savedSearchesError });
     }
 
     // 5. Delete favorites
@@ -157,7 +158,7 @@ export async function POST(request: NextRequest) {
       .eq('user_id', user.id);
 
     if (favoritesError) {
-      console.error('Error deleting favorites:', favoritesError);
+      logger.error('Error deleting favorites', { error: favoritesError });
     }
 
     // 6. Anonymize activity data (keep for analytics, remove user association)
@@ -167,7 +168,7 @@ export async function POST(request: NextRequest) {
       .eq('user_id', user.id);
 
     if (activityError) {
-      console.error('Error anonymizing activity:', activityError);
+      logger.error('Error anonymizing activity', { error: activityError });
     }
 
     // 7. Anonymize sessions
@@ -177,7 +178,7 @@ export async function POST(request: NextRequest) {
       .eq('user_id', user.id);
 
     if (sessionsError) {
-      console.error('Error anonymizing sessions:', sessionsError);
+      logger.error('Error anonymizing sessions', { error: sessionsError });
     }
 
     // 8. Delete consent history (or keep for compliance - keeping for now)
@@ -190,7 +191,7 @@ export async function POST(request: NextRequest) {
       .eq('id', user.id);
 
     if (profileError) {
-      console.error('Error deleting profile:', profileError);
+      logger.error('Error deleting profile', { error: profileError });
       // Update deletion request status to failed
       await supabase
         .from('data_deletion_requests')
@@ -210,12 +211,12 @@ export async function POST(request: NextRequest) {
       const { error: authDeleteError } = await adminClient.auth.admin.deleteUser(user.id);
 
       if (authDeleteError) {
-        console.error('Error deleting auth user:', authDeleteError);
+        logger.error('Error deleting auth user', { error: authDeleteError });
         // Profile is already deleted, so auth user is orphaned
         // Log this for manual cleanup
       }
     } catch (adminError) {
-      console.error('Admin client error:', adminError);
+      logger.error('Admin client error', { error: adminError });
       // Continue - profile is deleted, auth user may be orphaned
     }
 
@@ -235,7 +236,7 @@ export async function POST(request: NextRequest) {
       message: 'Your account has been deleted. We\'re sorry to see you go.',
     });
   } catch (error) {
-    console.error('Account deletion error:', error);
+    logger.logError('Account deletion error', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -271,7 +272,7 @@ export async function GET() {
       .limit(1);
 
     if (error) {
-      console.error('Error fetching deletion requests:', error);
+      logger.error('Error fetching deletion requests', { error });
       return NextResponse.json({ error: 'Failed to check status' }, { status: 500 });
     }
 
@@ -280,7 +281,7 @@ export async function GET() {
       request: requests?.[0] || null,
     });
   } catch (error) {
-    console.error('Deletion status check error:', error);
+    logger.logError('Deletion status check error', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

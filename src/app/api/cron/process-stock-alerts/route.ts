@@ -8,6 +8,7 @@
 import { createServiceClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { sendBackInStockNotification } from '@/lib/email/sendgrid';
+import { logger } from '@/lib/logger';
 import type { Listing } from '@/types';
 import type { Database } from '@/types/database';
 
@@ -30,7 +31,7 @@ function isAuthorized(request: NextRequest): boolean {
   const cronSecret = process.env.CRON_SECRET;
 
   if (!cronSecret) {
-    console.warn('CRON_SECRET not configured - allowing unauthenticated access');
+    logger.warn('CRON_SECRET not configured - allowing unauthenticated access');
     return true;
   }
 
@@ -77,7 +78,7 @@ export async function GET(request: NextRequest) {
     const supabase = createServiceClient();
     const lookbackWindow = getLookbackWindow();
 
-    console.log(`Processing back-in-stock alerts since ${lookbackWindow.toISOString()}`);
+    logger.info('Processing back-in-stock alerts', { since: lookbackWindow.toISOString() });
 
     // Step 1: Find listings that recently became available
     // We check for listings that:
@@ -94,7 +95,7 @@ export async function GET(request: NextRequest) {
       .gte('detected_at', lookbackWindow.toISOString());
 
     if (statusError) {
-      console.error('Error fetching status changes:', statusError);
+      logger.error('Error fetching status changes', { error: statusError });
       return NextResponse.json({ error: statusError.message }, { status: 500 });
     }
 
@@ -108,7 +109,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    console.log(`Found ${statusChangesTyped.length} status changes`);
+    logger.info('Found status changes', { count: statusChangesTyped.length });
 
     // Get unique listing IDs
     const listingIds = [...new Set(statusChangesTyped.map((sc) => sc.listing_id))];
@@ -134,7 +135,7 @@ export async function GET(request: NextRequest) {
       .or('is_available.eq.true,status.eq.available');
 
     if (listingsError) {
-      console.error('Error fetching listings:', listingsError);
+      logger.error('Error fetching listings', { error: listingsError });
       return NextResponse.json({ error: listingsError.message }, { status: 500 });
     }
 
@@ -149,7 +150,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    console.log(`${availableListingsTyped.length} listings are now available`);
+    logger.info('Listings now available', { count: availableListingsTyped.length });
 
     const availableListingIds = availableListingsTyped.map((l) => l.id);
 
@@ -164,7 +165,7 @@ export async function GET(request: NextRequest) {
     const alerts = alertsData as AlertRow[] | null;
 
     if (alertsError) {
-      console.error('Error fetching alerts:', alertsError);
+      logger.error('Error fetching alerts', { error: alertsError });
       return NextResponse.json({ error: alertsError.message }, { status: 500 });
     }
 
@@ -178,7 +179,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    console.log(`Found ${alerts.length} active back_in_stock alerts to process`);
+    logger.info('Found active back_in_stock alerts', { count: alerts.length });
 
     // Filter out alerts within cooldown period
     const eligibleAlerts = alerts.filter((alert) => !isWithinCooldown(alert.last_triggered_at));
@@ -192,7 +193,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    console.log(`${eligibleAlerts.length} alerts eligible after cooldown filter`);
+    logger.info('Alerts eligible after cooldown', { count: eligibleAlerts.length });
 
     // Step 4: Get user emails
     const userIds = [...new Set(eligibleAlerts.map((a) => a.user_id))];
@@ -226,13 +227,13 @@ export async function GET(request: NextRequest) {
           try {
             const email = userEmails.get(alert.user_id);
             if (!email) {
-              console.warn(`No email for user ${alert.user_id}`);
+              logger.warn('No email for user', { userId: alert.user_id });
               return;
             }
 
             const listing = alert.listing_id ? listingsMap.get(alert.listing_id) : null;
             if (!listing) {
-              console.warn(`No listing found for alert ${alert.id}`);
+              logger.warn('No listing found for alert', { alertId: alert.id });
               return;
             }
 
@@ -260,10 +261,10 @@ export async function GET(request: NextRequest) {
                 delivery_method: 'email',
               } as never);
 
-              console.log(`Sent back-in-stock notification for alert ${alert.id} to ${email}`);
+              logger.info('Sent back-in-stock notification', { alertId: alert.id, email });
             } else {
               errors++;
-              console.error(`Failed to send notification for alert ${alert.id}:`, result.error);
+              logger.error('Failed to send notification', { alertId: alert.id, error: result.error });
 
               // Record failed notification
               await supabase.from('alert_history').insert({
@@ -276,7 +277,7 @@ export async function GET(request: NextRequest) {
             }
           } catch (err) {
             errors++;
-            console.error(`Error processing alert ${alert.id}:`, err);
+            logger.error('Error processing alert', { alertId: alert.id, error: err });
           }
         })
       );
@@ -293,7 +294,7 @@ export async function GET(request: NextRequest) {
       errors,
     });
   } catch (error) {
-    console.error('Back-in-stock alerts cron error:', error);
+    logger.logError('Back-in-stock alerts cron error', error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }

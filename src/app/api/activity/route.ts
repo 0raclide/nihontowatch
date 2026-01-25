@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 import type {
   ActivityBatchPayload,
   ActivityBatchResponse,
@@ -151,7 +152,7 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       // Log error but don't fail the request - activity tracking is best-effort
-      console.error('Failed to insert activity events:', error);
+      logger.error('Failed to insert activity events', { error });
 
       // Check if table doesn't exist
       if (error.code === '42P01') {
@@ -169,7 +170,7 @@ export async function POST(request: NextRequest) {
       eventsReceived: validEvents.length,
     } as ActivityBatchResponse);
   } catch (error) {
-    console.error('Activity batch API error:', error);
+    logger.logError('Activity batch API error', error);
     return NextResponse.json(
       { success: false, eventsReceived: 0, error: 'Internal server error' },
       { status: 500 }

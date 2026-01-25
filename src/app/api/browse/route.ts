@@ -5,6 +5,7 @@ import { parseNumericFilters } from '@/lib/search/numericFilters';
 import { parseSemanticQuery } from '@/lib/search/semanticQueryParser';
 import { CACHE, PAGINATION, LISTING_FILTERS } from '@/lib/constants';
 import { getUserSubscription, getDataDelayCutoff } from '@/lib/subscription/server';
+import { logger } from '@/lib/logger';
 
 // Force dynamic rendering - needed for subscription-based data filtering
 // Without this, Vercel edge might cache responses before auth check runs
@@ -476,7 +477,7 @@ export async function GET(request: NextRequest) {
     const { data: listings, error, count } = await query;
 
     if (error) {
-      console.error('Browse query error:', error);
+      logger.error('Browse query error', { error });
       // Handle range/pagination errors gracefully
       const errorMsg = error.message || '';
       if (errorMsg.includes('range') || errorMsg.includes('{"') || error.code === 'PGRST103') {
@@ -637,7 +638,7 @@ export async function GET(request: NextRequest) {
 
     return response;
   } catch (error) {
-    console.error('Browse API error:', error);
+    logger.logError('Browse API error', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

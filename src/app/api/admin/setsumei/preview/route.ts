@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-// @ts-nocheck - yuhinkai_enrichments table not in generated types
 /**
  * Preview Setsumei Connection API
  *
@@ -9,7 +7,7 @@
  * for preview before creating a manual connection.
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { parseYuhinkaiUrl, buildFullYuhinkaiUrl, getCollectionDisplayName } from '@/lib/yuhinkai/urlParser';
 import {
@@ -22,32 +20,19 @@ import {
   getCertTypeFromCollection,
   isOshiV2Configured,
 } from '@/lib/yuhinkai/oshiV2Client';
+import { logger } from '@/lib/logger';
+import { verifyAdmin } from '@/lib/admin/auth';
+import {
+  apiSuccess,
+  apiBadRequest,
+  apiUnauthorized,
+  apiForbidden,
+  apiNotFound,
+  apiServerError,
+  apiServiceUnavailable,
+} from '@/lib/api/responses';
 
 export const dynamic = 'force-dynamic';
-
-// =============================================================================
-// ADMIN VERIFICATION
-// =============================================================================
-
-async function verifyAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { error: 'Unauthorized', status: 401 };
-  }
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single<{ role: string }>();
-
-  if (profile?.role !== 'admin') {
-    return { error: 'Forbidden', status: 403 };
-  }
-
-  return { user };
-}
 
 // =============================================================================
 // GET HANDLER
@@ -57,18 +42,15 @@ export async function GET(request: NextRequest) {
   try {
     // Check if oshi-v2 is configured
     if (!isOshiV2Configured()) {
-      return NextResponse.json(
-        { error: 'Yuhinkai catalog integration is not configured' },
-        { status: 503 }
-      );
+      return apiServiceUnavailable('Yuhinkai catalog integration is not configured');
     }
 
     // Verify admin authentication
     const supabase = await createClient();
     const authResult = await verifyAdmin(supabase);
 
-    if ('error' in authResult) {
-      return NextResponse.json({ error: authResult.error }, { status: authResult.status });
+    if (!authResult.isAdmin) {
+      return authResult.error === 'unauthorized' ? apiUnauthorized() : apiForbidden();
     }
 
     // Get query parameters
@@ -77,34 +59,22 @@ export async function GET(request: NextRequest) {
     const listingIdStr = searchParams.get('listing_id');
 
     if (!yuhinkaiUrl) {
-      return NextResponse.json(
-        { error: 'Missing required parameter: url' },
-        { status: 400 }
-      );
+      return apiBadRequest('Missing required parameter: url');
     }
 
     if (!listingIdStr) {
-      return NextResponse.json(
-        { error: 'Missing required parameter: listing_id' },
-        { status: 400 }
-      );
+      return apiBadRequest('Missing required parameter: listing_id');
     }
 
     const listingId = parseInt(listingIdStr, 10);
     if (isNaN(listingId) || listingId <= 0) {
-      return NextResponse.json(
-        { error: 'Invalid listing_id: must be a positive integer' },
-        { status: 400 }
-      );
+      return apiBadRequest('Invalid listing_id: must be a positive integer');
     }
 
     // Parse the Yuhinkai URL
     const parseResult = parseYuhinkaiUrl(yuhinkaiUrl);
     if (!parseResult.success) {
-      return NextResponse.json(
-        { error: parseResult.error },
-        { status: 400 }
-      );
+      return apiBadRequest(parseResult.error);
     }
 
     const { collection, volume, itemNumber } = parseResult.data;
@@ -113,14 +83,42 @@ export async function GET(request: NextRequest) {
     const catalogRecord = await fetchCatalogRecord(collection, volume, itemNumber);
 
     if (!catalogRecord) {
-      return NextResponse.json(
-        {
-          error: `Catalog record not found: ${collection} vol.${volume} #${itemNumber}`,
-          parsed: parseResult.data,
-        },
-        { status: 404 }
-      );
+      return apiNotFound(`Catalog record ${collection} vol.${volume} #${itemNumber}`);
     }
+
+    // Type definitions for query results
+    type ListingWithDealer = {
+      id: number;
+      title: string | null;
+      title_en: string | null;
+      description: string | null;
+      description_en: string | null;
+      item_type: string | null;
+      item_category: string | null;
+      smith: string | null;
+      school: string | null;
+      tosogu_maker: string | null;
+      tosogu_school: string | null;
+      cert_type: string | null;
+      cert_session: string | null;
+      price_value: number | null;
+      price_currency: string | null;
+      images: string[] | null;
+      dealers: { id: number; name: string; domain: string } | null;
+    };
+
+    type ExistingEnrichment = {
+      id: number;
+      yuhinkai_uuid: string | null;
+      yuhinkai_collection: string | null;
+      yuhinkai_volume: number | null;
+      yuhinkai_item_number: number | null;
+      match_confidence: string | null;
+      verification_status: string | null;
+      connection_source: string | null;
+      verified_by: string | null;
+      verified_at: string | null;
+    };
 
     // Fetch listing from nihontowatch
     const { data: listing, error: listingError } = await supabase
@@ -149,18 +147,17 @@ export async function GET(request: NextRequest) {
         )
       `)
       .eq('id', listingId)
-      .single();
+      .single() as { data: ListingWithDealer | null; error: { message: string } | null };
 
     if (listingError || !listing) {
-      return NextResponse.json(
-        { error: `Listing not found: ${listingId}` },
-        { status: 404 }
-      );
+      return apiNotFound(`Listing ${listingId}`);
     }
 
     // Check for existing enrichment
-    const { data: existingEnrichment } = await supabase
-      .from('yuhinkai_enrichments')
+    // Type assertion needed - yuhinkai_enrichments table not in generated types
+    type YuhinkaiEnrichmentTable = ReturnType<typeof supabase.from>;
+    const { data: existingEnrichment } = await (supabase
+      .from('yuhinkai_enrichments') as unknown as YuhinkaiEnrichmentTable)
       .select(`
         id,
         yuhinkai_uuid,
@@ -174,7 +171,7 @@ export async function GET(request: NextRequest) {
         verified_at
       `)
       .eq('listing_id', listingId)
-      .single();
+      .single() as { data: ExistingEnrichment | null };
 
     // Extract enrichment data from catalog record
     const enrichmentPreview = {
@@ -197,7 +194,7 @@ export async function GET(request: NextRequest) {
       item_category: extractItemCategory(catalogRecord.metadata),
     };
 
-    return NextResponse.json({
+    return apiSuccess({
       listing: {
         id: listing.id,
         title: listing.title,
@@ -220,10 +217,7 @@ export async function GET(request: NextRequest) {
       willOverwrite: !!existingEnrichment,
     });
   } catch (error) {
-    console.error('[setsumei/preview] Error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    logger.logError('Setsumei preview error', error);
+    return apiServerError();
   }
 }

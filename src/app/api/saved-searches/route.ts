@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserSubscription } from '@/lib/subscription/server';
 import { canAccessFeature } from '@/types/subscription';
+import { logger } from '@/lib/logger';
 import type {
   CreateSavedSearchInput,
   UpdateSavedSearchInput,
@@ -93,7 +94,7 @@ export async function GET(request: NextRequest) {
     const { data: savedSearches, error } = await query;
 
     if (error) {
-      console.error('Error fetching saved searches:', error);
+      logger.error('Error fetching saved searches', { error });
       return NextResponse.json(
         { error: 'Failed to fetch saved searches' },
         { status: 500 }
@@ -102,7 +103,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ savedSearches: savedSearches || [] });
   } catch (error) {
-    console.error('Saved searches API error:', error);
+    logger.logError('Saved searches API error', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -179,7 +180,7 @@ export async function POST(request: NextRequest) {
       .eq('user_id', user.id);
 
     if (countError) {
-      console.error('Error counting saved searches:', countError);
+      logger.error('Error counting saved searches', { error: countError });
     } else if (count && count >= 20) {
       return NextResponse.json(
         { error: 'Maximum of 20 saved searches allowed' },
@@ -202,7 +203,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
-      console.error('Error creating saved search:', error);
+      logger.error('Error creating saved search', { error });
       return NextResponse.json(
         { error: 'Failed to create saved search' },
         { status: 500 }
@@ -211,7 +212,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ savedSearch }, { status: 201 });
   } catch (error) {
-    console.error('Create saved search error:', error);
+    logger.logError('Create saved search error', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -297,7 +298,7 @@ export async function PATCH(request: NextRequest) {
       .single();
 
     if (error) {
-      console.error('Error updating saved search:', error);
+      logger.error('Error updating saved search', { error });
       return NextResponse.json(
         { error: 'Failed to update saved search' },
         { status: 500 }
@@ -306,7 +307,7 @@ export async function PATCH(request: NextRequest) {
 
     return NextResponse.json({ savedSearch });
   } catch (error) {
-    console.error('Update saved search error:', error);
+    logger.logError('Update saved search error', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -368,7 +369,7 @@ export async function DELETE(request: NextRequest) {
       .eq('id', searchId);
 
     if (error) {
-      console.error('Error deleting saved search:', error);
+      logger.error('Error deleting saved search', { error });
       return NextResponse.json(
         { error: 'Failed to delete saved search' },
         { status: 500 }
@@ -377,7 +378,7 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Delete saved search error:', error);
+    logger.logError('Delete saved search error', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

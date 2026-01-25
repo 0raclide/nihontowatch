@@ -10,6 +10,7 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { getUserSubscription, getDataDelayCutoff } from '@/lib/subscription/server';
 import { NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -140,7 +141,7 @@ export async function GET() {
       }
     });
   } catch (error) {
-    console.error('Debug endpoint error:', error);
+    logger.logError('Debug endpoint error', error);
     return NextResponse.json({ error: String(error) }, { status: 500 });
   }
 }

@@ -1,5 +1,6 @@
 import { createServiceClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 import type {
   CreateSessionPayload,
   EndSessionPayload,
@@ -99,7 +100,7 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       // Log error but don't fail - session tracking is best-effort
-      console.error('Failed to create session:', error);
+      logger.error('Failed to create session', { error, sessionId });
 
       // Check if table doesn't exist
       if (error.code === '42P01') {
@@ -125,7 +126,7 @@ export async function POST(request: NextRequest) {
       sessionId,
     });
   } catch (error) {
-    console.error('Session create API error:', error);
+    logger.logError('Session create API error', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }
@@ -188,7 +189,7 @@ export async function PATCH(request: NextRequest) {
 
     if (error) {
       // Log error but don't fail - session tracking is best-effort
-      console.error('Failed to end session:', error);
+      logger.error('Failed to end session', { error, sessionId });
 
       // Check if table doesn't exist
       if (error.code === '42P01') {
@@ -205,7 +206,7 @@ export async function PATCH(request: NextRequest) {
       sessionId,
     });
   } catch (error) {
-    console.error('Session end API error:', error);
+    logger.logError('Session end API error', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }

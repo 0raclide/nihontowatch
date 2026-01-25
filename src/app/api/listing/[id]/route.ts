@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { CACHE } from '@/lib/constants';
+import { logger } from '@/lib/logger';
 
 // Disable ISR caching - use HTTP Cache-Control instead
 // This allows ?nocache=1 to properly bypass all caching layers for debugging
@@ -195,7 +196,7 @@ export async function GET(
       .single();
 
     if (error || !listing) {
-      console.error('Listing fetch error:', error);
+      logger.error('Listing fetch error', { error, listingId });
       return NextResponse.json(
         { error: 'Listing not found' },
         { status: 404 }
@@ -250,7 +251,7 @@ export async function GET(
 
     return response;
   } catch (error) {
-    console.error('Listing API error:', error);
+    logger.logError('Listing API error', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

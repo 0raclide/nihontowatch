@@ -1,37 +1,55 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/ban-ts-comment */
-// @ts-nocheck
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
+import { verifyAdmin } from '@/lib/admin/auth';
+import {
+  apiUnauthorized,
+  apiForbidden,
+  apiServerError,
+} from '@/lib/api/responses';
 
 export const dynamic = 'force-dynamic';
 
-async function verifyAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
-  const { data: { user } } = await supabase.auth.getUser();
+// Type definitions for query results
+type FavoriteWithListing = {
+  listing_id: number;
+  listings: { id: number; title: string | null } | null;
+};
 
-  if (!user) {
-    return { error: 'Unauthorized', status: 401 };
-  }
+type SessionData = {
+  total_duration_ms: number | null;
+  page_views: number | null;
+};
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single<{ role: string }>();
+type SearchEventData = {
+  event_data: { query?: string } | null;
+};
 
-  if (profile?.role !== 'admin') {
-    return { error: 'Forbidden', status: 403 };
-  }
+type AlertRecord = {
+  id: number | string;
+  user_id: string;
+  alert_type: string | null;
+  listing_id: number | null;
+  target_price: number | null;
+  search_criteria: Record<string, unknown> | null;
+  is_active: boolean | null;
+  last_triggered_at: string | null;
+  created_at: string;
+};
 
-  return { user };
-}
+type AlertHistoryRecord = {
+  alert_id: number | string;
+  triggered_at: string;
+  [key: string]: unknown;
+};
 
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient();
     const authResult = await verifyAdmin(supabase);
 
-    if ('error' in authResult) {
-      return NextResponse.json({ error: authResult.error }, { status: authResult.status });
+    if (!authResult.isAdmin) {
+      return authResult.error === 'unauthorized' ? apiUnauthorized() : apiForbidden();
     }
 
     const searchParams = request.nextUrl.searchParams;
@@ -48,6 +66,9 @@ export async function GET(request: NextRequest) {
     if (section === 'alerts') {
       return await getAlertsData(supabase, searchParams);
     }
+
+    // Type assertion for user_favorites table
+    type UserFavoritesTable = ReturnType<typeof supabase.from>;
 
     // Get basic dashboard stats
     const [
@@ -67,7 +88,8 @@ export async function GET(request: NextRequest) {
       // Total listings
       supabase.from('listings').select('id', { count: 'exact', head: true }),
       // Total favorites
-      supabase.from('user_favorites').select('id', { count: 'exact', head: true }),
+      (supabase.from('user_favorites') as unknown as UserFavoritesTable)
+        .select('id', { count: 'exact', head: true }) as Promise<{ count: number | null }>,
       // Recent signups
       supabase
         .from('profiles')
@@ -77,14 +99,13 @@ export async function GET(request: NextRequest) {
     ]);
 
     // Get popular listings (most favorited)
-    type FavoriteWithListing = { listing_id: number; listings: { id: number; title: string } | null };
-    const { data: popularListings, error: popularError } = await supabase
-      .from('user_favorites')
+    const { data: popularListings, error: popularError } = await (supabase
+      .from('user_favorites') as unknown as UserFavoritesTable)
       .select('listing_id, listings(id, title)')
-      .limit(1000) as { data: FavoriteWithListing[] | null; error: unknown };
+      .limit(1000) as { data: FavoriteWithListing[] | null; error: { message: string } | null };
 
     if (popularError) {
-      console.error('Error fetching popular listings:', popularError);
+      logger.error('Error fetching popular listings', { error: popularError.message });
     }
 
     // Count favorites per listing
@@ -127,20 +148,21 @@ export async function GET(request: NextRequest) {
       // (RLS policies make anonymous events invisible to regular queries)
       const serviceSupabase = createServiceClient();
 
+      // Type assertions for tables that may not be in generated types
+      type ServiceTable = ReturnType<typeof serviceSupabase.from>;
+
       const [sessionsResult, searchTermsResult, alertsResult] = await Promise.all([
         // Session stats (if user_sessions table exists)
-        serviceSupabase
-          .from('user_sessions')
+        (serviceSupabase.from('user_sessions') as unknown as ServiceTable)
           .select('total_duration_ms, page_views')
           .gte('started_at', startDate.toISOString())
-          .limit(1000),
+          .limit(1000) as Promise<{ data: SessionData[] | null; error: unknown }>,
         // Search terms from activity_events
-        serviceSupabase
-          .from('activity_events')
+        (serviceSupabase.from('activity_events') as unknown as ServiceTable)
           .select('event_data')
           .eq('event_type', 'search')
           .gte('created_at', startDate.toISOString())
-          .limit(1000),
+          .limit(1000) as Promise<{ data: SearchEventData[] | null; error: unknown }>,
         // Alerts count
         supabase.from('alerts').select('id', { count: 'exact', head: true }),
       ]);
@@ -152,7 +174,7 @@ export async function GET(request: NextRequest) {
 
       if (sessionsResult.data) {
         totalSessions = sessionsResult.data.length;
-        for (const session of sessionsResult.data as any[]) {
+        for (const session of sessionsResult.data) {
           totalDuration += (session.total_duration_ms || 0) / 1000;
           totalPageViews += session.page_views || 0;
         }
@@ -161,8 +183,8 @@ export async function GET(request: NextRequest) {
       // Aggregate search terms
       const searchCounts: Record<string, number> = {};
       if (searchTermsResult.data) {
-        for (const event of searchTermsResult.data as any[]) {
-          const query = (event.event_data as Record<string, unknown>)?.query as string;
+        for (const event of searchTermsResult.data) {
+          const query = event.event_data?.query;
           if (query) {
             const normalized = query.toLowerCase().trim();
             searchCounts[normalized] = (searchCounts[normalized] || 0) + 1;
@@ -194,11 +216,8 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(basicStats);
   } catch (error) {
-    console.error('Admin stats error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    logger.logError('Admin stats error', error);
+    return apiServerError();
   }
 }
 
@@ -212,10 +231,17 @@ async function getAlertsData(
   const statusFilter = searchParams.get('status');
   const offset = (page - 1) * limit;
 
+  // Type assertion for alerts table
+  type AlertsTable = ReturnType<typeof supabase.from>;
+  type AlertQueryResult = {
+    data: AlertRecord[] | null;
+    count: number | null;
+    error: { code?: string; message?: string } | null;
+  };
+
   // Try the newer 'alerts' table first, fall back to 'user_alerts' if it doesn't exist
   let tableName: 'alerts' | 'user_alerts' = 'alerts';
-  let query = supabase
-    .from(tableName)
+  let query = (supabase.from(tableName) as unknown as AlertsTable)
     .select(`
       id,
       user_id,
@@ -240,13 +266,12 @@ async function getAlertsData(
 
   let { data: alerts, count, error } = await query
     .order('created_at', { ascending: false })
-    .range(offset, offset + limit - 1);
+    .range(offset, offset + limit - 1) as AlertQueryResult;
 
   // If 'alerts' table doesn't exist, try 'user_alerts'
   if (error?.code === '42P01' || error?.message?.includes('does not exist')) {
     tableName = 'user_alerts';
-    query = supabase
-      .from(tableName)
+    query = (supabase.from(tableName) as unknown as AlertsTable)
       .select(`
         id,
         user_id,
@@ -271,7 +296,7 @@ async function getAlertsData(
 
     const result = await query
       .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1);
+      .range(offset, offset + limit - 1) as AlertQueryResult;
 
     alerts = result.data;
     count = result.count;
@@ -279,13 +304,13 @@ async function getAlertsData(
   }
 
   if (error) {
-    console.error('Alerts query error:', error);
+    logger.error('Alerts query error', { error: error.message });
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
   // Fetch user profiles separately to avoid join issues
   const userIds = [...new Set(alerts?.map(a => a.user_id).filter(Boolean) || [])];
-  const listingIds = [...new Set(alerts?.map(a => a.listing_id).filter(Boolean) || [])];
+  const listingIds = [...new Set(alerts?.map(a => a.listing_id).filter((id): id is number => id !== null) || [])];
 
   // Fetch profiles
   const profilesMap: Record<string, { email: string; display_name: string | null }> = {};
@@ -293,7 +318,7 @@ async function getAlertsData(
     const { data: profiles } = await supabase
       .from('profiles')
       .select('id, email, display_name')
-      .in('id', userIds);
+      .in('id', userIds) as { data: { id: string; email: string; display_name: string | null }[] | null };
 
     if (profiles) {
       for (const p of profiles) {
@@ -308,7 +333,7 @@ async function getAlertsData(
     const { data: listings } = await supabase
       .from('listings')
       .select('id, title, price_value')
-      .in('id', listingIds);
+      .in('id', listingIds) as { data: { id: number; title: string | null; price_value: number | null }[] | null };
 
     if (listings) {
       for (const l of listings) {
@@ -318,15 +343,16 @@ async function getAlertsData(
   }
 
   // Get alert history - skip if IDs are integers but table expects UUIDs
-  const historyByAlert: Record<string | number, any[]> = {};
+  const historyByAlert: Record<string | number, AlertHistoryRecord[]> = {};
   try {
     const alertIds = alerts?.map(a => a.id) || [];
     if (alertIds.length > 0) {
-      const { data: historyData, error: historyError } = await supabase
-        .from('alert_history')
+      type AlertHistoryTable = ReturnType<typeof supabase.from>;
+      const { data: historyData, error: historyError } = await (supabase
+        .from('alert_history') as unknown as AlertHistoryTable)
         .select('*')
         .in('alert_id', alertIds)
-        .order('triggered_at', { ascending: false });
+        .order('triggered_at', { ascending: false }) as { data: AlertHistoryRecord[] | null; error: unknown };
 
       if (!historyError && historyData) {
         for (const record of historyData) {
@@ -340,7 +366,7 @@ async function getAlertsData(
     }
   } catch (historyErr) {
     // History fetch failed (likely due to type mismatch), continue without it
-    console.warn('Could not fetch alert history:', historyErr);
+    logger.warn('Could not fetch alert history', { error: historyErr });
   }
 
   // Format response

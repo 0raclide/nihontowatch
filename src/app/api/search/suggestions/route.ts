@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { normalizeSearchText } from '@/lib/search';
 import { LISTING_FILTERS } from '@/lib/constants';
+import { logger } from '@/lib/logger';
 import type { SearchSuggestion, SearchSuggestionsResponse } from '@/lib/search/types';
 
 // Enable edge caching for search suggestions
@@ -100,7 +101,7 @@ export async function GET(request: NextRequest) {
       .limit(limit);
 
     if (error) {
-      console.error('Search suggestions error:', error);
+      logger.error('Search suggestions error', { error, query });
       return NextResponse.json({
         suggestions: [],
         total: 0,
@@ -139,7 +140,7 @@ export async function GET(request: NextRequest) {
 
     return response;
   } catch (error) {
-    console.error('Search suggestions API error:', error);
+    logger.logError('Search suggestions API error', error);
     return NextResponse.json(
       {
         suggestions: [],

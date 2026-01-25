@@ -9,6 +9,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 import type { AnalyticsPeriod, AnalyticsGranularity, AnalyticsAPIResponse } from '@/types/analytics';
 import type { Currency } from '@/types/index';
 
@@ -414,7 +415,7 @@ export async function fetchAllRows<T>(
     const { data, error } = await query;
 
     if (error) {
-      console.error(`Pagination error at offset ${offset}:`, error);
+      logger.error('Pagination error', { offset, error });
       break;
     }
 

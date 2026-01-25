@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-// @ts-nocheck - yuhinkai_enrichments table not in generated types
 /**
  * Disconnect Setsumei API
  *
@@ -10,8 +8,18 @@
  * and a Yuhinkai catalog record.
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
+import { verifyAdmin } from '@/lib/admin/auth';
+import {
+  apiSuccess,
+  apiBadRequest,
+  apiUnauthorized,
+  apiForbidden,
+  apiNotFound,
+  apiServerError,
+} from '@/lib/api/responses';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,30 +32,6 @@ interface DisconnectRequestBody {
 }
 
 // =============================================================================
-// ADMIN VERIFICATION
-// =============================================================================
-
-async function verifyAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { error: 'Unauthorized', status: 401 };
-  }
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single<{ role: string }>();
-
-  if (profile?.role !== 'admin') {
-    return { error: 'Forbidden', status: 403 };
-  }
-
-  return { user };
-}
-
-// =============================================================================
 // DELETE HANDLER
 // =============================================================================
 
@@ -57,8 +41,8 @@ export async function DELETE(request: NextRequest) {
     const supabase = await createClient();
     const authResult = await verifyAdmin(supabase);
 
-    if ('error' in authResult) {
-      return NextResponse.json({ error: authResult.error }, { status: authResult.status });
+    if (!authResult.isAdmin) {
+      return authResult.error === 'unauthorized' ? apiUnauthorized() : apiForbidden();
     }
 
     const { user } = authResult;
@@ -68,58 +52,64 @@ export async function DELETE(request: NextRequest) {
     try {
       body = await request.json();
     } catch {
-      return NextResponse.json(
-        { error: 'Invalid JSON body' },
-        { status: 400 }
-      );
+      return apiBadRequest('Invalid JSON body');
     }
 
     const { listing_id } = body;
 
     // Validate request body
     if (!listing_id || typeof listing_id !== 'number' || listing_id <= 0) {
-      return NextResponse.json(
-        { error: 'Invalid listing_id: must be a positive integer' },
-        { status: 400 }
-      );
+      return apiBadRequest('Invalid listing_id: must be a positive integer');
     }
 
     // Use service client for deletion (RLS requires service_role)
     const serviceClient = createServiceClient();
 
+    // Type assertion needed - yuhinkai_enrichments table not in generated types
+    type YuhinkaiEnrichmentTable = ReturnType<typeof serviceClient.from>;
+    type EnrichmentSelectResult = {
+      data: {
+        id: number;
+        yuhinkai_collection: string | null;
+        yuhinkai_volume: number | null;
+        yuhinkai_item_number: number | null;
+        connection_source: string | null;
+      } | null;
+      error: { message: string } | null;
+    };
+
     // Check for existing enrichment
-    const { data: existingEnrichment, error: fetchError } = await serviceClient
-      .from('yuhinkai_enrichments')
+    const { data: existingEnrichment, error: fetchError } = await (serviceClient
+      .from('yuhinkai_enrichments') as unknown as YuhinkaiEnrichmentTable)
       .select('id, yuhinkai_collection, yuhinkai_volume, yuhinkai_item_number, connection_source')
       .eq('listing_id', listing_id)
-      .single();
+      .single() as EnrichmentSelectResult;
 
     if (fetchError || !existingEnrichment) {
-      return NextResponse.json(
-        { error: `No enrichment found for listing ${listing_id}` },
-        { status: 404 }
-      );
+      return apiNotFound(`Enrichment for listing ${listing_id}`);
     }
 
     // Delete the enrichment
-    const { error: deleteError } = await serviceClient
-      .from('yuhinkai_enrichments')
+    const { error: deleteError } = await (serviceClient
+      .from('yuhinkai_enrichments') as unknown as YuhinkaiEnrichmentTable)
       .delete()
-      .eq('listing_id', listing_id);
+      .eq('listing_id', listing_id) as { error: { message: string } | null };
 
     if (deleteError) {
-      console.error('[setsumei/disconnect] Delete error:', deleteError);
-      return NextResponse.json(
-        { error: `Failed to delete enrichment: ${deleteError.message}` },
-        { status: 500 }
-      );
+      logger.error('Setsumei enrichment delete failed', { listing_id, error: deleteError.message });
+      return apiServerError(`Failed to delete enrichment: ${deleteError.message}`);
     }
 
-    console.log(
-      `[setsumei/disconnect] Enrichment removed: listing ${listing_id} (was ${existingEnrichment.yuhinkai_collection} vol.${existingEnrichment.yuhinkai_volume} #${existingEnrichment.yuhinkai_item_number}, source: ${existingEnrichment.connection_source}) by ${user.id}`
-    );
+    logger.info('Setsumei enrichment removed', {
+      listing_id,
+      collection: existingEnrichment.yuhinkai_collection,
+      volume: existingEnrichment.yuhinkai_volume,
+      itemNumber: existingEnrichment.yuhinkai_item_number,
+      source: existingEnrichment.connection_source,
+      userId: user.id,
+    });
 
-    return NextResponse.json({
+    return apiSuccess({
       success: true,
       deleted: {
         listing_id,
@@ -130,10 +120,7 @@ export async function DELETE(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('[setsumei/disconnect] Error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    logger.logError('Setsumei disconnect error', error);
+    return apiServerError();
   }
 }

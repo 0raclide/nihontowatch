@@ -11,6 +11,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 import {
   validateInquiryInput,
   formatValidationErrors,
@@ -144,7 +145,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     // Verify dealer data was fetched
     if (!typedListing.dealers) {
-      console.error('[Inquiry API] Dealer data not found for listing:', input.listingId);
+      logger.error('Dealer data not found for listing', { listingId: input.listingId });
       return NextResponse.json(
         { error: 'Dealer information not available' },
         { status: 500 }
@@ -156,7 +157,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // ---------------------------------------------------------------------
     const apiKey = process.env.OPENROUTER_API_KEY;
     if (!apiKey) {
-      console.error('[Inquiry API] OPENROUTER_API_KEY not configured');
+      logger.error('OPENROUTER_API_KEY not configured');
       return NextResponse.json(
         { error: 'Email generation service unavailable (API key not configured)' },
         { status: 500 }
@@ -192,10 +193,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     return NextResponse.json(response);
   } catch (error) {
+    logger.logError('Inquiry API error', error);
     const errorMessage = error instanceof Error ? error.message : String(error);
-    const errorStack = error instanceof Error ? error.stack : undefined;
-    console.error('[Inquiry API] Error:', errorMessage);
-    if (errorStack) console.error('[Inquiry API] Stack:', errorStack);
     return NextResponse.json(
       { error: `Failed to generate inquiry email: ${errorMessage}` },
       { status: 500 }
@@ -305,7 +304,7 @@ async function generateEmailWithAI(
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error('[Inquiry API] OpenRouter error:', response.status, errorText);
+    logger.error('OpenRouter error', { status: response.status, errorText });
     throw new Error(`AI service error: ${response.status}`);
   }
 
@@ -313,7 +312,7 @@ async function generateEmailWithAI(
   const content = data.choices?.[0]?.message?.content;
 
   if (!content) {
-    console.error('[Inquiry API] Empty AI response');
+    logger.error('Empty AI response');
     throw new Error('Empty response from AI service');
   }
 
@@ -381,8 +380,7 @@ function fixJsonNewlines(jsonStr: string): string {
  * Parse the JSON email response from the AI
  */
 function parseEmailJson(content: string): GeneratedEmailJson {
-  console.log('[Inquiry API] Raw AI response length:', content.length);
-  console.log('[Inquiry API] Raw AI response preview:', content.substring(0, 1000));
+  logger.debug('Raw AI response', { length: content.length, preview: content.substring(0, 500) });
 
   // Step 1: Strip markdown code fences if present (multiple patterns)
   let cleaned = content;
@@ -398,7 +396,7 @@ function parseEmailJson(content: string): GeneratedEmailJson {
     const match = content.match(pattern);
     if (match && match[1].includes('{')) {
       cleaned = match[1].trim();
-      console.log('[Inquiry API] Extracted from code block using pattern:', pattern.source);
+      logger.debug('Extracted from code block', { pattern: pattern.source });
       break;
     }
   }
@@ -409,7 +407,7 @@ function parseEmailJson(content: string): GeneratedEmailJson {
   const lastBrace = cleaned.lastIndexOf('}');
 
   if (firstBrace === -1 || lastBrace === -1 || lastBrace <= firstBrace) {
-    console.error('[Inquiry API] No JSON braces found in response:', cleaned.substring(0, 500));
+    logger.error('No JSON braces found in response', { preview: cleaned.substring(0, 500) });
     throw new Error('Invalid AI response format');
   }
 
@@ -420,23 +418,21 @@ function parseEmailJson(content: string): GeneratedEmailJson {
   // We need to escape them, but only inside string values
   jsonStr = fixJsonNewlines(jsonStr);
 
-  console.log('[Inquiry API] JSON string length:', jsonStr.length);
+  logger.debug('JSON string prepared', { length: jsonStr.length });
 
   try {
     const parsed = JSON.parse(jsonStr) as GeneratedEmailJson;
 
     // Validate required fields
     if (!parsed.email_ja || !parsed.email_en || !parsed.subject_ja || !parsed.subject_en) {
-      console.error('[Inquiry API] Missing fields. Got keys:', Object.keys(parsed));
+      logger.error('Missing fields in AI response', { keys: Object.keys(parsed) });
       throw new Error('Missing required fields in AI response');
     }
 
-    console.log('[Inquiry API] Successfully parsed email');
+    logger.debug('Successfully parsed email');
     return parsed;
   } catch (parseError) {
-    console.error('[Inquiry API] JSON parse error:', parseError);
-    console.error('[Inquiry API] Attempted to parse:', jsonStr.substring(0, 500));
-    console.error('[Inquiry API] Full content was:', content);
+    logger.error('JSON parse error', { error: parseError, attempted: jsonStr.substring(0, 500) });
     throw new Error('Failed to parse AI response');
   }
 }
@@ -470,6 +466,6 @@ function logInquiryHistory(
     })
     .catch((error) => {
       // Log but don't fail the request
-      console.error('[Inquiry API] Failed to log inquiry history:', error);
+      logger.error('Failed to log inquiry history', { error });
     });
 }

@@ -14,6 +14,8 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
+import { convertPriceToJPY } from '@/lib/currency/convert';
 import type {
   CategoryBreakdownResponse,
   DealerBreakdownResponse,
@@ -141,7 +143,7 @@ export async function GET(
         return errorResponse('Invalid breakdown type', 400);
     }
   } catch (error) {
-    console.error('Market breakdown API error:', error);
+    logger.logError('Market breakdown API error', error);
     return errorResponse('Internal server error', 500);
   }
 }
@@ -161,7 +163,7 @@ async function getCategoryBreakdown(
     {} // No filters - we need all for category breakdown
   );
 
-  console.log(`Category breakdown: fetched ${listings.length} listings for aggregation`);
+  logger.info('Category breakdown fetched listings', { count: listings.length });
 
   if (listings.length === 0) {
     const emptyResponse: CategoryBreakdownResponse = {
@@ -275,7 +277,7 @@ async function getDealerBreakdown(
     .eq('is_active', true);
 
   if (dealersError) {
-    console.error('Dealer query error:', dealersError);
+    logger.error('Dealer query error', { error: dealersError });
     return errorResponse('Failed to fetch dealer data', 500);
   }
 
@@ -289,7 +291,7 @@ async function getDealerBreakdown(
     { is_available: true, price_not_null: true }
   );
 
-  console.log(`Dealer breakdown: fetched ${listings.length} listings for aggregation`);
+  logger.info('Dealer breakdown fetched listings', { count: listings.length });
 
   // Create dealer name lookup
   const dealerNames = new Map<number, string>();
@@ -382,7 +384,7 @@ async function getCertificationBreakdown(
   // Filter for listings with certifications
   const listings = allListings.filter(l => l.cert_type !== null && l.cert_type !== '');
 
-  console.log(`Certification breakdown: fetched ${listings.length} certified listings`);
+  logger.info('Certification breakdown fetched listings', { count: listings.length });
 
   if (listings.length === 0) {
     const emptyResponse: CertificationBreakdownResponse = {
@@ -458,25 +460,6 @@ async function getCertificationBreakdown(
   return successResponse(response, 300);
 }
 
-/**
- * Convert a price to JPY using approximate exchange rates.
- */
-function convertPriceToJPY(
-  priceValue: number | null,
-  priceCurrency: string | null
-): number {
-  if (!priceValue || priceValue <= 0) return 0;
-
-  const toJPY: Record<string, number> = {
-    JPY: 1,
-    USD: 150,
-    EUR: 165,
-    GBP: 190,
-  };
-
-  const rate = toJPY[priceCurrency || 'JPY'] || 1;
-  return priceValue * rate;
-}
 
 /**
  * Format certification type for display.

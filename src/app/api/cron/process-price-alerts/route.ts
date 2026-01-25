@@ -8,6 +8,7 @@
 import { createServiceClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { sendPriceDropNotification } from '@/lib/email/sendgrid';
+import { logger } from '@/lib/logger';
 import type { Listing } from '@/types';
 import type { Database } from '@/types/database';
 
@@ -30,7 +31,7 @@ function isAuthorized(request: NextRequest): boolean {
   const cronSecret = process.env.CRON_SECRET;
 
   if (!cronSecret) {
-    console.warn('CRON_SECRET not configured - allowing unauthenticated access');
+    logger.warn('CRON_SECRET not configured - allowing unauthenticated access');
     return true;
   }
 
@@ -77,7 +78,7 @@ export async function GET(request: NextRequest) {
     const supabase = createServiceClient();
     const lookbackWindow = getLookbackWindow();
 
-    console.log(`Processing price drop alerts since ${lookbackWindow.toISOString()}`);
+    logger.info('Processing price drop alerts', { since: lookbackWindow.toISOString() });
 
     // Step 1: Find recent price decreases
     const { data: priceChanges, error: priceError } = await supabase
@@ -87,7 +88,7 @@ export async function GET(request: NextRequest) {
       .gte('detected_at', lookbackWindow.toISOString());
 
     if (priceError) {
-      console.error('Error fetching price changes:', priceError);
+      logger.error('Error fetching price changes', { error: priceError });
       return NextResponse.json({ error: priceError.message }, { status: 500 });
     }
 
@@ -101,7 +102,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    console.log(`Found ${priceChangesTyped.length} price decreases`);
+    logger.info('Found price decreases', { count: priceChangesTyped.length });
 
     // Get unique listing IDs with price drops
     const listingIds = [...new Set(priceChangesTyped.map((pc) => pc.listing_id))];
@@ -126,7 +127,7 @@ export async function GET(request: NextRequest) {
     const alerts = alertsData as AlertRow[] | null;
 
     if (alertsError) {
-      console.error('Error fetching alerts:', alertsError);
+      logger.error('Error fetching alerts', { error: alertsError });
       return NextResponse.json({ error: alertsError.message }, { status: 500 });
     }
 
@@ -139,7 +140,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    console.log(`Found ${alerts.length} active price_drop alerts to process`);
+    logger.info('Found active price_drop alerts to process', { count: alerts.length });
 
     // Filter out alerts within cooldown period
     const eligibleAlerts = alerts.filter((alert) => !isWithinCooldown(alert.last_triggered_at));
@@ -153,7 +154,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    console.log(`${eligibleAlerts.length} alerts eligible after cooldown filter`);
+    logger.info('Alerts eligible after cooldown filter', { count: eligibleAlerts.length });
 
     // Step 3: Get user emails
     const userIds = [...new Set(eligibleAlerts.map((a) => a.user_id))];
@@ -204,19 +205,19 @@ export async function GET(request: NextRequest) {
           try {
             const email = userEmails.get(alert.user_id);
             if (!email) {
-              console.warn(`No email for user ${alert.user_id}`);
+              logger.warn('No email for user', { userId: alert.user_id });
               return;
             }
 
             const listing = alert.listing_id ? listingsMap.get(alert.listing_id) : null;
             if (!listing) {
-              console.warn(`No listing found for alert ${alert.id}`);
+              logger.warn('No listing found for alert', { alertId: alert.id });
               return;
             }
 
             const priceChange = alert.listing_id ? priceChangeMap.get(alert.listing_id) : null;
             if (!priceChange) {
-              console.warn(`No price change found for listing ${alert.listing_id}`);
+              logger.warn('No price change found for listing', { listingId: alert.listing_id });
               return;
             }
 
@@ -249,10 +250,10 @@ export async function GET(request: NextRequest) {
                 delivery_method: 'email',
               } as never);
 
-              console.log(`Sent price drop notification for alert ${alert.id} to ${email}`);
+              logger.info('Sent price drop notification', { alertId: alert.id, email });
             } else {
               errors++;
-              console.error(`Failed to send notification for alert ${alert.id}:`, result.error);
+              logger.error('Failed to send notification', { alertId: alert.id, error: result.error });
 
               // Record failed notification
               await supabase.from('alert_history').insert({
@@ -265,7 +266,7 @@ export async function GET(request: NextRequest) {
             }
           } catch (err) {
             errors++;
-            console.error(`Error processing alert ${alert.id}:`, err);
+            logger.error('Error processing alert', { alertId: alert.id, error: err });
           }
         })
       );
@@ -281,7 +282,7 @@ export async function GET(request: NextRequest) {
       errors,
     });
   } catch (error) {
-    console.error('Price alerts cron error:', error);
+    logger.logError('Price alerts cron error', error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }

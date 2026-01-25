@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { createServiceClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -114,7 +115,7 @@ export async function POST(request: NextRequest) {
     // Translate using OpenRouter
     const apiKey = process.env.OPENROUTER_API_KEY;
     if (!apiKey) {
-      console.error('OPENROUTER_API_KEY not configured');
+      logger.error('OPENROUTER_API_KEY not configured');
       return NextResponse.json({
         translation: sourceField,
         cached: false,
@@ -173,7 +174,7 @@ ${sourceField}`;
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('OpenRouter API error:', response.status, errorText);
+      logger.error('OpenRouter API error', { status: response.status, errorText });
 
       // Return original text on API failure
       return NextResponse.json({
@@ -187,7 +188,7 @@ ${sourceField}`;
     const translation = responseData.choices?.[0]?.message?.content?.trim();
 
     if (!translation) {
-      console.error('Empty translation response');
+      logger.error('Empty translation response', { listingId });
       return NextResponse.json({
         translation: sourceField,
         cached: false,
@@ -202,7 +203,7 @@ ${sourceField}`;
       .eq('id', listingId);
 
     if (updateError) {
-      console.error('Failed to cache translation:', updateError);
+      logger.error('Failed to cache translation', { error: updateError, listingId });
       // Still return the translation even if caching failed
     }
 
@@ -211,7 +212,7 @@ ${sourceField}`;
       cached: false,
     });
   } catch (error) {
-    console.error('Translation API error:', error);
+    logger.logError('Translation API error', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

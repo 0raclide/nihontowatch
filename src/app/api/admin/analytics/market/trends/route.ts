@@ -16,6 +16,8 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
+import { convertPriceToJPY } from '@/lib/currency/convert';
 import type {
   TrendResponse,
   TrendDataPoint,
@@ -122,7 +124,7 @@ export async function GET(
     // 8. Return response with 5-minute cache
     return successResponse(response, 300);
   } catch (error) {
-    console.error('Market trends API error:', error);
+    logger.logError('Market trends API error', error);
     return errorResponse('Internal server error', 500);
   }
 }
@@ -155,7 +157,7 @@ async function getSnapshotData(
 
     if (error) {
       // Table might not exist - that's okay, we'll fall back to calculating
-      console.warn('market_daily_snapshots query failed, will calculate from listings:', error.message);
+      logger.warn('market_daily_snapshots query failed, will calculate from listings', { error: error.message });
       return [];
     }
 
@@ -597,22 +599,3 @@ function metricToAnalyticsMetric(
   }
 }
 
-/**
- * Convert a price to JPY using approximate exchange rates.
- */
-function convertPriceToJPY(
-  priceValue: number | null,
-  priceCurrency: string | null
-): number {
-  if (!priceValue || priceValue <= 0) return 0;
-
-  const toJPY: Record<string, number> = {
-    JPY: 1,
-    USD: 150,
-    EUR: 165,
-    GBP: 190,
-  };
-
-  const rate = toJPY[priceCurrency || 'JPY'] || 1;
-  return priceValue * rate;
-}

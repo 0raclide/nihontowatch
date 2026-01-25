@@ -1,10 +1,49 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/ban-ts-comment */
-// @ts-nocheck
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 import type { CreateAlertInput, UpdateAlertInput, AlertType } from '@/types';
+import {
+  apiUnauthorized,
+  apiBadRequest,
+  apiNotFound,
+  apiConflict,
+  apiForbidden,
+  apiServerError,
+  apiSuccess,
+} from '@/lib/api/responses';
 
 export const dynamic = 'force-dynamic';
+
+// Type definitions for alert queries
+type AlertWithListing = {
+  id: number;
+  user_id: string;
+  alert_type: string;
+  listing_id: number | null;
+  target_price: number | null;
+  search_criteria: Record<string, unknown> | null;
+  is_active: boolean;
+  created_at: string;
+  last_triggered_at: string | null;
+  listing: {
+    id: number;
+    url: string | null;
+    title: string | null;
+    item_type: string | null;
+    price_value: number | null;
+    price_currency: string | null;
+    images: string[] | null;
+    status: string | null;
+    is_available: boolean | null;
+    is_sold: boolean | null;
+    dealer_id: number | null;
+    dealers: {
+      id: number;
+      name: string;
+      domain: string;
+    } | null;
+  } | null;
+};
 
 /**
  * GET /api/alerts
@@ -17,10 +56,7 @@ export async function GET(request: NextRequest) {
     // Get authenticated user
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return apiUnauthorized();
     }
 
     // Parse query params for filtering
@@ -28,9 +64,11 @@ export async function GET(request: NextRequest) {
     const alertType = searchParams.get('type') as AlertType | null;
     const activeOnly = searchParams.get('active') === 'true';
 
+    // Type assertion for alerts table
+    type AlertsTable = ReturnType<typeof supabase.from>;
+
     // Build query
-    let query = supabase
-      .from('alerts')
+    let query = (supabase.from('alerts') as unknown as AlertsTable)
       .select(`
         *,
         listing:listings (
@@ -63,23 +101,17 @@ export async function GET(request: NextRequest) {
       query = query.eq('is_active', true);
     }
 
-    const { data: alerts, error } = await query;
+    const { data: alerts, error } = await query as { data: AlertWithListing[] | null; error: { message: string } | null };
 
     if (error) {
-      console.error('Error fetching alerts:', error);
-      return NextResponse.json(
-        { error: 'Failed to fetch alerts' },
-        { status: 500 }
-      );
+      logger.error('Error fetching alerts', { error: error.message, userId: user.id });
+      return apiServerError('Failed to fetch alerts');
     }
 
     return NextResponse.json({ alerts: alerts || [] });
   } catch (error) {
-    console.error('Alerts API error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    logger.logError('Alerts API error', error);
+    return apiServerError();
   }
 }
 
@@ -94,29 +126,23 @@ export async function POST(request: NextRequest) {
     // Get authenticated user
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return apiUnauthorized();
     }
 
     const body: CreateAlertInput = await request.json();
 
     // Validate required fields
     if (!body.alert_type) {
-      return NextResponse.json(
-        { error: 'alert_type is required' },
-        { status: 400 }
-      );
+      return apiBadRequest('alert_type is required');
     }
+
+    // Type assertion for alerts table
+    type AlertsTable = ReturnType<typeof supabase.from>;
 
     // Validate based on alert type
     if (body.alert_type === 'price_drop' || body.alert_type === 'back_in_stock') {
       if (!body.listing_id) {
-        return NextResponse.json(
-          { error: 'listing_id is required for price_drop and back_in_stock alerts' },
-          { status: 400 }
-        );
+        return apiBadRequest('listing_id is required for price_drop and back_in_stock alerts');
       }
 
       // Check if listing exists
@@ -127,39 +153,30 @@ export async function POST(request: NextRequest) {
         .single();
 
       if (listingError || !listing) {
-        return NextResponse.json(
-          { error: 'Listing not found' },
-          { status: 404 }
-        );
+        return apiNotFound('Listing');
       }
 
       // Check for duplicate alert
-      const { data: existingAlert } = await supabase
-        .from('alerts')
+      const { data: existingAlert } = await (supabase
+        .from('alerts') as unknown as AlertsTable)
         .select('id')
         .eq('user_id', user.id)
         .eq('alert_type', body.alert_type)
         .eq('listing_id', body.listing_id)
-        .single();
+        .single() as { data: { id: number } | null };
 
       if (existingAlert) {
-        return NextResponse.json(
-          { error: 'You already have this alert set up' },
-          { status: 409 }
-        );
+        return apiConflict('You already have this alert set up');
       }
     }
 
     if (body.alert_type === 'new_listing' && !body.search_criteria) {
-      return NextResponse.json(
-        { error: 'search_criteria is required for new_listing alerts' },
-        { status: 400 }
-      );
+      return apiBadRequest('search_criteria is required for new_listing alerts');
     }
 
     // Create the alert
-    const { data: alert, error } = await supabase
-      .from('alerts')
+    const { data: alert, error } = await (supabase
+      .from('alerts') as unknown as AlertsTable)
       .insert({
         user_id: user.id,
         alert_type: body.alert_type,
@@ -189,23 +206,17 @@ export async function POST(request: NextRequest) {
           )
         )
       `)
-      .single();
+      .single() as { data: AlertWithListing | null; error: { message: string } | null };
 
     if (error) {
-      console.error('Error creating alert:', error);
-      return NextResponse.json(
-        { error: 'Failed to create alert' },
-        { status: 500 }
-      );
+      logger.error('Error creating alert', { error: error.message, userId: user.id });
+      return apiServerError('Failed to create alert');
     }
 
     return NextResponse.json({ alert }, { status: 201 });
   } catch (error) {
-    console.error('Create alert error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    logger.logError('Create alert error', error);
+    return apiServerError();
   }
 }
 
@@ -220,40 +231,31 @@ export async function PATCH(request: NextRequest) {
     // Get authenticated user
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return apiUnauthorized();
     }
 
     const body: UpdateAlertInput & { id: number } = await request.json();
 
     if (!body.id) {
-      return NextResponse.json(
-        { error: 'Alert id is required' },
-        { status: 400 }
-      );
+      return apiBadRequest('Alert id is required');
     }
 
+    // Type assertion for alerts table
+    type AlertsTable = ReturnType<typeof supabase.from>;
+
     // Verify ownership
-    const { data: existingAlert, error: fetchError } = await supabase
-      .from('alerts')
+    const { data: existingAlert, error: fetchError } = await (supabase
+      .from('alerts') as unknown as AlertsTable)
       .select('id, user_id')
       .eq('id', body.id)
-      .single();
+      .single() as { data: { id: number; user_id: string } | null; error: { message: string } | null };
 
     if (fetchError || !existingAlert) {
-      return NextResponse.json(
-        { error: 'Alert not found' },
-        { status: 404 }
-      );
+      return apiNotFound('Alert');
     }
 
     if (existingAlert.user_id !== user.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 403 }
-      );
+      return apiForbidden();
     }
 
     // Build update object
@@ -269,8 +271,8 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Update the alert
-    const { data: alert, error } = await supabase
-      .from('alerts')
+    const { data: alert, error } = await (supabase
+      .from('alerts') as unknown as AlertsTable)
       .update(updateData)
       .eq('id', body.id)
       .select(`
@@ -294,23 +296,17 @@ export async function PATCH(request: NextRequest) {
           )
         )
       `)
-      .single();
+      .single() as { data: AlertWithListing | null; error: { message: string } | null };
 
     if (error) {
-      console.error('Error updating alert:', error);
-      return NextResponse.json(
-        { error: 'Failed to update alert' },
-        { status: 500 }
-      );
+      logger.error('Error updating alert', { error: error.message, alertId: body.id });
+      return apiServerError('Failed to update alert');
     }
 
     return NextResponse.json({ alert });
   } catch (error) {
-    console.error('Update alert error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    logger.logError('Update alert error', error);
+    return apiServerError();
   }
 }
 
@@ -325,63 +321,48 @@ export async function DELETE(request: NextRequest) {
     // Get authenticated user
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return apiUnauthorized();
     }
 
     const searchParams = request.nextUrl.searchParams;
     const alertId = searchParams.get('id');
 
     if (!alertId) {
-      return NextResponse.json(
-        { error: 'Alert id is required' },
-        { status: 400 }
-      );
+      return apiBadRequest('Alert id is required');
     }
 
+    // Type assertion for alerts table
+    type AlertsTable = ReturnType<typeof supabase.from>;
+
     // Verify ownership
-    const { data: existingAlert, error: fetchError } = await supabase
-      .from('alerts')
+    const { data: existingAlert, error: fetchError } = await (supabase
+      .from('alerts') as unknown as AlertsTable)
       .select('id, user_id')
       .eq('id', parseInt(alertId))
-      .single();
+      .single() as { data: { id: number; user_id: string } | null; error: { message: string } | null };
 
     if (fetchError || !existingAlert) {
-      return NextResponse.json(
-        { error: 'Alert not found' },
-        { status: 404 }
-      );
+      return apiNotFound('Alert');
     }
 
     if (existingAlert.user_id !== user.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 403 }
-      );
+      return apiForbidden();
     }
 
     // Delete the alert
-    const { error } = await supabase
-      .from('alerts')
+    const { error } = await (supabase
+      .from('alerts') as unknown as AlertsTable)
       .delete()
-      .eq('id', parseInt(alertId));
+      .eq('id', parseInt(alertId)) as { error: { message: string } | null };
 
     if (error) {
-      console.error('Error deleting alert:', error);
-      return NextResponse.json(
-        { error: 'Failed to delete alert' },
-        { status: 500 }
-      );
+      logger.error('Error deleting alert', { error: error.message, alertId });
+      return apiServerError('Failed to delete alert');
     }
 
-    return NextResponse.json({ success: true });
+    return apiSuccess({ success: true });
   } catch (error) {
-    console.error('Delete alert error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    logger.logError('Delete alert error', error);
+    return apiServerError();
   }
 }

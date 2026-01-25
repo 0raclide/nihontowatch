@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -111,7 +112,7 @@ export async function GET() {
 
     // Check for errors
     if (profileResult.error) {
-      console.error('Error fetching profile:', profileResult.error);
+      logger.error('Error fetching profile', { error: profileResult.error });
       return NextResponse.json({ error: 'Failed to export data' }, { status: 500 });
     }
 
@@ -180,7 +181,7 @@ export async function GET() {
 
     return response;
   } catch (error) {
-    console.error('Data export error:', error);
+    logger.logError('Data export error', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

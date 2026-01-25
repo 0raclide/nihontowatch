@@ -1,36 +1,19 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
+import { verifyAdmin } from '@/lib/admin/auth';
+import { apiUnauthorized, apiForbidden } from '@/lib/api/responses';
 
 export const dynamic = 'force-dynamic';
-
-async function verifyAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { error: 'Unauthorized', status: 401 };
-  }
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single<{ role: string }>();
-
-  if (profile?.role !== 'admin') {
-    return { error: 'Forbidden', status: 403 };
-  }
-
-  return { user };
-}
 
 export async function GET() {
   try {
     const supabase = await createClient();
     const authResult = await verifyAdmin(supabase);
 
-    if ('error' in authResult) {
-      return NextResponse.json({ error: authResult.error }, { status: authResult.status });
+    if (!authResult.isAdmin) {
+      return authResult.error === 'unauthorized' ? apiUnauthorized() : apiForbidden();
     }
 
     // Use service client to bypass RLS for scraper tables
@@ -46,7 +29,7 @@ export async function GET() {
 
       if (error) {
         // Table doesn't exist or query failed
-        console.log('scrape_runs table not available:', error.message);
+        logger.info('scrape_runs table not available', { error: error.message });
         return NextResponse.json({ runs: [] });
       }
 
@@ -71,7 +54,7 @@ export async function GET() {
       return NextResponse.json({ runs: [] });
     }
   } catch (error) {
-    console.error('Scraper runs error:', error);
+    logger.logError('Scraper runs error', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

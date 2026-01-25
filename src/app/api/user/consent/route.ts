@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { headers } from 'next/headers';
+import { logger } from '@/lib/logger';
 import type { ConsentRecord, ConsentHistoryInsert } from '@/lib/consent/types';
 
 export const dynamic = 'force-dynamic';
@@ -62,7 +63,7 @@ export async function GET() {
       .single();
 
     if (profileError) {
-      console.error('Error fetching consent:', profileError);
+      logger.error('Error fetching consent', { error: profileError });
       return NextResponse.json({ error: 'Failed to fetch consent' }, { status: 500 });
     }
 
@@ -79,7 +80,7 @@ export async function GET() {
       marketingOptOut: profile?.marketing_opt_out,
     });
   } catch (error) {
-    console.error('Consent GET error:', error);
+    logger.logError('Consent GET error', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -136,7 +137,7 @@ export async function POST(request: NextRequest) {
       .eq('id', user.id);
 
     if (updateError) {
-      console.error('Error updating consent:', updateError);
+      logger.error('Error updating consent', { error: updateError });
       return NextResponse.json({ error: 'Failed to save consent' }, { status: 500 });
     }
 
@@ -155,7 +156,7 @@ export async function POST(request: NextRequest) {
 
     if (historyError) {
       // Don't fail the request, just log the error
-      console.error('Error logging consent history:', historyError);
+      logger.error('Error logging consent history', { error: historyError });
     }
 
     return NextResponse.json({
@@ -167,7 +168,7 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('Consent POST error:', error);
+    logger.logError('Consent POST error', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -214,7 +215,7 @@ export async function DELETE() {
       .eq('id', user.id);
 
     if (updateError) {
-      console.error('Error revoking consent:', updateError);
+      logger.error('Error revoking consent', { error: updateError });
       return NextResponse.json({ error: 'Failed to revoke consent' }, { status: 500 });
     }
 
@@ -230,7 +231,7 @@ export async function DELETE() {
       } as never);
 
     if (historyError) {
-      console.error('Error logging consent revocation:', historyError);
+      logger.error('Error logging consent revocation', { error: historyError });
     }
 
     return NextResponse.json({
@@ -238,7 +239,7 @@ export async function DELETE() {
       message: 'Consent revoked successfully',
     });
   } catch (error) {
-    console.error('Consent DELETE error:', error);
+    logger.logError('Consent DELETE error', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

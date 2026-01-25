@@ -1,7 +1,14 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/ban-ts-comment */
-// @ts-nocheck
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
+import {
+  apiUnauthorized,
+  apiBadRequest,
+  apiNotFound,
+  apiConflict,
+  apiServerError,
+  apiSuccess,
+} from '@/lib/api/responses';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,15 +24,47 @@ export async function GET() {
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      );
+      return apiUnauthorized('Authentication required');
     }
 
+    // Type for favorites with nested listing data
+    type FavoriteWithListing = {
+      id: number;
+      created_at: string;
+      listing_id: number;
+      listings: {
+        id: number;
+        url: string | null;
+        title: string | null;
+        item_type: string | null;
+        price_value: number | null;
+        price_currency: string | null;
+        smith: string | null;
+        tosogu_maker: string | null;
+        school: string | null;
+        tosogu_school: string | null;
+        cert_type: string | null;
+        nagasa_cm: number | null;
+        images: string[] | null;
+        first_seen_at: string | null;
+        status: string | null;
+        is_available: boolean | null;
+        is_sold: boolean | null;
+        dealer_id: number | null;
+        dealers: {
+          id: number;
+          name: string;
+          domain: string;
+        } | null;
+      } | null;
+    };
+
+    // Type assertion needed - user_favorites table may not be in generated types
+    type UserFavoritesTable = ReturnType<typeof supabase.from>;
+
     // Fetch favorites with listing details
-    const { data: favorites, error } = await supabase
-      .from('user_favorites')
+    const { data: favorites, error } = await (supabase
+      .from('user_favorites') as unknown as UserFavoritesTable)
       .select(`
         id,
         created_at,
@@ -57,14 +96,11 @@ export async function GET() {
         )
       `)
       .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false }) as { data: FavoriteWithListing[] | null; error: { message: string } | null };
 
     if (error) {
-      console.error('Error fetching favorites:', error);
-      return NextResponse.json(
-        { error: 'Failed to fetch favorites' },
-        { status: 500 }
-      );
+      logger.error('Error fetching favorites', { error: error.message, userId: user.id });
+      return apiServerError('Failed to fetch favorites');
     }
 
     // Transform the data to extract listings with favorite metadata
@@ -77,17 +113,14 @@ export async function GET() {
     // Also return just the listing IDs for quick lookup
     const favoriteIds = favorites?.map(fav => fav.listing_id) || [];
 
-    return NextResponse.json({
+    return apiSuccess({
       favorites: favoritesWithListings,
       favoriteIds,
       total: favorites?.length || 0,
     });
   } catch (error) {
-    console.error('Favorites API error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    logger.logError('Favorites API error', error);
+    return apiServerError();
   }
 }
 
@@ -103,20 +136,14 @@ export async function POST(request: NextRequest) {
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      );
+      return apiUnauthorized('Authentication required');
     }
 
     const body = await request.json();
     const { listing_id } = body;
 
     if (!listing_id || typeof listing_id !== 'number') {
-      return NextResponse.json(
-        { error: 'Invalid listing_id' },
-        { status: 400 }
-      );
+      return apiBadRequest('Invalid listing_id');
     }
 
     // Check if listing exists
@@ -127,43 +154,37 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (listingError || !listing) {
-      return NextResponse.json(
-        { error: 'Listing not found' },
-        { status: 404 }
-      );
+      return apiNotFound('Listing');
     }
 
+    // Type assertion needed - user_favorites table may not be in generated types
+    type UserFavoritesTable = ReturnType<typeof supabase.from>;
+
     // Check if already favorited
-    const { data: existing } = await supabase
-      .from('user_favorites')
+    const { data: existing } = await (supabase
+      .from('user_favorites') as unknown as UserFavoritesTable)
       .select('id')
       .eq('user_id', user.id)
       .eq('listing_id', listing_id)
-      .single();
+      .single() as { data: { id: number } | null };
 
     if (existing) {
-      return NextResponse.json(
-        { error: 'Already favorited', favoriteId: existing.id },
-        { status: 409 }
-      );
+      return apiConflict('Already favorited');
     }
 
     // Add to favorites
-    const { data: favorite, error: insertError } = await supabase
-      .from('user_favorites')
+    const { data: favorite, error: insertError } = await (supabase
+      .from('user_favorites') as unknown as UserFavoritesTable)
       .insert({
         user_id: user.id,
         listing_id,
       })
       .select('id, created_at')
-      .single();
+      .single() as { data: { id: number; created_at: string } | null; error: { message: string } | null };
 
-    if (insertError) {
-      console.error('Error adding favorite:', insertError);
-      return NextResponse.json(
-        { error: 'Failed to add favorite' },
-        { status: 500 }
-      );
+    if (insertError || !favorite) {
+      logger.error('Error adding favorite', { error: insertError?.message, userId: user.id, listing_id });
+      return apiServerError('Failed to add favorite');
     }
 
     return NextResponse.json({
@@ -172,11 +193,8 @@ export async function POST(request: NextRequest) {
       createdAt: favorite.created_at,
     }, { status: 201 });
   } catch (error) {
-    console.error('Add favorite error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    logger.logError('Add favorite error', error);
+    return apiServerError();
   }
 }
 
@@ -192,45 +210,34 @@ export async function DELETE(request: NextRequest) {
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      );
+      return apiUnauthorized('Authentication required');
     }
 
     const body = await request.json();
     const { listing_id } = body;
 
     if (!listing_id || typeof listing_id !== 'number') {
-      return NextResponse.json(
-        { error: 'Invalid listing_id' },
-        { status: 400 }
-      );
+      return apiBadRequest('Invalid listing_id');
     }
+
+    // Type assertion needed - user_favorites table may not be in generated types
+    type UserFavoritesTable = ReturnType<typeof supabase.from>;
 
     // Delete the favorite
-    const { error: deleteError } = await supabase
-      .from('user_favorites')
+    const { error: deleteError } = await (supabase
+      .from('user_favorites') as unknown as UserFavoritesTable)
       .delete()
       .eq('user_id', user.id)
-      .eq('listing_id', listing_id);
+      .eq('listing_id', listing_id) as { error: { message: string } | null };
 
     if (deleteError) {
-      console.error('Error removing favorite:', deleteError);
-      return NextResponse.json(
-        { error: 'Failed to remove favorite' },
-        { status: 500 }
-      );
+      logger.error('Error removing favorite', { error: deleteError.message, userId: user.id, listing_id });
+      return apiServerError('Failed to remove favorite');
     }
 
-    return NextResponse.json({
-      success: true,
-    });
+    return apiSuccess({ success: true });
   } catch (error) {
-    console.error('Remove favorite error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    logger.logError('Remove favorite error', error);
+    return apiServerError();
   }
 }

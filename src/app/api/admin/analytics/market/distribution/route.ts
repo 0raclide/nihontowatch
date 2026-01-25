@@ -18,6 +18,8 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
+import { convertPricesToJPY } from '@/lib/currency/convert';
 import type {
   PriceDistributionResponse,
   PriceBucket,
@@ -108,12 +110,12 @@ export async function GET(
     const { data: listings, error } = await query;
 
     if (error) {
-      console.error('Distribution query error:', error);
+      logger.error('Distribution query error', { error });
       return errorResponse('Failed to fetch price data', 500);
     }
 
     // 5. Extract and convert prices to JPY
-    const priceValues = convertAndFilterPrices(listings || []);
+    const priceValues = convertPricesToJPY(listings || []);
 
     // Handle empty results
     if (priceValues.length === 0) {
@@ -184,35 +186,8 @@ export async function GET(
     // 9. Return response with 5-minute cache
     return successResponse(response, 300);
   } catch (error) {
-    console.error('Price distribution API error:', error);
+    logger.logError('Price distribution API error', error);
     return errorResponse('Internal server error', 500);
   }
 }
 
-/**
- * Convert prices to JPY and filter out invalid values.
- *
- * @param listings - Array of listings with price_value and price_currency
- * @returns Array of valid price values in JPY
- */
-function convertAndFilterPrices(
-  listings: Array<{ price_value: number | null; price_currency: string | null }>
-): number[] {
-  // Approximate conversion rates to JPY
-  const toJPY: Record<string, number> = {
-    JPY: 1,
-    USD: 150,
-    EUR: 165,
-    GBP: 190,
-  };
-
-  return listings
-    .filter(
-      (l): l is { price_value: number; price_currency: string } =>
-        l.price_value !== null && l.price_value > 0
-    )
-    .map((l) => {
-      const rate = toJPY[l.price_currency || 'JPY'] || 1;
-      return l.price_value * rate;
-    });
-}

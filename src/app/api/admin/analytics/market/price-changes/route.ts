@@ -16,6 +16,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 import type {
   PriceChangesResponse,
   PriceChangeRecord,
@@ -126,7 +127,7 @@ export async function GET(
     const count = result.count;
 
     if (error) {
-      console.error('Price changes query error:', error);
+      logger.error('Price changes query error', { error });
       return errorResponse('Failed to fetch price changes', 500);
     }
 
@@ -215,7 +216,7 @@ export async function GET(
     // 9. Return response (no cache for real-time data)
     return successResponse(response, 0);
   } catch (error) {
-    console.error('Price changes API error:', error);
+    logger.logError('Price changes API error', error);
     return errorResponse('Internal server error', 500);
   }
 }

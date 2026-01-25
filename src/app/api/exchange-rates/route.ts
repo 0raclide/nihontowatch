@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 
 // Enable ISR caching - rates don't change frequently
 // Removed force-dynamic which was conflicting with revalidate
@@ -58,7 +59,7 @@ export async function GET() {
     jsonResponse.headers.set('Cache-Control', 'public, max-age=3600, s-maxage=3600');
     return jsonResponse;
   } catch (error) {
-    console.error('Exchange rate fetch error:', error);
+    logger.error('Exchange rate fetch error', { error });
 
     // Return fallback rates if API fails
     const fallbackRates: ExchangeRates = {

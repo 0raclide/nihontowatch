@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 
 /**
  * POST /api/admin/refresh-price-jpy
@@ -52,7 +53,7 @@ export async function POST() {
     });
 
     if (error) {
-      console.error('Failed to refresh price_jpy:', error);
+      logger.error('Failed to refresh price_jpy', { error });
       return NextResponse.json(
         { error: 'Failed to refresh prices', details: error.message },
         { status: 500 }
@@ -70,7 +71,7 @@ export async function POST() {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    console.error('Price refresh error:', error);
+    logger.logError('Price refresh error', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

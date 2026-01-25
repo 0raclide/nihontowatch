@@ -13,6 +13,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 import type {
   ActivityBatchPayload,
   ActivityBatchResponse,
@@ -70,6 +71,7 @@ const VALID_EVENT_TYPES = [
   'alert_create',
   'alert_delete',
   'external_link_click',
+  'viewport_dwell',
 ] as const;
 
 function isValidEventType(type: string): boolean {
@@ -118,6 +120,10 @@ function validateEvent(event: unknown): event is ActivityEvent {
       break;
     case 'external_link_click':
       if (!e.url || typeof e.url !== 'string') return false;
+      break;
+    case 'viewport_dwell':
+      if (!e.listingId || typeof e.listingId !== 'number') return false;
+      if (typeof e.dwellMs !== 'number') return false;
       break;
   }
 
@@ -215,7 +221,7 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       // Log error but don't fail the request - activity tracking is best-effort
-      console.error('Failed to insert activity events:', error);
+      logger.error('Failed to insert activity events', { error });
 
       // Check if table doesn't exist
       if (error.code === '42P01') {
@@ -237,7 +243,7 @@ export async function POST(request: NextRequest) {
       eventsReceived: validEvents.length,
     } as ActivityBatchResponse);
   } catch (error) {
-    console.error('Activity tracking API error:', error);
+    logger.logError('Activity tracking API error', error);
     return NextResponse.json(
       { success: false, eventsReceived: 0, error: 'Internal server error' },
       { status: 500 }
@@ -306,7 +312,7 @@ async function updateUserActivity(
     await supabase.from('user_activity').insert(activityRecords);
   } catch (error) {
     // Silently fail - this is best-effort compatibility
-    console.error('Failed to update user_activity:', error);
+    logger.error('Failed to update user_activity', { error });
   }
 }
 
