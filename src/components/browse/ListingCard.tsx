@@ -666,6 +666,9 @@ export const ListingCard = memo(function ListingCard({
     prevProps.isNearViewport === nextProps.isNearViewport &&
     prevProps.showFavoriteButton === nextProps.showFavoriteButton &&
     // Compare exchange rates by timestamp (cheaper than deep compare)
-    prevProps.exchangeRates?.timestamp === nextProps.exchangeRates?.timestamp
+    prevProps.exchangeRates?.timestamp === nextProps.exchangeRates?.timestamp &&
+    // Re-render if setsumei availability changes (OCR or Yuhinkai enrichment)
+    prevProps.listing.setsumei_text_en === nextProps.listing.setsumei_text_en &&
+    prevProps.listing.listing_yuhinkai_enrichment?.length === nextProps.listing.listing_yuhinkai_enrichment?.length
   );
 });
