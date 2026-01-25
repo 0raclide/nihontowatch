@@ -259,6 +259,13 @@ const DEALER_LABELS: Record<string, string> = {
   'katana_ando': 'Katana Ando',
 };
 
+// Non-Japanese dealer countries (all others are Japan)
+const DEALER_COUNTRIES: Record<string, string> = {
+  'Nihonto': 'USA',
+  'NihontoArt': 'Canada',
+  'SwordsOfJapan': 'USA',
+};
+
 export function FilterContent({
   facets,
   filters,
@@ -273,8 +280,6 @@ export function FilterContent({
   availability,
   onAvailabilityChange,
 }: FilterContentProps) {
-  // Debug: Log isAdmin prop
-  console.log('[FilterContent] isAdmin prop:', isAdmin);
   // Normalize and aggregate item types
   const normalizedItemTypes = useMemo(() => {
     const aggregated: Record<string, number> = {};
@@ -339,6 +344,21 @@ export function FilterContent({
         return aIndex - bIndex;
       });
   }, [facets.certifications]);
+
+  // Group dealers by geography (Japan vs International)
+  const japaneseDealers = useMemo(() =>
+    facets.dealers
+      .filter(d => !DEALER_COUNTRIES[d.name])
+      .sort((a, b) => b.count - a.count),
+    [facets.dealers]
+  );
+
+  const internationalDealers = useMemo(() =>
+    facets.dealers
+      .filter(d => DEALER_COUNTRIES[d.name])
+      .sort((a, b) => b.count - a.count),
+    [facets.dealers]
+  );
 
   // Calculate totals for category tabs
   const nihontoTotal = useMemo(() =>
@@ -655,20 +675,43 @@ export function FilterContent({
           </div>
         </FilterSection>
 
-        {/* 4. Dealer - Checkbox list like item types */}
+        {/* 4. Dealer - Grouped by geography */}
         <FilterSection title="Dealer" defaultOpen={false}>
           <div className="space-y-1">
-            {facets.dealers
-              .sort((a, b) => b.count - a.count)
-              .map((dealer) => (
-                <Checkbox
-                  key={dealer.id}
-                  label={DEALER_LABELS[dealer.name] || dealer.name}
-                  count={dealer.count}
-                  checked={filters.dealers.includes(dealer.id)}
-                  onChange={(checked) => handleDealerChange(dealer.id, checked)}
-                />
-              ))}
+            {/* Japan dealers */}
+            {japaneseDealers.length > 0 && (
+              <>
+                <p className="text-[11px] uppercase tracking-wider text-muted font-medium pt-1 pb-2">
+                  Japan
+                </p>
+                {japaneseDealers.map((dealer) => (
+                  <Checkbox
+                    key={dealer.id}
+                    label={DEALER_LABELS[dealer.name] || dealer.name}
+                    count={dealer.count}
+                    checked={filters.dealers.includes(dealer.id)}
+                    onChange={(checked) => handleDealerChange(dealer.id, checked)}
+                  />
+                ))}
+              </>
+            )}
+            {/* International dealers */}
+            {internationalDealers.length > 0 && (
+              <>
+                <p className="text-[11px] uppercase tracking-wider text-muted font-medium pt-4 pb-2">
+                  International
+                </p>
+                {internationalDealers.map((dealer) => (
+                  <Checkbox
+                    key={dealer.id}
+                    label={`${DEALER_LABELS[dealer.name] || dealer.name} (${DEALER_COUNTRIES[dealer.name]})`}
+                    count={dealer.count}
+                    checked={filters.dealers.includes(dealer.id)}
+                    onChange={(checked) => handleDealerChange(dealer.id, checked)}
+                  />
+                ))}
+              </>
+            )}
             {facets.dealers.length === 0 && (
               <p className="text-[14px] text-muted italic py-2">No dealers available</p>
             )}
