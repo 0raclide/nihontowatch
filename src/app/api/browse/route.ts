@@ -629,6 +629,12 @@ export async function GET(request: NextRequest) {
       subscriptionTier: subscription.tier,
       // Admin flag for admin-only filters
       isAdmin: subscription.isAdmin,
+      // DEBUG: Server-side subscription info (remove after debugging)
+      _debug: {
+        userId: subscription.userId,
+        tier: subscription.tier,
+        isAdmin: subscription.isAdmin,
+      },
     });
 
     // Cache settings based on user authentication
