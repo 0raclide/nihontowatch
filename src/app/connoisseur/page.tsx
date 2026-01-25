@@ -1,14 +1,16 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { LoginModal } from '@/components/auth/LoginModal';
-import { TIER_PRICING } from '@/types/subscription';
+import { TIER_PRICING, isTrialModeActive } from '@/types/subscription';
 
 export default function ConnoisseurPage() {
+  const router = useRouter();
   const { checkout, isConnoisseur } = useSubscription();
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
@@ -17,6 +19,13 @@ export default function ConnoisseurPage() {
 
   const pricing = TIER_PRICING.connoisseur;
   const monthlyPrice = Math.round(pricing.annual / 12);
+
+  // Hide connoisseur page during trial mode
+  useEffect(() => {
+    if (isTrialModeActive()) {
+      router.replace('/');
+    }
+  }, [router]);
 
   React.useEffect(() => {
     if (user && pendingCheckout) {
