@@ -262,8 +262,8 @@ const DEALER_LABELS: Record<string, string> = {
 // Non-Japanese dealer countries (all others are Japan)
 const DEALER_COUNTRIES: Record<string, string> = {
   'Nihonto': 'USA',
-  'NihontoArt': 'Canada',
-  'SwordsOfJapan': 'USA',
+  'Nihonto Art': 'Canada',
+  'Swords of Japan': 'USA',
 };
 
 export function FilterContent({
