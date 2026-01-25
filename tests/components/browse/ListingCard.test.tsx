@@ -500,5 +500,133 @@ describe('ListingCard Component', () => {
       expect(screen.queryByText('Jūyō')).not.toBeInTheDocument();
       expect(screen.getByTestId('setsumei-zufu-badge')).toBeInTheDocument();
     });
+
+    // Yuhinkai enrichment tests (manual connections)
+    describe('with Yuhinkai enrichment', () => {
+      it('shows Zufu badge when listing has verified Yuhinkai enrichment with setsumei (array format from browse API)', () => {
+        const listingWithYuhinkaiEnrichment = {
+          ...mockListing,
+          setsumei_text_en: null, // No OCR setsumei
+          listing_yuhinkai_enrichment: [{
+            setsumei_en: '## Juyo-Token Setsumei from Yuhinkai',
+            match_confidence: 'DEFINITIVE',
+            connection_source: 'manual',
+            verification_status: 'confirmed',
+          }],
+        };
+        render(<ListingCard {...defaultProps} listing={listingWithYuhinkaiEnrichment} />);
+
+        expect(screen.getByTestId('setsumei-zufu-badge')).toBeInTheDocument();
+      });
+
+      it('shows Zufu badge when listing has yuhinkai_enrichment object (from QuickView context)', () => {
+        const listingWithEnrichmentObject = {
+          ...mockListing,
+          setsumei_text_en: null,
+          yuhinkai_enrichment: {
+            setsumei_en: '## Setsumei from optimistic update',
+            match_confidence: 'DEFINITIVE',
+            connection_source: 'manual',
+            verification_status: 'confirmed',
+          },
+        };
+        render(<ListingCard {...defaultProps} listing={listingWithEnrichmentObject} />);
+
+        expect(screen.getByTestId('setsumei-zufu-badge')).toBeInTheDocument();
+      });
+
+      it('does NOT show Zufu badge for Yuhinkai enrichment without setsumei_en', () => {
+        const listingWithoutSetsumei = {
+          ...mockListing,
+          setsumei_text_en: null,
+          listing_yuhinkai_enrichment: [{
+            setsumei_en: null, // No setsumei
+            match_confidence: 'DEFINITIVE',
+            connection_source: 'manual',
+            verification_status: 'confirmed',
+          }],
+        };
+        render(<ListingCard {...defaultProps} listing={listingWithoutSetsumei} />);
+
+        expect(screen.queryByTestId('setsumei-zufu-badge')).not.toBeInTheDocument();
+      });
+
+      it('does NOT show Zufu badge for auto-matched enrichment (only manual connections)', () => {
+        const listingWithAutoMatch = {
+          ...mockListing,
+          setsumei_text_en: null,
+          listing_yuhinkai_enrichment: [{
+            setsumei_en: '## Auto-matched setsumei',
+            match_confidence: 'DEFINITIVE',
+            connection_source: 'auto', // Auto-matched, not manual
+            verification_status: 'auto',
+          }],
+        };
+        render(<ListingCard {...defaultProps} listing={listingWithAutoMatch} />);
+
+        // Auto-matches are hidden (not production-ready)
+        expect(screen.queryByTestId('setsumei-zufu-badge')).not.toBeInTheDocument();
+      });
+
+      it('does NOT show Zufu badge for non-DEFINITIVE confidence', () => {
+        const listingWithLowConfidence = {
+          ...mockListing,
+          setsumei_text_en: null,
+          listing_yuhinkai_enrichment: [{
+            setsumei_en: '## Setsumei',
+            match_confidence: 'HIGH', // Not DEFINITIVE
+            connection_source: 'manual',
+            verification_status: 'confirmed',
+          }],
+        };
+        render(<ListingCard {...defaultProps} listing={listingWithLowConfidence} />);
+
+        expect(screen.queryByTestId('setsumei-zufu-badge')).not.toBeInTheDocument();
+      });
+
+      it('does NOT show Zufu badge for manual connection not yet confirmed', () => {
+        const listingNotConfirmed = {
+          ...mockListing,
+          setsumei_text_en: null,
+          listing_yuhinkai_enrichment: [{
+            setsumei_en: '## Setsumei',
+            match_confidence: 'DEFINITIVE',
+            connection_source: 'manual',
+            verification_status: 'review_needed', // Not confirmed
+          }],
+        };
+        render(<ListingCard {...defaultProps} listing={listingNotConfirmed} />);
+
+        expect(screen.queryByTestId('setsumei-zufu-badge')).not.toBeInTheDocument();
+      });
+
+      it('prefers showing badge when either OCR or Yuhinkai has setsumei', () => {
+        // Both OCR and Yuhinkai have setsumei - badge should show
+        const listingWithBoth = {
+          ...mockListing,
+          setsumei_text_en: '## OCR setsumei',
+          listing_yuhinkai_enrichment: [{
+            setsumei_en: '## Yuhinkai setsumei',
+            match_confidence: 'DEFINITIVE',
+            connection_source: 'manual',
+            verification_status: 'confirmed',
+          }],
+        };
+        render(<ListingCard {...defaultProps} listing={listingWithBoth} />);
+
+        expect(screen.getByTestId('setsumei-zufu-badge')).toBeInTheDocument();
+      });
+
+      it('handles empty listing_yuhinkai_enrichment array', () => {
+        const listingWithEmptyArray = {
+          ...mockListing,
+          setsumei_text_en: null,
+          listing_yuhinkai_enrichment: [], // Empty array
+        };
+        render(<ListingCard {...defaultProps} listing={listingWithEmptyArray} />);
+
+        expect(screen.queryByTestId('setsumei-zufu-badge')).not.toBeInTheDocument();
+      });
+    });
   });
 });

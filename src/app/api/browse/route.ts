@@ -212,6 +212,8 @@ export async function GET(request: NextRequest) {
       : (params.tab === 'sold' ? STATUS_SOLD : STATUS_AVAILABLE);
 
     // Build query
+    // Note: listing_yuhinkai_enrichment view already filters to DEFINITIVE matches
+    // that are either manual (confirmed) or auto-matched, so presence = valid enrichment
     let query = supabase
       .from('listings')
       .select(`
@@ -256,7 +258,13 @@ export async function GET(request: NextRequest) {
         is_sold,
         is_initial_import,
         dealer_id,
-        dealers:dealers!inner(id, name, domain)
+        dealers:dealers!inner(id, name, domain),
+        listing_yuhinkai_enrichment(
+          setsumei_en,
+          match_confidence,
+          connection_source,
+          verification_status
+        )
       `, { count: 'exact' });
 
     // Status filter (only apply if not 'all' - null means show both available and sold)

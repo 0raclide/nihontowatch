@@ -245,16 +245,34 @@ export async function POST(request: NextRequest) {
       `[setsumei/connect] Manual connection created: listing ${listing_id} → ${collection} vol.${volume} #${itemNumber} by ${user.id}`
     );
 
+    // Return full enrichment for optimistic UI update (instant setsumei display)
     return NextResponse.json({
       success: true,
       action: existingEnrichment ? 'updated' : 'created',
       enrichment: {
-        id: enrichment.id,
+        // Identity fields
+        enrichment_id: enrichment.id,
         listing_id: enrichment.listing_id,
         yuhinkai_uuid: enrichment.yuhinkai_uuid,
         yuhinkai_collection: enrichment.yuhinkai_collection,
         yuhinkai_volume: enrichment.yuhinkai_volume,
         yuhinkai_item_number: enrichment.yuhinkai_item_number,
+        // Setsumei translations (needed for optimistic display)
+        setsumei_ja: enrichment.setsumei_ja,
+        setsumei_en: enrichment.setsumei_en,
+        setsumei_en_format: enrichment.setsumei_en_format,
+        // Enriched metadata
+        enriched_maker: enrichment.enriched_maker,
+        enriched_maker_kanji: enrichment.enriched_maker_kanji,
+        enriched_school: enrichment.enriched_school,
+        enriched_period: enrichment.enriched_period,
+        enriched_form_type: enrichment.enriched_form_type,
+        item_category: enrichment.item_category,
+        // Match confidence (needed for hasVerifiedEnrichment check)
+        match_score: enrichment.match_score,
+        match_confidence: enrichment.match_confidence,
+        // Verification status
+        verification_status: enrichment.verification_status,
         connection_source: enrichment.connection_source,
         verified_by: enrichment.verified_by,
         verified_at: enrichment.verified_at,

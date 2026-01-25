@@ -9,7 +9,9 @@ import type { Listing } from '@/types';
 
 interface AdminSetsumeiWidgetProps {
   listing: Listing;
-  onConnectionChanged?: () => void;
+  /** Called after connection changes. Receives enrichment data for optimistic UI update.
+   *  Pass null on disconnect to clear enrichment, undefined to just refresh. */
+  onConnectionChanged?: (enrichment?: Record<string, unknown> | null) => void;
 }
 
 interface PreviewData {
@@ -143,7 +145,8 @@ export function AdminSetsumeiWidget({ listing, onConnectionChanged }: AdminSetsu
       );
       setPreview(null);
       setUrl('');
-      onConnectionChanged?.();
+      // Pass enrichment data for optimistic UI update (instant setsumei display)
+      onConnectionChanged?.(data.enrichment);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to connect');
     } finally {
@@ -174,7 +177,8 @@ export function AdminSetsumeiWidget({ listing, onConnectionChanged }: AdminSetsu
       }
 
       setSuccessMessage('Connection removed');
-      onConnectionChanged?.();
+      // Pass null to indicate removal - optimistic update will clear enrichment
+      onConnectionChanged?.(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to disconnect');
     } finally {

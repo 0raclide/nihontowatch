@@ -47,8 +47,10 @@ interface QuickViewContextType {
   hasPrevious: boolean;
   /** Set the listings array for navigation */
   setListings: (listings: Listing[]) => void;
-  /** Refresh the current listing data from the API (e.g., after admin changes) */
-  refreshCurrentListing: () => Promise<void>;
+  /** Refresh the current listing data from the API (e.g., after admin changes)
+   *  Accepts optional enrichment for optimistic update (instant UI feedback)
+   *  Pass null to clear enrichment (e.g., on disconnect) */
+  refreshCurrentListing: (optimisticEnrichment?: Record<string, unknown> | null) => Promise<void>;
 }
 
 // ============================================================================
@@ -237,11 +239,37 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
 
   // Refresh the current listing from the API
   // Used after admin actions like connecting setsumei to reload updated data
-  const refreshCurrentListing = useCallback(async () => {
+  // Accepts optional enrichment for optimistic update (instant UI feedback)
+  // Pass null to clear enrichment (e.g., on disconnect)
+  const refreshCurrentListing = useCallback(async (optimisticEnrichment?: Record<string, unknown> | null) => {
     if (!currentListing) return;
 
+    // Optimistic update: immediately show/clear enrichment data while we fetch full listing
+    // Check for explicit null (disconnect) or truthy object (new enrichment)
+    if (optimisticEnrichment !== undefined) {
+      const optimisticListing = {
+        ...currentListing,
+        yuhinkai_enrichment: optimisticEnrichment,
+      };
+      setCurrentListing(optimisticListing);
+
+      // Also update in listings array for consistency
+      if (currentIndex !== -1 && listings.length > 0) {
+        setListingsState(prev => {
+          const newListings = [...prev];
+          newListings[currentIndex] = optimisticListing;
+          return newListings;
+        });
+      }
+    }
+
     try {
-      const response = await fetch(`/api/listing/${currentListing.id}`);
+      // CRITICAL: Add cache bypass for instant updates after admin actions
+      // Without ?nocache=1, Vercel edge cache (10-min TTL) serves stale data
+      const response = await fetch(
+        `/api/listing/${currentListing.id}?nocache=1`,
+        { cache: 'no-store' }
+      );
       if (!response.ok) {
         console.error('Failed to refresh listing:', response.status);
         return;

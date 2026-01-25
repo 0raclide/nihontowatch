@@ -32,6 +32,14 @@ interface SoldData {
   confidence: 'high' | 'medium' | 'low' | 'unknown';
 }
 
+// Yuhinkai enrichment data from browse API (subset for badge display)
+interface YuhinkaiEnrichmentBadge {
+  setsumei_en: string | null;
+  match_confidence: string | null;
+  connection_source: string | null;
+  verification_status: string | null;
+}
+
 interface Listing {
   id: string;
   url: string;
@@ -54,7 +62,11 @@ interface Listing {
   is_available: boolean;
   is_sold: boolean;
   sold_data?: SoldData | null; // Sold item data with confidence
-  setsumei_text_en?: string | null; // Official NBTHK evaluation translation
+  setsumei_text_en?: string | null; // OCR-extracted NBTHK evaluation translation
+  // Yuhinkai enrichment from browse API (array from view, we use first if present)
+  listing_yuhinkai_enrichment?: YuhinkaiEnrichmentBadge[];
+  // Or single enrichment object (from QuickView context after optimistic update)
+  yuhinkai_enrichment?: YuhinkaiEnrichmentBadge | null;
   dealer_id: number;
   dealers: {
     id: number;
@@ -281,6 +293,50 @@ function formatPrice(
   });
 
   return formatter.format(Math.round(converted));
+}
+
+/**
+ * Check if a listing has English setsumei translation available.
+ * Checks both OCR-extracted setsumei AND Yuhinkai enrichment.
+ */
+function hasSetsumeiTranslation(listing: Listing): boolean {
+  // Check OCR-extracted setsumei
+  if (listing.setsumei_text_en) {
+    return true;
+  }
+
+  // Check Yuhinkai enrichment (from browse API - array)
+  const enrichmentArray = listing.listing_yuhinkai_enrichment;
+  if (enrichmentArray && enrichmentArray.length > 0) {
+    const enrichment = enrichmentArray[0];
+    // Must have setsumei_en, DEFINITIVE confidence, and valid verification
+    if (
+      enrichment.setsumei_en &&
+      enrichment.match_confidence === 'DEFINITIVE' &&
+      (enrichment.connection_source === 'manual'
+        ? enrichment.verification_status === 'confirmed'
+        : ['auto', 'confirmed'].includes(enrichment.verification_status || ''))
+    ) {
+      // Only show manual connections (auto-matcher not production-ready)
+      if (enrichment.connection_source === 'manual') {
+        return true;
+      }
+    }
+  }
+
+  // Check Yuhinkai enrichment (from QuickView context - single object)
+  const enrichment = listing.yuhinkai_enrichment;
+  if (enrichment?.setsumei_en) {
+    if (
+      enrichment.match_confidence === 'DEFINITIVE' &&
+      enrichment.connection_source === 'manual' &&
+      enrichment.verification_status === 'confirmed'
+    ) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 function cleanTitle(title: string | null, smith: string | null, maker: string | null): string {
@@ -560,7 +616,7 @@ export const ListingCard = memo(function ListingCard({
               {certInfo.label}
             </span>
           )}
-          {listing.setsumei_text_en && (
+          {hasSetsumeiTranslation(listing) && (
             <SetsumeiZufuBadge compact />
           )}
         </div>
