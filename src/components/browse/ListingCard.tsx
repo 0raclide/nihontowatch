@@ -9,6 +9,7 @@ import { useQuickViewOptional } from '@/contexts/QuickViewContext';
 import { useViewportTrackingOptional } from '@/lib/viewport';
 import { getImageUrl, dealerDoesNotPublishImages } from '@/lib/images';
 import { shouldShowNewBadge } from '@/lib/newListing';
+import { isTrialModeActive } from '@/types/subscription';
 import { useImagePreloader } from '@/hooks/useImagePreloader';
 
 // 72 hours in milliseconds - matches the data delay for free tier
@@ -592,7 +593,7 @@ export const ListingCard = memo(function ListingCard({
               data-testid="new-listing-badge"
               className="text-[9px] lg:text-[10px] uppercase tracking-wider font-semibold px-1.5 lg:px-2 py-0.5 lg:py-1 bg-new-listing-bg text-new-listing"
             >
-              {isEarlyAccessListing(listing.first_seen_at) ? 'Early Access' : 'New'}
+              {isEarlyAccessListing(listing.first_seen_at) && !isTrialModeActive() ? 'Early Access' : 'New'}
             </span>
           )}
         </div>
