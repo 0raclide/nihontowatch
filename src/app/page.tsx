@@ -303,7 +303,10 @@ function HomeContent() {
 
         // Set admin status from API response
         if (json.isAdmin !== undefined) {
+          console.log('[Browse] Setting isAdmin from API:', json.isAdmin);
           setIsAdmin(json.isAdmin);
+        } else {
+          console.log('[Browse] API response missing isAdmin field');
         }
 
         // Reset to page 1 and set initial listings for infinite scroll

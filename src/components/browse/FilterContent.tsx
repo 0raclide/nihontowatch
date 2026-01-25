@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, memo } from 'react';
 
 interface Facet {
   value: string;
@@ -51,7 +51,7 @@ export interface FilterContentProps {
   onAvailabilityChange?: (status: AvailabilityStatus) => void;
 }
 
-function FilterSection({
+const FilterSection = memo(function FilterSection({
   title,
   children,
   defaultOpen = true,
@@ -85,9 +85,9 @@ function FilterSection({
       </div>
     </div>
   );
-}
+});
 
-function Checkbox({
+const Checkbox = memo(function Checkbox({
   label,
   count,
   checked,
@@ -123,7 +123,7 @@ function Checkbox({
       )}
     </label>
   );
-}
+});
 
 // Nihonto (swords/blades)
 const NIHONTO_TYPES = ['katana', 'wakizashi', 'tanto', 'tachi', 'naginata', 'yari', 'kodachi', 'ken', 'naginata naoshi', 'sword'];

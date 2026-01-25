@@ -364,11 +364,13 @@ export async function GET(request: NextRequest) {
         .eq('connection_source', 'manual')
         .eq('verification_status', 'confirmed')
         .eq('match_confidence', 'DEFINITIVE')
-        .not('setsumei_en', 'is', null);
+        .not('setsumei_en', 'is', null) as { data: { listing_id: number | null }[] | null };
 
       if (manualEnrichments?.length) {
-        const excludeIds = manualEnrichments.map(e => e.listing_id);
-        query = query.not('id', 'in', `(${excludeIds.join(',')})`);
+        const excludeIds = manualEnrichments.map(e => e.listing_id).filter((id): id is number => id !== null);
+        if (excludeIds.length > 0) {
+          query = query.not('id', 'in', `(${excludeIds.join(',')})`);
+        }
       }
     }
 

@@ -18,6 +18,7 @@ export interface Database {
           catalog_url: string | null;
           country: string;
           is_active: boolean;
+          earliest_listing_at: string | null;
           created_at: string;
         };
         Insert: Omit<Database['public']['Tables']['dealers']['Row'], 'id' | 'created_at'>;
@@ -242,7 +243,8 @@ export interface Database {
           id: number;
           session_id: string;
           user_id: string | null;
-          event_type: 'page_view' | 'listing_view' | 'search' | 'filter_change' | 'favorite_add' | 'favorite_remove' | 'alert_create' | 'alert_delete' | 'external_link_click';
+          visitor_id: string | null;
+          event_type: 'page_view' | 'listing_view' | 'search' | 'filter_change' | 'favorite_add' | 'favorite_remove' | 'alert_create' | 'alert_delete' | 'external_link_click' | 'viewport_dwell';
           event_data: Record<string, unknown>;
           created_at: string;
         };
@@ -302,6 +304,54 @@ export interface Database {
           error_message?: string | null;
         };
         Update: Partial<Omit<Database['public']['Tables']['saved_search_notifications']['Row'], 'id' | 'created_at'>>;
+      };
+      // Yuhinkai enrichments (setsumei data from Oshi-v2 catalog)
+      yuhinkai_enrichments: {
+        Row: {
+          id: number;
+          catalog_id: string;
+          listing_id: number | null;
+          title: string | null;
+          setsumei_text_ja: string | null;
+          setsumei_text_en: string | null;
+          setsumei_en: string | null;
+          setsumei_image_url: string | null;
+          metadata: Record<string, unknown> | null;
+          connection_source: string | null;
+          verification_status: string | null;
+          match_confidence: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['yuhinkai_enrichments']['Row'], 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Database['public']['Tables']['yuhinkai_enrichments']['Insert']>;
+      };
+      // Listing to Yuhinkai enrichment mapping
+      listing_yuhinkai_enrichment: {
+        Row: {
+          id: number;
+          listing_id: number;
+          enrichment_id: number;
+          confidence_score: number | null;
+          match_method: string | null;
+          created_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['listing_yuhinkai_enrichment']['Row'], 'id' | 'created_at'>;
+        Update: Partial<Database['public']['Tables']['listing_yuhinkai_enrichment']['Insert']>;
+      };
+      // Inquiry history (for AI-generated inquiry emails)
+      inquiry_history: {
+        Row: {
+          id: number;
+          user_id: string | null;
+          listing_id: number;
+          dealer_id: number;
+          inquiry_text: string;
+          model_used: string | null;
+          created_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['inquiry_history']['Row'], 'id' | 'created_at'>;
+        Update: Partial<Database['public']['Tables']['inquiry_history']['Insert']>;
       };
       // Market intelligence daily snapshots
       market_daily_snapshots: {

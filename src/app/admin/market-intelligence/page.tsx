@@ -1,19 +1,42 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, Suspense, lazy } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   MetricCard,
-  PriceDistributionChart,
-  CategoryBreakdownChart,
-  DealerMarketShareChart,
-  TrendLineChart,
   PriceChangesTable,
   FilterBar,
+  ChartSkeleton,
 } from '@/components/admin/analytics';
 import type { AnalyticsFilters, AnalyticsPeriod } from '@/types/analytics';
 import { DEFAULT_ANALYTICS_FILTERS, getPeriodLabel } from '@/types/analytics';
 import { useMarketIntelligence } from '@/hooks/useMarketIntelligence';
+
+// Dynamic imports for heavy Recharts-based components (~200KB total)
+// This reduces initial bundle size for the admin page
+const PriceDistributionChart = lazy(() =>
+  import('@/components/admin/analytics/PriceDistributionChart').then((mod) => ({
+    default: mod.PriceDistributionChart,
+  }))
+);
+
+const CategoryBreakdownChart = lazy(() =>
+  import('@/components/admin/analytics/CategoryBreakdownChart').then((mod) => ({
+    default: mod.CategoryBreakdownChart,
+  }))
+);
+
+const DealerMarketShareChart = lazy(() =>
+  import('@/components/admin/analytics/DealerMarketShareChart').then((mod) => ({
+    default: mod.DealerMarketShareChart,
+  }))
+);
+
+const TrendLineChart = lazy(() =>
+  import('@/components/admin/analytics/TrendLineChart').then((mod) => ({
+    default: mod.TrendLineChart,
+  }))
+);
 
 /**
  * Chart metric icon component
@@ -366,22 +389,24 @@ export default function MarketIntelligencePage() {
           {errors.distribution ? (
             <ErrorDisplay message={errors.distribution} />
           ) : (
-            <PriceDistributionChart
-              buckets={data.distribution?.buckets ?? []}
-              statistics={
-                data.distribution?.statistics ?? {
-                  count: 0,
-                  mean: 0,
-                  median: 0,
-                  stdDev: 0,
-                  skewness: 0,
-                  percentiles: { p10: 0, p25: 0, p75: 0, p90: 0 },
+            <Suspense fallback={<ChartSkeleton height={300} />}>
+              <PriceDistributionChart
+                buckets={data.distribution?.buckets ?? []}
+                statistics={
+                  data.distribution?.statistics ?? {
+                    count: 0,
+                    mean: 0,
+                    median: 0,
+                    stdDev: 0,
+                    skewness: 0,
+                    percentiles: { p10: 0, p25: 0, p75: 0, p90: 0 },
+                  }
                 }
-              }
-              highlightMedian
-              height={300}
-              loading={loading.distribution}
-            />
+                highlightMedian
+                height={300}
+                loading={loading.distribution}
+              />
+            </Suspense>
           )}
         </div>
 
@@ -398,13 +423,15 @@ export default function MarketIntelligencePage() {
           {errors.categoryBreakdown ? (
             <ErrorDisplay message={errors.categoryBreakdown} />
           ) : (
-            <CategoryBreakdownChart
-              categories={data.categoryBreakdown?.categories ?? []}
-              metric={categoryMetric}
-              showLegend
-              height={300}
-              loading={loading.categoryBreakdown}
-            />
+            <Suspense fallback={<ChartSkeleton height={300} />}>
+              <CategoryBreakdownChart
+                categories={data.categoryBreakdown?.categories ?? []}
+                metric={categoryMetric}
+                showLegend
+                height={300}
+                loading={loading.categoryBreakdown}
+              />
+            </Suspense>
           )}
         </div>
       </div>
@@ -421,26 +448,28 @@ export default function MarketIntelligencePage() {
           {errors.trends ? (
             <ErrorDisplay message={errors.trends} />
           ) : (
-            <TrendLineChart
-              dataPoints={data.trends?.dataPoints ?? []}
-              summary={
-                data.trends?.summary ?? {
-                  startValue: 0,
-                  endValue: 0,
-                  minValue: 0,
-                  maxValue: 0,
-                  totalChange: 0,
-                  totalChangePercent: 0,
-                  trend: 'stable',
-                  volatility: 0,
+            <Suspense fallback={<ChartSkeleton height={300} />}>
+              <TrendLineChart
+                dataPoints={data.trends?.dataPoints ?? []}
+                summary={
+                  data.trends?.summary ?? {
+                    startValue: 0,
+                    endValue: 0,
+                    minValue: 0,
+                    maxValue: 0,
+                    totalChange: 0,
+                    totalChangePercent: 0,
+                    trend: 'stable',
+                    volatility: 0,
+                  }
                 }
-              }
-              trendLine={data.trends?.trendLine}
-              showTrendLine
-              metric="median_price"
-              height={300}
-              loading={loading.trends}
-            />
+                trendLine={data.trends?.trendLine}
+                showTrendLine
+                metric="median_price"
+                height={300}
+                loading={loading.trends}
+              />
+            </Suspense>
           )}
         </div>
 
@@ -457,13 +486,15 @@ export default function MarketIntelligencePage() {
           {errors.dealerBreakdown ? (
             <ErrorDisplay message={errors.dealerBreakdown} />
           ) : (
-            <DealerMarketShareChart
-              dealers={data.dealerBreakdown?.dealers ?? []}
-              metric={dealerMetric}
-              limit={10}
-              height={400}
-              loading={loading.dealerBreakdown}
-            />
+            <Suspense fallback={<ChartSkeleton height={400} />}>
+              <DealerMarketShareChart
+                dealers={data.dealerBreakdown?.dealers ?? []}
+                metric={dealerMetric}
+                limit={10}
+                height={400}
+                loading={loading.dealerBreakdown}
+              />
+            </Suspense>
           )}
         </div>
       </div>

@@ -103,77 +103,94 @@ export async function GET(request: NextRequest) {
     const periodEndISO = now.toISOString();
     const previousPeriodStartISO = previousPeriodStart.toISOString();
 
-    // Fetch all dealers
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: dealers, error: dealersError } = await (supabase as any)
-      .from('dealers')
-      .select('id, name, domain, is_active')
-      .eq('is_active', true)
-      .order('name');
+    // Fetch all data in parallel for better performance
+    const [
+      dealersResult,
+      clickEventsResult,
+      prevClickEventsResult,
+      dwellEventsResult,
+      favoriteEventsResult,
+      listingStatsResult,
+      listingDealerMapResult,
+    ] = await Promise.all([
+      // Fetch all dealers
+      supabase
+        .from('dealers')
+        .select('id, name, domain, is_active')
+        .eq('is_active', true)
+        .order('name'),
 
-    if (dealersError) {
-      console.error('Error fetching dealers:', dealersError);
+      // Fetch activity events for the period (click-throughs)
+      supabase
+        .from('activity_events')
+        .select('visitor_id, event_data, created_at')
+        .eq('event_type', 'external_link_click')
+        .gte('created_at', periodStartISO)
+        .order('created_at', { ascending: false })
+        .limit(10000),
+
+      // Fetch previous period clicks for trend comparison
+      supabase
+        .from('activity_events')
+        .select('event_data')
+        .eq('event_type', 'external_link_click')
+        .gte('created_at', previousPeriodStartISO)
+        .lt('created_at', periodStartISO)
+        .limit(10000),
+
+      // Fetch viewport dwell events (engagement)
+      supabase
+        .from('activity_events')
+        .select('event_data, created_at')
+        .eq('event_type', 'viewport_dwell')
+        .gte('created_at', periodStartISO)
+        .limit(20000),
+
+      // Fetch favorites
+      supabase
+        .from('activity_events')
+        .select('event_data')
+        .eq('event_type', 'favorite_add')
+        .gte('created_at', periodStartISO)
+        .limit(5000),
+
+      // Fetch listing counts and values per dealer
+      supabase
+        .from('listings')
+        .select('dealer_id, price_jpy')
+        .eq('is_available', true),
+
+      // Build dealer-to-listing mapping for dwell/favorite events
+      supabase
+        .from('listings')
+        .select('id, dealer_id'),
+    ]);
+
+    // Handle errors
+    if (dealersResult.error) {
+      console.error('Error fetching dealers:', dealersResult.error);
       return NextResponse.json({ error: 'Database error' }, { status: 500 });
     }
 
-    // Fetch activity events for the period (click-throughs)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: clickEvents, error: clickError } = await (supabase as any)
-      .from('activity_events')
-      .select('visitor_id, event_data, created_at')
-      .eq('event_type', 'external_link_click')
-      .gte('created_at', periodStartISO)
-      .order('created_at', { ascending: false })
-      .limit(10000);
-
-    if (clickError) {
-      console.error('Error fetching click events:', clickError);
+    if (clickEventsResult.error) {
+      console.error('Error fetching click events:', clickEventsResult.error);
       return NextResponse.json({ error: 'Database error' }, { status: 500 });
     }
 
-    // Fetch previous period clicks for trend comparison
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: prevClickEvents } = await (supabase as any)
-      .from('activity_events')
-      .select('event_data')
-      .eq('event_type', 'external_link_click')
-      .gte('created_at', previousPeriodStartISO)
-      .lt('created_at', periodStartISO)
-      .limit(10000);
+    // Extract data from results with explicit types for better inference
+    type EventData = { dealerName?: string; listingId?: number; dwellMs?: number };
+    type ActivityEvent = { visitor_id: string | null; event_data: EventData | null; created_at: string };
 
-    // Fetch viewport dwell events (engagement)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: dwellEvents } = await (supabase as any)
-      .from('activity_events')
-      .select('event_data, created_at')
-      .eq('event_type', 'viewport_dwell')
-      .gte('created_at', periodStartISO)
-      .limit(20000);
-
-    // Fetch favorites
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: favoriteEvents } = await (supabase as any)
-      .from('activity_events')
-      .select('event_data')
-      .eq('event_type', 'favorite_add')
-      .gte('created_at', periodStartISO)
-      .limit(5000);
-
-    // Fetch listing counts and values per dealer
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: listingStats } = await (supabase as any)
-      .from('listings')
-      .select('dealer_id, price_jpy')
-      .eq('is_available', true);
-
-    // Build dealer-to-listing mapping for dwell/favorite events
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: listingDealerMap } = await (supabase as any)
-      .from('listings')
-      .select('id, dealer_id');
+    const dealers = dealersResult.data as { id: number; name: string; domain: string; is_active: boolean }[] | null;
+    const clickEvents = clickEventsResult.data as ActivityEvent[] | null;
+    const prevClickEvents = prevClickEventsResult.data as { event_data: EventData | null }[] | null;
+    const dwellEvents = dwellEventsResult.data as { event_data: EventData | null; created_at: string }[] | null;
+    const favoriteEvents = favoriteEventsResult.data as { event_data: EventData | null }[] | null;
+    const listingStats = listingStatsResult.data as { dealer_id: number; price_jpy: number | null }[] | null;
+    const listingDealerMap = listingDealerMapResult.data as { id: number; dealer_id: number }[] | null;
 
     const listingToDealer: Record<number, number> = {};
-    (listingDealerMap || []).forEach((l: { id: number; dealer_id: number }) => {
+    (listingDealerMap || []).forEach((l) => {
       listingToDealer[l.id] = l.dealer_id;
     });
 
