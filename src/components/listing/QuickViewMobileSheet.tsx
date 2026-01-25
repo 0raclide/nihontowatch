@@ -301,13 +301,13 @@ export function QuickViewMobileSheet({
                   }}
                   onTouchStart={(e) => e.stopPropagation()}
                   onTouchEnd={(e) => e.stopPropagation()}
-                  className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors ${
+                  className={`w-8 h-8 flex items-center justify-center rounded-full transition-all duration-200 ${
                     isStudyMode
-                      ? 'bg-gold text-white'
-                      : 'hover:bg-ink/10 active:bg-ink/20 text-muted'
+                      ? 'bg-gold text-white shadow-lg'
+                      : 'magical-book'
                   }`}
                   aria-label={isStudyMode ? 'View photos' : 'Study setsumei'}
-                  title={isStudyMode ? 'View photos' : 'Study NBTHK setsumei'}
+                  title={isStudyMode ? 'View photos' : 'Read NBTHK evaluation'}
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}

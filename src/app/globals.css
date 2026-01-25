@@ -981,6 +981,70 @@ body.drawer-open {
 }
 
 /* ==========================================================================
+   Magical Book Icon - Study Setsumei Button
+   Floating effect with warm golden aura pulse
+   ========================================================================== */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes glowPulse {
+  0%, 100% {
+    box-shadow: 0 0 8px 2px rgba(184, 134, 11, 0.25),
+                0 0 16px 4px rgba(184, 134, 11, 0.15);
+  }
+  50% {
+    box-shadow: 0 0 12px 4px rgba(184, 134, 11, 0.4),
+                0 0 24px 8px rgba(184, 134, 11, 0.2);
+  }
+}
+
+/* Combined floating + glowing effect */
+.magical-book {
+  animation:
+    float 3s ease-in-out infinite,
+    glowPulse 2.5s ease-in-out infinite;
+  background: linear-gradient(135deg, rgba(184, 134, 11, 0.15) 0%, rgba(212, 175, 55, 0.1) 100%);
+  border: 1px solid rgba(184, 134, 11, 0.3);
+  color: var(--accent);
+}
+
+.magical-book:hover {
+  animation:
+    float 3s ease-in-out infinite,
+    glowPulse 1.5s ease-in-out infinite;
+  box-shadow: 0 0 16px 6px rgba(184, 134, 11, 0.5),
+              0 0 32px 12px rgba(184, 134, 11, 0.25);
+  background: linear-gradient(135deg, rgba(184, 134, 11, 0.25) 0%, rgba(212, 175, 55, 0.15) 100%);
+  border-color: rgba(184, 134, 11, 0.5);
+  transform: scale(1.05);
+}
+
+/* Dark mode adjustments - use theme accent color */
+html.dark .magical-book,
+html.theme-dark .magical-book,
+html.theme-opus .magical-book,
+html.theme-yuhindo .magical-book {
+  background: linear-gradient(135deg, var(--accent-glow) 0%, rgba(var(--accent), 0.1) 100%);
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 0 8px 2px var(--accent-glow),
+              0 0 16px 4px rgba(255, 255, 255, 0.05);
+}
+
+html.dark .magical-book:hover,
+html.theme-dark .magical-book:hover,
+html.theme-opus .magical-book:hover,
+html.theme-yuhindo .magical-book:hover {
+  box-shadow: 0 0 16px 6px var(--accent-glow),
+              0 0 32px 12px rgba(255, 255, 255, 0.1);
+}
+
+/* ==========================================================================
    Mobile Scroll Stability
    Prevents bouncing/jank during infinite scroll load more
    ========================================================================== */
