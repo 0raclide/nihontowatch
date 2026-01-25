@@ -1,17 +1,17 @@
 'use client';
 
 import { useState } from 'react';
-import ReactMarkdown from 'react-markdown';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { HighlightedMarkdown } from '@/components/glossary/HighlightedMarkdown';
-import type { Listing, CertificationType } from '@/types';
+import type { Listing, ListingWithEnrichment, CertificationType } from '@/types';
+import { getSetsumeiContent } from '@/types';
 
 // =============================================================================
 // TYPES
 // =============================================================================
 
 interface SetsumeiSectionProps {
-  listing: Listing;
+  listing: Listing | ListingWithEnrichment;
   className?: string;
   /** Preview mode shows truncated content with "Read more" link */
   variant?: 'preview' | 'full';
@@ -66,9 +66,12 @@ export function SetsumeiSection({
     return null;
   }
 
-  const hasSetsumei = !!listing.setsumei_text_en;
-  const hasOriginal = !!listing.setsumei_text_ja;
+  // Get best available setsumei (prefers Yuhinkai over OCR)
+  const setsumei = getSetsumeiContent(listing as ListingWithEnrichment);
+  const hasSetsumei = !!setsumei?.text_en;
+  const hasOriginal = !!setsumei?.text_ja;
   const hasAccess = canAccess('setsumei_translation');
+  const isYuhinkai = setsumei?.source === 'yuhinkai';
 
   // Default padding classes (can be overridden via className)
   const baseClasses = className.includes('px-0') ? 'py-3' : 'px-4 py-3 lg:px-5';
@@ -96,15 +99,16 @@ export function SetsumeiSection({
 
   // Gated state - show preview for users without access
   if (!hasAccess) {
-    const fullText = listing.setsumei_text_en || '';
+    const fullText = setsumei?.text_en || '';
     // Show ~1/3 of content as readable preview
-    const previewLength = Math.min(Math.floor(fullText.length / 3), 400);
-    const previewText = fullText.slice(0, previewLength);
+    const gatedPreviewLength = Math.min(Math.floor(fullText.length / 3), 400);
+    const previewText = fullText.slice(0, gatedPreviewLength);
     // Find a good break point (end of sentence or word)
     const lastPeriod = previewText.lastIndexOf('.');
     const lastSpace = previewText.lastIndexOf(' ');
-    const breakPoint = lastPeriod > previewLength * 0.7 ? lastPeriod + 1 : lastSpace;
+    const breakPoint = lastPeriod > gatedPreviewLength * 0.7 ? lastPeriod + 1 : lastSpace;
     const cleanPreview = breakPoint > 0 ? previewText.slice(0, breakPoint) : previewText;
+    const certLabel = setsumei?.cert_type || listing.cert_type;
 
     return (
       <div className={`${baseClasses} ${className}`}>
@@ -112,23 +116,27 @@ export function SetsumeiSection({
         <div className="flex items-center justify-between mb-1">
           <div className="flex items-center gap-2">
             <h3 className="text-[10px] uppercase tracking-wider text-gold font-medium">
-              NBTHK Zufu Commentary
+              {isYuhinkai ? 'Official Catalog Translation' : 'NBTHK Zufu Commentary'}
             </h3>
             <span className="text-[9px] px-1.5 py-0.5 bg-gold/10 text-gold rounded">
-              {listing.cert_type}
+              {certLabel}
+              {setsumei?.cert_session && ` #${setsumei.cert_session}`}
             </span>
           </div>
         </div>
 
-        <p className="text-[10px] text-muted/70 mb-2 flex items-center gap-1">
-          <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <span>AI translation — may contain errors</span>
-        </p>
+        {/* Only show AI disclaimer for OCR translations */}
+        {!isYuhinkai && (
+          <p className="text-[10px] text-muted/70 mb-2 flex items-center gap-1">
+            <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>AI translation — may contain errors</span>
+          </p>
+        )}
 
         {/* Gated Content - readable preview that fades */}
-        <div className="bg-surface-elevated/30 border border-gold/20 rounded-lg p-4 relative overflow-hidden">
+        <div className={`${isYuhinkai ? 'bg-gold/5 border-gold/20' : 'bg-surface-elevated/30 border-gold/20'} border rounded-lg p-4 relative overflow-hidden`}>
           {/* Readable preview text */}
           <div className="prose prose-sm prose-invert max-w-none text-ink/80
             prose-p:text-[13px] prose-p:leading-relaxed prose-p:mb-2
@@ -154,14 +162,22 @@ export function SetsumeiSection({
             </button>
           </div>
         </div>
+
+        {/* Source attribution for Yuhinkai */}
+        {isYuhinkai && (
+          <div className="mt-2 text-[10px] text-muted">
+            Source: Yuhinkai Catalog
+          </div>
+        )}
       </div>
     );
   }
 
   // Determine what text to display
   const displayText = showOriginal
-    ? listing.setsumei_text_ja || listing.setsumei_text_en
-    : listing.setsumei_text_en;
+    ? setsumei?.text_ja || setsumei?.text_en
+    : setsumei?.text_en;
+  const certLabel = setsumei?.cert_type || listing.cert_type;
 
   // For preview mode, truncate the text
   const isPreview = variant === 'preview';
@@ -176,10 +192,11 @@ export function SetsumeiSection({
       <div className="flex items-center justify-between mb-1">
         <div className="flex items-center gap-2">
           <h3 className="text-[10px] uppercase tracking-wider text-gold font-medium">
-            NBTHK Zufu Commentary
+            {isYuhinkai ? 'Official Catalog Translation' : 'NBTHK Zufu Commentary'}
           </h3>
           <span className="text-[9px] px-1.5 py-0.5 bg-gold/10 text-gold rounded">
-            {listing.cert_type}
+            {certLabel}
+            {setsumei?.cert_session && ` #${setsumei.cert_session}`}
           </span>
         </div>
         {/* Toggle for original Japanese - only in full mode with original available */}
@@ -194,8 +211,8 @@ export function SetsumeiSection({
         )}
       </div>
 
-      {/* AI translation disclaimer - only show when viewing English translation */}
-      {!showOriginal && (
+      {/* AI translation disclaimer - only show for OCR when viewing English translation */}
+      {!showOriginal && !isYuhinkai && (
         <p className="text-[10px] text-muted/70 mb-2 flex items-center gap-1">
           <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -205,7 +222,7 @@ export function SetsumeiSection({
       )}
 
       {/* Content */}
-      <div className="bg-surface-elevated/30 border border-gold/20 rounded-lg p-4">
+      <div className={`${isYuhinkai ? 'bg-gold/5 border-gold/20' : 'bg-surface-elevated/30 border-gold/20'} border rounded-lg p-4`}>
         {showOriginal ? (
           // Japanese text - preserve whitespace
           <p className="text-[13px] text-ink/80 leading-relaxed whitespace-pre-line font-jp">
@@ -257,6 +274,13 @@ export function SetsumeiSection({
           </button>
         )}
       </div>
+
+      {/* Source attribution for Yuhinkai */}
+      {isYuhinkai && (
+        <div className="mt-2 text-[10px] text-muted">
+          Source: Yuhinkai Catalog
+        </div>
+      )}
     </div>
   );
 }
