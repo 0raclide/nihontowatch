@@ -528,6 +528,7 @@ function LazyImage({
               onLoad={() => setLoaded(true)}
               onError={handleError}
               loading={isFirst ? 'eager' : 'lazy'}
+              fetchPriority={isFirst ? 'high' : undefined}
               placeholder="blur"
               blurDataURL={BLUR_PLACEHOLDER}
               sizes="(max-width: 1024px) 100vw, 60vw"

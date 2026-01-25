@@ -13,7 +13,12 @@ import {
 import { usePathname } from 'next/navigation';
 import type { Listing } from '@/types';
 import { useSignupPressureOptional } from './SignupPressureContext';
-import { getAllImages } from '@/lib/images';
+import {
+  getAllImages,
+  isValidItemImage,
+  getCachedValidation,
+  setCachedValidation,
+} from '@/lib/images';
 
 // ============================================================================
 // Types
@@ -319,25 +324,44 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
 
   // Prefetch images for adjacent listings when navigating
   // This makes J/K navigation feel instant
+  // Also validates images during prefetch to populate cache
   useEffect(() => {
     if (!isOpen || currentIndex === -1 || listings.length === 0) return;
 
-    const preloadImages = (listing: Listing, count: number = 2) => {
+    const preloadAndValidateImages = (listing: Listing, count: number = 2) => {
       const images = getAllImages(listing);
       images.slice(0, count).forEach((url) => {
         const img = new window.Image();
+
+        // On load, validate and cache the result
+        img.onload = () => {
+          if (getCachedValidation(url) === undefined) {
+            const validation = isValidItemImage({
+              width: img.naturalWidth,
+              height: img.naturalHeight,
+            });
+            setCachedValidation(url, validation.isValid ? 'valid' : 'invalid');
+          }
+        };
+
+        img.onerror = () => {
+          if (getCachedValidation(url) === undefined) {
+            setCachedValidation(url, 'invalid');
+          }
+        };
+
         img.src = url;
       });
     };
 
     // Preload previous listing
     if (currentIndex > 0) {
-      preloadImages(listings[currentIndex - 1]);
+      preloadAndValidateImages(listings[currentIndex - 1]);
     }
 
     // Preload next listing
     if (currentIndex < listings.length - 1) {
-      preloadImages(listings[currentIndex + 1]);
+      preloadAndValidateImages(listings[currentIndex + 1]);
     }
   }, [isOpen, currentIndex, listings]);
 

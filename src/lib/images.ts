@@ -17,6 +17,76 @@
 
 import { IMAGE_QUALITY, DEALERS_WITHOUT_IMAGES } from './constants';
 
+// =============================================================================
+// VALIDATION CACHE
+// =============================================================================
+
+/**
+ * Global cache for image validation results.
+ * Prevents double-loading images for dimension checks.
+ *
+ * Key: image URL
+ * Value: 'valid' | 'invalid' | Promise (pending validation)
+ */
+const validationCache = new Map<string, 'valid' | 'invalid' | Promise<'valid' | 'invalid'>>();
+
+/**
+ * Check if an image URL has a cached validation result.
+ * Returns the result if available, or undefined if not cached.
+ */
+export function getCachedValidation(url: string): 'valid' | 'invalid' | undefined {
+  const cached = validationCache.get(url);
+  if (cached === 'valid' || cached === 'invalid') {
+    return cached;
+  }
+  return undefined;
+}
+
+/**
+ * Get pending validation promise if one exists.
+ */
+export function getPendingValidation(url: string): Promise<'valid' | 'invalid'> | undefined {
+  const cached = validationCache.get(url);
+  if (cached instanceof Promise) {
+    return cached;
+  }
+  return undefined;
+}
+
+/**
+ * Cache a validation result for an image URL.
+ */
+export function setCachedValidation(url: string, result: 'valid' | 'invalid'): void {
+  validationCache.set(url, result);
+}
+
+/**
+ * Set a pending validation promise for an image URL.
+ * Returns the promise for chaining.
+ */
+export function setPendingValidation(url: string, promise: Promise<'valid' | 'invalid'>): Promise<'valid' | 'invalid'> {
+  validationCache.set(url, promise);
+  return promise;
+}
+
+/**
+ * Clear the validation cache (mainly for testing).
+ */
+export function clearValidationCache(): void {
+  validationCache.clear();
+}
+
+/**
+ * Get the current size of the validation cache (for debugging).
+ */
+export function getValidationCacheSize(): number {
+  return validationCache.size;
+}
+
+// =============================================================================
+// TYPES
+// =============================================================================
+
 /**
  * Minimal interface for image source fields.
  * Works with any object that has these optional fields.

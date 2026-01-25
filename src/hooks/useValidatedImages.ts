@@ -1,7 +1,13 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { isValidItemImage } from '@/lib/images';
+import {
+  isValidItemImage,
+  getCachedValidation,
+  getPendingValidation,
+  setCachedValidation,
+  setPendingValidation,
+} from '@/lib/images';
 
 /**
  * Hook that validates image URLs by checking their dimensions.
@@ -9,9 +15,14 @@ import { isValidItemImage } from '@/lib/images';
  * Filters out invalid images (icons, buttons, tiny UI elements) that may have
  * been accidentally scraped from dealer pages alongside actual product images.
  *
+ * Uses a global cache to prevent double-loading:
+ * - If an image was already validated (e.g., during preload), uses cached result
+ * - If validation is pending, waits for existing promise
+ * - Only fetches images that haven't been seen before
+ *
  * Uses a two-phase approach:
  * 1. Initially returns all images (assumes valid)
- * 2. As images are validated in parallel, removes invalid ones
+ * 2. As images are validated, removes invalid ones
  *
  * This prevents layout shifts while still filtering bad images.
  *
@@ -50,31 +61,54 @@ export function useValidatedImages(imageUrls: string[]) {
     }
 
     // Validate all images in PARALLEL (not sequentially)
-    // This prevents race conditions where component re-renders interrupt validation
+    // Uses cache to avoid re-fetching already-validated images
     let mounted = true;
 
-    const validateImage = (url: string, index: number): Promise<void> => {
-      return new Promise((resolve) => {
-        if (!url) {
-          if (mounted) {
-            setCheckedIndices(prev => new Set(prev).add(index));
-          }
-          resolve();
-          return;
+    const validateImage = async (url: string, index: number): Promise<void> => {
+      if (!url) {
+        if (mounted) {
+          setCheckedIndices(prev => new Set(prev).add(index));
         }
+        return;
+      }
 
+      // Check cache first - instant result if already validated
+      const cached = getCachedValidation(url);
+      if (cached !== undefined) {
+        if (mounted) {
+          if (cached === 'valid') {
+            setValidIndices(prev => new Set(prev).add(index));
+          }
+          setCheckedIndices(prev => new Set(prev).add(index));
+        }
+        return;
+      }
+
+      // Check for pending validation - wait for existing request
+      const pending = getPendingValidation(url);
+      if (pending) {
+        const result = await pending;
+        if (mounted) {
+          if (result === 'valid') {
+            setValidIndices(prev => new Set(prev).add(index));
+          }
+          setCheckedIndices(prev => new Set(prev).add(index));
+        }
+        return;
+      }
+
+      // No cache hit - need to validate by loading the image
+      const validationPromise = new Promise<'valid' | 'invalid'>((resolve) => {
         const img = new Image();
         let resolved = false;
 
         const finish = (isValid: boolean) => {
-          if (resolved || !mounted) return;
+          if (resolved) return;
           resolved = true;
 
-          if (isValid) {
-            setValidIndices(prev => new Set(prev).add(index));
-          }
-          setCheckedIndices(prev => new Set(prev).add(index));
-          resolve();
+          const result = isValid ? 'valid' : 'invalid';
+          setCachedValidation(url, result);
+          resolve(result);
         };
 
         // Set a timeout for slow images (5 seconds)
@@ -100,6 +134,17 @@ export function useValidatedImages(imageUrls: string[]) {
 
         img.src = url;
       });
+
+      // Register the pending validation so other consumers can wait for it
+      setPendingValidation(url, validationPromise);
+
+      const result = await validationPromise;
+      if (mounted) {
+        if (result === 'valid') {
+          setValidIndices(prev => new Set(prev).add(index));
+        }
+        setCheckedIndices(prev => new Set(prev).add(index));
+      }
     };
 
     // Validate all images in parallel

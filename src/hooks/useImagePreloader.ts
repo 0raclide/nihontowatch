@@ -1,7 +1,13 @@
 'use client';
 
 import { useCallback, useRef } from 'react';
-import { getAllImages, type ImageSource } from '@/lib/images';
+import {
+  getAllImages,
+  type ImageSource,
+  isValidItemImage,
+  getCachedValidation,
+  setCachedValidation,
+} from '@/lib/images';
 
 /**
  * Cache of preloaded image URLs to avoid duplicate requests.
@@ -22,6 +28,9 @@ const MAX_PRELOAD_COUNT = 3;
  * causes the browser to fetch and cache them. When the image is later
  * displayed, it loads instantly from cache.
  *
+ * Also validates images during preload and caches results, so when
+ * QuickView opens, validation is instant from cache.
+ *
  * @example
  * ```tsx
  * const { preloadListing } = useImagePreloader();
@@ -39,8 +48,9 @@ export function useImagePreloader() {
   const activePreloads = useRef<HTMLImageElement[]>([]);
 
   /**
-   * Preload a single image URL.
+   * Preload a single image URL and validate its dimensions.
    * Skips if already preloaded to avoid duplicate requests.
+   * Populates validation cache for instant QuickView validation.
    */
   const preloadImage = useCallback((url: string): HTMLImageElement | null => {
     if (!url || preloadedUrls.has(url)) {
@@ -48,19 +58,44 @@ export function useImagePreloader() {
     }
 
     const img = new Image();
-    img.src = url;
-    preloadedUrls.add(url);
 
     // Track for potential cancellation
     activePreloads.current.push(img);
 
-    // Clean up tracking once loaded or failed
-    img.onload = img.onerror = () => {
+    // On load, validate dimensions and cache the result
+    img.onload = () => {
+      // Remove from active preloads
       const index = activePreloads.current.indexOf(img);
       if (index > -1) {
         activePreloads.current.splice(index, 1);
       }
+
+      // Validate and cache if not already cached
+      if (getCachedValidation(url) === undefined) {
+        const validation = isValidItemImage({
+          width: img.naturalWidth,
+          height: img.naturalHeight,
+        });
+        setCachedValidation(url, validation.isValid ? 'valid' : 'invalid');
+      }
     };
+
+    img.onerror = () => {
+      // Remove from active preloads
+      const index = activePreloads.current.indexOf(img);
+      if (index > -1) {
+        activePreloads.current.splice(index, 1);
+      }
+
+      // Cache as invalid on error
+      if (getCachedValidation(url) === undefined) {
+        setCachedValidation(url, 'invalid');
+      }
+    };
+
+    // Start loading
+    img.src = url;
+    preloadedUrls.add(url);
 
     return img;
   }, []);
