@@ -11,6 +11,34 @@ export type TextSegment =
 let cachedMatcher: RegExp | null = null;
 
 /**
+ * Check if a character is a Unicode letter (handles macrons, accents, etc.)
+ * Uses Unicode property escapes for proper letter detection
+ */
+function isUnicodeLetter(char: string | undefined): boolean {
+  if (!char) return false;
+  // Match any Unicode letter (Latin, Japanese, etc.)
+  return /\p{L}/u.test(char);
+}
+
+/**
+ * Check if a match is at a valid word boundary
+ * Handles Unicode characters that JavaScript's \b doesn't recognize
+ * e.g., prevents "ken" from matching inside "Tōken" (ō is Unicode)
+ */
+function isAtWordBoundary(text: string, start: number, end: number): boolean {
+  const charBefore = text[start - 1];
+  const charAfter = text[end];
+
+  // Check if surrounded by letters (not a word boundary)
+  const letterBefore = isUnicodeLetter(charBefore);
+  const letterAfter = isUnicodeLetter(charAfter);
+
+  // Valid if NOT preceded by a letter AND NOT followed by a letter
+  // (i.e., at least one side is a word boundary)
+  return !letterBefore && !letterAfter;
+}
+
+/**
  * Build a regex pattern that matches all glossary terms
  * Terms are sorted by length (longest first) to handle overlapping matches
  * e.g., "ko-itame" matches before "itame"
@@ -35,9 +63,9 @@ export function buildTermMatcher(): RegExp {
       return flexible;
     });
 
-  // Build regex with word boundaries
-  // Using \b for word boundaries to avoid partial matches
-  cachedMatcher = new RegExp(`\\b(${termPatterns.join('|')})\\b`, 'gi');
+  // Build regex WITHOUT word boundaries - we'll check boundaries manually
+  // to properly handle Unicode characters like ō, ū, etc.
+  cachedMatcher = new RegExp(`(${termPatterns.join('|')})`, 'gi');
   return cachedMatcher;
 }
 
@@ -64,6 +92,12 @@ export function findTermMatches(text: string): MatchInfo[] {
   while ((match = matcher.exec(text)) !== null) {
     const start = match.index;
     const end = start + match[0].length;
+
+    // Check Unicode-aware word boundaries
+    // This prevents "ken" from matching inside "Tōken" (ō is a Unicode letter)
+    if (!isAtWordBoundary(text, start, end)) {
+      continue;
+    }
 
     // Check if this range overlaps with any existing match
     const overlaps = occupiedRanges.some(
