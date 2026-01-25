@@ -629,4 +629,77 @@ describe('ListingCard Component', () => {
       });
     });
   });
+
+  describe('React.memo comparison for setsumei changes', () => {
+    /**
+     * These tests verify that ListingCard re-renders when setsumei-related
+     * data changes. This is critical because React.memo could prevent
+     * badge updates if the comparison function is too aggressive.
+     */
+
+    it('re-renders when setsumei_text_en changes from null to value', () => {
+      const { rerender } = render(<ListingCard {...defaultProps} />);
+
+      // Initially no badge (mockListing has no setsumei)
+      expect(screen.queryByTestId('setsumei-zufu-badge')).not.toBeInTheDocument();
+
+      // Update with setsumei_text_en
+      const listingWithSetsumei = {
+        ...mockListing,
+        setsumei_text_en: '## New setsumei content',
+      };
+      rerender(<ListingCard {...defaultProps} listing={listingWithSetsumei} />);
+
+      // Badge should now appear
+      expect(screen.getByTestId('setsumei-zufu-badge')).toBeInTheDocument();
+    });
+
+    it('re-renders when listing_yuhinkai_enrichment is added', () => {
+      const { rerender } = render(<ListingCard {...defaultProps} />);
+
+      // Initially no badge
+      expect(screen.queryByTestId('setsumei-zufu-badge')).not.toBeInTheDocument();
+
+      // Update with Yuhinkai enrichment
+      const listingWithEnrichment = {
+        ...mockListing,
+        listing_yuhinkai_enrichment: [{
+          setsumei_en: '## Yuhinkai setsumei',
+          match_confidence: 'DEFINITIVE',
+          connection_source: 'manual',
+          verification_status: 'confirmed',
+        }],
+      };
+      rerender(<ListingCard {...defaultProps} listing={listingWithEnrichment} />);
+
+      // Badge should now appear
+      expect(screen.getByTestId('setsumei-zufu-badge')).toBeInTheDocument();
+    });
+
+    it('re-renders when listing_yuhinkai_enrichment is removed (disconnect)', () => {
+      const listingWithEnrichment = {
+        ...mockListing,
+        listing_yuhinkai_enrichment: [{
+          setsumei_en: '## Yuhinkai setsumei',
+          match_confidence: 'DEFINITIVE',
+          connection_source: 'manual',
+          verification_status: 'confirmed',
+        }],
+      };
+      const { rerender } = render(<ListingCard {...defaultProps} listing={listingWithEnrichment} />);
+
+      // Initially has badge
+      expect(screen.getByTestId('setsumei-zufu-badge')).toBeInTheDocument();
+
+      // Remove enrichment
+      const listingWithoutEnrichment = {
+        ...mockListing,
+        listing_yuhinkai_enrichment: [],
+      };
+      rerender(<ListingCard {...defaultProps} listing={listingWithoutEnrichment} />);
+
+      // Badge should be gone
+      expect(screen.queryByTestId('setsumei-zufu-badge')).not.toBeInTheDocument();
+    });
+  });
 });
