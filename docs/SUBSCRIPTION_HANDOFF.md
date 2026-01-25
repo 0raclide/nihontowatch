@@ -2,7 +2,7 @@
 
 Implementation status and handoff notes for the Nihontowatch Pro Tier system.
 
-**Last Updated:** 2026-01-25
+**Last Updated:** 2026-01-25 (Dealer Analytics Tracking Fix)
 
 ---
 
@@ -53,6 +53,45 @@ NEXT_PUBLIC_TRIAL_MODE=false  # Normal paywall restored
 ---
 
 ## Changelog
+
+### 2026-01-25: Dealer Analytics Tracking Fix
+
+**Problem Identified:**
+- Dealer analytics showed 0 listing views for all dealers
+- `viewport_dwell` events were being silently rejected by the API
+- GDPR consent defaulted to blocking all tracking (users who never interacted with cookie banner had no tracking)
+- Listing detail page had no tracking at all
+
+**Root Causes:**
+
+1. **API validation missing `viewport_dwell`** - The `VALID_EVENT_TYPES` array in `/api/track` didn't include `viewport_dwell`, so events were filtered out silently
+2. **Database constraint missing `viewport_dwell`** - Even if API passed, DB would reject the insert
+3. **Consent defaulted to OFF** - `hasAnalyticsConsent()` returned `false` when no consent record existed
+4. **No tracking on detail page** - "View on {dealer}" button clicks weren't tracked
+
+**Fixes Applied:**
+
+| File | Change |
+|------|--------|
+| `src/app/api/track/route.ts` | Added `viewport_dwell` to `VALID_EVENT_TYPES` with validation |
+| `supabase/migrations/042_add_viewport_dwell_event_type.sql` | Added `viewport_dwell` to DB constraint |
+| `src/lib/consent/helpers.ts` | `hasAnalyticsConsent()` now returns `true` by default |
+| `src/lib/tracking/ActivityTracker.tsx` | Updated comments to reflect new default |
+| `src/app/listing/[id]/ListingDetailClient.tsx` | Added external link click + dwell time tracking |
+
+**Policy Change:**
+- **Old behavior:** Tracking OFF by default, only ON if user explicitly accepts cookies
+- **New behavior:** Tracking ON by default, only OFF if user explicitly declines
+
+**Tests Added:**
+- Created `tests/api/track/route.test.ts` with 28 tests covering all event types
+- Updated `tests/consent/tracking-consent.test.ts` for new default behavior
+- Updated `tests/consent/consent-storage.test.ts` for new default behavior
+
+**Post-Redirect Tracking (Confirmed Impossible):**
+Cannot track time spent on dealer sites after redirect - this is a fundamental cross-origin security limitation. Only "intent" (clicks, dwell on our site) can be tracked, not "outcomes" (purchases on dealer sites).
+
+---
 
 ### 2026-01-24: Search Alerts Production Fix & Enthusiast Tier Access
 
