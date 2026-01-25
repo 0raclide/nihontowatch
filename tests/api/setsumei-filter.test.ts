@@ -27,6 +27,7 @@ vi.mock('@/lib/subscription/server', () => ({
       status: 'active',
       userId: null,
       isDelayed: false, // KEY: Prevents .lte() code path
+      isAdmin: true, // Enable admin-only filters like missing_setsumei
     })
   ),
   getDataDelayCutoff: vi.fn(() => new Date().toISOString()),
@@ -38,6 +39,8 @@ interface QueryTracker {
   fromCalls: string[];
   selectCalls: Array<{ columns: string }>;
   inCalls: Array<{ column: string; values: unknown[] }>;
+  isCalls: Array<{ column: string; value: unknown }>;
+  eqCalls: Array<{ column: string; value: unknown }>;
 }
 
 let queryTracker: QueryTracker;
@@ -62,9 +65,15 @@ function createMockQueryBuilder(returnData: unknown[] = [], returnCount = 0) {
     return chain();
   });
 
-  builder.eq = vi.fn(() => chain());
+  builder.eq = vi.fn((column: string, value: unknown) => {
+    queryTracker.eqCalls.push({ column, value });
+    return chain();
+  });
   builder.or = vi.fn(() => chain());
-  builder.is = vi.fn(() => chain());
+  builder.is = vi.fn((column: string, value: unknown) => {
+    queryTracker.isCalls.push({ column, value });
+    return chain();
+  });
   builder.filter = vi.fn(() => chain());
   builder.order = vi.fn(() => chain());
   builder.textSearch = vi.fn(() => chain());
@@ -107,6 +116,8 @@ describe('Setsumei Filter - Browse API', () => {
       fromCalls: [],
       selectCalls: [],
       inCalls: [],
+      isCalls: [],
+      eqCalls: [],
     };
     mockQueryBuilder = createMockQueryBuilder([], 0);
     vi.clearAllMocks();
@@ -219,5 +230,72 @@ describe('Setsumei Data Contract', () => {
 
     expect(setsumeiWithSession).toMatch(/^##\s+/);
     expect(setsumeiWithSession).toMatch(/Session/i);
+  });
+});
+
+describe('missing_setsumei=true Filter (Admin Queue)', () => {
+  beforeEach(() => {
+    queryTracker = {
+      notCalls: [],
+      fromCalls: [],
+      selectCalls: [],
+      inCalls: [],
+      isCalls: [],
+      eqCalls: [],
+    };
+    mockQueryBuilder = createMockQueryBuilder([], 0);
+    vi.clearAllMocks();
+  });
+
+  it('should filter for Juyo/Tokuju items with setsumei_text_en IS NULL', async () => {
+    const request = new NextRequest(
+      'http://localhost:3000/api/browse?missing_setsumei=true'
+    );
+
+    await GET(request);
+
+    // Should apply cert_type filter for Juyo/Tokuju
+    const certFilter = queryTracker.inCalls.find(
+      (call) => call.column === 'cert_type'
+    );
+    expect(certFilter).toBeDefined();
+    expect(certFilter?.values).toContain('Juyo');
+    expect(certFilter?.values).toContain('Tokuju');
+
+    // Should filter where setsumei_text_en IS NULL
+    const setsumeiIsNull = queryTracker.isCalls.find(
+      (call) => call.column === 'setsumei_text_en' && call.value === null
+    );
+    expect(setsumeiIsNull).toBeDefined();
+  });
+
+  it('should query yuhinkai_enrichments to exclude manual enrichments', async () => {
+    const request = new NextRequest(
+      'http://localhost:3000/api/browse?missing_setsumei=true'
+    );
+
+    await GET(request);
+
+    // Should query yuhinkai_enrichments table for manual connections
+    const yuhinkaiQuery = queryTracker.fromCalls.find(
+      (table) => table === 'yuhinkai_enrichments'
+    );
+    expect(yuhinkaiQuery).toBeDefined();
+
+    // Should filter for manual, confirmed, definitive enrichments
+    const manualFilter = queryTracker.eqCalls.find(
+      (call) => call.column === 'connection_source' && call.value === 'manual'
+    );
+    expect(manualFilter).toBeDefined();
+
+    const confirmedFilter = queryTracker.eqCalls.find(
+      (call) => call.column === 'verification_status' && call.value === 'confirmed'
+    );
+    expect(confirmedFilter).toBeDefined();
+
+    const definitiveFilter = queryTracker.eqCalls.find(
+      (call) => call.column === 'match_confidence' && call.value === 'DEFINITIVE'
+    );
+    expect(definitiveFilter).toBeDefined();
   });
 });

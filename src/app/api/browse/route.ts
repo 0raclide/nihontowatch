@@ -355,6 +355,21 @@ export async function GET(request: NextRequest) {
       query = query.in('cert_type', juyoCerts);
       // Filter where setsumei_text_en IS NULL (no OCR translation)
       query = query.is('setsumei_text_en', null);
+
+      // Also exclude listings with valid manual Yuhinkai enrichments
+      // These already have setsumei via the enrichment system (not OCR)
+      const { data: manualEnrichments } = await supabase
+        .from('yuhinkai_enrichments')
+        .select('listing_id')
+        .eq('connection_source', 'manual')
+        .eq('verification_status', 'confirmed')
+        .eq('match_confidence', 'DEFINITIVE')
+        .not('setsumei_en', 'is', null);
+
+      if (manualEnrichments?.length) {
+        const excludeIds = manualEnrichments.map(e => e.listing_id);
+        query = query.not('id', 'in', `(${excludeIds.join(',')})`);
+      }
     }
 
     // Process query with semantic extraction, numeric filters, and text search
