@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Image from 'next/image';
 import { HighlightedMarkdown } from '@/components/glossary/HighlightedMarkdown';
 import type { ListingWithEnrichment } from '@/types';
 import { getSetsumeiContent } from '@/types';
@@ -25,8 +24,6 @@ interface StudySetsumeiViewProps {
  */
 export function StudySetsumeiView({ listing, onBackToPhotos }: StudySetsumeiViewProps) {
   const [showOriginal, setShowOriginal] = useState(false);
-  const [imageLoaded, setImageLoaded] = useState(false);
-  const [imageError, setImageError] = useState(false);
 
   const setsumei = getSetsumeiContent(listing);
 
@@ -39,9 +36,6 @@ export function StudySetsumeiView({ listing, onBackToPhotos }: StudySetsumeiView
     : setsumei.text_en;
 
   const hasOriginal = !!setsumei.text_ja;
-  const sourceLabel = setsumei.source === 'yuhinkai'
-    ? 'Yuhinkai Catalog'
-    : 'NBTHK Zufu';
 
   return (
     <div className="h-full flex flex-col bg-linen" data-testid="study-setsumei-view">
@@ -73,32 +67,6 @@ export function StudySetsumeiView({ listing, onBackToPhotos }: StudySetsumeiView
 
       {/* Scrollable content */}
       <div className="flex-1 overflow-y-auto overscroll-contain">
-        {/* Setsumei image (if available) */}
-        {setsumei.image_url && !imageError && (
-          <div className="relative bg-cream border-b border-gold/10">
-            {!imageLoaded && (
-              <div className="aspect-[3/4] max-h-[400px] img-loading" />
-            )}
-            <Image
-              src={setsumei.image_url}
-              alt="NBTHK Setsumei document"
-              width={600}
-              height={800}
-              className={`w-full h-auto max-h-[400px] object-contain transition-opacity duration-300 ${
-                imageLoaded ? 'opacity-100' : 'opacity-0 absolute inset-0'
-              }`}
-              onLoad={() => setImageLoaded(true)}
-              onError={() => setImageError(true)}
-              priority
-            />
-            {imageLoaded && (
-              <div className="absolute bottom-2 right-2 px-2 py-1 bg-ink/60 backdrop-blur-sm rounded text-[10px] text-white/80">
-                Original Document
-              </div>
-            )}
-          </div>
-        )}
-
         {/* Content section */}
         <div className="px-4 py-5 lg:px-6">
           {/* Language toggle */}
@@ -156,18 +124,6 @@ export function StudySetsumeiView({ listing, onBackToPhotos }: StudySetsumeiView
             )}
           </div>
 
-          {/* Source attribution */}
-          <div className="mt-4 flex items-center justify-between text-[10px] text-muted">
-            <div className="flex items-center gap-1.5">
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              <span>Source: {sourceLabel}</span>
-            </div>
-            {setsumei.source === 'yuhinkai' && (
-              <span className="text-gold font-medium">Official Translation</span>
-            )}
-          </div>
         </div>
 
         {/* Bottom padding for mobile safe area */}
