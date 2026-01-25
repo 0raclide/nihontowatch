@@ -303,6 +303,7 @@ function HomeContent() {
 
         // Set admin status from API response
         if (json.isAdmin !== undefined) {
+          console.log('[Browse] Setting isAdmin from API:', json.isAdmin);
           setIsAdmin(json.isAdmin);
         }
 
