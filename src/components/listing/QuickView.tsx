@@ -455,6 +455,55 @@ function LazyImage({
     setUseUnoptimized(false);
   }, [src]);
 
+  // Mobile Safari fix: onLoad doesn't always fire on initial page load from deep links.
+  // This effect checks if the image is already complete (cached) or uses a fallback timeout.
+  // See: https://bugs.webkit.org/show_bug.cgi?id=233419
+  useEffect(() => {
+    if (!isVisible || loaded || error) return;
+
+    // Check if the image is already complete (e.g., from browser cache)
+    // Need to wait a tick for the img element to be available in the DOM
+    const checkComplete = () => {
+      // Find the img element within our container (Next.js Image renders an img)
+      const container = ref.current;
+      if (!container) return false;
+
+      const img = container.querySelector('img');
+      if (img && img.complete && img.naturalWidth > 0) {
+        setLoaded(true);
+        return true;
+      }
+      return false;
+    };
+
+    // Check immediately after render
+    const immediateCheck = requestAnimationFrame(() => {
+      checkComplete();
+    });
+
+    // Fallback timeout for first image: if onLoad doesn't fire within 3 seconds,
+    // assume the image loaded (mobile Safari sometimes doesn't fire onLoad)
+    let fallbackTimeout: ReturnType<typeof setTimeout> | undefined;
+    if (isFirst) {
+      fallbackTimeout = setTimeout(() => {
+        if (!loaded && !error) {
+          // Double-check if image is complete before forcing loaded state
+          if (checkComplete()) return;
+
+          // Force loaded state - the image is likely rendered but onLoad didn't fire
+          // This is better UX than showing a perpetual loading spinner
+          console.warn(`[LazyImage] Fallback: forcing loaded state for image ${index} after timeout`);
+          setLoaded(true);
+        }
+      }, 3000);
+    }
+
+    return () => {
+      cancelAnimationFrame(immediateCheck);
+      if (fallbackTimeout) clearTimeout(fallbackTimeout);
+    };
+  }, [isVisible, loaded, error, isFirst, index]);
+
   useEffect(() => {
     const element = ref.current;
     if (!element) return;

@@ -637,16 +637,9 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    // Cache settings based on user authentication
-    // Authenticated users: no caching to ensure fresh personalized data
-    // Anonymous users: public cache for performance
-    if (subscription.userId) {
-      // No caching for authenticated users - ensures subscription tier is respected
-      response.headers.set('Cache-Control', 'private, no-store, must-revalidate');
-    } else {
-      // Public cache for anonymous users - can be shared via CDN
-      response.headers.set('Cache-Control', `public, s-maxage=${CACHE.BROWSE_RESULTS}, stale-while-revalidate=${CACHE.SWR_WINDOW}`);
-    }
+    // Always use private caching to prevent CDN from caching isAdmin=false responses
+    // This fixes a race condition where the first request might not have auth cookies ready
+    response.headers.set('Cache-Control', 'private, no-store, must-revalidate');
 
     return response;
   } catch (error) {
