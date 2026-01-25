@@ -10,11 +10,12 @@
 - Image optimization with skeleton loaders
 - Dark mode support
 - User authentication (magic link + password)
-- Subscription tiers (Free / Enthusiast / Connoisseur)
-- Saved searches with email alerts (Enthusiast+)
-- AI inquiry email drafts (Enthusiast+)
-- Setsumei translations (Enthusiast+)
-- 72h data delay for free tier
+- Saved searches with email alerts
+- AI inquiry email drafts
+- Setsumei translations (NBTHK certification descriptions)
+- Dealer analytics dashboard (admin)
+
+**Trial Mode:** All premium features currently free (toggle via `NEXT_PUBLIC_TRIAL_MODE` env var)
 
 **Defaults:**
 - Currency: JPY
@@ -335,15 +336,48 @@ OPENROUTER_API_KEY=xxx
 
 ---
 
-## Subscription & Alerts System
+## Business Model & Monetization
 
-### Subscription Tiers
+### Strategy: Hybrid Model
+
+The optimal monetization strategy is a hybrid approach:
+
+1. **Free for collectors** - Maximize eyeballs to become the default first stop
+2. **Charge dealers** - B2B revenue from analytics and premium placement
+3. **Optional collector premium** - Power user features for serious buyers
+
+**Market Size Context:**
+- ~8,400 registered members on Nihonto Message Board
+- ~1,500-2,000 active collectors globally
+- 27+ dealers currently in the system
+
+### Trial Mode
+
+All premium features are currently **free for all users** to drive adoption.
+
+**To toggle trial mode:**
+```bash
+# In Vercel environment variables:
+NEXT_PUBLIC_TRIAL_MODE=true   # All features free
+NEXT_PUBLIC_TRIAL_MODE=false  # Normal paywall (or remove var)
+```
+
+When trial ends, paywall returns instantly - no code changes needed.
+
+**What trial mode does:**
+- `canAccessFeature()` returns `true` for all features
+- `isDelayed` returns `false` (no 72h data delay)
+- DataDelayBanner is hidden
+- Pricing page still exists but free tier shows "Browse all listings"
+
+### Subscription Tiers (Post-Trial)
 
 | Tier | Price | Key Features |
 |------|-------|--------------|
-| Free | $0 | 72h delayed data, basic browsing, unlimited favorites |
-| Enthusiast | $25/mo | Real-time data, setsumei translations, inquiry emails, saved searches with alerts |
+| Free | $0 | Browse all listings, filters, favorites, currency conversion |
+| Enthusiast | $25/mo | Email alerts, setsumei translations, AI inquiry emails, data exports |
 | Connoisseur | $200/mo | Everything + private listings, artist stats, LINE access, Discord |
+| Dealer | $100-300/mo | Analytics dashboard, click tracking, competitive intel |
 
 ### Search Alerts Architecture
 
@@ -413,6 +447,36 @@ Features and minimum tier:
 - `search_alerts`: enthusiast
 - `private_listings`: connoisseur
 - `artist_stats`: connoisseur
+
+### Dealer Analytics (B2B Revenue)
+
+Comprehensive analytics infrastructure already built for dealer monetization:
+
+**Tracking in place:**
+- Click-through tracking to dealer websites
+- Unique visitor counts per dealer
+- Dwell time (how long users view listings)
+- Favorites per dealer
+- Conversion tracking (click → item sold)
+- Daily aggregated stats
+- Dealer rankings and percentiles
+
+**Admin dashboard:**
+- `/admin/dealers` - All dealer analytics
+- `/admin/dealers/[id]` - Individual dealer report with PDF export
+- Traffic value estimates (CPM calculation)
+
+**Key files:**
+| Component | Location |
+|-----------|----------|
+| Tracking API | `src/app/api/track/route.ts` |
+| Dealer analytics API | `src/app/api/admin/dealers/analytics/route.ts` |
+| Admin dashboard | `src/app/admin/dealers/page.tsx` |
+| Individual report | `src/app/admin/dealers/[id]/page.tsx` |
+| Activity tracker | `src/lib/tracking/ActivityTracker.tsx` |
+| Dwell tracking | `src/lib/viewport/DwellTracker.ts` |
+
+**Gap for B2B launch:** Dealer self-serve portal (dealers can't log in to see their own data yet)
 
 ### Documentation
 

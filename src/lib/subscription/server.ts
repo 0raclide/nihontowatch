@@ -22,6 +22,7 @@ export async function getUserSubscription(): Promise<{
   status: SubscriptionStatus;
   userId: string | null;
   isDelayed: boolean;
+  isAdmin: boolean;
 }> {
   try {
     const supabase = await createClient();
@@ -36,6 +37,7 @@ export async function getUserSubscription(): Promise<{
         status: 'inactive',
         userId: null,
         isDelayed: isTrialModeActive() ? false : true,
+        isAdmin: false,
       };
     }
 
@@ -98,6 +100,7 @@ export async function getUserSubscription(): Promise<{
         status: 'active',
         userId: user.id,
         isDelayed: false,
+        isAdmin: true,
       };
     }
 
@@ -112,6 +115,7 @@ export async function getUserSubscription(): Promise<{
       status,
       userId: user.id,
       isDelayed: isTrialModeActive() ? false : effectiveTier === 'free',
+      isAdmin: false,
     };
   } catch (error) {
     console.error('Error getting user subscription:', error);
@@ -120,6 +124,7 @@ export async function getUserSubscription(): Promise<{
       status: 'inactive',
       userId: null,
       isDelayed: isTrialModeActive() ? false : true,
+      isAdmin: false,
     };
   }
 }

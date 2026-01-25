@@ -2,7 +2,53 @@
 
 Implementation status and handoff notes for the Nihontowatch Pro Tier system.
 
-**Last Updated:** 2026-01-24
+**Last Updated:** 2026-01-25
+
+---
+
+## Current State: Trial Mode Active
+
+**All premium features are currently FREE for all users** to maximize adoption.
+
+### Why Trial Mode?
+
+Market analysis revealed:
+- ~8,400 registered collectors on Nihonto Message Board (larger than expected)
+- Growth matters more than conversion at this stage
+- Goal: Become the default first stop for collectors
+
+### Business Model Shift
+
+Moving from collector-paid to hybrid model:
+1. **Free for collectors** - All features available to maximize traffic
+2. **Charge dealers** - B2B revenue from analytics (infrastructure already built)
+3. **Optional collector premium** - Power features for serious buyers (future)
+
+### Trial Mode Toggle
+
+```bash
+# Vercel environment variables
+NEXT_PUBLIC_TRIAL_MODE=true   # All features free (current)
+NEXT_PUBLIC_TRIAL_MODE=false  # Normal paywall restored
+```
+
+### What Trial Mode Does
+
+| Component | Behavior |
+|-----------|----------|
+| `canAccessFeature()` | Returns `true` for all features |
+| `isDelayed` | Returns `false` (no 72h data delay) |
+| `DataDelayBanner` | Hidden |
+| Pricing page | Still exists, free tier shows "Browse all listings" |
+
+### Key Files Changed
+
+| File | Change |
+|------|--------|
+| `src/types/subscription.ts` | Added `isTrialModeActive()`, updated `canAccessFeature()` |
+| `src/lib/subscription/server.ts` | `isDelayed` respects trial mode |
+| `src/components/subscription/DataDelayBanner.tsx` | Hidden in trial mode |
+| `tests/subscription/trial-mode.test.ts` | Comprehensive test coverage |
 
 ---
 

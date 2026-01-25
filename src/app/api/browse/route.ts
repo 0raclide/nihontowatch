@@ -25,6 +25,8 @@ interface BrowseParams {
   askOnly?: boolean;
   /** Filter to only show catalog-enriched listings */
   enriched?: boolean;
+  /** Admin filter: show Juyo/Tokuju items missing setsumei (no OCR and no manual Yuhinkai) */
+  missingSetsumei?: boolean;
   query?: string;
   sort?: string;
   page?: number;
@@ -154,6 +156,7 @@ function parseParams(searchParams: URLSearchParams): BrowseParams {
     signatureStatuses: signatureStatusesRaw ? signatureStatusesRaw.split(',') : undefined,
     askOnly: searchParams.get('ask') === 'true',
     enriched: searchParams.get('enriched') === 'true',
+    missingSetsumei: searchParams.get('missing_setsumei') === 'true',
     query: searchParams.get('q') || undefined,
     sort: searchParams.get('sort') || 'recent',
     page: Number(searchParams.get('page')) || 1,
@@ -334,6 +337,16 @@ export async function GET(request: NextRequest) {
     // NBTHK Zufu translation filter - only show listings with OCR setsumei
     if (params.enriched) {
       query = query.not('setsumei_text_en', 'is', null);
+    }
+
+    // Admin filter: Missing setsumei - Juyo/Tokuju items without OCR setsumei
+    // Only apply for admins (checked via subscription.isAdmin)
+    if (params.missingSetsumei && subscription.isAdmin) {
+      // Filter for Juyo/Tokuju certifications (eligible for setsumei)
+      const juyoCerts = ['Juyo', 'juyo', 'Tokuju', 'tokuju', 'Tokubetsu Juyo', 'tokubetsu_juyo'];
+      query = query.in('cert_type', juyoCerts);
+      // Filter where setsumei_text_en IS NULL (no OCR translation)
+      query = query.is('setsumei_text_en', null);
     }
 
     // Process query with semantic extraction, numeric filters, and text search
