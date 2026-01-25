@@ -20,11 +20,13 @@ describe('API Cache Headers', () => {
       expect(cacheControl).toBeTruthy();
     });
 
-    it('should be public cacheable', async () => {
+    it('should be private (contains personalized data: isAdmin, tier)', async () => {
       const res = await fetch(`${API_BASE}/api/browse?limit=1`);
 
       const cacheControl = res.headers.get('cache-control');
-      expect(cacheControl).toContain('public');
+      // Browse API returns personalized data (isAdmin, subscription tier, isDelayed)
+      // so it must use private caching to prevent CDN from serving wrong auth state
+      expect(cacheControl).toContain('private');
     });
   });
 

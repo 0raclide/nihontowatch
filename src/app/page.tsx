@@ -19,6 +19,7 @@ import { PAGINATION } from '@/lib/constants';
 import { useActivityOptional } from '@/components/activity/ActivityProvider';
 import { DeepLinkHandler } from '@/components/browse/DeepLinkHandler';
 import { DataDelayBanner } from '@/components/subscription/DataDelayBanner';
+import { useAuth } from '@/lib/auth/AuthContext';
 
 interface Listing {
   id: string;
@@ -139,6 +140,8 @@ function HomeContent() {
   const isMobile = useIsMobile();
   const filtersChangedRef = useRef(false);
   const activity = useActivityOptional();
+  // Use auth context for admin status - more reliable than API response
+  const { isAdmin: authIsAdmin } = useAuth();
 
   const [activeTab, setActiveTab] = useState<AvailabilityStatus>(
     (searchParams.get('tab') as AvailabilityStatus) || 'available'
@@ -177,7 +180,7 @@ function HomeContent() {
 
   const [data, setData] = useState<BrowseResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
+  // isAdmin now comes from authIsAdmin (useAuth hook) - no need for local state
 
   // Infinite scroll state - accumulates listings as user scrolls
   const [allListings, setAllListings] = useState<Listing[]>([]);
@@ -301,13 +304,8 @@ function HomeContent() {
         const json = await res.json();
         setData(json);
 
-        // Set admin status from API response
-        if (json.isAdmin !== undefined) {
-          console.log('[Browse] Setting isAdmin from API:', json.isAdmin);
-          setIsAdmin(json.isAdmin);
-        } else {
-          console.log('[Browse] API response missing isAdmin field');
-        }
+        // Note: isAdmin now comes from useAuth() context, not API response
+        // This is more reliable as it's determined client-side from the profile
 
         // Reset to page 1 and set initial listings for infinite scroll
         setAllListings(json.listings || []);
@@ -519,7 +517,7 @@ function HomeContent() {
             facets={data?.facets || { itemTypes: [], certifications: [], dealers: [], historicalPeriods: [], signatureStatuses: [] }}
             filters={filters}
             onFilterChange={handleFilterChange}
-            isAdmin={isAdmin}
+            isAdmin={authIsAdmin}
           />
 
           <div className="flex-1 min-w-0">
@@ -545,7 +543,7 @@ function HomeContent() {
           filters={filters}
           onFilterChange={handleFilterChange}
           isUpdating={isLoading}
-          isAdmin={isAdmin}
+          isAdmin={authIsAdmin}
           sort={sort}
           onSortChange={(newSort) => {
             setSort(newSort);

@@ -280,9 +280,6 @@ export function FilterContent({
   availability,
   onAvailabilityChange,
 }: FilterContentProps) {
-  // Debug: Log isAdmin prop value
-  console.log('[FilterContent] isAdmin:', isAdmin);
-
   // Normalize and aggregate item types
   const normalizedItemTypes = useMemo(() => {
     const aggregated: Record<string, number> = {};
