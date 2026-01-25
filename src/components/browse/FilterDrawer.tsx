@@ -11,6 +11,7 @@ interface FilterDrawerProps {
   filters: FilterContentProps['filters'];
   onFilterChange: FilterContentProps['onFilterChange'];
   isUpdating?: boolean;
+  isAdmin?: boolean;
   sort?: string;
   onSortChange?: (sort: string) => void;
   currency?: Currency;
@@ -24,6 +25,7 @@ export function FilterDrawer({
   filters,
   onFilterChange,
   isUpdating,
+  isAdmin,
   sort,
   onSortChange,
   currency,
@@ -41,6 +43,7 @@ export function FilterDrawer({
         onFilterChange={onFilterChange}
         onClose={closeFilterDrawer}
         isUpdating={isUpdating}
+        isAdmin={isAdmin}
         sort={sort}
         onSortChange={onSortChange}
         currency={currency}

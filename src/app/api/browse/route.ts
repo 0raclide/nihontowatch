@@ -602,6 +602,8 @@ export async function GET(request: NextRequest) {
       // Data freshness indicator for subscription tier
       isDelayed: subscription.isDelayed,
       subscriptionTier: subscription.tier,
+      // Admin flag for admin-only filters
+      isAdmin: subscription.isAdmin,
     });
 
     // Cache settings based on user authentication

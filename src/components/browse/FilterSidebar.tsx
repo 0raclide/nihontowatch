@@ -7,9 +7,10 @@ interface FilterSidebarProps {
   facets: FilterContentProps['facets'];
   filters: FilterContentProps['filters'];
   onFilterChange: FilterContentProps['onFilterChange'];
+  isAdmin?: boolean;
 }
 
-export function FilterSidebar({ facets, filters, onFilterChange }: FilterSidebarProps) {
+export function FilterSidebar({ facets, filters, onFilterChange, isAdmin }: FilterSidebarProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Prevent scroll events from propagating to the page when at scroll boundaries
@@ -39,6 +40,7 @@ export function FilterSidebar({ facets, filters, onFilterChange }: FilterSidebar
             facets={facets}
             filters={filters}
             onFilterChange={onFilterChange}
+            isAdmin={isAdmin}
           />
         </div>
       </div>

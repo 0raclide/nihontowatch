@@ -122,6 +122,7 @@ interface Filters {
   signatureStatuses: string[];
   askOnly?: boolean;
   enriched?: boolean;
+  missingSetsumei?: boolean;
 }
 
 interface ExchangeRates {
@@ -152,6 +153,7 @@ function HomeContent() {
     signatureStatuses: searchParams.get('sig')?.split(',').filter(Boolean) || [],
     askOnly: searchParams.get('ask') === 'true',
     enriched: searchParams.get('enriched') === 'true',
+    missingSetsumei: searchParams.get('missing_setsumei') === 'true',
   });
   const [sort, setSort] = useState(searchParams.get('sort') || 'price_desc');
   const [page, setPage] = useState(Number(searchParams.get('page')) || 1);
@@ -175,6 +177,7 @@ function HomeContent() {
 
   const [data, setData] = useState<BrowseResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   // Infinite scroll state - accumulates listings as user scrolls
   const [allListings, setAllListings] = useState<Listing[]>([]);
@@ -232,6 +235,7 @@ function HomeContent() {
     if (filters.signatureStatuses.length) params.set('sig', filters.signatureStatuses.join(','));
     if (filters.askOnly) params.set('ask', 'true');
     if (filters.enriched) params.set('enriched', 'true');
+    if (filters.missingSetsumei) params.set('missing_setsumei', 'true');
     if (sort !== 'recent') params.set('sort', sort);
     // Note: page not synced to URL - infinite scroll manages page internally
     if (searchQuery) params.set('q', searchQuery);
@@ -253,6 +257,7 @@ function HomeContent() {
     if (filters.signatureStatuses.length) params.set('sig', filters.signatureStatuses.join(','));
     if (filters.askOnly) params.set('ask', 'true');
     if (filters.enriched) params.set('enriched', 'true');
+    if (filters.missingSetsumei) params.set('missing_setsumei', 'true');
     if (sort !== 'recent') params.set('sort', sort);
     // Note: page is NOT included - handled by loadMore
     if (searchQuery) params.set('q', searchQuery);
@@ -295,6 +300,11 @@ function HomeContent() {
         const res = await fetch(`/api/browse?${params.toString()}`, { credentials: 'include' });
         const json = await res.json();
         setData(json);
+
+        // Set admin status from API response
+        if (json.isAdmin !== undefined) {
+          setIsAdmin(json.isAdmin);
+        }
 
         // Reset to page 1 and set initial listings for infinite scroll
         setAllListings(json.listings || []);
@@ -506,6 +516,7 @@ function HomeContent() {
             facets={data?.facets || { itemTypes: [], certifications: [], dealers: [], historicalPeriods: [], signatureStatuses: [] }}
             filters={filters}
             onFilterChange={handleFilterChange}
+            isAdmin={isAdmin}
           />
 
           <div className="flex-1 min-w-0">
@@ -531,6 +542,7 @@ function HomeContent() {
           filters={filters}
           onFilterChange={handleFilterChange}
           isUpdating={isLoading}
+          isAdmin={isAdmin}
           sort={sort}
           onSortChange={(newSort) => {
             setSort(newSort);

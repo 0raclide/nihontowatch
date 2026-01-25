@@ -35,9 +35,12 @@ export interface FilterContentProps {
     signatureStatuses: string[];
     askOnly?: boolean;
     enriched?: boolean;
+    missingSetsumei?: boolean;
   };
   onFilterChange: (key: string, value: unknown) => void;
   onClose?: () => void;
+  /** Whether the current user is an admin */
+  isAdmin?: boolean;
   isUpdating?: boolean;
   // Sort, currency, and availability for mobile drawer
   sort?: string;
@@ -262,6 +265,7 @@ export function FilterContent({
   onFilterChange,
   onClose,
   isUpdating,
+  isAdmin,
   sort,
   onSortChange,
   currency,
@@ -420,6 +424,7 @@ export function FilterContent({
     onFilterChange('signatureStatuses', []);
     onFilterChange('askOnly', false);
     onFilterChange('enriched', false);
+    onFilterChange('missingSetsumei', false);
   }, [onFilterChange]);
 
   const hasActiveFilters =
@@ -431,7 +436,8 @@ export function FilterContent({
     filters.historicalPeriods.length > 0 ||
     filters.signatureStatuses.length > 0 ||
     filters.askOnly ||
-    filters.enriched;
+    filters.enriched ||
+    filters.missingSetsumei;
 
   const activeFilterCount =
     (filters.category !== 'all' ? 1 : 0) +
@@ -441,7 +447,8 @@ export function FilterContent({
     filters.historicalPeriods.length +
     filters.signatureStatuses.length +
     (filters.askOnly ? 1 : 0) +
-    (filters.enriched ? 1 : 0);
+    (filters.enriched ? 1 : 0) +
+    (filters.missingSetsumei ? 1 : 0);
 
   return (
     <div className="px-4 lg:px-0 pb-6">
@@ -722,6 +729,42 @@ export function FilterContent({
             </div>
           </label>
         </div>
+
+        {/* 7. Admin: Missing Setsumei - Only visible to admins */}
+        {isAdmin && (
+          <div className="py-5 border-t border-gold/30">
+            <label className="flex items-center justify-between cursor-pointer group min-h-[48px]">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] px-1.5 py-0.5 bg-gold/20 text-gold rounded font-semibold">
+                  ADMIN
+                </span>
+                <span className="text-[15px] lg:text-[14px] text-charcoal group-hover:text-ink transition-colors">
+                  Missing Setsumei
+                </span>
+              </div>
+              <div className="relative">
+                <input
+                  type="checkbox"
+                  checked={filters.missingSetsumei || false}
+                  onChange={(e) => onFilterChange('missingSetsumei', e.target.checked)}
+                  className="peer sr-only"
+                />
+                <div className={`w-12 h-7 lg:w-11 lg:h-6 rounded-full transition-colors ${
+                  filters.missingSetsumei
+                    ? 'bg-gold'
+                    : 'bg-border-dark'
+                }`}>
+                  <div className={`absolute top-1 w-5 h-5 lg:w-4 lg:h-4 bg-white rounded-full shadow transition-transform ${
+                    filters.missingSetsumei ? 'translate-x-6 lg:translate-x-6' : 'translate-x-1'
+                  }`} />
+                </div>
+              </div>
+            </label>
+            <p className="text-[11px] text-muted mt-1">
+              Juyo/Tokuju items without OCR setsumei translation
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Live update indicator - subtle, at bottom */}
@@ -747,6 +790,7 @@ export function getActiveFilterCount(filters: FilterContentProps['filters']): nu
     filters.historicalPeriods.length +
     filters.signatureStatuses.length +
     (filters.askOnly ? 1 : 0) +
-    (filters.enriched ? 1 : 0)
+    (filters.enriched ? 1 : 0) +
+    (filters.missingSetsumei ? 1 : 0)
   );
 }
