@@ -580,6 +580,136 @@ p, li, td, th {
 }
 
 /* ==========================================================================
+   Translation Prose Styling
+   Scholarly typography for setsumei/catalog translations
+   ========================================================================== */
+.prose-translation {
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: 14.5px;
+  line-height: 1.85;
+  color: var(--text-secondary);
+  letter-spacing: 0.01em;
+}
+
+/* First paragraph - slightly larger for emphasis */
+.prose-translation > p:first-of-type {
+  font-size: 15px;
+}
+
+/* Title header with underline */
+.prose-translation h1 {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-top: 0;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Section headers */
+.prose-translation h2 {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-top: 1.75rem;
+  margin-bottom: 0.75rem;
+}
+
+/* Subsection headers */
+.prose-translation h3 {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-top: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+/* Paragraphs with generous spacing */
+.prose-translation p {
+  margin-bottom: 1.25rem;
+}
+
+/* Remove margin from last paragraph */
+.prose-translation p:last-child {
+  margin-bottom: 0;
+}
+
+/* Lists */
+.prose-translation ul {
+  margin: 1rem 0;
+  padding-left: 1.25rem;
+  list-style-type: disc;
+}
+
+.prose-translation ol {
+  margin: 1rem 0;
+  padding-left: 1.25rem;
+  list-style-type: decimal;
+}
+
+.prose-translation li {
+  margin: 0.5rem 0;
+}
+
+.prose-translation li::marker {
+  color: var(--text-muted);
+}
+
+/* Bold text - primary color for emphasis */
+.prose-translation strong {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* Blockquotes - elegant left border */
+.prose-translation blockquote {
+  border-left: 2px solid var(--accent);
+  padding-left: 1rem;
+  margin: 1rem 0;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* Horizontal rules */
+.prose-translation hr {
+  margin: 1.5rem 0;
+  border: none;
+  border-top: 1px solid var(--border);
+}
+
+/* Tables */
+.prose-translation table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 1rem 0;
+}
+
+.prose-translation th,
+.prose-translation td {
+  border: 1px solid var(--border);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+}
+
+.prose-translation th {
+  background: var(--surface-elevated);
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+/* Links */
+.prose-translation a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.prose-translation a:hover {
+  text-decoration: underline;
+}
+
+/* ==========================================================================
    Card Styles
    ========================================================================== */
 .card-hover {

@@ -99,31 +99,30 @@ export function StudySetsumeiView({ listing, onBackToPhotos }: StudySetsumeiView
           <div className="bg-cream/50 border border-gold/15 rounded-xl p-5 shadow-sm">
             {showOriginal ? (
               // Japanese text
-              <p className="text-[14px] lg:text-[15px] text-ink/85 leading-[1.9] whitespace-pre-line font-jp">
+              <p className="text-[15px] lg:text-[16px] text-ink/85 leading-[1.9] whitespace-pre-line font-jp">
                 {displayText}
               </p>
             ) : (
-              // English markdown with glossary highlighting
-              <div className="prose prose-sm max-w-none text-ink/85
-                prose-headings:text-ink prose-headings:font-semibold prose-headings:mb-3 prose-headings:mt-5 first:prose-headings:mt-0
-                prose-h2:text-[16px] prose-h3:text-[14px]
-                prose-p:text-[14px] lg:prose-p:text-[15px] prose-p:leading-relaxed prose-p:mb-4
-                prose-li:text-[14px] lg:prose-li:text-[15px] prose-li:my-1
-                prose-strong:text-ink prose-strong:font-semibold
-                prose-table:text-[13px]
-                [&_table]:border-collapse [&_table]:w-full [&_table]:my-4
-                [&_th]:border [&_th]:border-gold/20 [&_th]:px-3 [&_th]:py-2 [&_th]:bg-gold/5 [&_th]:text-left [&_th]:font-medium
-                [&_td]:border [&_td]:border-gold/20 [&_td]:px-3 [&_td]:py-2
-              ">
+              // English markdown with scholarly typography
+              <article className="prose-translation text-[15px] lg:text-[16px]">
                 {setsumei.format === 'markdown' ? (
-                  <HighlightedMarkdown content={displayText} />
+                  <HighlightedMarkdown content={displayText} variant="translation" />
                 ) : (
                   <p className="whitespace-pre-line">{displayText}</p>
                 )}
-              </div>
+              </article>
             )}
           </div>
 
+          {/* Source attribution */}
+          <div className="mt-4 flex items-center justify-between text-[10px] text-muted">
+            <span>
+              Source: {setsumei.source === 'yuhinkai' ? 'Yuhinkai Catalog' : 'NBTHK Zufu'}
+            </span>
+            {setsumei.source === 'yuhinkai' && (
+              <span className="text-gold font-medium">Official Translation</span>
+            )}
+          </div>
         </div>
 
         {/* Bottom padding for mobile safe area */}

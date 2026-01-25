@@ -7,6 +7,8 @@ import { segmentText } from '@/lib/glossary/highlighter';
 
 interface HighlightedMarkdownProps {
   content: string;
+  /** Variant for different styling contexts */
+  variant?: 'default' | 'translation';
 }
 
 /**
@@ -61,45 +63,143 @@ function highlightChildren(children: React.ReactNode): React.ReactNode {
  * Defined outside component to ensure stable reference
  */
 const markdownComponents: Components = {
-  p: ({ children, ...props }) => (
-    <p {...props}>{highlightChildren(children)}</p>
+  p: ({ children }) => (
+    <p>{highlightChildren(children)}</p>
   ),
-  li: ({ children, ...props }) => (
-    <li {...props}>{highlightChildren(children)}</li>
+  li: ({ children }) => (
+    <li>{highlightChildren(children)}</li>
   ),
-  strong: ({ children, ...props }) => (
-    <strong {...props}>{highlightChildren(children)}</strong>
+  strong: ({ children }) => (
+    <strong>{highlightChildren(children)}</strong>
   ),
-  em: ({ children, ...props }) => (
-    <em {...props}>{highlightChildren(children)}</em>
+  em: ({ children }) => (
+    <em>{highlightChildren(children)}</em>
   ),
-  td: ({ children, ...props }) => (
-    <td {...props}>{highlightChildren(children)}</td>
+  td: ({ children }) => (
+    <td>{highlightChildren(children)}</td>
   ),
-  th: ({ children, ...props }) => (
-    <th {...props}>{highlightChildren(children)}</th>
+  th: ({ children }) => (
+    <th>{highlightChildren(children)}</th>
   ),
-  h1: ({ children, ...props }) => (
-    <h1 {...props}>{highlightChildren(children)}</h1>
+  h1: ({ children }) => (
+    <h1>{highlightChildren(children)}</h1>
   ),
-  h2: ({ children, ...props }) => (
-    <h2 {...props}>{highlightChildren(children)}</h2>
+  h2: ({ children }) => (
+    <h2>{highlightChildren(children)}</h2>
   ),
-  h3: ({ children, ...props }) => (
-    <h3 {...props}>{highlightChildren(children)}</h3>
+  h3: ({ children }) => (
+    <h3>{highlightChildren(children)}</h3>
   ),
-  h4: ({ children, ...props }) => (
-    <h4 {...props}>{highlightChildren(children)}</h4>
+  h4: ({ children }) => (
+    <h4>{highlightChildren(children)}</h4>
+  ),
+};
+
+/**
+ * Styled components for translation variant
+ * Uses scholarly typography matching oshi-v2
+ * CSS classes defined in globals.css (.prose-translation)
+ */
+const translationComponents: Components = {
+  // Title header with underline
+  h1: ({ children }) => (
+    <h1 className="text-base font-medium text-ink mt-0 mb-4 pb-2 border-b border-border">
+      {highlightChildren(children)}
+    </h1>
+  ),
+  // Section headers with generous top margin
+  h2: ({ children }) => (
+    <h2 className="text-[14px] font-medium text-ink mt-7 mb-3">
+      {highlightChildren(children)}
+    </h2>
+  ),
+  // Subsection headers
+  h3: ({ children }) => (
+    <h3 className="text-[13px] font-medium text-ink mt-5 mb-2">
+      {highlightChildren(children)}
+    </h3>
+  ),
+  h4: ({ children }) => (
+    <h4 className="text-[13px] font-medium text-ink mt-4 mb-2">
+      {highlightChildren(children)}
+    </h4>
+  ),
+  // Paragraphs with generous spacing
+  p: ({ children }) => (
+    <p className="mb-5 last:mb-0">
+      {highlightChildren(children)}
+    </p>
+  ),
+  // Bold text - primary color for emphasis
+  strong: ({ children }) => (
+    <strong className="font-semibold text-ink">
+      {highlightChildren(children)}
+    </strong>
+  ),
+  // Italics - keep subtle
+  em: ({ children }) => (
+    <em>{highlightChildren(children)}</em>
+  ),
+  // Line breaks as vertical spacers (like oshi-v2)
+  br: () => <span className="block h-3" />,
+  // Lists with proper spacing
+  ul: ({ children }) => (
+    <ul className="my-4 pl-5 space-y-2 list-disc list-outside marker:text-muted">
+      {children}
+    </ul>
+  ),
+  ol: ({ children }) => (
+    <ol className="my-4 pl-5 space-y-2 list-decimal list-outside marker:text-muted">
+      {children}
+    </ol>
+  ),
+  li: ({ children }) => (
+    <li>{highlightChildren(children)}</li>
+  ),
+  // Blockquotes with gold accent
+  blockquote: ({ children }) => (
+    <blockquote className="border-l-2 border-gold pl-4 my-4 text-muted italic">
+      {children}
+    </blockquote>
+  ),
+  // Horizontal rules
+  hr: () => <hr className="my-6 border-border" />,
+  // Tables
+  table: ({ children }) => (
+    <table className="w-full border-collapse text-[13px] my-4">
+      {children}
+    </table>
+  ),
+  th: ({ children }) => (
+    <th className="border border-border px-3 py-2 bg-surface-elevated font-medium text-ink text-left">
+      {highlightChildren(children)}
+    </th>
+  ),
+  td: ({ children }) => (
+    <td className="border border-border px-3 py-2">
+      {highlightChildren(children)}
+    </td>
+  ),
+  // Links
+  a: ({ children, href }) => (
+    <a href={href} className="text-gold hover:text-gold-light hover:underline">
+      {highlightChildren(children)}
+    </a>
   ),
 };
 
 /**
  * HighlightedMarkdown component
  * Renders markdown with glossary term highlighting
+ *
+ * @param content - Markdown content to render
+ * @param variant - 'default' uses minimal styling, 'translation' uses scholarly typography
  */
-export function HighlightedMarkdown({ content }: HighlightedMarkdownProps) {
+export function HighlightedMarkdown({ content, variant = 'default' }: HighlightedMarkdownProps) {
+  const components = variant === 'translation' ? translationComponents : markdownComponents;
+
   return (
-    <ReactMarkdown components={markdownComponents}>
+    <ReactMarkdown components={components}>
       {content}
     </ReactMarkdown>
   );

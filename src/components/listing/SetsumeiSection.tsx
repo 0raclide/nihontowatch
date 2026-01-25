@@ -138,12 +138,9 @@ export function SetsumeiSection({
         {/* Gated Content - readable preview that fades */}
         <div className={`${isYuhinkai ? 'bg-gold/5 border-gold/20' : 'bg-surface-elevated/30 border-gold/20'} border rounded-lg p-4 relative overflow-hidden`}>
           {/* Readable preview text */}
-          <div className="prose prose-sm prose-invert max-w-none text-ink/80
-            prose-p:text-[13px] prose-p:leading-relaxed prose-p:mb-2
-            prose-strong:text-ink prose-strong:font-medium
-          ">
-            <HighlightedMarkdown content={cleanPreview} />
-          </div>
+          <article className="prose-translation">
+            <HighlightedMarkdown content={cleanPreview} variant="translation" />
+          </article>
 
           {/* Fade overlay with CTA - pointer-events-none allows clicking glossary terms through the gradient */}
           <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-surface via-surface/95 to-transparent flex flex-col items-center justify-end pb-4 pointer-events-none">
@@ -225,23 +222,14 @@ export function SetsumeiSection({
       <div className={`${isYuhinkai ? 'bg-gold/5 border-gold/20' : 'bg-surface-elevated/30 border-gold/20'} border rounded-lg p-4`}>
         {showOriginal ? (
           // Japanese text - preserve whitespace
-          <p className="text-[13px] text-ink/80 leading-relaxed whitespace-pre-line font-jp">
+          <p className="text-[14.5px] text-ink/80 leading-[1.85] whitespace-pre-line font-jp">
             {visibleText}
           </p>
         ) : (
-          // English markdown with glossary term highlighting
-          <div className="prose prose-sm prose-invert max-w-none text-ink/80
-            prose-headings:text-ink prose-headings:font-medium prose-headings:mb-2 prose-headings:mt-4 first:prose-headings:mt-0
-            prose-h2:text-[15px] prose-h3:text-[13px]
-            prose-p:text-[13px] prose-p:leading-relaxed prose-p:mb-3
-            prose-li:text-[13px] prose-li:my-0.5
-            prose-strong:text-ink prose-strong:font-medium
-            prose-table:text-[12px]
-            [&_table]:border-collapse [&_th]:border [&_th]:border-border [&_th]:px-2 [&_th]:py-1 [&_th]:bg-surface
-            [&_td]:border [&_td]:border-border [&_td]:px-2 [&_td]:py-1
-          ">
-            <HighlightedMarkdown content={visibleText || ''} />
-          </div>
+          // English markdown with scholarly typography
+          <article className="prose-translation">
+            <HighlightedMarkdown content={visibleText || ''} variant="translation" />
+          </article>
         )}
 
         {/* Read more / Show less buttons - works in both preview and full modes */}
