@@ -1,0 +1,85 @@
+/**
+ * Consent Helpers
+ *
+ * Standalone functions to check consent status from localStorage.
+ * These can be used outside of React components (e.g., in tracking code).
+ */
+
+import {
+  type ConsentCategory,
+  type ConsentRecord,
+  CONSENT_STORAGE_KEY,
+} from './types';
+
+/**
+ * Get stored consent from localStorage
+ * Can be called from anywhere (not just React components)
+ */
+export function getStoredConsent(): ConsentRecord | null {
+  if (typeof window === 'undefined') return null;
+
+  try {
+    const stored = localStorage.getItem(CONSENT_STORAGE_KEY);
+    if (!stored) return null;
+
+    const parsed = JSON.parse(stored) as ConsentRecord;
+
+    // Validate structure
+    if (!parsed.preferences || !parsed.timestamp || !parsed.version) {
+      return null;
+    }
+
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Check if a specific consent category has been granted
+ * Can be called from anywhere (not just React components)
+ *
+ * @param category - The consent category to check
+ * @returns true if consent is granted, false otherwise
+ */
+export function hasConsentFor(category: ConsentCategory): boolean {
+  // Essential is always allowed
+  if (category === 'essential') return true;
+
+  const consent = getStoredConsent();
+
+  // If no consent record exists, assume no consent for optional categories
+  if (!consent) return false;
+
+  return consent.preferences[category] === true;
+}
+
+/**
+ * Check if analytics consent has been granted
+ * Convenience function for tracking code
+ */
+export function hasAnalyticsConsent(): boolean {
+  return hasConsentFor('analytics');
+}
+
+/**
+ * Check if functional consent has been granted
+ * Convenience function for preference storage
+ */
+export function hasFunctionalConsent(): boolean {
+  return hasConsentFor('functional');
+}
+
+/**
+ * Check if marketing consent has been granted
+ */
+export function hasMarketingConsent(): boolean {
+  return hasConsentFor('marketing');
+}
+
+/**
+ * Check if user has made any consent choice
+ */
+export function hasUserConsented(): boolean {
+  return getStoredConsent() !== null;
+}

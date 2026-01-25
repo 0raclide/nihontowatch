@@ -37,6 +37,7 @@ import {
   setupUnloadHandler,
 } from '@/lib/activity/sessionManager';
 import { getVisitorId, getDeviceInfo } from '@/lib/activity/visitorId';
+import { hasAnalyticsConsent } from '@/lib/consent';
 import type {
   ActivityEvent,
   PageViewEvent,
@@ -69,12 +70,24 @@ const PRIVACY_OPT_OUT_KEY = 'nihontowatch_tracking_opt_out';
 
 /**
  * Check if user has opted out of tracking
+ * This checks both the legacy opt-out key AND the new GDPR consent system.
+ * User is opted out if:
+ * 1. Legacy opt-out is enabled, OR
+ * 2. GDPR analytics consent is not granted
  */
 export function hasOptedOutOfTracking(): boolean {
   if (typeof window === 'undefined') return false;
 
   try {
-    return localStorage.getItem(PRIVACY_OPT_OUT_KEY) === 'true';
+    // Check legacy opt-out
+    const legacyOptOut = localStorage.getItem(PRIVACY_OPT_OUT_KEY) === 'true';
+    if (legacyOptOut) return true;
+
+    // Check GDPR consent - if user hasn't consented to analytics, treat as opted out
+    // Note: hasAnalyticsConsent returns false if no consent record exists
+    if (!hasAnalyticsConsent()) return true;
+
+    return false;
   } catch {
     return false;
   }

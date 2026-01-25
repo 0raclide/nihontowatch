@@ -5,10 +5,16 @@
  * This allows tracking user behavior over time without requiring login.
  *
  * The visitor ID is:
- * - Stored in localStorage (persists across sessions)
+ * - Stored in localStorage (persists across sessions) ONLY if analytics consent is given
  * - Generated once per browser/device
  * - Used to link all activity events to a single anonymous user
+ *
+ * GDPR Compliance:
+ * - If no analytics consent, returns session-only ID (not persisted)
+ * - Existing IDs are respected (consent was given when they were created)
  */
+
+import { hasAnalyticsConsent } from '@/lib/consent';
 
 const VISITOR_ID_KEY = 'nihontowatch_visitor_id';
 const VISITOR_CREATED_KEY = 'nihontowatch_visitor_created';
@@ -27,24 +33,61 @@ function generateVisitorId(): string {
 
 /**
  * Get or create the persistent visitor ID
+ *
+ * GDPR Compliance:
+ * - Returns existing ID if one exists (consent was given when created)
+ * - Only creates NEW persistent ID if analytics consent is given
+ * - Falls back to session-only ID if no consent
  */
 export function getVisitorId(): string {
   if (typeof window === 'undefined') return '';
 
   try {
+    // Check if we already have a visitor ID (consent was given when it was created)
     let visitorId = localStorage.getItem(VISITOR_ID_KEY);
 
-    if (!visitorId) {
-      visitorId = generateVisitorId();
-      localStorage.setItem(VISITOR_ID_KEY, visitorId);
-      localStorage.setItem(VISITOR_CREATED_KEY, new Date().toISOString());
+    if (visitorId) {
+      return visitorId;
     }
+
+    // No existing ID - check if we have consent to create one
+    if (!hasAnalyticsConsent()) {
+      // No consent - return session-only ID (not persisted)
+      return generateSessionOnlyId();
+    }
+
+    // Have consent - create and persist a new visitor ID
+    visitorId = generateVisitorId();
+    localStorage.setItem(VISITOR_ID_KEY, visitorId);
+    localStorage.setItem(VISITOR_CREATED_KEY, new Date().toISOString());
 
     return visitorId;
   } catch {
     // localStorage blocked (private browsing, etc.)
     // Fall back to session-only ID
-    return generateVisitorId();
+    return generateSessionOnlyId();
+  }
+}
+
+/**
+ * Generate a session-only visitor ID (not persisted)
+ * Uses sessionStorage so it persists within the tab but not across sessions
+ */
+const SESSION_VISITOR_KEY = 'nihontowatch_session_visitor';
+
+function generateSessionOnlyId(): string {
+  if (typeof window === 'undefined') return '';
+
+  try {
+    let sessionId = sessionStorage.getItem(SESSION_VISITOR_KEY);
+    if (!sessionId) {
+      sessionId = `anon_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 10)}`;
+      sessionStorage.setItem(SESSION_VISITOR_KEY, sessionId);
+    }
+    return sessionId;
+  } catch {
+    // sessionStorage blocked - generate ephemeral ID
+    return `anon_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 10)}`;
   }
 }
 

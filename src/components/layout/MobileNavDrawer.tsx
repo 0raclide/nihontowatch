@@ -7,10 +7,12 @@ import { ThemeSelector } from '@/components/ui/ThemeToggle';
 import { useMobileUI } from '@/contexts/MobileUIContext';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { LoginModal } from '@/components/auth/LoginModal';
+import { useConsent } from '@/contexts/ConsentContext';
 
 export function MobileNavDrawer() {
   const { navDrawerOpen, closeNavDrawer } = useMobileUI();
   const { user, profile, isAdmin, signOut, isLoading: authLoading } = useAuth();
+  const { openPreferences } = useConsent();
   const [showLoginModal, setShowLoginModal] = useState(false);
 
   const displayName = profile?.display_name || user?.email?.split('@')[0] || 'User';
@@ -131,6 +133,47 @@ export function MobileNavDrawer() {
               Theme
             </span>
             <ThemeSelector />
+          </div>
+
+          <div className="h-px bg-border/50 my-4" />
+
+          {/* Legal Links */}
+          <div className="px-4 py-2">
+            <span className="text-[11px] uppercase tracking-[0.15em] text-text-muted mb-2 block">
+              Legal
+            </span>
+            <div className="flex flex-wrap gap-x-4 gap-y-2 mt-2">
+              <Link
+                href="/terms"
+                onClick={closeNavDrawer}
+                className="text-[12px] text-muted hover:text-ink transition-colors"
+              >
+                Terms
+              </Link>
+              <Link
+                href="/privacy"
+                onClick={closeNavDrawer}
+                className="text-[12px] text-muted hover:text-ink transition-colors"
+              >
+                Privacy
+              </Link>
+              <Link
+                href="/cookies"
+                onClick={closeNavDrawer}
+                className="text-[12px] text-muted hover:text-ink transition-colors"
+              >
+                Cookies
+              </Link>
+              <button
+                onClick={() => {
+                  closeNavDrawer();
+                  openPreferences();
+                }}
+                className="text-[12px] text-muted hover:text-ink transition-colors"
+              >
+                Cookie Preferences
+              </button>
+            </div>
           </div>
 
           {/* Sign Out (at bottom for logged in users) */}

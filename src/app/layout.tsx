@@ -11,6 +11,8 @@ import { PaywallModal } from "@/components/subscription/PaywallModal";
 import { FavoritesProvider } from "@/contexts/FavoritesContext";
 import { ActivityWrapper } from "@/components/activity/ActivityWrapper";
 import { SignupPressureWrapper } from "@/components/signup";
+import { ConsentProvider } from "@/contexts/ConsentContext";
+import { CookieBanner, ConsentPreferences } from "@/components/consent";
 import {
   generateOrganizationJsonLd,
   generateWebsiteJsonLd,
@@ -91,23 +93,27 @@ export default function RootLayout({
       </head>
       <body className="antialiased font-sans" suppressHydrationWarning>
         <AuthProvider>
-          <SubscriptionProvider>
-            <PaywallModal />
-            <FavoritesProvider>
-              <SignupPressureWrapper>
-                <MobileUIProvider>
-                  <ThemeProvider>
-                    <QuickViewProvider>
-                      <ActivityWrapper>
-                        {children}
-                      </ActivityWrapper>
-                      <QuickView />
-                    </QuickViewProvider>
-                  </ThemeProvider>
-                </MobileUIProvider>
-              </SignupPressureWrapper>
-            </FavoritesProvider>
-          </SubscriptionProvider>
+          <ConsentProvider>
+            <SubscriptionProvider>
+              <PaywallModal />
+              <FavoritesProvider>
+                <SignupPressureWrapper>
+                  <MobileUIProvider>
+                    <ThemeProvider>
+                      <QuickViewProvider>
+                        <ActivityWrapper>
+                          {children}
+                        </ActivityWrapper>
+                        <QuickView />
+                      </QuickViewProvider>
+                    </ThemeProvider>
+                  </MobileUIProvider>
+                </SignupPressureWrapper>
+              </FavoritesProvider>
+            </SubscriptionProvider>
+            <CookieBanner />
+            <ConsentPreferences />
+          </ConsentProvider>
         </AuthProvider>
       </body>
     </html>

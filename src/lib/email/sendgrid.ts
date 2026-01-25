@@ -34,7 +34,8 @@ export async function sendSavedSearchNotification(
   to: string,
   savedSearch: SavedSearch,
   matchedListings: Listing[],
-  frequency: 'instant' | 'daily'
+  frequency: 'instant' | 'daily',
+  userId?: string
 ): Promise<SendEmailResult> {
   if (!process.env.SENDGRID_API_KEY) {
     console.warn('SENDGRID_API_KEY not configured, skipping email');
@@ -46,6 +47,9 @@ export async function sendSavedSearchNotification(
       ? `New matches for "${savedSearch.name || 'your search'}"`
       : `Daily digest: ${matchedListings.length} new matches`;
 
+  // Recipient info for unsubscribe links
+  const recipient = userId ? { userId, email: to } : undefined;
+
   try {
     const [response] = await sgMail.send({
       to,
@@ -54,8 +58,8 @@ export async function sendSavedSearchNotification(
         name: FROM_NAME,
       },
       subject,
-      text: generateSavedSearchNotificationText(savedSearch, matchedListings, frequency),
-      html: generateSavedSearchNotificationHtml(savedSearch, matchedListings, frequency),
+      text: generateSavedSearchNotificationText(savedSearch, matchedListings, frequency, recipient),
+      html: generateSavedSearchNotificationHtml(savedSearch, matchedListings, frequency, recipient),
     });
 
     return {
@@ -79,6 +83,7 @@ export async function sendBatchNotifications(
     savedSearch: SavedSearch;
     matchedListings: Listing[];
     frequency: 'instant' | 'daily';
+    userId?: string;
   }>
 ): Promise<SendEmailResult[]> {
   if (!process.env.SENDGRID_API_KEY) {
@@ -95,7 +100,7 @@ export async function sendBatchNotifications(
 
     const batchResults = await Promise.all(
       batch.map((n) =>
-        sendSavedSearchNotification(n.to, n.savedSearch, n.matchedListings, n.frequency)
+        sendSavedSearchNotification(n.to, n.savedSearch, n.matchedListings, n.frequency, n.userId)
       )
     );
 

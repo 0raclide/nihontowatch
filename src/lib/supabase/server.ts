@@ -77,3 +77,12 @@ export function createServiceClient() {
     }
   );
 }
+
+/**
+ * Create a Supabase admin client for auth operations like deleting users
+ * Alias for createServiceClient for clarity
+ * WARNING: Only use in trusted server-side contexts
+ */
+export async function createAdminClient() {
+  return createServiceClient();
+}

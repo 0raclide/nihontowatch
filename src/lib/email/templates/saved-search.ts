@@ -1,8 +1,14 @@
 import type { SavedSearch, Listing } from '@/types';
 import { criteriaToHumanReadable, criteriaToUrl } from '@/lib/savedSearches/urlToCriteria';
 import { getImageUrl } from '@/lib/images';
+import { getUnsubscribeUrl } from '@/app/api/unsubscribe/route';
 
 const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://nihontowatch.com';
+
+interface EmailRecipient {
+  userId: string;
+  email: string;
+}
 
 /**
  * Format price for display in email
@@ -24,12 +30,21 @@ function formatPrice(value: number | null | undefined, currency: string): string
 export function generateSavedSearchNotificationHtml(
   savedSearch: SavedSearch,
   matchedListings: Listing[],
-  frequency: 'instant' | 'daily'
+  frequency: 'instant' | 'daily',
+  recipient?: EmailRecipient
 ): string {
   const searchName = savedSearch.name || 'Your saved search';
   const criteriaSummary = criteriaToHumanReadable(savedSearch.search_criteria);
   const searchUrl = `${BASE_URL}${criteriaToUrl(savedSearch.search_criteria)}`;
   const manageUrl = `${BASE_URL}/saved`;
+
+  // Generate unsubscribe URLs if recipient info provided
+  const unsubscribeSearchUrl = recipient
+    ? getUnsubscribeUrl({ userId: recipient.userId, email: recipient.email, type: 'saved_search', savedSearchId: savedSearch.id })
+    : null;
+  const unsubscribeAllUrl = recipient
+    ? getUnsubscribeUrl({ userId: recipient.userId, email: recipient.email, type: 'all' })
+    : null;
 
   const listingsHtml = matchedListings
     .slice(0, 10) // Limit to 10 in email
@@ -148,7 +163,7 @@ export function generateSavedSearchNotificationHtml(
               <p style="margin: 0 0 8px; color: #666; font-size: 12px; text-align: center;">
                 You're receiving this email because you set up a saved search on Nihontowatch.
               </p>
-              <p style="margin: 0; text-align: center;">
+              <p style="margin: 0 0 12px; text-align: center;">
                 <a href="${manageUrl}" style="color: #b8860b; text-decoration: none; font-size: 12px;">
                   Manage saved searches
                 </a>
@@ -157,6 +172,19 @@ export function generateSavedSearchNotificationHtml(
                   Visit Nihontowatch
                 </a>
               </p>
+              ${unsubscribeSearchUrl ? `
+              <p style="margin: 0; text-align: center; border-top: 1px solid #e5e5e5; padding-top: 12px;">
+                <a href="${unsubscribeSearchUrl}" style="color: #999; text-decoration: none; font-size: 11px;">
+                  Unsubscribe from this alert
+                </a>
+                ${unsubscribeAllUrl ? `
+                <span style="color: #ccc; margin: 0 8px;">|</span>
+                <a href="${unsubscribeAllUrl}" style="color: #999; text-decoration: none; font-size: 11px;">
+                  Unsubscribe from all emails
+                </a>
+                ` : ''}
+              </p>
+              ` : ''}
             </td>
           </tr>
         </table>
@@ -174,12 +202,21 @@ export function generateSavedSearchNotificationHtml(
 export function generateSavedSearchNotificationText(
   savedSearch: SavedSearch,
   matchedListings: Listing[],
-  frequency: 'instant' | 'daily'
+  frequency: 'instant' | 'daily',
+  recipient?: EmailRecipient
 ): string {
   const searchName = savedSearch.name || 'Your saved search';
   const criteriaSummary = criteriaToHumanReadable(savedSearch.search_criteria);
   const searchUrl = `${BASE_URL}${criteriaToUrl(savedSearch.search_criteria)}`;
   const manageUrl = `${BASE_URL}/saved`;
+
+  // Generate unsubscribe URLs if recipient info provided
+  const unsubscribeSearchUrl = recipient
+    ? getUnsubscribeUrl({ userId: recipient.userId, email: recipient.email, type: 'saved_search', savedSearchId: savedSearch.id })
+    : null;
+  const unsubscribeAllUrl = recipient
+    ? getUnsubscribeUrl({ userId: recipient.userId, email: recipient.email, type: 'all' })
+    : null;
 
   const listingsText = matchedListings
     .slice(0, 10)
@@ -192,6 +229,10 @@ export function generateSavedSearchNotificationText(
 
   const moreCount = matchedListings.length - 10;
   const moreText = moreCount > 0 ? `\n\n... and ${moreCount} more matches` : '';
+
+  const unsubscribeText = unsubscribeSearchUrl
+    ? `\n\nUnsubscribe from this alert: ${unsubscribeSearchUrl}${unsubscribeAllUrl ? `\nUnsubscribe from all emails: ${unsubscribeAllUrl}` : ''}`
+    : '';
 
   return `
 ${frequency === 'instant' ? 'NEW MATCHES FOUND' : 'YOUR DAILY DIGEST'}
@@ -211,6 +252,6 @@ Manage saved searches: ${manageUrl}
 
 ---
 
-You're receiving this email because you set up a saved search on Nihontowatch.
+You're receiving this email because you set up a saved search on Nihontowatch.${unsubscribeText}
   `.trim();
 }

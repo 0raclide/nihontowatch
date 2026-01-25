@@ -9,14 +9,21 @@ import { BottomTabBar } from '@/components/navigation/BottomTabBar';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { LoginModal } from '@/components/auth/LoginModal';
 import { createClient } from '@/lib/supabase/client';
+import { useConsent } from '@/contexts/ConsentContext';
 
 export default function ProfilePage() {
   const { user, profile, isLoading: authLoading, isAdmin, signOut, refreshProfile } = useAuth();
+  const { openPreferences } = useConsent();
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [displayName, setDisplayName] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteEmail, setDeleteEmail] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const handleEditClick = useCallback(() => {
     setDisplayName(profile?.display_name || '');
@@ -54,6 +61,62 @@ export default function ProfilePage() {
   const handleSignOut = useCallback(async () => {
     await signOut();
   }, [signOut]);
+
+  const handleExportData = useCallback(async () => {
+    setIsExporting(true);
+    try {
+      const response = await fetch('/api/user/data-export');
+      if (!response.ok) {
+        throw new Error('Failed to export data');
+      }
+      const data = await response.json();
+
+      // Create downloadable file
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `nihontowatch-data-export-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Export error:', err);
+      alert('Failed to export data. Please try again.');
+    } finally {
+      setIsExporting(false);
+    }
+  }, []);
+
+  const handleDeleteAccount = useCallback(async () => {
+    if (!user?.email) return;
+
+    setIsDeleting(true);
+    setDeleteError(null);
+
+    try {
+      const response = await fetch('/api/user/delete-account', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ confirmEmail: deleteEmail }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setDeleteError(data.message || data.error || 'Failed to delete account');
+        return;
+      }
+
+      // Account deleted - redirect to home
+      window.location.href = '/';
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : 'Failed to delete account');
+    } finally {
+      setIsDeleting(false);
+    }
+  }, [user?.email, deleteEmail]);
 
   // Authentication loading state - also show loading if we have cached profile but no user yet
   // This handles the case where auth is still initializing during page navigation
@@ -253,18 +316,141 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Sign Out */}
+        {/* Privacy & Data */}
+        <div className="bg-white dark:bg-ink/5 rounded-xl border border-border p-6 lg:p-8 mb-6">
+          <h3 className="font-serif text-[15px] text-ink mb-4">Privacy & Data</h3>
+          <div className="space-y-3">
+            {/* Cookie Preferences */}
+            <button
+              onClick={openPreferences}
+              className="flex items-center justify-between w-full p-3 rounded-lg hover:bg-linen dark:hover:bg-ink/10 transition-colors group text-left"
+            >
+              <div className="flex items-center gap-3">
+                <svg className="w-5 h-5 text-muted group-hover:text-gold transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+                <div>
+                  <span className="text-[14px] text-ink block">Cookie Preferences</span>
+                  <span className="text-[12px] text-muted">Manage your cookie and tracking settings</span>
+                </div>
+              </div>
+              <svg className="w-4 h-4 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+
+            {/* Export Data */}
+            <button
+              onClick={handleExportData}
+              disabled={isExporting}
+              className="flex items-center justify-between w-full p-3 rounded-lg hover:bg-linen dark:hover:bg-ink/10 transition-colors group text-left disabled:opacity-50"
+            >
+              <div className="flex items-center gap-3">
+                <svg className="w-5 h-5 text-muted group-hover:text-gold transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                <div>
+                  <span className="text-[14px] text-ink block">
+                    {isExporting ? 'Exporting...' : 'Export My Data'}
+                  </span>
+                  <span className="text-[12px] text-muted">Download all your data (GDPR)</span>
+                </div>
+              </div>
+              <svg className="w-4 h-4 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+
+            {/* Privacy Policy Link */}
+            <Link
+              href="/privacy"
+              className="flex items-center justify-between w-full p-3 rounded-lg hover:bg-linen dark:hover:bg-ink/10 transition-colors group"
+            >
+              <div className="flex items-center gap-3">
+                <svg className="w-5 h-5 text-muted group-hover:text-gold transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <div>
+                  <span className="text-[14px] text-ink block">Privacy Policy</span>
+                  <span className="text-[12px] text-muted">Learn how we handle your data</span>
+                </div>
+              </div>
+              <svg className="w-4 h-4 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </Link>
+          </div>
+        </div>
+
+        {/* Account Actions */}
         <div className="bg-white dark:bg-ink/5 rounded-xl border border-border p-6 lg:p-8">
           <h3 className="font-serif text-[15px] text-ink mb-4">Account Actions</h3>
-          <button
-            onClick={handleSignOut}
-            className="flex items-center gap-2 text-[14px] text-red-600 hover:text-red-700 transition-colors"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-            </svg>
-            Sign Out
-          </button>
+          <div className="space-y-4">
+            <button
+              onClick={handleSignOut}
+              className="flex items-center gap-2 text-[14px] text-muted hover:text-ink transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              Sign Out
+            </button>
+
+            <div className="pt-4 border-t border-border">
+              {!showDeleteConfirm ? (
+                <button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="flex items-center gap-2 text-[14px] text-red-600 hover:text-red-700 transition-colors"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                  Delete Account
+                </button>
+              ) : (
+                <div className="space-y-3">
+                  <p className="text-[13px] text-red-600">
+                    This action is permanent and cannot be undone. All your data will be deleted.
+                  </p>
+                  <div>
+                    <label className="text-[12px] text-muted block mb-1">
+                      Type your email to confirm: <strong>{user?.email}</strong>
+                    </label>
+                    <input
+                      type="email"
+                      value={deleteEmail}
+                      onChange={(e) => setDeleteEmail(e.target.value)}
+                      placeholder="Enter your email"
+                      className="w-full px-3 py-2 text-[14px] border border-border rounded-lg bg-cream dark:bg-ink/10 text-ink focus:outline-none focus:ring-2 focus:ring-red-500/50"
+                    />
+                    {deleteError && (
+                      <p className="text-[12px] text-red-500 mt-1">{deleteError}</p>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleDeleteAccount}
+                      disabled={isDeleting || deleteEmail.toLowerCase() !== user?.email?.toLowerCase()}
+                      className="px-4 py-2 text-[13px] font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isDeleting ? 'Deleting...' : 'Permanently Delete'}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowDeleteConfirm(false);
+                        setDeleteEmail('');
+                        setDeleteError(null);
+                      }}
+                      disabled={isDeleting}
+                      className="px-4 py-2 text-[13px] font-medium text-muted hover:text-ink transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </main>
 

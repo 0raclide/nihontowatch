@@ -166,12 +166,13 @@ export async function GET(request: NextRequest) {
               return;
             }
 
-            // Send notification
+            // Send notification (with userId for unsubscribe link)
             const result = await sendSavedSearchNotification(
               email,
               savedSearch as unknown as SavedSearch,
               matchedListings as unknown as Listing[],
-              frequency as 'instant' | 'daily'
+              frequency as 'instant' | 'daily',
+              savedSearch.user_id
             );
 
             if (result.success) {
