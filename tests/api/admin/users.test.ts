@@ -220,7 +220,7 @@ describe('GET /api/admin/users', () => {
               id: 'user-1',
               email: 'admin@example.com',
               display_name: 'Admin User',
-              role: 'admin',
+              is_admin: true,
               created_at: '2024-01-01T00:00:00Z',
               updated_at: '2024-01-01T00:00:00Z',
             },
@@ -237,7 +237,6 @@ describe('GET /api/admin/users', () => {
       expect(response.status).toBe(200);
       expect(json.users).toHaveLength(1);
       expect(json.users[0].is_admin).toBe(true);
-      expect(json.users[0]).not.toHaveProperty('role');
     });
 
     it('transforms role="user" to is_admin=false', async () => {
@@ -262,7 +261,7 @@ describe('GET /api/admin/users', () => {
               id: 'user-2',
               email: 'user@example.com',
               display_name: 'Regular User',
-              role: 'user',
+              is_admin: false,
               created_at: '2024-01-01T00:00:00Z',
               updated_at: '2024-01-01T00:00:00Z',
             },
@@ -279,7 +278,6 @@ describe('GET /api/admin/users', () => {
       expect(response.status).toBe(200);
       expect(json.users).toHaveLength(1);
       expect(json.users[0].is_admin).toBe(false);
-      expect(json.users[0]).not.toHaveProperty('role');
     });
 
     it('transforms multiple users with mixed roles correctly', async () => {
@@ -304,7 +302,7 @@ describe('GET /api/admin/users', () => {
               id: 'user-1',
               email: 'admin@example.com',
               display_name: 'Admin User',
-              role: 'admin',
+              is_admin: true,
               created_at: '2024-01-01T00:00:00Z',
               updated_at: '2024-01-01T00:00:00Z',
             },
@@ -312,7 +310,7 @@ describe('GET /api/admin/users', () => {
               id: 'user-2',
               email: 'user@example.com',
               display_name: 'Regular User',
-              role: 'user',
+              is_admin: false,
               created_at: '2024-01-02T00:00:00Z',
               updated_at: '2024-01-02T00:00:00Z',
             },
@@ -320,7 +318,7 @@ describe('GET /api/admin/users', () => {
               id: 'user-3',
               email: 'admin2@example.com',
               display_name: 'Another Admin',
-              role: 'admin',
+              is_admin: true,
               created_at: '2024-01-03T00:00:00Z',
               updated_at: '2024-01-03T00:00:00Z',
             },
@@ -765,6 +763,7 @@ describe('PATCH /api/admin/users', () => {
       expect(updateBuilder.update).toHaveBeenCalledWith(
         expect.objectContaining({
           role: 'admin',
+          is_admin: true,
         })
       );
     });
@@ -798,6 +797,7 @@ describe('PATCH /api/admin/users', () => {
       expect(updateBuilder.update).toHaveBeenCalledWith(
         expect.objectContaining({
           role: 'user',
+          is_admin: false,
         })
       );
     });

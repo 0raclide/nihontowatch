@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
 
     let query = supabase
       .from('profiles')
-      .select('id, email, display_name, role, created_at, updated_at', { count: 'exact' });
+      .select('id, email, display_name, is_admin, created_at, updated_at', { count: 'exact' });
 
     // Apply search filter
     if (search) {
@@ -45,15 +45,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // Transform role to is_admin for UI compatibility
-    const transformedUsers = users?.map((user) => ({
-      id: user.id,
-      email: user.email,
-      display_name: user.display_name,
-      is_admin: user.role === 'admin',
-      created_at: user.created_at,
-      updated_at: user.updated_at,
-    })) || [];
+    // Return users as-is (is_admin column exists in database)
+    const transformedUsers = users || [];
 
     return NextResponse.json({
       users: transformedUsers,
@@ -88,13 +81,17 @@ export async function PATCH(request: NextRequest) {
       return apiBadRequest('Cannot remove your own admin status');
     }
 
-    // Update role column - is_admin is a GENERATED column computed from role
+    // Update BOTH role and is_admin columns (they are separate, not generated)
     const newRole = isAdmin ? 'admin' : 'user';
     // Type assertion needed - profiles table update has partial typing issues
     type ProfilesTable = ReturnType<typeof supabase.from>;
     const { error } = await (supabase
       .from('profiles') as unknown as ProfilesTable)
-      .update({ role: newRole, updated_at: new Date().toISOString() })
+      .update({
+        role: newRole,
+        is_admin: isAdmin,
+        updated_at: new Date().toISOString()
+      })
       .eq('id', userId) as { error: { message: string } | null };
 
     if (error) {
