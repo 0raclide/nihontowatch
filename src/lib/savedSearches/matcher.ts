@@ -34,6 +34,7 @@ const TOSOGU_TYPES = [
 
 // Certification variants mapping
 const CERT_VARIANTS: Record<string, string[]> = {
+  'Juyo Bijutsuhin': ['Juyo Bijutsuhin', 'JuBi', 'jubi'], // Pre-war government designation
   Juyo: ['Juyo', 'juyo'],
   Tokuju: ['Tokuju', 'tokuju', 'Tokubetsu Juyo', 'tokubetsu_juyo'],
   TokuHozon: ['TokuHozon', 'Tokubetsu Hozon', 'tokubetsu_hozon'],

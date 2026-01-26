@@ -179,6 +179,8 @@ export const ARMOR_TYPES = [
 // =============================================================================
 
 export const CERTIFICATIONS = {
+  // Government designations (pre-war, highest prestige)
+  JUYO_BIJUTSUHIN: 'Juyo Bijutsuhin',
   // NBTHK
   JUYO: 'Juyo',
   TOKUBETSU_JUYO: 'Tokubetsu Juyo',
@@ -193,6 +195,7 @@ export const CERTIFICATIONS = {
 } as const;
 
 export const CERTIFICATION_PRIORITY = {
+  [CERTIFICATIONS.JUYO_BIJUTSUHIN]: 0, // Pre-war government designation - highest prestige
   [CERTIFICATIONS.TOKUBETSU_JUYO]: 1,
   [CERTIFICATIONS.JUYO]: 2,
   [CERTIFICATIONS.TOKUBETSU_HOZON]: 3,

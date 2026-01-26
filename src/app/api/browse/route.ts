@@ -182,6 +182,7 @@ function applyMinPriceFilter<T extends { or: (condition: string) => T }>(query: 
 
 // Certification variants mapping (for backward compatibility until data is normalized)
 const CERT_VARIANTS: Record<string, string[]> = {
+  'Juyo Bijutsuhin': ['Juyo Bijutsuhin', 'JuBi', 'jubi'], // Pre-war government designation
   'Juyo': ['Juyo', 'juyo'],
   'Tokuju': ['Tokuju', 'tokuju', 'Tokubetsu Juyo', 'tokubetsu_juyo'],
   'TokuHozon': ['TokuHozon', 'Tokubetsu Hozon', 'tokubetsu_hozon'],

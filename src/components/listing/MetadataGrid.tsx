@@ -112,6 +112,9 @@ interface MetadataItemProps {
 // =============================================================================
 
 export const CERT_CONFIG: Record<string, { label: string; shortLabel: string; tier: 'premier' | 'high' | 'standard' }> = {
+  // Pre-war government designation (highest prestige)
+  'Juyo Bijutsuhin': { label: 'Juyo Bijutsuhin', shortLabel: 'JuBi', tier: 'premier' },
+  // NBTHK
   Juyo: { label: 'Juyo', shortLabel: 'Juyo', tier: 'premier' },
   juyo: { label: 'Juyo', shortLabel: 'Juyo', tier: 'premier' },
   'Tokubetsu Juyo': { label: 'Tokubetsu Juyo', shortLabel: 'TokuJu', tier: 'premier' },

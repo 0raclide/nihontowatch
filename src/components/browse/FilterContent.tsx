@@ -212,6 +212,9 @@ const ITEM_TYPE_LABELS: Record<string, string> = {
 };
 
 const CERT_LABELS: Record<string, string> = {
+  // Pre-war government designation (highest prestige)
+  'Juyo Bijutsuhin': 'Jūyō Bijutsuhin',
+  // NBTHK
   Juyo: 'Jūyō',
   juyo: 'Jūyō',
   Tokuju: 'Tokubetsu Jūyō',
@@ -226,7 +229,7 @@ const CERT_LABELS: Record<string, string> = {
 };
 
 // Sort order for certifications (highest to lowest)
-const CERT_ORDER = ['Tokuju', 'tokuju', 'Juyo', 'juyo', 'TokuHozon', 'tokubetsu_hozon', 'Hozon', 'hozon', 'TokuKicho', 'nbthk', 'nthk'];
+const CERT_ORDER = ['Juyo Bijutsuhin', 'Tokuju', 'tokuju', 'Juyo', 'juyo', 'TokuHozon', 'tokubetsu_hozon', 'Hozon', 'hozon', 'TokuKicho', 'nbthk', 'nthk'];
 
 // Signature status labels
 const SIGNATURE_LABELS: Record<string, string> = {
