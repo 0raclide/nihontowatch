@@ -550,6 +550,7 @@ export function FilterContent({
               className="w-full px-3 py-3 bg-paper border-2 border-border rounded-lg text-[15px] text-ink focus:outline-none focus:border-gold"
             >
               <option value="recent">Newest</option>
+              <option value="sale_date">Recently Sold</option>
               <option value="price_asc">Price ↑</option>
               <option value="price_desc">Price ↓</option>
               <option value="name">A-Z</option>

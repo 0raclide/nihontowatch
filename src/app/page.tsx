@@ -19,7 +19,10 @@ import { PAGINATION } from '@/lib/constants';
 import { useActivityOptional } from '@/components/activity/ActivityProvider';
 import { DeepLinkHandler } from '@/components/browse/DeepLinkHandler';
 import { DataDelayBanner } from '@/components/subscription/DataDelayBanner';
+import { NewSinceLastVisitBanner } from '@/components/browse/NewSinceLastVisitBanner';
 import { useAuth } from '@/lib/auth/AuthContext';
+import { useNewSinceLastVisit } from '@/contexts/NewSinceLastVisitContext';
+import { NEW_SINCE_LAST_VISIT } from '@/lib/constants';
 
 interface Listing {
   id: string;
@@ -141,7 +144,8 @@ function HomeContent() {
   const filtersChangedRef = useRef(false);
   const activity = useActivityOptional();
   // Use auth context for admin status - more reliable than API response
-  const { isAdmin: authIsAdmin } = useAuth();
+  const { isAdmin: authIsAdmin, user } = useAuth();
+  const { recordVisit } = useNewSinceLastVisit();
 
   const [activeTab, setActiveTab] = useState<AvailabilityStatus>(
     (searchParams.get('tab') as AvailabilityStatus) || 'available'
@@ -210,6 +214,16 @@ function HomeContent() {
     fetchRates();
   }, []);
 
+  // Record visit for "New Since Last Visit" banner (debounced to avoid rapid updates)
+  useEffect(() => {
+    if (!isLoading && user) {
+      const timer = setTimeout(() => {
+        recordVisit();
+      }, NEW_SINCE_LAST_VISIT.RECORD_VISIT_DELAY_MS);
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading, user, recordVisit]);
+
   // Persist currency preference
   const handleCurrencyChange = useCallback((newCurrency: Currency) => {
     setCurrency(newCurrency);
@@ -222,7 +236,13 @@ function HomeContent() {
   const handleAvailabilityChange = useCallback((status: AvailabilityStatus) => {
     setActiveTab(status);
     setPage(1); // Reset to page 1 when changing availability filter
-  }, []);
+    // Auto-switch to sale_date sort for sold tab, price_desc for others
+    if (status === 'sold') {
+      setSort('sale_date');
+    } else if (sort === 'sale_date') {
+      setSort('price_desc'); // Reset to default when leaving sold tab
+    }
+  }, [sort]);
 
   // Build URL params from state (for URL sync - filters and sort only, not page)
   const buildUrlParams = useCallback(() => {
@@ -405,6 +425,7 @@ function HomeContent() {
     <div className="min-h-screen bg-cream transition-colors">
       <Header />
       <DataDelayBanner />
+      <NewSinceLastVisitBanner />
 
       {/* Handle deep links to specific listings via ?listing= URL param */}
       <DeepLinkHandler />
@@ -453,6 +474,7 @@ function HomeContent() {
               }}
             >
               <option value="recent">Newest</option>
+              <option value="sale_date">Recently Sold</option>
               <option value="price_asc">Price ↑</option>
               <option value="price_desc">Price ↓</option>
               <option value="name">A-Z</option>

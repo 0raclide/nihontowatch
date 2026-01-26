@@ -226,6 +226,28 @@ export async function GET(
     // Extract Yuhinkai enrichment (view returns array, we want first item or null)
     const yuhinkai_enrichment = typedListing.listing_yuhinkai_enrichment?.[0] || null;
 
+    // For sold items with no price, fetch sale price from price_history
+    let salePrice: number | null = null;
+    let saleCurrency: string | null = null;
+    let priceFromHistory = false;
+
+    if (typedListing.is_sold && !typedListing.price_value) {
+      const { data: priceHistory } = await supabase
+        .from('price_history')
+        .select('old_price, old_currency')
+        .eq('listing_id', listingId)
+        .in('change_type', ['sold', 'presumed_sold'])
+        .order('detected_at', { ascending: false })
+        .limit(1)
+        .single() as { data: { old_price: number | null; old_currency: string | null } | null };
+
+      if (priceHistory && priceHistory.old_price) {
+        salePrice = priceHistory.old_price;
+        saleCurrency = priceHistory.old_currency || 'JPY';
+        priceFromHistory = true;
+      }
+    }
+
     // Enrich listing with dealer baseline and Yuhinkai enrichment
     const enrichedListing = {
       ...typedListing,
@@ -234,6 +256,12 @@ export async function GET(
       yuhinkai_enrichment,
       // Remove the array version
       listing_yuhinkai_enrichment: undefined,
+      // Add sale price from history if available
+      ...(priceFromHistory && {
+        price_value: salePrice,
+        price_currency: saleCurrency,
+        price_from_history: true,
+      }),
     };
 
     const response = NextResponse.json({ listing: enrichedListing });
