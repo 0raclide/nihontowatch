@@ -457,8 +457,13 @@ export async function GET(request: NextRequest) {
         break;
       case 'sale_date':
         // For sold tab: sort by when items sold (newest sales first)
-        // Items without status_changed_at appear last
-        query = query.order('status_changed_at', { ascending: false, nullsFirst: false });
+        // Items WITH a sale date appear first, sorted by date descending
+        // Items WITHOUT a sale date appear last, sorted by first_seen_at descending
+        // Note: Supabase nullsFirst only affects position within the sort, not a separate group
+        // So we use a compound sort: first by having a date, then by the date itself
+        query = query
+          .order('status_changed_at', { ascending: false, nullsFirst: false })
+          .order('first_seen_at', { ascending: false });
         break;
       default:
         // "Newest" sort: Genuine new inventory first, then bulk imports
