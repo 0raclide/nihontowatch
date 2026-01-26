@@ -2,7 +2,7 @@
 
 Implementation status and handoff notes for the Nihontowatch Pro Tier system.
 
-**Last Updated:** 2026-01-25 (Dealer Analytics Tracking Fix)
+**Last Updated:** 2026-01-26 (Sold Items Sorting & Price Preservation)
 
 ---
 
@@ -53,6 +53,43 @@ NEXT_PUBLIC_TRIAL_MODE=false  # Normal paywall restored
 ---
 
 ## Changelog
+
+### 2026-01-26: Sold Items Sorting & Price Preservation
+
+**Problem Identified:**
+- ¥60M Kotetsu katana disappeared from Sold tab after being marked sold
+- Sold items were sorted by discovery date (`first_seen_at`), not sale date (`status_changed_at`)
+- Price was cleared to NULL when items sold, showing "Price on request" instead of sale price
+- Recently sold high-value items were buried beyond position 1000 in pagination
+
+**Root Causes:**
+
+1. **No sale date sort option** - Default sort used `first_seen_at` for all tabs including Sold
+2. **Price cleared on sale** - When scraper marks items sold, `price_value` becomes NULL
+3. **Price history not utilized** - `price_history` table had sale prices but wasn't queried for display
+
+**Fixes Applied:**
+
+| File | Change |
+|------|--------|
+| `src/app/api/browse/route.ts` | Added `sale_date` sort option (orders by `status_changed_at` DESC) |
+| `src/app/api/browse/route.ts` | Enriches sold items with sale price from `price_history.old_price` |
+| `src/app/api/listing/[id]/route.ts` | Fetches sale price from `price_history` for detail page |
+| `src/app/page.tsx` | Auto-switches to "Recently Sold" sort when entering Sold tab |
+| `src/app/page.tsx` | Added "Recently Sold" option to desktop sort dropdown |
+| `src/components/browse/FilterContent.tsx` | Added "Recently Sold" option to mobile sort dropdown |
+
+**Results:**
+- Kotetsu now at position ~22 (was >1000)
+- Sale price ¥60,000,000 displays correctly
+- `price_from_history: true` flag indicates price source
+- Frontend auto-selects "Recently Sold" sort on Sold tab
+
+**Commits:**
+- `1a95430` - feat: Add sale date sorting and price preservation for sold items
+- `ef829ac` - fix: Add secondary sort for sale_date to handle nulls better
+
+---
 
 ### 2026-01-25: Dealer Analytics Tracking Fix
 
