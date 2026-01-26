@@ -172,6 +172,7 @@ export interface Database {
           stripe_subscription_id: string | null;
           created_at: string;
           updated_at: string;
+          last_visit_at: string | null;
         };
         Insert: {
           id: string;
@@ -186,6 +187,7 @@ export interface Database {
           subscription_expires_at?: string | null;
           stripe_customer_id?: string | null;
           stripe_subscription_id?: string | null;
+          last_visit_at?: string | null;
         };
         Update: Partial<Omit<Database['public']['Tables']['profiles']['Row'], 'id' | 'created_at'>>;
       };

@@ -12,6 +12,7 @@ import { FavoritesProvider } from "@/contexts/FavoritesContext";
 import { ActivityWrapper } from "@/components/activity/ActivityWrapper";
 import { SignupPressureWrapper } from "@/components/signup";
 import { ConsentProvider } from "@/contexts/ConsentContext";
+import { NewSinceLastVisitProvider } from "@/contexts/NewSinceLastVisitContext";
 import { CookieBanner, ConsentPreferences } from "@/components/consent";
 import {
   generateOrganizationJsonLd,
@@ -93,27 +94,29 @@ export default function RootLayout({
       </head>
       <body className="antialiased font-sans" suppressHydrationWarning>
         <AuthProvider>
-          <ConsentProvider>
-            <SubscriptionProvider>
-              <PaywallModal />
-              <FavoritesProvider>
-                <SignupPressureWrapper>
-                  <MobileUIProvider>
-                    <ThemeProvider>
-                      <QuickViewProvider>
-                        <ActivityWrapper>
-                          {children}
-                        </ActivityWrapper>
-                        <QuickView />
-                      </QuickViewProvider>
-                    </ThemeProvider>
-                  </MobileUIProvider>
-                </SignupPressureWrapper>
-              </FavoritesProvider>
-            </SubscriptionProvider>
-            <CookieBanner />
-            <ConsentPreferences />
-          </ConsentProvider>
+          <NewSinceLastVisitProvider>
+            <ConsentProvider>
+              <SubscriptionProvider>
+                <PaywallModal />
+                <FavoritesProvider>
+                  <SignupPressureWrapper>
+                    <MobileUIProvider>
+                      <ThemeProvider>
+                        <QuickViewProvider>
+                          <ActivityWrapper>
+                            {children}
+                          </ActivityWrapper>
+                          <QuickView />
+                        </QuickViewProvider>
+                      </ThemeProvider>
+                    </MobileUIProvider>
+                  </SignupPressureWrapper>
+                </FavoritesProvider>
+              </SubscriptionProvider>
+              <CookieBanner />
+              <ConsentPreferences />
+            </ConsentProvider>
+          </NewSinceLastVisitProvider>
         </AuthProvider>
       </body>
     </html>

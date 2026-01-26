@@ -237,6 +237,28 @@ export const NEW_LISTING = {
 } as const;
 
 // =============================================================================
+// NEW SINCE LAST VISIT
+// =============================================================================
+
+export const NEW_SINCE_LAST_VISIT = {
+  /**
+   * Minimum number of new items required to show the banner.
+   * Set to 1 to show for any new items.
+   */
+  MIN_ITEMS_THRESHOLD: 1,
+  /**
+   * Maximum days to display in "X days ago" text.
+   * Shows "30+ days ago" for longer gaps.
+   */
+  MAX_DAYS_DISPLAY: 30,
+  /**
+   * Delay in milliseconds before recording a visit.
+   * Prevents rapid updates on quick navigation.
+   */
+  RECORD_VISIT_DELAY_MS: 2000,
+} as const;
+
+// =============================================================================
 // DISPLAY
 // =============================================================================
 
