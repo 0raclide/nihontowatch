@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
 
     let query = supabase
       .from('profiles')
-      .select('id, email, display_name, is_admin, created_at, updated_at', { count: 'exact' });
+      .select('id, email, display_name, role, created_at, updated_at', { count: 'exact' });
 
     // Apply search filter
     if (search) {
@@ -45,8 +45,18 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    // Transform role to is_admin for UI compatibility
+    const transformedUsers = users?.map((user) => ({
+      id: user.id,
+      email: user.email,
+      display_name: user.display_name,
+      is_admin: user.role === 'admin',
+      created_at: user.created_at,
+      updated_at: user.updated_at,
+    })) || [];
+
     return NextResponse.json({
-      users: users || [],
+      users: transformedUsers,
       total: count || 0,
       page,
       totalPages: Math.ceil((count || 0) / limit),
