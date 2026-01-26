@@ -82,8 +82,9 @@ export function CookieBanner() {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm text-ink leading-relaxed">
-                  Cookies help us remember your currency preference, save your searches,
-                  and show you relevant pieces from our 27 dealers.{' '}
+                  <strong>Accept cookies to unlock cool features:</strong> track new items since your last visit,
+                  save your currency preference, remember your searches, and personalize your experience
+                  across our 27 dealers.{' '}
                   <Link
                     href="/privacy"
                     className="text-accent hover:underline focus:underline focus:outline-none"

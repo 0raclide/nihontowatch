@@ -23,18 +23,33 @@ vi.mock('@/components/auth/LoginModal', () => ({
   ),
 }));
 
+// Mock ConsentContext
+vi.mock('@/contexts/ConsentContext', () => ({
+  useConsent: vi.fn(),
+}));
+
+// Mock hasFunctionalConsent helper
+vi.mock('@/lib/consent', () => ({
+  hasFunctionalConsent: vi.fn(),
+}));
+
 import { useAuth } from '@/lib/auth/AuthContext';
 import {
   useNewSinceLastVisit,
   useShouldShowNewItemsBanner,
 } from '@/contexts/NewSinceLastVisitContext';
+import { useConsent } from '@/contexts/ConsentContext';
+import { hasFunctionalConsent } from '@/lib/consent';
 
 const mockUseAuth = vi.mocked(useAuth);
 const mockUseNewSinceLastVisit = vi.mocked(useNewSinceLastVisit);
 const mockUseShouldShowNewItemsBanner = vi.mocked(useShouldShowNewItemsBanner);
+const mockUseConsent = vi.mocked(useConsent);
+const mockHasFunctionalConsent = vi.mocked(hasFunctionalConsent);
 
 describe('NewSinceLastVisitBanner', () => {
   const mockDismiss = vi.fn();
+  const mockOpenPreferences = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -51,6 +66,25 @@ describe('NewSinceLastVisitBanner', () => {
       recordVisit: vi.fn(),
       refresh: vi.fn(),
     });
+
+    // Mock consent context
+    mockUseConsent.mockReturnValue({
+      openPreferences: mockOpenPreferences,
+      closePreferences: vi.fn(),
+      closeBanner: vi.fn(),
+      hasConsent: vi.fn(),
+      acceptAll: vi.fn(),
+      rejectNonEssential: vi.fn(),
+      updateConsent: vi.fn(),
+      resetConsent: vi.fn(),
+      hasConsented: false,
+      consent: null,
+      showBanner: false,
+      showPreferences: false,
+    } as never);
+
+    // Default: user has functional consent (tests can override)
+    mockHasFunctionalConsent.mockReturnValue(true);
   });
 
   describe('when shouldShow is false', () => {
@@ -60,6 +94,58 @@ describe('NewSinceLastVisitBanner', () => {
 
       const { container } = render(<NewSinceLastVisitBanner />);
       expect(container.firstChild).toBeNull();
+    });
+  });
+
+  describe('consent upsell (logged-in without functional consent)', () => {
+    beforeEach(() => {
+      mockUseShouldShowNewItemsBanner.mockReturnValue(true);
+      mockUseAuth.mockReturnValue({
+        user: { id: 'user-123', email: 'test@example.com' },
+      } as never);
+      // User is logged in but has NOT consented to functional cookies
+      mockHasFunctionalConsent.mockReturnValue(false);
+    });
+
+    it('renders consent upsell banner', () => {
+      render(<NewSinceLastVisitBanner />);
+
+      // Text appears twice (desktop + mobile versions)
+      const texts = screen.getAllByText(/enable personalization/i);
+      expect(texts.length).toBeGreaterThan(0);
+      expect(screen.getByRole('button', { name: /enable/i })).toBeInTheDocument();
+    });
+
+    it('opens preferences modal when clicking enable', () => {
+      render(<NewSinceLastVisitBanner />);
+
+      const enableButton = screen.getByRole('button', { name: /enable/i });
+      fireEvent.click(enableButton);
+
+      expect(mockOpenPreferences).toHaveBeenCalledTimes(1);
+    });
+
+    it('uses purple styling for consent upsell', () => {
+      const { container } = render(<NewSinceLastVisitBanner />);
+
+      const banner = container.firstChild as HTMLElement;
+      expect(banner?.className).toContain('bg-purple');
+    });
+
+    it('has dismiss button', () => {
+      render(<NewSinceLastVisitBanner />);
+
+      const dismissButton = screen.getByRole('button', { name: /dismiss/i });
+      expect(dismissButton).toBeInTheDocument();
+    });
+
+    it('calls dismiss when clicking dismiss button', () => {
+      render(<NewSinceLastVisitBanner />);
+
+      const dismissButton = screen.getByRole('button', { name: /dismiss/i });
+      fireEvent.click(dismissButton);
+
+      expect(mockDismiss).toHaveBeenCalledTimes(1);
     });
   });
 

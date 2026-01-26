@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from 'react';
 import { useAuth } from '@/lib/auth/AuthContext';
+import { hasFunctionalConsent } from '@/lib/consent';
 import { NEW_SINCE_LAST_VISIT } from '@/lib/constants';
 
 // =============================================================================
@@ -80,7 +81,9 @@ export function NewSinceLastVisitProvider({ children }: { children: ReactNode })
 
   // Fetch new items count when user is authenticated
   const fetchCount = useCallback(async () => {
-    if (!user) {
+    // GDPR Compliance: Only track visits if user has consented to functional cookies
+    // Functional consent covers personalization features like "new since last visit"
+    if (!user || !hasFunctionalConsent()) {
       setState(prev => ({
         ...prev,
         count: null,
@@ -140,7 +143,8 @@ export function NewSinceLastVisitProvider({ children }: { children: ReactNode })
 
   // Record a visit (update last_visit_at)
   const recordVisit = useCallback(async () => {
-    if (!user) return;
+    // GDPR Compliance: Only record visits if user has consented to functional cookies
+    if (!user || !hasFunctionalConsent()) return;
 
     try {
       await fetch('/api/user/update-last-visit', { method: 'POST' });
@@ -192,18 +196,26 @@ export function useShouldShowNewItemsBanner(): boolean {
   const { count, isDismissed, isLoading, isFirstVisit } = useNewSinceLastVisit();
   const { user } = useAuth();
 
-  // Show teaser for logged-out users (not dismissed)
-  if (!user && !isDismissed) {
-    return true;
-  }
-
-  // Don't show while loading
-  if (isLoading) {
+  // Don't show if dismissed
+  if (isDismissed) {
     return false;
   }
 
-  // Don't show if dismissed
-  if (isDismissed) {
+  // Show teaser for logged-out users
+  if (!user) {
+    return true;
+  }
+
+  // Logged in but no functional consent - show consent upsell
+  if (!hasFunctionalConsent()) {
+    return true;
+  }
+
+  // From here on, user is logged in AND has functional consent
+  // Apply normal filtering rules
+
+  // Don't show while loading
+  if (isLoading) {
     return false;
   }
 

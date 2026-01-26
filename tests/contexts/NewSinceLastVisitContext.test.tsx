@@ -46,8 +46,15 @@ vi.mock('@/lib/auth/AuthContext', () => ({
   })),
 }));
 
+// Mock hasFunctionalConsent
+vi.mock('@/lib/consent', () => ({
+  hasFunctionalConsent: vi.fn(() => true), // Default to true for tests
+}));
+
 import { useAuth } from '@/lib/auth/AuthContext';
+import { hasFunctionalConsent } from '@/lib/consent';
 const mockUseAuth = vi.mocked(useAuth);
+const mockHasFunctionalConsent = vi.mocked(hasFunctionalConsent);
 
 // Test consumer component
 function TestConsumer() {
@@ -345,6 +352,97 @@ describe('NewSinceLastVisitContext', () => {
     });
   });
 
+  describe('consent gating', () => {
+    it('does not fetch count if user lacks functional consent', async () => {
+      mockUseAuth.mockReturnValue({
+        user: { id: 'user-123', email: 'test@example.com' },
+        isLoading: false,
+      } as never);
+
+      // User has NOT given functional consent
+      mockHasFunctionalConsent.mockReturnValue(false);
+
+      render(
+        <NewSinceLastVisitProvider>
+          <TestConsumer />
+        </NewSinceLastVisitProvider>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId('is-loading').textContent).toBe('no');
+      });
+
+      // Should NOT have made API call
+      expect(mockFetch).not.toHaveBeenCalled();
+      expect(screen.getByTestId('count').textContent).toBe('null');
+    });
+
+    it('fetches count if user has functional consent', async () => {
+      mockUseAuth.mockReturnValue({
+        user: { id: 'user-123', email: 'test@example.com' },
+        isLoading: false,
+      } as never);
+
+      // User HAS given functional consent
+      mockHasFunctionalConsent.mockReturnValue(true);
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          isLoggedIn: true,
+          count: 25,
+          daysSince: 2,
+          isFirstVisit: false,
+          lastVisitAt: '2024-01-01T00:00:00Z',
+        }),
+      } as Response);
+
+      render(
+        <NewSinceLastVisitProvider>
+          <TestConsumer />
+        </NewSinceLastVisitProvider>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId('count').textContent).toBe('25');
+      });
+
+      // Should have made API call
+      expect(mockFetch).toHaveBeenCalledWith('/api/user/new-items-count');
+    });
+
+    it('does not record visit if user lacks functional consent', async () => {
+      mockUseAuth.mockReturnValue({
+        user: { id: 'user-123', email: 'test@example.com' },
+        isLoading: false,
+      } as never);
+
+      // User has NOT given functional consent
+      mockHasFunctionalConsent.mockReturnValue(false);
+
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: async () => ({ success: true }),
+      } as Response);
+
+      render(
+        <NewSinceLastVisitProvider>
+          <TestConsumer />
+        </NewSinceLastVisitProvider>
+      );
+
+      // Click record visit button
+      fireEvent.click(screen.getByTestId('record-visit'));
+
+      await act(async () => {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      });
+
+      // Should NOT have made API call
+      expect(mockFetch).not.toHaveBeenCalledWith('/api/user/update-last-visit', expect.anything());
+    });
+  });
+
   describe('useShouldShowNewItemsBanner', () => {
     it('returns true for logged-out users (teaser)', async () => {
       mockUseAuth.mockReturnValue({
@@ -413,6 +511,9 @@ describe('NewSinceLastVisitContext', () => {
         signOut: vi.fn(),
         refreshProfile: vi.fn(),
       });
+
+      // Explicitly set functional consent to true for this test
+      mockHasFunctionalConsent.mockReturnValue(true);
 
       mockFetch.mockResolvedValueOnce({
         json: () =>
@@ -487,6 +588,9 @@ describe('NewSinceLastVisitContext', () => {
         signOut: vi.fn(),
         refreshProfile: vi.fn(),
       });
+
+      // Explicitly set functional consent to true for this test
+      mockHasFunctionalConsent.mockReturnValue(true);
 
       mockFetch.mockResolvedValueOnce({
         json: () =>

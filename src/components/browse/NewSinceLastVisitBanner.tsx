@@ -4,6 +4,8 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { LoginModal } from '@/components/auth/LoginModal';
+import { useConsent } from '@/contexts/ConsentContext';
+import { hasFunctionalConsent } from '@/lib/consent';
 import {
   useNewSinceLastVisit,
   useShouldShowNewItemsBanner,
@@ -20,9 +22,48 @@ export function NewSinceLastVisitBanner() {
   const { count, daysSince, dismiss, isLoading } = useNewSinceLastVisit();
   const shouldShow = useShouldShowNewItemsBanner();
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const { openPreferences } = useConsent();
 
   if (!shouldShow || isLoading) {
     return null;
+  }
+
+  // Logged-in user without functional consent - show consent upsell
+  if (user && !hasFunctionalConsent()) {
+    return (
+      <div className="bg-purple-50 dark:bg-purple-900/20 border-b border-purple-200 dark:border-purple-800/50">
+        <div className="max-w-7xl mx-auto px-4 py-2.5 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between gap-4 text-sm">
+            <div className="flex items-center gap-2">
+              <SparklesIcon className="w-4 h-4 text-purple-600 dark:text-purple-400 flex-shrink-0" />
+              <p className="text-purple-800 dark:text-purple-200">
+                <span className="hidden sm:inline">
+                  <strong>Enable personalization</strong> to track new items, save currency preference, and more
+                </span>
+                <span className="sm:hidden">
+                  <strong>Enable personalization</strong> for cool features
+                </span>
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={openPreferences}
+                className="flex-shrink-0 text-purple-700 dark:text-purple-300 font-medium hover:text-purple-900 dark:hover:text-purple-100 transition-colors"
+              >
+                Enable
+              </button>
+              <button
+                onClick={dismiss}
+                aria-label="Dismiss"
+                className="p-1 -mr-1 text-purple-400 hover:text-purple-600 dark:hover:text-purple-200 transition-colors"
+              >
+                <XIcon className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   // Logged-out user teaser

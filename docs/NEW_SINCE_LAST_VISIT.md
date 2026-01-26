@@ -43,13 +43,76 @@ This feature tracks when logged-in users last visited the browse page and displa
 ```
 
 - **Blue styling** (informational)
-- **Links to login page**
+- **Opens login modal** (button, not link)
 - **Dismissible** (session-only)
+
+### Logged-in User Without Consent (GDPR Compliance)
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│ ✨ Enable personalization to track new items...  [Enable][✕]    │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+- **Purple styling** (distinct from other banners)
+- **Opens consent preferences** modal
+- **Dismissible** (session-only)
+- **GDPR Compliant**: Feature only works if user consents to functional cookies
 
 ### First Visit
 
 - No banner shown (user establishes baseline)
 - `last_visit_at` is recorded after 2 seconds on the page
+
+---
+
+## GDPR Compliance
+
+**Consent Required:** This feature requires **functional consent** from users.
+
+### Why Functional Consent?
+
+The feature tracks:
+- User's last visit timestamp (`last_visit_at` in database)
+- Visit history for personalization
+- Count of new items since last visit
+
+This is **personalization/preference tracking** → requires functional consent under GDPR.
+
+### Implementation
+
+```typescript
+// src/contexts/NewSinceLastVisitContext.tsx
+import { hasFunctionalConsent } from '@/lib/consent';
+
+const fetchCount = useCallback(async () => {
+  // ✅ Check consent BEFORE tracking
+  if (!user || !hasFunctionalConsent()) {
+    return; // No tracking without consent
+  }
+
+  // Proceed with API call...
+}, [user]);
+```
+
+### User Experience by Consent State
+
+| User State | Banner Shown | Behavior |
+|------------|--------------|----------|
+| Logged out | Login teaser (blue) | Encourages login |
+| Logged in, no consent | Consent upsell (purple) | Opens preferences modal |
+| Logged in, with consent | New items count (green) | Shows personalized data |
+| First visit + consent | Nothing | Establishes baseline |
+
+### Cookie Banner Copy
+
+```
+Accept cookies to unlock cool features: track new items since your last visit,
+save your currency preference, remember your searches, and personalize your experience
+across our 27 dealers.
+```
+
+**Key principle:** Make it explicitly clear what users get by accepting cookies.
 
 ---
 

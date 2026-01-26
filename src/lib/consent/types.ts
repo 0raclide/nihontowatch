@@ -126,12 +126,13 @@ export const CATEGORY_INFO: Record<ConsentCategory, CategoryInfo> = {
   functional: {
     id: 'functional',
     name: 'Functional',
-    description: 'Enable personalized features and remember your preferences.',
+    description: 'Enable personalized features and remember your preferences. These make the site more useful for you!',
     required: false,
     examples: [
-      'Theme preference (light/dark mode)',
+      'Track new items since your last visit',
       'Currency preference (JPY/USD/EUR)',
-      'Recently viewed items',
+      'Theme preference (light/dark mode)',
+      'Saved search filters and sort preferences',
     ],
   },
   analytics: {
