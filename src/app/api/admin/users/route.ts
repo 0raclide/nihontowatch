@@ -81,7 +81,7 @@ export async function PATCH(request: NextRequest) {
       return apiBadRequest('Cannot remove your own admin status');
     }
 
-    // Update BOTH role and is_admin columns (they are separate, not generated)
+    // Update role column only - is_admin is a GENERATED column computed from role
     const newRole = isAdmin ? 'admin' : 'user';
     // Type assertion needed - profiles table update has partial typing issues
     type ProfilesTable = ReturnType<typeof supabase.from>;
@@ -89,7 +89,6 @@ export async function PATCH(request: NextRequest) {
       .from('profiles') as unknown as ProfilesTable)
       .update({
         role: newRole,
-        is_admin: isAdmin,
         updated_at: new Date().toISOString()
       })
       .eq('id', userId) as { error: { message: string } | null };

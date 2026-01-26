@@ -763,7 +763,6 @@ describe('PATCH /api/admin/users', () => {
       expect(updateBuilder.update).toHaveBeenCalledWith(
         expect.objectContaining({
           role: 'admin',
-          is_admin: true,
         })
       );
     });
@@ -797,7 +796,6 @@ describe('PATCH /api/admin/users', () => {
       expect(updateBuilder.update).toHaveBeenCalledWith(
         expect.objectContaining({
           role: 'user',
-          is_admin: false,
         })
       );
     });
