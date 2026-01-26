@@ -7,6 +7,7 @@ This document tracks dealer-specific customizations, quirks, and maintenance not
 ## Table of Contents
 
 - [Aoi Art](#aoi-art)
+- [Shoubudou](#shoubudou)
 - [Touken Matsumoto](#touken-matsumoto)
 - [Adding New Dealer Notes](#adding-new-dealer-notes)
 
@@ -56,6 +57,46 @@ Aoi Art uses a multi-strategy approach for image extraction:
 - Some listings have the shop owner image mixed in with product images
 - Price can be in JSON-LD, meta tags, or text patterns
 - Certification data often in title or description text
+
+---
+
+## Shoubudou
+
+**Domain:** shoubudou.co.jp
+**Scraper:** `Oshi-scrapper/scrapers/shoubudou.py`
+**Status:** Active
+**Dealer ID:** 12
+
+### Sold Detection
+
+**IMPORTANT:** Shoubudou requires a custom `_is_sold_indicator()` override.
+
+Shoubudou uses EC-CUBE platform with category-based sold tracking:
+- Sold items are moved to `category_id=29` (売却済 / Sold)
+- The navigation sidebar shows a link to this category on **every page**
+- This causes false positives with the base scraper's full-text search
+
+**Implementation (2026-01-26):**
+- Overrode `_is_sold_indicator()` to use `_check_sold()` method
+- `_check_sold()` looks for `li.onmark` element with `category_id=29` link
+- This correctly identifies only items actually in the sold category
+
+```python
+def _is_sold_indicator(self, soup: BeautifulSoup) -> bool:
+    """Override base class sold indicator check."""
+    return self._check_sold(soup)
+```
+
+### Known Quirks
+
+- Navigation sidebar contains "売却済 / Sold" link on all pages (fixed with override)
+- Uses EC-CUBE e-commerce platform
+- Category highlighting via `li.onmark` class
+- Prices in Japanese shaku/sun format, converted to cm by scraper
+
+### Incident History
+
+- **2026-01-26:** 243 listings incorrectly marked as sold due to navigation text containing "売却済". Fixed with `_is_sold_indicator()` override. 8 items corrected. See [POSTMORTEM_SHOUBUDOU_SOLD_STATUS.md](./POSTMORTEM_SHOUBUDOU_SOLD_STATUS.md)
 
 ---
 
@@ -142,6 +183,7 @@ See [CLAUDE.md](../CLAUDE.md#current-dealers-27-total) for the complete dealer l
 | Dealer | Domain | Has Custom Notes |
 |--------|--------|------------------|
 | Aoi Art | aoijapan.com | Yes |
+| Shoubudou | shoubudou.co.jp | Yes |
 | Touken Matsumoto | touken-matsumoto.jp | Yes |
 | Eirakudo | eirakudo.com | No |
 | Nipponto | nipponto.co.jp | No |

@@ -18,6 +18,7 @@
 | [STUDY_SETSUMEI_FEATURE.md](./STUDY_SETSUMEI_FEATURE.md) | Study mode for reading NBTHK setsumei (book icon in QuickView) |
 | [SEARCH_FEATURES.md](./SEARCH_FEATURES.md) | Natural language search, filters, query syntax |
 | [NEW_LISTING_INDICATOR.md](./NEW_LISTING_INDICATOR.md) | "New" badge for recently discovered listings |
+| [NEW_SINCE_LAST_VISIT.md](./NEW_SINCE_LAST_VISIT.md) | Personalized "X new items since your last visit" banner for retention |
 | [OPTIMIZATION.md](./OPTIMIZATION.md) | Performance optimization, image loading, caching strategies |
 | [PRO_TIER_STRATEGY.md](./PRO_TIER_STRATEGY.md) | Subscription business strategy, tier features, pricing |
 | [PRO_TIER_IMPLEMENTATION.md](./PRO_TIER_IMPLEMENTATION.md) | Full implementation checklist for subscription system |
@@ -36,6 +37,7 @@
 
 | Document | Date | Issue |
 |----------|------|-------|
+| [POSTMORTEM_SHOUBUDOU_SOLD_STATUS.md](./POSTMORTEM_SHOUBUDOU_SOLD_STATUS.md) | 2026-01-26 | Shoubudou items incorrectly marked as sold (navigation text false positive) |
 | [POSTMORTEM_SWORD_SETSUMEI_MISSING.md](./POSTMORTEM_SWORD_SETSUMEI_MISSING.md) | 2026-01-21 | Sword enrichments missing setsumei_en (translation_md not fetched) |
 | [QA_PRICE_DATA_AUDIT_20260121.md](./QA_PRICE_DATA_AUDIT_20260121.md) | 2026-01-21 | **Comprehensive price data audit** - E-sword bug, parser bugs, sold transitions |
 | [POSTMORTEM_PRICE_HISTORY_DATA_QUALITY.md](./POSTMORTEM_PRICE_HISTORY_DATA_QUALITY.md) | 2026-01-21 | price_history cleanup (178 bad records removed) |
@@ -140,6 +142,15 @@
 4. Check `src/components/signup/SignupModal.tsx` - Modal UI
 5. Run `npm test tests/signup` - 200 unit tests
 6. Run `npx playwright test tests/e2e/signup-pressure.spec.ts` - 29 e2e tests
+
+### "I need to work on 'new since last visit' feature"
+1. Read [NEW_SINCE_LAST_VISIT.md](./NEW_SINCE_LAST_VISIT.md) - Complete feature docs
+2. Check `src/contexts/NewSinceLastVisitContext.tsx` - State management
+3. Check `src/components/browse/NewSinceLastVisitBanner.tsx` - Banner UI
+4. Check `src/app/api/user/new-items-count/route.ts` - Count API
+5. Check `src/app/api/user/update-last-visit/route.ts` - Visit recording API
+6. Run `npm test tests/contexts/NewSinceLastVisitContext` - Context tests
+7. Run `npm test tests/components/browse/NewSinceLastVisitBanner` - Component tests
 
 ### "I need to add admin features"
 1. Read [USER_ACCOUNTS_SYSTEM.md#admin-dashboard](./USER_ACCOUNTS_SYSTEM.md#admin-dashboard)
