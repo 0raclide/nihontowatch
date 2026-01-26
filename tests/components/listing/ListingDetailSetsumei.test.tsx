@@ -125,17 +125,3 @@ describe('ListingDetailClient Setsumei Logic', () => {
   });
 });
 
-describe('Browse API Setsumei Filter Verification', () => {
-  it('should filter on setsumei_text_en, not listing_yuhinkai_enrichment', async () => {
-    const fs = await import('fs');
-    const path = await import('path');
-    const filePath = path.join(process.cwd(), 'src/app/api/browse/route.ts');
-    const content = fs.readFileSync(filePath, 'utf-8');
-
-    // Should use setsumei_text_en filter
-    expect(content).toContain("query.not('setsumei_text_en', 'is', null)");
-
-    // Should NOT query listing_yuhinkai_enrichment for enriched filter
-    expect(content).not.toContain("from('listing_yuhinkai_enrichment')");
-  });
-});

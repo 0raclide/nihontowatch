@@ -34,7 +34,6 @@ export interface FilterContentProps {
     historicalPeriods: string[];
     signatureStatuses: string[];
     askOnly?: boolean;
-    enriched?: boolean;
     missingSetsumei?: boolean;
   };
   onFilterChange: (key: string, value: unknown) => void;
@@ -445,7 +444,6 @@ export function FilterContent({
     onFilterChange('historicalPeriods', []);
     onFilterChange('signatureStatuses', []);
     onFilterChange('askOnly', false);
-    onFilterChange('enriched', false);
     onFilterChange('missingSetsumei', false);
   }, [onFilterChange]);
 
@@ -458,7 +456,6 @@ export function FilterContent({
     filters.historicalPeriods.length > 0 ||
     filters.signatureStatuses.length > 0 ||
     filters.askOnly ||
-    filters.enriched ||
     filters.missingSetsumei;
 
   const activeFilterCount =
@@ -469,7 +466,6 @@ export function FilterContent({
     filters.historicalPeriods.length +
     filters.signatureStatuses.length +
     (filters.askOnly ? 1 : 0) +
-    (filters.enriched ? 1 : 0) +
     (filters.missingSetsumei ? 1 : 0);
 
   return (
@@ -718,38 +714,7 @@ export function FilterContent({
           </div>
         </FilterSection>
 
-        {/* 5. Catalog Enriched - Premium feature with professional translations */}
-        <div className="py-5">
-          <label className="flex items-center justify-between cursor-pointer group min-h-[48px]">
-            <div className="flex items-center gap-2">
-              <span className="text-[15px] lg:text-[14px] text-charcoal group-hover:text-ink transition-colors">
-                Setsumei EN
-              </span>
-            </div>
-            <div className="relative">
-              <input
-                type="checkbox"
-                checked={filters.enriched || false}
-                onChange={(e) => onFilterChange('enriched', e.target.checked)}
-                className="peer sr-only"
-              />
-              <div className={`w-12 h-7 lg:w-11 lg:h-6 rounded-full transition-colors ${
-                filters.enriched
-                  ? 'bg-gold'
-                  : 'bg-border-dark'
-              }`}>
-                <div className={`absolute top-1 w-5 h-5 lg:w-4 lg:h-4 bg-white rounded-full shadow transition-transform ${
-                  filters.enriched ? 'translate-x-6 lg:translate-x-6' : 'translate-x-1'
-                }`} />
-              </div>
-            </div>
-          </label>
-          <p className="text-[11px] text-muted mt-1">
-            Juyo/Tokuju items with official evaluation translations
-          </p>
-        </div>
-
-        {/* 6. Price on Request - Last, least important */}
+        {/* 5. Price on Request - Last, least important */}
         <div className="py-5">
           <label className="flex items-center justify-between cursor-pointer group min-h-[48px]">
             <span className="text-[15px] lg:text-[14px] text-charcoal group-hover:text-ink transition-colors">
@@ -835,7 +800,6 @@ export function getActiveFilterCount(filters: FilterContentProps['filters']): nu
     filters.historicalPeriods.length +
     filters.signatureStatuses.length +
     (filters.askOnly ? 1 : 0) +
-    (filters.enriched ? 1 : 0) +
     (filters.missingSetsumei ? 1 : 0)
   );
 }

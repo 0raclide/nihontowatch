@@ -24,8 +24,6 @@ interface BrowseParams {
   historicalPeriods?: string[];
   signatureStatuses?: string[];
   askOnly?: boolean;
-  /** Filter to only show catalog-enriched listings */
-  enriched?: boolean;
   /** Admin filter: show Juyo/Tokuju items missing setsumei (no OCR and no manual Yuhinkai) */
   missingSetsumei?: boolean;
   query?: string;
@@ -156,7 +154,6 @@ function parseParams(searchParams: URLSearchParams): BrowseParams {
     historicalPeriods: historicalPeriodsRaw ? historicalPeriodsRaw.split(',') : undefined,
     signatureStatuses: signatureStatusesRaw ? signatureStatusesRaw.split(',') : undefined,
     askOnly: searchParams.get('ask') === 'true',
-    enriched: searchParams.get('enriched') === 'true',
     missingSetsumei: searchParams.get('missing_setsumei') === 'true',
     query: searchParams.get('q') || undefined,
     sort: searchParams.get('sort') || 'recent',
@@ -341,11 +338,6 @@ export async function GET(request: NextRequest) {
     // Signature status filter (mei_type: signed = has mei, unsigned/mumei = no mei)
     if (params.signatureStatuses?.length) {
       query = query.in('signature_status', params.signatureStatuses);
-    }
-
-    // NBTHK Zufu translation filter - only show listings with OCR setsumei
-    if (params.enriched) {
-      query = query.not('setsumei_text_en', 'is', null);
     }
 
     // Admin filter: Missing setsumei - Juyo/Tokuju items without OCR setsumei
