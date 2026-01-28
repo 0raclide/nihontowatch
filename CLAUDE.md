@@ -19,7 +19,7 @@
 
 **Defaults:**
 - Currency: JPY
-- Sort: Price high to low
+- Sort: Newest first
 - Items per page: 100
 - Only available items shown (sold archive hidden)
 

@@ -162,7 +162,7 @@ function HomeContent() {
     enriched: searchParams.get('enriched') === 'true',
     missingSetsumei: searchParams.get('missing_setsumei') === 'true',
   });
-  const [sort, setSort] = useState(searchParams.get('sort') || 'price_desc');
+  const [sort, setSort] = useState(searchParams.get('sort') || 'recent');
   const [page, setPage] = useState(Number(searchParams.get('page')) || 1);
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
 
@@ -240,7 +240,7 @@ function HomeContent() {
     if (status === 'sold') {
       setSort('sale_date');
     } else if (sort === 'sale_date') {
-      setSort('price_desc'); // Reset to default when leaving sold tab
+      setSort('recent'); // Reset to default when leaving sold tab
     }
   }, [sort]);
 
