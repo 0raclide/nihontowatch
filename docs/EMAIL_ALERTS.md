@@ -196,13 +196,14 @@ All templates include:
 - Plain text fallback
 - Nihontowatch branding
 - Listing images and details
-- Direct links to listings
+- **Quickview links** - clicking items opens them on Nihontowatch (not external dealer sites)
 - Manage alerts link
 
 ### Saved Search Email
 - Subject: "New matches for [search name]" or "Daily digest: X new matches"
 - Shows up to 10 listings with images, titles, prices
-- Link to view all results
+- **Each listing links to quickview**: `https://nihontowatch.com/?listing=<id>`
+- "View All Results" button links to full search results
 
 ### Price Drop Email
 - Subject: "Price dropped X% on [listing title]"
@@ -213,6 +214,23 @@ All templates include:
 - Subject: "[listing title] is back in stock!"
 - Listing image, price, and details
 - Direct link to purchase
+
+## Listing Links
+
+Email templates use `getListingQuickViewUrl(listingId)` to generate links that open on Nihontowatch:
+
+```typescript
+// src/lib/email/templates/saved-search.ts
+getListingQuickViewUrl(39097)
+// Returns: "https://nihontowatch.com/?listing=39097"
+```
+
+When users click these links:
+1. The `?listing=<id>` parameter is detected by `DeepLinkHandler`
+2. The listing is fetched from Supabase
+3. The QuickView modal opens with full listing details
+
+This keeps users on Nihontowatch instead of redirecting to external dealer sites.
 
 ## SendGrid Setup
 

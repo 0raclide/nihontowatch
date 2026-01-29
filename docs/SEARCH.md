@@ -322,6 +322,17 @@ WHERE price_value < 500000
 | `/src/lib/search/numericFilters.ts` | Extract numeric filters (cm>70, price<500000) |
 | `/src/lib/search/textNormalization.ts` | Macron removal, aliases, normalization |
 | `/src/app/api/browse/route.ts` | Main search API - combines all filters |
+| `/src/lib/savedSearches/matcher.ts` | Saved search matcher - uses same semantic parsing |
+
+### Consistency: Browse API and Saved Search Matcher
+
+Both the browse API and the saved search notification matcher use `parseSemanticQuery()` to handle certification and item type terms. This ensures that:
+
+1. **Saved searches match the same results as the browse page**
+2. **No false positives**: Searching "Juyo" won't match Hozon items that mention "Juyo" in their description
+3. **No false negatives**: Actual Juyo items are matched by `cert_type` filter, not text search
+
+This was fixed in January 2026 - see `docs/POSTMORTEM_SAVED_SEARCH_MATCHER.md` for details.
 
 ---
 
