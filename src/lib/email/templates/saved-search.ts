@@ -5,6 +5,17 @@ import { getUnsubscribeUrl } from '@/app/api/unsubscribe/route';
 
 const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://nihontowatch.com';
 
+/**
+ * Generate a Nihontowatch quickview URL for a listing.
+ * When clicked, this opens the quickview modal via the DeepLinkHandler.
+ *
+ * @param listingId - The listing ID
+ * @returns URL like https://nihontowatch.com/?listing=12345
+ */
+export function getListingQuickViewUrl(listingId: number): string {
+  return `${BASE_URL}/?listing=${listingId}`;
+}
+
 interface EmailRecipient {
   userId: string;
   email: string;
@@ -62,7 +73,7 @@ export function generateSavedSearchNotificationHtml(
                 }
               </td>
               <td valign="top">
-                <a href="${listing.url}" style="color: #1a1a1a; text-decoration: none; font-weight: 500; font-size: 14px; line-height: 1.4;">
+                <a href="${getListingQuickViewUrl(listing.id)}" style="color: #1a1a1a; text-decoration: none; font-weight: 500; font-size: 14px; line-height: 1.4;">
                   ${listing.title || 'Untitled listing'}
                 </a>
                 <p style="margin: 4px 0 0; color: #666; font-size: 12px;">
@@ -223,7 +234,7 @@ export function generateSavedSearchNotificationText(
     .map((listing, i) => {
       const title = listing.title || 'Untitled listing';
       const price = formatPrice(listing.price_value, listing.price_currency || 'JPY');
-      return `${i + 1}. ${title}\n   ${price}\n   ${listing.url}`;
+      return `${i + 1}. ${title}\n   ${price}\n   ${getListingQuickViewUrl(listing.id)}`;
     })
     .join('\n\n');
 
