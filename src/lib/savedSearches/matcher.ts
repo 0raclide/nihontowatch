@@ -2,6 +2,7 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import type { SavedSearchCriteria, Listing } from '@/types';
 import { normalizeSearchText, expandSearchAliases } from '@/lib/search';
 import { parseNumericFilters } from '@/lib/search/numericFilters';
+import { parseSemanticQuery } from '@/lib/search/semanticQueryParser';
 
 // Item type categories
 const NIHONTO_TYPES = [
@@ -145,38 +146,63 @@ export async function findMatchingListings(
     query = query.lte('price_value', criteria.maxPrice);
   }
 
-  // Query/text search with numeric filters
+  // Query/text search with semantic parsing and numeric filters
+  // This matches the browse API behavior to ensure consistent results
   if (criteria.query && criteria.query.trim().length >= 2) {
-    const { filters, textWords } = parseNumericFilters(criteria.query);
+    // Step 1: Extract semantic filters (certifications, item types) from query
+    // This ensures "Juyo" is treated as a certification filter, not text search
+    // which would match listings that merely mention "Juyo" in related items
+    const { extractedFilters, remainingTerms } = parseSemanticQuery(criteria.query);
+
+    // Apply extracted certification filters (exact match on cert_type)
+    // Only apply if no explicit certification filter was already set
+    if (extractedFilters.certifications.length > 0 && !criteria.certifications?.length) {
+      const certVariants = extractedFilters.certifications.flatMap(
+        (c) => CERT_VARIANTS[c] || [c]
+      );
+      query = query.in('cert_type', certVariants);
+    }
+
+    // Apply extracted item type filters (exact match on item_type)
+    // Only apply if no explicit item type filter was already set
+    if (extractedFilters.itemTypes.length > 0 && !criteria.itemTypes?.length && !criteria.category) {
+      const typeConditions = extractedFilters.itemTypes
+        .map((t) => `item_type.ilike.${t}`)
+        .join(',');
+      query = query.or(typeConditions);
+    }
+
+    // Step 2: Parse numeric filters from remaining terms
+    const remainingQuery = remainingTerms.join(' ');
+    const { filters, textWords } = parseNumericFilters(remainingQuery);
 
     // Apply numeric filters
     for (const { field, op, value } of filters) {
       query = query.filter(field, op, value);
     }
 
-    // Text search on remaining words
-    const searchFields = [
-      'title',
-      'description',
-      'smith',
-      'tosogu_maker',
-      'school',
-      'tosogu_school',
-      'province',
-      'era',
-      'mei_type',
-      'cert_type',
-      'item_type',
-      'item_category',
-      'tosogu_material',
-    ];
+    // Step 3: Text search on remaining words (artisan names, provinces, etc.)
+    // Only non-semantic terms reach here - certifications/item types are handled above
+    if (textWords.length > 0) {
+      const searchFields = [
+        'title',
+        'description',
+        'smith',
+        'tosogu_maker',
+        'school',
+        'tosogu_school',
+        'province',
+        'era',
+        'mei_type',
+      ];
 
-    for (const word of textWords) {
-      const expandedTerms = expandSearchAliases(word).map(normalizeSearchText);
-      const conditions = expandedTerms.flatMap((term) =>
-        searchFields.map((field) => `${field}.ilike.%${term}%`)
-      );
-      query = query.or(conditions.join(','));
+      for (const word of textWords) {
+        const expandedTerms = expandSearchAliases(word).map(normalizeSearchText);
+        const conditions = expandedTerms.flatMap((term) =>
+          searchFields.map((field) => `${field}.ilike.%${term}%`)
+        );
+        query = query.or(conditions.join(','));
+      }
     }
   }
 
@@ -258,6 +284,34 @@ export async function countMatchingListings(
   }
   if (criteria.maxPrice !== undefined) {
     query = query.lte('price_value', criteria.maxPrice);
+  }
+
+  // Process query with semantic parsing (same as findMatchingListings)
+  if (criteria.query && criteria.query.trim().length >= 2) {
+    const { extractedFilters, remainingTerms } = parseSemanticQuery(criteria.query);
+
+    // Apply extracted certification filters
+    if (extractedFilters.certifications.length > 0 && !criteria.certifications?.length) {
+      const certVariants = extractedFilters.certifications.flatMap(
+        (c) => CERT_VARIANTS[c] || [c]
+      );
+      query = query.in('cert_type', certVariants);
+    }
+
+    // Apply extracted item type filters
+    if (extractedFilters.itemTypes.length > 0 && !criteria.itemTypes?.length && !criteria.category) {
+      const typeConditions = extractedFilters.itemTypes
+        .map((t) => `item_type.ilike.${t}`)
+        .join(',');
+      query = query.or(typeConditions);
+    }
+
+    // Parse and apply numeric filters
+    const remainingQuery = remainingTerms.join(' ');
+    const { filters } = parseNumericFilters(remainingQuery);
+    for (const { field, op, value } of filters) {
+      query = query.filter(field, op, value);
+    }
   }
 
   const { count, error } = await query;
