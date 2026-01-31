@@ -37,6 +37,7 @@
 
 | Document | Date | Issue |
 |----------|------|-------|
+| [DEALER_ANALYTICS_TRACKING_FIX.md](./DEALER_ANALYTICS_TRACKING_FIX.md) | 2026-01-31 | **Dealer click-throughs overcounted** - Card clicks logged as external_link_click instead of quickview_open |
 | [POSTMORTEM_SHOUBUDOU_SOLD_STATUS.md](./POSTMORTEM_SHOUBUDOU_SOLD_STATUS.md) | 2026-01-26 | Shoubudou items incorrectly marked as sold (navigation text false positive) |
 | [POSTMORTEM_SWORD_SETSUMEI_MISSING.md](./POSTMORTEM_SWORD_SETSUMEI_MISSING.md) | 2026-01-21 | Sword enrichments missing setsumei_en (translation_md not fetched) |
 | [QA_PRICE_DATA_AUDIT_20260121.md](./QA_PRICE_DATA_AUDIT_20260121.md) | 2026-01-21 | **Comprehensive price data audit** - E-sword bug, parser bugs, sold transitions |

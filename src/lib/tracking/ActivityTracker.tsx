@@ -49,6 +49,7 @@ import type {
   ExternalLinkClickEvent,
   ViewportDwellEvent,
   QuickViewPanelToggleEvent,
+  QuickViewOpenEvent,
   ImagePinchZoomEvent,
   SearchFilters,
   ActivityBatchPayload,
@@ -155,6 +156,11 @@ export interface ActivityTracker {
     listingId: number,
     action: 'collapse' | 'expand',
     dwellMs?: number
+  ) => void;
+  trackQuickViewOpen: (
+    listingId: number,
+    dealerName?: string,
+    source?: 'listing_card' | 'search_results' | 'favorites'
   ) => void;
   trackImagePinchZoom: (
     listingId: number,
@@ -571,6 +577,27 @@ export function ActivityTrackerProvider({
     [createBaseEvent, queueEvent, isOptedOut]
   );
 
+  const trackQuickViewOpen = useCallback(
+    (
+      listingId: number,
+      dealerName?: string,
+      source: 'listing_card' | 'search_results' | 'favorites' = 'listing_card'
+    ) => {
+      if (isOptedOut) return;
+
+      const event: QuickViewOpenEvent = {
+        ...createBaseEvent(),
+        type: 'quickview_open',
+        listingId,
+        dealerName,
+        source,
+      };
+
+      queueEvent(event);
+    },
+    [createBaseEvent, queueEvent, isOptedOut]
+  );
+
   const trackImagePinchZoom = useCallback(
     (
       listingId: number,
@@ -605,6 +632,7 @@ export function ActivityTrackerProvider({
       trackExternalLinkClick,
       trackViewportDwell,
       trackQuickViewPanelToggle,
+      trackQuickViewOpen,
       trackImagePinchZoom,
       flush: flushEvents,
       isOptedOut,
@@ -620,6 +648,7 @@ export function ActivityTrackerProvider({
       trackExternalLinkClick,
       trackViewportDwell,
       trackQuickViewPanelToggle,
+      trackQuickViewOpen,
       trackImagePinchZoom,
       flushEvents,
       isOptedOut,

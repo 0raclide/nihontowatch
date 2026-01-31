@@ -227,6 +227,54 @@ describe('POST /api/track', () => {
     });
   });
 
+  describe('quickview_open validation', () => {
+    it('accepts valid quickview_open events', async () => {
+      const payload = createValidPayload([
+        createBaseEvent('quickview_open', {
+          listingId: 456,
+          dealerName: 'Aoi Art',
+          source: 'listing_card',
+        }),
+      ]);
+
+      const response = await POST(createRequest(payload));
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data.success).toBe(true);
+      expect(data.eventsReceived).toBe(1);
+    });
+
+    it('requires listingId for quickview_open', async () => {
+      const payload = createValidPayload([
+        createBaseEvent('quickview_open', {
+          dealerName: 'Aoi Art',
+          source: 'listing_card',
+          // Missing listingId
+        }),
+      ]);
+
+      const response = await POST(createRequest(payload));
+      const data = await response.json();
+
+      expect(data.eventsReceived).toBe(0);
+    });
+
+    it('accepts quickview_open with only required fields', async () => {
+      const payload = createValidPayload([
+        createBaseEvent('quickview_open', {
+          listingId: 789,
+          // Optional fields omitted
+        }),
+      ]);
+
+      const response = await POST(createRequest(payload));
+      const data = await response.json();
+
+      expect(data.eventsReceived).toBe(1);
+    });
+  });
+
   describe('payload validation', () => {
     it('rejects invalid JSON', async () => {
       const request = new NextRequest('http://localhost:3000/api/track', {

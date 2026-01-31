@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { FavoriteButton } from '@/components/favorites/FavoriteButton';
 import { ShareButton } from '@/components/share/ShareButton';
 import { InquiryModal } from '@/components/inquiry';
@@ -8,6 +8,7 @@ import { LoginModal } from '@/components/auth/LoginModal';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { useQuickViewOptional } from '@/contexts/QuickViewContext';
+import { useActivityTrackerOptional } from '@/lib/tracking/ActivityTracker';
 import { useCurrency, formatPriceWithConversion } from '@/hooks/useCurrency';
 import { shouldShowNewBadge } from '@/lib/newListing';
 import type { Listing, ListingWithEnrichment } from '@/types';
@@ -37,6 +38,7 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
   const { user, isAdmin } = useAuth();
   const { showPaywall, canAccess } = useSubscription();
   const quickView = useQuickViewOptional();
+  const activityTracker = useActivityTrackerOptional();
   const [isInquiryModalOpen, setIsInquiryModalOpen] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
 
@@ -64,6 +66,17 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
     }
     setIsInquiryModalOpen(true);
   };
+
+  // Track when user clicks through to dealer's website
+  const handleDealerLinkClick = useCallback(() => {
+    if (activityTracker && listing) {
+      activityTracker.trackExternalLinkClick(
+        listing.url,
+        Number(listing.id),
+        listing.dealers?.name || listing.dealer?.name
+      );
+    }
+  }, [activityTracker, listing]);
 
   return (
     <div className="flex flex-col h-full min-h-0">
@@ -191,6 +204,7 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
             href={listing.url}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={handleDealerLinkClick}
             data-testid="cta-button"
             className="flex-1 flex items-center justify-center gap-2 px-5 py-3 text-[13px] lg:text-[14px] font-medium text-white bg-gold hover:bg-gold-light rounded-lg transition-colors"
           >

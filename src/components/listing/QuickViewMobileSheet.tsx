@@ -10,6 +10,7 @@ import { ShareButton } from '@/components/share/ShareButton';
 import { InquiryModal } from '@/components/inquiry';
 import { LoginModal } from '@/components/auth/LoginModal';
 import { useAuth } from '@/lib/auth/AuthContext';
+import { useActivityTrackerOptional } from '@/lib/tracking/ActivityTracker';
 import { MetadataGrid, getCertInfo, getArtisanInfo } from './MetadataGrid';
 import { SetsumeiSection } from './SetsumeiSection';
 import { TranslatedDescription } from './TranslatedDescription';
@@ -70,6 +71,7 @@ export function QuickViewMobileSheet({
 
   // Inquiry modal state
   const { user } = useAuth();
+  const activityTracker = useActivityTrackerOptional();
   const [isInquiryModalOpen, setIsInquiryModalOpen] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
 
@@ -109,6 +111,17 @@ export function QuickViewMobileSheet({
     }
     setIsInquiryModalOpen(true);
   }, [user]);
+
+  // Track when user clicks through to dealer's website
+  const handleDealerLinkClick = useCallback(() => {
+    if (activityTracker && listing) {
+      activityTracker.trackExternalLinkClick(
+        listing.url,
+        Number(listing.id),
+        listing.dealers?.name || listing.dealer?.name
+      );
+    }
+  }, [activityTracker, listing]);
 
   // Initialize viewport height
   useEffect(() => {
@@ -466,7 +479,10 @@ export function QuickViewMobileSheet({
                 rel="noopener noreferrer"
                 onTouchStart={(e) => e.stopPropagation()}
                 onTouchEnd={(e) => e.stopPropagation()}
-                onClick={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDealerLinkClick();
+                }}
                 className="flex-1 flex items-center justify-center gap-2 px-5 py-3 text-[13px] font-medium text-white bg-gold hover:bg-gold-light rounded-lg transition-colors active:scale-[0.98]"
               >
                 View on {dealerName}

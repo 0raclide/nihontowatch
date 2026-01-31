@@ -22,6 +22,7 @@ export type ActivityEventType =
   | 'dealer_click'
   | 'viewport_dwell'
   | 'quickview_panel_toggle'
+  | 'quickview_open'
   | 'image_pinch_zoom';
 
 // =============================================================================
@@ -158,6 +159,17 @@ export interface QuickViewPanelToggleEvent extends BaseActivityEvent {
   dwellMs?: number;
 }
 
+/**
+ * QuickView open event - when user opens the QuickView modal from a listing card
+ */
+export interface QuickViewOpenEvent extends BaseActivityEvent {
+  type: 'quickview_open';
+  listingId: number;
+  dealerName?: string;
+  /** Source of the QuickView open */
+  source: 'listing_card' | 'search_results' | 'favorites';
+}
+
 export interface ImagePinchZoomEvent extends BaseActivityEvent {
   type: 'image_pinch_zoom';
   listingId: number;
@@ -182,6 +194,7 @@ export type ActivityEvent =
   | DealerClickEvent
   | ViewportDwellEvent
   | QuickViewPanelToggleEvent
+  | QuickViewOpenEvent
   | ImagePinchZoomEvent;
 
 // =============================================================================

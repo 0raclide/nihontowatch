@@ -26,6 +26,7 @@ function isValidEventType(type: string): boolean {
     'external_link_click',
     'viewport_dwell',
     'quickview_panel_toggle',
+    'quickview_open',
     'image_pinch_zoom',
   ];
   return validTypes.includes(type);

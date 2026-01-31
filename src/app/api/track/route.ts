@@ -72,6 +72,7 @@ const VALID_EVENT_TYPES = [
   'alert_delete',
   'external_link_click',
   'viewport_dwell',
+  'quickview_open',
 ] as const;
 
 function isValidEventType(type: string): boolean {
@@ -124,6 +125,9 @@ function validateEvent(event: unknown): event is ActivityEvent {
     case 'viewport_dwell':
       if (!e.listingId || typeof e.listingId !== 'number') return false;
       if (typeof e.dwellMs !== 'number') return false;
+      break;
+    case 'quickview_open':
+      if (!e.listingId || typeof e.listingId !== 'number') return false;
       break;
   }
 

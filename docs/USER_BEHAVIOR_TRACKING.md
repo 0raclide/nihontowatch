@@ -8,7 +8,7 @@ This document covers Nihontowatch's user behavior tracking system, the signals w
 
 **North Star Metric:** Time spent using the app (session duration, return visits)
 
-**Last Updated:** January 18, 2026
+**Last Updated:** January 31, 2026
 
 ---
 
@@ -98,7 +98,8 @@ Admin Dashboards
 | `filter_change` | Filter toggle | filters, changedFilter, oldValue, newValue |
 | `favorite_add/remove` | Favorite action | listingId |
 | `alert_create/delete` | Alert action | alertId, alertType, criteria |
-| `external_link_click` | Dealer link click | url, listingId, dealerName |
+| `external_link_click` | "View on dealer" button click in QuickView | url, listingId, dealerName |
+| `quickview_open` | User clicks listing card to open QuickView | listingId, dealerName, source |
 | `viewport_dwell` | Listing card visible for >1.5s in browse grid | listingId, dwellMs, intersectionRatio, isRevisit |
 | `quickview_panel_toggle` | User collapses/expands QuickView panel | listingId, action (collapse/expand), dwellMs |
 | `image_pinch_zoom` | User pinch-zooms on mobile | listingId, imageIndex, zoomScale, durationMs |
@@ -712,6 +713,17 @@ CREATE INDEX idx_activity_events_created_at ON activity_events(created_at);
   "dealerName": "Aoi Art"
 }
 ```
+
+**quickview_open:**
+```json
+{
+  "listingId": 12345,
+  "dealerName": "Aoi Art",
+  "source": "listing_card"
+}
+```
+
+> **Note:** Prior to 2026-01-31, card clicks were incorrectly tracked as `external_link_click` instead of `quickview_open`. See [DEALER_ANALYTICS_TRACKING_FIX.md](./DEALER_ANALYTICS_TRACKING_FIX.md) for details.
 
 **viewport_dwell:**
 ```json

@@ -440,12 +440,12 @@ export const ListingCard = memo(function ListingCard({
       return;
     }
 
-    // Track click activity
+    // Track QuickView open (engagement event, not click-through to dealer)
     if (activity) {
-      activity.trackExternalLinkClick(
-        listing.url,
+      activity.trackQuickViewOpen(
         Number(listing.id),
-        listing.dealers?.name
+        listing.dealers?.name,
+        'listing_card'
       );
     }
 
