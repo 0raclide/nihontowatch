@@ -21,10 +21,6 @@ type SessionData = {
   page_views: number | null;
 };
 
-type SearchEventData = {
-  event_data: { query?: string } | null;
-};
-
 type AlertRecord = {
   id: number | string;
   user_id: string;
@@ -98,20 +94,30 @@ export async function GET(request: NextRequest) {
         .limit(10),
     ]);
 
-    // Get popular listings (most favorited)
-    const { data: popularListings, error: popularError } = await (supabase
-      .from('user_favorites') as unknown as UserFavoritesTable)
-      .select('listing_id, listings(id, title)')
-      .limit(1000) as { data: FavoriteWithListing[] | null; error: { message: string } | null };
+    // Use service client to query listing_views (bypasses RLS for anonymous data)
+    const serviceSupabase = createServiceClient();
 
-    if (popularError) {
-      logger.error('Error fetching popular listings', { error: popularError.message });
+    // Get popular listings with both views and favorites
+    const [popularFavoritesResult, popularViewsResult] = await Promise.all([
+      // Favorites
+      (supabase.from('user_favorites') as unknown as UserFavoritesTable)
+        .select('listing_id, listings(id, title)')
+        .limit(1000) as Promise<{ data: FavoriteWithListing[] | null; error: { message: string } | null }>,
+      // Views from listing_views table
+      serviceSupabase
+        .from('listing_views')
+        .select('listing_id')
+        .limit(10000),
+    ]);
+
+    if (popularFavoritesResult.error) {
+      logger.error('Error fetching popular listings', { error: popularFavoritesResult.error.message });
     }
 
     // Count favorites per listing
     const listingFavorites: Record<number, { title: string; count: number }> = {};
-    if (popularListings) {
-      for (const fav of popularListings) {
+    if (popularFavoritesResult.data) {
+      for (const fav of popularFavoritesResult.data) {
         const listingId = fav.listing_id;
         const listing = fav.listings;
         // Skip if listing was deleted (orphaned favorite)
@@ -123,14 +129,33 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const topListings = Object.entries(listingFavorites)
-      .map(([id, data]) => ({
-        id: parseInt(id),
-        title: data.title,
-        views: 0, // Views tracking not yet implemented
-        favorites: data.count,
-      }))
-      .sort((a, b) => b.favorites - a.favorites)
+    // Count views per listing
+    const listingViews: Record<number, number> = {};
+    if (popularViewsResult.data) {
+      for (const view of popularViewsResult.data as { listing_id: number }[]) {
+        listingViews[view.listing_id] = (listingViews[view.listing_id] || 0) + 1;
+      }
+    }
+
+    // Merge favorites and views, prioritizing listings with most engagement
+    const allListingIds = new Set([
+      ...Object.keys(listingFavorites).map(Number),
+      ...Object.keys(listingViews).map(Number),
+    ]);
+
+    const listingEngagement: { id: number; title: string; views: number; favorites: number }[] = [];
+    for (const id of allListingIds) {
+      const favData = listingFavorites[id];
+      listingEngagement.push({
+        id,
+        title: favData?.title || `Listing #${id}`,
+        views: listingViews[id] || 0,
+        favorites: favData?.count || 0,
+      });
+    }
+
+    const topListings = listingEngagement
+      .sort((a, b) => (b.views + b.favorites * 2) - (a.views + a.favorites * 2)) // Weight favorites more
       .slice(0, 10);
 
     const basicStats = {
@@ -144,27 +169,28 @@ export async function GET(request: NextRequest) {
 
     // If detailed analytics requested
     if (detailed) {
-      // Use service role client for activity data to bypass RLS
-      // (RLS policies make anonymous events invisible to regular queries)
-      const serviceSupabase = createServiceClient();
-
       // Type assertions for tables that may not be in generated types
       type ServiceTable = ReturnType<typeof serviceSupabase.from>;
 
-      const [sessionsResult, searchTermsResult, alertsResult] = await Promise.all([
+      const [sessionsResult, searchTermsResult, alertsResult, totalViewsResult] = await Promise.all([
         // Session stats (if user_sessions table exists)
         (serviceSupabase.from('user_sessions') as unknown as ServiceTable)
           .select('total_duration_ms, page_views')
           .gte('started_at', startDate.toISOString())
           .limit(1000) as Promise<{ data: SessionData[] | null; error: unknown }>,
-        // Search terms from activity_events
-        (serviceSupabase.from('activity_events') as unknown as ServiceTable)
-          .select('event_data')
-          .eq('event_type', 'search')
-          .gte('created_at', startDate.toISOString())
-          .limit(1000) as Promise<{ data: SearchEventData[] | null; error: unknown }>,
+        // Search terms from user_searches table (new dedicated table)
+        serviceSupabase
+          .from('user_searches')
+          .select('query_normalized')
+          .gte('searched_at', startDate.toISOString())
+          .limit(1000),
         // Alerts count
         supabase.from('alerts').select('id', { count: 'exact', head: true }),
+        // Total views from listing_views
+        serviceSupabase
+          .from('listing_views')
+          .select('id', { count: 'exact', head: true })
+          .gte('viewed_at', startDate.toISOString()),
       ]);
 
       // Calculate session stats
@@ -180,13 +206,12 @@ export async function GET(request: NextRequest) {
         }
       }
 
-      // Aggregate search terms
+      // Aggregate search terms from user_searches table
       const searchCounts: Record<string, number> = {};
       if (searchTermsResult.data) {
-        for (const event of searchTermsResult.data) {
-          const query = event.event_data?.query;
-          if (query) {
-            const normalized = query.toLowerCase().trim();
+        for (const search of searchTermsResult.data as { query_normalized: string }[]) {
+          const normalized = search.query_normalized;
+          if (normalized) {
             searchCounts[normalized] = (searchCounts[normalized] || 0) + 1;
           }
         }
@@ -207,7 +232,7 @@ export async function GET(request: NextRequest) {
         mostViewedListings: topListings, // Reusing popular listings
         popularSearchTerms,
         conversionFunnel: {
-          views: totalPageViews,
+          views: totalViewsResult.count || 0, // Real views from listing_views
           favorites: favoritesResult.count || 0,
           alerts: alertsResult.count || 0,
         },

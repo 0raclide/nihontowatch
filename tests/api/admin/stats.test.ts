@@ -116,6 +116,13 @@ function setupStandardMocks() {
         return usersBuilder;
     }
   });
+
+  // Setup service client mocks for listing_views (now queried even in basic stats)
+  const viewsBuilder = createMockQueryBuilder([], 0);
+  mockServiceClient.from.mockImplementation((table: string) => {
+    if (table === 'listing_views') return viewsBuilder;
+    return createMockQueryBuilder();
+  });
 }
 
 // =============================================================================
@@ -216,16 +223,16 @@ describe('GET /api/admin/stats', () => {
       ], 2);
 
       const searchEventsBuilder = createMockQueryBuilder([
-        { event_data: { query: 'katana' } },
-        { event_data: { query: 'wakizashi' } },
-        { event_data: { query: 'katana' } },
+        { query_normalized: 'katana' },
+        { query_normalized: 'wakizashi' },
+        { query_normalized: 'katana' },
       ], 3);
 
       const alertsBuilder = createMockQueryBuilder([], 5);
 
       mockServiceClient.from.mockImplementation((table: string) => {
         if (table === 'user_sessions') return sessionsBuilder;
-        if (table === 'activity_events') return searchEventsBuilder;
+        if (table === 'user_searches') return searchEventsBuilder;
         return createMockQueryBuilder();
       });
 
@@ -262,22 +269,22 @@ describe('GET /api/admin/stats', () => {
       expect(json).toHaveProperty('conversionFunnel');
     });
 
-    it('uses service client for activity_events queries', async () => {
+    it('uses service client for user_searches queries', async () => {
       const searchEventsBuilder = createMockQueryBuilder([
-        { event_data: { query: 'test search' } },
+        { query_normalized: 'test search' },
       ], 1);
 
       mockServiceClient.from.mockImplementation((table: string) => {
-        if (table === 'activity_events') return searchEventsBuilder;
+        if (table === 'user_searches') return searchEventsBuilder;
         return createMockQueryBuilder();
       });
 
       const request = createMockRequest({ detailed: 'true' });
       await GET(request);
 
-      // Verify service client was used for activity_events
+      // Verify service client was used for user_searches
       expect(createServiceClient).toHaveBeenCalled();
-      expect(mockServiceClient.from).toHaveBeenCalledWith('activity_events');
+      expect(mockServiceClient.from).toHaveBeenCalledWith('user_searches');
     });
 
     it('uses service client for user_sessions queries', async () => {
@@ -299,15 +306,16 @@ describe('GET /api/admin/stats', () => {
     });
 
     it('aggregates search terms correctly', async () => {
+      // user_searches table stores pre-normalized queries in query_normalized column
       const searchEventsBuilder = createMockQueryBuilder([
-        { event_data: { query: 'Katana' } },
-        { event_data: { query: 'katana' } },  // Same term, different case
-        { event_data: { query: 'KATANA' } },  // Same term, all caps
-        { event_data: { query: 'wakizashi' } },
+        { query_normalized: 'katana' },
+        { query_normalized: 'katana' },
+        { query_normalized: 'katana' },
+        { query_normalized: 'wakizashi' },
       ], 4);
 
       mockServiceClient.from.mockImplementation((table: string) => {
-        if (table === 'activity_events') return searchEventsBuilder;
+        if (table === 'user_searches') return searchEventsBuilder;
         return createMockQueryBuilder();
       });
 
@@ -318,7 +326,7 @@ describe('GET /api/admin/stats', () => {
       expect(response.status).toBe(200);
       expect(json.popularSearchTerms).toBeDefined();
 
-      // Should be normalized to lowercase
+      // Terms should be aggregated by count
       const katanaTerm = json.popularSearchTerms.find((t: { term: string }) => t.term === 'katana');
       expect(katanaTerm).toBeDefined();
       expect(katanaTerm.count).toBe(3);
@@ -397,13 +405,13 @@ describe('GET /api/admin/stats', () => {
     it('returns top 20 search terms', async () => {
       // Create 25 unique search terms
       const searchEvents = Array.from({ length: 25 }, (_, i) => ({
-        event_data: { query: `search term ${i}` },
+        query_normalized: `search term ${i}`,
       }));
 
       const searchEventsBuilder = createMockQueryBuilder(searchEvents, 25);
 
       mockServiceClient.from.mockImplementation((table: string) => {
-        if (table === 'activity_events') return searchEventsBuilder;
+        if (table === 'user_searches') return searchEventsBuilder;
         return createMockQueryBuilder();
       });
 
@@ -417,14 +425,14 @@ describe('GET /api/admin/stats', () => {
 
     it('sorts search terms by count descending', async () => {
       const searchEventsBuilder = createMockQueryBuilder([
-        { event_data: { query: 'rare term' } },
-        { event_data: { query: 'common term' } },
-        { event_data: { query: 'common term' } },
-        { event_data: { query: 'common term' } },
+        { query_normalized: 'rare term' },
+        { query_normalized: 'common term' },
+        { query_normalized: 'common term' },
+        { query_normalized: 'common term' },
       ], 4);
 
       mockServiceClient.from.mockImplementation((table: string) => {
-        if (table === 'activity_events') return searchEventsBuilder;
+        if (table === 'user_searches') return searchEventsBuilder;
         return createMockQueryBuilder();
       });
 
@@ -439,13 +447,13 @@ describe('GET /api/admin/stats', () => {
 
     it('handles empty search terms gracefully', async () => {
       const searchEventsBuilder = createMockQueryBuilder([
-        { event_data: { query: '' } },
-        { event_data: { query: null } },
-        { event_data: {} },
+        { query_normalized: '' },
+        { query_normalized: null },
+        { query_normalized: '' },
       ], 3);
 
       mockServiceClient.from.mockImplementation((table: string) => {
-        if (table === 'activity_events') return searchEventsBuilder;
+        if (table === 'user_searches') return searchEventsBuilder;
         return createMockQueryBuilder();
       });
 
@@ -477,9 +485,9 @@ describe('GET /api/admin/stats', () => {
       expect(json.error).toBe('Internal server error');
     });
 
-    it('handles missing activity_events table gracefully', async () => {
+    it('handles missing user_searches table gracefully', async () => {
       const errorBuilder = createMockQueryBuilder(null, null, {
-        message: 'relation "activity_events" does not exist',
+        message: 'relation "user_searches" does not exist',
         code: '42P01',
       });
 
