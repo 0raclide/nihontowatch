@@ -26,11 +26,13 @@
 | [SUBSCRIPTION_HANDOFF.md](./SUBSCRIPTION_HANDOFF.md) | **Current status & handoff notes for subscription implementation** |
 | [SEO.md](./SEO.md) | SEO optimization, structured data, sitemap, robots.txt |
 | [TESTING.md](./TESTING.md) | Test suite docs, concordance tests, CI/CD integration |
+| [USER_ENGAGEMENT_ANALYTICS.md](./USER_ENGAGEMENT_ANALYTICS.md) | Admin engagement dashboard - user growth, funnel, search analytics |
 
 ## Sessions
 
 | Document | Date | Summary |
 |----------|------|---------|
+| [SESSION_20260201_USER_ENGAGEMENT_ANALYTICS.md](./SESSION_20260201_USER_ENGAGEMENT_ANALYTICS.md) | 2026-02-01 | **User engagement analytics** - 4-agent implementation of `/admin/analytics` dashboard |
 | [SESSION_20260125_TRIAL_MODE.md](./SESSION_20260125_TRIAL_MODE.md) | 2026-01-25 | **Trial mode & business pivot** - All features free, hybrid model (free collectors, paid dealers) |
 
 ## Postmortems & QA Audits
@@ -178,6 +180,14 @@
 3. Check `src/lib/activity/types.ts` - Event type definitions
 4. Check `src/app/api/activity/` - API routes
 5. Check `src/app/admin/analytics/` - Analytics dashboard
+
+### "I need to work on user engagement analytics"
+1. Read [USER_ENGAGEMENT_ANALYTICS.md](./USER_ENGAGEMENT_ANALYTICS.md) - Complete dashboard docs
+2. Check `src/hooks/useUserEngagement.ts` - Data fetching hook
+3. Check `src/app/api/admin/analytics/engagement/` - 5 API endpoints
+4. Check `src/components/admin/analytics/` - Chart components
+5. Check `src/app/admin/analytics/page.tsx` - Dashboard page
+6. Check `src/lib/tracking/viewTracker.ts` and `searchTracker.ts` - Client tracking helpers
 
 ### "I need to work on dealer inquiry emails"
 1. Read [INQUIRY_EMAIL_SYSTEM.md](./INQUIRY_EMAIL_SYSTEM.md) - Complete system docs

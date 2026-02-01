@@ -15,3 +15,8 @@ export { TrendLineChart } from './TrendLineChart';
 export { PriceChangesTable } from './PriceChangesTable';
 export { FilterBar } from './FilterBar';
 export { ChartSkeleton } from './ChartSkeleton';
+
+// User Engagement Analytics Components
+export { ConversionFunnelChart } from './ConversionFunnelChart';
+export { UserGrowthChart } from './UserGrowthChart';
+export { SearchTermsTable } from './SearchTermsTable';

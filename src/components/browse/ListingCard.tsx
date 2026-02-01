@@ -9,6 +9,7 @@ import { useQuickViewOptional } from '@/contexts/QuickViewContext';
 import { useViewportTrackingOptional } from '@/lib/viewport';
 import { getImageUrl, dealerDoesNotPublishImages } from '@/lib/images';
 import { shouldShowNewBadge } from '@/lib/newListing';
+import { trackSearchClick } from '@/lib/tracking/searchTracker';
 import { isTrialModeActive } from '@/types/subscription';
 import { useImagePreloader } from '@/hooks/useImagePreloader';
 
@@ -90,6 +91,7 @@ interface ListingCardProps {
   priority?: boolean; // For above-the-fold images
   showFavoriteButton?: boolean;
   isNearViewport?: boolean; // For lazy loading optimization
+  searchId?: number; // For CTR tracking
 }
 
 // Normalize Japanese kanji and variants to standard English keys
@@ -370,7 +372,8 @@ export const ListingCard = memo(function ListingCard({
   exchangeRates,
   priority = false,
   showFavoriteButton = true,
-  isNearViewport = true // Default to true for backward compatibility
+  isNearViewport = true, // Default to true for backward compatibility
+  searchId,
 }: ListingCardProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
@@ -440,6 +443,11 @@ export const ListingCard = memo(function ListingCard({
       return;
     }
 
+    // Track search click-through for CTR analytics (if this came from a search)
+    if (searchId) {
+      trackSearchClick(searchId, Number(listing.id));
+    }
+
     // Track QuickView open (engagement event, not click-through to dealer)
     if (activity) {
       activity.trackQuickViewOpen(
@@ -455,7 +463,7 @@ export const ListingCard = memo(function ListingCard({
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       quickView.openQuickView(listing as any);
     }
-  }, [activity, quickView, listing]);
+  }, [activity, quickView, listing, searchId]);
 
   // Preload QuickView images on hover (after 150ms delay)
   const handleMouseEnter = useCallback(() => {

@@ -8,9 +8,12 @@ import { QuickViewMobileSheet } from './QuickViewMobileSheet';
 import { StudySetsumeiView } from './StudySetsumeiView';
 import { useQuickView } from '@/contexts/QuickViewContext';
 import { useActivityTrackerOptional } from '@/lib/tracking/ActivityTracker';
+import { trackListingView } from '@/lib/tracking/viewTracker';
+import { getSessionId } from '@/lib/activity/sessionManager';
 import { usePinchZoomTracking } from '@/lib/viewport';
 import { getAllImages, dealerDoesNotPublishImages } from '@/lib/images';
 import { useValidatedImages } from '@/hooks/useValidatedImages';
+import { useAuth } from '@/lib/auth/AuthContext';
 import type { ListingWithEnrichment } from '@/types';
 
 // Blur placeholder for lazy images
@@ -35,6 +38,7 @@ export function QuickView() {
   } = useQuickView();
 
   const activityTracker = useActivityTrackerOptional();
+  const { user } = useAuth();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const mobileScrollContainerRef = useRef<HTMLDivElement>(null);
   const [visibleImages, setVisibleImages] = useState<Set<number>>(new Set([0, 1]));
@@ -68,6 +72,14 @@ export function QuickView() {
 
     setIsSheetExpanded(prev => !prev);
   }, [isSheetExpanded, activityTracker, currentListing]);
+
+  // Track view to dedicated listing_views table when QuickView opens
+  useEffect(() => {
+    if (!currentListing || !isOpen) return;
+
+    const sessionId = getSessionId();
+    trackListingView(currentListing.id, sessionId, user?.id, 'browse');
+  }, [currentListing?.id, isOpen, user?.id]);
 
   // Reset scroll and visible images when listing changes
   useEffect(() => {

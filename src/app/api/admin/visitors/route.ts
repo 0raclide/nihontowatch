@@ -1,8 +1,9 @@
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 interface VisitorStats {
   // Top metrics - HONEST numbers
@@ -53,6 +54,20 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Verify user is an admin
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+
+    if (!profile || (profile as { role?: string }).role !== 'admin') {
+      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
+    }
+
+    // Use service client to bypass RLS for admin queries
+    const serviceClient = createServiceClient();
+
     // Get time range from query params
     const { searchParams } = new URL(request.url);
     const range = searchParams.get('range') || '7d';
@@ -82,7 +97,7 @@ export async function GET(request: NextRequest) {
 
     // Fetch all events in the period (limit to 10000 for performance)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: events, error } = await (supabase as any)
+    const { data: events, error } = await (serviceClient as any)
       .from('activity_events')
       .select('visitor_id, ip_address, event_type, event_data, session_id, created_at')
       .gte('created_at', periodStartISO)

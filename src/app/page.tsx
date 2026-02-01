@@ -19,6 +19,8 @@ import { PAGINATION } from '@/lib/constants';
 import { useActivityOptional } from '@/components/activity/ActivityProvider';
 import { DeepLinkHandler } from '@/components/browse/DeepLinkHandler';
 import { DataDelayBanner } from '@/components/subscription/DataDelayBanner';
+import { trackSearch } from '@/lib/tracking/searchTracker';
+import { getSessionId } from '@/lib/activity/sessionManager';
 import { NewSinceLastVisitBanner } from '@/components/browse/NewSinceLastVisitBanner';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { useNewSinceLastVisit } from '@/contexts/NewSinceLastVisitContext';
@@ -190,6 +192,7 @@ function HomeContent() {
   const [allListings, setAllListings] = useState<Listing[]>([]);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const loadingMoreRef = useRef(false); // Ref for synchronous guard against rapid calls
+  const currentSearchIdRef = useRef<number | undefined>(undefined); // For CTR tracking
 
   // Currency state - default to JPY
   const [currency, setCurrency] = useState<Currency>(() => {
@@ -311,6 +314,20 @@ function HomeContent() {
     router.replace(newUrl, { scroll: false });
   }, [buildUrlParams, router]);
 
+  // Helper to check if there are active filters (for search tracking)
+  const hasActiveFilters = useCallback(() => {
+    return (
+      filters.itemTypes.length > 0 ||
+      filters.certifications.length > 0 ||
+      filters.dealers.length > 0 ||
+      filters.schools.length > 0 ||
+      filters.historicalPeriods.length > 0 ||
+      filters.signatureStatuses.length > 0 ||
+      filters.askOnly === true ||
+      filters.enriched === true
+    );
+  }, [filters]);
+
   // Fetch data - uses buildFetchParams (excludes page) so this only runs on filter/search changes
   // Page changes are handled by loadMore via infinite scroll
   useEffect(() => {
@@ -331,6 +348,27 @@ function HomeContent() {
         setAllListings(json.listings || []);
         setPage(1);
         filtersChangedRef.current = false;
+
+        // Track search if there's a query or active filters
+        if (searchQuery || hasActiveFilters()) {
+          const sessionId = getSessionId();
+          const searchFilters = {
+            itemType: filters.itemTypes,
+            dealer: filters.dealers.map(String),
+            certification: filters.certifications,
+          };
+          const searchId = await trackSearch(
+            searchQuery || '',
+            searchFilters,
+            json.total || 0,
+            sessionId,
+            user?.id
+          );
+          currentSearchIdRef.current = searchId;
+        } else {
+          // Clear searchId when not a search (just browsing)
+          currentSearchIdRef.current = undefined;
+        }
       } catch (error) {
         console.error('Failed to fetch:', error);
       } finally {
@@ -339,7 +377,7 @@ function HomeContent() {
     };
 
     fetchData();
-  }, [buildFetchParams]);
+  }, [buildFetchParams, searchQuery, hasActiveFilters, filters, user?.id]);
 
   // Load more for infinite scroll
   // Uses explicit offset based on loaded items count to avoid pagination bugs
@@ -555,6 +593,7 @@ function HomeContent() {
               currency={currency}
               exchangeRates={exchangeRates}
               onLoadMore={loadMore}
+              searchId={currentSearchIdRef.current}
             />
           </div>
         </div>

@@ -13,7 +13,7 @@ Fixed a critical bug in dealer analytics where "click-throughs" were being massi
 **Impact:**
 - Dealer analytics now shows accurate click-through numbers
 - New `quickview_open` event captures user engagement previously lost
-- No data migration needed - historical data left as-is
+- Historical misleading data deleted (1,532 events) for clean slate
 
 ---
 
@@ -143,6 +143,7 @@ const handleDealerLinkClick = useCallback(() => {
 | `src/components/listing/QuickViewContent.tsx` | Modified | Added activity tracker, handler, and onClick to dealer button |
 | `src/components/listing/QuickViewMobileSheet.tsx` | Modified | Added activity tracker, handler, and onClick to dealer button |
 | `tests/api/track/route.test.ts` | Modified | Added tests for `quickview_open` event validation |
+| `supabase/migrations/046_add_quickview_open_event_type.sql` | Added | Database constraint fix - added `quickview_open`, `quickview_panel_toggle`, `image_pinch_zoom` to allowed event types |
 
 ---
 

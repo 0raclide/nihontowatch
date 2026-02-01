@@ -18,6 +18,8 @@ import { SetsumeiSection } from '@/components/listing/SetsumeiSection';
 import { SetsumeiZufuBadge } from '@/components/ui/SetsumeiZufuBadge';
 import { AdminSetsumeiWidget } from '@/components/listing/AdminSetsumeiWidget';
 import { useActivityTracker } from '@/lib/tracking/ActivityTracker';
+import { trackListingView, getViewReferrer } from '@/lib/tracking/viewTracker';
+import { getSessionId } from '@/lib/activity/sessionManager';
 import type { Listing, CreateAlertInput } from '@/types';
 
 // Extended listing type for this page
@@ -87,6 +89,10 @@ export default function ListingDetailPage() {
 
     viewStartTime.current = Date.now();
 
+    // Track view to dedicated listing_views table for analytics
+    const sessionId = getSessionId();
+    trackListingView(Number(listingId), sessionId, user?.id, getViewReferrer());
+
     // Track dwell time when user leaves the page
     return () => {
       const dwellMs = Date.now() - viewStartTime.current;
@@ -95,7 +101,7 @@ export default function ListingDetailPage() {
         activity.trackViewportDwell(Number(listingId), dwellMs);
       }
     };
-  }, [listing, listingId, activity]);
+  }, [listing, listingId, activity, user?.id]);
 
   // Track external link click
   const handleExternalLinkClick = useCallback(() => {

@@ -71,6 +71,7 @@ interface ListingGridProps {
   currency: Currency;
   exchangeRates: ExchangeRates | null;
   onLoadMore?: () => void;
+  searchId?: number; // For CTR tracking
 }
 
 function LoadingSkeleton() {
@@ -140,6 +141,7 @@ export function ListingGrid({
   currency,
   exchangeRates,
   onLoadMore,
+  searchId,
 }: ListingGridProps) {
   // Loading state
   if (isLoading) {
@@ -168,6 +170,7 @@ export function ListingGrid({
         isLoadingMore={isLoadingMore}
         hasMore={listings.length < total}
         onLoadMore={onLoadMore}
+        searchId={searchId}
       />
     </ViewportTrackingProvider>
   );

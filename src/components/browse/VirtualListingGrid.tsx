@@ -91,6 +91,7 @@ interface VirtualListingGridProps {
   page?: number;
   totalPages?: number;
   onPageChange?: (page: number) => void;
+  searchId?: number; // For CTR tracking
 }
 
 function Pagination({
@@ -201,6 +202,7 @@ export function VirtualListingGrid({
   page = 1,
   totalPages = 1,
   onPageChange,
+  searchId,
 }: VirtualListingGridProps) {
   const quickView = useQuickViewOptional();
   const loadMoreTriggerRef = useRef<HTMLDivElement>(null);
@@ -342,6 +344,7 @@ export function VirtualListingGrid({
           exchangeRates={exchangeRates}
           priority={startIndex + idx < PRIORITY_COUNT}
           isNearViewport={true} // All visible items should load images
+          searchId={searchId}
         />
       ))}
     </div>
