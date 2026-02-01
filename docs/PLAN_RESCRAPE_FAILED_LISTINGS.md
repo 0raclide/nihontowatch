@@ -1,5 +1,13 @@
 # Plan: Fix Missing Data and Prevent Scrape Failures
 
+> **STATUS: IMPLEMENTED** (2026-02-02)
+>
+> See [POSTMORTEM_FALSE_404_DETECTION.md](./POSTMORTEM_FALSE_404_DETECTION.md) for resolution details.
+>
+> **Commits:**
+> - Oshi-scrapper `0395ecb`: 404 retry logic, http_status storage, recovery script
+> - nihontowatch `63344ea`: Documentation
+
 ## Investigation Summary
 
 ### Root Cause Analysis (Deep Dive)
