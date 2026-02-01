@@ -210,15 +210,20 @@ After deployment, the dealer analytics dashboard will show:
 
 ## Historical Data
 
-**Decision:** Leave historical data as-is.
+**Decision:** Deleted all misleading historical data.
 
-Rationale:
-- Historical `external_link_click` events are technically valid data points (they show QuickView engagement)
-- Purging would lose information
-- No disclaimer needed on dashboard - the sudden drop is self-explanatory
-- Going forward, data will be accurate
+**Action taken:**
+- Deleted 1,532 `external_link_click` events created before the fix (2026-01-31T18:43:00Z)
+- These events were actually QuickView opens, not real dealer visits
+- Dealer analytics now starts with a clean slate
 
-If needed in the future, historical data can be identified by timestamp (events before this fix are QuickView opens, events after are real click-throughs).
+**Current state (post-cleanup):**
+| Event Type | Count | Status |
+|------------|-------|--------|
+| `external_link_click` | 1 | Clean slate |
+| `viewport_dwell` | 11,211 | Accurate (unaffected by bug) |
+| `quickview_open` | 14+ | New metric, growing |
+| `favorite_add` | 0 | Accurate |
 
 ---
 
@@ -238,17 +243,16 @@ If needed in the future, historical data can be identified by timestamp (events 
 2. **Conversion funnel**: Track QuickView open → dealer click-through conversion rate
 3. **Source attribution**: Use `source` field to distinguish where QuickView was opened from
 
-### Migration Notes (if needed)
+### Database Constraint Fix
 
-If you ever need to distinguish historical data:
+The initial deployment failed silently because the `check_event_type` constraint on `activity_events` didn't include `quickview_open`. Migration `046_add_quickview_open_event_type.sql` fixed this by adding:
+- `quickview_open`
+- `quickview_panel_toggle`
+- `image_pinch_zoom`
 
-```sql
--- Events before 2026-01-31 are QuickView opens (mislabeled)
--- Events after 2026-01-31 are real dealer click-throughs
-SELECT * FROM activity_events
-WHERE event_type = 'external_link_click'
-AND created_at < '2026-01-31';
-```
+**Lesson learned:** When adding new event types, always update both:
+1. API validation (`isValidEventType()` in route handlers)
+2. Database constraint (`check_event_type` on `activity_events`)
 
 ---
 
@@ -257,3 +261,6 @@ AND created_at < '2026-01-31';
 | Date | Author | Change |
 |------|--------|--------|
 | 2026-01-31 | Claude | Initial implementation of tracking fix |
+| 2026-01-31 | Claude | Added migration 046 to fix database constraint |
+| 2026-01-31 | Claude | Deleted 1,532 misleading historical events |
+| 2026-02-01 | Claude | Updated docs, verified /dealers is 100% reliable |
