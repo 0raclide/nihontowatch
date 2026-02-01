@@ -76,11 +76,11 @@ export async function GET(request: NextRequest) {
     ] = await Promise.all([
       // Total users
       supabase.from('profiles').select('id', { count: 'exact', head: true }),
-      // Active users in last 24h (using updated_at as proxy for activity)
+      // Active users in last 24h (using last_visit_at for actual site activity)
       supabase
         .from('profiles')
         .select('id', { count: 'exact', head: true })
-        .gte('updated_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()),
+        .gte('last_visit_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()),
       // Total listings
       supabase.from('listings').select('id', { count: 'exact', head: true }),
       // Total favorites
