@@ -1,7 +1,8 @@
 # User Engagement Analytics Dashboard
 
-**Status**: ✅ Complete
+**Status**: ✅ Complete & Fully Operational
 **Implemented**: 2026-02-01
+**Tracking Integration**: 2026-02-01
 **Location**: `/admin/analytics`
 
 ## Overview
@@ -471,3 +472,81 @@ This implementation was designed to run in parallel with the Dealer Analytics wo
 - `/api/track/route.ts`
 - `activity_events` table
 - `user_sessions` table
+
+---
+
+## Tracking Integration (2026-02-01)
+
+The initial implementation created the infrastructure but tracking wasn't integrated into the frontend. A follow-up fix connected all the pieces:
+
+### What Was Fixed
+
+| Component | Change |
+|-----------|--------|
+| **Analytics Endpoints** | Updated to query `listing_views` and `user_searches` tables instead of `activity_events` |
+| **ListingDetailClient.tsx** | Added `trackListingView()` call on page load |
+| **QuickView.tsx** | Added `trackListingView()` call when QuickView opens |
+| **page.tsx (browse)** | Added `trackSearch()` call after search results load |
+| **ListingCard.tsx** | Added `trackSearchClick()` for CTR tracking |
+
+### Data Flow
+
+```
+User browses/searches                  User views listing
+        │                                      │
+        ▼                                      ▼
+  trackSearch()                         trackListingView()
+        │                                      │
+        ▼                                      ▼
+  /api/track/search                    /api/track/view
+        │                                      │
+        ▼                                      ▼
+  user_searches table                  listing_views table
+        │                                      │
+        └──────────────┬───────────────────────┘
+                       │
+                       ▼
+           Analytics API endpoints
+                       │
+                       ▼
+              /admin/analytics
+```
+
+### Session Duration Tracking
+
+Session duration and page views are tracked via the existing `ActivityTracker` system:
+
+1. **Session Start**: `ActivityTrackerProvider` creates session on mount via POST to `/api/activity/session`
+2. **Page Views**: `updateActivity(true)` increments page view counter in sessionStorage
+3. **Session End**: `setupUnloadHandler()` sends duration via `sendBeacon` on page unload
+
+**Reliability Note**: Session end uses `sendBeacon` which is reliable for normal browser closes, but may miss data if the browser is force-quit or crashes.
+
+### Metrics Tracked
+
+| Metric | Table | How Populated |
+|--------|-------|---------------|
+| Views | `listing_views` | `trackListingView()` from detail page & QuickView |
+| Searches | `user_searches` | `trackSearch()` from browse page |
+| Search CTR | `user_searches.clicked_listing_id` | `trackSearchClick()` from ListingCard |
+| Session Duration | `user_sessions.total_duration_ms` | `endSession()` on page unload |
+| Page Views/Session | `user_sessions.page_views` | `updateActivity(true)` on navigation |
+| Bounce Rate | Calculated | Sessions with `page_views <= 1` |
+| Favorites | `user_favorites` | Direct insert on favorite action |
+| User Growth | `profiles.created_at` | Standard auth registration |
+
+### Files Modified in Integration Fix
+
+```
+src/app/api/admin/analytics/engagement/overview/route.ts    # Query new tables
+src/app/api/admin/analytics/engagement/searches/route.ts    # Query user_searches
+src/app/api/admin/analytics/engagement/top-listings/route.ts # Query listing_views
+src/app/api/admin/analytics/engagement/funnel/route.ts      # Query both new tables
+src/app/listing/[id]/ListingDetailClient.tsx                # Add view tracking
+src/components/listing/QuickView.tsx                        # Add view tracking
+src/app/page.tsx                                            # Add search tracking
+src/components/browse/ListingGrid.tsx                       # Pass searchId prop
+src/components/browse/VirtualListingGrid.tsx                # Pass searchId prop
+src/components/browse/ListingCard.tsx                       # Add CTR tracking
+tests/api/admin/analytics/engagement/searches.test.ts       # Update mocks
+```

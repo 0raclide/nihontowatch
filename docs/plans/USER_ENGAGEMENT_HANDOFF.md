@@ -505,16 +505,26 @@ Agents should read these for patterns and context:
 
 ## Success Criteria
 
-- [ ] `listing_views` table created with proper indexes and RLS
-- [ ] `user_searches` table created with proper indexes and RLS
-- [ ] View tracking works (verify with manual test)
-- [ ] Search tracking works (verify with manual test)
-- [ ] All 5 engagement APIs return valid data
-- [ ] All APIs require admin authentication
-- [ ] Period filter works on all APIs
-- [ ] Dashboard loads without errors
-- [ ] Charts render with data
-- [ ] Period selector updates all data
-- [ ] Refresh button works
-- [ ] All tests pass (`npm test`)
-- [ ] No TypeScript errors (`npm run build`)
+- [x] `listing_views` table created with proper indexes and RLS
+- [x] `user_searches` table created with proper indexes and RLS
+- [x] View tracking works (verify with manual test)
+- [x] Search tracking works (verify with manual test)
+- [x] All 5 engagement APIs return valid data
+- [x] All APIs require admin authentication
+- [x] Period filter works on all APIs
+- [x] Dashboard loads without errors
+- [x] Charts render with data
+- [x] Period selector updates all data
+- [x] Refresh button works
+- [x] All tests pass (`npm test`) - 3,582 tests passing
+- [x] No TypeScript errors (`npm run build`)
+
+### Tracking Integration Fix (2026-02-01)
+
+After initial implementation, tracking wasn't connected to the frontend. Fixed by:
+1. Updated analytics endpoints to query `listing_views` and `user_searches` (not `activity_events`)
+2. Integrated `trackListingView()` into ListingDetailClient.tsx and QuickView.tsx
+3. Integrated `trackSearch()` into page.tsx with CTR tracking via searchId prop chain
+4. Updated test mocks to use new table structure
+
+See `docs/USER_ENGAGEMENT_ANALYTICS.md` for complete documentation.
