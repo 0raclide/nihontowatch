@@ -263,7 +263,7 @@ const DEALER_LABELS: Record<string, string> = {
 
 // Non-Japanese dealer countries (all others are Japan)
 const DEALER_COUNTRIES: Record<string, string> = {
-  'Legacy Art': 'USA',
+  'Legacy Swords': 'USA',
   'Nihonto': 'USA',
   'Nihonto Art': 'Canada',
   'Nihonto Australia': 'AU',
