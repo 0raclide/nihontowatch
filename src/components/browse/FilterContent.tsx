@@ -268,6 +268,7 @@ const DEALER_COUNTRIES: Record<string, string> = {
   'Nihonto Australia': 'AU',
   'Nihontocraft': 'USA',
   'Swords of Japan': 'USA',
+  'Tetsugendo': 'USA',
   'Giuseppe Piva': 'Italy',
 };
 

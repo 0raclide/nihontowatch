@@ -208,7 +208,7 @@ id, url (UNIQUE), dealer_id, discovered_at, is_scraped, scrape_priority
 
 ---
 
-## Current Dealers (27 Total)
+## Current Dealers (29 Total)
 
 ### Japanese Dealers (24)
 
@@ -239,13 +239,15 @@ id, url (UNIQUE), dealer_id, discovered_at, is_scraped, scrape_priority
 | Tokka Biz | tokka.biz | ✅ Active |
 | Sanmei | sanmei.com | ✅ Active |
 
-### Western Dealers (3)
+### Western Dealers (5)
 
 | Dealer | Domain | Country | Status |
 |--------|--------|---------|--------|
+| Legacy Swords | legacyswords.com | USA | ✅ Active |
 | Nihonto | nihonto.com | USA | ✅ Active |
 | Nihonto Art | nihontoart.com | USA | ✅ Active |
 | Swords of Japan | swordsofjapan.com | USA | ✅ Active |
+| Tetsugendo | tetsugendo.com | USA | ✅ Active |
 
 ### Planned International Dealers
 
