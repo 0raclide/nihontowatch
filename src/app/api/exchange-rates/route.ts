@@ -28,9 +28,9 @@ export async function GET() {
     }
 
     // Fetch fresh rates from Frankfurter API (free, no API key needed)
-    // Base is USD, get JPY and EUR rates
+    // Base is USD, get JPY, EUR, and AUD rates
     const response = await fetch(
-      'https://api.frankfurter.app/latest?from=USD&to=JPY,EUR',
+      'https://api.frankfurter.app/latest?from=USD&to=JPY,EUR,AUD',
       { next: { revalidate: 3600 } }
     );
 
@@ -47,6 +47,7 @@ export async function GET() {
         USD: 1,
         JPY: data.rates.JPY,
         EUR: data.rates.EUR,
+        AUD: data.rates.AUD,
       },
       timestamp: now,
     };
@@ -68,6 +69,7 @@ export async function GET() {
         USD: 1,
         JPY: 150, // Approximate fallback
         EUR: 0.92, // Approximate fallback
+        AUD: 1.55, // Approximate fallback
       },
       timestamp: Date.now(),
     };

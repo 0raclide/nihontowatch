@@ -25,6 +25,7 @@ export const EXCHANGE_RATES: Record<string, number> = {
   USD: 150,
   EUR: 165,
   GBP: 190,
+  AUD: 97, // ~150/1.55 = 96.77, rounded to 97
 };
 
 /**
