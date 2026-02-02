@@ -265,6 +265,7 @@ const DEALER_LABELS: Record<string, string> = {
 const DEALER_COUNTRIES: Record<string, string> = {
   'Nihonto': 'USA',
   'Nihonto Art': 'Canada',
+  'Nihontocraft': 'USA',
   'Swords of Japan': 'USA',
 };
 
