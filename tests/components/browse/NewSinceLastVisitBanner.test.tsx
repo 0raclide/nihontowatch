@@ -301,7 +301,10 @@ describe('NewSinceLastVisitBanner', () => {
       expect(screen.getByText(/30\+ days ago/i)).toBeInTheDocument();
     });
 
-    it('links to newest sort view', () => {
+    it('scrolls to top and dismisses when clicking view new items', () => {
+      const scrollToMock = vi.fn();
+      window.scrollTo = scrollToMock;
+
       mockUseNewSinceLastVisit.mockReturnValue({
         count: 10,
         daysSince: 3,
@@ -316,8 +319,11 @@ describe('NewSinceLastVisitBanner', () => {
 
       render(<NewSinceLastVisitBanner />);
 
-      const viewLink = screen.getByRole('link', { name: /view new items/i });
-      expect(viewLink).toHaveAttribute('href', '/?sort=recent');
+      const viewButton = screen.getByRole('button', { name: /view new items/i });
+      fireEvent.click(viewButton);
+
+      expect(scrollToMock).toHaveBeenCalledWith({ top: 0, behavior: 'smooth' });
+      expect(mockDismiss).toHaveBeenCalled();
     });
 
     it('uses emerald/green styling for logged-in banner', () => {

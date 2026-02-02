@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { LoginModal } from '@/components/auth/LoginModal';
 import { useConsent } from '@/contexts/ConsentContext';
@@ -129,12 +128,17 @@ export function NewSinceLastVisitBanner() {
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <Link
-              href="/?sort=recent"
+            <button
+              onClick={() => {
+                // Scroll to top to see the new items (already sorted by newest)
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                // Dismiss the banner
+                dismiss();
+              }}
               className="flex-shrink-0 text-emerald-700 dark:text-emerald-300 font-medium hover:text-emerald-900 dark:hover:text-emerald-100 transition-colors"
             >
               View new items
-            </Link>
+            </button>
             <button
               onClick={dismiss}
               aria-label="Dismiss"
