@@ -262,6 +262,7 @@ const DEALER_LABELS: Record<string, string> = {
 };
 
 // Non-Japanese dealer countries (all others are Japan)
+// Updated 2026-02-02: Added Legacy Swords
 const DEALER_COUNTRIES: Record<string, string> = {
   'Legacy Swords': 'USA',
   'Nihonto': 'USA',
