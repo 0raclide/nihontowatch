@@ -23,6 +23,9 @@ function createDealerSlug(name: string): string {
 
 // Derive country from domain TLD (fallback when country column doesn't exist)
 function getCountryFromDomain(domain: string): string {
+  // Specific overrides for known international dealers
+  if (domain === 'giuseppepiva.com') return 'Italy';
+
   if (domain.endsWith('.jp') || domain.endsWith('.co.jp')) return 'JP';
   if (domain.endsWith('.com') || domain.endsWith('.net')) return 'USA';
   if (domain.endsWith('.uk') || domain.endsWith('.co.uk')) return 'UK';
@@ -40,6 +43,8 @@ function getCountryFlag(country: string): string {
     UK: '🇬🇧',
     DE: '🇩🇪',
     Germany: '🇩🇪',
+    Italy: '🇮🇹',
+    IT: '🇮🇹',
   };
   return flags[country] || '🌐';
 }

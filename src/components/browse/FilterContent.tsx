@@ -267,6 +267,7 @@ const DEALER_COUNTRIES: Record<string, string> = {
   'Nihonto Art': 'Canada',
   'Nihontocraft': 'USA',
   'Swords of Japan': 'USA',
+  'Giuseppe Piva': 'Italy',
 };
 
 export function FilterContent({
