@@ -142,6 +142,66 @@ Verified against actual page content:
 - Images are product images (not banners)
 - Prices are in AUD
 
+## QA Report (Post-Backfill)
+
+### Final Statistics
+
+| Metric | Value | Status |
+|--------|-------|--------|
+| Total listings | 390 | ✓ |
+| Unknown items | 0 | ✓ Fixed |
+| Currency (AUD) | 100% | ✓ Fixed |
+| Banner images | 0 | ✓ Fixed |
+| Price coverage | 53.6% | OK (some "Contact for Price") |
+| Image coverage | 95.4% | OK (18 have dealer placeholders) |
+| Sword smith | 86.2% | Good |
+| Tosogu attribution | 27.7% | Fixed (was 0%) |
+| Sword nagasa | 40.7% | Acceptable |
+
+### Item Type Distribution
+
+| Type | Count | % |
+|------|-------|---|
+| tsuba | 153 | 39.2% |
+| katana | 72 | 18.5% |
+| menuki | 32 | 8.2% |
+| tanto | 31 | 7.9% |
+| wakizashi | 21 | 5.4% |
+| kozuka | 15 | 3.8% |
+| fuchi-kashira | 13 | 3.3% |
+| yari | 10 | 2.6% |
+| inro | 10 | 2.6% |
+| other | 33 | 8.5% |
+
+### QA Fixes Applied
+
+1. **23 Unknown items classified:**
+   - 5 kabuto (helmets)
+   - 9 inro
+   - 3 kogai
+   - 2 koshirae (daisho)
+   - 1 armor
+   - 1 katana
+   - 1 fuchi-kashira
+   - 1 book (excluded from nihonto)
+
+2. **64 tosogu items fixed:**
+   - Copied `school` → `tosogu_school`
+   - Copied `smith` → `tosogu_maker`
+
+3. **18 listings with no images:**
+   - Verified as dealer-side issue (placeholder images on website)
+   - Not a scraping bug
+
+### Certification Breakdown
+
+| Type | Count |
+|------|-------|
+| Hozon | 35 |
+| TokuHozon | 33 |
+| Juyo | 8 |
+| Tokuju | 1 |
+
 ## Related Documentation
 
 - `prompts/dealers/nihonto_au.py` - LLM extraction hints for this dealer
