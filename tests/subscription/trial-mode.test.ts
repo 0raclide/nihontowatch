@@ -316,7 +316,7 @@ describe('Trial mode toggle behavior', () => {
     process.env.NEXT_PUBLIC_TRIAL_MODE = 'false';
     vi.resetModules();
 
-    let { canAccessFeature } = await import('@/types/subscription');
+    const { canAccessFeature } = await import('@/types/subscription');
     expect(canAccessFeature('free', 'fresh_data')).toBe(false);
 
     // Now, trial mode ON

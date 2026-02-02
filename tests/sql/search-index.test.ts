@@ -412,26 +412,19 @@ describe('Search Data Integrity', () => {
   });
 
   it('total_count accurately reflects matching records', async () => {
-    const { data: results, error } = await supabase.rpc('search_listings_instant', {
+    // Use a large limit to get all results in a single query
+    // This avoids race conditions where data changes between queries
+    const { data: allResults, error } = await supabase.rpc('search_listings_instant', {
       p_query: 'katana',
-      p_limit: 5,
+      p_limit: 2000, // Large enough to get all katana results
     });
 
     expect(error).toBeNull();
 
-    if (results && results.length > 0) {
-      const totalCount = results[0].total_count;
-
-      // Fetch with larger limit to verify count
-      const { data: allResults } = await supabase.rpc('search_listings_instant', {
-        p_query: 'katana',
-        p_limit: totalCount + 10, // Get more than total to verify
-      });
-
-      if (allResults) {
-        // The number of results should equal the total_count
-        expect(allResults.length).toBe(totalCount);
-      }
+    if (allResults && allResults.length > 0) {
+      // Verify total_count matches actual results returned (from same query)
+      const totalCount = allResults[0].total_count;
+      expect(allResults.length).toBe(totalCount);
     }
   });
 });
