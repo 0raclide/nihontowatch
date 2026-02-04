@@ -17,7 +17,7 @@ import { shouldShowNewBadge } from '@/lib/newListing';
 import { SetsumeiSection } from '@/components/listing/SetsumeiSection';
 import { SetsumeiZufuBadge } from '@/components/ui/SetsumeiZufuBadge';
 import { AdminSetsumeiWidget } from '@/components/listing/AdminSetsumeiWidget';
-import { useActivityTracker } from '@/lib/tracking/ActivityTracker';
+import { useActivityTrackerOptional } from '@/lib/tracking/ActivityTracker';
 import { trackListingView, getViewReferrer } from '@/lib/tracking/viewTracker';
 import { getSessionId } from '@/lib/activity/sessionManager';
 import type { Listing, CreateAlertInput } from '@/types';
@@ -80,7 +80,7 @@ export default function ListingDetailPage() {
   const [showLoginModal, setShowLoginModal] = useState(false);
 
   const { createAlert, isCreating } = useAlerts({ autoFetch: false });
-  const activity = useActivityTracker();
+  const activity = useActivityTrackerOptional();
   const viewStartTime = useRef<number>(Date.now());
 
   // Track listing view when page loads and dwell time when leaving
