@@ -10,6 +10,9 @@ import {
 } from '@/lib/seo/jsonLd';
 import type { Listing, Dealer, ItemType, Currency } from '@/types';
 
+// Force dynamic rendering - needed for Supabase server client with cookies
+export const dynamic = 'force-dynamic';
+
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://nihontowatch.com';
 
 // Listing data type for metadata generation
