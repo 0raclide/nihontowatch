@@ -302,12 +302,13 @@ export default async function ListingPage({ params }: Props) {
 
   return (
     <>
-      {/* JSON-LD Structured Data - must be in head for Google to detect */}
+      {/* JSON-LD Structured Data - placed in body (Next.js App Router best practice) */}
+      {/* Google bot reads JSON-LD from anywhere in the document */}
       {jsonLdData && (
-        <head>
+        <>
           <script {...jsonLdScriptProps(jsonLdData.product)} />
           <script {...jsonLdScriptProps(jsonLdData.breadcrumb)} />
-        </head>
+        </>
       )}
       <ListingDetailClient />
     </>
