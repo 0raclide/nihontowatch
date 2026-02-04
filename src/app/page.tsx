@@ -184,6 +184,14 @@ function HomeContent() {
     }
   }, [urlEnriched]); // Only depend on urlEnriched to avoid loops
 
+  // Sync sort from URL (needed for SSR hydration - mobile browsers often serve cached pages)
+  const urlSort = searchParams.get('sort') || 'recent';
+  useEffect(() => {
+    if (urlSort !== sort) {
+      setSort(urlSort);
+    }
+  }, [urlSort]); // Only depend on urlSort to avoid loops
+
   const [data, setData] = useState<BrowseResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   // isAdmin now comes from authIsAdmin (useAuth hook) - no need for local state
