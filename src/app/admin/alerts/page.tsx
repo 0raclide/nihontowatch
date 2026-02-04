@@ -3,32 +3,42 @@
 import { useEffect, useState, useCallback } from 'react';
 
 interface Alert {
-  id: number;
+  id: number | string;
   user_id: string;
   alert_type: 'price_drop' | 'new_listing' | 'back_in_stock';
-  listing_id: number | null;
-  target_price: number | null;
-  search_criteria: Record<string, unknown> | null;
+  source_table: 'saved_searches' | 'alerts';
+  // For new_listing (from saved_searches)
+  name?: string | null;
+  notification_frequency?: 'instant' | 'daily' | 'none';
+  last_notified_at?: string | null;
+  last_match_count?: number;
+  // For price_drop/back_in_stock (from alerts)
+  listing_id?: number | null;
+  target_price?: number | null;
+  listing?: {
+    title: string | null;
+    price_value: number | null;
+  } | null;
+  last_triggered_at?: string | null;
+  // Common fields
+  search_criteria?: Record<string, unknown> | null;
   is_active: boolean;
-  last_triggered_at: string | null;
   created_at: string;
   user?: {
     email: string;
     display_name: string | null;
-  };
-  listing?: {
-    title: string;
-    price_value: number | null;
-  };
+  } | null;
   history?: AlertHistoryRecord[];
 }
 
 interface AlertHistoryRecord {
-  id: number;
+  id?: number;
+  alert_id?: string | number;
   triggered_at: string;
   delivery_status: 'pending' | 'sent' | 'failed';
   delivery_method: 'email' | 'push';
-  error_message: string | null;
+  error_message?: string | null;
+  match_count?: number;
 }
 
 interface AlertsResponse {
@@ -38,10 +48,23 @@ interface AlertsResponse {
   totalPages: number;
 }
 
+const ALERT_TYPE_OPTIONS = [
+  { value: 'new_listing', label: 'New Listing' },
+  { value: 'price_drop', label: 'Price Drop' },
+  { value: 'back_in_stock', label: 'Back in Stock' },
+  { value: 'all', label: 'All Types' },
+];
+
 const ALERT_TYPE_LABELS: Record<string, string> = {
   price_drop: 'Price Drop',
   new_listing: 'New Listing',
   back_in_stock: 'Back in Stock',
+};
+
+const NOTIFICATION_FREQUENCY_LABELS: Record<string, string> = {
+  instant: 'Instant',
+  daily: 'Daily',
+  none: 'None',
 };
 
 const ALERT_TYPE_COLORS: Record<string, string> = {
@@ -73,6 +96,61 @@ function formatDateTime(dateString: string) {
   });
 }
 
+function formatSearchCriteria(criteria: Record<string, unknown> | null | undefined): string {
+  if (!criteria) return 'Any listing';
+
+  const parts: string[] = [];
+
+  // Item types
+  if (criteria.itemTypes && Array.isArray(criteria.itemTypes) && criteria.itemTypes.length > 0) {
+    const types = criteria.itemTypes as string[];
+    parts.push(types.length > 2 ? `${types.length} types` : types.join(', '));
+  }
+
+  // Category
+  if (criteria.category && criteria.category !== 'all') {
+    parts.push(criteria.category as string);
+  }
+
+  // Certifications
+  if (criteria.certifications && Array.isArray(criteria.certifications) && criteria.certifications.length > 0) {
+    const certs = criteria.certifications as string[];
+    parts.push(certs.length > 2 ? `${certs.length} certs` : certs.join(', '));
+  }
+
+  // Dealers
+  if (criteria.dealers && Array.isArray(criteria.dealers) && criteria.dealers.length > 0) {
+    const dealers = criteria.dealers as number[];
+    parts.push(`${dealers.length} dealer${dealers.length !== 1 ? 's' : ''}`);
+  }
+
+  // Schools
+  if (criteria.schools && Array.isArray(criteria.schools) && criteria.schools.length > 0) {
+    const schools = criteria.schools as string[];
+    parts.push(schools.length > 2 ? `${schools.length} schools` : schools.join(', '));
+  }
+
+  // Price range
+  if (criteria.minPrice || criteria.maxPrice) {
+    const min = criteria.minPrice as number | undefined;
+    const max = criteria.maxPrice as number | undefined;
+    if (min && max) {
+      parts.push(`¥${min.toLocaleString()}-${max.toLocaleString()}`);
+    } else if (min) {
+      parts.push(`≥¥${min.toLocaleString()}`);
+    } else if (max) {
+      parts.push(`≤¥${max.toLocaleString()}`);
+    }
+  }
+
+  // Query text
+  if (criteria.query) {
+    parts.push(`"${criteria.query}"`);
+  }
+
+  return parts.length > 0 ? parts.join(' · ') : 'Any listing';
+}
+
 export default function AdminAlertsPage() {
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [total, setTotal] = useState(0);
@@ -80,10 +158,10 @@ export default function AdminAlertsPage() {
   const [totalPages, setTotalPages] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [expandedAlert, setExpandedAlert] = useState<number | null>(null);
+  const [expandedAlert, setExpandedAlert] = useState<string | number | null>(null);
 
-  // Filters
-  const [typeFilter, setTypeFilter] = useState<string>('');
+  // Filters - default to new_listing
+  const [typeFilter, setTypeFilter] = useState<string>('new_listing');
   const [statusFilter, setStatusFilter] = useState<string>('');
 
   const fetchAlerts = useCallback(async () => {
@@ -119,12 +197,13 @@ export default function AdminAlertsPage() {
   }, [fetchAlerts]);
 
   const clearFilters = () => {
-    setTypeFilter('');
+    setTypeFilter('new_listing');
     setStatusFilter('');
     setPage(1);
   };
 
-  const hasFilters = typeFilter || statusFilter;
+  // Has filters if status is set or type is not the default
+  const hasFilters = statusFilter || (typeFilter !== 'new_listing');
 
   return (
     <div className="space-y-6">
@@ -156,8 +235,7 @@ export default function AdminAlertsPage() {
               }}
               className="px-3 py-2 bg-linen border-0 rounded-lg text-sm text-ink focus:outline-none focus:ring-2 focus:ring-gold/30 min-w-[150px]"
             >
-              <option value="">All Types</option>
-              {Object.entries(ALERT_TYPE_LABELS).map(([value, label]) => (
+              {ALERT_TYPE_OPTIONS.map(({ value, label }) => (
                 <option key={value} value={value}>{label}</option>
               ))}
             </select>
@@ -265,18 +343,37 @@ export default function AdminAlertsPage() {
                         </span>
                       </td>
                       <td className="px-6 py-4 text-sm text-charcoal">
-                        {alert.listing_id ? (
+                        {alert.alert_type === 'new_listing' ? (
+                          <div className="max-w-[250px]">
+                            {alert.name && (
+                              <p className="font-medium text-ink truncate">{alert.name}</p>
+                            )}
+                            <p className="text-xs text-muted truncate">
+                              {formatSearchCriteria(alert.search_criteria)}
+                            </p>
+                            {alert.notification_frequency && (
+                              <div className="flex items-center gap-2 mt-1">
+                                <span className="text-xs px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-600">
+                                  {NOTIFICATION_FREQUENCY_LABELS[alert.notification_frequency]}
+                                </span>
+                                {alert.last_match_count !== undefined && alert.last_match_count > 0 && (
+                                  <span className="text-xs text-muted">
+                                    {alert.last_match_count} last match{alert.last_match_count !== 1 ? 'es' : ''}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        ) : alert.listing_id ? (
                           <div>
                             <p className="truncate max-w-[200px]">{alert.listing?.title || `Listing #${alert.listing_id}`}</p>
                             {alert.target_price && (
-                              <p className="text-xs text-muted">Target: {alert.target_price.toLocaleString()}</p>
+                              <p className="text-xs text-muted">Target: ¥{alert.target_price.toLocaleString()}</p>
                             )}
                           </div>
                         ) : alert.search_criteria ? (
                           <p className="text-xs text-muted truncate max-w-[200px]">
-                            {Object.entries(alert.search_criteria)
-                              .map(([k, v]) => `${k}: ${v}`)
-                              .join(', ')}
+                            {formatSearchCriteria(alert.search_criteria)}
                           </p>
                         ) : (
                           <span className="text-muted">-</span>
@@ -309,13 +406,13 @@ export default function AdminAlertsPage() {
                         <td colSpan={6} className="px-6 py-4 bg-linen/50">
                           <div className="pl-11">
                             <h4 className="text-xs uppercase tracking-wider text-muted font-semibold mb-3">
-                              Delivery History
+                              {alert.alert_type === 'new_listing' ? 'Notification History' : 'Delivery History'}
                             </h4>
                             {alert.history && alert.history.length > 0 ? (
                               <div className="space-y-2">
-                                {alert.history.map((record) => (
+                                {alert.history.map((record, index) => (
                                   <div
-                                    key={record.id}
+                                    key={record.id || index}
                                     className="flex items-center gap-4 text-sm bg-cream rounded-lg px-4 py-3"
                                   >
                                     <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${
@@ -325,6 +422,11 @@ export default function AdminAlertsPage() {
                                     </span>
                                     <span className="text-muted capitalize">{record.delivery_method}</span>
                                     <span className="text-muted">{formatDateTime(record.triggered_at)}</span>
+                                    {record.match_count !== undefined && record.match_count > 0 && (
+                                      <span className="text-xs text-charcoal">
+                                        {record.match_count} match{record.match_count !== 1 ? 'es' : ''}
+                                      </span>
+                                    )}
                                     {record.error_message && (
                                       <span className="text-error text-xs">{record.error_message}</span>
                                     )}
@@ -334,7 +436,12 @@ export default function AdminAlertsPage() {
                             ) : (
                               <p className="text-sm text-muted">No delivery history</p>
                             )}
-                            {alert.last_triggered_at && (
+                            {alert.alert_type === 'new_listing' && alert.last_notified_at && (
+                              <p className="text-xs text-muted mt-3">
+                                Last notified: {formatDateTime(alert.last_notified_at)}
+                              </p>
+                            )}
+                            {alert.alert_type !== 'new_listing' && alert.last_triggered_at && (
                               <p className="text-xs text-muted mt-3">
                                 Last triggered: {formatDateTime(alert.last_triggered_at)}
                               </p>
