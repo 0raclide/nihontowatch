@@ -729,6 +729,7 @@ export interface SavedSearchCriteria {
   certifications?: string[];
   dealers?: number[];
   schools?: string[];
+  signatureStatuses?: string[];
   askOnly?: boolean;
   query?: string;
   sort?: string;

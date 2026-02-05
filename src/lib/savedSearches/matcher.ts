@@ -165,11 +165,18 @@ export async function findMatchingListings(
 
     // Apply extracted item type filters (exact match on item_type)
     // Only apply if no explicit item type filter was already set
-    if (extractedFilters.itemTypes.length > 0 && !criteria.itemTypes?.length && !criteria.category) {
+    // Note: category === 'all' means no category restriction, so semantic extraction should apply
+    if (extractedFilters.itemTypes.length > 0 && !criteria.itemTypes?.length && (!criteria.category || criteria.category === 'all')) {
       const typeConditions = extractedFilters.itemTypes
         .map((t) => `item_type.ilike.${t}`)
         .join(',');
       query = query.or(typeConditions);
+    }
+
+    // Apply extracted signature status filters (exact match on signature_status)
+    // Only apply if no explicit signature status filter was already set
+    if (extractedFilters.signatureStatuses?.length && !criteria.signatureStatuses?.length) {
+      query = query.in('signature_status', extractedFilters.signatureStatuses);
     }
 
     // Step 2: Parse numeric filters from remaining terms
@@ -299,11 +306,17 @@ export async function countMatchingListings(
     }
 
     // Apply extracted item type filters
-    if (extractedFilters.itemTypes.length > 0 && !criteria.itemTypes?.length && !criteria.category) {
+    // Note: category === 'all' means no category restriction, so semantic extraction should apply
+    if (extractedFilters.itemTypes.length > 0 && !criteria.itemTypes?.length && (!criteria.category || criteria.category === 'all')) {
       const typeConditions = extractedFilters.itemTypes
         .map((t) => `item_type.ilike.${t}`)
         .join(',');
       query = query.or(typeConditions);
+    }
+
+    // Apply extracted signature status filters
+    if (extractedFilters.signatureStatuses?.length && !criteria.signatureStatuses?.length) {
+      query = query.in('signature_status', extractedFilters.signatureStatuses);
     }
 
     // Parse and apply numeric filters
