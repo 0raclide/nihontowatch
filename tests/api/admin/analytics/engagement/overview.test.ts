@@ -306,4 +306,108 @@ describe('GET /api/admin/analytics/engagement/overview', () => {
       expect(cacheControl).toContain('max-age=60');
     });
   });
+
+  // ===========================================================================
+  // SESSION DURATION CALCULATION TESTS
+  // ===========================================================================
+
+  describe('session duration calculation', () => {
+    it('correctly calculates average session duration from total_duration_ms', async () => {
+      setupAdminAuth();
+
+      const profileBuilder = createMockQueryBuilder([], 100);
+      profileBuilder.single = vi.fn(() =>
+        Promise.resolve({ data: { role: 'admin' }, error: null })
+      );
+
+      // Mock sessions with known durations: 120s, 60s, 30s = 210s total, avg = 70s
+      const sessionsBuilder = createMockQueryBuilder([
+        { total_duration_ms: 120000, page_views: 5 },
+        { total_duration_ms: 60000, page_views: 2 },
+        { total_duration_ms: 30000, page_views: 1 },
+      ], 3);
+
+      const eventsBuilder = createMockQueryBuilder([], 0);
+      const favoritesBuilder = createMockQueryBuilder([], 0);
+
+      mockSupabaseClient.from.mockImplementation((table: string) => {
+        if (table === 'profiles') return profileBuilder;
+        if (table === 'user_sessions') return sessionsBuilder;
+        if (table === 'activity_events') return eventsBuilder;
+        if (table === 'user_favorites') return favoritesBuilder;
+        if (table === 'listing_views') return createMockQueryBuilder([], 0);
+        if (table === 'user_searches') return createMockQueryBuilder([], 0);
+        return createMockQueryBuilder();
+      });
+
+      const request = createMockRequest();
+      const response = await GET(request);
+      const json = await response.json();
+
+      expect(response.status).toBe(200);
+      // (120000 + 60000 + 30000) / 3 / 1000 = 70 seconds
+      expect(json.data.sessions.avgDurationSeconds).toBe(70);
+    });
+
+    it('returns 0 for average duration when no sessions exist', async () => {
+      setupAdminAuth();
+
+      const profileBuilder = createMockQueryBuilder([], 100);
+      profileBuilder.single = vi.fn(() =>
+        Promise.resolve({ data: { role: 'admin' }, error: null })
+      );
+
+      // No sessions
+      const sessionsBuilder = createMockQueryBuilder([], 0);
+
+      mockSupabaseClient.from.mockImplementation((table: string) => {
+        if (table === 'profiles') return profileBuilder;
+        if (table === 'user_sessions') return sessionsBuilder;
+        if (table === 'listing_views') return createMockQueryBuilder([], 0);
+        if (table === 'user_searches') return createMockQueryBuilder([], 0);
+        if (table === 'user_favorites') return createMockQueryBuilder([], 0);
+        return createMockQueryBuilder();
+      });
+
+      const request = createMockRequest();
+      const response = await GET(request);
+      const json = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(json.data.sessions.avgDurationSeconds).toBe(0);
+    });
+
+    it('handles sessions with null total_duration_ms gracefully', async () => {
+      setupAdminAuth();
+
+      const profileBuilder = createMockQueryBuilder([], 100);
+      profileBuilder.single = vi.fn(() =>
+        Promise.resolve({ data: { role: 'admin' }, error: null })
+      );
+
+      // Sessions with some null durations (session created but not yet ended)
+      const sessionsBuilder = createMockQueryBuilder([
+        { total_duration_ms: 60000, page_views: 3 },
+        { total_duration_ms: null, page_views: 1 },  // Session not ended yet
+        { total_duration_ms: 120000, page_views: 5 },
+      ], 3);
+
+      mockSupabaseClient.from.mockImplementation((table: string) => {
+        if (table === 'profiles') return profileBuilder;
+        if (table === 'user_sessions') return sessionsBuilder;
+        if (table === 'listing_views') return createMockQueryBuilder([], 0);
+        if (table === 'user_searches') return createMockQueryBuilder([], 0);
+        if (table === 'user_favorites') return createMockQueryBuilder([], 0);
+        return createMockQueryBuilder();
+      });
+
+      const request = createMockRequest();
+      const response = await GET(request);
+      const json = await response.json();
+
+      expect(response.status).toBe(200);
+      // (60000 + 0 + 120000) / 3 / 1000 = 60 seconds (null treated as 0)
+      expect(json.data.sessions.avgDurationSeconds).toBe(60);
+    });
+  });
 });

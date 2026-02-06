@@ -103,14 +103,24 @@ describe('POST /api/activity/session', () => {
       expect(json.error).toBe('Invalid payload structure');
     });
 
-    it('returns 400 for wrong action type on POST', async () => {
-      const request = createMockRequest({ action: 'end', sessionId: 'sess_123' });
+    it('accepts end action on POST (sendBeacon compatibility)', async () => {
+      // sendBeacon can only send POST requests, so POST must handle 'end' action
+      const queryBuilder = createMockQueryBuilder(null);
+      mockServiceClient.from.mockReturnValue(queryBuilder);
+
+      const request = createMockRequest({
+        action: 'end',
+        sessionId: 'sess_123',
+        endedAt: new Date().toISOString(),
+        totalDurationMs: 60000,
+        pageViews: 5,
+      });
 
       const response = await POST(request);
       const json = await response.json();
 
-      expect(response.status).toBe(400);
-      expect(json.error).toBe('Invalid action for POST');
+      expect(response.status).toBe(200);
+      expect(json.success).toBe(true);
     });
   });
 
@@ -248,6 +258,83 @@ describe('POST /api/activity/session', () => {
 });
 
 // =============================================================================
+// POST - Session End Tests (sendBeacon compatibility)
+// =============================================================================
+
+describe('POST /api/activity/session - end action (sendBeacon)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('ends session successfully via POST', async () => {
+    const queryBuilder = createMockQueryBuilder(null);
+    mockServiceClient.from.mockReturnValue(queryBuilder);
+
+    const endedAt = new Date().toISOString();
+    const request = createMockRequest({
+      action: 'end',
+      sessionId: 'sess_beacon123',
+      endedAt,
+      totalDurationMs: 300000,
+      pageViews: 15,
+    });
+
+    const response = await POST(request);
+    const json = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(json.success).toBe(true);
+    expect(json.sessionId).toBe('sess_beacon123');
+
+    // Verify update was called
+    expect(mockServiceClient.from).toHaveBeenCalledWith('user_sessions');
+    expect(queryBuilder.update).toHaveBeenCalledWith({
+      ended_at: endedAt,
+      total_duration_ms: 300000,
+      page_views: 15,
+    });
+  });
+
+  it('queries by session_id not id when ending via POST', async () => {
+    const queryBuilder = createMockQueryBuilder(null);
+    mockServiceClient.from.mockReturnValue(queryBuilder);
+
+    const request = createMockRequest({
+      action: 'end',
+      sessionId: 'sess_beacon_column',
+      endedAt: new Date().toISOString(),
+      totalDurationMs: 60000,
+      pageViews: 5,
+    });
+
+    await POST(request);
+
+    // Verify eq was called with session_id, not id
+    expect(queryBuilder.eq).toHaveBeenCalledWith('session_id', 'sess_beacon_column');
+  });
+
+  it('handles missing table gracefully when ending via POST', async () => {
+    const queryBuilder = createMockQueryBuilder({ code: '42P01', message: 'table not found' });
+    mockServiceClient.from.mockReturnValue(queryBuilder);
+
+    const request = createMockRequest({
+      action: 'end',
+      sessionId: 'sess_beacon_notable',
+      endedAt: new Date().toISOString(),
+      totalDurationMs: 60000,
+      pageViews: 5,
+    });
+
+    const response = await POST(request);
+    const json = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(json.success).toBe(true);
+    expect(json.warning).toBe('Sessions table not configured');
+  });
+});
+
+// =============================================================================
 // PATCH - Session End Tests
 // =============================================================================
 
@@ -380,7 +467,7 @@ describe('Session API - Full Lifecycle', () => {
     vi.clearAllMocks();
   });
 
-  it('handles create then end flow', async () => {
+  it('handles create then end flow via PATCH', async () => {
     const queryBuilder = createMockQueryBuilder(null);
     mockServiceClient.from.mockReturnValue(queryBuilder);
 
@@ -400,7 +487,7 @@ describe('Session API - Full Lifecycle', () => {
     expect(createResponse.status).toBe(200);
     expect(createJson.success).toBe(true);
 
-    // End session
+    // End session via PATCH
     const endTime = new Date(startTime.getTime() + 300000); // 5 minutes later
     const endRequest = createMockRequest({
       action: 'end',
@@ -411,6 +498,49 @@ describe('Session API - Full Lifecycle', () => {
     }, 'PATCH');
 
     const endResponse = await PATCH(endRequest);
+    const endJson = await endResponse.json();
+
+    expect(endResponse.status).toBe(200);
+    expect(endJson.success).toBe(true);
+
+    // Verify both operations used correct session_id
+    expect(queryBuilder.insert).toHaveBeenCalledWith(
+      expect.objectContaining({ session_id: sessionId })
+    );
+    expect(queryBuilder.eq).toHaveBeenCalledWith('session_id', sessionId);
+  });
+
+  it('handles create then end flow via POST (sendBeacon)', async () => {
+    const queryBuilder = createMockQueryBuilder(null);
+    mockServiceClient.from.mockReturnValue(queryBuilder);
+
+    const sessionId = 'sess_sendbeacon_lifecycle';
+    const startTime = new Date();
+
+    // Create session
+    const createRequest = createMockRequest({
+      action: 'create',
+      sessionId,
+      userAgent: 'Test Browser',
+    });
+
+    const createResponse = await POST(createRequest);
+    const createJson = await createResponse.json();
+
+    expect(createResponse.status).toBe(200);
+    expect(createJson.success).toBe(true);
+
+    // End session via POST (simulating sendBeacon)
+    const endTime = new Date(startTime.getTime() + 180000); // 3 minutes later
+    const endRequest = createMockRequest({
+      action: 'end',
+      sessionId,
+      endedAt: endTime.toISOString(),
+      totalDurationMs: 180000,
+      pageViews: 7,
+    }); // POST by default
+
+    const endResponse = await POST(endRequest);
     const endJson = await endResponse.json();
 
     expect(endResponse.status).toBe(200);

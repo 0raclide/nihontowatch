@@ -243,11 +243,14 @@ function getSchoolName(school: string | null): string | null {
   return school;
 }
 
-const CERT_LABELS: Record<string, { label: string; tier: 'tokuju' | 'juyo' | 'tokuho' | 'hozon' }> = {
+const CERT_LABELS: Record<string, { label: string; tier: 'tokuju' | 'jubi' | 'juyo' | 'tokuho' | 'hozon' }> = {
   // Tokubetsu Juyo - highest tier (purple)
-  Tokuju: { label: 'Tokubetsu Jūyō', tier: 'tokuju' },
-  tokuju: { label: 'Tokubetsu Jūyō', tier: 'tokuju' },
-  tokubetsu_juyo: { label: 'Tokubetsu Jūyō', tier: 'tokuju' },
+  Tokuju: { label: 'Tokuju', tier: 'tokuju' },
+  tokuju: { label: 'Tokuju', tier: 'tokuju' },
+  tokubetsu_juyo: { label: 'Tokuju', tier: 'tokuju' },
+  // Juyo Bijutsuhin - Important Cultural Property (orange/gold)
+  JuyoBijutsuhin: { label: 'Jubi', tier: 'jubi' },
+  juyo_bijutsuhin: { label: 'Jubi', tier: 'jubi' },
   // Juyo - high tier (blue)
   Juyo: { label: 'Jūyō', tier: 'juyo' },
   juyo: { label: 'Jūyō', tier: 'juyo' },
@@ -622,6 +625,8 @@ export const ListingCard = memo(function ListingCard({
               <span className={`text-[9px] lg:text-[10px] uppercase tracking-wider font-semibold px-1.5 lg:px-2 py-0.5 lg:py-1 ${
                 certInfo.tier === 'tokuju'
                   ? 'bg-tokuju-bg text-tokuju'
+                  : certInfo.tier === 'jubi'
+                  ? 'bg-jubi-bg text-jubi'
                   : certInfo.tier === 'juyo'
                   ? 'bg-juyo-bg text-juyo'
                   : certInfo.tier === 'tokuho'

@@ -324,7 +324,7 @@ test.describe('Signup Pressure System', () => {
     });
 
     test('modal has social proof text', async ({ page }) => {
-      const socialProof = page.getByText('Aggregating 27 dealers worldwide');
+      const socialProof = page.getByText('The entire nihonto market in one place');
       await expect(socialProof).toBeVisible();
     });
 

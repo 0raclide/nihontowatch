@@ -64,69 +64,111 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!isCreatePayload(body)) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid action for POST' },
-        { status: 400 }
-      );
-    }
-
-    const {
-      sessionId,
-      userAgent,
-      screenWidth,
-      screenHeight,
-      timezone,
-      language,
-    } = body;
-
-    // Insert session into database using service client to bypass RLS
     const supabase = createServiceClient();
 
-    // Use type assertion since user_sessions table may not be in generated types yet
-    // Note: id is auto-generated UUID, session_id is the TEXT identifier we track
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any).from('user_sessions').insert({
-      session_id: sessionId,
-      // user_id left null for anonymous sessions (requires migration to allow NULL)
-      started_at: new Date().toISOString(),
-      page_views: 0,
-      user_agent: userAgent || null,
-      screen_width: screenWidth || null,
-      screen_height: screenHeight || null,
-      timezone: timezone || null,
-      language: language || null,
-    });
+    // Handle 'create' action - create new session
+    if (isCreatePayload(body)) {
+      const {
+        sessionId,
+        userAgent,
+        screenWidth,
+        screenHeight,
+        timezone,
+        language,
+      } = body;
 
-    if (error) {
-      // Log error but don't fail - session tracking is best-effort
-      logger.error('Failed to create session', { error, sessionId });
+      // Insert session into database using service client to bypass RLS
+      // Note: id is auto-generated UUID, session_id is the TEXT identifier we track
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase as any).from('user_sessions').insert({
+        session_id: sessionId,
+        // user_id left null for anonymous sessions (requires migration to allow NULL)
+        started_at: new Date().toISOString(),
+        page_views: 0,
+        user_agent: userAgent || null,
+        screen_width: screenWidth || null,
+        screen_height: screenHeight || null,
+        timezone: timezone || null,
+        language: language || null,
+      });
 
-      // Check if table doesn't exist
-      if (error.code === '42P01') {
-        return NextResponse.json({
-          success: true,
-          sessionId,
-          warning: 'Sessions table not configured',
-        });
+      if (error) {
+        // Log error but don't fail - session tracking is best-effort
+        logger.error('Failed to create session', { error, sessionId });
+
+        // Check if table doesn't exist
+        if (error.code === '42P01') {
+          return NextResponse.json({
+            success: true,
+            sessionId,
+            warning: 'Sessions table not configured',
+          });
+        }
+
+        // Check for duplicate session (ignore - might be refresh)
+        if (error.code === '23505') {
+          return NextResponse.json({
+            success: true,
+            sessionId,
+            existing: true,
+          });
+        }
       }
 
-      // Check for duplicate session (ignore - might be refresh)
-      if (error.code === '23505') {
-        return NextResponse.json({
-          success: true,
-          sessionId,
-          existing: true,
-        });
-      }
+      return NextResponse.json({
+        success: true,
+        sessionId,
+      });
     }
 
-    return NextResponse.json({
-      success: true,
-      sessionId,
-    });
+    // Handle 'end' action - update session with duration
+    // Note: sendBeacon (used on page unload) can only send POST requests,
+    // so we must handle session ending here as well as in PATCH
+    if (isEndPayload(body)) {
+      const {
+        sessionId,
+        endedAt,
+        totalDurationMs,
+        pageViews,
+      } = body;
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase as any)
+        .from('user_sessions')
+        .update({
+          ended_at: endedAt,
+          total_duration_ms: totalDurationMs,
+          page_views: pageViews,
+        })
+        .eq('session_id', sessionId);
+
+      if (error) {
+        // Log error but don't fail - session tracking is best-effort
+        logger.error('Failed to end session', { error, sessionId });
+
+        // Check if table doesn't exist
+        if (error.code === '42P01') {
+          return NextResponse.json({
+            success: true,
+            sessionId,
+            warning: 'Sessions table not configured',
+          });
+        }
+      }
+
+      return NextResponse.json({
+        success: true,
+        sessionId,
+      });
+    }
+
+    // Should not reach here due to validatePayload, but handle gracefully
+    return NextResponse.json(
+      { success: false, error: 'Invalid action' },
+      { status: 400 }
+    );
   } catch (error) {
-    logger.logError('Session create API error', error);
+    logger.logError('Session API error', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }

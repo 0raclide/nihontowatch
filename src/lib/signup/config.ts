@@ -47,7 +47,7 @@ export const SIGNUP_MODAL_COPY: SignupModalCopyVariants = {
     body: "Create an account to save the pieces you're watching, receive alerts when prices shift, and never lose track of a listing that caught your eye.",
     cta: 'Create Account',
     dismiss: 'Continue browsing',
-    socialProof: 'Aggregating 27 dealers worldwide',
+    socialProof: 'The entire nihonto market in one place',
   },
 
   favorite: {
@@ -71,7 +71,7 @@ export const SIGNUP_MODAL_COPY: SignupModalCopyVariants = {
     body: 'Understanding price history helps you make informed decisions. Create an account to access historical data and market trends.',
     cta: 'Create Account',
     dismiss: 'Continue browsing',
-    socialProof: 'Price data across 27 dealers',
+    socialProof: 'Price data across all major dealers',
   },
 };
 

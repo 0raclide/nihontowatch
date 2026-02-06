@@ -34,11 +34,14 @@ interface ListingDetail extends Listing {
 }
 
 // Certification display config
-const CERT_LABELS: Record<string, { label: string; tier: 'tokuju' | 'juyo' | 'tokuho' | 'hozon' }> = {
+const CERT_LABELS: Record<string, { label: string; tier: 'tokuju' | 'jubi' | 'juyo' | 'tokuho' | 'hozon' }> = {
   // Tokubetsu Juyo - highest tier (purple)
-  Tokuju: { label: 'Tokubetsu Juyo', tier: 'tokuju' },
-  tokuju: { label: 'Tokubetsu Juyo', tier: 'tokuju' },
-  tokubetsu_juyo: { label: 'Tokubetsu Juyo', tier: 'tokuju' },
+  Tokuju: { label: 'Tokuju', tier: 'tokuju' },
+  tokuju: { label: 'Tokuju', tier: 'tokuju' },
+  tokubetsu_juyo: { label: 'Tokuju', tier: 'tokuju' },
+  // Juyo Bijutsuhin - Important Cultural Property (orange/gold)
+  JuyoBijutsuhin: { label: 'Jubi', tier: 'jubi' },
+  juyo_bijutsuhin: { label: 'Jubi', tier: 'jubi' },
   // Juyo - high tier (blue)
   Juyo: { label: 'Juyo', tier: 'juyo' },
   juyo: { label: 'Juyo', tier: 'juyo' },
@@ -313,6 +316,8 @@ export default function ListingDetailPage() {
                 <span className={`text-[11px] uppercase tracking-wider font-medium px-2.5 py-1 rounded ${
                   certInfo.tier === 'tokuju'
                     ? 'bg-tokuju-bg text-tokuju'
+                    : certInfo.tier === 'jubi'
+                    ? 'bg-jubi-bg text-jubi'
                     : certInfo.tier === 'juyo'
                     ? 'bg-juyo-bg text-juyo'
                     : certInfo.tier === 'tokuho'

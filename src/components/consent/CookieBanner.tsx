@@ -84,7 +84,7 @@ export function CookieBanner() {
                 <p className="text-sm text-ink leading-relaxed">
                   <strong>Accept cookies to unlock cool features:</strong> track new items since your last visit,
                   save your currency preference, remember your searches, and personalize your experience
-                  across our 27 dealers.{' '}
+                  across the entire market.{' '}
                   <Link
                     href="/privacy"
                     className="text-accent hover:underline focus:underline focus:outline-none"
