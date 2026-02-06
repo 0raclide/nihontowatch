@@ -255,8 +255,8 @@ const CERT_LABELS: Record<string, { label: string; tier: 'tokuju' | 'jubi' | 'ju
   Juyo: { label: 'Jūyō', tier: 'juyo' },
   juyo: { label: 'Jūyō', tier: 'juyo' },
   // Tokubetsu Hozon - mid tier (brown)
-  TokuHozon: { label: 'Tokubetsu Hozon', tier: 'tokuho' },
-  tokubetsu_hozon: { label: 'Tokubetsu Hozon', tier: 'tokuho' },
+  TokuHozon: { label: 'Tokuho', tier: 'tokuho' },
+  tokubetsu_hozon: { label: 'Tokuho', tier: 'tokuho' },
   TokuKicho: { label: 'Tokubetsu Kichō', tier: 'tokuho' },
   // Hozon - standard tier (yellow)
   Hozon: { label: 'Hozon', tier: 'hozon' },
