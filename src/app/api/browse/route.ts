@@ -415,10 +415,20 @@ export async function GET(request: NextRequest) {
         query = query.filter(field, op, value);
       }
 
-      // Step 3: Text search on remaining words (artisan names, provinces, etc.)
+      // Step 3: Check if query looks like an artisan code (e.g., "MAS590", "OWA009", "NS-OSA")
+      // Artisan codes are typically 2-3 letters followed by numbers, or NS-* school codes
+      const artisanCodePattern = /^[A-Z]{2,4}\d{2,4}$|^NS-[A-Za-z]+$/i;
+      const potentialArtisanCode = textWords.find(w => artisanCodePattern.test(w));
+      if (potentialArtisanCode) {
+        // Search artisan_id field directly (case-insensitive substring match)
+        query = query.ilike('artisan_id', `%${potentialArtisanCode}%`);
+      }
+
+      // Step 4: Text search on remaining words (artisan names, provinces, etc.)
       // Uses PostgreSQL Full-Text Search with word boundary matching
       // This prevents substring pollution (e.g., "rai" matching "grained")
-      if (textWords.length > 0) {
+      // Skip FTS if we already matched an artisan code (avoid zero results from FTS miss)
+      if (textWords.length > 0 && !potentialArtisanCode) {
         // Build FTS query parts for each word, expanding aliases with OR
         const queryParts: string[] = [];
 
