@@ -49,6 +49,9 @@ interface Listing {
     domain: string;
   };
   dealer_earliest_seen_at?: string | null;
+  // Artisan matching
+  artisan_id?: string | null;
+  artisan_confidence?: 'HIGH' | 'MEDIUM' | 'LOW' | 'NONE' | null;
 }
 
 interface ExchangeRates {
@@ -72,6 +75,7 @@ interface ListingGridProps {
   exchangeRates: ExchangeRates | null;
   onLoadMore?: () => void;
   searchId?: number; // For CTR tracking
+  isAdmin?: boolean; // For admin-only features like artisan code display
 }
 
 function LoadingSkeleton() {
@@ -142,6 +146,7 @@ export function ListingGrid({
   exchangeRates,
   onLoadMore,
   searchId,
+  isAdmin = false,
 }: ListingGridProps) {
   // Loading state
   if (isLoading) {
@@ -171,6 +176,7 @@ export function ListingGrid({
         hasMore={listings.length < total}
         onLoadMore={onLoadMore}
         searchId={searchId}
+        isAdmin={isAdmin}
       />
     </ViewportTrackingProvider>
   );

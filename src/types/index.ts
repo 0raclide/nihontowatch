@@ -428,6 +428,10 @@ export interface Listing {
   setsumei_pipeline_version?: string; // Pipeline version (e.g., "3.6.0")
   setsumei_error?: string;           // Error message if processing failed
 
+  // Artisan matching (from Oshi-scrapper)
+  artisan_id?: string;
+  artisan_confidence?: 'HIGH' | 'MEDIUM' | 'LOW' | 'NONE';
+
   // Timestamps
   first_seen_at: string;
   last_scraped_at: string;

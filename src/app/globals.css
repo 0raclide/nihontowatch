@@ -70,6 +70,14 @@
   --new-listing: #2D8A5A;
   --new-listing-bg: rgba(45, 138, 90, 0.12);
 
+  /* Artisan confidence colors (admin-only badges) */
+  --artisan-high: #2D8A5A;             /* Green - matches new-listing */
+  --artisan-high-bg: rgba(45, 138, 90, 0.12);
+  --artisan-medium: #C9A857;           /* Yellow/amber - matches warning */
+  --artisan-medium-bg: rgba(201, 168, 87, 0.12);
+  --artisan-low: #6A6A6A;              /* Gray - muted for uncertainty */
+  --artisan-low-bg: rgba(106, 106, 106, 0.10);
+
   /* Alias for backwards compatibility */
   --burgundy: var(--juyo);
 
@@ -157,6 +165,14 @@ html.dark {
   /* New listing badge - bright for dark mode */
   --new-listing: #50d890;
   --new-listing-bg: rgba(80, 216, 144, 0.20);
+
+  /* Artisan confidence colors - bright for dark mode */
+  --artisan-high: #50d890;             /* Green - matches new-listing */
+  --artisan-high-bg: rgba(80, 216, 144, 0.20);
+  --artisan-medium: #e8c860;           /* Yellow/amber - brighter for dark */
+  --artisan-medium-bg: rgba(232, 200, 96, 0.18);
+  --artisan-low: #888888;              /* Gray - slightly brighter for dark */
+  --artisan-low-bg: rgba(136, 136, 136, 0.15);
 
   /* Shadows - softer for elegance */
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.25);
@@ -448,6 +464,14 @@ html.theme-yuhindo {
   /* New listing badge */
   --color-new-listing: var(--new-listing);
   --color-new-listing-bg: var(--new-listing-bg);
+
+  /* Artisan confidence badges (admin-only) */
+  --color-artisan-high: var(--artisan-high);
+  --color-artisan-high-bg: var(--artisan-high-bg);
+  --color-artisan-medium: var(--artisan-medium);
+  --color-artisan-medium-bg: var(--artisan-medium-bg);
+  --color-artisan-low: var(--artisan-low);
+  --color-artisan-low-bg: var(--artisan-low-bg);
 
   /* Yuhindo theme specific */
   --color-silk-plum: var(--silk-plum);

@@ -68,6 +68,9 @@ interface Listing {
     domain: string;
   };
   dealer_earliest_seen_at?: string | null;
+  // Artisan matching
+  artisan_id?: string | null;
+  artisan_confidence?: 'HIGH' | 'MEDIUM' | 'LOW' | 'NONE' | null;
 }
 
 interface ExchangeRates {
@@ -92,6 +95,7 @@ interface VirtualListingGridProps {
   totalPages?: number;
   onPageChange?: (page: number) => void;
   searchId?: number; // For CTR tracking
+  isAdmin?: boolean; // For admin-only features like artisan code display
 }
 
 function Pagination({
@@ -203,6 +207,7 @@ export function VirtualListingGrid({
   totalPages = 1,
   onPageChange,
   searchId,
+  isAdmin = false,
 }: VirtualListingGridProps) {
   const quickView = useQuickViewOptional();
   const loadMoreTriggerRef = useRef<HTMLDivElement>(null);
@@ -345,6 +350,7 @@ export function VirtualListingGrid({
           priority={startIndex + idx < PRIORITY_COUNT}
           isNearViewport={true} // All visible items should load images
           searchId={searchId}
+          isAdmin={isAdmin}
         />
       ))}
     </div>

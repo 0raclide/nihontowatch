@@ -26,6 +26,8 @@ interface BrowseParams {
   askOnly?: boolean;
   /** Admin filter: show Juyo/Tokuju items missing setsumei (no OCR and no manual Yuhinkai) */
   missingSetsumei?: boolean;
+  /** Artisan code filter (substring match) */
+  artisanCode?: string;
   query?: string;
   sort?: string;
   page?: number;
@@ -155,6 +157,7 @@ function parseParams(searchParams: URLSearchParams): BrowseParams {
     signatureStatuses: signatureStatusesRaw ? signatureStatusesRaw.split(',') : undefined,
     askOnly: searchParams.get('ask') === 'true',
     missingSetsumei: searchParams.get('missing_setsumei') === 'true',
+    artisanCode: searchParams.get('artisan') || undefined,
     query: searchParams.get('q') || undefined,
     sort: searchParams.get('sort') || 'recent',
     page: Number(searchParams.get('page')) || 1,
@@ -257,6 +260,8 @@ export async function GET(request: NextRequest) {
         is_sold,
         is_initial_import,
         dealer_id,
+        artisan_id,
+        artisan_confidence,
         dealers:dealers!inner(id, name, domain),
         listing_yuhinkai_enrichment(
           setsumei_en,
@@ -339,6 +344,11 @@ export async function GET(request: NextRequest) {
     // Signature status filter (mei_type: signed = has mei, unsigned/mumei = no mei)
     if (params.signatureStatuses?.length) {
       query = query.in('signature_status', params.signatureStatuses);
+    }
+
+    // Artisan code filter (substring match for admin research)
+    if (params.artisanCode) {
+      query = query.ilike('artisan_id', `%${params.artisanCode}%`);
     }
 
     // Admin filter: Missing setsumei - Juyo/Tokuju items without OCR setsumei

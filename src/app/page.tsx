@@ -72,6 +72,9 @@ interface Listing {
     domain: string;
   };
   dealer_earliest_seen_at?: string | null;
+  // Artisan matching
+  artisan_id?: string | null;
+  artisan_confidence?: 'HIGH' | 'MEDIUM' | 'LOW' | 'NONE' | null;
 }
 
 interface Facet {
@@ -602,6 +605,7 @@ function HomeContent() {
               exchangeRates={exchangeRates}
               onLoadMore={loadMore}
               searchId={currentSearchIdRef.current}
+              isAdmin={authIsAdmin}
             />
           </div>
         </div>

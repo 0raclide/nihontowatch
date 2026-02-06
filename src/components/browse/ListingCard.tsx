@@ -74,6 +74,9 @@ interface Listing {
     name: string;
     domain: string;
   };
+  // Artisan matching (admin-only display)
+  artisan_id?: string | null;
+  artisan_confidence?: 'HIGH' | 'MEDIUM' | 'LOW' | 'NONE' | null;
 }
 
 interface ExchangeRates {
@@ -92,6 +95,7 @@ interface ListingCardProps {
   showFavoriteButton?: boolean;
   isNearViewport?: boolean; // For lazy loading optimization
   searchId?: number; // For CTR tracking
+  isAdmin?: boolean; // For admin-only features like artisan code display
 }
 
 // Normalize Japanese kanji and variants to standard English keys
@@ -374,6 +378,7 @@ export const ListingCard = memo(function ListingCard({
   showFavoriteButton = true,
   isNearViewport = true, // Default to true for backward compatibility
   searchId,
+  isAdmin = false,
 }: ListingCardProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
@@ -610,22 +615,39 @@ export const ListingCard = memo(function ListingCard({
       {/* Content - Fixed height with flex layout for consistent card sizes */}
       <div className="p-2.5 lg:p-4 flex flex-col h-[130px] lg:h-[140px]">
         {/* Certification & Setsumei badges - fixed height slot */}
-        <div className="h-[24px] lg:h-[28px] flex items-center gap-1.5">
-          {certInfo && (
-            <span className={`text-[9px] lg:text-[10px] uppercase tracking-wider font-semibold px-1.5 lg:px-2 py-0.5 lg:py-1 ${
-              certInfo.tier === 'tokuju'
-                ? 'bg-tokuju-bg text-tokuju'
-                : certInfo.tier === 'juyo'
-                ? 'bg-juyo-bg text-juyo'
-                : certInfo.tier === 'tokuho'
-                ? 'bg-toku-hozon-bg text-toku-hozon'
-                : 'bg-hozon-bg text-hozon'
+        <div className="h-[24px] lg:h-[28px] flex items-center justify-between">
+          {/* Left side: certification + setsumei badges */}
+          <div className="flex items-center gap-1.5">
+            {certInfo && (
+              <span className={`text-[9px] lg:text-[10px] uppercase tracking-wider font-semibold px-1.5 lg:px-2 py-0.5 lg:py-1 ${
+                certInfo.tier === 'tokuju'
+                  ? 'bg-tokuju-bg text-tokuju'
+                  : certInfo.tier === 'juyo'
+                  ? 'bg-juyo-bg text-juyo'
+                  : certInfo.tier === 'tokuho'
+                  ? 'bg-toku-hozon-bg text-toku-hozon'
+                  : 'bg-hozon-bg text-hozon'
+              }`}>
+                {certInfo.label}
+              </span>
+            )}
+            {hasSetsumeiTranslation(listing) && (
+              <SetsumeiZufuBadge compact />
+            )}
+          </div>
+
+          {/* Right side: artisan code (admin only, HIGH/MEDIUM/LOW confidence) */}
+          {isAdmin && listing.artisan_id &&
+           listing.artisan_confidence && listing.artisan_confidence !== 'NONE' && (
+            <span className={`text-[9px] lg:text-[10px] font-mono font-medium px-1.5 py-0.5 ${
+              listing.artisan_confidence === 'HIGH'
+                ? 'bg-artisan-high-bg text-artisan-high'
+                : listing.artisan_confidence === 'MEDIUM'
+                ? 'bg-artisan-medium-bg text-artisan-medium'
+                : 'bg-artisan-low-bg text-artisan-low'
             }`}>
-              {certInfo.label}
+              {listing.artisan_id}
             </span>
-          )}
-          {hasSetsumeiTranslation(listing) && (
-            <SetsumeiZufuBadge compact />
           )}
         </div>
 
