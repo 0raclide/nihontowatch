@@ -124,6 +124,7 @@ const ITEM_TYPE_NORMALIZE: Record<string, string> = {
 };
 
 const ITEM_TYPE_LABELS: Record<string, string> = {
+  // Swords
   katana: 'Katana',
   wakizashi: 'Wakizashi',
   tanto: 'Tantō',
@@ -131,13 +132,28 @@ const ITEM_TYPE_LABELS: Record<string, string> = {
   naginata: 'Naginata',
   yari: 'Yari',
   kodachi: 'Kodachi',
+  ken: 'Ken',
+  daisho: 'Daishō',
+  // Tosogu (fittings)
   tsuba: 'Tsuba',
   'fuchi-kashira': 'Fuchi-Kashira',
+  fuchi_kashira: 'Fuchi-Kashira',
   kozuka: 'Kozuka',
+  kogai: 'Kōgai',
   menuki: 'Menuki',
+  fuchi: 'Fuchi',
+  kashira: 'Kashira',
+  futatokoro: 'Futatokoro',
+  mitokoromono: 'Mitokoromono',
   koshirae: 'Koshirae',
+  tosogu: 'Tosogu',
+  // Armor
   armor: 'Armor',
   kabuto: 'Kabuto',
+  helmet: 'Kabuto',
+  // Other
+  stand: 'Stand',
+  book: 'Book',
   other: 'Other',
 };
 
