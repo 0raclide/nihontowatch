@@ -14,6 +14,7 @@
 - AI inquiry email drafts
 - Setsumei translations (NBTHK certification descriptions)
 - Dealer analytics dashboard (admin)
+- Artisan code display & search (admin-only badges with confidence levels)
 
 **Trial Mode:** All premium features currently free (toggle via `NEXT_PUBLIC_TRIAL_MODE` env var)
 
@@ -479,6 +480,34 @@ Comprehensive analytics infrastructure already built for dealer monetization:
 | Dwell tracking | `src/lib/viewport/DwellTracker.ts` |
 
 **Gap for B2B launch:** Dealer self-serve portal (dealers can't log in to see their own data yet)
+
+### Artisan Code Display (Admin Feature)
+
+Displays Yuhinkai artisan codes (e.g., "MAS590", "OWA009") on listing cards for admin users, with confidence-based color coding.
+
+**How it works:**
+- Artisan matching runs in Oshi-scrapper (`artisan_matcher/` module)
+- Matches listings to Yuhinkai database entries (12,447 smiths, 1,119 tosogu makers)
+- Stores `artisan_id` and `artisan_confidence` in listings table
+
+**Display:**
+- Badge appears on **right side** of certification row (e.g., "TOKUBETSU HOZON" left, "MAS590" right)
+- **Green** = HIGH confidence (exact kanji match or LLM consensus)
+- **Yellow** = MEDIUM confidence (romaji match or school fallback)
+- **Gray** = LOW confidence (LLM disagreement)
+- Only visible to **admin users**
+
+**Search:**
+- URL param: `?artisan=MAS590` (substring match)
+- Search box: Type artisan code directly (e.g., "OWA009") - auto-detected by pattern
+
+**Key files:**
+| Component | Location |
+|-----------|----------|
+| CSS colors | `src/app/globals.css` (--artisan-high, --artisan-medium, --artisan-low) |
+| Badge display | `src/components/browse/ListingCard.tsx` (certification row) |
+| API filter | `src/app/api/browse/route.ts` (artisanCode param) |
+| DB schema | `supabase/migrations/048_artisan_matching.sql` |
 
 ### Documentation
 
