@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import type { ArtisanDetails } from '@/app/api/artisan/[code]/route';
+import type { ArtisanSearchResult } from '@/app/api/artisan/search/route';
 
 interface ArtisanCandidate {
   artisan_id: string;
@@ -23,17 +24,19 @@ interface ArtisanTooltipProps {
   candidates?: ArtisanCandidate[] | null;
   verified?: 'correct' | 'incorrect' | null;
   onVerify?: (status: 'correct' | 'incorrect' | null) => void;
+  onArtisanFixed?: (newArtisanId: string) => void;
   children: React.ReactNode;
 }
 
 export function ArtisanTooltip({
   listingId,
-  artisanId,
-  confidence,
+  artisanId: initialArtisanId,
+  confidence: initialConfidence,
   method,
   candidates,
   verified: initialVerified,
   onVerify,
+  onArtisanFixed,
   children,
 }: ArtisanTooltipProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -47,6 +50,20 @@ export function ArtisanTooltip({
   const termRef = useRef<HTMLButtonElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
 
+  // State for artisan ID (can change after fix)
+  const [artisanId, setArtisanId] = useState(initialArtisanId);
+  const [confidence, setConfidence] = useState(initialConfidence);
+
+  // Correction mode state
+  const [showCorrectionSearch, setShowCorrectionSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<ArtisanSearchResult[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [fixing, setFixing] = useState(false);
+  const [fixSuccess, setFixSuccess] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
   // Handle client-side mounting for portal
   useEffect(() => {
     setMounted(true);
@@ -56,6 +73,105 @@ export function ArtisanTooltip({
   useEffect(() => {
     setVerified(initialVerified ?? null);
   }, [initialVerified]);
+
+  // Sync artisan ID when prop changes (e.g., after fix)
+  useEffect(() => {
+    setArtisanId(initialArtisanId);
+  }, [initialArtisanId]);
+
+  // Focus search input when correction mode opens
+  useEffect(() => {
+    if (showCorrectionSearch && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [showCorrectionSearch]);
+
+  // Debounced search effect
+  useEffect(() => {
+    if (!searchQuery || searchQuery.length < 2) {
+      setSearchResults([]);
+      setSearchError(null);
+      return;
+    }
+
+    const debounceTimeout = setTimeout(async () => {
+      setSearchLoading(true);
+      setSearchError(null);
+
+      try {
+        const response = await fetch(
+          `/api/artisan/search?q=${encodeURIComponent(searchQuery)}&limit=10`
+        );
+        if (response.ok) {
+          const data = await response.json();
+          setSearchResults(data.results || []);
+        } else {
+          const data = await response.json();
+          setSearchError(data.error || 'Search failed');
+          setSearchResults([]);
+        }
+      } catch {
+        setSearchError('Search failed');
+        setSearchResults([]);
+      } finally {
+        setSearchLoading(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(debounceTimeout);
+  }, [searchQuery]);
+
+  // Handle selecting a search result to fix the artisan
+  const handleSelectArtisan = async (result: ArtisanSearchResult) => {
+    if (fixing) return;
+
+    setFixing(true);
+    try {
+      const response = await fetch(`/api/listing/${listingId}/fix-artisan`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          artisan_id: result.code,
+          confidence: 'HIGH',
+        }),
+      });
+
+      if (response.ok) {
+        // Update local state
+        setArtisanId(result.code);
+        setConfidence('HIGH');
+        setVerified('correct');
+        setFixSuccess(true);
+        setShowCorrectionSearch(false);
+        setSearchQuery('');
+        setSearchResults([]);
+
+        // Refetch artisan details for the new code
+        setArtisan(null);
+        setLoading(true);
+        const artisanResponse = await fetch(`/api/artisan/${encodeURIComponent(result.code)}`);
+        if (artisanResponse.ok) {
+          const data = await artisanResponse.json();
+          setArtisan(data.artisan);
+        }
+        setLoading(false);
+
+        // Notify parent
+        onArtisanFixed?.(result.code);
+        onVerify?.('correct');
+
+        // Clear success message after delay
+        setTimeout(() => setFixSuccess(false), 3000);
+      } else {
+        const data = await response.json();
+        setSearchError(data.error || 'Failed to update artisan');
+      }
+    } catch {
+      setSearchError('Failed to update artisan');
+    } finally {
+      setFixing(false);
+    }
+  };
 
   // Fetch artisan details when tooltip opens
   const fetchArtisan = useCallback(async () => {
@@ -93,7 +209,8 @@ export function ArtisanTooltip({
     if (isOpen && termRef.current) {
       const rect = termRef.current.getBoundingClientRect();
       const tooltipWidth = 320; // w-80 = 20rem = 320px
-      const tooltipHeight = 350; // approximate height
+      // Increase height when correction search is open
+      const tooltipHeight = showCorrectionSearch ? 550 : 350;
       const padding = 12;
 
       // Calculate horizontal position
@@ -126,7 +243,7 @@ export function ArtisanTooltip({
         zIndex: 10001,
       });
     }
-  }, [isOpen]);
+  }, [isOpen, showCorrectionSearch]);
 
   // Close on click outside, window scroll, and escape key
   useEffect(() => {
@@ -183,6 +300,15 @@ export function ArtisanTooltip({
       if (response.ok) {
         setVerified(status);
         onVerify?.(status);
+
+        // Show correction search when marked as incorrect
+        if (status === 'incorrect') {
+          setShowCorrectionSearch(true);
+        } else {
+          setShowCorrectionSearch(false);
+          setSearchQuery('');
+          setSearchResults([]);
+        }
       } else {
         console.error('Failed to save verification');
       }
@@ -396,6 +522,115 @@ export function ArtisanTooltip({
                     Incorrect
                   </button>
                 </div>
+
+                {/* Success message after fix */}
+                {fixSuccess && (
+                  <div className="mt-3 py-2 px-3 bg-green-500/10 border border-green-500/30 rounded text-xs text-green-500 flex items-center gap-2">
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Artisan updated successfully
+                  </div>
+                )}
+
+                {/* Correction search panel */}
+                {showCorrectionSearch && !fixSuccess && (
+                  <div className="mt-3 pt-3 border-t border-border">
+                    <div className="text-[10px] uppercase tracking-wider text-muted mb-2">
+                      Search for correct artisan:
+                    </div>
+
+                    {/* Search input */}
+                    <div className="relative mb-2">
+                      <input
+                        ref={searchInputRef}
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Name, code, or school..."
+                        className="w-full px-3 py-2 text-xs bg-surface border border-border rounded focus:outline-none focus:border-gold/50 text-ink placeholder:text-muted"
+                      />
+                      {searchLoading && (
+                        <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                          <div className="w-4 h-4 border-2 border-muted border-t-gold rounded-full animate-spin" />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Search error */}
+                    {searchError && (
+                      <p className="text-[10px] text-red-500 mb-2">{searchError}</p>
+                    )}
+
+                    {/* Search results */}
+                    {searchResults.length > 0 && (
+                      <div className="max-h-48 overflow-y-auto space-y-1 scrollbar-thin">
+                        {searchResults.map((result) => (
+                          <button
+                            key={result.code}
+                            onClick={() => handleSelectArtisan(result)}
+                            disabled={fixing}
+                            className={`w-full text-left p-2 rounded border border-border hover:border-gold/50 hover:bg-gold/5 transition-colors ${
+                              fixing ? 'opacity-50 cursor-not-allowed' : ''
+                            }`}
+                          >
+                            <div className="flex items-center justify-between mb-0.5">
+                              <span className="font-mono text-xs font-medium text-gold">
+                                {result.code}
+                              </span>
+                              <span className="text-[9px] text-muted uppercase">
+                                {result.type === 'smith' ? 'Smith' : 'Tosogu'}
+                              </span>
+                            </div>
+                            <div className="text-xs text-ink">
+                              {result.name_kanji && (
+                                <span className="font-jp mr-1">{result.name_kanji}</span>
+                              )}
+                              {result.name_romaji && (
+                                <span>{result.name_romaji}</span>
+                              )}
+                              {result.generation && (
+                                <span className="text-muted ml-1">({result.generation})</span>
+                              )}
+                            </div>
+                            {result.school && (
+                              <div className="text-[10px] text-muted mt-0.5">
+                                {result.school}
+                                {result.province && ` · ${result.province}`}
+                              </div>
+                            )}
+                            {(result.juyo_count > 0 || result.tokuju_count > 0) && (
+                              <div className="text-[10px] text-muted mt-0.5">
+                                {result.tokuju_count > 0 && `${result.tokuju_count} Tokuju`}
+                                {result.tokuju_count > 0 && result.juyo_count > 0 && ' · '}
+                                {result.juyo_count > 0 && `${result.juyo_count} Juyo`}
+                              </div>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* No results */}
+                    {searchQuery.length >= 2 && !searchLoading && searchResults.length === 0 && !searchError && (
+                      <p className="text-[10px] text-muted text-center py-2">
+                        No artisans found for &quot;{searchQuery}&quot;
+                      </p>
+                    )}
+
+                    {/* Cancel button */}
+                    <button
+                      onClick={() => {
+                        setShowCorrectionSearch(false);
+                        setSearchQuery('');
+                        setSearchResults([]);
+                      }}
+                      className="mt-2 w-full py-1.5 text-[10px] text-muted hover:text-ink transition-colors"
+                    >
+                      Cancel search
+                    </button>
+                  </div>
+                )}
               </>
             )}
           </div>,

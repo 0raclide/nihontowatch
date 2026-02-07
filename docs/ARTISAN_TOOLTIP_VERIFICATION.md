@@ -342,6 +342,162 @@ test('artisan tooltip opens on click', async ({ page }) => {
 
 ---
 
+## Admin Artisan Correction
+
+When an admin marks a match as "Incorrect", they can search for the correct artisan and fix the record.
+
+### Correction Flow
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         ADMIN CORRECTION FLOW                           │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  1. Admin clicks "Incorrect" button                                    │
+│     └── Search box appears below verification buttons                   │
+│                                                                         │
+│  2. Admin types name/code/school                                       │
+│     └── Debounced search (300ms) queries /api/artisan/search           │
+│                                                                         │
+│  3. Results displayed (sorted by Juyo/Tokuju count)                    │
+│     └── Shows: code, name (kanji/romaji), school, province, stats      │
+│                                                                         │
+│  4. Admin clicks correct artisan                                       │
+│     └── POST /api/listing/[id]/fix-artisan                             │
+│                                                                         │
+│  5. Two database writes:                                                │
+│     a) Updates listings table (artisan_id, method=ADMIN_CORRECTION)    │
+│     b) Inserts to artisan_corrections table (for pipeline re-apply)    │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### Corrections Table Schema
+
+```sql
+-- Created by migration 051_artisan_corrections.sql
+CREATE TABLE artisan_corrections (
+    id SERIAL PRIMARY KEY,
+    listing_id INTEGER NOT NULL REFERENCES listings(id),
+    corrected_artisan_id TEXT NOT NULL,     -- The correct code
+    original_artisan_id TEXT,               -- What pipeline matched (NULL if none)
+    corrected_by TEXT NOT NULL,             -- Admin user ID
+    corrected_at TIMESTAMPTZ DEFAULT NOW(),
+    notes TEXT,                             -- Optional context
+    UNIQUE(listing_id)                      -- One correction per listing
+);
+```
+
+### API Endpoints
+
+#### GET /api/artisan/search
+
+Searches Yuhinkai database for smiths and tosogu makers.
+
+**Request:**
+```
+GET /api/artisan/search?q=masamune&type=all&limit=10
+```
+
+**Response:**
+```json
+{
+  "results": [
+    {
+      "code": "MAS590",
+      "type": "smith",
+      "name_romaji": "Masamune",
+      "name_kanji": "正宗",
+      "school": "Soshu",
+      "province": "Sagami",
+      "era": "Kamakura",
+      "juyo_count": 127,
+      "tokuju_count": 24
+    }
+  ],
+  "query": "masamune",
+  "total": 1
+}
+```
+
+#### POST /api/listing/[id]/fix-artisan
+
+Updates the artisan on a listing after admin correction.
+
+**Request:**
+```json
+{
+  "artisan_id": "MAS590",
+  "confidence": "HIGH",
+  "notes": "Original match was for wrong Masamune generation"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "listingId": 1099,
+  "previousArtisanId": "MAS123",
+  "artisanId": "MAS590",
+  "confidence": "HIGH"
+}
+```
+
+### Re-Applying Corrections After Pipeline Re-Run
+
+The `artisan_corrections` table stores corrections separately from the listings table. After Oshi-scrapper runs artisan matching, it should re-apply corrections:
+
+**Python (Oshi-scrapper) - Suggested Implementation:**
+
+```python
+async def reapply_artisan_corrections(supabase_client):
+    """
+    Re-apply admin corrections after artisan matching pipeline run.
+    Call this AFTER the matching pipeline completes.
+    """
+    # Get all corrections
+    result = await supabase_client.table('artisan_corrections').select('*').execute()
+    corrections = result.data
+
+    for correction in corrections:
+        # Update the listing with the corrected artisan_id
+        await supabase_client.table('listings').update({
+            'artisan_id': correction['corrected_artisan_id'],
+            'artisan_confidence': 'HIGH',
+            'artisan_method': 'ADMIN_CORRECTION',
+            'artisan_verified': 'correct',
+            'artisan_verified_at': correction['corrected_at'],
+            'artisan_verified_by': correction['corrected_by'],
+        }).eq('id', correction['listing_id']).execute()
+
+    return len(corrections)
+```
+
+**Alternative: Skip Corrected Listings During Matching:**
+
+```python
+# In artisan_matcher pipeline, skip listings that have corrections
+corrected_listings = await supabase.table('artisan_corrections').select('listing_id').execute()
+corrected_ids = {c['listing_id'] for c in corrected_listings.data}
+
+for listing in listings_to_match:
+    if listing['id'] in corrected_ids:
+        continue  # Skip - has admin correction
+    # ... run matching logic
+```
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `src/components/artisan/ArtisanTooltip.tsx` | Tooltip with search UI for correction |
+| `src/app/api/artisan/search/route.ts` | Search endpoint for Yuhinkai database |
+| `src/app/api/listing/[id]/fix-artisan/route.ts` | Applies correction to listing |
+| `supabase/migrations/051_artisan_corrections.sql` | Corrections table schema |
+
+---
+
 ## Related Documentation
 
 - [SYNC_ELITE_FACTOR_API.md](./SYNC_ELITE_FACTOR_API.md) - Webhook API for syncing elite_factor from Yuhinkai
