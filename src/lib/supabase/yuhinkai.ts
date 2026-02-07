@@ -1,0 +1,91 @@
+import { createClient } from '@supabase/supabase-js';
+
+/**
+ * Supabase client for Yuhinkai database (artist profiles, smith entities, etc.)
+ * This is a separate database from the main NihontoWatch database.
+ */
+
+const yuhinkaiUrl = process.env.YUHINKAI_SUPABASE_URL || '';
+const yuhinkaiKey = process.env.YUHINKAI_SUPABASE_KEY || '';
+
+if (!yuhinkaiUrl) {
+  console.error('[Yuhinkai] YUHINKAI_SUPABASE_URL is not configured.');
+}
+if (!yuhinkaiKey) {
+  console.error('[Yuhinkai] YUHINKAI_SUPABASE_KEY is not configured.');
+}
+
+export const yuhinkaiClient = createClient(yuhinkaiUrl, yuhinkaiKey);
+
+export interface ArtistProfile {
+  id: string;
+  artist_code: string;
+  artist_type: 'smith' | 'tosogu_maker';
+  profile_md: string;
+  hook: string | null;
+  setsumei_count: number;
+  extraction_json: Record<string, unknown>;
+  stats_snapshot: Record<string, unknown>;
+  profile_depth: 'full' | 'standard' | 'brief';
+  human_reviewed: boolean;
+  quality_flags: string[];
+  generated_at: string;
+  model_version: string;
+  pipeline_version: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SmithEntity {
+  smith_id: string;
+  name_kanji: string | null;
+  name_romaji: string | null;
+  province: string | null;
+  school: string | null;
+  era: string | null;
+  period: string | null;
+  generation: string | null;
+  teacher: string | null;
+  hawley: number | null;
+  fujishiro: string | null;
+  toko_taikan: number | null;
+  kokuho_count: number;
+  jubun_count: number;
+  jubi_count: number;
+  gyobutsu_count: number;
+  tokuju_count: number;
+  juyo_count: number;
+  total_items: number;
+  elite_count: number;
+  elite_factor: number;
+  is_school_code: boolean;
+}
+
+export async function getArtistProfile(code: string): Promise<ArtistProfile | null> {
+  const { data, error } = await yuhinkaiClient
+    .from('artist_profiles')
+    .select('*')
+    .eq('artist_code', code)
+    .single();
+
+  if (error || !data) {
+    console.error('[Yuhinkai] Error fetching artist profile:', error);
+    return null;
+  }
+
+  return data as ArtistProfile;
+}
+
+export async function getSmithEntity(code: string): Promise<SmithEntity | null> {
+  const { data, error } = await yuhinkaiClient
+    .from('smith_entities')
+    .select('*')
+    .eq('smith_id', code)
+    .single();
+
+  if (error || !data) {
+    return null;
+  }
+
+  return data as SmithEntity;
+}
