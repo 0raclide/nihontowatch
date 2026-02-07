@@ -278,6 +278,27 @@ export function ArtisanTooltip({
                   </div>
                 )}
 
+                {/* Elite Factor */}
+                {artisan && artisan.elite_factor !== null && artisan.elite_factor !== undefined && (
+                  <div className="mb-3 py-2 border-t border-border">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-[10px] uppercase tracking-wider text-muted">Elite Factor</span>
+                      <span className="text-sm font-semibold text-gold">
+                        {(artisan.elite_factor * 100).toFixed(1)}%
+                      </span>
+                    </div>
+                    <div className="h-2 bg-surface rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-gold/60 to-gold rounded-full transition-all duration-300"
+                        style={{ width: `${Math.min(artisan.elite_factor * 100 * 2, 100)}%` }}
+                      />
+                    </div>
+                    <div className="text-[9px] text-muted mt-1">
+                      {artisan.elite_count || 0} elite works / {artisan.total_items || 0} total
+                    </div>
+                  </div>
+                )}
+
                 {/* Stats */}
                 {artisan && (artisan.juyo_count > 0 || artisan.tokuju_count > 0) && (
                   <div className="flex gap-4 mb-3 py-2 border-t border-b border-border">

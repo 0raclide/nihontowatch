@@ -24,6 +24,8 @@ export interface ArtisanDetails {
   juyo_count: number;
   tokuju_count: number;
   total_items: number;
+  elite_factor: number | null;
+  elite_count: number;
   is_school_code: boolean;
 }
 
@@ -77,6 +79,8 @@ export async function GET(
         juyo_count: smithEntity.juyo_count || 0,
         tokuju_count: smithEntity.tokuju_count || 0,
         total_items: smithEntity.total_items || 0,
+        elite_factor: smithEntity.elite_factor ?? null,
+        elite_count: smithEntity.elite_count || 0,
         is_school_code: smithEntity.is_school_code || false,
       };
 
@@ -117,6 +121,8 @@ export async function GET(
       juyo_count: tosoguMaker.juyo_count || 0,
       tokuju_count: tosoguMaker.tokuju_count || 0,
       total_items: tosoguMaker.total_items || 0,
+      elite_factor: tosoguMaker.elite_factor ?? null,
+      elite_count: tosoguMaker.elite_count || 0,
       is_school_code: tosoguMaker.is_school_code || false,
     };
 
