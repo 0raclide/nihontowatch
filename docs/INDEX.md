@@ -28,6 +28,7 @@
 | [TESTING.md](./TESTING.md) | Test suite docs, concordance tests, CI/CD integration |
 | [USER_ENGAGEMENT_ANALYTICS.md](./USER_ENGAGEMENT_ANALYTICS.md) | Admin engagement dashboard - user growth, funnel, search analytics |
 | [YUHINKAI_REGISTRY_VISION.md](./YUHINKAI_REGISTRY_VISION.md) | **Strategic vision** - Yuhinkai as canonical nihonto registry, work tracking, price index |
+| [ARTISAN_TOOLTIP_VERIFICATION.md](./ARTISAN_TOOLTIP_VERIFICATION.md) | Admin QA tool - click artisan badges for details & verification |
 
 ## Sessions
 
@@ -241,6 +242,14 @@
 3. Check `Oshi-scrapper/models/yuhinkai.py` - Yuhinkai data models
 4. See database schema in vision doc for `works`, `work_appearances`, `price_index` tables
 
+### "I need to work on artisan tooltip / verification"
+1. Read [ARTISAN_TOOLTIP_VERIFICATION.md](./ARTISAN_TOOLTIP_VERIFICATION.md) - Complete feature docs
+2. Check `src/components/artisan/ArtisanTooltip.tsx` - Tooltip component
+3. Check `src/app/api/artisan/[code]/route.ts` - Artisan details API
+4. Check `src/app/api/listing/[id]/verify-artisan/route.ts` - Verification API
+5. Check `src/lib/supabase/yuhinkai.ts` - Yuhinkai database client
+6. Check `supabase/migrations/049_artisan_verification.sql` - DB schema
+
 ### "I need to work on SEO"
 1. Read [SEO.md](./SEO.md) - Complete SEO documentation
 2. Check `src/app/robots.ts` - robots.txt generation
@@ -278,4 +287,5 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for:
 | Email alerts | [EMAIL_ALERTS.md](./EMAIL_ALERTS.md) - Saved search, price drop, back-in-stock |
 | Testing | [TESTING.md](./TESTING.md) - Unit, concordance, integration tests |
 | SEO & Structured Data | [SEO.md](./SEO.md) - sitemap, robots.txt, JSON-LD schemas |
+| Artisan tooltip & QA | [ARTISAN_TOOLTIP_VERIFICATION.md](./ARTISAN_TOOLTIP_VERIFICATION.md) - Admin verification tool |
 | Deployment | [CLAUDE.md](../CLAUDE.md#deployment) |

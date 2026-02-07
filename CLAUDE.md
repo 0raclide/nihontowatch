@@ -167,6 +167,10 @@ images (JSONB), raw_page_text
 first_seen_at, last_scraped_at, scrape_count
 -- Sorting
 is_initial_import  -- TRUE = bulk import, FALSE = genuine new inventory (for "Newest" sort)
+-- Artisan matching (from Oshi-scrapper)
+artisan_id, artisan_confidence, artisan_method, artisan_candidates, artisan_matched_at
+-- Artisan verification (admin QA)
+artisan_verified, artisan_verified_at, artisan_verified_by
 ```
 
 **price_history**
@@ -486,9 +490,9 @@ Comprehensive analytics infrastructure already built for dealer monetization:
 
 **Gap for B2B launch:** Dealer self-serve portal (dealers can't log in to see their own data yet)
 
-### Artisan Code Display (Admin Feature)
+### Artisan Code Display & Verification (Admin Feature)
 
-Displays Yuhinkai artisan codes (e.g., "MAS590", "OWA009") on listing cards for admin users, with confidence-based color coding.
+Displays Yuhinkai artisan codes (e.g., "MAS590", "OWA009") on listing cards for admin users, with confidence-based color coding and QA verification.
 
 **How it works:**
 - Artisan matching runs in Oshi-scrapper (`artisan_matcher/` module)
@@ -502,6 +506,13 @@ Displays Yuhinkai artisan codes (e.g., "MAS590", "OWA009") on listing cards for 
 - **Gray** = LOW confidence (LLM disagreement)
 - Only visible to **admin users**
 
+**Tooltip (click badge):**
+- Shows artisan details from Yuhinkai database (name kanji/romaji, school, province, era)
+- Displays Juyo/Tokuju counts and match method
+- Shows alternative candidates for QA review
+- **Verification buttons**: ✓ Correct / ✗ Incorrect to flag match accuracy
+- Verification saved to database with timestamp and admin user ID
+
 **Search:**
 - URL param: `?artisan=MAS590` (substring match)
 - Search box: Type artisan code directly (e.g., "OWA009") - auto-detected by pattern
@@ -511,8 +522,12 @@ Displays Yuhinkai artisan codes (e.g., "MAS590", "OWA009") on listing cards for 
 |-----------|----------|
 | CSS colors | `src/app/globals.css` (--artisan-high, --artisan-medium, --artisan-low) |
 | Badge display | `src/components/browse/ListingCard.tsx` (certification row) |
+| Tooltip component | `src/components/artisan/ArtisanTooltip.tsx` |
+| Artisan details API | `src/app/api/artisan/[code]/route.ts` |
+| Verification API | `src/app/api/listing/[id]/verify-artisan/route.ts` |
+| Yuhinkai client | `src/lib/supabase/yuhinkai.ts` |
 | API filter | `src/app/api/browse/route.ts` (artisanCode param) |
-| DB schema | `supabase/migrations/048_artisan_matching.sql` |
+| DB schema | `supabase/migrations/048_artisan_matching.sql`, `049_artisan_verification.sql` |
 
 ### Documentation
 

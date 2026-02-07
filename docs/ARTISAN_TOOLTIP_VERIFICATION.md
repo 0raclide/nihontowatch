@@ -1,0 +1,338 @@
+# Artisan Tooltip & Verification System
+
+**Status:** ✅ Live in Production
+**Admin Only:** Yes
+**Purpose:** QA tool for verifying artisan ID matches on listings
+
+---
+
+## Overview
+
+The artisan tooltip feature allows admins to click on artisan ID badges (e.g., "MAS590", "OWA009") on listing cards to view detailed artisan information from the Yuhinkai database. Admins can then verify if the match is correct or incorrect, which is saved to the database for QA tracking.
+
+---
+
+## How It Works
+
+### Data Flow
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         ARTISAN MATCHING FLOW                           │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  1. MATCHING (runs in Oshi-scrapper)                                   │
+│     ┌──────────────┐      ┌──────────────┐      ┌──────────────┐      │
+│     │   Listing    │ ───► │   Artisan    │ ───► │  Yuhinkai    │      │
+│     │   (smith,    │      │   Matcher    │      │   Database   │      │
+│     │   school)    │      │   Module     │      │ (smith_      │      │
+│     └──────────────┘      └──────────────┘      │  entities)   │      │
+│                                  │              └──────────────┘      │
+│                                  ▼                                     │
+│     ┌──────────────────────────────────────────────────────────┐      │
+│     │  Stores in nihontowatch.listings:                        │      │
+│     │  - artisan_id (e.g., "MAS590")                          │      │
+│     │  - artisan_confidence (HIGH/MEDIUM/LOW)                  │      │
+│     │  - artisan_method (exact_kanji, consensus_unanimous)     │      │
+│     │  - artisan_candidates (top 3 alternatives)               │      │
+│     └──────────────────────────────────────────────────────────┘      │
+│                                                                         │
+│  2. DISPLAY (nihontowatch frontend)                                    │
+│     ┌──────────────┐      ┌──────────────┐      ┌──────────────┐      │
+│     │  ListingCard │ ───► │   Artisan    │ ───► │  Badge with  │      │
+│     │  (browse     │      │   Tooltip    │      │  confidence  │      │
+│     │   page)      │      │  Component   │      │  color       │      │
+│     └──────────────┘      └──────────────┘      └──────────────┘      │
+│                                                                         │
+│  3. VERIFICATION (admin QA)                                            │
+│     ┌──────────────┐      ┌──────────────┐      ┌──────────────┐      │
+│     │  Admin       │      │  /api/       │      │  Saves to    │      │
+│     │  clicks      │ ───► │  artisan/    │ ───► │  Yuhinkai    │      │
+│     │  badge       │      │  [code]      │      │  database    │      │
+│     └──────────────┘      └──────────────┘      └──────────────┘      │
+│            │                                                            │
+│            ▼                                                            │
+│     ┌──────────────┐      ┌──────────────┐      ┌──────────────┐      │
+│     │  Tooltip     │      │  /api/       │      │  Saves to    │      │
+│     │  shows       │ ───► │  listing/    │ ───► │ nihontowatch │      │
+│     │  details +   │      │  [id]/       │      │  .listings   │      │
+│     │  verify btns │      │  verify-     │      │ (verified,   │      │
+│     └──────────────┘      │  artisan     │      │  verified_at,│      │
+│                           └──────────────┘      │  verified_by)│      │
+│                                                  └──────────────┘      │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### Confidence Levels
+
+| Level | Color | Badge Class | Meaning |
+|-------|-------|-------------|---------|
+| HIGH | Green | `text-artisan-high` | Exact kanji match or LLM consensus (unanimous) |
+| MEDIUM | Yellow | `text-artisan-medium` | Romaji match or school fallback |
+| LOW | Gray | `text-artisan-low` | LLM disagreement or weak match |
+
+---
+
+## Database Schema
+
+### nihontowatch.listings (verification columns)
+
+```sql
+-- Added by migration 049_artisan_verification.sql
+artisan_verified TEXT          -- 'correct', 'incorrect', or NULL
+artisan_verified_at TIMESTAMPTZ
+artisan_verified_by TEXT       -- Admin user ID
+
+-- Index for filtering verified/unverified listings
+CREATE INDEX idx_listings_artisan_verified ON listings(artisan_verified)
+  WHERE artisan_verified IS NOT NULL;
+```
+
+### Yuhinkai (oshi-v2) smith_entities
+
+The tooltip fetches details from the Yuhinkai database:
+
+```sql
+smith_id         -- Artisan code (e.g., "MAS590")
+name_kanji       -- Japanese name (e.g., "正宗")
+name_romaji      -- Romanized name (e.g., "Masamune")
+school           -- School affiliation (e.g., "Soshu")
+province         -- Province (e.g., "Sagami")
+era              -- Era (e.g., "Kamakura")
+period           -- Specific period
+juyo_count       -- Number of Juyo works
+tokuju_count     -- Number of Tokubetsu Juyo works
+total_items      -- Total items in registry
+is_school_code   -- TRUE if this is a school entry, not individual smith
+```
+
+---
+
+## API Endpoints
+
+### GET /api/artisan/[code]
+
+Fetches artisan details from Yuhinkai database.
+
+**Request:**
+```
+GET /api/artisan/MAS590
+```
+
+**Response:**
+```json
+{
+  "artisan": {
+    "code": "MAS590",
+    "name_romaji": "Masamune",
+    "name_kanji": "正宗",
+    "school": "Soshu",
+    "province": "Sagami",
+    "era": "Kamakura",
+    "period": "late Kamakura",
+    "juyo_count": 127,
+    "tokuju_count": 24,
+    "total_items": 185,
+    "is_school_code": false
+  }
+}
+```
+
+**Caching:** 1 hour at edge (`s-maxage=3600, stale-while-revalidate=86400`)
+
+**Error States:**
+- `404` - Artisan not found in Yuhinkai database
+- `404` - Yuhinkai database not configured (missing env vars)
+- `400` - Invalid code (< 2 characters)
+
+### POST /api/listing/[id]/verify-artisan
+
+Saves verification status for admin QA.
+
+**Request:**
+```json
+{
+  "verified": "correct"  // or "incorrect" or null (to reset)
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "listing": {
+    "id": 1099,
+    "artisan_id": "HAN5",
+    "artisan_verified": "correct",
+    "artisan_verified_at": "2026-02-07T10:30:00Z",
+    "artisan_verified_by": "user_abc123"
+  }
+}
+```
+
+**Auth:** Admin only (verified via Supabase auth)
+
+---
+
+## Components
+
+### ArtisanTooltip (`src/components/artisan/ArtisanTooltip.tsx`)
+
+Portal-based tooltip that follows the GlossaryTerm pattern.
+
+**Props:**
+```typescript
+interface ArtisanTooltipProps {
+  listingId: number;          // For verification API call
+  artisanId: string;          // The artisan code (e.g., "MAS590")
+  confidence: 'HIGH' | 'MEDIUM' | 'LOW';
+  method?: string;            // How match was made
+  candidates?: Array<{ code: string; score: number; name?: string }>;
+  verified?: 'correct' | 'incorrect' | null;
+  onVerify?: (status: 'correct' | 'incorrect' | null) => void;
+  children: React.ReactNode;  // The badge element
+}
+```
+
+**Features:**
+- Click to open (not hover)
+- Portal-based rendering (avoids z-index issues)
+- Viewport-aware positioning (above or below badge)
+- Close on: click outside, Escape key, scroll
+- Verification buttons with toggle behavior
+
+**UI Layout:**
+```
+┌─────────────────────────────────────────┐
+│  MAS590                    [HIGH ●]     │  ← Header
+├─────────────────────────────────────────┤
+│  正宗  Masamune                         │  ← Name
+│  School:   Soshu                        │
+│  Province: Sagami                       │
+│  Era:      Kamakura                     │
+├─────────────────────────────────────────┤
+│  Juyo: 127  |  Tokuju: 24               │  ← Stats
+├─────────────────────────────────────────┤
+│  Match: exact_kanji                     │  ← Method
+│  Candidates: MAS591, MAS012             │  ← Alternatives
+├─────────────────────────────────────────┤
+│  [✓ Correct]         [✗ Incorrect]      │  ← Verification
+└─────────────────────────────────────────┘
+```
+
+### ListingCard Integration
+
+The artisan badge in `ListingCard.tsx` is wrapped with the tooltip:
+
+```tsx
+<ArtisanTooltip
+  listingId={listing.id}
+  artisanId={listing.artisan_id}
+  confidence={listing.artisan_confidence}
+  method={listing.artisan_method}
+  candidates={listing.artisan_candidates}
+  verified={listing.artisan_verified}
+>
+  <span
+    className={`text-[9px] ... ${confidenceClass}`}
+    data-artisan-tooltip
+  >
+    {listing.artisan_id}
+  </span>
+</ArtisanTooltip>
+```
+
+**Click Propagation:** The badge uses `data-artisan-tooltip` attribute and `e.stopPropagation()` to prevent QuickView from opening when clicking the badge.
+
+---
+
+## Environment Variables
+
+The artisan API needs access to the Yuhinkai (oshi-v2) Supabase database:
+
+```bash
+# Option 1: YUHINKAI_* naming
+YUHINKAI_SUPABASE_URL=https://xxx.supabase.co
+YUHINKAI_SUPABASE_KEY=xxx
+
+# Option 2: OSHI_V2_* naming (legacy, also supported)
+OSHI_V2_SUPABASE_URL=https://xxx.supabase.co
+OSHI_V2_SUPABASE_ANON_KEY=xxx
+```
+
+The code supports both naming conventions for backwards compatibility.
+
+---
+
+## Key Files
+
+| File | Purpose |
+|------|---------|
+| `src/components/artisan/ArtisanTooltip.tsx` | Tooltip component with verification |
+| `src/app/api/artisan/[code]/route.ts` | Fetches artisan details from Yuhinkai |
+| `src/app/api/listing/[id]/verify-artisan/route.ts` | Saves verification status |
+| `src/lib/supabase/yuhinkai.ts` | Supabase client for Yuhinkai database |
+| `src/components/browse/ListingCard.tsx` | Badge display and tooltip integration |
+| `src/app/api/browse/route.ts` | Includes artisan fields in listing response |
+| `supabase/migrations/049_artisan_verification.sql` | Verification columns |
+| `src/app/globals.css` | CSS variables for confidence colors |
+
+---
+
+## Testing
+
+### Manual Testing
+
+1. Log in as admin
+2. Go to `/browse`
+3. Find a listing with an artisan badge (colored code like "MAS590")
+4. Click the badge - tooltip should open
+5. Verify "Correct" and "Incorrect" buttons work
+6. Click the same button again to reset
+7. Confirm QuickView does NOT open when clicking the badge
+
+### Database Verification
+
+```sql
+-- Check verified artisans
+SELECT id, artisan_id, artisan_verified, artisan_verified_at
+FROM listings
+WHERE artisan_verified IS NOT NULL
+ORDER BY artisan_verified_at DESC;
+```
+
+### Playwright Test
+
+Located at `/tmp/test-artisan.spec.ts`:
+
+```typescript
+test('artisan tooltip opens on click', async ({ page }) => {
+  await page.goto('http://localhost:3000/browse');
+  const artisanBadge = page.locator('[data-artisan-tooltip]').first();
+  await artisanBadge.click();
+  const tooltip = page.locator('text=Correct');
+  expect(await tooltip.isVisible()).toBe(true);
+});
+```
+
+---
+
+## Edge Cases
+
+| Scenario | Behavior |
+|----------|----------|
+| Artisan not in Yuhinkai | Shows available data from listings table only |
+| School codes (NS-*) | Shows "School Entry" indicator |
+| Yuhinkai DB not configured | Returns 404 with message |
+| Already verified | Shows filled button for current status |
+| Click verified button again | Resets to unverified (null) |
+| Loading state | Shows spinner while fetching |
+| Error state | Shows "Could not load details" |
+
+---
+
+## Related Documentation
+
+- [YUHINKAI_REGISTRY_VISION.md](./YUHINKAI_REGISTRY_VISION.md) - Strategic vision for Yuhinkai as canonical registry
+- [YUHINKAI_ENRICHMENT.md](./YUHINKAI_ENRICHMENT.md) - Setsumei enrichment feature
+- Oshi-scrapper `artisan_matcher/` - Artisan matching module

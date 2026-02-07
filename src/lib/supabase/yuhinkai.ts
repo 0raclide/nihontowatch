@@ -62,6 +62,26 @@ export interface SmithEntity {
   is_school_code: boolean;
 }
 
+export interface TosoguMaker {
+  maker_id: string;
+  name_kanji: string | null;
+  name_romaji: string | null;
+  province: string | null;
+  school: string | null;
+  era: string | null;
+  generation: string | null;
+  teacher: string | null;
+  specialties: string[] | null;
+  alternative_names: string[] | null;
+  notes: string | null;
+  tokuju_count: number;
+  juyo_count: number;
+  total_items: number;
+  elite_count: number;
+  elite_factor: number;
+  is_school_code: boolean;
+}
+
 export async function getArtistProfile(code: string): Promise<ArtistProfile | null> {
   const { data, error } = await yuhinkaiClient
     .from('artist_profiles')
@@ -89,4 +109,18 @@ export async function getSmithEntity(code: string): Promise<SmithEntity | null> 
   }
 
   return data as SmithEntity;
+}
+
+export async function getTosoguMaker(code: string): Promise<TosoguMaker | null> {
+  const { data, error } = await yuhinkaiClient
+    .from('tosogu_makers')
+    .select('*')
+    .eq('maker_id', code)
+    .single();
+
+  if (error || !data) {
+    return null;
+  }
+
+  return data as TosoguMaker;
 }
