@@ -103,6 +103,8 @@ period           -- Specific period
 juyo_count       -- Number of Juyo works
 tokuju_count     -- Number of Tokubetsu Juyo works
 total_items      -- Total items in registry
+elite_count      -- Number of elite works (Kokuho + Gyobutsu + JuBun + Tokuju)
+elite_factor     -- Bayesian elite factor: (elite_count + 1) / (total_items + 10)
 is_school_code   -- TRUE if this is a school entry, not individual smith
 ```
 
@@ -133,6 +135,8 @@ GET /api/artisan/MAS590
     "juyo_count": 127,
     "tokuju_count": 24,
     "total_items": 185,
+    "elite_count": 26,
+    "elite_factor": 0.1385,
     "is_school_code": false
   }
 }
@@ -211,7 +215,14 @@ interface ArtisanTooltipProps {
 │  Province: Sagami                       │
 │  Era:      Kamakura                     │
 ├─────────────────────────────────────────┤
-│  Juyo: 127  |  Tokuju: 24               │  ← Stats
+│  ELITE FACTOR                   13.8%   │  ← Elite Factor
+│  ██████████░░░░░░░░░░░░░░░░░░░░░░░░░░  │     (gold progress bar)
+│  26 elite works / 185 total             │
+├─────────────────────────────────────────┤
+│  ┌────┐  ┌────┐  ┌────┐                 │  ← Stats
+│  │127 │  │ 24 │  │185 │                 │
+│  │Juyo│  │Toku│  │Tot │                 │
+│  └────┘  └────┘  └────┘                 │
 ├─────────────────────────────────────────┤
 │  Match: exact_kanji                     │  ← Method
 │  Candidates: MAS591, MAS012             │  ← Alternatives
@@ -333,6 +344,7 @@ test('artisan tooltip opens on click', async ({ page }) => {
 
 ## Related Documentation
 
+- [SYNC_ELITE_FACTOR_API.md](./SYNC_ELITE_FACTOR_API.md) - Webhook API for syncing elite_factor from Yuhinkai
 - [YUHINKAI_REGISTRY_VISION.md](./YUHINKAI_REGISTRY_VISION.md) - Strategic vision for Yuhinkai as canonical registry
 - [YUHINKAI_ENRICHMENT.md](./YUHINKAI_ENRICHMENT.md) - Setsumei enrichment feature
 - Oshi-scrapper `artisan_matcher/` - Artisan matching module
