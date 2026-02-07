@@ -11,7 +11,7 @@ import { useActivityTrackerOptional } from '@/lib/tracking/ActivityTracker';
 import { trackListingView } from '@/lib/tracking/viewTracker';
 import { getSessionId } from '@/lib/activity/sessionManager';
 import { usePinchZoomTracking } from '@/lib/viewport';
-import { getAllImages, dealerDoesNotPublishImages } from '@/lib/images';
+import { getAllImages, dealerDoesNotPublishImages, getCachedDimensions } from '@/lib/images';
 import { useValidatedImages } from '@/hooks/useValidatedImages';
 import { useAuth } from '@/lib/auth/AuthContext';
 import type { ListingWithEnrichment } from '@/types';
@@ -459,6 +459,11 @@ function LazyImage({
   const [retryCount, setRetryCount] = useState(0);
   const [useUnoptimized, setUseUnoptimized] = useState(false);
 
+  // Get cached dimensions from preload (if available)
+  // This allows us to set the correct aspect ratio before the image loads
+  const cachedDimensions = getCachedDimensions(src);
+  const hasKnownDimensions = !!cachedDimensions;
+
   // Reset state when src changes
   useEffect(() => {
     setLoaded(false);
@@ -551,16 +556,27 @@ function LazyImage({
     }
   };
 
+  // Container style with dynamic aspect ratio when dimensions are known
+  const containerStyle = hasKnownDimensions
+    ? { aspectRatio: `${cachedDimensions.width} / ${cachedDimensions.height}` }
+    : undefined;
+
+  // When dimensions are unknown, use min-height as fallback
+  const containerClass = `relative bg-linen rounded overflow-hidden ${
+    !hasKnownDimensions && !loaded && !error && isVisible ? 'min-h-[300px]' : ''
+  }`;
+
   return (
     <div
       ref={ref}
-      className={`relative bg-linen rounded overflow-hidden ${!loaded && !error && isVisible ? 'min-h-[300px]' : ''}`}
+      className={containerClass}
+      style={containerStyle}
     >
       {isVisible ? (
         <>
           {/* Loading skeleton - maintains height while image loads */}
           {!loaded && !error && (
-            <div className="absolute inset-0 img-loading min-h-[300px]" />
+            <div className={`absolute inset-0 img-loading ${!hasKnownDimensions ? 'min-h-[300px]' : ''}`} />
           )}
 
           {/* Error state */}
@@ -571,7 +587,7 @@ function LazyImage({
           )}
 
           {/* Actual image - Next.js Image for optimization (AVIF/WebP, sizing) */}
-          {/* On retry, uses unoptimized=true to bypass optimization which may fix certain images */}
+          {/* Uses fill + object-contain when dimensions are known for stable layout */}
           {!error && (
             <Image
               key={`${src}-${retryCount}`}
@@ -582,10 +598,15 @@ function LazyImage({
                 listingTitle,
                 `Photo ${index + 1} of ${totalImages}`,
               ].filter(Boolean).join(' - ')}
-              width={800}
-              height={600}
-              className={`w-full h-auto transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
-              style={{ width: '100%', height: 'auto' }}
+              {...(hasKnownDimensions
+                ? { fill: true, className: `object-contain transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}` }
+                : {
+                    width: 800,
+                    height: 600,
+                    className: `w-full h-auto transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`,
+                    style: { width: '100%', height: 'auto' },
+                  }
+              )}
               onLoad={() => setLoaded(true)}
               onError={handleError}
               loading={isFirst ? 'eager' : 'lazy'}
@@ -626,7 +647,14 @@ function LazyImage({
         </>
       ) : (
         // Placeholder before image enters viewport range
-        <div className="aspect-[3/4] bg-linen flex items-center justify-center">
+        // Uses cached dimensions if available, otherwise falls back to 3:4
+        <div
+          className="bg-linen flex items-center justify-center"
+          style={hasKnownDimensions
+            ? { aspectRatio: `${cachedDimensions.width} / ${cachedDimensions.height}` }
+            : { aspectRatio: '3 / 4' }
+          }
+        >
           <div className="w-8 h-8 border-2 border-border border-t-gold rounded-full animate-spin" />
         </div>
       )}

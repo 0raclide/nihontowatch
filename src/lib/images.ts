@@ -18,6 +18,47 @@
 import { IMAGE_QUALITY, DEALERS_WITHOUT_IMAGES } from './constants';
 
 // =============================================================================
+// DIMENSION CACHE
+// =============================================================================
+
+/**
+ * Cached image dimensions for layout stability.
+ * Populated during preload, used to set correct aspect ratio before image loads.
+ */
+export interface ImageDimensionsCache {
+  width: number;
+  height: number;
+  aspectRatio: number;
+}
+
+const dimensionCache = new Map<string, ImageDimensionsCache>();
+
+/**
+ * Get cached dimensions for an image URL.
+ */
+export function getCachedDimensions(url: string): ImageDimensionsCache | undefined {
+  return dimensionCache.get(url);
+}
+
+/**
+ * Cache dimensions for an image URL.
+ */
+export function setCachedDimensions(url: string, width: number, height: number): void {
+  dimensionCache.set(url, {
+    width,
+    height,
+    aspectRatio: width / height,
+  });
+}
+
+/**
+ * Clear the dimension cache (mainly for testing).
+ */
+export function clearDimensionCache(): void {
+  dimensionCache.clear();
+}
+
+// =============================================================================
 // VALIDATION CACHE
 // =============================================================================
 

@@ -7,6 +7,7 @@ import {
   isValidItemImage,
   getCachedValidation,
   setCachedValidation,
+  setCachedDimensions,
 } from '@/lib/images';
 
 /**
@@ -62,7 +63,7 @@ export function useImagePreloader() {
     // Track for potential cancellation
     activePreloads.current.push(img);
 
-    // On load, validate dimensions and cache the result
+    // On load, cache dimensions and validate
     img.onload = () => {
       // Remove from active preloads
       const index = activePreloads.current.indexOf(img);
@@ -70,11 +71,16 @@ export function useImagePreloader() {
         activePreloads.current.splice(index, 1);
       }
 
+      const { naturalWidth, naturalHeight } = img;
+
+      // Cache dimensions for layout stability in QuickView
+      setCachedDimensions(url, naturalWidth, naturalHeight);
+
       // Validate and cache if not already cached
       if (getCachedValidation(url) === undefined) {
         const validation = isValidItemImage({
-          width: img.naturalWidth,
-          height: img.naturalHeight,
+          width: naturalWidth,
+          height: naturalHeight,
         });
         setCachedValidation(url, validation.isValid ? 'valid' : 'invalid');
       }
