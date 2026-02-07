@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { useState, useCallback, useEffect, useRef, useMemo, memo } from 'react';
 import { FavoriteButton } from '@/components/favorites/FavoriteButton';
 import { SetsumeiZufuBadge } from '@/components/ui/SetsumeiZufuBadge';
+import { ArtisanTooltip } from '@/components/artisan/ArtisanTooltip';
 import { useActivityOptional } from '@/components/activity/ActivityProvider';
 import { useQuickViewOptional } from '@/contexts/QuickViewContext';
 import { useViewportTrackingOptional } from '@/lib/viewport';
@@ -77,6 +78,9 @@ interface Listing {
   // Artisan matching (admin-only display)
   artisan_id?: string | null;
   artisan_confidence?: 'HIGH' | 'MEDIUM' | 'LOW' | 'NONE' | null;
+  artisan_method?: string | null;
+  artisan_candidates?: Array<{ code: string; score: number; name?: string }> | null;
+  artisan_verified?: 'correct' | 'incorrect' | null;
 }
 
 interface ExchangeRates {
@@ -660,15 +664,24 @@ export const ListingCard = memo(function ListingCard({
           {/* Right side: artisan code (admin only, HIGH/MEDIUM/LOW confidence) */}
           {isAdmin && listing.artisan_id &&
            listing.artisan_confidence && listing.artisan_confidence !== 'NONE' && (
-            <span className={`text-[9px] lg:text-[10px] font-mono font-medium px-1.5 py-0.5 ${
-              listing.artisan_confidence === 'HIGH'
-                ? 'bg-artisan-high-bg text-artisan-high'
-                : listing.artisan_confidence === 'MEDIUM'
-                ? 'bg-artisan-medium-bg text-artisan-medium'
-                : 'bg-artisan-low-bg text-artisan-low'
-            }`}>
-              {listing.artisan_id}
-            </span>
+            <ArtisanTooltip
+              listingId={parseInt(listing.id)}
+              artisanId={listing.artisan_id}
+              confidence={listing.artisan_confidence}
+              method={listing.artisan_method}
+              candidates={listing.artisan_candidates}
+              verified={listing.artisan_verified}
+            >
+              <span className={`text-[9px] lg:text-[10px] font-mono font-medium px-1.5 py-0.5 ${
+                listing.artisan_confidence === 'HIGH'
+                  ? 'bg-artisan-high-bg text-artisan-high'
+                  : listing.artisan_confidence === 'MEDIUM'
+                  ? 'bg-artisan-medium-bg text-artisan-medium'
+                  : 'bg-artisan-low-bg text-artisan-low'
+              }`}>
+                {listing.artisan_id}
+              </span>
+            </ArtisanTooltip>
           )}
         </div>
 

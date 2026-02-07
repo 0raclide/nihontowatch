@@ -26,6 +26,8 @@ interface BrowseParams {
   askOnly?: boolean;
   /** Admin filter: show Juyo/Tokuju items missing setsumei (no OCR and no manual Yuhinkai) */
   missingSetsumei?: boolean;
+  /** Admin filter: show items missing artisan code match */
+  missingArtisanCode?: boolean;
   /** Artisan code filter (substring match) */
   artisanCode?: string;
   query?: string;
@@ -157,6 +159,7 @@ function parseParams(searchParams: URLSearchParams): BrowseParams {
     signatureStatuses: signatureStatusesRaw ? signatureStatusesRaw.split(',') : undefined,
     askOnly: searchParams.get('ask') === 'true',
     missingSetsumei: searchParams.get('missing_setsumei') === 'true',
+    missingArtisanCode: searchParams.get('missing_artisan') === 'true',
     artisanCode: searchParams.get('artisan') || undefined,
     query: searchParams.get('q') || undefined,
     sort: searchParams.get('sort') || 'recent',
@@ -262,6 +265,9 @@ export async function GET(request: NextRequest) {
         dealer_id,
         artisan_id,
         artisan_confidence,
+        artisan_method,
+        artisan_candidates,
+        artisan_verified,
         dealers:dealers!inner(id, name, domain),
         listing_yuhinkai_enrichment(
           setsumei_en,
@@ -376,6 +382,12 @@ export async function GET(request: NextRequest) {
           query = query.not('id', 'in', `(${excludeIds.join(',')})`);
         }
       }
+    }
+
+    // Admin filter: Missing artisan code - items without Yuhinkai artisan match
+    // Only apply for admins (checked via subscription.isAdmin)
+    if (params.missingArtisanCode && subscription.isAdmin) {
+      query = query.is('artisan_id', null);
     }
 
     // Process query with semantic extraction, numeric filters, and text search
