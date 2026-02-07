@@ -364,8 +364,10 @@ export function ArtisanTooltip({
       <button
         ref={termRef}
         type="button"
+        data-artisan-tooltip
         onClick={(e) => {
           e.stopPropagation();
+          e.preventDefault();
           setIsOpen(!isOpen);
         }}
         className="cursor-pointer"

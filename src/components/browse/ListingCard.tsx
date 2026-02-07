@@ -466,8 +466,9 @@ export const ListingCard = memo(function ListingCard({
 
   // Handle card click - open quick view or track activity
   const handleClick = useCallback((e: React.MouseEvent) => {
-    // Don't handle if clicking on the favorite button
-    if ((e.target as HTMLElement).closest('[data-favorite-button]')) {
+    // Don't handle if clicking on interactive elements (favorite button, artisan tooltip)
+    if ((e.target as HTMLElement).closest('[data-favorite-button]') ||
+        (e.target as HTMLElement).closest('[data-artisan-tooltip]')) {
       return;
     }
 
