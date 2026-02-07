@@ -1,0 +1,1146 @@
+maker_id,name_kanji,name_romaji,school,province,era,generation,teacher,alternative_names,notes,is_school_code
+AKA001,吉次,Yoshitsugu,Akao,,,,,,,No
+AKA002,熊谷義之,Kumagai Yoshiyuki,Akao,,,,,,,No
+AKA003,熊谷義次,Kumagai Yoshitsugu,Akao,,,,,,,No
+AKA004,義正,Yoshimasa,Akao,,,2th gen,,,,No
+AKA005,義明,Yoshiaki,Akao,,,3th gen,,,,No
+AKA006,馬面序政,Bamen Tsunemasa,Akao,,,,,,,No
+AKA007,本荘義胤,Honjō Yoshitane,Akao,,,,,,,No
+AKA008,関義則,Seki Yoshinori,Akao,,,,,,,No
+AKA009,森如件,Mori Joken,Akao,,,,,,,No
+AKA010,畑直鏡,Hata Naoaki,Akao,,,,,,,No
+AKA011,安家,Yasuie,Akao,,,,,,,No
+AKA012,安之,Yasuyuki,Akao,,,2th gen,,,,No
+AKA013,寛長,Hironaga,Akao,,,,,,,No
+AKA014,宜秀,Yoshihide,Akao,,,2th gen,,,,No
+AKA015,正斎,Masanari,Akao,,,3th gen,,,,No
+AKA016,国永,Kuninaga,Akao,,,,,,,No
+AKA017,国広,Kunihiro,Akao,,,2th gen,,,,No
+AKA018,延常,Nobutsune,Akao,,,,,,,No
+AKS001,忠宗,Tadamune,Akasaka,,,,,,,No
+AKS002,忠時,Tadatoki,Akasaka,,,,,,,No
+AKS003,忠重,Tadashige,Akasaka,,,,,,,No
+AKS004,忠好,Tadayoshi,Akasaka,,,,,,,No
+AKS005,忠則,Tadanori,Akasaka,,,,,,,No
+AKS006,寿竹,Juchiku/Toshitake,Akasaka,,,,,,,No
+AKS007,忠一,Tadakazu,Akasaka,,,,,,,No
+AKS008,忠辰,Tadatatsu,Akasaka,,,2th gen,,,,No
+AKS009,忠直,Tadanao,Akasaka,,,3th gen,,,,No
+AKS010,憲国,Norikuni,Akasaka,,,,,,,No
+AKS011,正虎,Masatora,Akasaka,Musashi,Mid-Edo (d.1707),3,,忠虎; Tadatora; 庄左衛門正虎; Shozaemon Masatora; 三代,"Third generation Akasaka master. Full name: Shozaemon Masatora (庄左衛門正虎). Counted among the ""three great masters of Akasaka school"".",No
+NS-Akasaka,赤坂,Akasaka,Akasaka,Edo,,,,,Non-specific school attribution,Yes
+AKI001,貞政,Sadamasa,Aki Province,Aki,,,,,,No
+AKI002,其阿弥,Goami,Aki Province,Aki,,2th gen,,,,No
+AKI003,正比,Masahiro,Aki Province,Aki,,,,,,No
+AKI004,正命,Masanobu,Aki Province,Aki,,2th gen,,,,No
+AKI005,明政,Akimasa,Aki Province,Aki,,3th gen,,,,No
+NS-AkitaShoami,秋田正阿弥,Akita-Shōami,Akita-Shōami,,,,,,Non-specific school attribution,Yes
+BIN001,正則,Masanori,Bingo Province,Bingo,,,,,,No
+BIN002,如石,Joseki,Bingo Province,Bingo,,,,,,No
+BIN003,武則,Takenori,Bingo Province,Bingo,,2th gen,,,,No
+BIT001,美乗,Yoshinori,Bitchū Province,Bitchū,,,,,,No
+BIZ001,正阿弥,Shōami,Bizen Province,Bizen,,,,,,No
+BIZ002,武英,Takehide,Bizen Province,Bizen,,2th gen,,,,No
+BIZ003,知昆,Tomoyasu,Bizen Province,Bizen,,3th gen,,,,No
+BIZ004,知叔,Tomoyoshi,Bizen Province,Bizen,,4th gen,,,,No
+BIZ005,守親,Morichika,Bizen Province,Bizen,,,,,,No
+NS-Bushu,武州,Bushū,Bushū,,,,,,Non-specific school attribution,Yes
+NS-Choshu,長州,Chōshū,Chōshū,Nagato,,,,,Non-specific school attribution,Yes
+DEW001,伝兵衛,Denbei,Dewa Province,Dewa,,,,,,No
+DEW002,伝七,Denshichi,Dewa Province,Dewa,,,,,,No
+DEW003,重常,Shigetsune,Dewa Province,Dewa,,,,,,No
+DEW004,重央,Shigenaka/Shigechika/Shigehisa,Dewa Province,Dewa,,,,,,No
+DEW005,重恒,Shigetsune,Dewa Province,Dewa,,2th gen,,,,No
+DEW006,重賢,Shigekata,Dewa Province,Dewa,,,,,,No
+DEW007,重照,Shigeteru,Dewa Province,Dewa,,2th gen,,,,No
+DEW008,政照,Masateru,Dewa Province,Dewa,,3th gen,,,,No
+DEW009,重定,Shigesada,Dewa Province,Dewa,,,,,,No
+DEW010,重広,Shigehiro,Dewa Province,Dewa,,2th gen,,,,No
+DEW011,重政,Shigemasa,Dewa Province,Dewa,,,,,,No
+DEW012,重治,Shigeharu,Dewa Province,Dewa,,2th gen,,,,No
+DEW013,政乗,Masanori/Seijō,Dewa Province,Dewa,,3th gen,,,,No
+DEW014,元胤,Mototane,Dewa Province,Dewa,,4th gen,,,,No
+DEW015,珍久,Yoshihisa/Chinkyū,Dewa Province,Dewa,,,,,,No
+DEW016,正位,Masataka/Shō’i,Dewa Province,Dewa,,2th gen,,,,No
+DEW017,在珍,Ariyoshi/Zaichin,Dewa Province,Dewa,,3th gen,,,,No
+DEW018,在哉,Arichika,Dewa Province,Dewa,,,,,,No
+DEW019,清成,Kiyonari,Dewa Province,Dewa,,,,,,No
+DEW020,光時,Mitsutoki,Dewa Province,Dewa,,,,,,No
+DEW021,時孝,Tokitaka,Dewa Province,Dewa,,2th gen,,,,No
+DEW022,光親,Mitsuchika,Dewa Province,Dewa,,,,,,No
+DEW023,光中,Mitsunaka,Dewa Province,Dewa,,,,,,No
+DEW024,赤文,Sekibun,Dewa Province,Dewa,,,,,,No
+DEW025,文雄,Fumio,Dewa Province,Dewa,,,,,,No
+DEW026,文子,Fumiko,Dewa Province,Dewa,,,,,,No
+DEW027,宜「時」,Yoshi [toki],Dewa Province,Dewa,,2th gen,,,,No
+DEW028,雅哉,Masachika,Dewa Province,Dewa,,,,,,No
+DEW029,義信,Yoshinobu,Dewa Province,Dewa,,,,,,No
+DEW030,光久,Mitsuhisa,Dewa Province,Dewa,,,,,,No
+DEW031,琴乗,Kinjō,Dewa Province,Dewa,,2th gen,,,,No
+DEW032,安信,Yasunobu,Dewa Province,Dewa,,,,,,No
+DEW033,時雄,Tokio,Dewa Province,Dewa,,2th gen,,,,No
+DEW034,雅,Masa,Dewa Province,Dewa,,3th gen,,,,No
+DEW035,一秀,Isshū,Dewa Province,Dewa,,4th gen,,,,No
+DEW036,善則,Yoshinori,Dewa Province,Dewa,,5th gen,,,,No
+DEW037,安定,Yasusada,Dewa Province,Dewa,,,,,,No
+DEW038,東雲,Tō’un,Dewa Province,Dewa,,2th gen,,,,No
+DEW039,政房,Masafusa,Dewa Province,Dewa,,3th gen,,,,No
+DEW040,幸翁,Kōō,Dewa Province,Dewa,,4th gen,,,,No
+DEW041,倫常,Tomotsune,Dewa Province,Dewa,,,,,,No
+DEW042,元胤,Mototane,Dewa Province,Dewa,,,,,,No
+DEW043,友寿,Tomotoshi,Dewa Province,Dewa,,2th gen,,,,No
+DEW044,一斎,Issai,Dewa Province,Dewa,,3th gen,,,,No
+ECH001,良近,Yoshichika,Echigo Province,Echigo,,,,,,No
+ECH002,良直,Yoshinao,Echigo Province,Echigo,,2th gen,,,,No
+ECH003,直信,Naonobu,Echigo Province,Echigo,,3th gen,,,,No
+ECH004,当明,Masaaki,Echigo Province,Echigo,,,,,,No
+ECH005,直和,Naokazu,Echigo Province,Echigo,,2th gen,,,,No
+ECH006,光広,Mitsuhiro,Echigo Province,Echigo,,,,,,No
+ECH007,芳彦,Yoshihiko,Echigo Province,Echigo,,,,,,No
+ECH008,南山,Nanzan,Echigo Province,Echigo,,,,,,No
+ECH009,鷺洲 (Mitsunaga,Roshū,Echigo Province,Echigo,,2th gen,,,,No
+ECH010,光長,Mitsunaga,Echigo Province,Echigo,,,,,,No
+ECH011,一明,Kazuaki,Echigo Province,Echigo,,2th gen,,,,No
+ECH012,延次,Nobutsugu,Echigo Province,Echigo,,,,,,No
+ECH013,親随,Chikayuki,Echigo Province,Echigo,,,,,,No
+ECH014,記内,Kinai,Echizen Province,Echizen,,,,,,No
+ECH015,甚左衛門,Jinzaemon,Echizen Province,Echizen,,,,,,No
+ECH016,甚兵衛,Jinbei,Echizen Province,Echizen,,2th gen,,,,No
+ECH017,吉兵衛,Kichibei,Echizen Province,Echizen,,,,,,No
+ECH018,吉次,Yoshitsugu,Echizen Province,Echizen,,2th gen,,,,No
+ECH019,赤尾,Akao,Echizen Province,Echizen,,3th gen,,,,No
+ECH020,小狐,Kogitsune,Echizen Province,Echizen,,,,,,No
+ECH021,平太夫,Heidayū,Echizen Province,Echizen,,,,,,No
+ECH022,七郎,Shichirō,Echizen Province,Echizen,,2th gen,,,,No
+ECH023,嘉時,Yoshitoki,Echizen Province,Echizen,,3th gen,,,,No
+ECH024,忠作,Chūsaku,Echizen Province,Echizen,,4th gen,,,,No
+EGA001,利政,Toshimasa,Egawa,,,,,,,No
+EGA002,宗隣,Sōrin,Egawa,,,,,,,No
+EGA003,利易,Toshiyasu,Egawa,,,,,,,No
+EGA004,利英,Toshihide,Egawa,,,2th gen,,,,No
+EGA005,宗義,Muneyoshi,Egawa,,,3th gen,,,,No
+EGA006,永保,Eiho,Egawa,,,4th gen,,,,No
+ETC001,乾清,Kensei,Etchū Province,Etchū,,,,,,No
+NS-Ezo,蝦夷,Ezo,Ezo,Ezo,,,,,Non-specific school attribution,Yes
+FUR001,元珍,Genchin,Furukawa,,,,,,,No
+FUR002,常珍,Jōchin,Furukawa,,,,,,,No
+FUR003,聖寿,Shōju,Furukawa,,,,,,,No
+GAS001,応起,Ōki/Masaoki,Gassan,,,,,,,No
+GAS002,元広,Motohiro,Gassan,,,,,,,No
+GAS003,政貫,Masatsura,Gassan,,,,,,,No
+GAS004,興秀,Okihide,Gassan,,,2th gen,,,,No
+GOT001,乗真,Jōshin,Gotō,,,,,,,No
+GOT002,光乗,Kōjō,Gotō,,,2th gen,,,,No
+GOT003,徳乗,Tokujō,Gotō,,,,,,,No
+GOT004,栄乗,Eijō,Gotō,,,,,,,No
+GOT005,顕乗,Kenjō,Gotō,,,,,,,No
+GOT006,光重,Mitsushige,Gotō,,,,,,,No
+GOT007,程乗,Teijō,Gotō,,,2th gen,,,,No
+GOT008,廉乗,Renjō,Gotō,,,,,,,No
+GOT009,光寿,Mitsunobu,Gotō,,,,,,,No
+GOT010,光寿 (Tsūjō,Mitsunobu,Gotō,,,,,,,No
+GOT011,光理,Mitsumasa,Gotō,,,,,,,No
+GOT012,光孝,Mitsutaka,Gotō,,,,,,,No
+GOT013,光守,Mitsumori,Gotō,,,,,,,No
+GOT014,光美,Mitsuyoshi,Gotō,,,,,,,No
+GOT015,光晃,Mitsuaki,Gotō,,,,,,,No
+GOT016,光則 (Mitsuhira,Mitsunori,Gotō,,,,,,,No
+GOT017,光則 (Mitsuhira,Mitsusuke,Gotō,,,2th gen,,,,No
+GOT018,光求,Mitsumoto,Gotō,,,,,,,No
+GOT019,光守,Mitsumori,Gotō,,,2th gen,,,,No
+GOT020,石乗,Sekijō,Gotō,,Edo,,,,Goto Sekijo - Goto family member.,No
+NS-Goto,後藤,Gotō,Gotō,Kyoto,,,,,Non-specific school attribution,Yes
+HAM001,政随,Shōzui,Hamano,,Mid-Edo (1696-1769),,,浜野政随; 味墨; Miboku; 乙柳軒; Otsuryuken; 太郎兵衛; Tarobei; Hamano Masayuki; Masayuki; 龝峰斎; Shuhosai,Founder of Hamano school (1696-1769). Studied under Nara Toshinaga. Art names: Otsuryuken Miboku. Known for takabori.,No
+HAM002,兼随,Kaneyuki/Kenzui,Hamano,,,,,,,No
+HAM003,鋪随,Nobuyuki/Hozui,Hamano,,,,,,,No
+HAM004,政信,Masanobu,Hamano,,,,,,,No
+HAM005,政芳,Masayoshi,Hamano,,,,,,,No
+HAM006,菊次郎,Kikujirō,Hamano,,,2th gen,,,,No
+HAM007,矩随,Noriyuki,Hamano,,,,,,,No
+HAM008,矩随 (Norinobu,Noriyuki,Hamano,,,,,,,No
+HAM009,直随,Naoyuki,Hamano,,,,,,,No
+HAM010,直親,Naochika,Hamano,,,,,,,No
+HAM011,保随,Yasuyuki/Hozui,Hamano,,,,,,,No
+HAM012,保忠,Yasutada,Hamano,,,,,,,No
+HAM013,政盧,Masayoshi,Hamano,,,,,,,No
+HAM014,信盧,Nobuyoshi,Hamano,,,,,,,No
+HAM015,尚盧,Naoyoshi,Hamano,,,,,,,No
+HAM016,政孝,Masataka,Hamano,,,,,,,No
+HAM017,政次,Masatsugu,Hamano,,,2th gen,,,,No
+HAM018,政春,Masaharu,Hamano,,,3th gen,,,,No
+HAM019,永随,Nagayuki/Eizui,Hamano,,,,,,,No
+HAM020,高随,Takayuki/Kōzui,Hamano,,,2th gen,,,,No
+HAM021,春随,Haruyuki/Shunzui,Hamano,,,,,,,No
+HAM022,矩最,Noriyoshi,Hamano,,,2th gen,,,,No
+HAM023,弘随,Hiroyuki,Hamano,,,,,,,No
+HAM024,親随,Chikayuki,Hamano,,,2th gen,,,,No
+HAM025,良随,Yoshiyuki,Hamano,,,3th gen,,,,No
+HAM026,信近,Nobuchika,Hamano,,,4th gen,,,,No
+HAM027,直定,Naosada,Hamano,,,5th gen,,,,No
+HAM028,直寿,Naotoshi,Hamano,,,,,,,No
+HAM029,直泰,Naoyasu,Hamano,,,2th gen,,,,No
+HAM030,直春,Naoharu,Hamano,,,3th gen,,,,No
+HAM031,直秀,Naohide,Hamano,,,4th gen,,,,No
+HAM032,義直,Yoshinao,Hamano,,,5th gen,,,,No
+HAM033,春親,Haruchika,Hamano,,,,,,,No
+NS-Hamano,浜野,Hamano,Hamano,Edo,,,,,Non-specific school attribution,Yes
+HAR001,安宗,Yasumune,Harima Province,Harima,,,,,,No
+HAR002,政員,Masakazu,Harima Province,Harima,,,,,,No
+HAR003,重義,Shigeyoshi,Harima Province,Harima,,2th gen,,,,No
+HAR004,暉真,Kishin,Harima Province,Harima,,,,,,No
+HAR005,為太夫,Tamedayū,Harima Province,Harima,,2th gen,,,,No
+HAR006,貞寄,Sadayori,Harima Province,Harima,,3th gen,,,,No
+HAR007,元綱,Mototsuna,Harima Province,Harima,,,,,,No
+HAY001,藤八,Tōhachi,Hayashi,Higo,Mid-Edo (1723-1791),3,Hayashi Shigemitsu (2nd gen),林藤八; Hayashi Tōhachi; Hayashi Tohachi; 三代林; Tohachi,"Third generation Hayashi master. Known as ""a great and much sought after artist"" equaled with founder Matashichi.",No
+NS-Hayashi,林,Hayashi,Hayashi,Edo,,,,,Non-specific school attribution,Yes
+HAZ001,正秀,Masahide,Hazama,Ise,Hoei-Kyoho (1704-1736),,,間; Hazama; 間正秀,"Major Hazama school artist. Pieces signed simply ""間"" (Hazama) are attributed to him. Known for sahari inlay.",No
+HAZ002,貞秀,Sadahide,Hazama,Ise,Hoei-Kyoho (1704-1736),,,貞映; Teiei; 国友貞映; Kunitomo Teiei; 国友貞秀,"Also read as Teiei. Signed works as ""Kunitomo Teiei"" (国友貞映). From Kunitomo gunsmith family.",No
+HAZ003,正孝,Masataka,Hazama,Ise,Hoei-Kyoho (1704-1736),,,間正孝,One of the two best-known Hazama artists alongside Teiei.,No
+NS-Hazama,間派,Hazama,Hazama,Ise,Hoei-Kyoho (1704-1736),,,亀山派; Kameyama; 間; Hazama-ha,Non-specific school attribution. Also known as Kameyama school (亀山派). Known for sahari inlay.,Yes
+NS-Heianjo,平安城,Heianjō,Heianjō,Kyoto,,,,,Non-specific school attribution,Yes
+HZA001,長吉,Nagayoshi,Heianjō-Zōgan Artists,,,,,,,No
+HZA002,吉長,Yoshinaga,Heianjō-Zōgan Artists,,,2th gen,,,,No
+HZA003,吉久,Yoshihisa,Heianjō-Zōgan Artists,,,3th gen,,,,No
+HZA004,政重,Masashige,Heianjō-Zōgan Artists,,,,,,,No
+HZA005,重光,Shigemitsu,Heianjō-Zōgan Artists,,,2th gen,,,,No
+HZA006,康村,Yasumura,Heianjō-Zōgan Artists,,,3th gen,,,,No
+HZA007,往久,Yukihisa/Ōkyū,Heianjō-Zōgan Artists,,,4th gen,,,,No
+HZA008,助次郎,Sukejirō,Heianjō-Zōgan Artists,,,,,,,No
+HZA009,英貞,Hidesada,Heianjō-Zōgan Artists,,,2th gen,,,,No
+HZA010,直正,Naomasa,Heianjō-Zōgan Artists,,,3th gen,,,,No
+HZA011,長次,Nagatsugu,Heianjō-Zōgan Artists,,,,,,,No
+HZA012,忠次,Tadatsugu,Heianjō-Zōgan Artists,,,2th gen,,,,No
+NS-Higo,肥後,Higo,Higo,Higo,,,,,Non-specific school attribution,Yes
+HIR001,就久,Narihisa,Hirata,,,,,,,No
+HIR002,就門,Narikado,Hirata,,,2th gen,,,,No
+HIR003,就行,Nariyuki,Hirata,,,3th gen,,,,No
+HIR004,就亮,Narisuke,Hirata,,,,,,,No
+HIR005,春就,Harunari,Hirata,,,2th gen,,,,No
+HIR006,就将,Narimasa,Hirata,,,,,,,No
+HIR007,彦乗,Genjō,Hirata,,,,,,,No
+HIR008,春行,Haruyuki,Hirata,,,,,,,No
+HIR009,春寛,Haruhiro,Hirata,,,2th gen,,,,No
+HIR010,春正,Harumasa,Hirata,,,3th gen,,,,No
+HIR011,春美,Haruyoshi,Hirata,,,4th gen,,,,No
+HIR012,彦三,Hikozō,Hirata,Higo,Early Edo (1590-1635),1st gen,,,"1st gen. Hirata Hikozo (平田彦三), founder of Hirata school. Retainer of Hosokawa Sansai. Part of Shoami tradition. One of four major Higo kinko schools.",No
+NS-Hirata,平田,Hirata,Hirata,Edo,,,,,Non-specific school attribution,Yes
+HIT001,与五良,Yogorō,Hitachi Province,Hitachi,,,,,,No
+HIT002,与五良,Yogorō,Hitachi Province,Hitachi,,,,,,No
+HIT003,正忠,Masatada,Hitachi Province,Hitachi,,2th gen,,,,No
+HIT004,通寿,Michitoshi,Hitachi Province,Hitachi,,3th gen,,,,No
+HIT005,寿通,Toshimichi,Hitachi Province,Hitachi,,,,,,No
+HIT006,元教,Motonori,Hitachi Province,Hitachi,,2th gen,,,,No
+HIT007,元孚 (Tōgū,Motozane/Genpu,Hitachi Province,Hitachi,,3th gen,,,,No
+HIT008,元孚,Motozane/Genpu,Hitachi Province,Hitachi,,,,,,No
+HIT009,元晴,Motoharu,Hitachi Province,Hitachi,,2th gen,,,,No
+HIT010,元春,Motoharu,Hitachi Province,Hitachi,,,,,,No
+HIT011,元易,Motoyasu,Hitachi Province,Hitachi,,2th gen,,,,No
+HIT012,元輝,Mototeru,Hitachi Province,Hitachi,,,,,,No
+HIT013,元随,Motoyuki,Hitachi Province,Hitachi,,2th gen,,,,No
+HIT014,元儔,Mototomo,Hitachi Province,Hitachi,,,,,,No
+HIT015,元重,Motoshige,Hitachi Province,Hitachi,,,,,,No
+HIT016,元章,Motoaki,Hitachi Province,Hitachi,,,,,,No
+HIT017,元徳,Motonori,Hitachi Province,Hitachi,,2th gen,,,,No
+HIT018,友行,Tomoyuki,Hitachi Province,Hitachi,,3th gen,,,,No
+HIT019,友善,Tomoyoshi,Hitachi Province,Hitachi,,,,,,No
+HIT020,友次,Tomotsugu,Hitachi Province,Hitachi,,,,,,No
+HIT021,友寿,Tomotoshi,Hitachi Province,Hitachi,,,,,,No
+HIT022,友道,Tomomichi,Hitachi Province,Hitachi,,,,,,No
+HIT023,友随,Tomoyuki,Hitachi Province,Hitachi,,2th gen,,,,No
+HIT024,吉長,Yoshinaga,Hitachi Province,Hitachi,,,,,,No
+HIT025,美久,Yoshihisa,Hitachi Province,Hitachi,,2th gen,,,,No
+HIT026,美久,Yoshihisa,Hitachi Province,Hitachi,,,,,,No
+HIT027,美敬,Yoshitaka,Hitachi Province,Hitachi,,2th gen,,,,No
+HIT028,美久,Yoshihisa,Hitachi Province,Hitachi,,,,,,No
+HIT029,美清,Yoshikiyo,Hitachi Province,Hitachi,,2th gen,,,,No
+HIT030,美精,Yoshikiyo,Hitachi Province,Hitachi,,,,,,No
+HIT031,美広,Yoshihiro,Hitachi Province,Hitachi,,2th gen,,,,No
+HIT032,弘寿,Hirotoshi,Hitachi Province,Hitachi,,3th gen,,,,No
+HIT033,弘義,Hiroyoshi,Hitachi Province,Hitachi,,,,,,No
+HIT034,弘親,Hirochika,Hitachi Province,Hitachi,,,,,,No
+HIT035,弘貞 (Enzō,Hirosada,Hitachi Province,Hitachi,,,,,,No
+HIT036,弘直,Hironao,Hitachi Province,Hitachi,,,,,,No
+HIT037,弘泰,Hiroyasu,Hitachi Province,Hitachi,,2th gen,,,,No
+HIT038,弘政,Hiromasa,Hitachi Province,Hitachi,,3th gen,,,,No
+HIT039,弘定,Hirosada,Hitachi Province,Hitachi,,4th gen,,,,No
+HIT040,弘信,Hironobu,Hitachi Province,Hitachi,,5th gen,,,,No
+HIT041,勝平,Katsuhira,Hitachi Province,Hitachi,,,,,,No
+HIT042,勝容,Katsuhiro,Hitachi Province,Hitachi,,,,,,No
+HIT043,勝寿,Katsutoshi,Hitachi Province,Hitachi,,,,,,No
+HIT044,勝房,Katsufusa,Hitachi Province,Hitachi,,2th gen,,,,No
+HIT045,節愛,Setsuai/Tomochika,Hitachi Province,Hitachi,,,,,,No
+HIT046,節尚,Sesshō/Tomohisa,Hitachi Province,Hitachi,,2th gen,,,,No
+HIT047,保国,Yasukuni,Hitachi Province,Hitachi,,,,,,No
+HIT048,保則,Yasunori,Hitachi Province,Hitachi,,,,,,No
+HIT049,元重,Motoshige,Hitachi Province,Hitachi,,2th gen,,,,No
+HIT050,栄寿,Eiju/Hidetoshi,Hitachi Province,Hitachi,,,,,,No
+HIT051,栄随,Eizui/Hideyuki,Hitachi Province,Hitachi,,,,,,No
+HIT052,元貞,Motosada,Hitachi Province,Hitachi,,,,,,No
+HIT053,元茂,Motoshige,Hitachi Province,Hitachi,,,,,,No
+HIT054,元寿,Mototoshi,Hitachi Province,Hitachi,,2th gen,,,,No
+HIT055,徳義,Noriyoshi,Hitachi Province,Hitachi,,,,,,No
+HIT056,貞幹,Teikan,Hitachi Province,Hitachi,,,,,,No
+HIT057,貞久,Sadahisa,Hitachi Province,Hitachi,,,,,,No
+HIT058,盛寿,Moritoshi,Hitachi Province,Hitachi,,2th gen,,,,No
+HIT059,美盛,Yoshimori/Bisei,Hitachi Province,Hitachi,,3th gen,,,,No
+HIT060,美親,Yoshichika,Hitachi Province,Hitachi,,,,,,No
+HIT061,義政,Yoshimasa,Hitachi Province,Hitachi,,2th gen,,,,No
+HIT062,元親,Motochika,Hitachi Province,Hitachi,,3th gen,,,,No
+HIT063,政義,Masayoshi,Hitachi Province,Hitachi,,4th gen,,,,No
+HIT064,美明,Yoshiaki,Hitachi Province,Hitachi,,,,,,No
+HIT065,政之,Masayuki,Hitachi Province,Hitachi,,2th gen,,,,No
+HIT066,英之,Hideyuki,Hitachi Province,Hitachi,,3th gen,,,,No
+HIT067,勝茂,Katsushige,Hitachi Province,Hitachi,,,,,,No
+HIT068,美実,Yoshimichi,Hitachi Province,Hitachi,,2th gen,,,,No
+HIT069,竟向,Kyūkō,Hitachi Province,Hitachi,,3th gen,,,,No
+HIT070,元隆,Mototaka,Hitachi Province,Hitachi,,4th gen,,,,No
+HIT071,行善,Yukiyoshi,Hitachi Province,Hitachi,,5th gen,,,,No
+HIT072,善随,Yoshiyuki,Hitachi Province,Hitachi,,,,,,No
+HIT073,久則,Hisanori,Hitachi Province,Hitachi,,2th gen,,,,No
+HIT074,英義,Hideyoshi,Hitachi Province,Hitachi,,3th gen,,,,No
+HIT075,元忠,Mototada,Hitachi Province,Hitachi,,4th gen,,,,No
+HIT076,宗久,Munehisa,Hitachi Province,Hitachi,,,,,,No
+HIT077,彦六,Hikoroku,Hitachi Province,Hitachi,,2th gen,,,,No
+HIT078,北仙,Hokusen,Hitachi Province,Hitachi,,3th gen,,,,No
+HIT079,正重,Masashige,Hitachi Province,Hitachi,,4th gen,,,,No
+HIT080,正則,Masanori,Hitachi Province,Hitachi,,5th gen,,,,No
+ICH001,長常,Nagatsune,Ichinomiya,,,,,,,No
+ICH002,長常 (Setsuzan,Nagatsune,Ichinomiya,,,,,,,No
+ICH003,長義,Nagayoshi,Ichinomiya,,,,,,,No
+ICH004,長年,Nagatoshi,Ichinomiya,,,,,,,No
+ICH005,長光,Nagamitsu,Ichinomiya,,,2th gen,,,,No
+ICH006,長美,Nagayoshi,Ichinomiya,,,3th gen,,,,No
+ICH007,常直,Tsunenao,Ichinomiya,,,,,,,No
+ICH008,貞中,Sadanaka,Ichinomiya,,,,,,,No
+ICH009,常代,Tsuneyo,Ichinomiya,,,,,,,No
+ICH010,高山,Kōzan,Ichinomiya,,,2th gen,,,,No
+INA005,駿河,Suruga,Inaba Province,Inaba,,,,,,No
+INA006,家信,Ienobu,Inaba Province,Inaba,,,,,,No
+INA007,卓次,Takutsugu,Inaba Province,Inaba,,2th gen,,,,No
+INA008,卓重,Takushige,Inaba Province,Inaba,,,,,,No
+INA009,卓置,Takuoki,Inaba Province,Inaba,,,,,,No
+INA010,卓幸,Takuyuki,Inaba Province,Inaba,,,,,,No
+INA011,正充,Masamitsu,Inaba Province,Inaba,,2th gen,,,,No
+INA012,直充,Naomitsu,Inaba Province,Inaba,,,,,,No
+INA013,一充,Kazumitsu,Inaba Province,Inaba,,,,,,No
+INA014,吉充,Yoshimitsu,Inaba Province,Inaba,,2th gen,,,,No
+INA015,正寛,Masahiro,Inaba Province,Inaba,,,,,,No
+INA016,正矩,Masanori,Inaba Province,Inaba,,2th gen,,,,No
+INA017,正吉,Masayoshi,Inaba Province,Inaba,,3th gen,,,,No
+INA018,正義,Masayoshi,Inaba Province,Inaba,,,,,,No
+INA019,光正,Mitsumasa,Inaba Province,Inaba,,2th gen,,,,No
+INA020,武親,Takechika,Inaba Province,Inaba,,,,,,No
+INA021,一斎,Issai,Inaba Province,Inaba,,2th gen,,,,No
+INA001,直克,Naokatsu,Inagawa,,,,,,,No
+INA002,良克,Yoshikatsu,Inagawa,,,,,,,No
+INA003,信克,Nobukatsu,Inagawa,,,,,,,No
+INA004,良光,Yoshimitsu,Inagawa,,,2th gen,,,,No
+ITA001,金家,Kaneie,Iron Tsuba Artists,,,,,,,No
+ITA002,金定,Kanesada,Iron Tsuba Artists,,,,,,,No
+ITA003,鉄人,Tetsujin,Iron Tsuba Artists,,,2th gen,,,,No
+ITA004,鉄人,Tetsujin,Iron Tsuba Artists,,,,,鉄仁,,No
+ITA005,信家,Nobuie,Iron Tsuba Artists,,,,,,,No
+ITA006,山吉兵,Yamakichibei,Iron Tsuba Artists,,,,,,,No
+ITA007,法安,Hōan,Iron Tsuba Artists,,,,,,,No
+ITA008,法安,Hōan,Iron Tsuba Artists,,,,,,,No
+ITA009,久次,Hisatsugu,Iron Tsuba Artists,,,2th gen,,,,No
+ITA010,兼信,Kanenobu,Iron Tsuba Artists,,,3th gen,,,,No
+ISE001,信時,Nobutoki,Ise Province,Ise,,,,,,No
+ISE002,光貞,Mitsusada,Ise Province,Ise,,2th gen,,,,No
+ISE003,貞義,Sadayoshi,Ise Province,Ise,,,,,,No
+ISE004,命明,Nobuaki,Ise Province,Ise,,2th gen,,,,No
+ISE005,貞栄,Sadahide/Teiei,Ise Province,Ise,,,,,,No
+ISE006,正栄,Masahide,Ise Province,Ise,,,,,,No
+ISE007,正命,Masanobu,Ise Province,Ise,,2th gen,,,,No
+ISH001,政常,Masatsune,Ishiguro,,,,,,,No
+ISH002,是常,Koretsune,Ishiguro,,,,,,,No
+ISH003,政守,Masamori,Ishiguro,,,,,,,No
+ISH004,政美,Masayoshi,Ishiguro,,,2th gen,,,,No
+ISH005,是美,Koreyoshi,Ishiguro,,,,,,,No
+ISH006,政明,Masaaki,Ishiguro,,,,,,,No
+ISH007,政近,Masachika,Ishiguro,,,,,,,No
+ISH008,政春,Masaharu,Ishiguro,,,,,,,No
+ISH009,小貫政春,Onuki Masaharu,Ishiguro,,,,,,,No
+ISH010,政春,Masaharu,Ishiguro,,,2th gen,,,,No
+ISH011,政勝,Masakatsu,Ishiguro,,,3th gen,,,,No
+ISH012,政英,Masahide,Ishiguro,,,4th gen,,,,No
+ISH013,政恒,Masatsune,Ishiguro,,,,,,,No
+ISH014,政明,Masaaki,Ishiguro,,,2th gen,,,,No
+ISH015,吉明,Yoshiaki,Ishiguro,,,3th gen,,,,No
+ISH016,広明,Hiroaki,Ishiguro,,,4th gen,,,,No
+ISH017,永美,Nagayoshi,Ishiguro,,,,,,,No
+ISH018,美次,Yoshitsugu,Ishiguro,,,2th gen,,,,No
+ISH019,貞美,Sadayoshi,Ishiguro,,,,,,,No
+ISH020,美明,Yoshiaki,Ishiguro,,,2th gen,,,,No
+ISH021,美孝,Yoshitaka,Ishiguro,,,3th gen,,,,No
+ISH022,一美,Kazuyoshi,Ishiguro,,,,,,,No
+ISH023,一寿,Kazutoshi/Ichiju,Ishiguro,,,2th gen,,,,No
+ISH024,光常,Mitsutsune,Ishiguro,,,3th gen,,,,No
+NS-Ishiguro,石黒,Ishiguro,Ishiguro,Edo,,,,,Non-specific school attribution,Yes
+ITO043,辰寿,Tatsutoshi,Ito,,,,,,,No
+ITO044,辰直,Tatsunao,Ito,,,,,,,No
+ITO045,並寿,Namitoshi,Ito,,,,,,,No
+ITO046,安寿,Yasutoshi,Ito,,,2th gen,,,,No
+ITO047,昌寿,Masatoshi,Ito,,,,,,,No
+ITO048,定直,Sadanao,Ito,,,2th gen,,,,No
+ITO001,正恒,Masatsune,Itō,,,,,,,No
+ITO002,正方,Masakata,Itō,,,,,,,No
+ITO003,正吉,Masayoshi,Itō,,,,,,,No
+ITO004,正種,Masatane,Itō,,,,,,,No
+ITO005,勘右衛門,Kan’emon,Itō,,,2th gen,,,,No
+ITO006,正乗,Masanori/Seijō,Itō,,,,,,,No
+ITO007,勝見,Katsumi,Itō,,,,,,,No
+ITO008,正国,Masakuni,Itō,,,,,,,No
+ITO009,正次,Masatsugu,Itō,,,,,,,No
+ITO010,正親,Masachika,Itō,,,,,,,No
+ITO011,正房,Masafusa,Itō,,,,,,,No
+ITO012,正常,Masatsune,Itō,,,,,,,No
+ITO013,正秀,Masahide,Itō,,,2th gen,,,,No
+ITO014,正春,Masaharu,Itō,,,,,,,No
+ITO015,正里,Masasato,Itō,,,2th gen,,,,No
+ITO016,正則,Masanori,Itō,,,,,,,No
+ITO017,正義,Masayoshi,Itō,,,2th gen,,,,No
+ITO018,正利,Masatoshi,Itō,,,,,,,No
+ITO019,正久,Masahisa,Itō,,,2th gen,,,,No
+ITO020,正直,Masanao,Itō,,,,,,,No
+ITO021,正金,Masakane,Itō,,,2th gen,,,,No
+ITO022,正保,Masayasu,Itō,,,,,,,No
+ITO023,正冨,Masatomi,Itō,,,2th gen,,,,No
+ITO024,正長,Masanaga,Itō,,,,,,,No
+ITO025,正寿,Masatoshi,Itō,,,2th gen,,政寿,,No
+ITO026,正備,Masayoshi,Itō,,,,,政備,,No
+ITO027,正美,Masayoshi,Itō,,,2th gen,,,,No
+ITO028,正寿,Masatoshi,Itō,,,3th gen,,,,No
+ITO029,正光,Masamitsu,Itō,,,4th gen,,,,No
+ITO030,正定,Masasada,Itō,,,,,,,No
+ITO031,正永,Masanaga,Itō,,,2th gen,,,,No
+ITO032,正栄,Masahide,Itō,,,3th gen,,,,No
+ITO033,正光,Masamitsu,Itō,,,4th gen,,,,No
+ITO034,幸則,Yukinori,Itō,,,,,,,No
+ITO035,則良,Noriyoshi,Itō,,,2th gen,,,,No
+ITO036,貞恒,Sadatsune,Itō,,,3th gen,,,,No
+ITO037,恒忠,Tsunetada,Itō,,,4th gen,,,,No
+ITO038,満喜,Mitsuyoshi,Itō,,,,,,,No
+ITO039,利政,Toshimasa,Itō,,,2th gen,,,,No
+ITO040,春利,Harutoshi,Itō,,,3th gen,,,,No
+ITO041,正豊,Masatoyo,Itō,,,,,,,No
+ITO042,清親,Kiyochika,Itō,,,2th gen,,,,No
+NS-Ito,伊藤,Itō,Itō,,,,,,Non-specific school attribution: Ito school,Yes
+IWA011,国光,Kunimitsu,Iwami Province,Iwami,,,,,,No
+IWA012,広次,Hirotsugu,Iwami Province,Iwami,,2th gen,,,,No
+IWA001,昆寛,Konkan,Iwamoto,,,,,,,No
+IWA002,昆寛 (Ryō’un,Konkan,Iwamoto,,,,,,,No
+IWA003,良寛,Ryōkan,Iwamoto,,,,,,,No
+IWA004,寛利,Kanri,Iwamoto,,,,,,,No
+IWA005,昆寿,Konju,Iwamoto,,,,,,,No
+IWA006,政克 (Masamoto,Masakatsu,Iwamoto,,,,,,,No
+IWA007,宗永,Sōei,Iwamoto,,,,,,,No
+IWA008,宗栄,Sōei,Iwamoto,,,,,,,No
+IWA009,一寛,Ikkan,Iwamoto,,,,,,,No
+IWA010,昆寛斎,Konkansai,Iwamoto,,,,,,,No
+NS-Iwamoto,岩本,Iwamoto,Iwamoto,Edo,,,,,Non-specific school attribution,Yes
+IYO001,盛国,Morikuni,Iyo Province,Iyo,,,,,,No
+IYO002,盛富,Moritomi,Iyo Province,Iyo,,,,,,No
+IYO003,盛世,Moriyo,Iyo Province,Iyo,,,,,,No
+IYO004,盛祥,Moriyoshi,Iyo Province,Iyo,,2th gen,,,,No
+IYO005,盛積,Morizumi,Iyo Province,Iyo,,,,,,No
+IYO006,森峯,Morimine/Moritaka,Iyo Province,Iyo,,,,,,No
+IYO007,森次,Moritsugu,Iyo Province,Iyo,,,,盛次,,No
+IYO008,森勝,Morikatsu,Iyo Province,Iyo,,,,,,No
+IYO009,森尚,Morihisa,Iyo Province,Iyo,,,,,,No
+IYO010,森清,Morikiyo,Iyo Province,Iyo,,2th gen,,,,No
+IYO011,盛行,Moriyuki,Iyo Province,Iyo,,,,森行,,No
+IYO012,金吉,Kaneyoshi,Iyo Province,Iyo,,2th gen,,,,No
+IYO013,金久,Kanehisa,Iyo Province,Iyo,,,,,,No
+IYO014,家武,Ietake,Iyo Province,Iyo,,2th gen,,,,No
+IZU001,毎幹,Tsunemoto/Kazutomo,Izumo Province,Izumo,,,,,,No
+IZU002,雅智,Masatomo,Izumo Province,Izumo,,,,,,No
+IZU003,毎矩,Tsunenori,Izumo Province,Izumo,,2th gen,,,,No
+IZU004,春田,Haruta,Izumo Province,Izumo,,3th gen,,,,No
+IZU005,宗茂,Muneshige,Izumo Province,Izumo,,4th gen,,,,No
+IZU006,豊貫,Toyotsura,Izumo Province,Izumo,,,,,,No
+IZU007,豊親,Toyochika,Izumo Province,Izumo,,2th gen,,,,No
+IZU008,豊久,Toyohisa,Izumo Province,Izumo,,3th gen,,,,No
+IZU009,豊重,Toyoshige,Izumo Province,Izumo,,,,,,No
+IZU010,寛寿,Kanju/Hirotoshi,Izumo Province,Izumo,,2th gen,,,,No
+IZU011,理助,Risuke,Izumo Province,Izumo,,3th gen,,,,No
+IZU012,弥助,Yasuke,Izumo Province,Izumo,,,,,,No
+IZU013,盈清,Mitsukiyo,Izumo Province,Izumo,,2th gen,,,,No
+IZU014,芸重,Masashige,Izumo Province,Izumo,,3th gen,,,,No
+IZU015,忠政,Tadamasa,Izumo Province,Izumo,,,,,,No
+IZU016,健位 (Denji,Takenori,Izumo Province,Izumo,,2th gen,,,,No
+IZU017,与陸,Yoriku/Tomomutsu,Izumo Province,Izumo,,,,,,No
+IZU018,篤忠,Tokutada,Izumo Province,Izumo,,2th gen,,,,No
+IZU019,元貞,Motosada,Izumo Province,Izumo,,3th gen,,,,No
+IZU020,令利,Noritoshi,Izumo Province,Izumo,,4th gen,,,,No
+NS-Kaga,加賀,Kaga,Kaga,Kaga,,,,,Non-specific school attribution,Yes
+KAG001,克久,Katsuhisa,Kaga Province,Kaga,,,,,,No
+KAG002,盛明,Moriaki,Kaga Province,Kaga,,2th gen,,,,No
+KAG003,克久,Katsuhisa,Kaga Province,Kaga,,,,,,No
+KAG004,好春,Yoshiharu,Kaga Province,Kaga,,2th gen,,,,No
+KAG005,定則,Sadanori,Kaga Province,Kaga,,3th gen,,,,No
+KAG006,克正,Katsumasa,Kaga Province,Kaga,,4th gen,,,,No
+KAG007,源六,Genroku,Kaga Province,Kaga,,,,,,No
+KAG008,源四郎,Genshirō,Kaga Province,Kaga,,2th gen,,,,No
+KAG009,氏忠,Ujitada,Kaga Province,Kaga,,3th gen,,,,No
+KAG010,氏只,Ujitada,Kaga Province,Kaga,,4th gen,,,,No
+KAG011,侶久,Tomohisa,Kaga Province,Kaga,,,,,,No
+KAG012,侶延,Tomonobu,Kaga Province,Kaga,,2th gen,,,,No
+KAG013,清永,Kiyonaga,Kaga Province,Kaga,,3th gen,,,,No
+KAG014,永政,Nagamasa,Kaga Province,Kaga,,4th gen,,,,No
+KAG015,吉重,Yoshishige,Kaga Province,Kaga,,5th gen,,,,No
+NS-KagaZogan,加賀象嵌,Kaga zōgan,Kaga zōgan,Kaga,,,,,Non-specific school attribution,Yes
+NS-KagaKinko,加賀金工,Kaga-kinkō,Kaga-kinkō,,,,,,Non-specific school attribution,Yes
+NS-Kamakura,鎌倉,Kamakura,Kamakura,,,,,,Non-specific school attribution,Yes
+KAM001,楽寿,Rakuju,Kamiyoshi,Higo,Late Edo (1817-1884),,,,"3rd gen. Kamiyoshi Rakuju. Son of Fukanobu, grandson of Tadamitsu. Higo Kamiyoshi school.",No
+NS-Kanayama,金山,Kanayama,Kanayama,,,,,,Non-specific school attribution,Yes
+NS-Kaneie,金家,Kaneie,Kaneie,Kyoto,,,,,Non-specific school attribution,Yes
+NS-Kano,加納,Kano,Kano,Mino,,,,,Non-specific school attribution,Yes
+NS-Katchushi,甲冑師,Katchūshi,Katchūshi,,,,,,Non-specific school attribution,Yes
+KAT001,永寿,Eiju,Katsura,,,,,,,No
+KII001,貞命,Teimei/Sadanobu,Kii Province,Kii,,,,,,No
+KII002,算経,Kazutsune/Sankei,Kii Province,Kii,,,,,,No
+KII003,経国,Tsunekuni,Kii Province,Kii,,,,,,No
+KII004,常正 (Chikasuke,Tsunemasa,Kii Province,Kii,,,,,,No
+KII005,直貞,Naosada,Kii Province,Kii,,,,,,No
+KII006,鉄斎,Tessai,Kii Province,Kii,,2th gen,,,,No
+KII007,正喜 (Chinsai,Masayoshi,Kii Province,Kii,,,,,,No
+KII008,正喜 (Chinsai,Issō,Kii Province,Kii,,2th gen,,,,No
+KIU001,序克,Tsunekatsu,Kikuchi,,,,,,,No
+KIU002,序光,Tsunemitsu,Kikuchi,,,,,,,No
+KIU003,序定,Tsunesada,Kikuchi,,,,,,,No
+KIU004,序沖,Tsuneoki,Kikuchi,,,2th gen,,,,No
+KIU005,序房,Tsunefusa,Kikuchi,,,3th gen,,,,No
+KIG001,宗吉,Muneyoshi,Kikugawa,,,,,,,No
+KIG002,南甫,Nanpo,Kikugawa,,,2th gen,,,,No
+KIG003,南甫 (Hisahide,Nanpo,Kikugawa,,,,,,,No
+KIG004,友義,Tomoyoshi,Kikugawa,,,,,,,No
+KIO001,光行,Mitsuyuki,Kikuoka,,,,,,,No
+KIO002,光朝,Mitsutomo,Kikuoka,,,,,,,No
+KIO003,光重,Mitsushige,Kikuoka,,,,,,,No
+KIO004,光政,Mitsumasa,Kikuoka,,,,,,,No
+KIO005,光利,Mitsutoshi,Kikuoka,,,,,,,No
+KIO006,行信,Yukinobu,Kikuoka,,,,,,,No
+KIO007,利信,Toshinobu,Kikuoka,,,2th gen,,,,No
+KIO008,行善,Yukiyoshi,Kikuoka,,,3th gen,,,,No
+NS-Kikuoka,菊岡,Kikuoka,Kikuoka,Mito,,,,,Non-specific school attribution,Yes
+NS-KoGoto,古後藤,Ko-Gotō,Ko-Gotō,Kyoto,,,,,Non-specific school attribution,Yes
+NS-KoHagi,古萩,Ko-Hagi,Ko-Hagi,Nagato,,,,,Non-specific school attribution,Yes
+NS-KoKatchushi,古甲冑師,Ko-Katchūshi,Ko-Katchūshi,,,,,,Non-specific school attribution,Yes
+NS-Kokinko,古金工,Ko-kinkō,Ko-kinkō,,,,,,Non-specific school attribution,Yes
+NS-KoMino,古美濃,Ko-Mino,Ko-Mino,Mino,,,,,Non-specific school attribution,Yes
+NS-KoShoami,古正阿弥,Ko-Shōami,Ko-Shōami,,,,,,Non-specific school attribution,Yes
+NS-KoTosho,古刀匠,Ko-tōshō,Ko-tōshō,,,,,,Non-specific school attribution,Yes
+KON001,春明,Haruaki,Kōno,,,,,,,No
+KON002,明親,Akichika,Kōno,,,,,,,No
+KON003,伴正,Tomomasa,Kōno,,,,,,,No
+KON004,明竜,Akitatsu/Meiryū,Kōno,,,2th gen,,,,No
+KON005,明乗,Akinori/Meijō,Kōno,,,,,,,No
+KON006,明広,Akihiro,Kōno,,,2th gen,,,,No
+KON007,明重,Akishige,Kōno,,,3th gen,,,,No
+KON008,明雄,Akio,Kōno,,,4th gen,,,,No
+KON009,明伴,Akitomo,Kōno,,,,,,,No
+KON010,明貞,Akisada,Kōno,,,2th gen,,,,No
+KON011,田中東龍斎,Tanaka Tōryūsai,Kōno,,,,,,,No
+KON012,清寿,Kiyotoshi,Kōno,,,,,,,No
+KON013,寿良,Toshiyoshi,Kōno,,,,,,,No
+KON014,良延,Yoshinobu,Kōno,,,,,,,No
+KON015,竜青眠 (Toshinori,Ryūseimin,Kōno,,,,,,,No
+KON016,寿矩,Toshinori,Kōno,,,,,,,No
+KON017,寿景,Toshikage,Kōno,,,2th gen,,,,No
+KON018,政景,Masakage,Kōno,,,,,,,No
+KON019,清重,Kiyoshige,Kōno,,,,,,,No
+KON020,義景,Yoshikage,Kōno,,,2th gen,,,,No
+KON021,寿明,Toshiaki,Kōno,,,3th gen,,,,No
+KON022,寿光,Toshimitsu,Kōno,,,,,,,No
+KON023,寿政,Toshimasa,Kōno,,,,,,,No
+KON024,寿延,Toshinobu,Kōno,,,2th gen,,,,No
+KON025,寿勝,Toshikatsu,Kōno,,,3th gen,,,,No
+KON026,寿春,Toshiharu,Kōno,,,4th gen,,,,No
+KON027,寿高,Toshitaka,Kōno,,,,,,,No
+KON028,清次,Kiyotsugu,Kōno,,,2th gen,,,,No
+KON029,常信,Tsunenobu,Kōno,,,3th gen,,,,No
+KZU001,正良,Masayoshi,Kōzuke Province,Kōzuke,,,,,,No
+KZU002,重次,Shigetsugu,Kōzuke Province,Kōzuke,,2th gen,,,,No
+NS-KyoKanagushi,京金具師,Kyō-kanagushi,Kyō-kanagushi,,,,,,Non-specific school attribution,Yes
+NS-KyoKinko,京金工,Kyō-kinkō,Kyō-kinkō,,,,,,Non-specific school attribution,Yes
+NS-KyoShoami,京正阿弥,Kyō-Shōami,Kyō-Shōami,,,,,,Non-specific school attribution,Yes
+NS-Kyosukashi,京透,Kyō-sukashi,Kyō-sukashi,Yamashiro,,,,,Non-specific style attribution: Kyoto openwork (sukashi) tsuba,Yes
+MIM001,勝継,Katsutsugu,Mimasaka Province,Mimasaka,,,,,,No
+MIM002,勝好,Katsuyoshi,Mimasaka Province,Mimasaka,,2th gen,,,,No
+NS-Mino,美濃,Mino,Mino,Mino,,,,,Non-specific school attribution,Yes
+MIN001,光武,Mitsutake,Mino Province,Mino,,,,,,No
+MIN002,吉教,Yoshimasa,Mino Province,Mino,,2th gen,,,,No
+MIN003,喜基,Yoshimoto,Mino Province,Mino,,,,,,No
+MIN004,光仲,Mitsunaka,Mino Province,Mino,,2th gen,,,,No
+MIN005,光伸,Mitsunobu,Mino Province,Mino,,3th gen,,,,No
+MIN006,光暁,Mitsuaki,Mino Province,Mino,,,,,,No
+MIN007,仲之,Nakayuki,Mino Province,Mino,,2th gen,,,,No
+MIN008,長正,Nagamasa,Mino Province,Mino,,3th gen,,,,No
+MIN009,光春,Mitsuharu,Mino Province,Mino,,4th gen,,,,No
+NS-Mito,水戸,Mito,Mito,Hitachi,,,,,Non-specific school attribution,Yes
+MUR001,如竹 (Nakanori,Jochiku,Murakami,,,,,,,No
+MUR002,松英 (Jochiku,Shōei,Murakami,,,,,,,No
+MUR003,松英 (Jochiku,Masanori,Murakami,,,2th gen,,,,No
+MUR004,如泉,Josen,Murakami,,,,,,,No
+MUR005,如瑌,Josen,Murakami,,,2th gen,,,,No
+MUR006,如,Jochū,Murakami,,,3th gen,,,,No
+MUR007,如柳,Joryū,Murakami,,,4th gen,,,,No
+MUR008,津尋甫,Tsu Jinpo,Murakami,,,,,,,No
+MUR009,遅塚久則,Chizuka Hisanori,Murakami,,,,,,,No
+MUR010,堀江興成,Horie Okinari,Murakami,,,,,,,No
+MUR011,堀江興吉,Horie Okiyoshi,Murakami,,,,,,,No
+MUR012,興慎,Okichika,Murakami,,,2th gen,,,,No
+MUR013,興久,Okihisa,Murakami,,,3th gen,,,,No
+MUR014,染谷知信,Someya Tomonobu,Murakami,,,,,,,No
+MUR015,一信,Kazunobu,Murakami,,,,,,,No
+MUR016,如水,Josui,Murakami,Musashi,Late Edo,,Murakami Jochiku,山光堂; Sankōdō; Sankodo; 賀茂氏孫山光堂如水,Rare female tosogu artist. Art name: Sankodo (山光堂). Descended from Kamo family of Kyoto. Listed in Soken Kisho (1781).,No
+MUS001,恒忠,Tsunetada,Musashi Province,Musashi,,,,,,No
+MUT001,清明,Kiyoaki,Mutsu Province,Mutsu,,,,,,No
+MUT002,大助,Daisuke,Mutsu Province,Mutsu,,2th gen,,,,No
+MUT003,貞刻,Sadatoki,Mutsu Province,Mutsu,,3th gen,,,,No
+MUT004,知至,Tomomichi,Mutsu Province,Mutsu,,,,知道,,No
+MUT005,清忠,Kiyotada,Mutsu Province,Mutsu,,,,,,No
+MUT006,秀冨,Hidetomi,Mutsu Province,Mutsu,,2th gen,,,,No
+MUT007,寿常 (Tsunetoshi,Toshitsune,Mutsu Province,Mutsu,,3th gen,,,,No
+MUT008,七右衛門,Schichi’emon,Mutsu Province,Mutsu,,,,,,No
+MUT009,安房,Yasufusa,Mutsu Province,Mutsu,,2th gen,,,,No
+MUT010,正寿,Masatoshi,Mutsu Province,Mutsu,,3th gen,,,,No
+MUT011,清近,Kiyochika,Mutsu Province,Mutsu,,4th gen,,,,No
+MUT012,美寿,Yoshitoshi,Mutsu Province,Mutsu,,,,,,No
+MUT013,正利,Masatoshi,Mutsu Province,Mutsu,,2th gen,,,,No
+MUT014,信経,Nobutsune,Mutsu Province,Mutsu,,3th gen,,,,No
+MUT015,安光,Yasumitsu,Mutsu Province,Mutsu,,4th gen,,,,No
+MUT016,文右衛門,Bun’emon,Mutsu Province,Mutsu,,,,,,No
+MUT017,勝房,Katsufusa,Mutsu Province,Mutsu,,2th gen,,,,No
+MUT018,勝成,Katsunari,Mutsu Province,Mutsu,,3th gen,,,,No
+MUT019,高光,Takamitsu,Mutsu Province,Mutsu,,,,,,No
+MUT020,正光,Masamitsu,Mutsu Province,Mutsu,,2th gen,,政光,,No
+MUT021,一光,Ikkō/Kazumitsu,Mutsu Province,Mutsu,,,,,,No
+MUT022,長鶴,Chōkaku,Mutsu Province,Mutsu,,,,長鸖,,No
+MUT023,長次,Nagatsugu,Mutsu Province,Mutsu,,2th gen,,,,No
+MUT024,兼祐,Kanesuke,Mutsu Province,Mutsu,,3th gen,,,,No
+MUT025,明義,Akiyoshi,Mutsu Province,Mutsu,,,,,,No
+MUT026,英明,Hideaki,Mutsu Province,Mutsu,,,,,,No
+MUT027,明周,Akichika,Mutsu Province,Mutsu,,2th gen,,,,No
+MUT028,重光,Shigemitsu,Mutsu Province,Mutsu,,3th gen,,,,No
+MUT029,玉成,Gyokusei/Tamanari,Mutsu Province,Mutsu,,,,,,No
+MUT030,了意,Ryō’i,Mutsu Province,Mutsu,,2th gen,,,,No
+MUT031,了明,Ryōmei,Mutsu Province,Mutsu,,3th gen,,,,No
+MUT032,愛竹,Aichiku,Mutsu Province,Mutsu,,4th gen,,,,No
+MUT033,包考,Kanetaka,Mutsu Province,Mutsu,,,,,,No
+MUT034,包矩,Kanenori,Mutsu Province,Mutsu,,,,,,No
+MUT035,直賢,Naokata,Mutsu Province,Mutsu,,2th gen,,,,No
+MUT036,信重,Nobushige,Mutsu Province,Mutsu,,3th gen,,,,No
+MUT037,重信,Shigenobu,Mutsu Province,Mutsu,,,,,,No
+MUT038,重富,Shigetomi,Mutsu Province,Mutsu,,2th gen,,,,No
+MUT039,正阿弥,Shōami,Mutsu Province,Mutsu,,3th gen,,,,No
+MYO001,宗介,Munesuke,Myōchin,,,,,,,No
+MYO002,宗親,Munechika,Myōchin,,,,,,,No
+MYO003,宗定,Munesada,Myōchin,,,,,,,No
+MYO004,宗盛,Munemori,Myōchin,,,2th gen,,,,No
+MYO005,宗布,Munenobu,Myōchin,,,3th gen,,,,No
+MYO006,宗次,Munetsugu,Myōchin,,,4th gen,,,,No
+MYO007,宗察,Muneaki,Myōchin,,,,,,,No
+MYO008,宗保,Muneyasu,Myōchin,,,2th gen,,,,No
+MYO009,宗周,Munechika,Myōchin,,,,,,,No
+MYO010,宗治,Muneharu,Myōchin,,,2th gen,,,,No
+MYO011,宗政,Munemasa,Myōchin,,,,,,,No
+MYO012,保周,Yasuchika,Myōchin,,,,,,,No
+MYO013,守次,Moritsugu,Myōchin,,,,,,,No
+MYO014,義忠,Yoshitada,Myōchin,,,,,,,No
+MYO015,義次,Yoshitsugu,Myōchin,,,2th gen,,,,No
+MYO016,宗吉,Muneyoshi,Myōchin,,,,,,,No
+MYO017,宗矩,Munenori,Myōchin,,,,,,,No
+MYO018,義久,Yoshihisa,Myōchin,,,,,,,No
+MYO019,宗任,Munetada,Myōchin,,,2th gen,,,,No
+MYO020,勝治,Katsuharu,Myōchin,,,3th gen,,,,No
+MYO021,吉久,Yoshihisa,Myōchin,,,,,,,No
+MYO022,宗久,Munehisa,Myōchin,,,,,,,No
+MYO023,宗幸,Muneyuki,Myōchin,,,2th gen,,,,No
+MYO024,宗朗,Muneaki,Myōchin,,,,,,,No
+MYO025,義定,Yoshisada,Myōchin,,,2th gen,,,,No
+MYO026,保次,Yasutsugu,Myōchin,,,,,,,No
+NS-Myochin,明珍,Myōchin,Myōchin,,,,,,Myochin school - famous armor/tsuba makers from Kamakura period. Top class iron metalworkers.,Yes
+NAG001,重高,Shigetaka,Nagasone,,,,,,,No
+NAG002,才市,Saiichi,Nagasone,,,2th gen,,,,No
+NAG003,定員,Sadakazu,Nagasone,,,3th gen,,,,No
+NAG004,利宗,Toshimune,Nagasone,,,4th gen,,,,No
+NAG005,直勝,Naokatsu,Nagasone,,,,,,,No
+NAG006,直勝,Naokatsu,Nagasone,,,,,,,No
+NAG007,直忠,Naotada,Nagasone,,,2th gen,,,,No
+NAG008,直光,Naomitsu,Nagasone,,,3th gen,,,,No
+NAG009,直胤,Naotane,Nagasone,,,,,,,No
+NAG010,義胤,Yoshitane,Nagasone,,,2th gen,,,,No
+NAG011,秀世,Hideyo,Nagasone,,,3th gen,,,,No
+NAG012,継平,Tsuguhira,Nagasone,,,4th gen,,,,No
+NAG013,継秀,Tsuguhide,Nagasone,,,,,,,No
+NAG014,一広,Kazuhiro,Nagasone,,,,,,,No
+NAG015,一次,Kazutsugu,Nagasone,,,,,,,No
+NAG016,一次,Kazutsugu,Nagasone,,,,,,,No
+NAG017,国安,Kuniyasu,Nagasone,,,2th gen,,,,No
+NAG018,為義,Tameyoshi,Nagasone,,,3th gen,,,,No
+NAG019,道俊,Michitoshi,Nagasone,,,4th gen,,,,No
+NAG020,正勝,Masakatsu,Nagasone,,,,,,,No
+NAG021,近則,Chikanori,Nagasone,,,2th gen,,,,No
+NAG022,助宗,Sukemune,Nagasone,,,3th gen,,,,No
+NAG023,信高,Nobutaka,Nagasone,,,4th gen,,,,No
+NAG024,貞之,Sadayuki,Nagasone,,,,,,,No
+NAG025,国重,Kunishige,Nagasone,,,,,,,No
+NAG026,義隆,Yoshitaka,Nagasone,,,2th gen,,,,No
+NAG027,行秀,Yukihide,Nagasone,,,,,,,No
+NAG028,久国,Hisakuni,Nagasone,,,2th gen,,,,No
+NAG029,義昌,Yoshimasa,Nagasone,,,,,,,No
+NAG030,光昌,Mitsumasa,Nagasone,,,2th gen,,,,No
+NAG031,真了,Shinryō,Nagasone,,,3th gen,,,,No
+NAG032,本行,Motoyuki,Nagasone,,,,,,,No
+NAG033,忠吉,Tadayoshi,Nagasone,,,2th gen,,,,No
+NAG034,忠光,Tadamitsu,Nagasone,,,3th gen,,,,No
+NAG035,正勝,Masakatsu,Nagasone,,,,,,,No
+NAG036,正良,Masayoshi,Nagasone,,,2th gen,,,,No
+NAG037,良宗,Yoshimune,Nagasone,,,,,,,No
+NAG038,是一,Korekazu,Nagasone,,,2th gen,,,,No
+NAG039,包保,Kaneyasu,Nagasone,,,3th gen,,,,No
+NAG040,長録孔,Chōrokukō,Nagasone,,,,,,,No
+NAG041,家次,Ietsugu,Nagasone,,,2th gen,,,,No
+NAG042,吉道,Yoshimichi,Nagasone,,,3th gen,,,,No
+NAG043,友周,Tomochika,Nagato Province,Nagato,,,,,,No
+NAG044,正周,Masachika,Nagato Province,Nagato,,,,,,No
+NAG045,友直,Tomonao,Nagato Province,Nagato,,2th gen,,,,No
+NAG046,友久,Tomohisa,Nagato Province,Nagato,,,,,,No
+NAG047,六郎右衛門,Rokurō’emon,Nagato Province,Nagato,,2th gen,,,,No
+NAG048,友道,Tomomichi,Nagato Province,Nagato,,,,,,No
+NAG049,友久,Tomohisa,Nagato Province,Nagato,,2th gen,,,,No
+NAG050,六郎右衛門,Rokurō’emon,Nagato Province,Nagato,,3th gen,,,,No
+NAG051,友道,Tomomichi,Nagato Province,Nagato,,,,,,No
+NAG052,友好,Tomoyoshi,Nagato Province,Nagato,,2th gen,,,,No
+NAG053,友範,Tomonori,Nagato Province,Nagato,,3th gen,,,,No
+NAG054,友恒,Tomotsune,Nagato Province,Nagato,,,,,,No
+NAG055,中井友恒,Nakai Tomotsune,Nagato Province,Nagato,,2th gen,,,,No
+NAG056,友信,Tomonobu,Nagato Province,Nagato,,,,,,No
+NAG057,友光,Tomomitsu,Nagato Province,Nagato,,2th gen,,,,No
+NAG058,友之,Tomoyuki,Nagato Province,Nagato,,3th gen,,,,No
+NAG059,友信,Tomonobu,Nagato Province,Nagato,,,,,,No
+NAG060,宣政,Nobumasa,Nagato Province,Nagato,,,,,,No
+NAG061,宣英 (Masaaki,Nobuhide,Nagato Province,Nagato,,,,,,No
+NAG062,政詮,Masaaki,Nagato Province,Nagato,,,,,,No
+NAG063,政富,Masatomi,Nagato Province,Nagato,,2th gen,,,,No
+NAG064,政知,Masatomo,Nagato Province,Nagato,,,,,,No
+NAG065,宣次,Nobutsugu,Nagato Province,Nagato,,2th gen,,,,No
+NAG066,政嗣,Masatsugu,Nagato Province,Nagato,,3th gen,,,,No
+NAG067,政高,Masataka,Nagato Province,Nagato,,,,,,No
+NAG068,方高,Masataka,Nagato Province,Nagato,,2th gen,,,,No
+NAG069,知賢,Tomokata/Chiken,Nagato Province,Nagato,,,,,,No
+NAG070,豊章,Toyoaki,Nagato Province,Nagato,,2th gen,,,,No
+NAG071,燕里,Enri,Nagato Province,Nagato,,,,,,No
+NAG072,義勝 (Naokatsu,Yoshikatsu,Nagato Province,Nagato,,,,,,No
+NAG073,義勝 (Naokatsu,Tomokiyo,Nagato Province,Nagato,,2th gen,,,,No
+NAG074,友久,Tomohisa,Nagato Province,Nagato,,,,,,No
+NAG075,友之,Tomoyuki,Nagato Province,Nagato,,,,,,No
+NAG076,宣政,Nobumasa,Nagato Province,Nagato,,2th gen,,,,No
+NAG077,清高,Kiyotaka,Nagato Province,Nagato,,,,,,No
+NAG078,通高,Michitaka,Nagato Province,Nagato,,,,,,No
+NAG079,正高,Masataka,Nagato Province,Nagato,,2th gen,,政高,,No
+NAG080,政高,Masataka,Nagato Province,Nagato,,,,,,No
+NAG081,光高,Mitsutaka,Nagato Province,Nagato,,2th gen,,,,No
+NAG082,国高,Kunitaka,Nagato Province,Nagato,,3th gen,,,,No
+NAG083,友勝,Tomokatsu,Nagato Province,Nagato,,,,,,No
+NAG084,友信,Tomonobu,Nagato Province,Nagato,,2th gen,,,,No
+NAG085,幸久 (Yukinori,Yukihisa,Nagato Province,Nagato,,3th gen,,,,No
+NAG086,幸登,Yukinori,Nagato Province,Nagato,,,,,,No
+NAG087,幸利,Yukitoshi,Nagato Province,Nagato,,,,,,No
+NAG088,正幸,Masayuki,Nagato Province,Nagato,,2th gen,,,,No
+NAG089,幸純,Yukizumi,Nagato Province,Nagato,,,,,,No
+NAG090,幸仲,Yukinaka,Nagato Province,Nagato,,2th gen,,,,No
+NAG091,幸次 (Yukiharu,Yukitsugu,Nagato Province,Nagato,,,,,,No
+NAG092,幸治,Yukiharu,Nagato Province,Nagato,,,,,,No
+NAG093,貞次,Sadatsugu,Nagato Province,Nagato,,2th gen,,,,No
+NAG094,幸春,Yukiharu,Nagato Province,Nagato,,3th gen,,,,No
+NAG095,友久,Tomohisa,Nagato Province,Nagato,,,,,,No
+NAG096,友義,Tomoyoshi,Nagato Province,Nagato,,,,,,No
+NAG097,友賢,Tomokata,Nagato Province,Nagato,,2th gen,,,,No
+NAG098,友重,Tomoshige,Nagato Province,Nagato,,3th gen,,,,No
+NAG099,慧友,Satotomo,Nagato Province,Nagato,,4th gen,,,,No
+NAG100,種亮,Taneaki,Nagato Province,Nagato,,5th gen,,,,No
+NAG101,昌一,Masakazu,Nagato Province,Nagato,,,,昌弌,,No
+NAG102,忠正,Tadamasa,Nagato Province,Nagato,,2th gen,,,,No
+NAG103,正幸,Masayuki,Nagato Province,Nagato,,,,,,No
+NAG104,貞氏,Sadauji,Nagato Province,Nagato,,2th gen,,,,No
+NAG105,正次,Masatsugu,Nagato Province,Nagato,,,,,,No
+NAG106,友之,Tomoyuki,Nagato Province,Nagato,,2th gen,,,,No
+NAG107,正定,Masasada,Nagato Province,Nagato,,3th gen,,,,No
+NAG108,幸光,Yukimitsu,Nagato Province,Nagato,,,,,,No
+NAG109,正辰,Masatoki,Nagato Province,Nagato,,2th gen,,,,No
+NAG110,幸政,Yukimasa,Nagato Province,Nagato,,3th gen,,,,No
+NAG111,友次,Tomotsugu,Nagato Province,Nagato,,,,,,No
+NAG112,友道,Tomomichi,Nagato Province,Nagato,,2th gen,,,,No
+NAG113,友則,Tomonori,Nagato Province,Nagato,,3th gen,,,,No
+NAG114,友之,Tomoyuki,Nagato Province,Nagato,,4th gen,,,,No
+NAG115,友正,Tomomasa,Nagato Province,Nagato,,,,,,No
+NAG116,友定,Tomosada,Nagato Province,Nagato,,2th gen,,,,No
+NAG117,友清,Tomokiyo,Nagato Province,Nagato,,3th gen,,,,No
+NAG118,茂常,Shigetsune,Nagato Province,Nagato,,,,,,No
+NAG119,常永,Tsunenaga,Nagato Province,Nagato,,2th gen,,,,No
+NAG120,常信,Tsunenobu,Nagato Province,Nagato,,3th gen,,,,No
+NAG121,幸常,Yukitsune,Nagato Province,Nagato,,,,,,No
+NAG122,義充,Yoshimitsu,Nagato Province,Nagato,,2th gen,,,,No
+NAG123,清風,Kiyokaze,Nagato Province,Nagato,,3th gen,,,,No
+NAG124,光正,Mitsumasa,Nagato Province,Nagato,,4th gen,,,,No
+NAG125,正信,Masanobu,Nagato Province,Nagato,,,,,,No
+NAG126,喜鹿,Kiroku,Nagato Province,Nagato,,2th gen,,,,No
+NAG127,青柳軒,Seiryūken,Nagato Province,Nagato,,3th gen,,,,No
+NAG128,一信,Kazunobu,Nagato Province,Nagato,,4th gen,,,,No
+NAG129,直行,Naoyuki,Nagato Province,Nagato,,,,,,No
+NAG130,源祐,Gensuke,Nagato Province,Nagato,,2th gen,,,,No
+NAG131,馬翁,Baō/Maō,Nagato Province,Nagato,,3th gen,,,,No
+NAG132,仲井,Nakai,Nagato Province,Nagato,,4th gen,,,,No
+NAG133,河治,Kawaji,Nagato Province,Nagato,,,,,,No
+NAG134,糸賀,Itoga,Nagato Province,Nagato,,2th gen,,,,No
+NAR001,利寿,Toshinaga,Nara,,,,,,,No
+NAR002,乗意,Jōi,Nara,,,,,,,No
+NAR003,利治,Toshiharu,Nara,,,,,,,No
+NAR004,宗有,Sōyū,Nara,,,2th gen,,,,No
+NAR005,利永,Toshinaga,Nara,,,,,,,No
+NAR006,利光,Toshimitsu,Nara,,,2th gen,,,,No
+NAR007,正長,Masanaga,Nara,,,,,,,No
+NAR008,重光,Shigemitsu,Nara,,,,,,,No
+NAR009,重治,Shigeharu,Nara,,,2th gen,,,,No
+NAR010,利重,Toshishige,Nara,,,,,,,No
+NAR011,寿軌,Toshinori,Nara,,,,,,,No
+NAR012,寿由,Toshiyoshi,Nara,,,2th gen,,,,No
+NAR013,利善,Toshiyoshi,Nara,,,,,,,No
+NAR014,重親,Shigechika,Nara,,,2th gen,,,,No
+NAR015,宗利,Munetoshi,Nara,,,3th gen,,,,No
+NAR016,常重,Tsuneshige,Nara,,,,,,,No
+NAR017,常重 (Tōrin,Tsuneshige,Nara,,,,,,,No
+NAR018,常重 (Tōrin,Masachika,Nara,,,2th gen,,,,No
+NAR019,辰政,Tatsumasa,Nara,,,,,,,No
+NAR020,成政,Narimasa,Nara,,,2th gen,,,,No
+NAR021,政弘,Masahiro,Nara,,,3th gen,,,,No
+NAR022,光春,Mitsuharu,Nara,,,,,,,No
+NAR023,亀眼,Kigan,Nara,,,2th gen,,,,No
+NAR024,奈良,Nara,Nara,,,3th gen,,,,No
+NS-Nara,奈良,Nara,Nara,Nara,,,,,Non-specific school attribution,Yes
+NAT001,夏雄,Natsuo,Natsuo / Tōkyō Fine Arts,,,,,,,No
+NAT002,勝珉,Shōmin,Natsuo / Tōkyō Fine Arts,,,,,,,No
+NAT003,珉乗,Minjō,Natsuo / Tōkyō Fine Arts,,,,,,,No
+NAT004,勝広,Katsuhiro,Natsuo / Tōkyō Fine Arts,,,2th gen,,,,No
+NAT005,秀鏡,Shūkyō/Hideaki,Natsuo / Tōkyō Fine Arts,,,,,,,No
+NAT006,隆雄,Takao,Natsuo / Tōkyō Fine Arts,,,,,,,No
+NAT007,美盛,Yoshimori/Bisei,Natsuo / Tōkyō Fine Arts,,,,,,,No
+NAT008,美実,Yoshizane,Natsuo / Tōkyō Fine Arts,,,2th gen,,,,No
+NAT009,隆雄,Takao,Natsuo / Tōkyō Fine Arts,,,,,,,No
+NAT010,勝守,Katsumori,Natsuo / Tōkyō Fine Arts,,,2th gen,,,,No
+NAT011,友雄,Tomoo,Natsuo / Tōkyō Fine Arts,,,3th gen,,,,No
+NIS001,勘四郎,Kanshirō,Nishigaki,Higo,Early Edo (1613-1693),1st gen,,,1st gen. Nishigaki Kanshiro (西垣勘四郎). One of the best tsuba makers in Japanese history. Higo school.,No
+NS-Nishigaki,西垣,Nishigaki,Nishigaki,Edo,,,,,Non-specific school attribution,Yes
+NOM001,正道,Masamichi,Nomura,,,,,,,No
+NOM002,正次,Masatsugu,Nomura,,,,,,,No
+NOM003,正英,Masahide,Nomura,,,,,,,No
+NOM004,正芳,Masayoshi,Nomura,,,,,,,No
+NOM005,正秀,Masahide,Nomura,,,2th gen,,,,No
+NS-Oda,小田,Oda,Oda,,,,,,Non-specific school attribution,Yes
+OKA001,正楽,Shōraku,Okamoto,,,,,,,No
+OKA002,尚房,Naofusa,Okamoto,,,,,,,No
+OKA003,尚方,Naokata,Okamoto,,,,,,,No
+OKA004,直房,Naofusa,Okamoto,,,2th gen,,,,No
+OKA005,栄寿,Eiju,Okamoto,,,,,,,No
+OKA006,山﨑一賀,Yamazaki Ichiga,Okamoto,,,,,,,No
+OKA007,細野政守,Hosono Masamori,Okamoto,,,,,,,No
+OKA008,綾小路永峯,Ayanokōji Nagamine,Okamoto,,,,,,,No
+OKA009,上杉加寿貫,Uesugi Kazutsura,Okamoto,,,,,,,No
+OKA010,加賀春,Kagaharu,Okamoto,,,,,,,No
+OKA011,春貫,Harutsura,Okamoto,,,,,,,No
+OKA012,有恒,Aritsune,Okamoto,,,,,,,No
+OKA013,知恒,Tomotsune,Okamoto,,,,,,,No
+OKA014,元董,Mototada,Okamoto,,,,,,,No
+OKA015,牧川,Bokusen,Okamoto,,,2th gen,,,,No
+OKA016,清長,Kiyonaga,Okamoto,,,,,,,No
+OKA017,重国,Shigekuni,Okamoto,,,2th gen,,,,No
+OKA018,大日釡調,Dainichi Fuchō,Okamoto,,,,,,,No
+OKA019,武禅,Buzen,Okamoto,,,2th gen,,,,No
+OKA020,直寛,Naohiro,Okamoto,,,3th gen,,,,No
+OKA021,竹斎,Chikusai,Okamoto,,,,,,,No
+OKA022,佳興,Yoshioki,Okamoto,,,2th gen,,,,No
+OKA023,正博,Masahiro,Okamoto,,,3th gen,,,,No
+OKA024,吉正,Yoshimasa,Okamoto,,,4th gen,,,,No
+MIP001,宗典,Sōten,Ōmi Province,Ōmi,,,,,,No
+MIP002,宗典,Sōten,Ōmi Province,Ōmi,,,,,,No
+MIP003,秀典,Shūten,Ōmi Province,Ōmi,,2th gen,,,,No
+MIP004,宗典,Sōten,Ōmi Province,Ōmi,,,,,,No
+MIP005,宗秀,Munehide,Ōmi Province,Ōmi,,,,,,No
+MIP006,宗賢,Munekata,Ōmi Province,Ōmi,,2th gen,,,,No
+MIP007,包教,Kanenori,Ōmi Province,Ōmi,,,,,,No
+MIP008,光義,Mitsuyoshi,Ōmi Province,Ōmi,,,,,,No
+MIP009,宗顕,Muneaki,Ōmi Province,Ōmi,,,,,,No
+MIP010,宗賢,Munekata,Ōmi Province,Ōmi,,2th gen,,,,No
+MIP011,義之,Yoshiyuki,Ōmi Province,Ōmi,,3th gen,,,,No
+MIP012,対山堂,Taizandō,Ōmi Province,Ōmi,,4th gen,,,,No
+MIP013,宗珍,Muneyoshi,Ōmi Province,Ōmi,,,,,,No
+MIP014,喜知,Yoshitomo,Ōmi Province,Ōmi,,2th gen,,,,No
+MIP015,吉房,Yoshifusa,Ōmi Province,Ōmi,,3th gen,,,,No
+MIP016,直政,Naomasa,Ōmi Province,Ōmi,,4th gen,,,,No
+MIP017,政次,Masatsugu,Ōmi Province,Ōmi,,5th gen,,,,No
+MIP018,光昌,Mitsumasa,Ōmi Province,Ōmi,,,,充昌; 光正,,No
+MIP019,常成,Tsunenari,Ōmi Province,Ōmi,,,,,,No
+MIP020,充胤,Mitsutane,Ōmi Province,Ōmi,,2th gen,,,,No
+MIP021,格亮,Tadasuke,Ōmi Province,Ōmi,,,,,,No
+NS-Omori,大森,Ōmori,Ōmori,Edo,,,,,Non-specific school attribution,Yes
+OMO001,英昌,Terumasa,Ōmori,,,,,,,No
+OMO002,英秀,Teruhide,Ōmori,,,,,,,No
+OMO003,英満,Terumitsu,Ōmori,,,,,,,No
+OMO004,英一,Terukazu,Ōmori,,,,,,,No
+OMO005,秀永,Hidenaga,Ōmori,,,,,,,No
+OMO006,英辰,Terutoki,Ōmori,,,2th gen,,,,No
+OMO007,英知,Terutomo,Ōmori,,,,,,,No
+OMO008,一知,Kazutomo,Ōmori,,,,,,,No
+OMO009,満辰,Mitsutoki,Ōmori,,,2th gen,,,,No
+OMO010,秀知,Hidetomo,Ōmori,,,,,,,No
+OMO011,秀随,Hideyuki,Ōmori,,,2th gen,,,,No
+OMO012,秀寿,Hidetoshi,Ōmori,,,,,,,No
+OMO013,英彦,Teruhiko,Ōmori,,,2th gen,,,,No
+OMO014,辰成,Tatsunari,Ōmori,,,3th gen,,,,No
+OMO015,辰宣,Tatsunobu,Ōmori,,,4th gen,,,,No
+NS-Onin,応仁,Ōnin,Ōnin,Kyoto,,,,,Non-specific school attribution,Yes
+NS-Otsuki,大月,Ōtsuki,Ōtsuki,Edo,,,,,Non-specific school attribution,Yes
+OTS001,光興,Mitsuoki,Ōtsuki,,,,,,,No
+OTS002,光弘,Mitsuhiro,Ōtsuki,,,,,,,No
+OTS003,光林,Kōrin,Ōtsuki,,,,,,,No
+OTS004,光芳,Mitsuyoshi,Ōtsuki,,,2th gen,,,,No
+OTS005,良邦,Yoshikuni,Ōtsuki,,,3th gen,,,,No
+OTS006,秀興,Hideoki,Ōtsuki,,,,,,,No
+OTS007,秀国,Hidekuni,Ōtsuki,,,,,,,No
+OTS008,秀国 (Kinryūsai,Hidekuni,Ōtsuki,,,,,,,No
+OTS009,篤興,Tokuoki,Ōtsuki,,,,,,,No
+OTS010,篤明,Tokuaki,Ōtsuki,,,,,,,No
+OTS011,篤行,Tokuyuki,Ōtsuki,,,,,,,No
+OTS012,篤弘,Tokuhiro,Ōtsuki,,,2th gen,,,,No
+NS-Owari,尾張,Owari,Owari,Owari,,,,,Non-specific school attribution,Yes
+OWA001,貞広,Sadahiro,Owari Province,Owari,,,,,,No
+OWA002,則亮 (Norisuke/Koreyoshi,Norisuke,Owari Province,Owari,,,,,,No
+OWA003,克明,Katsuaki,Owari Province,Owari,,,,,,No
+OWA004,次左衛門,Jizaemon,Owari Province,Owari,,,,,,No
+OWA005,彦右衛門,Hiko’emon,Owari Province,Owari,,2th gen,,,,No
+OWA006,友休,Tomoyasu,Owari Province,Owari,,,,,,No
+OWA007,重正,Shigemasa,Owari Province,Owari,,2th gen,,,,No
+OWA008,友則,Tomonori,Owari Province,Owari,,3th gen,,,,No
+OWA009,信家,Nobuie,Owari Province,Owari,,,,,,No
+OWA010,宗栄,Munehide/Sōei,Owari Province,Owari,,2th gen,,,,No
+OZA001,直政,Naomasa,Ozaki,,,,,,,No
+OZA002,備次,Nagatsugu,Ozaki,,,2th gen,,,,No
+OZA003,戸張富久,Tobari Tomihisa,Ozaki,,,,,,,No
+OZA004,富随,Tomiyuki,Ozaki,,,,,,,No
+OZA005,方教,Masanori,Ozaki,,,,,,,No
+OZA006,益常,Masutsune,Ozaki,,,2th gen,,,,No
+OZA007,信清,Nobukiyo,Ozaki,,,3th gen,,,,No
+OZA008,信久,Nobuhisa,Ozaki,,,4th gen,,,,No
+OZA009,信明,Nobuaki,Ozaki,,,,,,,No
+OZA010,厚隆,Atsutaka,Ozaki,,,2th gen,,,,No
+OZA011,孝則,Takanori,Ozaki,,,3th gen,,,,No
+OZA012,府川一則,Fukawa Kazunori,Ozaki,,,,,,,No
+OZA013,光長,Mitsunaga,Ozaki,,,,,,,No
+SAD001,利姓,Toshiuji,Sado,,,,,,,No
+SAD002,利貞,Toshisada,Sado,,,,,,,No
+SAN001,直好,Naoyoshi,Sano,,,,,,,No
+SAN002,直照,Naoteru,Sano,,,,,,,No
+SAN003,直信,Naonobu,Sano,,,2th gen,,,,No
+SAN004,時信,Tokinobu,Sano,,,,,,,No
+SAN005,直寿,Naotoshi,Sano,,,2th gen,,,,No
+SAN006,政朝,Masatomo,Sano,,,3th gen,,,,No
+SAO001,家貞,Iesada,Saotome,,,,,,,No
+SAO002,家則,Ienori,Saotome,,,,,,,No
+SAO003,家久,Iehisa,Saotome,,,,,,,No
+SAO004,家忠,Ietada,Saotome,,,,,,,No
+SAO005,高義,Takayoshi,Saotome,,,2th gen,,,,No
+NS-Satsuma,薩摩,Satsuma,Satsuma,Satsuma,,,,,Non-specific school attribution,Yes
+NS-Seki,関,Seki,Seki,Mino,,,,,Non-specific school attribution,Yes
+NS-Shimizu,志水,Shimizu,Shimizu,Higo,,,,,"Shimizu school - one of four major Higo kinko schools. Founded by Shimizu Jingo, nephew of Hirata Hikozo.",Yes
+SMZ001,甚五,Jingo,Shimizu,Higo,Edo,,,,"Shimizu Jingo (志水甚五). Nephew of Hirata Hikozo. Founder of Shimizu school, one of four major Higo kinko schools.",No
+SMZ002,甚吾,Jingo,Shimizu,Higo,Edo,,,,Shimizu Jingo - alternative kanji (甚吾 vs 甚五).,No
+SHI001,致道,Munemichi,Shimotsuke Province,Shimotsuke,,,,,,No
+SHI002,致一,Munekazu,Shimotsuke Province,Shimotsuke,,,,,,No
+SHI003,渓玉,Keigyoku,Shimotsuke Province,Shimotsuke,,2th gen,,,,No
+SHI004,乗知,Jōchi/Noritomo,Shinano Province,Shinano,,,,,,No
+SHI005,鎮陣,Shigenobu,Shinano Province,Shinano,,2th gen,,,,No
+SHI006,甫掃,Hosō,Shinano Province,Shinano,,,,,,No
+SHI007,甫矯 (Inaba,Hokyō,Shinano Province,Shinano,,2th gen,,,,No
+NS-Shoami,正阿弥,Shōami,Shōami,,,,,,Non-specific school attribution,Yes
+SHO001,常吉,Tsuneyoshi,Shōami,,,,,,,No
+SHO002,宗喜,Muneyoshi,Shōami,,,2th gen,,,,No
+SHO003,政徳,Masanori,Shōami,,,,,,,No
+SHO004,次郎八,Jirōhachi,Shōami,,,,,,,No
+SHO005,金十郎,Kinjūrō,Shōami,,,2th gen,,金拾郎,,No
+SHO006,寛悦,Kan’etsu,Shōami,,,,,,,No
+SHO007,又次郎,Matahirō,Shōami,,,2th gen,,,,No
+SHO008,平八郎,Heihachirō,Shōami,,,3th gen,,,,No
+SHO009,吉一,Yoshikazu,Shōami,,,,,,,No
+SHO010,吉久,Yoshihisa,Shōami,,,2th gen,,,,No
+SHO011,吉重,Yoshishige,Shōami,,,,,,,No
+SHO012,又七,Matashichi,Shōami,,,2th gen,,,,No
+SHO013,光宅,Mitsuie,Shōami,,,3th gen,,,,No
+SHO014,信重,Nobushige,Shōami,,,4th gen,,,,No
+SHO015,重次,Shigetsugu,Shōami,,,,,,,No
+SHO016,治八郎,Jihachirō,Shōami,,,2th gen,,,,No
+SHO017,正利,Masatoshi,Shōami,,,3th gen,,,,No
+SHO018,正阿弥,Shōami,Shōami,,,4th gen,,,,No
+NS-Shonai,庄内,Shōnai,Shōnai,Dewa,,,,,Non-specific school attribution: Shonai school,Yes
+SON001,芳継,Yoshitsugu,Sonobe,,,,,,,No
+SON002,芳英,Yoshihide,Sonobe,,,,,,,No
+SON003,英忠,Hidetada,Sonobe,,,,,,,No
+SON004,有隣,Arichika,Sonobe,,,2th gen,,,,No
+SUN001,正虎,Masatora,Sunagawa,,,,,,,No
+SUN002,正吉,Masayoshi,Sunagawa,,,,,,,No
+SUN003,正矩,Masanori,Sunagawa,,,,,,,No
+SUP001,如蘭,Joran,Suō Province,Suō,,,,,,No
+SUR001,葦風,Ifū,Suruga Province,Suruga,,,,,,No
+TAK001,正次,Masatsugu,Takahashi,,,,,,,No
+TAK002,良次,Yoshitsugu,Takahashi,,,,,,,No
+NS-Tanaka,田中,Tanaka,Tanaka,Edo,,,,,Non-specific school attribution,Yes
+TAN001,定正,Sadamasa,Tanba Province,Tanba,,,,,,No
+TAN002,定道,Sadamichi,Tanba Province,Tanba,,,,,,No
+NS-Taniyama,谷山,Taniyama,Taniyama,Satsuma,,,,,Non-specific school attribution,Yes
+NS-Toryusai,桃柳斎,Tōryūsai,Tōryūsai,Edo,,,,,Non-specific school attribution,Yes
+TSU001,安親,Yasuchika,Tsuchiya,,,,,,,No
+TSU002,安親 (Tō’u,Yasuchika,Tsuchiya,,,,,,,No
+TSU003,国親,Kunichika,Tsuchiya,,,,,,,No
+TSU004,寿昌,Toshimasa,Tsuchiya,,,2th gen,,,,No
+TSU005,昌親,Masachika,Tsuchiya,,,,,,,No
+TSU006,昌親 (Yasuchika,Masachika,Tsuchiya,,,,,,,No
+TSU007,左安親,Sa Yasuchika,Tsuchiya,,,,,,,No
+TSU008,正珉安親,Shōmin Yasuchika,Tsuchiya,,,,,,,No
+TSU009,喜寛,Kikan/Yoshihiro,Tsuchiya,,,,,,,No
+TSU010,安昌,Yasumasa,Tsuchiya,,,,,,,No
+TSU011,安信,Yasunobu,Tsuchiya,,,,,,,No
+TSU012,安成,Yasunari,Tsuchiya,,,2th gen,,,,No
+TSU013,安族,Yasutsugu,Tsuchiya,,,3th gen,,,,No
+TSU014,安房,Yasufusa,Tsuchiya,,,4th gen,,,,No
+TSU015,安則,Yasunori,Tsuchiya,,,5th gen,,,,No
+TSU016,正親,Masachika,Tsuchiya,,,,,,,No
+TSU017,汎親,Hirochika,Tsuchiya,,,2th gen,,,,No
+TSU018,寿親,Toshichika,Tsuchiya,,,3th gen,,,,No
+NS-Umetada,埋忠,Umetada,Umetada,Kyoto,,,,,Non-specific school attribution,Yes
+UME001,明寿,Myōju,Umetada,,,,,,,No
+UME002,明真,Myōshin,Umetada,,,,,,,No
+UME003,寿斎,Jusai,Umetada,,,2th gen,,,,No
+UME004,重義,Shigeyoshi,Umetada,,,,,,,No
+UME005,宗義,Muneyoshi,Umetada,,,,,,,No
+UME006,七左,Shichiza,Umetada,,,,,,,No
+UME007,七左衛門,Shichizaemon,Umetada,,,2th gen,,,,No
+UME008,八左衛門,Hachizaemon,Umetada,,,3th gen,,,,No
+UME009,九左,Kyūza,Umetada,,,,,,,No
+UME010,九左衛門,Kyūzaemon,Umetada,,,2th gen,,,,No
+UME011,彦左衛門,Hikozaemon,Umetada,,,3th gen,,,,No
+UME012,彦兵衛,Hikobei,Umetada,,,,,,,No
+UME013,宗武,Munetake,Umetada,,,2th gen,,,,No
+UME014,重成,Shigenari,Umetada,,,3th gen,,,,No
+UME015,重長,Shigenaga,Umetada,,,,,,,No
+UME016,重近,Shigechika,Umetada,,,,,,,No
+UME017,親茂,Chikashige,Umetada,,,2th gen,,,,No
+UME018,宮内,Kunai,Umetada,,,3th gen,,,,No
+UME019,寿寛,Toshihiro,Umetada,,,4th gen,,,,No
+UME020,義信,Yoshinobu,Umetada,,,,,,,No
+UME021,光忠,Mitsutada,Umetada,,,2th gen,,,,No
+UME022,❀忠,Umetada,Umetada,,,,,,,No
+UME023,加治右衛門,Kaji’emon,Umetada,,,2th gen,,,,No
+UME024,就次,Naritsugu,Umetada,,,3th gen,,,,No
+UME025,就受,Narishige,Umetada,,,4th gen,,,,No
+UME026,就方,Narimasa,Umetada,,,,,,,No
+UME027,就門,Narikado,Umetada,,,,,,,No
+UME028,就一,Narikazu,Umetada,,,2th gen,,,,No
+UME029,就昌,Narimasa,Umetada,,,3th gen,,,,No
+UME030,就栄,Narihide,Umetada,,,4th gen,,,,No
+NS-WakiGoto,脇後藤,Waki-Gotō,Waki-Gotō,,,,,,Non-specific school attribution,Yes
+WGO001,覚乗,Kakujō,Waki-Gotō Branches and Students,,,,,,,No
+WGO002,演乗,Enjō,Waki-Gotō Branches and Students,,,,,,,No
+WGO003,達乗,Tatsujō,Waki-Gotō Branches and Students,,,,,,,No
+WGO004,光雅,Mitsumasa,Waki-Gotō Branches and Students,,,2th gen,,,,No
+WGO005,東乗,Tōjō,Waki-Gotō Branches and Students,,,3th gen,,,,No
+WGO006,光文,Mitsufumi,Waki-Gotō Branches and Students,,,,,,,No
+WGO007,悦乗,Etsujō,Waki-Gotō Branches and Students,,,,,,,No
+WGO008,光倫,Mitsutomo,Waki-Gotō Branches and Students,,,,,,,No
+WGO009,光倫,Mitsutomo,Waki-Gotō Branches and Students,,,,,,,No
+WGO010,琢乗,Takujō,Waki-Gotō Branches and Students,,,2th gen,,,,No
+WGO011,伝乗,Denjō,Waki-Gotō Branches and Students,,,3th gen,,,,No
+WGO012,光俗,Mitsuyo,Waki-Gotō Branches and Students,,,,,,,No
+WGO013,光次,Mitsutsugu,Waki-Gotō Branches and Students,,,2th gen,,,,No
+WGO014,光長,Mitsunaga,Waki-Gotō Branches and Students,,,3th gen,,,,No
+WGO015,光定,Mitsusada,Waki-Gotō Branches and Students,,,4th gen,,,,No
+WGO016,運乗,Unjō,Waki-Gotō Branches and Students,,,,,,,No
+WGO017,快乗,Kaijō,Waki-Gotō Branches and Students,,,2th gen,,,,No
+WGO018,就乗,Jujō,Waki-Gotō Branches and Students,,,3th gen,,,,No
+WGO019,殷乗,Injō,Waki-Gotō Branches and Students,,,,,,,No
+WGO020,春乗,Shunjō,Waki-Gotō Branches and Students,,,2th gen,,,,No
+WGO021,仙乗,Senjō,Waki-Gotō Branches and Students,,,,,,,No
+WGO022,亀乗,Kijō,Waki-Gotō Branches and Students,,,2th gen,,,,No
+WGO023,光保,Mitsuyasu,Waki-Gotō Branches and Students,,,,,,,No
+WGO024,泰乗,Taijō,Waki-Gotō Branches and Students,,,,,,,No
+WGO025,光久,Mitsuhisa,Waki-Gotō Branches and Students,,,2th gen,,,,No
+WGO026,光明,Mitsuaki,Waki-Gotō Branches and Students,,,,,,,No
+WGO027,光乗,Kōjō,Waki-Gotō Branches and Students,,,2th gen,,,,No
+WGO028,光治,Mitsuharu,Waki-Gotō Branches and Students,,,3th gen,,,,No
+WGO029,寿孝,Toshitaka,Waki-Gotō Branches and Students,,,,,,,No
+WGO030,要信,Yōshin,Waki-Gotō Branches and Students,,,,,,,No
+WGO031,善長,Yoshinaga,Waki-Gotō Branches and Students,,,2th gen,,,,No
+WGO032,東峯,Tōhō,Waki-Gotō Branches and Students,,,,,,,No
+WGO033,政意,Masaoki/Sei’i,Waki-Gotō Branches and Students,,,2th gen,,誠意,,No
+WGO034,忠光,Tadamitsu,Waki-Gotō Branches and Students,,,,,,,No
+WGO035,仙七,Senshichi,Waki-Gotō Branches and Students,,,2th gen,,,,No
+WGO036,七兵衛,Shichibei,Waki-Gotō Branches and Students,,,3th gen,,,,No
+WGO037,清明,Kiyoaki,Waki-Gotō Branches and Students,,,4th gen,,,,No
+WGO038,清乗,Seijō,Waki-Gotō Branches and Students,,,,,,,No
+WGO039,光景,Mitsukage,Waki-Gotō Branches and Students,,,,,,,No
+WGO040,采女,Uneme,Waki-Gotō Branches and Students,,,2th gen,,,,No
+WGO041,宗知,Munetomo/Sōchi,Waki-Gotō Branches and Students,,,3th gen,,,,No
+WGO042,後藤一乗,Gotō Ichijō,Waki-Gotō Branches and Students,,Late Edo-Early Meiji (1791-1876),,,一乗; 伯応; Hakuō; Hakuo; 凸凹山人; Totsuo-sanjin; 凸凹翁; 夢竜; Muryū; 栄次郎; Eijirō,"Last great Goto master (1791-1876). Used Hakuo pseudonym for iron tsuba. 81 Juyo, 7 Tokubetsu Juyo.",No
+WGO043,一乗,Ichijō,Waki-Gotō Branches and Students,,,,,後藤一乗; 伯応; Hakuō; Hakuo; 凸凹山人; Totsuo-sanjin,Short signature for Goto Ichijo (see WGO042).,No
+WGO044,光来,Kōrai,Waki-Gotō Branches and Students,,,,,,,No
+WGO045,光正,Mitsumasa,Waki-Gotō Branches and Students,,,,,,,No
+WGO046,光熈,Mitsuteru,Waki-Gotō Branches and Students,,,2th gen,,,,No
+WGO047,光覧,Kōran,Waki-Gotō Branches and Students,,,,,,,No
+WGO048,一琴,Ikkin,Waki-Gotō Branches and Students,,,,,,,No
+WGO049,一至,Isshi,Waki-Gotō Branches and Students,,,,,,,No
+WGO050,一勝,Isshō,Waki-Gotō Branches and Students,,,,,,,No
+WGO051,一匠,Isshō,Waki-Gotō Branches and Students,,,,,,,No
+WGO052,一的,Itteki,Waki-Gotō Branches and Students,,,,,,,No
+WGO053,一真,Isshin,Waki-Gotō Branches and Students,,,,,,,No
+WGO054,永武,Nagatake,Waki-Gotō Branches and Students,,,,,,,No
+WGO055,東明,Tōmei,Waki-Gotō Branches and Students,,,,,,,No
+WGO056,一寿,Ichiju,Waki-Gotō Branches and Students,,,,,,,No
+WGO057,幽斎,Yūsai,Waki-Gotō Branches and Students,,,,,,,No
+WGO058,一拳,Ikken,Waki-Gotō Branches and Students,,,,,,,No
+WGO059,明祥,Akiyoshi,Waki-Gotō Branches and Students,,,,,,,No
+WGO060,一啓,Ikkei,Waki-Gotō Branches and Students,,,2th gen,,,,No
+WGO061,一為,Ichii,Waki-Gotō Branches and Students,,,3th gen,,,,No
+WGO062,至永,Shiei,Waki-Gotō Branches and Students,,,4th gen,,,,No
+NS-Yanagawa,柳川,Yanagawa,Yanagawa,Edo,,,,,Non-specific school attribution,Yes
+YAN001,直政,Naomasa,Yanagawa,,,,,,,No
+YAN002,直光,Naomitsu,Yanagawa,,,,,,,No
+YAN003,直春,Naoharu,Yanagawa,,,,,,,No
+YAN004,直連,Naotsura,Yanagawa,,,,,,,No
+YAN005,直時,Naotoki,Yanagawa,,,,,,,No
+YAN006,直次,Naotsugu,Yanagawa,,,,,,,No
+YAN007,直俊,Naotoshi,Yanagawa,,,2th gen,,,,No
+YAN008,直純,Naozumi,Yanagawa,,,3th gen,,,,No
+YAN009,光保,Mitsuyasu,Yanagawa,,,,,,,No
+YAN010,春英,Haruhide,Yanagawa,,,2th gen,,,,No
+YAN011,春貞,Harusada,Yanagawa,,,3th gen,,,,No
+YAN012,政義,Masayoshi,Yanagawa,,,4th gen,,,,No
+NS-Yokoya,横谷,Yokoya,Yokoya,Edo,,,,,Non-specific school attribution,Yes
+YOK001,宗珉,Sōmin,Yokoya,,Mid-Edo (1670-1733),,,横谷宗珉; 宗民; Sōmin; 友常; Tomotsune; 遯庵; Ton'an; 次兵衛; Jihei,Founder of Machibori style (1670-1733). Invented katakiribori technique. Multiple generations exist.,No
+YOK002,宗與,Sōyo,Yokoya,,,,,宗与,,No
+YOK003,英精,Terukiyo,Yokoya,,,,,,,No
+YOK004,宗壽,Sōju,Yokoya,,,,,宗寿,,No
+YOK005,友喜,Tomoyoshi,Yokoya,,,,,,,No
+YOK006,宜貞,Yoshisada,Yokoya,,,2th gen,,,,No
+YOK007,安精,Yasukiyo,Yokoya,,,3th gen,,,,No
+YOK008,起龍斎宗珉,Kiryūsai Sōmin,Yokoya,,,,,,,No
+YOK009,Sōchi,Sōyo,Yokoya,,,,,,,No
+YOS001,照次,Terutsugu,Yoshioka,,,,,,,No
+YOS002,重貞,Shigesada,Yoshioka,,,,,,,No
+YOS003,尹次,Tadatsugu,Yoshioka,,,2th gen,,,,No
+YOS004,重貞,Shigesada,Yoshioka,,,,,,,No
+YOS005,師次,Morotsugu,Yoshioka,,,2th gen,,,,No
+YOS006,清次,Kiyotsugu,Yoshioka,,,3th gen,,,,No
+YOS007,因幡介,Inaba no Suke,Yoshioka,,,,,,,No
+YOS008,英竹,Hidetake,Yoshioka,,,,,,,No
+YOS009,光広,Mitsuhiro,Yoshioka,,,2th gen,,,,No

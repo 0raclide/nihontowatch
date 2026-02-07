@@ -132,6 +132,7 @@ interface Filters {
   askOnly?: boolean;
   enriched?: boolean;
   missingSetsumei?: boolean;
+  missingArtisanCode?: boolean;
 }
 
 interface ExchangeRates {
@@ -166,6 +167,7 @@ function HomeContent() {
     askOnly: searchParams.get('ask') === 'true',
     enriched: searchParams.get('enriched') === 'true',
     missingSetsumei: searchParams.get('missing_setsumei') === 'true',
+    missingArtisanCode: searchParams.get('missing_artisan') === 'true',
   });
   const [sort, setSort] = useState(searchParams.get('sort') || 'recent');
   const [page, setPage] = useState(Number(searchParams.get('page')) || 1);
@@ -282,6 +284,7 @@ function HomeContent() {
     if (filters.askOnly) params.set('ask', 'true');
     if (filters.enriched) params.set('enriched', 'true');
     if (filters.missingSetsumei) params.set('missing_setsumei', 'true');
+    if (filters.missingArtisanCode) params.set('missing_artisan', 'true');
     if (sort !== 'recent') params.set('sort', sort);
     // Note: page not synced to URL - infinite scroll manages page internally
     if (searchQuery) params.set('q', searchQuery);
@@ -305,6 +308,7 @@ function HomeContent() {
     if (filters.askOnly) params.set('ask', 'true');
     if (filters.enriched) params.set('enriched', 'true');
     if (filters.missingSetsumei) params.set('missing_setsumei', 'true');
+    if (filters.missingArtisanCode) params.set('missing_artisan', 'true');
     if (sort !== 'recent') params.set('sort', sort);
     // Note: page is NOT included - handled by loadMore
     if (searchQuery) params.set('q', searchQuery);

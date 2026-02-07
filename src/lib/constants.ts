@@ -104,6 +104,7 @@ export const ITEM_TYPES = {
   FUCHI_KASHIRA: 'fuchi_kashira',
   FUTATOKORO: 'futatokoro',     // 2-piece set: kozuka + kogai (二所物)
   MITOKOROMONO: 'mitokoromono', // 3-piece set (三所物)
+  GOTOKOROMONO: 'gotokoromono', // 5-piece set (五所物)
   TOSOGU: 'tosogu',             // Generic fitting
   // Armor & Accessories
   ARMOR: 'armor',
@@ -147,6 +148,7 @@ export const TOSOGU_TYPES = [
   ITEM_TYPES.FUCHI_KASHIRA,
   ITEM_TYPES.FUTATOKORO,
   ITEM_TYPES.MITOKOROMONO,
+  ITEM_TYPES.GOTOKOROMONO,
   ITEM_TYPES.TOSOGU,
 ] as const;
 

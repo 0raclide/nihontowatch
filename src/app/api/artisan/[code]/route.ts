@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 // Check if Yuhinkai database is configured (support both naming conventions)
 const isYuhinkaiConfigured = !!(
   (process.env.YUHINKAI_SUPABASE_URL || process.env.OSHI_V2_SUPABASE_URL) &&
-  (process.env.YUHINKAI_SUPABASE_KEY || process.env.OSHI_V2_SUPABASE_KEY)
+  (process.env.YUHINKAI_SUPABASE_KEY || process.env.OSHI_V2_SUPABASE_KEY || process.env.OSHI_V2_SUPABASE_ANON_KEY)
 );
 
 /**

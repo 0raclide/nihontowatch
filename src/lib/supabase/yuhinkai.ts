@@ -7,7 +7,7 @@ import { createClient } from '@supabase/supabase-js';
 
 // Support both naming conventions (YUHINKAI_* or OSHI_V2_*)
 const yuhinkaiUrl = process.env.YUHINKAI_SUPABASE_URL || process.env.OSHI_V2_SUPABASE_URL || '';
-const yuhinkaiKey = process.env.YUHINKAI_SUPABASE_KEY || process.env.OSHI_V2_SUPABASE_KEY || '';
+const yuhinkaiKey = process.env.YUHINKAI_SUPABASE_KEY || process.env.OSHI_V2_SUPABASE_KEY || process.env.OSHI_V2_SUPABASE_ANON_KEY || '';
 
 if (!yuhinkaiUrl) {
   console.error('[Yuhinkai] YUHINKAI_SUPABASE_URL is not configured.');

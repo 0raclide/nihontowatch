@@ -209,56 +209,61 @@ id, url (UNIQUE), dealer_id, discovered_at, is_scraped, scrape_priority
 
 ---
 
-## Current Dealers (29 Total)
+## Current Dealers (44 Total)
 
-### Japanese Dealers (24)
+### Japanese Dealers (36)
 
 | Dealer | Domain | Status |
 |--------|--------|--------|
 | Aoi Art | aoijapan.com | ✅ Active |
-| Eirakudo | eirakudo.com | ✅ Active |
-| Nipponto | nipponto.co.jp | ✅ Active |
-| E-sword | e-sword.jp | ✅ Active |
-| Samurai Nippon | samurai-nippon.net | ✅ Active |
-| Kusanagi | kusanaginosya.com | ✅ Active |
+| Asahi Token | asahitoken.jp | ✅ Active |
+| Ayakashi | ayakashi.co.jp | ✅ Active |
 | Choshuya | choshuya.co.jp | ✅ Active |
-| Ginza Seikodo | ginza-seikodo.com | ✅ Active |
-| Iida Koendo | iida-koendo.com | ✅ Active |
-| Katana Ando | katana-ando.com | ✅ Active |
+| E-sword | e-sword.jp | ✅ Active |
+| Eirakudo | eirakudo.shop | ✅ Active |
+| Gallery Youyou | galleryyouyou.com | ✅ Active |
+| Giheiya | giheiya.com | ✅ Active |
+| Ginza Seikodo | ginzaseikodo.com | ✅ Active |
+| Goushuya | goushuya-nihontou.com | ✅ Active |
+| Hyozaemon | hyozaemon.jp | ✅ Active |
+| Iida Koendo | iidakoendo.com | ✅ Active |
+| Kanshoan | kanshoan.com | ✅ Active |
+| Katana Ando | katana-ando.co.jp | ✅ Active |
 | Katanahanbai | katanahanbai.com | ✅ Active |
-| Shoubudou | shoubudou.jp | ✅ Active |
-| Taiseido | taiseido.net | ✅ Active |
+| Kusanagi | kusanaginosya.com | ✅ Active |
+| Nipponto | nipponto.co.jp | ✅ Active |
 | Premi | premi.co.jp | ✅ Active |
-| Gallery Youyou | gallery-youyou.com | ✅ Active |
-| Hyozaemon | hyozaemon.com | ✅ Active |
-| Tsuruginoya | tsuruginoya.com | ✅ Active |
-| Touken Matsumoto | touken-matsumoto.jp | ✅ Active |
-| Touken Komachi | toukenkomachi.com | ✅ Active |
-| Touken Sakata | touken-sakata.com | ✅ Active |
-| Token-Net | token-net.com | ✅ Active |
-| World Seiyudo | world-seiyudo.com | ✅ Active |
-| Tokka Biz | tokka.biz | ✅ Active |
+| Samurai Nippon | samurai-nippon.net | ✅ Active |
+| Samurai Shokai | samuraishokai.jp | ✅ Active |
 | Sanmei | sanmei.com | ✅ Active |
+| Shoubudou | shoubudou.co.jp | ✅ Active |
+| Sugie Art | sugieart.com | ✅ Active |
+| Taiseido | taiseido.biz | ✅ Active |
+| Token-Net | token-net.com | ✅ Active |
+| Tokka Biz | tokka.biz | ✅ Active |
+| Touken Komachi | toukenkomachi.com | ✅ Active |
+| Touken Matsumoto | touken-matsumoto.jp | ✅ Active |
+| Touken Sakata | touken-sakata.com | ✅ Active |
+| Toukentakarado | toukentakarado.com | ✅ Active |
+| Tsuba Info | tsuba.info | ✅ Active |
+| Tsuruginoya | tsuruginoya.com | ✅ Active |
+| Wakeidou | wakeidou.com | ✅ Active |
+| World Seiyudo | world-seiyudo.com | ✅ Active |
+| Yamasiroya | yamasiroya.com | ✅ Active |
+| Yushindou | yushindou.com | ✅ Active |
 
-### Western Dealers (5)
+### International Dealers (8)
 
 | Dealer | Domain | Country | Status |
 |--------|--------|---------|--------|
+| Giuseppe Piva | giuseppepiva.com | Italy | ✅ Active |
 | Legacy Swords | legacyswords.com | USA | ✅ Active |
 | Nihonto | nihonto.com | USA | ✅ Active |
 | Nihonto Art | nihontoart.com | USA | ✅ Active |
+| Nihonto Australia | nihonto.com.au | Australia | ✅ Active |
+| Nihontocraft | nihontocraft.com | USA | ✅ Active |
 | Swords of Japan | swordsofjapan.com | USA | ✅ Active |
 | Tetsugendo | tetsugendo.com | USA | ✅ Active |
-
-### Planned International Dealers
-
-| Dealer | Domain | Country | Status |
-|--------|--------|---------|--------|
-| Nihonto Antiques | nihontoantiques.com | USA | Planned |
-| Unique Japan | uniquejapan.com | UK | Planned |
-| Bushido Swords | bushido-swords.com | Germany | Planned |
-| Japanese Sword Shop | japaneseswordshop.com | USA | Planned |
-| Swordstore | swordstore.com | USA | Planned |
 
 ---
 

@@ -35,6 +35,7 @@ export interface FilterContentProps {
     signatureStatuses: string[];
     askOnly?: boolean;
     missingSetsumei?: boolean;
+    missingArtisanCode?: boolean;
   };
   onFilterChange: (key: string, value: unknown) => void;
   onClose?: () => void;
@@ -138,6 +139,7 @@ const TOSOGU_TYPES = [
   'koshirae',
   'tosogu',
   'mitokoromono',
+  'gotokoromono',
 ];
 
 // Armor types
@@ -196,6 +198,7 @@ const ITEM_TYPE_LABELS: Record<string, string> = {
   koshirae: 'Koshirae',
   tosogu: 'Tosogu',
   mitokoromono: 'Mitokoromono',
+  gotokoromono: 'Gotokoromono',
   // Armor
   armor: 'Armor',
   yoroi: 'Yoroi',
@@ -454,6 +457,7 @@ export function FilterContent({
     onFilterChange('signatureStatuses', []);
     onFilterChange('askOnly', false);
     onFilterChange('missingSetsumei', false);
+    onFilterChange('missingArtisanCode', false);
   }, [onFilterChange]);
 
   const hasActiveFilters =
@@ -465,7 +469,8 @@ export function FilterContent({
     filters.historicalPeriods.length > 0 ||
     filters.signatureStatuses.length > 0 ||
     filters.askOnly ||
-    filters.missingSetsumei;
+    filters.missingSetsumei ||
+    filters.missingArtisanCode;
 
   const activeFilterCount =
     (filters.category !== 'all' ? 1 : 0) +
@@ -475,7 +480,8 @@ export function FilterContent({
     filters.historicalPeriods.length +
     filters.signatureStatuses.length +
     (filters.askOnly ? 1 : 0) +
-    (filters.missingSetsumei ? 1 : 0);
+    (filters.missingSetsumei ? 1 : 0) +
+    (filters.missingArtisanCode ? 1 : 0);
 
   return (
     <div className="px-4 lg:px-0 pb-6">
@@ -785,6 +791,42 @@ export function FilterContent({
             </p>
           </div>
         )}
+
+        {/* 8. Admin: Missing Artisan Code - Only visible to admins */}
+        {isAdmin && (
+          <div className="py-5 border-t border-gold/30">
+            <label className="flex items-center justify-between cursor-pointer group min-h-[48px]">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] px-1.5 py-0.5 bg-gold/20 text-gold rounded font-semibold">
+                  ADMIN
+                </span>
+                <span className="text-[15px] lg:text-[14px] text-charcoal group-hover:text-ink transition-colors">
+                  Missing Artisan Code
+                </span>
+              </div>
+              <div className="relative">
+                <input
+                  type="checkbox"
+                  checked={filters.missingArtisanCode || false}
+                  onChange={(e) => onFilterChange('missingArtisanCode', e.target.checked)}
+                  className="peer sr-only"
+                />
+                <div className={`w-12 h-7 lg:w-11 lg:h-6 rounded-full transition-colors ${
+                  filters.missingArtisanCode
+                    ? 'bg-gold'
+                    : 'bg-border-dark'
+                }`}>
+                  <div className={`absolute top-1 w-5 h-5 lg:w-4 lg:h-4 bg-white rounded-full shadow transition-transform ${
+                    filters.missingArtisanCode ? 'translate-x-6 lg:translate-x-6' : 'translate-x-1'
+                  }`} />
+                </div>
+              </div>
+            </label>
+            <p className="text-[11px] text-muted mt-1">
+              Items without Yuhinkai artisan code match
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Live update indicator - subtle, at bottom */}
@@ -810,6 +852,7 @@ export function getActiveFilterCount(filters: FilterContentProps['filters']): nu
     filters.historicalPeriods.length +
     filters.signatureStatuses.length +
     (filters.askOnly ? 1 : 0) +
-    (filters.missingSetsumei ? 1 : 0)
+    (filters.missingSetsumei ? 1 : 0) +
+    (filters.missingArtisanCode ? 1 : 0)
   );
 }

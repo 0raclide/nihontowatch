@@ -27,6 +27,7 @@
 | [SEO.md](./SEO.md) | SEO optimization, structured data, sitemap, robots.txt |
 | [TESTING.md](./TESTING.md) | Test suite docs, concordance tests, CI/CD integration |
 | [USER_ENGAGEMENT_ANALYTICS.md](./USER_ENGAGEMENT_ANALYTICS.md) | Admin engagement dashboard - user growth, funnel, search analytics |
+| [YUHINKAI_REGISTRY_VISION.md](./YUHINKAI_REGISTRY_VISION.md) | **Strategic vision** - Yuhinkai as canonical nihonto registry, work tracking, price index |
 
 ## Sessions
 
@@ -39,6 +40,7 @@
 
 | Document | Date | Issue |
 |----------|------|-------|
+| [NIPPONTO_JUYO_FALSE_POSITIVE_FIX.md](./NIPPONTO_JUYO_FALSE_POSITIVE_FIX.md) | 2026-02-07 | **Nipponto Juyo false positives** - Nav menu "重要刀剣" matched as certification (4 items fixed) |
 | [POSTMORTEM_FALSE_404_DETECTION.md](./POSTMORTEM_FALSE_404_DETECTION.md) | 2026-02-02 | **False 404 detection** - Transient 404s marking listings as sold (62 affected, 5 recovered) |
 | [DEALER_ANALYTICS_TRACKING_FIX.md](./DEALER_ANALYTICS_TRACKING_FIX.md) | 2026-01-31 | **Dealer click-throughs overcounted** - Card clicks logged as external_link_click instead of quickview_open |
 | [POSTMORTEM_SHOUBUDOU_SOLD_STATUS.md](./POSTMORTEM_SHOUBUDOU_SOLD_STATUS.md) | 2026-01-26 | Shoubudou items incorrectly marked as sold (navigation text false positive) |
@@ -117,6 +119,7 @@
 1. Read [DEALERS.md](./DEALERS.md) - Existing dealer notes
 2. Check `Oshi-scrapper/scrapers/<dealer>.py` - Scraper code
 3. Add exclusions, quirks, or cleanup notes to DEALERS.md
+4. See [NIPPONTO_JUYO_FALSE_POSITIVE_FIX.md](./NIPPONTO_JUYO_FALSE_POSITIVE_FIX.md) - Example of nav menu false positive fix
 
 ### "I need to build a UI component"
 1. Check `oshi-v2/src/components/` - Reference implementations
@@ -231,6 +234,12 @@
 6. Check `src/contexts/SubscriptionContext.tsx` - Subscription state management
 7. Check `src/lib/stripe/` - Stripe integration (server + client)
 8. Check `src/app/api/subscription/` - API routes (checkout, webhook, portal)
+
+### "I need to work on Yuhinkai Registry / Work Tracking"
+1. Read [YUHINKAI_REGISTRY_VISION.md](./YUHINKAI_REGISTRY_VISION.md) - Strategic vision and architecture
+2. Check `Oshi-scrapper/artisan_matcher/` - Artisan matching module
+3. Check `Oshi-scrapper/models/yuhinkai.py` - Yuhinkai data models
+4. See database schema in vision doc for `works`, `work_appearances`, `price_index` tables
 
 ### "I need to work on SEO"
 1. Read [SEO.md](./SEO.md) - Complete SEO documentation

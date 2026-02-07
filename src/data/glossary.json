@@ -2,10 +2,10 @@
   "_metadata": {
     "title": "Japanese Sword Terminology Glossary",
     "description": "Technical terms used in Japanese sword (nihonto) documentation, extracted from Juyo and Tokubetsu Juyo translations",
-    "version": "1.2.1",
+    "version": "1.3.1",
     "created": "2025-12-19",
-    "total_terms": 1571,
-    "updated": "2026-01-13"
+    "total_terms": 1588,
+    "updated": "2026-02-06"
   },
   "categories": {
     "blade_types": "Types of Japanese blades",
@@ -71,7 +71,7 @@
       "romaji": "aoe-kiwame",
       "kanji": "青江極",
       "category": "documentation",
-      "definition": "Authentication certificate for Aoe school blades; formal attribution to this Bizen lineage."
+      "definition": "Authentication certificate for Aoe school blades; formal attribution to this Bitchu Province tradition."
     },
     {
       "romaji": "aogai",
@@ -136,13 +136,13 @@
     {
       "romaji": "ara-nie",
       "kanji": "荒沸",
-      "category": "kitae",
-      "definition": "Coarse, rough nie particles."
+      "category": "hamon",
+      "definition": "Coarse, rough nie particles; large martensite crystals visible as bright points in the hamon."
     },
     {
       "romaji": "arare",
       "kanji": "霰",
-      "category": "general",
+      "category": "hamon",
       "definition": "Hailstone pattern; small round nie formations in the hamon resembling hail."
     },
     {
@@ -167,13 +167,13 @@
       "romaji": "ashi-gawa",
       "kanji": "足側",
       "category": "hamon",
-      "definition": "The side or area where ashi (legs) extend from the hamon into the hada."
+      "definition": "The side or area where ashi (legs) extend from the hamon toward the cutting edge (ha)."
     },
     {
       "romaji": "ashi-kanamono",
       "kanji": "足金物",
-      "category": "hamon",
-      "definition": "Metal fittings or hardware; also refers to ashi (legs) extending from the hamon into the hada."
+      "category": "koshirae",
+      "definition": "Metal fittings attached to a scabbard (saya) for securing cords, including kurikata, kaeshizuno, and uragawara."
     },
     {
       "romaji": "awahō",
@@ -246,6 +246,12 @@
       "kanji": "備前",
       "category": "general",
       "definition": "Bizen Province; a region in present-day southeastern Okayama Prefecture, the most prolific sword-making province."
+    },
+    {
+      "romaji": "blue-papers",
+      "kanji": "",
+      "category": "documentation",
+      "definition": "Colloquial Western term for Koshu Tokubetsu Kicho papers, which had a blue cover. Unlike green/white papers, blue papers were issued by the central NBTHK authority in Tokyo, not the provincial branches where authentication scandals occurred. More reliable than other Kicho-era papers but still not up to modern Hozon standards in rigor. See: koshu-tokubetsu-kicho."
     },
     {
       "romaji": "bō",
@@ -365,7 +371,7 @@
       "romaji": "chikei",
       "kanji": "地景",
       "category": "kitae",
-      "definition": "Dark lines in the ji created by concentrations of steel during folding."
+      "definition": "Gleaming dark lines in the ji (surface) caused by nie activity along concentrations of carbon/steel from folding."
     },
     {
       "romaji": "Chikuzen",
@@ -419,7 +425,7 @@
       "romaji": "chōji-ashi",
       "kanji": "丁子足",
       "category": "hamon",
-      "definition": "Clove-shaped extensions from the hamon edge, resembling the flower bud spice."
+      "definition": "Ashi (legs) extending from a choji (clove-shaped) hamon toward the cutting edge."
     },
     {
       "romaji": "chōji-ba",
@@ -549,9 +555,9 @@
     },
     {
       "romaji": "daisaku",
-      "kanji": "大作",
-      "category": "assessment",
-      "definition": "Great work; term indicating a masterpiece or exceptional quality sword by a renowned smith."
+      "kanji": "代作",
+      "category": "mei",
+      "definition": "A sword made by a student or assistant but bearing the signature of the master smith. The work is executed by proxy while carrying the master's name."
     },
     {
       "romaji": "daisho",
@@ -575,7 +581,7 @@
       "romaji": "dan-utsuri",
       "kanji": "段映り",
       "category": "kitae",
-      "definition": "Stepped reflection; a hamon reflection pattern appearing in distinct horizontal bands or steps."
+      "definition": "Combined utsuri; a blade showing more than one type of utsuri reflection, typically bo-utsuri and midare-utsuri appearing together. Characteristic of Aoe school work."
     },
     {
       "romaji": "dango-chōji",
@@ -657,9 +663,9 @@
     },
     {
       "romaji": "dotan-barai",
-      "kanji": "土丹払",
-      "category": "hamon",
-      "definition": "Clay sweeping; a hamon treatment technique creating distinctive temper line effects."
+      "kanji": "土壇払",
+      "category": "assessment",
+      "definition": "Cut through to the platform; a tameshigiri (cutting test) term inscribed on the nakago indicating the blade cut completely through the test target and into the earthen platform beneath."
     },
     {
       "romaji": "eboshi",
@@ -861,9 +867,9 @@
     },
     {
       "romaji": "furisode-nakago",
-      "kanji": "振袖中心",
+      "kanji": "振袖茎",
       "category": "nakago",
-      "definition": "Long-sleeved tang; an exceptionally long nakago extending well into the handle."
+      "definition": "Kimono-sleeve shaped tang; a nakago with a distinctive curved profile resembling the flowing sleeve of a furisode kimono, with strong curvature toward the mune. Found on Kamakura tanto."
     },
     {
       "romaji": "furukiwame",
@@ -964,14 +970,20 @@
     {
       "romaji": "gendaito",
       "kanji": "現代刀",
-      "category": "schools",
-      "definition": "Modern sword; swords made after 1876."
+      "category": "blade_types",
+      "definition": "Modern traditionally-forged sword; blades made by smiths after 1876 using traditional tamahagane and forging methods. Distinguished from showato (non-traditionally made military blades)."
     },
     {
       "romaji": "genkō",
       "kanji": "元寇",
       "category": "general",
       "definition": "The Mongol invasions of Japan (1274, 1281); historically significant period for sword development."
+    },
+    {
+      "romaji": "gimei",
+      "kanji": "偽銘",
+      "category": "mei",
+      "definition": "False or fake signature; a fraudulent inscription added to misattribute a blade to a famous smith."
     },
     {
       "romaji": "gin-iroe",
@@ -1023,9 +1035,9 @@
     },
     {
       "romaji": "goban-kaji",
-      "kanji": "五番鍛冶",
+      "kanji": "御番鍛冶",
       "category": "schools",
-      "definition": "Fifth-rank smith; a classification system for ranking swordsmiths by skill level."
+      "definition": "Imperial smiths; the select group of master swordsmiths summoned by retired Emperor Go-Toba in the early 13th century to forge swords under his personal instruction at the imperial court."
     },
     {
       "romaji": "gokaden",
@@ -1064,10 +1076,16 @@
       "definition": "Famous family lineage of metalworkers serving the Tokugawa, renowned for kozuka and menuki."
     },
     {
+      "romaji": "green-papers",
+      "kanji": "",
+      "category": "documentation",
+      "definition": "Colloquial Western term for Tokubetsu Kicho papers (pre-1982), which had a green cover. Treat as equivalent to no papers—approximately 95% of attributions are unreliable. Exception: low-value fittings from inexpensive schools where modern Hozon certification costs exceed the value gained. See: tokubetsu-kicho."
+    },
+    {
       "romaji": "gunome",
       "kanji": "互の目",
       "category": "hamon",
-      "definition": "Regular, repeated zigzag or sawtooth pattern."
+      "definition": "Undulating hamon with regular, repeated rounded wave-like peaks resembling a series of semicircles."
     },
     {
       "romaji": "gunome-ashi",
@@ -1239,9 +1257,9 @@
     },
     {
       "romaji": "habahiro",
-      "kanji": "刃幅",
+      "kanji": "幅広",
       "category": "sugata",
-      "definition": "The width of the blade measured at the hamachi (blade collar area)."
+      "definition": "Wide blade; describes a blade with a broader width than standard proportions for its type."
     },
     {
       "romaji": "habaki",
@@ -1431,9 +1449,9 @@
     },
     {
       "romaji": "haitate",
-      "kanji": "脛当",
+      "kanji": "佩楯",
       "category": "general",
-      "definition": "Shin guards or greaves that protect the lower legs in samurai armor."
+      "definition": "Thigh armor; protective covering for the upper legs consisting of cloth with attached armor plates, worn as part of samurai armor."
     },
     {
       "romaji": "haitō",
@@ -1470,6 +1488,12 @@
       "kanji": "佩裏",
       "category": "nakago",
       "definition": "The inner side when the blade is suspended."
+    },
+    {
+      "romaji": "hakogaki",
+      "kanji": "箱書",
+      "category": "documentation",
+      "definition": "Box inscription; writing on a storage box identifying the contents, often by a recognized authority, used as authentication."
     },
     {
       "romaji": "hakikake",
@@ -1876,8 +1900,8 @@
     {
       "romaji": "hitsu-ana",
       "kanji": "櫃穴",
-      "category": "general",
-      "definition": "A rectangular groove or slot carved into the blade, often paired with round holes."
+      "category": "tosogu",
+      "definition": "Holes in the tsuba (sword guard) through which the kozuka and kogai are inserted into their respective pockets in the scabbard."
     },
     {
       "romaji": "Hizen",
@@ -1922,6 +1946,12 @@
       "definition": "An honorary Buddhist rank sometimes granted to distinguished swordsmiths and craftsmen."
     },
     {
+      "romaji": "Hon'ami",
+      "kanji": "本阿弥",
+      "category": "documentation",
+      "definition": "The most prestigious family of sword appraisers, active from the Muromachi period through Edo. Their origami certificates remain highly valued."
+    },
+    {
       "romaji": "honka",
       "kanji": "本歌",
       "category": "assessment",
@@ -1958,6 +1988,12 @@
       "definition": "Carvings or engravings on the blade."
     },
     {
+      "romaji": "horyu",
+      "kanji": "保留",
+      "category": "documentation",
+      "definition": "Deferred judgement; a status given by NBTHK shinsa when a blade cannot be definitively attributed or authenticated. The item is held for further study rather than being passed or rejected. Blades with horyu status may be resubmitted after additional research or restoration work."
+    },
+    {
       "romaji": "hōryō",
       "kanji": "宝菱",
       "category": "general",
@@ -1992,6 +2028,12 @@
       "kanji": "細身",
       "category": "sugata",
       "definition": "Slender body; describes a blade with narrow proportions and elegant taper."
+    },
+    {
+      "romaji": "hozon",
+      "kanji": "保存",
+      "category": "documentation",
+      "definition": "Worthy of preservation; NBTHK certification indicating a blade meets standards for historical and artistic value."
     },
     {
       "romaji": "hotsure",
@@ -2555,13 +2597,19 @@
       "romaji": "juyo",
       "kanji": "重要",
       "category": "documentation",
-      "definition": "Important; NBTHK designation for significant blades."
+      "definition": "Important; NBTHK designation for blades and fittings of exceptional quality, ranking below Tokubetsu Juyo."
     },
     {
       "romaji": "jūyō-bijutsuhin",
       "kanji": "重要美術品",
-      "category": "assessment",
-      "definition": "Important Art Object; official Japanese cultural designation for significant artistic works."
+      "category": "documentation",
+      "definition": "Important Art Object; pre-war Japanese government designation (1933-1950) for culturally significant works including swords. Collectors should exercise considerable caution: Jubi items exhibit enormous qualitative variance, from masterworks approaching Kokuho caliber to pieces now recognized as gimei. Like Juyo Bunkazai and Kokuho, Jubi items cannot be exported from Japan."
+    },
+    {
+      "romaji": "juyo-bunkazai",
+      "kanji": "重要文化財",
+      "category": "documentation",
+      "definition": "Important Cultural Property; current Japanese government designation for cultural treasures, ranking below National Treasure (Kokuho). Cannot be exported from Japan."
     },
     {
       "romaji": "juzu-ba",
@@ -2902,8 +2950,8 @@
     {
       "romaji": "kanmuri-otoshi",
       "kanji": "冠落",
-      "category": "hamon",
-      "definition": "Hamon pattern where the temper line drops down from the ridge like a falling crown."
+      "category": "sugata",
+      "definition": "Crown-drop construction; a blade form where the back (mune) side is beveled from about the middle of the blade toward the point, common on naginata and Yamato tradition tanto."
     },
     {
       "romaji": "kanmuri-otoshi-zukuri",
@@ -2916,6 +2964,12 @@
       "kanji": "鑑賞",
       "category": "general",
       "definition": "Appreciation or connoisseurship; the aesthetic evaluation and understanding of sword qualities."
+    },
+    {
+      "romaji": "kantei",
+      "kanji": "鑑定",
+      "category": "documentation",
+      "definition": "Appraisal or authentication; the formal process of examining and attributing a sword to a specific maker or school."
     },
     {
       "romaji": "kantei-mei",
@@ -3374,6 +3428,12 @@
       "definition": "Auspicious day; lucky date often inscribed on tangs to mark completion."
     },
     {
+      "romaji": "kicho",
+      "kanji": "貴重",
+      "category": "documentation",
+      "definition": "Precious; post-war NBTHK designation discontinued and discredited due to authentication scandals. Treat as equivalent to no papers—approximately 95% of attributions are unreliable. Exception: low-value fittings from inexpensive schools where modern Hozon certification costs exceed the value gained. Also called 'white papers' in Western collecting."
+    },
+    {
       "romaji": "Kii",
       "kanji": "紀伊",
       "category": "general",
@@ -3575,7 +3635,7 @@
       "romaji": "kinpun-mei",
       "kanji": "金粉銘",
       "category": "nakago",
-      "definition": "Gold powder signature; an inscription filled or highlighted with gold powder."
+      "definition": "Gold lacquer/powder signature; attribution written in gold lacquer (urushi mixed with gold powder). A decorative form of attribution sometimes seen on shirasaya. Less authoritative than kinzogan-mei (gold inlay) as the lacquer can be more easily applied and is not permanent. Also romanized as kimpun-mei."
     },
     {
       "romaji": "kinran",
@@ -3611,7 +3671,7 @@
       "romaji": "kinzogan-mei",
       "kanji": "金象嵌銘",
       "category": "nakago",
-      "definition": "Gold-inlaid signature; attribution added in gold inlay."
+      "definition": "Gold-inlaid signature; attribution inlaid in gold by an expert appraiser, typically on shortened (o-suriage) blades. Considered the most prestigious form of attribution when done by recognized authorities like the Hon'ami family. The gold inlay is permanent and indicates high confidence in the attribution."
     },
     {
       "romaji": "kiri",
@@ -4202,6 +4262,12 @@
       "definition": "Carving or engraving; decorative cutting work on sword fittings or blade surfaces."
     },
     {
+      "romaji": "kokuho",
+      "kanji": "国宝",
+      "category": "documentation",
+      "definition": "National Treasure; the highest official Japanese government designation for cultural properties, including swords of supreme historical and artistic value. Cannot be exported from Japan."
+    },
+    {
       "romaji": "kokushi",
       "kanji": "国師",
       "category": "general",
@@ -4380,6 +4446,12 @@
       "kanji": "腰反り",
       "category": "sugata",
       "definition": "Curvature concentrated near the base of the blade, typical of early tachi."
+    },
+    {
+      "romaji": "koshu-tokubetsu-kicho",
+      "kanji": "甲種特別貴重",
+      "category": "documentation",
+      "definition": "Higher grade of Tokubetsu Kicho, distinguished by a blue cover ('blue papers' in Western collecting). Unlike green/white papers issued by provincial branches, Koshu Tokubetsu Kicho was issued by the central NBTHK authority in Tokyo and was not affected by the authentication scandals. More reliable than other Kicho-era papers but still not up to modern Hozon standards in rigor."
     },
     {
       "romaji": "kōsoku",
@@ -4696,8 +4768,8 @@
     {
       "romaji": "machibori",
       "kanji": "町彫",
-      "category": "horimono",
-      "definition": "Town carving; groove carving done by specialized engravers rather than the swordsmith."
+      "category": "metalwork",
+      "definition": "Town carving; metalwork on sword fittings done by independent commoner craftsmen, as opposed to ie-bori work by family schools with official patronage like the Goto."
     },
     {
       "romaji": "mai",
@@ -4893,9 +4965,9 @@
     },
     {
       "romaji": "metezashi",
-      "kanji": "目手指",
-      "category": "hamon",
-      "definition": "Finger-like projections extending from the hamon into the ji area of the blade."
+      "kanji": "馬手差",
+      "category": "koshirae",
+      "definition": "A tanto worn on the right side of the body with the point facing forward, as opposed to the standard left-side carry."
     },
     {
       "romaji": "midare",
@@ -5042,6 +5114,12 @@
       "definition": "The three-piece set of kozuka, kogai, and menuki."
     },
     {
+      "romaji": "gotokoromono",
+      "kanji": "五所物",
+      "category": "tosogu",
+      "definition": "The five-piece matching set consisting of tsuba, fuchi-kashira, kozuka, kogai, and menuki."
+    },
+    {
       "romaji": "mitsu-mune",
       "kanji": "三棟",
       "category": "sugata",
@@ -5068,8 +5146,8 @@
     {
       "romaji": "mizukage",
       "kanji": "水影",
-      "category": "general",
-      "definition": "Water shadow; subtle reflective patterns or shadows visible on the blade surface."
+      "category": "assessment",
+      "definition": "Water shadow; a hazy diagonal line appearing near the ha-machi, typically indicating the blade has been retempered. Generally considered a flaw."
     },
     {
       "romaji": "mizunoto-i",
@@ -5369,7 +5447,7 @@
       "romaji": "naginata",
       "kanji": "薙刀",
       "category": "blade_types",
-      "definition": "A polearm with a curved blade, used primarily by warrior monks and women of samurai families."
+      "definition": "A polearm with a curved, single-edged blade mounted on a long shaft, used by samurai, warrior monks (sohei), and trained in the traditional martial arts."
     },
     {
       "romaji": "naginata-hi",
@@ -5482,8 +5560,8 @@
     {
       "romaji": "namako-sukashi",
       "kanji": "海鼠透",
-      "category": "hamon",
-      "definition": "Sea cucumber openwork; irregular oval-shaped openings or patterns resembling sea cucumbers."
+      "category": "tosogu",
+      "definition": "Sea cucumber openwork; irregular oval-shaped pierced openings in tsuba resembling sea cucumbers."
     },
     {
       "romaji": "namazu-hada",
@@ -5564,6 +5642,12 @@
       "definition": "Pear-skin inlay; inlay technique creating a textured surface resembling pear skin."
     },
     {
+      "romaji": "NBTHK",
+      "kanji": "日本美術刀剣保存協会",
+      "category": "documentation",
+      "definition": "Nihon Bijutsu Token Hozon Kyokai (Society for Preservation of Japanese Art Swords); the primary authentication organization for Japanese swords, issuing Hozon, Tokubetsu Hozon, Juyo, and Tokubetsu Juyo certifications."
+    },
+    {
       "romaji": "nenki",
       "kanji": "年紀",
       "category": "general",
@@ -5626,8 +5710,8 @@
     {
       "romaji": "nie",
       "kanji": "沸",
-      "category": "kitae",
-      "definition": "Individual crystals of martensite visible as bright, sparkling particles."
+      "category": "hamon",
+      "definition": "Individual crystals of martensite visible as bright, sparkling particles in the hamon and ji areas."
     },
     {
       "romaji": "nie-ashi",
@@ -5782,8 +5866,8 @@
     {
       "romaji": "nioi",
       "kanji": "匂",
-      "category": "kitae",
-      "definition": "Extremely fine martensite particles not individually visible, creating a misty appearance."
+      "category": "hamon",
+      "definition": "Extremely fine martensite particles not individually visible, creating a misty, cloud-like appearance along the hamon."
     },
     {
       "romaji": "nioi-deki",
@@ -5904,6 +5988,12 @@
       "kanji": "のたれ乱",
       "category": "hamon",
       "definition": "Irregular notare; wavy hamon pattern with additional random undulations and variations."
+    },
+    {
+      "romaji": "NTHK",
+      "kanji": "日本刀剣保存会",
+      "category": "documentation",
+      "definition": "Nihon Token Hozon Kai (Japan Sword Preservation Society); a sword authentication organization issuing certificates including Kanteisho grades."
     },
     {
       "romaji": "nuke",
@@ -6089,7 +6179,7 @@
       "romaji": "o-suriage",
       "kanji": "大磨上げ",
       "category": "nakago",
-      "definition": "Greatly shortened; significantly reduced in length."
+      "definition": "Greatly shortened; tang significantly reduced in length, typically resulting in loss of the original signature (mei)."
     },
     {
       "romaji": "oan",
@@ -6203,7 +6293,7 @@
       "romaji": "origami",
       "kanji": "折紙",
       "category": "documentation",
-      "definition": "Certificate of authenticity; appraisal document."
+      "definition": "Certificate of authenticity; traditionally folded appraisal document, historically issued by the Hon'ami family during the Edo period."
     },
     {
       "romaji": "origane",
@@ -6725,7 +6815,7 @@
       "romaji": "sansaku-bōshi",
       "kanji": "三作帽子",
       "category": "boshi",
-      "definition": "Third-grade boshi; a hamon termination pattern of moderate quality workmanship."
+      "definition": "A boshi style characteristic of three famous Osafune smiths (Nagamitsu, Kagemitsu, Sanenaga), featuring a straight temper line through the kissaki with a small turn-back."
     },
     {
       "romaji": "sanshō",
@@ -6851,7 +6941,7 @@
       "romaji": "sayagaki",
       "kanji": "鞘書",
       "category": "documentation",
-      "definition": "Scabbard inscription; attribution written on the storage scabbard."
+      "definition": "Scabbard inscription; attribution and description written on a shirasaya (storage scabbard) by a recognized expert. The authority of a sayagaki depends entirely on who wrote it. Inscriptions by Honma Kunzan or Tanobe Michihiro are highly valued, while those by less recognized individuals carry little weight. A sayagaki typically includes the smith attribution, blade characteristics, measurements, and date of examination."
     },
     {
       "romaji": "sayagata",
@@ -6879,9 +6969,9 @@
     },
     {
       "romaji": "sekigane",
-      "kanji": "関金",
-      "category": "general",
-      "definition": "Barrier metal; a separating metal layer or insert used in sword construction techniques."
+      "kanji": "責金",
+      "category": "tosogu",
+      "definition": "Soft metal spacers (typically copper) fitted into the nakago-ana of a tsuba to provide a snug fit to a specific blade's tang."
     },
     {
       "romaji": "seme-kanagu",
@@ -7154,10 +7244,16 @@
       "definition": "Bamboo-joint cut file marks; a specific pattern of horizontal file marks."
     },
     {
+      "romaji": "shinsa",
+      "kanji": "審査",
+      "category": "documentation",
+      "definition": "Examination or judging; the formal NBTHK process of evaluating swords for certification."
+    },
+    {
       "romaji": "shinshinto",
       "kanji": "新々刀",
       "category": "schools",
-      "definition": "New-new sword; blades made approximately 1781-1876."
+      "definition": "New-new sword; blades made approximately 1781-1868 (end of Edo period), characterized by revival of koto techniques."
     },
     {
       "romaji": "shinsoku-mon",
@@ -7175,7 +7271,7 @@
       "romaji": "shinto",
       "kanji": "新刀",
       "category": "schools",
-      "definition": "New sword; blades made from approximately 1596-1780."
+      "definition": "New sword; blades made from approximately 1596-1781, characterized by new forging methods after the unification of Japan."
     },
     {
       "romaji": "Shintogo",
@@ -7346,6 +7442,12 @@
       "definition": "Flickering candle-like appearance in the hamon with small, dancing flame patterns."
     },
     {
+      "romaji": "shoshin",
+      "kanji": "正真",
+      "category": "assessment",
+      "definition": "Genuine work; an authentic blade confirmed to be by the smith whose signature it bears."
+    },
+    {
       "romaji": "shōni-mokkō-gata",
       "kanji": "小仁木瓜形",
       "category": "general",
@@ -7361,7 +7463,13 @@
       "romaji": "shu-mei",
       "kanji": "朱銘",
       "category": "nakago",
-      "definition": "Red lacquer signature; attribution in red lacquer."
+      "definition": "Red lacquer signature; attribution written in red lacquer, typically by Hon'ami appraisers during the Edo period. Applied to ubu (unshortened) nakago where gold inlay was not appropriate. Less permanent than kinzogan-mei but still a respected form of attribution when by a recognized authority."
+    },
+    {
+      "romaji": "shu-sho",
+      "kanji": "朱書",
+      "category": "nakago",
+      "definition": "Red lacquer attribution; post-Edo period variant of shu-mei. Unlike traditional shu-mei which was applied during the Edo period on ubu nakago, shu-sho refers to later attributions in red lacquer. Generally considered less authoritative than historical shu-mei."
     },
     {
       "romaji": "shugodai",
@@ -8354,16 +8462,28 @@
       "definition": "Hood or cap; a covering piece, often referring to protective caps on sword components."
     },
     {
+      "romaji": "tokubetsu-hozon",
+      "kanji": "特別保存",
+      "category": "documentation",
+      "definition": "Especially worthy of preservation; NBTHK certification indicating superior quality above Hozon grade."
+    },
+    {
       "romaji": "tokubetsu-juyo",
       "kanji": "特別重要",
       "category": "documentation",
       "definition": "Especially Important; highest NBTHK designation."
     },
     {
+      "romaji": "tokubetsu-kicho",
+      "kanji": "特別貴重",
+      "category": "documentation",
+      "definition": "Especially Precious; post-war NBTHK designation discontinued and discredited due to authentication scandals. Treat as equivalent to no papers—approximately 95% of attributions are unreliable. Exception: low-value fittings from inexpensive schools where modern Hozon certification costs exceed the value gained. Pre-1982 papers had green covers ('green papers' in Western collecting)."
+    },
+    {
       "romaji": "tomobako",
       "kanji": "共箱",
       "category": "general",
-      "definition": "Original wooden storage box made by the same craftsman who created the sword or fitting."
+      "definition": "Original wooden storage box accompanying a sword or fitting; typically inscribed with attribution or provenance information."
     },
     {
       "romaji": "tōran",
@@ -8753,7 +8873,7 @@
       "romaji": "uchigatana",
       "kanji": "打刀",
       "category": "blade_types",
-      "definition": "Curved sword worn edge-up through the sash; predecessor to the modern katana."
+      "definition": "Curved sword worn edge-up thrust through the sash (obi), the standard method of wearing katana from the Muromachi period onward."
     },
     {
       "romaji": "uchigatana koshirae",
@@ -8777,7 +8897,7 @@
       "romaji": "uchinoke",
       "kanji": "打除け",
       "category": "hamon",
-      "definition": "Projections; areas where the hamon extends into the ji."
+      "definition": "Arc-shaped activities in the hamon; curved formations appearing along or within the temper line."
     },
     {
       "romaji": "uchizori",
@@ -8936,6 +9056,12 @@
       "definition": "Applied overlay; metal shapes soldered onto the surface."
     },
     {
+      "romaji": "white-papers",
+      "kanji": "",
+      "category": "documentation",
+      "definition": "Colloquial Western term for basic Kicho papers, which had a white cover. The lowest grade of the discredited Kicho system. Treat as equivalent to no papers—approximately 95% of attributions are unreliable. Exception: low-value fittings from inexpensive schools where modern Hozon certification costs exceed the value gained. See: kicho."
+    },
+    {
       "romaji": "wagō",
       "kanji": "和合",
       "category": "general",
@@ -9030,6 +9156,24 @@
       "kanji": "渡巻",
       "category": "koshirae",
       "definition": "Crossing wrap or spiral binding technique used on sword handles and scabbards."
+    },
+    {
+      "romaji": "wazamono",
+      "kanji": "業物",
+      "category": "assessment",
+      "definition": "Sharp blade; classification for swords with proven cutting ability based on historical test cutting records."
+    },
+    {
+      "romaji": "o-wazamono",
+      "kanji": "大業物",
+      "category": "assessment",
+      "definition": "Excellent sharp blade; higher grade of cutting ability classification, indicating superior sharpness."
+    },
+    {
+      "romaji": "saijo-o-wazamono",
+      "kanji": "最上大業物",
+      "category": "assessment",
+      "definition": "Supreme sharp blade; the highest cutting ability classification, reserved for blades of legendary sharpness."
     },
     {
       "romaji": "wazori",
