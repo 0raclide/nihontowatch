@@ -5,8 +5,9 @@ import { createClient } from '@supabase/supabase-js';
  * This is a separate database from the main NihontoWatch database.
  */
 
-const yuhinkaiUrl = process.env.YUHINKAI_SUPABASE_URL || '';
-const yuhinkaiKey = process.env.YUHINKAI_SUPABASE_KEY || '';
+// Support both naming conventions (YUHINKAI_* or OSHI_V2_*)
+const yuhinkaiUrl = process.env.YUHINKAI_SUPABASE_URL || process.env.OSHI_V2_SUPABASE_URL || '';
+const yuhinkaiKey = process.env.YUHINKAI_SUPABASE_KEY || process.env.OSHI_V2_SUPABASE_KEY || '';
 
 if (!yuhinkaiUrl) {
   console.error('[Yuhinkai] YUHINKAI_SUPABASE_URL is not configured.');
