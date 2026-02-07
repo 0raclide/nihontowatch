@@ -29,6 +29,7 @@
 | [USER_ENGAGEMENT_ANALYTICS.md](./USER_ENGAGEMENT_ANALYTICS.md) | Admin engagement dashboard - user growth, funnel, search analytics |
 | [YUHINKAI_REGISTRY_VISION.md](./YUHINKAI_REGISTRY_VISION.md) | **Strategic vision** - Yuhinkai as canonical nihonto registry, work tracking, price index |
 | [ARTISAN_TOOLTIP_VERIFICATION.md](./ARTISAN_TOOLTIP_VERIFICATION.md) | Admin QA tool - click artisan badges for details & verification |
+| [SYNC_ELITE_FACTOR_API.md](./SYNC_ELITE_FACTOR_API.md) | Webhook API for syncing elite_factor from Yuhinkai to listings |
 
 ## Sessions
 
@@ -249,6 +250,13 @@
 4. Check `src/app/api/listing/[id]/verify-artisan/route.ts` - Verification API
 5. Check `src/lib/supabase/yuhinkai.ts` - Yuhinkai database client
 6. Check `supabase/migrations/049_artisan_verification.sql` - DB schema
+
+### "I need to work on elite factor sync"
+1. Read [SYNC_ELITE_FACTOR_API.md](./SYNC_ELITE_FACTOR_API.md) - Complete API docs
+2. Check `src/app/api/admin/sync-elite-factor/route.ts` - Webhook endpoint
+3. Check `scripts/backfill-elite-factor.ts` - Manual backfill script
+4. Check `src/lib/supabase/yuhinkai.ts` - Yuhinkai database client
+5. Check `supabase/migrations/050_artisan_elite_factor.sql` - DB schema
 
 ### "I need to work on SEO"
 1. Read [SEO.md](./SEO.md) - Complete SEO documentation
