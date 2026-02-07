@@ -377,3 +377,17 @@ export function dealerDoesNotPublishImages(dealerDomain: string | undefined): bo
   if (!dealerDomain) return false;
   return DEALERS_WITHOUT_IMAGES.includes(dealerDomain.toLowerCase());
 }
+
+/**
+ * Check if an image URL is from Supabase Storage CDN.
+ *
+ * Supabase images are already optimized and cached on their CDN,
+ * so we can bypass Next.js Image optimization for faster loading.
+ *
+ * @param url - The image URL to check
+ * @returns True if the URL is from Supabase Storage
+ */
+export function isSupabaseStorageUrl(url: string | undefined | null): boolean {
+  if (!url) return false;
+  return url.includes('supabase.co/storage/v1/object/public/');
+}

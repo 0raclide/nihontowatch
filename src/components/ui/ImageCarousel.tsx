@@ -10,6 +10,7 @@ import {
   KeyboardEvent,
 } from 'react';
 import Image from 'next/image';
+import { isSupabaseStorageUrl } from '@/lib/images';
 
 export interface ImageCarouselProps {
   images: string[];
@@ -452,6 +453,7 @@ export default function ImageCarousel({
                   placeholder="blur"
                   blurDataURL={BLUR_PLACEHOLDER}
                   draggable={false}
+                  unoptimized={isSupabaseStorageUrl(src)}
                 />
               </div>
             )}

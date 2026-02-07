@@ -41,6 +41,7 @@ vi.mock('@/lib/freshness', () => ({
 vi.mock('@/lib/images', () => ({
   getImageUrl: (listing: { images?: string[] | null }) => listing.images?.[0] || null,
   dealerDoesNotPublishImages: () => false,
+  isSupabaseStorageUrl: () => false,
 }));
 
 // We DON'T mock newListing - we want to test the real integration

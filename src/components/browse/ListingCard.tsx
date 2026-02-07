@@ -7,7 +7,7 @@ import { SetsumeiZufuBadge } from '@/components/ui/SetsumeiZufuBadge';
 import { useActivityOptional } from '@/components/activity/ActivityProvider';
 import { useQuickViewOptional } from '@/contexts/QuickViewContext';
 import { useViewportTrackingOptional } from '@/lib/viewport';
-import { getImageUrl, dealerDoesNotPublishImages } from '@/lib/images';
+import { getImageUrl, dealerDoesNotPublishImages, isSupabaseStorageUrl } from '@/lib/images';
 import { shouldShowNewBadge } from '@/lib/newListing';
 import { trackSearchClick } from '@/lib/tracking/searchTracker';
 import { isTrialModeActive } from '@/types/subscription';
@@ -589,6 +589,8 @@ export const ListingCard = memo(function ListingCard({
             loading={priority ? undefined : 'lazy'}
             placeholder="blur"
             blurDataURL={BLUR_PLACEHOLDER}
+            // Supabase CDN images are already optimized - bypass Next.js Image optimization
+            unoptimized={isSupabaseStorageUrl(imageUrl)}
             onLoad={() => setIsLoading(false)}
             onError={() => {
               setIsLoading(false);
