@@ -79,7 +79,16 @@ interface Listing {
   artisan_id?: string | null;
   artisan_confidence?: 'HIGH' | 'MEDIUM' | 'LOW' | 'NONE' | null;
   artisan_method?: string | null;
-  artisan_candidates?: Array<{ code: string; score: number; name?: string }> | null;
+  artisan_candidates?: Array<{
+    artisan_id: string;
+    name_kanji?: string;
+    name_romaji?: string;
+    school?: string;
+    generation?: string;
+    is_school_code?: boolean;
+    retrieval_method?: string;
+    retrieval_score?: number;
+  }> | null;
   artisan_verified?: 'correct' | 'incorrect' | null;
 }
 

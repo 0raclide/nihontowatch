@@ -5,9 +5,14 @@ import { createPortal } from 'react-dom';
 import type { ArtisanDetails } from '@/app/api/artisan/[code]/route';
 
 interface ArtisanCandidate {
-  code: string;
-  score: number;
-  name?: string;
+  artisan_id: string;
+  name_kanji?: string;
+  name_romaji?: string;
+  school?: string;
+  generation?: string;
+  is_school_code?: boolean;
+  retrieval_method?: string;
+  retrieval_score?: number;
 }
 
 interface ArtisanTooltipProps {
@@ -305,18 +310,36 @@ export function ArtisanTooltip({
                   </div>
                 )}
 
-                {/* Candidates */}
+                {/* Alternative Candidates (for QA) */}
                 {candidates && candidates.length > 0 && (
                   <div className="mb-3">
                     <div className="text-[10px] uppercase tracking-wider text-muted mb-1">
-                      Other candidates:
+                      Alternative candidates:
                     </div>
-                    <div className="space-y-0.5">
-                      {candidates.slice(0, 3).map((c, i) => (
-                        <div key={i} className="text-[10px] font-mono text-ink/70">
-                          {c.code} {c.name ? `(${c.name})` : ''} - {(c.score * 100).toFixed(0)}%
-                        </div>
-                      ))}
+                    <div className="space-y-1.5">
+                      {candidates.slice(0, 3).map((c, i) => {
+                        const displayName = c.name_romaji || c.name_kanji || '';
+                        const genSuffix = c.generation ? ` (${c.generation})` : '';
+                        return (
+                          <div key={i} className="text-[10px] border-l-2 border-border pl-2">
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-mono font-medium text-ink">{c.artisan_id}</span>
+                              {c.is_school_code && (
+                                <span className="text-[8px] uppercase text-muted bg-surface px-1 rounded">school</span>
+                              )}
+                            </div>
+                            {displayName && (
+                              <div className="text-ink/80">{displayName}{genSuffix}</div>
+                            )}
+                            {c.school && (
+                              <div className="text-muted">{c.school}</div>
+                            )}
+                            {c.retrieval_method && (
+                              <div className="text-[9px] text-muted/70 italic">via {c.retrieval_method.replace(/_/g, ' ')}</div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
