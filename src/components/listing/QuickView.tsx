@@ -12,6 +12,7 @@ import { trackListingView } from '@/lib/tracking/viewTracker';
 import { getSessionId } from '@/lib/activity/sessionManager';
 import { usePinchZoomTracking } from '@/lib/viewport';
 import { getAllImages, dealerDoesNotPublishImages } from '@/lib/images';
+import { useValidatedImages } from '@/hooks/useValidatedImages';
 import { useAuth } from '@/lib/auth/AuthContext';
 import type { ListingWithEnrichment } from '@/types';
 
@@ -156,11 +157,10 @@ export function QuickView() {
     setIsStudyMode(prev => !prev);
   }, []);
 
-  // Get all images from the listing
-  // Note: We skip client-side validation to prevent layout shifts.
-  // Images from Supabase storage are already vetted during scraping.
-  // Invalid images (if any) will fail to load and show error state gracefully.
-  const images = currentListing ? getAllImages(currentListing) : [];
+  // Get all images and validate them to filter out icons/buttons/tiny UI elements
+  // Hook must be called unconditionally, so we handle null listing with empty array
+  const rawImages = currentListing ? getAllImages(currentListing) : [];
+  const { validatedImages: images } = useValidatedImages(rawImages);
 
   if (!currentListing) return null;
 
@@ -551,81 +551,83 @@ function LazyImage({
     }
   };
 
-  // Use consistent aspect ratio container to prevent layout shifts
-  // aspect-[3/4] matches typical sword/tosogu photos (tall images)
   return (
     <div
       ref={ref}
-      className="relative aspect-[3/4] bg-linen rounded overflow-hidden"
+      className={`relative bg-linen rounded overflow-hidden ${!loaded && !error && isVisible ? 'min-h-[300px]' : ''}`}
     >
-      {/* Loading skeleton - always same size as container */}
-      {!loaded && !error && (
-        <div className="absolute inset-0 img-loading" />
-      )}
+      {isVisible ? (
+        <>
+          {/* Loading skeleton - maintains height while image loads */}
+          {!loaded && !error && (
+            <div className="absolute inset-0 img-loading min-h-[300px]" />
+          )}
 
-      {/* Spinner overlay when not yet visible (waiting to load) */}
-      {!isVisible && !loaded && (
-        <div className="absolute inset-0 flex items-center justify-center">
+          {/* Error state */}
+          {error && (
+            <div className="aspect-[3/4] flex items-center justify-center bg-linen">
+              <span className="text-muted text-sm">Failed to load</span>
+            </div>
+          )}
+
+          {/* Actual image - Next.js Image for optimization (AVIF/WebP, sizing) */}
+          {/* On retry, uses unoptimized=true to bypass optimization which may fix certain images */}
+          {!error && (
+            <Image
+              key={`${src}-${retryCount}`}
+              src={src}
+              alt={[
+                itemType,
+                certType,
+                listingTitle,
+                `Photo ${index + 1} of ${totalImages}`,
+              ].filter(Boolean).join(' - ')}
+              width={800}
+              height={600}
+              className={`w-full h-auto transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+              style={{ width: '100%', height: 'auto' }}
+              onLoad={() => setLoaded(true)}
+              onError={handleError}
+              loading={isFirst ? 'eager' : 'lazy'}
+              fetchPriority={isFirst ? 'high' : undefined}
+              placeholder="blur"
+              blurDataURL={BLUR_PLACEHOLDER}
+              sizes="(max-width: 1024px) 100vw, 60vw"
+              unoptimized={useUnoptimized}
+            />
+          )}
+
+          {/* Image position indicator - elegant pill */}
+          {loaded && totalImages > 1 && (
+            <div className="absolute bottom-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-ink/70 backdrop-blur-sm">
+              <span className="text-[11px] text-white/90 font-medium tabular-nums">
+                {index + 1}
+              </span>
+              <span className="text-[11px] text-white/50">/</span>
+              <span className="text-[11px] text-white/50 tabular-nums">
+                {totalImages}
+              </span>
+            </div>
+          )}
+
+          {/* Scroll hint on first image - subtle fade animation */}
+          {showScrollHint && loaded && (
+            <div className="absolute bottom-16 inset-x-0 flex justify-center pointer-events-none animate-pulse">
+              <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-ink/60 backdrop-blur-md">
+                <svg className="w-4 h-4 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 9l-7 7-7-7" />
+                </svg>
+                <span className="text-[12px] text-white/90 font-medium">
+                  {totalImages - 1} more photos
+                </span>
+              </div>
+            </div>
+          )}
+        </>
+      ) : (
+        // Placeholder before image enters viewport range
+        <div className="aspect-[3/4] bg-linen flex items-center justify-center">
           <div className="w-8 h-8 border-2 border-border border-t-gold rounded-full animate-spin" />
-        </div>
-      )}
-
-      {/* Error state */}
-      {error && (
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-muted text-sm">Failed to load</span>
-        </div>
-      )}
-
-      {/* Actual image - uses fill to match container, object-contain for correct proportions */}
-      {/* Always render when visible (even during loading) for smoother transition */}
-      {isVisible && !error && (
-        <Image
-          key={`${src}-${retryCount}`}
-          src={src}
-          alt={[
-            itemType,
-            certType,
-            listingTitle,
-            `Photo ${index + 1} of ${totalImages}`,
-          ].filter(Boolean).join(' - ')}
-          fill
-          className={`object-contain transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
-          onLoad={() => setLoaded(true)}
-          onError={handleError}
-          loading={isFirst ? 'eager' : 'lazy'}
-          fetchPriority={isFirst ? 'high' : undefined}
-          placeholder="blur"
-          blurDataURL={BLUR_PLACEHOLDER}
-          sizes="(max-width: 1024px) 100vw, 60vw"
-          unoptimized={useUnoptimized}
-        />
-      )}
-
-      {/* Image position indicator - elegant pill */}
-      {loaded && totalImages > 1 && (
-        <div className="absolute bottom-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-ink/70 backdrop-blur-sm">
-          <span className="text-[11px] text-white/90 font-medium tabular-nums">
-            {index + 1}
-          </span>
-          <span className="text-[11px] text-white/50">/</span>
-          <span className="text-[11px] text-white/50 tabular-nums">
-            {totalImages}
-          </span>
-        </div>
-      )}
-
-      {/* Scroll hint on first image - subtle fade animation */}
-      {showScrollHint && loaded && (
-        <div className="absolute bottom-16 inset-x-0 flex justify-center pointer-events-none animate-pulse">
-          <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-ink/60 backdrop-blur-md">
-            <svg className="w-4 h-4 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 9l-7 7-7-7" />
-            </svg>
-            <span className="text-[12px] text-white/90 font-medium">
-              {totalImages - 1} more photos
-            </span>
-          </div>
         </div>
       )}
     </div>
