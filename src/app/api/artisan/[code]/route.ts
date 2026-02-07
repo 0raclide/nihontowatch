@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSmithEntity, SmithEntity } from '@/lib/supabase/yuhinkai';
 import { logger } from '@/lib/logger';
 
 export const revalidate = 0;
 export const dynamic = 'force-dynamic';
+
+// Check if Yuhinkai database is configured
+const isYuhinkaiConfigured = !!(
+  process.env.YUHINKAI_SUPABASE_URL &&
+  process.env.YUHINKAI_SUPABASE_KEY
+);
 
 /**
  * Artisan details response shape
@@ -44,8 +49,18 @@ export async function GET(
   // Allow cache bypass with ?nocache=1 for debugging
   const nocache = request.nextUrl.searchParams.get('nocache') === '1';
 
+  // Return 404 if Yuhinkai database is not configured
+  if (!isYuhinkaiConfigured) {
+    return NextResponse.json(
+      { artisan: null, error: 'Yuhinkai database not configured' },
+      { status: 404 }
+    );
+  }
+
   try {
-    const smithEntity: SmithEntity | null = await getSmithEntity(code);
+    // Dynamic import to avoid build-time errors when env vars are missing
+    const { getSmithEntity } = await import('@/lib/supabase/yuhinkai');
+    const smithEntity = await getSmithEntity(code);
 
     if (!smithEntity) {
       // Return empty response with 404 if not found
