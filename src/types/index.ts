@@ -497,7 +497,8 @@ export type SortOption =
   | 'price_asc'
   | 'price_desc'
   | 'name'
-  | 'dealer';
+  | 'dealer'
+  | 'elite_factor';
 
 export interface BrowseResult {
   listings: Listing[];

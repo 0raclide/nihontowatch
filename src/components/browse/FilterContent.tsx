@@ -566,6 +566,7 @@ export function FilterContent({
               <option value="price_asc">Price ↑</option>
               <option value="price_desc">Price ↓</option>
               <option value="name">A-Z</option>
+              {isAdmin && <option value="elite_factor">Elite Factor</option>}
             </select>
           </div>
 

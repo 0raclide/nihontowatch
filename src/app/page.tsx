@@ -542,6 +542,7 @@ function HomeContent() {
               <option value="price_asc">Price ↑</option>
               <option value="price_desc">Price ↓</option>
               <option value="name">A-Z</option>
+              {authIsAdmin && <option value="elite_factor">Elite Factor</option>}
             </select>
 
             {/* Save Search Button */}

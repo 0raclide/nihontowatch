@@ -497,6 +497,12 @@ export async function GET(request: NextRequest) {
           .order('status_changed_at', { ascending: false, nullsFirst: false })
           .order('first_seen_at', { ascending: false });
         break;
+      case 'elite_factor':
+        // Sort by artisan's bayesian elite factor (admin-only feature)
+        // Higher elite factor = more prestigious maker
+        // Listings without artisan match appear last (nullsFirst: false)
+        query = query.order('artisan_elite_factor', { ascending: false, nullsFirst: false });
+        break;
       default:
         // "Newest" sort: Genuine new inventory first, then bulk imports
         // is_initial_import: FALSE (genuine new) sorts before TRUE (bulk import)
