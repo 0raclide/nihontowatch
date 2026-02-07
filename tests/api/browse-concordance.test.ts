@@ -335,33 +335,39 @@ describe('Browse API Concordance Tests', () => {
       }
     });
 
-    it('facet count should approximately match filtered total (same request)', async () => {
-      // Make a fresh request and verify internal consistency
-      const fresh = await fetchBrowse({});
-      const firstCert = fresh.facets.certifications[0];
-      if (!firstCert) return;
+    it(
+      'facet count should approximately match filtered total (same request)',
+      async () => {
+        // Make a fresh request and verify internal consistency
+        const fresh = await fetchBrowse({});
+        const firstCert = fresh.facets.certifications[0];
+        if (!firstCert) return;
 
-      // Now filter by that cert in the same timeframe
-      const filtered = await fetchBrowse({ cert: firstCert.value });
+        // Now filter by that cert in the same timeframe
+        const filtered = await fetchBrowse({ cert: firstCert.value });
 
-      // The filtered total should closely match the facet count
-      // Allow 20% tolerance for:
-      // 1. CDN edge caching may serve slightly stale data
-      // 2. Minor timing differences between requests
-      // 3. Cert variant expansions (filter may match slightly more variants)
-      //
-      // NOTE: If this test fails with >50% discrepancy, the facet pagination
-      // may have regressed. See src/app/api/browse/route.ts facet functions.
-      const tolerance = Math.max(firstCert.count * 0.2, 10);
+        // The filtered total should closely match the facet count
+        // Allow 20% tolerance for:
+        // 1. CDN edge caching may serve slightly stale data
+        // 2. Minor timing differences between requests
+        // 3. Cert variant expansions (filter may match slightly more variants)
+        //
+        // NOTE: If this test fails with >50% discrepancy, the facet pagination
+        // may have regressed. See src/app/api/browse/route.ts facet functions.
+        const tolerance = Math.max(firstCert.count * 0.2, 10);
 
-      // Log for debugging
-      if (filtered.total > firstCert.count + tolerance) {
-        console.log(`Facet mismatch: facet=${firstCert.count}, filtered=${filtered.total}, tolerance=${tolerance}`);
-      }
+        // Log for debugging
+        if (filtered.total > firstCert.count + tolerance) {
+          console.log(
+            `Facet mismatch: facet=${firstCert.count}, filtered=${filtered.total}, tolerance=${tolerance}`
+          );
+        }
 
-      expect(filtered.total).toBeGreaterThanOrEqual(firstCert.count - tolerance);
-      expect(filtered.total).toBeLessThanOrEqual(firstCert.count + tolerance);
-    });
+        expect(filtered.total).toBeGreaterThanOrEqual(firstCert.count - tolerance);
+        expect(filtered.total).toBeLessThanOrEqual(firstCert.count + tolerance);
+      },
+      15000  // Increased timeout - test makes multiple API calls against production
+    );
   });
 
   // ===========================================================================
