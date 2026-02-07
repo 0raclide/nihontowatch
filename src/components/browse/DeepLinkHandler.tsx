@@ -2,7 +2,6 @@
 
 import { useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
 import { useQuickViewOptional } from '@/contexts/QuickViewContext';
 import type { Listing } from '@/types';
 
@@ -10,10 +9,13 @@ import type { Listing } from '@/types';
  * Handles deep links to listings via the ?listing= URL parameter.
  *
  * When the page loads with ?listing=<id>, this component:
- * 1. Fetches the listing from Supabase
+ * 1. Fetches the listing from the API (same endpoint used by QuickView)
  * 2. Opens the QuickView modal with that listing
  *
  * This enables shareable URLs that open specific listings.
+ *
+ * Uses the /api/listing/[id] endpoint instead of direct Supabase queries
+ * to ensure consistent data format and avoid RLS/client-side issues.
  */
 export function DeepLinkHandler() {
   const searchParams = useSearchParams();
@@ -31,71 +33,38 @@ export function DeepLinkHandler() {
     const listingId = parseInt(listingParam, 10);
     if (isNaN(listingId)) return;
 
-    // Fetch and open the listing
+    // Fetch and open the listing using the API endpoint
+    // This ensures we get the same data format as QuickView's fetchFullListing
     const fetchAndOpenListing = async () => {
       try {
-        const supabase = createClient();
-        const { data, error } = await supabase
-          .from('listings')
-          .select(`
-            *,
-            dealers (
-              id,
-              name,
-              domain,
-              is_active,
-              created_at
-            )
-          `)
-          .eq('id', listingId)
-          .single();
+        const response = await fetch(`/api/listing/${listingId}`);
 
-        if (error || !data) {
-          console.error('Failed to fetch listing for deep link:', error);
+        if (!response.ok) {
+          console.error('Failed to fetch listing for deep link:', response.status);
           return;
         }
 
-        // Cast data to a type we can work with
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const listingData = data as any;
+        const data = await response.json();
+        const listingData = data.listing;
 
-        // Convert to Listing type expected by QuickView
-        // Use type assertion since we know the data from Supabase includes all required fields
+        if (!listingData) {
+          console.error('No listing data in response for deep link');
+          return;
+        }
+
+        // The API returns the listing with 'dealers' (plural) from Supabase join
+        // Map to both 'dealers' and 'dealer' for compatibility with all components
         const listing = {
-          id: listingData.id,
-          url: listingData.url,
-          title: listingData.title,
-          item_type: listingData.item_type,
-          price_value: listingData.price_value,
-          price_currency: listingData.price_currency,
-          smith: listingData.smith,
-          tosogu_maker: listingData.tosogu_maker,
-          school: listingData.school,
-          tosogu_school: listingData.tosogu_school,
-          cert_type: listingData.cert_type,
-          nagasa_cm: listingData.nagasa_cm,
-          sori_cm: listingData.sori_cm,
-          motohaba_cm: listingData.motohaba_cm,
-          images: listingData.images || [],
-          stored_images: listingData.stored_images,
-          first_seen_at: listingData.first_seen_at,
-          last_scraped_at: listingData.last_scraped_at,
-          scrape_count: listingData.scrape_count || 0,
-          status: listingData.status,
-          is_available: listingData.is_available,
-          is_sold: listingData.is_sold,
-          page_exists: listingData.page_exists ?? true,
-          dealer_id: listingData.dealer_id,
+          ...listingData,
+          // Ensure both singular and plural dealer references work
           dealer: listingData.dealers ? {
             id: listingData.dealers.id,
             name: listingData.dealers.name,
             domain: listingData.dealers.domain,
-            is_active: listingData.dealers.is_active,
-            created_at: listingData.dealers.created_at,
           } : undefined,
         } as Listing;
 
-        // Open the QuickView
+        // Open the QuickView with complete listing data
         quickView.openQuickView(listing);
         hasHandledRef.current = true;
       } catch (err) {
