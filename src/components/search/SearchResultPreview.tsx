@@ -2,7 +2,6 @@
 
 import Image from 'next/image';
 import type { SearchSuggestion } from '@/lib/search/types';
-import { isSupabaseStorageUrl } from '@/lib/images';
 
 interface SearchResultPreviewProps {
   suggestion: SearchSuggestion;
@@ -88,7 +87,6 @@ export function SearchResultPreview({
             sizes="48px"
             placeholder="blur"
             blurDataURL={BLUR_PLACEHOLDER}
-            unoptimized={isSupabaseStorageUrl(suggestion.image_url)}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">

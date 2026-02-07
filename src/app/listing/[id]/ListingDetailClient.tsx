@@ -11,7 +11,7 @@ import { LoginModal } from '@/components/auth/LoginModal';
 import { InquiryModal } from '@/components/inquiry/InquiryModal';
 import { useAlerts } from '@/hooks/useAlerts';
 import { useAuth } from '@/lib/auth/AuthContext';
-import { getAllImages, isSupabaseStorageUrl } from '@/lib/images';
+import { getAllImages } from '@/lib/images';
 import { useValidatedImages } from '@/hooks/useValidatedImages';
 import { shouldShowNewBadge } from '@/lib/newListing';
 import { SetsumeiSection } from '@/components/listing/SetsumeiSection';
@@ -263,7 +263,6 @@ export default function ListingDetailPage() {
                   className="object-contain"
                   sizes="(max-width: 1024px) 100vw, 50vw"
                   priority
-                  unoptimized={isSupabaseStorageUrl(images[selectedImageIndex])}
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
@@ -302,7 +301,6 @@ export default function ListingDetailPage() {
                       fill
                       className="object-cover"
                       sizes="64px"
-                      unoptimized={isSupabaseStorageUrl(img)}
                     />
                   </button>
                 ))}

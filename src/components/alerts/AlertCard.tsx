@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import type { Alert } from '@/types';
-import { getImageUrl, isSupabaseStorageUrl } from '@/lib/images';
+import { getImageUrl } from '@/lib/images';
 
 interface AlertCardProps {
   alert: Alert;
@@ -170,7 +170,6 @@ export function AlertCard({ alert, onToggle, onDelete }: AlertCardProps) {
                   fill
                   className="object-cover"
                   sizes="64px"
-                  unoptimized={isSupabaseStorageUrl(imageUrl)}
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">

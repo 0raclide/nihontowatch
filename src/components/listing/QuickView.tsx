@@ -11,7 +11,7 @@ import { useActivityTrackerOptional } from '@/lib/tracking/ActivityTracker';
 import { trackListingView } from '@/lib/tracking/viewTracker';
 import { getSessionId } from '@/lib/activity/sessionManager';
 import { usePinchZoomTracking } from '@/lib/viewport';
-import { getAllImages, dealerDoesNotPublishImages, isSupabaseStorageUrl } from '@/lib/images';
+import { getAllImages, dealerDoesNotPublishImages } from '@/lib/images';
 import { useValidatedImages } from '@/hooks/useValidatedImages';
 import { useAuth } from '@/lib/auth/AuthContext';
 import type { ListingWithEnrichment } from '@/types';
@@ -459,9 +459,6 @@ function LazyImage({
   const [retryCount, setRetryCount] = useState(0);
   const [useUnoptimized, setUseUnoptimized] = useState(false);
 
-  // Supabase CDN images are already optimized - bypass Next.js Image optimization
-  const isFromSupabase = isSupabaseStorageUrl(src);
-
   // Reset state when src changes
   useEffect(() => {
     setLoaded(false);
@@ -596,7 +593,7 @@ function LazyImage({
               placeholder="blur"
               blurDataURL={BLUR_PLACEHOLDER}
               sizes="(max-width: 1024px) 100vw, 60vw"
-              unoptimized={isFromSupabase || useUnoptimized}
+              unoptimized={useUnoptimized}
             />
           )}
 
