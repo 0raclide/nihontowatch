@@ -83,6 +83,21 @@ export async function middleware(request: NextRequest) {
 
   // Protect /api/admin routes
   if (request.nextUrl.pathname.startsWith('/api/admin')) {
+    // Allow API-key authenticated requests (webhooks from Yuhinkai)
+    const cronSecret = process.env.CRON_SECRET;
+    const authHeader = request.headers.get('authorization');
+    const cronHeader = request.headers.get('x-cron-secret');
+
+    const hasValidApiKey = cronSecret && (
+      authHeader === `Bearer ${cronSecret}` ||
+      cronHeader === cronSecret
+    );
+
+    if (hasValidApiKey) {
+      // API key auth - let the route handler process it
+      return supabaseResponse;
+    }
+
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
