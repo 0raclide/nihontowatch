@@ -286,14 +286,14 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
     s.push({ id: 'overview', label: 'Overview' });
     if (certifications.total_items > 0) s.push({ id: 'certifications', label: 'Certifications' });
     if (denrai.length > 0) s.push({ id: 'provenance', label: 'Provenance' });
-    if (profile?.profile_md) s.push({ id: 'biography', label: 'Biography' });
-    if (hasDistributions) s.push({ id: 'distributions', label: 'Analysis' });
+    if (hasFormStats) s.push({ id: 'blade-forms', label: entity.entity_type === 'smith' ? 'Blade Forms' : 'Work Types' });
+    if (hasMeiStats) s.push({ id: 'signatures', label: 'Signatures' });
     if (listingsExist) s.push({ id: 'listings', label: 'Available' });
     if (soldListingsExist) s.push({ id: 'sold', label: 'Previously Sold' });
     if (lineage.teacher || lineage.students.length > 0) s.push({ id: 'lineage', label: 'Lineage' });
     if (related.length > 0) s.push({ id: 'related', label: 'School' });
     return s;
-  }, [profile, certifications.total_items, hasDistributions, listingsExist, soldListingsExist, lineage, related, denrai]);
+  }, [entity.entity_type, certifications.total_items, hasFormStats, hasMeiStats, listingsExist, soldListingsExist, lineage, related, denrai]);
 
   const fujishiroLabel = entity.fujishiro ? FUJISHIRO_LABELS[entity.fujishiro] : null;
   const isTopGrade = rankings.elite_grade === 'S' || rankings.elite_grade === 'A';
@@ -568,52 +568,35 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
         )}
 
         {/* ═══════════════════════════════════════════════════════════════════
-            BIOGRAPHY — Rich scholarly profile
+            BLADE FORMS — Form distribution across certified works
         ═══════════════════════════════════════════════════════════════════ */}
-        {profile?.profile_md && (
+        {hasFormStats && (
           <>
             <SectionDivider />
-            <section id="biography">
-              <h2 className="text-[11px] uppercase tracking-[0.2em] text-muted/50 mb-6">Biography</h2>
-              <Biography markdown={profile.profile_md} hook={profile.hook} />
-              {profile.setsumei_count > 0 && (
-                <p className="mt-5 text-[11px] text-muted/35 italic">
-                  Profile informed by {profile.setsumei_count} translated setsumei
-                </p>
-              )}
+            <section id="blade-forms">
+              <h2 className="text-[11px] uppercase tracking-[0.2em] text-muted/50 mb-2">
+                {entity.entity_type === 'smith' ? 'Blade Forms' : 'Work Types'}
+              </h2>
+              <p className="text-[11px] text-muted/35 mb-7 italic">
+                Distribution across {certifications.total_items} certified works
+              </p>
+              <FormDistributionBar distribution={stats.form_distribution} />
             </section>
           </>
         )}
 
         {/* ═══════════════════════════════════════════════════════════════════
-            DISTRIBUTIONS — Forms + Signatures
+            SIGNATURES — Mei type distribution across certified works
         ═══════════════════════════════════════════════════════════════════ */}
-        {hasDistributions && (
+        {hasMeiStats && (
           <>
             <SectionDivider />
-            <section id="distributions">
-              <h2 className="text-[11px] uppercase tracking-[0.2em] text-muted/50 mb-2">Analysis</h2>
+            <section id="signatures">
+              <h2 className="text-[11px] uppercase tracking-[0.2em] text-muted/50 mb-2">Signatures</h2>
               <p className="text-[11px] text-muted/35 mb-7 italic">
-                Statistical breakdown across {certifications.total_items} certified works
+                Signature types across {certifications.total_items} certified works
               </p>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-10">
-                {/* Form distribution */}
-                {hasFormStats && (
-                  <div>
-                    <h3 className="text-[11px] text-muted/45 mb-3 uppercase tracking-wider">Blade Forms</h3>
-                    <FormDistributionBar distribution={stats.form_distribution} />
-                  </div>
-                )}
-
-                {/* Mei distribution */}
-                {hasMeiStats && (
-                  <div>
-                    <h3 className="text-[11px] text-muted/45 mb-3 uppercase tracking-wider">Signatures</h3>
-                    <MeiDistributionBar distribution={stats.mei_distribution} />
-                  </div>
-                )}
-              </div>
+              <MeiDistributionBar distribution={stats.mei_distribution} />
             </section>
           </>
         )}
