@@ -10,6 +10,7 @@ import {
   getElitePercentile,
   getTokoTaikanPercentile,
   resolveTeacher,
+  getDenraiForArtists,
 } from '@/lib/supabase/yuhinkai';
 import { generateBreadcrumbJsonLd, jsonLdScriptProps } from '@/lib/seo/jsonLd';
 import { ArtistPageClient } from './ArtistPageClient';
@@ -45,7 +46,7 @@ async function getArtistData(code: string): Promise<ArtisanPageResponse | null> 
   const eliteFactor = entity.elite_factor ?? 0;
   const slug = generateArtisanSlug(entity.name_romaji, entityCode);
 
-  const [profile, students, related, elitePercentile, tokoTaikanPercentile, teacherStub] =
+  const [profile, students, related, elitePercentile, tokoTaikanPercentile, teacherStub, denraiMap] =
     await Promise.all([
       getArtistProfile(entityCode),
       getStudents(entityCode, entity.name_romaji),
@@ -55,6 +56,9 @@ async function getArtistData(code: string): Promise<ArtisanPageResponse | null> 
         ? getTokoTaikanPercentile(smithEntity!.toko_taikan!)
         : Promise.resolve(null),
       entity.teacher ? resolveTeacher(entity.teacher) : Promise.resolve(null),
+      entity.name_romaji
+        ? getDenraiForArtists([entity.name_romaji])
+        : Promise.resolve(new Map<string, Array<{ owner: string; count: number }>>()),
     ]);
 
   let stats: ArtisanPageResponse['stats'] = null;
@@ -136,6 +140,7 @@ async function getArtistData(code: string): Promise<ArtisanPageResponse | null> 
       tokuju_count: r.tokuju_count,
       elite_factor: r.elite_factor,
     })),
+    denrai: (entity.name_romaji && denraiMap.get(entity.name_romaji)) || [],
   };
 }
 

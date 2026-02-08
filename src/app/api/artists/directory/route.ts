@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const { getArtistsForDirectory, getArtistDirectoryFacets, getDenraiForArtists } = await import('@/lib/supabase/yuhinkai');
+    const { getArtistsForDirectory, getArtistDirectoryFacets } = await import('@/lib/supabase/yuhinkai');
     const { generateArtisanSlug } = await import('@/lib/artisan/slugs');
 
     const params = request.nextUrl.searchParams;
@@ -49,22 +49,14 @@ export async function GET(request: NextRequest) {
       getArtistDirectoryFacets(),
     ]);
 
-    // Fetch denrai and listing counts in parallel
-    const uniqueNames = [...new Set(
-      artists.map(a => a.name_romaji).filter((n): n is string => !!n)
-    )];
+    // Fetch listing counts for artist cards
     const codes = artists.map(a => a.code);
+    const listingCounts = await getListingCountsForArtists(codes);
 
-    const [denraiMap, listingCounts] = await Promise.all([
-      getDenraiForArtists(uniqueNames),
-      getListingCountsForArtists(codes),
-    ]);
-
-    // Add slugs, denrai, and listing counts to artists
+    // Add slugs and listing counts to artists
     const artistsWithSlugs = artists.map(a => ({
       ...a,
       slug: generateArtisanSlug(a.name_romaji, a.code),
-      denrai_owners: (a.name_romaji && denraiMap.get(a.name_romaji)) || undefined,
       available_count: listingCounts.get(a.code) || 0,
     }));
 

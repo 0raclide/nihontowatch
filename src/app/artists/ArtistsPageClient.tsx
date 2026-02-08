@@ -482,23 +482,6 @@ function ArtistCard({ artist }: { artist: ArtistWithSlug }) {
         {[artist.school, artist.era, artist.province].filter(Boolean).join(' \u00b7 ') || 'Unknown'}
       </div>
 
-      {/* Row 2.5: Denrai (provenance) badges */}
-      {artist.denrai_owners && artist.denrai_owners.length > 0 && (
-        <div className="mt-1.5 flex flex-wrap gap-1">
-          {artist.denrai_owners.map((d) => (
-            <span
-              key={d.owner}
-              className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300 border border-violet-200 dark:border-violet-700/40"
-            >
-              {d.owner}
-              {d.count > 1 && (
-                <span className="text-violet-500 dark:text-violet-400">({d.count})</span>
-              )}
-            </span>
-          ))}
-        </div>
-      )}
-
       {/* Row 3: Cert counts + available */}
       <div className="mt-2.5 flex items-center gap-3 text-[11px] tabular-nums">
         {artist.tokuju_count > 0 && (

@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import { getArtistsForDirectory, getArtistDirectoryFacets, getDenraiForArtists } from '@/lib/supabase/yuhinkai';
+import { getArtistsForDirectory, getArtistDirectoryFacets } from '@/lib/supabase/yuhinkai';
 import { generateArtisanSlug } from '@/lib/artisan/slugs';
 import { generateBreadcrumbJsonLd, jsonLdScriptProps } from '@/lib/seo/jsonLd';
 import { generateArtistDirectoryJsonLd } from '@/lib/seo/jsonLd';
@@ -98,21 +98,13 @@ export default async function ArtistsPage({ searchParams }: ArtistsPageProps) {
     getArtistDirectoryFacets(),
   ]);
 
-  // Fetch denrai and listing counts in parallel
-  const uniqueNames = [...new Set(
-    artists.map(a => a.name_romaji).filter((n): n is string => !!n)
-  )];
+  // Fetch listing counts for the current page of artists
   const codes = artists.map(a => a.code);
-
-  const [denraiMap, listingCounts] = await Promise.all([
-    getDenraiForArtists(uniqueNames),
-    getListingCounts(codes),
-  ]);
+  const listingCounts = await getListingCounts(codes);
 
   const artistsWithSlugs = artists.map(a => ({
     ...a,
     slug: generateArtisanSlug(a.name_romaji, a.code),
-    denrai_owners: (a.name_romaji && denraiMap.get(a.name_romaji)) || undefined,
     available_count: listingCounts.get(a.code) || 0,
   }));
 
