@@ -350,6 +350,40 @@ export function generateDealerJsonLd(dealer: Dealer): LocalBusinessJsonLd {
   };
 }
 
+/**
+ * Generate CollectionPage JSON-LD for the artist directory
+ */
+export function generateArtistDirectoryJsonLd(
+  topArtists: Array<{ name: string; url: string }>
+): object {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: 'Japanese Swordsmith & Tosogu Maker Directory',
+    description:
+      'Comprehensive directory of Japanese swordsmiths and tosogu makers with certification statistics and elite rankings.',
+    url: `${BASE_URL}/artists`,
+    isPartOf: {
+      '@type': 'WebSite',
+      name: 'NihontoWatch',
+      url: BASE_URL,
+    },
+    mainEntity: {
+      '@type': 'ItemList',
+      numberOfItems: topArtists.length,
+      itemListElement: topArtists.map((artist, i) => ({
+        '@type': 'ListItem',
+        position: i + 1,
+        item: {
+          '@type': 'Person',
+          name: artist.name,
+          url: artist.url,
+        },
+      })),
+    },
+  };
+}
+
 // =============================================================================
 // REACT COMPONENT HELPERS
 // =============================================================================

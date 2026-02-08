@@ -1,5 +1,7 @@
 import { MetadataRoute } from 'next';
 import { createServiceClient } from '@/lib/supabase/server';
+import { yuhinkaiClient } from '@/lib/supabase/yuhinkai';
+import { generateArtisanSlug } from '@/lib/artisan/slugs';
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://nihontowatch.com';
 
@@ -39,6 +41,39 @@ async function getAllDealers(): Promise<DealerForSitemap[]> {
   }
 
   return data || [];
+}
+
+interface ArtisanForSitemap {
+  code: string;
+  name_romaji: string | null;
+}
+
+async function getAllNotableArtisans(): Promise<ArtisanForSitemap[]> {
+  const artisans: ArtisanForSitemap[] = [];
+
+  // Fetch smiths
+  const { data: smiths } = await yuhinkaiClient
+    .from('smith_entities')
+    .select('smith_id, name_romaji')
+    .eq('is_school_code', false)
+    .gt('total_items', 0);
+
+  for (const s of smiths || []) {
+    artisans.push({ code: s.smith_id, name_romaji: s.name_romaji });
+  }
+
+  // Fetch tosogu makers
+  const { data: makers } = await yuhinkaiClient
+    .from('tosogu_makers')
+    .select('maker_id, name_romaji')
+    .eq('is_school_code', false)
+    .gt('total_items', 0);
+
+  for (const m of makers || []) {
+    artisans.push({ code: m.maker_id, name_romaji: m.name_romaji });
+  }
+
+  return artisans;
 }
 
 async function getAllListings(): Promise<ListingForSitemap[]> {
@@ -87,12 +122,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'weekly',
       priority: 0.8,
     },
+    {
+      url: `${baseUrl}/artists`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.8,
+    },
   ];
 
-  // Fetch dealers and listings in parallel
-  const [dealers, listings] = await Promise.all([
+  // Fetch dealers, listings, and artisans in parallel
+  const [dealers, listings, artisans] = await Promise.all([
     getAllDealers(),
     getAllListings(),
+    getAllNotableArtisans(),
   ]);
 
   // Individual dealer pages
@@ -113,7 +155,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
-  return [...staticPages, ...dealerPages, ...listingPages];
+  // Individual artist pages
+  const artistPages: MetadataRoute.Sitemap = artisans.map((artisan) => ({
+    url: `${baseUrl}/artists/${generateArtisanSlug(artisan.name_romaji, artisan.code)}`,
+    changeFrequency: 'monthly' as const,
+    priority: 0.6,
+  }));
+
+  return [...staticPages, ...dealerPages, ...listingPages, ...artistPages];
 }
 
 // Revalidate sitemap every hour

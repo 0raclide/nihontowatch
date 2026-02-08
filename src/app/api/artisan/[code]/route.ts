@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
+import { generateArtisanSlug } from '@/lib/artisan/slugs';
 
 export const revalidate = 0;
 export const dynamic = 'force-dynamic';
@@ -11,7 +12,7 @@ const isYuhinkaiConfigured = !!(
 );
 
 /**
- * Artisan details response shape
+ * Artisan details response shape (legacy — kept for ArtisanTooltip compat)
  */
 export interface ArtisanDetails {
   code: string;
@@ -21,13 +22,12 @@ export interface ArtisanDetails {
   province: string | null;
   era: string | null;
   period: string | null;
-  // Certification counts (highest prestige first)
-  kokuho_count: number;   // National Treasures
-  jubun_count: number;    // Important Cultural Properties (Bunkazai)
-  jubi_count: number;     // Important Art Objects (Bijutsuhin)
-  gyobutsu_count: number; // Imperial Collection
-  tokuju_count: number;   // Tokubetsu Juyo
-  juyo_count: number;     // Juyo
+  kokuho_count: number;
+  jubun_count: number;
+  jubi_count: number;
+  gyobutsu_count: number;
+  tokuju_count: number;
+  juyo_count: number;
   total_items: number;
   elite_factor: number | null;
   elite_count: number;
@@ -35,11 +35,82 @@ export interface ArtisanDetails {
 }
 
 /**
+ * Rich artisan page response shape
+ */
+export interface ArtisanPageResponse {
+  entity: {
+    code: string;
+    name_romaji: string | null;
+    name_kanji: string | null;
+    school: string | null;
+    province: string | null;
+    era: string | null;
+    period: string | null;
+    generation: string | null;
+    teacher: string | null;
+    entity_type: 'smith' | 'tosogu';
+    is_school_code: boolean;
+    slug: string;
+    fujishiro: string | null;
+    toko_taikan: number | null;
+    specialties: string[] | null;
+  };
+  certifications: {
+    kokuho_count: number;
+    jubun_count: number;
+    jubi_count: number;
+    gyobutsu_count: number;
+    tokuju_count: number;
+    juyo_count: number;
+    total_items: number;
+    elite_count: number;
+    elite_factor: number;
+  };
+  rankings: {
+    elite_percentile: number;
+    elite_grade: string;
+    toko_taikan_percentile: number | null;
+  };
+  profile: {
+    profile_md: string;
+    hook: string | null;
+    setsumei_count: number;
+    generated_at: string;
+  } | null;
+  stats: {
+    mei_distribution: Record<string, number>;
+    form_distribution: Record<string, number>;
+  } | null;
+  lineage: {
+    teacher: { code: string; name_romaji: string | null; slug: string } | null;
+    students: Array<{ code: string; name_romaji: string | null; slug: string }>;
+  };
+  related: Array<{
+    code: string;
+    name_romaji: string | null;
+    name_kanji: string | null;
+    slug: string;
+    school: string | null;
+    juyo_count: number;
+    tokuju_count: number;
+    elite_factor: number;
+  }>;
+}
+
+function computeEliteGrade(percentile: number): string {
+  if (percentile >= 95) return 'S';
+  if (percentile >= 80) return 'A';
+  if (percentile >= 60) return 'B';
+  if (percentile >= 40) return 'C';
+  return 'D';
+}
+
+/**
  * GET /api/artisan/[code]
  *
- * Fetches artisan details from Yuhinkai database.
- * Tries smith_entities first (for swords), then tosogu_makers (for fittings).
- * Used by ArtisanTooltip component for admin QA.
+ * Returns rich artisan data for the artist page.
+ * With ?rich=1, returns full ArtisanPageResponse.
+ * Without, returns legacy ArtisanDetails for ArtisanTooltip compat.
  */
 export async function GET(
   request: NextRequest,
@@ -54,10 +125,9 @@ export async function GET(
     );
   }
 
-  // Allow cache bypass with ?nocache=1 for debugging
   const nocache = request.nextUrl.searchParams.get('nocache') === '1';
+  const rich = request.nextUrl.searchParams.get('rich') === '1';
 
-  // Return 404 if Yuhinkai database is not configured
   if (!isYuhinkaiConfigured) {
     return NextResponse.json(
       { artisan: null, error: 'Yuhinkai database not configured' },
@@ -66,91 +136,171 @@ export async function GET(
   }
 
   try {
-    // Dynamic import to avoid build-time errors when env vars are missing
-    const { getSmithEntity, getTosoguMaker } = await import('@/lib/supabase/yuhinkai');
+    const {
+      getSmithEntity,
+      getTosoguMaker,
+      getArtistProfile,
+      getStudents,
+      getRelatedArtisans,
+      getElitePercentile,
+      getTokoTaikanPercentile,
+      resolveTeacher,
+    } = await import('@/lib/supabase/yuhinkai');
 
-    // Try smith_entities first (for swords)
+    // Try smith_entities first
     const smithEntity = await getSmithEntity(code);
+    const isSmith = !!smithEntity;
 
-    if (smithEntity) {
+    // Try tosogu_makers if not a smith
+    const tosoguMaker = !isSmith ? await getTosoguMaker(code) : null;
+    const entity = smithEntity || tosoguMaker;
+
+    if (!entity) {
+      return NextResponse.json({ artisan: null }, { status: 404 });
+    }
+
+    const entityCode = isSmith ? (entity as typeof smithEntity)!.smith_id : (entity as typeof tosoguMaker)!.maker_id;
+    const entityType = isSmith ? 'smith' as const : 'tosogu' as const;
+
+    // Legacy response for ArtisanTooltip
+    if (!rich) {
       const artisan: ArtisanDetails = {
-        code: smithEntity.smith_id,
-        name_romaji: smithEntity.name_romaji,
-        name_kanji: smithEntity.name_kanji,
-        school: smithEntity.school,
-        province: smithEntity.province,
-        era: smithEntity.era,
-        period: smithEntity.period,
-        kokuho_count: smithEntity.kokuho_count || 0,
-        jubun_count: smithEntity.jubun_count || 0,
-        jubi_count: smithEntity.jubi_count || 0,
-        gyobutsu_count: smithEntity.gyobutsu_count || 0,
-        tokuju_count: smithEntity.tokuju_count || 0,
-        juyo_count: smithEntity.juyo_count || 0,
-        total_items: smithEntity.total_items || 0,
-        elite_factor: smithEntity.elite_factor ?? null,
-        elite_count: smithEntity.elite_count || 0,
-        is_school_code: smithEntity.is_school_code || false,
+        code: entityCode,
+        name_romaji: entity.name_romaji,
+        name_kanji: entity.name_kanji,
+        school: entity.school,
+        province: entity.province,
+        era: entity.era,
+        period: isSmith ? (entity as typeof smithEntity)!.period : null,
+        kokuho_count: entity.kokuho_count || 0,
+        jubun_count: entity.jubun_count || 0,
+        jubi_count: entity.jubi_count || 0,
+        gyobutsu_count: entity.gyobutsu_count || 0,
+        tokuju_count: entity.tokuju_count || 0,
+        juyo_count: entity.juyo_count || 0,
+        total_items: entity.total_items || 0,
+        elite_factor: entity.elite_factor ?? null,
+        elite_count: entity.elite_count || 0,
+        is_school_code: entity.is_school_code || false,
       };
 
       const response = NextResponse.json({ artisan });
-
-      // Cache for 1 hour at edge (artisan data rarely changes)
       if (nocache) {
         response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
       } else {
-        response.headers.set(
-          'Cache-Control',
-          'public, s-maxage=3600, stale-while-revalidate=86400'
-        );
+        response.headers.set('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400');
       }
-
       return response;
     }
 
-    // Try tosogu_makers if not found in smith_entities (for fittings)
-    const tosoguMaker = await getTosoguMaker(code);
+    // Rich response for artist page
+    const eliteFactor = entity.elite_factor ?? 0;
+    const slug = generateArtisanSlug(entity.name_romaji, entityCode);
 
-    if (!tosoguMaker) {
-      // Return empty response with 404 if not found in either table
-      return NextResponse.json(
-        { artisan: null },
-        { status: 404 }
-      );
+    // Fetch all enrichment data in parallel
+    const [profile, students, related, elitePercentile, tokoTaikanPercentile, teacherStub] =
+      await Promise.all([
+        getArtistProfile(entityCode),
+        getStudents(entityCode, entity.name_romaji),
+        getRelatedArtisans(entityCode, entity.school, entityType),
+        getElitePercentile(eliteFactor, entityType),
+        isSmith && (entity as typeof smithEntity)!.toko_taikan
+          ? getTokoTaikanPercentile((entity as typeof smithEntity)!.toko_taikan!)
+          : Promise.resolve(null),
+        entity.teacher ? resolveTeacher(entity.teacher) : Promise.resolve(null),
+      ]);
+
+    // Extract stats from profile snapshot if available
+    let stats: ArtisanPageResponse['stats'] = null;
+    if (profile?.stats_snapshot) {
+      const snapshot = profile.stats_snapshot as Record<string, unknown>;
+      const mei = snapshot.mei_distribution as Record<string, number> | undefined;
+      const form = snapshot.form_distribution as Record<string, number> | undefined;
+      if (mei || form) {
+        stats = {
+          mei_distribution: mei || {},
+          form_distribution: form || {},
+        };
+      }
     }
 
-    const artisan: ArtisanDetails = {
-      code: tosoguMaker.maker_id,
-      name_romaji: tosoguMaker.name_romaji,
-      name_kanji: tosoguMaker.name_kanji,
-      school: tosoguMaker.school,
-      province: tosoguMaker.province,
-      era: tosoguMaker.era,
-      period: null, // tosogu_makers don't have period
-      kokuho_count: tosoguMaker.kokuho_count || 0,
-      jubun_count: tosoguMaker.jubun_count || 0,
-      jubi_count: tosoguMaker.jubi_count || 0,
-      gyobutsu_count: tosoguMaker.gyobutsu_count || 0,
-      tokuju_count: tosoguMaker.tokuju_count || 0,
-      juyo_count: tosoguMaker.juyo_count || 0,
-      total_items: tosoguMaker.total_items || 0,
-      elite_factor: tosoguMaker.elite_factor ?? null,
-      elite_count: tosoguMaker.elite_count || 0,
-      is_school_code: tosoguMaker.is_school_code || false,
+    const eliteGrade = computeEliteGrade(elitePercentile);
+
+    const pageResponse: ArtisanPageResponse = {
+      entity: {
+        code: entityCode,
+        name_romaji: entity.name_romaji,
+        name_kanji: entity.name_kanji,
+        school: entity.school,
+        province: entity.province,
+        era: entity.era,
+        period: isSmith ? (entity as typeof smithEntity)!.period : null,
+        generation: entity.generation,
+        teacher: entity.teacher,
+        entity_type: entityType,
+        is_school_code: entity.is_school_code || false,
+        slug,
+        fujishiro: isSmith ? (entity as typeof smithEntity)!.fujishiro : null,
+        toko_taikan: isSmith ? (entity as typeof smithEntity)!.toko_taikan : null,
+        specialties: !isSmith ? (entity as typeof tosoguMaker)!.specialties : null,
+      },
+      certifications: {
+        kokuho_count: entity.kokuho_count || 0,
+        jubun_count: entity.jubun_count || 0,
+        jubi_count: entity.jubi_count || 0,
+        gyobutsu_count: entity.gyobutsu_count || 0,
+        tokuju_count: entity.tokuju_count || 0,
+        juyo_count: entity.juyo_count || 0,
+        total_items: entity.total_items || 0,
+        elite_count: entity.elite_count || 0,
+        elite_factor: eliteFactor,
+      },
+      rankings: {
+        elite_percentile: elitePercentile,
+        elite_grade: eliteGrade,
+        toko_taikan_percentile: tokoTaikanPercentile,
+      },
+      profile: profile
+        ? {
+            profile_md: profile.profile_md,
+            hook: profile.hook,
+            setsumei_count: profile.setsumei_count,
+            generated_at: profile.generated_at,
+          }
+        : null,
+      stats,
+      lineage: {
+        teacher: teacherStub
+          ? {
+              code: teacherStub.code,
+              name_romaji: teacherStub.name_romaji,
+              slug: generateArtisanSlug(teacherStub.name_romaji, teacherStub.code),
+            }
+          : null,
+        students: students.map(s => ({
+          code: s.code,
+          name_romaji: s.name_romaji,
+          slug: generateArtisanSlug(s.name_romaji, s.code),
+        })),
+      },
+      related: related.map(r => ({
+        code: r.code,
+        name_romaji: r.name_romaji,
+        name_kanji: r.name_kanji,
+        slug: generateArtisanSlug(r.name_romaji, r.code),
+        school: r.school,
+        juyo_count: r.juyo_count,
+        tokuju_count: r.tokuju_count,
+        elite_factor: r.elite_factor,
+      })),
     };
 
-    const response = NextResponse.json({ artisan });
-
-    // Cache for 1 hour at edge (artisan data rarely changes)
+    const response = NextResponse.json(pageResponse);
     if (nocache) {
       response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
     } else {
-      response.headers.set(
-        'Cache-Control',
-        'public, s-maxage=3600, stale-while-revalidate=86400'
-      );
+      response.headers.set('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400');
     }
-
     return response;
   } catch (error) {
     logger.logError('Artisan API error', error);

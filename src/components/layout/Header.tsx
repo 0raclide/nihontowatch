@@ -174,6 +174,12 @@ function HeaderContent() {
                 Browse
               </Link>
               <Link
+                href="/artists"
+                className="text-[11px] uppercase tracking-[0.2em] text-muted hover:text-gold transition-colors"
+              >
+                Artists
+              </Link>
+              <Link
                 href="/glossary"
                 className="text-[11px] uppercase tracking-[0.2em] text-muted hover:text-gold transition-colors"
               >
