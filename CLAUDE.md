@@ -15,6 +15,7 @@
 - Setsumei translations (NBTHK certification descriptions)
 - Dealer analytics dashboard (admin)
 - Artisan code display & search (admin-only badges with confidence levels)
+- Artist directory (`/artists`) with filters, pagination, and sitemap integration
 
 **Trial Mode:** All premium features currently free (toggle via `NEXT_PUBLIC_TRIAL_MODE` env var)
 
@@ -529,12 +530,30 @@ Displays Yuhinkai artisan codes (e.g., "MAS590", "OWA009") on listing cards for 
 | API filter | `src/app/api/browse/route.ts` (artisanCode param) |
 | DB schema | `supabase/migrations/048_artisan_matching.sql`, `049_artisan_verification.sql` |
 
+### Artist Directory (`/artists`)
+
+Browseable index of all 13,566 artisans from the Yuhinkai database. Server-rendered for SEO, client-side filtering for instant UX. Default view shows ~1,400 notable artisans (those with certified works) sorted by elite factor.
+
+**Architecture**: Hybrid SSR + client fetch. Initial page load is server-rendered. Filter changes use client-side `fetch()` to `/api/artists/directory` with `window.history.replaceState()` for URL updates (no SSR round-trip).
+
+**Key files:**
+| Component | Location |
+|-----------|----------|
+| Directory API | `src/app/api/artists/directory/route.ts` |
+| Server page | `src/app/artists/page.tsx` |
+| Client component | `src/app/artists/ArtistsPageClient.tsx` |
+| DB queries | `src/lib/supabase/yuhinkai.ts` (`getArtistsForDirectory`, `getArtistDirectoryFacets`) |
+| JSON-LD | `src/lib/seo/jsonLd.ts` (`generateArtistDirectoryJsonLd`) |
+| Slug utils | `src/lib/artisan/slugs.ts` |
+| Session doc | `docs/SESSION_20260208_ARTIST_DIRECTORY.md` |
+
 ### Documentation
 
 For detailed implementation docs, see:
 - `docs/SUBSCRIPTION_HANDOFF.md` - Current status and changelog
 - `docs/PRO_TIER_IMPLEMENTATION.md` - Implementation checklist
 - `docs/PRO_TIER_STRATEGY.md` - Business strategy
+- `docs/SESSION_20260208_ARTIST_DIRECTORY.md` - Artist directory implementation
 
 ---
 
@@ -573,6 +592,8 @@ Always check both paths when displaying artisan info.
 - `/listing/[id]` - Individual listing (canonical URL)
 - `/dealers` - Dealer directory
 - `/dealers/[slug]` - Individual dealer page
+- `/artists` - Artist directory (filterable)
+- `/artists/[slug]` - Individual artist profile (e.g., `/artists/masamune-MAS590`)
 
 ### Meta Tags
 Every page needs:

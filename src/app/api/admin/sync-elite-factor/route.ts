@@ -282,24 +282,28 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Also support GET for manual testing (admin only)
+// GET triggers a full sync (cron-compatible)
 export async function GET(request: NextRequest) {
   if (!isAuthorized(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  return NextResponse.json({
-    status: 'ok',
-    usage: {
-      endpoint: 'POST /api/admin/sync-elite-factor',
-      headers: {
-        'Authorization': 'Bearer {CRON_SECRET}',
-        'Content-Type': 'application/json',
-      },
-      body_options: [
-        '{ "artisan_codes": ["MAS590", "KUN123"] }',
-        '{ "all": true }',
-      ],
-    },
-  });
+  try {
+    logger.info('[sync-elite-factor] Starting full sync (GET/cron)');
+    const supabase = await createServiceClient();
+    const result = await syncAllArtisans(supabase);
+
+    logger.info('[sync-elite-factor] Sync complete', { ...result });
+
+    return NextResponse.json({
+      success: true,
+      ...result,
+    });
+  } catch (error) {
+    logger.error('[sync-elite-factor] Error:', { error: String(error) });
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
 }

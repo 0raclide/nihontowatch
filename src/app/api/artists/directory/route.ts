@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createServiceClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/logger';
 
 export const revalidate = 0;
@@ -24,7 +25,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const { getArtistsForDirectory, getArtistDirectoryFacets } = await import('@/lib/supabase/yuhinkai');
+    const { getArtistsForDirectory, getArtistDirectoryFacets, getDenraiForArtists } = await import('@/lib/supabase/yuhinkai');
     const { generateArtisanSlug } = await import('@/lib/artisan/slugs');
 
     const params = request.nextUrl.searchParams;
@@ -48,10 +49,23 @@ export async function GET(request: NextRequest) {
       getArtistDirectoryFacets(),
     ]);
 
-    // Add slugs to artists
+    // Fetch denrai and listing counts in parallel
+    const uniqueNames = [...new Set(
+      artists.map(a => a.name_romaji).filter((n): n is string => !!n)
+    )];
+    const codes = artists.map(a => a.code);
+
+    const [denraiMap, listingCounts] = await Promise.all([
+      getDenraiForArtists(uniqueNames),
+      getListingCountsForArtists(codes),
+    ]);
+
+    // Add slugs, denrai, and listing counts to artists
     const artistsWithSlugs = artists.map(a => ({
       ...a,
       slug: generateArtisanSlug(a.name_romaji, a.code),
+      denrai_owners: (a.name_romaji && denraiMap.get(a.name_romaji)) || undefined,
+      available_count: listingCounts.get(a.code) || 0,
     }));
 
     const totalPages = Math.ceil(total / limit);
@@ -80,4 +94,36 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+/**
+ * Batch-fetch available listing counts per artisan code from the main database.
+ * Returns map of artisan_code → number of available listings.
+ */
+async function getListingCountsForArtists(codes: string[]): Promise<Map<string, number>> {
+  const result = new Map<string, number>();
+  if (codes.length === 0) return result;
+
+  try {
+    const supabase = createServiceClient();
+    // artisan_id is not in the generated DB types, so cast the result
+    const { data, error } = await supabase
+      .from('listings')
+      .select('artisan_id')
+      .in('artisan_id' as string, codes)
+      .eq('is_available', true) as { data: Array<{ artisan_id: string }> | null; error: unknown };
+
+    if (error) {
+      logger.logError('Listing counts query error', error);
+      return result;
+    }
+
+    for (const row of data || []) {
+      result.set(row.artisan_id, (result.get(row.artisan_id) || 0) + 1);
+    }
+  } catch (err) {
+    logger.logError('Listing counts error', err);
+  }
+
+  return result;
 }

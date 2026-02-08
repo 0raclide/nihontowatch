@@ -16,6 +16,10 @@
     {
       "path": "/api/cron/process-stock-alerts",
       "schedule": "*/15 * * * *"
+    },
+    {
+      "path": "/api/admin/sync-elite-factor",
+      "schedule": "0 6 * * *"
     }
   ]
 }

@@ -1,8 +1,9 @@
 import { Metadata } from 'next';
-import { getArtistsForDirectory, getArtistDirectoryFacets } from '@/lib/supabase/yuhinkai';
+import { getArtistsForDirectory, getArtistDirectoryFacets, getDenraiForArtists } from '@/lib/supabase/yuhinkai';
 import { generateArtisanSlug } from '@/lib/artisan/slugs';
 import { generateBreadcrumbJsonLd, jsonLdScriptProps } from '@/lib/seo/jsonLd';
 import { generateArtistDirectoryJsonLd } from '@/lib/seo/jsonLd';
+import { createClient } from '@/lib/supabase/server';
 import { ArtistsPageClient } from './ArtistsPageClient';
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://nihontowatch.com';
@@ -56,6 +57,26 @@ export async function generateMetadata({ searchParams }: ArtistsPageProps): Prom
   };
 }
 
+async function getListingCounts(codes: string[]): Promise<Map<string, number>> {
+  const result = new Map<string, number>();
+  if (codes.length === 0) return result;
+  try {
+    const supabase = await createClient();
+    // artisan_id is not in the generated DB types, so cast the result
+    const { data } = await supabase
+      .from('listings')
+      .select('artisan_id')
+      .in('artisan_id' as string, codes)
+      .eq('is_available', true) as { data: Array<{ artisan_id: string }> | null };
+    for (const row of data || []) {
+      result.set(row.artisan_id, (result.get(row.artisan_id) || 0) + 1);
+    }
+  } catch {
+    // Non-critical — cards just won't show listing counts
+  }
+  return result;
+}
+
 export default async function ArtistsPage({ searchParams }: ArtistsPageProps) {
   const params = await searchParams;
 
@@ -77,9 +98,22 @@ export default async function ArtistsPage({ searchParams }: ArtistsPageProps) {
     getArtistDirectoryFacets(),
   ]);
 
+  // Fetch denrai and listing counts in parallel
+  const uniqueNames = [...new Set(
+    artists.map(a => a.name_romaji).filter((n): n is string => !!n)
+  )];
+  const codes = artists.map(a => a.code);
+
+  const [denraiMap, listingCounts] = await Promise.all([
+    getDenraiForArtists(uniqueNames),
+    getListingCounts(codes),
+  ]);
+
   const artistsWithSlugs = artists.map(a => ({
     ...a,
     slug: generateArtisanSlug(a.name_romaji, a.code),
+    denrai_owners: (a.name_romaji && denraiMap.get(a.name_romaji)) || undefined,
+    available_count: listingCounts.get(a.code) || 0,
   }));
 
   const totalPages = Math.ceil(total / 50);

@@ -322,6 +322,8 @@ export interface ArtistDirectoryEntry {
   juyo_count: number;
   total_items: number;
   elite_factor: number;
+  denrai_owners?: Array<{ owner: string; count: number }>;
+  available_count?: number;
 }
 
 export interface DirectoryFilters {
@@ -602,4 +604,69 @@ export async function resolveTeacher(teacherRef: string): Promise<ArtisanStub | 
   }
 
   return null;
+}
+
+// =============================================================================
+// DENRAI (PROVENANCE) QUERIES
+// =============================================================================
+
+/**
+ * Fetch denrai (provenance) owner data for a set of artisans.
+ * Queries gold_values where gold_artisan matches the given names,
+ * unnests gold_denrai_owners in JS, and aggregates counts per (artisan, owner).
+ * Returns top 5 owners per artisan, sorted by count descending.
+ */
+export async function getDenraiForArtists(
+  names: string[]
+): Promise<Map<string, Array<{ owner: string; count: number }>>> {
+  const result = new Map<string, Array<{ owner: string; count: number }>>();
+  if (names.length === 0) return result;
+
+  const { data, error } = await yuhinkaiClient
+    .from('gold_values')
+    .select('gold_artisan, gold_denrai_owners')
+    .in('gold_artisan', names)
+    .not('gold_denrai_owners', 'is', null);
+
+  if (error) {
+    console.error('[Yuhinkai] Denrai query error:', error);
+    return result;
+  }
+
+  if (!data || data.length === 0) return result;
+
+  // Aggregate: for each row, unnest owners and count per (artisan, owner)
+  const counts = new Map<string, Map<string, number>>();
+
+  for (const row of data) {
+    const artisan = row.gold_artisan as string;
+    const owners = row.gold_denrai_owners as string[];
+    if (!owners || !Array.isArray(owners)) continue;
+
+    if (!counts.has(artisan)) counts.set(artisan, new Map());
+    const ownerMap = counts.get(artisan)!;
+
+    // Count each unique owner per row (unnest semantics — one count per item/row)
+    const seen = new Set<string>();
+    for (const owner of owners) {
+      const trimmed = owner.trim();
+      if (trimmed && !seen.has(trimmed)) {
+        seen.add(trimmed);
+        ownerMap.set(trimmed, (ownerMap.get(trimmed) || 0) + 1);
+      }
+    }
+  }
+
+  // Convert to sorted arrays, top 5 per artisan
+  for (const [artisan, ownerMap] of counts) {
+    const sorted = Array.from(ownerMap.entries())
+      .map(([owner, count]) => ({ owner, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+    if (sorted.length > 0) {
+      result.set(artisan, sorted);
+    }
+  }
+
+  return result;
 }

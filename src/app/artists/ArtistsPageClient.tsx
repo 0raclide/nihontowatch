@@ -1,8 +1,7 @@
 'use client';
 
-import { useState, useCallback, useTransition } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
 import type { ArtistDirectoryEntry, DirectoryFacets } from '@/lib/supabase/yuhinkai';
 
 // =============================================================================
@@ -47,20 +46,19 @@ export function ArtistsPageClient({
   initialFacets,
   initialFilters,
 }: ArtistsPageClientProps) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const [isPending, startTransition] = useTransition();
-
   const [artists, setArtists] = useState(initialArtists);
   const [pagination, setPagination] = useState(initialPagination);
   const [filters, setFilters] = useState(initialFilters);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [searchInput, setSearchInput] = useState(initialFilters.q || '');
+  const abortRef = useRef<AbortController | null>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const facets = initialFacets;
 
-  // Build URL params from filters
-  const buildParams = useCallback((f: Filters, page: number) => {
+  // Build URL search string from filters
+  const buildQueryString = useCallback((f: Filters, page: number) => {
     const p = new URLSearchParams();
     if (f.type !== 'all') p.set('type', f.type);
     if (f.school) p.set('school', f.school);
@@ -70,73 +68,114 @@ export function ArtistsPageClient({
     if (f.sort !== 'elite_factor') p.set('sort', f.sort);
     if (page > 1) p.set('page', page.toString());
     if (!f.notable) p.set('notable', 'false');
-    return p;
+    return p.toString();
   }, []);
 
-  // Navigate with updated params (SSR handles fresh data)
-  const navigate = useCallback((f: Filters, page: number) => {
-    const p = buildParams(f, page);
-    const qs = p.toString();
-    startTransition(() => {
-      router.push(`/artists${qs ? `?${qs}` : ''}`, { scroll: false });
-    });
-  }, [buildParams, router]);
+  // Update URL without navigation (keeps it shareable)
+  const updateUrl = useCallback((f: Filters, page: number) => {
+    const qs = buildQueryString(f, page);
+    const url = `/artists${qs ? `?${qs}` : ''}`;
+    window.history.replaceState(null, '', url);
+  }, [buildQueryString]);
 
-  // Also fetch client-side for instant feel
+  // Client-side fetch — the only data-fetching path for filter interactions
   const fetchArtists = useCallback(async (f: Filters, page: number) => {
+    // Abort any in-flight request
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     setIsLoading(true);
-    const p = buildParams(f, page);
-    p.set('limit', '50');
-    if (page <= 1) p.delete('page');
+    setError(null);
+
+    const p = new URLSearchParams();
+    if (f.type !== 'all') p.set('type', f.type);
+    if (f.school) p.set('school', f.school);
+    if (f.province) p.set('province', f.province);
+    if (f.era) p.set('era', f.era);
+    if (f.q) p.set('q', f.q);
+    p.set('sort', f.sort);
     p.set('page', page.toString());
+    p.set('limit', '50');
+    if (!f.notable) p.set('notable', 'false');
 
     try {
-      const res = await fetch(`/api/artists/directory?${p.toString()}`);
+      const res = await fetch(`/api/artists/directory?${p.toString()}`, {
+        signal: controller.signal,
+      });
       if (res.ok) {
         const data = await res.json();
         setArtists(data.artists);
         setPagination(data.pagination);
+      } else {
+        setError('Failed to load artists. Please try again.');
       }
-    } catch {
-      // Fall back to SSR navigation
+    } catch (err: unknown) {
+      if (err instanceof DOMException && err.name === 'AbortError') return;
+      setError('Network error. Please check your connection.');
     } finally {
-      setIsLoading(false);
+      if (!controller.signal.aborted) {
+        setIsLoading(false);
+      }
     }
-  }, [buildParams]);
+  }, []);
+
+  // Cleanup abort and debounce on unmount
+  useEffect(() => {
+    return () => {
+      abortRef.current?.abort();
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
+
+  const applyFilters = useCallback((newFilters: Filters, page: number) => {
+    setFilters(newFilters);
+    updateUrl(newFilters, page);
+    fetchArtists(newFilters, page);
+  }, [updateUrl, fetchArtists]);
 
   const handleFilterChange = useCallback((key: keyof Filters, value: string | boolean) => {
     const newFilters = { ...filters, [key]: value };
-    // Reset to page 1 on filter change
-    setFilters(newFilters);
-    navigate(newFilters, 1);
-    fetchArtists(newFilters, 1);
-  }, [filters, navigate, fetchArtists]);
+    applyFilters(newFilters, 1);
+  }, [filters, applyFilters]);
 
   const handlePageChange = useCallback((page: number) => {
-    navigate(filters, page);
-    fetchArtists(filters, page);
-    // Scroll to top of results
+    applyFilters(filters, page);
     document.getElementById('artist-grid')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }, [filters, navigate, fetchArtists]);
+  }, [filters, applyFilters]);
+
+  // Debounced search — fires 300ms after user stops typing
+  const debouncedSearch = useCallback((value: string, currentFilters: Filters) => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      const trimmed = value.trim();
+      applyFilters({ ...currentFilters, q: trimmed || undefined }, 1);
+    }, 300);
+  }, [applyFilters]);
+
+  const handleSearchInput = useCallback((value: string) => {
+    setSearchInput(value);
+    debouncedSearch(value, filters);
+  }, [filters, debouncedSearch]);
 
   const handleSearch = useCallback((e: React.FormEvent) => {
     e.preventDefault();
+    // Immediate search on Enter — cancel any pending debounce
+    if (debounceRef.current) clearTimeout(debounceRef.current);
     const trimmed = searchInput.trim();
-    const newFilters = { ...filters, q: trimmed || undefined };
-    setFilters(newFilters);
-    navigate(newFilters, 1);
-    fetchArtists(newFilters, 1);
-  }, [searchInput, filters, navigate, fetchArtists]);
+    applyFilters({ ...filters, q: trimmed || undefined }, 1);
+  }, [searchInput, filters, applyFilters]);
 
   const clearSearch = useCallback(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
     setSearchInput('');
-    const newFilters = { ...filters, q: undefined };
-    setFilters(newFilters);
-    navigate(newFilters, 1);
-    fetchArtists(newFilters, 1);
-  }, [filters, navigate, fetchArtists]);
+    applyFilters({ ...filters, q: undefined }, 1);
+  }, [filters, applyFilters]);
 
-  const loading = isLoading || isPending;
+  const clearAllFilters = useCallback(() => {
+    setSearchInput('');
+    applyFilters({ type: 'all', sort: 'elite_factor', notable: true }, 1);
+  }, [applyFilters]);
 
   return (
     <div className="max-w-[1600px] mx-auto px-4 py-8 lg:px-6">
@@ -164,7 +203,7 @@ export function ArtistsPageClient({
               <input
                 type="search"
                 value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
+                onChange={(e) => handleSearchInput(e.target.value)}
                 placeholder="Search by name, kanji, or code..."
                 className="w-full pl-4 pr-10 py-2 bg-cream border border-border text-[13px] text-ink placeholder:text-muted/40 focus:outline-none focus:border-gold/40 focus:shadow-[0_0_0_3px_rgba(181,142,78,0.1)] transition-all"
               />
@@ -196,6 +235,7 @@ export function ArtistsPageClient({
               <button
                 key={t}
                 onClick={() => handleFilterChange('type', t)}
+                disabled={isLoading}
                 className={`px-4 py-2 text-[11px] uppercase tracking-[0.15em] transition-colors ${
                   filters.type === t
                     ? 'bg-gold/10 text-gold font-medium'
@@ -258,11 +298,8 @@ export function ArtistsPageClient({
           {(filters.school || filters.province || filters.era || filters.q) && (
             <button
               onClick={() => {
-                const cleared: Filters = { type: filters.type, sort: filters.sort, notable: filters.notable };
-                setFilters(cleared);
                 setSearchInput('');
-                navigate(cleared, 1);
-                fetchArtists(cleared, 1);
+                applyFilters({ type: filters.type, sort: filters.sort, notable: filters.notable }, 1);
               }}
               className="text-[11px] text-gold hover:text-gold-light underline underline-offset-2"
             >
@@ -273,18 +310,31 @@ export function ArtistsPageClient({
       </div>
 
       {/* Results */}
-      <div id="artist-grid" className={`mt-8 transition-opacity duration-200 ${loading ? 'opacity-50' : ''}`}>
-        {artists.length === 0 ? (
+      <div id="artist-grid" className="mt-8">
+        {/* Error state */}
+        {error && (
+          <div className="mb-4 px-4 py-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/30 flex items-center justify-between">
+            <p className="text-[12px] text-red-700 dark:text-red-400">{error}</p>
+            <button
+              onClick={() => fetchArtists(filters, pagination.page)}
+              className="text-[11px] text-red-700 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 underline underline-offset-2 ml-4 shrink-0"
+            >
+              Retry
+            </button>
+          </div>
+        )}
+
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {[...Array(6)].map((_, i) => (
+              <SkeletonCard key={i} />
+            ))}
+          </div>
+        ) : artists.length === 0 ? (
           <div className="py-20 text-center">
             <p className="text-muted text-sm">No artisans found matching your criteria.</p>
             <button
-              onClick={() => {
-                const cleared: Filters = { type: 'all', sort: 'elite_factor', notable: true };
-                setFilters(cleared);
-                setSearchInput('');
-                navigate(cleared, 1);
-                fetchArtists(cleared, 1);
-              }}
+              onClick={clearAllFilters}
               className="mt-3 text-[12px] text-gold hover:text-gold-light underline"
             >
               Reset all filters
@@ -306,6 +356,7 @@ export function ArtistsPageClient({
                 totalPages={pagination.totalPages}
                 totalCount={pagination.totalCount}
                 onPageChange={handlePageChange}
+                disabled={isLoading}
               />
             )}
           </>
@@ -379,6 +430,26 @@ function FilterSelect({
   );
 }
 
+function SkeletonCard() {
+  return (
+    <div className="p-4 bg-cream border border-border">
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex-1 space-y-1.5">
+          <div className="h-4 w-32 img-loading rounded" />
+          <div className="h-3 w-16 img-loading rounded" />
+        </div>
+        <div className="h-5 w-12 img-loading rounded" />
+      </div>
+      <div className="mt-2.5 h-3 w-40 img-loading rounded" />
+      <div className="mt-3 flex gap-3">
+        <div className="h-3 w-16 img-loading rounded" />
+        <div className="h-3 w-14 img-loading rounded" />
+      </div>
+      <div className="mt-3 h-1.5 w-full img-loading rounded" />
+    </div>
+  );
+}
+
 function ArtistCard({ artist }: { artist: ArtistWithSlug }) {
   const elitePct = artist.elite_factor > 0 ? Math.min(artist.elite_factor * 100, 100) : 0;
 
@@ -411,7 +482,24 @@ function ArtistCard({ artist }: { artist: ArtistWithSlug }) {
         {[artist.school, artist.era, artist.province].filter(Boolean).join(' \u00b7 ') || 'Unknown'}
       </div>
 
-      {/* Row 3: Cert counts */}
+      {/* Row 2.5: Denrai (provenance) badges */}
+      {artist.denrai_owners && artist.denrai_owners.length > 0 && (
+        <div className="mt-1.5 flex flex-wrap gap-1">
+          {artist.denrai_owners.map((d) => (
+            <span
+              key={d.owner}
+              className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300 border border-violet-200 dark:border-violet-700/40"
+            >
+              {d.owner}
+              {d.count > 1 && (
+                <span className="text-violet-500 dark:text-violet-400">({d.count})</span>
+              )}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* Row 3: Cert counts + available */}
       <div className="mt-2.5 flex items-center gap-3 text-[11px] tabular-nums">
         {artist.tokuju_count > 0 && (
           <span className="text-gold font-medium">{artist.tokuju_count} Tokuju</span>
@@ -420,6 +508,11 @@ function ArtistCard({ artist }: { artist: ArtistWithSlug }) {
           <span className="text-ink">{artist.juyo_count} Juyo</span>
         )}
         <span className="text-muted/50">{artist.total_items} total</span>
+        {(artist.available_count ?? 0) > 0 && (
+          <span className="ml-auto text-emerald-600 dark:text-emerald-400 font-medium">
+            {artist.available_count} for sale
+          </span>
+        )}
       </div>
 
       {/* Row 4: Elite bar */}
@@ -445,11 +538,13 @@ function PaginationBar({
   totalPages,
   totalCount,
   onPageChange,
+  disabled,
 }: {
   page: number;
   totalPages: number;
   totalCount: number;
   onPageChange: (page: number) => void;
+  disabled?: boolean;
 }) {
   // Generate page numbers with ellipsis
   const pages: (number | 'ellipsis')[] = [];
@@ -464,7 +559,7 @@ function PaginationBar({
   }
 
   return (
-    <div className="mt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+    <div className={`mt-8 flex flex-col sm:flex-row items-center justify-between gap-4 ${disabled ? 'opacity-50 pointer-events-none' : ''}`}>
       <p className="text-[11px] text-muted/60">
         Showing {((page - 1) * 50) + 1}–{Math.min(page * 50, totalCount)} of {totalCount.toLocaleString()}
       </p>
