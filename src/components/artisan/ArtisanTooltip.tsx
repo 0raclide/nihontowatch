@@ -204,39 +204,27 @@ export function ArtisanTooltip({
     }
   }, [isOpen, artisan, loading, fetchArtisan]);
 
-  // Position tooltip relative to viewport
+  // Position tooltip relative to document (absolute positioning allows scrolling)
   useEffect(() => {
     if (isOpen && termRef.current) {
       const rect = termRef.current.getBoundingClientRect();
       const tooltipWidth = 320; // w-80 = 20rem = 320px
-      // Increase height when correction search is open
-      const tooltipHeight = showCorrectionSearch ? 550 : 350;
       const padding = 12;
 
-      // Calculate horizontal position
-      let left = rect.left;
-      if (left + tooltipWidth > window.innerWidth - padding) {
-        left = window.innerWidth - tooltipWidth - padding;
+      // Calculate horizontal position (viewport-relative, then add scroll offset)
+      let left = rect.left + window.scrollX;
+      if (rect.left + tooltipWidth > window.innerWidth - padding) {
+        left = window.innerWidth - tooltipWidth - padding + window.scrollX;
       }
-      if (left < padding) {
-        left = padding;
+      if (rect.left < padding) {
+        left = padding + window.scrollX;
       }
 
-      // Calculate vertical position
-      const spaceBelow = window.innerHeight - rect.bottom;
-      const spaceAbove = rect.top;
-
-      let top: number;
-      if (spaceBelow >= tooltipHeight + padding || spaceBelow >= spaceAbove) {
-        // Show below
-        top = rect.bottom + 8;
-      } else {
-        // Show above
-        top = rect.top - tooltipHeight - 8;
-      }
+      // Always show below the trigger element (user can scroll to see full tooltip)
+      const top = rect.bottom + 8 + window.scrollY;
 
       setTooltipStyle({
-        position: 'fixed',
+        position: 'absolute',
         top: `${top}px`,
         left: `${left}px`,
         width: `${tooltipWidth}px`,
