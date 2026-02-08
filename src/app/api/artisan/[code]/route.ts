@@ -90,6 +90,10 @@ export interface ArtisanPageResponse {
     name_kanji: string | null;
     slug: string;
     school: string | null;
+    kokuho_count: number;
+    jubun_count: number;
+    jubi_count: number;
+    gyobutsu_count: number;
     juyo_count: number;
     tokuju_count: number;
     elite_factor: number;
@@ -282,6 +286,10 @@ export async function GET(
         name_kanji: r.name_kanji,
         slug: generateArtisanSlug(r.name_romaji, r.code),
         school: r.school,
+        kokuho_count: r.kokuho_count,
+        jubun_count: r.jubun_count,
+        jubi_count: r.jubi_count,
+        gyobutsu_count: r.gyobutsu_count,
         juyo_count: r.juyo_count,
         tokuju_count: r.tokuju_count,
         elite_factor: r.elite_factor,
