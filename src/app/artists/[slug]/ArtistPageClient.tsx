@@ -236,6 +236,7 @@ function SectionDivider() {
 export function ArtistPageClient({ data }: ArtistPageClientProps) {
   const { entity, certifications, rankings, profile, stats, lineage, related, denrai } = data;
   const [listings, setListings] = useState<Listing[] | null>(null);
+  const [soldListings, setSoldListings] = useState<Listing[] | null>(null);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -244,10 +245,15 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
       .then(res => res.json())
       .then(d => { if (!cancelled) setListings(d.listings || []); })
       .catch(() => { if (!cancelled) setListings([]); });
+    fetch(`/api/artisan/${encodeURIComponent(entity.code)}/listings?status=sold`)
+      .then(res => res.json())
+      .then(d => { if (!cancelled) setSoldListings(d.listings || []); })
+      .catch(() => { if (!cancelled) setSoldListings([]); });
     return () => { cancelled = true; };
   }, [entity.code]);
 
   const listingsExist = listings !== null && listings.length > 0;
+  const soldListingsExist = soldListings !== null && soldListings.length > 0;
 
   const handleShare = useCallback(() => {
     const url = window.location.href;
@@ -274,15 +280,16 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
   const sections = useMemo(() => {
     const s: Array<{ id: string; label: string }> = [];
     s.push({ id: 'overview', label: 'Overview' });
+    if (certifications.total_items > 0) s.push({ id: 'certifications', label: 'Certifications' });
     if (denrai.length > 0) s.push({ id: 'provenance', label: 'Provenance' });
     if (profile?.profile_md) s.push({ id: 'biography', label: 'Biography' });
-    if (certifications.total_items > 0) s.push({ id: 'certifications', label: 'Certifications' });
     if (hasDistributions) s.push({ id: 'distributions', label: 'Analysis' });
     if (listingsExist) s.push({ id: 'listings', label: 'Available' });
+    if (soldListingsExist) s.push({ id: 'sold', label: 'Previously Sold' });
     if (lineage.teacher || lineage.students.length > 0) s.push({ id: 'lineage', label: 'Lineage' });
     if (related.length > 0) s.push({ id: 'related', label: 'School' });
     return s;
-  }, [profile, certifications.total_items, hasDistributions, listingsExist, lineage, related, denrai]);
+  }, [profile, certifications.total_items, hasDistributions, listingsExist, soldListingsExist, lineage, related, denrai]);
 
   const fujishiroLabel = entity.fujishiro ? FUJISHIRO_LABELS[entity.fujishiro] : null;
   const isTopGrade = rankings.elite_grade === 'S' || rankings.elite_grade === 'A';
@@ -480,6 +487,50 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
         </section>
 
         {/* ═══════════════════════════════════════════════════════════════════
+            CERTIFICATIONS — Pyramid + Elite Standing
+        ═══════════════════════════════════════════════════════════════════ */}
+        {certifications.total_items > 0 && (
+          <>
+            <SectionDivider />
+            <section id="certifications">
+              <h2 className="text-[11px] uppercase tracking-[0.2em] text-muted/50 mb-7">Certifications</h2>
+
+              <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr] gap-10">
+                {/* Hierarchy */}
+                <div>
+                  <PrestigePyramid
+                    kokuho={certifications.kokuho_count}
+                    jubun={certifications.jubun_count}
+                    jubi={certifications.jubi_count}
+                    gyobutsu={certifications.gyobutsu_count}
+                    tokuju={certifications.tokuju_count}
+                    juyo={certifications.juyo_count}
+                  />
+                  <div className="mt-4 pt-4 border-t border-border/20 flex items-baseline justify-between text-sm">
+                    <span className="text-muted/50">Total certified</span>
+                    <span className="text-ink font-light tabular-nums">{certifications.total_items}</span>
+                  </div>
+                </div>
+
+                {/* Elite standing */}
+                <div className="flex flex-col justify-between">
+                  <div>
+                    <h3 className="text-[11px] text-muted/45 mb-3 uppercase tracking-wider">Elite Standing</h3>
+                    <EliteFactorDisplay
+                      eliteFactor={certifications.elite_factor}
+                      percentile={rankings.elite_percentile}
+                      grade={rankings.elite_grade}
+                      totalItems={certifications.total_items}
+                      eliteCount={certifications.elite_count}
+                    />
+                  </div>
+                </div>
+              </div>
+            </section>
+          </>
+        )}
+
+        {/* ═══════════════════════════════════════════════════════════════════
             PROVENANCE — Historical collections
         ═══════════════════════════════════════════════════════════════════ */}
         {denrai.length > 0 && (
@@ -531,50 +582,6 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
         )}
 
         {/* ═══════════════════════════════════════════════════════════════════
-            CERTIFICATIONS — Pyramid + Elite Standing
-        ═══════════════════════════════════════════════════════════════════ */}
-        {certifications.total_items > 0 && (
-          <>
-            <SectionDivider />
-            <section id="certifications">
-              <h2 className="text-[11px] uppercase tracking-[0.2em] text-muted/50 mb-7">Certifications</h2>
-
-              <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr] gap-10">
-                {/* Hierarchy */}
-                <div>
-                  <PrestigePyramid
-                    kokuho={certifications.kokuho_count}
-                    jubun={certifications.jubun_count}
-                    jubi={certifications.jubi_count}
-                    gyobutsu={certifications.gyobutsu_count}
-                    tokuju={certifications.tokuju_count}
-                    juyo={certifications.juyo_count}
-                  />
-                  <div className="mt-4 pt-4 border-t border-border/20 flex items-baseline justify-between text-sm">
-                    <span className="text-muted/50">Total certified</span>
-                    <span className="text-ink font-light tabular-nums">{certifications.total_items}</span>
-                  </div>
-                </div>
-
-                {/* Elite standing */}
-                <div className="flex flex-col justify-between">
-                  <div>
-                    <h3 className="text-[11px] text-muted/45 mb-3 uppercase tracking-wider">Elite Standing</h3>
-                    <EliteFactorDisplay
-                      eliteFactor={certifications.elite_factor}
-                      percentile={rankings.elite_percentile}
-                      grade={rankings.elite_grade}
-                      totalItems={certifications.total_items}
-                      eliteCount={certifications.elite_count}
-                    />
-                  </div>
-                </div>
-              </div>
-            </section>
-          </>
-        )}
-
-        {/* ═══════════════════════════════════════════════════════════════════
             DISTRIBUTIONS — Forms + Signatures
         ═══════════════════════════════════════════════════════════════════ */}
         {hasDistributions && (
@@ -616,6 +623,19 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
             <section id="listings">
               <h2 className="text-[11px] uppercase tracking-[0.2em] text-muted/50 mb-6">Currently Available</h2>
               <ArtisanListings code={entity.code} artisanName={entity.name_romaji} initialListings={listings} />
+            </section>
+          </>
+        )}
+
+        {/* ═══════════════════════════════════════════════════════════════════
+            PREVIOUSLY SOLD — Sold/unavailable listings
+        ═══════════════════════════════════════════════════════════════════ */}
+        {soldListingsExist && (
+          <>
+            <SectionDivider />
+            <section id="sold">
+              <h2 className="text-[11px] uppercase tracking-[0.2em] text-muted/50 mb-6">Previously Sold</h2>
+              <ArtisanListings code={entity.code} artisanName={entity.name_romaji} initialListings={soldListings} />
             </section>
           </>
         )}

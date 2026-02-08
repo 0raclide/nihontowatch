@@ -4,11 +4,25 @@ import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
+const LISTING_FIELDS = `
+  id, url, title, item_type, item_category,
+  price_value, price_currency, price_raw,
+  smith, school, province, era, mei_type,
+  tosogu_maker, tosogu_school,
+  cert_type, cert_session,
+  images,
+  is_available, is_sold, status,
+  first_seen_at, last_scraped_at,
+  artisan_id, artisan_confidence,
+  nagasa_cm, sori_cm,
+  dealer:dealers(id, name, domain)
+`;
+
 /**
  * GET /api/artisan/[code]/listings
  *
- * Fetches currently available listings from the main NihontoWatch database
- * that are matched to this artisan code.
+ * Fetches listings from the main NihontoWatch database matched to this artisan code.
+ * ?status=sold  — returns sold/unavailable items instead of available ones.
  */
 export async function GET(
   request: NextRequest,
@@ -20,28 +34,25 @@ export async function GET(
     return NextResponse.json({ error: 'Invalid artisan code' }, { status: 400 });
   }
 
+  const status = request.nextUrl.searchParams.get('status');
+
   try {
     const supabase = await createClient();
 
-    const { data: listings, error } = await supabase
+    let query = supabase
       .from('listings')
-      .select(`
-        id, url, title, item_type, item_category,
-        price_value, price_currency, price_raw,
-        smith, school, province, era, mei_type,
-        tosogu_maker, tosogu_school,
-        cert_type, cert_session,
-        images,
-        is_available, is_sold, status,
-        first_seen_at, last_scraped_at,
-        artisan_id, artisan_confidence,
-        nagasa_cm, sori_cm,
-        dealer:dealers(id, name, domain)
-      `)
-      .eq('artisan_id', code)
-      .eq('is_available', true)
-      .order('first_seen_at', { ascending: false })
-      .limit(24);
+      .select(LISTING_FIELDS)
+      .eq('artisan_id', code);
+
+    if (status === 'sold') {
+      query = query.eq('is_available', false).limit(50);
+    } else {
+      query = query.eq('is_available', true).limit(24);
+    }
+
+    query = query.order('first_seen_at', { ascending: false });
+
+    const { data: listings, error } = await query;
 
     if (error) {
       logger.logError('Artisan listings query error', error);

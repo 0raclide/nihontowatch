@@ -464,13 +464,14 @@ function ArtistCard({ artist }: { artist: ArtistWithSlug }) {
     : undefined;
 
   // Designation shortcodes — ordered by prestige, only shown when > 0
+  // Monochrome palette: hierarchy conveyed through weight, not color
   const certBadges: Array<{ label: string; value: number; className: string }> = [];
-  if (artist.kokuho_count > 0) certBadges.push({ label: 'Kokuho', value: artist.kokuho_count, className: 'text-red-500 dark:text-red-400 font-medium' });
-  if (artist.jubun_count > 0) certBadges.push({ label: 'Jubun', value: artist.jubun_count, className: 'text-amber-600 dark:text-amber-400 font-medium' });
-  if (artist.jubi_count > 0) certBadges.push({ label: 'Jubi', value: artist.jubi_count, className: 'text-amber-600/80 dark:text-amber-400/80 font-medium' });
-  if (artist.gyobutsu_count > 0) certBadges.push({ label: 'Gyobutsu', value: artist.gyobutsu_count, className: 'text-purple-600 dark:text-purple-400 font-medium' });
-  if (artist.tokuju_count > 0) certBadges.push({ label: 'Tokuju', value: artist.tokuju_count, className: 'text-gold font-medium' });
-  if (artist.juyo_count > 0) certBadges.push({ label: 'Juyo', value: artist.juyo_count, className: 'text-ink' });
+  if (artist.kokuho_count > 0) certBadges.push({ label: 'Kokuho', value: artist.kokuho_count, className: 'text-ink font-semibold' });
+  if (artist.jubun_count > 0) certBadges.push({ label: 'Jubun', value: artist.jubun_count, className: 'text-ink font-semibold' });
+  if (artist.jubi_count > 0) certBadges.push({ label: 'Jubi', value: artist.jubi_count, className: 'text-ink font-medium' });
+  if (artist.gyobutsu_count > 0) certBadges.push({ label: 'Gyobutsu', value: artist.gyobutsu_count, className: 'text-ink font-medium' });
+  if (artist.tokuju_count > 0) certBadges.push({ label: 'Tokuju', value: artist.tokuju_count, className: 'text-ink/80 font-medium' });
+  if (artist.juyo_count > 0) certBadges.push({ label: 'Juyo', value: artist.juyo_count, className: 'text-ink/70' });
 
   return (
     <div
