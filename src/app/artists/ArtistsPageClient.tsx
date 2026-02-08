@@ -21,7 +21,7 @@ interface Pagination {
 }
 
 interface Filters {
-  type: 'smith' | 'tosogu' | 'all';
+  type: 'smith' | 'tosogu';
   school?: string;
   province?: string;
   era?: string;
@@ -50,18 +50,17 @@ export function ArtistsPageClient({
   const [artists, setArtists] = useState(initialArtists);
   const [pagination, setPagination] = useState(initialPagination);
   const [filters, setFilters] = useState(initialFilters);
+  const [facets, setFacets] = useState(initialFacets);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchInput, setSearchInput] = useState(initialFilters.q || '');
   const abortRef = useRef<AbortController | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const facets = initialFacets;
-
   // Build URL search string from filters
   const buildQueryString = useCallback((f: Filters, page: number) => {
     const p = new URLSearchParams();
-    if (f.type !== 'all') p.set('type', f.type);
+    if (f.type === 'tosogu') p.set('type', 'tosogu');
     if (f.school) p.set('school', f.school);
     if (f.province) p.set('province', f.province);
     if (f.era) p.set('era', f.era);
@@ -90,7 +89,7 @@ export function ArtistsPageClient({
     setError(null);
 
     const p = new URLSearchParams();
-    if (f.type !== 'all') p.set('type', f.type);
+    p.set('type', f.type);
     if (f.school) p.set('school', f.school);
     if (f.province) p.set('province', f.province);
     if (f.era) p.set('era', f.era);
@@ -108,6 +107,7 @@ export function ArtistsPageClient({
         const data = await res.json();
         setArtists(data.artists);
         setPagination(data.pagination);
+        if (data.facets) setFacets(data.facets);
       } else {
         setError('Failed to load artists. Please try again.');
       }
@@ -137,6 +137,12 @@ export function ArtistsPageClient({
 
   const handleFilterChange = useCallback((key: keyof Filters, value: string | boolean) => {
     const newFilters = { ...filters, [key]: value };
+    // Clear school/province/era when switching types — they won't be valid for the other type
+    if (key === 'type') {
+      newFilters.school = undefined;
+      newFilters.province = undefined;
+      newFilters.era = undefined;
+    }
     applyFilters(newFilters, 1);
   }, [filters, applyFilters]);
 
@@ -175,8 +181,8 @@ export function ArtistsPageClient({
 
   const clearAllFilters = useCallback(() => {
     setSearchInput('');
-    applyFilters({ type: 'all', sort: 'elite_factor', notable: true }, 1);
-  }, [applyFilters]);
+    applyFilters({ type: filters.type, sort: 'elite_factor', notable: true }, 1);
+  }, [filters.type, applyFilters]);
 
   return (
     <div className="max-w-[1600px] mx-auto px-4 py-8 lg:px-6">
@@ -232,7 +238,7 @@ export function ArtistsPageClient({
 
           {/* Type Toggle */}
           <div className="flex border border-border divide-x divide-border">
-            {(['all', 'smith', 'tosogu'] as const).map((t) => (
+            {(['smith', 'tosogu'] as const).map((t) => (
               <button
                 key={t}
                 onClick={() => handleFilterChange('type', t)}
@@ -243,7 +249,7 @@ export function ArtistsPageClient({
                     : 'text-muted hover:text-ink hover:bg-hover'
                 }`}
               >
-                {t === 'all' ? 'All' : t === 'smith' ? 'Nihonto' : 'Tosogu'}
+                {t === 'smith' ? 'Nihonto' : 'Tosogu'}
               </button>
             ))}
           </div>
@@ -381,13 +387,9 @@ function StatsBar({
   filters: Filters;
 }) {
   const items = [
-    { label: 'Artists', value: pagination.totalCount.toLocaleString() },
-    ...(filters.type === 'all'
-      ? [
-          { label: 'Nihonto', value: facets.totals.smiths.toLocaleString() },
-          { label: 'Tosogu', value: facets.totals.tosogu.toLocaleString() },
-        ]
-      : []),
+    { label: filters.type === 'smith' ? 'Nihonto' : 'Tosogu', value: pagination.totalCount.toLocaleString() },
+    { label: 'Nihonto Total', value: facets.totals.smiths.toLocaleString() },
+    { label: 'Tosogu Total', value: facets.totals.tosogu.toLocaleString() },
   ];
 
   return (

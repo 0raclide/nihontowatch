@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
     const params = request.nextUrl.searchParams;
 
     const typeParam = params.get('type');
-    const type = (typeParam === 'smith' || typeParam === 'tosogu') ? typeParam : 'all';
+    const type = (typeParam === 'tosogu') ? 'tosogu' : 'smith';
     const school = params.get('school') || undefined;
     const province = params.get('province') || undefined;
     const era = params.get('era') || undefined;
@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
 
     const [{ artists, total }, facets] = await Promise.all([
       getArtistsForDirectory({ type, school, province, era, q, sort, page, limit, notable }),
-      getArtistDirectoryFacets(),
+      getArtistDirectoryFacets(type),
     ]);
 
     // Fetch listing data for artist cards

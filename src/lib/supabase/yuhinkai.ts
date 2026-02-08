@@ -332,7 +332,7 @@ export interface ArtistDirectoryEntry {
 }
 
 export interface DirectoryFilters {
-  type?: 'smith' | 'tosogu' | 'all';
+  type?: 'smith' | 'tosogu';
   school?: string;
   province?: string;
   era?: string;
@@ -352,13 +352,13 @@ export interface DirectoryFacets {
 
 /**
  * Fetch paginated artisan list for the directory page.
- * Queries both smith_entities and tosogu_makers, merges results.
+ * Queries either smith_entities or tosogu_makers based on the type filter.
  */
 export async function getArtistsForDirectory(
   filters: DirectoryFilters = {}
 ): Promise<{ artists: ArtistDirectoryEntry[]; total: number }> {
   const {
-    type = 'all',
+    type = 'smith',
     school,
     province,
     era,
@@ -371,195 +371,94 @@ export async function getArtistsForDirectory(
 
   const safeLimit = Math.min(Math.max(limit, 1), 100);
   const offset = (Math.max(page, 1) - 1) * safeLimit;
+  const sortCol = sort === 'name' ? 'name_romaji' : sort;
 
-  const smithResults: ArtistDirectoryEntry[] = [];
-  const tosoguResults: ArtistDirectoryEntry[] = [];
-  let smithTotal = 0;
-  let tosoguTotal = 0;
+  const table = type === 'tosogu' ? 'tosogu_makers' : 'smith_entities';
+  const idCol = type === 'tosogu' ? 'maker_id' : 'smith_id';
+  const entityType = type === 'tosogu' ? 'tosogu' : 'smith';
 
-  // Determine sort column mapping for each table
-  const smithSortCol = sort === 'name' ? 'name_romaji' : sort;
-  const tosoguSortCol = sort === 'name' ? 'name_romaji' : sort;
+  let query = yuhinkaiClient
+    .from(table)
+    .select(`${idCol}, name_romaji, name_kanji, school, province, era, kokuho_count, jubun_count, jubi_count, gyobutsu_count, tokuju_count, juyo_count, total_items, elite_factor`, { count: 'exact' })
+    .eq('is_school_code', false);
 
-  // Query smiths
-  if (type === 'all' || type === 'smith') {
-    let query = yuhinkaiClient
-      .from('smith_entities')
-      .select('smith_id, name_romaji, name_kanji, school, province, era, kokuho_count, jubun_count, jubi_count, gyobutsu_count, tokuju_count, juyo_count, total_items, elite_factor', { count: 'exact' })
-      .eq('is_school_code', false);
-
-    if (notable) query = query.gt('total_items', 0);
-    if (school) query = query.eq('school', school);
-    if (province) query = query.eq('province', province);
-    if (era) query = query.eq('era', era);
-    if (q) {
-      query = query.or(`name_romaji.ilike.%${q}%,name_kanji.ilike.%${q}%,smith_id.ilike.%${q}%`);
-    }
-
-    // When querying both types, fetch all matching and merge; when single type, paginate directly
-    if (type === 'smith') {
-      query = query
-        .order(smithSortCol, { ascending: sort === 'name', nullsFirst: false })
-        .range(offset, offset + safeLimit - 1);
-    } else {
-      // For merged queries, we need all IDs for sorting — but that's too expensive.
-      // Instead, fetch top N for each type and merge client-side.
-      query = query
-        .order(smithSortCol, { ascending: sort === 'name', nullsFirst: false })
-        .range(0, offset + safeLimit - 1);
-    }
-
-    const { data, count, error } = await query;
-    if (error) {
-      console.error('[Yuhinkai] Directory smith query error:', error);
-    } else {
-      smithTotal = count || 0;
-      for (const s of data || []) {
-        smithResults.push({
-          code: s.smith_id,
-          name_romaji: s.name_romaji,
-          name_kanji: s.name_kanji,
-          school: s.school,
-          province: s.province,
-          era: s.era,
-          entity_type: 'smith',
-          kokuho_count: s.kokuho_count || 0,
-          jubun_count: s.jubun_count || 0,
-          jubi_count: s.jubi_count || 0,
-          gyobutsu_count: s.gyobutsu_count || 0,
-          tokuju_count: s.tokuju_count || 0,
-          juyo_count: s.juyo_count || 0,
-          total_items: s.total_items || 0,
-          elite_factor: s.elite_factor || 0,
-        });
-      }
-    }
+  if (notable) query = query.gt('total_items', 0);
+  if (school) query = query.eq('school', school);
+  if (province) query = query.eq('province', province);
+  if (era) query = query.eq('era', era);
+  if (q) {
+    query = query.or(`name_romaji.ilike.%${q}%,name_kanji.ilike.%${q}%,${idCol}.ilike.%${q}%,school.ilike.%${q}%,province.ilike.%${q}%`);
   }
 
-  // Query tosogu makers
-  if (type === 'all' || type === 'tosogu') {
-    let query = yuhinkaiClient
-      .from('tosogu_makers')
-      .select('maker_id, name_romaji, name_kanji, school, province, era, kokuho_count, jubun_count, jubi_count, gyobutsu_count, tokuju_count, juyo_count, total_items, elite_factor', { count: 'exact' })
-      .eq('is_school_code', false);
+  query = query
+    .order(sortCol, { ascending: sort === 'name', nullsFirst: false })
+    .range(offset, offset + safeLimit - 1);
 
-    if (notable) query = query.gt('total_items', 0);
-    if (school) query = query.eq('school', school);
-    if (province) query = query.eq('province', province);
-    if (era) query = query.eq('era', era);
-    if (q) {
-      query = query.or(`name_romaji.ilike.%${q}%,name_kanji.ilike.%${q}%,maker_id.ilike.%${q}%`);
-    }
-
-    if (type === 'tosogu') {
-      query = query
-        .order(tosoguSortCol, { ascending: sort === 'name', nullsFirst: false })
-        .range(offset, offset + safeLimit - 1);
-    } else {
-      query = query
-        .order(tosoguSortCol, { ascending: sort === 'name', nullsFirst: false })
-        .range(0, offset + safeLimit - 1);
-    }
-
-    const { data, count, error } = await query;
-    if (error) {
-      console.error('[Yuhinkai] Directory tosogu query error:', error);
-    } else {
-      tosoguTotal = count || 0;
-      for (const m of data || []) {
-        tosoguResults.push({
-          code: m.maker_id,
-          name_romaji: m.name_romaji,
-          name_kanji: m.name_kanji,
-          school: m.school,
-          province: m.province,
-          era: m.era,
-          entity_type: 'tosogu',
-          kokuho_count: m.kokuho_count || 0,
-          jubun_count: m.jubun_count || 0,
-          jubi_count: m.jubi_count || 0,
-          gyobutsu_count: m.gyobutsu_count || 0,
-          tokuju_count: m.tokuju_count || 0,
-          juyo_count: m.juyo_count || 0,
-          total_items: m.total_items || 0,
-          elite_factor: m.elite_factor || 0,
-        });
-      }
-    }
+  const { data, count, error } = await query;
+  if (error) {
+    console.error(`[Yuhinkai] Directory ${entityType} query error:`, error);
+    return { artists: [], total: 0 };
   }
 
-  // Single-type pagination is already handled by the DB
-  if (type === 'smith') {
-    return { artists: smithResults, total: smithTotal };
-  }
-  if (type === 'tosogu') {
-    return { artists: tosoguResults, total: tosoguTotal };
-  }
+  const artists: ArtistDirectoryEntry[] = (data || []).map((row: Record<string, unknown>) => ({
+    code: row[idCol] as string,
+    name_romaji: row.name_romaji as string | null,
+    name_kanji: row.name_kanji as string | null,
+    school: row.school as string | null,
+    province: row.province as string | null,
+    era: row.era as string | null,
+    entity_type: entityType,
+    kokuho_count: (row.kokuho_count as number) || 0,
+    jubun_count: (row.jubun_count as number) || 0,
+    jubi_count: (row.jubi_count as number) || 0,
+    gyobutsu_count: (row.gyobutsu_count as number) || 0,
+    tokuju_count: (row.tokuju_count as number) || 0,
+    juyo_count: (row.juyo_count as number) || 0,
+    total_items: (row.total_items as number) || 0,
+    elite_factor: (row.elite_factor as number) || 0,
+  }));
 
-  // Merged type: combine, sort, paginate client-side
-  const total = smithTotal + tosoguTotal;
-  const merged = [...smithResults, ...tosoguResults];
-
-  merged.sort((a, b) => {
-    switch (sort) {
-      case 'name':
-        return (a.name_romaji || '').localeCompare(b.name_romaji || '');
-      case 'juyo_count':
-        return b.juyo_count - a.juyo_count;
-      case 'total_items':
-        return b.total_items - a.total_items;
-      case 'elite_factor':
-      default:
-        return b.elite_factor - a.elite_factor;
-    }
-  });
-
-  const artists = merged.slice(offset, offset + safeLimit);
-  return { artists, total };
+  return { artists, total: count || 0 };
 }
 
 /**
  * Fetch aggregate facets for filter dropdowns on the directory page.
+ * Only returns schools/provinces/eras for the selected type, keeping
+ * totals for both types (used for tab counts).
  */
-export async function getArtistDirectoryFacets(): Promise<DirectoryFacets> {
-  // Fetch counts for both tables in parallel
+export async function getArtistDirectoryFacets(type: 'smith' | 'tosogu'): Promise<DirectoryFacets> {
+  const table = type === 'smith' ? 'smith_entities' : 'tosogu_makers';
+  const idCol = type === 'smith' ? 'smith_id' : 'maker_id';
+
+  // Fetch facets for the selected type + totals for both types in parallel
   const [
-    { data: smithSchools },
-    { data: tosoguSchools },
-    { data: smithProvinces },
-    { data: tosoguProvinces },
-    { data: smithEras },
-    { data: tosoguEras },
+    { data: schools },
+    { data: provinces },
+    { data: eras },
     { count: smithCount },
     { count: tosoguCount },
   ] = await Promise.all([
-    yuhinkaiClient.from('smith_entities').select('school').eq('is_school_code', false).gt('total_items', 0).not('school', 'is', null),
-    yuhinkaiClient.from('tosogu_makers').select('school').eq('is_school_code', false).gt('total_items', 0).not('school', 'is', null),
-    yuhinkaiClient.from('smith_entities').select('province').eq('is_school_code', false).gt('total_items', 0).not('province', 'is', null),
-    yuhinkaiClient.from('tosogu_makers').select('province').eq('is_school_code', false).gt('total_items', 0).not('province', 'is', null),
-    yuhinkaiClient.from('smith_entities').select('era').eq('is_school_code', false).gt('total_items', 0).not('era', 'is', null),
-    yuhinkaiClient.from('tosogu_makers').select('era').eq('is_school_code', false).gt('total_items', 0).not('era', 'is', null),
+    yuhinkaiClient.from(table).select('school').eq('is_school_code', false).gt('total_items', 0).not('school', 'is', null),
+    yuhinkaiClient.from(table).select('province').eq('is_school_code', false).gt('total_items', 0).not('province', 'is', null),
+    yuhinkaiClient.from(table).select('era').eq('is_school_code', false).gt('total_items', 0).not('era', 'is', null),
     yuhinkaiClient.from('smith_entities').select('*', { count: 'exact', head: true }).eq('is_school_code', false).gt('total_items', 0),
     yuhinkaiClient.from('tosogu_makers').select('*', { count: 'exact', head: true }).eq('is_school_code', false).gt('total_items', 0),
   ]);
 
-  // Aggregate school counts
   const schoolMap = new Map<string, number>();
-  for (const row of [...(smithSchools || []), ...(tosoguSchools || [])]) {
+  for (const row of schools || []) {
     const s = row.school as string;
     schoolMap.set(s, (schoolMap.get(s) || 0) + 1);
   }
 
-  // Aggregate province counts
   const provinceMap = new Map<string, number>();
-  for (const row of [...(smithProvinces || []), ...(tosoguProvinces || [])]) {
+  for (const row of provinces || []) {
     const p = row.province as string;
     provinceMap.set(p, (provinceMap.get(p) || 0) + 1);
   }
 
-  // Aggregate era counts
   const eraMap = new Map<string, number>();
-  for (const row of [...(smithEras || []), ...(tosoguEras || [])]) {
+  for (const row of eras || []) {
     const e = row.era as string;
     eraMap.set(e, (eraMap.get(e) || 0) + 1);
   }

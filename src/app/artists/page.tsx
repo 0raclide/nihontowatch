@@ -33,9 +33,8 @@ export async function generateMetadata({ searchParams }: ArtistsPageProps): Prom
   if (school) parts.push(`${school} School`);
   if (province) parts.push(province);
   if (era) parts.push(era);
-  if (typeParam === 'smith') parts.push('Nihonto Artists');
-  else if (typeParam === 'tosogu') parts.push('Tosogu Artists');
-  else parts.push('Artists');
+  if (typeParam === 'tosogu') parts.push('Tosogu Artists');
+  else parts.push('Nihonto Artists');
 
   const titleSuffix = parts.length > 0 ? parts.join(' — ') : 'Artist Directory';
   const title = `${titleSuffix} | NihontoWatch`;
@@ -86,7 +85,7 @@ export default async function ArtistsPage({ searchParams }: ArtistsPageProps) {
   const params = await searchParams;
 
   const typeParam = getStringParam(params, 'type');
-  const type = (typeParam === 'smith' || typeParam === 'tosogu') ? typeParam : 'all';
+  const type = (typeParam === 'tosogu') ? 'tosogu' : 'smith';
   const school = getStringParam(params, 'school');
   const province = getStringParam(params, 'province');
   const era = getStringParam(params, 'era');
@@ -100,7 +99,7 @@ export default async function ArtistsPage({ searchParams }: ArtistsPageProps) {
 
   const [{ artists, total }, facets] = await Promise.all([
     getArtistsForDirectory({ type, school, province, era, q, sort, page, limit: 50, notable }),
-    getArtistDirectoryFacets(),
+    getArtistDirectoryFacets(type),
   ]);
 
   // Fetch listing data for the current page of artists
