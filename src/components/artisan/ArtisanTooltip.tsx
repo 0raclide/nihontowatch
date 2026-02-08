@@ -245,40 +245,18 @@ export function ArtisanTooltip({
     }
   }, [isOpen, showCorrectionSearch]);
 
-  // Close on click outside, window scroll, and escape key
+  // Close on escape key only (tooltip persists until X is clicked)
   useEffect(() => {
     if (!isOpen) return;
-
-    const handleClickOutside = (e: MouseEvent) => {
-      if (
-        termRef.current &&
-        !termRef.current.contains(e.target as Node) &&
-        tooltipRef.current &&
-        !tooltipRef.current.contains(e.target as Node)
-      ) {
-        setIsOpen(false);
-      }
-    };
-
-    // Only close on window/document scroll, not scroll inside modals
-    const handleScroll = (e: Event) => {
-      if (e.target === document || e.target === document.documentElement) {
-        setIsOpen(false);
-      }
-    };
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setIsOpen(false);
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
     document.addEventListener('keydown', handleKeyDown);
-    document.addEventListener('scroll', handleScroll, true);
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('keydown', handleKeyDown);
-      document.removeEventListener('scroll', handleScroll, true);
     };
   }, [isOpen]);
 
@@ -338,12 +316,23 @@ export function ArtisanTooltip({
             aria-live="polite"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Header with code and confidence */}
+            {/* Header with code, confidence, and close button */}
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm font-mono font-semibold text-ink">{artisanId}</span>
-              <span className={`text-[10px] font-medium px-2 py-0.5 rounded ${confidenceColor}`}>
-                {confidence}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className={`text-[10px] font-medium px-2 py-0.5 rounded ${confidenceColor}`}>
+                  {confidence}
+                </span>
+                <button
+                  onClick={() => setIsOpen(false)}
+                  className="p-1 -mr-1 text-muted hover:text-ink transition-colors rounded hover:bg-surface"
+                  aria-label="Close tooltip"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
             </div>
 
             {/* Loading state */}
