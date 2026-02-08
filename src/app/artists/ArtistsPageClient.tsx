@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import type { ArtistDirectoryEntry, DirectoryFacets } from '@/lib/supabase/yuhinkai';
 
 // =============================================================================
@@ -451,12 +452,30 @@ function SkeletonCard() {
 }
 
 function ArtistCard({ artist }: { artist: ArtistWithSlug }) {
+  const router = useRouter();
   const elitePct = artist.elite_factor > 0 ? Math.min(artist.elite_factor * 100, 100) : 0;
 
+  const profileUrl = `/artists/${artist.slug}`;
+  const availableCount = artist.available_count ?? 0;
+
+  // Build browse URL for "for sale" link — opens QuickView if we have a first listing ID
+  const forSaleUrl = availableCount > 0
+    ? `/browse?artisan=${encodeURIComponent(artist.code)}${artist.first_listing_id ? `&listing=${artist.first_listing_id}` : ''}`
+    : undefined;
+
+  // Designation shortcodes — ordered by prestige, only shown when > 0
+  const certBadges: Array<{ label: string; value: number; className: string }> = [];
+  if (artist.kokuho_count > 0) certBadges.push({ label: 'Kokuho', value: artist.kokuho_count, className: 'text-red-500 dark:text-red-400 font-medium' });
+  if (artist.jubun_count > 0) certBadges.push({ label: 'Jubun', value: artist.jubun_count, className: 'text-amber-600 dark:text-amber-400 font-medium' });
+  if (artist.jubi_count > 0) certBadges.push({ label: 'Jubi', value: artist.jubi_count, className: 'text-amber-600/80 dark:text-amber-400/80 font-medium' });
+  if (artist.gyobutsu_count > 0) certBadges.push({ label: 'Gyobutsu', value: artist.gyobutsu_count, className: 'text-purple-600 dark:text-purple-400 font-medium' });
+  if (artist.tokuju_count > 0) certBadges.push({ label: 'Tokuju', value: artist.tokuju_count, className: 'text-gold font-medium' });
+  if (artist.juyo_count > 0) certBadges.push({ label: 'Juyo', value: artist.juyo_count, className: 'text-ink' });
+
   return (
-    <Link
-      href={`/artists/${artist.slug}`}
-      className="group block p-4 bg-cream border border-border hover:border-gold/40 transition-colors"
+    <div
+      onClick={() => router.push(profileUrl)}
+      className="group cursor-pointer p-4 bg-cream border border-border hover:border-gold/40 transition-colors"
     >
       {/* Row 1: Name + Type */}
       <div className="flex items-start justify-between gap-2">
@@ -483,18 +502,24 @@ function ArtistCard({ artist }: { artist: ArtistWithSlug }) {
       </div>
 
       {/* Row 3: Cert counts + available */}
-      <div className="mt-2.5 flex items-center gap-3 text-[11px] tabular-nums">
-        {artist.tokuju_count > 0 && (
-          <span className="text-gold font-medium">{artist.tokuju_count} Tokuju</span>
-        )}
-        {artist.juyo_count > 0 && (
-          <span className="text-ink">{artist.juyo_count} Juyo</span>
-        )}
-        <span className="text-muted/50">{artist.total_items} total</span>
-        {(artist.available_count ?? 0) > 0 && (
-          <span className="ml-auto text-emerald-600 dark:text-emerald-400 font-medium">
-            {artist.available_count} for sale
+      <div className="mt-2.5 flex items-center gap-3 text-[11px] tabular-nums flex-wrap">
+        {certBadges.map((badge) => (
+          <span key={badge.label} className={badge.className}>
+            {badge.value} {badge.label}
           </span>
+        ))}
+        <span className="text-muted/50">{artist.total_items} total</span>
+        {availableCount > 0 && forSaleUrl && (
+          <Link
+            href={forSaleUrl}
+            onClick={(e) => e.stopPropagation()}
+            className="ml-auto inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium hover:text-emerald-500 dark:hover:text-emerald-300 transition-colors"
+          >
+            {availableCount} for sale
+            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+            </svg>
+          </Link>
         )}
       </div>
 
@@ -512,7 +537,7 @@ function ArtistCard({ artist }: { artist: ArtistWithSlug }) {
           </span>
         </div>
       )}
-    </Link>
+    </div>
   );
 }
 

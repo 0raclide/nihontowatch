@@ -97,6 +97,15 @@ function StatsBar({ data, availableCount }: { data: ArtisanPageResponse; availab
   if (certifications.kokuho_count > 0) {
     items.push({ label: 'Kokuhō', value: certifications.kokuho_count.toString() });
   }
+  if (certifications.jubun_count > 0) {
+    items.push({ label: 'Jūyō Bunkazai', value: certifications.jubun_count.toString() });
+  }
+  if (certifications.jubi_count > 0) {
+    items.push({ label: 'Jūyō Bijutsuhin', value: certifications.jubi_count.toString() });
+  }
+  if (certifications.gyobutsu_count > 0) {
+    items.push({ label: 'Gyobutsu', value: certifications.gyobutsu_count.toString() });
+  }
   if (certifications.tokuju_count > 0) {
     items.push({ label: 'Tokubetsu Jūyō', value: certifications.tokuju_count.toString() });
   }
@@ -106,7 +115,7 @@ function StatsBar({ data, availableCount }: { data: ArtisanPageResponse; availab
       items.push({ label: 'Fujishiro', value: '★'.repeat(rank) });
     }
   }
-  if (certifications.juyo_count > 0 && certifications.kokuho_count === 0) {
+  if (certifications.juyo_count > 0) {
     items.push({ label: 'Jūyō', value: certifications.juyo_count.toString() });
   }
   if (availableCount !== null && availableCount > 0) {
@@ -265,6 +274,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
   const sections = useMemo(() => {
     const s: Array<{ id: string; label: string }> = [];
     s.push({ id: 'overview', label: 'Overview' });
+    if (denrai.length > 0) s.push({ id: 'provenance', label: 'Provenance' });
     if (profile?.profile_md) s.push({ id: 'biography', label: 'Biography' });
     if (certifications.total_items > 0) s.push({ id: 'certifications', label: 'Certifications' });
     if (hasDistributions) s.push({ id: 'distributions', label: 'Analysis' });
@@ -272,7 +282,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
     if (lineage.teacher || lineage.students.length > 0) s.push({ id: 'lineage', label: 'Lineage' });
     if (related.length > 0) s.push({ id: 'related', label: 'School' });
     return s;
-  }, [profile, certifications.total_items, hasDistributions, listingsExist, lineage, related]);
+  }, [profile, certifications.total_items, hasDistributions, listingsExist, lineage, related, denrai]);
 
   const fujishiroLabel = entity.fujishiro ? FUJISHIRO_LABELS[entity.fujishiro] : null;
   const isTopGrade = rankings.elite_grade === 'S' || rankings.elite_grade === 'A';
@@ -435,20 +445,6 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
                   <span className="text-ink">{entity.specialties.join(', ')}</span>
                 </>
               )}
-              {denrai.length > 0 && (
-                <>
-                  <span className="text-muted/50">Provenance</span>
-                  <span className="text-ink">
-                    {denrai.map((d, i) => (
-                      <span key={d.owner}>
-                        {d.owner}
-                        {d.count > 1 && <span className="text-muted/35 ml-0.5 tabular-nums">({d.count})</span>}
-                        {i < denrai.length - 1 && <span className="text-muted/20 mx-1.5">·</span>}
-                      </span>
-                    ))}
-                  </span>
-                </>
-              )}
               <>
                 <span className="text-muted/50">Type</span>
                 <span className="text-ink">{entity.entity_type === 'smith' ? 'Swordsmith' : 'Tosogu Maker'}</span>
@@ -482,6 +478,39 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
             )}
           </div>
         </section>
+
+        {/* ═══════════════════════════════════════════════════════════════════
+            PROVENANCE — Historical collections
+        ═══════════════════════════════════════════════════════════════════ */}
+        {denrai.length > 0 && (
+          <>
+            <SectionDivider />
+            <section id="provenance">
+              <h2 className="text-[11px] uppercase tracking-[0.2em] text-muted/50 mb-2">Provenance</h2>
+              <p className="text-[11px] text-muted/35 mb-7 italic">
+                Certified works by {entity.name_romaji || entity.code} have been held in the following collections
+              </p>
+
+              <div className="space-y-0">
+                {denrai.map((d, i) => (
+                  <div
+                    key={d.owner}
+                    className={`flex items-baseline justify-between py-3 ${
+                      i < denrai.length - 1 ? 'border-b border-border/15' : ''
+                    }`}
+                  >
+                    <span className="text-sm text-ink font-light">{d.owner}</span>
+                    {d.count > 1 && (
+                      <span className="text-xs text-muted/40 tabular-nums ml-4">
+                        {d.count} {d.count === 1 ? 'work' : 'works'}
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </section>
+          </>
+        )}
 
         {/* ═══════════════════════════════════════════════════════════════════
             BIOGRAPHY — Rich scholarly profile

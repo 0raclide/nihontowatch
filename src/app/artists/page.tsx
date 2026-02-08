@@ -57,19 +57,24 @@ export async function generateMetadata({ searchParams }: ArtistsPageProps): Prom
   };
 }
 
-async function getListingCounts(codes: string[]): Promise<Map<string, number>> {
-  const result = new Map<string, number>();
+async function getListingData(codes: string[]): Promise<Map<string, { count: number; firstId?: number }>> {
+  const result = new Map<string, { count: number; firstId?: number }>();
   if (codes.length === 0) return result;
   try {
     const supabase = await createClient();
     // artisan_id is not in the generated DB types, so cast the result
     const { data } = await supabase
       .from('listings')
-      .select('artisan_id')
+      .select('id, artisan_id')
       .in('artisan_id' as string, codes)
-      .eq('is_available', true) as { data: Array<{ artisan_id: string }> | null };
+      .eq('is_available', true) as { data: Array<{ id: number; artisan_id: string }> | null };
     for (const row of data || []) {
-      result.set(row.artisan_id, (result.get(row.artisan_id) || 0) + 1);
+      const existing = result.get(row.artisan_id);
+      if (existing) {
+        existing.count += 1;
+      } else {
+        result.set(row.artisan_id, { count: 1, firstId: row.id });
+      }
     }
   } catch {
     // Non-critical — cards just won't show listing counts
@@ -98,15 +103,19 @@ export default async function ArtistsPage({ searchParams }: ArtistsPageProps) {
     getArtistDirectoryFacets(),
   ]);
 
-  // Fetch listing counts for the current page of artists
+  // Fetch listing data for the current page of artists
   const codes = artists.map(a => a.code);
-  const listingCounts = await getListingCounts(codes);
+  const listingData = await getListingData(codes);
 
-  const artistsWithSlugs = artists.map(a => ({
-    ...a,
-    slug: generateArtisanSlug(a.name_romaji, a.code),
-    available_count: listingCounts.get(a.code) || 0,
-  }));
+  const artistsWithSlugs = artists.map(a => {
+    const ld = listingData.get(a.code);
+    return {
+      ...a,
+      slug: generateArtisanSlug(a.name_romaji, a.code),
+      available_count: ld?.count || 0,
+      first_listing_id: ld?.firstId,
+    };
+  });
 
   const totalPages = Math.ceil(total / 50);
 

@@ -318,12 +318,17 @@ export interface ArtistDirectoryEntry {
   province: string | null;
   era: string | null;
   entity_type: 'smith' | 'tosogu';
+  kokuho_count: number;
+  jubun_count: number;
+  jubi_count: number;
+  gyobutsu_count: number;
   tokuju_count: number;
   juyo_count: number;
   total_items: number;
   elite_factor: number;
   denrai_owners?: Array<{ owner: string; count: number }>;
   available_count?: number;
+  first_listing_id?: number;
 }
 
 export interface DirectoryFilters {
@@ -380,7 +385,7 @@ export async function getArtistsForDirectory(
   if (type === 'all' || type === 'smith') {
     let query = yuhinkaiClient
       .from('smith_entities')
-      .select('smith_id, name_romaji, name_kanji, school, province, era, tokuju_count, juyo_count, total_items, elite_factor', { count: 'exact' })
+      .select('smith_id, name_romaji, name_kanji, school, province, era, kokuho_count, jubun_count, jubi_count, gyobutsu_count, tokuju_count, juyo_count, total_items, elite_factor', { count: 'exact' })
       .eq('is_school_code', false);
 
     if (notable) query = query.gt('total_items', 0);
@@ -418,6 +423,10 @@ export async function getArtistsForDirectory(
           province: s.province,
           era: s.era,
           entity_type: 'smith',
+          kokuho_count: s.kokuho_count || 0,
+          jubun_count: s.jubun_count || 0,
+          jubi_count: s.jubi_count || 0,
+          gyobutsu_count: s.gyobutsu_count || 0,
           tokuju_count: s.tokuju_count || 0,
           juyo_count: s.juyo_count || 0,
           total_items: s.total_items || 0,
@@ -431,7 +440,7 @@ export async function getArtistsForDirectory(
   if (type === 'all' || type === 'tosogu') {
     let query = yuhinkaiClient
       .from('tosogu_makers')
-      .select('maker_id, name_romaji, name_kanji, school, province, era, tokuju_count, juyo_count, total_items, elite_factor', { count: 'exact' })
+      .select('maker_id, name_romaji, name_kanji, school, province, era, kokuho_count, jubun_count, jubi_count, gyobutsu_count, tokuju_count, juyo_count, total_items, elite_factor', { count: 'exact' })
       .eq('is_school_code', false);
 
     if (notable) query = query.gt('total_items', 0);
@@ -466,6 +475,10 @@ export async function getArtistsForDirectory(
           province: m.province,
           era: m.era,
           entity_type: 'tosogu',
+          kokuho_count: m.kokuho_count || 0,
+          jubun_count: m.jubun_count || 0,
+          jubi_count: m.jubi_count || 0,
+          gyobutsu_count: m.gyobutsu_count || 0,
           tokuju_count: m.tokuju_count || 0,
           juyo_count: m.juyo_count || 0,
           total_items: m.total_items || 0,
