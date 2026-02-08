@@ -13,6 +13,10 @@ interface RelatedArtisan {
   name_kanji: string | null;
   slug: string;
   school: string | null;
+  kokuho_count: number;
+  jubun_count: number;
+  jubi_count: number;
+  gyobutsu_count: number;
   juyo_count: number;
   tokuju_count: number;
   elite_factor: number;
@@ -53,12 +57,24 @@ export function RelatedArtisans({ artisans, schoolName }: RelatedArtisansProps) 
                 </span>
               )}
             </div>
-            <div className="flex-shrink-0 flex items-baseline gap-4 text-xs text-muted tabular-nums">
+            <div className="flex-shrink-0 flex items-baseline gap-3 text-xs tabular-nums">
+              {artisan.kokuho_count > 0 && (
+                <span className="text-ink font-semibold">{artisan.kokuho_count} kokuhō</span>
+              )}
+              {artisan.jubun_count > 0 && (
+                <span className="text-ink font-semibold">{artisan.jubun_count} jubun</span>
+              )}
+              {artisan.jubi_count > 0 && (
+                <span className="text-ink font-medium">{artisan.jubi_count} jubi</span>
+              )}
+              {artisan.gyobutsu_count > 0 && (
+                <span className="text-ink font-medium">{artisan.gyobutsu_count} gyobutsu</span>
+              )}
               {artisan.tokuju_count > 0 && (
-                <span>{artisan.tokuju_count} tokujū</span>
+                <span className="text-muted">{artisan.tokuju_count} tokujū</span>
               )}
               {artisan.juyo_count > 0 && (
-                <span>{artisan.juyo_count} jūyō</span>
+                <span className="text-muted">{artisan.juyo_count} jūyō</span>
               )}
             </div>
           </Link>

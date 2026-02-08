@@ -191,6 +191,10 @@ export interface RelatedArtisan {
   name_romaji: string | null;
   name_kanji: string | null;
   school: string | null;
+  kokuho_count: number;
+  jubun_count: number;
+  jubi_count: number;
+  gyobutsu_count: number;
   juyo_count: number;
   tokuju_count: number;
   elite_factor: number;
@@ -210,7 +214,7 @@ export async function getRelatedArtisans(
   if (entityType === 'smith') {
     const { data } = await yuhinkaiClient
       .from('smith_entities')
-      .select('smith_id, name_romaji, name_kanji, school, juyo_count, tokuju_count, elite_factor')
+      .select('smith_id, name_romaji, name_kanji, school, kokuho_count, jubun_count, jubi_count, gyobutsu_count, juyo_count, tokuju_count, elite_factor')
       .eq('school', school)
       .neq('smith_id', code)
       .eq('is_school_code', false)
@@ -222,6 +226,10 @@ export async function getRelatedArtisans(
       name_romaji: s.name_romaji,
       name_kanji: s.name_kanji,
       school: s.school,
+      kokuho_count: s.kokuho_count || 0,
+      jubun_count: s.jubun_count || 0,
+      jubi_count: s.jubi_count || 0,
+      gyobutsu_count: s.gyobutsu_count || 0,
       juyo_count: s.juyo_count || 0,
       tokuju_count: s.tokuju_count || 0,
       elite_factor: s.elite_factor || 0,
@@ -230,7 +238,7 @@ export async function getRelatedArtisans(
 
   const { data } = await yuhinkaiClient
     .from('tosogu_makers')
-    .select('maker_id, name_romaji, name_kanji, school, juyo_count, tokuju_count, elite_factor')
+    .select('maker_id, name_romaji, name_kanji, school, kokuho_count, jubun_count, jubi_count, gyobutsu_count, juyo_count, tokuju_count, elite_factor')
     .eq('school', school)
     .neq('maker_id', code)
     .eq('is_school_code', false)
@@ -242,6 +250,10 @@ export async function getRelatedArtisans(
     name_romaji: m.name_romaji,
     name_kanji: m.name_kanji,
     school: m.school,
+    kokuho_count: m.kokuho_count || 0,
+    jubun_count: m.jubun_count || 0,
+    jubi_count: m.jubi_count || 0,
+    gyobutsu_count: m.gyobutsu_count || 0,
     juyo_count: m.juyo_count || 0,
     tokuju_count: m.tokuju_count || 0,
     elite_factor: m.elite_factor || 0,

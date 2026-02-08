@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import { getArtistsForDirectory, getArtistDirectoryFacets } from '@/lib/supabase/yuhinkai';
+import { getArtistsForDirectory, getArtistDirectoryFacets, getBulkElitePercentiles } from '@/lib/supabase/yuhinkai';
 import { generateArtisanSlug } from '@/lib/artisan/slugs';
 import { generateBreadcrumbJsonLd, jsonLdScriptProps } from '@/lib/seo/jsonLd';
 import { generateArtistDirectoryJsonLd } from '@/lib/seo/jsonLd';
@@ -102,15 +102,19 @@ export default async function ArtistsPage({ searchParams }: ArtistsPageProps) {
     getArtistDirectoryFacets(type),
   ]);
 
-  // Fetch listing data for the current page of artists
+  // Fetch listing data and percentiles for the current page of artists
   const codes = artists.map(a => a.code);
-  const listingData = await getListingData(codes);
+  const [listingData, percentileMap] = await Promise.all([
+    getListingData(codes),
+    getBulkElitePercentiles(artists.map(a => ({ code: a.code, elite_factor: a.elite_factor, entity_type: a.entity_type }))),
+  ]);
 
   const artistsWithSlugs = artists.map(a => {
     const ld = listingData.get(a.code);
     return {
       ...a,
       slug: generateArtisanSlug(a.name_romaji, a.code),
+      percentile: percentileMap.get(a.code) ?? 0,
       available_count: ld?.count || 0,
       first_listing_id: ld?.firstId,
     };

@@ -453,7 +453,7 @@ function SkeletonCard() {
 
 function ArtistCard({ artist }: { artist: ArtistWithSlug }) {
   const router = useRouter();
-  const elitePct = artist.elite_factor > 0 ? Math.min(artist.elite_factor * 100, 100) : 0;
+  const percentile = artist.percentile ?? 0;
 
   const profileUrl = `/artists/${artist.slug}`;
   const availableCount = artist.available_count ?? 0;
@@ -521,17 +521,14 @@ function ArtistCard({ artist }: { artist: ArtistWithSlug }) {
       </div>
 
       {/* Row 4: Elite bar */}
-      {elitePct > 0 && (
-        <div className="mt-2.5 flex items-center gap-2">
-          <div className="flex-1 h-1.5 bg-border/50 overflow-hidden">
+      {percentile > 0 && (
+        <div className="mt-2.5">
+          <div className="h-1 bg-border/50 overflow-hidden">
             <div
-              className="h-full bg-gold/60 transition-all"
-              style={{ width: `${elitePct}%` }}
+              className="h-full bg-gold/40 transition-all"
+              style={{ width: `${percentile}%` }}
             />
           </div>
-          <span className="text-[10px] text-muted/50 tabular-nums shrink-0">
-            {Math.round(elitePct)}%
-          </span>
         </div>
       )}
     </div>

@@ -68,7 +68,6 @@ export interface ArtisanPageResponse {
   };
   rankings: {
     elite_percentile: number;
-    elite_grade: string;
     toko_taikan_percentile: number | null;
   };
   profile: {
@@ -96,14 +95,6 @@ export interface ArtisanPageResponse {
     elite_factor: number;
   }>;
   denrai: Array<{ owner: string; count: number }>;
-}
-
-function computeEliteGrade(percentile: number): string {
-  if (percentile >= 95) return 'S';
-  if (percentile >= 80) return 'A';
-  if (percentile >= 60) return 'B';
-  if (percentile >= 40) return 'C';
-  return 'D';
 }
 
 /**
@@ -229,8 +220,6 @@ export async function GET(
       }
     }
 
-    const eliteGrade = computeEliteGrade(elitePercentile);
-
     const pageResponse: ArtisanPageResponse = {
       entity: {
         code: entityCode,
@@ -262,7 +251,6 @@ export async function GET(
       },
       rankings: {
         elite_percentile: elitePercentile,
-        elite_grade: eliteGrade,
         toko_taikan_percentile: tokoTaikanPercentile,
       },
       profile: profile

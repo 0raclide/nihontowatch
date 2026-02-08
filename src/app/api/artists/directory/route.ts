@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const { getArtistsForDirectory, getArtistDirectoryFacets } = await import('@/lib/supabase/yuhinkai');
+    const { getArtistsForDirectory, getArtistDirectoryFacets, getBulkElitePercentiles } = await import('@/lib/supabase/yuhinkai');
     const { generateArtisanSlug } = await import('@/lib/artisan/slugs');
 
     const params = request.nextUrl.searchParams;
@@ -49,16 +49,20 @@ export async function GET(request: NextRequest) {
       getArtistDirectoryFacets(type),
     ]);
 
-    // Fetch listing data for artist cards
+    // Fetch listing data and percentiles for artist cards
     const codes = artists.map(a => a.code);
-    const listingData = await getListingDataForArtists(codes);
+    const [listingData, percentileMap] = await Promise.all([
+      getListingDataForArtists(codes),
+      getBulkElitePercentiles(artists.map(a => ({ code: a.code, elite_factor: a.elite_factor, entity_type: a.entity_type }))),
+    ]);
 
-    // Add slugs and listing data to artists
+    // Add slugs, percentiles, and listing data to artists
     const artistsWithSlugs = artists.map(a => {
       const ld = listingData.get(a.code);
       return {
         ...a,
         slug: generateArtisanSlug(a.name_romaji, a.code),
+        percentile: percentileMap.get(a.code) ?? 0,
         available_count: ld?.count || 0,
         first_listing_id: ld?.firstId,
       };

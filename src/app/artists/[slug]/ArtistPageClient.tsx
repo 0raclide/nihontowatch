@@ -296,7 +296,6 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
   }, [entity.entity_type, certifications.total_items, hasFormStats, hasMeiStats, listingsExist, soldListingsExist, lineage, related, denrai]);
 
   const fujishiroLabel = entity.fujishiro ? FUJISHIRO_LABELS[entity.fujishiro] : null;
-  const isTopGrade = rankings.elite_grade === 'S' || rankings.elite_grade === 'A';
 
   return (
     <div className="max-w-[780px] mx-auto px-5 sm:px-8">
@@ -350,27 +349,14 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
             {/* Gold accent line */}
             <div className="w-8 h-px bg-gold/50 mb-5" />
 
-            <div className="relative flex items-start gap-6">
-              <div className="flex-1 min-w-0">
-                <h1 className="text-4xl sm:text-5xl font-serif font-light text-ink leading-[1.05] tracking-tight">
-                  {entity.name_romaji || entity.code}
-                </h1>
-                {entity.name_kanji && (
-                  <p className="text-lg text-muted/25 font-serif font-light mt-2 tracking-[0.08em]">
-                    {entity.name_kanji}
-                  </p>
-                )}
-              </div>
-
-              {/* Grade badge — refined circle (hanko motif) */}
-              {isTopGrade && certifications.total_items > 0 && (
-                <div className="flex-shrink-0 pt-2">
-                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full border border-gold/25 flex items-center justify-center">
-                    <span className="text-2xl sm:text-3xl font-serif font-light text-gold/70 leading-none -mt-0.5">
-                      {rankings.elite_grade}
-                    </span>
-                  </div>
-                </div>
+            <div className="relative">
+              <h1 className="text-4xl sm:text-5xl font-serif font-light text-ink leading-[1.05] tracking-tight">
+                {entity.name_romaji || entity.code}
+              </h1>
+              {entity.name_kanji && (
+                <p className="text-lg text-muted/25 font-serif font-light mt-2 tracking-[0.08em]">
+                  {entity.name_kanji}
+                </p>
               )}
             </div>
 
@@ -523,7 +509,6 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
                     <EliteFactorDisplay
                       eliteFactor={certifications.elite_factor}
                       percentile={rankings.elite_percentile}
-                      grade={rankings.elite_grade}
                       totalItems={certifications.total_items}
                       eliteCount={certifications.elite_count}
                     />
