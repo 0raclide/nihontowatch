@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import type { Listing } from '@/types';
+import { useQuickViewOptional } from '@/contexts/QuickViewContext';
 
 /**
  * ArtisanListings — Displays currently available listings matched to this artisan.
@@ -19,6 +20,20 @@ interface ArtisanListingsProps {
 export function ArtisanListings({ code, artisanName, initialListings }: ArtisanListingsProps) {
   const [listings, setListings] = useState<Listing[]>(initialListings || []);
   const [loading, setLoading] = useState(!initialListings);
+  const quickView = useQuickViewOptional();
+
+  const handleCardClick = useCallback((listing: Listing) => {
+    if (quickView) {
+      quickView.setListings(listings);
+      quickView.openQuickView(listing);
+    } else {
+      // Fallback: navigate directly
+      const href = listing.is_available
+        ? `/browse?artisan=${encodeURIComponent(code)}&listing=${listing.id}`
+        : `/listing/${listing.id}`;
+      window.location.href = href;
+    }
+  }, [quickView, listings, code]);
 
   useEffect(() => {
     // Skip fetch if we already have data from parent
@@ -72,15 +87,13 @@ export function ArtisanListings({ code, artisanName, initialListings }: ArtisanL
           const price = listing.price_value
             ? `¥${listing.price_value.toLocaleString()}`
             : listing.price_raw || 'Ask';
-          const href = listing.is_available
-            ? `/browse?artisan=${encodeURIComponent(code)}&listing=${listing.id}`
-            : `/listing/${listing.id}`;
 
           return (
-            <Link
+            <button
               key={listing.id}
-              href={href}
-              className="group bg-surface-elevated border border-border rounded-lg overflow-hidden hover:border-gold/40 transition-colors"
+              type="button"
+              onClick={() => handleCardClick(listing)}
+              className="group bg-surface-elevated border border-border rounded-lg overflow-hidden hover:border-gold/40 transition-colors cursor-pointer text-left"
             >
               {/* Image */}
               <div className="aspect-[4/3] bg-border/30 overflow-hidden">
@@ -117,7 +130,7 @@ export function ArtisanListings({ code, artisanName, initialListings }: ArtisanL
                   </span>
                 )}
               </div>
-            </Link>
+            </button>
           );
         })}
       </div>
