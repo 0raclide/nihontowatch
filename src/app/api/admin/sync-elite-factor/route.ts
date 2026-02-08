@@ -169,18 +169,30 @@ async function syncAllArtisans(
   let notFound = 0;
   let errors = 0;
 
-  // Get distinct artisan_ids from listings
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: listings } = await (supabase.from('listings') as any)
-    .select('artisan_id')
-    .not('artisan_id', 'is', null) as { data: { artisan_id: string }[] | null };
+  // Get distinct artisan_ids from listings (paginate to avoid Supabase 1000-row default limit)
+  const allArtisanIds: string[] = [];
+  let offset = 0;
+  const PAGE_SIZE = 1000;
 
-  if (!listings || listings.length === 0) {
+  while (true) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: page } = await (supabase.from('listings') as any)
+      .select('artisan_id')
+      .not('artisan_id', 'is', null)
+      .range(offset, offset + PAGE_SIZE - 1) as { data: { artisan_id: string }[] | null };
+
+    if (!page || page.length === 0) break;
+    allArtisanIds.push(...page.map((l: { artisan_id: string }) => l.artisan_id).filter(Boolean));
+    if (page.length < PAGE_SIZE) break;
+    offset += PAGE_SIZE;
+  }
+
+  if (allArtisanIds.length === 0) {
     return { updated: 0, notFound: 0, errors: 0, duration_ms: Date.now() - startTime };
   }
 
   // Get unique artisan codes
-  const uniqueCodes = [...new Set(listings.map((l) => l.artisan_id).filter(Boolean))];
+  const uniqueCodes = [...new Set(allArtisanIds)];
   logger.info(`[sync-elite-factor] Syncing ${uniqueCodes.length} unique artisans`);
 
   // Build a map of code -> elite_factor
