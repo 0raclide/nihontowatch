@@ -326,6 +326,7 @@ export interface ArtistDirectoryEntry {
   juyo_count: number;
   total_items: number;
   elite_factor: number;
+  percentile?: number;
   denrai_owners?: Array<{ owner: string; count: number }>;
   available_count?: number;
   first_listing_id?: number;
@@ -477,6 +478,137 @@ export async function getArtistDirectoryFacets(type: 'smith' | 'tosogu'): Promis
       tosogu: tosoguCount || 0,
     },
   };
+}
+
+// =============================================================================
+// BULK PERCENTILE QUERIES (for directory cards)
+// =============================================================================
+
+/**
+ * Compute elite_factor percentiles for a batch of artists.
+ * Separates smiths and tosogu into independent comparison pools.
+ * Deduplicates elite_factor values to minimise query count.
+ * Returns Map<code, percentile 0-100>.
+ */
+export async function getBulkElitePercentiles(
+  artists: Array<{ code: string; elite_factor: number; entity_type: 'smith' | 'tosogu' }>
+): Promise<Map<string, number>> {
+  const result = new Map<string, number>();
+  if (artists.length === 0) return result;
+
+  // Group by entity_type
+  const byType = new Map<'smith' | 'tosogu', typeof artists>();
+  for (const a of artists) {
+    if (!byType.has(a.entity_type)) byType.set(a.entity_type, []);
+    byType.get(a.entity_type)!.push(a);
+  }
+
+  // Process each type independently
+  const typePromises = Array.from(byType.entries()).map(async ([entityType, group]) => {
+    const table = entityType === 'smith' ? 'smith_entities' : 'tosogu_makers';
+
+    // Get total count for this type
+    const { count: total } = await yuhinkaiClient
+      .from(table)
+      .select('*', { count: 'exact', head: true })
+      .gt('total_items', 0)
+      .eq('is_school_code', false);
+
+    if (!total || total === 0) {
+      for (const a of group) result.set(a.code, 0);
+      return;
+    }
+
+    // Deduplicate elite_factor values
+    const uniqueFactors = [...new Set(group.map(a => a.elite_factor))];
+
+    // Count how many artisans rank below each unique factor (parallel)
+    const belowCounts = await Promise.all(
+      uniqueFactors.map(async (factor) => {
+        const { count: below } = await yuhinkaiClient
+          .from(table)
+          .select('*', { count: 'exact', head: true })
+          .lt('elite_factor', factor)
+          .gt('total_items', 0)
+          .eq('is_school_code', false);
+        return { factor, below: below || 0 };
+      })
+    );
+
+    // Build factor → percentile map
+    const factorToPercentile = new Map<number, number>();
+    for (const { factor, below } of belowCounts) {
+      factorToPercentile.set(factor, Math.round((below / total) * 100));
+    }
+
+    // Assign to each artist
+    for (const a of group) {
+      result.set(a.code, factorToPercentile.get(a.elite_factor) ?? 0);
+    }
+  });
+
+  await Promise.all(typePromises);
+  return result;
+}
+
+// =============================================================================
+// FORM & MEI DISTRIBUTIONS (from gold_values)
+// =============================================================================
+
+/**
+ * Compute form and mei distributions directly from gold_values for any artisan.
+ * No dependency on artist_profiles — works for all 13,566 artisans.
+ */
+export async function getArtisanDistributions(
+  code: string,
+  entityType: 'smith' | 'tosogu'
+): Promise<{ form_distribution: Record<string, number>; mei_distribution: Record<string, number> } | null> {
+  const idCol = entityType === 'smith' ? 'gold_smith_id' : 'gold_maker_id';
+
+  const { data, error } = await yuhinkaiClient
+    .from('gold_values')
+    .select('gold_form_type, gold_mei_status')
+    .eq(idCol, code);
+
+  if (error || !data || data.length === 0) return null;
+
+  const form: Record<string, number> = {};
+  const mei: Record<string, number> = {};
+
+  for (const row of data) {
+    // Form distribution
+    const rawForm = (row.gold_form_type as string | null)?.toLowerCase().trim();
+    if (rawForm) {
+      const formKey = ['katana', 'wakizashi', 'tanto', 'tachi', 'naginata', 'yari', 'ken', 'kodachi'].includes(rawForm)
+        ? rawForm
+        : 'other';
+      form[formKey] = (form[formKey] || 0) + 1;
+    }
+
+    // Mei distribution — normalize to canonical keys
+    const rawMei = (row.gold_mei_status as string | null)?.toLowerCase().trim();
+    if (rawMei) {
+      let meiKey: string;
+      if (rawMei === 'mumei' || rawMei === 'unsigned') meiKey = 'mumei';
+      else if (rawMei === 'signed' || rawMei === 'mei') meiKey = 'signed';
+      else if (rawMei === 'kinzogan' || rawMei === 'kinzogan-mei' || rawMei === 'kinzogan_mei') meiKey = 'kinzogan_mei';
+      else if (rawMei === 'den' || rawMei === 'tradition') meiKey = 'den';
+      else if (rawMei === 'attributed') meiKey = 'attributed';
+      else if (rawMei === 'gimei') meiKey = 'gimei';
+      else if (rawMei === 'orikaeshi' || rawMei === 'orikaeshi-mei' || rawMei === 'orikaeshi_mei') meiKey = 'orikaeshi_mei';
+      else if (rawMei === 'gaku' || rawMei === 'gaku-mei' || rawMei === 'gaku_mei') meiKey = 'gaku_mei';
+      else if (rawMei === 'suriage') meiKey = 'suriage';
+      else if (rawMei === 'shu' || rawMei === 'shu-mei' || rawMei === 'shu_mei') meiKey = 'shu_mei';
+      else meiKey = rawMei;
+      mei[meiKey] = (mei[meiKey] || 0) + 1;
+    }
+  }
+
+  const hasForm = Object.values(form).some(v => v > 0);
+  const hasMei = Object.values(mei).some(v => v > 0);
+  if (!hasForm && !hasMei) return null;
+
+  return { form_distribution: form, mei_distribution: mei };
 }
 
 // =============================================================================

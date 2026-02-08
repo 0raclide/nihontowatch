@@ -11,6 +11,7 @@ import {
   getTokoTaikanPercentile,
   resolveTeacher,
   getDenraiForArtists,
+  getArtisanDistributions,
 } from '@/lib/supabase/yuhinkai';
 import { generateBreadcrumbJsonLd, jsonLdScriptProps } from '@/lib/seo/jsonLd';
 import { ArtistPageClient } from './ArtistPageClient';
@@ -20,14 +21,6 @@ const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://nihontowatch.com';
 
 interface ArtistPageProps {
   params: Promise<{ slug: string }>;
-}
-
-function computeEliteGrade(percentile: number): string {
-  if (percentile >= 95) return 'S';
-  if (percentile >= 80) return 'A';
-  if (percentile >= 60) return 'B';
-  if (percentile >= 40) return 'C';
-  return 'D';
 }
 
 /**
@@ -61,6 +54,7 @@ async function getArtistData(code: string): Promise<ArtisanPageResponse | null> 
         : Promise.resolve(new Map<string, Array<{ owner: string; count: number }>>()),
     ]);
 
+  // Try profile snapshot first, fall back to live gold_values query
   let stats: ArtisanPageResponse['stats'] = null;
   if (profile?.stats_snapshot) {
     const snapshot = profile.stats_snapshot as Record<string, unknown>;
@@ -70,8 +64,9 @@ async function getArtistData(code: string): Promise<ArtisanPageResponse | null> 
       stats = { mei_distribution: mei || {}, form_distribution: form || {} };
     }
   }
-
-  const eliteGrade = computeEliteGrade(elitePercentile);
+  if (!stats) {
+    stats = await getArtisanDistributions(entityCode, entityType);
+  }
 
   return {
     entity: {
@@ -104,7 +99,6 @@ async function getArtistData(code: string): Promise<ArtisanPageResponse | null> 
     },
     rankings: {
       elite_percentile: elitePercentile,
-      elite_grade: eliteGrade,
       toko_taikan_percentile: tokoTaikanPercentile,
     },
     profile: profile
