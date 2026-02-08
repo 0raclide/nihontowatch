@@ -122,7 +122,7 @@ export function ArtisanListings({ code, artisanName, initialListings }: ArtisanL
               {/* Info */}
               <div className="p-2.5">
                 <h4 className="text-xs font-medium text-ink line-clamp-2 leading-snug">
-                  {listing.title}
+                  {listing.title_en || listing.title}
                 </h4>
                 <div className="mt-1.5 flex items-baseline justify-between gap-1">
                   <span className="text-xs font-medium text-gold">{price}</span>
@@ -146,7 +146,7 @@ export function ArtisanListings({ code, artisanName, initialListings }: ArtisanL
       {/* Link to full browse filtered by artisan */}
       <div className="mt-4 text-center">
         <Link
-          href={`/browse?artisan=${encodeURIComponent(code)}`}
+          href={`/?artisan=${encodeURIComponent(code)}`}
           className="text-sm text-gold hover:text-gold-light"
         >
           View all listings by {artisanName || code} &rarr;

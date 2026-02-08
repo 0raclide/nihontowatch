@@ -311,7 +311,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
           {/* Breadcrumb + Share */}
           <div className="flex items-center justify-between mb-10">
             <nav className="text-[11px] text-muted/40 tracking-widest uppercase">
-              <Link href="/browse" className="hover:text-muted transition-colors">Browse</Link>
+              <Link href="/" className="hover:text-muted transition-colors">Browse</Link>
               <span className="mx-2 text-border">/</span>
               <Link href="/artists" className="hover:text-muted transition-colors">Artists</Link>
               <span className="mx-2 text-border">/</span>
@@ -470,7 +470,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
           {/* Browse CTA */}
           <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2">
             <Link
-              href={`/browse?artisan=${encodeURIComponent(entity.code)}`}
+              href={`/?artisan=${encodeURIComponent(entity.code)}`}
               className="inline-flex items-center gap-1.5 text-xs text-gold/70 hover:text-gold transition-colors tracking-wide"
             >
               Browse all listings by {entity.name_romaji || entity.code}

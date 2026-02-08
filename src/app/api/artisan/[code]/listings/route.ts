@@ -5,12 +5,13 @@ import { logger } from '@/lib/logger';
 export const dynamic = 'force-dynamic';
 
 const LISTING_FIELDS = `
-  id, url, title, item_type, item_category,
+  id, url, title, title_en, item_type, item_category,
   price_value, price_currency, price_raw,
   smith, school, province, era, mei_type,
   tosogu_maker, tosogu_school,
   cert_type, cert_session,
   images,
+  description, description_en,
   is_available, is_sold, status,
   first_seen_at, last_scraped_at,
   artisan_id, artisan_confidence,
