@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import type { Listing } from '@/types';
 import { useQuickViewOptional } from '@/contexts/QuickViewContext';
 
@@ -21,19 +22,7 @@ export function ArtisanListings({ code, artisanName, initialListings }: ArtisanL
   const [listings, setListings] = useState<Listing[]>(initialListings || []);
   const [loading, setLoading] = useState(!initialListings);
   const quickView = useQuickViewOptional();
-
-  const handleCardClick = useCallback((listing: Listing) => {
-    if (quickView) {
-      quickView.setListings(listings);
-      quickView.openQuickView(listing);
-    } else {
-      // Fallback: navigate directly
-      const href = listing.is_available
-        ? `/browse?artisan=${encodeURIComponent(code)}&listing=${listing.id}`
-        : `/listing/${listing.id}`;
-      window.location.href = href;
-    }
-  }, [quickView, listings, code]);
+  const router = useRouter();
 
   useEffect(() => {
     // Skip fetch if we already have data from parent
@@ -89,11 +78,30 @@ export function ArtisanListings({ code, artisanName, initialListings }: ArtisanL
             : listing.price_raw || 'Ask';
 
           return (
-            <button
+            <div
               key={listing.id}
-              type="button"
-              onClick={() => handleCardClick(listing)}
-              className="group bg-surface-elevated border border-border rounded-lg overflow-hidden hover:border-gold/40 transition-colors cursor-pointer text-left"
+              role="button"
+              tabIndex={0}
+              onClick={() => {
+                if (quickView) {
+                  quickView.setListings(listings);
+                  quickView.openQuickView(listing);
+                } else {
+                  router.push(`/listing/${listing.id}`);
+                }
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  if (quickView) {
+                    quickView.setListings(listings);
+                    quickView.openQuickView(listing);
+                  } else {
+                    router.push(`/listing/${listing.id}`);
+                  }
+                }
+              }}
+              className="group bg-surface-elevated border border-border rounded-lg overflow-hidden hover:border-gold/40 transition-colors cursor-pointer"
             >
               {/* Image */}
               <div className="aspect-[4/3] bg-border/30 overflow-hidden">
@@ -130,7 +138,7 @@ export function ArtisanListings({ code, artisanName, initialListings }: ArtisanL
                   </span>
                 )}
               </div>
-            </button>
+            </div>
           );
         })}
       </div>
