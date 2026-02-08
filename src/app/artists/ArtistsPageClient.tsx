@@ -186,7 +186,7 @@ export function ArtistsPageClient({
           Artist Directory
         </h1>
         <p className="mt-2 text-sm text-muted max-w-2xl">
-          Browse {facets.totals.smiths.toLocaleString()} swordsmiths and {facets.totals.tosogu.toLocaleString()} tosogu makers
+          {facets.totals.smiths.toLocaleString()} nihonto and {facets.totals.tosogu.toLocaleString()} tosogu artists
           from the Yuhinkai database, ranked by certified works.
         </p>
       </div>
@@ -243,7 +243,7 @@ export function ArtistsPageClient({
                     : 'text-muted hover:text-ink hover:bg-hover'
                 }`}
               >
-                {t === 'all' ? 'All' : t === 'smith' ? 'Smiths' : 'Tosogu'}
+                {t === 'all' ? 'All' : t === 'smith' ? 'Nihonto' : 'Tosogu'}
               </button>
             ))}
           </div>
@@ -381,15 +381,13 @@ function StatsBar({
   filters: Filters;
 }) {
   const items = [
-    { label: 'Results', value: pagination.totalCount.toLocaleString() },
+    { label: 'Artists', value: pagination.totalCount.toLocaleString() },
     ...(filters.type === 'all'
       ? [
-          { label: 'Smiths', value: facets.totals.smiths.toLocaleString() },
+          { label: 'Nihonto', value: facets.totals.smiths.toLocaleString() },
           { label: 'Tosogu', value: facets.totals.tosogu.toLocaleString() },
         ]
       : []),
-    { label: 'Schools', value: facets.schools.length.toLocaleString() },
-    { label: 'Provinces', value: facets.provinces.length.toLocaleString() },
   ];
 
   return (
@@ -488,12 +486,8 @@ function ArtistCard({ artist }: { artist: ArtistWithSlug }) {
             <span className="text-xs text-muted/60 ml-2">{artist.name_kanji}</span>
           )}
         </div>
-        <span className={`shrink-0 text-[9px] uppercase tracking-wider px-1.5 py-0.5 border ${
-          artist.entity_type === 'smith'
-            ? 'text-muted/60 border-border'
-            : 'text-amber-600/60 border-amber-600/20'
-        }`}>
-          {artist.entity_type === 'smith' ? 'Smith' : 'Tosogu'}
+        <span className="shrink-0 text-[9px] uppercase tracking-wider px-1.5 py-0.5 border text-muted/60 border-border">
+          {artist.entity_type === 'smith' ? 'Nihonto' : 'Tosogu'}
         </span>
       </div>
 

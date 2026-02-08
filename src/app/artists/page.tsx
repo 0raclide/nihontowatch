@@ -33,16 +33,16 @@ export async function generateMetadata({ searchParams }: ArtistsPageProps): Prom
   if (school) parts.push(`${school} School`);
   if (province) parts.push(province);
   if (era) parts.push(era);
-  if (typeParam === 'smith') parts.push('Swordsmiths');
-  else if (typeParam === 'tosogu') parts.push('Tosogu Makers');
+  if (typeParam === 'smith') parts.push('Nihonto Artists');
+  else if (typeParam === 'tosogu') parts.push('Tosogu Artists');
   else parts.push('Artists');
 
   const titleSuffix = parts.length > 0 ? parts.join(' — ') : 'Artist Directory';
   const title = `${titleSuffix} | NihontoWatch`;
 
   const description = school
-    ? `Browse ${school} school artisans — swordsmiths and tosogu makers with certification statistics, elite rankings, and detailed profiles.`
-    : 'Comprehensive directory of Japanese swordsmiths and tosogu makers. Browse by school, province, and era with Juyo and Tokubetsu Juyo certification counts.';
+    ? `Browse ${school} school artists — nihonto and tosogu makers with certification statistics, elite rankings, and detailed profiles.`
+    : 'Comprehensive directory of Japanese nihonto and tosogu artists. Browse by school, province, and era with Juyo and Tokubetsu Juyo certification counts.';
 
   return {
     title,
