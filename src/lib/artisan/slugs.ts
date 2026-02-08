@@ -7,15 +7,17 @@
  *
  * Supported code patterns:
  * - 2-4 uppercase letters + 2-4 digits (e.g., MAS590, OWA009)
+ * - Underscore codes: PREFIX_SUFFIX + digits (e.g., HAY_MAT1, NAR_TOU1)
  * - NS-* codes (e.g., NS-Goto, NS-Kokinko) — mixed case allowed
  */
 
 /** Pattern matching known artisan code formats */
 const STANDARD_CODE_PATTERN = /^[A-Z]{2,4}\d{2,4}$/;
+const UNDERSCORE_CODE_PATTERN = /^[A-Z]+(?:_[A-Z]+)+\d+$/;
 const NS_CODE_PATTERN = /^NS-[A-Za-z]+$/;
 
 function isArtisanCode(s: string): boolean {
-  return STANDARD_CODE_PATTERN.test(s) || NS_CODE_PATTERN.test(s);
+  return STANDARD_CODE_PATTERN.test(s) || UNDERSCORE_CODE_PATTERN.test(s) || NS_CODE_PATTERN.test(s);
 }
 
 /**
@@ -69,7 +71,7 @@ export function extractCodeFromSlug(slug: string): string | null {
   // Split on hyphens and check segments from the end
   const segments = slug.split('-');
   for (let i = segments.length - 1; i >= 0; i--) {
-    if (STANDARD_CODE_PATTERN.test(segments[i])) {
+    if (STANDARD_CODE_PATTERN.test(segments[i]) || UNDERSCORE_CODE_PATTERN.test(segments[i])) {
       return segments[i];
     }
   }
