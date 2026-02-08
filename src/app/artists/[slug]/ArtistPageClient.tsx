@@ -234,7 +234,11 @@ function SectionDivider() {
 // ─── MAIN COMPONENT ─────────────────────────────────────────────────────────
 
 export function ArtistPageClient({ data }: ArtistPageClientProps) {
-  const { entity, certifications, rankings, profile, stats, lineage, related, denrai } = data;
+  const { entity, certifications, rankings, profile, stats, lineage, related, denrai: rawDenrai } = data;
+  const denrai = useMemo(
+    () => rawDenrai.filter(d => !/^own(er|ed)\s+at\s/i.test(d.owner)),
+    [rawDenrai]
+  );
   const [listings, setListings] = useState<Listing[] | null>(null);
   const [soldListings, setSoldListings] = useState<Listing[] | null>(null);
   const [copied, setCopied] = useState(false);
