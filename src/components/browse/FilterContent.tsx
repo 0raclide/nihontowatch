@@ -142,12 +142,14 @@ const TOSOGU_TYPES = [
   'gotokoromono',
 ];
 
-// Armor types
+// Armor types (includes firearms as military equipment)
 const ARMOR_TYPES = [
   'armor', 'yoroi', 'gusoku',
   'helmet', 'kabuto',
   'menpo', 'mengu',
   'kote', 'suneate', 'do',
+  // Firearms
+  'tanegashima', 'hinawaju',
 ];
 
 // Normalize Japanese/variant item types to standard English
@@ -168,7 +170,8 @@ const ITEM_TYPE_NORMALIZE: Record<string, string> = {
   'Wakizashi': 'wakizashi',
   'Tanto': 'tanto',
   'fuchi_kashira': 'fuchi-kashira',
-  'tanegashima': 'other',
+  '火縄銃': 'tanegashima',
+  'hinawaju': 'tanegashima',  // Normalize to tanegashima
   'books': 'other',
 };
 
@@ -210,6 +213,9 @@ const ITEM_TYPE_LABELS: Record<string, string> = {
   kote: 'Kote',
   suneate: 'Suneate',
   do: 'Dō',
+  // Firearms
+  tanegashima: 'Tanegashima',
+  hinawaju: 'Hinawajū',
   // Other
   other: 'Other',
 };

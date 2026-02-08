@@ -117,6 +117,9 @@ export const ITEM_TYPES = {
   KOTE: 'kote',
   SUNEATE: 'suneate',
   DO: 'do',
+  // Firearms (火縄銃 - hinawaju/tanegashima)
+  TANEGASHIMA: 'tanegashima',   // Matchlock gun (種子島)
+  HINAWAJU: 'hinawaju',         // Matchlock gun alternate name (火縄銃)
   // Other
   KOSHIRAE: 'koshirae',
   STAND: 'stand',               // Sword racks, display stands
@@ -174,6 +177,17 @@ export const ARMOR_TYPES = [
   ITEM_TYPES.KOTE,     // Gauntlets
   ITEM_TYPES.SUNEATE,  // Shin guards
   ITEM_TYPES.DO,       // Chest armor
+] as const;
+
+export const FIREARM_TYPES = [
+  ITEM_TYPES.TANEGASHIMA,  // Matchlock gun (種子島)
+  ITEM_TYPES.HINAWAJU,     // Matchlock gun alternate (火縄銃)
+] as const;
+
+// Combined military equipment (armor + firearms) for browse filtering
+export const MILITARY_TYPES = [
+  ...ARMOR_TYPES,
+  ...FIREARM_TYPES,
 ] as const;
 
 // =============================================================================

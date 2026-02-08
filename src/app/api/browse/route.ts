@@ -67,6 +67,8 @@ const ARMOR_TYPES = [
   'kote',  // Gauntlets
   'suneate',  // Shin guards
   'do',  // Chest armor
+  // Firearms (grouped with armor as military equipment)
+  'tanegashima', 'hinawaju',  // Matchlock guns (火縄銃/種子島)
 ];
 
 // Types to exclude from browse results (non-collectibles)
