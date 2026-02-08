@@ -530,9 +530,13 @@ Displays Yuhinkai artisan codes (e.g., "MAS590", "OWA009") on listing cards for 
 | API filter | `src/app/api/browse/route.ts` (artisanCode param) |
 | DB schema | `supabase/migrations/048_artisan_matching.sql`, `049_artisan_verification.sql` |
 
-### Artist Directory (`/artists`)
+### Artist Feature (`/artists` + `/artists/[slug]`)
 
-Browseable index of all 13,566 artisans from the Yuhinkai database. Server-rendered for SEO, client-side filtering for instant UX. Default view shows ~1,400 notable artisans (those with certified works) sorted by elite factor.
+Two-tier artisan discovery system for 13,566 artisans (12,447 smiths + 1,119 tosogu makers):
+
+1. **Directory** (`/artists`) — Filterable index with search, type/school/province/era filters, elite factor ranking. Cards show all 6 designation types (Kokuho, Jubun, Jubi, Gyobutsu, Tokuju, Juyo) and "N for sale" links that open browse with QuickView.
+
+2. **Profile** (`/artists/[slug]`) — Rich individual pages with biography, certification pyramid, elite standing, blade form/signature analysis, teacher-student lineage, provenance (denrai), and live listings.
 
 **Architecture**: Hybrid SSR + client fetch. Initial page load is server-rendered. Filter changes use client-side `fetch()` to `/api/artists/directory` with `window.history.replaceState()` for URL updates (no SSR round-trip).
 
@@ -540,20 +544,22 @@ Browseable index of all 13,566 artisans from the Yuhinkai database. Server-rende
 | Component | Location |
 |-----------|----------|
 | Directory API | `src/app/api/artists/directory/route.ts` |
-| Server page | `src/app/artists/page.tsx` |
-| Client component | `src/app/artists/ArtistsPageClient.tsx` |
-| DB queries | `src/lib/supabase/yuhinkai.ts` (`getArtistsForDirectory`, `getArtistDirectoryFacets`) |
-| JSON-LD | `src/lib/seo/jsonLd.ts` (`generateArtistDirectoryJsonLd`) |
+| Artisan API (detail) | `src/app/api/artisan/[code]/route.ts` |
+| Directory page | `src/app/artists/page.tsx` + `ArtistsPageClient.tsx` |
+| Profile page | `src/app/artists/[slug]/page.tsx` + `ArtistPageClient.tsx` |
+| Shared components | `src/components/artisan/` (Tooltip, Listings, Pyramid, Elite, etc.) |
+| DB queries | `src/lib/supabase/yuhinkai.ts` |
 | Slug utils | `src/lib/artisan/slugs.ts` |
-| Session doc | `docs/SESSION_20260208_ARTIST_DIRECTORY.md` |
+| **Full documentation** | `docs/ARTIST_FEATURE.md` |
 
 ### Documentation
 
 For detailed implementation docs, see:
+- `docs/ARTIST_FEATURE.md` - **Comprehensive artist feature documentation** (directory + profiles + admin badges)
 - `docs/SUBSCRIPTION_HANDOFF.md` - Current status and changelog
 - `docs/PRO_TIER_IMPLEMENTATION.md` - Implementation checklist
 - `docs/PRO_TIER_STRATEGY.md` - Business strategy
-- `docs/SESSION_20260208_ARTIST_DIRECTORY.md` - Artist directory implementation
+- `docs/SESSION_20260208_ARTIST_DIRECTORY.md` - Artist directory implementation session
 
 ---
 

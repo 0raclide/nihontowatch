@@ -1,7 +1,8 @@
 # Session: Artist Directory Implementation
 
 **Date**: 2026-02-08
-**Status**: Complete — awaiting user visual QA before deploy
+**Status**: Deployed to production
+**Comprehensive docs**: See [`ARTIST_FEATURE.md`](./ARTIST_FEATURE.md) for full feature documentation including subsequent enhancements (all 6 designation types, "for sale" QuickView links, provenance section).
 
 ## Summary
 
@@ -105,9 +106,4 @@ Sub-components (all inline):
 
 ## Deploy
 
-Not yet deployed. Changes are on `main` branch (unstaged). When ready:
-```bash
-git add src/app/api/artists/directory/route.ts src/app/artists/page.tsx src/app/artists/ArtistsPageClient.tsx src/lib/supabase/yuhinkai.ts src/components/layout/Header.tsx src/components/layout/MobileNavDrawer.tsx src/app/sitemap.ts src/lib/seo/jsonLd.ts
-git commit -m "feat: Add artist directory page with filters, pagination, and sitemap"
-git push
-```
+Deployed to production on 2026-02-08. Live at https://nihontowatch.com/artists

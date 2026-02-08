@@ -28,6 +28,7 @@
 | [TESTING.md](./TESTING.md) | Test suite docs, concordance tests, CI/CD integration |
 | [USER_ENGAGEMENT_ANALYTICS.md](./USER_ENGAGEMENT_ANALYTICS.md) | Admin engagement dashboard - user growth, funnel, search analytics |
 | [YUHINKAI_REGISTRY_VISION.md](./YUHINKAI_REGISTRY_VISION.md) | **Strategic vision** - Yuhinkai as canonical nihonto registry, work tracking, price index |
+| [ARTIST_FEATURE.md](./ARTIST_FEATURE.md) | **Comprehensive artist feature docs** — directory, profiles, admin badges, data model, all file paths |
 | [ARTISAN_TOOLTIP_VERIFICATION.md](./ARTISAN_TOOLTIP_VERIFICATION.md) | Admin QA tool - click artisan badges for details & verification |
 | [SYNC_ELITE_FACTOR_API.md](./SYNC_ELITE_FACTOR_API.md) | Webhook API for syncing elite_factor from Yuhinkai to listings |
 
@@ -35,6 +36,7 @@
 
 | Document | Date | Summary |
 |----------|------|---------|
+| [SESSION_20260208_ARTIST_DIRECTORY.md](./SESSION_20260208_ARTIST_DIRECTORY.md) | 2026-02-08 | **Artist directory & profiles** — `/artists` page, designation counts, "for sale" QuickView links, provenance |
 | [SESSION_20260201_USER_ENGAGEMENT_ANALYTICS.md](./SESSION_20260201_USER_ENGAGEMENT_ANALYTICS.md) | 2026-02-01 | **User engagement analytics** - 4-agent implementation of `/admin/analytics` dashboard |
 | [SESSION_20260125_TRIAL_MODE.md](./SESSION_20260125_TRIAL_MODE.md) | 2026-01-25 | **Trial mode & business pivot** - All features free, hybrid model (free collectors, paid dealers) |
 
@@ -242,6 +244,15 @@
 2. Check `Oshi-scrapper/artisan_matcher/` - Artisan matching module
 3. Check `Oshi-scrapper/models/yuhinkai.py` - Yuhinkai data models
 4. See database schema in vision doc for `works`, `work_appearances`, `price_index` tables
+
+### "I need to work on the artist feature (directory, profiles, badges)"
+1. **Start here:** Read [ARTIST_FEATURE.md](./ARTIST_FEATURE.md) - Comprehensive docs with every file path, type, data flow
+2. Check `src/app/artists/` - Directory page + profile page
+3. Check `src/app/api/artists/directory/route.ts` - Directory API
+4. Check `src/app/api/artisan/[code]/route.ts` - Profile data API
+5. Check `src/components/artisan/` - Shared components (Tooltip, Pyramid, Listings, etc.)
+6. Check `src/lib/supabase/yuhinkai.ts` - All Yuhinkai database queries
+7. Check `src/lib/artisan/slugs.ts` - URL slug generation/extraction
 
 ### "I need to work on artisan tooltip / verification"
 1. Read [ARTISAN_TOOLTIP_VERIFICATION.md](./ARTISAN_TOOLTIP_VERIFICATION.md) - Complete feature docs
