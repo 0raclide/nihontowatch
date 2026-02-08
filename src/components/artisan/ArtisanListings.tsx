@@ -72,11 +72,14 @@ export function ArtisanListings({ code, artisanName, initialListings }: ArtisanL
           const price = listing.price_value
             ? `¥${listing.price_value.toLocaleString()}`
             : listing.price_raw || 'Ask';
+          const href = listing.is_available
+            ? `/browse?artisan=${encodeURIComponent(code)}&listing=${listing.id}`
+            : `/listing/${listing.id}`;
 
           return (
             <Link
               key={listing.id}
-              href={`/browse?artisan=${encodeURIComponent(code)}&listing=${listing.id}`}
+              href={href}
               className="group bg-surface-elevated border border-border rounded-lg overflow-hidden hover:border-gold/40 transition-colors"
             >
               {/* Image */}
