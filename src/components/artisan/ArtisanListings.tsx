@@ -76,7 +76,7 @@ export function ArtisanListings({ code, artisanName, initialListings }: ArtisanL
           return (
             <Link
               key={listing.id}
-              href={`/listing/${listing.id}`}
+              href={`/browse?artisan=${encodeURIComponent(code)}&listing=${listing.id}`}
               className="group bg-surface-elevated border border-border rounded-lg overflow-hidden hover:border-gold/40 transition-colors"
             >
               {/* Image */}
