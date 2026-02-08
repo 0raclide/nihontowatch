@@ -425,27 +425,54 @@ export function ArtisanTooltip({
                   </div>
                 )}
 
-                {/* Stats */}
-                {artisan && (artisan.juyo_count > 0 || artisan.tokuju_count > 0) && (
-                  <div className="flex gap-4 mb-3 py-2 border-t border-b border-border">
-                    {artisan.juyo_count > 0 && (
+                {/* Certification Counts - 2 rows of 3 */}
+                {artisan && (
+                  artisan.kokuho_count > 0 || artisan.jubun_count > 0 || artisan.jubi_count > 0 ||
+                  artisan.gyobutsu_count > 0 || artisan.tokuju_count > 0 || artisan.juyo_count > 0
+                ) && (
+                  <div className="mb-3 py-2 border-t border-b border-border">
+                    {/* Row 1: Kokuho, Jubun, Jubi */}
+                    <div className="grid grid-cols-3 gap-2 mb-2">
                       <div className="text-center">
-                        <div className="text-lg font-semibold text-ink">{artisan.juyo_count}</div>
-                        <div className="text-[9px] uppercase tracking-wider text-muted">Juyo</div>
+                        <div className={`text-lg font-semibold ${artisan.kokuho_count > 0 ? 'text-gold' : 'text-muted/30'}`}>
+                          {artisan.kokuho_count || 0}
+                        </div>
+                        <div className="text-[9px] uppercase tracking-wider text-muted">Kokuho</div>
                       </div>
-                    )}
-                    {artisan.tokuju_count > 0 && (
                       <div className="text-center">
-                        <div className="text-lg font-semibold text-ink">{artisan.tokuju_count}</div>
+                        <div className={`text-lg font-semibold ${artisan.jubun_count > 0 ? 'text-ink' : 'text-muted/30'}`}>
+                          {artisan.jubun_count || 0}
+                        </div>
+                        <div className="text-[9px] uppercase tracking-wider text-muted">Jubun</div>
+                      </div>
+                      <div className="text-center">
+                        <div className={`text-lg font-semibold ${artisan.jubi_count > 0 ? 'text-ink' : 'text-muted/30'}`}>
+                          {artisan.jubi_count || 0}
+                        </div>
+                        <div className="text-[9px] uppercase tracking-wider text-muted">Jubi</div>
+                      </div>
+                    </div>
+                    {/* Row 2: Imperial, Tokuju, Juyo */}
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="text-center">
+                        <div className={`text-lg font-semibold ${artisan.gyobutsu_count > 0 ? 'text-ink' : 'text-muted/30'}`}>
+                          {artisan.gyobutsu_count || 0}
+                        </div>
+                        <div className="text-[9px] uppercase tracking-wider text-muted">Imperial</div>
+                      </div>
+                      <div className="text-center">
+                        <div className={`text-lg font-semibold ${artisan.tokuju_count > 0 ? 'text-ink' : 'text-muted/30'}`}>
+                          {artisan.tokuju_count || 0}
+                        </div>
                         <div className="text-[9px] uppercase tracking-wider text-muted">Tokuju</div>
                       </div>
-                    )}
-                    {artisan.total_items > 0 && (
                       <div className="text-center">
-                        <div className="text-lg font-semibold text-ink">{artisan.total_items}</div>
-                        <div className="text-[9px] uppercase tracking-wider text-muted">Total</div>
+                        <div className={`text-lg font-semibold ${artisan.juyo_count > 0 ? 'text-ink' : 'text-muted/30'}`}>
+                          {artisan.juyo_count || 0}
+                        </div>
+                        <div className="text-[9px] uppercase tracking-wider text-muted">Juyo</div>
                       </div>
-                    )}
+                    </div>
                   </div>
                 )}
 

@@ -74,8 +74,13 @@ export interface TosoguMaker {
   specialties: string[] | null;
   alternative_names: string[] | null;
   notes: string | null;
-  tokuju_count: number;
-  juyo_count: number;
+  // Certification counts (highest prestige first)
+  kokuho_count: number;   // National Treasures
+  jubun_count: number;    // Important Cultural Properties (Bunkazai)
+  jubi_count: number;     // Important Art Objects (Bijutsuhin)
+  gyobutsu_count: number; // Imperial Collection
+  tokuju_count: number;   // Tokubetsu Juyo
+  juyo_count: number;     // Juyo
   total_items: number;
   elite_count: number;
   elite_factor: number;

@@ -21,8 +21,13 @@ export interface ArtisanDetails {
   province: string | null;
   era: string | null;
   period: string | null;
-  juyo_count: number;
-  tokuju_count: number;
+  // Certification counts (highest prestige first)
+  kokuho_count: number;   // National Treasures
+  jubun_count: number;    // Important Cultural Properties (Bunkazai)
+  jubi_count: number;     // Important Art Objects (Bijutsuhin)
+  gyobutsu_count: number; // Imperial Collection
+  tokuju_count: number;   // Tokubetsu Juyo
+  juyo_count: number;     // Juyo
   total_items: number;
   elite_factor: number | null;
   elite_count: number;
@@ -76,8 +81,12 @@ export async function GET(
         province: smithEntity.province,
         era: smithEntity.era,
         period: smithEntity.period,
-        juyo_count: smithEntity.juyo_count || 0,
+        kokuho_count: smithEntity.kokuho_count || 0,
+        jubun_count: smithEntity.jubun_count || 0,
+        jubi_count: smithEntity.jubi_count || 0,
+        gyobutsu_count: smithEntity.gyobutsu_count || 0,
         tokuju_count: smithEntity.tokuju_count || 0,
+        juyo_count: smithEntity.juyo_count || 0,
         total_items: smithEntity.total_items || 0,
         elite_factor: smithEntity.elite_factor ?? null,
         elite_count: smithEntity.elite_count || 0,
@@ -118,8 +127,12 @@ export async function GET(
       province: tosoguMaker.province,
       era: tosoguMaker.era,
       period: null, // tosogu_makers don't have period
-      juyo_count: tosoguMaker.juyo_count || 0,
+      kokuho_count: tosoguMaker.kokuho_count || 0,
+      jubun_count: tosoguMaker.jubun_count || 0,
+      jubi_count: tosoguMaker.jubi_count || 0,
+      gyobutsu_count: tosoguMaker.gyobutsu_count || 0,
       tokuju_count: tosoguMaker.tokuju_count || 0,
+      juyo_count: tosoguMaker.juyo_count || 0,
       total_items: tosoguMaker.total_items || 0,
       elite_factor: tosoguMaker.elite_factor ?? null,
       elite_count: tosoguMaker.elite_count || 0,
