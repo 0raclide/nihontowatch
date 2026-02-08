@@ -72,6 +72,14 @@ export function TranslatedDescription({
     }
   }, [listing.description, listing.description_en, hasJapanese, fetchTranslation]);
 
+  // Sync translation state when listing.description_en becomes available
+  // (e.g., after QuickView fetches the full listing data asynchronously)
+  useEffect(() => {
+    if (listing.description_en && !translation) {
+      setTranslation(listing.description_en);
+    }
+  }, [listing.description_en, translation]);
+
   // Reset expanded state when listing changes or when toggling original/translation
   useEffect(() => {
     setIsExpanded(false);
