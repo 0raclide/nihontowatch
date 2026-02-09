@@ -464,22 +464,21 @@ function ArtistCard({ artist }: { artist: ArtistWithSlug }) {
     : undefined;
 
   // Designation shortcodes — ordered by prestige, only shown when > 0
-  // Monochrome palette: hierarchy conveyed through weight, not color
-  const certBadges: Array<{ label: string; value: number; className: string }> = [];
-  if (artist.kokuho_count > 0) certBadges.push({ label: 'Kokuho', value: artist.kokuho_count, className: 'text-ink font-semibold' });
-  if (artist.jubun_count > 0) certBadges.push({ label: 'Jubun', value: artist.jubun_count, className: 'text-ink font-semibold' });
-  if (artist.jubi_count > 0) certBadges.push({ label: 'Jubi', value: artist.jubi_count, className: 'text-ink font-medium' });
-  if (artist.gyobutsu_count > 0) certBadges.push({ label: 'Gyobutsu', value: artist.gyobutsu_count, className: 'text-ink font-medium' });
-  if (artist.tokuju_count > 0) certBadges.push({ label: 'Tokuju', value: artist.tokuju_count, className: 'text-ink/80 font-medium' });
-  if (artist.juyo_count > 0) certBadges.push({ label: 'Juyo', value: artist.juyo_count, className: 'text-ink/70' });
+  const certBadges: Array<{ label: string; value: number }> = [];
+  if (artist.kokuho_count > 0) certBadges.push({ label: 'Kokuho', value: artist.kokuho_count });
+  if (artist.jubun_count > 0) certBadges.push({ label: 'Jubun', value: artist.jubun_count });
+  if (artist.jubi_count > 0) certBadges.push({ label: 'Jubi', value: artist.jubi_count });
+  if (artist.gyobutsu_count > 0) certBadges.push({ label: 'Gyobutsu', value: artist.gyobutsu_count });
+  if (artist.tokuju_count > 0) certBadges.push({ label: 'Tokuju', value: artist.tokuju_count });
+  if (artist.juyo_count > 0) certBadges.push({ label: 'Juyo', value: artist.juyo_count });
 
   return (
     <div
       onClick={() => router.push(profileUrl)}
-      className="group cursor-pointer p-4 bg-cream border border-border hover:border-gold/40 transition-colors"
+      className="group cursor-pointer p-4 bg-cream border border-border hover:border-gold/40 transition-colors flex flex-col"
     >
-      {/* Row 1: Name + Type */}
-      <div className="flex items-start justify-between gap-2">
+      {/* Row 1: Name + Total works */}
+      <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <span className="text-sm font-medium text-ink group-hover:text-gold transition-colors truncate block">
             {artist.school && <span className="font-normal">{artist.school} </span>}
@@ -489,9 +488,10 @@ function ArtistCard({ artist }: { artist: ArtistWithSlug }) {
             <span className="text-xs text-muted/60 ml-2">{artist.name_kanji}</span>
           )}
         </div>
-        <span className="shrink-0 text-[9px] uppercase tracking-wider px-1.5 py-0.5 border text-muted/60 border-border">
-          {artist.entity_type === 'smith' ? 'Nihonto' : 'Tosogu'}
-        </span>
+        <div className="shrink-0 text-center leading-none">
+          <span className="block text-lg font-serif text-ink/80 tabular-nums">{artist.total_items}</span>
+          <span className="block text-[8px] uppercase tracking-[0.15em] text-muted/50 mt-0.5">works</span>
+        </div>
       </div>
 
       {/* Row 2: School / Era / Province */}
@@ -499,31 +499,36 @@ function ArtistCard({ artist }: { artist: ArtistWithSlug }) {
         {[artist.school, artist.era, artist.province].filter(Boolean).join(' \u00b7 ') || 'Unknown'}
       </div>
 
-      {/* Row 3: Cert counts + available */}
-      <div className="mt-2.5 flex items-center gap-3 text-[11px] tabular-nums flex-wrap">
-        {certBadges.map((badge) => (
-          <span key={badge.label} className={badge.className}>
-            {badge.value} {badge.label}
-          </span>
-        ))}
-        <span className="text-muted/50">{artist.total_items} total</span>
-        {availableCount > 0 && forSaleUrl && (
+      {/* Row 3: Cert counts */}
+      {certBadges.length > 0 && (
+        <div className="mt-2.5 flex items-center gap-3 text-[11px] text-ink/80 tabular-nums flex-wrap">
+          {certBadges.map((badge) => (
+            <span key={badge.label}>
+              {badge.value} {badge.label}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* Row 4: For sale link */}
+      {availableCount > 0 && forSaleUrl && (
+        <div className="mt-1.5 flex justify-end text-[11px] tabular-nums">
           <Link
             href={forSaleUrl}
             onClick={(e) => e.stopPropagation()}
-            className="ml-auto inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium hover:text-emerald-500 dark:hover:text-emerald-300 transition-colors"
+            className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium hover:text-emerald-500 dark:hover:text-emerald-300 transition-colors"
           >
             {availableCount} for sale
             <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
             </svg>
           </Link>
-        )}
-      </div>
+        </div>
+      )}
 
-      {/* Row 4: Elite bar */}
+      {/* Elite bar — pinned to bottom */}
       {percentile > 0 && (
-        <div className="mt-2.5">
+        <div className="mt-auto pt-2.5">
           <div className="h-1 bg-border/50 overflow-hidden">
             <div
               className="h-full bg-gold/40 transition-all"
