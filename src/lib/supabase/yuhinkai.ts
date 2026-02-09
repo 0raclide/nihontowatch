@@ -1043,13 +1043,13 @@ export async function getArtisanHeroImage(
 /**
  * Batch-fetch hero image URLs for multiple artisans.
  *
- * Uses the same selection logic as getArtisanHeroImage but batched:
- * 1. Single query for all gold_values across all codes
- * 2. Single query for catalog_records of matching UUIDs
- * 3. Builds best image URL per artisan (highest collection priority)
- * 4. Skips HEAD verification — caller should handle missing images client-side
+ * Mirrors getArtisanHeroImage() selection logic exactly:
+ * 1. Walk collections in priority order (Tokuju → Juyo → Kokuho → JuBun → Jubi)
+ * 2. Within each collection, pick the item with the MOST total records
+ *    (catalog_records + linked_records) — the richest, most interesting item
+ * 3. Construct image URL, verify with HEAD, fall back to setsumei if needed
  *
- * Returns map of artisan code → image URL string (or absent if none found).
+ * Batched: uses bulk queries instead of per-artist queries.
  */
 export async function getBulkArtisanHeroImages(
   artists: Array<{ code: string; entityType: 'smith' | 'tosogu' }>
@@ -1057,7 +1057,6 @@ export async function getBulkArtisanHeroImages(
   const result = new Map<string, string>();
   if (artists.length === 0) return result;
 
-  // Split by entity type since they use different columns
   const smithCodes = artists.filter(a => a.entityType === 'smith').map(a => a.code);
   const tosoguCodes = artists.filter(a => a.entityType === 'tosogu').map(a => a.code);
 
@@ -1091,61 +1090,112 @@ export async function getBulkArtisanHeroImages(
   for (const row of allGoldRows) {
     const code = (row.gold_smith_id || row.gold_maker_id) as string;
     const existing = codeToRows.get(code);
-    if (existing) {
-      existing.push(row);
-    } else {
-      codeToRows.set(code, [row]);
-    }
+    if (existing) existing.push(row);
+    else codeToRows.set(code, [row]);
   }
 
-  // 3. For each artisan, find the best UUID (highest collection priority)
-  //    We pick the first matching UUID in the highest-priority collection.
-  const uuidsToFetch = new Set<string>();
-  const codeToTargetUuid = new Map<string, { uuid: string; collection: string }>();
+  // 3. For each artisan, find ALL matching UUIDs per collection (highest priority first)
+  //    This mirrors the single-artist version which collects all UUIDs per collection
+  //    to rank by richness.
+  type CandidateInfo = { uuids: string[]; collection: string };
+  const codeToCandidates = new Map<string, CandidateInfo>();
+  const allCandidateUuids = new Set<string>();
 
   for (const [code, rows] of codeToRows) {
     for (const targetCollection of COLLECTION_PRIORITY) {
-      const match = rows.find(r => r.gold_collections?.includes(targetCollection));
-      if (match) {
-        const uuid = match.object_uuid as string;
-        uuidsToFetch.add(uuid);
-        codeToTargetUuid.set(code, { uuid, collection: targetCollection });
-        break;
+      const matchingUuids: string[] = [];
+      for (const row of rows) {
+        if (row.gold_collections?.includes(targetCollection)) {
+          matchingUuids.push(row.object_uuid as string);
+        }
+      }
+      if (matchingUuids.length > 0) {
+        codeToCandidates.set(code, { uuids: matchingUuids, collection: targetCollection });
+        for (const uuid of matchingUuids) allCandidateUuids.add(uuid);
+        break; // Use highest-priority collection that has matches
       }
     }
   }
 
-  if (uuidsToFetch.size === 0) return result;
+  if (allCandidateUuids.size === 0) return result;
 
-  // 4. Batch-fetch catalog records for all target UUIDs
-  const { data: catalogRows } = await yuhinkaiClient
-    .from('catalog_records')
-    .select('object_uuid, collection, volume, item_number')
-    .in('object_uuid', [...uuidsToFetch]);
+  // 4. Batch-fetch catalog_records and linked_records for ALL candidate UUIDs
+  //    to count siblings (same logic as single-artist version)
+  const uuidArray = [...allCandidateUuids];
+  const [{ data: allCatalog }, { data: allLinked }] = await Promise.all([
+    yuhinkaiClient
+      .from('catalog_records')
+      .select('object_uuid, collection, volume, item_number')
+      .in('object_uuid', uuidArray),
+    yuhinkaiClient
+      .from('linked_records')
+      .select('object_uuid')
+      .in('object_uuid', uuidArray),
+  ]);
 
-  if (!catalogRows || catalogRows.length === 0) return result;
+  // 5. Count total records per UUID (catalog + linked)
+  const siblingCounts = new Map<string, number>();
+  for (const row of allCatalog || []) {
+    const uuid = row.object_uuid as string;
+    siblingCounts.set(uuid, (siblingCounts.get(uuid) || 0) + 1);
+  }
+  for (const row of allLinked || []) {
+    const uuid = row.object_uuid as string;
+    siblingCounts.set(uuid, (siblingCounts.get(uuid) || 0) + 1);
+  }
 
-  // Index catalog records by (uuid, collection) for fast lookup
+  // Index catalog records by (uuid, collection)
   const catalogIndex = new Map<string, { volume: number; item_number: number }>();
-  for (const row of catalogRows) {
+  for (const row of allCatalog || []) {
     const key = `${row.object_uuid}:${row.collection}`;
     if (!catalogIndex.has(key)) {
       catalogIndex.set(key, { volume: row.volume, item_number: row.item_number });
     }
   }
 
-  // 5. Build image URL per artisan
-  for (const [code, target] of codeToTargetUuid) {
-    const key = `${target.uuid}:${target.collection}`;
-    const record = catalogIndex.get(key);
-    if (!record) continue;
+  // 6. For each artisan, rank UUIDs by sibling count and build image URL
+  //    Collect all candidate URLs for batch HEAD verification
+  type UrlCandidate = { code: string; urls: string[] };
+  const allUrlCandidates: UrlCandidate[] = [];
 
-    const candidates = buildStoragePaths(target.collection, record.volume, record.item_number);
-    // Take the first candidate (oshigata preferred) — skip HEAD check for thumbnails
-    if (candidates.length > 0) {
-      const imageUrl = `${IMAGE_STORAGE_BASE}/storage/v1/object/public/images/${candidates[0].path}`;
-      result.set(code, imageUrl);
+  for (const [code, { uuids, collection }] of codeToCandidates) {
+    // Rank by richness (most records first) — matches single-artist logic
+    const ranked = uuids
+      .map(uuid => ({ uuid, siblings: siblingCounts.get(uuid) || 0 }))
+      .sort((a, b) => b.siblings - a.siblings);
+
+    // Try each ranked UUID until we find one with a catalog record
+    for (const { uuid } of ranked) {
+      const key = `${uuid}:${collection}`;
+      const record = catalogIndex.get(key);
+      if (!record) continue;
+
+      const candidates = buildStoragePaths(collection, record.volume, record.item_number);
+      const urls = candidates.map(c => `${IMAGE_STORAGE_BASE}/storage/v1/object/public/images/${c.path}`);
+      if (urls.length > 0) {
+        allUrlCandidates.push({ code, urls });
+        break;
+      }
     }
+  }
+
+  // 7. Batch HEAD verification — check all primary URLs in parallel
+  const headResults = await Promise.all(
+    allUrlCandidates.map(async ({ code, urls }) => {
+      for (const url of urls) {
+        try {
+          const head = await fetch(url, { method: 'HEAD' });
+          if (head.ok) return { code, url };
+        } catch {
+          // Try next candidate
+        }
+      }
+      return { code, url: null };
+    })
+  );
+
+  for (const { code, url } of headResults) {
+    if (url) result.set(code, url);
   }
 
   return result;
