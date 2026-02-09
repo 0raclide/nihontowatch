@@ -337,7 +337,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
 
             <div className="relative">
               <h1 className="text-4xl sm:text-5xl font-serif font-light text-ink leading-[1.05] tracking-tight">
-                {entity.school && <span className="text-2xl sm:text-3xl">{entity.school} </span>}
+                {entity.school && <>{entity.school} </>}
                 {entity.name_romaji || entity.code}
               </h1>
               {entity.name_kanji && (
