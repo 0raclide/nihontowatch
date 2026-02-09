@@ -497,7 +497,7 @@ function ArtistCard({ artist }: { artist: ArtistWithSlug }) {
           <img
             src={artist.cover_image}
             alt=""
-            className="max-w-full max-h-full object-contain opacity-60 group-hover:opacity-90 transition-opacity"
+            className="max-w-full max-h-full object-contain"
             loading="lazy"
             onError={(e: SyntheticEvent<HTMLImageElement>) => {
               const container = e.currentTarget.parentElement;
