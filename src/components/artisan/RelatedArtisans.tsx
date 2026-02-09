@@ -20,6 +20,7 @@ interface RelatedArtisan {
   juyo_count: number;
   tokuju_count: number;
   elite_factor: number;
+  available_count?: number;
 }
 
 interface RelatedArtisansProps {
@@ -75,6 +76,9 @@ export function RelatedArtisans({ artisans, schoolName }: RelatedArtisansProps) 
               )}
               {artisan.juyo_count > 0 && (
                 <span className="text-ink/50">{artisan.juyo_count} jūyō</span>
+              )}
+              {(artisan.available_count ?? 0) > 0 && (
+                <span className="text-emerald-500 dark:text-emerald-400">{artisan.available_count} on the market</span>
               )}
             </div>
           </Link>

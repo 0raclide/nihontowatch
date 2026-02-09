@@ -15,6 +15,7 @@ import {
   getArtisanDistributions,
   getArtisanHeroImage,
 } from '@/lib/supabase/yuhinkai';
+import { createServiceClient } from '@/lib/supabase/server';
 import { generateBreadcrumbJsonLd, jsonLdScriptProps } from '@/lib/seo/jsonLd';
 import { ArtistPageClient } from './ArtistPageClient';
 import type { ArtisanPageResponse } from '@/app/api/artisan/[code]/route';
@@ -67,6 +68,29 @@ async function getArtistData(code: string): Promise<ArtisanPageResponse | null> 
   }
   if (!stats) {
     stats = await getArtisanDistributions(entityCode, entityType);
+  }
+
+  // Fetch available listing counts for students + related artisans
+  const allRelatedCodes = [
+    ...students.map(s => s.code),
+    ...related.map(r => r.code),
+  ];
+  const listingCountMap = new Map<string, number>();
+  if (allRelatedCodes.length > 0) {
+    try {
+      const supabase = createServiceClient();
+      const { data: listingRows } = await supabase
+        .from('listings')
+        .select('id, artisan_id')
+        .in('artisan_id' as string, allRelatedCodes)
+        .eq('is_available', true) as { data: Array<{ id: number; artisan_id: string }> | null; error: unknown };
+
+      for (const row of listingRows || []) {
+        listingCountMap.set(row.artisan_id, (listingCountMap.get(row.artisan_id) || 0) + 1);
+      }
+    } catch {
+      // Non-critical — listing counts are optional
+    }
   }
 
   return {
@@ -122,7 +146,17 @@ async function getArtistData(code: string): Promise<ArtisanPageResponse | null> 
       students: students.map(s => ({
         code: s.code,
         name_romaji: s.name_romaji,
+        name_kanji: s.name_kanji,
         slug: generateArtisanSlug(s.name_romaji, s.code),
+        school: s.school,
+        kokuho_count: s.kokuho_count,
+        jubun_count: s.jubun_count,
+        jubi_count: s.jubi_count,
+        gyobutsu_count: s.gyobutsu_count,
+        juyo_count: s.juyo_count,
+        tokuju_count: s.tokuju_count,
+        elite_factor: s.elite_factor,
+        available_count: listingCountMap.get(s.code) || 0,
       })),
     },
     related: related.map(r => ({
@@ -138,6 +172,7 @@ async function getArtistData(code: string): Promise<ArtisanPageResponse | null> 
       juyo_count: r.juyo_count,
       tokuju_count: r.tokuju_count,
       elite_factor: r.elite_factor,
+      available_count: listingCountMap.get(r.code) || 0,
     })),
     denrai,
     heroImage,

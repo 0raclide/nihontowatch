@@ -729,19 +729,37 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
                     <span className="text-[10px] text-ink/35 uppercase tracking-widest block mb-2">
                       {lineage.students.length === 1 ? 'Student' : `Students (${lineage.students.length})`}
                     </span>
-                    <div className="flex flex-wrap gap-x-3 gap-y-1.5">
+                    <div className="space-y-0">
                       {lineage.students.map((student, i) => (
-                        <span key={student.code}>
-                          <Link
-                            href={`/artists/${student.slug}`}
-                            className="text-sm text-ink hover:text-gold transition-colors"
-                          >
-                            {student.name_romaji || student.code}
-                          </Link>
-                          {i < lineage.students.length - 1 && (
-                            <span className="text-ink/20 ml-2">·</span>
-                          )}
-                        </span>
+                        <Link
+                          key={student.code}
+                          href={`/artists/${student.slug}`}
+                          className={`flex items-baseline justify-between py-2 group hover:bg-hover/30 -mx-2 px-2 rounded transition-colors ${
+                            i < lineage.students.length - 1 ? 'border-b border-border/15' : ''
+                          }`}
+                        >
+                          <div className="min-w-0">
+                            <span className="text-sm text-ink group-hover:text-gold transition-colors">
+                              {student.name_romaji || student.code}
+                            </span>
+                            {student.name_kanji && (
+                              <span className="text-sm text-ink/35 ml-2">
+                                {student.name_kanji}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex-shrink-0 flex items-baseline gap-3 text-xs tabular-nums">
+                            {student.tokuju_count > 0 && (
+                              <span className="text-ink/50">{student.tokuju_count} tokujū</span>
+                            )}
+                            {student.juyo_count > 0 && (
+                              <span className="text-ink/50">{student.juyo_count} jūyō</span>
+                            )}
+                            {(student.available_count ?? 0) > 0 && (
+                              <span className="text-emerald-500 dark:text-emerald-400">{student.available_count} on the market</span>
+                            )}
+                          </div>
+                        </Link>
                       ))}
                     </div>
                   </div>

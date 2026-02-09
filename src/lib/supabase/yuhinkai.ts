@@ -204,25 +204,35 @@ export interface ArtisanStub {
  * Find students of a given smith (smiths whose teacher field matches this code or name).
  * The teacher field in smith_entities stores the teacher's code or name.
  */
-export async function getStudents(code: string, nameRomaji: string | null): Promise<ArtisanStub[]> {
+export async function getStudents(code: string, nameRomaji: string | null): Promise<RelatedArtisan[]> {
+  const selectFields = 'smith_id, name_romaji, name_kanji, school, kokuho_count, jubun_count, jubi_count, gyobutsu_count, juyo_count, tokuju_count, elite_factor';
+
   // Search by code match first
   const { data: byCode } = await yuhinkaiClient
     .from('smith_entities')
-    .select('smith_id, name_romaji, name_kanji')
+    .select(selectFields)
     .eq('teacher', code)
     .limit(20);
 
-  const students: ArtisanStub[] = (byCode || []).map(s => ({
+  const students: RelatedArtisan[] = (byCode || []).map(s => ({
     code: s.smith_id,
     name_romaji: s.name_romaji,
     name_kanji: s.name_kanji,
+    school: s.school,
+    kokuho_count: s.kokuho_count || 0,
+    jubun_count: s.jubun_count || 0,
+    jubi_count: s.jubi_count || 0,
+    gyobutsu_count: s.gyobutsu_count || 0,
+    juyo_count: s.juyo_count || 0,
+    tokuju_count: s.tokuju_count || 0,
+    elite_factor: s.elite_factor || 0,
   }));
 
   // Also search by name if available and got few results
   if (nameRomaji && students.length < 5) {
     const { data: byName } = await yuhinkaiClient
       .from('smith_entities')
-      .select('smith_id, name_romaji, name_kanji')
+      .select(selectFields)
       .eq('teacher', nameRomaji)
       .limit(20);
 
@@ -233,10 +243,21 @@ export async function getStudents(code: string, nameRomaji: string | null): Prom
           code: s.smith_id,
           name_romaji: s.name_romaji,
           name_kanji: s.name_kanji,
+          school: s.school,
+          kokuho_count: s.kokuho_count || 0,
+          jubun_count: s.jubun_count || 0,
+          jubi_count: s.jubi_count || 0,
+          gyobutsu_count: s.gyobutsu_count || 0,
+          juyo_count: s.juyo_count || 0,
+          tokuju_count: s.tokuju_count || 0,
+          elite_factor: s.elite_factor || 0,
         });
       }
     }
   }
+
+  // Sort by elite_factor descending
+  students.sort((a, b) => b.elite_factor - a.elite_factor);
 
   return students;
 }

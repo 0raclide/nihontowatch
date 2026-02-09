@@ -82,7 +82,21 @@ export interface ArtisanPageResponse {
   } | null;
   lineage: {
     teacher: { code: string; name_romaji: string | null; slug: string } | null;
-    students: Array<{ code: string; name_romaji: string | null; slug: string }>;
+    students: Array<{
+      code: string;
+      name_romaji: string | null;
+      name_kanji: string | null;
+      slug: string;
+      school: string | null;
+      kokuho_count: number;
+      jubun_count: number;
+      jubi_count: number;
+      gyobutsu_count: number;
+      juyo_count: number;
+      tokuju_count: number;
+      elite_factor: number;
+      available_count?: number;
+    }>;
   };
   related: Array<{
     code: string;
@@ -97,6 +111,7 @@ export interface ArtisanPageResponse {
     juyo_count: number;
     tokuju_count: number;
     elite_factor: number;
+    available_count?: number;
   }>;
   denrai: Array<{ owner: string; count: number }>;
   heroImage: {
@@ -285,7 +300,16 @@ export async function GET(
         students: students.map(s => ({
           code: s.code,
           name_romaji: s.name_romaji,
+          name_kanji: s.name_kanji,
           slug: generateArtisanSlug(s.name_romaji, s.code),
+          school: s.school,
+          kokuho_count: s.kokuho_count,
+          jubun_count: s.jubun_count,
+          jubi_count: s.jubi_count,
+          gyobutsu_count: s.gyobutsu_count,
+          juyo_count: s.juyo_count,
+          tokuju_count: s.tokuju_count,
+          elite_factor: s.elite_factor,
         })),
       },
       related: related.map(r => ({
