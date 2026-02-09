@@ -436,12 +436,8 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
 
               {/* Context line — museum wall label */}
               {certifications.total_items > 0 && (
-                <p className="mt-2.5 text-[12px] text-ink/40 tracking-wide italic">
-                  {[
-                    `${certifications.total_items} ranked works`,
-                    entity.province,
-                    entity.era,
-                  ].filter(Boolean).join(' · ')}
+                <p className="mt-2.5 text-[12px] text-gold tracking-wide italic">
+                  {certifications.total_items} ranked works
                 </p>
               )}
 
