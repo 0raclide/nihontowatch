@@ -141,7 +141,7 @@ export async function GET(
       getElitePercentile,
       getTokoTaikanPercentile,
       resolveTeacher,
-      getDenraiForArtists,
+      getDenraiForArtisan,
     } = await import('@/lib/supabase/yuhinkai');
 
     // Try smith_entities first
@@ -195,7 +195,7 @@ export async function GET(
     const slug = generateArtisanSlug(entity.name_romaji, entityCode);
 
     // Fetch all enrichment data in parallel
-    const [profile, students, related, elitePercentile, tokoTaikanPercentile, teacherStub, denraiMap] =
+    const [profile, students, related, elitePercentile, tokoTaikanPercentile, teacherStub, denrai] =
       await Promise.all([
         getArtistProfile(entityCode),
         getStudents(entityCode, entity.name_romaji),
@@ -205,9 +205,7 @@ export async function GET(
           ? getTokoTaikanPercentile((entity as typeof smithEntity)!.toko_taikan!)
           : Promise.resolve(null),
         entity.teacher ? resolveTeacher(entity.teacher) : Promise.resolve(null),
-        entity.name_romaji
-          ? getDenraiForArtists([entity.name_romaji])
-          : Promise.resolve(new Map<string, Array<{ owner: string; count: number }>>()),
+        getDenraiForArtisan(entityCode, entityType),
       ]);
 
     // Extract stats from profile snapshot if available
@@ -294,7 +292,7 @@ export async function GET(
         tokuju_count: r.tokuju_count,
         elite_factor: r.elite_factor,
       })),
-      denrai: (entity.name_romaji && denraiMap.get(entity.name_romaji)) || [],
+      denrai,
     };
 
     const response = NextResponse.json(pageResponse);

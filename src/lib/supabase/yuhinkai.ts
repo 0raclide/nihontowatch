@@ -350,7 +350,7 @@ export interface DirectoryFilters {
   province?: string;
   era?: string;
   q?: string;
-  sort?: 'elite_factor' | 'juyo_count' | 'name' | 'total_items';
+  sort?: 'elite_factor' | 'name' | 'total_items';
   page?: number;
   limit?: number;
   notable?: boolean;
@@ -671,40 +671,36 @@ export async function resolveTeacher(teacherRef: string): Promise<ArtisanStub | 
 // =============================================================================
 
 /**
- * Fetch denrai (provenance) owner data for a set of artisans.
- * Queries gold_values where gold_artisan matches the given names,
- * unnests gold_denrai_owners in JS, and aggregates counts per (artisan, owner).
- * Returns top 5 owners per artisan, sorted by count descending.
+ * Fetch denrai (provenance) owner data for an artisan by entity code.
+ * Queries gold_values by gold_smith_id or gold_maker_id for reliable matching,
+ * unnests gold_denrai_owners in JS, and aggregates counts per owner.
+ * Returns all owners sorted by count descending.
  */
-export async function getDenraiForArtists(
-  names: string[]
-): Promise<Map<string, Array<{ owner: string; count: number }>>> {
-  const result = new Map<string, Array<{ owner: string; count: number }>>();
-  if (names.length === 0) return result;
+export async function getDenraiForArtisan(
+  code: string,
+  entityType: 'smith' | 'tosogu'
+): Promise<Array<{ owner: string; count: number }>> {
+  const codeColumn = entityType === 'smith' ? 'gold_smith_id' : 'gold_maker_id';
 
   const { data, error } = await yuhinkaiClient
     .from('gold_values')
-    .select('gold_artisan, gold_denrai_owners')
-    .in('gold_artisan', names)
+    .select('gold_denrai_owners')
+    .eq(codeColumn, code)
     .not('gold_denrai_owners', 'is', null);
 
   if (error) {
     console.error('[Yuhinkai] Denrai query error:', error);
-    return result;
+    return [];
   }
 
-  if (!data || data.length === 0) return result;
+  if (!data || data.length === 0) return [];
 
-  // Aggregate: for each row, unnest owners and count per (artisan, owner)
-  const counts = new Map<string, Map<string, number>>();
+  // Aggregate: for each row, unnest owners and count per owner
+  const ownerMap = new Map<string, number>();
 
   for (const row of data) {
-    const artisan = row.gold_artisan as string;
     const owners = row.gold_denrai_owners as string[];
     if (!owners || !Array.isArray(owners)) continue;
-
-    if (!counts.has(artisan)) counts.set(artisan, new Map());
-    const ownerMap = counts.get(artisan)!;
 
     // Count each unique owner per row (unnest semantics — one count per item/row)
     const seen = new Set<string>();
@@ -717,16 +713,8 @@ export async function getDenraiForArtists(
     }
   }
 
-  // Convert to sorted arrays, top 5 per artisan
-  for (const [artisan, ownerMap] of counts) {
-    const sorted = Array.from(ownerMap.entries())
-      .map(([owner, count]) => ({ owner, count }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 5);
-    if (sorted.length > 0) {
-      result.set(artisan, sorted);
-    }
-  }
-
-  return result;
+  // Convert to sorted array, all owners
+  return Array.from(ownerMap.entries())
+    .map(([owner, count]) => ({ owner, count }))
+    .sort((a, b) => b.count - a.count);
 }

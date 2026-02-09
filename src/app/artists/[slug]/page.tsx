@@ -10,7 +10,7 @@ import {
   getElitePercentile,
   getTokoTaikanPercentile,
   resolveTeacher,
-  getDenraiForArtists,
+  getDenraiForArtisan,
   getArtisanDistributions,
 } from '@/lib/supabase/yuhinkai';
 import { generateBreadcrumbJsonLd, jsonLdScriptProps } from '@/lib/seo/jsonLd';
@@ -39,7 +39,7 @@ async function getArtistData(code: string): Promise<ArtisanPageResponse | null> 
   const eliteFactor = entity.elite_factor ?? 0;
   const slug = generateArtisanSlug(entity.name_romaji, entityCode);
 
-  const [profile, students, related, elitePercentile, tokoTaikanPercentile, teacherStub, denraiMap] =
+  const [profile, students, related, elitePercentile, tokoTaikanPercentile, teacherStub, denrai] =
     await Promise.all([
       getArtistProfile(entityCode),
       getStudents(entityCode, entity.name_romaji),
@@ -49,9 +49,7 @@ async function getArtistData(code: string): Promise<ArtisanPageResponse | null> 
         ? getTokoTaikanPercentile(smithEntity!.toko_taikan!)
         : Promise.resolve(null),
       entity.teacher ? resolveTeacher(entity.teacher) : Promise.resolve(null),
-      entity.name_romaji
-        ? getDenraiForArtists([entity.name_romaji])
-        : Promise.resolve(new Map<string, Array<{ owner: string; count: number }>>()),
+      getDenraiForArtisan(entityCode, entityType),
     ]);
 
   // Try profile snapshot first, fall back to live gold_values query
@@ -138,7 +136,7 @@ async function getArtistData(code: string): Promise<ArtisanPageResponse | null> 
       tokuju_count: r.tokuju_count,
       elite_factor: r.elite_factor,
     })),
-    denrai: (entity.name_romaji && denraiMap.get(entity.name_romaji)) || [],
+    denrai,
   };
 }
 
@@ -159,7 +157,8 @@ export async function generateMetadata({ params }: ArtistPageProps): Promise<Met
   const juyo = entity.juyo_count || 0;
   const tokuju = entity.tokuju_count || 0;
 
-  const title = `${name} — ${entity.school || 'Japanese'} ${type} | NihontoWatch`;
+  const schoolLabel = entity.school && entity.school.toLowerCase() !== name.toLowerCase() ? entity.school : 'Japanese';
+  const title = `${name} — ${schoolLabel} ${type} | NihontoWatch`;
   const description = `Comprehensive profile of ${name}${province}, ${entity.era || 'Japanese'} ${type}. ${juyo} Jūyō, ${tokuju} Tokubetsu Jūyō certified works. Certification statistics, biography, and available listings.`;
 
   const canonicalSlug = generateArtisanSlug(entity.name_romaji, smith ? smith.smith_id : tosogu!.maker_id);
