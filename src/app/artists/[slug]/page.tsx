@@ -19,7 +19,6 @@ import {
 import { createServiceClient } from '@/lib/supabase/server';
 import { generateBreadcrumbJsonLd, jsonLdScriptProps } from '@/lib/seo/jsonLd';
 import { ArtistPageClient } from './ArtistPageClient';
-import { FontSwitcher } from '@/components/dev/FontSwitcher';
 import type { ArtisanPageResponse } from '@/app/api/artisan/[code]/route';
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://nihontowatch.com';
@@ -272,7 +271,6 @@ export default async function ArtistSlugPage({ params }: ArtistPageProps) {
       <script {...jsonLdScriptProps(breadcrumbJsonLd)} />
 
       <ArtistPageClient data={data} />
-      <FontSwitcher />
     </div>
   );
 }
