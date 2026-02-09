@@ -429,9 +429,9 @@ export async function GET(request: NextRequest) {
         query = query.filter(field, op, value);
       }
 
-      // Step 3: Check if query looks like an artisan code (e.g., "MAS590", "OWA009", "NS-OSA")
-      // Artisan codes are typically 2-3 letters followed by numbers, or NS-* school codes
-      const artisanCodePattern = /^[A-Z]{2,4}\d{2,4}$|^NS-[A-Za-z]+$/i;
+      // Step 3: Check if query looks like an artisan code (e.g., "MAS590", "MYO3", "NS-Ko-Bizen")
+      // Covers: standard (1-4 letters + 1-5 digits + optional suffix), NS-*, NC-*, tmp*, underscore
+      const artisanCodePattern = /^[A-Z]{1,4}\d{1,5}(?:[.\-]\d)?[A-Za-z]?$|^NS-[A-Za-z]+(?:-[A-Za-z]+)*$|^NC-[A-Z]+\d+[A-Za-z]?$|^tmp[A-Z]{1,4}\d+[A-Za-z]?$|^[A-Z]+(?:_[A-Z]+)+\d+$/i;
       const potentialArtisanCode = textWords.find(w => artisanCodePattern.test(w));
       if (potentialArtisanCode) {
         // Search artisan_id field directly (case-insensitive substring match)
