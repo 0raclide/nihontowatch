@@ -205,41 +205,41 @@ html.dark {
 html.theme-opus {
   color-scheme: dark;
 
-  /* Deep sapphire - the ocean where ideas form */
-  --background: #0c1220;
-  --background-warm: #101828;
+  /* Void — barely-there blue, near-black depth */
+  --background: #020610;
+  --background-warm: #060c18;
   --foreground: #e8e4dc;
 
   /* Layered depths */
-  --surface: #141c2c;
-  --surface-elevated: #1c2538;
-  --surface-overlay: rgba(20, 28, 44, 0.97);
+  --surface: #08101c;
+  --surface-elevated: #0e1824;
+  --surface-overlay: rgba(4, 10, 18, 0.97);
 
   /* Subtle structural lines */
-  --border: #2a3448;
-  --border-subtle: #1e2838;
+  --border: #162030;
+  --border-subtle: #101a24;
   --border-accent: rgba(218, 165, 90, 0.40);
 
-  --hover: #1e2838;
-  --active: #2a3448;
+  --hover: #101a24;
+  --active: #162030;
 
-  /* Warm amber - insights surfacing from depths */
-  --accent: #daa55a;
-  --accent-light: #e8c080;
-  --accent-dark: #b08040;
-  --accent-glow: rgba(218, 165, 90, 0.22);
+  /* Honey gold - deep warm, almost orange */
+  --accent: #d49040;
+  --accent-light: #e0a858;
+  --accent-dark: #b07830;
+  --accent-glow: rgba(212, 144, 64, 0.22);
 
   /* Warm parchment text - readable, human */
-  /* WCAG AA requires 4.5:1 contrast for normal text against #0c1220 background */
+  /* WCAG AA requires 4.5:1 contrast for normal text against #020610 background */
   --text-primary: #e8e4dc;
   --text-secondary: #c0b8a8;
   --text-tertiary: #8a8478;
   --text-muted: #8a847c;  /* Lightened from #5a5650 for WCAG AA (~5:1 contrast) */
-  --text-accent: #e8c080;
+  --text-accent: #e0a858;
 
   /* Semantic with warmth */
   --success: #68a878;
-  --warning: #daa55a;
+  --warning: #d49040;
   --error: #c87070;
 
   /* Button defaults */
@@ -269,7 +269,7 @@ html.theme-opus {
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.35);
   --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.45);
   --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.55);
-  --shadow-glow: 0 0 40px rgba(218, 165, 90, 0.15);
+  --shadow-glow: 0 0 40px rgba(212, 144, 64, 0.15);
 
   /* Legacy aliases */
   --cream: var(--background);
@@ -281,7 +281,7 @@ html.theme-opus {
   --gold: var(--accent);
   --gold-light: var(--accent-light);
   --muted: var(--text-muted);
-  --border-dark: #2a3448;
+  --border-dark: #162030;
 }
 
 /* Sothebys - Light mode explicit class */
