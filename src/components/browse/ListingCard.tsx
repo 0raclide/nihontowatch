@@ -1,7 +1,6 @@
 'use client';
 
 import Image from 'next/image';
-import Link from 'next/link';
 import { useState, useCallback, useEffect, useRef, useMemo, memo } from 'react';
 import { FavoriteButton } from '@/components/favorites/FavoriteButton';
 import { SetsumeiZufuBadge } from '@/components/ui/SetsumeiZufuBadge';
@@ -697,7 +696,7 @@ export const ListingCard = memo(function ListingCard({
                 </span>
               </ArtisanTooltip>
             ) : (
-              <Link
+              <a
                 href={`/artists/${listing.artisan_id}`}
                 data-artisan-tooltip
                 onClick={(e) => e.stopPropagation()}
@@ -710,7 +709,7 @@ export const ListingCard = memo(function ListingCard({
                 }`}
               >
                 {listing.artisan_id}
-              </Link>
+              </a>
             )
           )}
         </div>

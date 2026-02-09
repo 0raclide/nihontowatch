@@ -5,7 +5,6 @@ import type { Listing, ListingWithEnrichment } from '@/types';
 import { isTosogu, getItemTypeLabel, hasSetsumeiData } from '@/types';
 import { useCurrency, formatPriceWithConversion } from '@/hooks/useCurrency';
 import { shouldShowNewBadge } from '@/lib/newListing';
-import Link from 'next/link';
 import { FavoriteButton } from '@/components/favorites/FavoriteButton';
 import { ShareButton } from '@/components/share/ShareButton';
 import { InquiryModal } from '@/components/inquiry';
@@ -413,7 +412,7 @@ export function QuickViewMobileSheet({
                 </span>
               </ArtisanTooltip>
             ) : (
-              <Link
+              <a
                 href={`/artists/${listing.artisan_id}`}
                 data-artisan-tooltip
                 onClick={(e) => e.stopPropagation()}
@@ -427,7 +426,7 @@ export function QuickViewMobileSheet({
                 }`}
               >
                 {listing.artisan_id}
-              </Link>
+              </a>
             )
           )}
           <QuickMeasurement listing={listing} />

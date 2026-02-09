@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import Link from 'next/link';
 import { FavoriteButton } from '@/components/favorites/FavoriteButton';
 import { ShareButton } from '@/components/share/ShareButton';
 import { InquiryModal } from '@/components/inquiry';
@@ -135,7 +134,7 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
                     </span>
                   </ArtisanTooltip>
                 ) : (
-                  <Link
+                  <a
                     href={`/artists/${listing.artisan_id}`}
                     data-artisan-tooltip
                     className={`text-[10px] font-mono font-medium px-2 py-0.5 rounded hover:opacity-80 transition-opacity ${
@@ -147,7 +146,7 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
                     }`}
                   >
                     {listing.artisan_id}
-                  </Link>
+                  </a>
                 )
               )}
             </div>
