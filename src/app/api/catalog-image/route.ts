@@ -30,7 +30,12 @@ export async function GET(request: NextRequest) {
       .download(storagePath);
 
     if (error || !data) {
-      return new NextResponse('Image not found', { status: 404 });
+      console.error('[catalog-image] Storage download error:', error?.message, 'path:', storagePath, 'url:', yuhinkaiUrl?.slice(0, 30));
+      // Return diagnostic info in dev/debug
+      return NextResponse.json(
+        { error: error?.message || 'No data returned', path: storagePath, hasUrl: !!yuhinkaiUrl, hasKey: !!yuhinkaiKey },
+        { status: 404 }
+      );
     }
 
     const buffer = Buffer.from(await data.arrayBuffer());
@@ -41,7 +46,8 @@ export async function GET(request: NextRequest) {
         'Cache-Control': 'public, max-age=31536000, immutable',
       },
     });
-  } catch {
-    return new NextResponse('Image not found', { status: 404 });
+  } catch (err) {
+    console.error('[catalog-image] Unexpected error:', err);
+    return new NextResponse('Image not found', { status: 500 });
   }
 }
