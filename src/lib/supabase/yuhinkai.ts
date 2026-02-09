@@ -818,9 +818,9 @@ export async function getArtisanDistributions(
   const measurements: MeasurementsByForm = {};
 
   for (const row of data) {
-    // Skip orphaned JE_Koto records — unreliable data without corroborating siblings
+    // Skip any record sourced from JE_Koto — unreliable for form/mei/measurements
     const collections = row.gold_collections as string[] | null;
-    if (collections?.length === 1 && collections[0] === 'JE_Koto') continue;
+    if (collections?.includes('JE_Koto')) continue;
 
     // Form distribution
     const rawForm = (row.gold_form_type as string | null)?.toLowerCase().trim();
@@ -1112,9 +1112,7 @@ export async function getDenraiForArtisan(
   const ownerMap = new Map<string, number>();
 
   for (const row of data) {
-    // Skip orphaned JE_Koto records — unreliable data without corroborating siblings
-    const collections = row.gold_collections as string[] | null;
-    if (collections?.length === 1 && collections[0] === 'JE_Koto') continue;
+    // JE_Koto records ARE included for provenance — denrai data is reliable even from JE_Koto
 
     const owners = row.gold_denrai_owners as string[];
     if (!owners || !Array.isArray(owners)) continue;
