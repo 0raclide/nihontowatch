@@ -165,6 +165,7 @@ export async function GET(
       getTokoTaikanPercentile,
       resolveTeacher,
       getDenraiForArtisan,
+      getArtisanDistributions,
     } = await import('@/lib/supabase/yuhinkai');
 
     // Try smith_entities first
@@ -233,19 +234,9 @@ export async function GET(
         getArtisanHeroImage(entityCode, entityType),
       ]);
 
-    // Extract stats from profile snapshot if available
-    let stats: ArtisanPageResponse['stats'] = null;
-    if (profile?.stats_snapshot) {
-      const snapshot = profile.stats_snapshot as Record<string, unknown>;
-      const mei = snapshot.mei_distribution as Record<string, number> | undefined;
-      const form = snapshot.form_distribution as Record<string, number> | undefined;
-      if (mei || form) {
-        stats = {
-          mei_distribution: mei || {},
-          form_distribution: form || {},
-        };
-      }
-    }
+    // Always compute mei/form distributions live from gold_values
+    // (profile snapshots had incorrect mei data — see CHO10/MAS590 bug)
+    const stats = await getArtisanDistributions(entityCode, entityType);
 
     const pageResponse: ArtisanPageResponse = {
       entity: {
