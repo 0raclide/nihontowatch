@@ -749,6 +749,18 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
                             )}
                           </div>
                           <div className="flex-shrink-0 flex items-baseline gap-3 text-xs tabular-nums">
+                            {student.kokuho_count > 0 && (
+                              <span className="text-ink font-semibold">{student.kokuho_count} kokuhō</span>
+                            )}
+                            {student.jubun_count > 0 && (
+                              <span className="text-ink font-semibold">{student.jubun_count} jubun</span>
+                            )}
+                            {student.jubi_count > 0 && (
+                              <span className="text-ink font-medium">{student.jubi_count} jubi</span>
+                            )}
+                            {student.gyobutsu_count > 0 && (
+                              <span className="text-ink font-medium">{student.gyobutsu_count} gyobutsu</span>
+                            )}
                             {student.tokuju_count > 0 && (
                               <span className="text-ink/50">{student.tokuju_count} tokujū</span>
                             )}

@@ -181,17 +181,28 @@ describe('ArtistPageClient — Students Section', () => {
     expect(screen.getByText('景光')).toBeTruthy();
   });
 
-  it('renders student certification counts (tokujū, jūyō)', () => {
+  it('renders all 6 student certification types when non-zero', () => {
     const data = makeTestData({
       lineage: {
         teacher: null,
         students: [
-          makeStudent({ tokuju_count: 5, juyo_count: 15 }),
+          makeStudent({
+            kokuho_count: 1,
+            jubun_count: 3,
+            jubi_count: 2,
+            gyobutsu_count: 1,
+            tokuju_count: 5,
+            juyo_count: 15,
+          }),
         ],
       },
     });
 
     render(<ArtistPageClient data={data} />);
+    expect(screen.getByText(/1 kokuhō/)).toBeTruthy();
+    expect(screen.getByText(/3 jubun/)).toBeTruthy();
+    expect(screen.getByText(/2 jubi/)).toBeTruthy();
+    expect(screen.getByText(/1 gyobutsu/)).toBeTruthy();
     expect(screen.getByText(/5 tokujū/)).toBeTruthy();
     expect(screen.getByText(/15 jūyō/)).toBeTruthy();
   });
@@ -201,14 +212,50 @@ describe('ArtistPageClient — Students Section', () => {
       lineage: {
         teacher: null,
         students: [
-          makeStudent({ tokuju_count: 0, juyo_count: 0 }),
+          makeStudent({
+            kokuho_count: 0,
+            jubun_count: 0,
+            jubi_count: 0,
+            gyobutsu_count: 0,
+            tokuju_count: 0,
+            juyo_count: 0,
+          }),
         ],
       },
     });
 
     render(<ArtistPageClient data={data} />);
+    expect(screen.queryByText(/kokuhō/)).toBeNull();
+    expect(screen.queryByText(/jubun/)).toBeNull();
+    expect(screen.queryByText(/jubi/)).toBeNull();
+    expect(screen.queryByText(/gyobutsu/)).toBeNull();
     expect(screen.queryByText(/tokujū/)).toBeNull();
     expect(screen.queryByText(/jūyō/)).toBeNull();
+  });
+
+  it('renders kokuho and jubun with semibold, jubi and gyobutsu with medium weight', () => {
+    const data = makeTestData({
+      lineage: {
+        teacher: null,
+        students: [
+          makeStudent({ kokuho_count: 1, jubun_count: 2, jubi_count: 3, gyobutsu_count: 1 }),
+        ],
+      },
+    });
+
+    render(<ArtistPageClient data={data} />);
+
+    const kokuhoEl = screen.getByText(/1 kokuhō/);
+    expect(kokuhoEl.className).toContain('font-semibold');
+
+    const jubunEl = screen.getByText(/2 jubun/);
+    expect(jubunEl.className).toContain('font-semibold');
+
+    const jubiEl = screen.getByText(/3 jubi/);
+    expect(jubiEl.className).toContain('font-medium');
+
+    const gyobutsuEl = screen.getByText(/1 gyobutsu/);
+    expect(gyobutsuEl.className).toContain('font-medium');
   });
 
   it('renders "on the market" text for students with available listings', () => {
