@@ -357,11 +357,11 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
 
   return (
     <div className="relative">
-      {/* Atmospheric gradient — accent-tinted wash behind the hero, fading to surface */}
+      {/* Atmospheric gradient — clean top, accent wash builds in hero zone, fades out */}
       <div
-        className="absolute inset-x-0 top-0 h-[600px] pointer-events-none"
+        className="absolute inset-x-0 top-0 h-[800px] pointer-events-none"
         style={{
-          background: `linear-gradient(180deg, var(--accent-glow) 0%, transparent 100%)`,
+          background: `linear-gradient(180deg, transparent 0%, var(--accent-glow) 35%, transparent 100%)`,
         }}
       />
 
