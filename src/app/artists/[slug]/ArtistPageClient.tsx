@@ -619,7 +619,10 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
                 subtitle={`Distribution across ${certifications.total_items} ranked works`}
                 className="mb-6"
               />
-              <FormDistributionBar distribution={stats.form_distribution} />
+              <FormDistributionBar
+                distribution={stats.form_distribution}
+                measurementsByForm={stats.measurements_by_form}
+              />
             </section>
           </>
         )}

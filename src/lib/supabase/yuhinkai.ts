@@ -787,21 +787,35 @@ export async function getBulkElitePercentiles(
  * Compute form and mei distributions directly from gold_values for any artisan.
  * No dependency on artist_profiles — works for all 13,566 artisans.
  */
+export interface MeasurementsByForm {
+  [formKey: string]: {
+    nagasa: number[];
+    sori: number[];
+    motohaba: number[];
+    sakihaba: number[];
+  };
+}
+
 export async function getArtisanDistributions(
   code: string,
   entityType: 'smith' | 'tosogu'
-): Promise<{ form_distribution: Record<string, number>; mei_distribution: Record<string, number> } | null> {
+): Promise<{
+  form_distribution: Record<string, number>;
+  mei_distribution: Record<string, number>;
+  measurements_by_form: MeasurementsByForm;
+} | null> {
   const idCol = entityType === 'smith' ? 'gold_smith_id' : 'gold_maker_id';
 
   const { data, error } = await yuhinkaiClient
     .from('gold_values')
-    .select('gold_form_type, gold_mei_status, gold_collections')
+    .select('gold_form_type, gold_mei_status, gold_collections, gold_nagasa, gold_sori, gold_motohaba, gold_sakihaba')
     .eq(idCol, code);
 
   if (error || !data || data.length === 0) return null;
 
   const form: Record<string, number> = {};
   const mei: Record<string, number> = {};
+  const measurements: MeasurementsByForm = {};
 
   for (const row of data) {
     // Skip orphaned JE_Koto records — unreliable data without corroborating siblings
@@ -810,12 +824,29 @@ export async function getArtisanDistributions(
 
     // Form distribution
     const rawForm = (row.gold_form_type as string | null)?.toLowerCase().trim();
+    let formKey: string | null = null;
     if (rawForm) {
       const SWORD_FORMS = ['katana', 'wakizashi', 'tanto', 'tachi', 'naginata', 'yari', 'ken', 'kodachi'];
       const TOSOGU_FORMS = ['tsuba', 'kozuka', 'kogai', 'menuki', 'fuchi', 'kashira', 'fuchi-kashira', 'mitokoromono', 'futatokoromono', 'soroimono'];
       const knownForms = entityType === 'smith' ? SWORD_FORMS : TOSOGU_FORMS;
-      const formKey = knownForms.includes(rawForm) ? rawForm : 'other';
+      formKey = knownForms.includes(rawForm) ? rawForm : 'other';
       form[formKey] = (form[formKey] || 0) + 1;
+    }
+
+    // Collect measurements by form (smiths only — measurements are sword-specific)
+    if (formKey && entityType === 'smith') {
+      if (!measurements[formKey]) {
+        measurements[formKey] = { nagasa: [], sori: [], motohaba: [], sakihaba: [] };
+      }
+      const m = measurements[formKey];
+      const nagasa = row.gold_nagasa as number | null;
+      const sori = row.gold_sori as number | null;
+      const motohaba = row.gold_motohaba as number | null;
+      const sakihaba = row.gold_sakihaba as number | null;
+      if (nagasa != null && nagasa > 0) m.nagasa.push(nagasa);
+      if (sori != null && sori > 0) m.sori.push(sori);
+      if (motohaba != null && motohaba > 0) m.motohaba.push(motohaba);
+      if (sakihaba != null && sakihaba > 0) m.sakihaba.push(sakihaba);
     }
 
     // Mei distribution — normalize to canonical keys
@@ -845,7 +876,7 @@ export async function getArtisanDistributions(
   const hasMei = Object.values(mei).some(v => v > 0);
   if (!hasForm && !hasMei) return null;
 
-  return { form_distribution: form, mei_distribution: mei };
+  return { form_distribution: form, mei_distribution: mei, measurements_by_form: measurements };
 }
 
 // =============================================================================

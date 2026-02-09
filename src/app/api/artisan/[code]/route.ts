@@ -79,6 +79,12 @@ export interface ArtisanPageResponse {
   stats: {
     mei_distribution: Record<string, number>;
     form_distribution: Record<string, number>;
+    measurements_by_form: Record<string, {
+      nagasa: number[];
+      sori: number[];
+      motohaba: number[];
+      sakihaba: number[];
+    }>;
   } | null;
   lineage: {
     teacher: { code: string; name_romaji: string | null; slug: string } | null;
