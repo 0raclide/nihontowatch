@@ -493,14 +493,13 @@ function ArtistCard({ artist }: { artist: ArtistWithSlug }) {
     >
       {/* Thumbnail — catalog oshigata from Yuhinkai */}
       {artist.cover_image && (
-        <div className="w-14 shrink-0 bg-ink/[0.03] border-r border-border/50 flex items-center justify-center p-1.5 overflow-hidden">
+        <div className="w-28 shrink-0 bg-white/[0.04] dark:bg-white/[0.04] border-r border-border/50 flex items-center justify-center p-3 overflow-hidden">
           <img
             src={artist.cover_image}
             alt=""
-            className="max-w-full max-h-full object-contain opacity-70 group-hover:opacity-100 transition-opacity"
+            className="max-w-full max-h-full object-contain opacity-60 group-hover:opacity-90 transition-opacity"
             loading="lazy"
             onError={(e: SyntheticEvent<HTMLImageElement>) => {
-              // Hide thumbnail if catalog image doesn't exist
               const container = e.currentTarget.parentElement;
               if (container) container.style.display = 'none';
             }}
