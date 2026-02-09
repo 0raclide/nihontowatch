@@ -771,9 +771,12 @@ function buildStoragePath(collection: string, volume: number, itemNumber: number
 
 /**
  * Fetch the best catalog image for an artisan's profile hero.
- * Walks collections in priority order (Tokuju → Juyo → Kokuho → JuBun → Jubi)
- * and constructs the storage URL directly from catalog_records data.
- * Images are in Supabase Storage at predictable paths (no stored_images lookup needed).
+ *
+ * Selection heuristic:
+ * 1. Walk collections in priority order (Tokuju → Juyo → Kokuho → JuBun → Jubi)
+ * 2. Within each collection, pick the item with the MOST sibling catalog_records
+ *    (most data-rich item — more siblings = more associated records, photos, etc.)
+ * 3. Serve image via /api/catalog-image proxy (storage bucket isn't publicly accessible)
  */
 export async function getArtisanHeroImage(
   code: string,
@@ -805,39 +808,54 @@ export async function getArtisanHeroImage(
 
     if (matchingUuids.length === 0) continue;
 
-    // 3. Get catalog records for these objects in this collection
-    const { data: catalogRecords } = await yuhinkaiClient
+    // 3. Get ALL catalog records for these objects (any collection)
+    //    to count siblings per object, then pick the one with the most records
+    const { data: allSiblings } = await yuhinkaiClient
       .from('catalog_records')
-      .select('object_uuid, collection, volume, item_number')
-      .in('object_uuid', matchingUuids)
-      .eq('collection', targetCollection)
-      .limit(1);
+      .select('object_uuid')
+      .in('object_uuid', matchingUuids);
 
-    if (!catalogRecords || catalogRecords.length === 0) continue;
+    // Count siblings per object
+    const siblingCounts = new Map<string, number>();
+    for (const row of allSiblings || []) {
+      const uuid = row.object_uuid as string;
+      siblingCounts.set(uuid, (siblingCounts.get(uuid) || 0) + 1);
+    }
 
-    const record = catalogRecords[0];
+    // Sort matching objects by sibling count descending
+    const ranked = matchingUuids
+      .map(uuid => ({ uuid, siblings: siblingCounts.get(uuid) || 0 }))
+      .sort((a, b) => b.siblings - a.siblings);
 
-    // 4. Build storage URL directly from collection/volume/item
-    const storagePath = buildStoragePath(
-      record.collection,
-      record.volume,
-      record.item_number
-    );
+    // 4. For the richest object, get the catalog record in the target collection
+    for (const { uuid } of ranked) {
+      const { data: catalogRecords } = await yuhinkaiClient
+        .from('catalog_records')
+        .select('object_uuid, collection, volume, item_number')
+        .eq('object_uuid', uuid)
+        .eq('collection', targetCollection)
+        .limit(1);
 
-    const { data: urlData } = yuhinkaiClient.storage
-      .from('images')
-      .getPublicUrl(storagePath);
+      if (!catalogRecords || catalogRecords.length === 0) continue;
 
-    if (!urlData?.publicUrl) continue;
+      const record = catalogRecords[0];
 
-    return {
-      imageUrl: urlData.publicUrl,
-      collection: targetCollection,
-      volume: record.volume,
-      itemNumber: record.item_number,
-      formType: formTypeMap.get(record.object_uuid) || null,
-      imageType: 'oshigata',
-    };
+      // 5. Build proxy URL (images bucket isn't publicly accessible)
+      const storagePath = buildStoragePath(
+        record.collection,
+        record.volume,
+        record.item_number
+      );
+
+      return {
+        imageUrl: `/api/catalog-image?path=${encodeURIComponent(storagePath)}`,
+        collection: targetCollection,
+        volume: record.volume,
+        itemNumber: record.item_number,
+        formType: formTypeMap.get(record.object_uuid) || null,
+        imageType: 'oshigata',
+      };
+    }
   }
 
   return null;
