@@ -29,15 +29,24 @@ export async function GET(request: NextRequest) {
     const client = createClient(yuhinkaiUrl, yuhinkaiKey);
     const parts = storagePath.split('/');
     const folder = parts[0];
-    const { data: files, error: listError } = await client.storage
+    // List root of bucket + target folder
+    const { data: buckets, error: bucketError } = await client.storage.listBuckets();
+    const { data: rootFiles, error: rootError } = await client.storage
       .from('images')
-      .list(folder, { limit: 20, search: parts[1]?.replace('_oshigata.jpg', '') });
+      .list('', { limit: 20 });
+    const { data: folderFiles, error: folderError } = await client.storage
+      .from('images')
+      .list(folder, { limit: 20 });
     return NextResponse.json({
+      buckets: buckets?.map(b => ({ name: b.name, public: b.public })) || [],
+      bucketError: bucketError?.message || null,
+      rootFiles: rootFiles?.map(f => f.name) || [],
+      rootError: rootError?.message || null,
+      folderFiles: folderFiles?.map(f => f.name) || [],
+      folderError: folderError?.message || null,
       folder,
-      searchTerm: parts[1]?.replace('_oshigata.jpg', ''),
-      files: files?.map(f => f.name) || [],
-      listError: listError?.message || null,
       storagePath,
+      projectUrl: yuhinkaiUrl?.slice(0, 40),
     });
   }
 
