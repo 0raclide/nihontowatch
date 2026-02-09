@@ -432,6 +432,18 @@ export interface Listing {
   artisan_id?: string;
   artisan_confidence?: 'HIGH' | 'MEDIUM' | 'LOW' | 'NONE';
   artisan_display_name?: string;
+  artisan_method?: string | null;
+  artisan_candidates?: Array<{
+    artisan_id: string;
+    name_kanji?: string;
+    name_romaji?: string;
+    school?: string;
+    generation?: string;
+    is_school_code?: boolean;
+    retrieval_method?: string;
+    retrieval_score?: number;
+  }> | null;
+  artisan_verified?: 'correct' | 'incorrect' | null;
 
   // Timestamps
   first_seen_at: string;

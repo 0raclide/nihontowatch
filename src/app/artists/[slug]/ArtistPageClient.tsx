@@ -518,10 +518,10 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
           {/* Browse CTA */}
           <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2">
             <Link
-              href={`/?artisan=${encodeURIComponent(entity.code)}`}
+              href={`/?artisan=${encodeURIComponent(entity.code)}&tab=all`}
               className="inline-flex items-center gap-1.5 text-xs text-gold hover:text-gold-light transition-colors tracking-wide"
             >
-              Browse all listings by {entity.name_romaji || entity.code}
+              Browse all listings
               <span aria-hidden>&rarr;</span>
             </Link>
             {listings !== null && listings.length === 0 && (

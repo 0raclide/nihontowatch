@@ -17,9 +17,11 @@ interface ArtisanListingsProps {
   artisanName: string | null;
   /** Pre-fetched listings to avoid duplicate API call */
   initialListings?: Listing[] | null;
+  /** Which context this component is shown in — affects the "View all" link */
+  status?: 'available' | 'sold';
 }
 
-export function ArtisanListings({ code, artisanName, initialListings }: ArtisanListingsProps) {
+export function ArtisanListings({ code, artisanName, initialListings, status = 'available' }: ArtisanListingsProps) {
   const [listings, setListings] = useState<Listing[]>(initialListings || []);
   const [loading, setLoading] = useState(!initialListings);
   const quickView = useQuickViewOptional();
@@ -147,10 +149,12 @@ export function ArtisanListings({ code, artisanName, initialListings }: ArtisanL
       {/* Link to full browse filtered by artisan */}
       <div className="mt-4 text-center">
         <Link
-          href={`/?artisan=${encodeURIComponent(code)}`}
+          href={`/?artisan=${encodeURIComponent(code)}&tab=${status === 'sold' ? 'sold' : 'available'}`}
           className="text-sm text-gold hover:text-gold-light"
         >
-          View all listings by {artisanName || code} &rarr;
+          {status === 'sold'
+            ? `Browse sold archive for ${artisanName || code}`
+            : `Browse all for sale by ${artisanName || code}`} &rarr;
         </Link>
       </div>
     </div>

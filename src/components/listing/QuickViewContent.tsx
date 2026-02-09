@@ -15,6 +15,8 @@ import type { Listing, ListingWithEnrichment } from '@/types';
 import { getItemTypeLabel, hasSetsumeiData } from '@/types';
 import { MetadataGrid, getCertInfo } from './MetadataGrid';
 import { AdminSetsumeiWidget } from './AdminSetsumeiWidget';
+import { AdminArtisanWidget } from '@/components/artisan/AdminArtisanWidget';
+import { ArtisanTooltip } from '@/components/artisan/ArtisanTooltip';
 import { TranslatedDescription } from './TranslatedDescription';
 import { TranslatedTitle } from './TranslatedTitle';
 
@@ -112,24 +114,57 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
                   New this week
                 </span>
               )}
-              {/* Artisan badge — always links to profile (tooltip doesn't work inside modal) */}
+              {/* Artisan badge — links to profile; admin gets edit pen with ArtisanTooltip */}
               {/* Hide tmp-prefixed provisional codes from non-admin users */}
               {listing.artisan_id &&
                listing.artisan_confidence && listing.artisan_confidence !== 'NONE' &&
                (isAdmin || !listing.artisan_id.startsWith('tmp')) && (
-                <a
-                  href={`/artists/${listing.artisan_id}`}
-                  data-artisan-tooltip
-                  className={`text-[10px] font-mono font-medium px-2 py-0.5 rounded hover:opacity-80 transition-opacity ${
-                    listing.artisan_confidence === 'HIGH'
-                      ? 'bg-artisan-high-bg text-artisan-high'
-                      : listing.artisan_confidence === 'MEDIUM'
-                      ? 'bg-artisan-medium-bg text-artisan-medium'
-                      : 'bg-artisan-low-bg text-artisan-low'
-                  }`}
-                >
-                  {listing.artisan_display_name || listing.artisan_id}
-                </a>
+                isAdmin ? (
+                  <span className="inline-flex items-center gap-0.5" data-artisan-tooltip>
+                    <a
+                      href={`/artists/${listing.artisan_id}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className={`text-[10px] font-mono font-medium px-2 py-0.5 rounded hover:opacity-80 transition-opacity ${
+                        listing.artisan_confidence === 'HIGH'
+                          ? 'bg-artisan-high-bg text-artisan-high'
+                          : listing.artisan_confidence === 'MEDIUM'
+                          ? 'bg-artisan-medium-bg text-artisan-medium'
+                          : 'bg-artisan-low-bg text-artisan-low'
+                      }`}
+                    >
+                      {listing.artisan_display_name || listing.artisan_id}
+                    </a>
+                    <ArtisanTooltip
+                      listingId={listing.id}
+                      artisanId={listing.artisan_id}
+                      confidence={listing.artisan_confidence as 'HIGH' | 'MEDIUM' | 'LOW'}
+                      method={listing.artisan_method}
+                      candidates={listing.artisan_candidates}
+                      verified={listing.artisan_verified}
+                      onArtisanFixed={() => quickView?.refreshCurrentListing()}
+                    >
+                      <span className="text-muted hover:text-ink transition-colors p-0.5 cursor-pointer">
+                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                        </svg>
+                      </span>
+                    </ArtisanTooltip>
+                  </span>
+                ) : (
+                  <a
+                    href={`/artists/${listing.artisan_id}`}
+                    data-artisan-tooltip
+                    className={`text-[10px] font-mono font-medium px-2 py-0.5 rounded hover:opacity-80 transition-opacity ${
+                      listing.artisan_confidence === 'HIGH'
+                        ? 'bg-artisan-high-bg text-artisan-high'
+                        : listing.artisan_confidence === 'MEDIUM'
+                        ? 'bg-artisan-medium-bg text-artisan-medium'
+                        : 'bg-artisan-low-bg text-artisan-low'
+                    }`}
+                  >
+                    {listing.artisan_display_name || listing.artisan_id}
+                  </a>
+                )
               )}
             </div>
             <div className="flex items-center gap-2">
@@ -198,6 +233,10 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
             <AdminSetsumeiWidget
               listing={listing}
               onConnectionChanged={quickView?.refreshCurrentListing}
+            />
+            <AdminArtisanWidget
+              listing={listing}
+              onArtisanChanged={() => quickView?.refreshCurrentListing()}
             />
           </div>
         )}
