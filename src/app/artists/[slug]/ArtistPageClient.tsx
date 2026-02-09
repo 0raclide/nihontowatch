@@ -237,7 +237,7 @@ function SectionDivider() {
 export function ArtistPageClient({ data }: ArtistPageClientProps) {
   const { entity, certifications, rankings, profile, stats, lineage, related, denrai: rawDenrai } = data;
   const denrai = useMemo(
-    () => rawDenrai.filter(d => !/^(own(er|ed)\s+at\s|at\s+time\s+of\s|current\s+owner|listed\s+in\s|formerly\s+owned\s+by\s)/i.test(d.owner)),
+    () => rawDenrai.filter(d => !/^(own(er|ed)\s+(at|by)\s|at\s+time\s+of\s|current\s+owner|listed\s+in\s|formerly\s+(owned|held)\s+by\s|needs\s+research|meibutsu|known\s+as\s|identified\s+with\s|said\s+to\s|reportedly\s|tradition:|thereafter\s|transmitted\s+to\s|later\s+held\s+by\s|presented\s+to\s|bestowed\s+by\s|koshigatani?\s)/i.test(d.owner)),
     [rawDenrai]
   );
   const [listings, setListings] = useState<Listing[] | null>(null);
