@@ -93,9 +93,6 @@ function StatsBar({ data, availableCount }: { data: ArtisanPageResponse; availab
   const { certifications, entity } = data;
   const items: Array<{ label: string; value: string; highlight?: boolean }> = [];
 
-  if (certifications.total_items > 0) {
-    items.push({ label: 'Ranked Works', value: certifications.total_items.toLocaleString() });
-  }
   if (certifications.kokuho_count > 0) {
     items.push({ label: 'Kokuhō', value: certifications.kokuho_count.toString() });
   }
@@ -437,6 +434,17 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
                 </p>
               )}
 
+              {/* Context line — museum wall label */}
+              {certifications.total_items > 0 && (
+                <p className="mt-2.5 text-[12px] text-ink/40 tracking-wide italic">
+                  {[
+                    `${certifications.total_items} ranked works`,
+                    entity.province,
+                    entity.era,
+                  ].filter(Boolean).join(' · ')}
+                </p>
+              )}
+
               {/* Metadata grid */}
               <div className="mt-5 grid grid-cols-[auto_1fr] gap-x-6 gap-y-1.5 text-[13px] leading-snug">
                 {entity.province && (
@@ -569,10 +577,6 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
                     tokuju={certifications.tokuju_count}
                     juyo={certifications.juyo_count}
                   />
-                  <div className="mt-4 pt-4 border-t border-border/20 flex items-baseline justify-between text-sm">
-                    <span className="text-ink/45">Ranked works</span>
-                    <span className="text-ink font-light tabular-nums">{certifications.total_items}</span>
-                  </div>
                 </div>
 
                 {/* Elite standing */}
