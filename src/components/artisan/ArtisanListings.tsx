@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { Listing } from '@/types';
+import { getImageUrl } from '@/lib/images';
 import { useQuickViewOptional } from '@/contexts/QuickViewContext';
 
 /**
@@ -71,7 +72,7 @@ export function ArtisanListings({ code, artisanName, initialListings }: ArtisanL
     <div>
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
         {listings.map((listing) => {
-          const imageUrl = listing.images?.[0] ?? null;
+          const imageUrl = getImageUrl(listing);
           const dealer = listing.dealer || listing.dealers;
           const price = listing.price_value
             ? `¥${listing.price_value.toLocaleString()}`

@@ -10,7 +10,7 @@ const LISTING_FIELDS = `
   smith, school, province, era, mei_type,
   tosogu_maker, tosogu_school,
   cert_type, cert_session,
-  images,
+  images, stored_images,
   description, description_en,
   is_available, is_sold, status,
   first_seen_at, last_scraped_at,

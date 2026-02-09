@@ -303,7 +303,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
         ═══════════════════════════════════════════════════════════════════ */}
         <section id="overview">
           {/* Breadcrumb + Share */}
-          <div className="flex items-center justify-between mb-10">
+          <div className="flex items-center justify-between mb-8">
             <nav className="text-[11px] text-ink/40 tracking-widest uppercase">
               <Link href="/" className="hover:text-ink/60 transition-colors">Browse</Link>
               <span className="mx-2 text-ink/20">/</span>
@@ -329,105 +329,80 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
             </button>
           </div>
 
-          {/* Name block */}
-          <div className="mb-4 relative">
-            {/* Kanji watermark */}
-            {entity.name_kanji && (
-              <div
-                className="absolute -top-6 -left-3 text-[80px] sm:text-[110px] font-serif text-muted/[0.05] leading-none select-none pointer-events-none"
-                aria-hidden="true"
-              >
-                {entity.name_kanji}
-              </div>
+          {/* Hero — Image + Identity as one cohesive unit */}
+          <div className={`flex flex-col ${heroImage ? 'sm:flex-row sm:items-start sm:gap-8' : ''}`}>
+            {/* Catalog image — square, sharp edges, museum plate */}
+            {heroImage && (
+              <figure className="shrink-0 mb-5 sm:mb-0">
+                <div className="w-[200px] h-[200px] sm:w-[220px] sm:h-[220px] overflow-hidden border border-border/20 shadow-sm">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={heroImage.imageUrl}
+                    alt={`${heroImage.imageType === 'oshigata' ? 'Oshigata' : 'Image'} — ${entity.name_romaji || entity.code}, ${COLLECTION_LABELS[heroImage.collection] || heroImage.collection}`}
+                    className="w-full h-full object-cover"
+                    loading="eager"
+                  />
+                </div>
+                <figcaption className="mt-1.5">
+                  <div className="text-[10px] uppercase tracking-[0.15em] text-gold/50 font-medium">
+                    {COLLECTION_LABELS[heroImage.collection] || heroImage.collection}
+                  </div>
+                  <div className="text-[10px] text-ink/25 tabular-nums">
+                    Vol. {heroImage.volume}, No. {heroImage.itemNumber}
+                    {heroImage.formType && <> &middot; {heroImage.formType}</>}
+                  </div>
+                </figcaption>
+              </figure>
             )}
 
-            {/* Gold accent line */}
-            <div className="w-8 h-px bg-gold/50 mb-5" />
+            {/* Identity + Vitals */}
+            <div className="flex-1 min-w-0">
+              <div className="w-6 h-px bg-gold/40 mb-3" />
 
-            <div className="relative">
-              <h1 className="text-4xl sm:text-5xl font-serif font-light text-ink leading-[1.05] tracking-tight">
+              <h1 className="text-3xl sm:text-[2.5rem] font-serif font-light text-ink leading-[1.1] tracking-tight">
                 {(() => { const dp = getArtisanDisplayParts(entity.name_romaji, entity.school); return <>{dp.prefix && <>{dp.prefix} </>}{dp.name || entity.code}</>; })()}
               </h1>
               {entity.name_kanji && (
-                <p className="text-lg text-ink/30 font-serif font-light mt-2 tracking-[0.08em]">
+                <p className="text-base text-ink/25 font-serif font-light mt-1 tracking-[0.06em]">
                   {entity.name_kanji}
                 </p>
               )}
-            </div>
 
-            {/* Hook — pull-quote with left accent */}
-            {profile?.hook && (
-              <p className="mt-7 pl-4 border-l-2 border-gold/30 text-sm text-ink/50 leading-relaxed italic max-w-xl">
-                {profile.hook}
-              </p>
-            )}
-          </div>
-
-          {/* Quick stats bar */}
-          <StatsBar data={data} availableCount={listings ? listings.length : null} />
-
-          {/* Vitals — image + metadata as one cohesive unit */}
-          <div className="mt-10 pt-8 border-t border-border/30">
-            <div className={`flex flex-col ${heroImage ? 'sm:flex-row sm:gap-8' : ''}`}>
-              {/* Catalog image — left column */}
-              {heroImage && (
-                <figure className="mb-6 sm:mb-0 shrink-0">
-                  <div className="w-full sm:w-[240px] aspect-square overflow-hidden">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={heroImage.imageUrl}
-                      alt={`${heroImage.imageType === 'oshigata' ? 'Oshigata' : 'Image'} — ${entity.name_romaji || entity.code}, ${COLLECTION_LABELS[heroImage.collection] || heroImage.collection}`}
-                      className="w-full h-full object-cover"
-                      loading="eager"
-                    />
-                  </div>
-                  <figcaption className="mt-2 space-y-0.5">
-                    <div className="text-[10px] uppercase tracking-[0.2em] text-gold/50 font-medium">
-                      {COLLECTION_LABELS[heroImage.collection] || heroImage.collection}
-                    </div>
-                    <div className="text-[10px] text-ink/25 tabular-nums">
-                      Vol. {heroImage.volume}, No. {heroImage.itemNumber}
-                      {heroImage.formType && <> &middot; {heroImage.formType}</>}
-                    </div>
-                  </figcaption>
-                </figure>
-              )}
-
-              {/* Metadata — right column, top-aligned */}
-              <div className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-1.5 text-sm self-start">
+              {/* Metadata grid — tight, top-aligned with image */}
+              <div className="mt-4 grid grid-cols-[auto_1fr] gap-x-5 gap-y-[5px] text-[13px] leading-snug">
                 {entity.province && (
                   <>
-                    <span className="text-ink/40">Province</span>
+                    <span className="text-ink/35">Province</span>
                     <span className="text-ink">{entity.province}</span>
                   </>
                 )}
                 {entity.era && (
                   <>
-                    <span className="text-ink/40">Era</span>
+                    <span className="text-ink/35">Era</span>
                     <span className="text-ink">{entity.era}</span>
                   </>
                 )}
                 {entity.period && entity.period !== entity.era && (
                   <>
-                    <span className="text-ink/40">Period</span>
+                    <span className="text-ink/35">Period</span>
                     <span className="text-ink">{entity.period}</span>
                   </>
                 )}
                 {entity.school && (
                   <>
-                    <span className="text-ink/40">School</span>
+                    <span className="text-ink/35">School</span>
                     <span className="text-ink">{entity.school}</span>
                   </>
                 )}
                 {entity.generation && (
                   <>
-                    <span className="text-ink/40">Generation</span>
+                    <span className="text-ink/35">Generation</span>
                     <span className="text-ink">{entity.generation}</span>
                   </>
                 )}
                 {entity.teacher && (
                   <>
-                    <span className="text-ink/40">Teacher</span>
+                    <span className="text-ink/35">Teacher</span>
                     {lineage.teacher ? (
                       <Link href={`/artists/${lineage.teacher.slug}`} className="text-ink hover:text-gold transition-colors">
                         {lineage.teacher.name_romaji || entity.teacher}
@@ -437,46 +412,52 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
                     )}
                   </>
                 )}
-                {entity.toko_taikan != null && (
+                {entity.fujishiro && (
                   <>
-                    <span className="text-ink/40">Toko Taikan</span>
+                    <span className="text-ink/35">Fujishiro</span>
                     <span className="text-ink">
-                      {entity.toko_taikan.toLocaleString()}
-                      {rankings.toko_taikan_percentile != null && (
-                        <span className="text-ink/30 ml-1.5">(top {Math.max(100 - rankings.toko_taikan_percentile, 1)}%)</span>
-                      )}
+                      {entity.fujishiro}
+                      {fujishiroLabel && <span className="text-ink/25 ml-1">({fujishiroLabel})</span>}
                     </span>
                   </>
                 )}
-                {entity.fujishiro && (
+                {entity.toko_taikan != null && (
                   <>
-                    <span className="text-ink/40">Fujishiro</span>
-                    <span className="text-ink">
-                      {entity.fujishiro}
-                      {fujishiroLabel && <span className="text-ink/30 ml-1.5">({fujishiroLabel})</span>}
+                    <span className="text-ink/35">Toko Taikan</span>
+                    <span className="text-ink tabular-nums">
+                      {entity.toko_taikan.toLocaleString()}
+                      {rankings.toko_taikan_percentile != null && (
+                        <span className="text-ink/25 ml-1">(top {Math.max(100 - rankings.toko_taikan_percentile, 1)}%)</span>
+                      )}
                     </span>
                   </>
                 )}
                 {entity.specialties && entity.specialties.length > 0 && (
                   <>
-                    <span className="text-ink/40">Specialties</span>
+                    <span className="text-ink/35">Specialties</span>
                     <span className="text-ink">{entity.specialties.join(', ')}</span>
                   </>
                 )}
-                <>
-                  <span className="text-ink/40">Type</span>
-                  <span className="text-ink">{entity.entity_type === 'smith' ? 'Swordsmith' : 'Tosogu Maker'}</span>
-                </>
-                <>
-                  <span className="text-ink/40">Code</span>
-                  <span className="text-ink font-mono text-xs tracking-wide">{entity.code}</span>
-                </>
+                <span className="text-ink/35">Type</span>
+                <span className="text-ink">{entity.entity_type === 'smith' ? 'Swordsmith' : 'Tosogu Maker'}</span>
+                <span className="text-ink/35">Code</span>
+                <span className="text-ink font-mono text-xs tracking-wide">{entity.code}</span>
               </div>
             </div>
           </div>
 
+          {/* Hook — pull-quote */}
+          {profile?.hook && (
+            <p className="mt-6 pl-4 border-l-2 border-gold/25 text-[13px] text-ink/45 leading-relaxed italic max-w-xl">
+              {profile.hook}
+            </p>
+          )}
+
+          {/* Quick stats bar */}
+          <StatsBar data={data} availableCount={listings ? listings.length : null} />
+
           {/* Browse CTA */}
-          <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2">
+          <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2">
             <Link
               href={`/?artisan=${encodeURIComponent(entity.code)}`}
               className="inline-flex items-center gap-1.5 text-xs text-gold hover:text-gold-light transition-colors tracking-wide"
