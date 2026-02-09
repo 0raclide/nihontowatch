@@ -80,6 +80,12 @@ interface ListingWithDealer {
   is_available: boolean;
   is_sold: boolean;
   dealer_id: number;
+  // Artisan matching
+  artisan_id: string | null;
+  artisan_confidence: string | null;
+  artisan_method: string | null;
+  artisan_candidates: unknown[] | null;
+  artisan_verified: string | null;
   dealers: {
     id: number;
     name: string;
@@ -159,6 +165,11 @@ export async function GET(
         is_available,
         is_sold,
         dealer_id,
+        artisan_id,
+        artisan_confidence,
+        artisan_method,
+        artisan_candidates,
+        artisan_verified,
         dealers (
           id,
           name,
