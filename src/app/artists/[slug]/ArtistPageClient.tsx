@@ -31,6 +31,21 @@ const FUJISHIRO_LABELS: Record<string, string> = {
   'Chu-saku':    'Average Work',
 };
 
+/**
+ * Derive a non-redundant school prefix for display before an artisan name.
+ * - "Hizen Tadayoshi" + name "Tadayoshi" → "Hizen"
+ * - "Taima" + name "Taima" → null  (exact match, skip entirely)
+ * - "Shimada" + name "Yoshisuke" → "Shimada"  (no overlap, use as-is)
+ */
+function schoolPrefix(school: string | null, name: string | null): string | null {
+  if (!school || !name) return school;
+  const s = school.toLowerCase();
+  const n = name.toLowerCase();
+  if (s === n) return null;
+  if (s.endsWith(` ${n}`)) return school.slice(0, -(name.length + 1)).trim() || null;
+  return school;
+}
+
 // ─── HELPERS ────────────────────────────────────────────────────────────────
 
 /**
@@ -337,7 +352,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
 
             <div className="relative">
               <h1 className="text-4xl sm:text-5xl font-serif font-light text-ink leading-[1.05] tracking-tight">
-                {entity.school && entity.school.toLowerCase() !== (entity.name_romaji || '').toLowerCase() && <>{entity.school} </>}
+                {schoolPrefix(entity.school, entity.name_romaji) && <>{schoolPrefix(entity.school, entity.name_romaji)} </>}
                 {entity.name_romaji || entity.code}
               </h1>
               {entity.name_kanji && (
