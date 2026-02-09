@@ -482,6 +482,7 @@ function ArtistCard({ artist }: { artist: ArtistWithSlug }) {
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
           <span className="text-sm font-medium text-ink group-hover:text-gold transition-colors truncate block">
+            {artist.school && <span className="text-muted/60 font-normal">{artist.school} </span>}
             {artist.name_romaji || artist.code}
           </span>
           {artist.name_kanji && (

@@ -1,6 +1,6 @@
 # Artist Feature — Comprehensive Documentation
 
-**Last updated**: 2026-02-08
+**Last updated**: 2026-02-09
 **Status**: Live at nihontowatch.com/artists
 
 ---
@@ -163,9 +163,13 @@ profile_depth        — 'full' | 'standard' | 'brief'
 human_reviewed       — Boolean
 ```
 
-**`gold_values`** — Yuhinkai catalog items (for provenance/denrai)
+**`gold_values`** — Yuhinkai catalog items (provenance, form/mei distributions)
 ```
 gold_artisan         — Artisan name (matches name_romaji)
+gold_smith_id        — FK to smith_entities (for distribution queries)
+gold_maker_id        — FK to tosogu_makers (for distribution queries)
+gold_form_type       — Blade/work type (katana, wakizashi, tanto, tachi, tsuba, etc.)
+gold_mei_status      — Signature status (signed, mumei, attributed, den, kinzogan, etc.)
 gold_denrai_owners   — Array of historical collection owners
 ```
 
@@ -233,21 +237,21 @@ artisan_elite_factor — Denormalized elite_factor from Yuhinkai (synced via web
    - **Stats bar** with all 6 designation counts: Kokuhō, Jūyō Bunkazai, Jūyō Bijutsuhin, Gyobutsu, Tokubetsu Jūyō, Jūyō + Fujishiro stars + Available Now count
    - Vitals grid: Province, Era, Period, School, Generation, Teacher (linked), Fujishiro, Tōkō Taikan (with percentile), Specialties, Provenance (denrai owners), Type, Code
 
-2. **Provenance** (if denrai data exists)
+2. **Certifications** (if `total_items > 0`)
+   - PrestigePyramid: visual hierarchy of all 6 designation types
+   - EliteFactorDisplay: percentile-based elite standing bar
+
+3. **Provenance** (if denrai data exists)
    - Historical collection owners table from gold_values
 
-3. **Biography** (if `artist_profiles` exists)
-   - Expandable markdown with section headers
-   - Inline formatting (bold, italic, links)
-   - "Informed by N translated setsumei" note
-
-4. **Certifications** (if `total_items > 0`)
-   - PrestigePyramid: visual hierarchy of all 6 designation types
-   - EliteFactorDisplay: grade letter + percentile + progress bar
-
-5. **Analysis** (if form/mei stats exist in profile snapshot)
+4. **Blade Forms** (if form data exists in gold_values)
+   - Heading: "Blade Forms" for smiths, "Work Types" for tosogu makers
    - FormDistributionBar: blade forms (katana, wakizashi, tantō, etc.)
-   - MeiDistributionBar: signature types (signed, mumei, attributed, etc.)
+   - Data source: `gold_values.gold_form_type` aggregated by artisan code (profile snapshot as fast-path)
+
+5. **Signatures** (if mei data exists in gold_values)
+   - MeiDistributionBar: signature types (signed, mumei, attributed, den, kinzōgan mei, etc.)
+   - Data source: `gold_values.gold_mei_status` aggregated by artisan code (profile snapshot as fast-path)
 
 6. **Currently Available** (if listings exist)
    - Grid of listing cards fetched client-side from `/api/artisan/[code]/listings`
@@ -465,10 +469,28 @@ CRON_SECRET=xxx
 | `docs/YUHINKAI_ENRICHMENT.md` | English translations from Yuhinkai catalog |
 | `docs/YUHINKAI_REGISTRY_VISION.md` | Strategic vision for canonical nihonto registry |
 | `docs/SESSION_20260208_ARTIST_DIRECTORY.md` | Original directory implementation session |
+| `docs/SESSION_20260209_BLADE_FORMS_SIGNATURES.md` | Blade Forms/Signatures split + gold_values query |
 
 ---
 
 ## Changelog
+
+### 2026-02-09 — Blade Forms & Signatures as standalone sections
+
+**Section restructure:**
+- Split combined "Analysis" section into two standalone sections: **Blade Forms** and **Signatures**
+- Moved after Provenance (before Available listings) for more prominence
+- Heading adapts: "Blade Forms" for smiths, "Work Types" for tosogu makers
+- Removed Biography section from profile pages
+
+**Direct gold_values query** (`getArtisanDistributions()`):
+- Form/mei distributions no longer depend on `artist_profiles.stats_snapshot`
+- Queries `gold_values` directly by `gold_smith_id` / `gold_maker_id`
+- Profile snapshot used as fast-path when available, live query as fallback
+- Enables these sections for **all 13,566 artisans** instead of just profiled ones
+
+**Files changed:** `ArtistPageClient.tsx`, `page.tsx`, `yuhinkai.ts`
+**Session doc:** `docs/SESSION_20260209_BLADE_FORMS_SIGNATURES.md`
 
 ### 2026-02-08 (Session 2 — Enhancement)
 
