@@ -854,18 +854,27 @@ export interface ArtisanHeroImage {
 }
 
 /**
- * Build the Supabase Storage path for a catalog image.
- * Matches the upload script conventions (from oshi-v2):
+ * Build candidate Supabase Storage paths for a catalog image.
+ * Returns multiple paths in priority order since not all image types
+ * exist for every item (e.g. Jubi has oshigata for some volumes,
+ * setsumei for others).
+ *
+ * Conventions (from oshi-v2 upload scripts):
  *   Kokuho (flat):   Kokuho/{item}_oshigata.jpg
  *   JuBun  (flat):   JuBun/{item}_combined.jpg
- *   Volume-based (Tokuju, Juyo, Jubi): {Collection}/{volume}_{item}_oshigata.jpg
+ *   Volume-based:    {Collection}/{volume}_{item}_{type}.jpg
  */
-function buildStoragePath(collection: string, volume: number, itemNumber: number): string {
-  const suffix = COMBINED_COLLECTIONS.has(collection) ? 'combined' : 'oshigata';
+function buildStoragePaths(collection: string, volume: number, itemNumber: number): Array<{ path: string; imageType: string }> {
   if (FLAT_COLLECTIONS.has(collection)) {
-    return `${collection}/${itemNumber}_${suffix}.jpg`;
+    const suffix = COMBINED_COLLECTIONS.has(collection) ? 'combined' : 'oshigata';
+    return [{ path: `${collection}/${itemNumber}_${suffix}.jpg`, imageType: suffix }];
   }
-  return `${collection}/${volume}_${itemNumber}_oshigata.jpg`;
+  // Volume-based: try oshigata first, then setsumei as fallback
+  const base = `${collection}/${volume}_${itemNumber}`;
+  return [
+    { path: `${base}_oshigata.jpg`, imageType: 'oshigata' },
+    { path: `${base}_setsumei.jpg`, imageType: 'setsumei' },
+  ];
 }
 
 /**
@@ -948,31 +957,31 @@ export async function getArtisanHeroImage(
       if (!catalogRecords || catalogRecords.length === 0) continue;
 
       const record = catalogRecords[0];
-      const storagePath = buildStoragePath(
+      const candidates = buildStoragePaths(
         record.collection,
         record.volume,
         record.item_number
       );
 
-      // 5. Public URL on the separate image storage project
-      const imageUrl = `${IMAGE_STORAGE_BASE}/storage/v1/object/public/images/${storagePath}`;
+      // 5. Try each candidate path — verify image exists in storage
+      for (const { path, imageType } of candidates) {
+        const imageUrl = `${IMAGE_STORAGE_BASE}/storage/v1/object/public/images/${path}`;
+        try {
+          const head = await fetch(imageUrl, { method: 'HEAD' });
+          if (!head.ok) continue;
+        } catch {
+          continue;
+        }
 
-      // 6. Verify image exists — not all volumes have been uploaded yet
-      try {
-        const head = await fetch(imageUrl, { method: 'HEAD' });
-        if (!head.ok) continue;
-      } catch {
-        continue;
+        return {
+          imageUrl,
+          collection: targetCollection,
+          volume: record.volume,
+          itemNumber: record.item_number,
+          formType: formTypeMap.get(record.object_uuid) || null,
+          imageType,
+        };
       }
-
-      return {
-        imageUrl,
-        collection: targetCollection,
-        volume: record.volume,
-        itemNumber: record.item_number,
-        formType: formTypeMap.get(record.object_uuid) || null,
-        imageType: COMBINED_COLLECTIONS.has(targetCollection) ? 'combined' : 'oshigata',
-      };
     }
   }
 
