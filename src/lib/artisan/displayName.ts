@@ -85,9 +85,9 @@ export function getArtisanDisplayParts(
   }
 
   // Rule 3: school ends with name (e.g. school="Hizen Tadayoshi", name="Tadayoshi")
+  // Use school as the full display name — no separate prefix needed.
   if (sNorm.endsWith(' ' + nNorm)) {
-    const prefixPart = school.slice(0, -(name.length + 1)).trim();
-    return { prefix: prefixPart || null, name: school };
+    return { prefix: null, name: school };
   }
 
   // Rule 4: lineage overlap — last word of school shares 4+ char root with first word of name
