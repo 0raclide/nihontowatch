@@ -233,7 +233,7 @@ export async function GET(
 
     // Fetch all enrichment data in parallel
     const { getArtisanHeroImage } = await import('@/lib/supabase/yuhinkai');
-    const [profile, students, related, elitePercentile, tokoTaikanPercentile, teacherStub, denrai, denraiGrouped, heroImage] =
+    const [profile, students, related, elitePercentile, tokoTaikanPercentile, teacherStub, denraiResult, heroImage] =
       await Promise.all([
         getArtistProfile(entityCode),
         getStudents(entityCode, entity.name_romaji),
@@ -244,9 +244,11 @@ export async function GET(
           : Promise.resolve(null),
         entity.teacher ? resolveTeacher(entity.teacher) : Promise.resolve(null),
         getDenraiForArtisan(entityCode, entityType),
-        getDenraiGrouped(entityCode, entityType),
         getArtisanHeroImage(entityCode, entityType),
       ]);
+
+    // Compute grouped denrai from precomputed result (no extra DB queries)
+    const denraiGrouped = await getDenraiGrouped(entityCode, entityType, denraiResult);
 
     // Always compute mei/form distributions live from gold_values
     // (profile snapshots had incorrect mei data — see CHO10/MAS590 bug)
@@ -331,7 +333,7 @@ export async function GET(
         tokuju_count: r.tokuju_count,
         elite_factor: r.elite_factor,
       })),
-      denrai,
+      denrai: denraiResult.owners,
       denraiGrouped,
       heroImage,
     };

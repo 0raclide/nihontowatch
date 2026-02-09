@@ -43,7 +43,7 @@ async function getArtistData(code: string): Promise<ArtisanPageResponse | null> 
   const eliteFactor = entity.elite_factor ?? 0;
   const slug = generateArtisanSlug(entity.name_romaji, entityCode);
 
-  const [profile, students, related, elitePercentile, tokoTaikanPercentile, teacherStub, denrai, denraiGrouped, heroImage] =
+  const [profile, students, related, elitePercentile, tokoTaikanPercentile, teacherStub, denraiResult, heroImage] =
     await Promise.all([
       getArtistProfile(entityCode),
       getStudents(entityCode, entity.name_romaji),
@@ -54,9 +54,11 @@ async function getArtistData(code: string): Promise<ArtisanPageResponse | null> 
         : Promise.resolve(null),
       entity.teacher ? resolveTeacher(entity.teacher) : Promise.resolve(null),
       getDenraiForArtisan(entityCode, entityType),
-      getDenraiGrouped(entityCode, entityType),
       getArtisanHeroImage(entityCode, entityType),
     ]);
+
+  // Compute grouped denrai from precomputed result (no extra DB queries)
+  const denraiGrouped = await getDenraiGrouped(entityCode, entityType, denraiResult);
 
   // Always compute mei/form distributions live from gold_values
   // (profile snapshots had incorrect mei data — see CHO10/MAS590 bug)
@@ -166,7 +168,7 @@ async function getArtistData(code: string): Promise<ArtisanPageResponse | null> 
       elite_factor: r.elite_factor,
       available_count: listingCountMap.get(r.code) || 0,
     })),
-    denrai,
+    denrai: denraiResult.owners,
     denraiGrouped,
     heroImage,
   };

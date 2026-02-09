@@ -1244,16 +1244,78 @@ export async function resolveTeacher(teacherRef: string): Promise<ArtisanStub | 
 // DENRAI (PROVENANCE) QUERIES
 // =============================================================================
 
+export interface DenraiResult {
+  owners: Array<{ owner: string; count: number }>;
+  itemCount: number;  // unique items with provenance data
+  canonicalMap: Map<string, { parent: string | null; category: string | null }>;
+}
+
+/**
+ * Deduplicate owners within a single item using category-based rules.
+ *
+ * Groups owners by parentMap groupKey, then:
+ * 1. If a group has any child (owner != groupKey), remove the generic parent entry
+ * 2. Among children, if both 'person' and 'family' categories exist, remove 'family' entries
+ * 3. Different people in the same family are kept (legitimate provenance)
+ * 4. Everything else (institution, shrine, uncategorized) preserved
+ */
+function dedupWithinItem(
+  owners: string[],
+  canonicalMap: Map<string, { parent: string | null; category: string | null }>
+): string[] {
+  // Group owners by groupKey = parent || self
+  const groups = new Map<string, Array<{ owner: string; category: string | null }>>();
+
+  for (const owner of owners) {
+    const info = canonicalMap.get(owner);
+    const groupKey = info?.parent || owner;
+    const category = info?.category || null;
+    if (!groups.has(groupKey)) groups.set(groupKey, []);
+    groups.get(groupKey)!.push({ owner, category });
+  }
+
+  const result: string[] = [];
+
+  for (const [groupKey, members] of groups) {
+    // Check if any member is a child (owner !== groupKey)
+    const hasChild = members.some(m => m.owner !== groupKey);
+
+    let filtered = members;
+
+    // Rule 1: Remove generic parent if any child exists
+    if (hasChild) {
+      filtered = filtered.filter(m => m.owner !== groupKey);
+    }
+
+    // Rule 2: Person trumps family within the same group
+    const hasPerson = filtered.some(m => m.category === 'person');
+    const hasFamily = filtered.some(m => m.category === 'family');
+    if (hasPerson && hasFamily) {
+      filtered = filtered.filter(m => m.category !== 'family');
+    }
+
+    // Rules 3 & 4: Keep all remaining
+    for (const m of filtered) {
+      result.push(m.owner);
+    }
+  }
+
+  return result;
+}
+
 /**
  * Fetch denrai (provenance) owner data for an artisan by entity code.
  * Queries gold_values by gold_smith_id or gold_maker_id for reliable matching,
- * unnests gold_denrai_owners in JS, and aggregates counts per owner.
- * Returns all owners sorted by count descending.
+ * unnests gold_denrai_owners in JS, deduplicates within each item using
+ * category-based rules, and aggregates counts per owner.
+ *
+ * Returns DenraiResult with deduped owner counts, item count, and canonical map
+ * (reusable by getDenraiGrouped to avoid duplicate queries).
  */
 export async function getDenraiForArtisan(
   code: string,
   entityType: 'smith' | 'tosogu'
-): Promise<Array<{ owner: string; count: number }>> {
+): Promise<DenraiResult> {
   const codeColumn = entityType === 'smith' ? 'gold_smith_id' : 'gold_maker_id';
 
   const { data, error } = await yuhinkaiClient
@@ -1264,12 +1326,53 @@ export async function getDenraiForArtisan(
 
   if (error) {
     console.error('[Yuhinkai] Denrai query error:', error);
-    return [];
+    return { owners: [], itemCount: 0, canonicalMap: new Map() };
   }
 
-  if (!data || data.length === 0) return [];
+  if (!data || data.length === 0) {
+    return { owners: [], itemCount: 0, canonicalMap: new Map() };
+  }
 
-  // Aggregate: for each row, unnest owners and count per owner
+  // Phase 1: Collect all unique owner names across all rows
+  const allOwnerNames = new Set<string>();
+  for (const row of data) {
+    const owners = row.gold_denrai_owners as string[];
+    if (!owners || !Array.isArray(owners)) continue;
+    for (const owner of owners) {
+      const trimmed = owner.trim();
+      if (trimmed) allOwnerNames.add(trimmed);
+    }
+  }
+
+  if (allOwnerNames.size === 0) {
+    return { owners: [], itemCount: data.length, canonicalMap: new Map() };
+  }
+
+  // Phase 2: Fetch canonical_name, parent_canonical, category from denrai_canonical_names
+  const canonicalMap = new Map<string, { parent: string | null; category: string | null }>();
+  const ownerNameArray = [...allOwnerNames];
+  const BATCH_SIZE = 200;
+
+  for (let i = 0; i < ownerNameArray.length; i += BATCH_SIZE) {
+    const batch = ownerNameArray.slice(i, i + BATCH_SIZE);
+    const { data: mappings } = await yuhinkaiClient
+      .from('denrai_canonical_names')
+      .select('canonical_name, parent_canonical, category')
+      .in('canonical_name', batch);
+
+    if (mappings) {
+      for (const row of mappings) {
+        if (row.canonical_name) {
+          canonicalMap.set(row.canonical_name, {
+            parent: row.parent_canonical || null,
+            category: row.category || null,
+          });
+        }
+      }
+    }
+  }
+
+  // Phase 3: For each row, deduplicate within-item, then count into ownerMap
   const ownerMap = new Map<string, number>();
 
   for (const row of data) {
@@ -1278,21 +1381,32 @@ export async function getDenraiForArtisan(
     const owners = row.gold_denrai_owners as string[];
     if (!owners || !Array.isArray(owners)) continue;
 
-    // Count each unique owner per row (unnest semantics — one count per item/row)
+    // Deduplicate names within this row first
     const seen = new Set<string>();
+    const uniqueOwners: string[] = [];
     for (const owner of owners) {
       const trimmed = owner.trim();
       if (trimmed && !seen.has(trimmed)) {
         seen.add(trimmed);
-        ownerMap.set(trimmed, (ownerMap.get(trimmed) || 0) + 1);
+        uniqueOwners.push(trimmed);
       }
+    }
+
+    // Apply within-item dedup rules (person trumps family, etc.)
+    const deduped = dedupWithinItem(uniqueOwners, canonicalMap);
+
+    // Count each deduped owner once per item
+    for (const owner of deduped) {
+      ownerMap.set(owner, (ownerMap.get(owner) || 0) + 1);
     }
   }
 
   // Convert to sorted array, all owners
-  return Array.from(ownerMap.entries())
+  const sortedOwners = Array.from(ownerMap.entries())
     .map(([owner, count]) => ({ owner, count }))
     .sort((a, b) => b.count - a.count);
+
+  return { owners: sortedOwners, itemCount: data.length, canonicalMap };
 }
 
 // =============================================================================
@@ -1310,31 +1424,24 @@ export type DenraiGroup = {
  * Fetch denrai data grouped by family hierarchy using parent_canonical
  * from denrai_canonical_names. Families with 2+ members collapse into
  * a single group; singletons render flat.
+ *
+ * If precomputed DenraiResult is provided, uses its owners + canonicalMap
+ * directly (zero extra queries). Otherwise calls getDenraiForArtisan internally.
  */
 export async function getDenraiGrouped(
   code: string,
-  entityType: 'smith' | 'tosogu'
+  entityType: 'smith' | 'tosogu',
+  precomputed?: DenraiResult
 ): Promise<DenraiGroup[]> {
-  const flat = await getDenraiForArtisan(code, entityType);
+  const denraiResult = precomputed || await getDenraiForArtisan(code, entityType);
+  const { owners: flat, canonicalMap } = denraiResult;
   if (flat.length === 0) return [];
 
-  // Batch-fetch parent_canonical for all owner names.
-  // gold_denrai_owners stores canonical_name values (output of normalize_owner_name_v2),
-  // so we match against canonical_name in the lookup table.
-  const ownerNames = flat.map(d => d.owner);
-  const { data: mappings } = await yuhinkaiClient
-    .from('denrai_canonical_names')
-    .select('canonical_name, parent_canonical')
-    .in('canonical_name', ownerNames)
-    .not('parent_canonical', 'is', null);
-
-  // Build canonical_name → parent_canonical map
+  // Build parent map from canonicalMap
   const parentMap = new Map<string, string>();
-  if (mappings) {
-    for (const row of mappings) {
-      if (row.canonical_name && row.parent_canonical) {
-        parentMap.set(row.canonical_name, row.parent_canonical);
-      }
+  for (const [name, info] of canonicalMap) {
+    if (info.parent) {
+      parentMap.set(name, info.parent);
     }
   }
 
