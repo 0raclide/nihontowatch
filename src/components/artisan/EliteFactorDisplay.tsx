@@ -39,7 +39,7 @@ export function EliteFactorDisplay({
       <div className="text-xs text-muted/60 leading-relaxed space-y-0.5">
         <p>
           <span className="text-ink/80">{eliteCount}</span> of{' '}
-          <span className="text-ink/80">{totalItems}</span> certified works hold elite designations
+          <span className="text-ink/80">{totalItems}</span> works hold elite designations
         </p>
         <p>
           Top <span className="text-ink/80">{topPct}%</span> among peers

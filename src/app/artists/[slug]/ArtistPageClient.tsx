@@ -92,7 +92,7 @@ function StatsBar({ data, availableCount }: { data: ArtisanPageResponse; availab
   const items: Array<{ label: string; value: string; highlight?: boolean }> = [];
 
   if (certifications.total_items > 0) {
-    items.push({ label: 'Certified Works', value: certifications.total_items.toLocaleString() });
+    items.push({ label: 'Distinct Works', value: certifications.total_items.toLocaleString() });
   }
   if (certifications.kokuho_count > 0) {
     items.push({ label: 'Kokuhō', value: certifications.kokuho_count.toString() });
@@ -351,6 +351,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
 
             <div className="relative">
               <h1 className="text-4xl sm:text-5xl font-serif font-light text-ink leading-[1.05] tracking-tight">
+                {entity.school && <span className="text-muted/40 text-2xl sm:text-3xl">{entity.school} </span>}
                 {entity.name_romaji || entity.code}
               </h1>
               {entity.name_kanji && (
@@ -497,7 +498,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
                     juyo={certifications.juyo_count}
                   />
                   <div className="mt-4 pt-4 border-t border-border/20 flex items-baseline justify-between text-sm">
-                    <span className="text-muted/50">Total certified</span>
+                    <span className="text-muted/50">Distinct works</span>
                     <span className="text-ink font-light tabular-nums">{certifications.total_items}</span>
                   </div>
                 </div>
@@ -563,7 +564,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
                 {entity.entity_type === 'smith' ? 'Blade Forms' : 'Work Types'}
               </h2>
               <p className="text-[11px] text-muted/35 mb-7 italic">
-                Distribution across {certifications.total_items} certified works
+                Distribution across {certifications.total_items} distinct works
               </p>
               <FormDistributionBar distribution={stats.form_distribution} />
             </section>
@@ -579,7 +580,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
             <section id="signatures">
               <h2 className="text-[11px] uppercase tracking-[0.2em] text-muted/50 mb-2">Signatures</h2>
               <p className="text-[11px] text-muted/35 mb-7 italic">
-                Signature types across {certifications.total_items} certified works
+                Signature types across {certifications.total_items} distinct works
               </p>
               <MeiDistributionBar distribution={stats.mei_distribution} />
             </section>
