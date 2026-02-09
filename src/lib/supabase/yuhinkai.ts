@@ -579,7 +579,7 @@ export async function getArtisanDistributions(
 
   const { data, error } = await yuhinkaiClient
     .from('gold_values')
-    .select('gold_form_type, gold_mei_status')
+    .select('gold_form_type, gold_mei_status, gold_collections')
     .eq(idCol, code);
 
   if (error || !data || data.length === 0) return null;
@@ -588,6 +588,10 @@ export async function getArtisanDistributions(
   const mei: Record<string, number> = {};
 
   for (const row of data) {
+    // Skip orphaned JE_Koto records — unreliable data without corroborating siblings
+    const collections = row.gold_collections as string[] | null;
+    if (collections?.length === 1 && collections[0] === 'JE_Koto') continue;
+
     // Form distribution
     const rawForm = (row.gold_form_type as string | null)?.toLowerCase().trim();
     if (rawForm) {
@@ -684,7 +688,7 @@ export async function getDenraiForArtisan(
 
   const { data, error } = await yuhinkaiClient
     .from('gold_values')
-    .select('gold_denrai_owners')
+    .select('gold_denrai_owners, gold_collections')
     .eq(codeColumn, code)
     .not('gold_denrai_owners', 'is', null);
 
@@ -699,6 +703,10 @@ export async function getDenraiForArtisan(
   const ownerMap = new Map<string, number>();
 
   for (const row of data) {
+    // Skip orphaned JE_Koto records — unreliable data without corroborating siblings
+    const collections = row.gold_collections as string[] | null;
+    if (collections?.length === 1 && collections[0] === 'JE_Koto') continue;
+
     const owners = row.gold_denrai_owners as string[];
     if (!owners || !Array.isArray(owners)) continue;
 
