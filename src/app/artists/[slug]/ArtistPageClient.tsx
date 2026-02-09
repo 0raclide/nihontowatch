@@ -31,14 +31,6 @@ const FUJISHIRO_LABELS: Record<string, string> = {
   'Chu-saku':    'Average Work',
 };
 
-const FUJISHIRO_RANK: Record<string, number> = {
-  'Saijō-saku': 5, 'Sai-jo saku': 5,
-  'Jōjō-saku': 4, 'Jojo-saku': 4,
-  'Jō-saku': 3, 'Jo-saku': 3,
-  'Chūjō-saku': 2, 'Chujo-saku': 2,
-  'Chū-saku': 1, 'Chu-saku': 1,
-};
-
 // ─── HELPERS ────────────────────────────────────────────────────────────────
 
 /**
@@ -108,12 +100,6 @@ function StatsBar({ data, availableCount }: { data: ArtisanPageResponse; availab
   }
   if (certifications.tokuju_count > 0) {
     items.push({ label: 'Tokubetsu Jūyō', value: certifications.tokuju_count.toString() });
-  }
-  if (entity.fujishiro) {
-    const rank = FUJISHIRO_RANK[entity.fujishiro] || 0;
-    if (rank > 0) {
-      items.push({ label: 'Fujishiro', value: '★'.repeat(rank) });
-    }
   }
   if (certifications.juyo_count > 0) {
     items.push({ label: 'Jūyō', value: certifications.juyo_count.toString() });
@@ -351,7 +337,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
 
             <div className="relative">
               <h1 className="text-4xl sm:text-5xl font-serif font-light text-ink leading-[1.05] tracking-tight">
-                {entity.school && <span className="text-muted/40 text-2xl sm:text-3xl">{entity.school} </span>}
+                {entity.school && <span className="text-2xl sm:text-3xl">{entity.school} </span>}
                 {entity.name_romaji || entity.code}
               </h1>
               {entity.name_kanji && (
@@ -417,15 +403,6 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
                   )}
                 </>
               )}
-              {entity.fujishiro && (
-                <>
-                  <span className="text-muted/50">Fujishiro</span>
-                  <span className="text-ink">
-                    {entity.fujishiro}
-                    {fujishiroLabel && <span className="text-muted/40 ml-1.5">({fujishiroLabel})</span>}
-                  </span>
-                </>
-              )}
               {entity.toko_taikan != null && (
                 <>
                   <span className="text-muted/50">Tōkō Taikan</span>
@@ -434,6 +411,15 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
                     {rankings.toko_taikan_percentile != null && (
                       <span className="text-muted/40 ml-1.5">(top {Math.max(100 - rankings.toko_taikan_percentile, 1)}%)</span>
                     )}
+                  </span>
+                </>
+              )}
+              {entity.fujishiro && (
+                <>
+                  <span className="text-muted/50">Fujishiro</span>
+                  <span className="text-ink">
+                    {entity.fujishiro}
+                    {fujishiroLabel && <span className="text-muted/40 ml-1.5">({fujishiroLabel})</span>}
                   </span>
                 </>
               )}
