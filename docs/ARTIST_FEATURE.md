@@ -99,6 +99,7 @@ Additionally, artisan codes appear as admin-only badges on listing cards through
 |------|---------|
 | `src/lib/supabase/yuhinkai.ts` | Yuhinkai DB client — all artisan queries, types, directory functions |
 | `src/lib/artisan/slugs.ts` | URL slug generation + extraction (e.g., `masamune-MAS590`) |
+| `src/lib/artisan/displayName.ts` | **Display name deduplication** — all artisan name rendering goes through here |
 | `src/lib/seo/jsonLd.ts` | JSON-LD generators including `generateArtistDirectoryJsonLd()` |
 
 ### CSS
@@ -203,6 +204,87 @@ artisan_verified_at  — Timestamp
 artisan_verified_by  — Admin user ID
 artisan_elite_factor — Denormalized elite_factor from Yuhinkai (synced via webhook)
 ```
+
+---
+
+## Display Name Deduplication
+
+**File:** `src/lib/artisan/displayName.ts`
+
+The Yuhinkai database stores `school` and `name_romaji` as separate fields. Naively concatenating them produces duplicates like "Goto Gotō", "Shōami Shōami Denbei", or shows the wrong person entirely. All artisan name rendering goes through `getArtisanDisplayParts()`.
+
+### How It Works
+
+The function takes `(nameRomaji, school)` and returns `{ prefix, name }`. The prefix renders in lighter weight before the name. Rules are applied in order — first match wins:
+
+| Rule | Condition | Result | Example |
+|------|-----------|--------|---------|
+| **1** | school = name (macron-normalised) | Just name, no prefix | school="Gotō", name="Gotō" → **Gotō** |
+| **2** | Name starts with school (whole word) | Just name, no prefix | school="Shōami", name="Shōami Denbei" → **Shōami Denbei** |
+| **2b** | School starts with name (whole word) | School as display | school="Oishi Sa", name="Oishi" → **Oishi Sa** |
+| **3** | School ends with name (space or hyphen) | School as display | school="Sue-Naminohira", name="Naminohira" → **Sue-Naminohira** |
+| **3b** | Name is a token in school (handles `/`) | School as display | school="Natsuo / Tokyo Fine Arts", name="Natsuo" → **Natsuo / Tokyo Fine Arts** |
+| **4** | Lineage: last school word shares 4-char root with name | School prefix + real name | school="Horikawa Kunihiro", name="Kunitomo" → **Horikawa Kunitomo** |
+| **5** | First word is geographic (province/city) | Strip geo + name | school="Osaka Gassan", name="Sadakazu" → **Gassan Sadakazu** |
+| **6** | Default | School as prefix + name | school="Osafune", name="Kanemitsu" → **Osafune Kanemitsu** |
+
+### Macron Normalisation
+
+All comparisons use `norm()` which lowercases and strips macrons: "Gotō" → "goto", "Shōami" → "shoami". This ensures "Goto" and "Gotō" compare equal.
+
+### Geographic Prefixes (`GEO_PREFIXES` set)
+
+~70 Japanese provinces + major cities. When the first word of a multi-word school matches, it gets stripped (e.g., "Osaka" from "Osaka Gassan"). **Exception:** if stripping leaves only a generic word like "Province", "School", "Group", the prefix is dropped entirely and just the name is shown.
+
+### Rule 5 Safe Words (`GENERIC_WORDS` set)
+
+Words that should never stand alone as a display prefix: `province`, `school`, `group`, `branch`, `style`. This prevents "Nagato Province" → "Province Tomochika" (391 tosogu makers had this bug).
+
+### Consumers
+
+All three files import from `displayName.ts` — never inline the logic:
+
+| File | Usage | Function |
+|------|-------|----------|
+| `src/app/artists/ArtistsPageClient.tsx` | Directory card name | `getArtisanDisplayParts()` |
+| `src/app/artists/[slug]/ArtistPageClient.tsx` | Profile hero name | `getArtisanDisplayParts()` |
+| `src/app/artists/[slug]/page.tsx` | Metadata `<title>` | `getArtisanDisplayParts()` |
+| `src/app/api/browse/route.ts` | Badge text on listing cards | `getArtisanDisplayName()` |
+
+### How to Fix a Display Name Bug
+
+1. **If the name renders wrong for a specific artisan:** Check the `school` and `name_romaji` values in the Yuhinkai DB (`smith_entities` or `tosogu_makers` table). If the school value is wrong, fix it there (use oshi-v2 service key). See "Database Corrections" below.
+
+2. **If an entire class of names renders wrong:** Add/modify a rule in `getArtisanDisplayParts()`. Rules are ordered — be careful about rule precedence. Test with `npx tsx -e` using the pattern in `docs/SESSION_20260209_DISPLAY_NAME_AUDIT.md`.
+
+3. **If a province/city is missing from geo-stripping:** Add it to the `GEO_PREFIXES` set. Include alternate romanisations (e.g., both "tamba" and "tanba").
+
+4. **If a new generic word causes "Province"-style bugs:** Add it to `GENERIC_WORDS`.
+
+### Database Corrections
+
+The Yuhinkai database is in a **separate Supabase project** from NihontoWatch:
+
+- **URL:** `YUHINKAI_SUPABASE_URL` (in oshi-v2 `.env.local` as `NEXT_PUBLIC_SUPABASE_URL`)
+- **Service key:** `SUPABASE_SERVICE_ROLE_KEY` (in oshi-v2 `.env.local`)
+- **Tables:** `smith_entities` (PK: `smith_id`), `tosogu_makers` (PK: `maker_id`)
+
+Common corrections:
+- Fix a wrong `school` value: `PATCH /rest/v1/smith_entities?smith_id=eq.XXX` with `{"school": "Correct Value"}`
+- Create a missing school code: `POST /rest/v1/smith_entities` with `smith_id: "NS-SchoolName"`, `is_school_code: true`, `name_romaji` = `school` = school name
+- NS- code naming: `NS-` + CamelCase school name (e.g., `NS-SueNaminohira`, `NS-KoMihara`)
+
+### Audit History
+
+Full audit of 13,605 records completed 2026-02-09. See `docs/SESSION_20260209_DISPLAY_NAME_AUDIT.md` for:
+- All bug categories found and fixed
+- Record counts per bug type
+- Test case patterns for verifying fixes
+
+### Known Edge Cases (Low Priority)
+
+- "Waki-Goto Branches and Students" (22 records): Very long school name (31 chars). Data quality issue — could be shortened in DB.
+- "Miike" school + "Mike" name: Single-char difference not caught by any rule. Displays "Miike Mike".
 
 ---
 
