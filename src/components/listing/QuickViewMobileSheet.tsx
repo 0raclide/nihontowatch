@@ -392,8 +392,10 @@ export function QuickViewMobileSheet({
               New this week
             </span>
           )}
+          {/* Hide tmp-prefixed provisional codes from non-admin users */}
           {listing.artisan_id &&
-           listing.artisan_confidence && listing.artisan_confidence !== 'NONE' && (
+           listing.artisan_confidence && listing.artisan_confidence !== 'NONE' &&
+           (isAdmin || !listing.artisan_id.startsWith('tmp')) && (
             isAdmin ? (
               <ArtisanTooltip
                 listingId={Number(listing.id)}

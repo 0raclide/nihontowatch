@@ -673,8 +673,10 @@ export const ListingCard = memo(function ListingCard({
           </div>
 
           {/* Right side: artisan code (HIGH/MEDIUM/LOW confidence) */}
+          {/* Hide tmp-prefixed provisional codes from non-admin users */}
           {listing.artisan_id &&
-           listing.artisan_confidence && listing.artisan_confidence !== 'NONE' && (
+           listing.artisan_confidence && listing.artisan_confidence !== 'NONE' &&
+           (isAdmin || !listing.artisan_id.startsWith('tmp')) && (
             isAdmin ? (
               <ArtisanTooltip
                 listingId={parseInt(listing.id)}
