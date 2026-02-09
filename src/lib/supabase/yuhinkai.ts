@@ -611,6 +611,10 @@ export async function getArtisanDistributions(
       else if (rawMei === 'gaku' || rawMei === 'gaku-mei' || rawMei === 'gaku_mei') meiKey = 'gaku_mei';
       else if (rawMei === 'suriage') meiKey = 'suriage';
       else if (rawMei === 'shu' || rawMei === 'shu-mei' || rawMei === 'shu_mei') meiKey = 'shu_mei';
+      else if (rawMei === 'ginzogan-mei' || rawMei === 'ginzogan_mei') meiKey = 'ginzogan_mei';
+      else if (rawMei === 'kinpun-mei' || rawMei === 'kinpun_mei') meiKey = 'kinpun_mei';
+      else if (rawMei === 'kiritsuke-mei' || rawMei === 'kiritsuke_mei') meiKey = 'kiritsuke_mei';
+      else if (rawMei === 'shusho-mei' || rawMei === 'shusho_mei') meiKey = 'shusho_mei';
       else meiKey = rawMei;
       mei[meiKey] = (mei[meiKey] || 0) + 1;
     }

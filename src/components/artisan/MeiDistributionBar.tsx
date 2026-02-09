@@ -22,6 +22,10 @@ const MEI_LABELS: Record<string, string> = {
   suriage: 'Suriage',
   kinzogan_mei: 'Kinzōgan Mei',
   shu_mei: 'Shū Mei',
+  kinpun_mei: 'Kinpun Mei',
+  ginzogan_mei: 'Ginzōgan Mei',
+  kiritsuke_mei: 'Kiritsuke Mei',
+  shusho_mei: 'Shūsho Mei',
 };
 
 export function MeiDistributionBar({ distribution }: MeiDistributionBarProps) {
