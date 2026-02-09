@@ -804,8 +804,11 @@ export async function getArtisanDistributions(
 /** Priority order: Tokuju has the nicest images, Jubi the worst */
 const COLLECTION_PRIORITY: string[] = ['Tokuju', 'Juyo', 'Kokuho', 'JuBun', 'Jubi'];
 
-/** Flat collections store images as {Collection}/{item}_oshigata.jpg */
+/** Flat collections have no volume subdirectory */
 const FLAT_COLLECTIONS = new Set(['Kokuho', 'JuBun']);
+
+/** JuBun uses _combined.jpg instead of _oshigata.jpg */
+const COMBINED_COLLECTIONS = new Set(['JuBun']);
 
 /** Image storage is on a separate Supabase project from the database */
 const IMAGE_STORAGE_BASE = process.env.NEXT_PUBLIC_IMAGE_STORAGE_URL
@@ -817,18 +820,20 @@ export interface ArtisanHeroImage {
   volume: number;
   itemNumber: number;
   formType: string | null;  // e.g. 'Katana'
-  imageType: string;        // e.g. 'oshigata'
+  imageType: string;        // e.g. 'oshigata' | 'combined'
 }
 
 /**
  * Build the Supabase Storage path for a catalog image.
- * Matches the upload script conventions:
- *   Flat (Kokuho, JuBun):   {Collection}/{item}_oshigata.jpg
+ * Matches the upload script conventions (from oshi-v2):
+ *   Kokuho (flat):   Kokuho/{item}_oshigata.jpg
+ *   JuBun  (flat):   JuBun/{item}_combined.jpg
  *   Volume-based (Tokuju, Juyo, Jubi): {Collection}/{volume}_{item}_oshigata.jpg
  */
 function buildStoragePath(collection: string, volume: number, itemNumber: number): string {
+  const suffix = COMBINED_COLLECTIONS.has(collection) ? 'combined' : 'oshigata';
   if (FLAT_COLLECTIONS.has(collection)) {
-    return `${collection}/${itemNumber}_oshigata.jpg`;
+    return `${collection}/${itemNumber}_${suffix}.jpg`;
   }
   return `${collection}/${volume}_${itemNumber}_oshigata.jpg`;
 }
@@ -928,7 +933,7 @@ export async function getArtisanHeroImage(
         volume: record.volume,
         itemNumber: record.item_number,
         formType: formTypeMap.get(record.object_uuid) || null,
-        imageType: 'oshigata',
+        imageType: COMBINED_COLLECTIONS.has(targetCollection) ? 'combined' : 'oshigata',
       };
     }
   }
