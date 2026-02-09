@@ -36,6 +36,7 @@
 
 | Document | Date | Summary |
 |----------|------|---------|
+| [SESSION_20260209_ARTISAN_DISPLAY_NAMES.md](./SESSION_20260209_ARTISAN_DISPLAY_NAMES.md) | 2026-02-09 | **Artisan display names on badges** — server-side enrichment from Yuhinkai, `getArtisanNames()` batch lookup |
 | [SESSION_20260208_ARTIST_DIRECTORY.md](./SESSION_20260208_ARTIST_DIRECTORY.md) | 2026-02-08 | **Artist directory & profiles** — `/artists` page, designation counts, "for sale" QuickView links, provenance |
 | [SESSION_20260201_USER_ENGAGEMENT_ANALYTICS.md](./SESSION_20260201_USER_ENGAGEMENT_ANALYTICS.md) | 2026-02-01 | **User engagement analytics** - 4-agent implementation of `/admin/analytics` dashboard |
 | [SESSION_20260125_TRIAL_MODE.md](./SESSION_20260125_TRIAL_MODE.md) | 2026-01-25 | **Trial mode & business pivot** - All features free, hybrid model (free collectors, paid dealers) |

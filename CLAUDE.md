@@ -501,11 +501,13 @@ Displays Yuhinkai artisan codes (e.g., "MAS590", "OWA009") on listing cards for 
 - Stores `artisan_id` and `artisan_confidence` in listings table
 
 **Display:**
-- Badge appears on **right side** of certification row (e.g., "TOKUBETSU HOZON" left, "MAS590" right)
+- Badge appears on **right side** of certification row (e.g., "TOKUBETSU HOZON" left, artisan name right)
+- Badge text shows **display name** (e.g., "Osafune Yasumitsu") resolved server-side from Yuhinkai, falling back to raw code if unavailable
+- `artisan_display_name` field is enriched by browse and listing detail APIs via `getArtisanNames()` + `getArtisanDisplayName()`
 - **Green** = HIGH confidence (exact kanji match or LLM consensus)
 - **Yellow** = MEDIUM confidence (romaji match or school fallback)
 - **Gray** = LOW confidence (LLM disagreement)
-- Only visible to **admin users**
+- Admin users see tooltip with code, candidates, and verification buttons; non-admin badges link to `/artists/{code}`
 
 **Tooltip (click badge):**
 - Shows artisan details from Yuhinkai database (name kanji/romaji, school, province, era)
@@ -526,8 +528,9 @@ Displays Yuhinkai artisan codes (e.g., "MAS590", "OWA009") on listing cards for 
 | Tooltip component | `src/components/artisan/ArtisanTooltip.tsx` |
 | Artisan details API | `src/app/api/artisan/[code]/route.ts` |
 | Verification API | `src/app/api/listing/[id]/verify-artisan/route.ts` |
-| Yuhinkai client | `src/lib/supabase/yuhinkai.ts` |
-| API filter | `src/app/api/browse/route.ts` (artisanCode param) |
+| Yuhinkai client | `src/lib/supabase/yuhinkai.ts` (`getArtisanNames()` for batch lookup) |
+| Display name logic | `src/lib/artisan/displayName.ts` (`getArtisanDisplayName()`) |
+| API filter | `src/app/api/browse/route.ts` (artisanCode param + display name enrichment) |
 | DB schema | `supabase/migrations/048_artisan_matching.sql`, `049_artisan_verification.sql` |
 
 ### Artist Feature (`/artists` + `/artists/[slug]`)
