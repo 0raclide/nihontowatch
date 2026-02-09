@@ -154,7 +154,7 @@ export function ArtisanListings({ code, artisanName, initialListings, status = '
         >
           {status === 'sold'
             ? `Browse sold archive for ${artisanName || code}`
-            : `Browse all for sale by ${artisanName || code}`} &rarr;
+            : `Browse all on the market by ${artisanName || code}`} &rarr;
         </Link>
       </div>
     </div>

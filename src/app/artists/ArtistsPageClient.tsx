@@ -287,7 +287,7 @@ export function ArtistsPageClient({
           >
             <option value="elite_factor">Sort: Elite Factor</option>
             <option value="total_items">Sort: Total Works</option>
-            <option value="for_sale">Sort: For Sale</option>
+            <option value="for_sale">Sort: On the Market</option>
             <option value="name">Sort: Name A-Z</option>
           </select>
 
@@ -535,7 +535,7 @@ function ArtistCard({ artist }: { artist: ArtistWithSlug }) {
             onClick={(e) => e.stopPropagation()}
             className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium hover:text-emerald-500 dark:hover:text-emerald-300 transition-colors"
           >
-            {availableCount} for sale
+            {availableCount} on the market
             <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
             </svg>
