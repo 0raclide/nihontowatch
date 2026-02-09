@@ -366,109 +366,112 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
           {/* Quick stats bar */}
           <StatsBar data={data} availableCount={listings ? listings.length : null} />
 
-          {/* Featured catalog image */}
-          {heroImage && (
-            <figure className="mt-10 pt-8 border-t border-border/30 flex flex-col items-center">
-              <div className="w-[280px] h-[280px] sm:w-[340px] sm:h-[340px] rounded-lg overflow-hidden shadow-lg shadow-black/20">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={heroImage.imageUrl}
-                  alt={`${heroImage.imageType === 'oshigata' ? 'Oshigata' : 'Image'} — ${entity.name_romaji || entity.code}, ${COLLECTION_LABELS[heroImage.collection] || heroImage.collection}`}
-                  className="w-full h-full object-cover"
-                  loading="eager"
-                />
-              </div>
-              <figcaption className="mt-4 text-center space-y-1">
-                <div className="text-[10px] uppercase tracking-[0.2em] text-gold/60 font-medium">
-                  {COLLECTION_LABELS[heroImage.collection] || heroImage.collection}
-                </div>
-                <div className="text-[11px] text-ink/30 tabular-nums">
-                  Vol. {heroImage.volume}, No. {heroImage.itemNumber}
-                  {heroImage.formType && <> &middot; {heroImage.formType}</>}
-                </div>
-              </figcaption>
-            </figure>
-          )}
-
-          {/* Vitals panel — biographical metadata */}
+          {/* Vitals — image + metadata as one cohesive unit */}
           <div className="mt-10 pt-8 border-t border-border/30">
-            <div className="grid grid-cols-[auto_1fr] gap-x-10 gap-y-2.5 text-sm">
-              {entity.province && (
-                <>
-                  <span className="text-ink/45">Province</span>
-                  <span className="text-ink">{entity.province}</span>
-                </>
+            <div className={`flex flex-col ${heroImage ? 'sm:flex-row sm:gap-8' : ''}`}>
+              {/* Catalog image — left column */}
+              {heroImage && (
+                <figure className="mb-6 sm:mb-0 shrink-0">
+                  <div className="w-full sm:w-[240px] aspect-square overflow-hidden">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={heroImage.imageUrl}
+                      alt={`${heroImage.imageType === 'oshigata' ? 'Oshigata' : 'Image'} — ${entity.name_romaji || entity.code}, ${COLLECTION_LABELS[heroImage.collection] || heroImage.collection}`}
+                      className="w-full h-full object-cover"
+                      loading="eager"
+                    />
+                  </div>
+                  <figcaption className="mt-2 space-y-0.5">
+                    <div className="text-[10px] uppercase tracking-[0.2em] text-gold/50 font-medium">
+                      {COLLECTION_LABELS[heroImage.collection] || heroImage.collection}
+                    </div>
+                    <div className="text-[10px] text-ink/25 tabular-nums">
+                      Vol. {heroImage.volume}, No. {heroImage.itemNumber}
+                      {heroImage.formType && <> &middot; {heroImage.formType}</>}
+                    </div>
+                  </figcaption>
+                </figure>
               )}
-              {entity.era && (
-                <>
-                  <span className="text-ink/45">Era</span>
-                  <span className="text-ink">{entity.era}</span>
-                </>
-              )}
-              {entity.period && entity.period !== entity.era && (
-                <>
-                  <span className="text-ink/45">Period</span>
-                  <span className="text-ink">{entity.period}</span>
-                </>
-              )}
-              {entity.school && (
-                <>
-                  <span className="text-ink/45">School</span>
-                  <span className="text-ink">{entity.school}</span>
-                </>
-              )}
-              {entity.generation && (
-                <>
-                  <span className="text-ink/45">Generation</span>
-                  <span className="text-ink">{entity.generation}</span>
-                </>
-              )}
-              {entity.teacher && (
-                <>
-                  <span className="text-ink/45">Teacher</span>
-                  {lineage.teacher ? (
-                    <Link href={`/artists/${lineage.teacher.slug}`} className="text-ink hover:text-gold transition-colors">
-                      {lineage.teacher.name_romaji || entity.teacher}
-                    </Link>
-                  ) : (
-                    <span className="text-ink">{entity.teacher}</span>
-                  )}
-                </>
-              )}
-              {entity.toko_taikan != null && (
-                <>
-                  <span className="text-ink/45">Tōkō Taikan</span>
-                  <span className="text-ink">
-                    {entity.toko_taikan.toLocaleString()}
-                    {rankings.toko_taikan_percentile != null && (
-                      <span className="text-ink/35 ml-1.5">(top {Math.max(100 - rankings.toko_taikan_percentile, 1)}%)</span>
+
+              {/* Metadata — right column, top-aligned */}
+              <div className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-1.5 text-sm self-start">
+                {entity.province && (
+                  <>
+                    <span className="text-ink/40">Province</span>
+                    <span className="text-ink">{entity.province}</span>
+                  </>
+                )}
+                {entity.era && (
+                  <>
+                    <span className="text-ink/40">Era</span>
+                    <span className="text-ink">{entity.era}</span>
+                  </>
+                )}
+                {entity.period && entity.period !== entity.era && (
+                  <>
+                    <span className="text-ink/40">Period</span>
+                    <span className="text-ink">{entity.period}</span>
+                  </>
+                )}
+                {entity.school && (
+                  <>
+                    <span className="text-ink/40">School</span>
+                    <span className="text-ink">{entity.school}</span>
+                  </>
+                )}
+                {entity.generation && (
+                  <>
+                    <span className="text-ink/40">Generation</span>
+                    <span className="text-ink">{entity.generation}</span>
+                  </>
+                )}
+                {entity.teacher && (
+                  <>
+                    <span className="text-ink/40">Teacher</span>
+                    {lineage.teacher ? (
+                      <Link href={`/artists/${lineage.teacher.slug}`} className="text-ink hover:text-gold transition-colors">
+                        {lineage.teacher.name_romaji || entity.teacher}
+                      </Link>
+                    ) : (
+                      <span className="text-ink">{entity.teacher}</span>
                     )}
-                  </span>
-                </>
-              )}
-              {entity.fujishiro && (
+                  </>
+                )}
+                {entity.toko_taikan != null && (
+                  <>
+                    <span className="text-ink/40">Toko Taikan</span>
+                    <span className="text-ink">
+                      {entity.toko_taikan.toLocaleString()}
+                      {rankings.toko_taikan_percentile != null && (
+                        <span className="text-ink/30 ml-1.5">(top {Math.max(100 - rankings.toko_taikan_percentile, 1)}%)</span>
+                      )}
+                    </span>
+                  </>
+                )}
+                {entity.fujishiro && (
+                  <>
+                    <span className="text-ink/40">Fujishiro</span>
+                    <span className="text-ink">
+                      {entity.fujishiro}
+                      {fujishiroLabel && <span className="text-ink/30 ml-1.5">({fujishiroLabel})</span>}
+                    </span>
+                  </>
+                )}
+                {entity.specialties && entity.specialties.length > 0 && (
+                  <>
+                    <span className="text-ink/40">Specialties</span>
+                    <span className="text-ink">{entity.specialties.join(', ')}</span>
+                  </>
+                )}
                 <>
-                  <span className="text-ink/45">Fujishiro</span>
-                  <span className="text-ink">
-                    {entity.fujishiro}
-                    {fujishiroLabel && <span className="text-ink/35 ml-1.5">({fujishiroLabel})</span>}
-                  </span>
+                  <span className="text-ink/40">Type</span>
+                  <span className="text-ink">{entity.entity_type === 'smith' ? 'Swordsmith' : 'Tosogu Maker'}</span>
                 </>
-              )}
-              {entity.specialties && entity.specialties.length > 0 && (
                 <>
-                  <span className="text-ink/45">Specialties</span>
-                  <span className="text-ink">{entity.specialties.join(', ')}</span>
+                  <span className="text-ink/40">Code</span>
+                  <span className="text-ink font-mono text-xs tracking-wide">{entity.code}</span>
                 </>
-              )}
-              <>
-                <span className="text-ink/45">Type</span>
-                <span className="text-ink">{entity.entity_type === 'smith' ? 'Swordsmith' : 'Tosogu Maker'}</span>
-              </>
-              <>
-                <span className="text-ink/45">Code</span>
-                <span className="text-ink font-mono text-xs tracking-wide">{entity.code}</span>
-              </>
+              </div>
             </div>
           </div>
 
