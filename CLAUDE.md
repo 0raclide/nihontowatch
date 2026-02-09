@@ -520,13 +520,22 @@ Displays Yuhinkai artisan codes (e.g., "MAS590", "OWA009") on listing cards for 
 - URL param: `?artisan=MAS590` (substring match)
 - Search box: Type artisan code directly (e.g., "OWA009") - auto-detected by pattern
 
+**Admin "Set Artisan" widget (QuickView):**
+- Collapsible panel in QuickView for manually assigning artisan codes to unmatched listings
+- Search with auto-detected type filtering (smith/tosogu based on item_type)
+- Uses `/api/artisan/search` + `/api/listing/[id]/fix-artisan`
+- Admin also sees edit pen icon next to artisan badges in QuickView for quick corrections via ArtisanTooltip
+
 **Key files:**
 | Component | Location |
 |-----------|----------|
 | CSS colors | `src/app/globals.css` (--artisan-high, --artisan-medium, --artisan-low) |
 | Badge display | `src/components/browse/ListingCard.tsx` (certification row) |
 | Tooltip component | `src/components/artisan/ArtisanTooltip.tsx` |
+| Admin set artisan | `src/components/artisan/AdminArtisanWidget.tsx` |
 | Artisan details API | `src/app/api/artisan/[code]/route.ts` |
+| Artisan search API | `src/app/api/artisan/search/route.ts` |
+| Fix artisan API | `src/app/api/listing/[id]/fix-artisan/route.ts` |
 | Verification API | `src/app/api/listing/[id]/verify-artisan/route.ts` |
 | Yuhinkai client | `src/lib/supabase/yuhinkai.ts` (`getArtisanNames()` for batch lookup) |
 | Display name logic | `src/lib/artisan/displayName.ts` (`getArtisanDisplayName()`) |
@@ -563,6 +572,7 @@ For detailed implementation docs, see:
 - `docs/PRO_TIER_IMPLEMENTATION.md` - Implementation checklist
 - `docs/PRO_TIER_STRATEGY.md` - Business strategy
 - `docs/SESSION_20260208_ARTIST_DIRECTORY.md` - Artist directory implementation session
+- `docs/SESSION_20260209_ADMIN_SET_ARTISAN.md` - Admin artisan assignment widget session
 
 ---
 
