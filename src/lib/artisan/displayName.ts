@@ -25,18 +25,22 @@ function norm(s: string): string {
 // ---------------------------------------------------------------------------
 
 const GEO_PREFIXES = new Set([
-  // Major sword provinces
+  // Major sword provinces (all romanisation variants)
   'aki', 'awa', 'bingo', 'bitchu', 'bizen', 'bungo', 'buzen', 'chikugo',
-  'chikuzen', 'echigo', 'echizen', 'etchu', 'harima', 'higo', 'hitachi',
-  'hizen', 'hoki', 'hyuga', 'iga', 'inaba', 'ise', 'iwami', 'iyo',
-  'izumi', 'izumo', 'kaga', 'kai', 'kawachi', 'kazusa', 'kii', 'kozuke',
-  'mikawa', 'mino', 'musashi', 'mutsu', 'nagato', 'noto', 'omi', 'osumi',
-  'owari', 'rikuzen', 'sagami', 'sanuki', 'satsuma', 'settsu', 'shimosa',
-  'shimotsuke', 'shinano', 'suou', 'suruga', 'tajima', 'tamba', 'tango',
-  'tosa', 'totomi', 'ugo', 'uzen', 'wakasa', 'yamashiro', 'yamato',
+  'chikuzen', 'dewa', 'echigo', 'echizen', 'etchu', 'harima', 'higo',
+  'hitachi', 'hizen', 'hoki', 'hyuga', 'iga', 'inaba', 'ise', 'iwami',
+  'iyo', 'izumi', 'izumo', 'kaga', 'kai', 'kawachi', 'kazusa', 'kii',
+  'kozuke', 'mikawa', 'mimasaka', 'mino', 'musashi', 'mutsu', 'nagato',
+  'noto', 'omi', 'osumi', 'owari', 'rikuzen', 'sagami', 'sanuki',
+  'satsuma', 'settsu', 'shimosa', 'shimotsuke', 'shinano', 'suo', 'suou',
+  'suruga', 'tajima', 'tamba', 'tanba', 'tango', 'tosa', 'totomi',
+  'ugo', 'uzen', 'wakasa', 'yamashiro', 'yamato',
   // Cities commonly prefixed in school names
   'osaka', 'kyoto', 'edo', 'kamakura', 'nara', 'sakai',
 ]);
+
+/** Words that should not stand alone as a prefix after geo-stripping. */
+const GENERIC_WORDS = new Set(['province', 'school', 'group', 'branch', 'style']);
 
 // ---------------------------------------------------------------------------
 // Core logic
@@ -49,15 +53,23 @@ export interface DisplayParts {
   name: string;
 }
 
+/** Split school into tokens on spaces, hyphens, and "/" */
+function schoolTokens(school: string): string[] {
+  return school.split(/[\s/]+/).filter(Boolean);
+}
+
 /**
  * Derive non-redundant display parts for an artisan.
  *
  * Rules (applied in order):
  * 1. Exact match (macron-normalised) → no prefix
  * 2. Name starts with school → no prefix (school already in name)
- * 3. School ends with name → prefix is the leading portion of school
- * 4. Lineage overlap → last word of school shares 4+ char prefix with name → school as display
- * 5. Geographic prefix stripping → first word of school is province/city → strip it
+ * 2b. School starts with name (whole word) → show school only
+ * 3. School ends with name (space or hyphen) → show school only
+ * 3b. Name appears as a token in school → show school only
+ * 4. School ends with name exactly (normalised) → show school only
+ * 5. Geographic prefix stripping → first word is province/city → strip it
+ *    (but only if remainder is meaningful, not just "Province")
  * 6. Default → school as prefix
  */
 export function getArtisanDisplayParts(
@@ -76,24 +88,41 @@ export function getArtisanDisplayParts(
   }
 
   // Rule 2: name already starts with school (e.g. school="Gotō", name="Gotō Renjō")
-  if (nNorm.startsWith(sNorm + ' ') || nNorm.startsWith(sNorm)) {
-    // Only suppress if the normalized school is a whole-word prefix of name
+  if (nNorm.startsWith(sNorm)) {
     const afterSchool = nNorm.slice(sNorm.length);
     if (afterSchool === '' || afterSchool.startsWith(' ')) {
       return { prefix: null, name };
     }
   }
 
+  // Rule 2b: school starts with name as a whole word (e.g. school="Oishi Sa", name="Oishi")
+  if (sNorm.startsWith(nNorm)) {
+    const afterName = sNorm.slice(nNorm.length);
+    if (afterName === '' || afterName.startsWith(' ')) {
+      return { prefix: null, name: school };
+    }
+  }
+
   // Rule 3: school ends with name (e.g. school="Hizen Tadayoshi", name="Tadayoshi"
   // or school="Sue-Naminohira", name="Naminohira")
-  // Use school as the full display name — no separate prefix needed.
   if (sNorm.endsWith(' ' + nNorm) || sNorm.endsWith('-' + nNorm)) {
     return { prefix: null, name: school };
   }
 
-  // Rule 4: lineage overlap — last word of school shares 4+ char root with first word of name
+  // Rule 3b: name appears as a token in school (handles "/" separators etc.)
+  // e.g. school="Natsuo / Tokyo Fine Arts", name="Natsuo"
+  const sTokens = schoolTokens(school).map(norm);
+  if (sTokens.includes(nNorm)) {
+    return { prefix: null, name: school };
+  }
+
+  // Rule 4: lineage substitution — multi-word school where the last word
+  // shares a 4+ char root with the artisan's name (same lineage, different person).
+  // Strip the lineage founder's name, keep the school/province prefix.
+  // e.g. "Horikawa Kunihiro" + "Kunitomo" → "Horikawa Kunitomo"
+  //      "Hizen Tadayoshi"   + "Tadahiro" → "Hizen Tadahiro"
   const schoolWords = school.split(' ');
-  if (schoolWords.length >= 1) {
+  if (schoolWords.length >= 2) {
     const lastSchoolWord = norm(schoolWords[schoolWords.length - 1]);
     const firstNameWord = norm(name.split(' ')[0]);
     if (
@@ -101,7 +130,8 @@ export function getArtisanDisplayParts(
       firstNameWord.length >= 4 &&
       lastSchoolWord.slice(0, 4) === firstNameWord.slice(0, 4)
     ) {
-      return { prefix: null, name: school };
+      const lineagePrefix = schoolWords.slice(0, -1).join(' ');
+      return { prefix: lineagePrefix, name };
     }
   }
 
@@ -110,7 +140,13 @@ export function getArtisanDisplayParts(
     const firstWord = norm(schoolWords[0]);
     if (GEO_PREFIXES.has(firstWord)) {
       const stripped = schoolWords.slice(1).join(' ');
-      return { prefix: stripped, name };
+      const strippedNorm = norm(stripped);
+      // Don't strip if the remainder is just a generic word like "Province"
+      if (!GENERIC_WORDS.has(strippedNorm)) {
+        return { prefix: stripped, name };
+      }
+      // "Aki Province" → just show name with no prefix (province shown elsewhere)
+      return { prefix: null, name };
     }
   }
 
