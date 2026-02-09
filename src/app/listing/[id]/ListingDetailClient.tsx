@@ -138,7 +138,7 @@ export default function ListingDetailPage() {
       setError(null);
 
       try {
-        const response = await fetch(`/api/listing/${listingId}`);
+        const response = await fetch(`/api/listing/${listingId}?nocache=1`, { cache: 'no-store' });
 
         if (!response.ok) {
           const errorData = await response.json();
@@ -441,8 +441,8 @@ export default function ListingDetailPage() {
               <AdminSetsumeiWidget
                 listing={listing as unknown as Listing}
                 onConnectionChanged={() => {
-                  // Refetch listing to show updated enrichment
-                  fetch(`/api/listing/${listingId}`)
+                  // Refetch listing to show updated enrichment (bypass edge cache)
+                  fetch(`/api/listing/${listingId}?nocache=1`, { cache: 'no-store' })
                     .then(res => res.json())
                     .then(data => {
                       if (data.listing) {

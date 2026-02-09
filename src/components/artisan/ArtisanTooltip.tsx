@@ -19,13 +19,15 @@ interface ArtisanCandidate {
 
 interface ArtisanTooltipProps {
   listingId: number;
-  artisanId: string;
-  confidence: 'HIGH' | 'MEDIUM' | 'LOW';
+  artisanId?: string | null;
+  confidence?: 'HIGH' | 'MEDIUM' | 'LOW' | null;
   method?: string | null;
   candidates?: ArtisanCandidate[] | null;
   verified?: 'correct' | 'incorrect' | null;
   onVerify?: (status: 'correct' | 'incorrect' | null) => void;
   onArtisanFixed?: (newArtisanId: string) => void;
+  /** Open directly in search/assign mode (for listings with no artisan) */
+  startInSearchMode?: boolean;
   children: React.ReactNode;
 }
 
@@ -38,6 +40,7 @@ export function ArtisanTooltip({
   verified: initialVerified,
   onVerify,
   onArtisanFixed,
+  startInSearchMode = false,
   children,
 }: ArtisanTooltipProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -52,11 +55,12 @@ export function ArtisanTooltip({
   const tooltipRef = useRef<HTMLDivElement>(null);
 
   // State for artisan ID (can change after fix)
-  const [artisanId, setArtisanId] = useState(initialArtisanId);
-  const [confidence, setConfidence] = useState(initialConfidence);
+  const [artisanId, setArtisanId] = useState(initialArtisanId || '');
+  const [confidence, setConfidence] = useState(initialConfidence || 'LOW' as const);
+  const hasArtisan = !!artisanId;
 
-  // Correction mode state
-  const [showCorrectionSearch, setShowCorrectionSearch] = useState(false);
+  // Correction mode state — auto-open search when no artisan assigned
+  const [showCorrectionSearch, setShowCorrectionSearch] = useState(startInSearchMode && !initialArtisanId);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<ArtisanSearchResult[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -77,7 +81,7 @@ export function ArtisanTooltip({
 
   // Sync artisan ID when prop changes (e.g., after fix)
   useEffect(() => {
-    setArtisanId(initialArtisanId);
+    setArtisanId(initialArtisanId || '');
   }, [initialArtisanId]);
 
   // Focus search input when correction mode opens
@@ -174,9 +178,9 @@ export function ArtisanTooltip({
     }
   };
 
-  // Fetch artisan details when tooltip opens
+  // Fetch artisan details when tooltip opens (skip if no artisan assigned)
   const fetchArtisan = useCallback(async () => {
-    if (artisan || loading) return;
+    if (!artisanId || artisan || loading) return;
 
     setLoading(true);
     setError(null);
@@ -198,12 +202,19 @@ export function ArtisanTooltip({
     }
   }, [artisanId, artisan, loading]);
 
-  // Fetch on open
+  // Fetch on open (only if artisan exists)
   useEffect(() => {
-    if (isOpen && !artisan && !loading) {
+    if (isOpen && artisanId && !artisan && !loading) {
       fetchArtisan();
     }
-  }, [isOpen, artisan, loading, fetchArtisan]);
+  }, [isOpen, artisanId, artisan, loading, fetchArtisan]);
+
+  // Auto-open search when tooltip opens in search mode with no artisan
+  useEffect(() => {
+    if (isOpen && startInSearchMode && !artisanId) {
+      setShowCorrectionSearch(true);
+    }
+  }, [isOpen, startInSearchMode, artisanId]);
 
   // Position tooltip relative to document (absolute positioning allows scrolling)
   useEffect(() => {
@@ -307,11 +318,15 @@ export function ArtisanTooltip({
           >
             {/* Header with code, confidence, and close button */}
             <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-mono font-semibold text-ink">{artisanId}</span>
+              <span className="text-sm font-mono font-semibold text-ink">
+                {hasArtisan ? artisanId : 'Assign Artisan'}
+              </span>
               <div className="flex items-center gap-2">
-                <span className={`text-[10px] font-medium px-2 py-0.5 rounded ${confidenceColor}`}>
-                  {confidence}
-                </span>
+                {hasArtisan && (
+                  <span className={`text-[10px] font-medium px-2 py-0.5 rounded ${confidenceColor}`}>
+                    {confidence}
+                  </span>
+                )}
                 <button
                   onClick={() => setIsOpen(false)}
                   className="p-1 -mr-1 text-muted hover:text-ink transition-colors rounded hover:bg-surface"
@@ -336,8 +351,8 @@ export function ArtisanTooltip({
               <p className="text-xs text-red-500 py-2">{error}</p>
             )}
 
-            {/* Artisan details */}
-            {!loading && !error && (
+            {/* Artisan details (skip when no artisan — show search only) */}
+            {!loading && !error && hasArtisan && (
               <>
                 {/* Name (kanji + romaji) */}
                 {artisan ? (
@@ -643,6 +658,106 @@ export function ArtisanTooltip({
                     >
                       Cancel search
                     </button>
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* No artisan assigned — show search directly */}
+            {!loading && !error && !hasArtisan && (
+              <>
+                <p className="text-xs text-muted mb-3">No artisan assigned to this listing.</p>
+
+                {/* Success message after fix */}
+                {fixSuccess && (
+                  <div className="py-2 px-3 bg-green-500/10 border border-green-500/30 rounded text-xs text-green-500 flex items-center gap-2">
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Artisan assigned successfully
+                  </div>
+                )}
+
+                {/* Search panel (always visible when no artisan) */}
+                {!fixSuccess && (
+                  <div>
+                    <div className="text-[10px] uppercase tracking-wider text-muted mb-2">
+                      Search for artisan:
+                    </div>
+
+                    <div className="relative mb-2">
+                      <input
+                        ref={searchInputRef}
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Name, code, or school..."
+                        className="w-full px-3 py-2 text-xs bg-surface border border-border rounded focus:outline-none focus:border-gold/50 text-ink placeholder:text-muted"
+                      />
+                      {searchLoading && (
+                        <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                          <div className="w-4 h-4 border-2 border-muted border-t-gold rounded-full animate-spin" />
+                        </div>
+                      )}
+                    </div>
+
+                    {searchError && (
+                      <p className="text-[10px] text-red-500 mb-2">{searchError}</p>
+                    )}
+
+                    {searchResults.length > 0 && (
+                      <div className="max-h-48 overflow-y-auto space-y-1 scrollbar-thin">
+                        {searchResults.map((result) => (
+                          <button
+                            key={result.code}
+                            onClick={() => handleSelectArtisan(result)}
+                            disabled={fixing}
+                            className={`w-full text-left p-2 rounded border border-border hover:border-gold/50 hover:bg-gold/5 transition-colors ${
+                              fixing ? 'opacity-50 cursor-not-allowed' : ''
+                            }`}
+                          >
+                            <div className="flex items-center justify-between mb-0.5">
+                              <span className="font-mono text-xs font-medium text-gold">
+                                {result.code}
+                              </span>
+                              <span className="text-[9px] text-muted uppercase">
+                                {result.type === 'smith' ? 'Smith' : 'Tosogu'}
+                              </span>
+                            </div>
+                            <div className="text-xs text-ink">
+                              {result.name_kanji && (
+                                <span className="font-jp mr-1">{result.name_kanji}</span>
+                              )}
+                              {result.name_romaji && (
+                                <span>{result.name_romaji}</span>
+                              )}
+                              {result.generation && (
+                                <span className="text-muted ml-1">({result.generation})</span>
+                              )}
+                            </div>
+                            {result.school && (
+                              <div className="text-[10px] text-muted mt-0.5">
+                                {result.school}
+                                {result.province && ` · ${result.province}`}
+                              </div>
+                            )}
+                            {(result.juyo_count > 0 || result.tokuju_count > 0) && (
+                              <div className="text-[10px] text-muted mt-0.5">
+                                {result.tokuju_count > 0 && `${result.tokuju_count} Tokuju`}
+                                {result.tokuju_count > 0 && result.juyo_count > 0 && ' · '}
+                                {result.juyo_count > 0 && `${result.juyo_count} Juyo`}
+                              </div>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {searchQuery.length >= 2 && !searchLoading && searchResults.length === 0 && !searchError && (
+                      <p className="text-[10px] text-muted text-center py-2">
+                        No artisans found for &quot;{searchQuery}&quot;
+                      </p>
+                    )}
                   </div>
                 )}
               </>

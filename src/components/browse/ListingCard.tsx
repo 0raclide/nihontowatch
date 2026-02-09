@@ -676,7 +676,7 @@ export const ListingCard = memo(function ListingCard({
           {/* Hide tmp-prefixed provisional codes from non-admin users */}
           {listing.artisan_id &&
            listing.artisan_confidence && listing.artisan_confidence !== 'NONE' &&
-           (isAdmin || !listing.artisan_id.startsWith('tmp')) && (
+           (isAdmin || !listing.artisan_id.startsWith('tmp')) ? (
             isAdmin ? (
               <ArtisanTooltip
                 listingId={parseInt(listing.id)}
@@ -712,7 +712,17 @@ export const ListingCard = memo(function ListingCard({
                 {listing.artisan_display_name || listing.artisan_id}
               </a>
             )
-          )}
+          ) : isAdmin && !listing.artisan_id ? (
+            /* Admin: show "Set ID" badge for unmatched listings */
+            <ArtisanTooltip
+              listingId={parseInt(listing.id)}
+              startInSearchMode
+            >
+              <span className="text-[9px] lg:text-[10px] font-mono font-medium px-1.5 py-0.5 bg-muted/10 text-muted hover:text-ink transition-colors">
+                Set ID
+              </span>
+            </ArtisanTooltip>
+          ) : null}
         </div>
 
         {/* Item Type - Primary identifier (always English), fallback to cleaned title */}
@@ -763,6 +773,10 @@ export const ListingCard = memo(function ListingCard({
     prevProps.exchangeRates?.timestamp === nextProps.exchangeRates?.timestamp &&
     // Re-render if setsumei availability changes (OCR or Yuhinkai enrichment)
     prevProps.listing.setsumei_text_en === nextProps.listing.setsumei_text_en &&
-    prevProps.listing.listing_yuhinkai_enrichment?.length === nextProps.listing.listing_yuhinkai_enrichment?.length
+    prevProps.listing.listing_yuhinkai_enrichment?.length === nextProps.listing.listing_yuhinkai_enrichment?.length &&
+    // Re-render if artisan data changes (after admin fix-artisan)
+    prevProps.listing.artisan_id === nextProps.listing.artisan_id &&
+    prevProps.listing.artisan_display_name === nextProps.listing.artisan_display_name &&
+    prevProps.listing.artisan_confidence === nextProps.listing.artisan_confidence
   );
 });

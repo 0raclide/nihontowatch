@@ -118,7 +118,7 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
               {/* Hide tmp-prefixed provisional codes from non-admin users */}
               {listing.artisan_id &&
                listing.artisan_confidence && listing.artisan_confidence !== 'NONE' &&
-               (isAdmin || !listing.artisan_id.startsWith('tmp')) && (
+               (isAdmin || !listing.artisan_id.startsWith('tmp')) ? (
                 isAdmin ? (
                   <span className="inline-flex items-center gap-0.5" data-artisan-tooltip>
                     <a
@@ -165,7 +165,21 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
                     {listing.artisan_display_name || listing.artisan_id}
                   </a>
                 )
-              )}
+              ) : isAdmin && !listing.artisan_id ? (
+                /* Admin: show "Set ID" badge with pen icon for unmatched listings */
+                <ArtisanTooltip
+                  listingId={listing.id}
+                  startInSearchMode
+                  onArtisanFixed={() => quickView?.refreshCurrentListing()}
+                >
+                  <span className="inline-flex items-center gap-0.5 text-[10px] font-mono font-medium px-2 py-0.5 rounded bg-muted/10 text-muted hover:text-ink transition-colors" data-artisan-tooltip>
+                    Set ID
+                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    </svg>
+                  </span>
+                </ArtisanTooltip>
+              ) : null}
             </div>
             <div className="flex items-center gap-2">
               {/* Study Setsumei button - only show when setsumei data available */}
