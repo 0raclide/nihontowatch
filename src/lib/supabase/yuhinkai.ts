@@ -744,6 +744,9 @@ export async function getArtisanDistributions(
 /** Priority order: Tokuju has the nicest images, Jubi the worst */
 const COLLECTION_PRIORITY: string[] = ['Tokuju', 'Juyo', 'Kokuho', 'JuBun', 'Jubi'];
 
+/** Flat collections store images as {Collection}/{item}_oshigata.jpg */
+const FLAT_COLLECTIONS = new Set(['Kokuho', 'JuBun']);
+
 export interface ArtisanHeroImage {
   imageUrl: string;
   collection: string;       // e.g. 'Tokuju'
@@ -754,9 +757,23 @@ export interface ArtisanHeroImage {
 }
 
 /**
+ * Build the Supabase Storage path for a catalog image.
+ * Matches the upload script conventions:
+ *   Flat (Kokuho, JuBun):   {Collection}/{item}_oshigata.jpg
+ *   Volume-based (Tokuju, Juyo, Jubi): {Collection}/{volume}_{item}_oshigata.jpg
+ */
+function buildStoragePath(collection: string, volume: number, itemNumber: number): string {
+  if (FLAT_COLLECTIONS.has(collection)) {
+    return `${collection}/${itemNumber}_oshigata.jpg`;
+  }
+  return `${collection}/${volume}_${itemNumber}_oshigata.jpg`;
+}
+
+/**
  * Fetch the best catalog image for an artisan's profile hero.
  * Walks collections in priority order (Tokuju → Juyo → Kokuho → JuBun → Jubi)
- * and returns the first oshigata (or fallback) image found.
+ * and constructs the storage URL directly from catalog_records data.
+ * Images are in Supabase Storage at predictable paths (no stored_images lookup needed).
  */
 export async function getArtisanHeroImage(
   code: string,
@@ -772,78 +789,54 @@ export async function getArtisanHeroImage(
 
   if (error || !goldRows || goldRows.length === 0) return null;
 
-  // 2. Bucket objects by best collection, walking priority order
+  // 2. Walk collections in priority order
   for (const targetCollection of COLLECTION_PRIORITY) {
-    const matchingObjects: Array<{ uuid: string; formType: string | null }> = [];
+    const matchingUuids: string[] = [];
+    const formTypeMap = new Map<string, string | null>();
 
     for (const row of goldRows) {
       const collections = row.gold_collections as string[] | null;
       if (collections?.includes(targetCollection)) {
-        matchingObjects.push({
-          uuid: row.object_uuid as string,
-          formType: (row.gold_form_type as string | null),
-        });
+        const uuid = row.object_uuid as string;
+        matchingUuids.push(uuid);
+        formTypeMap.set(uuid, row.gold_form_type as string | null);
       }
     }
 
-    if (matchingObjects.length === 0) continue;
+    if (matchingUuids.length === 0) continue;
 
     // 3. Get catalog records for these objects in this collection
-    const objectUuids = matchingObjects.map(o => o.uuid);
     const { data: catalogRecords } = await yuhinkaiClient
       .from('catalog_records')
-      .select('uuid, object_uuid, collection, volume, item_number')
-      .in('object_uuid', objectUuids)
+      .select('object_uuid, collection, volume, item_number')
+      .in('object_uuid', matchingUuids)
       .eq('collection', targetCollection)
-      .limit(10);
+      .limit(1);
 
     if (!catalogRecords || catalogRecords.length === 0) continue;
 
-    // 4. Get stored images for these catalog records (prefer oshigata)
-    const catalogUuids = catalogRecords.map(r => r.uuid);
-    const { data: images } = await yuhinkaiClient
-      .from('stored_images')
-      .select('catalog_record_uuid, storage_bucket, storage_path, image_type')
-      .in('catalog_record_uuid', catalogUuids)
-      .eq('is_current', true);
+    const record = catalogRecords[0];
 
-    if (!images || images.length === 0) continue;
+    // 4. Build storage URL directly from collection/volume/item
+    const storagePath = buildStoragePath(
+      record.collection,
+      record.volume,
+      record.item_number
+    );
 
-    // 5. Pick the best image: prefer oshigata > sugata > detail > any
-    const typeOrder = ['oshigata', 'sugata', 'detail'];
-    let bestImage = images[0];
-    let bestRank = typeOrder.indexOf(bestImage.image_type) >= 0
-      ? typeOrder.indexOf(bestImage.image_type)
-      : typeOrder.length;
-
-    for (const img of images) {
-      const rank = typeOrder.indexOf(img.image_type) >= 0
-        ? typeOrder.indexOf(img.image_type)
-        : typeOrder.length;
-      if (rank < bestRank) {
-        bestImage = img;
-        bestRank = rank;
-      }
-    }
-
-    // 6. Build public URL
     const { data: urlData } = yuhinkaiClient.storage
-      .from(bestImage.storage_bucket)
-      .getPublicUrl(bestImage.storage_path);
+      .from('images')
+      .getPublicUrl(storagePath);
 
     if (!urlData?.publicUrl) continue;
-
-    // Find the matching catalog record + gold_values form type
-    const catalogRecord = catalogRecords.find(r => r.uuid === bestImage.catalog_record_uuid)!;
-    const goldRow = matchingObjects.find(o => o.uuid === catalogRecord.object_uuid);
 
     return {
       imageUrl: urlData.publicUrl,
       collection: targetCollection,
-      volume: catalogRecord.volume,
-      itemNumber: catalogRecord.item_number,
-      formType: goldRow?.formType || null,
-      imageType: bestImage.image_type,
+      volume: record.volume,
+      itemNumber: record.item_number,
+      formType: formTypeMap.get(record.object_uuid) || null,
+      imageType: 'oshigata',
     };
   }
 
