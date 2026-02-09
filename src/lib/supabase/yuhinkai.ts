@@ -778,8 +778,8 @@ function buildStoragePath(collection: string, volume: number, itemNumber: number
  *
  * Selection heuristic:
  * 1. Walk collections in priority order (Tokuju → Juyo → Kokuho → JuBun → Jubi)
- * 2. Within each collection, pick the item with the MOST sibling catalog_records
- *    (most data-rich item — more siblings = more associated records, photos, etc.)
+ * 2. Within each collection, pick the item with the MOST total records
+ *    (catalog_records + linked_records — user-added photos, sayagaki, etc.)
  * 3. Construct public URL from the separate image storage Supabase project
  */
 export async function getArtisanHeroImage(
@@ -812,16 +812,26 @@ export async function getArtisanHeroImage(
 
     if (matchingUuids.length === 0) continue;
 
-    // 3. Get ALL catalog records for these objects (any collection)
-    //    to count siblings per object, then pick the one with the most records
-    const { data: allSiblings } = await yuhinkaiClient
-      .from('catalog_records')
-      .select('object_uuid')
-      .in('object_uuid', matchingUuids);
+    // 3. Count ALL associated records per object (catalog_records + linked_records)
+    //    to find the most data-rich item (user-added photos, sayagaki, etc.)
+    const [{ data: allCatalog }, { data: allLinked }] = await Promise.all([
+      yuhinkaiClient
+        .from('catalog_records')
+        .select('object_uuid')
+        .in('object_uuid', matchingUuids),
+      yuhinkaiClient
+        .from('linked_records')
+        .select('object_uuid')
+        .in('object_uuid', matchingUuids),
+    ]);
 
-    // Count siblings per object
+    // Count total records per object (catalog + user-added)
     const siblingCounts = new Map<string, number>();
-    for (const row of allSiblings || []) {
+    for (const row of allCatalog || []) {
+      const uuid = row.object_uuid as string;
+      siblingCounts.set(uuid, (siblingCounts.get(uuid) || 0) + 1);
+    }
+    for (const row of allLinked || []) {
       const uuid = row.object_uuid as string;
       siblingCounts.set(uuid, (siblingCounts.get(uuid) || 0) + 1);
     }

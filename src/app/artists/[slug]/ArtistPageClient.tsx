@@ -466,13 +466,13 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
 
               {/* Hero image */}
               {heroImage && (
-                <figure className="mt-8 sm:mt-0 flex flex-col items-center sm:items-end sm:w-[200px] shrink-0">
+                <figure className="mt-8 sm:mt-0 flex flex-col items-center sm:items-end sm:w-[320px] shrink-0">
                   <div className="relative rounded-lg overflow-hidden ring-1 ring-border/10 bg-muted/5">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={heroImage.imageUrl}
                       alt={`${heroImage.imageType === 'oshigata' ? 'Oshigata' : 'Image'} — ${entity.name_romaji || entity.code}, ${COLLECTION_LABELS[heroImage.collection] || heroImage.collection}`}
-                      className="max-h-[280px] w-auto object-contain opacity-90 dark:invert dark:opacity-80"
+                      className="max-h-[480px] w-auto object-contain"
                       loading="eager"
                     />
                   </div>
