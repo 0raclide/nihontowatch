@@ -20,11 +20,10 @@ import {
  * - If validation is pending, waits for existing promise
  * - Only fetches images that haven't been seen before
  *
- * Uses a two-phase approach:
- * 1. Initially returns all images (assumes valid)
- * 2. As images are validated, removes invalid ones
- *
- * This prevents layout shifts while still filtering bad images.
+ * Uses an "optimistic valid" approach to prevent layout shifts:
+ * - All images are assumed valid until proven otherwise
+ * - Invalid images are removed one at a time as they fail validation
+ * - This avoids the dramatic list-shrink that caused jumpy behavior
  *
  * @param imageUrls - Array of image URLs to validate
  * @returns Object with validatedImages array and loading state
@@ -33,27 +32,29 @@ import {
  * const { validatedImages, isValidating } = useValidatedImages(getAllImages(listing));
  */
 export function useValidatedImages(imageUrls: string[]) {
-  // Track which images have been validated as good
-  const [validIndices, setValidIndices] = useState<Set<number>>(new Set());
-  // Track which images have been checked (good or bad)
-  const [checkedIndices, setCheckedIndices] = useState<Set<number>>(new Set());
+  // Track which images have been confirmed invalid (to remove)
+  const [invalidIndices, setInvalidIndices] = useState<Set<number>>(new Set());
   // Track validation in progress
   const [isValidating, setIsValidating] = useState(true);
+  // Count of validated images (for stats)
+  const [validCount, setValidCount] = useState(0);
+  const [checkedCount, setCheckedCount] = useState(0);
 
   // Keep track of the URL array identity to reset on change
   const urlsRef = useRef<string[]>([]);
 
   useEffect(() => {
-    // Reset if URLs changed
+    // Reset if URLs changed (compare by content, not reference)
     const urlsChanged = imageUrls.length !== urlsRef.current.length ||
       imageUrls.some((url, i) => url !== urlsRef.current[i]);
 
-    if (urlsChanged) {
-      urlsRef.current = imageUrls;
-      setValidIndices(new Set());
-      setCheckedIndices(new Set());
-      setIsValidating(true);
-    }
+    if (!urlsChanged) return;
+
+    urlsRef.current = imageUrls;
+    setInvalidIndices(new Set());
+    setIsValidating(true);
+    setValidCount(0);
+    setCheckedCount(0);
 
     if (imageUrls.length === 0) {
       setIsValidating(false);
@@ -64,23 +65,47 @@ export function useValidatedImages(imageUrls: string[]) {
     // Uses cache to avoid re-fetching already-validated images
     let mounted = true;
 
+    // Batch state updates: collect all results, then apply once
+    const results: Array<{ index: number; valid: boolean }> = [];
+    let resultsCount = 0;
+
+    const applyResults = () => {
+      if (!mounted) return;
+
+      const newInvalid = new Set<number>();
+      let newValidCount = 0;
+      for (const r of results) {
+        if (!r.valid) newInvalid.add(r.index);
+        else newValidCount++;
+      }
+
+      setInvalidIndices(newInvalid);
+      setValidCount(newValidCount);
+      setCheckedCount(results.length);
+      setIsValidating(false);
+    };
+
+    const recordResult = (index: number, valid: boolean) => {
+      results.push({ index, valid });
+      resultsCount++;
+
+      // Apply incrementally for invalid images (remove them as they're found)
+      // but only if we've checked at least a few images to avoid single-item flickers
+      if (!valid && resultsCount >= 3 && mounted) {
+        setInvalidIndices(prev => new Set(prev).add(index));
+      }
+    };
+
     const validateImage = async (url: string, index: number): Promise<void> => {
       if (!url) {
-        if (mounted) {
-          setCheckedIndices(prev => new Set(prev).add(index));
-        }
+        recordResult(index, false);
         return;
       }
 
       // Check cache first - instant result if already validated
       const cached = getCachedValidation(url);
       if (cached !== undefined) {
-        if (mounted) {
-          if (cached === 'valid') {
-            setValidIndices(prev => new Set(prev).add(index));
-          }
-          setCheckedIndices(prev => new Set(prev).add(index));
-        }
+        recordResult(index, cached === 'valid');
         return;
       }
 
@@ -88,12 +113,7 @@ export function useValidatedImages(imageUrls: string[]) {
       const pending = getPendingValidation(url);
       if (pending) {
         const result = await pending;
-        if (mounted) {
-          if (result === 'valid') {
-            setValidIndices(prev => new Set(prev).add(index));
-          }
-          setCheckedIndices(prev => new Set(prev).add(index));
-        }
+        recordResult(index, result === 'valid');
         return;
       }
 
@@ -139,44 +159,26 @@ export function useValidatedImages(imageUrls: string[]) {
       setPendingValidation(url, validationPromise);
 
       const result = await validationPromise;
-      if (mounted) {
-        if (result === 'valid') {
-          setValidIndices(prev => new Set(prev).add(index));
-        }
-        setCheckedIndices(prev => new Set(prev).add(index));
-      }
+      recordResult(index, result === 'valid');
     };
 
-    // Validate all images in parallel
+    // Validate all images in parallel, apply final results once all complete
     Promise.all(imageUrls.map((url, index) => validateImage(url, index)))
-      .then(() => {
-        if (mounted) {
-          setIsValidating(false);
-        }
-      });
+      .then(applyResults);
 
     return () => {
       mounted = false;
     };
   }, [imageUrls]);
 
-  // Return validated images (maintaining original order)
-  const validatedImages = imageUrls.filter((_, i) => validIndices.has(i));
-
-  // During initial validation, return all images to prevent flash
-  // Once we've checked at least one image, start filtering
-  const hasStartedValidation = checkedIndices.size > 0;
+  // Optimistic: show all images except those confirmed invalid
+  const validatedImages = imageUrls.filter((_, i) => !invalidIndices.has(i));
 
   return {
-    // Return filtered images once validation starts, otherwise all images
-    validatedImages: hasStartedValidation ? validatedImages : imageUrls,
-    // True while still checking images
+    validatedImages,
     isValidating,
-    // Count of images that passed validation
-    validCount: validIndices.size,
-    // Count of images that have been checked
-    checkedCount: checkedIndices.size,
-    // Total images being validated
+    validCount,
+    checkedCount,
     totalCount: imageUrls.length,
   };
 }

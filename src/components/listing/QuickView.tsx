@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useRef, useEffect, useState, useCallback } from 'react';
+import { Suspense, useRef, useEffect, useState, useCallback, useMemo } from 'react';
 import Image from 'next/image';
 import { QuickViewModal } from './QuickViewModal';
 import { QuickViewContent } from './QuickViewContent';
@@ -158,8 +158,17 @@ export function QuickView() {
   }, []);
 
   // Get all images and validate them to filter out icons/buttons/tiny UI elements
-  // Hook must be called unconditionally, so we handle null listing with empty array
-  const rawImages = currentListing ? getAllImages(currentListing) : [];
+  // Memoize to prevent re-creating the array when currentListing is replaced
+  // by fetchFullListing with the same image data (different object reference).
+  // We fingerprint by listing ID + image count since arrays are always from the same DB row.
+  const imageFingerprint = currentListing
+    ? `${currentListing.id}:${currentListing.images?.length ?? 0}:${currentListing.stored_images?.length ?? 0}`
+    : '';
+  const rawImages = useMemo(
+    () => currentListing ? getAllImages(currentListing) : [],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [imageFingerprint]
+  );
   const { validatedImages: images } = useValidatedImages(rawImages);
 
   if (!currentListing) return null;
