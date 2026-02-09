@@ -560,9 +560,10 @@ Two-tier artisan discovery system for 13,566 artisans (12,447 smiths + 1,119 tos
 | Directory page | `src/app/artists/page.tsx` + `ArtistsPageClient.tsx` |
 | Profile page | `src/app/artists/[slug]/page.tsx` + `ArtistPageClient.tsx` |
 | Shared components | `src/components/artisan/` (Tooltip, Listings, Pyramid, Elite, etc.) |
+| **Display name dedup** | `src/lib/artisan/displayName.ts` — **all artisan name rendering goes through here** |
 | DB queries | `src/lib/supabase/yuhinkai.ts` |
 | Slug utils | `src/lib/artisan/slugs.ts` |
-| **Full documentation** | `docs/ARTIST_FEATURE.md` |
+| **Full documentation** | `docs/ARTIST_FEATURE.md` (includes display name rules + how to fix) |
 
 ### Documentation
 
