@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 /**
  * EliteFactorDisplay — Factual presentation of elite certification ratio.
  *
  * Shows a thin ratio bar, stat line, and an info icon that reveals
- * a plain-language explanation + histogram of where this artisan stands.
+ * a plain-language explanation + high-resolution histogram.
  */
 
 interface EliteFactorDisplayProps {
@@ -16,8 +16,6 @@ interface EliteFactorDisplayProps {
   eliteCount: number;
   entityType: 'smith' | 'tosogu';
 }
-
-const BUCKET_LABELS = ['0–10%', '10–20%', '20–30%', '30–40%', '40–50%', '50–60%', '60–70%', '70–80%', '80–90%', '90–100%'];
 
 function EliteHistogram({
   buckets,
@@ -30,59 +28,90 @@ function EliteHistogram({
   eliteFactor: number;
   entityType: 'smith' | 'tosogu';
 }) {
-  const maxCount = Math.max(...buckets);
-  const activeBucket = Math.min(Math.floor(eliteFactor * 10), 9);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const peerLabel = entityType === 'smith' ? 'smiths' : 'tosogu makers';
+
+  // Find the last non-zero bucket to trim empty tail
+  let lastNonZero = buckets.length - 1;
+  while (lastNonZero > 0 && buckets[lastNonZero] === 0) lastNonZero--;
+  // Show at least up to the artisan's bucket + a little margin, min 10 buckets
+  const activeBucket = Math.min(Math.floor(eliteFactor * 100), 99);
+  const visibleCount = Math.max(lastNonZero + 2, activeBucket + 3, 10);
+  const visible = buckets.slice(0, visibleCount);
+
+  const maxCount = Math.max(...visible);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.scale(dpr, dpr);
+
+    const w = rect.width;
+    const h = rect.height;
+    const barW = w / visible.length;
+    const topPad = 12; // room for the marker above
+
+    ctx.clearRect(0, 0, w, h);
+
+    // Draw bars
+    for (let i = 0; i < visible.length; i++) {
+      const count = visible[i];
+      if (count === 0) continue;
+
+      // Log scale for height
+      const logH = Math.log(count + 1) / Math.log(maxCount + 1);
+      const barH = Math.max(logH * (h - topPad - 14), 1);
+      const x = i * barW;
+      const y = h - 14 - barH;
+
+      const isActive = i === activeBucket;
+
+      // Get computed style colors
+      ctx.fillStyle = isActive
+        ? 'rgba(196, 164, 105, 0.8)'  // gold
+        : 'rgba(128, 128, 128, 0.18)'; // neutral
+
+      ctx.fillRect(x + 0.5, y, Math.max(barW - 1, 1), barH);
+    }
+
+    // Draw marker arrow above active bucket
+    const markerX = (activeBucket + 0.5) * barW;
+    ctx.fillStyle = 'rgba(196, 164, 105, 0.9)';
+    ctx.beginPath();
+    ctx.moveTo(markerX - 4, 2);
+    ctx.lineTo(markerX + 4, 2);
+    ctx.lineTo(markerX, 8);
+    ctx.closePath();
+    ctx.fill();
+
+    // Axis labels
+    ctx.fillStyle = 'rgba(128, 128, 128, 0.35)';
+    ctx.font = '9px system-ui, sans-serif';
+    ctx.textBaseline = 'bottom';
+    ctx.textAlign = 'start';
+    ctx.fillText('0%', 0, h);
+    ctx.textAlign = 'end';
+    ctx.fillText(`${visibleCount}%`, w, h);
+  }, [visible, maxCount, activeBucket, visibleCount]);
 
   return (
     <div className="mt-3">
       <p className="text-[11px] text-ink/35 mb-2">
         Distribution across {total.toLocaleString()} {peerLabel} with ranked works
       </p>
-
-      {/* Bars */}
-      <div className="flex items-end gap-[3px] h-[52px]">
-        {buckets.map((count, i) => {
-          const isActive = i === activeBucket;
-          // Log scale so the dominant first bucket doesn't flatten everything else
-          const logH = maxCount > 0
-            ? Math.log(count + 1) / Math.log(maxCount + 1)
-            : 0;
-          const heightPct = Math.max(logH * 100, count > 0 ? 3 : 0);
-
-          return (
-            <div key={i} className="flex-1 flex flex-col items-center justify-end h-full relative group">
-              <div
-                className={`w-full rounded-[1.5px] transition-all duration-500 ${
-                  isActive
-                    ? 'bg-gold/70'
-                    : 'bg-border/30'
-                }`}
-                style={{ height: `${heightPct}%` }}
-              />
-              {isActive && (
-                <div className="absolute -top-[14px] left-1/2 -translate-x-1/2">
-                  <svg className="w-2 h-2 text-gold/80" viewBox="0 0 8 8" fill="currentColor">
-                    <path d="M4 6L1 2h6L4 6z" />
-                  </svg>
-                </div>
-              )}
-              {/* Tooltip on hover */}
-              <div className="absolute -top-8 left-1/2 -translate-x-1/2 hidden group-hover:block
-                bg-surface border border-border/30 rounded px-1.5 py-0.5 text-[10px] text-ink/60 whitespace-nowrap shadow-sm z-10">
-                {BUCKET_LABELS[i]}: {count.toLocaleString()}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Axis labels */}
-      <div className="flex justify-between mt-1 text-[9px] text-ink/25 tabular-nums">
-        <span>0%</span>
-        <span>50%</span>
-        <span>100%</span>
-      </div>
+      <canvas
+        ref={canvasRef}
+        className="w-full h-[68px]"
+        style={{ imageRendering: 'auto' }}
+      />
     </div>
   );
 }
@@ -181,7 +210,7 @@ export function EliteFactorDisplay({
               entityType={entityType}
             />
           ) : (
-            <div className="h-[52px] flex items-center justify-center">
+            <div className="h-[68px] flex items-center justify-center">
               <div className="w-4 h-4 border-2 border-border/30 border-t-gold/50 rounded-full animate-spin" />
             </div>
           )}

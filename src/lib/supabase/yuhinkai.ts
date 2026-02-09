@@ -351,7 +351,7 @@ export async function getElitePercentile(
 
 /**
  * Get elite factor distribution as histogram buckets.
- * Returns 10 buckets (0–10%, 10–20%, …, 90–100%) with counts.
+ * Returns 100 buckets at 1% resolution (0–1%, 1–2%, …, 99–100%).
  * Only includes artisans with total_items > 0.
  */
 export async function getEliteDistribution(
@@ -366,13 +366,13 @@ export async function getEliteDistribution(
 
   if (error || !data) {
     console.error('[Yuhinkai] Error fetching elite distribution:', error);
-    return { buckets: Array(10).fill(0), total: 0 };
+    return { buckets: Array(100).fill(0), total: 0 };
   }
 
-  const buckets = Array(10).fill(0);
+  const buckets = Array(100).fill(0);
   for (const row of data) {
     const ef = row.elite_factor ?? 0;
-    const idx = Math.min(Math.floor(ef * 10), 9);
+    const idx = Math.min(Math.floor(ef * 100), 99);
     buckets[idx]++;
   }
 
