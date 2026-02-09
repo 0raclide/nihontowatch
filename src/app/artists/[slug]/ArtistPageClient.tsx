@@ -402,7 +402,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
                     loading="eager"
                   />
                 </button>
-                <figcaption className="mt-1.5 w-[200px] sm:w-[220px]">
+                <figcaption className="mt-1.5 w-[200px] sm:w-[220px] text-center">
                   <div className="text-[10px] uppercase tracking-[0.15em] text-gold/50 font-medium">
                     {COLLECTION_LABELS[heroImage.collection] || heroImage.collection}
                   </div>
@@ -656,7 +656,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
             <SectionDivider />
             <section id="listings">
               <h2 className="text-[11px] uppercase tracking-[0.2em] text-ink/40 mb-6">Currently Available</h2>
-              <ArtisanListings code={entity.code} artisanName={entity.name_romaji} initialListings={listings} />
+              <ArtisanListings code={entity.code} artisanName={entity.name_romaji} initialListings={listings} status="available" />
             </section>
           </>
         )}
@@ -669,7 +669,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
             <SectionDivider />
             <section id="sold">
               <h2 className="text-[11px] uppercase tracking-[0.2em] text-ink/40 mb-6">Previously Sold</h2>
-              <ArtisanListings code={entity.code} artisanName={entity.name_romaji} initialListings={soldListings} />
+              <ArtisanListings code={entity.code} artisanName={entity.name_romaji} initialListings={soldListings} status="sold" />
             </section>
           </>
         )}
