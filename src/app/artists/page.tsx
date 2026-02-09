@@ -91,8 +91,8 @@ export default async function ArtistsPage({ searchParams }: ArtistsPageProps) {
   const era = getStringParam(params, 'era');
   const q = getStringParam(params, 'q');
   const sortParam = getStringParam(params, 'sort');
-  const sort = (['elite_factor', 'juyo_count', 'name', 'total_items'].includes(sortParam || '')
-    ? sortParam as 'elite_factor' | 'juyo_count' | 'name' | 'total_items'
+  const sort = (['elite_factor', 'name', 'total_items'].includes(sortParam || '')
+    ? sortParam as 'elite_factor' | 'name' | 'total_items'
     : 'elite_factor');
   const page = Math.max(parseInt(getStringParam(params, 'page') || '1', 10) || 1, 1);
   const notable = getStringParam(params, 'notable') !== 'false';

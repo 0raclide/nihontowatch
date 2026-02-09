@@ -37,8 +37,8 @@ export async function GET(request: NextRequest) {
     const era = params.get('era') || undefined;
     const q = params.get('q') || undefined;
     const sortParam = params.get('sort');
-    const sort = (['elite_factor', 'juyo_count', 'name', 'total_items'].includes(sortParam || '')
-      ? sortParam as 'elite_factor' | 'juyo_count' | 'name' | 'total_items'
+    const sort = (['elite_factor', 'name', 'total_items'].includes(sortParam || '')
+      ? sortParam as 'elite_factor' | 'name' | 'total_items'
       : 'elite_factor');
     const page = Math.max(parseInt(params.get('page') || '1', 10) || 1, 1);
     const limit = Math.min(Math.max(parseInt(params.get('limit') || '50', 10) || 50, 1), 100);
