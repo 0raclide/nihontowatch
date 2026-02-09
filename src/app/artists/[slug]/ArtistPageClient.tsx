@@ -582,6 +582,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
                       percentile={rankings.elite_percentile}
                       totalItems={certifications.total_items}
                       eliteCount={certifications.elite_count}
+                      entityType={entity.entity_type}
                     />
                   </div>
                 </div>

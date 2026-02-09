@@ -350,6 +350,36 @@ export async function getElitePercentile(
 }
 
 /**
+ * Get elite factor distribution as histogram buckets.
+ * Returns 10 buckets (0–10%, 10–20%, …, 90–100%) with counts.
+ * Only includes artisans with total_items > 0.
+ */
+export async function getEliteDistribution(
+  entityType: 'smith' | 'tosogu'
+): Promise<{ buckets: number[]; total: number }> {
+  const table = entityType === 'smith' ? 'smith_entities' : 'tosogu_makers';
+
+  const { data, error } = await yuhinkaiClient
+    .from(table)
+    .select('elite_factor')
+    .gt('total_items', 0);
+
+  if (error || !data) {
+    console.error('[Yuhinkai] Error fetching elite distribution:', error);
+    return { buckets: Array(10).fill(0), total: 0 };
+  }
+
+  const buckets = Array(10).fill(0);
+  for (const row of data) {
+    const ef = row.elite_factor ?? 0;
+    const idx = Math.min(Math.floor(ef * 10), 9);
+    buckets[idx]++;
+  }
+
+  return { buckets, total: data.length };
+}
+
+/**
  * Calculate Toko Taikan score percentile (smith only).
  * Returns a value from 0 to 100 (higher = higher rated than peers).
  */
