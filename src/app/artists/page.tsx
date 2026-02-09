@@ -4,6 +4,7 @@ import { generateArtisanSlug } from '@/lib/artisan/slugs';
 import { generateBreadcrumbJsonLd, jsonLdScriptProps } from '@/lib/seo/jsonLd';
 import { generateArtistDirectoryJsonLd } from '@/lib/seo/jsonLd';
 import { createClient } from '@/lib/supabase/server';
+import { getImageUrl } from '@/lib/images';
 import { ArtistsPageClient } from './ArtistsPageClient';
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://nihontowatch.com';
@@ -104,6 +105,25 @@ async function getAllListingCounts(): Promise<Map<string, { count: number; first
   return result;
 }
 
+async function getCoverImages(listingIds: number[]): Promise<Map<number, string | null>> {
+  const result = new Map<number, string | null>();
+  if (listingIds.length === 0) return result;
+  try {
+    const supabase = await createClient();
+    const { data } = await supabase
+      .from('listings')
+      .select('id, images, stored_images')
+      .in('id', listingIds) as { data: Array<{ id: number; images: string[] | null; stored_images: string[] | null }> | null };
+    for (const row of data || []) {
+      const url = getImageUrl({ images: row.images, stored_images: row.stored_images });
+      result.set(row.id, url);
+    }
+  } catch {
+    // Non-critical — cards just won't show thumbnails
+  }
+  return result;
+}
+
 export default async function ArtistsPage({ searchParams }: ArtistsPageProps) {
   const params = await searchParams;
 
@@ -144,14 +164,22 @@ export default async function ArtistsPage({ searchParams }: ArtistsPageProps) {
     listingData = await getListingData(codes);
   }
 
-  // Fetch percentiles and school member counts for the current page of artists
-  const [percentileMap, memberCountMap] = await Promise.all([
+  // Gather firstIds for cover image fetch (only current page's artists)
+  const pageFirstIds: number[] = [];
+  for (const a of artists) {
+    const ld = listingData.get(a.code);
+    if (ld?.firstId) pageFirstIds.push(ld.firstId);
+  }
+
+  // Fetch percentiles, school member counts, and cover images in parallel
+  const [percentileMap, memberCountMap, coverImages] = await Promise.all([
     getBulkElitePercentiles(
       artists.map(a => ({ code: a.code, elite_factor: a.elite_factor, entity_type: a.entity_type }))
     ),
     getSchoolMemberCounts(
       artists.map(a => ({ code: a.code, school: a.school, entity_type: a.entity_type, is_school_code: a.is_school_code }))
     ),
+    getCoverImages(pageFirstIds),
   ]);
 
   const artistsWithSlugs = artists.map(a => {
@@ -163,6 +191,7 @@ export default async function ArtistsPage({ searchParams }: ArtistsPageProps) {
       member_count: memberCountMap.get(a.code),
       available_count: ld?.count || 0,
       first_listing_id: ld?.firstId,
+      cover_image: ld?.firstId ? (coverImages.get(ld.firstId) || null) : null,
     };
   });
 

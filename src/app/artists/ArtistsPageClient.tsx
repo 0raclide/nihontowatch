@@ -12,6 +12,7 @@ import { getArtisanDisplayParts } from '@/lib/artisan/displayName';
 
 interface ArtistWithSlug extends ArtistDirectoryEntry {
   slug: string;
+  cover_image?: string | null;
 }
 
 interface Pagination {
@@ -193,8 +194,7 @@ export function ArtistsPageClient({
           Artist Directory
         </h1>
         <p className="mt-2 text-sm text-ink/50 max-w-2xl">
-          {facets.totals.smiths.toLocaleString()} nihonto and {facets.totals.tosogu.toLocaleString()} tosogu artists
-          from the Yuhinkai database, ranked by certified works.
+          {facets.totals.smiths.toLocaleString()} nihonto and {facets.totals.tosogu.toLocaleString()} tosogu artists, ranked by certified works.
         </p>
       </div>
 
@@ -487,73 +487,88 @@ function ArtistCard({ artist }: { artist: ArtistWithSlug }) {
   return (
     <div
       onClick={() => router.push(profileUrl)}
-      className={`group cursor-pointer p-4 bg-cream border border-border hover:border-gold/40 transition-colors flex flex-col${
+      className={`group cursor-pointer bg-cream border border-border hover:border-gold/40 transition-colors flex flex-row overflow-hidden${
         isSchool ? ' border-l-2 border-l-gold/60' : ''
       }`}
     >
-      {/* Row 1: Name + Total works */}
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <span className="text-sm font-medium text-ink group-hover:text-gold transition-colors truncate block">
-            {(() => { const dp = getArtisanDisplayParts(artist.name_romaji, artist.school); return <>{dp.prefix && <span className="font-normal">{dp.prefix} </span>}{dp.name || artist.code}</>; })()}
-          </span>
-          {artist.name_kanji && (
-            <span className="text-xs text-ink/40 ml-2">{artist.name_kanji}</span>
-          )}
+      {/* Thumbnail — contained museum-catalog style */}
+      {artist.cover_image && (
+        <div className="w-14 shrink-0 bg-ink/[0.03] border-r border-border/50 flex items-center justify-center p-1.5 overflow-hidden">
+          <img
+            src={artist.cover_image}
+            alt=""
+            className="max-w-full max-h-full object-contain opacity-70 group-hover:opacity-100 transition-opacity"
+            loading="lazy"
+          />
         </div>
-        <div className="shrink-0 text-center leading-none">
-          <span className="block text-lg font-serif text-ink tabular-nums">{artist.total_items}</span>
-          <span className={`block text-[8px] uppercase tracking-[0.15em] mt-0.5${
-            isSchool ? ' text-gold' : ' text-ink/40'
-          }`}>{isSchool ? 'school' : 'works'}</span>
-        </div>
-      </div>
+      )}
 
-      {/* Row 2: School / Era / Province (or school attribution subtitle) */}
-      <div className="mt-1.5 text-[11px] text-ink/45 truncate">
-        {isSchool
-          ? subtitleParts.join(' \u00b7 ')
-          : [artist.school, artist.era, artist.province].filter(Boolean).join(' \u00b7 ') || 'Unknown'}
-      </div>
-
-      {/* Row 3: Cert counts */}
-      {certBadges.length > 0 && (
-        <div className="mt-2.5 flex items-center gap-3 text-[11px] text-ink tabular-nums flex-wrap">
-          {certBadges.map((badge) => (
-            <span key={badge.label}>
-              {badge.value} {badge.label}
+      {/* Content */}
+      <div className="flex-1 p-4 flex flex-col min-w-0">
+        {/* Row 1: Name + Total works */}
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <span className="text-sm font-medium text-ink group-hover:text-gold transition-colors truncate block">
+              {(() => { const dp = getArtisanDisplayParts(artist.name_romaji, artist.school); return <>{dp.prefix && <span className="font-normal">{dp.prefix} </span>}{dp.name || artist.code}</>; })()}
             </span>
-          ))}
-        </div>
-      )}
-
-      {/* Row 4: For sale link */}
-      {availableCount > 0 && forSaleUrl && (
-        <div className="mt-1.5 flex justify-end text-[11px] tabular-nums">
-          <Link
-            href={forSaleUrl}
-            onClick={(e) => e.stopPropagation()}
-            className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium hover:text-emerald-500 dark:hover:text-emerald-300 transition-colors"
-          >
-            {availableCount} on the market
-            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-            </svg>
-          </Link>
-        </div>
-      )}
-
-      {/* Elite bar — pinned to bottom */}
-      {percentile > 0 && (
-        <div className="mt-auto pt-2.5">
-          <div className="h-1 bg-border/50 overflow-hidden">
-            <div
-              className="h-full bg-gold/40 transition-all"
-              style={{ width: `${percentile}%` }}
-            />
+            {artist.name_kanji && (
+              <span className="text-xs text-ink/40 ml-2">{artist.name_kanji}</span>
+            )}
+          </div>
+          <div className="shrink-0 text-center leading-none">
+            <span className="block text-lg font-serif text-ink tabular-nums">{artist.total_items}</span>
+            <span className={`block text-[8px] uppercase tracking-[0.15em] mt-0.5${
+              isSchool ? ' text-gold' : ' text-ink/40'
+            }`}>{isSchool ? 'school' : 'works'}</span>
           </div>
         </div>
-      )}
+
+        {/* Row 2: School / Era / Province (or school attribution subtitle) */}
+        <div className="mt-1.5 text-[11px] text-ink/45 truncate">
+          {isSchool
+            ? subtitleParts.join(' \u00b7 ')
+            : [artist.school, artist.era, artist.province].filter(Boolean).join(' \u00b7 ') || 'Unknown'}
+        </div>
+
+        {/* Row 3: Cert counts */}
+        {certBadges.length > 0 && (
+          <div className="mt-2.5 flex items-center gap-3 text-[11px] text-ink tabular-nums flex-wrap">
+            {certBadges.map((badge) => (
+              <span key={badge.label}>
+                {badge.value} {badge.label}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Row 4: For sale link */}
+        {availableCount > 0 && forSaleUrl && (
+          <div className="mt-1.5 flex justify-end text-[11px] tabular-nums">
+            <Link
+              href={forSaleUrl}
+              onClick={(e) => e.stopPropagation()}
+              className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium hover:text-emerald-500 dark:hover:text-emerald-300 transition-colors"
+            >
+              {availableCount} on the market
+              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+              </svg>
+            </Link>
+          </div>
+        )}
+
+        {/* Elite bar — pinned to bottom */}
+        {percentile > 0 && (
+          <div className="mt-auto pt-2.5">
+            <div className="h-1 bg-border/50 overflow-hidden">
+              <div
+                className="h-full bg-gold/40 transition-all"
+                style={{ width: `${percentile}%` }}
+              />
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/server';
+import { getImageUrl } from '@/lib/images';
 import { logger } from '@/lib/logger';
 
 export const revalidate = 0;
@@ -87,7 +88,15 @@ export async function GET(request: NextRequest) {
       ),
     ]);
 
-    // Add slugs, percentiles, member counts, and listing data to artists
+    // Fetch cover images for current page's artists
+    const pageFirstIds: number[] = [];
+    for (const a of artists) {
+      const ld = listingData.get(a.code);
+      if (ld?.firstId) pageFirstIds.push(ld.firstId);
+    }
+    const coverImages = await getCoverImagesForListings(pageFirstIds);
+
+    // Add slugs, percentiles, member counts, listing data, and cover images
     const artistsWithSlugs = artists.map(a => {
       const ld = listingData.get(a.code);
       return {
@@ -97,6 +106,7 @@ export async function GET(request: NextRequest) {
         member_count: memberCountMap.get(a.code),
         available_count: ld?.count || 0,
         first_listing_id: ld?.firstId,
+        cover_image: ld?.firstId ? (coverImages.get(ld.firstId) || null) : null,
       };
     });
 
@@ -195,6 +205,37 @@ async function getAllAvailableListingCounts(): Promise<Map<string, { count: numb
     }
   } catch (err) {
     logger.logError('All listing counts error', err);
+  }
+
+  return result;
+}
+
+/**
+ * Fetch cover image URLs for a batch of listing IDs.
+ * Returns map of listing_id → first image URL.
+ */
+async function getCoverImagesForListings(listingIds: number[]): Promise<Map<number, string | null>> {
+  const result = new Map<number, string | null>();
+  if (listingIds.length === 0) return result;
+
+  try {
+    const supabase = createServiceClient();
+    const { data, error } = await supabase
+      .from('listings')
+      .select('id, images, stored_images')
+      .in('id', listingIds) as { data: Array<{ id: number; images: string[] | null; stored_images: string[] | null }> | null; error: unknown };
+
+    if (error) {
+      logger.logError('Cover images query error', error);
+      return result;
+    }
+
+    for (const row of data || []) {
+      const url = getImageUrl({ images: row.images, stored_images: row.stored_images });
+      result.set(row.id, url);
+    }
+  } catch (err) {
+    logger.logError('Cover images error', err);
   }
 
   return result;
