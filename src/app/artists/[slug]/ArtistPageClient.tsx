@@ -356,10 +356,19 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
   const fujishiroLabel = entity.fujishiro ? FUJISHIRO_LABELS[entity.fujishiro] : null;
 
   return (
-    <div className="max-w-[780px] mx-auto px-5 sm:px-8">
-      <SectionJumpNav sections={sections} />
+    <div className="relative">
+      {/* Atmospheric gradient — accent-tinted wash behind the hero, fading to surface */}
+      <div
+        className="absolute inset-x-0 top-0 h-[600px] pointer-events-none"
+        style={{
+          background: `linear-gradient(180deg, var(--accent-glow) 0%, transparent 100%)`,
+        }}
+      />
 
-      <div className="pt-12 pb-20 space-y-16">
+      <div className="relative max-w-[780px] mx-auto px-5 sm:px-8">
+        <SectionJumpNav sections={sections} />
+
+        <div className="pt-12 pb-20 space-y-16">
 
         {/* ═══════════════════════════════════════════════════════════════════
             OVERVIEW — Hero header with vitals
@@ -774,15 +783,16 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
 
       </div>
 
-      {/* Image Lightbox */}
-      {heroImage && lightboxOpen && (
-        <ImageLightbox
-          src={heroImage.imageUrl}
-          alt={`${heroImage.imageType === 'oshigata' ? 'Oshigata' : 'Image'} — ${entity.name_romaji || entity.code}`}
-          caption={`${COLLECTION_LABELS[heroImage.collection] || heroImage.collection} — Vol. ${heroImage.volume}, No. ${heroImage.itemNumber}${heroImage.formType ? ` · ${heroImage.formType}` : ''}`}
-          onClose={() => setLightboxOpen(false)}
-        />
-      )}
+        {/* Image Lightbox */}
+        {heroImage && lightboxOpen && (
+          <ImageLightbox
+            src={heroImage.imageUrl}
+            alt={`${heroImage.imageType === 'oshigata' ? 'Oshigata' : 'Image'} — ${entity.name_romaji || entity.code}`}
+            caption={`${COLLECTION_LABELS[heroImage.collection] || heroImage.collection} — Vol. ${heroImage.volume}, No. ${heroImage.itemNumber}${heroImage.formType ? ` · ${heroImage.formType}` : ''}`}
+            onClose={() => setLightboxOpen(false)}
+          />
+        )}
+      </div>
     </div>
   );
 }
