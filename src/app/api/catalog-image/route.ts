@@ -13,6 +13,7 @@ const yuhinkaiKey = process.env.YUHINKAI_SUPABASE_KEY || process.env.OSHI_V2_SUP
 
 export async function GET(request: NextRequest) {
   const storagePath = request.nextUrl.searchParams.get('path');
+  const debug = request.nextUrl.searchParams.get('debug') === '1';
 
   if (!storagePath || !yuhinkaiUrl || !yuhinkaiKey) {
     return new NextResponse('Not found', { status: 404 });
@@ -21,6 +22,23 @@ export async function GET(request: NextRequest) {
   // Validate path format (prevent traversal)
   if (storagePath.includes('..') || !storagePath.match(/^[A-Za-z_]+\/[\d_]+_oshigata\.jpg$/)) {
     return new NextResponse('Invalid path', { status: 400 });
+  }
+
+  // Debug: list files in the folder to check what exists
+  if (debug) {
+    const client = createClient(yuhinkaiUrl, yuhinkaiKey);
+    const parts = storagePath.split('/');
+    const folder = parts[0];
+    const { data: files, error: listError } = await client.storage
+      .from('images')
+      .list(folder, { limit: 20, search: parts[1]?.replace('_oshigata.jpg', '') });
+    return NextResponse.json({
+      folder,
+      searchTerm: parts[1]?.replace('_oshigata.jpg', ''),
+      files: files?.map(f => f.name) || [],
+      listError: listError?.message || null,
+      storagePath,
+    });
   }
 
   try {
