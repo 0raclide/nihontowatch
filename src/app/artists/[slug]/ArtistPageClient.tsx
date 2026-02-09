@@ -11,6 +11,7 @@ import { SectionJumpNav } from '@/components/artisan/SectionJumpNav';
 import { ArtisanListings } from '@/components/artisan/ArtisanListings';
 import { RelatedArtisans } from '@/components/artisan/RelatedArtisans';
 import type { ArtisanPageResponse } from '@/app/api/artisan/[code]/route';
+import { getArtisanDisplayParts } from '@/lib/artisan/displayName';
 
 interface ArtistPageClientProps {
   data: ArtisanPageResponse;
@@ -38,21 +39,6 @@ const FUJISHIRO_LABELS: Record<string, string> = {
   'Chū-saku':   'Average Work',
   'Chu-saku':    'Average Work',
 };
-
-/**
- * Derive a non-redundant school prefix for display before an artisan name.
- * - "Hizen Tadayoshi" + name "Tadayoshi" → "Hizen"
- * - "Taima" + name "Taima" → null  (exact match, skip entirely)
- * - "Shimada" + name "Yoshisuke" → "Shimada"  (no overlap, use as-is)
- */
-function schoolPrefix(school: string | null, name: string | null): string | null {
-  if (!school || !name) return school;
-  const s = school.toLowerCase();
-  const n = name.toLowerCase();
-  if (s === n) return null;
-  if (s.endsWith(` ${n}`)) return school.slice(0, -(name.length + 1)).trim() || null;
-  return school;
-}
 
 // ─── HELPERS ────────────────────────────────────────────────────────────────
 
@@ -360,8 +346,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
 
             <div className="relative">
               <h1 className="text-4xl sm:text-5xl font-serif font-light text-ink leading-[1.05] tracking-tight">
-                {schoolPrefix(entity.school, entity.name_romaji) && <>{schoolPrefix(entity.school, entity.name_romaji)} </>}
-                {entity.name_romaji || entity.code}
+                {(() => { const dp = getArtisanDisplayParts(entity.name_romaji, entity.school); return <>{dp.prefix && <>{dp.prefix} </>}{dp.name || entity.code}</>; })()}
               </h1>
               {entity.name_kanji && (
                 <p className="text-lg text-ink/30 font-serif font-light mt-2 tracking-[0.08em]">
@@ -381,112 +366,109 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
           {/* Quick stats bar */}
           <StatsBar data={data} availableCount={listings ? listings.length : null} />
 
-          {/* Vitals panel — metadata + hero image side-by-side on desktop */}
-          <div className="mt-10 pt-8 border-t border-border/30">
-            <div className={`${heroImage ? 'sm:grid sm:grid-cols-[1fr_auto] sm:gap-10' : ''}`}>
-              {/* Metadata grid */}
-              <div className="grid grid-cols-[auto_1fr] gap-x-10 gap-y-2.5 text-sm">
-                {entity.province && (
-                  <>
-                    <span className="text-ink/45">Province</span>
-                    <span className="text-ink">{entity.province}</span>
-                  </>
-                )}
-                {entity.era && (
-                  <>
-                    <span className="text-ink/45">Era</span>
-                    <span className="text-ink">{entity.era}</span>
-                  </>
-                )}
-                {entity.period && entity.period !== entity.era && (
-                  <>
-                    <span className="text-ink/45">Period</span>
-                    <span className="text-ink">{entity.period}</span>
-                  </>
-                )}
-                {entity.school && (
-                  <>
-                    <span className="text-ink/45">School</span>
-                    <span className="text-ink">{entity.school}</span>
-                  </>
-                )}
-                {entity.generation && (
-                  <>
-                    <span className="text-ink/45">Generation</span>
-                    <span className="text-ink">{entity.generation}</span>
-                  </>
-                )}
-                {entity.teacher && (
-                  <>
-                    <span className="text-ink/45">Teacher</span>
-                    {lineage.teacher ? (
-                      <Link href={`/artists/${lineage.teacher.slug}`} className="text-ink hover:text-gold transition-colors">
-                        {lineage.teacher.name_romaji || entity.teacher}
-                      </Link>
-                    ) : (
-                      <span className="text-ink">{entity.teacher}</span>
-                    )}
-                  </>
-                )}
-                {entity.toko_taikan != null && (
-                  <>
-                    <span className="text-ink/45">Tōkō Taikan</span>
-                    <span className="text-ink">
-                      {entity.toko_taikan.toLocaleString()}
-                      {rankings.toko_taikan_percentile != null && (
-                        <span className="text-ink/35 ml-1.5">(top {Math.max(100 - rankings.toko_taikan_percentile, 1)}%)</span>
-                      )}
-                    </span>
-                  </>
-                )}
-                {entity.fujishiro && (
-                  <>
-                    <span className="text-ink/45">Fujishiro</span>
-                    <span className="text-ink">
-                      {entity.fujishiro}
-                      {fujishiroLabel && <span className="text-ink/35 ml-1.5">({fujishiroLabel})</span>}
-                    </span>
-                  </>
-                )}
-                {entity.specialties && entity.specialties.length > 0 && (
-                  <>
-                    <span className="text-ink/45">Specialties</span>
-                    <span className="text-ink">{entity.specialties.join(', ')}</span>
-                  </>
-                )}
-                <>
-                  <span className="text-ink/45">Type</span>
-                  <span className="text-ink">{entity.entity_type === 'smith' ? 'Swordsmith' : 'Tosogu Maker'}</span>
-                </>
-                <>
-                  <span className="text-ink/45">Code</span>
-                  <span className="text-ink font-mono text-xs tracking-wide">{entity.code}</span>
-                </>
+          {/* Featured catalog image */}
+          {heroImage && (
+            <figure className="mt-10 pt-8 border-t border-border/30 flex flex-col items-center">
+              <div className="relative">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={heroImage.imageUrl}
+                  alt={`${heroImage.imageType === 'oshigata' ? 'Oshigata' : 'Image'} — ${entity.name_romaji || entity.code}, ${COLLECTION_LABELS[heroImage.collection] || heroImage.collection}`}
+                  className="max-h-[520px] w-auto object-contain rounded shadow-lg shadow-black/20"
+                  loading="eager"
+                />
               </div>
+              <figcaption className="mt-4 text-center space-y-1">
+                <div className="text-[10px] uppercase tracking-[0.2em] text-gold/60 font-medium">
+                  {COLLECTION_LABELS[heroImage.collection] || heroImage.collection}
+                </div>
+                <div className="text-[11px] text-ink/30 tabular-nums">
+                  Vol. {heroImage.volume}, No. {heroImage.itemNumber}
+                  {heroImage.formType && <> &middot; {heroImage.formType}</>}
+                </div>
+              </figcaption>
+            </figure>
+          )}
 
-              {/* Hero image */}
-              {heroImage && (
-                <figure className="mt-8 sm:mt-0 flex flex-col items-center sm:items-end sm:w-[320px] shrink-0">
-                  <div className="relative rounded-lg overflow-hidden ring-1 ring-border/10 bg-muted/5">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={heroImage.imageUrl}
-                      alt={`${heroImage.imageType === 'oshigata' ? 'Oshigata' : 'Image'} — ${entity.name_romaji || entity.code}, ${COLLECTION_LABELS[heroImage.collection] || heroImage.collection}`}
-                      className="max-h-[480px] w-auto object-contain"
-                      loading="eager"
-                    />
-                  </div>
-                  <figcaption className="mt-2.5 text-center sm:text-right space-y-0.5">
-                    <div className="text-[10px] uppercase tracking-[0.15em] text-gold/70 font-medium">
-                      {COLLECTION_LABELS[heroImage.collection] || heroImage.collection}
-                    </div>
-                    <div className="text-[10px] text-ink/35 tabular-nums">
-                      Vol. {heroImage.volume}, No. {heroImage.itemNumber}
-                      {heroImage.formType && <> &middot; {heroImage.formType}</>}
-                    </div>
-                  </figcaption>
-                </figure>
+          {/* Vitals panel — biographical metadata */}
+          <div className="mt-10 pt-8 border-t border-border/30">
+            <div className="grid grid-cols-[auto_1fr] gap-x-10 gap-y-2.5 text-sm">
+              {entity.province && (
+                <>
+                  <span className="text-ink/45">Province</span>
+                  <span className="text-ink">{entity.province}</span>
+                </>
               )}
+              {entity.era && (
+                <>
+                  <span className="text-ink/45">Era</span>
+                  <span className="text-ink">{entity.era}</span>
+                </>
+              )}
+              {entity.period && entity.period !== entity.era && (
+                <>
+                  <span className="text-ink/45">Period</span>
+                  <span className="text-ink">{entity.period}</span>
+                </>
+              )}
+              {entity.school && (
+                <>
+                  <span className="text-ink/45">School</span>
+                  <span className="text-ink">{entity.school}</span>
+                </>
+              )}
+              {entity.generation && (
+                <>
+                  <span className="text-ink/45">Generation</span>
+                  <span className="text-ink">{entity.generation}</span>
+                </>
+              )}
+              {entity.teacher && (
+                <>
+                  <span className="text-ink/45">Teacher</span>
+                  {lineage.teacher ? (
+                    <Link href={`/artists/${lineage.teacher.slug}`} className="text-ink hover:text-gold transition-colors">
+                      {lineage.teacher.name_romaji || entity.teacher}
+                    </Link>
+                  ) : (
+                    <span className="text-ink">{entity.teacher}</span>
+                  )}
+                </>
+              )}
+              {entity.toko_taikan != null && (
+                <>
+                  <span className="text-ink/45">Tōkō Taikan</span>
+                  <span className="text-ink">
+                    {entity.toko_taikan.toLocaleString()}
+                    {rankings.toko_taikan_percentile != null && (
+                      <span className="text-ink/35 ml-1.5">(top {Math.max(100 - rankings.toko_taikan_percentile, 1)}%)</span>
+                    )}
+                  </span>
+                </>
+              )}
+              {entity.fujishiro && (
+                <>
+                  <span className="text-ink/45">Fujishiro</span>
+                  <span className="text-ink">
+                    {entity.fujishiro}
+                    {fujishiroLabel && <span className="text-ink/35 ml-1.5">({fujishiroLabel})</span>}
+                  </span>
+                </>
+              )}
+              {entity.specialties && entity.specialties.length > 0 && (
+                <>
+                  <span className="text-ink/45">Specialties</span>
+                  <span className="text-ink">{entity.specialties.join(', ')}</span>
+                </>
+              )}
+              <>
+                <span className="text-ink/45">Type</span>
+                <span className="text-ink">{entity.entity_type === 'smith' ? 'Swordsmith' : 'Tosogu Maker'}</span>
+              </>
+              <>
+                <span className="text-ink/45">Code</span>
+                <span className="text-ink font-mono text-xs tracking-wide">{entity.code}</span>
+              </>
             </div>
           </div>
 
