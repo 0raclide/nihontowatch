@@ -169,7 +169,7 @@ gold_artisan         — Artisan name (matches name_romaji)
 gold_smith_id        — FK to smith_entities (for distribution queries)
 gold_maker_id        — FK to tosogu_makers (for distribution queries)
 gold_form_type       — Blade/work type (katana, wakizashi, tanto, tachi, tsuba, etc.)
-gold_mei_status      — Signature status (signed, mumei, attributed, den, kinzogan, etc.)
+gold_mei_status      — Signature status (signed, mumei, den, kinzogan-mei, shu-mei, etc.)
 gold_denrai_owners   — Array of historical collection owners
 ```
 
@@ -267,8 +267,9 @@ artisan_elite_factor — Denormalized elite_factor from Yuhinkai (synced via web
    - Data source: `gold_values.gold_form_type` aggregated by artisan code (profile snapshot as fast-path)
 
 5. **Signatures** (if mei data exists in gold_values)
-   - MeiDistributionBar: signature types (signed, mumei, attributed, den, kinzōgan mei, etc.)
+   - MeiDistributionBar: signature types (signed, mumei, den, kinzōgan mei, shū mei, kinpun mei, ginzōgan mei, kiritsuke mei, shūsho mei, etc.)
    - Data source: `gold_values.gold_mei_status` aggregated by artisan code (profile snapshot as fast-path)
+   - Migration 267 resolved generic 'attributed' → specific types via `mei.attribution_type`
 
 6. **Currently Available** (if listings exist)
    - Grid of listing cards fetched client-side from `/api/artisan/[code]/listings`
@@ -491,6 +492,23 @@ CRON_SECRET=xxx
 ---
 
 ## Changelog
+
+### 2026-02-09 — Normalize 'attributed' mei status (Migration 267)
+
+**Problem:** Oshi-Jussi import stored `mei.status = 'attributed'` with the specific sub-type in `mei.attribution_type` (e.g., `kinzogan`, `shumei`). But `synthesize_object()` only read `mei.status`, ignoring `attribution_type` — so `gold_mei_status` ended up as the meaningless `'attributed'` for 692 objects.
+
+**Fix (oshi-v2 migration 267):**
+- Updated `synthesize_object()` to resolve `'attributed'` using `mei.attribution_type`:
+  - `kinzogan` → `kinzogan-mei`, `shumei` → `shu-mei`, `ginzogan` → `ginzogan-mei`
+  - `kinpun` → `kinpun-mei`, `kiritsuke` → `kiritsuke-mei`, `shusho` → `shusho-mei`
+- Re-synthesized 692 affected objects in ~6 seconds
+- Result: **0 `attributed` remaining**. Resolved to: 568 kinzogan-mei, 131 shu-mei, 90 kinpun-mei, 55 shusho-mei, 35 kiritsuke-mei, 1 ginzogan-mei
+
+**Nihontowatch display changes:**
+- `MeiDistributionBar.tsx`: Added 4 new labels (Kinpun Mei, Ginzōgan Mei, Kiritsuke Mei, Shūsho Mei)
+- `yuhinkai.ts` (`getArtisanDistributions()`): Added hyphen→underscore normalization for 4 new types from gold_values
+
+**Files changed:** `oshi-v2/supabase/migrations/267_normalize_attributed_mei.sql`, `MeiDistributionBar.tsx`, `yuhinkai.ts`
 
 ### 2026-02-09 — Blade Forms & Signatures as standalone sections
 
