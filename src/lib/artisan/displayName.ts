@@ -84,9 +84,10 @@ export function getArtisanDisplayParts(
     }
   }
 
-  // Rule 3: school ends with name (e.g. school="Hizen Tadayoshi", name="Tadayoshi")
+  // Rule 3: school ends with name (e.g. school="Hizen Tadayoshi", name="Tadayoshi"
+  // or school="Sue-Naminohira", name="Naminohira")
   // Use school as the full display name — no separate prefix needed.
-  if (sNorm.endsWith(' ' + nNorm)) {
+  if (sNorm.endsWith(' ' + nNorm) || sNorm.endsWith('-' + nNorm)) {
     return { prefix: null, name: school };
   }
 
