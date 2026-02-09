@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
 import { extractCodeFromSlug, isBareCode, generateArtisanSlug } from '@/lib/artisan/slugs';
+import { getArtisanDisplayParts } from '@/lib/artisan/displayName';
 import {
   getSmithEntity,
   getTosoguMaker,
@@ -19,16 +20,6 @@ import { ArtistPageClient } from './ArtistPageClient';
 import type { ArtisanPageResponse } from '@/app/api/artisan/[code]/route';
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://nihontowatch.com';
-
-/** Strip redundant name from school: "Hizen Tadayoshi" + "Tadayoshi" → "Hizen" */
-function schoolPrefix(school: string | null, name: string): string | null {
-  if (!school) return null;
-  const s = school.toLowerCase();
-  const n = name.toLowerCase();
-  if (s === n) return null;
-  if (s.endsWith(` ${n}`)) return school.slice(0, -(name.length + 1)).trim() || null;
-  return school;
-}
 
 interface ArtistPageProps {
   params: Promise<{ slug: string }>;
@@ -170,7 +161,8 @@ export async function generateMetadata({ params }: ArtistPageProps): Promise<Met
   const juyo = entity.juyo_count || 0;
   const tokuju = entity.tokuju_count || 0;
 
-  const schoolLabel = schoolPrefix(entity.school, name) || 'Japanese';
+  const { prefix } = getArtisanDisplayParts(name, entity.school);
+  const schoolLabel = prefix || entity.school || 'Japanese';
   const title = `${name} — ${schoolLabel} ${type} | NihontoWatch`;
   const description = `Comprehensive profile of ${name}${province}, ${entity.era || 'Japanese'} ${type}. ${juyo} Jūyō, ${tokuju} Tokubetsu Jūyō certified works. Certification statistics, biography, and available listings.`;
 

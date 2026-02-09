@@ -4,20 +4,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { ArtistDirectoryEntry, DirectoryFacets } from '@/lib/supabase/yuhinkai';
-
-// =============================================================================
-// HELPERS
-// =============================================================================
-
-/** Strip redundant name from school for display: "Hizen Tadayoshi" + "Tadayoshi" → "Hizen" */
-function schoolPrefix(school: string | null, name: string | null): string | null {
-  if (!school || !name) return school;
-  const s = school.toLowerCase();
-  const n = name.toLowerCase();
-  if (s === n) return null;
-  if (s.endsWith(` ${n}`)) return school.slice(0, -(name.length + 1)).trim() || null;
-  return school;
-}
+import { getArtisanDisplayParts } from '@/lib/artisan/displayName';
 
 // =============================================================================
 // TYPES
@@ -508,8 +495,7 @@ function ArtistCard({ artist }: { artist: ArtistWithSlug }) {
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <span className="text-sm font-medium text-ink group-hover:text-gold transition-colors truncate block">
-            {schoolPrefix(artist.school, artist.name_romaji) && <span className="font-normal">{schoolPrefix(artist.school, artist.name_romaji)} </span>}
-            {artist.name_romaji || artist.code}
+            {(() => { const dp = getArtisanDisplayParts(artist.name_romaji, artist.school); return <>{dp.prefix && <span className="font-normal">{dp.prefix} </span>}{dp.name || artist.code}</>; })()}
           </span>
           {artist.name_kanji && (
             <span className="text-xs text-ink/40 ml-2">{artist.name_kanji}</span>

@@ -701,9 +701,10 @@ export async function getArtisanDistributions(
     // Form distribution
     const rawForm = (row.gold_form_type as string | null)?.toLowerCase().trim();
     if (rawForm) {
-      const formKey = ['katana', 'wakizashi', 'tanto', 'tachi', 'naginata', 'yari', 'ken', 'kodachi'].includes(rawForm)
-        ? rawForm
-        : 'other';
+      const SWORD_FORMS = ['katana', 'wakizashi', 'tanto', 'tachi', 'naginata', 'yari', 'ken', 'kodachi'];
+      const TOSOGU_FORMS = ['tsuba', 'kozuka', 'kogai', 'menuki', 'fuchi', 'kashira', 'fuchi-kashira', 'mitokoromono', 'futatokoromono', 'soroimono'];
+      const knownForms = entityType === 'smith' ? SWORD_FORMS : TOSOGU_FORMS;
+      const formKey = knownForms.includes(rawForm) ? rawForm : 'other';
       form[formKey] = (form[formKey] || 0) + 1;
     }
 

@@ -12,6 +12,7 @@ interface FormDistributionBarProps {
 }
 
 const FORM_LABELS: Record<string, string> = {
+  // Sword forms
   tanto: 'Tantō',
   katana: 'Katana',
   tachi: 'Tachi',
@@ -20,6 +21,17 @@ const FORM_LABELS: Record<string, string> = {
   yari: 'Yari',
   ken: 'Ken',
   kodachi: 'Kodachi',
+  // Tosogu forms
+  tsuba: 'Tsuba',
+  kozuka: 'Kozuka',
+  kogai: 'Kōgai',
+  menuki: 'Menuki',
+  fuchi: 'Fuchi',
+  kashira: 'Kashira',
+  'fuchi-kashira': 'Fuchi-Kashira',
+  mitokoromono: 'Mitokoromono',
+  futatokoromono: 'Futatokoromono',
+  soroimono: 'Soroimono',
   other: 'Other',
 };
 
