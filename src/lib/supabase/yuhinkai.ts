@@ -957,6 +957,14 @@ export async function getArtisanHeroImage(
       // 5. Public URL on the separate image storage project
       const imageUrl = `${IMAGE_STORAGE_BASE}/storage/v1/object/public/images/${storagePath}`;
 
+      // 6. Verify image exists — not all volumes have been uploaded yet
+      try {
+        const head = await fetch(imageUrl, { method: 'HEAD' });
+        if (!head.ok) continue;
+      } catch {
+        continue;
+      }
+
       return {
         imageUrl,
         collection: targetCollection,
