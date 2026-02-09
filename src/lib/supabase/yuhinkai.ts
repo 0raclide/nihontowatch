@@ -509,7 +509,7 @@ export async function getArtistsForDirectory(
   if (province) query = query.eq('province', province);
   if (era) query = query.eq('era', era);
   if (q) {
-    query = query.or(`name_romaji.ilike.%${q}%,name_kanji.ilike.%${q}%,${idCol}.ilike.%${q}%,school.ilike.%${q}%,province.ilike.%${q}%`);
+    query = query.or(`name_romaji.ilike.%${q}%,name_kanji.ilike.%${q}%,${idCol}.ilike.%${q}%,school.ilike.%${q}%,province.ilike.%${q}%,name_search_text.ilike.%${q}%`);
   }
 
   query = query
@@ -576,7 +576,7 @@ export async function getFilteredArtistsByCodes(
     if (filters.province) query = query.eq('province', filters.province);
     if (filters.era) query = query.eq('era', filters.era);
     if (filters.q) {
-      query = query.or(`name_romaji.ilike.%${filters.q}%,name_kanji.ilike.%${filters.q}%,${idCol}.ilike.%${filters.q}%,school.ilike.%${filters.q}%,province.ilike.%${filters.q}%`);
+      query = query.or(`name_romaji.ilike.%${filters.q}%,name_kanji.ilike.%${filters.q}%,${idCol}.ilike.%${filters.q}%,school.ilike.%${filters.q}%,province.ilike.%${filters.q}%,name_search_text.ilike.%${filters.q}%`);
     }
 
     const { data } = await query;
@@ -1259,7 +1259,7 @@ export interface DenraiResult {
  * 3. Different people in the same family are kept (legitimate provenance)
  * 4. Everything else (institution, shrine, uncategorized) preserved
  */
-function dedupWithinItem(
+export function dedupWithinItem(
   owners: string[],
   canonicalMap: Map<string, { parent: string | null; category: string | null }>
 ): string[] {
