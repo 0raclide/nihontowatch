@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect, useCallback, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import type { Listing } from '@/types';
 import { PrestigePyramid } from '@/components/artisan/PrestigePyramid';
@@ -226,6 +227,57 @@ function SectionDivider() {
   );
 }
 
+/** Fullscreen image lightbox with click/Escape to close */
+function ImageLightbox({ src, alt, caption, onClose }: { src: string; alt: string; caption: string; onClose: () => void }) {
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', handleKey);
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', handleKey);
+      document.body.style.overflow = '';
+    };
+  }, [onClose]);
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/90 animate-fadeIn cursor-zoom-out"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label={alt}
+    >
+      {/* Close button */}
+      <button
+        onClick={onClose}
+        className="absolute top-4 right-4 z-10 flex items-center justify-center w-10 h-10 rounded-full
+          bg-white/10 hover:bg-white/20 text-white/70 hover:text-white transition-colors"
+        aria-label="Close"
+      >
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+
+      {/* Image */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={src}
+        alt={alt}
+        className="max-h-[85vh] max-w-[90vw] object-contain select-none"
+        onClick={(e) => e.stopPropagation()}
+        draggable={false}
+      />
+
+      {/* Caption */}
+      <p className="mt-3 text-[11px] text-white/40 tracking-wider uppercase text-center">
+        {caption}
+      </p>
+    </div>,
+    document.body
+  );
+}
+
 // ─── MAIN COMPONENT ─────────────────────────────────────────────────────────
 
 export function ArtistPageClient({ data }: ArtistPageClientProps) {
@@ -237,6 +289,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
   const [listings, setListings] = useState<Listing[] | null>(null);
   const [soldListings, setSoldListings] = useState<Listing[] | null>(null);
   const [copied, setCopied] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -331,19 +384,25 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
 
           {/* Hero — Image + Identity as one cohesive unit */}
           <div className={`flex flex-col ${heroImage ? 'sm:flex-row sm:items-start sm:gap-8' : ''}`}>
-            {/* Catalog image — square, sharp edges, museum plate */}
+            {/* Catalog image — natural aspect ratio, sharp edges, museum plate */}
             {heroImage && (
               <figure className="shrink-0 mb-5 sm:mb-0">
-                <div className="w-[200px] h-[200px] sm:w-[220px] sm:h-[220px] overflow-hidden border border-border/20 shadow-sm">
+                <button
+                  type="button"
+                  onClick={() => setLightboxOpen(true)}
+                  className="block w-[200px] sm:w-[220px] border border-border/20 shadow-sm cursor-zoom-in
+                    hover:shadow-md hover:border-border/30 transition-all duration-200 bg-black/5"
+                  aria-label="View full-size image"
+                >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={heroImage.imageUrl}
                     alt={`${heroImage.imageType === 'oshigata' ? 'Oshigata' : 'Image'} — ${entity.name_romaji || entity.code}, ${COLLECTION_LABELS[heroImage.collection] || heroImage.collection}`}
-                    className="w-full h-full object-cover"
+                    className="w-full h-auto object-contain max-h-[300px] sm:max-h-[340px]"
                     loading="eager"
                   />
-                </div>
-                <figcaption className="mt-1.5">
+                </button>
+                <figcaption className="mt-1.5 w-[200px] sm:w-[220px]">
                   <div className="text-[10px] uppercase tracking-[0.15em] text-gold/50 font-medium">
                     {COLLECTION_LABELS[heroImage.collection] || heroImage.collection}
                   </div>
@@ -703,6 +762,16 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
         </div>
 
       </div>
+
+      {/* Image Lightbox */}
+      {heroImage && lightboxOpen && (
+        <ImageLightbox
+          src={heroImage.imageUrl}
+          alt={`${heroImage.imageType === 'oshigata' ? 'Oshigata' : 'Image'} — ${entity.name_romaji || entity.code}`}
+          caption={`${COLLECTION_LABELS[heroImage.collection] || heroImage.collection} — Vol. ${heroImage.volume}, No. ${heroImage.itemNumber}${heroImage.formType ? ` · ${heroImage.formType}` : ''}`}
+          onClose={() => setLightboxOpen(false)}
+        />
+      )}
     </div>
   );
 }
