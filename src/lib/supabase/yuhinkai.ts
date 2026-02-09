@@ -796,34 +796,42 @@ export interface MeasurementsByForm {
   };
 }
 
-export async function getArtisanDistributions(
-  code: string,
+/** Row shape returned by the gold_values query in getArtisanDistributions */
+export interface GoldValuesRow {
+  gold_form_type: string | null;
+  gold_mei_status: string | null;
+  gold_collections: string[] | null;
+  gold_nagasa: number | null;
+  gold_sori: number | null;
+  gold_motohaba: number | null;
+  gold_sakihaba: number | null;
+}
+
+/**
+ * Pure function: process gold_values rows into form/mei distributions + measurements.
+ * Exported separately for testability — the JE_Koto exclusion logic lives here.
+ */
+export function processGoldValuesRows(
+  rows: GoldValuesRow[],
   entityType: 'smith' | 'tosogu'
-): Promise<{
+): {
   form_distribution: Record<string, number>;
   mei_distribution: Record<string, number>;
   measurements_by_form: MeasurementsByForm;
-} | null> {
-  const idCol = entityType === 'smith' ? 'gold_smith_id' : 'gold_maker_id';
-
-  const { data, error } = await yuhinkaiClient
-    .from('gold_values')
-    .select('gold_form_type, gold_mei_status, gold_collections, gold_nagasa, gold_sori, gold_motohaba, gold_sakihaba')
-    .eq(idCol, code);
-
-  if (error || !data || data.length === 0) return null;
-
+} | null {
   const form: Record<string, number> = {};
   const mei: Record<string, number> = {};
   const measurements: MeasurementsByForm = {};
 
-  for (const row of data) {
-    // Skip any record sourced from JE_Koto — unreliable for form/mei/measurements
-    const collections = row.gold_collections as string[] | null;
-    if (collections?.includes('JE_Koto')) continue;
+  for (const row of rows) {
+    // Skip orphaned JE_Koto records (JE_Koto is the ONLY collection) — unreliable data
+    // without corroborating siblings. Records that also appear in Juyo/Tokuju/etc.
+    // are fine: gold_form_type/gold_mei_status are synthesized from the best source.
+    const collections = row.gold_collections;
+    if (collections?.length === 1 && collections[0] === 'JE_Koto') continue;
 
     // Form distribution
-    const rawForm = (row.gold_form_type as string | null)?.toLowerCase().trim();
+    const rawForm = row.gold_form_type?.toLowerCase().trim() ?? null;
     let formKey: string | null = null;
     if (rawForm) {
       const SWORD_FORMS = ['katana', 'wakizashi', 'tanto', 'tachi', 'naginata', 'yari', 'ken', 'kodachi'];
@@ -839,18 +847,14 @@ export async function getArtisanDistributions(
         measurements[formKey] = { nagasa: [], sori: [], motohaba: [], sakihaba: [] };
       }
       const m = measurements[formKey];
-      const nagasa = row.gold_nagasa as number | null;
-      const sori = row.gold_sori as number | null;
-      const motohaba = row.gold_motohaba as number | null;
-      const sakihaba = row.gold_sakihaba as number | null;
-      if (nagasa != null && nagasa > 0) m.nagasa.push(nagasa);
-      if (sori != null && sori > 0) m.sori.push(sori);
-      if (motohaba != null && motohaba > 0) m.motohaba.push(motohaba);
-      if (sakihaba != null && sakihaba > 0) m.sakihaba.push(sakihaba);
+      if (row.gold_nagasa != null && row.gold_nagasa > 0) m.nagasa.push(row.gold_nagasa);
+      if (row.gold_sori != null && row.gold_sori > 0) m.sori.push(row.gold_sori);
+      if (row.gold_motohaba != null && row.gold_motohaba > 0) m.motohaba.push(row.gold_motohaba);
+      if (row.gold_sakihaba != null && row.gold_sakihaba > 0) m.sakihaba.push(row.gold_sakihaba);
     }
 
     // Mei distribution — normalize to canonical keys
-    const rawMei = (row.gold_mei_status as string | null)?.toLowerCase().trim();
+    const rawMei = row.gold_mei_status?.toLowerCase().trim() ?? null;
     if (rawMei) {
       let meiKey: string;
       if (rawMei === 'mumei' || rawMei === 'unsigned') meiKey = 'mumei';
@@ -877,6 +881,26 @@ export async function getArtisanDistributions(
   if (!hasForm && !hasMei) return null;
 
   return { form_distribution: form, mei_distribution: mei, measurements_by_form: measurements };
+}
+
+export async function getArtisanDistributions(
+  code: string,
+  entityType: 'smith' | 'tosogu'
+): Promise<{
+  form_distribution: Record<string, number>;
+  mei_distribution: Record<string, number>;
+  measurements_by_form: MeasurementsByForm;
+} | null> {
+  const idCol = entityType === 'smith' ? 'gold_smith_id' : 'gold_maker_id';
+
+  const { data, error } = await yuhinkaiClient
+    .from('gold_values')
+    .select('gold_form_type, gold_mei_status, gold_collections, gold_nagasa, gold_sori, gold_motohaba, gold_sakihaba')
+    .eq(idCol, code);
+
+  if (error || !data || data.length === 0) return null;
+
+  return processGoldValuesRows(data as GoldValuesRow[], entityType);
 }
 
 // =============================================================================
