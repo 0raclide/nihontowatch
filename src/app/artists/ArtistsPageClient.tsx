@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, type SyntheticEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { ArtistDirectoryEntry, DirectoryFacets } from '@/lib/supabase/yuhinkai';
@@ -491,7 +491,7 @@ function ArtistCard({ artist }: { artist: ArtistWithSlug }) {
         isSchool ? ' border-l-2 border-l-gold/60' : ''
       }`}
     >
-      {/* Thumbnail — contained museum-catalog style */}
+      {/* Thumbnail — catalog oshigata from Yuhinkai */}
       {artist.cover_image && (
         <div className="w-14 shrink-0 bg-ink/[0.03] border-r border-border/50 flex items-center justify-center p-1.5 overflow-hidden">
           <img
@@ -499,6 +499,11 @@ function ArtistCard({ artist }: { artist: ArtistWithSlug }) {
             alt=""
             className="max-w-full max-h-full object-contain opacity-70 group-hover:opacity-100 transition-opacity"
             loading="lazy"
+            onError={(e: SyntheticEvent<HTMLImageElement>) => {
+              // Hide thumbnail if catalog image doesn't exist
+              const container = e.currentTarget.parentElement;
+              if (container) container.style.display = 'none';
+            }}
           />
         </div>
       )}

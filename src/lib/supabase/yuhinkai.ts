@@ -1040,6 +1040,117 @@ export async function getArtisanHeroImage(
   return null;
 }
 
+/**
+ * Batch-fetch hero image URLs for multiple artisans.
+ *
+ * Uses the same selection logic as getArtisanHeroImage but batched:
+ * 1. Single query for all gold_values across all codes
+ * 2. Single query for catalog_records of matching UUIDs
+ * 3. Builds best image URL per artisan (highest collection priority)
+ * 4. Skips HEAD verification — caller should handle missing images client-side
+ *
+ * Returns map of artisan code → image URL string (or absent if none found).
+ */
+export async function getBulkArtisanHeroImages(
+  artists: Array<{ code: string; entityType: 'smith' | 'tosogu' }>
+): Promise<Map<string, string>> {
+  const result = new Map<string, string>();
+  if (artists.length === 0) return result;
+
+  // Split by entity type since they use different columns
+  const smithCodes = artists.filter(a => a.entityType === 'smith').map(a => a.code);
+  const tosoguCodes = artists.filter(a => a.entityType === 'tosogu').map(a => a.code);
+
+  // 1. Batch-fetch all gold_values for all codes
+  type GoldRow = { object_uuid: string; gold_collections: string[] | null; gold_smith_id: string | null; gold_maker_id: string | null };
+  const allGoldRows: GoldRow[] = [];
+
+  if (smithCodes.length > 0) {
+    const { data } = await yuhinkaiClient
+      .from('gold_values')
+      .select('object_uuid, gold_collections, gold_smith_id')
+      .in('gold_smith_id', smithCodes);
+    for (const row of data || []) {
+      allGoldRows.push({ ...(row as GoldRow), gold_maker_id: null });
+    }
+  }
+  if (tosoguCodes.length > 0) {
+    const { data } = await yuhinkaiClient
+      .from('gold_values')
+      .select('object_uuid, gold_collections, gold_maker_id')
+      .in('gold_maker_id', tosoguCodes);
+    for (const row of data || []) {
+      allGoldRows.push({ ...(row as GoldRow), gold_smith_id: null });
+    }
+  }
+
+  if (allGoldRows.length === 0) return result;
+
+  // 2. Group gold rows by artisan code
+  const codeToRows = new Map<string, GoldRow[]>();
+  for (const row of allGoldRows) {
+    const code = (row.gold_smith_id || row.gold_maker_id) as string;
+    const existing = codeToRows.get(code);
+    if (existing) {
+      existing.push(row);
+    } else {
+      codeToRows.set(code, [row]);
+    }
+  }
+
+  // 3. For each artisan, find the best UUID (highest collection priority)
+  //    We pick the first matching UUID in the highest-priority collection.
+  const uuidsToFetch = new Set<string>();
+  const codeToTargetUuid = new Map<string, { uuid: string; collection: string }>();
+
+  for (const [code, rows] of codeToRows) {
+    for (const targetCollection of COLLECTION_PRIORITY) {
+      const match = rows.find(r => r.gold_collections?.includes(targetCollection));
+      if (match) {
+        const uuid = match.object_uuid as string;
+        uuidsToFetch.add(uuid);
+        codeToTargetUuid.set(code, { uuid, collection: targetCollection });
+        break;
+      }
+    }
+  }
+
+  if (uuidsToFetch.size === 0) return result;
+
+  // 4. Batch-fetch catalog records for all target UUIDs
+  const { data: catalogRows } = await yuhinkaiClient
+    .from('catalog_records')
+    .select('object_uuid, collection, volume, item_number')
+    .in('object_uuid', [...uuidsToFetch]);
+
+  if (!catalogRows || catalogRows.length === 0) return result;
+
+  // Index catalog records by (uuid, collection) for fast lookup
+  const catalogIndex = new Map<string, { volume: number; item_number: number }>();
+  for (const row of catalogRows) {
+    const key = `${row.object_uuid}:${row.collection}`;
+    if (!catalogIndex.has(key)) {
+      catalogIndex.set(key, { volume: row.volume, item_number: row.item_number });
+    }
+  }
+
+  // 5. Build image URL per artisan
+  for (const [code, target] of codeToTargetUuid) {
+    const key = `${target.uuid}:${target.collection}`;
+    const record = catalogIndex.get(key);
+    if (!record) continue;
+
+    const candidates = buildStoragePaths(target.collection, record.volume, record.item_number);
+    // Take the first candidate (oshigata preferred) — skip HEAD check for thumbnails
+    if (candidates.length > 0) {
+      const imageUrl = `${IMAGE_STORAGE_BASE}/storage/v1/object/public/images/${candidates[0].path}`;
+      result.set(code, imageUrl);
+    }
+  }
+
+  return result;
+}
+
 // =============================================================================
 // TEACHER RESOLUTION
 // =============================================================================
