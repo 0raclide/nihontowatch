@@ -114,6 +114,12 @@ export interface ArtisanPageResponse {
     available_count?: number;
   }>;
   denrai: Array<{ owner: string; count: number }>;
+  denraiGrouped: Array<{
+    parent: string;
+    totalCount: number;
+    children: Array<{ owner: string; count: number }>;
+    isGroup: boolean;
+  }>;
   heroImage: {
     imageUrl: string;
     collection: string;
@@ -165,6 +171,7 @@ export async function GET(
       getTokoTaikanPercentile,
       resolveTeacher,
       getDenraiForArtisan,
+      getDenraiGrouped,
       getArtisanDistributions,
     } = await import('@/lib/supabase/yuhinkai');
 
@@ -220,7 +227,7 @@ export async function GET(
 
     // Fetch all enrichment data in parallel
     const { getArtisanHeroImage } = await import('@/lib/supabase/yuhinkai');
-    const [profile, students, related, elitePercentile, tokoTaikanPercentile, teacherStub, denrai, heroImage] =
+    const [profile, students, related, elitePercentile, tokoTaikanPercentile, teacherStub, denrai, denraiGrouped, heroImage] =
       await Promise.all([
         getArtistProfile(entityCode),
         getStudents(entityCode, entity.name_romaji),
@@ -231,6 +238,7 @@ export async function GET(
           : Promise.resolve(null),
         entity.teacher ? resolveTeacher(entity.teacher) : Promise.resolve(null),
         getDenraiForArtisan(entityCode, entityType),
+        getDenraiGrouped(entityCode, entityType),
         getArtisanHeroImage(entityCode, entityType),
       ]);
 
@@ -318,6 +326,7 @@ export async function GET(
         elite_factor: r.elite_factor,
       })),
       denrai,
+      denraiGrouped,
       heroImage,
     };
 

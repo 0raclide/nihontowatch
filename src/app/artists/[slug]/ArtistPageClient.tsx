@@ -288,11 +288,25 @@ function ImageLightbox({ src, alt, caption, onClose }: { src: string; alt: strin
 // ─── MAIN COMPONENT ─────────────────────────────────────────────────────────
 
 export function ArtistPageClient({ data }: ArtistPageClientProps) {
-  const { entity, certifications, rankings, profile, stats, lineage, related, denrai: rawDenrai, heroImage } = data;
-  const denrai = useMemo(
-    () => rawDenrai.filter(d => !/^(own(er|ed)\s+(at|by)\s|at\s+time\s+of\s|current\s+owner|listed\s+in\s|formerly\s+(owned|held)\s+by\s|needs\s+research|meibutsu|known\s+as\s|identified\s+with\s|said\s+to\s|reportedly\s|tradition:|thereafter\s|transmitted\s+to\s|later\s+held\s+by\s|presented\s+to\s|bestowed\s+by\s|koshigatani?\s)/i.test(d.owner)),
-    [rawDenrai]
-  );
+  const { entity, certifications, rankings, profile, stats, lineage, related, denraiGrouped: rawDenraiGrouped, heroImage } = data;
+  const noisePattern = /^(own(er|ed)\s+(at|by)\s|at\s+time\s+of\s|current\s+owner|listed\s+in\s|formerly\s+(owned|held)\s+by\s|needs\s+research|meibutsu|known\s+as\s|identified\s+with\s|said\s+to\s|reportedly\s|tradition:|thereafter\s|transmitted\s+to\s|later\s+held\s+by\s|presented\s+to\s|bestowed\s+by\s|koshigatani?\s)/i;
+  const denraiGrouped = useMemo(() => {
+    if (!rawDenraiGrouped) return [];
+    return rawDenraiGrouped
+      .map(g => {
+        const filtered = g.children.filter(c => !noisePattern.test(c.owner));
+        if (filtered.length === 0) return null;
+        return {
+          ...g,
+          children: filtered,
+          totalCount: filtered.reduce((sum, c) => sum + c.count, 0),
+          isGroup: filtered.length > 1,
+        };
+      })
+      .filter((g): g is NonNullable<typeof g> => g !== null)
+      .sort((a, b) => b.totalCount - a.totalCount);
+  }, [rawDenraiGrouped]);
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [listings, setListings] = useState<Listing[] | null>(null);
   const [soldListings, setSoldListings] = useState<Listing[] | null>(null);
   const [copied, setCopied] = useState(false);
@@ -342,13 +356,13 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
     if (certifications.total_items > 0) s.push({ id: 'certifications', label: 'Certifications' });
     if (hasFormStats) s.push({ id: 'blade-forms', label: entity.entity_type === 'smith' ? 'Blade Forms' : 'Work Types' });
     if (hasMeiStats) s.push({ id: 'signatures', label: 'Signatures' });
-    if (denrai.length > 0) s.push({ id: 'provenance', label: 'Provenance' });
+    if (denraiGrouped.length > 0) s.push({ id: 'provenance', label: 'Provenance' });
     if (listingsExist) s.push({ id: 'listings', label: 'Available' });
     if (soldListingsExist) s.push({ id: 'sold', label: 'Previously Sold' });
     if (lineage.teacher || lineage.students.length > 0) s.push({ id: 'lineage', label: 'Lineage' });
     if (related.length > 0) s.push({ id: 'related', label: 'School' });
     return s;
-  }, [entity.entity_type, certifications.total_items, hasFormStats, hasMeiStats, listingsExist, soldListingsExist, lineage, related, denrai]);
+  }, [entity.entity_type, certifications.total_items, hasFormStats, hasMeiStats, listingsExist, soldListingsExist, lineage, related, denraiGrouped]);
 
   const fujishiroLabel = entity.fujishiro ? FUJISHIRO_LABELS[entity.fujishiro] : null;
 
@@ -630,7 +644,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
         {/* ═══════════════════════════════════════════════════════════════════
             PROVENANCE — Historical collections
         ═══════════════════════════════════════════════════════════════════ */}
-        {denrai.length > 0 && (
+        {denraiGrouped.length > 0 && (
           <>
             <section>
               <SectionHeader
@@ -641,21 +655,76 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
               />
 
               <div className="space-y-0">
-                {denrai.map((d, i) => (
-                  <div
-                    key={d.owner}
-                    className={`flex items-baseline justify-between py-3 ${
-                      i < denrai.length - 1 ? 'border-b border-border/15' : ''
-                    }`}
-                  >
-                    <span className="text-sm text-ink font-light">{d.owner}</span>
-                    {d.count > 1 && (
-                      <span className="text-xs text-ink/35 tabular-nums ml-4">
-                        {d.count} {d.count === 1 ? 'work' : 'works'}
-                      </span>
-                    )}
-                  </div>
-                ))}
+                {denraiGrouped.map((g, gi) => {
+                  const isLast = gi === denraiGrouped.length - 1;
+                  const isExpanded = expandedGroups.has(g.parent);
+
+                  if (!g.isGroup) {
+                    // Singleton — render flat, same as before
+                    const d = g.children[0];
+                    return (
+                      <div
+                        key={d.owner}
+                        className={`flex items-baseline justify-between py-3 ${
+                          !isLast ? 'border-b border-border/15' : ''
+                        }`}
+                      >
+                        <span className="text-sm text-ink font-light">{d.owner}</span>
+                        {d.count > 1 && (
+                          <span className="text-xs text-ink/35 tabular-nums ml-4">
+                            {d.count} works
+                          </span>
+                        )}
+                      </div>
+                    );
+                  }
+
+                  // Group — collapsible row
+                  return (
+                    <div key={g.parent} className={!isLast ? 'border-b border-border/15' : ''}>
+                      <button
+                        type="button"
+                        onClick={() => setExpandedGroups(prev => {
+                          const next = new Set(prev);
+                          if (next.has(g.parent)) next.delete(g.parent);
+                          else next.add(g.parent);
+                          return next;
+                        })}
+                        className="flex items-baseline justify-between py-3 w-full text-left group"
+                      >
+                        <span className="text-sm text-ink font-light">
+                          <span className="text-ink/30 text-xs mr-1.5 inline-block w-3">
+                            {isExpanded ? '▾' : '▸'}
+                          </span>
+                          {g.parent}
+                          <span className="text-ink/30 text-xs ml-1.5">
+                            {g.children.length}
+                          </span>
+                        </span>
+                        <span className="text-xs text-ink/35 tabular-nums ml-4">
+                          {g.totalCount} works
+                        </span>
+                      </button>
+                      {isExpanded && (
+                        <div className="pl-[18px] pb-2">
+                          {g.children.map(c => (
+                            <div
+                              key={c.owner}
+                              className="flex items-baseline justify-between py-1.5"
+                            >
+                              <span className="text-sm text-ink/60 font-light">{c.owner}</span>
+                              {c.count > 1 && (
+                                <span className="text-xs text-ink/25 tabular-nums ml-4">
+                                  {c.count}
+                                </span>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </section>
           </>

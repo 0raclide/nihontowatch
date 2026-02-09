@@ -12,12 +12,14 @@ import {
   getTokoTaikanPercentile,
   resolveTeacher,
   getDenraiForArtisan,
+  getDenraiGrouped,
   getArtisanDistributions,
   getArtisanHeroImage,
 } from '@/lib/supabase/yuhinkai';
 import { createServiceClient } from '@/lib/supabase/server';
 import { generateBreadcrumbJsonLd, jsonLdScriptProps } from '@/lib/seo/jsonLd';
 import { ArtistPageClient } from './ArtistPageClient';
+import { FontSwitcher } from '@/components/dev/FontSwitcher';
 import type { ArtisanPageResponse } from '@/app/api/artisan/[code]/route';
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://nihontowatch.com';
@@ -42,7 +44,7 @@ async function getArtistData(code: string): Promise<ArtisanPageResponse | null> 
   const eliteFactor = entity.elite_factor ?? 0;
   const slug = generateArtisanSlug(entity.name_romaji, entityCode);
 
-  const [profile, students, related, elitePercentile, tokoTaikanPercentile, teacherStub, denrai, heroImage] =
+  const [profile, students, related, elitePercentile, tokoTaikanPercentile, teacherStub, denrai, denraiGrouped, heroImage] =
     await Promise.all([
       getArtistProfile(entityCode),
       getStudents(entityCode, entity.name_romaji),
@@ -53,22 +55,13 @@ async function getArtistData(code: string): Promise<ArtisanPageResponse | null> 
         : Promise.resolve(null),
       entity.teacher ? resolveTeacher(entity.teacher) : Promise.resolve(null),
       getDenraiForArtisan(entityCode, entityType),
+      getDenraiGrouped(entityCode, entityType),
       getArtisanHeroImage(entityCode, entityType),
     ]);
 
-  // Try profile snapshot first, fall back to live gold_values query
-  let stats: ArtisanPageResponse['stats'] = null;
-  if (profile?.stats_snapshot) {
-    const snapshot = profile.stats_snapshot as Record<string, unknown>;
-    const mei = snapshot.mei_distribution as Record<string, number> | undefined;
-    const form = snapshot.form_distribution as Record<string, number> | undefined;
-    if (mei || form) {
-      stats = { mei_distribution: mei || {}, form_distribution: form || {} };
-    }
-  }
-  if (!stats) {
-    stats = await getArtisanDistributions(entityCode, entityType);
-  }
+  // Always compute mei/form distributions live from gold_values
+  // (profile snapshots had incorrect mei data — see CHO10/MAS590 bug)
+  const stats = await getArtisanDistributions(entityCode, entityType);
 
   // Fetch available listing counts for students + related artisans
   const allRelatedCodes = [
@@ -175,6 +168,7 @@ async function getArtistData(code: string): Promise<ArtisanPageResponse | null> 
       available_count: listingCountMap.get(r.code) || 0,
     })),
     denrai,
+    denraiGrouped,
     heroImage,
   };
 }
@@ -278,6 +272,7 @@ export default async function ArtistSlugPage({ params }: ArtistPageProps) {
       <script {...jsonLdScriptProps(breadcrumbJsonLd)} />
 
       <ArtistPageClient data={data} />
+      <FontSwitcher />
     </div>
   );
 }

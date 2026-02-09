@@ -1104,3 +1104,73 @@ export async function getDenraiForArtisan(
     .map(([owner, count]) => ({ owner, count }))
     .sort((a, b) => b.count - a.count);
 }
+
+// =============================================================================
+// DENRAI GROUPED (FAMILY HIERARCHY)
+// =============================================================================
+
+export type DenraiGroup = {
+  parent: string;
+  totalCount: number;
+  children: Array<{ owner: string; count: number }>;
+  isGroup: boolean;
+};
+
+/**
+ * Fetch denrai data grouped by family hierarchy using parent_canonical
+ * from denrai_canonical_names. Families with 2+ members collapse into
+ * a single group; singletons render flat.
+ */
+export async function getDenraiGrouped(
+  code: string,
+  entityType: 'smith' | 'tosogu'
+): Promise<DenraiGroup[]> {
+  const flat = await getDenraiForArtisan(code, entityType);
+  if (flat.length === 0) return [];
+
+  // Batch-fetch parent_canonical for all owner names.
+  // gold_denrai_owners stores canonical_name values (output of normalize_owner_name_v2),
+  // so we match against canonical_name in the lookup table.
+  const ownerNames = flat.map(d => d.owner);
+  const { data: mappings } = await yuhinkaiClient
+    .from('denrai_canonical_names')
+    .select('canonical_name, parent_canonical')
+    .in('canonical_name', ownerNames)
+    .not('parent_canonical', 'is', null);
+
+  // Build canonical_name → parent_canonical map
+  const parentMap = new Map<string, string>();
+  if (mappings) {
+    for (const row of mappings) {
+      if (row.canonical_name && row.parent_canonical) {
+        parentMap.set(row.canonical_name, row.parent_canonical);
+      }
+    }
+  }
+
+  // Group by parent_canonical (or self if no parent)
+  const groupMap = new Map<string, Array<{ owner: string; count: number }>>();
+  for (const d of flat) {
+    const parent = parentMap.get(d.owner) || d.owner;
+    if (!groupMap.has(parent)) groupMap.set(parent, []);
+    groupMap.get(parent)!.push(d);
+  }
+
+  // Build DenraiGroup array
+  const groups: DenraiGroup[] = [];
+  for (const [parent, children] of groupMap) {
+    const totalCount = children.reduce((sum, c) => sum + c.count, 0);
+    // Sort children by count desc within group
+    children.sort((a, b) => b.count - a.count);
+    groups.push({
+      parent,
+      totalCount,
+      children,
+      isGroup: children.length > 1,
+    });
+  }
+
+  // Sort groups by totalCount desc
+  groups.sort((a, b) => b.totalCount - a.totalCount);
+  return groups;
+}
