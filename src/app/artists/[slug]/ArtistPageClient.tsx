@@ -121,17 +121,19 @@ function StatsBar({ data, availableCount }: { data: ArtisanPageResponse; availab
   if (items.length === 0) return null;
 
   return (
-    <div className="flex flex-wrap gap-x-8 gap-y-3 mt-8">
-      {items.map((item, i) => (
-        <div key={i} className="flex items-baseline gap-2">
-          <span className={`text-xl font-serif font-light tabular-nums ${item.highlight ? 'text-emerald-400' : 'text-gold'}`}>
-            {item.value}
-          </span>
-          <span className={`text-[10px] uppercase tracking-[0.15em] ${item.highlight ? 'text-emerald-400/60' : 'text-ink/40'}`}>
-            {item.label}
-          </span>
-        </div>
-      ))}
+    <div className="mt-8 pt-6 border-t border-border/20">
+      <div className="flex flex-wrap gap-x-10 gap-y-4">
+        {items.map((item, i) => (
+          <div key={i} className="flex flex-col">
+            <span className={`text-2xl font-serif font-light tabular-nums leading-none ${item.highlight ? 'text-emerald-400' : 'text-gold'}`}>
+              {item.value}
+            </span>
+            <span className={`text-[10px] uppercase tracking-[0.15em] mt-1.5 ${item.highlight ? 'text-emerald-400/60' : 'text-ink/40'}`}>
+              {item.label}
+            </span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -218,11 +220,19 @@ function Biography({ markdown, hook }: { markdown: string; hook: string | null }
   );
 }
 
-/** Minimal decorative separator between major sections */
-function SectionDivider() {
+/** Section header — thin rule + small-caps title, like a catalog chapter heading */
+function SectionHeader({ title, subtitle, id, className = '' }: { title: string; subtitle?: string; id?: string; className?: string }) {
   return (
-    <div className="flex justify-center py-1">
-      <div className="w-8 h-px bg-gold/20" />
+    <div id={id} className={className}>
+      <div className="h-px bg-border/30 mb-5" />
+      <h2 className="text-[13px] uppercase tracking-[0.18em] text-ink/60 font-medium">
+        {title}
+      </h2>
+      {subtitle && (
+        <p className="text-[12.5px] text-ink/35 mt-1 italic font-light">
+          {subtitle}
+        </p>
+      )}
     </div>
   );
 }
@@ -349,7 +359,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
     <div className="max-w-[780px] mx-auto px-5 sm:px-8">
       <SectionJumpNav sections={sections} />
 
-      <div className="pt-12 pb-20 space-y-14">
+      <div className="pt-12 pb-20 space-y-16">
 
         {/* ═══════════════════════════════════════════════════════════════════
             OVERVIEW — Hero header with vitals
@@ -416,52 +426,52 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
 
             {/* Identity + Vitals */}
             <div className="flex-1 min-w-0">
-              <div className="w-6 h-px bg-gold/40 mb-3" />
+              <div className="w-10 h-[2px] bg-gold/50 mb-4" />
 
               <h1 className="text-3xl sm:text-[2.5rem] font-serif font-light text-ink leading-[1.1] tracking-tight">
                 {(() => { const dp = getArtisanDisplayParts(entity.name_romaji, entity.school); return <>{dp.prefix && <>{dp.prefix} </>}{dp.name || entity.code}</>; })()}
               </h1>
               {entity.name_kanji && (
-                <p className="text-base text-ink/25 font-serif font-light mt-1 tracking-[0.06em]">
+                <p className="text-lg text-ink/35 font-serif font-light mt-1.5 tracking-[0.08em]">
                   {entity.name_kanji}
                 </p>
               )}
 
-              {/* Metadata grid — tight, top-aligned with image */}
-              <div className="mt-4 grid grid-cols-[auto_1fr] gap-x-5 gap-y-[5px] text-[13px] leading-snug">
+              {/* Metadata grid */}
+              <div className="mt-5 grid grid-cols-[auto_1fr] gap-x-6 gap-y-1.5 text-[13px] leading-snug">
                 {entity.province && (
                   <>
-                    <span className="text-ink/35">Province</span>
+                    <span className="text-ink/50">Province</span>
                     <span className="text-ink">{entity.province}</span>
                   </>
                 )}
                 {entity.era && (
                   <>
-                    <span className="text-ink/35">Era</span>
+                    <span className="text-ink/50">Era</span>
                     <span className="text-ink">{entity.era}</span>
                   </>
                 )}
                 {entity.period && entity.period !== entity.era && (
                   <>
-                    <span className="text-ink/35">Period</span>
+                    <span className="text-ink/50">Period</span>
                     <span className="text-ink">{entity.period}</span>
                   </>
                 )}
                 {entity.school && (
                   <>
-                    <span className="text-ink/35">School</span>
+                    <span className="text-ink/50">School</span>
                     <span className="text-ink">{entity.school}</span>
                   </>
                 )}
                 {entity.generation && (
                   <>
-                    <span className="text-ink/35">Generation</span>
+                    <span className="text-ink/50">Generation</span>
                     <span className="text-ink">{entity.generation}</span>
                   </>
                 )}
                 {entity.teacher && (
                   <>
-                    <span className="text-ink/35">Teacher</span>
+                    <span className="text-ink/50">Teacher</span>
                     {lineage.teacher ? (
                       <Link href={`/artists/${lineage.teacher.slug}`} className="text-ink hover:text-gold transition-colors">
                         {lineage.teacher.name_romaji || entity.teacher}
@@ -473,7 +483,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
                 )}
                 {entity.fujishiro && (
                   <>
-                    <span className="text-ink/35">Fujishiro</span>
+                    <span className="text-ink/50">Fujishiro</span>
                     <span className="text-ink">
                       {entity.fujishiro}
                       {fujishiroLabel && <span className="text-ink/25 ml-1">({fujishiroLabel})</span>}
@@ -482,7 +492,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
                 )}
                 {entity.toko_taikan != null && (
                   <>
-                    <span className="text-ink/35">Toko Taikan</span>
+                    <span className="text-ink/50">Toko Taikan</span>
                     <span className="text-ink tabular-nums">
                       {entity.toko_taikan.toLocaleString()}
                       {rankings.toko_taikan_percentile != null && (
@@ -493,21 +503,21 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
                 )}
                 {entity.specialties && entity.specialties.length > 0 && (
                   <>
-                    <span className="text-ink/35">Specialties</span>
+                    <span className="text-ink/50">Specialties</span>
                     <span className="text-ink">{entity.specialties.join(', ')}</span>
                   </>
                 )}
-                <span className="text-ink/35">Type</span>
+                <span className="text-ink/50">Type</span>
                 <span className="text-ink">{entity.entity_type === 'smith' ? 'Swordsmith' : 'Tosogu Maker'}</span>
-                <span className="text-ink/35">Code</span>
+                <span className="text-ink/50">Code</span>
                 <span className="text-ink font-mono text-xs tracking-wide">{entity.code}</span>
               </div>
             </div>
           </div>
 
-          {/* Hook — pull-quote */}
+          {/* Hook — epigraph */}
           {profile?.hook && (
-            <p className="mt-6 pl-4 border-l-2 border-gold/25 text-[13px] text-ink/45 leading-relaxed italic max-w-xl">
+            <p className="mt-8 pl-5 border-l-[3px] border-gold/40 text-[14px] text-ink/55 leading-[1.8] italic font-light max-w-xl">
               {profile.hook}
             </p>
           )}
@@ -543,9 +553,8 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
         ═══════════════════════════════════════════════════════════════════ */}
         {certifications.total_items > 0 && (
           <>
-            <SectionDivider />
-            <section id="certifications">
-              <h2 className="text-sm font-serif font-light tracking-wide text-ink/70 mb-7">Certifications</h2>
+            <section>
+              <SectionHeader id="certifications" title="Certifications" className="mb-7" />
 
               <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr] gap-10">
                 {/* Hierarchy */}
@@ -567,7 +576,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
                 {/* Elite standing */}
                 <div className="flex flex-col justify-between">
                   <div>
-                    <h3 className="text-xs font-serif font-light tracking-wide text-ink/60 mb-3">Elite Standing</h3>
+                    <h3 className="text-[12px] uppercase tracking-[0.12em] text-ink/50 font-medium mb-3">Elite Standing</h3>
                     <EliteFactorDisplay
                       eliteFactor={certifications.elite_factor}
                       percentile={rankings.elite_percentile}
@@ -586,14 +595,13 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
         ═══════════════════════════════════════════════════════════════════ */}
         {hasFormStats && (
           <>
-            <SectionDivider />
-            <section id="blade-forms">
-              <h2 className="text-sm font-serif font-light tracking-wide text-ink/70 mb-2">
-                {entity.entity_type === 'smith' ? 'Blade Forms' : 'Work Types'}
-              </h2>
-              <p className="text-xs text-ink/40 mb-6 italic">
-                Distribution across {certifications.total_items} ranked works
-              </p>
+            <section>
+              <SectionHeader
+                id="blade-forms"
+                title={entity.entity_type === 'smith' ? 'Blade Forms' : 'Work Types'}
+                subtitle={`Distribution across ${certifications.total_items} ranked works`}
+                className="mb-6"
+              />
               <FormDistributionBar distribution={stats.form_distribution} />
             </section>
           </>
@@ -604,12 +612,13 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
         ═══════════════════════════════════════════════════════════════════ */}
         {hasMeiStats && (
           <>
-            <SectionDivider />
-            <section id="signatures">
-              <h2 className="text-sm font-serif font-light tracking-wide text-ink/70 mb-2">Signatures</h2>
-              <p className="text-xs text-ink/40 mb-6 italic">
-                Signature types across {certifications.total_items} ranked works
-              </p>
+            <section>
+              <SectionHeader
+                id="signatures"
+                title="Signatures"
+                subtitle={`Signature types across ${certifications.total_items} ranked works`}
+                className="mb-6"
+              />
               <MeiDistributionBar distribution={stats.mei_distribution} />
             </section>
           </>
@@ -620,12 +629,13 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
         ═══════════════════════════════════════════════════════════════════ */}
         {denrai.length > 0 && (
           <>
-            <SectionDivider />
-            <section id="provenance">
-              <h2 className="text-sm font-serif font-light tracking-wide text-ink/70 mb-2">Provenance</h2>
-              <p className="text-xs text-ink/40 mb-6 italic">
-                Certified works by {entity.name_romaji || entity.code} have been held in the following collections
-              </p>
+            <section>
+              <SectionHeader
+                id="provenance"
+                title="Provenance"
+                subtitle={`Certified works by ${entity.name_romaji || entity.code} have been held in the following collections`}
+                className="mb-6"
+              />
 
               <div className="space-y-0">
                 {denrai.map((d, i) => (
@@ -653,9 +663,8 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
         ═══════════════════════════════════════════════════════════════════ */}
         {listingsExist && (
           <>
-            <SectionDivider />
-            <section id="listings">
-              <h2 className="text-sm font-serif font-light tracking-wide text-ink/70 mb-6">Currently Available</h2>
+            <section>
+              <SectionHeader id="listings" title="Currently Available" className="mb-6" />
               <ArtisanListings code={entity.code} artisanName={entity.name_romaji} initialListings={listings} status="available" />
             </section>
           </>
@@ -666,9 +675,8 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
         ═══════════════════════════════════════════════════════════════════ */}
         {soldListingsExist && (
           <>
-            <SectionDivider />
-            <section id="sold">
-              <h2 className="text-sm font-serif font-light tracking-wide text-ink/70 mb-6">Previously Sold</h2>
+            <section>
+              <SectionHeader id="sold" title="Previously Sold" className="mb-6" />
               <ArtisanListings code={entity.code} artisanName={entity.name_romaji} initialListings={soldListings} status="sold" />
             </section>
           </>
@@ -679,9 +687,8 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
         ═══════════════════════════════════════════════════════════════════ */}
         {(lineage.teacher || lineage.students.length > 0) && (
           <>
-            <SectionDivider />
-            <section id="lineage">
-              <h2 className="text-sm font-serif font-light tracking-wide text-ink/70 mb-6">Lineage</h2>
+            <section>
+              <SectionHeader id="lineage" title="Lineage" className="mb-6" />
               <div className="relative pl-7">
                 {/* Vertical connection line */}
                 <div className="absolute left-[9px] top-0 bottom-0 w-px bg-border/25" />
@@ -742,11 +749,12 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
         ═══════════════════════════════════════════════════════════════════ */}
         {related.length > 0 && (
           <>
-            <SectionDivider />
-            <section id="related">
-              <h2 className="text-sm font-serif font-light tracking-wide text-ink/70 mb-6">
-                {entity.school ? `${entity.school} School` : 'Related Artisans'}
-              </h2>
+            <section>
+              <SectionHeader
+                id="related"
+                title={entity.school ? `${entity.school} School` : 'Related Artisans'}
+                className="mb-6"
+              />
               <RelatedArtisans artisans={related} schoolName={entity.school} />
             </section>
           </>
