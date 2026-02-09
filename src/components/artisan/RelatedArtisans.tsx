@@ -33,7 +33,7 @@ export function RelatedArtisans({ artisans, schoolName }: RelatedArtisansProps) 
   return (
     <div>
       {schoolName && (
-        <p className="text-xs text-muted mb-4 italic">
+        <p className="text-xs text-ink/45 mb-4 italic">
           Other artisans of the {schoolName} school
         </p>
       )}
@@ -52,7 +52,7 @@ export function RelatedArtisans({ artisans, schoolName }: RelatedArtisansProps) 
                 {artisan.name_romaji || artisan.code}
               </span>
               {artisan.name_kanji && (
-                <span className="text-sm text-muted/40 ml-2">
+                <span className="text-sm text-ink/35 ml-2">
                   {artisan.name_kanji}
                 </span>
               )}
@@ -71,10 +71,10 @@ export function RelatedArtisans({ artisans, schoolName }: RelatedArtisansProps) 
                 <span className="text-ink font-medium">{artisan.gyobutsu_count} gyobutsu</span>
               )}
               {artisan.tokuju_count > 0 && (
-                <span className="text-muted">{artisan.tokuju_count} tokujū</span>
+                <span className="text-ink/50">{artisan.tokuju_count} tokujū</span>
               )}
               {artisan.juyo_count > 0 && (
-                <span className="text-muted">{artisan.juyo_count} jūyō</span>
+                <span className="text-ink/50">{artisan.juyo_count} jūyō</span>
               )}
             </div>
           </Link>

@@ -53,7 +53,7 @@ export function MeiDistributionBar({ distribution }: MeiDistributionBarProps) {
             <span className="text-sm text-ink">{label}</span>
             <div className="flex items-baseline gap-3">
               <span className="text-sm tabular-nums text-ink font-light">{count}</span>
-              <span className="text-xs tabular-nums text-muted w-10 text-right">{pct}%</span>
+              <span className="text-xs tabular-nums text-ink/45 w-10 text-right">{pct}%</span>
             </div>
           </div>
         );

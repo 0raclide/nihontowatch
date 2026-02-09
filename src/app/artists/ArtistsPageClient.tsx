@@ -26,7 +26,7 @@ interface Filters {
   province?: string;
   era?: string;
   q?: string;
-  sort: 'elite_factor' | 'juyo_count' | 'name' | 'total_items';
+  sort: 'elite_factor' | 'name' | 'total_items';
   notable: boolean;
 }
 
@@ -191,7 +191,7 @@ export function ArtistsPageClient({
         <h1 className="font-serif text-2xl lg:text-3xl text-ink tracking-tight">
           Artist Directory
         </h1>
-        <p className="mt-2 text-sm text-muted max-w-2xl">
+        <p className="mt-2 text-sm text-ink/50 max-w-2xl">
           {facets.totals.smiths.toLocaleString()} nihonto and {facets.totals.tosogu.toLocaleString()} tosogu artists
           from the Yuhinkai database, ranked by certified works.
         </p>
@@ -212,13 +212,13 @@ export function ArtistsPageClient({
                 value={searchInput}
                 onChange={(e) => handleSearchInput(e.target.value)}
                 placeholder="Search by name, kanji, or code..."
-                className="w-full pl-4 pr-10 py-2 bg-cream border border-border text-[13px] text-ink placeholder:text-muted/40 focus:outline-none focus:border-gold/40 focus:shadow-[0_0_0_3px_rgba(181,142,78,0.1)] transition-all"
+                className="w-full pl-4 pr-10 py-2 bg-cream border border-border text-[13px] text-ink placeholder:text-ink/30 focus:outline-none focus:border-gold/40 focus:shadow-[0_0_0_3px_rgba(181,142,78,0.1)] transition-all"
               />
               {searchInput && (
                 <button
                   type="button"
                   onClick={clearSearch}
-                  className="absolute right-8 top-1/2 -translate-y-1/2 p-1 text-muted/40 hover:text-muted"
+                  className="absolute right-8 top-1/2 -translate-y-1/2 p-1 text-ink/40 hover:text-ink/60"
                 >
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -227,7 +227,7 @@ export function ArtistsPageClient({
               )}
               <button
                 type="submit"
-                className="absolute right-1 top-1/2 -translate-y-1/2 p-1.5 text-muted/50 hover:text-gold"
+                className="absolute right-1 top-1/2 -translate-y-1/2 p-1.5 text-ink/40 hover:text-gold"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -246,7 +246,7 @@ export function ArtistsPageClient({
                 className={`px-4 py-2 text-[11px] uppercase tracking-[0.15em] transition-colors ${
                   filters.type === t
                     ? 'bg-gold/10 text-gold font-medium'
-                    : 'text-muted hover:text-ink hover:bg-hover'
+                    : 'text-ink/50 hover:text-ink hover:bg-hover'
                 }`}
               >
                 {t === 'smith' ? 'Nihonto' : 'Tosogu'}
@@ -282,16 +282,15 @@ export function ArtistsPageClient({
           <select
             value={filters.sort}
             onChange={(e) => handleFilterChange('sort', e.target.value)}
-            className="px-3 py-2 bg-cream border border-border text-[12px] text-muted focus:outline-none focus:border-gold/40 cursor-pointer"
+            className="px-3 py-2 bg-cream border border-border text-[12px] text-ink/60 focus:outline-none focus:border-gold/40 cursor-pointer"
           >
             <option value="elite_factor">Sort: Elite Factor</option>
-            <option value="juyo_count">Sort: Juyo Count</option>
             <option value="total_items">Sort: Total Works</option>
             <option value="name">Sort: Name A-Z</option>
           </select>
 
           {/* Notable Toggle */}
-          <label className="flex items-center gap-2 text-[12px] text-muted cursor-pointer select-none">
+          <label className="flex items-center gap-2 text-[12px] text-ink/60 cursor-pointer select-none">
             <input
               type="checkbox"
               checked={filters.notable}
@@ -339,7 +338,7 @@ export function ArtistsPageClient({
           </div>
         ) : artists.length === 0 ? (
           <div className="py-20 text-center">
-            <p className="text-muted text-sm">No artisans found matching your criteria.</p>
+            <p className="text-ink/50 text-sm">No artisans found matching your criteria.</p>
             <button
               onClick={clearAllFilters}
               className="mt-3 text-[12px] text-gold hover:text-gold-light underline"
@@ -397,7 +396,7 @@ function StatsBar({
       {items.map((item) => (
         <div key={item.label} className="flex items-baseline gap-1.5">
           <span className="text-sm font-serif tabular-nums text-ink">{item.value}</span>
-          <span className="text-[10px] uppercase tracking-wider text-muted/60">{item.label}</span>
+          <span className="text-[10px] uppercase tracking-wider text-ink/40">{item.label}</span>
         </div>
       ))}
     </div>
@@ -419,7 +418,7 @@ function FilterSelect({
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="px-3 py-2 bg-cream border border-border text-[12px] text-muted focus:outline-none focus:border-gold/40 cursor-pointer"
+      className="px-3 py-2 bg-cream border border-border text-[12px] text-ink/60 focus:outline-none focus:border-gold/40 cursor-pointer"
     >
       <option value="">All {label}s</option>
       {options.map((opt) => (
@@ -481,27 +480,27 @@ function ArtistCard({ artist }: { artist: ArtistWithSlug }) {
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <span className="text-sm font-medium text-ink group-hover:text-gold transition-colors truncate block">
-            {artist.school && <span className="font-normal">{artist.school} </span>}
+            {artist.school && artist.school.toLowerCase() !== (artist.name_romaji || '').toLowerCase() && <span className="font-normal">{artist.school} </span>}
             {artist.name_romaji || artist.code}
           </span>
           {artist.name_kanji && (
-            <span className="text-xs text-muted/60 ml-2">{artist.name_kanji}</span>
+            <span className="text-xs text-ink/40 ml-2">{artist.name_kanji}</span>
           )}
         </div>
         <div className="shrink-0 text-center leading-none">
-          <span className="block text-lg font-serif text-ink/80 tabular-nums">{artist.total_items}</span>
-          <span className="block text-[8px] uppercase tracking-[0.15em] text-muted/50 mt-0.5">works</span>
+          <span className="block text-lg font-serif text-ink tabular-nums">{artist.total_items}</span>
+          <span className="block text-[8px] uppercase tracking-[0.15em] text-ink/40 mt-0.5">works</span>
         </div>
       </div>
 
       {/* Row 2: School / Era / Province */}
-      <div className="mt-1.5 text-[11px] text-muted/70 truncate">
+      <div className="mt-1.5 text-[11px] text-ink/45 truncate">
         {[artist.school, artist.era, artist.province].filter(Boolean).join(' \u00b7 ') || 'Unknown'}
       </div>
 
       {/* Row 3: Cert counts */}
       {certBadges.length > 0 && (
-        <div className="mt-2.5 flex items-center gap-3 text-[11px] text-ink/80 tabular-nums flex-wrap">
+        <div className="mt-2.5 flex items-center gap-3 text-[11px] text-ink tabular-nums flex-wrap">
           {certBadges.map((badge) => (
             <span key={badge.label}>
               {badge.value} {badge.label}
@@ -568,7 +567,7 @@ function PaginationBar({
 
   return (
     <div className={`mt-8 flex flex-col sm:flex-row items-center justify-between gap-4 ${disabled ? 'opacity-50 pointer-events-none' : ''}`}>
-      <p className="text-[11px] text-muted/60">
+      <p className="text-[11px] text-ink/45">
         Showing {((page - 1) * 50) + 1}–{Math.min(page * 50, totalCount)} of {totalCount.toLocaleString()}
       </p>
 
@@ -577,14 +576,14 @@ function PaginationBar({
         <button
           onClick={() => onPageChange(page - 1)}
           disabled={page <= 1}
-          className="px-2.5 py-1.5 text-[11px] text-muted hover:text-ink hover:bg-hover disabled:opacity-30 disabled:pointer-events-none transition-colors"
+          className="px-2.5 py-1.5 text-[11px] text-ink/50 hover:text-ink hover:bg-hover disabled:opacity-30 disabled:pointer-events-none transition-colors"
         >
           Prev
         </button>
 
         {pages.map((p, i) =>
           p === 'ellipsis' ? (
-            <span key={`e${i}`} className="px-1 text-muted/40 text-[11px]">
+            <span key={`e${i}`} className="px-1 text-ink/30 text-[11px]">
               ...
             </span>
           ) : (
@@ -594,7 +593,7 @@ function PaginationBar({
               className={`min-w-[32px] px-2 py-1.5 text-[11px] transition-colors ${
                 p === page
                   ? 'bg-gold/10 text-gold font-medium border border-gold/30'
-                  : 'text-muted hover:text-ink hover:bg-hover'
+                  : 'text-ink/50 hover:text-ink hover:bg-hover'
               }`}
             >
               {p}
@@ -606,7 +605,7 @@ function PaginationBar({
         <button
           onClick={() => onPageChange(page + 1)}
           disabled={page >= totalPages}
-          className="px-2.5 py-1.5 text-[11px] text-muted hover:text-ink hover:bg-hover disabled:opacity-30 disabled:pointer-events-none transition-colors"
+          className="px-2.5 py-1.5 text-[11px] text-ink/50 hover:text-ink hover:bg-hover disabled:opacity-30 disabled:pointer-events-none transition-colors"
         >
           Next
         </button>

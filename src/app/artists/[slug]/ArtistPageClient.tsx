@@ -114,10 +114,10 @@ function StatsBar({ data, availableCount }: { data: ArtisanPageResponse; availab
     <div className="flex flex-wrap gap-x-8 gap-y-3 mt-8">
       {items.map((item, i) => (
         <div key={i} className="flex items-baseline gap-2">
-          <span className={`text-xl font-serif font-light tabular-nums ${item.highlight ? 'text-emerald-400' : 'text-gold/90'}`}>
+          <span className={`text-xl font-serif font-light tabular-nums ${item.highlight ? 'text-emerald-400' : 'text-gold'}`}>
             {item.value}
           </span>
-          <span className={`text-[10px] uppercase tracking-[0.15em] ${item.highlight ? 'text-emerald-400/50' : 'text-muted/45'}`}>
+          <span className={`text-[10px] uppercase tracking-[0.15em] ${item.highlight ? 'text-emerald-400/60' : 'text-ink/40'}`}>
             {item.label}
           </span>
         </div>
@@ -166,11 +166,11 @@ function Biography({ markdown, hook }: { markdown: string; hook: string | null }
           <div key={i}>
             {/* Don't show the first section title if it matches generic pattern */}
             {(i > 0 || !section.title.match(/^THE SMITH|THE MAKER|OVERVIEW/i)) && (
-              <h3 className="text-xs uppercase tracking-[0.2em] text-gold/60 mb-3">
+              <h3 className="text-xs uppercase tracking-[0.2em] text-gold/70 mb-3">
                 {section.title}
               </h3>
             )}
-            <div className="text-[13.5px] text-ink/75 leading-[1.9] font-light space-y-4">
+            <div className="text-[13.5px] text-ink/80 leading-[1.9] font-light space-y-4">
               {section.body.split('\n\n').map((paragraph, j) => {
                 // Handle bullet points
                 if (paragraph.includes('\n•') || paragraph.startsWith('•')) {
@@ -178,8 +178,8 @@ function Biography({ markdown, hook }: { markdown: string; hook: string | null }
                   return (
                     <ul key={j} className="space-y-1.5 pl-1">
                       {bullets.map((bullet, k) => (
-                        <li key={k} className="flex gap-2.5 text-[13.5px] text-ink/65">
-                          <span className="text-gold/40 flex-shrink-0 leading-[1.9]">·</span>
+                        <li key={k} className="flex gap-2.5 text-[13.5px] text-ink/70">
+                          <span className="text-gold/50 flex-shrink-0 leading-[1.9]">·</span>
                           <span>{renderInlineMarkdown(bullet.replace(/^•\s*/, ''))}</span>
                         </li>
                       ))}
@@ -199,7 +199,7 @@ function Biography({ markdown, hook }: { markdown: string; hook: string | null }
       {hasMore && (
         <button
           onClick={() => setExpanded(!expanded)}
-          className="mt-6 text-[11px] text-gold/70 hover:text-gold transition-colors tracking-[0.15em] uppercase"
+          className="mt-6 text-[11px] text-gold hover:text-gold-light transition-colors tracking-[0.15em] uppercase"
         >
           {expanded ? 'Show less' : `Read full profile (${sections.length} sections)`}
         </button>
@@ -295,16 +295,16 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
         <section id="overview">
           {/* Breadcrumb + Share */}
           <div className="flex items-center justify-between mb-10">
-            <nav className="text-[11px] text-muted/40 tracking-widest uppercase">
-              <Link href="/" className="hover:text-muted transition-colors">Browse</Link>
-              <span className="mx-2 text-border">/</span>
-              <Link href="/artists" className="hover:text-muted transition-colors">Artists</Link>
-              <span className="mx-2 text-border">/</span>
-              <span className="text-muted/60">{entity.name_romaji || entity.code}</span>
+            <nav className="text-[11px] text-ink/40 tracking-widest uppercase">
+              <Link href="/" className="hover:text-ink/60 transition-colors">Browse</Link>
+              <span className="mx-2 text-ink/20">/</span>
+              <Link href="/artists" className="hover:text-ink/60 transition-colors">Artists</Link>
+              <span className="mx-2 text-ink/20">/</span>
+              <span className="text-ink/50">{entity.name_romaji || entity.code}</span>
             </nav>
             <button
               onClick={handleShare}
-              className="text-[11px] text-muted/40 hover:text-muted transition-colors flex items-center gap-1.5"
+              className="text-[11px] text-ink/40 hover:text-ink/60 transition-colors flex items-center gap-1.5"
               title="Share this profile"
             >
               {copied ? (
@@ -337,11 +337,11 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
 
             <div className="relative">
               <h1 className="text-4xl sm:text-5xl font-serif font-light text-ink leading-[1.05] tracking-tight">
-                {entity.school && <>{entity.school} </>}
+                {entity.school && entity.school.toLowerCase() !== (entity.name_romaji || '').toLowerCase() && <>{entity.school} </>}
                 {entity.name_romaji || entity.code}
               </h1>
               {entity.name_kanji && (
-                <p className="text-lg text-muted/25 font-serif font-light mt-2 tracking-[0.08em]">
+                <p className="text-lg text-ink/30 font-serif font-light mt-2 tracking-[0.08em]">
                   {entity.name_kanji}
                 </p>
               )}
@@ -349,7 +349,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
 
             {/* Hook — pull-quote with left accent */}
             {profile?.hook && (
-              <p className="mt-7 pl-4 border-l-2 border-gold/20 text-sm text-muted/60 leading-relaxed italic max-w-xl">
+              <p className="mt-7 pl-4 border-l-2 border-gold/30 text-sm text-ink/50 leading-relaxed italic max-w-xl">
                 {profile.hook}
               </p>
             )}
@@ -363,37 +363,37 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
             <div className="grid grid-cols-[auto_1fr] gap-x-10 gap-y-2.5 text-sm">
               {entity.province && (
                 <>
-                  <span className="text-muted/50">Province</span>
+                  <span className="text-ink/45">Province</span>
                   <span className="text-ink">{entity.province}</span>
                 </>
               )}
               {entity.era && (
                 <>
-                  <span className="text-muted/50">Era</span>
+                  <span className="text-ink/45">Era</span>
                   <span className="text-ink">{entity.era}</span>
                 </>
               )}
               {entity.period && entity.period !== entity.era && (
                 <>
-                  <span className="text-muted/50">Period</span>
+                  <span className="text-ink/45">Period</span>
                   <span className="text-ink">{entity.period}</span>
                 </>
               )}
               {entity.school && (
                 <>
-                  <span className="text-muted/50">School</span>
+                  <span className="text-ink/45">School</span>
                   <span className="text-ink">{entity.school}</span>
                 </>
               )}
               {entity.generation && (
                 <>
-                  <span className="text-muted/50">Generation</span>
+                  <span className="text-ink/45">Generation</span>
                   <span className="text-ink">{entity.generation}</span>
                 </>
               )}
               {entity.teacher && (
                 <>
-                  <span className="text-muted/50">Teacher</span>
+                  <span className="text-ink/45">Teacher</span>
                   {lineage.teacher ? (
                     <Link href={`/artists/${lineage.teacher.slug}`} className="text-ink hover:text-gold transition-colors">
                       {lineage.teacher.name_romaji || entity.teacher}
@@ -405,36 +405,36 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
               )}
               {entity.toko_taikan != null && (
                 <>
-                  <span className="text-muted/50">Tōkō Taikan</span>
+                  <span className="text-ink/45">Tōkō Taikan</span>
                   <span className="text-ink">
                     {entity.toko_taikan.toLocaleString()}
                     {rankings.toko_taikan_percentile != null && (
-                      <span className="text-muted/40 ml-1.5">(top {Math.max(100 - rankings.toko_taikan_percentile, 1)}%)</span>
+                      <span className="text-ink/35 ml-1.5">(top {Math.max(100 - rankings.toko_taikan_percentile, 1)}%)</span>
                     )}
                   </span>
                 </>
               )}
               {entity.fujishiro && (
                 <>
-                  <span className="text-muted/50">Fujishiro</span>
+                  <span className="text-ink/45">Fujishiro</span>
                   <span className="text-ink">
                     {entity.fujishiro}
-                    {fujishiroLabel && <span className="text-muted/40 ml-1.5">({fujishiroLabel})</span>}
+                    {fujishiroLabel && <span className="text-ink/35 ml-1.5">({fujishiroLabel})</span>}
                   </span>
                 </>
               )}
               {entity.specialties && entity.specialties.length > 0 && (
                 <>
-                  <span className="text-muted/50">Specialties</span>
+                  <span className="text-ink/45">Specialties</span>
                   <span className="text-ink">{entity.specialties.join(', ')}</span>
                 </>
               )}
               <>
-                <span className="text-muted/50">Type</span>
+                <span className="text-ink/45">Type</span>
                 <span className="text-ink">{entity.entity_type === 'smith' ? 'Swordsmith' : 'Tosogu Maker'}</span>
               </>
               <>
-                <span className="text-muted/50">Code</span>
+                <span className="text-ink/45">Code</span>
                 <span className="text-ink font-mono text-xs tracking-wide">{entity.code}</span>
               </>
             </div>
@@ -444,7 +444,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
           <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2">
             <Link
               href={`/?artisan=${encodeURIComponent(entity.code)}`}
-              className="inline-flex items-center gap-1.5 text-xs text-gold/70 hover:text-gold transition-colors tracking-wide"
+              className="inline-flex items-center gap-1.5 text-xs text-gold hover:text-gold-light transition-colors tracking-wide"
             >
               Browse all listings by {entity.name_romaji || entity.code}
               <span aria-hidden>&rarr;</span>
@@ -452,7 +452,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
             {listings !== null && listings.length === 0 && (
               <Link
                 href={`/saved-searches?artisan=${encodeURIComponent(entity.code)}`}
-                className="inline-flex items-center gap-1.5 text-xs text-muted/40 hover:text-muted transition-colors tracking-wide"
+                className="inline-flex items-center gap-1.5 text-xs text-ink/40 hover:text-ink/60 transition-colors tracking-wide"
               >
                 <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
@@ -470,7 +470,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
           <>
             <SectionDivider />
             <section id="certifications">
-              <h2 className="text-[11px] uppercase tracking-[0.2em] text-muted/50 mb-7">Certifications</h2>
+              <h2 className="text-[11px] uppercase tracking-[0.2em] text-ink/40 mb-7">Certifications</h2>
 
               <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr] gap-10">
                 {/* Hierarchy */}
@@ -484,7 +484,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
                     juyo={certifications.juyo_count}
                   />
                   <div className="mt-4 pt-4 border-t border-border/20 flex items-baseline justify-between text-sm">
-                    <span className="text-muted/50">Distinct works</span>
+                    <span className="text-ink/45">Distinct works</span>
                     <span className="text-ink font-light tabular-nums">{certifications.total_items}</span>
                   </div>
                 </div>
@@ -492,7 +492,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
                 {/* Elite standing */}
                 <div className="flex flex-col justify-between">
                   <div>
-                    <h3 className="text-[11px] text-muted/45 mb-3 uppercase tracking-wider">Elite Standing</h3>
+                    <h3 className="text-[11px] text-ink/40 mb-3 uppercase tracking-wider">Elite Standing</h3>
                     <EliteFactorDisplay
                       eliteFactor={certifications.elite_factor}
                       percentile={rankings.elite_percentile}
@@ -513,8 +513,8 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
           <>
             <SectionDivider />
             <section id="provenance">
-              <h2 className="text-[11px] uppercase tracking-[0.2em] text-muted/50 mb-2">Provenance</h2>
-              <p className="text-[11px] text-muted/35 mb-7 italic">
+              <h2 className="text-[11px] uppercase tracking-[0.2em] text-ink/40 mb-2">Provenance</h2>
+              <p className="text-[11px] text-ink/40 mb-7 italic">
                 Certified works by {entity.name_romaji || entity.code} have been held in the following collections
               </p>
 
@@ -528,7 +528,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
                   >
                     <span className="text-sm text-ink font-light">{d.owner}</span>
                     {d.count > 1 && (
-                      <span className="text-xs text-muted/40 tabular-nums ml-4">
+                      <span className="text-xs text-ink/35 tabular-nums ml-4">
                         {d.count} {d.count === 1 ? 'work' : 'works'}
                       </span>
                     )}
@@ -546,10 +546,10 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
           <>
             <SectionDivider />
             <section id="blade-forms">
-              <h2 className="text-[11px] uppercase tracking-[0.2em] text-muted/50 mb-2">
+              <h2 className="text-[11px] uppercase tracking-[0.2em] text-ink/40 mb-2">
                 {entity.entity_type === 'smith' ? 'Blade Forms' : 'Work Types'}
               </h2>
-              <p className="text-[11px] text-muted/35 mb-7 italic">
+              <p className="text-[11px] text-ink/40 mb-7 italic">
                 Distribution across {certifications.total_items} distinct works
               </p>
               <FormDistributionBar distribution={stats.form_distribution} />
@@ -564,8 +564,8 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
           <>
             <SectionDivider />
             <section id="signatures">
-              <h2 className="text-[11px] uppercase tracking-[0.2em] text-muted/50 mb-2">Signatures</h2>
-              <p className="text-[11px] text-muted/35 mb-7 italic">
+              <h2 className="text-[11px] uppercase tracking-[0.2em] text-ink/40 mb-2">Signatures</h2>
+              <p className="text-[11px] text-ink/40 mb-7 italic">
                 Signature types across {certifications.total_items} distinct works
               </p>
               <MeiDistributionBar distribution={stats.mei_distribution} />
@@ -580,7 +580,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
           <>
             <SectionDivider />
             <section id="listings">
-              <h2 className="text-[11px] uppercase tracking-[0.2em] text-muted/50 mb-6">Currently Available</h2>
+              <h2 className="text-[11px] uppercase tracking-[0.2em] text-ink/40 mb-6">Currently Available</h2>
               <ArtisanListings code={entity.code} artisanName={entity.name_romaji} initialListings={listings} />
             </section>
           </>
@@ -593,7 +593,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
           <>
             <SectionDivider />
             <section id="sold">
-              <h2 className="text-[11px] uppercase tracking-[0.2em] text-muted/50 mb-6">Previously Sold</h2>
+              <h2 className="text-[11px] uppercase tracking-[0.2em] text-ink/40 mb-6">Previously Sold</h2>
               <ArtisanListings code={entity.code} artisanName={entity.name_romaji} initialListings={soldListings} />
             </section>
           </>
@@ -606,7 +606,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
           <>
             <SectionDivider />
             <section id="lineage">
-              <h2 className="text-[11px] uppercase tracking-[0.2em] text-muted/50 mb-6">Lineage</h2>
+              <h2 className="text-[11px] uppercase tracking-[0.2em] text-ink/40 mb-6">Lineage</h2>
               <div className="relative pl-7">
                 {/* Vertical connection line */}
                 <div className="absolute left-[9px] top-0 bottom-0 w-px bg-border/25" />
@@ -615,7 +615,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
                 {lineage.teacher && (
                   <div className="relative pb-5">
                     <div className="absolute left-[-19px] top-1.5 w-[7px] h-[7px] rounded-full bg-border/40 ring-[2.5px] ring-surface" />
-                    <span className="text-[10px] text-muted/40 uppercase tracking-widest block mb-1">Teacher</span>
+                    <span className="text-[10px] text-ink/35 uppercase tracking-widest block mb-1">Teacher</span>
                     <Link
                       href={`/artists/${lineage.teacher.slug}`}
                       className="text-sm text-ink hover:text-gold transition-colors"
@@ -637,7 +637,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
                 {lineage.students.length > 0 && (
                   <div className="relative">
                     <div className="absolute left-[-19px] top-1.5 w-[7px] h-[7px] rounded-full bg-border/40 ring-[2.5px] ring-surface" />
-                    <span className="text-[10px] text-muted/40 uppercase tracking-widest block mb-2">
+                    <span className="text-[10px] text-ink/35 uppercase tracking-widest block mb-2">
                       {lineage.students.length === 1 ? 'Student' : `Students (${lineage.students.length})`}
                     </span>
                     <div className="flex flex-wrap gap-x-3 gap-y-1.5">
@@ -650,7 +650,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
                             {student.name_romaji || student.code}
                           </Link>
                           {i < lineage.students.length - 1 && (
-                            <span className="text-muted/25 ml-2">·</span>
+                            <span className="text-ink/20 ml-2">·</span>
                           )}
                         </span>
                       ))}
@@ -669,7 +669,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
           <>
             <SectionDivider />
             <section id="related">
-              <h2 className="text-[11px] uppercase tracking-[0.2em] text-muted/50 mb-6">
+              <h2 className="text-[11px] uppercase tracking-[0.2em] text-ink/40 mb-6">
                 {entity.school ? `${entity.school} School` : 'Related Artisans'}
               </h2>
               <RelatedArtisans artisans={related} schoolName={entity.school} />

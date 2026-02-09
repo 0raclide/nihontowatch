@@ -56,7 +56,7 @@ export function SectionJumpNav({ sections }: SectionJumpNavProps) {
             className={`whitespace-nowrap text-xs transition-colors pb-1 ${
               activeId === section.id
                 ? 'text-ink border-b border-gold/60'
-                : 'text-muted/60 hover:text-muted border-b border-transparent'
+                : 'text-ink/40 hover:text-ink/60 border-b border-transparent'
             }`}
           >
             {section.label}

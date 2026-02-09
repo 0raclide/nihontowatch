@@ -48,11 +48,11 @@ export function PrestigePyramid({ kokuho, jubun, jubi, gyobutsu, tokuju, juyo }:
             style={{ paddingLeft: `${tier.indent * 16}px` }}
           >
             <div className="flex items-baseline justify-between mb-1">
-              <span className={`text-sm ${active ? 'text-ink' : 'text-muted/35'}`}>
+              <span className={`text-sm ${active ? 'text-ink' : 'text-ink/25'}`}>
                 {tier.label}
               </span>
               <span className={`tabular-nums text-sm font-light ${
-                active ? 'text-ink' : 'text-muted/25'
+                active ? 'text-ink' : 'text-ink/20'
               }`}>
                 {active ? count : '—'}
               </span>

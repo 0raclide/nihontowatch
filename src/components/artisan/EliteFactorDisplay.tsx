@@ -36,7 +36,7 @@ export function EliteFactorDisplay({
       </div>
 
       {/* Stats line */}
-      <div className="text-xs text-muted/60 leading-relaxed space-y-0.5">
+      <div className="text-xs text-ink/50 leading-relaxed space-y-0.5">
         <p>
           <span className="text-ink/80">{eliteCount}</span> of{' '}
           <span className="text-ink/80">{totalItems}</span> works hold elite designations
