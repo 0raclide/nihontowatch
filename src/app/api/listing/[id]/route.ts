@@ -2,6 +2,8 @@ import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { CACHE } from '@/lib/constants';
 import { logger } from '@/lib/logger';
+import { getArtisanNames } from '@/lib/supabase/yuhinkai';
+import { getArtisanDisplayName } from '@/lib/artisan/displayName';
 
 // Disable ISR caching - use HTTP Cache-Control instead
 // This allows ?nocache=1 to properly bypass all caching layers for debugging
@@ -259,6 +261,16 @@ export async function GET(
       }
     }
 
+    // Resolve artisan display name from Yuhinkai
+    let artisanDisplayName: string | undefined;
+    if (typedListing.artisan_id) {
+      const artisanNameMap = await getArtisanNames([typedListing.artisan_id]);
+      const artisanData = artisanNameMap.get(typedListing.artisan_id);
+      if (artisanData) {
+        artisanDisplayName = getArtisanDisplayName(artisanData.name_romaji, artisanData.school);
+      }
+    }
+
     // Enrich listing with dealer baseline and Yuhinkai enrichment
     const enrichedListing = {
       ...typedListing,
@@ -267,6 +279,8 @@ export async function GET(
       yuhinkai_enrichment,
       // Remove the array version
       listing_yuhinkai_enrichment: undefined,
+      // Artisan display name from Yuhinkai
+      ...(artisanDisplayName && { artisan_display_name: artisanDisplayName }),
       // Add sale price from history if available
       ...(priceFromHistory && {
         price_value: salePrice,

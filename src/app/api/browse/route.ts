@@ -4,6 +4,8 @@ import { normalizeSearchText, expandSearchAliases } from '@/lib/search';
 import { parseNumericFilters } from '@/lib/search/numericFilters';
 import { parseSemanticQuery } from '@/lib/search/semanticQueryParser';
 import { CACHE, PAGINATION, LISTING_FILTERS } from '@/lib/constants';
+import { getArtisanNames } from '@/lib/supabase/yuhinkai';
+import { getArtisanDisplayName } from '@/lib/artisan/displayName';
 import { getUserSubscription, getDataDelayCutoff } from '@/lib/subscription/server';
 import { logger } from '@/lib/logger';
 
@@ -576,6 +578,24 @@ export async function GET(request: NextRequest) {
         dealer_earliest_seen_at: baselineMap[listing.dealer_id] || null,
         sold_data: computeSoldData(listing),
       }));
+
+      // Enrich listings with artisan display names from Yuhinkai
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const artisanCodes = [...new Set(enrichedListings.map((l: any) => l.artisan_id).filter(Boolean))] as string[];
+      if (artisanCodes.length > 0) {
+        const artisanNameMap = await getArtisanNames(artisanCodes);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        enrichedListings = enrichedListings.map((listing: any) => {
+          if (listing.artisan_id && artisanNameMap.has(listing.artisan_id)) {
+            const { name_romaji, school } = artisanNameMap.get(listing.artisan_id)!;
+            return {
+              ...listing,
+              artisan_display_name: getArtisanDisplayName(name_romaji, school),
+            };
+          }
+          return listing;
+        });
+      }
     }
 
     // Enrich sold items with sale price from price_history

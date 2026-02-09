@@ -131,6 +131,65 @@ export async function getTosoguMaker(code: string): Promise<TosoguMaker | null> 
 }
 
 // =============================================================================
+// BATCH NAME LOOKUP (for badge display names)
+// =============================================================================
+
+/**
+ * Fetch name_romaji and school for a batch of artisan codes.
+ * Queries smith_entities and tosogu_makers in parallel.
+ * Used by browse/listing APIs to enrich badges with display names.
+ */
+export async function getArtisanNames(
+  codes: string[]
+): Promise<Map<string, { name_romaji: string | null; school: string | null }>> {
+  const result = new Map<string, { name_romaji: string | null; school: string | null }>();
+  if (codes.length === 0) return result;
+
+  const BATCH_SIZE = 200;
+
+  // Query both tables in parallel
+  const [smithResults, tosoguResults] = await Promise.all([
+    // Smith entities
+    (async () => {
+      const rows: Array<{ smith_id: string; name_romaji: string | null; school: string | null }> = [];
+      for (let i = 0; i < codes.length; i += BATCH_SIZE) {
+        const batch = codes.slice(i, i + BATCH_SIZE);
+        const { data } = await yuhinkaiClient
+          .from('smith_entities')
+          .select('smith_id, name_romaji, school')
+          .in('smith_id', batch);
+        if (data) rows.push(...(data as typeof rows));
+      }
+      return rows;
+    })(),
+    // Tosogu makers
+    (async () => {
+      const rows: Array<{ maker_id: string; name_romaji: string | null; school: string | null }> = [];
+      for (let i = 0; i < codes.length; i += BATCH_SIZE) {
+        const batch = codes.slice(i, i + BATCH_SIZE);
+        const { data } = await yuhinkaiClient
+          .from('tosogu_makers')
+          .select('maker_id, name_romaji, school')
+          .in('maker_id', batch);
+        if (data) rows.push(...(data as typeof rows));
+      }
+      return rows;
+    })(),
+  ]);
+
+  for (const row of smithResults) {
+    result.set(row.smith_id, { name_romaji: row.name_romaji, school: row.school });
+  }
+  for (const row of tosoguResults) {
+    if (!result.has(row.maker_id)) {
+      result.set(row.maker_id, { name_romaji: row.name_romaji, school: row.school });
+    }
+  }
+
+  return result;
+}
+
+// =============================================================================
 // LINEAGE QUERIES
 // =============================================================================
 

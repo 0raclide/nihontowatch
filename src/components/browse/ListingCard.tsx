@@ -78,6 +78,7 @@ interface Listing {
   // Artisan matching (admin-only display)
   artisan_id?: string | null;
   artisan_confidence?: 'HIGH' | 'MEDIUM' | 'LOW' | 'NONE' | null;
+  artisan_display_name?: string | null;
   artisan_method?: string | null;
   artisan_candidates?: Array<{
     artisan_id: string;
@@ -692,7 +693,7 @@ export const ListingCard = memo(function ListingCard({
                     ? 'bg-artisan-medium-bg text-artisan-medium'
                     : 'bg-artisan-low-bg text-artisan-low'
                 }`}>
-                  {listing.artisan_id}
+                  {listing.artisan_display_name || listing.artisan_id}
                 </span>
               </ArtisanTooltip>
             ) : (
@@ -708,7 +709,7 @@ export const ListingCard = memo(function ListingCard({
                     : 'bg-artisan-low-bg text-artisan-low'
                 }`}
               >
-                {listing.artisan_id}
+                {listing.artisan_display_name || listing.artisan_id}
               </a>
             )
           )}

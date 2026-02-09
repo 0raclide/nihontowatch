@@ -408,7 +408,7 @@ export function QuickViewMobileSheet({
                   : 'bg-artisan-low-bg text-artisan-low'
               }`}
             >
-              {listing.artisan_id}
+              {listing.artisan_display_name || listing.artisan_id}
             </a>
           )}
           <QuickMeasurement listing={listing} />

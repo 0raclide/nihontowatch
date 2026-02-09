@@ -128,7 +128,7 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
                       : 'bg-artisan-low-bg text-artisan-low'
                   }`}
                 >
-                  {listing.artisan_id}
+                  {listing.artisan_display_name || listing.artisan_id}
                 </a>
               )}
             </div>

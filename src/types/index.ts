@@ -431,6 +431,7 @@ export interface Listing {
   // Artisan matching (from Oshi-scrapper)
   artisan_id?: string;
   artisan_confidence?: 'HIGH' | 'MEDIUM' | 'LOW' | 'NONE';
+  artisan_display_name?: string;
 
   // Timestamps
   first_seen_at: string;

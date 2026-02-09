@@ -75,6 +75,7 @@ interface Listing {
   // Artisan matching
   artisan_id?: string | null;
   artisan_confidence?: 'HIGH' | 'MEDIUM' | 'LOW' | 'NONE' | null;
+  artisan_display_name?: string | null;
 }
 
 interface Facet {
