@@ -136,9 +136,9 @@ jubi_count           — Important Art Objects (Bijutsuhin)
 gyobutsu_count       — Imperial Collection
 tokuju_count         — Tokubetsu Jūyō
 juyo_count           — Jūyō
-total_items          — Total certified works
-elite_count          — Works with elite designations
-elite_factor         — 0.0-1.0 ratio of elite works
+total_items          — Distinct physical works (best-collection priority, mutually exclusive)
+elite_count          — Works with elite designations (Kokuho + JuBun + Jubi + Gyobutsu + Tokuju)
+elite_factor         — 0.0-1.0 Bayesian ratio: (elite + 1) / (total + 10)
 is_school_code       — TRUE for aggregate school entries (excluded from directory)
 ```
 
@@ -149,7 +149,7 @@ name_kanji, name_romaji, province, school, era, generation, teacher
 specialties          — Array of specialties (e.g., ["tsuba", "kozuka"])
 alternative_names    — Array of alternate names
 kokuho_count, jubun_count, jubi_count, gyobutsu_count, tokuju_count, juyo_count
-total_items, elite_count, elite_factor, is_school_code
+total_items, elite_count, elite_factor, is_school_code  — same best-collection semantics as smiths
 ```
 
 **`artist_profiles`** — AI-generated biographies
@@ -172,6 +172,23 @@ gold_form_type       — Blade/work type (katana, wakizashi, tanto, tachi, tsuba
 gold_mei_status      — Signature status (signed, mumei, attributed, den, kinzogan, etc.)
 gold_denrai_owners   — Array of historical collection owners
 ```
+
+### Designation Counting: Best-Collection Priority
+
+Each physical object is assigned to its **single highest** designation, making counts mutually exclusive and safely summable. This prevents double-counting (e.g., a Tokuju sword that also has a Juyo record is counted only under Tokuju).
+
+**Priority order** (highest wins):
+```
+Kokuho (1) > Tokuju (2) > JuBun (3) > Jubi (4) > Gyobutsu/IMP (5) > Juyo (6)
+```
+
+**SQL technique**: `DISTINCT ON (artisan_id, object_uuid)` ordered by priority CASE expression.
+
+**Result**: `total_items = kokuho + jubun + jubi + gyobutsu + tokuju + juyo` (exact equality).
+
+**Excluded**: `JE_Koto` (reference data) and `metadata_v2` collections.
+
+**Computed by**: `compute_maker_statistics()` function (oshi-v2 migration `20260209010000_best_collection_maker_stats.sql`).
 
 ### Main Database Columns on `listings`
 
