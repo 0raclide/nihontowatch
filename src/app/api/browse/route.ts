@@ -868,6 +868,7 @@ async function getCertificationFacets(
   // Normalize cert function
   const normalizeCert = (cert: string): string => {
     const lower = cert.toLowerCase();
+    if (['juyo bijutsuhin', 'jubi', 'important art object'].includes(lower)) return 'Juyo Bijutsuhin';
     if (lower === 'juyo') return 'Juyo';
     if (['tokuju', 'tokubetsu juyo', 'tokubetsu_juyo'].includes(lower)) return 'Tokuju';
     if (['tokuhozon', 'tokubetsu hozon', 'tokubetsu_hozon'].includes(lower)) return 'TokuHozon';

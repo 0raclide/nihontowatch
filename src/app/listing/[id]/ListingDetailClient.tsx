@@ -40,6 +40,7 @@ const CERT_LABELS: Record<string, { label: string; tier: 'tokuju' | 'jubi' | 'ju
   tokuju: { label: 'Tokuju', tier: 'tokuju' },
   tokubetsu_juyo: { label: 'Tokuju', tier: 'tokuju' },
   // Juyo Bijutsuhin - Important Cultural Property (orange/gold)
+  'Juyo Bijutsuhin': { label: 'Jubi', tier: 'jubi' },
   JuyoBijutsuhin: { label: 'Jubi', tier: 'jubi' },
   juyo_bijutsuhin: { label: 'Jubi', tier: 'jubi' },
   // Juyo - high tier (blue)
