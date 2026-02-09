@@ -747,6 +747,10 @@ const COLLECTION_PRIORITY: string[] = ['Tokuju', 'Juyo', 'Kokuho', 'JuBun', 'Jub
 /** Flat collections store images as {Collection}/{item}_oshigata.jpg */
 const FLAT_COLLECTIONS = new Set(['Kokuho', 'JuBun']);
 
+/** Image storage is on a separate Supabase project from the database */
+const IMAGE_STORAGE_BASE = process.env.NEXT_PUBLIC_IMAGE_STORAGE_URL
+  || 'https://itbhfhyptogxcjbjfzwx.supabase.co';
+
 export interface ArtisanHeroImage {
   imageUrl: string;
   collection: string;       // e.g. 'Tokuju'
@@ -769,15 +773,6 @@ function buildStoragePath(collection: string, volume: number, itemNumber: number
   return `${collection}/${volume}_${itemNumber}_oshigata.jpg`;
 }
 
-/** Service role client for storage access (separate from anon-key yuhinkaiClient) */
-function getStorageClient() {
-  const url = process.env.YUHINKAI_SUPABASE_URL || process.env.OSHI_V2_SUPABASE_URL || '';
-  const key = process.env.YUHINKAI_STORAGE_KEY || '';
-  if (!url || !key) return null;
-  const { createClient } = require('@supabase/supabase-js');
-  return createClient(url, key);
-}
-
 /**
  * Fetch the best catalog image for an artisan's profile hero.
  *
@@ -785,8 +780,7 @@ function getStorageClient() {
  * 1. Walk collections in priority order (Tokuju → Juyo → Kokuho → JuBun → Jubi)
  * 2. Within each collection, pick the item with the MOST sibling catalog_records
  *    (most data-rich item — more siblings = more associated records, photos, etc.)
- * 3. Verify the image exists in storage before returning (sparse coverage)
- * 4. Serve image via /api/catalog-image proxy (storage bucket isn't publicly accessible)
+ * 3. Construct public URL from the separate image storage Supabase project
  */
 export async function getArtisanHeroImage(
   code: string,
@@ -801,9 +795,6 @@ export async function getArtisanHeroImage(
     .eq(codeColumn, code);
 
   if (error || !goldRows || goldRows.length === 0) return null;
-
-  const storageClient = getStorageClient();
-  if (!storageClient) return null;
 
   // 2. Walk collections in priority order
   for (const targetCollection of COLLECTION_PRIORITY) {
@@ -840,7 +831,7 @@ export async function getArtisanHeroImage(
       .map(uuid => ({ uuid, siblings: siblingCounts.get(uuid) || 0 }))
       .sort((a, b) => b.siblings - a.siblings);
 
-    // 4. For each candidate (richest first), check if image exists in storage
+    // 4. For the richest object, get the catalog record in the target collection
     for (const { uuid } of ranked) {
       const { data: catalogRecords } = await yuhinkaiClient
         .from('catalog_records')
@@ -858,15 +849,11 @@ export async function getArtisanHeroImage(
         record.item_number
       );
 
-      // 5. Verify file exists in storage (coverage is sparse)
-      const { data: fileData } = await storageClient.storage
-        .from('images')
-        .download(storagePath);
-
-      if (!fileData) continue; // File doesn't exist, try next candidate
+      // 5. Public URL on the separate image storage project
+      const imageUrl = `${IMAGE_STORAGE_BASE}/storage/v1/object/public/images/${storagePath}`;
 
       return {
-        imageUrl: `/api/catalog-image?path=${encodeURIComponent(storagePath)}`,
+        imageUrl,
         collection: targetCollection,
         volume: record.volume,
         itemNumber: record.item_number,
