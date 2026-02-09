@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
+import Link from 'next/link';
 import type { ArtisanDetails } from '@/app/api/artisan/[code]/route';
 import type { ArtisanSearchResult } from '@/app/api/artisan/search/route';
 
@@ -526,6 +527,15 @@ export function ArtisanTooltip({
                     Incorrect
                   </button>
                 </div>
+
+                {/* View Profile link */}
+                <Link
+                  href={`/artists/${artisanId}`}
+                  onClick={() => setIsOpen(false)}
+                  className="block mt-3 pt-3 border-t border-border text-center text-xs font-medium text-gold hover:text-gold-light transition-colors"
+                >
+                  View Profile →
+                </Link>
 
                 {/* Success message after fix */}
                 {fixSuccess && (

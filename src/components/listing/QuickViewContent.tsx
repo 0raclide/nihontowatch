@@ -1,10 +1,12 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import Link from 'next/link';
 import { FavoriteButton } from '@/components/favorites/FavoriteButton';
 import { ShareButton } from '@/components/share/ShareButton';
 import { InquiryModal } from '@/components/inquiry';
 import { LoginModal } from '@/components/auth/LoginModal';
+import { ArtisanTooltip } from '@/components/artisan/ArtisanTooltip';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { useQuickViewOptional } from '@/contexts/QuickViewContext';
@@ -111,6 +113,40 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
                 >
                   New this week
                 </span>
+              )}
+              {listing.artisan_id &&
+               listing.artisan_confidence && listing.artisan_confidence !== 'NONE' && (
+                isAdmin ? (
+                  <ArtisanTooltip
+                    listingId={Number(listing.id)}
+                    artisanId={listing.artisan_id}
+                    confidence={listing.artisan_confidence}
+                  >
+                    <span className={`text-[10px] font-mono font-medium px-2 py-0.5 rounded ${
+                      listing.artisan_confidence === 'HIGH'
+                        ? 'bg-artisan-high-bg text-artisan-high'
+                        : listing.artisan_confidence === 'MEDIUM'
+                        ? 'bg-artisan-medium-bg text-artisan-medium'
+                        : 'bg-artisan-low-bg text-artisan-low'
+                    }`}>
+                      {listing.artisan_id}
+                    </span>
+                  </ArtisanTooltip>
+                ) : (
+                  <Link
+                    href={`/artists/${listing.artisan_id}`}
+                    data-artisan-tooltip
+                    className={`text-[10px] font-mono font-medium px-2 py-0.5 rounded hover:opacity-80 transition-opacity ${
+                      listing.artisan_confidence === 'HIGH'
+                        ? 'bg-artisan-high-bg text-artisan-high'
+                        : listing.artisan_confidence === 'MEDIUM'
+                        ? 'bg-artisan-medium-bg text-artisan-medium'
+                        : 'bg-artisan-low-bg text-artisan-low'
+                    }`}
+                  >
+                    {listing.artisan_id}
+                  </Link>
+                )
               )}
             </div>
             <div className="flex items-center gap-2">

@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import Link from 'next/link';
 import { useState, useCallback, useEffect, useRef, useMemo, memo } from 'react';
 import { FavoriteButton } from '@/components/favorites/FavoriteButton';
 import { SetsumeiZufuBadge } from '@/components/ui/SetsumeiZufuBadge';
@@ -671,27 +672,44 @@ export const ListingCard = memo(function ListingCard({
             )}
           </div>
 
-          {/* Right side: artisan code (admin only, HIGH/MEDIUM/LOW confidence) */}
-          {isAdmin && listing.artisan_id &&
+          {/* Right side: artisan code (HIGH/MEDIUM/LOW confidence) */}
+          {listing.artisan_id &&
            listing.artisan_confidence && listing.artisan_confidence !== 'NONE' && (
-            <ArtisanTooltip
-              listingId={parseInt(listing.id)}
-              artisanId={listing.artisan_id}
-              confidence={listing.artisan_confidence}
-              method={listing.artisan_method}
-              candidates={listing.artisan_candidates}
-              verified={listing.artisan_verified}
-            >
-              <span className={`text-[9px] lg:text-[10px] font-mono font-medium px-1.5 py-0.5 ${
-                listing.artisan_confidence === 'HIGH'
-                  ? 'bg-artisan-high-bg text-artisan-high'
-                  : listing.artisan_confidence === 'MEDIUM'
-                  ? 'bg-artisan-medium-bg text-artisan-medium'
-                  : 'bg-artisan-low-bg text-artisan-low'
-              }`}>
+            isAdmin ? (
+              <ArtisanTooltip
+                listingId={parseInt(listing.id)}
+                artisanId={listing.artisan_id}
+                confidence={listing.artisan_confidence}
+                method={listing.artisan_method}
+                candidates={listing.artisan_candidates}
+                verified={listing.artisan_verified}
+              >
+                <span className={`text-[9px] lg:text-[10px] font-mono font-medium px-1.5 py-0.5 ${
+                  listing.artisan_confidence === 'HIGH'
+                    ? 'bg-artisan-high-bg text-artisan-high'
+                    : listing.artisan_confidence === 'MEDIUM'
+                    ? 'bg-artisan-medium-bg text-artisan-medium'
+                    : 'bg-artisan-low-bg text-artisan-low'
+                }`}>
+                  {listing.artisan_id}
+                </span>
+              </ArtisanTooltip>
+            ) : (
+              <Link
+                href={`/artists/${listing.artisan_id}`}
+                data-artisan-tooltip
+                onClick={(e) => e.stopPropagation()}
+                className={`text-[9px] lg:text-[10px] font-mono font-medium px-1.5 py-0.5 hover:opacity-80 transition-opacity ${
+                  listing.artisan_confidence === 'HIGH'
+                    ? 'bg-artisan-high-bg text-artisan-high'
+                    : listing.artisan_confidence === 'MEDIUM'
+                    ? 'bg-artisan-medium-bg text-artisan-medium'
+                    : 'bg-artisan-low-bg text-artisan-low'
+                }`}
+              >
                 {listing.artisan_id}
-              </span>
-            </ArtisanTooltip>
+              </Link>
+            )
           )}
         </div>
 

@@ -5,10 +5,12 @@ import type { Listing, ListingWithEnrichment } from '@/types';
 import { isTosogu, getItemTypeLabel, hasSetsumeiData } from '@/types';
 import { useCurrency, formatPriceWithConversion } from '@/hooks/useCurrency';
 import { shouldShowNewBadge } from '@/lib/newListing';
+import Link from 'next/link';
 import { FavoriteButton } from '@/components/favorites/FavoriteButton';
 import { ShareButton } from '@/components/share/ShareButton';
 import { InquiryModal } from '@/components/inquiry';
 import { LoginModal } from '@/components/auth/LoginModal';
+import { ArtisanTooltip } from '@/components/artisan/ArtisanTooltip';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { useActivityTrackerOptional } from '@/lib/tracking/ActivityTracker';
 import { MetadataGrid, getCertInfo, getArtisanInfo } from './MetadataGrid';
@@ -70,7 +72,7 @@ export function QuickViewMobileSheet({
   const [viewportHeight, setViewportHeight] = useState(0);
 
   // Inquiry modal state
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const activityTracker = useActivityTrackerOptional();
   const [isInquiryModalOpen, setIsInquiryModalOpen] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -389,6 +391,42 @@ export function QuickViewMobileSheet({
             <span className="text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded bg-new-listing-bg text-new-listing">
               New this week
             </span>
+          )}
+          {listing.artisan_id &&
+           listing.artisan_confidence && listing.artisan_confidence !== 'NONE' && (
+            isAdmin ? (
+              <ArtisanTooltip
+                listingId={Number(listing.id)}
+                artisanId={listing.artisan_id}
+                confidence={listing.artisan_confidence}
+              >
+                <span className={`text-[10px] font-mono font-medium px-2 py-0.5 rounded ${
+                  listing.artisan_confidence === 'HIGH'
+                    ? 'bg-artisan-high-bg text-artisan-high'
+                    : listing.artisan_confidence === 'MEDIUM'
+                    ? 'bg-artisan-medium-bg text-artisan-medium'
+                    : 'bg-artisan-low-bg text-artisan-low'
+                }`}>
+                  {listing.artisan_id}
+                </span>
+              </ArtisanTooltip>
+            ) : (
+              <Link
+                href={`/artists/${listing.artisan_id}`}
+                data-artisan-tooltip
+                onClick={(e) => e.stopPropagation()}
+                onTouchStart={(e) => e.stopPropagation()}
+                className={`text-[10px] font-mono font-medium px-2 py-0.5 rounded hover:opacity-80 transition-opacity ${
+                  listing.artisan_confidence === 'HIGH'
+                    ? 'bg-artisan-high-bg text-artisan-high'
+                    : listing.artisan_confidence === 'MEDIUM'
+                    ? 'bg-artisan-medium-bg text-artisan-medium'
+                    : 'bg-artisan-low-bg text-artisan-low'
+                }`}
+              >
+                {listing.artisan_id}
+              </Link>
+            )
           )}
           <QuickMeasurement listing={listing} />
         </div>
