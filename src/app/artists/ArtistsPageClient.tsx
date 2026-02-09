@@ -517,7 +517,9 @@ function ArtistCard({ artist }: { artist: ArtistWithSlug }) {
         </div>
         <div className="shrink-0 text-center leading-none">
           <span className="block text-lg font-serif text-ink tabular-nums">{artist.total_items}</span>
-          <span className="block text-[8px] uppercase tracking-[0.15em] text-ink/40 mt-0.5">works</span>
+          <span className={`block text-[8px] uppercase tracking-[0.15em] mt-0.5${
+            isSchool ? ' text-gold' : ' text-ink/40'
+          }`}>{isSchool ? 'school' : 'works'}</span>
         </div>
       </div>
 
