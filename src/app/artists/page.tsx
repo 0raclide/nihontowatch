@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import { getArtistsForDirectory, getArtistDirectoryFacets, getBulkElitePercentiles } from '@/lib/supabase/yuhinkai';
+import { getArtistsForDirectory, getArtistDirectoryFacets, getBulkElitePercentiles, getFilteredArtistsByCodes, getSchoolMemberCounts } from '@/lib/supabase/yuhinkai';
 import { generateArtisanSlug } from '@/lib/artisan/slugs';
 import { generateBreadcrumbJsonLd, jsonLdScriptProps } from '@/lib/seo/jsonLd';
 import { generateArtistDirectoryJsonLd } from '@/lib/seo/jsonLd';
@@ -81,6 +81,29 @@ async function getListingData(codes: string[]): Promise<Map<string, { count: num
   return result;
 }
 
+async function getAllListingCounts(): Promise<Map<string, { count: number; firstId?: number }>> {
+  const result = new Map<string, { count: number; firstId?: number }>();
+  try {
+    const supabase = await createClient();
+    const { data } = await supabase
+      .from('listings')
+      .select('id, artisan_id')
+      .eq('is_available', true)
+      .not('artisan_id' as string, 'is', null) as { data: Array<{ id: number; artisan_id: string }> | null };
+    for (const row of data || []) {
+      const existing = result.get(row.artisan_id);
+      if (existing) {
+        existing.count += 1;
+      } else {
+        result.set(row.artisan_id, { count: 1, firstId: row.id });
+      }
+    }
+  } catch {
+    // Non-critical
+  }
+  return result;
+}
+
 export default async function ArtistsPage({ searchParams }: ArtistsPageProps) {
   const params = await searchParams;
 
@@ -91,22 +114,44 @@ export default async function ArtistsPage({ searchParams }: ArtistsPageProps) {
   const era = getStringParam(params, 'era');
   const q = getStringParam(params, 'q');
   const sortParam = getStringParam(params, 'sort');
-  const sort = (['elite_factor', 'name', 'total_items'].includes(sortParam || '')
-    ? sortParam as 'elite_factor' | 'name' | 'total_items'
+  const sort = (['elite_factor', 'name', 'total_items', 'for_sale'].includes(sortParam || '')
+    ? sortParam as 'elite_factor' | 'name' | 'total_items' | 'for_sale'
     : 'elite_factor');
   const page = Math.max(parseInt(getStringParam(params, 'page') || '1', 10) || 1, 1);
   const notable = getStringParam(params, 'notable') !== 'false';
 
-  const [{ artists, total }, facets] = await Promise.all([
-    getArtistsForDirectory({ type, school, province, era, q, sort, page, limit: 50, notable }),
-    getArtistDirectoryFacets(type),
-  ]);
+  let artists;
+  let total: number;
+  let listingData: Map<string, { count: number; firstId?: number }>;
 
-  // Fetch listing data and percentiles for the current page of artists
-  const codes = artists.map(a => a.code);
-  const [listingData, percentileMap] = await Promise.all([
-    getListingData(codes),
-    getBulkElitePercentiles(artists.map(a => ({ code: a.code, elite_factor: a.elite_factor, entity_type: a.entity_type }))),
+  const facets = await getArtistDirectoryFacets(type);
+
+  if (sort === 'for_sale') {
+    // Special flow: sort by available listings count
+    const allListingData = await getAllListingCounts();
+    const artisanCodes = [...allListingData.keys()];
+    const matchedArtists = await getFilteredArtistsByCodes(artisanCodes, type, { school, province, era, q, notable });
+    matchedArtists.sort((a, b) => (allListingData.get(b.code)?.count || 0) - (allListingData.get(a.code)?.count || 0));
+    total = matchedArtists.length;
+    const offset = (page - 1) * 50;
+    artists = matchedArtists.slice(offset, offset + 50);
+    listingData = allListingData;
+  } else {
+    const result = await getArtistsForDirectory({ type, school, province, era, q, sort, page, limit: 50, notable });
+    artists = result.artists;
+    total = result.total;
+    const codes = artists.map(a => a.code);
+    listingData = await getListingData(codes);
+  }
+
+  // Fetch percentiles and school member counts for the current page of artists
+  const [percentileMap, memberCountMap] = await Promise.all([
+    getBulkElitePercentiles(
+      artists.map(a => ({ code: a.code, elite_factor: a.elite_factor, entity_type: a.entity_type }))
+    ),
+    getSchoolMemberCounts(
+      artists.map(a => ({ code: a.code, school: a.school, entity_type: a.entity_type, is_school_code: a.is_school_code }))
+    ),
   ]);
 
   const artistsWithSlugs = artists.map(a => {
@@ -115,6 +160,7 @@ export default async function ArtistsPage({ searchParams }: ArtistsPageProps) {
       ...a,
       slug: generateArtisanSlug(a.name_romaji, a.code),
       percentile: percentileMap.get(a.code) ?? 0,
+      member_count: memberCountMap.get(a.code),
       available_count: ld?.count || 0,
       first_listing_id: ld?.firstId,
     };

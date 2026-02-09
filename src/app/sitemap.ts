@@ -51,22 +51,20 @@ interface ArtisanForSitemap {
 async function getAllNotableArtisans(): Promise<ArtisanForSitemap[]> {
   const artisans: ArtisanForSitemap[] = [];
 
-  // Fetch smiths
+  // Fetch smiths (including NS school codes)
   const { data: smiths } = await yuhinkaiClient
     .from('smith_entities')
     .select('smith_id, name_romaji')
-    .eq('is_school_code', false)
     .gt('total_items', 0);
 
   for (const s of smiths || []) {
     artisans.push({ code: s.smith_id, name_romaji: s.name_romaji });
   }
 
-  // Fetch tosogu makers
+  // Fetch tosogu makers (including NS school codes)
   const { data: makers } = await yuhinkaiClient
     .from('tosogu_makers')
     .select('maker_id, name_romaji')
-    .eq('is_school_code', false)
     .gt('total_items', 0);
 
   for (const m of makers || []) {

@@ -99,6 +99,14 @@ export interface ArtisanPageResponse {
     elite_factor: number;
   }>;
   denrai: Array<{ owner: string; count: number }>;
+  heroImage: {
+    imageUrl: string;
+    collection: string;
+    volume: number;
+    itemNumber: number;
+    formType: string | null;
+    imageType: string;
+  } | null;
 }
 
 /**
@@ -195,7 +203,8 @@ export async function GET(
     const slug = generateArtisanSlug(entity.name_romaji, entityCode);
 
     // Fetch all enrichment data in parallel
-    const [profile, students, related, elitePercentile, tokoTaikanPercentile, teacherStub, denrai] =
+    const { getArtisanHeroImage } = await import('@/lib/supabase/yuhinkai');
+    const [profile, students, related, elitePercentile, tokoTaikanPercentile, teacherStub, denrai, heroImage] =
       await Promise.all([
         getArtistProfile(entityCode),
         getStudents(entityCode, entity.name_romaji),
@@ -206,6 +215,7 @@ export async function GET(
           : Promise.resolve(null),
         entity.teacher ? resolveTeacher(entity.teacher) : Promise.resolve(null),
         getDenraiForArtisan(entityCode, entityType),
+        getArtisanHeroImage(entityCode, entityType),
       ]);
 
     // Extract stats from profile snapshot if available
@@ -293,6 +303,7 @@ export async function GET(
         elite_factor: r.elite_factor,
       })),
       denrai,
+      heroImage,
     };
 
     const response = NextResponse.json(pageResponse);

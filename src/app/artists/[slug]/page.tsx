@@ -12,6 +12,7 @@ import {
   resolveTeacher,
   getDenraiForArtisan,
   getArtisanDistributions,
+  getArtisanHeroImage,
 } from '@/lib/supabase/yuhinkai';
 import { generateBreadcrumbJsonLd, jsonLdScriptProps } from '@/lib/seo/jsonLd';
 import { ArtistPageClient } from './ArtistPageClient';
@@ -49,7 +50,7 @@ async function getArtistData(code: string): Promise<ArtisanPageResponse | null> 
   const eliteFactor = entity.elite_factor ?? 0;
   const slug = generateArtisanSlug(entity.name_romaji, entityCode);
 
-  const [profile, students, related, elitePercentile, tokoTaikanPercentile, teacherStub, denrai] =
+  const [profile, students, related, elitePercentile, tokoTaikanPercentile, teacherStub, denrai, heroImage] =
     await Promise.all([
       getArtistProfile(entityCode),
       getStudents(entityCode, entity.name_romaji),
@@ -60,6 +61,7 @@ async function getArtistData(code: string): Promise<ArtisanPageResponse | null> 
         : Promise.resolve(null),
       entity.teacher ? resolveTeacher(entity.teacher) : Promise.resolve(null),
       getDenraiForArtisan(entityCode, entityType),
+      getArtisanHeroImage(entityCode, entityType),
     ]);
 
   // Try profile snapshot first, fall back to live gold_values query
@@ -147,6 +149,7 @@ async function getArtistData(code: string): Promise<ArtisanPageResponse | null> 
       elite_factor: r.elite_factor,
     })),
     denrai,
+    heroImage,
   };
 }
 

@@ -40,7 +40,7 @@ interface Filters {
   province?: string;
   era?: string;
   q?: string;
-  sort: 'elite_factor' | 'name' | 'total_items';
+  sort: 'elite_factor' | 'name' | 'total_items' | 'for_sale';
   notable: boolean;
 }
 
@@ -300,6 +300,7 @@ export function ArtistsPageClient({
           >
             <option value="elite_factor">Sort: Elite Factor</option>
             <option value="total_items">Sort: Total Works</option>
+            <option value="for_sale">Sort: For Sale</option>
             <option value="name">Sort: Name A-Z</option>
           </select>
 
@@ -467,6 +468,7 @@ function SkeletonCard() {
 function ArtistCard({ artist }: { artist: ArtistWithSlug }) {
   const router = useRouter();
   const percentile = artist.percentile ?? 0;
+  const isSchool = artist.is_school_code;
 
   const profileUrl = `/artists/${artist.slug}`;
   const availableCount = artist.available_count ?? 0;
@@ -485,10 +487,22 @@ function ArtistCard({ artist }: { artist: ArtistWithSlug }) {
   if (artist.tokuju_count > 0) certBadges.push({ label: 'Tokuju', value: artist.tokuju_count });
   if (artist.juyo_count > 0) certBadges.push({ label: 'Juyo', value: artist.juyo_count });
 
+  // Build subtitle for school codes vs individual artists
+  const subtitleParts: string[] = [];
+  if (isSchool) {
+    subtitleParts.push('School attribution');
+    if (artist.member_count && artist.member_count > 0) {
+      subtitleParts.push(`${artist.member_count} known smiths`);
+    }
+    if (artist.province) subtitleParts.push(artist.province);
+  }
+
   return (
     <div
       onClick={() => router.push(profileUrl)}
-      className="group cursor-pointer p-4 bg-cream border border-border hover:border-gold/40 transition-colors flex flex-col"
+      className={`group cursor-pointer p-4 bg-cream border border-border hover:border-gold/40 transition-colors flex flex-col${
+        isSchool ? ' border-l-2 border-l-gold/60' : ''
+      }`}
     >
       {/* Row 1: Name + Total works */}
       <div className="flex items-start justify-between gap-3">
@@ -507,9 +521,11 @@ function ArtistCard({ artist }: { artist: ArtistWithSlug }) {
         </div>
       </div>
 
-      {/* Row 2: School / Era / Province */}
+      {/* Row 2: School / Era / Province (or school attribution subtitle) */}
       <div className="mt-1.5 text-[11px] text-ink/45 truncate">
-        {[artist.school, artist.era, artist.province].filter(Boolean).join(' \u00b7 ') || 'Unknown'}
+        {isSchool
+          ? subtitleParts.join(' \u00b7 ')
+          : [artist.school, artist.era, artist.province].filter(Boolean).join(' \u00b7 ') || 'Unknown'}
       </div>
 
       {/* Row 3: Cert counts */}

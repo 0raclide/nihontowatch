@@ -279,14 +279,12 @@ export async function getElitePercentile(
     .from(table)
     .select('*', { count: 'exact', head: true })
     .lt('elite_factor', eliteFactor)
-    .gt('total_items', 0)
-    .eq('is_school_code', false);
+    .gt('total_items', 0);
 
   const { count: total } = await yuhinkaiClient
     .from(table)
     .select('*', { count: 'exact', head: true })
-    .gt('total_items', 0)
-    .eq('is_school_code', false);
+    .gt('total_items', 0);
 
   if (!total || total === 0) return 0;
   return Math.round(((below || 0) / total) * 100);
@@ -338,7 +336,9 @@ export interface ArtistDirectoryEntry {
   juyo_count: number;
   total_items: number;
   elite_factor: number;
+  is_school_code: boolean;
   percentile?: number;
+  member_count?: number;
   denrai_owners?: Array<{ owner: string; count: number }>;
   available_count?: number;
   first_listing_id?: number;
@@ -350,7 +350,7 @@ export interface DirectoryFilters {
   province?: string;
   era?: string;
   q?: string;
-  sort?: 'elite_factor' | 'name' | 'total_items';
+  sort?: 'elite_factor' | 'name' | 'total_items' | 'for_sale';
   page?: number;
   limit?: number;
   notable?: boolean;
@@ -384,7 +384,7 @@ export async function getArtistsForDirectory(
 
   const safeLimit = Math.min(Math.max(limit, 1), 100);
   const offset = (Math.max(page, 1) - 1) * safeLimit;
-  const sortCol = sort === 'name' ? 'name_romaji' : sort;
+  const sortCol = sort === 'name' ? 'name_romaji' : (sort === 'for_sale' ? 'elite_factor' : sort);
 
   const table = type === 'tosogu' ? 'tosogu_makers' : 'smith_entities';
   const idCol = type === 'tosogu' ? 'maker_id' : 'smith_id';
@@ -392,8 +392,7 @@ export async function getArtistsForDirectory(
 
   let query = yuhinkaiClient
     .from(table)
-    .select(`${idCol}, name_romaji, name_kanji, school, province, era, kokuho_count, jubun_count, jubi_count, gyobutsu_count, tokuju_count, juyo_count, total_items, elite_factor`, { count: 'exact' })
-    .eq('is_school_code', false);
+    .select(`${idCol}, name_romaji, name_kanji, school, province, era, kokuho_count, jubun_count, jubi_count, gyobutsu_count, tokuju_count, juyo_count, total_items, elite_factor, is_school_code`, { count: 'exact' });
 
   if (notable) query = query.gt('total_items', 0);
   if (school) query = query.eq('school', school);
@@ -429,9 +428,72 @@ export async function getArtistsForDirectory(
     juyo_count: (row.juyo_count as number) || 0,
     total_items: (row.total_items as number) || 0,
     elite_factor: (row.elite_factor as number) || 0,
+    is_school_code: (row.is_school_code as boolean) || false,
   }));
 
   return { artists, total: count || 0 };
+}
+
+/**
+ * Fetch artists matching a set of codes with optional directory filters applied.
+ * Used by the "for sale" sort which needs to query by known artisan codes
+ * (from listings) then apply Yuhinkai filters (school, province, era, etc.).
+ * Processes in batches to avoid URL length limits on .in() queries.
+ */
+export async function getFilteredArtistsByCodes(
+  codes: string[],
+  type: 'smith' | 'tosogu',
+  filters: { school?: string; province?: string; era?: string; q?: string; notable?: boolean }
+): Promise<ArtistDirectoryEntry[]> {
+  if (codes.length === 0) return [];
+
+  const table = type === 'tosogu' ? 'tosogu_makers' : 'smith_entities';
+  const idCol = type === 'tosogu' ? 'maker_id' : 'smith_id';
+  const entityType = type === 'tosogu' ? 'tosogu' : 'smith';
+
+  const BATCH_SIZE = 200;
+  const results: ArtistDirectoryEntry[] = [];
+
+  for (let i = 0; i < codes.length; i += BATCH_SIZE) {
+    const batch = codes.slice(i, i + BATCH_SIZE);
+    let query = yuhinkaiClient
+      .from(table)
+      .select(`${idCol}, name_romaji, name_kanji, school, province, era, kokuho_count, jubun_count, jubi_count, gyobutsu_count, tokuju_count, juyo_count, total_items, elite_factor, is_school_code`)
+      .in(idCol, batch);
+
+    if (filters.notable !== false) query = query.gt('total_items', 0);
+    if (filters.school) query = query.eq('school', filters.school);
+    if (filters.province) query = query.eq('province', filters.province);
+    if (filters.era) query = query.eq('era', filters.era);
+    if (filters.q) {
+      query = query.or(`name_romaji.ilike.%${filters.q}%,name_kanji.ilike.%${filters.q}%,${idCol}.ilike.%${filters.q}%,school.ilike.%${filters.q}%,province.ilike.%${filters.q}%`);
+    }
+
+    const { data } = await query;
+
+    for (const row of data || []) {
+      results.push({
+        code: (row as Record<string, unknown>)[idCol] as string,
+        name_romaji: row.name_romaji as string | null,
+        name_kanji: row.name_kanji as string | null,
+        school: row.school as string | null,
+        province: row.province as string | null,
+        era: row.era as string | null,
+        entity_type: entityType,
+        kokuho_count: (row.kokuho_count as number) || 0,
+        jubun_count: (row.jubun_count as number) || 0,
+        jubi_count: (row.jubi_count as number) || 0,
+        gyobutsu_count: (row.gyobutsu_count as number) || 0,
+        tokuju_count: (row.tokuju_count as number) || 0,
+        juyo_count: (row.juyo_count as number) || 0,
+        total_items: (row.total_items as number) || 0,
+        elite_factor: (row.elite_factor as number) || 0,
+        is_school_code: (row.is_school_code as boolean) || false,
+      });
+    }
+  }
+
+  return results;
 }
 
 /**
@@ -451,11 +513,11 @@ export async function getArtistDirectoryFacets(type: 'smith' | 'tosogu'): Promis
     { count: smithCount },
     { count: tosoguCount },
   ] = await Promise.all([
-    yuhinkaiClient.from(table).select('school').eq('is_school_code', false).gt('total_items', 0).not('school', 'is', null),
-    yuhinkaiClient.from(table).select('province').eq('is_school_code', false).gt('total_items', 0).not('province', 'is', null),
-    yuhinkaiClient.from(table).select('era').eq('is_school_code', false).gt('total_items', 0).not('era', 'is', null),
-    yuhinkaiClient.from('smith_entities').select('*', { count: 'exact', head: true }).eq('is_school_code', false).gt('total_items', 0),
-    yuhinkaiClient.from('tosogu_makers').select('*', { count: 'exact', head: true }).eq('is_school_code', false).gt('total_items', 0),
+    yuhinkaiClient.from(table).select('school').gt('total_items', 0).not('school', 'is', null),
+    yuhinkaiClient.from(table).select('province').gt('total_items', 0).not('province', 'is', null),
+    yuhinkaiClient.from(table).select('era').gt('total_items', 0).not('era', 'is', null),
+    yuhinkaiClient.from('smith_entities').select('*', { count: 'exact', head: true }).gt('total_items', 0),
+    yuhinkaiClient.from('tosogu_makers').select('*', { count: 'exact', head: true }).gt('total_items', 0),
   ]);
 
   const schoolMap = new Map<string, number>();
@@ -493,6 +555,52 @@ export async function getArtistDirectoryFacets(type: 'smith' | 'tosogu'): Promis
 }
 
 // =============================================================================
+// SCHOOL MEMBER COUNTS (for NS code cards)
+// =============================================================================
+
+/**
+ * For NS school code entries, count how many individual smiths/makers share the same school.
+ * Returns Map<code, memberCount>.
+ */
+export async function getSchoolMemberCounts(
+  artists: Array<{ code: string; school: string | null; entity_type: 'smith' | 'tosogu'; is_school_code: boolean }>
+): Promise<Map<string, number>> {
+  const result = new Map<string, number>();
+  const nsCodes = artists.filter(a => a.is_school_code && a.school);
+  if (nsCodes.length === 0) return result;
+
+  // Deduplicate by school+type
+  const uniqueSchools = new Map<string, { school: string; type: 'smith' | 'tosogu'; codes: string[] }>();
+  for (const a of nsCodes) {
+    const key = `${a.entity_type}:${a.school}`;
+    const entry = uniqueSchools.get(key);
+    if (entry) {
+      entry.codes.push(a.code);
+    } else {
+      uniqueSchools.set(key, { school: a.school!, type: a.entity_type, codes: [a.code] });
+    }
+  }
+
+  await Promise.all(
+    Array.from(uniqueSchools.values()).map(async ({ school, type, codes }) => {
+      const table = type === 'smith' ? 'smith_entities' : 'tosogu_makers';
+      const { count } = await yuhinkaiClient
+        .from(table)
+        .select('*', { count: 'exact', head: true })
+        .eq('school', school)
+        .eq('is_school_code', false)
+        .gt('total_items', 0);
+
+      for (const code of codes) {
+        result.set(code, count || 0);
+      }
+    })
+  );
+
+  return result;
+}
+
+// =============================================================================
 // BULK PERCENTILE QUERIES (for directory cards)
 // =============================================================================
 
@@ -523,8 +631,7 @@ export async function getBulkElitePercentiles(
     const { count: total } = await yuhinkaiClient
       .from(table)
       .select('*', { count: 'exact', head: true })
-      .gt('total_items', 0)
-      .eq('is_school_code', false);
+      .gt('total_items', 0);
 
     if (!total || total === 0) {
       for (const a of group) result.set(a.code, 0);
@@ -541,8 +648,7 @@ export async function getBulkElitePercentiles(
           .from(table)
           .select('*', { count: 'exact', head: true })
           .lt('elite_factor', factor)
-          .gt('total_items', 0)
-          .eq('is_school_code', false);
+          .gt('total_items', 0);
         return { factor, below: below || 0 };
       })
     );
@@ -629,6 +735,119 @@ export async function getArtisanDistributions(
   if (!hasForm && !hasMei) return null;
 
   return { form_distribution: form, mei_distribution: mei };
+}
+
+// =============================================================================
+// HERO IMAGE (highest-designation catalog image for artist profiles)
+// =============================================================================
+
+/** Priority order: Tokuju has the nicest images, Jubi the worst */
+const COLLECTION_PRIORITY: string[] = ['Tokuju', 'Juyo', 'Kokuho', 'JuBun', 'Jubi'];
+
+export interface ArtisanHeroImage {
+  imageUrl: string;
+  collection: string;       // e.g. 'Tokuju'
+  volume: number;
+  itemNumber: number;
+  formType: string | null;  // e.g. 'Katana'
+  imageType: string;        // e.g. 'oshigata'
+}
+
+/**
+ * Fetch the best catalog image for an artisan's profile hero.
+ * Walks collections in priority order (Tokuju → Juyo → Kokuho → JuBun → Jubi)
+ * and returns the first oshigata (or fallback) image found.
+ */
+export async function getArtisanHeroImage(
+  code: string,
+  entityType: 'smith' | 'tosogu'
+): Promise<ArtisanHeroImage | null> {
+  const codeColumn = entityType === 'smith' ? 'gold_smith_id' : 'gold_maker_id';
+
+  // 1. Get all objects for this artisan with their collections + form type
+  const { data: goldRows, error } = await yuhinkaiClient
+    .from('gold_values')
+    .select('object_uuid, gold_collections, gold_form_type')
+    .eq(codeColumn, code);
+
+  if (error || !goldRows || goldRows.length === 0) return null;
+
+  // 2. Bucket objects by best collection, walking priority order
+  for (const targetCollection of COLLECTION_PRIORITY) {
+    const matchingObjects: Array<{ uuid: string; formType: string | null }> = [];
+
+    for (const row of goldRows) {
+      const collections = row.gold_collections as string[] | null;
+      if (collections?.includes(targetCollection)) {
+        matchingObjects.push({
+          uuid: row.object_uuid as string,
+          formType: (row.gold_form_type as string | null),
+        });
+      }
+    }
+
+    if (matchingObjects.length === 0) continue;
+
+    // 3. Get catalog records for these objects in this collection
+    const objectUuids = matchingObjects.map(o => o.uuid);
+    const { data: catalogRecords } = await yuhinkaiClient
+      .from('catalog_records')
+      .select('uuid, object_uuid, collection, volume, item_number')
+      .in('object_uuid', objectUuids)
+      .eq('collection', targetCollection)
+      .limit(10);
+
+    if (!catalogRecords || catalogRecords.length === 0) continue;
+
+    // 4. Get stored images for these catalog records (prefer oshigata)
+    const catalogUuids = catalogRecords.map(r => r.uuid);
+    const { data: images } = await yuhinkaiClient
+      .from('stored_images')
+      .select('catalog_record_uuid, storage_bucket, storage_path, image_type')
+      .in('catalog_record_uuid', catalogUuids)
+      .eq('is_current', true);
+
+    if (!images || images.length === 0) continue;
+
+    // 5. Pick the best image: prefer oshigata > sugata > detail > any
+    const typeOrder = ['oshigata', 'sugata', 'detail'];
+    let bestImage = images[0];
+    let bestRank = typeOrder.indexOf(bestImage.image_type) >= 0
+      ? typeOrder.indexOf(bestImage.image_type)
+      : typeOrder.length;
+
+    for (const img of images) {
+      const rank = typeOrder.indexOf(img.image_type) >= 0
+        ? typeOrder.indexOf(img.image_type)
+        : typeOrder.length;
+      if (rank < bestRank) {
+        bestImage = img;
+        bestRank = rank;
+      }
+    }
+
+    // 6. Build public URL
+    const { data: urlData } = yuhinkaiClient.storage
+      .from(bestImage.storage_bucket)
+      .getPublicUrl(bestImage.storage_path);
+
+    if (!urlData?.publicUrl) continue;
+
+    // Find the matching catalog record + gold_values form type
+    const catalogRecord = catalogRecords.find(r => r.uuid === bestImage.catalog_record_uuid)!;
+    const goldRow = matchingObjects.find(o => o.uuid === catalogRecord.object_uuid);
+
+    return {
+      imageUrl: urlData.publicUrl,
+      collection: targetCollection,
+      volume: catalogRecord.volume,
+      itemNumber: catalogRecord.item_number,
+      formType: goldRow?.formType || null,
+      imageType: bestImage.image_type,
+    };
+  }
+
+  return null;
 }
 
 // =============================================================================
