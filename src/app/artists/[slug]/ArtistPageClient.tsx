@@ -671,7 +671,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
                       >
                         <span className="text-sm text-ink font-light">{d.owner}</span>
                         {d.count > 1 && (
-                          <span className="text-xs text-ink/35 tabular-nums ml-4">
+                          <span className="text-xs text-ink/35 tabular-nums ml-4 shrink-0">
                             {d.count} works
                           </span>
                         )}
@@ -690,31 +690,28 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
                           else next.add(g.parent);
                           return next;
                         })}
-                        className="flex items-baseline justify-between py-3 w-full text-left group"
+                        className="flex items-baseline justify-between py-3 w-full text-left"
                       >
-                        <span className="text-sm text-ink font-light">
-                          <span className="text-ink/30 text-xs mr-1.5 inline-block w-3">
+                        <span className="text-sm text-ink font-light flex items-baseline gap-1.5">
+                          <span className="text-ink/30 text-[10px] shrink-0">
                             {isExpanded ? '▾' : '▸'}
                           </span>
                           {g.parent}
-                          <span className="text-ink/30 text-xs ml-1.5">
-                            {g.children.length}
-                          </span>
                         </span>
-                        <span className="text-xs text-ink/35 tabular-nums ml-4">
+                        <span className="text-xs text-ink/35 tabular-nums ml-4 shrink-0">
                           {g.totalCount} works
                         </span>
                       </button>
                       {isExpanded && (
-                        <div className="pl-[18px] pb-2">
+                        <div className="pl-5 pb-2">
                           {g.children.map(c => (
                             <div
                               key={c.owner}
                               className="flex items-baseline justify-between py-1.5"
                             >
-                              <span className="text-sm text-ink/60 font-light">{c.owner}</span>
+                              <span className="text-sm text-ink/50 font-light">{c.owner}</span>
                               {c.count > 1 && (
-                                <span className="text-xs text-ink/25 tabular-nums ml-4">
+                                <span className="text-xs text-ink/25 tabular-nums ml-4 shrink-0">
                                   {c.count}
                                 </span>
                               )}
