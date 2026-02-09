@@ -176,7 +176,7 @@ function Biography({ markdown, hook }: { markdown: string; hook: string | null }
           <div key={i}>
             {/* Don't show the first section title if it matches generic pattern */}
             {(i > 0 || !section.title.match(/^THE SMITH|THE MAKER|OVERVIEW/i)) && (
-              <h3 className="text-xs uppercase tracking-[0.2em] text-gold/70 mb-3">
+              <h3 className="text-xs font-serif font-light tracking-wide text-gold/70 mb-3">
                 {section.title}
               </h3>
             )}
@@ -333,9 +333,9 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
     const s: Array<{ id: string; label: string }> = [];
     s.push({ id: 'overview', label: 'Overview' });
     if (certifications.total_items > 0) s.push({ id: 'certifications', label: 'Certifications' });
-    if (denrai.length > 0) s.push({ id: 'provenance', label: 'Provenance' });
     if (hasFormStats) s.push({ id: 'blade-forms', label: entity.entity_type === 'smith' ? 'Blade Forms' : 'Work Types' });
     if (hasMeiStats) s.push({ id: 'signatures', label: 'Signatures' });
+    if (denrai.length > 0) s.push({ id: 'provenance', label: 'Provenance' });
     if (listingsExist) s.push({ id: 'listings', label: 'Available' });
     if (soldListingsExist) s.push({ id: 'sold', label: 'Previously Sold' });
     if (lineage.teacher || lineage.students.length > 0) s.push({ id: 'lineage', label: 'Lineage' });
@@ -545,7 +545,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
           <>
             <SectionDivider />
             <section id="certifications">
-              <h2 className="text-[11px] uppercase tracking-[0.2em] text-ink/40 mb-7">Certifications</h2>
+              <h2 className="text-sm font-serif font-light tracking-wide text-ink/70 mb-7">Certifications</h2>
 
               <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr] gap-10">
                 {/* Hierarchy */}
@@ -567,7 +567,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
                 {/* Elite standing */}
                 <div className="flex flex-col justify-between">
                   <div>
-                    <h3 className="text-[11px] text-ink/40 mb-3 uppercase tracking-wider">Elite Standing</h3>
+                    <h3 className="text-xs font-serif font-light tracking-wide text-ink/60 mb-3">Elite Standing</h3>
                     <EliteFactorDisplay
                       eliteFactor={certifications.elite_factor}
                       percentile={rankings.elite_percentile}
@@ -582,14 +582,48 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
         )}
 
         {/* ═══════════════════════════════════════════════════════════════════
+            BLADE FORMS — Form distribution across certified works
+        ═══════════════════════════════════════════════════════════════════ */}
+        {hasFormStats && (
+          <>
+            <SectionDivider />
+            <section id="blade-forms">
+              <h2 className="text-sm font-serif font-light tracking-wide text-ink/70 mb-2">
+                {entity.entity_type === 'smith' ? 'Blade Forms' : 'Work Types'}
+              </h2>
+              <p className="text-xs text-ink/40 mb-6 italic">
+                Distribution across {certifications.total_items} ranked works
+              </p>
+              <FormDistributionBar distribution={stats.form_distribution} />
+            </section>
+          </>
+        )}
+
+        {/* ═══════════════════════════════════════════════════════════════════
+            SIGNATURES — Mei type distribution across certified works
+        ═══════════════════════════════════════════════════════════════════ */}
+        {hasMeiStats && (
+          <>
+            <SectionDivider />
+            <section id="signatures">
+              <h2 className="text-sm font-serif font-light tracking-wide text-ink/70 mb-2">Signatures</h2>
+              <p className="text-xs text-ink/40 mb-6 italic">
+                Signature types across {certifications.total_items} ranked works
+              </p>
+              <MeiDistributionBar distribution={stats.mei_distribution} />
+            </section>
+          </>
+        )}
+
+        {/* ═══════════════════════════════════════════════════════════════════
             PROVENANCE — Historical collections
         ═══════════════════════════════════════════════════════════════════ */}
         {denrai.length > 0 && (
           <>
             <SectionDivider />
             <section id="provenance">
-              <h2 className="text-[11px] uppercase tracking-[0.2em] text-ink/40 mb-2">Provenance</h2>
-              <p className="text-[11px] text-ink/40 mb-7 italic">
+              <h2 className="text-sm font-serif font-light tracking-wide text-ink/70 mb-2">Provenance</h2>
+              <p className="text-xs text-ink/40 mb-6 italic">
                 Certified works by {entity.name_romaji || entity.code} have been held in the following collections
               </p>
 
@@ -615,47 +649,13 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
         )}
 
         {/* ═══════════════════════════════════════════════════════════════════
-            BLADE FORMS — Form distribution across certified works
-        ═══════════════════════════════════════════════════════════════════ */}
-        {hasFormStats && (
-          <>
-            <SectionDivider />
-            <section id="blade-forms">
-              <h2 className="text-[11px] uppercase tracking-[0.2em] text-ink/40 mb-2">
-                {entity.entity_type === 'smith' ? 'Blade Forms' : 'Work Types'}
-              </h2>
-              <p className="text-[11px] text-ink/40 mb-7 italic">
-                Distribution across {certifications.total_items} ranked works
-              </p>
-              <FormDistributionBar distribution={stats.form_distribution} />
-            </section>
-          </>
-        )}
-
-        {/* ═══════════════════════════════════════════════════════════════════
-            SIGNATURES — Mei type distribution across certified works
-        ═══════════════════════════════════════════════════════════════════ */}
-        {hasMeiStats && (
-          <>
-            <SectionDivider />
-            <section id="signatures">
-              <h2 className="text-[11px] uppercase tracking-[0.2em] text-ink/40 mb-2">Signatures</h2>
-              <p className="text-[11px] text-ink/40 mb-7 italic">
-                Signature types across {certifications.total_items} ranked works
-              </p>
-              <MeiDistributionBar distribution={stats.mei_distribution} />
-            </section>
-          </>
-        )}
-
-        {/* ═══════════════════════════════════════════════════════════════════
             CURRENTLY AVAILABLE — Live listings
         ═══════════════════════════════════════════════════════════════════ */}
         {listingsExist && (
           <>
             <SectionDivider />
             <section id="listings">
-              <h2 className="text-[11px] uppercase tracking-[0.2em] text-ink/40 mb-6">Currently Available</h2>
+              <h2 className="text-sm font-serif font-light tracking-wide text-ink/70 mb-6">Currently Available</h2>
               <ArtisanListings code={entity.code} artisanName={entity.name_romaji} initialListings={listings} status="available" />
             </section>
           </>
@@ -668,7 +668,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
           <>
             <SectionDivider />
             <section id="sold">
-              <h2 className="text-[11px] uppercase tracking-[0.2em] text-ink/40 mb-6">Previously Sold</h2>
+              <h2 className="text-sm font-serif font-light tracking-wide text-ink/70 mb-6">Previously Sold</h2>
               <ArtisanListings code={entity.code} artisanName={entity.name_romaji} initialListings={soldListings} status="sold" />
             </section>
           </>
@@ -681,7 +681,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
           <>
             <SectionDivider />
             <section id="lineage">
-              <h2 className="text-[11px] uppercase tracking-[0.2em] text-ink/40 mb-6">Lineage</h2>
+              <h2 className="text-sm font-serif font-light tracking-wide text-ink/70 mb-6">Lineage</h2>
               <div className="relative pl-7">
                 {/* Vertical connection line */}
                 <div className="absolute left-[9px] top-0 bottom-0 w-px bg-border/25" />
@@ -744,7 +744,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
           <>
             <SectionDivider />
             <section id="related">
-              <h2 className="text-[11px] uppercase tracking-[0.2em] text-ink/40 mb-6">
+              <h2 className="text-sm font-serif font-light tracking-wide text-ink/70 mb-6">
                 {entity.school ? `${entity.school} School` : 'Related Artisans'}
               </h2>
               <RelatedArtisans artisans={related} schoolName={entity.school} />
