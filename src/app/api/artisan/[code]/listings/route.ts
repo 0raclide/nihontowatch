@@ -14,7 +14,7 @@ const LISTING_FIELDS = `
   description, description_en,
   is_available, is_sold, status,
   first_seen_at, last_scraped_at,
-  artisan_id, artisan_confidence,
+  artisan_id, artisan_confidence, artisan_method, artisan_candidates, artisan_verified,
   nagasa_cm, sori_cm,
   dealer:dealers(id, name, domain)
 `;
@@ -23,6 +23,7 @@ const LISTING_FIELDS = `
  * GET /api/artisan/[code]/listings
  *
  * Fetches listings from the main NihontoWatch database matched to this artisan code.
+ * For school codes, also includes listings from all school member artisans.
  * ?status=sold  — returns sold/unavailable items instead of available ones.
  */
 export async function GET(
@@ -40,15 +41,46 @@ export async function GET(
   try {
     const supabase = await createClient();
 
+    // Check if this is a school code — if so, include member artisan listings
+    let artisanCodes = [code];
+    try {
+      const { getSmithEntity, getTosoguMaker, getSchoolMemberCodes } = await import('@/lib/supabase/yuhinkai');
+      const smith = await getSmithEntity(code);
+      const tosogu = !smith ? await getTosoguMaker(code) : null;
+      const entity = smith || tosogu;
+
+      if (entity?.is_school_code && entity?.school) {
+        const entityType = smith ? 'smith' as const : 'tosogu' as const;
+        const memberCodesMap = await getSchoolMemberCodes([{
+          code,
+          school: entity.school,
+          entity_type: entityType,
+        }]);
+        const memberCodes = memberCodesMap.get(code) || [];
+        if (memberCodes.length > 0) {
+          artisanCodes = [code, ...memberCodes];
+        }
+      }
+    } catch (err) {
+      // If Yuhinkai lookup fails, fall back to exact code match
+      logger.logError('School member lookup failed', err);
+    }
+
     let query = supabase
       .from('listings')
-      .select(LISTING_FIELDS)
-      .eq('artisan_id', code);
+      .select(LISTING_FIELDS);
+
+    if (artisanCodes.length === 1) {
+      query = query.eq('artisan_id', code);
+    } else {
+      query = query.in('artisan_id' as string, artisanCodes);
+    }
 
     if (status === 'sold') {
-      query = query.eq('is_available', false).limit(50);
+      // Include is_available=false AND is_available=NULL (e.g. reserved items)
+      query = query.or('is_available.eq.false,is_available.is.null').limit(50);
     } else {
-      query = query.eq('is_available', true).limit(24);
+      query = query.eq('is_available', true).limit(50);
     }
 
     query = query.order('first_seen_at', { ascending: false });
