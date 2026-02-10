@@ -96,6 +96,7 @@ function HeaderContent() {
               />
               <h1 className="font-serif text-2xl tracking-tight text-ink">
                 Nihonto<span className="text-gold font-medium">Watch</span>
+                <sup className="ml-1.5 text-[9px] font-sans font-semibold tracking-widest text-gold/70 border border-gold/30 rounded px-1 py-px align-super">BETA</sup>
               </h1>
             </Link>
 
@@ -324,6 +325,7 @@ function HeaderFallback() {
             />
             <span className="font-serif text-2xl tracking-tight text-ink">
               Nihonto<span className="text-gold font-medium">Watch</span>
+              <sup className="ml-1.5 text-[9px] font-sans font-semibold tracking-widest text-gold/70 border border-gold/30 rounded px-1 py-px align-super">BETA</sup>
             </span>
           </div>
           {/* Functional form that works without JS via native form submission */}

@@ -289,12 +289,18 @@ function HomeContent() {
     fetchRates();
   }, []);
 
-  // Sync browse grid when a listing is edited in QuickView (e.g. artisan fix)
+  // Sync browse grid when a listing is edited in QuickView or via card tooltip
+  // (e.g. artisan fix, setsumei connect)
   useEffect(() => {
     const handler = (e: Event) => {
-      const updated = (e as CustomEvent).detail as Listing;
+      const updated = (e as CustomEvent).detail;
       if (!updated?.id) return;
-      setAllListings(prev => prev.map(l => l.id === updated.id ? { ...l, ...updated } : l));
+      // String-coerce ids for comparison — browse API may return number while
+      // listing detail API or tooltip dispatch may use a different type
+      const updatedId = String(updated.id);
+      setAllListings(prev => prev.map(l =>
+        String(l.id) === updatedId ? { ...l, ...updated } : l
+      ));
     };
     window.addEventListener('listing-refreshed', handler);
     return () => window.removeEventListener('listing-refreshed', handler);
@@ -570,6 +576,7 @@ function HomeContent() {
               />
               <h1 className="font-serif text-[22px] tracking-wide text-ink mt-1.5">
                 Nihonto<span className="text-gold font-medium">Watch</span>
+                <sup className="ml-1 text-[8px] font-sans font-semibold tracking-widest text-gold/70 border border-gold/30 rounded px-1 py-px align-super">BETA</sup>
               </h1>
             </Link>
             {/* Desktop: Show "Collection" */}
@@ -718,6 +725,7 @@ function HomeContent() {
             <div className="flex flex-col items-center gap-2 lg:flex-row lg:gap-6">
               <span className="font-serif text-lg text-ink">
                 Nihonto<span className="text-gold">watch</span>
+                <sup className="ml-1 text-[8px] font-sans font-semibold tracking-widest text-gold/60 border border-gold/25 rounded px-1 py-px align-super">BETA</sup>
               </span>
               <span className="text-[11px] text-muted text-center lg:text-left">
                 Curated Japanese arms from dealers worldwide
