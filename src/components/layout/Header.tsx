@@ -34,15 +34,45 @@ function HeaderContent() {
   const activity = useActivityOptional();
 
   // ── Scroll-linked header: moves with scroll, snaps when idle ──
+  // Refinements: progressive shadow, scroll-up hysteresis, asymmetric snap,
+  // will-change GPU hint, prefers-reduced-motion respect.
   const lastScrollY = useRef(0);
   const offsetRef = useRef(0);
+  const upAccum = useRef(0);        // accumulates upward scroll before reveal starts
   const snapTimer = useRef<number | null>(null);
 
   useEffect(() => {
-    const TOP_ZONE = 100; // always show near top of page
+    const TOP_ZONE = 100;           // always show near top of page
+    const UP_DEAD_ZONE = 12;        // px of upward scroll before reveal begins
+    const SNAP_OPEN_RATIO = 0.35;   // snap open when 35%+ revealed (eager to help)
+    const SNAP_CLOSE_RATIO = 0.65;  // snap closed when 65%+ hidden (hard to dismiss)
+
+    // Respect prefers-reduced-motion — skip scroll-linked behavior entirely
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReduced) return;
+
+    const header = headerRef.current;
+    if (header) header.style.willChange = 'transform';
+
+    /** Update shadow + backdrop blur proportional to reveal amount */
+    const applyDepth = (offset: number, h: number, scrollY: number) => {
+      if (!header) return;
+      // Progress: 0 = fully hidden, 1 = fully visible
+      const progress = 1 - Math.abs(offset) / h;
+      // Only show depth when scrolled past the natural header position
+      const scrollFactor = Math.min(1, scrollY / 200);
+      const depth = progress * scrollFactor;
+      header.style.boxShadow = depth > 0.05
+        ? `0 1px ${4 + depth * 8}px rgba(0,0,0,${depth * 0.08})`
+        : 'none';
+      header.style.backdropFilter = depth > 0.05 ? `blur(${depth * 12}px)` : 'none';
+      // Slight background opacity when floating (lets content peek through)
+      if (depth > 0.05) {
+        header.style.backgroundColor = '';  // let CSS class handle base color
+      }
+    };
 
     const onScroll = () => {
-      const header = headerRef.current;
       if (!header) return;
 
       const y = window.scrollY;
@@ -53,9 +83,11 @@ function HeaderContent() {
       if (y < TOP_ZONE) {
         if (offsetRef.current !== 0) {
           offsetRef.current = 0;
-          header.style.transition = 'transform 0.3s ease-out';
+          header.style.transition = 'transform 0.3s ease-out, box-shadow 0.3s ease-out, backdrop-filter 0.3s ease-out';
           header.style.transform = 'translateY(0)';
         }
+        applyDepth(0, h, y);
+        upAccum.current = 0;
         lastScrollY.current = y;
         return;
       }
@@ -66,22 +98,45 @@ function HeaderContent() {
         return;
       }
 
-      // Move header pixel-by-pixel with scroll — no transition, feels physical
+      // ── Scroll-up hysteresis ──
+      // Require UP_DEAD_ZONE of intentional upward scroll before reveal starts.
+      // Prevents twitching from scroll-inertia micro-reversals.
+      if (delta < 0 && offsetRef.current <= -h) {
+        // Header is fully hidden and user is scrolling up
+        upAccum.current += Math.abs(delta);
+        if (upAccum.current < UP_DEAD_ZONE) {
+          lastScrollY.current = y;
+          return; // swallow — not enough intent yet
+        }
+        // Past threshold — fall through to normal movement
+      }
+      if (delta > 0) {
+        upAccum.current = 0; // reset on any downward scroll
+      }
+
+      // Move header pixel-by-pixel — no transition, feels physical
       header.style.transition = 'none';
       offsetRef.current = Math.max(-h, Math.min(0, offsetRef.current - delta));
       header.style.transform = `translateY(${offsetRef.current}px)`;
+      applyDepth(offsetRef.current, h, y);
 
-      // When scrolling stops, snap to nearest state
+      // ── Asymmetric snap on idle ──
       if (snapTimer.current) clearTimeout(snapTimer.current);
       snapTimer.current = window.setTimeout(() => {
-        header.style.transition = 'transform 0.25s ease-out';
-        if (offsetRef.current < -h / 2) {
+        const revealed = 1 - Math.abs(offsetRef.current) / h;
+        header.style.transition = 'transform 0.25s ease-out, box-shadow 0.25s ease-out, backdrop-filter 0.25s ease-out';
+        if (revealed < SNAP_OPEN_RATIO) {
+          // Not enough revealed → snap closed
           offsetRef.current = -h;
           header.style.transform = `translateY(${-h}px)`;
-        } else {
+          applyDepth(-h, h, y);
+        } else if (revealed > SNAP_CLOSE_RATIO) {
+          // Mostly revealed → snap open
           offsetRef.current = 0;
           header.style.transform = 'translateY(0)';
+          applyDepth(0, h, window.scrollY);
         }
+        // Between thresholds: stay put (prevents indecisive snapping)
       }, 150);
 
       lastScrollY.current = y;
@@ -91,6 +146,7 @@ function HeaderContent() {
     return () => {
       window.removeEventListener('scroll', onScroll);
       if (snapTimer.current) clearTimeout(snapTimer.current);
+      if (header) header.style.willChange = '';
     };
   }, []);
 
