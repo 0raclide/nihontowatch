@@ -69,14 +69,23 @@ export function SectionJumpNav({ sections }: SectionJumpNavProps) {
     };
   }, [sections]);
 
+  // ── Offset-aware scroll helper ──
+  const scrollToSection = useCallback((sectionId: string) => {
+    const el = document.getElementById(sectionId);
+    if (!el) return;
+    const headerOffset = 96; // ~6rem — clears sticky header + breathing room
+    const y = el.getBoundingClientRect().top + window.scrollY - headerOffset;
+    window.scrollTo({ top: y, behavior: 'smooth' });
+  }, []);
+
   // ── Mobile: navigate to section ──
   const navigateTo = useCallback((sectionId: string) => {
     setMobileMenuOpen(false);
     // Small delay so the menu closes before scroll starts
     requestAnimationFrame(() => {
-      document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      scrollToSection(sectionId);
     });
-  }, []);
+  }, [scrollToSection]);
 
   // ── Mobile: prev/next section ──
   const activeIndex = sections.findIndex(s => s.id === activeId);
@@ -102,7 +111,7 @@ export function SectionJumpNav({ sections }: SectionJumpNavProps) {
   return (
     <>
       {/* ═══ DESKTOP: Sticky top bar (hidden on mobile) ═══ */}
-      <div className="hidden sm:block sticky top-0 z-20 -mx-4 relative">
+      <div className="hidden sm:block xl:hidden sticky top-0 lg:top-[77px] z-20 -mx-4 relative">
         {canScrollLeft && (
           <div className="absolute left-0 top-0 bottom-0 w-6 bg-gradient-to-r from-surface to-transparent z-10 pointer-events-none" />
         )}
@@ -119,7 +128,7 @@ export function SectionJumpNav({ sections }: SectionJumpNavProps) {
                 href={`#${section.id}`}
                 onClick={(e) => {
                   e.preventDefault();
-                  document.getElementById(section.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  scrollToSection(section.id);
                 }}
                 className={`whitespace-nowrap text-xs transition-colors pb-1 ${
                   activeId === section.id
@@ -136,6 +145,31 @@ export function SectionJumpNav({ sections }: SectionJumpNavProps) {
           ))}
         </nav>
       </div>
+
+      {/* ═══ XL+: Fixed left-margin sidebar (hidden below xl) ═══ */}
+      <nav
+        className="hidden xl:flex flex-col gap-1 fixed top-[96px] z-20"
+        style={{ left: 'max(24px, calc(50vw - 540px))' }}
+        aria-label="Section navigation"
+      >
+        {sections.map((section) => (
+          <a
+            key={section.id}
+            href={`#${section.id}`}
+            onClick={(e) => {
+              e.preventDefault();
+              scrollToSection(section.id);
+            }}
+            className={`block text-[11px] uppercase tracking-[0.14em] py-1.5 pl-3 border-l-[2px] transition-colors ${
+              activeId === section.id
+                ? 'text-gold border-gold/70'
+                : 'text-ink/25 border-transparent hover:text-ink/45 hover:border-ink/15'
+            }`}
+          >
+            {section.label}
+          </a>
+        ))}
+      </nav>
 
       {/* ═══ MOBILE: Fixed bottom section nav, above BottomTabBar (hidden on sm+) ═══ */}
       <div

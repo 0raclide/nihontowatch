@@ -220,7 +220,7 @@ function Biography({ markdown, hook }: { markdown: string; hook: string | null }
 /** Section header — thin rule + small-caps title, like a catalog chapter heading */
 function SectionHeader({ title, subtitle, id, className = '' }: { title: string; subtitle?: string; id?: string; className?: string }) {
   return (
-    <div id={id} className={className}>
+    <div id={id} className={`scroll-mt-24 ${className}`}>
       <div className="h-px bg-border/30 mb-5" />
       <h2 className="text-[13px] uppercase tracking-[0.18em] text-ink/60 font-medium">
         {title}
@@ -375,7 +375,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
         {/* ═══════════════════════════════════════════════════════════════════
             OVERVIEW — Hero header with vitals
         ═══════════════════════════════════════════════════════════════════ */}
-        <section id="overview">
+        <section id="overview" className="scroll-mt-24">
           {/* Breadcrumb + Share */}
           <div className="flex items-center justify-between mb-6 sm:mb-8">
             <nav className="text-[11px] text-ink/40 tracking-widest uppercase">
