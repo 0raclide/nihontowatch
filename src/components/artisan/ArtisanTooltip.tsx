@@ -216,27 +216,29 @@ export function ArtisanTooltip({
     }
   }, [isOpen, startInSearchMode, artisanId]);
 
-  // Position tooltip relative to document (absolute positioning allows scrolling)
+  // Position tooltip relative to viewport using fixed positioning.
+  // This works correctly even when body scroll is locked (QuickView modal uses
+  // position:fixed on body, which breaks absolute positioning offsets).
   useEffect(() => {
     if (isOpen && termRef.current) {
       const rect = termRef.current.getBoundingClientRect();
       const tooltipWidth = 320; // w-80 = 20rem = 320px
       const padding = 12;
 
-      // Calculate horizontal position (viewport-relative, then add scroll offset)
-      let left = rect.left + window.scrollX;
+      // Calculate horizontal position (viewport-relative)
+      let left = rect.left;
       if (rect.left + tooltipWidth > window.innerWidth - padding) {
-        left = window.innerWidth - tooltipWidth - padding + window.scrollX;
+        left = window.innerWidth - tooltipWidth - padding;
       }
-      if (rect.left < padding) {
-        left = padding + window.scrollX;
+      if (left < padding) {
+        left = padding;
       }
 
-      // Always show below the trigger element (user can scroll to see full tooltip)
-      const top = rect.bottom + 8 + window.scrollY;
+      // Show below the trigger element
+      const top = rect.bottom + 8;
 
       setTooltipStyle({
-        position: 'absolute',
+        position: 'fixed',
         top: `${top}px`,
         left: `${left}px`,
         width: `${tooltipWidth}px`,
@@ -245,7 +247,7 @@ export function ArtisanTooltip({
     }
   }, [isOpen, showCorrectionSearch]);
 
-  // Close on escape key only (tooltip persists until X is clicked)
+  // Close on escape key or scroll (fixed-position tooltip would float away on scroll)
   useEffect(() => {
     if (!isOpen) return;
 
@@ -253,10 +255,19 @@ export function ArtisanTooltip({
       if (e.key === 'Escape') setIsOpen(false);
     };
 
+    const handleScroll = (e: Event) => {
+      // Don't close if scrolling inside the tooltip itself (e.g. search results)
+      if (tooltipRef.current && tooltipRef.current.contains(e.target as Node)) return;
+      setIsOpen(false);
+    };
+
     document.addEventListener('keydown', handleKeyDown);
+    // Listen on capture phase to catch scroll on any container (QuickView panels, etc.)
+    document.addEventListener('scroll', handleScroll, { capture: true, passive: true });
 
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('scroll', handleScroll, { capture: true } as EventListenerOptions);
     };
   }, [isOpen]);
 
