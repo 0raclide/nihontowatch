@@ -426,7 +426,13 @@ export function QuickViewMobileSheet({
                   method={listing.artisan_method}
                   candidates={listing.artisan_candidates}
                   verified={listing.artisan_verified}
-                  onArtisanFixed={() => quickView?.refreshCurrentListing()}
+                  onArtisanFixed={(newId) => quickView?.refreshCurrentListing({
+                    artisan_id: newId,
+                    artisan_confidence: newId === 'UNKNOWN' ? 'LOW' : 'HIGH',
+                    artisan_method: 'ADMIN_CORRECTION',
+                    artisan_verified: 'correct' as const,
+                    artisan_display_name: newId === 'UNKNOWN' ? 'Unknown' : newId,
+                  })}
                 >
                   <span className="text-muted hover:text-ink transition-colors p-0.5 cursor-pointer">
                     <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">

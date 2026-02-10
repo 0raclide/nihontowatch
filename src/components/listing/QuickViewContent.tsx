@@ -141,7 +141,13 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
                       method={listing.artisan_method}
                       candidates={listing.artisan_candidates}
                       verified={listing.artisan_verified}
-                      onArtisanFixed={() => quickView?.refreshCurrentListing()}
+                      onArtisanFixed={(newId) => quickView?.refreshCurrentListing({
+                        artisan_id: newId,
+                        artisan_confidence: newId === 'UNKNOWN' ? 'LOW' : 'HIGH',
+                        artisan_method: 'ADMIN_CORRECTION',
+                        artisan_verified: 'correct' as const,
+                        artisan_display_name: newId === 'UNKNOWN' ? 'Unknown' : newId,
+                      })}
                     >
                       <span className="text-muted hover:text-ink transition-colors p-0.5 cursor-pointer">
                         <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -170,7 +176,13 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
                 <ArtisanTooltip
                   listingId={listing.id}
                   startInSearchMode
-                  onArtisanFixed={() => quickView?.refreshCurrentListing()}
+                  onArtisanFixed={(newId) => quickView?.refreshCurrentListing({
+                    artisan_id: newId,
+                    artisan_confidence: newId === 'UNKNOWN' ? 'LOW' : 'HIGH',
+                    artisan_method: 'ADMIN_CORRECTION',
+                    artisan_verified: 'correct' as const,
+                    artisan_display_name: newId === 'UNKNOWN' ? 'Unknown' : newId,
+                  })}
                 >
                   <span className="inline-flex items-center gap-0.5 text-[10px] font-mono font-medium px-2 py-0.5 rounded bg-muted/10 text-muted hover:text-ink transition-colors" data-artisan-tooltip>
                     Set ID
@@ -246,11 +258,19 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
           <div className="px-4 py-3 lg:px-5">
             <AdminSetsumeiWidget
               listing={listing}
-              onConnectionChanged={quickView?.refreshCurrentListing}
+              onConnectionChanged={(enrichment) => quickView?.refreshCurrentListing(
+                enrichment !== undefined ? { yuhinkai_enrichment: enrichment } as unknown as Partial<Listing> : undefined
+              )}
             />
             <AdminArtisanWidget
               listing={listing}
-              onArtisanChanged={() => quickView?.refreshCurrentListing()}
+              onArtisanChanged={(newId) => quickView?.refreshCurrentListing({
+                artisan_id: newId,
+                artisan_confidence: newId === 'UNKNOWN' ? 'LOW' : 'HIGH',
+                artisan_method: 'ADMIN_CORRECTION',
+                artisan_verified: 'correct' as const,
+                artisan_display_name: newId === 'UNKNOWN' ? 'Unknown' : newId,
+              })}
             />
           </div>
         )}

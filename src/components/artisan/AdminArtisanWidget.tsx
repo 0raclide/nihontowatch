@@ -11,7 +11,7 @@ import type { ArtisanSearchResult } from '@/app/api/artisan/search/route';
 
 interface AdminArtisanWidgetProps {
   listing: Listing;
-  onArtisanChanged?: () => void;
+  onArtisanChanged?: (newArtisanId: string) => void;
 }
 
 // =============================================================================
@@ -120,7 +120,7 @@ export function AdminArtisanWidget({ listing, onArtisanChanged }: AdminArtisanWi
         setSuccessMessage('Marked as UNKNOWN');
         setSearchQuery('');
         setSearchResults([]);
-        onArtisanChanged?.();
+        onArtisanChanged?.('UNKNOWN');
         setTimeout(() => setSuccessMessage(null), 4000);
       } else {
         const data = await response.json();
@@ -157,7 +157,7 @@ export function AdminArtisanWidget({ listing, onArtisanChanged }: AdminArtisanWi
         setSearchResults([]);
 
         // Notify parent to refresh listing data
-        onArtisanChanged?.();
+        onArtisanChanged?.(result.code);
 
         // Clear success after delay
         setTimeout(() => setSuccessMessage(null), 4000);

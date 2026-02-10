@@ -48,9 +48,8 @@ interface QuickViewContextType {
   /** Set the listings array for navigation */
   setListings: (listings: Listing[]) => void;
   /** Refresh the current listing data from the API (e.g., after admin changes)
-   *  Accepts optional enrichment for optimistic update (instant UI feedback)
-   *  Pass null to clear enrichment (e.g., on disconnect) */
-  refreshCurrentListing: (optimisticEnrichment?: Record<string, unknown> | null) => Promise<void>;
+   *  Accepts optional partial listing fields for optimistic update (instant UI feedback) */
+  refreshCurrentListing: (optimisticFields?: Partial<Listing>) => Promise<void>;
 }
 
 // ============================================================================
@@ -241,15 +240,14 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
   // Used after admin actions like connecting setsumei to reload updated data
   // Accepts optional enrichment for optimistic update (instant UI feedback)
   // Pass null to clear enrichment (e.g., on disconnect)
-  const refreshCurrentListing = useCallback(async (optimisticEnrichment?: Record<string, unknown> | null) => {
+  const refreshCurrentListing = useCallback(async (optimisticFields?: Partial<Listing>) => {
     if (!currentListing) return;
 
-    // Optimistic update: immediately show/clear enrichment data while we fetch full listing
-    // Check for explicit null (disconnect) or truthy object (new enrichment)
-    if (optimisticEnrichment !== undefined) {
+    // Optimistic update: immediately apply fields while we fetch full listing
+    if (optimisticFields) {
       const optimisticListing = {
         ...currentListing,
-        yuhinkai_enrichment: optimisticEnrichment,
+        ...optimisticFields,
       };
       setCurrentListing(optimisticListing);
 
