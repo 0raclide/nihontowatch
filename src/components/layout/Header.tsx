@@ -30,7 +30,54 @@ function HeaderContent() {
   }, [currentQuery]);
   const [showAdminMenu, setShowAdminMenu] = useState(false);
   const adminMenuRef = useRef<HTMLDivElement>(null);
+  const headerRef = useRef<HTMLElement>(null);
   const activity = useActivityOptional();
+
+  // ── Auto-hide header on scroll down, reveal on scroll up (desktop) ──
+  const [headerHidden, setHeaderHidden] = useState(false);
+  const lastScrollY = useRef(0);
+  const scrollAccum = useRef(0);
+
+  useEffect(() => {
+    const DEAD_ZONE = 8;        // px — ignore micro-jitter
+    const TOP_ZONE = 120;       // always show near top of page
+
+    const onScroll = () => {
+      const y = window.scrollY;
+      const delta = y - lastScrollY.current;
+
+      // Always show near page top
+      if (y < TOP_ZONE) {
+        setHeaderHidden(false);
+        scrollAccum.current = 0;
+        lastScrollY.current = y;
+        return;
+      }
+
+      // Don't hide while user is interacting with the header (e.g. search focused)
+      if (headerRef.current?.contains(document.activeElement)) {
+        lastScrollY.current = y;
+        return;
+      }
+
+      // Reset accumulator on direction change
+      if ((delta > 0 && scrollAccum.current < 0) || (delta < 0 && scrollAccum.current > 0)) {
+        scrollAccum.current = 0;
+      }
+      scrollAccum.current += delta;
+
+      if (scrollAccum.current > DEAD_ZONE) {
+        setHeaderHidden(true);
+      } else if (scrollAccum.current < -DEAD_ZONE) {
+        setHeaderHidden(false);
+      }
+
+      lastScrollY.current = y;
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   // Stable callback for closing login modal (prevents re-render loops)
   const closeLoginModal = useCallback(() => {
@@ -81,7 +128,12 @@ function HeaderContent() {
   return (
     <>
       {/* Header hidden on mobile - branding moved to page header */}
-      <header className="hidden lg:block sticky top-0 z-40 bg-cream transition-colors">
+      <header
+        ref={headerRef}
+        className={`hidden lg:block sticky top-0 z-40 bg-cream transition-[transform,background-color] duration-300 ease-out ${
+          headerHidden ? '-translate-y-full' : 'translate-y-0'
+        }`}
+      >
         <div className="max-w-[1600px] mx-auto px-4 py-3 lg:px-6 lg:py-5">
           {/* Desktop Header */}
           <div className="flex items-center justify-between">
