@@ -133,17 +133,25 @@ export function isPartOfInitialImport(
  *
  * Requirements:
  * 1. Dealer must be "established" (baseline >= 7 days old)
- * 2. Listing was discovered AFTER the dealer's initial import window
+ * 2. Listing must NOT be a bulk import (is_initial_import DB column is authoritative)
  * 3. Listing was discovered within the last 7 days
+ *
+ * The is_initial_import DB column is the SINGLE SOURCE OF TRUTH for whether a listing
+ * is part of a bulk import. This catches both initial imports AND secondary bulk
+ * discoveries (e.g., expanded crawls finding old dealer inventory weeks later).
+ * The date-based isPartOfInitialImport() is only used as a fallback when the DB
+ * column is not available (null/undefined).
  *
  * @param listingFirstSeenAt - When this listing was first scraped
  * @param dealerEarliestSeenAt - The earliest first_seen_at for any listing from this dealer
+ * @param isInitialImport - DB column value (TRUE = bulk, FALSE = genuine new, null = unknown)
  * @param thresholdDays - Optional override for the threshold (default 7 days)
  * @returns true if the listing should show the "New this week" badge
  */
 export function shouldShowNewBadge(
   listingFirstSeenAt: string | null | undefined,
   dealerEarliestSeenAt: string | null | undefined,
+  isInitialImport?: boolean | null,
   thresholdDays: number = NEW_LISTING.THRESHOLD_DAYS
 ): boolean {
   // Dealer must be established (in system for at least 7 days)
@@ -152,9 +160,17 @@ export function shouldShowNewBadge(
     return false;
   }
 
-  // Must not be part of initial import (must be genuinely new)
-  if (isPartOfInitialImport(listingFirstSeenAt, dealerEarliestSeenAt)) {
+  // DB column is authoritative when available — catches both initial
+  // imports AND secondary bulk discoveries (the Choshuya scenario)
+  if (isInitialImport === true) {
     return false;
+  }
+
+  // Fallback to date-based check only when DB column is unavailable
+  if (isInitialImport == null) {
+    if (isPartOfInitialImport(listingFirstSeenAt, dealerEarliestSeenAt)) {
+      return false;
+    }
   }
 
   // Must be within the threshold (7 days)

@@ -510,6 +510,51 @@ describe('shouldShowNewBadge', () => {
     });
   });
 
+  describe('is_initial_import DB column override', () => {
+    // Established dealer (baseline 30+ days ago)
+    const baseline = '2025-12-01T12:00:00Z';
+
+    it('hides badge when is_initial_import=true, even if dates would show badge', () => {
+      // Listing discovered today, well after baseline — dates say "show badge"
+      // But DB column says it's a bulk import — DB wins
+      const listing = '2026-01-15T10:00:00Z';
+      expect(shouldShowNewBadge(listing, baseline, true)).toBe(false);
+    });
+
+    it('shows badge when is_initial_import=false and dates are valid', () => {
+      const listing = '2026-01-14T10:00:00Z';
+      expect(shouldShowNewBadge(listing, baseline, false)).toBe(true);
+    });
+
+    it('falls back to date-based check when is_initial_import is null', () => {
+      // Within 24h of baseline → initial import (date-based fallback)
+      const withinBaseline = '2025-12-01T20:00:00Z';
+      expect(shouldShowNewBadge(withinBaseline, baseline, null)).toBe(false);
+
+      // After baseline, within 7 days → shows badge (date-based fallback)
+      const genuineNew = '2026-01-14T10:00:00Z';
+      expect(shouldShowNewBadge(genuineNew, baseline, null)).toBe(true);
+    });
+
+    it('falls back to date-based check when is_initial_import is undefined', () => {
+      const genuineNew = '2026-01-14T10:00:00Z';
+      expect(shouldShowNewBadge(genuineNew, baseline, undefined)).toBe(true);
+    });
+
+    it('hides badge when is_initial_import=false but listing is too old', () => {
+      // DB says genuine new, but listing is >7 days old — no badge
+      const oldListing = '2026-01-05T10:00:00Z';
+      expect(shouldShowNewBadge(oldListing, baseline, false)).toBe(false);
+    });
+
+    it('hides badge when is_initial_import=false but dealer not established', () => {
+      // DB says genuine new, but dealer is only 3 days old
+      const recentBaseline = '2026-01-12T12:00:00Z';
+      const listing = '2026-01-14T10:00:00Z';
+      expect(shouldShowNewBadge(listing, recentBaseline, false)).toBe(false);
+    });
+  });
+
   describe('real-world scenarios', () => {
     it('scenario: established dealer adds new inventory', () => {
       // Dealer has been in our system for months (established)
@@ -572,6 +617,57 @@ describe('shouldShowNewBadge', () => {
 
       // Shows badge: dealer is established + listing is new + outside import window
       expect(shouldShowNewBadge(newListing, aoiArtBaseline)).toBe(true);
+    });
+
+    /**
+     * GOLDEN TEST: Choshuya "secondary bulk import" regression
+     *
+     * This is the CRITICAL scenario that caused the 2026-02-10 incident:
+     * An established dealer gets a bulk re-crawl that discovers hundreds of
+     * EXISTING inventory items. These items have recent first_seen_at dates
+     * (because we just discovered them) but they are NOT genuinely new —
+     * they're old stock that our crawler hadn't indexed before.
+     *
+     * Without the is_initial_import DB column override, the date-based check
+     * would show "New" badges on all of them (first_seen_at is recent and
+     * well after the 24h baseline window), flooding the "Newest" view with
+     * hundreds of fake "new" items from a single dealer.
+     *
+     * The DB column is_initial_import=TRUE is set for these bulk-discovered
+     * items and MUST prevent the badge from showing.
+     */
+    it('GOLDEN: Choshuya secondary bulk import — bulk re-crawl must NOT show New badge', () => {
+      // Choshuya baseline: Jan 2 (established dealer, 13+ days old)
+      const choshuyaBaseline = '2026-01-02T10:59:00Z';
+
+      // 146 items discovered today via expanded crawler — old stock, not new inventory
+      // Date-based check alone would INCORRECTLY show badges (recent + after baseline)
+      // DB column is_initial_import=TRUE prevents this
+      const bulkDiscoveredToday = '2026-01-15T09:42:00Z';
+
+      // WITH DB column (is_initial_import=true) → NO badge (correct)
+      expect(shouldShowNewBadge(bulkDiscoveredToday, choshuyaBaseline, true)).toBe(false);
+
+      // WITHOUT DB column (null) → badge would show (fragile date-based fallback)
+      // This demonstrates WHY the DB column is essential
+      expect(shouldShowNewBadge(bulkDiscoveredToday, choshuyaBaseline, null)).toBe(true);
+    });
+
+    it('GOLDEN: genuine new listing from same dealer still shows badge', () => {
+      // Same dealer (Choshuya), but a truly new item trickles in
+      const choshuyaBaseline = '2026-01-02T10:59:00Z';
+      const genuineNewItem = '2026-01-14T14:00:00Z';
+
+      // DB column is_initial_import=false → shows badge (correct)
+      expect(shouldShowNewBadge(genuineNewItem, choshuyaBaseline, false)).toBe(true);
+    });
+
+    it('GOLDEN: bulk import must not appear in "new" tier regardless of first_seen_at', () => {
+      // Even if first_seen_at is 1 minute ago, is_initial_import=true blocks the badge
+      const baseline = '2025-06-01T12:00:00Z'; // Very established dealer
+      const justNow = '2026-01-15T11:59:00Z'; // Discovered literally just now
+
+      expect(shouldShowNewBadge(justNow, baseline, true)).toBe(false);
     });
   });
 });

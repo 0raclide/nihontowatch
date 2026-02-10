@@ -450,8 +450,9 @@ export interface Listing {
   last_scraped_at: string;
   scrape_count: number;
 
-  // Enriched by API (for "New this week" badge)
-  dealer_earliest_seen_at?: string | null;
+  // Sorting / "New" badge
+  is_initial_import?: boolean | null; // DB column: TRUE = bulk import, FALSE = genuine new
+  dealer_earliest_seen_at?: string | null; // Enriched by API
 
   // Relations (when joined)
   dealer?: Dealer;

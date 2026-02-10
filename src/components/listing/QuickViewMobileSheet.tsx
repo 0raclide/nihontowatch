@@ -388,7 +388,7 @@ export function QuickViewMobileSheet({
               {certInfo.shortLabel}
             </span>
           )}
-          {shouldShowNewBadge(listing.first_seen_at, listing.dealer_earliest_seen_at) && (
+          {shouldShowNewBadge(listing.first_seen_at, listing.dealer_earliest_seen_at, listing.is_initial_import) && (
             <span className="text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded bg-new-listing-bg text-new-listing">
               New this week
             </span>

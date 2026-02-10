@@ -331,7 +331,7 @@ export default function ListingDetailPage() {
               {listing.setsumei_text_en && (
                 <SetsumeiZufuBadge />
               )}
-              {shouldShowNewBadge(listing.first_seen_at, listing.dealer_earliest_seen_at) && (
+              {shouldShowNewBadge(listing.first_seen_at, listing.dealer_earliest_seen_at, listing.is_initial_import) && (
                 <span className="text-[11px] uppercase tracking-wider font-medium px-2.5 py-1 rounded bg-new-listing-bg text-new-listing">
                   New this week
                 </span>

@@ -59,6 +59,7 @@ interface Listing {
   images: string[] | null;
   stored_images?: string[] | null;
   first_seen_at: string;
+  is_initial_import?: boolean | null; // DB column: TRUE = bulk import, FALSE = genuine new
   dealer_earliest_seen_at?: string | null; // Earliest listing from this dealer (for baseline check)
   status: string;
   is_available: boolean;
@@ -748,7 +749,7 @@ export const ListingCard = memo(function ListingCard({
           }`}>
             {formatPrice(listing.price_value, listing.price_currency, currency, exchangeRates)}
           </span>
-          {shouldShowNewBadge(listing.first_seen_at, listing.dealer_earliest_seen_at) && (
+          {shouldShowNewBadge(listing.first_seen_at, listing.dealer_earliest_seen_at, listing.is_initial_import) && (
             <span
               data-testid="new-listing-badge"
               className="text-[9px] lg:text-[10px] uppercase tracking-wider font-semibold px-1.5 lg:px-2 py-0.5 lg:py-1 bg-new-listing-bg text-new-listing"
