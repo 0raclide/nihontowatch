@@ -4,8 +4,6 @@ import { generateArtisanSlug } from '@/lib/artisan/slugs';
 import { generateBreadcrumbJsonLd, jsonLdScriptProps } from '@/lib/seo/jsonLd';
 import { generateArtistDirectoryJsonLd } from '@/lib/seo/jsonLd';
 import { createClient } from '@/lib/supabase/server';
-import { Header } from '@/components/layout/Header';
-
 import { ArtistsPageClient } from './ArtistsPageClient';
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://nihontowatch.com';
@@ -225,11 +223,9 @@ export default async function ArtistsPage({ searchParams }: ArtistsPageProps) {
   );
 
   return (
-    <div className="min-h-screen bg-surface">
+    <>
       <script {...jsonLdScriptProps(breadcrumbJsonLd)} />
       <script {...jsonLdScriptProps(directoryJsonLd)} />
-
-      <Header />
 
       <ArtistsPageClient
         initialArtists={artistsWithSlugs}
@@ -237,7 +233,6 @@ export default async function ArtistsPage({ searchParams }: ArtistsPageProps) {
         initialFacets={facets}
         initialFilters={{ type, school, province, era, q, sort, notable }}
       />
-
-    </div>
+    </>
   );
 }

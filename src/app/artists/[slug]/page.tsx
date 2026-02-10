@@ -18,7 +18,6 @@ import {
 } from '@/lib/supabase/yuhinkai';
 import { createServiceClient } from '@/lib/supabase/server';
 import { generateBreadcrumbJsonLd, jsonLdScriptProps } from '@/lib/seo/jsonLd';
-import { Header } from '@/components/layout/Header';
 import { ArtistProfileBar } from '@/components/artisan/ArtistProfileBar';
 import { ArtistPageClient } from './ArtistPageClient';
 import type { ArtisanPageResponse } from '@/app/api/artisan/[code]/route';
@@ -279,15 +278,13 @@ export default async function ArtistSlugPage({ params }: ArtistPageProps) {
   ]);
 
   return (
-    <div className="min-h-screen bg-surface">
+    <>
       <script {...jsonLdScriptProps(personJsonLd)} />
       <script {...jsonLdScriptProps(breadcrumbJsonLd)} />
-
-      <Header />
 
       <ArtistPageClient data={data} />
 
       <ArtistProfileBar />
-    </div>
+    </>
   );
 }
