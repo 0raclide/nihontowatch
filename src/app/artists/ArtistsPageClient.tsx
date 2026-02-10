@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation';
 import type { ArtistDirectoryEntry, DirectoryFacets } from '@/lib/supabase/yuhinkai';
 import { getArtisanDisplayParts } from '@/lib/artisan/displayName';
 import { eraToBroadPeriod } from '@/lib/artisan/eraPeriods';
+import { Drawer } from '@/components/ui/Drawer';
+import { useMobileUI } from '@/contexts/MobileUIContext';
 
 // =============================================================================
 // TYPES
@@ -59,6 +61,12 @@ export function ArtistsPageClient({
   const [searchInput, setSearchInput] = useState(initialFilters.q || '');
   const abortRef = useRef<AbortController | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Mobile drawer state (local — not via MobileUIContext)
+  const [searchDrawerOpen, setSearchDrawerOpen] = useState(false);
+  const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
+  const { openNavDrawer } = useMobileUI();
+  const drawerSearchRef = useRef<HTMLInputElement>(null);
 
   // Build URL search string from filters
   const buildQueryString = useCallback((f: Filters, page: number) => {
@@ -368,6 +376,270 @@ export function ArtistsPageClient({
           </>
         )}
       </div>
+
+      {/* ================================================================
+          MOBILE BOTTOM BAR + DRAWERS
+          ================================================================ */}
+
+      {/* Bottom Tab Bar — mobile only */}
+      <nav
+        className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-cream/95 backdrop-blur-sm border-t border-border"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+        role="navigation"
+        aria-label="Artist navigation"
+      >
+        <div className="flex items-center h-16">
+          {/* Search */}
+          <button
+            onClick={() => {
+              setFilterDrawerOpen(false);
+              setSearchDrawerOpen(true);
+            }}
+            className="flex flex-col items-center justify-center flex-1 h-full text-charcoal active:text-gold transition-colors"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <span className="text-[11px] mt-1 font-medium">Search</span>
+          </button>
+
+          {/* Filters */}
+          <button
+            onClick={() => {
+              setSearchDrawerOpen(false);
+              setFilterDrawerOpen(true);
+            }}
+            className="flex flex-col items-center justify-center flex-1 h-full text-charcoal active:text-gold transition-colors relative"
+          >
+            <div className="relative">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+              </svg>
+              {(() => {
+                const count = [filters.school, filters.province, filters.era, filters.q].filter(Boolean).length
+                  + (filters.notable === false ? 1 : 0);
+                return count > 0 ? (
+                  <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-gold text-white text-[10px] rounded-full flex items-center justify-center font-bold">
+                    {count}
+                  </span>
+                ) : null;
+              })()}
+            </div>
+            <span className="text-[11px] mt-1 font-medium">Filters</span>
+          </button>
+
+          {/* Menu */}
+          <button
+            onClick={openNavDrawer}
+            className="flex flex-col items-center justify-center flex-1 h-full text-charcoal active:text-gold transition-colors"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+            <span className="text-[11px] mt-1 font-medium">Menu</span>
+          </button>
+        </div>
+      </nav>
+
+      {/* Spacer for bottom bar */}
+      <div
+        className="lg:hidden flex-shrink-0"
+        style={{ height: 'calc(64px + env(safe-area-inset-bottom, 0px))' }}
+        aria-hidden="true"
+      />
+
+      {/* Artist Search Drawer */}
+      <Drawer
+        isOpen={searchDrawerOpen}
+        onClose={() => setSearchDrawerOpen(false)}
+        title="Search Artists"
+      >
+        <div className="p-4 space-y-4">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (debounceRef.current) clearTimeout(debounceRef.current);
+              const trimmed = searchInput.trim();
+              applyFilters({ ...filters, q: trimmed || undefined }, 1);
+              setSearchDrawerOpen(false);
+            }}
+          >
+            <div className="relative">
+              <input
+                ref={drawerSearchRef}
+                type="search"
+                value={searchInput}
+                onChange={(e) => handleSearchInput(e.target.value)}
+                placeholder="Search by name, kanji, or code..."
+                className="w-full pl-4 pr-10 py-3 bg-cream border border-border text-sm text-ink placeholder:text-ink/30 focus:outline-none focus:border-gold/40 focus:shadow-[0_0_0_3px_rgba(181,142,78,0.1)] transition-all"
+                autoFocus
+              />
+              {searchInput && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    clearSearch();
+                    setSearchDrawerOpen(false);
+                  }}
+                  className="absolute right-10 top-1/2 -translate-y-1/2 p-1 text-ink/40 hover:text-ink/60"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+              <button
+                type="submit"
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-ink/40 hover:text-gold"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </button>
+            </div>
+          </form>
+
+          {/* Quick school suggestions */}
+          {facets.schools.length > 0 && (
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.12em] text-ink/40 mb-2">Popular schools</p>
+              <div className="flex flex-wrap gap-2">
+                {facets.schools.slice(0, 6).map((s) => (
+                  <button
+                    key={s.value}
+                    onClick={() => {
+                      setSearchInput('');
+                      applyFilters({ ...filters, q: undefined, school: s.value }, 1);
+                      setSearchDrawerOpen(false);
+                    }}
+                    className="px-3 py-1.5 text-[12px] bg-hover border border-border text-ink/60 hover:text-gold hover:border-gold/40 transition-colors"
+                  >
+                    {s.value}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </Drawer>
+
+      {/* Artist Filter Drawer */}
+      <Drawer
+        isOpen={filterDrawerOpen}
+        onClose={() => setFilterDrawerOpen(false)}
+        title="Filter Artists"
+      >
+        <div className="p-4 space-y-5">
+          {/* Type Toggle */}
+          <div>
+            <p className="text-[11px] uppercase tracking-[0.12em] text-ink/40 mb-2">Type</p>
+            <div className="flex border border-border divide-x divide-border">
+              {(['smith', 'tosogu'] as const).map((t) => (
+                <button
+                  key={t}
+                  onClick={() => handleFilterChange('type', t)}
+                  disabled={isLoading}
+                  className={`flex-1 px-4 py-2.5 min-h-[44px] text-[12px] uppercase tracking-[0.12em] transition-colors ${
+                    filters.type === t
+                      ? 'bg-gold/10 text-gold font-medium'
+                      : 'text-ink/50 hover:text-ink hover:bg-hover'
+                  }`}
+                >
+                  {t === 'smith' ? 'Nihonto' : 'Tosogu'}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* School */}
+          <div>
+            <p className="text-[11px] uppercase tracking-[0.12em] text-ink/40 mb-2">School</p>
+            <select
+              value={filters.school || ''}
+              onChange={(e) => handleFilterChange('school', e.target.value || '')}
+              className="w-full px-3 py-2.5 bg-cream border border-border text-[13px] text-ink focus:outline-none focus:border-gold/40 cursor-pointer"
+            >
+              <option value="">All Schools</option>
+              {facets.schools.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.value} ({opt.count})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Province */}
+          <div>
+            <p className="text-[11px] uppercase tracking-[0.12em] text-ink/40 mb-2">Province</p>
+            <select
+              value={filters.province || ''}
+              onChange={(e) => handleFilterChange('province', e.target.value || '')}
+              className="w-full px-3 py-2.5 bg-cream border border-border text-[13px] text-ink focus:outline-none focus:border-gold/40 cursor-pointer"
+            >
+              <option value="">All Provinces</option>
+              {facets.provinces.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.value} ({opt.count})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Period */}
+          <div>
+            <p className="text-[11px] uppercase tracking-[0.12em] text-ink/40 mb-2">Period</p>
+            <select
+              value={filters.era || ''}
+              onChange={(e) => handleFilterChange('era', e.target.value || '')}
+              className="w-full px-3 py-2.5 bg-cream border border-border text-[13px] text-ink focus:outline-none focus:border-gold/40 cursor-pointer"
+            >
+              <option value="">All Periods</option>
+              {facets.eras.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.value} ({opt.count})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Sort */}
+          <div>
+            <p className="text-[11px] uppercase tracking-[0.12em] text-ink/40 mb-2">Sort by</p>
+            <select
+              value={filters.sort}
+              onChange={(e) => handleFilterChange('sort', e.target.value)}
+              className="w-full px-3 py-2.5 bg-cream border border-border text-[13px] text-ink focus:outline-none focus:border-gold/40 cursor-pointer"
+            >
+              <option value="elite_factor">Elite Factor</option>
+              <option value="total_items">Total Works</option>
+              <option value="for_sale">On the Market</option>
+              <option value="name">Name A-Z</option>
+            </select>
+          </div>
+
+          {/* Notable Toggle */}
+          <label className="flex items-center gap-3 py-1 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={filters.notable}
+              onChange={(e) => handleFilterChange('notable', e.target.checked)}
+              className="accent-gold w-4 h-4"
+            />
+            <span className="text-[13px] text-ink">Notable only</span>
+          </label>
+
+          {/* Clear All */}
+          <button
+            onClick={() => {
+              clearAllFilters();
+              setFilterDrawerOpen(false);
+            }}
+            className="w-full py-2.5 text-[12px] text-gold hover:text-gold-light border border-gold/30 hover:border-gold/50 transition-colors"
+          >
+            Clear all filters
+          </button>
+        </div>
+      </Drawer>
     </div>
   );
 }

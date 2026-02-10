@@ -1,6 +1,8 @@
 import { Metadata } from 'next';
 import { GlossaryPageClient } from './GlossaryPageClient';
 import { getMetadata, getTermCount } from '@/lib/glossary';
+import { Header } from '@/components/layout/Header';
+import { BottomTabBar } from '@/components/navigation/BottomTabBar';
 
 export const metadata: Metadata = {
   title: 'Japanese Sword & Fittings Glossary | NihontoWatch',
@@ -30,7 +32,9 @@ export default function GlossaryPage() {
 
   return (
     <div className="min-h-screen bg-cream">
-      {/* Header */}
+      <Header />
+
+      {/* Page Header */}
       <div className="bg-surface border-b border-border">
         <div className="max-w-[1200px] mx-auto px-4 py-8 lg:px-6 lg:py-12">
           <h1 className="font-serif text-3xl lg:text-4xl text-ink mb-2">
@@ -49,6 +53,8 @@ export default function GlossaryPage() {
 
       {/* Client-side interactive content */}
       <GlossaryPageClient />
+
+      <BottomTabBar />
     </div>
   );
 }

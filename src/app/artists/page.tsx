@@ -5,7 +5,7 @@ import { generateBreadcrumbJsonLd, jsonLdScriptProps } from '@/lib/seo/jsonLd';
 import { generateArtistDirectoryJsonLd } from '@/lib/seo/jsonLd';
 import { createClient } from '@/lib/supabase/server';
 import { Header } from '@/components/layout/Header';
-import { BottomTabBar } from '@/components/navigation/BottomTabBar';
+
 import { ArtistsPageClient } from './ArtistsPageClient';
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://nihontowatch.com';
@@ -238,7 +238,6 @@ export default async function ArtistsPage({ searchParams }: ArtistsPageProps) {
         initialFilters={{ type, school, province, era, q, sort, notable }}
       />
 
-      <BottomTabBar />
     </div>
   );
 }

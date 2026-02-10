@@ -345,9 +345,34 @@ function HeaderFallback() {
               </button>
             </div>
           </form>
-          <div className="flex items-center gap-4">
+          <nav className="flex items-center gap-6">
+            <Link
+              href="/browse"
+              className="text-[11px] uppercase tracking-[0.2em] text-muted hover:text-gold transition-colors"
+            >
+              Browse
+            </Link>
+            <Link
+              href="/artists"
+              className="text-[11px] uppercase tracking-[0.2em] text-muted hover:text-gold transition-colors"
+            >
+              Artists
+            </Link>
+            <Link
+              href="/glossary"
+              className="text-[11px] uppercase tracking-[0.2em] text-muted hover:text-gold transition-colors"
+            >
+              Glossary
+            </Link>
+            <Link
+              href="/saved"
+              className="text-[11px] uppercase tracking-[0.2em] text-muted hover:text-gold transition-colors"
+            >
+              Saved
+            </Link>
+            <div className="h-3 w-px bg-border" />
             <div className="w-8 h-8 bg-linen/50 rounded-full animate-pulse" />
-          </div>
+          </nav>
         </div>
       </div>
       <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent" />
