@@ -83,11 +83,11 @@ describe('ListingCard Component', () => {
     expect(screen.getByText('Katana')).toBeInTheDocument();
   });
 
-  it('renders dealer domain in header', () => {
+  it('renders dealer name in header', () => {
     render(<ListingCard {...defaultProps} />);
 
-    // Shows dealer domain (e.g., "aoijapan.com") at top of card
-    expect(screen.getByText('aoijapan.com')).toBeInTheDocument();
+    // Shows dealer name (e.g., "Aoi Art") at top of card
+    expect(screen.getByText('Aoi Art')).toBeInTheDocument();
   });
 
   it('renders certification badge', () => {

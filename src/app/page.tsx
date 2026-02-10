@@ -553,7 +553,7 @@ function HomeContent() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-cream transition-colors">
+    <div className="min-h-screen bg-surface transition-colors">
       <Header />
       <DataDelayBanner />
       <NewSinceLastVisitBanner />
