@@ -87,7 +87,7 @@ export async function POST(
 
     const previousArtisanId = listing.artisan_id;
 
-    // Update the artisan_id and mark as verified correct
+    // Update the artisan_id and mark as verified correct + locked
     const updateData = {
       artisan_id: artisan_id,
       artisan_confidence: confidence,
@@ -96,6 +96,7 @@ export async function POST(
       artisan_verified: 'correct' as const,
       artisan_verified_at: new Date().toISOString(),
       artisan_verified_by: user.id,
+      artisan_admin_locked: true,
     };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

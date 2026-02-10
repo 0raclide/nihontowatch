@@ -90,16 +90,20 @@ export async function POST(
     }
 
     // Update the verification status
+    // When admin verifies (correct or incorrect), lock the artisan fields
+    // When admin clears verification (null), unlock so scraper can re-match
     const updateData = verified === null
       ? {
           artisan_verified: null,
           artisan_verified_at: null,
           artisan_verified_by: null,
+          artisan_admin_locked: false,
         }
       : {
           artisan_verified: verified,
           artisan_verified_at: new Date().toISOString(),
           artisan_verified_by: user.id,
+          artisan_admin_locked: true,
         };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
