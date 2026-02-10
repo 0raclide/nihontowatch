@@ -69,6 +69,11 @@ export function ArtisanTooltip({
   const [fixSuccess, setFixSuccess] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
+  // Drag state for repositioning the tooltip
+  const [isDragging, setIsDragging] = useState(false);
+  const isDraggingRef = useRef(false);
+  const dragOffsetRef = useRef({ x: 0, y: 0 });
+
   // Handle client-side mounting for portal
   useEffect(() => {
     setMounted(true);
@@ -247,6 +252,46 @@ export function ArtisanTooltip({
     }
   }, [isOpen, showCorrectionSearch]);
 
+  // Drag-to-reposition handlers
+  const handleDragStart = useCallback((e: React.MouseEvent) => {
+    // Only drag from left mouse button, ignore clicks on buttons/inputs
+    if (e.button !== 0) return;
+    const target = e.target as HTMLElement;
+    if (target.closest('button') || target.closest('input') || target.closest('a')) return;
+
+    e.preventDefault();
+    setIsDragging(true);
+    isDraggingRef.current = true;
+
+    const el = tooltipRef.current;
+    if (el) {
+      const rect = el.getBoundingClientRect();
+      dragOffsetRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isDragging) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const newLeft = e.clientX - dragOffsetRef.current.x;
+      const newTop = e.clientY - dragOffsetRef.current.y;
+      setTooltipStyle(prev => ({ ...prev, top: `${newTop}px`, left: `${newLeft}px` }));
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+      isDraggingRef.current = false;
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging]);
+
   // Close on escape key or scroll (fixed-position tooltip would float away on scroll)
   useEffect(() => {
     if (!isOpen) return;
@@ -258,6 +303,8 @@ export function ArtisanTooltip({
     const handleScroll = (e: Event) => {
       // Don't close if scrolling inside the tooltip itself (e.g. search results)
       if (tooltipRef.current && tooltipRef.current.contains(e.target as Node)) return;
+      // Don't close while dragging
+      if (isDraggingRef.current) return;
       setIsOpen(false);
     };
 
@@ -322,16 +369,27 @@ export function ArtisanTooltip({
           <div
             ref={tooltipRef}
             style={tooltipStyle}
-            className="p-4 rounded-lg bg-surface-elevated border border-border shadow-xl animate-fadeIn"
+            className="rounded-lg bg-surface-elevated border border-border shadow-xl animate-fadeIn flex flex-col"
             role="tooltip"
             aria-live="polite"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Header with code, confidence, and close button */}
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-mono font-semibold text-ink">
-                {hasArtisan ? artisanId : 'Assign Artisan'}
-              </span>
+            {/* Draggable header — grab to reposition */}
+            <div
+              onMouseDown={handleDragStart}
+              className={`flex items-center justify-between px-4 pt-3 pb-2 border-b border-border/50 select-none ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+            >
+              <div className="flex items-center gap-2">
+                {/* Drag grip */}
+                <svg className="w-3 h-4 text-muted/40 shrink-0" viewBox="0 0 6 10" fill="currentColor">
+                  <circle cx="1" cy="1" r="1" /><circle cx="5" cy="1" r="1" />
+                  <circle cx="1" cy="5" r="1" /><circle cx="5" cy="5" r="1" />
+                  <circle cx="1" cy="9" r="1" /><circle cx="5" cy="9" r="1" />
+                </svg>
+                <span className="text-sm font-mono font-semibold text-ink">
+                  {hasArtisan ? artisanId : 'Assign Artisan'}
+                </span>
+              </div>
               <div className="flex items-center gap-2">
                 {hasArtisan && (
                   <span className={`text-[10px] font-medium px-2 py-0.5 rounded ${confidenceColor}`}>
@@ -349,6 +407,9 @@ export function ArtisanTooltip({
                 </button>
               </div>
             </div>
+
+            {/* Scrollable content area */}
+            <div className="px-4 py-3 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 120px)' }}>
 
             {/* Loading state */}
             {loading && (
@@ -773,6 +834,7 @@ export function ArtisanTooltip({
                 )}
               </>
             )}
+            </div>{/* end scrollable content */}
           </div>,
           document.body
         )
