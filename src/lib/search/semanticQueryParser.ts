@@ -29,6 +29,8 @@ export interface SemanticFilters {
   itemTypes: string[];
   /** Canonical signature status values ('signed', 'unsigned') */
   signatureStatuses: string[];
+  /** Canonical province/tradition names (e.g., 'Soshu', 'Bizen') */
+  provinces: string[];
 }
 
 // =============================================================================
@@ -251,6 +253,69 @@ const SIGNATURE_STATUS_TERMS: Record<string, string> = {
   'mumei': 'unsigned',
 };
 
+// =============================================================================
+// PROVINCE / TRADITION MAPPINGS
+// =============================================================================
+
+/**
+ * Maps search terms (lowercase) to canonical province/tradition names.
+ * Used to extract province filters from search queries like "Soshu Masamune".
+ */
+const PROVINCE_TERMS: Record<string, string> = {
+  // Gokaden (Five Traditions)
+  'soshu': 'Soshu',
+  'sagami': 'Soshu',       // Sagami province = Soshu tradition
+  'bizen': 'Bizen',
+  'bishu': 'Bizen',        // Bishu = alternate reading of Bizen
+  'yamashiro': 'Yamashiro',
+  'yamato': 'Yamato',
+  'mino': 'Mino',
+  'noshu': 'Mino',         // Noshu = alternate reading of Mino
+
+  // Other major provinces
+  'hizen': 'Hizen',
+  'satsuma': 'Satsuma',
+  'echizen': 'Echizen',
+  'kaga': 'Kaga',
+  'owari': 'Owari',
+  'settsu': 'Settsu',
+  'chikuzen': 'Chikuzen',
+  'tosa': 'Tosa',
+  'omi': 'Omi',
+  'mutsu': 'Mutsu',
+  'oshu': 'Mutsu',         // Oshu = alternate reading of Mutsu
+  'awa': 'Awa',
+  'bungo': 'Bungo',
+  'iwami': 'Iwami',
+  'seki': 'Seki',          // Seki city in Mino province
+};
+
+/**
+ * Maps canonical province names to DB search variants.
+ * Each variant is used for ILIKE matching on province/school/tosogu_school columns.
+ */
+export const PROVINCE_VARIANTS: Record<string, string[]> = {
+  'Soshu':     ['Soshu', 'Sagami'],
+  'Bizen':     ['Bizen', 'Bishu'],
+  'Yamashiro': ['Yamashiro'],
+  'Yamato':    ['Yamato'],
+  'Mino':      ['Mino', 'Noshu'],
+  'Hizen':     ['Hizen'],
+  'Satsuma':   ['Satsuma'],
+  'Echizen':   ['Echizen'],
+  'Kaga':      ['Kaga'],
+  'Owari':     ['Owari'],
+  'Settsu':    ['Settsu'],
+  'Chikuzen':  ['Chikuzen'],
+  'Tosa':      ['Tosa'],
+  'Omi':       ['Omi'],
+  'Mutsu':     ['Mutsu', 'Oshu'],
+  'Awa':       ['Awa'],
+  'Bungo':     ['Bungo'],
+  'Iwami':     ['Iwami'],
+  'Seki':      ['Seki', 'Mino'],
+};
+
 /**
  * Multi-word category phrases to check before splitting into words.
  */
@@ -287,6 +352,7 @@ export function parseSemanticQuery(queryStr: string): ParsedSemanticQuery {
       certifications: [],
       itemTypes: [],
       signatureStatuses: [],
+      provinces: [],
     },
     remainingTerms: [],
   };
@@ -380,6 +446,15 @@ export function parseSemanticQuery(queryStr: string): ParsedSemanticQuery {
       continue;
     }
 
+    // Check if it's a province/tradition term
+    const provinceCanonical = PROVINCE_TERMS[word];
+    if (provinceCanonical) {
+      if (!result.extractedFilters.provinces.includes(provinceCanonical)) {
+        result.extractedFilters.provinces.push(provinceCanonical);
+      }
+      continue;
+    }
+
     // Not a semantic term - pass to text search
     result.remainingTerms.push(word);
   }
@@ -397,7 +472,8 @@ export function isSemanticTerm(word: string): boolean {
     CERTIFICATION_TERMS[normalized] ||
     ITEM_TYPE_TERMS[normalized] ||
     CATEGORY_TERMS[normalized] ||
-    SIGNATURE_STATUS_TERMS[normalized]
+    SIGNATURE_STATUS_TERMS[normalized] ||
+    PROVINCE_TERMS[normalized]
   );
 }
 
@@ -436,6 +512,14 @@ export function getItemTypeKey(term: string): string | undefined {
  */
 export function getCategoryTypes(term: string): string[] | undefined {
   return CATEGORY_TERMS[normalizeSearchText(term)];
+}
+
+/**
+ * Get the canonical province name for a search term.
+ * Returns undefined if not a province term.
+ */
+export function getProvinceKey(term: string): string | undefined {
+  return PROVINCE_TERMS[normalizeSearchText(term)];
 }
 
 // Export type arrays for testing

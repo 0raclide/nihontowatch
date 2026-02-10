@@ -16,6 +16,7 @@ import {
   getCertificationKey,
   getItemTypeKey,
   getSignatureStatusKey,
+  getProvinceKey,
   NIHONTO_TYPES,
   TOSOGU_TYPES,
   ARMOR_TYPES,
@@ -190,11 +191,12 @@ describe('Category Term Expansion', () => {
       expect(result.remainingTerms).toEqual([]);
     });
 
-    it('handles nihonto with smith name', () => {
+    it('handles nihonto with province name', () => {
       const result = parseSemanticQuery('nihonto bizen');
 
       expect(result.extractedFilters.itemTypes.length).toBe(NIHONTO_TYPES.length);
-      expect(result.remainingTerms).toEqual(['bizen']);
+      expect(result.extractedFilters.provinces).toEqual(['Bizen']);
+      expect(result.remainingTerms).toEqual([]);
     });
 
     it('handles tosogu with maker name', () => {
@@ -332,7 +334,7 @@ describe('getCategoryTypes', () => {
 
   it('returns undefined for unknown terms', () => {
     expect(getCategoryTypes('unknown')).toBeUndefined();
-    expect(getCategoryTypes('bizen')).toBeUndefined();
+    expect(getCategoryTypes('masamune')).toBeUndefined();
   });
 });
 
@@ -358,8 +360,13 @@ describe('isSemanticTerm', () => {
     expect(isSemanticTerm('hozon')).toBe(true);
   });
 
+  it('returns true for province terms', () => {
+    expect(isSemanticTerm('bizen')).toBe(true);
+    expect(isSemanticTerm('soshu')).toBe(true);
+    expect(isSemanticTerm('yamashiro')).toBe(true);
+  });
+
   it('returns false for non-semantic terms', () => {
-    expect(isSemanticTerm('bizen')).toBe(false);
     expect(isSemanticTerm('goto')).toBe(false);
     expect(isSemanticTerm('masamune')).toBe(false);
   });
@@ -411,6 +418,7 @@ describe('Edge Cases', () => {
     expect(result.extractedFilters.itemTypes).toEqual([]);
     expect(result.extractedFilters.certifications).toEqual([]);
     expect(result.extractedFilters.signatureStatuses).toEqual([]);
+    expect(result.extractedFilters.provinces).toEqual([]);
     expect(result.remainingTerms).toEqual([]);
   });
 
@@ -489,12 +497,13 @@ describe('Regression Tests', () => {
     expect(result.extractedFilters.itemTypes).toEqual(['fuchi-kashira']);
   });
 
-  it('artisan names pass through to text search', () => {
+  it('extracts province and passes smith name to text search', () => {
     const result = parseSemanticQuery('bizen masamune');
 
+    expect(result.extractedFilters.provinces).toEqual(['Bizen']);
     expect(result.extractedFilters.itemTypes).toEqual([]);
     expect(result.extractedFilters.certifications).toEqual([]);
-    expect(result.remainingTerms).toEqual(['bizen', 'masamune']);
+    expect(result.remainingTerms).toEqual(['masamune']);
   });
 
   it('armor search with maker name still works', () => {
@@ -561,11 +570,12 @@ describe('Signature Status Extraction', () => {
       expect(result.remainingTerms).toEqual([]);
     });
 
-    it('handles signature with text search term', () => {
+    it('handles signature with province term', () => {
       const result = parseSemanticQuery('signed bizen');
 
       expect(result.extractedFilters.signatureStatuses).toEqual(['signed']);
-      expect(result.remainingTerms).toEqual(['bizen']);
+      expect(result.extractedFilters.provinces).toEqual(['Bizen']);
+      expect(result.remainingTerms).toEqual([]);
     });
 
     it('handles signature with category expansion', () => {
@@ -609,6 +619,124 @@ describe('Signature Status Extraction', () => {
     it('handles mixed case "MuMei"', () => {
       const result = parseSemanticQuery('MuMei');
       expect(result.extractedFilters.signatureStatuses).toEqual(['unsigned']);
+    });
+  });
+});
+
+// =============================================================================
+// PROVINCE / TRADITION EXTRACTION
+// =============================================================================
+
+describe('Province/Tradition Extraction', () => {
+  describe('basic extraction', () => {
+    it('extracts "soshu" as Soshu province', () => {
+      const result = parseSemanticQuery('soshu');
+      expect(result.extractedFilters.provinces).toEqual(['Soshu']);
+      expect(result.remainingTerms).toEqual([]);
+    });
+
+    it('extracts "sagami" as Soshu province (alias)', () => {
+      const result = parseSemanticQuery('sagami');
+      expect(result.extractedFilters.provinces).toEqual(['Soshu']);
+      expect(result.remainingTerms).toEqual([]);
+    });
+
+    it('extracts "bizen" as Bizen province', () => {
+      const result = parseSemanticQuery('bizen');
+      expect(result.extractedFilters.provinces).toEqual(['Bizen']);
+      expect(result.remainingTerms).toEqual([]);
+    });
+
+    it('extracts "bishu" as Bizen province (alias)', () => {
+      const result = parseSemanticQuery('bishu');
+      expect(result.extractedFilters.provinces).toEqual(['Bizen']);
+    });
+
+    it('extracts "noshu" as Mino province (alias)', () => {
+      const result = parseSemanticQuery('noshu');
+      expect(result.extractedFilters.provinces).toEqual(['Mino']);
+    });
+
+    it('extracts "oshu" as Mutsu province (alias)', () => {
+      const result = parseSemanticQuery('oshu');
+      expect(result.extractedFilters.provinces).toEqual(['Mutsu']);
+    });
+  });
+
+  describe('combined queries', () => {
+    it('"Soshu Masamune" extracts province + smith name', () => {
+      const result = parseSemanticQuery('Soshu Masamune');
+      expect(result.extractedFilters.provinces).toEqual(['Soshu']);
+      expect(result.remainingTerms).toEqual(['masamune']);
+    });
+
+    it('"Bizen Osafune Kanemitsu" extracts province + smith terms', () => {
+      const result = parseSemanticQuery('Bizen Osafune Kanemitsu');
+      expect(result.extractedFilters.provinces).toEqual(['Bizen']);
+      expect(result.remainingTerms).toEqual(['osafune', 'kanemitsu']);
+    });
+
+    it('combines province with cert and type: "Soshu tanto juyo"', () => {
+      const result = parseSemanticQuery('Soshu tanto juyo');
+      expect(result.extractedFilters.provinces).toEqual(['Soshu']);
+      expect(result.extractedFilters.itemTypes).toEqual(['tanto']);
+      expect(result.extractedFilters.certifications).toEqual(['Juyo']);
+      expect(result.remainingTerms).toEqual([]);
+    });
+
+    it('multiple provinces: "Soshu Bizen"', () => {
+      const result = parseSemanticQuery('Soshu Bizen');
+      expect(result.extractedFilters.provinces).toEqual(['Soshu', 'Bizen']);
+      expect(result.remainingTerms).toEqual([]);
+    });
+
+    it('province with signature status: "signed yamashiro"', () => {
+      const result = parseSemanticQuery('signed yamashiro');
+      expect(result.extractedFilters.signatureStatuses).toEqual(['signed']);
+      expect(result.extractedFilters.provinces).toEqual(['Yamashiro']);
+      expect(result.remainingTerms).toEqual([]);
+    });
+
+    it('province with category: "nihonto hizen"', () => {
+      const result = parseSemanticQuery('nihonto hizen');
+      expect(result.extractedFilters.itemTypes.length).toBe(NIHONTO_TYPES.length);
+      expect(result.extractedFilters.provinces).toEqual(['Hizen']);
+      expect(result.remainingTerms).toEqual([]);
+    });
+  });
+
+  describe('case insensitivity', () => {
+    it('handles uppercase "SOSHU"', () => {
+      const result = parseSemanticQuery('SOSHU');
+      expect(result.extractedFilters.provinces).toEqual(['Soshu']);
+    });
+
+    it('handles mixed case "BiZeN"', () => {
+      const result = parseSemanticQuery('BiZeN');
+      expect(result.extractedFilters.provinces).toEqual(['Bizen']);
+    });
+  });
+
+  describe('does not duplicate provinces', () => {
+    it('sagami and soshu both resolve to Soshu without duplicate', () => {
+      const result = parseSemanticQuery('sagami soshu');
+      expect(result.extractedFilters.provinces).toEqual(['Soshu']);
+    });
+  });
+
+  describe('helper functions', () => {
+    it('getProvinceKey returns canonical name for province terms', () => {
+      expect(getProvinceKey('soshu')).toBe('Soshu');
+      expect(getProvinceKey('sagami')).toBe('Soshu');
+      expect(getProvinceKey('bizen')).toBe('Bizen');
+      expect(getProvinceKey('bishu')).toBe('Bizen');
+      expect(getProvinceKey('yamashiro')).toBe('Yamashiro');
+    });
+
+    it('getProvinceKey returns undefined for non-province terms', () => {
+      expect(getProvinceKey('katana')).toBeUndefined();
+      expect(getProvinceKey('masamune')).toBeUndefined();
+      expect(getProvinceKey('juyo')).toBeUndefined();
     });
   });
 });

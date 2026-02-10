@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { normalizeSearchText, expandSearchAliases } from '@/lib/search';
 import { parseNumericFilters } from '@/lib/search/numericFilters';
-import { parseSemanticQuery } from '@/lib/search/semanticQueryParser';
+import { parseSemanticQuery, PROVINCE_VARIANTS } from '@/lib/search/semanticQueryParser';
 import { CACHE, PAGINATION, LISTING_FILTERS } from '@/lib/constants';
 import { getArtisanNames } from '@/lib/supabase/yuhinkai';
 import { getArtisanDisplayName } from '@/lib/artisan/displayName';
@@ -448,6 +448,22 @@ export async function GET(request: NextRequest) {
       // Only apply if no explicit signature status filter was already set via URL params
       if (extractedFilters.signatureStatuses?.length && !params.signatureStatuses?.length) {
         query = query.in('signature_status', extractedFilters.signatureStatuses);
+      }
+
+      // Apply extracted province filters (ILIKE on province/school/tosogu_school)
+      // Only apply if no explicit school filter was already set via URL params
+      if (extractedFilters.provinces?.length && !params.schools?.length) {
+        const allVariants = extractedFilters.provinces.flatMap(
+          p => PROVINCE_VARIANTS[p] || [p]
+        );
+        const provinceConditions = allVariants
+          .flatMap(v => [
+            `province.ilike.%${v}%`,
+            `school.ilike.%${v}%`,
+            `tosogu_school.ilike.%${v}%`,
+          ])
+          .join(',');
+        query = query.or(provinceConditions);
       }
 
       // Step 2: Parse numeric filters from remaining terms
