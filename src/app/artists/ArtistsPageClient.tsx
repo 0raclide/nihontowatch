@@ -678,20 +678,37 @@ function FilterSelect({
 
 function SkeletonCard() {
   return (
-    <div className="p-4 bg-cream border border-border">
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex-1 space-y-1.5">
-          <div className="h-4 w-32 img-loading rounded" />
-          <div className="h-3 w-16 img-loading rounded" />
+    <div className="bg-cream border border-border flex flex-row overflow-hidden">
+      {/* Thumbnail placeholder */}
+      <div className="w-20 sm:w-28 shrink-0 bg-white/[0.04] border-r border-border/50 flex items-center justify-center p-2 sm:p-3">
+        <div className="w-full h-16 sm:h-20 img-loading rounded" />
+      </div>
+      {/* Content */}
+      <div className="flex-1 p-4 flex flex-col min-w-0">
+        {/* Row 1: Name + Works */}
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1 space-y-1">
+            <div className="h-4 w-28 img-loading rounded" />
+            <div className="h-3 w-14 img-loading rounded" />
+          </div>
+          <div className="shrink-0 text-center space-y-1">
+            <div className="h-5 w-8 img-loading rounded mx-auto" />
+            <div className="h-2 w-10 img-loading rounded" />
+          </div>
         </div>
-        <div className="h-5 w-12 img-loading rounded" />
+        {/* Row 2: School / Period / Province */}
+        <div className="mt-1.5 h-3 w-36 img-loading rounded" />
+        {/* Row 3: Cert badges */}
+        <div className="mt-2.5 flex items-center gap-3">
+          <div className="h-3 w-14 img-loading rounded" />
+          <div className="h-3 w-12 img-loading rounded" />
+          <div className="h-3 w-14 img-loading rounded" />
+        </div>
+        {/* Elite bar */}
+        <div className="mt-auto pt-2.5">
+          <div className="h-1 w-full img-loading rounded" />
+        </div>
       </div>
-      <div className="mt-2.5 h-3 w-40 img-loading rounded" />
-      <div className="mt-3 flex gap-3">
-        <div className="h-3 w-16 img-loading rounded" />
-        <div className="h-3 w-14 img-loading rounded" />
-      </div>
-      <div className="mt-3 h-1.5 w-full img-loading rounded" />
     </div>
   );
 }
