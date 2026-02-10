@@ -122,6 +122,55 @@ function formatFreshness(isoDate: string | null): string {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
+// Live-ticking elapsed time since last scan
+function useElapsedSince(isoDate: string | null): string | null {
+  const [elapsed, setElapsed] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isoDate) return;
+
+    function compute() {
+      const diffMs = Date.now() - new Date(isoDate!).getTime();
+      if (diffMs < 0) return '0s';
+      const totalSec = Math.floor(diffMs / 1000);
+      const d = Math.floor(totalSec / 86400);
+      const h = Math.floor((totalSec % 86400) / 3600);
+      const m = Math.floor((totalSec % 3600) / 60);
+      const s = totalSec % 60;
+      if (d > 0) return `${d}d ${h}h ${m}m`;
+      if (h > 0) return `${h}h ${m}m ${s}s`;
+      return `${m}m ${s}s`;
+    }
+
+    setElapsed(compute());
+    const id = setInterval(() => setElapsed(compute()), 1000);
+    return () => clearInterval(id);
+  }, [isoDate]);
+
+  return elapsed;
+}
+
+function LiveStatsBanner({ data }: { data: BrowseResponse | null }) {
+  const elapsed = useElapsedSince(data?.lastUpdated ?? null);
+  if (!data || !elapsed) return null;
+
+  const dealerCount = data.facets.dealers.length;
+  const itemCount = data.total.toLocaleString();
+
+  return (
+    <div className="hidden lg:flex items-center gap-1.5 mt-1.5 text-[11px] text-muted/70 font-mono tabular-nums">
+      <div className="w-1.5 h-1.5 rounded-full bg-sage animate-pulse" />
+      <span className="text-sage font-medium tracking-wide">LIVE</span>
+      <span className="text-muted/30 mx-0.5">&middot;</span>
+      <span>Scanned {elapsed} ago</span>
+      <span className="text-muted/30 mx-0.5">&middot;</span>
+      <span>{dealerCount} dealers</span>
+      <span className="text-muted/30 mx-0.5">&middot;</span>
+      <span>{itemCount} items</span>
+    </div>
+  );
+}
+
 interface Filters {
   category: 'all' | 'nihonto' | 'tosogu' | 'armor';
   itemTypes: string[];
@@ -528,6 +577,8 @@ function HomeContent() {
             <p className="hidden lg:block text-[13px] text-muted mt-1">
               Japanese swords and fittings from established dealers
             </p>
+            {/* Live stats banner - desktop only */}
+            <LiveStatsBanner data={data} />
           </div>
 
           {/* Controls row - Desktop only, mobile uses filter drawer */}
