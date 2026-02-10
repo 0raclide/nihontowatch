@@ -157,11 +157,13 @@ function HeaderContent() {
                   )}
                 </button>
                 {/* Keyboard hint - show ESC when searching, Enter when not */}
-                <div className="absolute right-12 top-1/2 -translate-y-1/2 hidden sm:flex items-center gap-0.5 opacity-0 group-focus-within:opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                  <kbd className="px-1.5 py-0.5 text-[10px] font-medium text-muted/40 bg-linen/80 rounded">
-                    {currentQuery ? 'Esc' : 'Enter'}
-                  </kbd>
-                </div>
+                {!currentQuery && (
+                  <div className="absolute right-12 top-1/2 -translate-y-1/2 hidden sm:flex items-center gap-0.5 opacity-0 group-focus-within:opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                    <kbd className="px-1.5 py-0.5 text-[10px] font-medium text-muted/40 bg-linen/80 rounded">
+                      Enter
+                    </kbd>
+                  </div>
+                )}
               </div>
             </form>
 
