@@ -404,14 +404,14 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
           </div>
 
           {/* Hero — Image + Identity as one cohesive unit */}
-          <div className={`flex ${heroImage ? 'flex-row items-start gap-4 sm:gap-8' : 'flex-col'}`}>
+          <div className={`flex ${heroImage ? 'flex-row items-start gap-3 sm:gap-8' : 'flex-col'}`}>
             {/* Catalog image — natural aspect ratio, sharp edges, museum plate */}
             {heroImage && (
               <figure className="shrink-0">
                 <button
                   type="button"
                   onClick={() => setLightboxOpen(true)}
-                  className="block w-[120px] sm:w-[220px] border border-border/20 shadow-sm cursor-zoom-in
+                  className="block w-[140px] sm:w-[220px] border border-border/20 shadow-sm cursor-zoom-in
                     hover:shadow-md hover:border-border/30 transition-all duration-200 bg-black/5"
                   aria-label="View full-size image"
                 >
@@ -423,7 +423,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
                     loading="eager"
                   />
                 </button>
-                <figcaption className="mt-1.5 w-[120px] sm:w-[220px] text-center">
+                <figcaption className="mt-1.5 w-[140px] sm:w-[220px] text-center">
                   <div className="text-[10px] uppercase tracking-[0.15em] text-gold/50 font-medium">
                     {COLLECTION_LABELS[heroImage.collection] || heroImage.collection}
                   </div>
@@ -504,7 +504,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
                     <span className="text-ink/50">Fujishiro</span>
                     <span className="text-ink">
                       {entity.fujishiro}
-                      {fujishiroLabel && <span className="text-ink/25 ml-1">({fujishiroLabel})</span>}
+                      {fujishiroLabel && <span className="hidden sm:inline text-ink/25 ml-1">({fujishiroLabel})</span>}
                     </span>
                   </>
                 )}
