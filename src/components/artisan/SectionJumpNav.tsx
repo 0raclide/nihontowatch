@@ -146,29 +146,43 @@ export function SectionJumpNav({ sections }: SectionJumpNavProps) {
         </nav>
       </div>
 
-      {/* ═══ XL+: Fixed left-margin sidebar (hidden below xl) ═══ */}
+      {/* ═══ XL+: Fixed left-margin sidebar — vertically centered ═══ */}
       <nav
-        className="hidden xl:flex flex-col gap-1 fixed top-[96px] z-20"
-        style={{ left: 'max(24px, calc(50vw - 540px))' }}
+        className="hidden xl:block fixed top-1/2 -translate-y-1/2 z-20"
+        style={{ left: 'max(20px, calc(50vw - 548px))' }}
         aria-label="Section navigation"
       >
-        {sections.map((section) => (
-          <a
-            key={section.id}
-            href={`#${section.id}`}
-            onClick={(e) => {
-              e.preventDefault();
-              scrollToSection(section.id);
-            }}
-            className={`block text-[11px] uppercase tracking-[0.14em] py-1.5 pl-3 border-l-[2px] transition-colors ${
-              activeId === section.id
-                ? 'text-gold border-gold/70'
-                : 'text-ink/25 border-transparent hover:text-ink/45 hover:border-ink/15'
-            }`}
-          >
-            {section.label}
-          </a>
-        ))}
+        <div className="relative pl-3">
+          {/* Continuous vertical rule */}
+          <div className="absolute left-0 top-1 bottom-1 w-px bg-ink/[0.08]" />
+
+          <div className="flex flex-col">
+            {sections.map((section) => {
+              const isActive = activeId === section.id;
+              return (
+                <a
+                  key={section.id}
+                  href={`#${section.id}`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    scrollToSection(section.id);
+                  }}
+                  className={`relative block text-[10px] uppercase tracking-[0.16em] py-[5px] transition-colors duration-200 ${
+                    isActive
+                      ? 'text-gold'
+                      : 'text-ink/20 hover:text-ink/40'
+                  }`}
+                >
+                  {/* Active dot on the vertical rule */}
+                  {isActive && (
+                    <span className="absolute left-[-13px] top-1/2 -translate-y-1/2 w-[5px] h-[5px] rounded-full bg-gold/80" />
+                  )}
+                  {section.label}
+                </a>
+              );
+            })}
+          </div>
+        </div>
       </nav>
 
       {/* ═══ MOBILE: Fixed bottom section nav, above BottomTabBar (hidden on sm+) ═══ */}
