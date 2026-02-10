@@ -240,6 +240,17 @@ function HomeContent() {
     fetchRates();
   }, []);
 
+  // Sync browse grid when a listing is edited in QuickView (e.g. artisan fix)
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const updated = (e as CustomEvent).detail as Listing;
+      if (!updated?.id) return;
+      setAllListings(prev => prev.map(l => l.id === updated.id ? { ...l, ...updated } : l));
+    };
+    window.addEventListener('listing-refreshed', handler);
+    return () => window.removeEventListener('listing-refreshed', handler);
+  }, []);
+
   // Record visit for "New Since Last Visit" banner (debounced to avoid rapid updates)
   useEffect(() => {
     if (!isLoading && user) {
