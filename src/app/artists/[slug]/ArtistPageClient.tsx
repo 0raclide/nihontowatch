@@ -119,7 +119,7 @@ function StatsBar({ data, availableCount }: { data: ArtisanPageResponse; availab
 
   return (
     <div className="mt-8 pt-6 border-t border-border/20">
-      <div className="flex flex-wrap gap-x-10 gap-y-4">
+      <div className="flex flex-wrap gap-x-6 sm:gap-x-10 gap-y-4">
         {items.map((item, i) => (
           <div key={i} className="flex flex-col">
             <span className={`text-2xl font-serif font-light tabular-nums leading-none ${item.highlight ? 'text-emerald-400' : 'text-gold'}`}>
@@ -367,7 +367,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
   const fujishiroLabel = entity.fujishiro ? FUJISHIRO_LABELS[entity.fujishiro] : null;
 
   return (
-    <div className="max-w-[780px] mx-auto px-5 sm:px-8">
+    <div className="max-w-[780px] mx-auto px-4 sm:px-8">
         <SectionJumpNav sections={sections} />
 
         <div className="pt-12 pb-20 space-y-16">
@@ -377,13 +377,13 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
         ═══════════════════════════════════════════════════════════════════ */}
         <section id="overview">
           {/* Breadcrumb + Share */}
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center justify-between mb-6 sm:mb-8">
             <nav className="text-[11px] text-ink/40 tracking-widest uppercase">
               <Link href="/" className="hover:text-ink/60 transition-colors">Browse</Link>
               <span className="mx-2 text-ink/20">/</span>
               <Link href="/artists" className="hover:text-ink/60 transition-colors">Artists</Link>
               <span className="mx-2 text-ink/20">/</span>
-              <span className="text-ink/50">{entity.name_romaji || entity.code}</span>
+              <span className="hidden sm:inline text-ink/50">{entity.name_romaji || entity.code}</span>
             </nav>
             <button
               onClick={handleShare}
@@ -411,7 +411,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
                 <button
                   type="button"
                   onClick={() => setLightboxOpen(true)}
-                  className="block w-[200px] sm:w-[220px] border border-border/20 shadow-sm cursor-zoom-in
+                  className="block w-[160px] sm:w-[220px] border border-border/20 shadow-sm cursor-zoom-in
                     hover:shadow-md hover:border-border/30 transition-all duration-200 bg-black/5"
                   aria-label="View full-size image"
                 >
@@ -423,7 +423,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
                     loading="eager"
                   />
                 </button>
-                <figcaption className="mt-1.5 w-[200px] sm:w-[220px] text-center">
+                <figcaption className="mt-1.5 w-[160px] sm:w-[220px] text-center">
                   <div className="text-[10px] uppercase tracking-[0.15em] text-gold/50 font-medium">
                     {COLLECTION_LABELS[heroImage.collection] || heroImage.collection}
                   </div>
@@ -456,7 +456,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
               )}
 
               {/* Metadata grid */}
-              <div className="mt-5 grid grid-cols-[auto_1fr] gap-x-6 gap-y-1.5 text-[13px] leading-snug">
+              <div className="mt-5 grid grid-cols-[auto_1fr] gap-x-4 sm:gap-x-6 gap-y-1.5 text-[13px] leading-snug">
                 {entity.province && (
                   <>
                     <span className="text-ink/50">Province</span>
@@ -576,7 +576,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
             <section>
               <SectionHeader id="certifications" title="Certifications" className="mb-7" />
 
-              <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr] gap-10">
+              <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr] gap-6 sm:gap-10">
                 {/* Hierarchy */}
                 <div>
                   <PrestigePyramid
@@ -799,7 +799,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
                         <Link
                           key={student.code}
                           href={`/artists/${student.slug}`}
-                          className={`flex items-baseline justify-between py-2 group hover:bg-hover/30 -mx-2 px-2 rounded transition-colors ${
+                          className={`flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-1 sm:gap-3 py-2 group hover:bg-hover/30 -mx-2 px-2 rounded transition-colors ${
                             i < lineage.students.length - 1 ? 'border-b border-border/15' : ''
                           }`}
                         >
@@ -813,7 +813,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
                               </span>
                             )}
                           </div>
-                          <div className="flex-shrink-0 flex items-baseline gap-3 text-xs tabular-nums">
+                          <div className="flex-shrink-0 flex flex-wrap items-baseline gap-x-2.5 gap-y-1 text-xs tabular-nums">
                             {student.kokuho_count > 0 && (
                               <span className="text-ink font-semibold">{student.kokuho_count} kokuhō</span>
                             )}
@@ -833,7 +833,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
                               <span className="text-ink/50">{student.juyo_count} jūyō</span>
                             )}
                             {(student.available_count ?? 0) > 0 && (
-                              <span className="text-emerald-500 dark:text-emerald-400">{student.available_count} on the market</span>
+                              <span className="text-emerald-500 dark:text-emerald-400">{student.available_count} for sale</span>
                             )}
                           </div>
                         </Link>

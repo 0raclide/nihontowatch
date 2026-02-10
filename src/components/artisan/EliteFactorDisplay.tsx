@@ -161,7 +161,8 @@ export function EliteFactorDisplay({
             onClick={() => setShowInfo(!showInfo)}
             className="inline-flex items-center justify-center w-[15px] h-[15px] ml-1.5 rounded-full
               border border-ink/20 text-ink/35 hover:text-ink/60 hover:border-ink/40
-              transition-colors align-middle cursor-pointer"
+              transition-colors align-middle cursor-pointer
+              relative before:absolute before:-inset-3 before:content-['']"
             aria-label="How is Elite Standing calculated?"
             aria-expanded={showInfo}
           >

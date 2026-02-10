@@ -258,7 +258,7 @@ describe('ArtistPageClient — Students Section', () => {
     expect(gyobutsuEl.className).toContain('font-medium');
   });
 
-  it('renders "on the market" text for students with available listings', () => {
+  it('renders "for sale" text for students with available listings', () => {
     const data = makeTestData({
       lineage: {
         teacher: null,
@@ -271,13 +271,13 @@ describe('ArtistPageClient — Students Section', () => {
 
     render(<ArtistPageClient data={data} />);
 
-    expect(screen.getByText('4 on the market')).toBeTruthy();
+    expect(screen.getByText('4 for sale')).toBeTruthy();
     // Should only appear once (not for the student with 0)
-    const marketTexts = screen.queryAllByText(/on the market/);
+    const marketTexts = screen.queryAllByText(/for sale/);
     expect(marketTexts).toHaveLength(1);
   });
 
-  it('"on the market" text has emerald color class', () => {
+  it('"for sale" text has emerald color class', () => {
     const data = makeTestData({
       lineage: {
         teacher: null,
@@ -289,7 +289,7 @@ describe('ArtistPageClient — Students Section', () => {
 
     render(<ArtistPageClient data={data} />);
 
-    const marketText = screen.getByText('2 on the market');
+    const marketText = screen.getByText('2 for sale');
     expect(marketText.className).toContain('text-emerald');
   });
 

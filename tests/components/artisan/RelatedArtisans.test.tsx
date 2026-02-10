@@ -83,7 +83,7 @@ describe('RelatedArtisans', () => {
     expect(screen.queryByText(/tokujū/)).toBeNull();
   });
 
-  it('renders "on the market" when available_count > 0', () => {
+  it('renders "for sale" when available_count > 0', () => {
     render(
       <RelatedArtisans
         artisans={[makeArtisan({ available_count: 3 })]}
@@ -91,10 +91,10 @@ describe('RelatedArtisans', () => {
       />
     );
 
-    expect(screen.getByText('3 on the market')).toBeTruthy();
+    expect(screen.getByText('3 for sale')).toBeTruthy();
   });
 
-  it('does not render "on the market" when available_count is 0', () => {
+  it('does not render "for sale" when available_count is 0', () => {
     render(
       <RelatedArtisans
         artisans={[makeArtisan({ available_count: 0 })]}
@@ -102,10 +102,10 @@ describe('RelatedArtisans', () => {
       />
     );
 
-    expect(screen.queryByText(/on the market/)).toBeNull();
+    expect(screen.queryByText(/for sale/)).toBeNull();
   });
 
-  it('does not render "on the market" when available_count is undefined', () => {
+  it('does not render "for sale" when available_count is undefined', () => {
     const artisan = makeArtisan();
     delete (artisan as Record<string, unknown>).available_count;
 
@@ -113,10 +113,10 @@ describe('RelatedArtisans', () => {
       <RelatedArtisans artisans={[artisan]} schoolName={null} />
     );
 
-    expect(screen.queryByText(/on the market/)).toBeNull();
+    expect(screen.queryByText(/for sale/)).toBeNull();
   });
 
-  it('"on the market" text has emerald color class', () => {
+  it('"for sale" text has emerald color class', () => {
     render(
       <RelatedArtisans
         artisans={[makeArtisan({ available_count: 5 })]}
@@ -124,7 +124,7 @@ describe('RelatedArtisans', () => {
       />
     );
 
-    const marketText = screen.getByText('5 on the market');
+    const marketText = screen.getByText('5 for sale');
     expect(marketText.className).toContain('text-emerald');
   });
 
@@ -145,7 +145,7 @@ describe('RelatedArtisans', () => {
     expect(screen.getByText('Gamma')).toBeTruthy();
 
     // Only Beta should show market count
-    expect(screen.getByText('2 on the market')).toBeTruthy();
+    expect(screen.getByText('2 for sale')).toBeTruthy();
 
     // Links should point to correct slugs
     const links = screen.getAllByRole('link');

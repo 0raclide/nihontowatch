@@ -18,6 +18,8 @@ import {
 } from '@/lib/supabase/yuhinkai';
 import { createServiceClient } from '@/lib/supabase/server';
 import { generateBreadcrumbJsonLd, jsonLdScriptProps } from '@/lib/seo/jsonLd';
+import { Header } from '@/components/layout/Header';
+import { BottomTabBar } from '@/components/navigation/BottomTabBar';
 import { ArtistPageClient } from './ArtistPageClient';
 import type { ArtisanPageResponse } from '@/app/api/artisan/[code]/route';
 
@@ -196,8 +198,10 @@ export async function generateMetadata({ params }: ArtistPageProps): Promise<Met
   const title = `${name} — ${schoolLabel} ${type} | NihontoWatch`;
   const description = `Comprehensive profile of ${name}${province}, ${entity.era || 'Japanese'} ${type}. ${juyo} Jūyō, ${tokuju} Tokubetsu Jūyō certified works. Certification statistics, biography, and available listings.`;
 
-  const canonicalSlug = generateArtisanSlug(entity.name_romaji, smith ? smith.smith_id : tosogu!.maker_id);
+  const entityCode = smith ? smith.smith_id : tosogu!.maker_id;
+  const canonicalSlug = generateArtisanSlug(entity.name_romaji, entityCode);
   const canonical = `${BASE_URL}/artists/${canonicalSlug}`;
+  const ogImageUrl = `${BASE_URL}/api/og?artist=${encodeURIComponent(entityCode)}`;
 
   return {
     title,
@@ -208,6 +212,13 @@ export async function generateMetadata({ params }: ArtistPageProps): Promise<Met
       description,
       type: 'profile',
       url: canonical,
+      images: [{ url: ogImageUrl, width: 1200, height: 630, alt: `${name} — ${schoolLabel} ${type}` }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${name} — Artist Profile`,
+      description,
+      images: [ogImageUrl],
     },
   };
 }
@@ -272,7 +283,11 @@ export default async function ArtistSlugPage({ params }: ArtistPageProps) {
       <script {...jsonLdScriptProps(personJsonLd)} />
       <script {...jsonLdScriptProps(breadcrumbJsonLd)} />
 
+      <Header />
+
       <ArtistPageClient data={data} />
+
+      <BottomTabBar />
     </div>
   );
 }

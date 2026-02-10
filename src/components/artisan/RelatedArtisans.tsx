@@ -44,7 +44,7 @@ export function RelatedArtisans({ artisans, schoolName }: RelatedArtisansProps) 
           <Link
             key={artisan.code}
             href={`/artists/${artisan.slug}`}
-            className={`flex items-baseline justify-between py-2.5 group hover:bg-hover/30 -mx-2 px-2 rounded transition-colors ${
+            className={`flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-1 sm:gap-3 py-2.5 group hover:bg-hover/30 -mx-2 px-2 rounded transition-colors ${
               i < artisans.length - 1 ? 'border-b border-border/20' : ''
             }`}
           >
@@ -58,7 +58,7 @@ export function RelatedArtisans({ artisans, schoolName }: RelatedArtisansProps) 
                 </span>
               )}
             </div>
-            <div className="flex-shrink-0 flex items-baseline gap-3 text-xs tabular-nums">
+            <div className="flex-shrink-0 flex flex-wrap items-baseline gap-x-2.5 gap-y-1 text-xs tabular-nums">
               {artisan.kokuho_count > 0 && (
                 <span className="text-ink font-semibold">{artisan.kokuho_count} kokuhō</span>
               )}
@@ -78,7 +78,7 @@ export function RelatedArtisans({ artisans, schoolName }: RelatedArtisansProps) 
                 <span className="text-ink/50">{artisan.juyo_count} jūyō</span>
               )}
               {(artisan.available_count ?? 0) > 0 && (
-                <span className="text-emerald-500 dark:text-emerald-400">{artisan.available_count} on the market</span>
+                <span className="text-emerald-500 dark:text-emerald-400">{artisan.available_count} for sale</span>
               )}
             </div>
           </Link>

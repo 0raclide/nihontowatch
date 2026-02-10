@@ -4,6 +4,8 @@ import { generateArtisanSlug } from '@/lib/artisan/slugs';
 import { generateBreadcrumbJsonLd, jsonLdScriptProps } from '@/lib/seo/jsonLd';
 import { generateArtistDirectoryJsonLd } from '@/lib/seo/jsonLd';
 import { createClient } from '@/lib/supabase/server';
+import { Header } from '@/components/layout/Header';
+import { BottomTabBar } from '@/components/navigation/BottomTabBar';
 import { ArtistsPageClient } from './ArtistsPageClient';
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://nihontowatch.com';
@@ -43,6 +45,8 @@ export async function generateMetadata({ searchParams }: ArtistsPageProps): Prom
     ? `Browse ${school} school artists — nihonto and tosogu makers with certification statistics, elite rankings, and detailed profiles.`
     : 'Comprehensive directory of Japanese nihonto and tosogu artists. Browse by school, province, and era with Juyo and Tokubetsu Juyo certification counts.';
 
+  const ogImageUrl = `${BASE_URL}/api/og`;
+
   return {
     title,
     description,
@@ -52,6 +56,13 @@ export async function generateMetadata({ searchParams }: ArtistsPageProps): Prom
       description,
       type: 'website',
       url: `${BASE_URL}/artists`,
+      images: [{ url: ogImageUrl, width: 1200, height: 630, alt: 'NihontoWatch — Artist Directory' }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: titleSuffix,
+      description,
+      images: [ogImageUrl],
     },
   };
 }
@@ -218,12 +229,16 @@ export default async function ArtistsPage({ searchParams }: ArtistsPageProps) {
       <script {...jsonLdScriptProps(breadcrumbJsonLd)} />
       <script {...jsonLdScriptProps(directoryJsonLd)} />
 
+      <Header />
+
       <ArtistsPageClient
         initialArtists={artistsWithSlugs}
         initialPagination={{ page, pageSize: 50, totalPages, totalCount: total }}
         initialFacets={facets}
         initialFilters={{ type, school, province, era, q, sort, notable }}
       />
+
+      <BottomTabBar />
     </div>
   );
 }

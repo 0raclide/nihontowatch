@@ -245,7 +245,7 @@ export function ArtistsPageClient({
                 key={t}
                 onClick={() => handleFilterChange('type', t)}
                 disabled={isLoading}
-                className={`px-4 py-2 text-[11px] uppercase tracking-[0.15em] transition-colors ${
+                className={`px-4 py-2 min-h-[44px] text-[11px] uppercase tracking-[0.15em] transition-colors ${
                   filters.type === t
                     ? 'bg-gold/10 text-gold font-medium'
                     : 'text-ink/50 hover:text-ink hover:bg-hover'
@@ -395,7 +395,7 @@ function StatsBar({
   ];
 
   return (
-    <div className="flex flex-wrap gap-x-6 gap-y-2 py-3 px-4 bg-cream/50 border border-border">
+    <div className="flex flex-wrap gap-x-4 sm:gap-x-6 gap-y-2 py-3 px-4 bg-cream/50 border border-border">
       {items.map((item) => (
         <div key={item.label} className="flex items-baseline gap-1.5">
           <span className="text-sm font-serif tabular-nums text-ink">{item.value}</span>
@@ -494,7 +494,7 @@ function ArtistCard({ artist }: { artist: ArtistWithSlug }) {
     >
       {/* Thumbnail — catalog oshigata from Yuhinkai */}
       {artist.cover_image && (
-        <div className="w-28 shrink-0 bg-white/[0.04] dark:bg-white/[0.04] border-r border-border/50 flex items-center justify-center p-3 overflow-hidden">
+        <div className="w-20 sm:w-28 shrink-0 bg-white/[0.04] dark:bg-white/[0.04] border-r border-border/50 flex items-center justify-center p-2 sm:p-3 overflow-hidden">
           <img
             src={artist.cover_image}
             alt=""
@@ -614,7 +614,7 @@ function PaginationBar({
         <button
           onClick={() => onPageChange(page - 1)}
           disabled={page <= 1}
-          className="px-2.5 py-1.5 text-[11px] text-ink/50 hover:text-ink hover:bg-hover disabled:opacity-30 disabled:pointer-events-none transition-colors"
+          className="px-3 py-2.5 sm:px-2.5 sm:py-1.5 text-[11px] text-ink/50 hover:text-ink hover:bg-hover disabled:opacity-30 disabled:pointer-events-none transition-colors"
         >
           Prev
         </button>
@@ -628,7 +628,7 @@ function PaginationBar({
             <button
               key={p}
               onClick={() => onPageChange(p)}
-              className={`min-w-[32px] px-2 py-1.5 text-[11px] transition-colors ${
+              className={`min-w-[36px] sm:min-w-[32px] px-2 py-2.5 sm:py-1.5 text-[11px] transition-colors ${
                 p === page
                   ? 'bg-gold/10 text-gold font-medium border border-gold/30'
                   : 'text-ink/50 hover:text-ink hover:bg-hover'
@@ -643,7 +643,7 @@ function PaginationBar({
         <button
           onClick={() => onPageChange(page + 1)}
           disabled={page >= totalPages}
-          className="px-2.5 py-1.5 text-[11px] text-ink/50 hover:text-ink hover:bg-hover disabled:opacity-30 disabled:pointer-events-none transition-colors"
+          className="px-3 py-2.5 sm:px-2.5 sm:py-1.5 text-[11px] text-ink/50 hover:text-ink hover:bg-hover disabled:opacity-30 disabled:pointer-events-none transition-colors"
         >
           Next
         </button>
