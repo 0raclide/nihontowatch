@@ -404,131 +404,148 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
           </div>
 
           {/* Hero — Image + Identity as one cohesive unit */}
-          <div className={`flex ${heroImage ? 'flex-row items-start gap-3 sm:gap-8' : 'flex-col'}`}>
-            {/* Catalog image — natural aspect ratio, sharp edges, museum plate */}
-            {heroImage && (
-              <figure className="shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setLightboxOpen(true)}
-                  className="block w-[140px] sm:w-[220px] border border-border/20 shadow-sm cursor-zoom-in
-                    hover:shadow-md hover:border-border/30 transition-all duration-200 bg-black/5"
-                  aria-label="View full-size image"
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={heroImage.imageUrl}
-                    alt={`${heroImage.imageType === 'oshigata' ? 'Oshigata' : 'Image'} — ${entity.name_romaji || entity.code}, ${COLLECTION_LABELS[heroImage.collection] || heroImage.collection}`}
-                    className="w-full h-auto object-contain max-h-[260px] sm:max-h-[340px]"
-                    loading="eager"
-                  />
-                </button>
-                <figcaption className="mt-1.5 w-[140px] sm:w-[220px] text-center">
-                  <div className="text-[10px] uppercase tracking-[0.15em] text-gold/50 font-medium">
-                    {COLLECTION_LABELS[heroImage.collection] || heroImage.collection}
-                  </div>
-                  <div className="text-[10px] text-ink/25 tabular-nums">
-                    Vol. {heroImage.volume}, No. {heroImage.itemNumber}
-                    {heroImage.formType && <> &middot; {heroImage.formType}</>}
-                  </div>
-                </figcaption>
-              </figure>
-            )}
-
-            {/* Identity + Vitals */}
-            <div className="flex-1 min-w-0">
-              <div className="w-8 sm:w-10 h-[2px] bg-gold/50 mb-3 sm:mb-4" />
-
-              <h1 className="text-2xl sm:text-[2.5rem] font-serif font-light text-ink leading-[1.1] tracking-tight">
+          <div>
+            {/* Title block — full width on mobile, inside metadata column on desktop */}
+            <div className="sm:hidden mb-4">
+              <div className="w-8 h-[2px] bg-gold/50 mb-3" />
+              <h1 className="text-2xl font-serif font-light text-ink leading-[1.1] tracking-tight">
                 {(() => { const dp = getArtisanDisplayParts(entity.name_romaji, entity.school); return <>{dp.prefix && <>{dp.prefix} </>}{dp.name || entity.code}</>; })()}
               </h1>
               {entity.name_kanji && (
-                <p className="text-base sm:text-lg text-ink/35 font-serif font-light mt-1 sm:mt-1.5 tracking-[0.08em]">
+                <p className="text-base text-ink/35 font-serif font-light mt-1 tracking-[0.08em]">
                   {entity.name_kanji}
                 </p>
               )}
+            </div>
 
-              {/* Context line — museum wall label */}
-              {certifications.total_items > 0 && (
-                <p className="mt-2.5 text-[12px] text-gold tracking-wide italic">
-                  {certifications.total_items} ranked works
-                </p>
+            <div className={`flex ${heroImage ? 'flex-row items-start gap-3 sm:gap-8' : 'flex-col'}`}>
+              {/* Catalog image — natural aspect ratio, sharp edges, museum plate */}
+              {heroImage && (
+                <figure className="shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setLightboxOpen(true)}
+                    className="block w-[140px] sm:w-[220px] border border-border/20 shadow-sm cursor-zoom-in
+                      hover:shadow-md hover:border-border/30 transition-all duration-200 bg-black/5"
+                    aria-label="View full-size image"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={heroImage.imageUrl}
+                      alt={`${heroImage.imageType === 'oshigata' ? 'Oshigata' : 'Image'} — ${entity.name_romaji || entity.code}, ${COLLECTION_LABELS[heroImage.collection] || heroImage.collection}`}
+                      className="w-full h-auto object-contain max-h-[260px] sm:max-h-[340px]"
+                      loading="eager"
+                    />
+                  </button>
+                  <figcaption className="mt-1.5 w-[140px] sm:w-[220px] text-center">
+                    <div className="text-[10px] uppercase tracking-[0.15em] text-gold/50 font-medium">
+                      {COLLECTION_LABELS[heroImage.collection] || heroImage.collection}
+                    </div>
+                    <div className="text-[10px] text-ink/25 tabular-nums">
+                      Vol. {heroImage.volume}, No. {heroImage.itemNumber}
+                      {heroImage.formType && <> &middot; {heroImage.formType}</>}
+                    </div>
+                  </figcaption>
+                </figure>
               )}
 
-              {/* Metadata grid */}
-              <div className="mt-3 sm:mt-5 grid grid-cols-[auto_1fr] gap-x-3 sm:gap-x-6 gap-y-1 sm:gap-y-1.5 text-[12px] sm:text-[13px] leading-snug">
-                {entity.province && (
-                  <>
-                    <span className="text-ink/50">Province</span>
-                    <span className="text-ink">{entity.province}</span>
-                  </>
+              {/* Identity + Vitals */}
+              <div className="flex-1 min-w-0">
+                {/* Title — desktop only (mobile title is above) */}
+                <div className="hidden sm:block">
+                  <div className="w-10 h-[2px] bg-gold/50 mb-4" />
+                  <h1 className="text-[2.5rem] font-serif font-light text-ink leading-[1.1] tracking-tight">
+                    {(() => { const dp = getArtisanDisplayParts(entity.name_romaji, entity.school); return <>{dp.prefix && <>{dp.prefix} </>}{dp.name || entity.code}</>; })()}
+                  </h1>
+                  {entity.name_kanji && (
+                    <p className="text-lg text-ink/35 font-serif font-light mt-1.5 tracking-[0.08em]">
+                      {entity.name_kanji}
+                    </p>
+                  )}
+                </div>
+
+                {/* Context line — museum wall label */}
+                {certifications.total_items > 0 && (
+                  <p className="sm:mt-2.5 text-[12px] text-gold tracking-wide italic">
+                    {certifications.total_items} ranked works
+                  </p>
                 )}
-                {entity.era && (
-                  <>
-                    <span className="text-ink/50">Era</span>
-                    <span className="text-ink">{entity.era}</span>
-                  </>
-                )}
-                {entity.period && entity.period !== entity.era && (
-                  <>
-                    <span className="text-ink/50">Period</span>
-                    <span className="text-ink">{entity.period}</span>
-                  </>
-                )}
-                {entity.school && (
-                  <>
-                    <span className="text-ink/50">School</span>
-                    <span className="text-ink">{entity.school}</span>
-                  </>
-                )}
-                {entity.generation && (
-                  <>
-                    <span className="text-ink/50">Generation</span>
-                    <span className="text-ink">{entity.generation}</span>
-                  </>
-                )}
-                {entity.teacher && (
-                  <>
-                    <span className="text-ink/50">Teacher</span>
-                    {lineage.teacher ? (
-                      <Link href={`/artists/${lineage.teacher.slug}`} className="text-ink hover:text-gold transition-colors">
-                        {lineage.teacher.name_romaji || entity.teacher}
-                      </Link>
-                    ) : (
-                      <span className="text-ink">{entity.teacher}</span>
-                    )}
-                  </>
-                )}
-                {entity.fujishiro && (
-                  <>
-                    <span className="text-ink/50">Fujishiro</span>
-                    <span className="text-ink">
-                      {entity.fujishiro}
-                      {fujishiroLabel && <span className="hidden sm:inline text-ink/25 ml-1">({fujishiroLabel})</span>}
-                    </span>
-                  </>
-                )}
-                {entity.toko_taikan != null && (
-                  <>
-                    <span className="text-ink/50">Toko Taikan</span>
-                    <span className="text-ink tabular-nums">
-                      {entity.toko_taikan.toLocaleString()}
-                      {rankings.toko_taikan_percentile != null && (
-                        <span className="text-ink/25 ml-1">(top {Math.max(100 - rankings.toko_taikan_percentile, 1)}%)</span>
+
+                {/* Metadata grid */}
+                <div className="mt-2 sm:mt-5 grid grid-cols-[auto_1fr] gap-x-3 sm:gap-x-6 gap-y-1 sm:gap-y-1.5 text-[12px] sm:text-[13px] leading-snug">
+                  {entity.province && (
+                    <>
+                      <span className="text-ink/50">Province</span>
+                      <span className="text-ink">{entity.province}</span>
+                    </>
+                  )}
+                  {entity.era && (
+                    <>
+                      <span className="text-ink/50">Era</span>
+                      <span className="text-ink">{entity.era}</span>
+                    </>
+                  )}
+                  {entity.period && entity.period !== entity.era && (
+                    <>
+                      <span className="text-ink/50">Period</span>
+                      <span className="text-ink">{entity.period}</span>
+                    </>
+                  )}
+                  {entity.school && (
+                    <>
+                      <span className="text-ink/50">School</span>
+                      <span className="text-ink">{entity.school}</span>
+                    </>
+                  )}
+                  {entity.generation && (
+                    <>
+                      <span className="text-ink/50">Generation</span>
+                      <span className="text-ink">{entity.generation}</span>
+                    </>
+                  )}
+                  {entity.teacher && (
+                    <>
+                      <span className="text-ink/50">Teacher</span>
+                      {lineage.teacher ? (
+                        <Link href={`/artists/${lineage.teacher.slug}`} className="text-ink hover:text-gold transition-colors">
+                          {lineage.teacher.name_romaji || entity.teacher}
+                        </Link>
+                      ) : (
+                        <span className="text-ink">{entity.teacher}</span>
                       )}
-                    </span>
-                  </>
-                )}
-                {entity.specialties && entity.specialties.length > 0 && (
-                  <>
-                    <span className="text-ink/50">Specialties</span>
-                    <span className="text-ink">{entity.specialties.join(', ')}</span>
-                  </>
-                )}
-                <span className="text-ink/50">Type</span>
-                <span className="text-ink">{entity.entity_type === 'smith' ? 'Swordsmith' : 'Tosogu Maker'}</span>
-                <span className="text-ink/50">Code</span>
-                <span className="text-ink font-mono text-xs tracking-wide">{entity.code}</span>
+                    </>
+                  )}
+                  {entity.fujishiro && (
+                    <>
+                      <span className="text-ink/50">Fujishiro</span>
+                      <span className="text-ink">
+                        {entity.fujishiro}
+                        {fujishiroLabel && <span className="hidden sm:inline text-ink/25 ml-1">({fujishiroLabel})</span>}
+                      </span>
+                    </>
+                  )}
+                  {entity.toko_taikan != null && (
+                    <>
+                      <span className="text-ink/50">Toko Taikan</span>
+                      <span className="text-ink tabular-nums">
+                        {entity.toko_taikan.toLocaleString()}
+                        {rankings.toko_taikan_percentile != null && (
+                          <span className="text-ink/25 ml-1">(top {Math.max(100 - rankings.toko_taikan_percentile, 1)}%)</span>
+                        )}
+                      </span>
+                    </>
+                  )}
+                  {entity.specialties && entity.specialties.length > 0 && (
+                    <>
+                      <span className="text-ink/50">Specialties</span>
+                      <span className="text-ink">{entity.specialties.join(', ')}</span>
+                    </>
+                  )}
+                  <span className="text-ink/50">Type</span>
+                  <span className="text-ink">{entity.entity_type === 'smith' ? 'Swordsmith' : 'Tosogu Maker'}</span>
+                  <span className="text-ink/50">Code</span>
+                  <span className="text-ink font-mono text-xs tracking-wide">{entity.code}</span>
+                </div>
               </div>
             </div>
           </div>
