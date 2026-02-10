@@ -172,6 +172,8 @@ is_initial_import  -- TRUE = bulk import, FALSE = genuine new inventory (for "Ne
 artisan_id, artisan_confidence, artisan_method, artisan_candidates, artisan_matched_at
 -- Artisan verification (admin QA)
 artisan_verified, artisan_verified_at, artisan_verified_by
+-- Admin lock (single source of truth — scraper NEVER writes this)
+artisan_admin_locked  -- BOOLEAN, TRUE = artisan fields protected from automated overwrite
 ```
 
 **price_history**
@@ -540,7 +542,7 @@ Displays Yuhinkai artisan codes (e.g., "MAS590", "OWA009") on listing cards for 
 | Yuhinkai client | `src/lib/supabase/yuhinkai.ts` (`getArtisanNames()` for batch lookup) |
 | Display name logic | `src/lib/artisan/displayName.ts` (`getArtisanDisplayName()`) |
 | API filter | `src/app/api/browse/route.ts` (artisanCode param + display name enrichment) |
-| DB schema | `supabase/migrations/048_artisan_matching.sql`, `049_artisan_verification.sql` |
+| DB schema | `supabase/migrations/048_artisan_matching.sql`, `049_artisan_verification.sql`, `054_artisan_admin_locked.sql` |
 
 ### Artist Feature (`/artists` + `/artists/[slug]`)
 
@@ -574,6 +576,7 @@ For detailed implementation docs, see:
 - `docs/PRO_TIER_STRATEGY.md` - Business strategy
 - `docs/SESSION_20260208_ARTIST_DIRECTORY.md` - Artist directory implementation session
 - `docs/SESSION_20260209_ADMIN_SET_ARTISAN.md` - Admin artisan assignment widget session
+- `docs/SESSION_20260210_ADMIN_LOCK.md` - Admin artisan lock protection (prevents scraper overwrites)
 
 ---
 
