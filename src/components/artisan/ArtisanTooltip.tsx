@@ -155,6 +155,7 @@ export function ArtisanTooltip({
         setSearchQuery('');
         setSearchResults([]);
         setArtisan(null);
+        fetchedForRef.current = 'UNKNOWN'; // Prevent fetch loop
 
         onArtisanFixed?.('UNKNOWN');
         onVerify?.('correct');
@@ -198,13 +199,17 @@ export function ArtisanTooltip({
 
         // Refetch artisan details for the new code
         setArtisan(null);
+        fetchedForRef.current = result.code; // Mark as fetched to prevent useEffect loop
         setLoading(true);
-        const artisanResponse = await fetch(`/api/artisan/${encodeURIComponent(result.code)}`);
-        if (artisanResponse.ok) {
-          const data = await artisanResponse.json();
-          setArtisan(data.artisan);
+        try {
+          const artisanResponse = await fetch(`/api/artisan/${encodeURIComponent(result.code)}`);
+          if (artisanResponse.ok) {
+            const data = await artisanResponse.json();
+            setArtisan(data.artisan);
+          }
+        } finally {
+          setLoading(false);
         }
-        setLoading(false);
 
         // Notify parent
         onArtisanFixed?.(result.code);
@@ -223,10 +228,22 @@ export function ArtisanTooltip({
     }
   };
 
+  // Track which artisanId we've already attempted to fetch (prevents infinite loop on 404)
+  const fetchedForRef = useRef<string | null>(null);
+
+  // Reset fetch tracking when artisanId changes (so new codes get fetched)
+  const prevArtisanIdRef = useRef(artisanId);
+  if (prevArtisanIdRef.current !== artisanId) {
+    prevArtisanIdRef.current = artisanId;
+    fetchedForRef.current = null;
+  }
+
   // Fetch artisan details when tooltip opens (skip if no artisan assigned or UNKNOWN)
   const fetchArtisan = useCallback(async () => {
     if (!artisanId || artisanId === 'UNKNOWN' || artisan || loading) return;
+    if (fetchedForRef.current === artisanId) return; // Already attempted
 
+    fetchedForRef.current = artisanId;
     setLoading(true);
     setError(null);
 
