@@ -96,7 +96,7 @@ export async function GET(
     const response = NextResponse.json({ listings: listings || [] });
     response.headers.set(
       'Cache-Control',
-      'public, s-maxage=300, stale-while-revalidate=600'
+      'private, no-store, must-revalidate'
     );
     return response;
   } catch (error) {
