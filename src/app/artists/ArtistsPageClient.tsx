@@ -207,8 +207,8 @@ export function ArtistsPageClient({
         </p>
       </div>
 
-      {/* Filters */}
-      <div className="mt-6 space-y-4">
+      {/* Filters — hidden on mobile (bottom bar drawers handle it) */}
+      <div className="hidden lg:block mt-6 space-y-4">
         {/* Search + Type Toggle Row */}
         <div className="flex flex-col sm:flex-row gap-3">
           {/* Search */}

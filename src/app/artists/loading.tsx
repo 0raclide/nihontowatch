@@ -7,8 +7,8 @@ export default function ArtistsLoading() {
         <div className="mt-2 h-4 w-80 bg-linen/40 animate-pulse rounded" />
       </div>
 
-      {/* Filter bar skeleton */}
-      <div className="mt-6 space-y-4">
+      {/* Filter bar skeleton — hidden on mobile */}
+      <div className="hidden lg:block mt-6 space-y-4">
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="flex-1 max-w-md h-10 bg-linen/40 animate-pulse rounded" />
           <div className="flex">
