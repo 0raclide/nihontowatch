@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import { getArtistsForDirectory, getArtistDirectoryFacets, getBulkElitePercentiles, getFilteredArtistsByCodes, getSchoolMemberCounts, getBulkArtisanHeroImages } from '@/lib/supabase/yuhinkai';
+import { getArtistsForDirectory, getArtistDirectoryFacets, getBulkElitePercentiles, getFilteredArtistsByCodes, getSchoolMemberCounts, getSchoolMemberCodes, getBulkArtisanHeroImages } from '@/lib/supabase/yuhinkai';
 import { generateArtisanSlug } from '@/lib/artisan/slugs';
 import { generateBreadcrumbJsonLd, jsonLdScriptProps } from '@/lib/seo/jsonLd';
 import { generateArtistDirectoryJsonLd } from '@/lib/seo/jsonLd';
@@ -142,6 +142,34 @@ export default async function ArtistsPage({ searchParams }: ArtistsPageProps) {
     total = result.total;
     const codes = artists.map(a => a.code);
     listingData = await getListingData(codes);
+  }
+
+  // For school codes, aggregate listing counts from member artisans
+  const schoolArtists = artists.filter(a => a.is_school_code && a.school);
+  if (schoolArtists.length > 0) {
+    const memberCodesMap = await getSchoolMemberCodes(
+      schoolArtists.map(a => ({ code: a.code, school: a.school!, entity_type: a.entity_type }))
+    );
+    const allMemberCodes: string[] = [];
+    for (const [, members] of memberCodesMap) {
+      allMemberCodes.push(...members);
+    }
+    if (allMemberCodes.length > 0) {
+      const memberListingData = await getListingData(allMemberCodes);
+      for (const [schoolCode, memberCodes] of memberCodesMap) {
+        const existing = listingData.get(schoolCode) || { count: 0 };
+        for (const memberCode of memberCodes) {
+          const memberData = memberListingData.get(memberCode);
+          if (memberData) {
+            existing.count += memberData.count;
+            if (!existing.firstId && memberData.firstId) {
+              existing.firstId = memberData.firstId;
+            }
+          }
+        }
+        listingData.set(schoolCode, existing);
+      }
+    }
   }
 
   // Fetch percentiles, school member counts, and hero images in parallel

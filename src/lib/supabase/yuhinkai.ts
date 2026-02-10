@@ -710,6 +710,49 @@ export async function getSchoolMemberCounts(
   return result;
 }
 
+/**
+ * For school codes, get all individual member codes from the relevant entity table.
+ * Returns Map<schoolCode, memberCodes[]>.
+ */
+export async function getSchoolMemberCodes(
+  schools: Array<{ code: string; school: string; entity_type: 'smith' | 'tosogu' }>
+): Promise<Map<string, string[]>> {
+  const result = new Map<string, string[]>();
+  if (schools.length === 0) return result;
+
+  // Deduplicate by school+type
+  const uniqueSchools = new Map<string, { school: string; type: 'smith' | 'tosogu'; codes: string[] }>();
+  for (const s of schools) {
+    const key = `${s.entity_type}:${s.school}`;
+    const entry = uniqueSchools.get(key);
+    if (entry) {
+      entry.codes.push(s.code);
+    } else {
+      uniqueSchools.set(key, { school: s.school, type: s.entity_type, codes: [s.code] });
+    }
+  }
+
+  await Promise.all(
+    Array.from(uniqueSchools.values()).map(async ({ school, type, codes }) => {
+      const table = type === 'smith' ? 'smith_entities' : 'tosogu_makers';
+      const idCol = type === 'smith' ? 'smith_id' : 'maker_id';
+
+      const { data } = await yuhinkaiClient
+        .from(table)
+        .select(idCol)
+        .eq('school', school)
+        .eq('is_school_code', false);
+
+      const memberCodes = (data || []).map((row: Record<string, unknown>) => row[idCol] as string);
+      for (const code of codes) {
+        result.set(code, memberCodes);
+      }
+    })
+  );
+
+  return result;
+}
+
 // =============================================================================
 // BULK PERCENTILE QUERIES (for directory cards)
 // =============================================================================

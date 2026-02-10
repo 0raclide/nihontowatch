@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const { getArtistsForDirectory, getArtistDirectoryFacets, getBulkElitePercentiles, getFilteredArtistsByCodes, getSchoolMemberCounts, getBulkArtisanHeroImages } = await import('@/lib/supabase/yuhinkai');
+    const { getArtistsForDirectory, getArtistDirectoryFacets, getBulkElitePercentiles, getFilteredArtistsByCodes, getSchoolMemberCounts, getSchoolMemberCodes, getBulkArtisanHeroImages } = await import('@/lib/supabase/yuhinkai');
     const { generateArtisanSlug } = await import('@/lib/artisan/slugs');
 
     const params = request.nextUrl.searchParams;
@@ -73,6 +73,38 @@ export async function GET(request: NextRequest) {
       // Fetch listing data for this page's artists
       const codes = artists.map(a => a.code);
       listingData = await getListingDataForArtists(codes);
+    }
+
+    // For school codes, aggregate listing counts from member artisans
+    const schoolArtists = artists.filter(a => a.is_school_code && a.school);
+    if (schoolArtists.length > 0) {
+      const memberCodesMap = await getSchoolMemberCodes(
+        schoolArtists.map(a => ({ code: a.code, school: a.school!, entity_type: a.entity_type }))
+      );
+
+      // Collect all member codes we need listing data for
+      const allMemberCodes: string[] = [];
+      for (const [, members] of memberCodesMap) {
+        allMemberCodes.push(...members);
+      }
+
+      if (allMemberCodes.length > 0) {
+        const memberListingData = await getListingDataForArtists(allMemberCodes);
+
+        for (const [schoolCode, memberCodes] of memberCodesMap) {
+          const existing = listingData.get(schoolCode) || { count: 0 };
+          for (const memberCode of memberCodes) {
+            const memberData = memberListingData.get(memberCode);
+            if (memberData) {
+              existing.count += memberData.count;
+              if (!existing.firstId && memberData.firstId) {
+                existing.firstId = memberData.firstId;
+              }
+            }
+          }
+          listingData.set(schoolCode, existing);
+        }
+      }
     }
 
     const facets = await getArtistDirectoryFacets(type);

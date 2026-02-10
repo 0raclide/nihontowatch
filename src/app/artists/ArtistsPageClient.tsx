@@ -479,7 +479,7 @@ function ArtistCard({ artist }: { artist: ArtistWithSlug }) {
   if (isSchool) {
     subtitleParts.push('School attribution');
     if (artist.member_count && artist.member_count > 0) {
-      subtitleParts.push(`${artist.member_count} known smiths`);
+      subtitleParts.push(`${artist.member_count} known ${artist.entity_type === 'tosogu' ? 'makers' : 'smiths'}`);
     }
     if (artist.province) subtitleParts.push(artist.province);
   }

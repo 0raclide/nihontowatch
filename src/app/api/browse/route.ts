@@ -357,8 +357,36 @@ export async function GET(request: NextRequest) {
     }
 
     // Artisan code filter (substring match for admin research)
+    // For school codes (NS-*), expand to include all member artisan codes
     if (params.artisanCode) {
-      query = query.ilike('artisan_id', `%${params.artisanCode}%`);
+      let expanded = false;
+      if (params.artisanCode.startsWith('NS-')) {
+        try {
+          const { getSmithEntity, getTosoguMaker, getSchoolMemberCodes } = await import('@/lib/supabase/yuhinkai');
+          const smith = await getSmithEntity(params.artisanCode);
+          const tosogu = !smith ? await getTosoguMaker(params.artisanCode) : null;
+          const entity = smith || tosogu;
+          if (entity?.is_school_code && entity?.school) {
+            const entityType = smith ? 'smith' as const : 'tosogu' as const;
+            const memberCodesMap = await getSchoolMemberCodes([{
+              code: params.artisanCode,
+              school: entity.school,
+              entity_type: entityType,
+            }]);
+            const memberCodes = memberCodesMap.get(params.artisanCode) || [];
+            if (memberCodes.length > 0) {
+              const allCodes = [params.artisanCode, ...memberCodes];
+              query = query.in('artisan_id' as string, allCodes);
+              expanded = true;
+            }
+          }
+        } catch {
+          // Fall through to default ilike filter
+        }
+      }
+      if (!expanded) {
+        query = query.ilike('artisan_id', `%${params.artisanCode}%`);
+      }
     }
 
     // Admin filter: Missing setsumei - Juyo/Tokuju items without OCR setsumei
