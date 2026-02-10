@@ -28,15 +28,22 @@ export function ArtisanListings({ code, artisanName, initialListings, status = '
   const router = useRouter();
 
   // Sync local state when a listing is refreshed in QuickView (e.g. after artisan fix)
+  // If the listing's artisan_id changed away from this artist, remove it from the grid
   useEffect(() => {
     const handler = (e: Event) => {
       const listing = (e as CustomEvent).detail as Listing;
       if (!listing?.id) return;
-      setListings(prev => prev.map(l => l.id === listing.id ? listing : l));
+      setListings(prev => {
+        if (listing.artisan_id !== code) {
+          // Artisan changed — remove from this artist's listing grid
+          return prev.filter(l => l.id !== listing.id);
+        }
+        return prev.map(l => l.id === listing.id ? listing : l);
+      });
     };
     window.addEventListener('listing-refreshed', handler);
     return () => window.removeEventListener('listing-refreshed', handler);
-  }, []);
+  }, [code]);
 
   useEffect(() => {
     // Skip fetch if we already have data from parent
