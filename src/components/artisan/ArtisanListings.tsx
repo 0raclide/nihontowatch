@@ -27,6 +27,17 @@ export function ArtisanListings({ code, artisanName, initialListings, status = '
   const quickView = useQuickViewOptional();
   const router = useRouter();
 
+  // Sync local state when a listing is refreshed in QuickView (e.g. after artisan fix)
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const listing = (e as CustomEvent).detail as Listing;
+      if (!listing?.id) return;
+      setListings(prev => prev.map(l => l.id === listing.id ? listing : l));
+    };
+    window.addEventListener('listing-refreshed', handler);
+    return () => window.removeEventListener('listing-refreshed', handler);
+  }, []);
+
   useEffect(() => {
     // Skip fetch if we already have data from parent
     if (initialListings) return;

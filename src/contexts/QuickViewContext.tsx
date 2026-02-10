@@ -287,6 +287,9 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
         newListings[currentIndex] = refreshedListing;
         setListingsState(newListings);
       }
+
+      // Notify any listeners (e.g. ArtisanListings) that a listing was refreshed
+      window.dispatchEvent(new CustomEvent('listing-refreshed', { detail: refreshedListing }));
     } catch (error) {
       console.error('Error refreshing listing:', error);
     }
