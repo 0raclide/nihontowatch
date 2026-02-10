@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { ArtistDirectoryEntry, DirectoryFacets } from '@/lib/supabase/yuhinkai';
 import { getArtisanDisplayParts } from '@/lib/artisan/displayName';
+import { eraToBroadPeriod } from '@/lib/artisan/eraPeriods';
 
 // =============================================================================
 // TYPES
@@ -271,7 +272,7 @@ export function ArtistsPageClient({
             onChange={(v) => handleFilterChange('province', v || '')}
           />
           <FilterSelect
-            label="Era"
+            label="Period"
             value={filters.era || ''}
             options={facets.eras}
             onChange={(v) => handleFilterChange('era', v || '')}
@@ -527,11 +528,11 @@ function ArtistCard({ artist }: { artist: ArtistWithSlug }) {
           </div>
         </div>
 
-        {/* Row 2: School / Era / Province (or school attribution subtitle) */}
+        {/* Row 2: School / Period / Province (or school attribution subtitle) */}
         <div className="mt-1.5 text-[11px] text-ink/45 truncate">
           {isSchool
             ? subtitleParts.join(' \u00b7 ')
-            : [artist.school, artist.era, artist.province].filter(Boolean).join(' \u00b7 ') || 'Unknown'}
+            : [artist.school, eraToBroadPeriod(artist.era) || artist.era, artist.province].filter(Boolean).join(' \u00b7 ') || 'Unknown'}
         </div>
 
         {/* Row 3: Cert counts */}

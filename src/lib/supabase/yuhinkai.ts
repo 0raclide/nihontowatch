@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { eraToBroadPeriod, PERIOD_ORDER, BROAD_PERIODS } from '@/lib/artisan/eraPeriods';
 
 /**
  * Supabase client for Yuhinkai database (artist profiles, smith entities, etc.)
@@ -474,6 +475,35 @@ export interface DirectoryFacets {
 }
 
 /**
+ * Resolve a broad period name (e.g. "Muromachi") to the list of specific era
+ * strings in the database that map to it. Fetches all distinct eras from the
+ * given entity table and filters through eraToBroadPeriod().
+ */
+async function getErasForBroadPeriod(
+  broadPeriod: string,
+  table: 'smith_entities' | 'tosogu_makers'
+): Promise<string[]> {
+  const { data } = await yuhinkaiClient
+    .from(table)
+    .select('era')
+    .gt('total_items', 0)
+    .not('era', 'is', null);
+
+  if (!data) return [];
+
+  // Collect unique era strings that map to this broad period
+  const matching = new Set<string>();
+  for (const row of data) {
+    const era = row.era as string;
+    if (eraToBroadPeriod(era) === broadPeriod) {
+      matching.add(era);
+    }
+  }
+
+  return [...matching];
+}
+
+/**
  * Fetch paginated artisan list for the directory page.
  * Queries either smith_entities or tosogu_makers based on the type filter.
  */
@@ -507,7 +537,18 @@ export async function getArtistsForDirectory(
   if (notable) query = query.gt('total_items', 0);
   if (school) query = query.eq('school', school);
   if (province) query = query.eq('province', province);
-  if (era) query = query.eq('era', era);
+
+  // Era filter: resolve broad period name to matching specific era strings
+  if (era) {
+    const matchingEras = await getErasForBroadPeriod(era, table);
+    if (matchingEras.length > 0) {
+      query = query.in('era', matchingEras);
+    } else {
+      // No eras match this broad period — return empty
+      return { artists: [], total: 0 };
+    }
+  }
+
   if (q) {
     query = query.or(`name_romaji.ilike.%${q}%,name_kanji.ilike.%${q}%,${idCol}.ilike.%${q}%,school.ilike.%${q}%,province.ilike.%${q}%,name_search_text.ilike.%${q}%`);
   }
@@ -564,6 +605,9 @@ export async function getFilteredArtistsByCodes(
   const BATCH_SIZE = 200;
   const results: ArtistDirectoryEntry[] = [];
 
+  // Pre-resolve broad period → specific eras once (reused across batches)
+  let resolvedEras: string[] | null = null;
+
   for (let i = 0; i < codes.length; i += BATCH_SIZE) {
     const batch = codes.slice(i, i + BATCH_SIZE);
     let query = yuhinkaiClient
@@ -574,7 +618,19 @@ export async function getFilteredArtistsByCodes(
     if (filters.notable !== false) query = query.gt('total_items', 0);
     if (filters.school) query = query.eq('school', filters.school);
     if (filters.province) query = query.eq('province', filters.province);
-    if (filters.era) query = query.eq('era', filters.era);
+
+    // Era filter: resolve broad period name to matching specific era strings
+    if (filters.era) {
+      if (!resolvedEras) {
+        resolvedEras = await getErasForBroadPeriod(filters.era, table);
+      }
+      if (resolvedEras.length > 0) {
+        query = query.in('era', resolvedEras);
+      } else {
+        continue; // No matching eras for this period — skip batch
+      }
+    }
+
     if (filters.q) {
       query = query.or(`name_romaji.ilike.%${filters.q}%,name_kanji.ilike.%${filters.q}%,${idCol}.ilike.%${filters.q}%,school.ilike.%${filters.q}%,province.ilike.%${filters.q}%,name_search_text.ilike.%${filters.q}%`);
     }
@@ -642,10 +698,14 @@ export async function getArtistDirectoryFacets(type: 'smith' | 'tosogu'): Promis
     provinceMap.set(p, (provinceMap.get(p) || 0) + 1);
   }
 
+  // Group specific eras into broad historical periods
   const eraMap = new Map<string, number>();
   for (const row of eras || []) {
     const e = row.era as string;
-    eraMap.set(e, (eraMap.get(e) || 0) + 1);
+    const broad = eraToBroadPeriod(e);
+    if (broad) {
+      eraMap.set(broad, (eraMap.get(broad) || 0) + 1);
+    }
   }
 
   const toSorted = (map: Map<string, number>) =>
@@ -653,10 +713,15 @@ export async function getArtistDirectoryFacets(type: 'smith' | 'tosogu'): Promis
       .map(([value, count]) => ({ value, count }))
       .sort((a, b) => b.count - a.count);
 
+  // Sort eras chronologically instead of by count
+  const eraSorted = Array.from(eraMap.entries())
+    .map(([value, count]) => ({ value, count }))
+    .sort((a, b) => (PERIOD_ORDER[a.value] ?? 99) - (PERIOD_ORDER[b.value] ?? 99));
+
   return {
     schools: toSorted(schoolMap),
     provinces: toSorted(provinceMap),
-    eras: toSorted(eraMap),
+    eras: eraSorted,
     totals: {
       smiths: smithCount || 0,
       tosogu: tosoguCount || 0,
