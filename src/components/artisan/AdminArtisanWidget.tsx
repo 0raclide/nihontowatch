@@ -99,6 +99,40 @@ export function AdminArtisanWidget({ listing, onArtisanChanged }: AdminArtisanWi
     return () => clearTimeout(debounceTimeout);
   }, [searchQuery, searchType]);
 
+  // Handle setting artisan as UNKNOWN (for later refinement)
+  const handleSetUnknown = async () => {
+    if (fixing) return;
+
+    setFixing(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`/api/listing/${listing.id}/fix-artisan`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          artisan_id: 'UNKNOWN',
+          confidence: 'LOW',
+        }),
+      });
+
+      if (response.ok) {
+        setSuccessMessage('Marked as UNKNOWN');
+        setSearchQuery('');
+        setSearchResults([]);
+        onArtisanChanged?.();
+        setTimeout(() => setSuccessMessage(null), 4000);
+      } else {
+        const data = await response.json();
+        setError(data.error || 'Failed to mark as unknown');
+      }
+    } catch {
+      setError('Failed to mark as unknown');
+    } finally {
+      setFixing(false);
+    }
+  };
+
   // Handle selecting a search result
   const handleSelectArtisan = async (result: ArtisanSearchResult) => {
     if (fixing) return;
@@ -252,10 +286,9 @@ export function AdminArtisanWidget({ listing, onArtisanChanged }: AdminArtisanWi
                       <span className="text-muted ml-1">({result.generation})</span>
                     )}
                   </div>
-                  {result.school && (
+                  {(result.school || result.province || result.era) && (
                     <div className="text-[11px] text-muted mt-0.5">
-                      {result.school}
-                      {result.province && ` · ${result.province}`}
+                      {[result.school, result.province, result.era].filter(Boolean).join(' · ')}
                     </div>
                   )}
                   {(result.juyo_count > 0 || result.tokuju_count > 0) && (
@@ -276,6 +309,27 @@ export function AdminArtisanWidget({ listing, onArtisanChanged }: AdminArtisanWi
               No artisans found for &quot;{searchQuery}&quot;
             </p>
           )}
+
+          {/* UNKNOWN option — always visible at bottom */}
+          <div className="pt-3 mt-2 border-t border-border/50">
+            <button
+              onClick={handleSetUnknown}
+              disabled={fixing}
+              className={`w-full text-left p-2.5 rounded-lg border border-dashed border-muted/40 hover:border-gold/50 hover:bg-gold/5 transition-colors ${
+                fixing ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-[12px] font-medium text-muted">?</span>
+                <span className="text-[12px] text-muted">
+                  Mark as <span className="font-mono font-medium">UNKNOWN</span>
+                </span>
+              </div>
+              <p className="text-[10px] text-muted/70 mt-0.5 ml-5">
+                Flag for later identification
+              </p>
+            </button>
+          </div>
 
         </div>
       )}

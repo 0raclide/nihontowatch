@@ -131,6 +131,46 @@ export function ArtisanTooltip({
     return () => clearTimeout(debounceTimeout);
   }, [searchQuery]);
 
+  // Handle setting artisan as UNKNOWN (for later refinement)
+  const handleSetUnknown = async () => {
+    if (fixing) return;
+
+    setFixing(true);
+    try {
+      const response = await fetch(`/api/listing/${listingId}/fix-artisan`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          artisan_id: 'UNKNOWN',
+          confidence: 'LOW',
+        }),
+      });
+
+      if (response.ok) {
+        setArtisanId('UNKNOWN');
+        setConfidence('LOW');
+        setVerified('correct');
+        setFixSuccess(true);
+        setShowCorrectionSearch(false);
+        setSearchQuery('');
+        setSearchResults([]);
+        setArtisan(null);
+
+        onArtisanFixed?.('UNKNOWN');
+        onVerify?.('correct');
+
+        setTimeout(() => setFixSuccess(false), 3000);
+      } else {
+        const data = await response.json();
+        setSearchError(data.error || 'Failed to mark as unknown');
+      }
+    } catch {
+      setSearchError('Failed to mark as unknown');
+    } finally {
+      setFixing(false);
+    }
+  };
+
   // Handle selecting a search result to fix the artisan
   const handleSelectArtisan = async (result: ArtisanSearchResult) => {
     if (fixing) return;
@@ -694,10 +734,9 @@ export function ArtisanTooltip({
                                 <span className="text-muted ml-1">({result.generation})</span>
                               )}
                             </div>
-                            {result.school && (
+                            {(result.school || result.province || result.era) && (
                               <div className="text-[10px] text-muted mt-0.5">
-                                {result.school}
-                                {result.province && ` · ${result.province}`}
+                                {[result.school, result.province, result.era].filter(Boolean).join(' · ')}
                               </div>
                             )}
                             {(result.juyo_count > 0 || result.tokuju_count > 0) && (
@@ -718,6 +757,27 @@ export function ArtisanTooltip({
                         No artisans found for &quot;{searchQuery}&quot;
                       </p>
                     )}
+
+                    {/* UNKNOWN option */}
+                    <div className="pt-2 mt-2 border-t border-border/50">
+                      <button
+                        onClick={handleSetUnknown}
+                        disabled={fixing}
+                        className={`w-full text-left p-2 rounded border border-dashed border-muted/40 hover:border-gold/50 hover:bg-gold/5 transition-colors ${
+                          fixing ? 'opacity-50 cursor-not-allowed' : ''
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-[11px] font-medium text-muted">?</span>
+                          <span className="text-[11px] text-muted">
+                            Mark as <span className="font-mono font-medium">UNKNOWN</span>
+                          </span>
+                        </div>
+                        <p className="text-[9px] text-muted/70 mt-0.5 ml-5">
+                          Flag for later identification
+                        </p>
+                      </button>
+                    </div>
 
                     {/* Cancel button */}
                     <button
@@ -807,10 +867,9 @@ export function ArtisanTooltip({
                                 <span className="text-muted ml-1">({result.generation})</span>
                               )}
                             </div>
-                            {result.school && (
+                            {(result.school || result.province || result.era) && (
                               <div className="text-[10px] text-muted mt-0.5">
-                                {result.school}
-                                {result.province && ` · ${result.province}`}
+                                {[result.school, result.province, result.era].filter(Boolean).join(' · ')}
                               </div>
                             )}
                             {(result.juyo_count > 0 || result.tokuju_count > 0) && (
@@ -830,6 +889,27 @@ export function ArtisanTooltip({
                         No artisans found for &quot;{searchQuery}&quot;
                       </p>
                     )}
+
+                    {/* UNKNOWN option */}
+                    <div className="pt-2 mt-2 border-t border-border/50">
+                      <button
+                        onClick={handleSetUnknown}
+                        disabled={fixing}
+                        className={`w-full text-left p-2 rounded border border-dashed border-muted/40 hover:border-gold/50 hover:bg-gold/5 transition-colors ${
+                          fixing ? 'opacity-50 cursor-not-allowed' : ''
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-[11px] font-medium text-muted">?</span>
+                          <span className="text-[11px] text-muted">
+                            Mark as <span className="font-mono font-medium">UNKNOWN</span>
+                          </span>
+                        </div>
+                        <p className="text-[9px] text-muted/70 mt-0.5 ml-5">
+                          Flag for later identification
+                        </p>
+                      </button>
+                    </div>
                   </div>
                 )}
               </>
