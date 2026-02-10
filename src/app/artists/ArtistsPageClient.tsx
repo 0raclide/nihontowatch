@@ -195,12 +195,9 @@ export function ArtistsPageClient({
           Artist Directory
         </h1>
         <p className="mt-2 text-sm text-ink/50 max-w-2xl">
-          {facets.totals.smiths.toLocaleString()} nihonto and {facets.totals.tosogu.toLocaleString()} tosogu artists, ranked by certified works.
+          {(facets.totals.smiths + facets.totals.tosogu).toLocaleString()} artisans across {facets.schools.length.toLocaleString()}+ schools — ranked by certified works.
         </p>
       </div>
-
-      {/* Stats Bar */}
-      <StatsBar facets={facets} pagination={pagination} filters={filters} />
 
       {/* Filters */}
       <div className="mt-6 space-y-4">
@@ -379,32 +376,6 @@ export function ArtistsPageClient({
 // SUB-COMPONENTS
 // =============================================================================
 
-function StatsBar({
-  facets,
-  pagination,
-  filters,
-}: {
-  facets: DirectoryFacets;
-  pagination: Pagination;
-  filters: Filters;
-}) {
-  const items = [
-    { label: filters.type === 'smith' ? 'Nihonto' : 'Tosogu', value: pagination.totalCount.toLocaleString() },
-    { label: 'Nihonto Total', value: facets.totals.smiths.toLocaleString() },
-    { label: 'Tosogu Total', value: facets.totals.tosogu.toLocaleString() },
-  ];
-
-  return (
-    <div className="flex flex-wrap gap-x-4 sm:gap-x-6 gap-y-2 py-3 px-4 bg-cream/50 border border-border">
-      {items.map((item) => (
-        <div key={item.label} className="flex items-baseline gap-1.5">
-          <span className="text-sm font-serif tabular-nums text-ink">{item.value}</span>
-          <span className="text-[10px] uppercase tracking-wider text-ink/40">{item.label}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
 
 function FilterSelect({
   label,
