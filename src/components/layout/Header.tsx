@@ -33,50 +33,65 @@ function HeaderContent() {
   const headerRef = useRef<HTMLElement>(null);
   const activity = useActivityOptional();
 
-  // ── Auto-hide header on scroll down, reveal on scroll up (desktop) ──
-  const [headerHidden, setHeaderHidden] = useState(false);
+  // ── Scroll-linked header: moves with scroll, snaps when idle ──
   const lastScrollY = useRef(0);
-  const scrollAccum = useRef(0);
+  const offsetRef = useRef(0);
+  const snapTimer = useRef<number | null>(null);
 
   useEffect(() => {
-    const DEAD_ZONE = 8;        // px — ignore micro-jitter
-    const TOP_ZONE = 120;       // always show near top of page
+    const TOP_ZONE = 100; // always show near top of page
 
     const onScroll = () => {
+      const header = headerRef.current;
+      if (!header) return;
+
       const y = window.scrollY;
       const delta = y - lastScrollY.current;
+      const h = header.offsetHeight;
 
-      // Always show near page top
+      // Always show near page top — ease back with transition
       if (y < TOP_ZONE) {
-        setHeaderHidden(false);
-        scrollAccum.current = 0;
+        if (offsetRef.current !== 0) {
+          offsetRef.current = 0;
+          header.style.transition = 'transform 0.3s ease-out';
+          header.style.transform = 'translateY(0)';
+        }
         lastScrollY.current = y;
         return;
       }
 
-      // Don't hide while user is interacting with the header (e.g. search focused)
-      if (headerRef.current?.contains(document.activeElement)) {
+      // Don't hide while search input (or other header element) is focused
+      if (header.contains(document.activeElement)) {
         lastScrollY.current = y;
         return;
       }
 
-      // Reset accumulator on direction change
-      if ((delta > 0 && scrollAccum.current < 0) || (delta < 0 && scrollAccum.current > 0)) {
-        scrollAccum.current = 0;
-      }
-      scrollAccum.current += delta;
+      // Move header pixel-by-pixel with scroll — no transition, feels physical
+      header.style.transition = 'none';
+      offsetRef.current = Math.max(-h, Math.min(0, offsetRef.current - delta));
+      header.style.transform = `translateY(${offsetRef.current}px)`;
 
-      if (scrollAccum.current > DEAD_ZONE) {
-        setHeaderHidden(true);
-      } else if (scrollAccum.current < -DEAD_ZONE) {
-        setHeaderHidden(false);
-      }
+      // When scrolling stops, snap to nearest state
+      if (snapTimer.current) clearTimeout(snapTimer.current);
+      snapTimer.current = window.setTimeout(() => {
+        header.style.transition = 'transform 0.25s ease-out';
+        if (offsetRef.current < -h / 2) {
+          offsetRef.current = -h;
+          header.style.transform = `translateY(${-h}px)`;
+        } else {
+          offsetRef.current = 0;
+          header.style.transform = 'translateY(0)';
+        }
+      }, 150);
 
       lastScrollY.current = y;
     };
 
     window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      if (snapTimer.current) clearTimeout(snapTimer.current);
+    };
   }, []);
 
   // Stable callback for closing login modal (prevents re-render loops)
@@ -130,9 +145,7 @@ function HeaderContent() {
       {/* Header hidden on mobile - branding moved to page header */}
       <header
         ref={headerRef}
-        className={`hidden lg:block sticky top-0 z-40 bg-cream transition-[transform,background-color] duration-300 ease-out ${
-          headerHidden ? '-translate-y-full' : 'translate-y-0'
-        }`}
+        className="hidden lg:block sticky top-0 z-40 bg-cream"
       >
         <div className="max-w-[1600px] mx-auto px-4 py-3 lg:px-6 lg:py-5">
           {/* Desktop Header */}
