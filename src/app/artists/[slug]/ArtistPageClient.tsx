@@ -404,14 +404,14 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
           </div>
 
           {/* Hero — Image + Identity as one cohesive unit */}
-          <div className={`flex flex-col ${heroImage ? 'sm:flex-row sm:items-start sm:gap-8' : ''}`}>
+          <div className={`flex ${heroImage ? 'flex-row items-start gap-4 sm:gap-8' : 'flex-col'}`}>
             {/* Catalog image — natural aspect ratio, sharp edges, museum plate */}
             {heroImage && (
-              <figure className="shrink-0 mb-5 sm:mb-0">
+              <figure className="shrink-0">
                 <button
                   type="button"
                   onClick={() => setLightboxOpen(true)}
-                  className="block w-[160px] sm:w-[220px] border border-border/20 shadow-sm cursor-zoom-in
+                  className="block w-[120px] sm:w-[220px] border border-border/20 shadow-sm cursor-zoom-in
                     hover:shadow-md hover:border-border/30 transition-all duration-200 bg-black/5"
                   aria-label="View full-size image"
                 >
@@ -419,11 +419,11 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
                   <img
                     src={heroImage.imageUrl}
                     alt={`${heroImage.imageType === 'oshigata' ? 'Oshigata' : 'Image'} — ${entity.name_romaji || entity.code}, ${COLLECTION_LABELS[heroImage.collection] || heroImage.collection}`}
-                    className="w-full h-auto object-contain max-h-[300px] sm:max-h-[340px]"
+                    className="w-full h-auto object-contain max-h-[260px] sm:max-h-[340px]"
                     loading="eager"
                   />
                 </button>
-                <figcaption className="mt-1.5 w-[160px] sm:w-[220px] text-center">
+                <figcaption className="mt-1.5 w-[120px] sm:w-[220px] text-center">
                   <div className="text-[10px] uppercase tracking-[0.15em] text-gold/50 font-medium">
                     {COLLECTION_LABELS[heroImage.collection] || heroImage.collection}
                   </div>
@@ -437,13 +437,13 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
 
             {/* Identity + Vitals */}
             <div className="flex-1 min-w-0">
-              <div className="w-10 h-[2px] bg-gold/50 mb-4" />
+              <div className="w-8 sm:w-10 h-[2px] bg-gold/50 mb-3 sm:mb-4" />
 
-              <h1 className="text-3xl sm:text-[2.5rem] font-serif font-light text-ink leading-[1.1] tracking-tight">
+              <h1 className="text-2xl sm:text-[2.5rem] font-serif font-light text-ink leading-[1.1] tracking-tight">
                 {(() => { const dp = getArtisanDisplayParts(entity.name_romaji, entity.school); return <>{dp.prefix && <>{dp.prefix} </>}{dp.name || entity.code}</>; })()}
               </h1>
               {entity.name_kanji && (
-                <p className="text-lg text-ink/35 font-serif font-light mt-1.5 tracking-[0.08em]">
+                <p className="text-base sm:text-lg text-ink/35 font-serif font-light mt-1 sm:mt-1.5 tracking-[0.08em]">
                   {entity.name_kanji}
                 </p>
               )}
@@ -456,7 +456,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
               )}
 
               {/* Metadata grid */}
-              <div className="mt-5 grid grid-cols-[auto_1fr] gap-x-4 sm:gap-x-6 gap-y-1.5 text-[13px] leading-snug">
+              <div className="mt-3 sm:mt-5 grid grid-cols-[auto_1fr] gap-x-3 sm:gap-x-6 gap-y-1 sm:gap-y-1.5 text-[12px] sm:text-[13px] leading-snug">
                 {entity.province && (
                   <>
                     <span className="text-ink/50">Province</span>
