@@ -223,9 +223,9 @@ export function ArtisanTooltip({
     }
   };
 
-  // Fetch artisan details when tooltip opens (skip if no artisan assigned)
+  // Fetch artisan details when tooltip opens (skip if no artisan assigned or UNKNOWN)
   const fetchArtisan = useCallback(async () => {
-    if (!artisanId || artisan || loading) return;
+    if (!artisanId || artisanId === 'UNKNOWN' || artisan || loading) return;
 
     setLoading(true);
     setError(null);
