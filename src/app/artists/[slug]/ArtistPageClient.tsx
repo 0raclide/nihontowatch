@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect, useCallback, type ReactNode } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import type { Listing } from '@/types';
@@ -328,24 +328,18 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
   const listingsExist = listings !== null && listings.length > 0;
   const soldListingsExist = soldListings !== null && soldListings.length > 0;
 
-  // Scroll to hash anchor after dynamic content loads (e.g. #listings from artist directory)
-  // Uses requestAnimationFrame + setTimeout to ensure DOM has committed after React render
+  // Scroll to hash anchor on mount (e.g. #listings from artist directory "on the market" link)
+  // The anchor element is always in the DOM (skeleton shown while loading), so we can scroll immediately.
+  const hasScrolledRef = useRef(false);
   useEffect(() => {
+    if (hasScrolledRef.current) return;
     const hash = window.location.hash.replace('#', '');
-    if (!hash || listings === null) return;
-    const raf = requestAnimationFrame(() => {
-      const el = document.getElementById(hash);
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth' });
-      } else {
-        // Fallback: element may not be painted yet, retry after a frame
-        setTimeout(() => {
-          document.getElementById(hash)?.scrollIntoView({ behavior: 'smooth' });
-        }, 200);
-      }
+    if (!hash) return;
+    hasScrolledRef.current = true;
+    requestAnimationFrame(() => {
+      document.getElementById(hash)?.scrollIntoView({ behavior: 'smooth' });
     });
-    return () => cancelAnimationFrame(raf);
-  }, [listings]);
+  }, []);
 
   const handleShare = useCallback(() => {
     const url = window.location.href;
@@ -769,13 +763,25 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
         {/* ═══════════════════════════════════════════════════════════════════
             CURRENTLY AVAILABLE — Live listings
         ═══════════════════════════════════════════════════════════════════ */}
-        {listingsExist && (
-          <>
-            <section>
-              <SectionHeader id="listings" title="Currently Available" className="mb-6" />
+        {(listings === null || listingsExist) && (
+          <section>
+            <SectionHeader id="listings" title="Currently Available" className="mb-6" />
+            {listings === null ? (
+              <div className="space-y-4">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="animate-pulse flex gap-4">
+                    <div className="w-20 h-20 bg-border/20 rounded" />
+                    <div className="flex-1 space-y-2 py-2">
+                      <div className="h-3 bg-border/20 rounded w-3/4" />
+                      <div className="h-3 bg-border/20 rounded w-1/2" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
               <ArtisanListings code={entity.code} artisanName={entity.name_romaji} initialListings={listings} status="available" />
-            </section>
-          </>
+            )}
+          </section>
         )}
 
         {/* ═══════════════════════════════════════════════════════════════════
