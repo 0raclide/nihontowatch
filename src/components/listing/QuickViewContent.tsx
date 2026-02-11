@@ -71,8 +71,6 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
 
   const handleToggleHidden = useCallback(async () => {
     const newHidden = !listing.admin_hidden;
-    const action = newHidden ? 'hide' : 'unhide';
-    if (!window.confirm(`Are you sure you want to ${action} this listing?`)) return;
 
     try {
       const res = await fetch(`/api/listing/${listing.id}/hide`, {
