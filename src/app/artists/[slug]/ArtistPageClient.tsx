@@ -328,6 +328,17 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
   const listingsExist = listings !== null && listings.length > 0;
   const soldListingsExist = soldListings !== null && soldListings.length > 0;
 
+  // Scroll to hash anchor after dynamic content loads (e.g. #listings from artist directory)
+  useEffect(() => {
+    const hash = window.location.hash.replace('#', '');
+    if (!hash || listings === null) return;
+    // Small delay to let the DOM render after state update
+    const timer = setTimeout(() => {
+      document.getElementById(hash)?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [listings]);
+
   const handleShare = useCallback(() => {
     const url = window.location.href;
     if (navigator.share) {
