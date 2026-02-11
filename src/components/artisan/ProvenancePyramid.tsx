@@ -21,11 +21,12 @@ import {
  */
 
 const TIER_COLORS: Record<TierKey, string> = {
-  imperial: 'var(--prov-imperial)',
-  premier:  'var(--prov-premier)',
-  major:    'var(--prov-major)',
-  mid:      'var(--prov-mid)',
-  minor:    'var(--prov-minor)',
+  imperial:    'var(--prov-imperial)',
+  premier:     'var(--prov-premier)',
+  major:       'var(--prov-major)',
+  mid:         'var(--prov-mid)',
+  institution: 'var(--prov-institution)',
+  minor:       'var(--prov-minor)',
 };
 
 interface ProvenancePyramidProps {
@@ -55,6 +56,9 @@ export function ProvenancePyramid({ analysis }: ProvenancePyramidProps) {
         const tierData = analysis.tiers.find(t => t.key === tier.key);
         const hasDetail = active && tierData && tierData.collectors.length > 0;
 
+        const labelColor = active ? 'text-ink' : 'text-ink/20';
+        const countColor = active ? 'text-ink' : 'text-ink/15';
+
         return (
           <div
             key={tier.key}
@@ -71,17 +75,15 @@ export function ProvenancePyramid({ analysis }: ProvenancePyramidProps) {
               className={`w-full text-left py-2.5 ${hasDetail ? 'cursor-pointer' : 'cursor-default'}`}
             >
               <div className="flex items-baseline justify-between mb-1">
-                <span className={`text-sm ${active ? 'text-ink' : 'text-ink/25'}`}>
+                <span className={`text-sm ${labelColor}`}>
                   {hasDetail && (
-                    <span className="text-ink/30 text-[10px] mr-1.5 inline-block w-2">
+                    <span className="text-[10px] mr-1.5 inline-block w-2 text-ink/30">
                       {isExpanded ? '▾' : '▸'}
                     </span>
                   )}
                   {tier.label}
                 </span>
-                <span className={`tabular-nums text-sm font-light ${
-                  active ? 'text-ink' : 'text-ink/20'
-                }`}>
+                <span className={`tabular-nums text-sm font-light ${countColor}`}>
                   {active ? count : '—'}
                 </span>
               </div>
@@ -105,12 +107,13 @@ export function ProvenancePyramid({ analysis }: ProvenancePyramidProps) {
                 {tierData.collectors.map(c => (
                   <div key={c.name} className="py-1.5">
                     <div className="flex items-baseline justify-between">
-                      <span className="text-sm text-ink/60 font-light">{c.name}</span>
-                      <span className="text-xs text-ink/25 tabular-nums ml-4 shrink-0">
+                      <span className="text-sm font-light text-ink/60">
+                        {c.name}
+                      </span>
+                      <span className="text-xs tabular-nums ml-4 shrink-0 text-ink/25">
                         {c.works > 1 ? `${c.works} works` : '1 work'}
                       </span>
                     </div>
-                    {/* Koku metadata line — the killer detail */}
                     {(c.meta.koku || c.meta.domain || c.meta.type) && (
                       <div className="text-[11px] text-ink/30 mt-0.5 tracking-wide">
                         {[
@@ -120,7 +123,6 @@ export function ProvenancePyramid({ analysis }: ProvenancePyramidProps) {
                         ].filter(Boolean).join('  ·  ')}
                       </div>
                     )}
-                    {/* Expanded family members */}
                     {c.isGroup && c.children && (
                       <div className="pl-4 mt-1">
                         {c.children.map(child => (

@@ -104,6 +104,7 @@ interface BrowseResponse {
   };
   lastUpdated: string | null;
   isUrlSearch?: boolean;
+  isAdmin?: boolean;
 }
 
 // Format relative time for freshness display
@@ -736,7 +737,7 @@ function HomeContent() {
               exchangeRates={exchangeRates}
               onLoadMore={loadMore}
               searchId={currentSearchIdRef.current}
-              isAdmin={authIsAdmin}
+              isAdmin={authIsAdmin || data?.isAdmin || false}
               mobileView={mobileView}
               isUrlSearch={data?.isUrlSearch || false}
               searchQuery={searchQuery}

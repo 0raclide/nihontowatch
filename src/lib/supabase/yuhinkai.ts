@@ -1464,11 +1464,18 @@ export async function getPublishedCatalogueEntries(
     catalogByUuid.get(cr.object_uuid)!.push({ collection: cr.collection, volume: cr.volume, item_number: cr.item_number });
   }
 
+  // Helper: user-uploaded images (records/ prefix) live on Yuhinkai storage,
+  // traditional catalog images (Tokuju/6_18_*.jpg) live on the separate image storage project
+  const resolveImageUrl = (storagePath: string) => {
+    const base = storagePath.startsWith('records/') ? YUHINKAI_STORAGE_BASE : IMAGE_STORAGE_BASE;
+    return `${base}/storage/v1/object/public/images/${storagePath}`;
+  };
+
   const imagesByUuid = new Map<string, CatalogueImage[]>();
   for (const si of storedImages) {
     if (!imagesByUuid.has(si.object_uuid)) imagesByUuid.set(si.object_uuid, []);
     imagesByUuid.get(si.object_uuid)!.push({
-      url: `${IMAGE_STORAGE_BASE}/storage/v1/object/public/images/${si.storage_path}`,
+      url: resolveImageUrl(si.storage_path),
       type: si.image_type as CatalogueImage['type'],
       category: 'catalog',
       width: si.width ?? undefined,
@@ -1484,7 +1491,7 @@ export async function getPublishedCatalogueEntries(
         if (img) {
           if (!imagesByUuid.has(lr.object_uuid)) imagesByUuid.set(lr.object_uuid, []);
           imagesByUuid.get(lr.object_uuid)!.push({
-            url: `${IMAGE_STORAGE_BASE}/storage/v1/object/public/images/${img.storage_path}`,
+            url: resolveImageUrl(img.storage_path),
             type: img.image_type as CatalogueImage['type'],
             category: img.category,
             width: img.width ?? undefined,
