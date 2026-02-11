@@ -1,7 +1,7 @@
-# Session: Choshuya GJ Discovery, Spec Hallucination & Banner Fix
+# Session: Choshuya GJ Discovery, Spec Hallucination, Banner & Cert Fixes
 
 **Date:** 2026-02-12
-**Repo:** Oshi-scrapper (3 commits pushed to main)
+**Repo:** Oshi-scrapper (5 commits pushed to main)
 
 ---
 
@@ -9,7 +9,7 @@
 
 A Juyo Rai Kunizane katana at 8.5M yen (`r8/002/02_kunizane.php`) was missing from the database. Investigation revealed systemic issues with the Choshuya GJ (Ginza Journal) scraping pipeline.
 
-## Three Issues Found & Fixed
+## Four Issues Found & Fixed
 
 ### 1. Missing GJ Issues — Discovery Gap (feat: `14249ef`)
 
@@ -71,6 +71,32 @@ Files: `utils/llm_extractor.py`, `prompts/base_extraction.md`, and 13 dealer-spe
 **Fix:**
 - Added `'banner'` to `_is_placeholder_image()` patterns in `scrapers/base.py`
 - Cleaned up all 6 database records (removed banner, product images preserved)
+
+---
+
+### 4. Missing Certifications — Conservative Extractor Gap (fix: `316f99e`)
+
+**Problem:** 89/142 GJ listings (63%) had no certification in the database. Investigation revealed the conservative cert extractor (`classify_cert_conservative()`) rejected real certs because Choshuya GJ pages use non-standard formats:
+- Japanese: `特別保存 (則重）` — no `刀剣` suffix (extractor required it)
+- English: `Tokubetsu-Hozon (Norishige)` — hyphenated form (not matched by any pattern)
+
+**Root cause:** The conservative extractor was designed for HTML pages with navigation noise. Its patterns require full cert names like `特別保存刀剣` or structured markers like `鑑定書:`. Choshuya GJ pages use abbreviated Japanese forms and English hyphenated names.
+
+**Fix:**
+- Added English hyphenated patterns: `Tokubetsu-Hozon`, `Tokubetsu-Juyo`
+- Added English cert+price patterns: `Juyo ¥X`, `Hozon ¥X`
+- Added Japanese cert without suffix + contextual markers (parenthetical/price/dash)
+- Fixed `CERT_PATTERNS` to allow hyphens in title extraction (`tokubetsu[\s-]*hozon`)
+- Placed new patterns AFTER structured patterns to prevent priority conflicts with Choshuya catalog pages that have translation errors (e.g., `保存刀装具鑑定書` + `Tokubetsu-hozon` mismatch)
+- 19 new tests + 3 false-positive guard tests
+- Updated 62 GJ listings + 1 miscategorized listing (32609: Juyo→TokuHozon)
+
+**Result:**
+| Metric | Before | After |
+|--------|--------|-------|
+| No-cert GJ listings | 89/142 (63%) | 27/142 (19%) |
+| Fixable items corrected | 0 | 62 |
+| Remaining no-cert | — | 27 (13 koshirae + 14 uncertified) |
 
 ---
 
