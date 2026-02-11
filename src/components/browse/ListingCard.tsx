@@ -8,7 +8,7 @@ import { ArtisanTooltip } from '@/components/artisan/ArtisanTooltip';
 import { useActivityOptional } from '@/components/activity/ActivityProvider';
 import { useQuickViewOptional } from '@/contexts/QuickViewContext';
 import { useViewportTrackingOptional } from '@/lib/viewport';
-import { getAllImages, getCachedValidation, isRenderFailed, setRenderFailed, dealerDoesNotPublishImages } from '@/lib/images';
+import { getAllImages, getCachedValidation, isRenderFailed, setRenderFailed, dealerDoesNotPublishImages, getPlaceholderKanji } from '@/lib/images';
 import { shouldShowNewBadge } from '@/lib/newListing';
 import { trackSearchClick } from '@/lib/tracking/searchTracker';
 import { isTrialModeActive } from '@/types/subscription';
@@ -622,20 +622,22 @@ export const ListingCard = memo(function ListingCard({
 
 
   // Shared image element
+  const placeholderKanji = getPlaceholderKanji(listing.item_type);
+
   const imageElement = dealerDoesNotPublishImages(listing.dealers?.domain) ? (
-    <div className="absolute inset-0 flex flex-col items-center justify-center bg-linen text-center px-4">
-      <svg className="w-10 h-10 text-muted/40 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-      </svg>
-      <span className="text-[10px] text-muted/60 font-medium leading-tight">
-        This merchant does not<br />publish images
+    <div className="absolute inset-0 flex flex-col items-center justify-center bg-linen text-center">
+      <span className="font-serif text-[72px] sm:text-[80px] leading-none text-muted/10 select-none" aria-hidden="true">
+        {placeholderKanji}
+      </span>
+      <span className="text-[9px] text-muted/40 tracking-widest uppercase mt-3">
+        Photos not published
       </span>
     </div>
   ) : (hasError || !imageUrl) ? (
     <div className="absolute inset-0 flex items-center justify-center bg-linen">
-      <svg className="w-12 h-12 text-muted/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-      </svg>
+      <span className="font-serif text-[72px] sm:text-[80px] leading-none text-muted/10 select-none" aria-hidden="true">
+        {placeholderKanji}
+      </span>
     </div>
   ) : isNearViewport ? (
     <Image

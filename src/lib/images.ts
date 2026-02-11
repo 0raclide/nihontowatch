@@ -18,6 +18,67 @@
 import { IMAGE_QUALITY, DEALERS_WITHOUT_IMAGES } from './constants';
 
 // =============================================================================
+// NO-IMAGE KANJI PLACEHOLDERS
+// =============================================================================
+
+/**
+ * Item type → kanji mapping for no-image placeholders.
+ * Displayed as a large, faded watermark when a listing has no photos.
+ */
+const ITEM_TYPE_KANJI: Record<string, string> = {
+  // Swords
+  katana: '刀',
+  wakizashi: '脇差',
+  tanto: '短刀',
+  tachi: '太刀',
+  naginata: '薙刀',
+  yari: '槍',
+  ken: '剣',
+  kodachi: '小太刀',
+  daisho: '大小',
+  // Fittings
+  tsuba: '鍔',
+  'fuchi-kashira': '縁頭',
+  fuchi_kashira: '縁頭',
+  kozuka: '小柄',
+  kogai: '笄',
+  menuki: '目貫',
+  fuchi: '縁',
+  kashira: '頭',
+  futatokoro: '二所',
+  mitokoromono: '三所',
+  koshirae: '拵',
+  tosogu: '刀装具',
+  // Armor
+  armor: '甲冑',
+  kabuto: '兜',
+  helmet: '兜',
+};
+
+/** Normalization map for raw item_type values → standard keys */
+const KANJI_NORMALIZE: Record<string, string> = {
+  '刀': 'katana', '脇差': 'wakizashi', '短刀': 'tanto', '太刀': 'tachi',
+  '槍': 'yari', '薙刀': 'naginata', '鍔': 'tsuba', '小柄': 'kozuka',
+  '目貫': 'menuki', '甲冑': 'armor', '兜': 'kabuto', '拵': 'koshirae',
+  '拵え': 'koshirae', 'Katana': 'katana', 'Wakizashi': 'wakizashi',
+  'Tanto': 'tanto', 'Tachi': 'tachi', 'Tsuba': 'tsuba',
+};
+
+const DEFAULT_KANJI = '刀';
+
+/**
+ * Get the kanji character(s) for an item type, used as a no-image placeholder.
+ *
+ * @param itemType - Raw item_type from the listing (e.g., 'katana', '刀', 'tsuba')
+ * @returns Kanji string for display (e.g., '刀', '鍔', '甲冑')
+ */
+export function getPlaceholderKanji(itemType: string | null): string {
+  if (!itemType) return DEFAULT_KANJI;
+  const normalized = KANJI_NORMALIZE[itemType] || itemType.toLowerCase();
+  return ITEM_TYPE_KANJI[normalized] || ITEM_TYPE_KANJI[itemType.toLowerCase()] || DEFAULT_KANJI;
+}
+
+// =============================================================================
 // DIMENSION CACHE
 // =============================================================================
 
@@ -122,6 +183,59 @@ export function clearValidationCache(): void {
  */
 export function getValidationCacheSize(): number {
   return validationCache.size;
+}
+
+// =============================================================================
+// RENDER FAILURE CACHE
+// =============================================================================
+
+/**
+ * Tracks images that failed to render in the Next.js <Image> component.
+ *
+ * This is SEPARATE from the dimension validation cache because the failure
+ * modes are completely different:
+ * - Validation cache: "Is this image a legitimate product photo?" (dimension check via raw new Image())
+ * - Render failure: "Did Next.js image optimization fail?" (Vercel proxy timeout, optimization error)
+ *
+ * A transient Vercel optimizer failure should NOT prevent QuickView from
+ * showing an image that has valid dimensions. ListingCard reads from
+ * validationCache but writes only to renderFailedSet.
+ */
+const renderFailedSet = new Set<string>();
+
+/**
+ * Check if an image failed to render in a Next.js Image component.
+ * Checks both in-memory set and sessionStorage (survives hard reloads).
+ */
+export function isRenderFailed(url: string): boolean {
+  if (renderFailedSet.has(url)) return true;
+  try {
+    if (typeof window !== 'undefined' && sessionStorage.getItem(`nw:img:bad:${url}`)) {
+      renderFailedSet.add(url); // Promote to in-memory for faster subsequent checks
+      return true;
+    }
+  } catch { /* SSR or storage unavailable */ }
+  return false;
+}
+
+/**
+ * Mark an image as failed to render. Writes to both in-memory set
+ * and sessionStorage for persistence across SPA navigations.
+ */
+export function setRenderFailed(url: string): void {
+  renderFailedSet.add(url);
+  try {
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem(`nw:img:bad:${url}`, '1');
+    }
+  } catch { /* SSR or storage unavailable */ }
+}
+
+/**
+ * Clear the render failure cache (mainly for testing).
+ */
+export function clearRenderFailedCache(): void {
+  renderFailedSet.clear();
 }
 
 // =============================================================================
