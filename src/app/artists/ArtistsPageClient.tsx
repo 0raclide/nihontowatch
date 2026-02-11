@@ -67,6 +67,16 @@ export function ArtistsPageClient({
   const abortRef = useRef<AbortController | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Sync state when SSR props change from external navigation (e.g. header search)
+  // useState only reads initialValue on mount — subsequent prop changes need this effect.
+  useEffect(() => {
+    setArtists(initialArtists);
+    setPagination(initialPagination);
+    setFilters(initialFilters);
+    setFacets(initialFacets);
+    setSearchInput(initialFilters.q || '');
+  }, [initialArtists, initialPagination, initialFilters, initialFacets]);
+
   // Mobile drawer state (local — not via MobileUIContext)
   const [searchDrawerOpen, setSearchDrawerOpen] = useState(false);
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
