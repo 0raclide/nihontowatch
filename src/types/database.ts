@@ -459,6 +459,102 @@ export interface Database {
         };
         Update: Partial<Omit<Database['public']['Tables']['market_daily_snapshots']['Row'], 'id' | 'created_at'>>;
       };
+      // User collection items (personal collection cataloging)
+      user_collection_items: {
+        Row: {
+          id: string;
+          user_id: string;
+          source_listing_id: number | null;
+          item_type: string | null;
+          title: string | null;
+          artisan_id: string | null;
+          artisan_display_name: string | null;
+          cert_type: string | null;
+          cert_session: number | null;
+          cert_organization: string | null;
+          smith: string | null;
+          school: string | null;
+          province: string | null;
+          era: string | null;
+          mei_type: string | null;
+          nagasa_cm: number | null;
+          sori_cm: number | null;
+          motohaba_cm: number | null;
+          sakihaba_cm: number | null;
+          price_paid: number | null;
+          price_paid_currency: string | null;
+          current_value: number | null;
+          current_value_currency: string | null;
+          acquired_date: string | null;
+          acquired_from: string | null;
+          condition: string;
+          status: string;
+          notes: string | null;
+          images: string[];
+          catalog_reference: Record<string, unknown> | null;
+          is_public: boolean;
+          folder_id: string | null;
+          sort_order: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          source_listing_id?: number | null;
+          item_type?: string | null;
+          title?: string | null;
+          artisan_id?: string | null;
+          artisan_display_name?: string | null;
+          cert_type?: string | null;
+          cert_session?: number | null;
+          cert_organization?: string | null;
+          smith?: string | null;
+          school?: string | null;
+          province?: string | null;
+          era?: string | null;
+          mei_type?: string | null;
+          nagasa_cm?: number | null;
+          sori_cm?: number | null;
+          motohaba_cm?: number | null;
+          sakihaba_cm?: number | null;
+          price_paid?: number | null;
+          price_paid_currency?: string | null;
+          current_value?: number | null;
+          current_value_currency?: string | null;
+          acquired_date?: string | null;
+          acquired_from?: string | null;
+          condition?: string;
+          status?: string;
+          notes?: string | null;
+          images?: string[];
+          catalog_reference?: Record<string, unknown> | null;
+          is_public?: boolean;
+          folder_id?: string | null;
+          sort_order?: number;
+        };
+        Update: Partial<Database['public']['Tables']['user_collection_items']['Insert']>;
+      };
+      // User collection folders
+      user_collection_folders: {
+        Row: {
+          id: string;
+          user_id: string;
+          name: string;
+          description: string | null;
+          cover_image_url: string | null;
+          sort_order: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          name: string;
+          description?: string | null;
+          cover_image_url?: string | null;
+          sort_order?: number;
+        };
+        Update: Partial<Omit<Database['public']['Tables']['user_collection_folders']['Row'], 'id' | 'user_id' | 'created_at'>>;
+      };
     };
     Views: {
       // Materialized view for market statistics by item type

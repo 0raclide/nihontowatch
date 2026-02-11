@@ -105,13 +105,21 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { path, itemId } = await request.json();
-    if (!path || !itemId) {
-      return NextResponse.json({ error: 'path and itemId are required' }, { status: 400 });
+    const { imageUrl, itemId } = await request.json();
+    if (!imageUrl || !itemId) {
+      return NextResponse.json({ error: 'imageUrl and itemId are required' }, { status: 400 });
     }
 
-    // Verify path belongs to this user
-    if (!path.startsWith(`${user.id}/`)) {
+    // Extract storage path from public URL
+    // URL format: https://xxx.supabase.co/storage/v1/object/public/collection-images/{user_id}/{item_id}/{uuid}.ext
+    const bucketMarker = '/collection-images/';
+    const bucketIdx = imageUrl.indexOf(bucketMarker);
+    const storagePath = bucketIdx !== -1
+      ? imageUrl.slice(bucketIdx + bucketMarker.length)
+      : null;
+
+    // Verify storage path belongs to this user (if it's a Supabase URL)
+    if (storagePath && !storagePath.startsWith(`${user.id}/`)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -126,18 +134,20 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Item not found' }, { status: 404 });
     }
 
-    // Remove from storage
-    const { error: storageError } = await supabase.storage
-      .from('collection-images')
-      .remove([path]);
+    // Remove from storage (only for Supabase-hosted images)
+    if (storagePath) {
+      const { error: storageError } = await supabase.storage
+        .from('collection-images')
+        .remove([storagePath]);
 
-    if (storageError) {
-      logger.warn('Failed to remove image from storage', { error: storageError });
+      if (storageError) {
+        logger.warn('Failed to remove image from storage', { error: storageError });
+      }
     }
 
-    // Remove from item's images array
+    // Remove from item's images array (match on the full URL)
     const currentImages = (item.images as string[]) || [];
-    const updatedImages = currentImages.filter(img => img !== path);
+    const updatedImages = currentImages.filter(img => img !== imageUrl);
     await (supabase
       .from('user_collection_items') as any)  // eslint-disable-line @typescript-eslint/no-explicit-any
       .update({ images: updatedImages } as never)

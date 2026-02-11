@@ -5,9 +5,11 @@ import { FavoriteButton } from '@/components/favorites/FavoriteButton';
 import { ShareButton } from '@/components/share/ShareButton';
 import { InquiryModal } from '@/components/inquiry';
 import { LoginModal } from '@/components/auth/LoginModal';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { useQuickViewOptional } from '@/contexts/QuickViewContext';
+import { mapListingToCollectionItem } from '@/lib/collection/listingImport';
 import { useActivityTrackerOptional } from '@/lib/tracking/ActivityTracker';
 import { useCurrency, formatPriceWithConversion } from '@/hooks/useCurrency';
 import { shouldShowNewBadge } from '@/lib/newListing';
@@ -36,6 +38,7 @@ interface QuickViewContentProps {
 // =============================================================================
 
 export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: QuickViewContentProps) {
+  const router = useRouter();
   const { currency, exchangeRates } = useCurrency();
   const { user, isAdmin } = useAuth();
   const { showPaywall, canAccess } = useSubscription();
@@ -68,6 +71,19 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
     }
     setIsInquiryModalOpen(true);
   };
+
+  const handleIOwn = useCallback(() => {
+    if (!user) {
+      setShowLoginModal(true);
+      return;
+    }
+    // Map listing data to collection prefill and navigate to collection page
+    const prefill = mapListingToCollectionItem(listing as import('@/types').Listing);
+    // Store prefill in sessionStorage for the collection page to pick up
+    sessionStorage.setItem('collection_prefill', JSON.stringify(prefill));
+    quickView?.closeQuickView?.();
+    router.push('/collection?add=listing');
+  }, [user, listing, quickView, router]);
 
   const handleToggleHidden = useCallback(async () => {
     const newHidden = !listing.admin_hidden;
@@ -355,6 +371,19 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
             </svg>
             Inquire
           </button>
+
+          {/* I Own This Button */}
+          {user && (
+            <button
+              onClick={handleIOwn}
+              className="flex items-center justify-center gap-2 px-4 py-3 text-[13px] lg:text-[14px] font-medium text-charcoal bg-linen hover:bg-hover border border-border rounded-lg transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+              </svg>
+              I Own This
+            </button>
+          )}
 
           {/* View on Dealer Button */}
           <a

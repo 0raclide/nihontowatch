@@ -59,11 +59,27 @@ vi.mock('@/components/auth/LoginModal', () => ({
   LoginModal: () => null,
 }));
 
+// Mock next/navigation
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: vi.fn(),
+    replace: vi.fn(),
+    back: vi.fn(),
+    prefetch: vi.fn(),
+  }),
+}));
+
 // Mock the QuickViewContext
 vi.mock('@/contexts/QuickViewContext', () => ({
   useQuickViewOptional: () => ({
     refreshCurrentListing: vi.fn(),
+    closeQuickView: vi.fn(),
   }),
+}));
+
+// Mock the listingImport utility
+vi.mock('@/lib/collection/listingImport', () => ({
+  mapListingToCollectionItem: vi.fn(() => ({})),
 }));
 
 // Mock the AdminSetsumeiWidget component

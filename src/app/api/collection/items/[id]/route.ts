@@ -134,12 +134,19 @@ export async function DELETE(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // Cleanup storage images
+    // Cleanup storage images (images array stores full URLs, extract storage paths)
     const images = (existing.images as string[]) || [];
-    if (images.length > 0) {
+    const bucketMarker = '/collection-images/';
+    const storagePaths = images
+      .map(url => {
+        const idx = url.indexOf(bucketMarker);
+        return idx !== -1 ? url.slice(idx + bucketMarker.length) : null;
+      })
+      .filter((p): p is string => p !== null);
+    if (storagePaths.length > 0) {
       const { error: storageError } = await supabase.storage
         .from('collection-images')
-        .remove(images);
+        .remove(storagePaths);
       if (storageError) {
         logger.warn('Failed to cleanup collection images', { error: storageError, itemId: id });
       }

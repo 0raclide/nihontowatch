@@ -328,6 +328,14 @@ function HeaderContent() {
               >
                 Saved
               </Link>
+              {user && (
+                <Link
+                  href="/collection"
+                  className="text-[11px] uppercase tracking-[0.2em] text-muted hover:text-gold transition-colors"
+                >
+                  Collection
+                </Link>
+              )}
               <div className="h-3 w-px bg-border" />
               <ThemeSwitcher />
               {/* Admin Quick Menu */}
