@@ -8,7 +8,7 @@ import { ArtisanTooltip } from '@/components/artisan/ArtisanTooltip';
 import { useActivityOptional } from '@/components/activity/ActivityProvider';
 import { useQuickViewOptional } from '@/contexts/QuickViewContext';
 import { useViewportTrackingOptional } from '@/lib/viewport';
-import { getAllImages, dealerDoesNotPublishImages } from '@/lib/images';
+import { getAllImages, getCachedValidation, setCachedValidation, dealerDoesNotPublishImages } from '@/lib/images';
 import { shouldShowNewBadge } from '@/lib/newListing';
 import { trackSearchClick } from '@/lib/tracking/searchTracker';
 import { isTrialModeActive } from '@/types/subscription';
@@ -462,9 +462,24 @@ export const ListingCard = memo(function ListingCard({
     listing.cert_type,
   ]);
 
-  // Derive thumbnail URL from allImages with fallback support.
-  // When an image fails to load, fallbackIndex increments to try the next one.
-  const imageUrl = allImages[fallbackIndex] || null;
+  // Derive thumbnail URL, skipping images known to be broken.
+  // Checks in-memory validationCache (survives SPA navigation) and
+  // sessionStorage (survives hard reload). fallbackIndex as dependency
+  // triggers re-evaluation after each onError marks a URL as broken.
+  const imageUrl = useMemo(() => {
+    for (const url of allImages) {
+      if (getCachedValidation(url) === 'invalid') continue;
+      try {
+        if (typeof window !== 'undefined' && sessionStorage.getItem(`nw:img:bad:${url}`)) {
+          setCachedValidation(url, 'invalid');
+          continue;
+        }
+      } catch { /* SSR or storage unavailable */ }
+      return url;
+    }
+    return null;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allImages, fallbackIndex]);
 
   // Check if item is definitively sold (for showing sale data)
   const isSold = listing.is_sold || listing.status === 'sold' || listing.status === 'presumed_sold';
@@ -598,8 +613,17 @@ export const ListingCard = memo(function ListingCard({
       blurDataURL={BLUR_PLACEHOLDER}
       onLoad={() => setIsLoading(false)}
       onError={() => {
-        setIsLoading(false);
-        setHasError(true);
+        if (imageUrl) {
+          setCachedValidation(imageUrl, 'invalid');
+          try { sessionStorage.setItem(`nw:img:bad:${imageUrl}`, '1'); } catch {}
+        }
+        const hasRemaining = allImages.some(url => getCachedValidation(url) !== 'invalid');
+        if (hasRemaining) {
+          setFallbackIndex(prev => prev + 1);
+        } else {
+          setIsLoading(false);
+          setHasError(true);
+        }
       }}
     />
   ) : (
@@ -993,8 +1017,8 @@ export const ListingCard = memo(function ListingCard({
 
       {/* Image Container with skeleton loader */}
       <div className="relative aspect-[4/3] overflow-hidden bg-linen">
-        {/* Skeleton loader - shows while loading */}
-        {isLoading && (
+        {/* Skeleton loader - shows while loading (hide if no valid image to try) */}
+        {isLoading && imageUrl && (
           <div className="absolute inset-0 bg-gradient-to-r from-linen via-paper to-linen animate-shimmer" />
         )}
 
