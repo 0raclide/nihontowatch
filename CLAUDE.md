@@ -284,15 +284,15 @@ id, url (UNIQUE), dealer_id, discovered_at, is_scraped, scrape_priority
 
 ### Completed Features (Phase 1)
 1. **User Accounts** - Magic link + password auth
-2. **Subscription Tiers** - Free / Enthusiast ($25/mo) / Connoisseur ($200/mo)
+2. **Subscription Tiers** - Free / Pro ($25/mo) / Collector ($99/mo) / Inner Circle ($249/mo) / Dealer ($150/mo)
 3. **Saved Searches with Alerts** - Instant (15 min) or daily digest emails
 4. **Price Drop Alerts** - Email when watched items decrease in price
 5. **AI Inquiry Emails** - Japanese business email drafts
 6. **Setsumei Translations** - NBTHK certification descriptions in English
-7. **72h Data Delay** - Free users see listings 72h late
+7. **7-day Data Delay** - Free users see listings 7 days late
 
 ### Future Features (Phase 2+)
-1. **Private Listings** - Exclusive dealer items (Connoisseur)
+1. **Private Listings** - Exclusive dealer items (Inner Circle)
 2. **Artist Stats** - Juyo/Tokuju certification counts by smith
 3. **Market Analytics** - Price trends, inventory levels
 4. **Dealer Tier** - Analytics and listing management for dealers
@@ -381,18 +381,19 @@ When trial ends, paywall returns instantly - no code changes needed.
 
 **What trial mode does:**
 - `canAccessFeature()` returns `true` for all features
-- `isDelayed` returns `false` (no 72h data delay)
+- `isDelayed` returns `false` (no 7-day data delay)
 - DataDelayBanner is hidden
 - Pricing page still exists but free tier shows "Browse all listings"
 
 ### Subscription Tiers (Post-Trial)
 
-| Tier | Price | Key Features |
-|------|-------|--------------|
-| Free | $0 | Browse all listings, filters, favorites, currency conversion |
-| Enthusiast | $25/mo | Email alerts, setsumei translations, AI inquiry emails, data exports |
-| Connoisseur | $200/mo | Everything + private listings, artist stats, LINE access, Discord |
-| Dealer | $100-300/mo | Analytics dashboard, click tracking, competitive intel |
+| Tier | Internal Name | Price | Key Features |
+|------|---------------|-------|--------------|
+| Free | `free` | $0 | Browse all listings, filters, favorites, currency conversion |
+| Pro | `enthusiast` | $25/mo | Fresh data, email alerts, AI inquiry emails, data exports |
+| Collector | `collector` | $99/mo | Everything in Pro + setsumei translations, artist stats, priority Juyo alerts |
+| Inner Circle | `inner_circle` | $249/mo | Everything in Collector + private listings, Discord, LINE |
+| Dealer | `dealer` | $150/mo | Pro features + analytics dashboard, competitive intel |
 
 ### Search Alerts Architecture
 
@@ -577,6 +578,7 @@ For detailed implementation docs, see:
 - `docs/SESSION_20260208_ARTIST_DIRECTORY.md` - Artist directory implementation session
 - `docs/SESSION_20260209_ADMIN_SET_ARTISAN.md` - Admin artisan assignment widget session
 - `docs/SESSION_20260210_ADMIN_LOCK.md` - Admin artisan lock protection (prevents scraper overwrites)
+- `docs/CATALOGUE_PUBLICATION_PIPE.md` - **Catalogue publication pipe** — Yuhinkai→NihontoWatch content flow (cross-repo)
 
 ---
 

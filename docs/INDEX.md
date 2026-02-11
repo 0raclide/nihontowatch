@@ -31,6 +31,7 @@
 | [ARTIST_FEATURE.md](./ARTIST_FEATURE.md) | **Comprehensive artist feature docs** — directory, profiles, admin badges, data model, all file paths |
 | [ARTISAN_TOOLTIP_VERIFICATION.md](./ARTISAN_TOOLTIP_VERIFICATION.md) | Admin QA tool - click artisan badges for details & verification |
 | [SYNC_ELITE_FACTOR_API.md](./SYNC_ELITE_FACTOR_API.md) | Webhook API for syncing elite_factor from Yuhinkai to listings |
+| [CATALOGUE_PUBLICATION_PIPE.md](./CATALOGUE_PUBLICATION_PIPE.md) | **Catalogue publication pipe** — Yuhinkai→NihontoWatch content flow (cross-repo, oshi-v2 + nihontowatch) |
 
 ## Sessions
 
@@ -46,6 +47,9 @@
 
 | Document | Date | Issue |
 |----------|------|-------|
+| [CERT_EXTRACTION_BUGS.md](./CERT_EXTRACTION_BUGS.md) | Living doc | **Certification extraction bug tracker** — all cert false positives/negatives, patterns, exclusions, diagnostic queries |
+| [POSTMORTEM_STALE_REFRESH_SSL.md](./POSTMORTEM_STALE_REFRESH_SSL.md) | 2026-02-11 | **Nipponto SSL + circuit breaker** — 8/10 runs failed for 48h, SSL fix + per-dealer circuit breaker, 13 golden tests |
+| [POSTMORTEM_STALE_REFRESH_CRISIS.md](./POSTMORTEM_STALE_REFRESH_CRISIS.md) | 2026-02-11 | **Stale refresh throughput crisis** — 65% World Seiyudo false positives, Tier 3 queue never draining, 427 items corrected |
 | [NIPPONTO_JUYO_FALSE_POSITIVE_FIX.md](./NIPPONTO_JUYO_FALSE_POSITIVE_FIX.md) | 2026-02-07 | **Nipponto Juyo false positives** - Nav menu "重要刀剣" matched as certification (4 items fixed) |
 | [POSTMORTEM_FALSE_404_DETECTION.md](./POSTMORTEM_FALSE_404_DETECTION.md) | 2026-02-02 | **False 404 detection** - Transient 404s marking listings as sold (62 affected, 5 recovered) |
 | [DEALER_ANALYTICS_TRACKING_FIX.md](./DEALER_ANALYTICS_TRACKING_FIX.md) | 2026-01-31 | **Dealer click-throughs overcounted** - Card clicks logged as external_link_click instead of quickview_open |
@@ -126,6 +130,19 @@
 2. Check `Oshi-scrapper/scrapers/<dealer>.py` - Scraper code
 3. Add exclusions, quirks, or cleanup notes to DEALERS.md
 4. See [NIPPONTO_JUYO_FALSE_POSITIVE_FIX.md](./NIPPONTO_JUYO_FALSE_POSITIVE_FIX.md) - Example of nav menu false positive fix
+
+### "I need to debug or fix a certification extraction bug"
+1. **Start here:** Read [CERT_EXTRACTION_BUGS.md](./CERT_EXTRACTION_BUGS.md) - All known cert bugs, extraction pipeline overview, diagnostic queries
+2. Check `Oshi-scrapper/utils/llm_extractor.py` - Conservative cert extraction (`extract_cert_from_body_conservative`)
+3. Check `Oshi-scrapper/tests/test_title_first_cert.py` - 70 cert extraction tests
+4. Check `Oshi-scrapper/scrapers/<dealer>.py` - Dealer-specific `_extract_certification()` (regex fallback)
+5. See [NIPPONTO_JUYO_FALSE_POSITIVE_FIX.md](./NIPPONTO_JUYO_FALSE_POSITIVE_FIX.md) - Detailed example of nav menu false positive
+
+### "I need to monitor or debug the stale refresh system"
+1. Read [POSTMORTEM_STALE_REFRESH_CRISIS.md](./POSTMORTEM_STALE_REFRESH_CRISIS.md) - Root cause, fixes, monitoring SQL queries, thresholds
+2. Check `Oshi-scrapper/scripts/refresh_stale.py` - Tiered refresh system (Tier 3 limit = 500)
+3. Check `Oshi-scrapper/scripts/refresh_dealer.py` - Manual per-dealer bulk refresh tool
+4. Check `.github/workflows/` - Cron schedule (4 runs/day)
 
 ### "I need to build a UI component"
 1. Check `oshi-v2/src/components/` - Reference implementations
@@ -270,6 +287,15 @@
 3. Check `scripts/backfill-elite-factor.ts` - Manual backfill script
 4. Check `src/lib/supabase/yuhinkai.ts` - Yuhinkai database client
 5. Check `supabase/migrations/050_artisan_elite_factor.sql` - DB schema
+
+### "I need to work on the catalogue publication pipe"
+1. **Start here:** Read [CATALOGUE_PUBLICATION_PIPE.md](./CATALOGUE_PUBLICATION_PIPE.md) - Full cross-repo feature docs
+2. Check `src/lib/supabase/yuhinkai.ts` - `getPublishedCatalogueEntries()` query + `CatalogueEntry` types
+3. Check `src/app/artists/[slug]/page.tsx` - Data wiring (catalogueEntries in Promise.all)
+4. Check `src/app/api/artisan/[code]/route.ts` - ArtisanPageResponse type extension
+5. Run `npm test -- cataloguePublications` - 11 unit tests
+6. **oshi-v2 side:** `src/app/api/catalogue/publish/route.ts` (API), `src/app/item/.../ItemDetailClient.tsx` (button)
+7. **Next step:** Build NihontoWatch artist page UI to render CatalogueEntry[]
 
 ### "I need to work on SEO"
 1. Read [SEO.md](./SEO.md) - Complete SEO documentation
