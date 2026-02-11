@@ -113,6 +113,7 @@ interface ListingCardProps {
   isAdmin?: boolean; // For admin-only features like artisan code display
   mobileView?: 'grid' | 'gallery'; // Mobile layout mode (only affects < sm breakpoint)
   fontSize?: 'compact' | 'standard' | 'large'; // Font size preference (both views)
+  imageAspect?: string; // Override image aspect ratio (default: 'aspect-[3/4]')
 }
 
 /**
@@ -467,6 +468,7 @@ export const ListingCard = memo(function ListingCard({
   isAdmin = false,
   mobileView = 'gallery',
   fontSize = 'large',
+  imageAspect,
 }: ListingCardProps) {
   // Mobile view helpers — only affect base (mobile) classes; sm:/lg: overrides restore tablet/desktop
   const isGridMobile = mobileView === 'grid';
@@ -769,7 +771,7 @@ export const ListingCard = memo(function ListingCard({
       </div>
 
       {/* Tall image — 3:4 aspect */}
-      <div className="relative aspect-[3/4] overflow-hidden bg-linen">
+      <div className={`relative ${imageAspect || 'aspect-[3/4]'} overflow-hidden bg-linen`}>
         {isLoading && imageUrl && <div className="absolute inset-0 bg-gradient-to-r from-linen via-paper to-linen animate-shimmer" />}
         {imageElement}
         {unavailableOverlay}
@@ -856,6 +858,7 @@ export const ListingCard = memo(function ListingCard({
     prevProps.listing.artisan_display_name === nextProps.listing.artisan_display_name &&
     prevProps.listing.artisan_confidence === nextProps.listing.artisan_confidence &&
     prevProps.mobileView === nextProps.mobileView &&
-    prevProps.fontSize === nextProps.fontSize
+    prevProps.fontSize === nextProps.fontSize &&
+    prevProps.imageAspect === nextProps.imageAspect
   );
 });

@@ -107,6 +107,7 @@ export function ArtisanListings({ code, artisanName, initialListings, status = '
             exchangeRates={exchangeRates}
             mobileView="grid"
             fontSize="standard"
+            imageAspect="aspect-[4/3]"
           />
         ))}
       </div>
