@@ -8,6 +8,7 @@ import { getArtisanDisplayParts } from '@/lib/artisan/displayName';
 import { eraToBroadPeriod } from '@/lib/artisan/eraPeriods';
 import { Drawer } from '@/components/ui/Drawer';
 import { useMobileUI } from '@/contexts/MobileUIContext';
+import { ArtistFilterSidebar } from '@/components/artisan/ArtistFilterSidebar';
 
 // =============================================================================
 // TYPES
@@ -207,174 +208,81 @@ export function ArtistsPageClient({
         </p>
       </div>
 
-      {/* Filters — hidden on mobile (bottom bar drawers handle it) */}
-      <div className="hidden lg:block mt-6 space-y-4">
-        {/* Search + Type Toggle Row */}
-        <div className="flex flex-col sm:flex-row gap-3">
-          {/* Search */}
-          <form onSubmit={handleSearch} className="flex-1 max-w-md">
-            <div className="relative">
-              <input
-                type="search"
-                value={searchInput}
-                onChange={(e) => handleSearchInput(e.target.value)}
-                placeholder="Search by name, kanji, or code..."
-                className="w-full pl-4 pr-10 py-2 bg-cream border border-border text-[13px] text-ink placeholder:text-ink/30 focus:outline-none focus:border-gold/40 focus:shadow-[0_0_0_3px_rgba(181,142,78,0.1)] transition-all"
-              />
-              {searchInput && (
-                <button
-                  type="button"
-                  onClick={clearSearch}
-                  className="absolute right-8 top-1/2 -translate-y-1/2 p-1 text-ink/40 hover:text-ink/60"
-                >
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              )}
+      {/* Desktop: Sidebar + Content layout */}
+      <div className="flex flex-col lg:flex-row lg:gap-10">
+        {/* Sidebar — hidden on mobile */}
+        <ArtistFilterSidebar
+          filters={filters}
+          facets={facets}
+          onFilterChange={handleFilterChange}
+          onSearchInput={handleSearchInput}
+          onSearchSubmit={handleSearch}
+          onClearSearch={clearSearch}
+          onClearAll={clearAllFilters}
+          searchInput={searchInput}
+          isLoading={isLoading}
+        />
+
+        {/* Results */}
+        <div id="artist-grid" className="flex-1 min-w-0 mt-8 lg:mt-0">
+          {/* Desktop count header */}
+          {!isLoading && artists.length > 0 && (
+            <p className="hidden lg:block text-[11px] text-ink/45 mb-4">
+              {pagination.totalCount.toLocaleString()} artisan{pagination.totalCount !== 1 ? 's' : ''}
+            </p>
+          )}
+
+          {/* Error state */}
+          {error && (
+            <div className="mb-4 px-4 py-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/30 flex items-center justify-between">
+              <p className="text-[12px] text-red-700 dark:text-red-400">{error}</p>
               <button
-                type="submit"
-                className="absolute right-1 top-1/2 -translate-y-1/2 p-1.5 text-ink/40 hover:text-gold"
+                onClick={() => fetchArtists(filters, pagination.page)}
+                className="text-[11px] text-red-700 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 underline underline-offset-2 ml-4 shrink-0"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
+                Retry
               </button>
             </div>
-          </form>
-
-          {/* Type Toggle */}
-          <div className="flex border border-border divide-x divide-border">
-            {(['smith', 'tosogu'] as const).map((t) => (
-              <button
-                key={t}
-                onClick={() => handleFilterChange('type', t)}
-                disabled={isLoading}
-                className={`px-4 py-2 min-h-[44px] text-[11px] uppercase tracking-[0.15em] transition-colors ${
-                  filters.type === t
-                    ? 'bg-gold/10 text-gold font-medium'
-                    : 'text-ink/50 hover:text-ink hover:bg-hover'
-                }`}
-              >
-                {t === 'smith' ? 'Nihonto' : 'Tosogu'}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Filter Dropdowns Row */}
-        <div className="flex flex-wrap gap-3 items-center">
-          <FilterSelect
-            label="School"
-            value={filters.school || ''}
-            options={facets.schools}
-            onChange={(v) => handleFilterChange('school', v || '')}
-          />
-          <FilterSelect
-            label="Province"
-            value={filters.province || ''}
-            options={facets.provinces}
-            onChange={(v) => handleFilterChange('province', v || '')}
-          />
-          <FilterSelect
-            label="Period"
-            value={filters.era || ''}
-            options={facets.eras}
-            onChange={(v) => handleFilterChange('era', v || '')}
-          />
-
-          <div className="h-5 w-px bg-border hidden sm:block" />
-
-          {/* Sort */}
-          <select
-            value={filters.sort}
-            onChange={(e) => handleFilterChange('sort', e.target.value)}
-            className="px-3 py-2 bg-cream border border-border text-[12px] text-ink/60 focus:outline-none focus:border-gold/40 cursor-pointer"
-          >
-            <option value="elite_factor">Sort: Elite Factor</option>
-            <option value="total_items">Sort: Total Works</option>
-            <option value="for_sale">Sort: On the Market</option>
-            <option value="name">Sort: Name A-Z</option>
-          </select>
-
-          {/* Notable Toggle */}
-          <label className="flex items-center gap-2 text-[12px] text-ink/60 cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={filters.notable}
-              onChange={(e) => handleFilterChange('notable', e.target.checked)}
-              className="accent-gold"
-            />
-            Notable only
-          </label>
-
-          {/* Active filter pills */}
-          {(filters.school || filters.province || filters.era || filters.q) && (
-            <button
-              onClick={() => {
-                setSearchInput('');
-                applyFilters({ type: filters.type, sort: filters.sort, notable: filters.notable }, 1);
-              }}
-              className="text-[11px] text-gold hover:text-gold-light underline underline-offset-2"
-            >
-              Clear filters
-            </button>
           )}
-        </div>
-      </div>
 
-      {/* Results */}
-      <div id="artist-grid" className="mt-8">
-        {/* Error state */}
-        {error && (
-          <div className="mb-4 px-4 py-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/30 flex items-center justify-between">
-            <p className="text-[12px] text-red-700 dark:text-red-400">{error}</p>
-            <button
-              onClick={() => fetchArtists(filters, pagination.page)}
-              className="text-[11px] text-red-700 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 underline underline-offset-2 ml-4 shrink-0"
-            >
-              Retry
-            </button>
-          </div>
-        )}
-
-        {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {[...Array(6)].map((_, i) => (
-              <SkeletonCard key={i} />
-            ))}
-          </div>
-        ) : artists.length === 0 ? (
-          <div className="py-20 text-center">
-            <p className="text-ink/50 text-sm">No artisans found matching your criteria.</p>
-            <button
-              onClick={clearAllFilters}
-              className="mt-3 text-[12px] text-gold hover:text-gold-light underline"
-            >
-              Reset all filters
-            </button>
-          </div>
-        ) : (
-          <>
-            {/* Grid */}
+          {isLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {artists.map((artist) => (
-                <ArtistCard key={artist.code} artist={artist} />
+              {[...Array(6)].map((_, i) => (
+                <SkeletonCard key={i} />
               ))}
             </div>
+          ) : artists.length === 0 ? (
+            <div className="py-20 text-center">
+              <p className="text-ink/50 text-sm">No artisans found matching your criteria.</p>
+              <button
+                onClick={clearAllFilters}
+                className="mt-3 text-[12px] text-gold hover:text-gold-light underline"
+              >
+                Reset all filters
+              </button>
+            </div>
+          ) : (
+            <>
+              {/* Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                {artists.map((artist) => (
+                  <ArtistCard key={artist.code} artist={artist} />
+                ))}
+              </div>
 
-            {/* Pagination */}
-            {pagination.totalPages > 1 && (
-              <PaginationBar
-                page={pagination.page}
-                totalPages={pagination.totalPages}
-                totalCount={pagination.totalCount}
-                onPageChange={handlePageChange}
-                disabled={isLoading}
-              />
-            )}
-          </>
-        )}
+              {/* Pagination */}
+              {pagination.totalPages > 1 && (
+                <PaginationBar
+                  page={pagination.page}
+                  totalPages={pagination.totalPages}
+                  totalCount={pagination.totalCount}
+                  onPageChange={handlePageChange}
+                  disabled={isLoading}
+                />
+              )}
+            </>
+          )}
+        </div>
       </div>
 
       {/* ================================================================
@@ -648,33 +556,6 @@ export function ArtistsPageClient({
 // SUB-COMPONENTS
 // =============================================================================
 
-
-function FilterSelect({
-  label,
-  value,
-  options,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  options: Array<{ value: string; count: number }>;
-  onChange: (value: string) => void;
-}) {
-  return (
-    <select
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className="px-3 py-2 bg-cream border border-border text-[12px] text-ink/60 focus:outline-none focus:border-gold/40 cursor-pointer"
-    >
-      <option value="">All {label}s</option>
-      {options.map((opt) => (
-        <option key={opt.value} value={opt.value}>
-          {opt.value} ({opt.count})
-        </option>
-      ))}
-    </select>
-  );
-}
 
 function SkeletonCard() {
   return (
