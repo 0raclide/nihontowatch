@@ -25,7 +25,7 @@ import { NewSinceLastVisitBanner } from '@/components/browse/NewSinceLastVisitBa
 import { useAuth } from '@/lib/auth/AuthContext';
 import { useNewSinceLastVisit } from '@/contexts/NewSinceLastVisitContext';
 import { NEW_SINCE_LAST_VISIT } from '@/lib/constants';
-import { CardStyleSelector, useCardStyle } from '@/components/browse/CardStyleSelector';
+
 
 interface Listing {
   id: string;
@@ -203,8 +203,6 @@ function HomeContent() {
   // Use auth context for admin status - more reliable than API response
   const { isAdmin: authIsAdmin, user } = useAuth();
   const { recordVisit } = useNewSinceLastVisit();
-  const [cardStyle, setCardStyle] = useCardStyle();
-
   const [activeTab, setActiveTab] = useState<AvailabilityStatus>(
     (searchParams.get('tab') as AvailabilityStatus) || 'available'
   );
@@ -600,11 +598,6 @@ function HomeContent() {
         {/* Subtle divider */}
         <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent mb-4 lg:mb-8" />
 
-        {/* Mobile card style selector */}
-        <div className="lg:hidden flex justify-end mb-3">
-          <CardStyleSelector value={cardStyle} onChange={setCardStyle} />
-        </div>
-
         {/* Active search indicator with clear button - visible on all screen sizes */}
         {searchQuery && (
           <div className="flex items-center gap-2 mb-3 lg:mb-6">
@@ -659,20 +652,22 @@ function HomeContent() {
           />
 
           <div className="flex-1 min-w-0">
-            {/* Grid header — item count + Save Search */}
+            {/* Grid header — item count + card style + Save Search */}
             <div className="hidden lg:flex items-center justify-between pb-3 mb-1">
               <span className="text-[11px] text-muted tabular-nums">
                 {isLoading ? 'Loading...' : `${data?.total?.toLocaleString() || 0} items`}
               </span>
-              <SaveSearchButton
-                criteria={{
-                  tab: activeTab, category: filters.category, itemTypes: filters.itemTypes,
-                  certifications: filters.certifications, dealers: filters.dealers,
-                  schools: filters.schools, askOnly: filters.askOnly,
-                  query: searchQuery || undefined, sort,
-                } as SavedSearchCriteria}
-                currentMatchCount={data?.total}
-              />
+              <div className="flex items-center gap-3">
+                <SaveSearchButton
+                  criteria={{
+                    tab: activeTab, category: filters.category, itemTypes: filters.itemTypes,
+                    certifications: filters.certifications, dealers: filters.dealers,
+                    schools: filters.schools, askOnly: filters.askOnly,
+                    query: searchQuery || undefined, sort,
+                  } as SavedSearchCriteria}
+                  currentMatchCount={data?.total}
+                />
+              </div>
             </div>
             <ListingGrid
               listings={allListings}
@@ -688,7 +683,6 @@ function HomeContent() {
               onLoadMore={loadMore}
               searchId={currentSearchIdRef.current}
               isAdmin={authIsAdmin}
-              cardStyle={cardStyle}
             />
           </div>
         </div>

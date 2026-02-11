@@ -13,7 +13,6 @@ import { shouldShowNewBadge } from '@/lib/newListing';
 import { trackSearchClick } from '@/lib/tracking/searchTracker';
 import { isTrialModeActive } from '@/types/subscription';
 import { useImagePreloader } from '@/hooks/useImagePreloader';
-import type { CardStyle, TagStyle } from './CardStyleSelector';
 
 // 7 days in milliseconds - matches the data delay for free tier
 const EARLY_ACCESS_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
@@ -112,8 +111,6 @@ interface ListingCardProps {
   isNearViewport?: boolean; // For lazy loading optimization
   searchId?: number; // For CTR tracking
   isAdmin?: boolean; // For admin-only features like artisan code display
-  cardStyle?: CardStyle; // Card design variant
-  tagStyle?: TagStyle; // Tag sub-variant for artisan display
 }
 
 // Normalize Japanese kanji and variants to standard English keys
@@ -416,8 +413,6 @@ export const ListingCard = memo(function ListingCard({
   isNearViewport = true, // Default to true for backward compatibility
   searchId,
   isAdmin = false,
-  cardStyle = 'classic',
-  tagStyle = 'a',
 }: ListingCardProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
@@ -565,23 +560,6 @@ export const ListingCard = memo(function ListingCard({
     };
   }, []);
 
-  // Shared container props for all card styles (ref must be passed separately)
-  const containerProps = {
-    role: 'button' as const,
-    tabIndex: 0,
-    'data-testid': 'listing-card',
-    'data-listing-id': listing.id,
-    onClick: handleClick,
-    onMouseEnter: handleMouseEnter,
-    onMouseLeave: handleMouseLeave,
-    onTouchStart: handleTouchStart,
-    onKeyDown: (e: React.KeyboardEvent) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        handleClick(e as unknown as React.MouseEvent);
-      }
-    },
-  };
 
   // Shared image element
   const imageElement = dealerDoesNotPublishImages(listing.dealers?.domain) ? (
@@ -673,414 +651,27 @@ export const ListingCard = memo(function ListingCard({
     </span>
   );
 
-  // Artisan badge (shared across variants)
+  // Artisan display name (resolved server-side from Yuhinkai)
   const artisanDisplayName = listing.artisan_display_name || listing.artisan_id;
 
-  // Shared artisan badge element (for admin and non-admin)
-  const artisanBadge = listing.artisan_id &&
-    listing.artisan_confidence && listing.artisan_confidence !== 'NONE' &&
-    (isAdmin || !listing.artisan_id.startsWith('tmp')) ? (
-    isAdmin ? (
-      <ArtisanTooltip
-        listingId={parseInt(listing.id)}
-        artisanId={listing.artisan_id}
-        confidence={listing.artisan_confidence}
-        method={listing.artisan_method}
-        candidates={listing.artisan_candidates}
-        verified={listing.artisan_verified}
-      >
-        <span className={`text-[9px] lg:text-[10px] font-mono font-medium px-1.5 py-0.5 ${
-          listing.artisan_confidence === 'HIGH'
-            ? 'bg-artisan-high-bg text-artisan-high'
-            : listing.artisan_confidence === 'MEDIUM'
-            ? 'bg-artisan-medium-bg text-artisan-medium'
-            : 'bg-artisan-low-bg text-artisan-low'
-        }`}>
-          {artisanDisplayName}
-        </span>
-      </ArtisanTooltip>
-    ) : (
-      <a
-        href={`/artists/${listing.artisan_id}`}
-        data-artisan-tooltip
-        onClick={(e) => e.stopPropagation()}
-        className={`text-[9px] lg:text-[10px] font-mono font-medium px-1.5 py-0.5 hover:opacity-80 transition-opacity ${
-          listing.artisan_confidence === 'HIGH'
-            ? 'bg-artisan-high-bg text-artisan-high'
-            : listing.artisan_confidence === 'MEDIUM'
-            ? 'bg-artisan-medium-bg text-artisan-medium'
-            : 'bg-artisan-low-bg text-artisan-low'
-        }`}
-      >
-        {artisanDisplayName}
-      </a>
-    )
-  ) : isAdmin && !listing.artisan_id ? (
-    <ArtisanTooltip listingId={parseInt(listing.id)} startInSearchMode>
-      <span className="text-[9px] lg:text-[10px] font-mono font-medium px-1.5 py-0.5 bg-muted/10 text-muted hover:text-ink transition-colors">
-        Set ID
-      </span>
-    </ArtisanTooltip>
-  ) : null;
-
-  // Cert badge element (shared)
-  const certBadge = certInfo && (
-    <span className={`text-[9px] lg:text-[10px] uppercase tracking-wider font-semibold px-1.5 lg:px-2 py-0.5 lg:py-1 ${
-      certInfo.tier === 'tokuju'
-        ? 'bg-tokuju-bg text-tokuju'
-        : certInfo.tier === 'jubi'
-        ? 'bg-jubi-bg text-jubi'
-        : certInfo.tier === 'juyo'
-        ? 'bg-juyo-bg text-juyo'
-        : certInfo.tier === 'tokuho'
-        ? 'bg-toku-hozon-bg text-toku-hozon'
-        : 'bg-hozon-bg text-hozon'
-    }`}>
-      {certInfo.label}
-    </span>
-  );
-
-  // Price display (shared)
+  // Price display
   const priceDisplay = formatPrice(listing.price_value, listing.price_currency, currency, exchangeRates);
 
-  // ══════════════════════════════════════════════════════
-  // "Refined" — Dealer + cert header, tall image, clean content
-  // Best hybrid: Gallery header (no bar) + tall 3:4 image
-  // Artisan prominent in attribution, no badge-row crowding
-  // ══════════════════════════════════════════════════════
-  if (cardStyle === 'clean') {
-    // Cert text color (no bg badge — just colored text in header)
-    const certTextColor = certInfo
-      ? certInfo.tier === 'tokuju' ? 'text-tokuju'
-        : certInfo.tier === 'jubi' ? 'text-jubi'
-        : certInfo.tier === 'juyo' ? 'text-juyo'
-        : certInfo.tier === 'tokuho' ? 'text-toku-hozon'
-        : 'text-hozon'
-      : '';
+  // Cert text color (no bg badge — just colored text in header)
+  const certTextColor = certInfo
+    ? certInfo.tier === 'tokuju' ? 'text-tokuju'
+      : certInfo.tier === 'jubi' ? 'text-jubi'
+      : certInfo.tier === 'juyo' ? 'text-juyo'
+      : certInfo.tier === 'tokuho' ? 'text-toku-hozon'
+      : 'text-hozon'
+    : '';
 
-    // Resolve the best artisan label for display
-    const hasArtisan = !!(artisanDisplayName && listing.artisan_id && listing.artisan_confidence !== 'NONE');
-    const displayArtisan = hasArtisan ? artisanDisplayName : (artisan || null);
-    const displaySchool = school || null;
+  // Attribution priority: artisan tag takes absolute priority over smith/school
+  const hasArtisanTag = !!(artisanDisplayName && listing.artisan_id && listing.artisan_confidence !== 'NONE');
+  const primaryName = hasArtisanTag ? artisanDisplayName! : (artisan || school || null);
+  const isLinked = hasArtisanTag && !!listing.artisan_id && !isAdmin;
+  const linkHref = listing.artisan_id ? `/artists/${listing.artisan_id}` : '#';
 
-    // ── Tag style A: "Inline" ──
-    // Artisan name woven naturally into attribution text.
-    // No badge, no pill — just clean text. Artisan clickable as link.
-    const artisanLineA = (
-      <div className="h-[18px] lg:h-[20px]">
-        {displayArtisan ? (
-          <p className="text-[11px] lg:text-[12px] text-charcoal truncate">
-            {hasArtisan && listing.artisan_id && !isAdmin ? (
-              <a
-                href={`/artists/${listing.artisan_id}`}
-                data-artisan-tooltip
-                onClick={(e) => e.stopPropagation()}
-                className="hover:text-gold transition-colors"
-              >
-                {displayArtisan}
-              </a>
-            ) : (
-              displayArtisan
-            )}
-            {displaySchool && displayArtisan !== displaySchool && (
-              <span className="text-muted"> · {displaySchool}</span>
-            )}
-          </p>
-        ) : displaySchool ? (
-          <p className="text-[11px] lg:text-[12px] text-charcoal truncate">{displaySchool}</p>
-        ) : null}
-      </div>
-    );
-
-    // ── Tag style B: "Pill" ──
-    // Artisan shown as a subtle rounded pill (no color coding).
-    // Smaller text, soft bg, truncates gracefully.
-    const artisanLineB = (
-      <div className="h-[20px] lg:h-[22px] flex items-center gap-1.5 overflow-hidden">
-        {displayArtisan ? (
-          hasArtisan && listing.artisan_id && !isAdmin ? (
-            <a
-              href={`/artists/${listing.artisan_id}`}
-              data-artisan-tooltip
-              onClick={(e) => e.stopPropagation()}
-              className="text-[10px] lg:text-[11px] font-medium text-charcoal bg-surface px-2 py-0.5 rounded-full truncate max-w-[70%] hover:bg-hover transition-colors"
-            >
-              {displayArtisan}
-            </a>
-          ) : (
-            <span className="text-[10px] lg:text-[11px] font-medium text-charcoal bg-surface px-2 py-0.5 rounded-full truncate max-w-[70%]">
-              {displayArtisan}
-            </span>
-          )
-        ) : null}
-        {displaySchool && displayArtisan !== displaySchool && (
-          <span className="text-[10px] lg:text-[11px] text-muted truncate">{displaySchool}</span>
-        )}
-        {!displayArtisan && displaySchool && (
-          <span className="text-[11px] lg:text-[12px] text-charcoal truncate">{displaySchool}</span>
-        )}
-      </div>
-    );
-
-    // ── Tag style C: "Underline" ──
-    // Artisan name with a subtle gold accent underline. School as quiet suffix.
-    const artisanLineC = (
-      <div className="h-[20px] lg:h-[22px] flex items-baseline gap-1.5 overflow-hidden">
-        {displayArtisan ? (
-          hasArtisan && listing.artisan_id && !isAdmin ? (
-            <a
-              href={`/artists/${listing.artisan_id}`}
-              data-artisan-tooltip
-              onClick={(e) => e.stopPropagation()}
-              className="text-[11px] lg:text-[12px] font-medium text-ink border-b border-gold/40 pb-px hover:border-gold transition-colors truncate max-w-[70%]"
-            >
-              {displayArtisan}
-            </a>
-          ) : (
-            <span className="text-[11px] lg:text-[12px] font-medium text-ink border-b border-gold/40 pb-px truncate max-w-[70%]">
-              {displayArtisan}
-            </span>
-          )
-        ) : null}
-        {displaySchool && displayArtisan !== displaySchool && (
-          <span className="text-[10px] lg:text-[11px] text-muted/60 truncate">{displaySchool}</span>
-        )}
-        {!displayArtisan && displaySchool && (
-          <span className="text-[11px] lg:text-[12px] text-charcoal truncate">{displaySchool}</span>
-        )}
-      </div>
-    );
-
-    const artisanLine = tagStyle === 'c' ? artisanLineC : tagStyle === 'b' ? artisanLineB : artisanLineA;
-
-    return (
-      <div
-        ref={cardRef}
-        {...containerProps}
-        className="group block bg-cream border border-border hover:border-gold/40 transition-all duration-300 cursor-pointer"
-      >
-        {/* Header: dealer (left) + setsumei icon + cert (right) — no colored bar */}
-        <div className="px-3 py-2 lg:px-4 lg:py-2.5 flex items-center justify-between">
-          <span className="text-[9px] lg:text-[10px] font-medium tracking-[0.14em] text-muted lowercase">
-            {listing.dealers?.name}
-          </span>
-          <div className="flex items-center gap-2">
-            {hasSetsumeiTranslation(listing) && <SetsumeiZufuBadge iconOnly />}
-            {certInfo && (
-              <span className={`text-[9px] lg:text-[10px] uppercase tracking-wider font-bold ${certTextColor}`}>
-                {certInfo.label}
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Tall image — 3:4 aspect, no overlays */}
-        <div className="relative aspect-[3/4] overflow-hidden bg-linen">
-          {isLoading && imageUrl && <div className="absolute inset-0 bg-gradient-to-r from-linen via-paper to-linen animate-shimmer" />}
-          {imageElement}
-          {unavailableOverlay}
-          {favoriteBtn}
-        </div>
-
-        {/* Content — spacious, clear hierarchy */}
-        <div className="px-3 pt-3 pb-3 lg:px-4 lg:pt-3.5 lg:pb-4 flex flex-col gap-0.5">
-          {/* Type — primary identifier */}
-          <h3 className="text-[15px] lg:text-base font-semibold leading-snug text-ink group-hover:text-gold transition-colors">
-            {itemType || cleanedTitle}
-          </h3>
-
-          {/* Attribution — varies by tag style */}
-          {artisanLine}
-
-          {/* Price row — clean separator */}
-          <div className="pt-2 mt-1 border-t border-border/40 flex items-center justify-between">
-            <span className={`text-[15px] lg:text-base tabular-nums ${isAskPrice ? 'text-charcoal' : 'text-ink font-semibold'}`}>
-              {priceDisplay}
-            </span>
-            <div className="flex items-center gap-1.5">
-              {newBadge}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // ══════════════════════════════════════════════════════
-  // "Cinematic" — Tall image, airy content, no overlays
-  // Dealer + cert text in a delicate header row
-  // Big image → type → artisan · school → price
-  // ══════════════════════════════════════════════════════
-  if (cardStyle === 'editorial') {
-    const certTextColor = certInfo
-      ? certInfo.tier === 'tokuju' ? 'text-tokuju'
-        : certInfo.tier === 'jubi' ? 'text-jubi'
-        : certInfo.tier === 'juyo' ? 'text-juyo'
-        : certInfo.tier === 'tokuho' ? 'text-toku-hozon'
-        : 'text-hozon'
-      : '';
-
-    return (
-      <div
-        ref={cardRef}
-        {...containerProps}
-        className="group block bg-cream border border-border/60 hover:border-gold/40 transition-all duration-300 cursor-pointer"
-      >
-        {/* Slim header — dealer left, cert right */}
-        <div className="px-3 py-1.5 lg:px-4 lg:py-2 flex items-baseline justify-between border-b border-border/30">
-          <span className="text-[8px] lg:text-[9px] font-medium tracking-[0.16em] text-muted/70 uppercase">
-            {listing.dealers?.name}
-          </span>
-          {certInfo && (
-            <span className={`text-[9px] lg:text-[10px] uppercase tracking-wider font-bold ${certTextColor}`}>
-              {certInfo.label}
-            </span>
-          )}
-        </div>
-
-        {/* Tall image — 5:7 aspect (taller than 3:4, portrait feel) */}
-        <div className="relative aspect-[5/7] overflow-hidden bg-linen">
-          {isLoading && imageUrl && <div className="absolute inset-0 bg-gradient-to-r from-linen via-paper to-linen animate-shimmer" />}
-          {imageElement}
-          {unavailableOverlay}
-          {favoriteBtn}
-        </div>
-
-        {/* Content — minimal, airy */}
-        <div className="px-3 pt-2.5 pb-3 lg:px-4 lg:pt-3 lg:pb-3.5">
-          {/* Type */}
-          <h3 className="text-[14px] lg:text-[15px] font-semibold leading-snug text-ink group-hover:text-gold transition-colors">
-            {itemType || cleanedTitle}
-          </h3>
-
-          {/* Attribution line — artisan · school */}
-          <div className="h-[18px] mt-0.5">
-            {(artisanDisplayName && listing.artisan_id && listing.artisan_confidence !== 'NONE') ? (
-              <p className="text-[11px] lg:text-[12px] text-charcoal/80 truncate">
-                {artisanDisplayName}
-                {school && artisanDisplayName !== school && (
-                  <span className="text-muted/60"> · {school}</span>
-                )}
-              </p>
-            ) : (artisan || school) ? (
-              <p className="text-[11px] lg:text-[12px] text-charcoal/80 truncate">
-                {artisan || school}
-              </p>
-            ) : null}
-          </div>
-
-          {/* Price + micro badges */}
-          <div className="flex items-center justify-between mt-2">
-            <span className={`text-[15px] lg:text-base tabular-nums ${isAskPrice ? 'text-charcoal/70' : 'text-ink font-semibold'}`}>
-              {priceDisplay}
-            </span>
-            <div className="flex items-center gap-1.5">
-              {hasSetsumeiTranslation(listing) && <SetsumeiZufuBadge iconOnly />}
-              {newBadge}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // ══════════════════════════════════════════════════════
-  // "Museum" — Centered, auction-catalog elegance
-  // Cert as colored dot + text. Everything centered.
-  // Tall image, serif-feeling hierarchy, quiet luxury.
-  // ══════════════════════════════════════════════════════
-  if (cardStyle === 'gallery') {
-    const certDotColor = certInfo
-      ? certInfo.tier === 'tokuju' ? 'bg-tokuju'
-        : certInfo.tier === 'jubi' ? 'bg-jubi'
-        : certInfo.tier === 'juyo' ? 'bg-juyo'
-        : certInfo.tier === 'tokuho' ? 'bg-toku-hozon'
-        : 'bg-hozon'
-      : '';
-    const certTextColor = certInfo
-      ? certInfo.tier === 'tokuju' ? 'text-tokuju'
-        : certInfo.tier === 'jubi' ? 'text-jubi'
-        : certInfo.tier === 'juyo' ? 'text-juyo'
-        : certInfo.tier === 'tokuho' ? 'text-toku-hozon'
-        : 'text-hozon'
-      : '';
-
-    return (
-      <div
-        ref={cardRef}
-        {...containerProps}
-        className="group block bg-cream border border-border/40 hover:border-gold/30 transition-all duration-300 cursor-pointer"
-      >
-        {/* Dealer — small, centered, top */}
-        <div className="px-3 pt-2.5 pb-1 lg:px-4 lg:pt-3 text-center">
-          <span className="text-[8px] lg:text-[9px] font-medium tracking-[0.18em] text-muted/60 uppercase">
-            {listing.dealers?.name}
-          </span>
-        </div>
-
-        {/* Tall image — 3:4 aspect */}
-        <div className="relative aspect-[3/4] overflow-hidden bg-linen mx-2.5 lg:mx-3">
-          {isLoading && imageUrl && <div className="absolute inset-0 bg-gradient-to-r from-linen via-paper to-linen animate-shimmer" />}
-          {imageElement}
-          {unavailableOverlay}
-          {favoriteBtn}
-        </div>
-
-        {/* Content — centered, catalog feel */}
-        <div className="px-3 pt-3 pb-3 lg:px-4 lg:pt-3.5 lg:pb-4 text-center">
-          {/* Cert indicator — dot + label, centered */}
-          {certInfo && (
-            <div className="flex items-center justify-center gap-1.5 mb-1.5">
-              <span className={`w-1.5 h-1.5 rounded-full ${certDotColor}`} />
-              <span className={`text-[8px] lg:text-[9px] uppercase tracking-[0.2em] font-semibold ${certTextColor}`}>
-                {certInfo.label}
-              </span>
-              {hasSetsumeiTranslation(listing) && <SetsumeiZufuBadge iconOnly />}
-            </div>
-          )}
-
-          {/* Type — centered headline */}
-          <h3 className="text-[16px] lg:text-[17px] font-semibold leading-tight text-ink group-hover:text-gold transition-colors">
-            {itemType || cleanedTitle}
-          </h3>
-
-          {/* Attribution — centered, elegant */}
-          <div className="h-[18px] lg:h-[20px] mt-0.5">
-            {(artisanDisplayName && listing.artisan_id && listing.artisan_confidence !== 'NONE') ? (
-              <p className="text-[11px] lg:text-[12px] text-charcoal/70 truncate">
-                {artisanDisplayName}
-                {school && artisanDisplayName !== school && (
-                  <span className="text-muted/50"> · {school}</span>
-                )}
-              </p>
-            ) : (artisan || school) ? (
-              <p className="text-[11px] lg:text-[12px] text-charcoal/70 truncate">
-                {artisan || school}
-              </p>
-            ) : null}
-          </div>
-
-          {/* Price — prominent, centered */}
-          <div className="pt-2.5 mt-2 border-t border-border/30">
-            <span className={`text-[16px] lg:text-[17px] tabular-nums ${isAskPrice ? 'text-charcoal/60' : 'text-ink font-semibold'}`}>
-              {priceDisplay}
-            </span>
-          </div>
-
-          {/* New badge — centered */}
-          {newBadge && (
-            <div className="flex items-center justify-center mt-1.5">
-              {newBadge}
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  // ══════════════════════════════════════════════════════
-  // DEFAULT: "Classic" — Original design (unchanged)
-  // ══════════════════════════════════════════════════════
   return (
     <div
       ref={cardRef}
@@ -1100,233 +691,106 @@ export const ListingCard = memo(function ListingCard({
       }}
       className="group block bg-cream border border-border hover:border-gold/40 transition-all duration-300 cursor-pointer"
     >
-      {/* Dealer Name - Prominent header */}
-      <div className="px-2.5 py-2 lg:px-4 lg:py-2.5 bg-surface text-center">
-        <span className="text-[10px] lg:text-[12px] font-medium tracking-[0.12em] text-charcoal dark:text-gray-300 lowercase">
+      {/* Header: dealer (left) + book icon + cert (right) */}
+      <div className="px-3 py-2 lg:px-4 lg:py-2.5 flex items-center justify-between">
+        <span className="text-[9px] lg:text-[10px] font-medium tracking-[0.14em] text-muted lowercase">
           {listing.dealers?.name}
         </span>
+        <div className="flex items-center gap-2">
+          {hasSetsumeiTranslation(listing) && <SetsumeiZufuBadge iconOnly />}
+          {certInfo && (
+            <span className={`text-[9px] lg:text-[10px] uppercase tracking-wider font-bold ${certTextColor}`}>
+              {certInfo.label}
+            </span>
+          )}
+        </div>
       </div>
 
-      {/* Image Container with skeleton loader */}
-      <div className="relative aspect-[4/3] overflow-hidden bg-linen">
-        {/* Skeleton loader - shows while loading (hide if no valid image to try) */}
-        {isLoading && imageUrl && (
-          <div className="absolute inset-0 bg-gradient-to-r from-linen via-paper to-linen animate-shimmer" />
-        )}
-
-        {/* Fallback for missing/broken images */}
-        {dealerDoesNotPublishImages(listing.dealers?.domain) ? (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-linen text-center px-4">
-            <svg className="w-10 h-10 text-muted/40 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-            <span className="text-[10px] text-muted/60 font-medium leading-tight">
-              This merchant does not<br />publish images
-            </span>
-          </div>
-        ) : (hasError || !imageUrl) ? (
-          <div className="absolute inset-0 flex items-center justify-center bg-linen">
-            <svg className="w-12 h-12 text-muted/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-          </div>
-        ) : isNearViewport ? (
-          <Image
-            src={imageUrl}
-            alt={altText}
-            fill
-            className={`object-cover group-hover:scale-105 transition-all duration-500 ${
-              isLoading ? 'opacity-0' : 'opacity-100'
-            }`}
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-            priority={priority}
-            // fetchPriority hints to browser which images to load first
-            // This improves LCP for above-the-fold images
-            fetchPriority={priority ? 'high' : undefined}
-            loading={priority ? undefined : 'lazy'}
-            placeholder="blur"
-            blurDataURL={BLUR_PLACEHOLDER}
-            onLoad={() => setIsLoading(false)}
-            onError={() => {
-              // Try next image in the array before showing error state
-              if (fallbackIndex + 1 < allImages.length) {
-                setFallbackIndex(fallbackIndex + 1);
-              } else {
-                setIsLoading(false);
-                setHasError(true);
-              }
-            }}
-          />
-        ) : (
-          // Placeholder shown for cards not yet near viewport
-          <div className="absolute inset-0 bg-linen" />
-        )}
-
-        {/* Unavailable overlay - shows for sold, reserved, withdrawn items */}
-        {isUnavailable && (
-          <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center">
-            <span className="text-[10px] uppercase tracking-widest text-white/90 font-medium">
-              {isSold ? 'Sold' : 'Unavailable'}
-            </span>
-            {isSold && listing.sold_data?.sale_date && (
-              <span className="text-[9px] text-white/80 mt-0.5">
-                {listing.sold_data.sale_date}
-              </span>
-            )}
-            {isSold && listing.sold_data?.days_on_market_display && (
-              <span className={`text-[8px] mt-0.5 font-medium ${
-                listing.sold_data.confidence === 'high' ? 'text-green-400' :
-                listing.sold_data.confidence === 'medium' ? 'text-yellow-400' :
-                'text-white/60'
-              }`}>
-                Listed {listing.sold_data.days_on_market_display}
-              </span>
-            )}
-          </div>
-        )}
-
-        {/* Favorite button - hidden for unavailable items */}
-        {showFavoriteButton && !isUnavailable && (
-          <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-            <FavoriteButton listingId={Number(listing.id)} size="sm" />
-          </div>
-        )}
+      {/* Tall image — 3:4 aspect */}
+      <div className="relative aspect-[3/4] overflow-hidden bg-linen">
+        {isLoading && imageUrl && <div className="absolute inset-0 bg-gradient-to-r from-linen via-paper to-linen animate-shimmer" />}
+        {imageElement}
+        {unavailableOverlay}
+        {favoriteBtn}
       </div>
 
-      {/* Content - Fixed height with flex layout for consistent card sizes */}
-      <div className="p-2.5 lg:p-4 flex flex-col h-[130px] lg:h-[140px]">
-        {/* Certification & Setsumei badges - fixed height slot */}
-        <div className="h-[24px] lg:h-[28px] flex items-center justify-between">
-          {/* Left side: certification + setsumei badges */}
-          <div className="flex items-center gap-1.5">
-            {certInfo && (
-              <span className={`text-[9px] lg:text-[10px] uppercase tracking-wider font-semibold px-1.5 lg:px-2 py-0.5 lg:py-1 ${
-                certInfo.tier === 'tokuju'
-                  ? 'bg-tokuju-bg text-tokuju'
-                  : certInfo.tier === 'jubi'
-                  ? 'bg-jubi-bg text-jubi'
-                  : certInfo.tier === 'juyo'
-                  ? 'bg-juyo-bg text-juyo'
-                  : certInfo.tier === 'tokuho'
-                  ? 'bg-toku-hozon-bg text-toku-hozon'
-                  : 'bg-hozon-bg text-hozon'
-              }`}>
-                {certInfo.label}
-              </span>
-            )}
-            {hasSetsumeiTranslation(listing) && (
-              <SetsumeiZufuBadge compact />
-            )}
-          </div>
+      {/* Content */}
+      <div className="px-3 pt-3 pb-3 lg:px-4 lg:pt-3.5 lg:pb-4 flex flex-col gap-0.5">
+        {/* Type — primary identifier */}
+        <h3 className="text-[15px] lg:text-base font-semibold leading-snug text-ink group-hover:text-gold transition-colors">
+          {itemType || cleanedTitle}
+        </h3>
 
-          {/* Right side: artisan code (HIGH/MEDIUM/LOW confidence) */}
-          {/* Hide tmp-prefixed provisional codes from non-admin users */}
-          {listing.artisan_id &&
-           listing.artisan_confidence && listing.artisan_confidence !== 'NONE' &&
-           (isAdmin || !listing.artisan_id.startsWith('tmp')) ? (
-            isAdmin ? (
+        {/* Attribution — gold underline on artisan, plain text fallback */}
+        {primaryName ? (
+          <div className="h-[20px] lg:h-[22px] flex items-baseline overflow-hidden">
+            {isLinked ? (
+              <a
+                href={linkHref}
+                data-artisan-tooltip
+                onClick={(e) => e.stopPropagation()}
+                className="text-[11px] lg:text-[12px] font-medium text-ink border-b border-gold/40 pb-px hover:border-gold transition-colors truncate"
+              >
+                {primaryName}
+              </a>
+            ) : hasArtisanTag && isAdmin ? (
               <ArtisanTooltip
                 listingId={parseInt(listing.id)}
-                artisanId={listing.artisan_id}
-                confidence={listing.artisan_confidence}
+                artisanId={listing.artisan_id!}
+                confidence={listing.artisan_confidence as 'HIGH' | 'MEDIUM' | 'LOW'}
                 method={listing.artisan_method}
                 candidates={listing.artisan_candidates}
                 verified={listing.artisan_verified}
               >
-                <span className={`text-[9px] lg:text-[10px] font-mono font-medium px-1.5 py-0.5 ${
-                  listing.artisan_confidence === 'HIGH'
-                    ? 'bg-artisan-high-bg text-artisan-high'
-                    : listing.artisan_confidence === 'MEDIUM'
-                    ? 'bg-artisan-medium-bg text-artisan-medium'
-                    : 'bg-artisan-low-bg text-artisan-low'
-                }`}>
-                  {listing.artisan_display_name || listing.artisan_id}
+                <span className="text-[11px] lg:text-[12px] font-medium text-ink border-b border-gold/40 pb-px truncate">
+                  {primaryName}
                 </span>
               </ArtisanTooltip>
+            ) : hasArtisanTag ? (
+              <span className="text-[11px] lg:text-[12px] font-medium text-ink border-b border-gold/40 pb-px truncate">
+                {primaryName}
+              </span>
             ) : (
-              <a
-                href={`/artists/${listing.artisan_id}`}
-                data-artisan-tooltip
-                onClick={(e) => e.stopPropagation()}
-                className={`text-[9px] lg:text-[10px] font-mono font-medium px-1.5 py-0.5 hover:opacity-80 transition-opacity ${
-                  listing.artisan_confidence === 'HIGH'
-                    ? 'bg-artisan-high-bg text-artisan-high'
-                    : listing.artisan_confidence === 'MEDIUM'
-                    ? 'bg-artisan-medium-bg text-artisan-medium'
-                    : 'bg-artisan-low-bg text-artisan-low'
-                }`}
-              >
-                {listing.artisan_display_name || listing.artisan_id}
-              </a>
-            )
-          ) : isAdmin && !listing.artisan_id ? (
-            /* Admin: show "Set ID" badge for unmatched listings */
-            <ArtisanTooltip
-              listingId={parseInt(listing.id)}
-              startInSearchMode
-            >
-              <span className="text-[9px] lg:text-[10px] font-mono font-medium px-1.5 py-0.5 bg-muted/10 text-muted hover:text-ink transition-colors">
-                Set ID
+              <span className="text-[11px] lg:text-[12px] text-charcoal truncate">
+                {primaryName}
+              </span>
+            )}
+          </div>
+        ) : isAdmin && !listing.artisan_id ? (
+          <div className="h-[20px] lg:h-[22px] flex items-baseline">
+            <ArtisanTooltip listingId={parseInt(listing.id)} startInSearchMode>
+              <span className="text-[10px] font-medium text-muted hover:text-ink transition-colors cursor-pointer">
+                Set artisan
               </span>
             </ArtisanTooltip>
-          ) : null}
-        </div>
+          </div>
+        ) : <div className="h-[20px] lg:h-[22px]" />}
 
-        {/* Item Type - Primary identifier (always English), fallback to cleaned title */}
-        <h3 className="text-[15px] lg:text-base font-semibold leading-snug text-ink group-hover:text-gold transition-colors mb-1">
-          {itemType || cleanedTitle}
-        </h3>
-
-        {/* Smith/School - Key attribution - fixed height slot */}
-        <div className="h-[20px] lg:h-[22px]">
-          {(artisan || school) && (
-            <p className="text-[12px] lg:text-[13px] text-charcoal truncate">
-              {artisan || school}
-            </p>
-          )}
-        </div>
-
-        {/* Price row - always at bottom */}
-        <div className="pt-2.5 mt-auto border-t border-border/50 flex items-center justify-between">
-          <span className={`text-[15px] lg:text-base tabular-nums ${
-            isAskPrice
-              ? 'text-charcoal'
-              : 'text-ink font-semibold'
-          }`}>
-            {formatPrice(listing.price_value, listing.price_currency, currency, exchangeRates)}
+        {/* Price row */}
+        <div className="pt-2 mt-1 border-t border-border/40 flex items-center justify-between">
+          <span className={`text-[15px] lg:text-base tabular-nums ${isAskPrice ? 'text-charcoal' : 'text-ink font-semibold'}`}>
+            {priceDisplay}
           </span>
-          {shouldShowNewBadge(listing.first_seen_at, listing.dealer_earliest_seen_at, listing.is_initial_import) && (
-            <span
-              data-testid="new-listing-badge"
-              className="text-[9px] lg:text-[10px] uppercase tracking-wider font-semibold px-1.5 lg:px-2 py-0.5 lg:py-1 bg-new-listing-bg text-new-listing"
-            >
-              {isEarlyAccessListing(listing.first_seen_at) && !isTrialModeActive() ? 'Early Access' : 'New'}
-            </span>
-          )}
+          <div className="flex items-center gap-1.5">
+            {newBadge}
+          </div>
         </div>
       </div>
     </div>
   );
+
 }, (prevProps, nextProps) => {
-  // Custom comparison for React.memo
-  // Only re-render if something that affects display has changed
   return (
     prevProps.listing.id === nextProps.listing.id &&
     prevProps.currency === nextProps.currency &&
     prevProps.priority === nextProps.priority &&
     prevProps.isNearViewport === nextProps.isNearViewport &&
     prevProps.showFavoriteButton === nextProps.showFavoriteButton &&
-    // Compare exchange rates by timestamp (cheaper than deep compare)
     prevProps.exchangeRates?.timestamp === nextProps.exchangeRates?.timestamp &&
-    // Re-render if setsumei availability changes (OCR or Yuhinkai enrichment)
     prevProps.listing.setsumei_text_en === nextProps.listing.setsumei_text_en &&
     prevProps.listing.listing_yuhinkai_enrichment?.length === nextProps.listing.listing_yuhinkai_enrichment?.length &&
-    // Re-render if artisan data changes (after admin fix-artisan)
     prevProps.listing.artisan_id === nextProps.listing.artisan_id &&
     prevProps.listing.artisan_display_name === nextProps.listing.artisan_display_name &&
-    prevProps.listing.artisan_confidence === nextProps.listing.artisan_confidence &&
-    // Re-render if card style changes
-    prevProps.cardStyle === nextProps.cardStyle &&
-    prevProps.tagStyle === nextProps.tagStyle
+    prevProps.listing.artisan_confidence === nextProps.listing.artisan_confidence
   );
 });
