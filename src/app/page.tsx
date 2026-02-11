@@ -6,10 +6,10 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Header } from '@/components/layout/Header';
 import { FilterSidebar } from '@/components/browse/FilterSidebar';
+import type { SidebarVariant } from '@/components/browse/FilterContent';
 import { FilterDrawer } from '@/components/browse/FilterDrawer';
 import { ListingGrid } from '@/components/browse/ListingGrid';
-import { CurrencySelector } from '@/components/ui/CurrencySelector';
-import { AvailabilityToggle, type AvailabilityStatus } from '@/components/ui/AvailabilityToggle';
+import type { AvailabilityStatus } from '@/components/ui/AvailabilityToggle';
 import { getActiveFilterCount } from '@/components/browse/FilterContent';
 import { SaveSearchButton } from '@/components/browse/SaveSearchButton';
 import type { SavedSearchCriteria } from '@/types';
@@ -25,6 +25,7 @@ import { NewSinceLastVisitBanner } from '@/components/browse/NewSinceLastVisitBa
 import { useAuth } from '@/lib/auth/AuthContext';
 import { useNewSinceLastVisit } from '@/contexts/NewSinceLastVisitContext';
 import { NEW_SINCE_LAST_VISIT } from '@/lib/constants';
+import { CardStyleSelector, useCardStyle } from '@/components/browse/CardStyleSelector';
 
 interface Listing {
   id: string;
@@ -202,6 +203,7 @@ function HomeContent() {
   // Use auth context for admin status - more reliable than API response
   const { isAdmin: authIsAdmin, user } = useAuth();
   const { recordVisit } = useNewSinceLastVisit();
+  const [cardStyle, setCardStyle] = useCardStyle();
 
   const [activeTab, setActiveTab] = useState<AvailabilityStatus>(
     (searchParams.get('tab') as AvailabilityStatus) || 'available'
@@ -220,6 +222,11 @@ function HomeContent() {
     missingArtisanCode: searchParams.get('missing_artisan') === 'true',
   });
   const [sort, setSort] = useState(searchParams.get('sort') || 'recent');
+  // Sidebar design: Panel variant with soft corners and tint selection
+  const sidebarVariant: SidebarVariant = 'b';
+  const toolbarVariant = 'panel' as const;
+  const cornerStyle = 'soft' as const;
+  const selectStyle = 'tint' as const;
   const [page, setPage] = useState(Number(searchParams.get('page')) || 1);
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
   const [artisanCode, setArtisanCode] = useState(searchParams.get('artisan') || '');
@@ -588,53 +595,15 @@ function HomeContent() {
             <LiveStatsBanner data={data} />
           </div>
 
-          {/* Controls row - Desktop only, mobile uses filter drawer */}
-          <div className="hidden lg:flex items-center gap-6">
-            <AvailabilityToggle value={activeTab} onChange={handleAvailabilityChange} />
-            <CurrencySelector value={currency} onChange={handleCurrencyChange} />
-
-            <select
-              value={sort}
-              onChange={(e) => {
-                setSort(e.target.value);
-                setPage(1);
-              }}
-              className="bg-transparent border-0 text-[12px] text-charcoal focus:outline-none cursor-pointer pr-5 appearance-none"
-              style={{
-                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239ca3af'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
-                backgroundRepeat: 'no-repeat',
-                backgroundPosition: 'right 0 center',
-                backgroundSize: '14px',
-              }}
-            >
-              <option value="recent">Newest</option>
-              <option value="sale_date">Recently Sold</option>
-              <option value="price_asc">Price ↑</option>
-              <option value="price_desc">Price ↓</option>
-              <option value="name">A-Z</option>
-              {authIsAdmin && <option value="elite_factor">Elite Factor</option>}
-            </select>
-
-            {/* Save Search Button */}
-            <SaveSearchButton
-              criteria={{
-                tab: activeTab,
-                category: filters.category,
-                itemTypes: filters.itemTypes,
-                certifications: filters.certifications,
-                dealers: filters.dealers,
-                schools: filters.schools,
-                askOnly: filters.askOnly,
-                query: searchQuery || undefined,
-                sort,
-              } as SavedSearchCriteria}
-              currentMatchCount={data?.total}
-            />
-          </div>
         </div>
 
         {/* Subtle divider */}
         <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent mb-4 lg:mb-8" />
+
+        {/* Mobile card style selector */}
+        <div className="lg:hidden flex justify-end mb-3">
+          <CardStyleSelector value={cardStyle} onChange={setCardStyle} />
+        </div>
 
         {/* Active search indicator with clear button - visible on all screen sizes */}
         {searchQuery && (
@@ -675,9 +644,36 @@ function HomeContent() {
             filters={filters}
             onFilterChange={handleFilterChange}
             isAdmin={authIsAdmin}
+            variant={sidebarVariant}
+            cornerStyle={cornerStyle}
+            selectStyle={selectStyle}
+            panelControls={{
+              sort,
+              onSortChange: (v: string) => { setSort(v); setPage(1); },
+              currency,
+              onCurrencyChange: handleCurrencyChange,
+              availability: activeTab,
+              onAvailabilityChange: handleAvailabilityChange,
+              isAdmin: authIsAdmin,
+            }}
           />
 
           <div className="flex-1 min-w-0">
+            {/* Grid header — item count + Save Search */}
+            <div className="hidden lg:flex items-center justify-between pb-3 mb-1">
+              <span className="text-[11px] text-muted tabular-nums">
+                {isLoading ? 'Loading...' : `${data?.total?.toLocaleString() || 0} items`}
+              </span>
+              <SaveSearchButton
+                criteria={{
+                  tab: activeTab, category: filters.category, itemTypes: filters.itemTypes,
+                  certifications: filters.certifications, dealers: filters.dealers,
+                  schools: filters.schools, askOnly: filters.askOnly,
+                  query: searchQuery || undefined, sort,
+                } as SavedSearchCriteria}
+                currentMatchCount={data?.total}
+              />
+            </div>
             <ListingGrid
               listings={allListings}
               total={data?.total || 0}
@@ -692,6 +688,7 @@ function HomeContent() {
               onLoadMore={loadMore}
               searchId={currentSearchIdRef.current}
               isAdmin={authIsAdmin}
+              cardStyle={cardStyle}
             />
           </div>
         </div>
@@ -716,6 +713,7 @@ function HomeContent() {
 
         {/* Mobile Bottom Tab Bar */}
         <BottomTabBar activeFilterCount={getActiveFilterCount(filters)} />
+
       </main>
 
       {/* Footer - Minimal, scholarly */}

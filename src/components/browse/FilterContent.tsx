@@ -2,6 +2,8 @@
 
 import { useState, useCallback, useMemo, memo } from 'react';
 
+export type SidebarVariant = 'default' | 'a' | 'b';
+
 interface Facet {
   value: string;
   count: number;
@@ -16,6 +18,9 @@ interface DealerFacet {
 type Currency = 'USD' | 'JPY' | 'EUR';
 
 export type AvailabilityStatus = 'available' | 'sold' | 'all';
+
+export type CornerStyle = 'sharp' | 'subtle' | 'soft';
+export type SelectStyle = 'bold' | 'tint' | 'outline';
 
 export interface FilterContentProps {
   facets: {
@@ -42,6 +47,9 @@ export interface FilterContentProps {
   /** Whether the current user is an admin */
   isAdmin?: boolean;
   isUpdating?: boolean;
+  variant?: SidebarVariant;
+  cornerStyle?: CornerStyle;
+  selectStyle?: SelectStyle;
   // Sort, currency, and availability for mobile drawer
   sort?: string;
   onSortChange?: (sort: string) => void;
@@ -55,29 +63,53 @@ const FilterSection = memo(function FilterSection({
   title,
   children,
   defaultOpen = true,
+  variant,
+  activeCount,
 }: {
   title: string;
   children: React.ReactNode;
   defaultOpen?: boolean;
+  variant?: SidebarVariant;
+  activeCount?: number;
 }) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
+  const isA = variant === 'a';
+  const isB = variant === 'b';
+  const elevated = isA || isB;
 
   return (
-    <div className="py-5">
+    <div className={isB ? 'py-1' : elevated ? 'py-3.5 first:pt-0' : 'py-5'}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-between w-full text-left group mb-4 py-1"
+        className={`flex items-center justify-between w-full text-left group ${isB ? (isOpen ? 'py-0.5 mb-1' : 'py-0.5 mb-0') : elevated ? 'py-1 mb-2.5' : 'py-1 mb-4'}`}
       >
-        <h3 className="text-[13px] uppercase tracking-[0.15em] font-semibold text-ink">
-          {title}
-        </h3>
+        <div className="flex items-center gap-1.5">
+          <h3 className={
+            isA
+              ? 'text-[14px] font-semibold text-ink'
+              : isB
+                ? 'text-[11px] uppercase tracking-[0.06em] font-semibold text-muted'
+                : 'text-[13px] uppercase tracking-[0.15em] font-semibold text-ink'
+          }>
+            {title}
+          </h3>
+          {elevated && activeCount !== undefined && activeCount > 0 && (
+            <span className={
+              isA
+                ? 'inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-gold rounded-full'
+                : 'inline-flex items-center justify-center min-w-[14px] h-[14px] px-0.5 text-[8px] font-bold text-white bg-gold rounded-full leading-none'
+            } style={isA ? { backgroundColor: 'color-mix(in srgb, var(--accent) 12%, transparent)' } : undefined}>
+              {activeCount}
+            </span>
+          )}
+        </div>
         <svg
-          className={`w-4 h-4 text-charcoal transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+          className={`${isB ? 'w-2.5 h-2.5' : 'w-3.5 h-3.5'} text-muted/60 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
         >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
         </svg>
       </button>
       <div className={`transition-all duration-200 overflow-hidden ${isOpen ? 'max-h-[4000px] opacity-100' : 'max-h-0 opacity-0'}`}>
@@ -92,34 +124,71 @@ const Checkbox = memo(function Checkbox({
   count,
   checked,
   onChange,
+  variant,
 }: {
   label: string;
   count?: number;
   checked: boolean;
   onChange: (checked: boolean) => void;
+  variant?: SidebarVariant;
 }) {
+  const isA = variant === 'a';
+  const elevated = variant === 'a' || variant === 'b';
+
+  const isB = variant === 'b';
+
   return (
-    <label className="flex items-center gap-3 cursor-pointer group py-2.5 min-h-[48px] lg:min-h-[40px]">
-      <div className="relative">
+    <label className={`flex items-center cursor-pointer group transition-colors ${
+      isB
+        ? 'gap-2.5 py-[4px] min-h-[28px] rounded -mx-1 px-1 hover:bg-hover/30'
+        : elevated
+          ? 'gap-2.5 py-[5px] min-h-[32px] rounded-md -mx-1.5 px-1.5 hover:bg-hover/50'
+          : 'gap-3 py-2.5 min-h-[48px] lg:min-h-[40px]'
+    }`}>
+      <div className="relative flex-shrink-0">
         <input
           type="checkbox"
           checked={checked}
           onChange={(e) => onChange(e.target.checked)}
           className="peer sr-only"
         />
-        <div className="w-5 h-5 lg:w-[18px] lg:h-[18px] border-2 border-charcoal/40 peer-checked:border-gold peer-checked:bg-gold transition-colors rounded">
-          {checked && (
-            <svg className="w-5 h-5 lg:w-[18px] lg:h-[18px] text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-            </svg>
-          )}
-        </div>
+        {isA ? (
+          <div className={`w-[15px] h-[15px] border-[1.5px] rounded-full transition-all duration-150 ${
+            checked
+              ? 'border-gold bg-gold'
+              : 'border-charcoal/30 group-hover:border-charcoal/50'
+          }`}>
+            {checked && (
+              <svg className="w-[15px] h-[15px] text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+              </svg>
+            )}
+          </div>
+        ) : (
+          <div className={`${isB ? 'w-[15px] h-[15px] rounded-[2px]' : elevated ? 'w-[16px] h-[16px] rounded-[3px]' : 'w-5 h-5 lg:w-[18px] lg:h-[18px] rounded-[3px]'} border-[1.5px] transition-all duration-150 ${
+            checked
+              ? 'border-gold bg-gold'
+              : isB ? 'border-border/60 group-hover:border-border' : 'border-charcoal/30 group-hover:border-charcoal/50'
+          }`} style={isB && checked ? { boxShadow: '0 0 6px rgba(184, 157, 105, 0.2)' } : undefined}>
+            {checked && (
+              <svg className={`${isB ? 'w-[15px] h-[15px]' : elevated ? 'w-[16px] h-[16px]' : 'w-5 h-5 lg:w-[18px] lg:h-[18px]'} text-white`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+              </svg>
+            )}
+          </div>
+        )}
       </div>
-      <span className="text-[15px] lg:text-[14px] text-charcoal group-hover:text-ink transition-colors flex-1">
+      <span className={`${
+        isB ? 'text-[12px]' : elevated ? 'text-[13px]' : 'text-[15px] lg:text-[14px]'
+      } text-charcoal group-hover:text-ink transition-colors flex-1 leading-tight`}>
         {label}
       </span>
       {count !== undefined && (
-        <span className="text-[13px] lg:text-[12px] text-muted tabular-nums">{count}</span>
+        <span className={`${
+          isB ? 'text-[10px]' : elevated ? 'text-[11px]' : 'text-[13px] lg:text-[12px]'
+        } text-muted/70 tabular-nums flex-shrink-0`}>
+          {count}
+        </span>
       )}
     </label>
   );
@@ -283,6 +352,13 @@ const DEALER_COUNTRIES: Record<string, string> = {
   'Giuseppe Piva': 'Italy',
 };
 
+// Category display labels for active filter pills
+const CATEGORY_LABELS: Record<string, string> = {
+  nihonto: 'Nihonto',
+  tosogu: 'Tosogu',
+  armor: 'Armor',
+};
+
 export function FilterContent({
   facets,
   filters,
@@ -290,6 +366,9 @@ export function FilterContent({
   onClose,
   isUpdating,
   isAdmin,
+  variant,
+  cornerStyle = 'soft',
+  selectStyle = 'bold',
   sort,
   onSortChange,
   currency,
@@ -297,6 +376,13 @@ export function FilterContent({
   availability,
   onAvailabilityChange,
 }: FilterContentProps) {
+  const isA = variant === 'a';
+  const isB = variant === 'b';
+  const elevated = isA || isB;
+
+  // Dealer search state (elevated variants)
+  const [dealerSearch, setDealerSearch] = useState('');
+
   // Normalize and aggregate item types
   const normalizedItemTypes = useMemo(() => {
     const aggregated: Record<string, number> = {};
@@ -376,6 +462,23 @@ export function FilterContent({
       .sort((a, b) => b.count - a.count),
     [facets.dealers]
   );
+
+  // Dealer search filtering (elevated variants)
+  const filteredJapaneseDealers = useMemo(() => {
+    if (!dealerSearch) return japaneseDealers;
+    const q = dealerSearch.toLowerCase();
+    return japaneseDealers.filter(d =>
+      (DEALER_LABELS[d.name] || d.name).toLowerCase().includes(q)
+    );
+  }, [japaneseDealers, dealerSearch]);
+
+  const filteredInternationalDealers = useMemo(() => {
+    if (!dealerSearch) return internationalDealers;
+    const q = dealerSearch.toLowerCase();
+    return internationalDealers.filter(d =>
+      (DEALER_LABELS[d.name] || d.name).toLowerCase().includes(q)
+    );
+  }, [internationalDealers, dealerSearch]);
 
   // Calculate totals for category tabs
   const nihontoTotal = useMemo(() =>
@@ -489,9 +592,31 @@ export function FilterContent({
     (filters.missingSetsumei ? 1 : 0) +
     (filters.missingArtisanCode ? 1 : 0);
 
+  // Active filter pills (Variant A)
+  const activeFilterPills = useMemo(() => {
+    if (!isA) return [];
+    const pills: { key: string; label: string; onRemove: () => void }[] = [];
+    if (filters.category !== 'all') {
+      pills.push({ key: 'cat', label: CATEGORY_LABELS[filters.category] || filters.category, onRemove: () => onFilterChange('category', 'all') });
+    }
+    filters.certifications.forEach(c => pills.push({ key: `cert-${c}`, label: CERT_LABELS[c] || c, onRemove: () => handleCertChange(c, false) }));
+    filters.itemTypes.forEach(t => pills.push({ key: `type-${t}`, label: ITEM_TYPE_LABELS[t] || t, onRemove: () => handleItemTypeChange(t, false) }));
+    filters.historicalPeriods.forEach(p => pills.push({ key: `period-${p}`, label: PERIOD_LABELS[p] || p, onRemove: () => handlePeriodChange(p, false) }));
+    filters.signatureStatuses.forEach(s => pills.push({ key: `sig-${s}`, label: SIGNATURE_LABELS[s] || s, onRemove: () => handleSignatureChange(s, false) }));
+    filters.dealers.forEach(id => {
+      const d = facets.dealers.find(dl => dl.id === id);
+      if (d) pills.push({ key: `dealer-${id}`, label: DEALER_LABELS[d.name] || d.name, onRemove: () => handleDealerChange(id, false) });
+    });
+    return pills;
+  }, [isA, filters, facets.dealers, onFilterChange, handleCertChange, handleItemTypeChange, handlePeriodChange, handleSignatureChange, handleDealerChange]);
+
+  // Which dealer lists to use
+  const jpDealers = elevated ? filteredJapaneseDealers : japaneseDealers;
+  const intlDealers = elevated ? filteredInternationalDealers : internationalDealers;
+
   return (
-    <div className="px-4 lg:px-0 pb-6">
-      {/* Header with close and clear buttons */}
+    <div className={elevated ? 'pb-4' : 'px-4 lg:px-0 pb-6'}>
+      {/* Mobile header */}
       <div className="flex items-center justify-between mb-4 py-3 lg:hidden">
         <div className="flex items-center gap-3">
           <h2 className="text-[17px] font-semibold text-ink">
@@ -524,20 +649,44 @@ export function FilterContent({
         </div>
       </div>
 
-      {/* Desktop header */}
-      <div className="hidden lg:flex items-center justify-between mb-2 py-2">
-        <h2 className="text-[13px] uppercase tracking-[0.15em] font-semibold text-ink">
-          Filters
-        </h2>
-        {hasActiveFilters && (
-          <button
-            onClick={clearAllFilters}
-            className="text-[12px] text-gold hover:text-gold-light transition-colors font-medium"
-          >
-            Clear all
-          </button>
-        )}
-      </div>
+      {/* Desktop header — Variant A: sentence-case with subtle border */}
+      {isA && (
+        <div className="hidden lg:flex items-center justify-between mb-1 pb-3 border-b border-border/30">
+          <h2 className="text-[15px] font-semibold text-ink">Filters</h2>
+          {hasActiveFilters && (
+            <button onClick={clearAllFilters} className="text-[12px] text-gold hover:text-gold-light transition-colors font-medium">Clear all</button>
+          )}
+        </div>
+      )}
+      {/* Variant B: no desktop header (handled by FilterSidebar card header) */}
+      {/* Default: original uppercase header */}
+      {!elevated && (
+        <div className="hidden lg:flex items-center justify-between mb-2 py-2">
+          <h2 className="text-[13px] uppercase tracking-[0.15em] font-semibold text-ink">Filters</h2>
+          {hasActiveFilters && (
+            <button onClick={clearAllFilters} className="text-[12px] text-gold hover:text-gold-light transition-colors font-medium">Clear all</button>
+          )}
+        </div>
+      )}
+
+      {/* Active Filter Pills (Variant A only) */}
+      {isA && activeFilterPills.length > 0 && (
+        <div className="hidden lg:flex flex-wrap gap-1.5 pt-3 pb-2">
+          {activeFilterPills.map(pill => (
+            <button
+              key={pill.key}
+              onClick={pill.onRemove}
+              className="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-medium text-gold border border-gold/20 rounded-full hover:border-gold/40 transition-colors group"
+              style={{ backgroundColor: 'color-mix(in srgb, var(--accent) 8%, transparent)' }}
+            >
+              {pill.label}
+              <svg className="w-2.5 h-2.5 text-gold/50 group-hover:text-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Availability - Mobile only */}
       {onAvailabilityChange && (
@@ -569,9 +718,8 @@ export function FilterContent({
             >
               <option value="recent">Newest</option>
               <option value="sale_date">Recently Sold</option>
-              <option value="price_asc">Price ↑</option>
-              <option value="price_desc">Price ↓</option>
-              <option value="name">A-Z</option>
+              <option value="price_asc">Price: Low → High</option>
+              <option value="price_desc">Price: High → Low</option>
               {isAdmin && <option value="elite_factor">Elite Factor</option>}
             </select>
           </div>
@@ -592,246 +740,229 @@ export function FilterContent({
         </div>
       )}
 
-      <div className="divide-y divide-border/50">
-        {/* 1. Category Toggle - Most Important */}
-        <div className="py-5">
-          <h3 className="text-[13px] uppercase tracking-[0.15em] font-semibold text-ink mb-4">
-            Category
-          </h3>
-          <div className="flex gap-2 lg:mr-2">
-            {[
-              { key: 'all', label: 'All' },
-              { key: 'nihonto', label: 'Nihonto' },
-              { key: 'tosogu', label: 'Tosogu' },
-              { key: 'armor', label: 'Armor' },
-            ].map(({ key, label }) => (
-              <button
-                key={key}
-                onClick={() => handleCategoryChange(key as 'all' | 'nihonto' | 'tosogu' | 'armor')}
-                className={`flex-1 px-4 py-3 lg:py-2.5 text-[15px] lg:text-[14px] font-medium rounded-lg transition-all duration-200 ${
-                  filters.category === key
-                    ? 'bg-gold text-white shadow-sm'
-                    : 'bg-linen text-charcoal hover:bg-hover'
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
+      <div className={elevated ? 'space-y-0' : 'divide-y divide-border/50'}>
+        {/* 1. Category Toggle */}
+        <div className={isB ? 'pt-1.5 pb-1' : elevated ? 'pt-3 pb-2' : 'py-5'}>
+          {!isB && (
+            <h3 className={
+              isA ? 'text-[14px] font-semibold text-ink mb-3'
+                : 'text-[13px] uppercase tracking-[0.15em] font-semibold text-ink mb-4'
+            }>
+              Category
+            </h3>
+          )}
+          {isB ? (
+            /* Variant B: segmented control — no gaps, shared border */
+            <div className={`flex ${cornerStyle === 'sharp' ? 'rounded-none' : cornerStyle === 'subtle' ? 'rounded-sm' : 'rounded-lg'} border border-border/30 overflow-hidden`}>
+              {[
+                { key: 'all', label: 'All' },
+                { key: 'nihonto', label: 'Nihonto' },
+                { key: 'tosogu', label: 'Tosogu' },
+                { key: 'armor', label: 'Armor' },
+              ].map(({ key, label }, i) => (
+                <button
+                  key={key}
+                  onClick={() => handleCategoryChange(key as 'all' | 'nihonto' | 'tosogu' | 'armor')}
+                  className={`flex-1 py-[7px] text-[11px] font-semibold tracking-[0.03em] transition-colors ${
+                    i > 0 ? 'border-l border-border/20' : ''
+                  } ${
+                    filters.category === key
+                      ? selectStyle === 'bold'
+                        ? 'bg-gold text-white'
+                        : selectStyle === 'tint'
+                          ? 'bg-gold/12 text-gold'
+                          : 'border border-gold/50 text-gold -m-px'
+                      : 'text-muted hover:text-ink hover:bg-hover/30'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className={`flex gap-1.5 ${elevated ? '' : 'lg:mr-2'}`}>
+              {[
+                { key: 'all', label: 'All' },
+                { key: 'nihonto', label: 'Nihonto' },
+                { key: 'tosogu', label: 'Tosogu' },
+                { key: 'armor', label: 'Armor' },
+              ].map(({ key, label }) => (
+                <button
+                  key={key}
+                  onClick={() => handleCategoryChange(key as 'all' | 'nihonto' | 'tosogu' | 'armor')}
+                  className={
+                    isA
+                      ? `flex-1 px-3 py-2 text-[13px] font-medium rounded-md transition-all duration-200 ${
+                          filters.category === key
+                            ? 'bg-gold/12 text-gold border border-gold/30'
+                            : 'text-charcoal hover:text-ink hover:bg-hover border border-transparent'
+                        }`
+                      : `flex-1 px-4 py-3 lg:py-2.5 text-[15px] lg:text-[14px] font-medium rounded-lg transition-all duration-200 ${
+                          filters.category === key
+                            ? 'bg-gold text-white shadow-sm'
+                            : 'bg-linen text-charcoal hover:bg-hover'
+                        }`
+                  }
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* 2. Certification - Second Most Important */}
-        <FilterSection title="Certification">
-          <div className="space-y-1">
+        {elevated && <div className={`border-t ${isB ? 'border-border/15' : 'border-border/30'}`} />}
+
+        {/* 2. Certification */}
+        <FilterSection title="Designation" variant={variant} activeCount={filters.certifications.length}>
+          <div className={elevated ? 'space-y-0' : 'space-y-1'}>
             {sortedCertifications.map((facet) => (
-              <Checkbox
-                key={facet.value}
-                label={CERT_LABELS[facet.value] || facet.value}
-                count={facet.count}
-                checked={filters.certifications.includes(facet.value)}
-                onChange={(checked) => handleCertChange(facet.value, checked)}
-              />
+              <Checkbox key={facet.value} label={CERT_LABELS[facet.value] || facet.value} count={facet.count} checked={filters.certifications.includes(facet.value)} onChange={(checked) => handleCertChange(facet.value, checked)} variant={variant} />
             ))}
-            {sortedCertifications.length === 0 && (
-              <p className="text-[14px] text-muted italic py-2">No certifications</p>
-            )}
+            {sortedCertifications.length === 0 && <p className={`${isB ? 'text-[11px]' : 'text-[14px]'} text-muted italic py-2`}>No certifications</p>}
           </div>
         </FilterSection>
 
-        {/* 3. Historical Period - After Certification */}
-        <FilterSection title="Period" defaultOpen={false}>
-          <div className="space-y-1">
+        {elevated && <div className={`border-t ${isB ? 'border-border/15' : 'border-border/30'}`} />}
+
+        {/* 3. Historical Period */}
+        <FilterSection title="Period" defaultOpen={false} variant={variant} activeCount={filters.historicalPeriods.length}>
+          <div className={elevated ? 'space-y-0' : 'space-y-1'}>
             {facets.historicalPeriods?.map((facet) => (
-              <Checkbox
-                key={facet.value}
-                label={PERIOD_LABELS[facet.value] || facet.value}
-                count={facet.count}
-                checked={filters.historicalPeriods.includes(facet.value)}
-                onChange={(checked) => handlePeriodChange(facet.value, checked)}
-              />
+              <Checkbox key={facet.value} label={PERIOD_LABELS[facet.value] || facet.value} count={facet.count} checked={filters.historicalPeriods.includes(facet.value)} onChange={(checked) => handlePeriodChange(facet.value, checked)} variant={variant} />
             ))}
-            {(!facets.historicalPeriods || facets.historicalPeriods.length === 0) && (
-              <p className="text-[14px] text-muted italic py-2">No periods available</p>
-            )}
+            {(!facets.historicalPeriods || facets.historicalPeriods.length === 0) && <p className={`${isB ? 'text-[11px]' : 'text-[14px]'} text-muted italic py-2`}>No periods available</p>}
           </div>
         </FilterSection>
+
+        {elevated && <div className={`border-t ${isB ? 'border-border/15' : 'border-border/30'}`} />}
 
         {/* 4. Signature Status */}
-        <FilterSection title="Signature" defaultOpen={false}>
-          <div className="space-y-1">
+        <FilterSection title="Signature" defaultOpen={false} variant={variant} activeCount={filters.signatureStatuses.length}>
+          <div className={elevated ? 'space-y-0' : 'space-y-1'}>
             {facets.signatureStatuses?.map((facet) => (
-              <Checkbox
-                key={facet.value}
-                label={SIGNATURE_LABELS[facet.value] || facet.value}
-                count={facet.count}
-                checked={filters.signatureStatuses.includes(facet.value)}
-                onChange={(checked) => handleSignatureChange(facet.value, checked)}
-              />
+              <Checkbox key={facet.value} label={SIGNATURE_LABELS[facet.value] || facet.value} count={facet.count} checked={filters.signatureStatuses.includes(facet.value)} onChange={(checked) => handleSignatureChange(facet.value, checked)} variant={variant} />
             ))}
-            {(!facets.signatureStatuses || facets.signatureStatuses.length === 0) && (
-              <p className="text-[14px] text-muted italic py-2">No signature data</p>
-            )}
+            {(!facets.signatureStatuses || facets.signatureStatuses.length === 0) && <p className={`${isB ? 'text-[11px]' : 'text-[14px]'} text-muted italic py-2`}>No signature data</p>}
           </div>
         </FilterSection>
+
+        {elevated && <div className={`border-t ${isB ? 'border-border/15' : 'border-border/30'}`} />}
 
         {/* 5. Item Type */}
-        <FilterSection title="Type" defaultOpen={false}>
-          <div className="space-y-1">
-            {visibleItemTypes
-              .filter((facet) => facet.value !== 'other')
-              .map((facet) => (
-              <Checkbox
-                key={facet.value}
-                label={ITEM_TYPE_LABELS[facet.value] || facet.value}
-                count={facet.count}
-                checked={filters.itemTypes.includes(facet.value)}
-                onChange={(checked) => handleItemTypeChange(facet.value, checked)}
-              />
+        <FilterSection title="Type" defaultOpen={false} variant={variant} activeCount={filters.itemTypes.length}>
+          <div className={elevated ? 'space-y-0' : 'space-y-1'}>
+            {visibleItemTypes.filter((facet) => facet.value !== 'other').map((facet) => (
+              <Checkbox key={facet.value} label={ITEM_TYPE_LABELS[facet.value] || facet.value} count={facet.count} checked={filters.itemTypes.includes(facet.value)} onChange={(checked) => handleItemTypeChange(facet.value, checked)} variant={variant} />
             ))}
-            {visibleItemTypes.length === 0 && (
-              <p className="text-[14px] text-muted italic py-2">No items available</p>
-            )}
+            {visibleItemTypes.length === 0 && <p className={`${isB ? 'text-[11px]' : 'text-[14px]'} text-muted italic py-2`}>No items available</p>}
           </div>
         </FilterSection>
 
-        {/* 4. Dealer - Grouped by geography */}
-        <FilterSection title="Dealer" defaultOpen={false}>
-          <div className="space-y-1">
+        {elevated && <div className={`border-t ${isB ? 'border-border/15' : 'border-border/30'}`} />}
+
+        {/* 6. Dealer */}
+        <FilterSection title="Dealer" defaultOpen={false} variant={variant} activeCount={filters.dealers.length}>
+          <div className={elevated ? 'space-y-0' : 'space-y-1'}>
+            {/* Dealer search (elevated variants) */}
+            {elevated && (
+              <div className="relative mb-1.5">
+                <svg className={`absolute left-2 top-1/2 -translate-y-1/2 ${isB ? 'w-3 h-3' : 'w-3.5 h-3.5'} text-muted`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <input
+                  type="text"
+                  value={dealerSearch}
+                  onChange={(e) => setDealerSearch(e.target.value)}
+                  placeholder="Search dealers..."
+                  className={`w-full ${isB ? 'pl-7 pr-3 py-1 text-[11px]' : 'pl-8 pr-3 py-1.5 text-[12px]'} rounded-md border transition-colors focus:outline-none focus:border-gold/50 ${
+                    isA ? 'bg-transparent border-border/60' : 'bg-transparent border-border/30'
+                  } text-ink placeholder:text-muted/70`}
+                />
+                {dealerSearch && (
+                  <button onClick={() => setDealerSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted hover:text-ink">
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                  </button>
+                )}
+              </div>
+            )}
             {/* Japan dealers */}
-            {japaneseDealers.length > 0 && (
+            {jpDealers.length > 0 && (
               <>
-                <p className="text-[11px] uppercase tracking-wider text-muted font-medium pt-1 pb-2">
-                  Japan
-                </p>
-                {japaneseDealers.map((dealer) => (
-                  <Checkbox
-                    key={dealer.id}
-                    label={DEALER_LABELS[dealer.name] || dealer.name}
-                    count={dealer.count}
-                    checked={filters.dealers.includes(dealer.id)}
-                    onChange={(checked) => handleDealerChange(dealer.id, checked)}
-                  />
+                <p className={`${isB ? 'text-[10px] tracking-[0.08em]' : 'text-[11px] tracking-wider'} uppercase text-muted font-medium pt-1 ${isB ? 'pb-0.5' : elevated ? 'pb-1' : 'pb-2'}`}>Japan</p>
+                {jpDealers.map((dealer) => (
+                  <Checkbox key={dealer.id} label={DEALER_LABELS[dealer.name] || dealer.name} count={dealer.count} checked={filters.dealers.includes(dealer.id)} onChange={(checked) => handleDealerChange(dealer.id, checked)} variant={variant} />
                 ))}
               </>
             )}
             {/* International dealers */}
-            {internationalDealers.length > 0 && (
+            {intlDealers.length > 0 && (
               <>
-                <p className="text-[11px] uppercase tracking-wider text-muted font-medium pt-4 pb-2">
-                  International
-                </p>
-                {internationalDealers.map((dealer) => (
-                  <Checkbox
-                    key={dealer.id}
-                    label={`${DEALER_LABELS[dealer.name] || dealer.name} (${DEALER_COUNTRIES[dealer.name]})`}
-                    count={dealer.count}
-                    checked={filters.dealers.includes(dealer.id)}
-                    onChange={(checked) => handleDealerChange(dealer.id, checked)}
-                  />
+                <p className={`${isB ? 'text-[10px] tracking-[0.08em]' : 'text-[11px] tracking-wider'} uppercase text-muted font-medium ${isB ? 'pt-1.5 pb-0.5' : elevated ? 'pt-2 pb-1' : 'pt-4 pb-2'}`}>International</p>
+                {intlDealers.map((dealer) => (
+                  <Checkbox key={dealer.id} label={`${DEALER_LABELS[dealer.name] || dealer.name} (${DEALER_COUNTRIES[dealer.name]})`} count={dealer.count} checked={filters.dealers.includes(dealer.id)} onChange={(checked) => handleDealerChange(dealer.id, checked)} variant={variant} />
                 ))}
               </>
             )}
-            {facets.dealers.length === 0 && (
-              <p className="text-[14px] text-muted italic py-2">No dealers available</p>
+            {elevated && filteredJapaneseDealers.length === 0 && filteredInternationalDealers.length === 0 && dealerSearch && (
+              <p className={`${isB ? 'text-[11px]' : 'text-[12px]'} text-muted italic py-2`}>No dealers match &ldquo;{dealerSearch}&rdquo;</p>
             )}
+            {facets.dealers.length === 0 && <p className={`${isB ? 'text-[11px]' : 'text-[14px]'} text-muted italic py-2`}>No dealers available</p>}
           </div>
         </FilterSection>
 
-        {/* 5. Price on Request - Last, least important */}
-        <div className="py-5">
-          <label className="flex items-center justify-between cursor-pointer group min-h-[48px]">
-            <span className="text-[15px] lg:text-[14px] text-charcoal group-hover:text-ink transition-colors">
+        {elevated && <div className={`border-t ${isB ? 'border-border/15' : 'border-border/30'}`} />}
+
+        {/* 7. Price on Request */}
+        <div className={isB ? 'py-2' : elevated ? 'py-3' : 'py-5'}>
+          <label className={`flex items-center justify-between cursor-pointer group ${isB ? 'min-h-[28px]' : elevated ? 'min-h-[36px]' : 'min-h-[48px]'}`}>
+            <span className={`${isB ? 'text-[12px]' : elevated ? 'text-[13px]' : 'text-[15px] lg:text-[14px]'} text-charcoal group-hover:text-ink transition-colors`}>
               Price on request only
             </span>
             <div className="relative">
-              <input
-                type="checkbox"
-                checked={filters.askOnly || false}
-                onChange={(e) => onFilterChange('askOnly', e.target.checked)}
-                className="peer sr-only"
-              />
-              <div className={`w-12 h-7 lg:w-11 lg:h-6 rounded-full transition-colors ${
-                filters.askOnly
-                  ? 'bg-gold'
-                  : 'bg-border-dark'
-              }`}>
-                <div className={`absolute top-1 w-5 h-5 lg:w-4 lg:h-4 bg-white rounded-full shadow transition-transform ${
-                  filters.askOnly ? 'translate-x-6 lg:translate-x-6' : 'translate-x-1'
-                }`} />
+              <input type="checkbox" checked={filters.askOnly || false} onChange={(e) => onFilterChange('askOnly', e.target.checked)} className="peer sr-only" />
+              <div className={`${isB ? 'w-8 h-[18px]' : elevated ? 'w-10 h-[22px]' : 'w-12 h-7 lg:w-11 lg:h-6'} rounded-full transition-colors ${filters.askOnly ? 'bg-gold' : 'bg-border-dark'}`}>
+                <div className={`absolute ${isB ? 'top-[3px] w-3 h-3' : elevated ? 'top-[3px] w-4 h-4' : 'top-1 w-5 h-5 lg:w-4 lg:h-4'} bg-white rounded-full shadow transition-transform ${filters.askOnly ? (isB ? 'translate-x-[14px]' : elevated ? 'translate-x-[22px]' : 'translate-x-6 lg:translate-x-6') : 'translate-x-[3px]'}`} />
               </div>
             </div>
           </label>
         </div>
 
-        {/* 7. Admin: Missing Setsumei - Only visible to admins */}
+        {/* Admin: Missing Setsumei */}
         {isAdmin && (
-          <div className="py-5 border-t border-gold/30">
-            <label className="flex items-center justify-between cursor-pointer group min-h-[48px]">
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] px-1.5 py-0.5 bg-gold/20 text-gold rounded font-semibold">
-                  ADMIN
-                </span>
-                <span className="text-[15px] lg:text-[14px] text-charcoal group-hover:text-ink transition-colors">
-                  Missing Setsumei
-                </span>
+          <div className={`${isB ? 'py-2' : elevated ? 'py-3' : 'py-5'} border-t ${isB ? 'border-gold/20' : 'border-gold/30'}`}>
+            <label className={`flex items-center justify-between cursor-pointer group ${isB ? 'min-h-[28px]' : elevated ? 'min-h-[36px]' : 'min-h-[48px]'}`}>
+              <div className="flex items-center gap-1.5">
+                <span className={`${isB ? 'text-[9px] px-1 py-px' : 'text-[10px] px-1.5 py-0.5'} bg-gold/20 text-gold rounded font-semibold`}>ADMIN</span>
+                <span className={`${isB ? 'text-[12px]' : elevated ? 'text-[13px]' : 'text-[15px] lg:text-[14px]'} text-charcoal group-hover:text-ink transition-colors`}>Missing Setsumei</span>
               </div>
               <div className="relative">
-                <input
-                  type="checkbox"
-                  checked={filters.missingSetsumei || false}
-                  onChange={(e) => onFilterChange('missingSetsumei', e.target.checked)}
-                  className="peer sr-only"
-                />
-                <div className={`w-12 h-7 lg:w-11 lg:h-6 rounded-full transition-colors ${
-                  filters.missingSetsumei
-                    ? 'bg-gold'
-                    : 'bg-border-dark'
-                }`}>
-                  <div className={`absolute top-1 w-5 h-5 lg:w-4 lg:h-4 bg-white rounded-full shadow transition-transform ${
-                    filters.missingSetsumei ? 'translate-x-6 lg:translate-x-6' : 'translate-x-1'
-                  }`} />
+                <input type="checkbox" checked={filters.missingSetsumei || false} onChange={(e) => onFilterChange('missingSetsumei', e.target.checked)} className="peer sr-only" />
+                <div className={`${isB ? 'w-8 h-[18px]' : elevated ? 'w-10 h-[22px]' : 'w-12 h-7 lg:w-11 lg:h-6'} rounded-full transition-colors ${filters.missingSetsumei ? 'bg-gold' : 'bg-border-dark'}`}>
+                  <div className={`absolute ${isB ? 'top-[3px] w-3 h-3' : elevated ? 'top-[3px] w-4 h-4' : 'top-1 w-5 h-5 lg:w-4 lg:h-4'} bg-white rounded-full shadow transition-transform ${filters.missingSetsumei ? (isB ? 'translate-x-[14px]' : elevated ? 'translate-x-[22px]' : 'translate-x-6 lg:translate-x-6') : 'translate-x-[3px]'}`} />
                 </div>
               </div>
             </label>
-            <p className="text-[11px] text-muted mt-1">
-              Juyo/Tokuju items without OCR setsumei translation
-            </p>
+            {!isB && <p className="text-[11px] text-muted mt-1">Juyo/Tokuju items without OCR setsumei translation</p>}
           </div>
         )}
 
-        {/* 8. Admin: Missing Artisan Code - Only visible to admins */}
+        {/* Admin: Missing Artisan Code */}
         {isAdmin && (
-          <div className="py-5 border-t border-gold/30">
-            <label className="flex items-center justify-between cursor-pointer group min-h-[48px]">
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] px-1.5 py-0.5 bg-gold/20 text-gold rounded font-semibold">
-                  ADMIN
-                </span>
-                <span className="text-[15px] lg:text-[14px] text-charcoal group-hover:text-ink transition-colors">
-                  Missing Artisan Code
-                </span>
+          <div className={`${isB ? 'py-2' : elevated ? 'py-3' : 'py-5'} border-t ${isB ? 'border-gold/20' : 'border-gold/30'}`}>
+            <label className={`flex items-center justify-between cursor-pointer group ${isB ? 'min-h-[28px]' : elevated ? 'min-h-[36px]' : 'min-h-[48px]'}`}>
+              <div className="flex items-center gap-1.5">
+                <span className={`${isB ? 'text-[9px] px-1 py-px' : 'text-[10px] px-1.5 py-0.5'} bg-gold/20 text-gold rounded font-semibold`}>ADMIN</span>
+                <span className={`${isB ? 'text-[12px]' : elevated ? 'text-[13px]' : 'text-[15px] lg:text-[14px]'} text-charcoal group-hover:text-ink transition-colors`}>Missing Artisan Code</span>
               </div>
               <div className="relative">
-                <input
-                  type="checkbox"
-                  checked={filters.missingArtisanCode || false}
-                  onChange={(e) => onFilterChange('missingArtisanCode', e.target.checked)}
-                  className="peer sr-only"
-                />
-                <div className={`w-12 h-7 lg:w-11 lg:h-6 rounded-full transition-colors ${
-                  filters.missingArtisanCode
-                    ? 'bg-gold'
-                    : 'bg-border-dark'
-                }`}>
-                  <div className={`absolute top-1 w-5 h-5 lg:w-4 lg:h-4 bg-white rounded-full shadow transition-transform ${
-                    filters.missingArtisanCode ? 'translate-x-6 lg:translate-x-6' : 'translate-x-1'
-                  }`} />
+                <input type="checkbox" checked={filters.missingArtisanCode || false} onChange={(e) => onFilterChange('missingArtisanCode', e.target.checked)} className="peer sr-only" />
+                <div className={`${isB ? 'w-8 h-[18px]' : elevated ? 'w-10 h-[22px]' : 'w-12 h-7 lg:w-11 lg:h-6'} rounded-full transition-colors ${filters.missingArtisanCode ? 'bg-gold' : 'bg-border-dark'}`}>
+                  <div className={`absolute ${isB ? 'top-[3px] w-3 h-3' : elevated ? 'top-[3px] w-4 h-4' : 'top-1 w-5 h-5 lg:w-4 lg:h-4'} bg-white rounded-full shadow transition-transform ${filters.missingArtisanCode ? (isB ? 'translate-x-[14px]' : elevated ? 'translate-x-[22px]' : 'translate-x-6 lg:translate-x-6') : 'translate-x-[3px]'}`} />
                 </div>
               </div>
             </label>
-            <p className="text-[11px] text-muted mt-1">
-              Items without Yuhinkai artisan code match
-            </p>
+            {!isB && <p className="text-[11px] text-muted mt-1">Items without Yuhinkai artisan code match</p>}
           </div>
         )}
       </div>

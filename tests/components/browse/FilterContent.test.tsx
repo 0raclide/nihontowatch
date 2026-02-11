@@ -55,7 +55,7 @@ describe('FilterContent Component', () => {
 
     expect(screen.getByText('Filters')).toBeInTheDocument();
     expect(screen.getByText('Category')).toBeInTheDocument();
-    expect(screen.getByText('Certification')).toBeInTheDocument();
+    expect(screen.getByText('Designation')).toBeInTheDocument();
     expect(screen.getByText('Type')).toBeInTheDocument();
     expect(screen.getByText('Dealer')).toBeInTheDocument();
   });
