@@ -92,6 +92,7 @@ interface Listing {
     retrieval_score?: number;
   }> | null;
   artisan_verified?: 'correct' | 'incorrect' | null;
+  admin_hidden?: boolean;
 }
 
 interface ExchangeRates {
@@ -776,6 +777,13 @@ export const ListingCard = memo(function ListingCard({
         {imageElement}
         {unavailableOverlay}
         {favoriteBtn}
+        {isAdmin && listing.admin_hidden && (
+          <div className="absolute top-2 left-2 w-6 h-6 flex items-center justify-center rounded-full bg-red-500/80 text-white" title="Hidden from public">
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
+            </svg>
+          </div>
+        )}
       </div>
 
       {/* Content */}

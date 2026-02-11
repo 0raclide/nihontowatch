@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import type { Listing } from '@/types';
 import { useQuickViewOptional } from '@/contexts/QuickViewContext';
+import { useAuth } from '@/lib/auth/AuthContext';
 import { useCurrency } from '@/hooks/useCurrency';
 import { ListingCard } from '@/components/browse/ListingCard';
 
@@ -26,6 +27,7 @@ export function ArtisanListings({ code, artisanName, initialListings, status = '
   const [listings, setListings] = useState<Listing[]>(initialListings || []);
   const [loading, setLoading] = useState(!initialListings);
   const quickView = useQuickViewOptional();
+  const { isAdmin } = useAuth();
   const { currency, exchangeRates } = useCurrency();
 
   // Sync local state when a listing is refreshed in QuickView (e.g. after artisan fix)
@@ -87,19 +89,25 @@ export function ArtisanListings({ code, artisanName, initialListings, status = '
     );
   }
 
+  // Filter hidden listings for non-admin users (admins see them with indicator)
+  const visibleListings = useMemo(
+    () => isAdmin ? listings : listings.filter(l => !l.admin_hidden),
+    [listings, isAdmin]
+  );
+
   // Pass listings to QuickView context for prev/next navigation
   useEffect(() => {
-    if (quickView && listings.length > 0) {
-      quickView.setListings(listings);
+    if (quickView && visibleListings.length > 0) {
+      quickView.setListings(visibleListings);
     }
-  }, [quickView, listings]);
+  }, [quickView, visibleListings]);
 
-  if (listings.length === 0) return null;
+  if (visibleListings.length === 0) return null;
 
   return (
     <div>
       <div className="grid grid-cols-2 gap-2.5 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {listings.map((listing) => (
+        {visibleListings.map((listing) => (
           <ListingCard
             key={listing.id}
             listing={listing as any}
@@ -108,6 +116,7 @@ export function ArtisanListings({ code, artisanName, initialListings, status = '
             mobileView="grid"
             fontSize="standard"
             imageAspect="aspect-[4/3]"
+            isAdmin={isAdmin}
           />
         ))}
       </div>

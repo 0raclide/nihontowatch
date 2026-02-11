@@ -70,8 +70,7 @@ export async function GET(
 
     let query = supabase
       .from('listings')
-      .select(LISTING_FIELDS)
-      .or('admin_hidden.eq.false,admin_hidden.is.null');
+      .select(LISTING_FIELDS);
 
     if (artisanCodes.length === 1) {
       query = query.eq('artisan_id', code);
