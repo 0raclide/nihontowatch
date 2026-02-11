@@ -159,17 +159,18 @@ export function CatalogueShowcase({ entry, totalEntries, artisanName }: Catalogu
   const [galleryIndex, setGalleryIndex] = useState<number | null>(null);
 
   // Build flat image array for gallery navigation:
-  // cover → photos → catalog → sayagaki → provenance
+  // cover → photos → provenance (catalog + sayagaki images excluded from display)
   const galleryImages = useMemo(() => {
-    const order: CatalogueImage['category'][] = ['cover', 'photo', 'catalog', 'sayagaki', 'provenance'];
-    return [...entry.images].sort((a, b) => order.indexOf(a.category) - order.indexOf(b.category));
+    const shown = new Set<CatalogueImage['category']>(['cover', 'photo', 'provenance']);
+    const order: CatalogueImage['category'][] = ['cover', 'photo', 'provenance'];
+    return entry.images
+      .filter(img => shown.has(img.category))
+      .sort((a, b) => order.indexOf(a.category) - order.indexOf(b.category));
   }, [entry.images]);
 
   // Separate images by category for display
   const coverImage = entry.coverImage;
   const photoImages = useMemo(() => entry.images.filter(img => img.category === 'photo'), [entry.images]);
-  const catalogImages = useMemo(() => entry.images.filter(img => img.category === 'catalog'), [entry.images]);
-  const sayagakiImages = useMemo(() => entry.images.filter(img => img.category === 'sayagaki'), [entry.images]);
   const provenanceImages = useMemo(() => entry.images.filter(img => img.category === 'provenance'), [entry.images]);
 
   const openGallery = useCallback((image: CatalogueImage) => {
@@ -247,68 +248,11 @@ export function CatalogueShowcase({ entry, totalEntries, artisanName }: Catalogu
         </div>
       )}
 
-      {/* ─── CATALOG REFERENCE IMAGES ────────────────────────────────── */}
-      {catalogImages.length > 0 && (
-        <details className="mb-4 group">
-          <summary className="text-[11px] text-ink/40 cursor-pointer hover:text-ink/60 transition-colors select-none
-            list-none flex items-center gap-1.5 py-2">
-            <span className="text-[10px] text-ink/30 group-open:rotate-90 transition-transform duration-150">&#9654;</span>
-            {catalogImages.length} catalogue reference image{catalogImages.length !== 1 ? 's' : ''}
-          </summary>
-          <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5 mt-2">
-            {catalogImages.map((img, i) => (
-              <button
-                key={i}
-                type="button"
-                onClick={() => openGallery(img)}
-                className="aspect-[4/3] overflow-hidden border border-border/10 cursor-zoom-in
-                  hover:border-border/25 transition-all duration-150 bg-black/5"
-                aria-label={`Catalogue image ${i + 1}`}
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={img.url}
-                  alt={`Catalogue reference ${i + 1}`}
-                  className="w-full h-full object-cover"
-                  loading="lazy"
-                />
-              </button>
-            ))}
-          </div>
-        </details>
-      )}
-
       {/* ─── SAYAGAKI ────────────────────────────────────────────────── */}
-      {(entry.sayagakiEn || sayagakiImages.length > 0) && (
+      {entry.sayagakiEn && (
         <div>
           <SubHeader title="Sayagaki" />
-          <div className="grid grid-cols-1 sm:grid-cols-[1fr_200px] gap-6">
-            <div>
-              {entry.sayagakiEn && <TextBlock text={entry.sayagakiEn} />}
-            </div>
-            {sayagakiImages.length > 0 && (
-              <div className="flex flex-col gap-2 order-first sm:order-last">
-                {sayagakiImages.map((img, i) => (
-                  <button
-                    key={i}
-                    type="button"
-                    onClick={() => openGallery(img)}
-                    className="border border-border/15 cursor-zoom-in hover:border-border/30
-                      transition-all duration-150 bg-black/5"
-                    aria-label={`Sayagaki image ${i + 1}`}
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={img.url}
-                      alt={`Sayagaki ${i + 1}`}
-                      className="w-full h-auto object-contain"
-                      loading="lazy"
-                    />
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+          <TextBlock text={entry.sayagakiEn} />
         </div>
       )}
 
