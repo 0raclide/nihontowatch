@@ -2,25 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import type { Listing } from '@/types';
-import { getImageUrl } from '@/lib/images';
 import { useQuickViewOptional } from '@/contexts/QuickViewContext';
-import { CERT_CONFIG } from '@/components/listing/MetadataGrid';
-
-/** Map cert tier to Tailwind color class — matches browse cards and QuickView */
-function certColor(tier: string): string {
-  switch (tier) {
-    case 'tokuju': return 'text-tokuju';
-    case 'jubi': return 'text-jubi';
-    case 'juyo': return 'text-juyo';
-    case 'tokuho': return 'text-toku-hozon';
-    default: return 'text-hozon';
-  }
-}
+import { useCurrency } from '@/hooks/useCurrency';
+import { ListingCard } from '@/components/browse/ListingCard';
 
 /**
  * ArtisanListings — Displays currently available listings matched to this artisan.
+ * Reuses the shared ListingCard component for visual consistency with browse.
  * Fetches from /api/artisan/[code]/listings client-side.
  */
 
@@ -37,7 +26,7 @@ export function ArtisanListings({ code, artisanName, initialListings, status = '
   const [listings, setListings] = useState<Listing[]>(initialListings || []);
   const [loading, setLoading] = useState(!initialListings);
   const quickView = useQuickViewOptional();
-  const router = useRouter();
+  const { currency, exchangeRates } = useCurrency();
 
   // Sync local state when a listing is refreshed in QuickView (e.g. after artisan fix)
   // If the listing's artisan_id changed away from this artist, remove it from the grid
@@ -87,7 +76,7 @@ export function ArtisanListings({ code, artisanName, initialListings, status = '
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
         {Array.from({ length: 4 }).map((_, i) => (
           <div key={i} className="bg-surface-elevated border border-border rounded-lg animate-pulse">
-            <div className="aspect-[4/3] bg-border/50 rounded-t-lg" />
+            <div className="aspect-[3/4] bg-border/50 rounded-t-lg" />
             <div className="p-3 space-y-2">
               <div className="h-3 bg-border/50 rounded w-3/4" />
               <div className="h-3 bg-border/50 rounded w-1/2" />
@@ -98,82 +87,27 @@ export function ArtisanListings({ code, artisanName, initialListings, status = '
     );
   }
 
+  // Pass listings to QuickView context for prev/next navigation
+  useEffect(() => {
+    if (quickView && listings.length > 0) {
+      quickView.setListings(listings);
+    }
+  }, [quickView, listings]);
+
   if (listings.length === 0) return null;
 
   return (
     <div>
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-        {listings.map((listing) => {
-          const imageUrl = getImageUrl(listing);
-          const dealer = listing.dealer || listing.dealers;
-          const price = listing.price_value
-            ? `¥${listing.price_value.toLocaleString()}`
-            : listing.price_raw || 'Ask';
-
-          return (
-            <div
-              key={listing.id}
-              role="button"
-              tabIndex={0}
-              onClick={() => {
-                if (quickView) {
-                  quickView.setListings(listings);
-                  quickView.openQuickView(listing);
-                } else {
-                  router.push(`/listing/${listing.id}`);
-                }
-              }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  if (quickView) {
-                    quickView.setListings(listings);
-                    quickView.openQuickView(listing);
-                  } else {
-                    router.push(`/listing/${listing.id}`);
-                  }
-                }
-              }}
-              className="group bg-surface-elevated border border-border rounded-lg overflow-hidden hover:border-gold/40 transition-colors cursor-pointer"
-            >
-              {/* Image */}
-              <div className="aspect-[4/3] bg-border/30 overflow-hidden">
-                {imageUrl ? (
-                  <img
-                    src={imageUrl}
-                    alt={listing.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    loading="lazy"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-muted text-xs">
-                    No image
-                  </div>
-                )}
-              </div>
-
-              {/* Info */}
-              <div className="p-2.5">
-                <h4 className="text-xs font-medium text-ink line-clamp-2 leading-snug">
-                  {listing.title_en || listing.title}
-                </h4>
-                <div className="mt-1.5 flex items-baseline justify-between gap-1">
-                  <span className="text-xs font-medium text-gold">{price}</span>
-                  {dealer && (
-                    <span className="text-[10px] text-muted truncate">
-                      {dealer.name}
-                    </span>
-                  )}
-                </div>
-                {listing.cert_type && CERT_CONFIG[listing.cert_type] && (
-                  <span className={`mt-1 inline-block text-[10px] uppercase tracking-wider font-bold ${certColor(CERT_CONFIG[listing.cert_type].tier)}`}>
-                    {CERT_CONFIG[listing.cert_type].shortLabel}
-                  </span>
-                )}
-              </div>
-            </div>
-          );
-        })}
+        {listings.map((listing) => (
+          <ListingCard
+            key={listing.id}
+            listing={listing as any}
+            currency={currency}
+            exchangeRates={exchangeRates}
+            mobileView="grid"
+          />
+        ))}
       </div>
 
       {/* Link to full browse filtered by artisan */}
