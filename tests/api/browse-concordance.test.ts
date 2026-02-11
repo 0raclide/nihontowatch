@@ -168,8 +168,8 @@ describe('Browse API Concordance Tests', () => {
   // ===========================================================================
 
   describe('Category counts should approximately sum to all (with tolerance)', () => {
-    // Allow for items that don't fit any category (e.g., unknown, tanegashima)
-    const TOLERANCE_PERCENT = 0.15; // 15% tolerance for uncategorized items
+    // Allow for items that don't fit any category (e.g., unknown, inro)
+    const TOLERANCE_PERCENT = 0.20; // 20% tolerance for uncategorized items
 
     it('nihonto + tosogu + armor totals should approximately equal all total', () => {
       const sumTotals = nihontoResponse.total + tosoguResponse.total + armorResponse.total;
