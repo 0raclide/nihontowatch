@@ -5,9 +5,15 @@
 -- Reuses item_type/cert_type/artisan vocabulary from listings.
 
 -- ---------------------------------------------------------------------------
+-- 0. Drop old collection tables (different schema from Dec 2025 prototype)
+-- ---------------------------------------------------------------------------
+DROP TABLE IF EXISTS public.user_collection_items CASCADE;
+DROP TABLE IF EXISTS public.user_collection_folders CASCADE;
+
+-- ---------------------------------------------------------------------------
 -- 1. user_collection_items
 -- ---------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS public.user_collection_items (
+CREATE TABLE public.user_collection_items (
   id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id         UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
 
@@ -74,7 +80,7 @@ CREATE TABLE IF NOT EXISTS public.user_collection_items (
 -- ---------------------------------------------------------------------------
 -- 2. user_collection_folders (schema only, UI deferred)
 -- ---------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS public.user_collection_folders (
+CREATE TABLE public.user_collection_folders (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id     UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   name        TEXT NOT NULL,
