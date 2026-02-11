@@ -10,14 +10,19 @@ import { eraToBroadPeriod, PERIOD_ORDER, BROAD_PERIODS } from '@/lib/artisan/era
 const yuhinkaiUrl = process.env.YUHINKAI_SUPABASE_URL || process.env.OSHI_V2_SUPABASE_URL || '';
 const yuhinkaiKey = process.env.YUHINKAI_SUPABASE_KEY || process.env.OSHI_V2_SUPABASE_KEY || process.env.OSHI_V2_SUPABASE_ANON_KEY || '';
 
-if (!yuhinkaiUrl) {
-  console.error('[Yuhinkai] YUHINKAI_SUPABASE_URL is not configured.');
-}
-if (!yuhinkaiKey) {
-  console.error('[Yuhinkai] YUHINKAI_SUPABASE_KEY is not configured.');
+export const yuhinkaiConfigured = !!(yuhinkaiUrl && yuhinkaiKey);
+
+if (!yuhinkaiConfigured) {
+  console.warn('[Yuhinkai] Not configured — Yuhinkai features will be unavailable.');
 }
 
-export const yuhinkaiClient = createClient(yuhinkaiUrl, yuhinkaiKey);
+// Use placeholder URL/key when not configured to avoid crashing at module evaluation
+// time during builds (e.g., CI without Yuhinkai secrets). Queries will fail gracefully
+// at runtime — all functions already handle errors with null/empty returns.
+export const yuhinkaiClient = createClient(
+  yuhinkaiUrl || 'https://placeholder.supabase.co',
+  yuhinkaiKey || 'placeholder-key'
+);
 
 export interface ArtistProfile {
   id: string;
@@ -1242,6 +1247,295 @@ export async function resolveTeacher(teacherRef: string): Promise<ArtisanStub | 
   }
 
   return null;
+}
+
+// =============================================================================
+// CATALOGUE PUBLICATIONS (user-published objects → NihontoWatch artist pages)
+// =============================================================================
+
+export interface CatalogueImage {
+  url: string;
+  type: 'oshigata' | 'sugata' | 'art' | 'detail' | 'other' | 'photo';
+  width?: number;
+  height?: number;
+}
+
+export interface CatalogueEntry {
+  objectUuid: string;
+  collection: string;        // "Juyo", "Tokuju", etc.
+  volume: number;
+  itemNumber: number;
+  formType: string | null;
+
+  images: CatalogueImage[];  // Whitelisted only (no setsumei)
+
+  sayagakiEn: string | null;
+  provenanceEn: string | null;
+  curatorNote: string | null;
+
+  contributor: {
+    displayName: string;
+    avatarUrl: string | null;
+  };
+
+  publishedAt: string;
+}
+
+/** Collection prestige order for sorting */
+const CATALOGUE_COLLECTION_PRESTIGE: Record<string, number> = {
+  'Tokuju': 0,
+  'Juyo': 1,
+  'Kokuho': 2,
+  'JuBun': 3,
+  'Jubi': 4,
+};
+
+/** Yuhinkai Supabase URL for avatar/image construction */
+const YUHINKAI_STORAGE_BASE = process.env.YUHINKAI_SUPABASE_URL || process.env.OSHI_V2_SUPABASE_URL || '';
+
+/**
+ * Fetch published catalogue entries for an artisan, for display on the
+ * NihontoWatch artist profile page.
+ *
+ * Query chain:
+ * 1. gold_values → get object UUIDs for this artisan
+ * 2. catalogue_publications → filter to published objects
+ * 3. For each: catalog_records, stored_images (no setsumei), linked_records (whitelisted types), user_profiles
+ *
+ * Whitelist enforced in code (service role key bypasses RLS):
+ * - Images: image_type != 'setsumei'
+ * - Text: only content_en (never content_jp)
+ * - Record types: only 'photo', 'sayagaki', 'provenance'
+ */
+export async function getPublishedCatalogueEntries(
+  artisanCode: string,
+  entityType: 'smith' | 'tosogu'
+): Promise<CatalogueEntry[]> {
+  const codeColumn = entityType === 'smith' ? 'gold_smith_id' : 'gold_maker_id';
+
+  // 1. Get object UUIDs for this artisan
+  const { data: goldRows, error: goldErr } = await yuhinkaiClient
+    .from('gold_values')
+    .select('object_uuid, gold_form_type')
+    .eq(codeColumn, artisanCode);
+
+  if (goldErr || !goldRows || goldRows.length === 0) return [];
+
+  const uuids = goldRows.map(r => r.object_uuid as string);
+  const formTypeByUuid = new Map<string, string | null>();
+  for (const r of goldRows) {
+    formTypeByUuid.set(r.object_uuid as string, r.gold_form_type as string | null);
+  }
+
+  // 2. Filter to published objects
+  const BATCH_SIZE = 200;
+  const publications: Array<{ object_uuid: string; published_by: string; published_at: string; note: string | null }> = [];
+
+  for (let i = 0; i < uuids.length; i += BATCH_SIZE) {
+    const batch = uuids.slice(i, i + BATCH_SIZE);
+    const { data } = await yuhinkaiClient
+      .from('catalogue_publications')
+      .select('object_uuid, published_by, published_at, note')
+      .in('object_uuid', batch);
+    if (data) publications.push(...(data as typeof publications));
+  }
+
+  if (publications.length === 0) return [];
+
+  const publishedUuids = publications.map(p => p.object_uuid);
+  const pubByUuid = new Map(publications.map(p => [p.object_uuid, p]));
+
+  // 3. Fetch associated data in parallel for all published objects
+  const [catalogRecords, storedImages, linkedRecords, userProfiles] = await Promise.all([
+    // Catalog records (to find collection/volume/item)
+    (async () => {
+      const rows: Array<{ object_uuid: string; collection: string; volume: number; item_number: number }> = [];
+      for (let i = 0; i < publishedUuids.length; i += BATCH_SIZE) {
+        const batch = publishedUuids.slice(i, i + BATCH_SIZE);
+        const { data } = await yuhinkaiClient
+          .from('catalog_records')
+          .select('object_uuid, collection, volume, item_number')
+          .in('object_uuid', batch);
+        if (data) rows.push(...(data as typeof rows));
+      }
+      return rows;
+    })(),
+
+    // Stored images (catalog-level: oshigata, sugata, art, detail, other — NOT setsumei)
+    (async () => {
+      const rows: Array<{ object_uuid: string; storage_path: string; image_type: string; width: number | null; height: number | null }> = [];
+      for (let i = 0; i < publishedUuids.length; i += BATCH_SIZE) {
+        const batch = publishedUuids.slice(i, i + BATCH_SIZE);
+        const { data } = await yuhinkaiClient
+          .from('stored_images')
+          .select('object_uuid, storage_path, image_type, width, height')
+          .in('object_uuid', batch)
+          .neq('image_type', 'setsumei')
+          .eq('is_current', true);
+        if (data) rows.push(...(data as typeof rows));
+      }
+      return rows;
+    })(),
+
+    // Linked records (whitelisted types only: photo, sayagaki, provenance)
+    (async () => {
+      const rows: Array<{ object_uuid: string; type: string; content_en: string | null; image_ids: string[] | null }> = [];
+      for (let i = 0; i < publishedUuids.length; i += BATCH_SIZE) {
+        const batch = publishedUuids.slice(i, i + BATCH_SIZE);
+        const { data } = await yuhinkaiClient
+          .from('linked_records')
+          .select('object_uuid, type, content_en, image_ids')
+          .in('object_uuid', batch)
+          .in('type', ['photo', 'sayagaki', 'provenance']);
+        if (data) rows.push(...(data as typeof rows));
+      }
+      return rows;
+    })(),
+
+    // User profiles for contributors
+    (async () => {
+      const userIds = [...new Set(publications.map(p => p.published_by))];
+      const profiles = new Map<string, { pseudonym: string | null; display_name: string | null; avatar_url: string | null }>();
+      for (let i = 0; i < userIds.length; i += BATCH_SIZE) {
+        const batch = userIds.slice(i, i + BATCH_SIZE);
+        const { data } = await yuhinkaiClient
+          .from('user_profiles')
+          .select('id, pseudonym, display_name, avatar_url')
+          .in('id', batch);
+        if (data) {
+          for (const row of data) {
+            profiles.set(row.id as string, {
+              pseudonym: row.pseudonym as string | null,
+              display_name: row.display_name as string | null,
+              avatar_url: row.avatar_url as string | null,
+            });
+          }
+        }
+      }
+      return profiles;
+    })(),
+  ]);
+
+  // 4. Fetch stored_images for photo linked_records (by image_ids)
+  const allPhotoImageIds: string[] = [];
+  for (const lr of linkedRecords) {
+    if (lr.type === 'photo' && lr.image_ids && lr.image_ids.length > 0) {
+      allPhotoImageIds.push(...lr.image_ids);
+    }
+  }
+
+  const photoImagesById = new Map<string, { storage_path: string; image_type: string; width: number | null; height: number | null }>();
+  if (allPhotoImageIds.length > 0) {
+    for (let i = 0; i < allPhotoImageIds.length; i += BATCH_SIZE) {
+      const batch = allPhotoImageIds.slice(i, i + BATCH_SIZE);
+      const { data } = await yuhinkaiClient
+        .from('stored_images')
+        .select('id, storage_path, image_type, width, height')
+        .in('id', batch)
+        .eq('is_current', true);
+      if (data) {
+        for (const row of data) {
+          photoImagesById.set(row.id as string, {
+            storage_path: row.storage_path as string,
+            image_type: row.image_type as string,
+            width: row.width as number | null,
+            height: row.height as number | null,
+          });
+        }
+      }
+    }
+  }
+
+  // 5. Group data by object UUID and pick highest-prestige catalog record
+  const catalogByUuid = new Map<string, Array<{ collection: string; volume: number; item_number: number }>>();
+  for (const cr of catalogRecords) {
+    if (!catalogByUuid.has(cr.object_uuid)) catalogByUuid.set(cr.object_uuid, []);
+    catalogByUuid.get(cr.object_uuid)!.push({ collection: cr.collection, volume: cr.volume, item_number: cr.item_number });
+  }
+
+  const imagesByUuid = new Map<string, CatalogueImage[]>();
+  for (const si of storedImages) {
+    if (!imagesByUuid.has(si.object_uuid)) imagesByUuid.set(si.object_uuid, []);
+    imagesByUuid.get(si.object_uuid)!.push({
+      url: `${IMAGE_STORAGE_BASE}/storage/v1/object/public/images/${si.storage_path}`,
+      type: si.image_type as CatalogueImage['type'],
+      width: si.width ?? undefined,
+      height: si.height ?? undefined,
+    });
+  }
+
+  // Add photo images from linked_records
+  for (const lr of linkedRecords) {
+    if (lr.type === 'photo' && lr.image_ids) {
+      for (const imgId of lr.image_ids) {
+        const img = photoImagesById.get(imgId);
+        if (img) {
+          if (!imagesByUuid.has(lr.object_uuid)) imagesByUuid.set(lr.object_uuid, []);
+          imagesByUuid.get(lr.object_uuid)!.push({
+            url: `${IMAGE_STORAGE_BASE}/storage/v1/object/public/images/${img.storage_path}`,
+            type: 'photo',
+            width: img.width ?? undefined,
+            height: img.height ?? undefined,
+          });
+        }
+      }
+    }
+  }
+
+  // Collect text fields by object UUID
+  const sayagakiByUuid = new Map<string, string>();
+  const provenanceByUuid = new Map<string, string>();
+  for (const lr of linkedRecords) {
+    if (!lr.content_en) continue;
+    if (lr.type === 'sayagaki' && !sayagakiByUuid.has(lr.object_uuid)) {
+      sayagakiByUuid.set(lr.object_uuid, lr.content_en);
+    }
+    if (lr.type === 'provenance' && !provenanceByUuid.has(lr.object_uuid)) {
+      provenanceByUuid.set(lr.object_uuid, lr.content_en);
+    }
+  }
+
+  // 6. Assemble CatalogueEntry[] sorted by collection prestige
+  const entries: CatalogueEntry[] = [];
+
+  for (const uuid of publishedUuids) {
+    const pub = pubByUuid.get(uuid)!;
+    const catalogs = catalogByUuid.get(uuid) || [];
+
+    // Pick highest-prestige catalog record
+    catalogs.sort((a, b) =>
+      (CATALOGUE_COLLECTION_PRESTIGE[a.collection] ?? 99) - (CATALOGUE_COLLECTION_PRESTIGE[b.collection] ?? 99)
+    );
+    const bestCatalog = catalogs[0];
+    if (!bestCatalog) continue; // No catalog record — skip
+
+    const profile = userProfiles.get(pub.published_by);
+    const displayName = profile?.pseudonym || profile?.display_name || 'Member';
+    const avatarUrl = profile?.avatar_url
+      ? `${YUHINKAI_STORAGE_BASE}/storage/v1/render/image/public/images/${profile.avatar_url}?width=64&height=64&resize=cover&quality=80`
+      : null;
+
+    entries.push({
+      objectUuid: uuid,
+      collection: bestCatalog.collection,
+      volume: bestCatalog.volume,
+      itemNumber: bestCatalog.item_number,
+      formType: formTypeByUuid.get(uuid) || null,
+      images: imagesByUuid.get(uuid) || [],
+      sayagakiEn: sayagakiByUuid.get(uuid) || null,
+      provenanceEn: provenanceByUuid.get(uuid) || null,
+      curatorNote: pub.note || null,
+      contributor: { displayName, avatarUrl },
+      publishedAt: pub.published_at,
+    });
+  }
+
+  // Sort by collection prestige
+  entries.sort((a, b) =>
+    (CATALOGUE_COLLECTION_PRESTIGE[a.collection] ?? 99) - (CATALOGUE_COLLECTION_PRESTIGE[b.collection] ?? 99)
+  );
+
+  return entries;
 }
 
 // =============================================================================
