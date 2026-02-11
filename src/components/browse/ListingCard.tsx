@@ -13,7 +13,7 @@ import { shouldShowNewBadge } from '@/lib/newListing';
 import { trackSearchClick } from '@/lib/tracking/searchTracker';
 import { isTrialModeActive } from '@/types/subscription';
 import { useImagePreloader } from '@/hooks/useImagePreloader';
-import type { CardStyle } from './CardStyleSelector';
+import type { CardStyle, TagStyle } from './CardStyleSelector';
 
 // 7 days in milliseconds - matches the data delay for free tier
 const EARLY_ACCESS_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
@@ -113,6 +113,7 @@ interface ListingCardProps {
   searchId?: number; // For CTR tracking
   isAdmin?: boolean; // For admin-only features like artisan code display
   cardStyle?: CardStyle; // Card design variant
+  tagStyle?: TagStyle; // Tag sub-variant for artisan display
 }
 
 // Normalize Japanese kanji and variants to standard English keys
@@ -416,6 +417,7 @@ export const ListingCard = memo(function ListingCard({
   searchId,
   isAdmin = false,
   cardStyle = 'classic',
+  tagStyle = 'a',
 }: ListingCardProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
@@ -599,6 +601,7 @@ export const ListingCard = memo(function ListingCard({
     </div>
   ) : isNearViewport ? (
     <Image
+      key={imageUrl}
       src={imageUrl}
       alt={altText}
       fill
@@ -741,68 +744,160 @@ export const ListingCard = memo(function ListingCard({
   const priceDisplay = formatPrice(listing.price_value, listing.price_currency, currency, exchangeRates);
 
   // ══════════════════════════════════════════════════════
-  // OPTION B: "Clean" — Uncluttered badges, artisan as attribution
-  // Moves artisan name out of crowded badge row → attribution line
-  // Badge row only has cert + setsumei (left side), nothing on right
+  // "Refined" — Dealer + cert header, tall image, clean content
+  // Best hybrid: Gallery header (no bar) + tall 3:4 image
+  // Artisan prominent in attribution, no badge-row crowding
   // ══════════════════════════════════════════════════════
   if (cardStyle === 'clean') {
+    // Cert text color (no bg badge — just colored text in header)
+    const certTextColor = certInfo
+      ? certInfo.tier === 'tokuju' ? 'text-tokuju'
+        : certInfo.tier === 'jubi' ? 'text-jubi'
+        : certInfo.tier === 'juyo' ? 'text-juyo'
+        : certInfo.tier === 'tokuho' ? 'text-toku-hozon'
+        : 'text-hozon'
+      : '';
+
+    // Resolve the best artisan label for display
+    const hasArtisan = !!(artisanDisplayName && listing.artisan_id && listing.artisan_confidence !== 'NONE');
+    const displayArtisan = hasArtisan ? artisanDisplayName : (artisan || null);
+    const displaySchool = school || null;
+
+    // ── Tag style A: "Inline" ──
+    // Artisan name woven naturally into attribution text.
+    // No badge, no pill — just clean text. Artisan clickable as link.
+    const artisanLineA = (
+      <div className="h-[18px] lg:h-[20px]">
+        {displayArtisan ? (
+          <p className="text-[11px] lg:text-[12px] text-charcoal truncate">
+            {hasArtisan && listing.artisan_id && !isAdmin ? (
+              <a
+                href={`/artists/${listing.artisan_id}`}
+                data-artisan-tooltip
+                onClick={(e) => e.stopPropagation()}
+                className="hover:text-gold transition-colors"
+              >
+                {displayArtisan}
+              </a>
+            ) : (
+              displayArtisan
+            )}
+            {displaySchool && displayArtisan !== displaySchool && (
+              <span className="text-muted"> · {displaySchool}</span>
+            )}
+          </p>
+        ) : displaySchool ? (
+          <p className="text-[11px] lg:text-[12px] text-charcoal truncate">{displaySchool}</p>
+        ) : null}
+      </div>
+    );
+
+    // ── Tag style B: "Pill" ──
+    // Artisan shown as a subtle rounded pill (no color coding).
+    // Smaller text, soft bg, truncates gracefully.
+    const artisanLineB = (
+      <div className="h-[20px] lg:h-[22px] flex items-center gap-1.5 overflow-hidden">
+        {displayArtisan ? (
+          hasArtisan && listing.artisan_id && !isAdmin ? (
+            <a
+              href={`/artists/${listing.artisan_id}`}
+              data-artisan-tooltip
+              onClick={(e) => e.stopPropagation()}
+              className="text-[10px] lg:text-[11px] font-medium text-charcoal bg-surface px-2 py-0.5 rounded-full truncate max-w-[70%] hover:bg-hover transition-colors"
+            >
+              {displayArtisan}
+            </a>
+          ) : (
+            <span className="text-[10px] lg:text-[11px] font-medium text-charcoal bg-surface px-2 py-0.5 rounded-full truncate max-w-[70%]">
+              {displayArtisan}
+            </span>
+          )
+        ) : null}
+        {displaySchool && displayArtisan !== displaySchool && (
+          <span className="text-[10px] lg:text-[11px] text-muted truncate">{displaySchool}</span>
+        )}
+        {!displayArtisan && displaySchool && (
+          <span className="text-[11px] lg:text-[12px] text-charcoal truncate">{displaySchool}</span>
+        )}
+      </div>
+    );
+
+    // ── Tag style C: "Underline" ──
+    // Artisan name with a subtle gold accent underline. School as quiet suffix.
+    const artisanLineC = (
+      <div className="h-[20px] lg:h-[22px] flex items-baseline gap-1.5 overflow-hidden">
+        {displayArtisan ? (
+          hasArtisan && listing.artisan_id && !isAdmin ? (
+            <a
+              href={`/artists/${listing.artisan_id}`}
+              data-artisan-tooltip
+              onClick={(e) => e.stopPropagation()}
+              className="text-[11px] lg:text-[12px] font-medium text-ink border-b border-gold/40 pb-px hover:border-gold transition-colors truncate max-w-[70%]"
+            >
+              {displayArtisan}
+            </a>
+          ) : (
+            <span className="text-[11px] lg:text-[12px] font-medium text-ink border-b border-gold/40 pb-px truncate max-w-[70%]">
+              {displayArtisan}
+            </span>
+          )
+        ) : null}
+        {displaySchool && displayArtisan !== displaySchool && (
+          <span className="text-[10px] lg:text-[11px] text-muted/60 truncate">{displaySchool}</span>
+        )}
+        {!displayArtisan && displaySchool && (
+          <span className="text-[11px] lg:text-[12px] text-charcoal truncate">{displaySchool}</span>
+        )}
+      </div>
+    );
+
+    const artisanLine = tagStyle === 'c' ? artisanLineC : tagStyle === 'b' ? artisanLineB : artisanLineA;
+
     return (
       <div
         ref={cardRef}
         {...containerProps}
         className="group block bg-cream border border-border hover:border-gold/40 transition-all duration-300 cursor-pointer"
       >
-        {/* Dealer — smaller, more subtle */}
-        <div className="px-2.5 py-1.5 lg:px-4 lg:py-2 bg-surface text-center">
-          <span className="text-[9px] lg:text-[11px] font-medium tracking-[0.14em] text-muted lowercase">
+        {/* Header: dealer (left) + setsumei icon + cert (right) — no colored bar */}
+        <div className="px-3 py-2 lg:px-4 lg:py-2.5 flex items-center justify-between">
+          <span className="text-[9px] lg:text-[10px] font-medium tracking-[0.14em] text-muted lowercase">
             {listing.dealers?.name}
           </span>
+          <div className="flex items-center gap-2">
+            {hasSetsumeiTranslation(listing) && <SetsumeiZufuBadge iconOnly />}
+            {certInfo && (
+              <span className={`text-[9px] lg:text-[10px] uppercase tracking-wider font-bold ${certTextColor}`}>
+                {certInfo.label}
+              </span>
+            )}
+          </div>
         </div>
 
-        {/* Image */}
-        <div className="relative aspect-[4/3] overflow-hidden bg-linen">
-          {isLoading && <div className="absolute inset-0 bg-gradient-to-r from-linen via-paper to-linen animate-shimmer" />}
+        {/* Tall image — 3:4 aspect, no overlays */}
+        <div className="relative aspect-[3/4] overflow-hidden bg-linen">
+          {isLoading && imageUrl && <div className="absolute inset-0 bg-gradient-to-r from-linen via-paper to-linen animate-shimmer" />}
           {imageElement}
           {unavailableOverlay}
           {favoriteBtn}
         </div>
 
-        {/* Content — more breathing room */}
-        <div className="p-3 lg:p-4 flex flex-col h-[135px] lg:h-[145px]">
-          {/* Cert badge row — only cert + setsumei, no artisan clutter */}
-          <div className="h-[24px] lg:h-[28px] flex items-center gap-1.5">
-            {certBadge}
-            {hasSetsumeiTranslation(listing) && <SetsumeiZufuBadge compact />}
-          </div>
-
-          {/* Item type — larger, bolder */}
-          <h3 className="text-[16px] lg:text-[17px] font-semibold leading-snug text-ink group-hover:text-gold transition-colors">
+        {/* Content — spacious, clear hierarchy */}
+        <div className="px-3 pt-3 pb-3 lg:px-4 lg:pt-3.5 lg:pb-4 flex flex-col gap-0.5">
+          {/* Type — primary identifier */}
+          <h3 className="text-[15px] lg:text-base font-semibold leading-snug text-ink group-hover:text-gold transition-colors">
             {itemType || cleanedTitle}
           </h3>
 
-          {/* Attribution — artisan display name (from badge), then smith, then school */}
-          <div className="h-[22px] lg:h-[24px] mt-0.5">
-            {(artisanDisplayName && listing.artisan_id && listing.artisan_confidence !== 'NONE') ? (
-              <p className="text-[12px] lg:text-[13px] text-charcoal truncate">
-                {artisanDisplayName}
-                {school && artisanDisplayName !== school && (
-                  <span className="text-muted"> · {school}</span>
-                )}
-              </p>
-            ) : (artisan || school) ? (
-              <p className="text-[12px] lg:text-[13px] text-charcoal truncate">
-                {artisan}{school && artisan && artisan !== school ? <span className="text-muted"> · {school}</span> : !artisan ? school : null}
-              </p>
-            ) : null}
-          </div>
+          {/* Attribution — varies by tag style */}
+          {artisanLine}
 
-          {/* Price + badges */}
-          <div className="pt-2 mt-auto border-t border-border/50 flex items-center justify-between">
+          {/* Price row — clean separator */}
+          <div className="pt-2 mt-1 border-t border-border/40 flex items-center justify-between">
             <span className={`text-[15px] lg:text-base tabular-nums ${isAskPrice ? 'text-charcoal' : 'text-ink font-semibold'}`}>
               {priceDisplay}
             </span>
             <div className="flex items-center gap-1.5">
-              {isAdmin && artisanBadge}
               {newBadge}
             </div>
           </div>
@@ -812,175 +907,172 @@ export const ListingCard = memo(function ListingCard({
   }
 
   // ══════════════════════════════════════════════════════
-  // OPTION C: "Editorial" — Image-forward, minimal content
-  // Dealer as tiny overlay on image. Cert overlaid on image.
-  // Below: just type + attribution + price. Ultra clean.
+  // "Cinematic" — Tall image, airy content, no overlays
+  // Dealer + cert text in a delicate header row
+  // Big image → type → artisan · school → price
   // ══════════════════════════════════════════════════════
   if (cardStyle === 'editorial') {
-    return (
-      <div
-        ref={cardRef}
-        {...containerProps}
-        className="group block bg-cream border border-border/60 hover:border-gold/40 transition-all duration-300 cursor-pointer overflow-hidden"
-      >
-        {/* Image — taller aspect, full bleed, overlays for dealer + cert */}
-        <div className="relative aspect-[3/4] overflow-hidden bg-linen">
-          {isLoading && <div className="absolute inset-0 bg-gradient-to-r from-linen via-paper to-linen animate-shimmer" />}
-          {imageElement}
-          {unavailableOverlay}
-
-          {/* Dealer overlay — top left, subtle */}
-          <div className="absolute top-0 left-0 right-0 bg-gradient-to-b from-black/40 via-black/15 to-transparent pt-2 pb-6 px-3">
-            <span className="text-[9px] lg:text-[10px] font-medium tracking-[0.14em] text-white/80 lowercase">
-              {listing.dealers?.name}
-            </span>
-          </div>
-
-          {/* Cert badge overlay — bottom left */}
-          {certInfo && (
-            <div className="absolute bottom-2 left-2">
-              <span className={`text-[9px] lg:text-[10px] uppercase tracking-wider font-semibold px-2 py-1 backdrop-blur-sm ${
-                certInfo.tier === 'tokuju'
-                  ? 'bg-tokuju-bg/90 text-tokuju'
-                  : certInfo.tier === 'jubi'
-                  ? 'bg-jubi-bg/90 text-jubi'
-                  : certInfo.tier === 'juyo'
-                  ? 'bg-juyo-bg/90 text-juyo'
-                  : certInfo.tier === 'tokuho'
-                  ? 'bg-toku-hozon-bg/90 text-toku-hozon'
-                  : 'bg-hozon-bg/90 text-hozon'
-              }`}>
-                {certInfo.label}
-              </span>
-              {hasSetsumeiTranslation(listing) && (
-                <span className="ml-1.5"><SetsumeiZufuBadge compact /></span>
-              )}
-            </div>
-          )}
-
-          {/* Favorite — top right */}
-          {favoriteBtn}
-        </div>
-
-        {/* Content — ultra minimal */}
-        <div className="p-3 lg:p-4 flex flex-col h-[100px] lg:h-[110px]">
-          {/* Type + attribution on one area */}
-          <h3 className="text-[15px] lg:text-base font-semibold leading-snug text-ink group-hover:text-gold transition-colors">
-            {itemType || cleanedTitle}
-          </h3>
-          <div className="mt-0.5 h-[20px]">
-            {(artisanDisplayName && listing.artisan_id && listing.artisan_confidence !== 'NONE') ? (
-              <p className="text-[12px] lg:text-[13px] text-charcoal truncate">{artisanDisplayName}</p>
-            ) : (artisan || school) ? (
-              <p className="text-[12px] lg:text-[13px] text-charcoal truncate">{artisan || school}</p>
-            ) : null}
-          </div>
-
-          {/* Price row */}
-          <div className="mt-auto flex items-center justify-between">
-            <span className={`text-[16px] lg:text-[17px] tabular-nums ${isAskPrice ? 'text-charcoal' : 'text-ink font-semibold'}`}>
-              {priceDisplay}
-            </span>
-            <div className="flex items-center gap-1.5">
-              {isAdmin && artisanBadge}
-              {newBadge}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // ══════════════════════════════════════════════════════
-  // OPTION D: "Gallery" — Colored accent line, refined hierarchy
-  // Cert shown as a colored top accent bar. Dealer inline.
-  // Bold type headline, generous whitespace.
-  // ══════════════════════════════════════════════════════
-  if (cardStyle === 'gallery') {
-    // Accent color based on certification tier
-    const accentColor = certInfo
-      ? certInfo.tier === 'tokuju' ? 'bg-tokuju'
-        : certInfo.tier === 'jubi' ? 'bg-jubi'
-        : certInfo.tier === 'juyo' ? 'bg-juyo'
-        : certInfo.tier === 'tokuho' ? 'bg-toku-hozon'
-        : 'bg-hozon'
-      : 'bg-border';
+    const certTextColor = certInfo
+      ? certInfo.tier === 'tokuju' ? 'text-tokuju'
+        : certInfo.tier === 'jubi' ? 'text-jubi'
+        : certInfo.tier === 'juyo' ? 'text-juyo'
+        : certInfo.tier === 'tokuho' ? 'text-toku-hozon'
+        : 'text-hozon'
+      : '';
 
     return (
       <div
         ref={cardRef}
         {...containerProps}
-        className="group block bg-cream border border-border/50 hover:border-gold/40 transition-all duration-300 cursor-pointer overflow-hidden"
+        className="group block bg-cream border border-border/60 hover:border-gold/40 transition-all duration-300 cursor-pointer"
       >
-        {/* Cert accent line — 3px top bar colored by cert tier */}
-        <div className={`h-[3px] ${accentColor}`} />
-
-        {/* Dealer + cert label inline */}
-        <div className="px-3 pt-2.5 pb-1.5 lg:px-4 flex items-center justify-between">
-          <span className="text-[9px] lg:text-[10px] font-medium tracking-[0.12em] text-muted lowercase">
+        {/* Slim header — dealer left, cert right */}
+        <div className="px-3 py-1.5 lg:px-4 lg:py-2 flex items-baseline justify-between border-b border-border/30">
+          <span className="text-[8px] lg:text-[9px] font-medium tracking-[0.16em] text-muted/70 uppercase">
             {listing.dealers?.name}
           </span>
           {certInfo && (
-            <span className={`text-[8px] lg:text-[9px] uppercase tracking-wider font-semibold ${
-              certInfo.tier === 'tokuju' ? 'text-tokuju'
-                : certInfo.tier === 'jubi' ? 'text-jubi'
-                : certInfo.tier === 'juyo' ? 'text-juyo'
-                : certInfo.tier === 'tokuho' ? 'text-toku-hozon'
-                : 'text-hozon'
-            }`}>
+            <span className={`text-[9px] lg:text-[10px] uppercase tracking-wider font-bold ${certTextColor}`}>
               {certInfo.label}
             </span>
           )}
         </div>
 
-        {/* Image */}
-        <div className="relative aspect-[4/3] overflow-hidden bg-linen mx-3 lg:mx-4">
-          {isLoading && <div className="absolute inset-0 bg-gradient-to-r from-linen via-paper to-linen animate-shimmer" />}
+        {/* Tall image — 5:7 aspect (taller than 3:4, portrait feel) */}
+        <div className="relative aspect-[5/7] overflow-hidden bg-linen">
+          {isLoading && imageUrl && <div className="absolute inset-0 bg-gradient-to-r from-linen via-paper to-linen animate-shimmer" />}
           {imageElement}
           {unavailableOverlay}
           {favoriteBtn}
         </div>
 
-        {/* Content — generous whitespace */}
-        <div className="p-3 lg:p-4 flex flex-col h-[125px] lg:h-[130px]">
-          {/* Type — large headline */}
-          <h3 className="text-[17px] lg:text-lg font-semibold leading-tight text-ink group-hover:text-gold transition-colors">
+        {/* Content — minimal, airy */}
+        <div className="px-3 pt-2.5 pb-3 lg:px-4 lg:pt-3 lg:pb-3.5">
+          {/* Type */}
+          <h3 className="text-[14px] lg:text-[15px] font-semibold leading-snug text-ink group-hover:text-gold transition-colors">
             {itemType || cleanedTitle}
           </h3>
 
-          {/* Attribution — smith + school */}
-          <div className="mt-1 h-[20px] lg:h-[22px]">
+          {/* Attribution line — artisan · school */}
+          <div className="h-[18px] mt-0.5">
             {(artisanDisplayName && listing.artisan_id && listing.artisan_confidence !== 'NONE') ? (
-              <p className="text-[12px] lg:text-[13px] text-charcoal truncate">
+              <p className="text-[11px] lg:text-[12px] text-charcoal/80 truncate">
                 {artisanDisplayName}
                 {school && artisanDisplayName !== school && (
-                  <span className="text-muted"> · {school}</span>
+                  <span className="text-muted/60"> · {school}</span>
                 )}
               </p>
             ) : (artisan || school) ? (
-              <p className="text-[12px] lg:text-[13px] text-charcoal truncate">
-                {artisan}{school && artisan && artisan !== school ? <span className="text-muted"> · {school}</span> : !artisan ? school : null}
+              <p className="text-[11px] lg:text-[12px] text-charcoal/80 truncate">
+                {artisan || school}
               </p>
             ) : null}
           </div>
 
-          {/* Setsumei badge row (subtle) */}
-          {hasSetsumeiTranslation(listing) && (
-            <div className="mt-1">
-              <SetsumeiZufuBadge compact />
-            </div>
-          )}
-
-          {/* Price + badges */}
-          <div className="mt-auto flex items-center justify-between">
-            <span className={`text-[16px] lg:text-[17px] tabular-nums ${isAskPrice ? 'text-charcoal' : 'text-ink font-bold'}`}>
+          {/* Price + micro badges */}
+          <div className="flex items-center justify-between mt-2">
+            <span className={`text-[15px] lg:text-base tabular-nums ${isAskPrice ? 'text-charcoal/70' : 'text-ink font-semibold'}`}>
               {priceDisplay}
             </span>
             <div className="flex items-center gap-1.5">
-              {isAdmin && artisanBadge}
+              {hasSetsumeiTranslation(listing) && <SetsumeiZufuBadge iconOnly />}
               {newBadge}
             </div>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ══════════════════════════════════════════════════════
+  // "Museum" — Centered, auction-catalog elegance
+  // Cert as colored dot + text. Everything centered.
+  // Tall image, serif-feeling hierarchy, quiet luxury.
+  // ══════════════════════════════════════════════════════
+  if (cardStyle === 'gallery') {
+    const certDotColor = certInfo
+      ? certInfo.tier === 'tokuju' ? 'bg-tokuju'
+        : certInfo.tier === 'jubi' ? 'bg-jubi'
+        : certInfo.tier === 'juyo' ? 'bg-juyo'
+        : certInfo.tier === 'tokuho' ? 'bg-toku-hozon'
+        : 'bg-hozon'
+      : '';
+    const certTextColor = certInfo
+      ? certInfo.tier === 'tokuju' ? 'text-tokuju'
+        : certInfo.tier === 'jubi' ? 'text-jubi'
+        : certInfo.tier === 'juyo' ? 'text-juyo'
+        : certInfo.tier === 'tokuho' ? 'text-toku-hozon'
+        : 'text-hozon'
+      : '';
+
+    return (
+      <div
+        ref={cardRef}
+        {...containerProps}
+        className="group block bg-cream border border-border/40 hover:border-gold/30 transition-all duration-300 cursor-pointer"
+      >
+        {/* Dealer — small, centered, top */}
+        <div className="px-3 pt-2.5 pb-1 lg:px-4 lg:pt-3 text-center">
+          <span className="text-[8px] lg:text-[9px] font-medium tracking-[0.18em] text-muted/60 uppercase">
+            {listing.dealers?.name}
+          </span>
+        </div>
+
+        {/* Tall image — 3:4 aspect */}
+        <div className="relative aspect-[3/4] overflow-hidden bg-linen mx-2.5 lg:mx-3">
+          {isLoading && imageUrl && <div className="absolute inset-0 bg-gradient-to-r from-linen via-paper to-linen animate-shimmer" />}
+          {imageElement}
+          {unavailableOverlay}
+          {favoriteBtn}
+        </div>
+
+        {/* Content — centered, catalog feel */}
+        <div className="px-3 pt-3 pb-3 lg:px-4 lg:pt-3.5 lg:pb-4 text-center">
+          {/* Cert indicator — dot + label, centered */}
+          {certInfo && (
+            <div className="flex items-center justify-center gap-1.5 mb-1.5">
+              <span className={`w-1.5 h-1.5 rounded-full ${certDotColor}`} />
+              <span className={`text-[8px] lg:text-[9px] uppercase tracking-[0.2em] font-semibold ${certTextColor}`}>
+                {certInfo.label}
+              </span>
+              {hasSetsumeiTranslation(listing) && <SetsumeiZufuBadge iconOnly />}
+            </div>
+          )}
+
+          {/* Type — centered headline */}
+          <h3 className="text-[16px] lg:text-[17px] font-semibold leading-tight text-ink group-hover:text-gold transition-colors">
+            {itemType || cleanedTitle}
+          </h3>
+
+          {/* Attribution — centered, elegant */}
+          <div className="h-[18px] lg:h-[20px] mt-0.5">
+            {(artisanDisplayName && listing.artisan_id && listing.artisan_confidence !== 'NONE') ? (
+              <p className="text-[11px] lg:text-[12px] text-charcoal/70 truncate">
+                {artisanDisplayName}
+                {school && artisanDisplayName !== school && (
+                  <span className="text-muted/50"> · {school}</span>
+                )}
+              </p>
+            ) : (artisan || school) ? (
+              <p className="text-[11px] lg:text-[12px] text-charcoal/70 truncate">
+                {artisan || school}
+              </p>
+            ) : null}
+          </div>
+
+          {/* Price — prominent, centered */}
+          <div className="pt-2.5 mt-2 border-t border-border/30">
+            <span className={`text-[16px] lg:text-[17px] tabular-nums ${isAskPrice ? 'text-charcoal/60' : 'text-ink font-semibold'}`}>
+              {priceDisplay}
+            </span>
+          </div>
+
+          {/* New badge — centered */}
+          {newBadge && (
+            <div className="flex items-center justify-center mt-1.5">
+              {newBadge}
+            </div>
+          )}
         </div>
       </div>
     );
@@ -1234,6 +1326,7 @@ export const ListingCard = memo(function ListingCard({
     prevProps.listing.artisan_display_name === nextProps.listing.artisan_display_name &&
     prevProps.listing.artisan_confidence === nextProps.listing.artisan_confidence &&
     // Re-render if card style changes
-    prevProps.cardStyle === nextProps.cardStyle
+    prevProps.cardStyle === nextProps.cardStyle &&
+    prevProps.tagStyle === nextProps.tagStyle
   );
 });
