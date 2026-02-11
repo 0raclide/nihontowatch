@@ -73,10 +73,10 @@ export function ArtisanListings({ code, artisanName, initialListings, status = '
 
   if (loading) {
     return (
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 gap-2.5 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="bg-surface-elevated border border-border rounded-lg animate-pulse">
-            <div className="aspect-[3/4] bg-border/50 rounded-t-lg" />
+          <div key={i} className="bg-surface-elevated border border-border animate-pulse">
+            <div className="aspect-[3/4] bg-border/50" />
             <div className="p-3 space-y-2">
               <div className="h-3 bg-border/50 rounded w-3/4" />
               <div className="h-3 bg-border/50 rounded w-1/2" />
@@ -98,7 +98,7 @@ export function ArtisanListings({ code, artisanName, initialListings, status = '
 
   return (
     <div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 gap-2.5 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {listings.map((listing) => (
           <ListingCard
             key={listing.id}
@@ -106,6 +106,7 @@ export function ArtisanListings({ code, artisanName, initialListings, status = '
             currency={currency}
             exchangeRates={exchangeRates}
             mobileView="grid"
+            fontSize="standard"
           />
         ))}
       </div>
