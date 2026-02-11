@@ -8,7 +8,7 @@
 When a listing's first image URL fails to load (e.g. dealer removed/moved the file), the `ListingCard` thumbnail immediately shows a broken image icon — even if working images exist further in the array.
 
 **Listing 42957 specifics:**
-- `images[]` — 4 URLs from goushuya-nihontou.com (3 broken, 1 broken)
+- `images[]` — 4 URLs from goushuya-nihontou.com (images[0],[1],[3] return 404; images[2] still alive, 570KB JPEG)
 - `stored_images[]` — 1 URL from Supabase CDN (`goushuya/L42957/02.jpg`, maps to index 2)
 - `getAllImages()` merges by index: `[dealer0, dealer1, stored2, dealer3]`
 - Card tried index 0, failed, showed broken icon. Never reached the working image at index 2.
@@ -83,7 +83,29 @@ The QuickView gallery was NOT affected — `useValidatedImages` hook already fil
 - **Self-healing**: if a dealer fixes their images, new browser sessions will rediscover them
 - **No server changes**: purely client-side fix
 
+## Key Detail: `key={imageUrl}` on Image Component
+
+Next.js Image may not re-trigger loading when `src` changes on the same mounted element (internal state not reset). Adding `key={imageUrl}` forces React to unmount/remount the Image component on each fallback attempt, guaranteeing a fresh browser load request.
+
+## Why Only 1 of 4 Images Was Stored
+
+The `ImageStorageManager` (Oshi-scrapper) handles per-image failures gracefully. When uploading listing 42957's images, images[0],[1],[3] were already 404 on the dealer's server — download failed, so only images[2] succeeded. Result: `images_upload_status = 'partial'`, `stored_images` contains just the one URL.
+
+**Image upload happens in:**
+- CLI scraper: `python main.py scrape --db --save-images` (line 2862)
+- Daily scrape: `scripts/daily_scrape.py` (line 565)
+- Batch migration: `scripts/migrate_images_to_storage.py` (for catching up pending)
+
+## Linter Revert Issue
+
+A linter or formatter reverted changes between editing and committing on two occasions:
+- First push (`e81237a`): only 72h→7day changes survived; `getAllImages`/`fallbackIndex`/`onError` changes were reverted
+- Second push (`54ef1d4` + earlier attempt): the full caching fix survived after we added a pre-commit verification step (`grep -c` before `git add`)
+
+**Lesson**: Always verify critical changes are present in the file immediately before `git add`, not just after editing.
+
 ## Commits
 
-- `e81237a` — Initial fallback logic (linter reverted the onError handler)
+- `e81237a` — Initial fallback logic (linter reverted the onError handler — dead code)
 - `54ef1d4` — Full fix with caching (sessionStorage + validationCache)
+- `93ab84c` — Add `key={imageUrl}` to force Image remount on fallback
