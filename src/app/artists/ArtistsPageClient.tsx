@@ -206,7 +206,7 @@ export function ArtistsPageClient({
       <div className="mb-8">
         <h1 className="hidden lg:block font-serif text-2xl text-ink tracking-tight">Artists</h1>
         <p className="hidden lg:block text-[13px] text-muted mt-1">
-          {attributedItemCount.toLocaleString()} items across {(facets.totals.smiths + facets.totals.tosogu).toLocaleString()} renowned artists
+          {attributedItemCount.toLocaleString()} items by {(facets.totals.smiths + facets.totals.tosogu).toLocaleString()} celebrated artisans across {facets.schools.length.toLocaleString()} schools
         </p>
         <LiveStatsBanner lastUpdated={lastUpdated} artisanCount={facets.totals.smiths + facets.totals.tosogu} schoolCount={facets.schools.length} />
         {/* Mobile heading */}
@@ -214,7 +214,7 @@ export function ArtistsPageClient({
           Artists
         </h1>
         <p className="lg:hidden mt-2 text-sm text-ink/50">
-          {(facets.totals.smiths + facets.totals.tosogu).toLocaleString()} renowned artists
+          {attributedItemCount.toLocaleString()} items by {(facets.totals.smiths + facets.totals.tosogu).toLocaleString()} celebrated artisans
         </p>
       </div>
 

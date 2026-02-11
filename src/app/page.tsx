@@ -15,7 +15,7 @@ import { SaveSearchButton } from '@/components/browse/SaveSearchButton';
 import type { SavedSearchCriteria } from '@/types';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { BottomTabBar } from '@/components/navigation/BottomTabBar';
-import { PAGINATION } from '@/lib/constants';
+import { PAGINATION, BLADE_TYPES, TOSOGU_TYPES } from '@/lib/constants';
 import { useActivityOptional } from '@/components/activity/ActivityProvider';
 import { DeepLinkHandler } from '@/components/browse/DeepLinkHandler';
 import { DataDelayBanner } from '@/components/subscription/DataDelayBanner';
@@ -155,7 +155,7 @@ function LiveStatsBanner({ data }: { data: BrowseResponse | null }) {
   const elapsed = useElapsedSince(data?.lastUpdated ?? null);
   if (!data || !elapsed) return null;
 
-  const dealerCount = data.facets.dealers.length;
+  const galleryCount = data.facets.dealers.length;
   const itemCount = data.total.toLocaleString();
 
   return (
@@ -165,7 +165,7 @@ function LiveStatsBanner({ data }: { data: BrowseResponse | null }) {
       <span className="text-muted/30 mx-0.5">&middot;</span>
       <span>Scanned {elapsed} ago</span>
       <span className="text-muted/30 mx-0.5">&middot;</span>
-      <span>{dealerCount} dealers</span>
+      <span>{galleryCount} galleries</span>
       <span className="text-muted/30 mx-0.5">&middot;</span>
       <span>{itemCount} items</span>
     </div>
@@ -603,7 +603,18 @@ function HomeContent() {
             {/* Desktop: Show "Collection" */}
             <h1 className="hidden lg:block font-serif text-2xl text-ink tracking-tight">Collection</h1>
             <p className="hidden lg:block text-[13px] text-muted mt-1">
-              Japanese swords and fittings from established dealers
+              {data ? (() => {
+                const bladeSet = new Set(BLADE_TYPES as readonly string[]);
+                const tosoguSet = new Set(TOSOGU_TYPES as readonly string[]);
+                const swordCount = data.facets.itemTypes
+                  .filter(f => bladeSet.has(f.value))
+                  .reduce((sum, f) => sum + f.count, 0);
+                const fittingsCount = data.facets.itemTypes
+                  .filter(f => tosoguSet.has(f.value))
+                  .reduce((sum, f) => sum + f.count, 0);
+                const galleryCount = data.facets.dealers.length;
+                return `${swordCount.toLocaleString()} Japanese swords and ${fittingsCount.toLocaleString()} fittings from ${galleryCount} galleries worldwide`;
+              })() : 'Japanese swords and fittings from specialist galleries worldwide'}
             </p>
             {/* Live stats banner - desktop only */}
             <LiveStatsBanner data={data} />
