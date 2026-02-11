@@ -65,10 +65,11 @@ export async function POST(request: NextRequest) {
     const serviceClient = createServiceClient();
 
     // Find dealer by matching domain
-    const { data: dealers, error: dealerError } = await serviceClient
-      .from('dealers')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: dealers, error: dealerError } = await (serviceClient
+      .from('dealers') as any)
       .select('id, name, domain')
-      .eq('is_active', true);
+      .eq('is_active', true) as { data: Array<{ id: string; name: string; domain: string }> | null; error: { message: string } | null };
 
     if (dealerError) {
       logger.error('Failed to fetch dealers for URL matching', { error: dealerError.message });
