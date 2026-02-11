@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback, Suspense } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { ThemeSwitcher } from '@/components/ui/ThemeSwitcher';
 import { useMobileUI } from '@/contexts/MobileUIContext';
 import { MobileNavDrawer } from './MobileNavDrawer';
@@ -18,8 +18,12 @@ function HeaderContent() {
   useMobileUI(); // Keep context active for child components
   const searchParams = useSearchParams();
   const router = useRouter();
+  const pathname = usePathname();
   const currentQuery = searchParams.get('q') || '';
   const loginParam = searchParams.get('login');
+  const isArtistPage = pathname.startsWith('/artists');
+  const searchAction = isArtistPage ? '/artists' : '/';
+  const searchPlaceholder = isArtistPage ? 'Search artists by name, kanji, or code...' : 'Search swords, smiths, dealers...';
   const { user, profile, isLoading: authLoading, isAdmin } = useAuth();
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
@@ -201,7 +205,7 @@ function HeaderContent() {
         activity.trackSearch(trimmedQuery);
       }
       // Use router.push to create history entry (allows back button)
-      router.push(`/?q=${encodeURIComponent(trimmedQuery)}`);
+      router.push(`${searchAction}?q=${encodeURIComponent(trimmedQuery)}`);
     }
   };
 
@@ -231,7 +235,7 @@ function HeaderContent() {
             </Link>
 
             {/* Search - Simple form */}
-            <form action="/" onSubmit={handleSearch} role="search" className="flex-1 max-w-md mx-10 group">
+            <form action={searchAction} onSubmit={handleSearch} role="search" className="flex-1 max-w-md mx-10 group">
               <div className="relative">
                 <input
                   type="search"
@@ -242,13 +246,13 @@ function HeaderContent() {
                   autoCapitalize="off"
                   autoCorrect="off"
                   spellCheck={false}
-                  placeholder="Search swords, smiths, dealers..."
+                  placeholder={searchPlaceholder}
                   disabled={isSearching}
                   onKeyDown={(e) => {
                     // ESC key clears search
                     if (e.key === 'Escape' && currentQuery) {
                       e.currentTarget.value = '';
-                      router.push('/');
+                      router.push(searchAction);
                     }
                   }}
                   className={`w-full pl-4 ${currentQuery ? 'pr-20' : 'pr-12'} py-2.5 bg-linen/50 border border-transparent text-[13px] text-ink placeholder:text-muted/40 focus:outline-none focus:border-gold/40 focus:bg-paper focus:shadow-[0_0_0_3px_rgba(181,142,78,0.1)] transition-all duration-200 disabled:opacity-60`}
@@ -258,10 +262,10 @@ function HeaderContent() {
                   <button
                     type="button"
                     onClick={() => {
-                      // Clear the input and navigate home
+                      // Clear the input and navigate to base route
                       const input = document.querySelector('header form[role="search"] input') as HTMLInputElement;
                       if (input) input.value = '';
-                      router.push('/');
+                      router.push(searchAction);
                     }}
                     aria-label="Clear search"
                     className="absolute right-10 top-1/2 -translate-y-1/2 p-1.5 text-muted/40 hover:text-muted hover:bg-linen rounded transition-colors"

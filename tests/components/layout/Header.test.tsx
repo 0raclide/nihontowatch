@@ -4,6 +4,21 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { Header } from '@/components/layout/Header';
 import { MobileUIProvider } from '@/contexts/MobileUIContext';
 
+// Mock window.matchMedia for scroll-linked header behavior
+Object.defineProperty(window, 'matchMedia', {
+  writable: true,
+  value: vi.fn().mockImplementation((query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  })),
+});
+
 // Mock Next.js Image
 vi.mock('next/image', () => ({
   default: ({ src, alt, width, height, className }: { src: string; alt: string; width: number; height: number; className?: string }) => (
@@ -14,6 +29,7 @@ vi.mock('next/image', () => ({
 
 // Mock router with trackable push
 const mockPush = vi.fn();
+let mockPathname = '/';
 vi.mock('next/navigation', () => ({
   useRouter: () => ({
     push: mockPush,
@@ -32,7 +48,7 @@ vi.mock('next/navigation', () => ({
     entries: () => [],
     toString: () => '',
   }),
-  usePathname: () => '/',
+  usePathname: () => mockPathname,
 }));
 
 // Mock the child components
@@ -88,6 +104,7 @@ describe('Header Component', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockPush.mockClear();
+    mockPathname = '/';
   });
 
   describe('Desktop Header', () => {
@@ -281,6 +298,71 @@ describe('Header Component', () => {
 
       const logoText = document.querySelector('h1');
       expect(logoText).toHaveClass('font-serif');
+    });
+  });
+
+  describe('Artist Page Context', () => {
+    beforeEach(() => {
+      mockPathname = '/artists';
+    });
+
+    it('shows artist placeholder on /artists', () => {
+      render(
+        <MobileUIProvider>
+          <Header />
+        </MobileUIProvider>
+      );
+
+      expect(screen.getByPlaceholderText(/search artists by name, kanji, or code/i)).toBeInTheDocument();
+    });
+
+    it('shows artist placeholder on /artists/[slug]', () => {
+      mockPathname = '/artists/masamune-MAS590';
+      render(
+        <MobileUIProvider>
+          <Header />
+        </MobileUIProvider>
+      );
+
+      expect(screen.getByPlaceholderText(/search artists by name, kanji, or code/i)).toBeInTheDocument();
+    });
+
+    it('navigates to /artists?q= on form submit', () => {
+      render(
+        <MobileUIProvider>
+          <Header />
+        </MobileUIProvider>
+      );
+
+      const searchInput = screen.getByPlaceholderText(/search artists by name, kanji, or code/i);
+      fireEvent.change(searchInput, { target: { value: 'Masamune' } });
+
+      const form = searchInput.closest('form');
+      fireEvent.submit(form!);
+
+      expect(mockPush).toHaveBeenCalledWith('/artists?q=Masamune');
+    });
+
+    it('form action is /artists on artist pages', () => {
+      render(
+        <MobileUIProvider>
+          <Header />
+        </MobileUIProvider>
+      );
+
+      const form = screen.getByRole('search');
+      expect(form).toHaveAttribute('action', '/artists');
+    });
+
+    it('shows default listing placeholder on non-artist pages', () => {
+      mockPathname = '/browse';
+      render(
+        <MobileUIProvider>
+          <Header />
+        </MobileUIProvider>
+      );
+
+      expect(screen.getByPlaceholderText(/search swords, smiths, dealers/i)).toBeInTheDocument();
     });
   });
 });

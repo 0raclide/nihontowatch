@@ -32,6 +32,7 @@ vi.mock('next/navigation', () => ({
     prefetch: vi.fn(),
   }),
   useSearchParams: () => mockSearchParams,
+  usePathname: () => '/',
 }));
 
 // Mock auth context

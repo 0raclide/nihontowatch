@@ -14,6 +14,7 @@ import { MobileUIProvider } from '@/contexts/MobileUIContext';
 
 // Mock router with trackable push
 const mockPush = vi.fn();
+let mockPathname = '/';
 vi.mock('next/navigation', () => ({
   useRouter: () => ({
     push: mockPush,
@@ -32,6 +33,7 @@ vi.mock('next/navigation', () => ({
     entries: () => [],
     toString: () => '',
   }),
+  usePathname: () => mockPathname,
 }));
 
 // Mock activity tracker
@@ -77,6 +79,7 @@ describe('MobileSearchSheet Component', () => {
     mockPush.mockClear();
     mockTrackSearch.mockClear();
     mockCloseSearch.mockClear();
+    mockPathname = '/';
   });
 
   describe('Search Form Submission', () => {
@@ -308,6 +311,114 @@ describe('MobileSearchSheet Component', () => {
       fireEvent.click(clearButton);
 
       expect(searchInput).toHaveValue('');
+    });
+  });
+
+  describe('Artist Page Context', () => {
+    beforeEach(() => {
+      mockPathname = '/artists';
+    });
+
+    it('shows artist placeholder on /artists', () => {
+      render(
+        <MobileUIProvider>
+          <MobileSearchSheet />
+        </MobileUIProvider>
+      );
+
+      expect(screen.getByPlaceholderText(/search artists by name, kanji, or code/i)).toBeInTheDocument();
+    });
+
+    it('shows artist placeholder on /artists/[slug]', () => {
+      mockPathname = '/artists/masamune-MAS590';
+      render(
+        <MobileUIProvider>
+          <MobileSearchSheet />
+        </MobileUIProvider>
+      );
+
+      expect(screen.getByPlaceholderText(/search artists by name, kanji, or code/i)).toBeInTheDocument();
+    });
+
+    it('navigates to /artists?q= on form submit', () => {
+      render(
+        <MobileUIProvider>
+          <MobileSearchSheet />
+        </MobileUIProvider>
+      );
+
+      const searchInput = screen.getByPlaceholderText(/search artists by name, kanji, or code/i);
+      fireEvent.change(searchInput, { target: { value: 'Soshu' } });
+
+      const form = searchInput.closest('form');
+      fireEvent.submit(form!);
+
+      expect(mockPush).toHaveBeenCalledWith('/artists?q=Soshu');
+    });
+
+    it('navigates to /artists?q= on quick search click', () => {
+      render(
+        <MobileUIProvider>
+          <MobileSearchSheet />
+        </MobileUIProvider>
+      );
+
+      const masamuneButton = screen.getByRole('button', { name: 'Masamune' });
+      fireEvent.click(masamuneButton);
+
+      expect(mockPush).toHaveBeenCalledWith('/artists?q=Masamune');
+    });
+
+    it('shows artist quick searches instead of listing quick searches', () => {
+      render(
+        <MobileUIProvider>
+          <MobileSearchSheet />
+        </MobileUIProvider>
+      );
+
+      // Artist terms should be present
+      expect(screen.getByRole('button', { name: 'Masamune' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Muramasa' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Soshu' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Bizen' })).toBeInTheDocument();
+
+      // Listing terms should NOT be present
+      expect(screen.queryByRole('button', { name: 'Katana' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Wakizashi' })).not.toBeInTheDocument();
+    });
+
+    it('shows "Popular Artists" heading instead of "Popular Searches"', () => {
+      render(
+        <MobileUIProvider>
+          <MobileSearchSheet />
+        </MobileUIProvider>
+      );
+
+      expect(screen.getByText('Popular Artists')).toBeInTheDocument();
+      expect(screen.queryByText('Popular Searches')).not.toBeInTheDocument();
+    });
+
+    it('shows artist search tips', () => {
+      render(
+        <MobileUIProvider>
+          <MobileSearchSheet />
+        </MobileUIProvider>
+      );
+
+      expect(screen.getByText(/by name/i)).toBeInTheDocument();
+      expect(screen.getByText(/by school/i)).toBeInTheDocument();
+      expect(screen.getByText(/by code/i)).toBeInTheDocument();
+    });
+
+    it('form action is /artists on artist pages', () => {
+      render(
+        <MobileUIProvider>
+          <MobileSearchSheet />
+        </MobileUIProvider>
+      );
+
+      const form = screen.getByRole('search');
+      expect(form).toHaveAttribute('action', '/artists');
     });
   });
 });
