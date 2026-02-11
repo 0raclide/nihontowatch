@@ -1,18 +1,65 @@
 /**
  * Browse API Concordance Tests
  *
- * These tests verify that facet counts are mathematically consistent
- * across different filter combinations. They catch bugs where facet
- * counts don't properly reflect the user's filter selections.
+ * Live integration tests that run against production (nihontowatch.com)
+ * after each deploy. They verify that facet counts are mathematically
+ * consistent across filter combinations — catching regressions where
+ * a code change breaks the relationship between facet counts and results.
  *
- * Key invariants tested:
- * 1. Facet counts for categories should be subsets of 'all' counts
- * 2. nihonto + tosogu facet counts should approximately equal 'all' counts
- * 3. Changing filters must change facet counts (not return stale data)
- * 4. Facet counts should never exceed total count
- * 5. Each facet must be filtered by OTHER active filters
+ * ┌─────────────────────────────────────────────────────────────────────┐
+ * │ IMPORTANT: These tests hit the LIVE production API.                │
+ * │ They run in CI after a 90s delay to let Vercel deploy.            │
+ * │ See .github/workflows/test.yml → concordance-tests job.           │
+ * └─────────────────────────────────────────────────────────────────────┘
  *
- * Run with: npm test -- browse-concordance
+ * KEY INVARIANTS TESTED:
+ *
+ * 1. SUBSET: Category-filtered facet counts must be <= "all" counts.
+ *    Nihonto Juyo <= All Juyo (always true, or query is broken).
+ *
+ * 2. APPROXIMATE ADDITIVITY: nihonto + tosogu + armor ≈ all (within 20%).
+ *    The gap comes from items classified as 'unknown', 'inro', 'koshirae',
+ *    etc. — types not in any of the three browse categories.
+ *    If this fails: likely a scraper item_type classification issue, not
+ *    a frontend bug. Check which cert type failed and what item_types
+ *    those "missing" items have in the DB.
+ *    HISTORY: 2026-02-11 — 8 TokuKicho armor items from World Seiyudo had
+ *    item_type='unknown' instead of armor/helmet/menpo. Fixed with DB
+ *    update and tolerance raised from 15% → 20%.
+ *
+ * 3. DIFFERENTIATION: Switching category MUST change cert counts.
+ *    If nihonto and all return identical Juyo counts, the category filter
+ *    is broken (stale data, missing WHERE clause, etc.).
+ *
+ * 4. BOUNDS: No single facet count can exceed total result count.
+ *
+ * 5. CROSS-FILTER: Combining filters must narrow results further.
+ *    cert + dealer ≤ cert alone AND ≤ dealer alone.
+ *
+ * 6. SELF-CONSISTENCY: A cert's facet count should approximately match
+ *    the total when filtering by that cert (within 20% + 10 tolerance
+ *    for CDN timing, cert variant expansion).
+ *
+ * TOLERANCE RATIONALE:
+ * - 20% for additivity: ~128 items have item_type='unknown' out of ~4,900
+ *   total (2.7% overall, but for rare certs with <30 items a few unknowns
+ *   can easily exceed 15%). 20% covers the long tail.
+ * - Tests use percentage tolerance, which inherently handles count growth
+ *   as the database grows.
+ *
+ * DEBUGGING FAILURES:
+ * - Check which cert type failed (test output shows the assertion values)
+ * - Query: SELECT id, title, item_type, cert_type FROM listings
+ *          WHERE is_available AND cert_type='<CERT>' AND item_type NOT IN
+ *          ('katana','wakizashi','tanto','tachi','naginata','yari','ken',
+ *           'tsuba','menuki','kozuka','kogai','fuchi','kashira','fuchi_kashira',
+ *           'armor','yoroi','gusoku','helmet','kabuto','menpo','mengu',
+ *           'kote','suneate','do','tanegashima','hinawaju')
+ * - If items have wrong item_type: fix in DB + improve scraper classification
+ * - If gap is expected (new item types): raise TOLERANCE_PERCENT
+ *
+ * Run locally: npx vitest run tests/api/browse-concordance.test.ts
+ * Run in CI:   Automatic on push to main (after 90s Vercel deploy wait)
  */
 
 import { describe, it, expect, beforeAll } from 'vitest';
@@ -168,19 +215,32 @@ describe('Browse API Concordance Tests', () => {
   // ===========================================================================
 
   describe('Category counts should approximately sum to all (with tolerance)', () => {
-    // Allow for items that don't fit any category (e.g., unknown, inro)
-    const TOLERANCE_PERCENT = 0.20; // 20% tolerance for uncategorized items
+    // The browse UI groups items into 3 categories: nihonto, tosogu, armor.
+    // Items with item_type 'unknown', 'inro', 'koshirae', etc. don't belong
+    // to any category, creating a gap between "all" and the sum of categories.
+    //
+    // As of 2026-02-11: ~128 items are 'unknown' out of ~4,900 total (2.7%).
+    // For rare cert types (e.g. TokuKicho with ~26 items), even a few unknowns
+    // can create a 30%+ gap. 20% tolerance covers the typical case; for outlier
+    // cert types the gap is a scraper classification issue, not a frontend bug.
+    //
+    // If this test fails:
+    //   1. Note the cert type and counts from the error message
+    //   2. Query DB for items with that cert_type whose item_type is NOT in
+    //      NIHONTO_TYPES, TOSOGU_TYPES, or ARMOR_TYPES (see browse/route.ts)
+    //   3. Fix the item_type in DB if misclassified, or improve the scraper
+    const TOLERANCE_PERCENT = 0.20;
 
     it('nihonto + tosogu + armor totals should approximately equal all total', () => {
       const sumTotals = nihontoResponse.total + tosoguResponse.total + armorResponse.total;
       const allTotal = allResponse.total;
+      const gap = allTotal - sumTotals;
+      const gapPct = allTotal > 0 ? ((gap / allTotal) * 100).toFixed(1) : '0';
 
-      // Sum should be close to all (within tolerance)
-      // Could be less (items in neither category) or slightly more (if categories overlap)
       const lowerBound = allTotal * (1 - TOLERANCE_PERCENT);
       const upperBound = allTotal * (1 + TOLERANCE_PERCENT);
 
-      expect(sumTotals).toBeGreaterThanOrEqual(lowerBound);
+      expect(sumTotals, `total gap: ${gap} items (${gapPct}%) not in any category`).toBeGreaterThanOrEqual(lowerBound);
       expect(sumTotals).toBeLessThanOrEqual(upperBound);
     });
 
@@ -190,13 +250,13 @@ describe('Browse API Concordance Tests', () => {
         const tosoguCount = getCertCount(tosoguResponse.facets.certifications, cert.value);
         const armorCount = getCertCount(armorResponse.facets.certifications, cert.value);
         const sumCount = nihontoCount + tosoguCount + armorCount;
+        const gap = cert.count - sumCount;
 
-        // Allow for tolerance
         const lowerBound = cert.count * (1 - TOLERANCE_PERCENT);
         const upperBound = cert.count * (1 + TOLERANCE_PERCENT);
 
-        expect(sumCount).toBeGreaterThanOrEqual(lowerBound);
-        expect(sumCount).toBeLessThanOrEqual(upperBound);
+        expect(sumCount, `${cert.value}: all=${cert.count}, nihonto=${nihontoCount}, tosogu=${tosoguCount}, armor=${armorCount}, gap=${gap}`).toBeGreaterThanOrEqual(lowerBound);
+        expect(sumCount, `${cert.value}: sum ${sumCount} exceeds all ${cert.count} + tolerance`).toBeLessThanOrEqual(upperBound);
       }
     });
   });
