@@ -27,25 +27,43 @@ function getColumnCount(width: number): number {
 }
 
 /**
- * Estimate row height based on column count.
- * Includes card height + gap. Values measured from actual rendered cards.
+ * Estimate row height dynamically from viewport width + column count.
  *
- * Measurements (card height + gap):
- * - 1 column (mobile): 425px + 12px gap = 437px
- * - 2 columns (sm): 390px + 16px gap = 406px
- * - 3 columns (lg): 354px + 16px gap = 370px
- * - 4 columns (xl): 356px + 16px gap = 372px
- * - 5 columns (2xl): 358px + 16px gap = 374px
+ * Instead of hardcoded pixel values (which break when card design changes),
+ * this computes the card height from first principles:
+ *   card = header + image(3:4 aspect) + content + border
+ *   row  = card + grid gap
+ *
+ * Card structure (Refined layout):
+ *   Header:  px-3 py-2  (lg: px-4 py-2.5) — dealer + cert text
+ *   Image:   aspect-[3/4] — height = cardWidth * 4/3
+ *   Content: px-3 pt-3 pb-3 (lg: px-4 pt-3.5 pb-4) — type + attribution + price
+ *   Border:  1px top + 1px bottom
  */
-function getRowHeight(columns: number): number {
-  switch (columns) {
-    case 1: return 437;
-    case 2: return 406;
-    case 3: return 370;
-    case 4: return 372;
-    case 5: return 374;
-    default: return 372; // Fallback to most common
-  }
+function getRowHeight(columns: number, viewportWidth?: number): number {
+  // Fallback to a reasonable mid-range estimate if viewport not yet known
+  const vw = viewportWidth || (columns >= 3 ? 1280 : 768);
+
+  // Container: max-w-[1600px] with px-4 (lg: px-6)
+  const px = vw >= 1024 ? 24 : 16;
+  const containerWidth = Math.min(vw - px * 2, 1600 - px * 2);
+
+  // Sidebar: w-[264px] + lg:gap-10 (40px), only on lg+
+  const sidebarSpace = vw >= 1024 ? 264 + 40 : 0;
+  const gridWidth = containerWidth - sidebarSpace;
+
+  // Grid gap: gap-3 (12px) mobile, sm:gap-4 (16px) tablet+
+  const gap = columns === 1 ? 12 : 16;
+  const cardWidth = (gridWidth - (columns - 1) * gap) / columns;
+
+  // Card height from CSS values
+  const isLg = vw >= 1024;
+  const headerH = isLg ? 34 : 28;           // py-2/py-2.5 + text
+  const imageH = Math.round(cardWidth * 4 / 3); // aspect-[3/4]
+  const contentH = isLg ? 115 : 106;        // padding + type + attribution + price
+  const borderH = 2;                         // border top + bottom
+
+  return headerH + imageH + contentH + borderH + gap;
 }
 
 // Use useLayoutEffect on client, useEffect on server (for SSR safety)
@@ -100,11 +118,11 @@ export function useAdaptiveVirtualScroll<T>({
   overscan = 3,
   enabled = true,
 }: UseAdaptiveVirtualScrollOptions<T>): UseAdaptiveVirtualScrollResult<T> {
-  // SSR-safe defaults - assume desktop-ish viewport
+  // SSR-safe defaults - assume desktop-ish viewport (3 cols at ~1024px)
   const [dimensions, setDimensions] = useState({
     viewportHeight: 800,
     columns: 3,
-    rowHeight: 370,
+    rowHeight: getRowHeight(3, 1024),
   });
 
   // Track which row we're starting from (triggers re-render when visible rows change)
@@ -127,7 +145,7 @@ export function useAdaptiveVirtualScroll<T>({
     const updateDimensions = () => {
       const width = window.innerWidth;
       const columns = getColumnCount(width);
-      const rowHeight = getRowHeight(columns);
+      const rowHeight = getRowHeight(columns, width);
 
       setDimensions({
         viewportHeight: window.innerHeight,
