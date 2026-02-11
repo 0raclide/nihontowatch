@@ -450,6 +450,9 @@ export interface Listing {
   last_scraped_at: string;
   scrape_count: number;
 
+  // Admin moderation
+  admin_hidden?: boolean; // TRUE = hidden from public views by admin
+
   // Sorting / "New" badge
   is_initial_import?: boolean | null; // DB column: TRUE = bulk import, FALSE = genuine new
   dealer_earliest_seen_at?: string | null; // Enriched by API

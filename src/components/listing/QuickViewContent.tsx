@@ -69,6 +69,25 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
     setIsInquiryModalOpen(true);
   };
 
+  const handleToggleHidden = useCallback(async () => {
+    const newHidden = !listing.admin_hidden;
+    const action = newHidden ? 'hide' : 'unhide';
+    if (!window.confirm(`Are you sure you want to ${action} this listing?`)) return;
+
+    try {
+      const res = await fetch(`/api/listing/${listing.id}/hide`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ hidden: newHidden }),
+      });
+      if (res.ok) {
+        quickView?.refreshCurrentListing({ admin_hidden: newHidden } as Partial<Listing>);
+      }
+    } catch {
+      // silently fail
+    }
+  }, [listing.id, listing.admin_hidden, quickView]);
+
   // Track when user clicks through to dealer's website
   const handleDealerLinkClick = useCallback(() => {
     if (activityTracker && listing) {
@@ -114,6 +133,14 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
                   New this week
                 </span>
               )}
+              {isAdmin && listing.admin_hidden && (
+                <span
+                  data-testid="hidden-badge"
+                  className="text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                >
+                  Hidden
+                </span>
+              )}
               {/* Artisan badge — links to profile; admin gets edit pen with ArtisanTooltip */}
               {/* Hide tmp-prefixed provisional codes from non-admin users */}
               {listing.artisan_id &&
@@ -148,6 +175,8 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
                         artisan_verified: 'correct' as const,
                         artisan_display_name: newId === 'UNKNOWN' ? 'Unknown' : newId,
                       })}
+                      adminHidden={listing.admin_hidden}
+                      onToggleHidden={handleToggleHidden}
                     >
                       <span className="text-muted hover:text-ink transition-colors p-0.5 cursor-pointer">
                         <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -183,6 +212,8 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
                     artisan_verified: 'correct' as const,
                     artisan_display_name: newId === 'UNKNOWN' ? 'Unknown' : newId,
                   })}
+                  adminHidden={listing.admin_hidden}
+                  onToggleHidden={handleToggleHidden}
                 >
                   <span className="inline-flex items-center gap-0.5 text-[10px] font-mono font-medium px-2 py-0.5 rounded bg-muted/10 text-muted hover:text-ink transition-colors" data-artisan-tooltip>
                     Set ID

@@ -181,7 +181,8 @@ async function getListingDataForArtists(codes: string[]): Promise<Map<string, { 
       .from('listings')
       .select('id, artisan_id')
       .in('artisan_id' as string, codes)
-      .eq('is_available', true) as { data: Array<{ id: number; artisan_id: string }> | null; error: unknown };
+      .eq('is_available', true)
+      .eq('admin_hidden', false) as { data: Array<{ id: number; artisan_id: string }> | null; error: unknown };
 
     if (error) {
       logger.logError('Listing data query error', error);
@@ -216,6 +217,7 @@ async function getAllAvailableListingCounts(): Promise<Map<string, { count: numb
       .from('listings')
       .select('id, artisan_id')
       .eq('is_available', true)
+      .eq('admin_hidden', false)
       .not('artisan_id' as string, 'is', null) as { data: Array<{ id: number; artisan_id: string }> | null; error: unknown };
 
     if (error) {

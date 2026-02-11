@@ -266,6 +266,7 @@ export async function GET(request: NextRequest) {
         is_available,
         is_sold,
         is_initial_import,
+        admin_hidden,
         dealer_id,
         artisan_id,
         artisan_confidence,
@@ -295,6 +296,11 @@ export async function GET(request: NextRequest) {
 
     // Minimum price filter (excludes books, accessories, low-quality items)
     query = applyMinPriceFilter(query);
+
+    // Hide admin-hidden listings from non-admin users
+    if (!subscription.isAdmin) {
+      query = query.eq('admin_hidden', false);
+    }
 
     // Exclude non-collectibles (stands, books, other accessories)
     query = query.not('item_type', 'ilike', 'stand');
@@ -842,7 +848,8 @@ async function getItemTypeFacets(
       .select('item_type')
       .not('item_type', 'ilike', 'stand')  // Exclude non-collectibles to match main query
       .not('item_type', 'ilike', 'book')
-      .not('item_type', 'ilike', 'other');
+      .not('item_type', 'ilike', 'other')
+      .eq('admin_hidden', false);
 
     // Status filter (only apply if not 'all')
     if (statusFilter) {
@@ -933,7 +940,8 @@ async function getCertificationFacets(
       .select('cert_type, item_type')
       .not('item_type', 'ilike', 'stand')  // Exclude non-collectibles to match main query
       .not('item_type', 'ilike', 'book')
-      .not('item_type', 'ilike', 'other');
+      .not('item_type', 'ilike', 'other')
+      .eq('admin_hidden', false);
 
     // Status filter (only apply if not 'all')
     if (statusFilter) {
@@ -1016,7 +1024,8 @@ async function getDealerFacets(
       .select('dealer_id, dealers!inner(name), item_type')
       .not('item_type', 'ilike', 'stand')  // Exclude non-collectibles to match main query
       .not('item_type', 'ilike', 'book')
-      .not('item_type', 'ilike', 'other');
+      .not('item_type', 'ilike', 'other')
+      .eq('admin_hidden', false);
 
     // Status filter (only apply if not 'all')
     if (statusFilter) {
@@ -1104,7 +1113,8 @@ async function getHistoricalPeriodFacets(
       .select('historical_period, item_type')
       .not('item_type', 'ilike', 'stand')  // Exclude non-collectibles
       .not('item_type', 'ilike', 'book')
-      .not('item_type', 'ilike', 'other');
+      .not('item_type', 'ilike', 'other')
+      .eq('admin_hidden', false);
 
     // Status filter (only apply if not 'all')
     if (statusFilter) {
@@ -1193,7 +1203,8 @@ async function getSignatureStatusFacets(
       .select('signature_status, item_type')
       .not('item_type', 'ilike', 'stand')  // Exclude non-collectibles
       .not('item_type', 'ilike', 'book')
-      .not('item_type', 'ilike', 'other');
+      .not('item_type', 'ilike', 'other')
+      .eq('admin_hidden', false);
 
     // Status filter (only apply if not 'all')
     if (statusFilter) {

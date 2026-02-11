@@ -81,6 +81,7 @@ interface ListingWithDealer {
   status: string;
   is_available: boolean;
   is_sold: boolean;
+  admin_hidden: boolean;
   dealer_id: number;
   // Artisan matching
   artisan_id: string | null;
@@ -166,6 +167,7 @@ export async function GET(
         status,
         is_available,
         is_sold,
+        admin_hidden,
         dealer_id,
         artisan_id,
         artisan_confidence,

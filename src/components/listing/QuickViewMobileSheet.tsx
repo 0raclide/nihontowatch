@@ -78,6 +78,25 @@ export function QuickViewMobileSheet({
   const [isInquiryModalOpen, setIsInquiryModalOpen] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
 
+  const handleToggleHidden = useCallback(async () => {
+    const newHidden = !listing.admin_hidden;
+    const action = newHidden ? 'hide' : 'unhide';
+    if (!window.confirm(`Are you sure you want to ${action} this listing?`)) return;
+
+    try {
+      const res = await fetch(`/api/listing/${listing.id}/hide`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ hidden: newHidden }),
+      });
+      if (res.ok) {
+        quickView?.refreshCurrentListing({ admin_hidden: newHidden } as Partial<Listing>);
+      }
+    } catch {
+      // silently fail
+    }
+  }, [listing.id, listing.admin_hidden, quickView]);
+
   // Gesture tracking refs
   const dragStartY = useRef(0);
   const dragStartHeight = useRef(0);
@@ -393,6 +412,11 @@ export function QuickViewMobileSheet({
               New this week
             </span>
           )}
+          {isAdmin && listing.admin_hidden && (
+            <span className="text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
+              Hidden
+            </span>
+          )}
           {/* Artisan badge — links to profile; admin gets edit pen with ArtisanTooltip */}
           {/* Hide tmp-prefixed provisional codes from non-admin users */}
           {listing.artisan_id &&
@@ -433,6 +457,8 @@ export function QuickViewMobileSheet({
                     artisan_verified: 'correct' as const,
                     artisan_display_name: newId === 'UNKNOWN' ? 'Unknown' : newId,
                   })}
+                  adminHidden={listing.admin_hidden}
+                  onToggleHidden={handleToggleHidden}
                 >
                   <span className="text-muted hover:text-ink transition-colors p-0.5 cursor-pointer">
                     <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
