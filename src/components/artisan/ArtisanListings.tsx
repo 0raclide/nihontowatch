@@ -6,6 +6,18 @@ import { useRouter } from 'next/navigation';
 import type { Listing } from '@/types';
 import { getImageUrl } from '@/lib/images';
 import { useQuickViewOptional } from '@/contexts/QuickViewContext';
+import { CERT_CONFIG } from '@/components/listing/MetadataGrid';
+
+/** Map cert tier to Tailwind color class — matches browse cards and QuickView */
+function certColor(tier: string): string {
+  switch (tier) {
+    case 'tokuju': return 'text-tokuju';
+    case 'jubi': return 'text-jubi';
+    case 'juyo': return 'text-juyo';
+    case 'tokuho': return 'text-toku-hozon';
+    default: return 'text-hozon';
+  }
+}
 
 /**
  * ArtisanListings — Displays currently available listings matched to this artisan.
@@ -153,9 +165,9 @@ export function ArtisanListings({ code, artisanName, initialListings, status = '
                     </span>
                   )}
                 </div>
-                {listing.cert_type && (
-                  <span className="mt-1 inline-block text-[10px] text-muted bg-border/50 px-1.5 py-0.5 rounded">
-                    {listing.cert_type}
+                {listing.cert_type && CERT_CONFIG[listing.cert_type] && (
+                  <span className={`mt-1 inline-block text-[10px] uppercase tracking-wider font-bold ${certColor(CERT_CONFIG[listing.cert_type].tier)}`}>
+                    {CERT_CONFIG[listing.cert_type].shortLabel}
                   </span>
                 )}
               </div>
