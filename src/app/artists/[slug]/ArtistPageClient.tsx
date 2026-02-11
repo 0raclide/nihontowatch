@@ -6,6 +6,8 @@ import Link from 'next/link';
 import type { Listing } from '@/types';
 import { PrestigePyramid } from '@/components/artisan/PrestigePyramid';
 import { EliteFactorDisplay } from '@/components/artisan/EliteFactorDisplay';
+import { ProvenancePyramid, ProvenanceFactorDisplay } from '@/components/artisan/ProvenancePyramid';
+import { computeProvenanceAnalysis } from '@/lib/artisan/provenanceMock';
 import { FormDistributionBar } from '@/components/artisan/FormDistributionBar';
 import { MeiDistributionBar } from '@/components/artisan/MeiDistributionBar';
 import { SectionJumpNav } from '@/components/artisan/SectionJumpNav';
@@ -13,6 +15,7 @@ import { ArtisanListings } from '@/components/artisan/ArtisanListings';
 import { RelatedArtisans } from '@/components/artisan/RelatedArtisans';
 import type { ArtisanPageResponse } from '@/app/api/artisan/[code]/route';
 import { getArtisanDisplayParts } from '@/lib/artisan/displayName';
+import { CatalogueShowcase } from '@/components/artisan/CatalogueShowcase';
 
 interface ArtistPageClientProps {
   data: ArtisanPageResponse;
@@ -306,6 +309,10 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
       .filter((g): g is NonNullable<typeof g> => g !== null)
       .sort((a, b) => b.totalCount - a.totalCount);
   }, [rawDenraiGrouped]);
+  const provenanceAnalysis = useMemo(
+    () => computeProvenanceAnalysis(denraiGrouped),
+    [denraiGrouped]
+  );
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [listings, setListings] = useState<Listing[] | null>(null);
   const [soldListings, setSoldListings] = useState<Listing[] | null>(null);
@@ -367,6 +374,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
     const s: Array<{ id: string; label: string }> = [];
     s.push({ id: 'overview', label: 'Overview' });
     if (certifications.total_items > 0) s.push({ id: 'certifications', label: 'Certifications' });
+    if (data.catalogueEntries?.length) s.push({ id: 'catalogue', label: 'Catalogue' });
     if (hasFormStats) s.push({ id: 'blade-forms', label: entity.entity_type === 'smith' ? 'Blade Forms' : 'Work Types' });
     if (hasMeiStats) s.push({ id: 'signatures', label: 'Signatures' });
     if (denraiGrouped.length > 0) s.push({ id: 'provenance', label: 'Provenance' });
@@ -375,7 +383,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
     if (lineage.teacher || lineage.students.length > 0) s.push({ id: 'lineage', label: 'Lineage' });
     if (related.length > 0) s.push({ id: 'related', label: 'School' });
     return s;
-  }, [entity.entity_type, certifications.total_items, hasFormStats, hasMeiStats, listingsExist, soldListingsExist, lineage, related, denraiGrouped]);
+  }, [entity.entity_type, certifications.total_items, data.catalogueEntries, hasFormStats, hasMeiStats, listingsExist, soldListingsExist, lineage, related, denraiGrouped]);
 
   const fujishiroLabel = entity.fujishiro ? FUJISHIRO_LABELS[entity.fujishiro] : null;
 
@@ -638,6 +646,20 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
         )}
 
         {/* ═══════════════════════════════════════════════════════════════════
+            PUBLISHED WORKS — Catalogue showcase
+        ═══════════════════════════════════════════════════════════════════ */}
+        {data.catalogueEntries && data.catalogueEntries.length > 0 && (
+          <section>
+            <SectionHeader id="catalogue" title="Published Works" subtitle="Documented by the community" className="mb-7" />
+            <CatalogueShowcase
+              entry={data.catalogueEntries[0]}
+              totalEntries={data.catalogueEntries.length}
+              artisanName={entity.name_romaji}
+            />
+          </section>
+        )}
+
+        {/* ═══════════════════════════════════════════════════════════════════
             BLADE FORMS — Form distribution across certified works
         ═══════════════════════════════════════════════════════════════════ */}
         {hasFormStats && (
@@ -675,86 +697,28 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
         )}
 
         {/* ═══════════════════════════════════════════════════════════════════
-            PROVENANCE — Historical collections
+            PROVENANCE — Historical collections (Provenance Pyramid + Factor)
         ═══════════════════════════════════════════════════════════════════ */}
-        {denraiGrouped.length > 0 && (
+        {provenanceAnalysis && (
           <>
             <section>
               <SectionHeader
                 id="provenance"
                 title="Provenance"
-                subtitle={`Certified works by ${entity.name_romaji || entity.code} have been held in the following collections`}
-                className="mb-6"
+                subtitle={`Certified works by ${entity.name_romaji || entity.code} have been held in ${provenanceAnalysis.count} documented collection${provenanceAnalysis.count !== 1 ? 's' : ''}`}
+                className="mb-7"
               />
 
-              <div className="space-y-0">
-                {denraiGrouped.map((g, gi) => {
-                  const isLast = gi === denraiGrouped.length - 1;
-                  const isExpanded = expandedGroups.has(g.parent);
+              <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr] gap-6 sm:gap-10">
+                {/* Provenance Pyramid — tier distribution */}
+                <div>
+                  <ProvenancePyramid analysis={provenanceAnalysis} />
+                </div>
 
-                  if (!g.isGroup) {
-                    // Singleton — render flat, same as before
-                    const d = g.children[0];
-                    return (
-                      <div
-                        key={d.owner}
-                        className={`flex items-baseline justify-between py-3 ${
-                          !isLast ? 'border-b border-border/15' : ''
-                        }`}
-                      >
-                        <span className="text-sm text-ink font-light">{d.owner}</span>
-                        {d.count > 1 && (
-                          <span className="text-xs text-ink/35 tabular-nums ml-4 shrink-0">
-                            {d.count} works
-                          </span>
-                        )}
-                      </div>
-                    );
-                  }
-
-                  // Group — collapsible row
-                  return (
-                    <div key={g.parent} className={!isLast ? 'border-b border-border/15' : ''}>
-                      <button
-                        type="button"
-                        onClick={() => setExpandedGroups(prev => {
-                          const next = new Set(prev);
-                          if (next.has(g.parent)) next.delete(g.parent);
-                          else next.add(g.parent);
-                          return next;
-                        })}
-                        className="flex items-baseline justify-between py-3 w-full text-left"
-                      >
-                        <span className="text-sm text-ink font-light flex items-baseline gap-1.5">
-                          <span className="text-ink/30 text-[10px] shrink-0">
-                            {isExpanded ? '▾' : '▸'}
-                          </span>
-                          {g.parent}
-                        </span>
-                        <span className="text-xs text-ink/35 tabular-nums ml-4 shrink-0">
-                          {g.totalCount} works
-                        </span>
-                      </button>
-                      {isExpanded && (
-                        <div className="pl-5 pb-2">
-                          {g.children.map(c => (
-                            <div
-                              key={c.owner}
-                              className="flex items-baseline justify-between py-1.5"
-                            >
-                              <span className="text-sm text-ink/50 font-light">{c.owner}</span>
-                              {c.count > 1 && (
-                                <span className="text-xs text-ink/25 tabular-nums ml-4 shrink-0">
-                                  {c.count}
-                                </span>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+                {/* Provenance Factor — the number */}
+                <div className="flex flex-col justify-between">
+                  <ProvenanceFactorDisplay analysis={provenanceAnalysis} />
+                </div>
               </div>
             </section>
           </>

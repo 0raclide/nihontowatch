@@ -1256,6 +1256,7 @@ export async function resolveTeacher(teacherRef: string): Promise<ArtisanStub | 
 export interface CatalogueImage {
   url: string;
   type: 'oshigata' | 'sugata' | 'art' | 'detail' | 'other' | 'photo';
+  category: 'catalog' | 'photo' | 'cover' | 'sayagaki' | 'provenance';
   width?: number;
   height?: number;
 }
@@ -1268,6 +1269,7 @@ export interface CatalogueEntry {
   formType: string | null;
 
   images: CatalogueImage[];  // Whitelisted only (no setsumei)
+  coverImage: CatalogueImage | null;  // From cover_image linked_record
 
   sayagakiEn: string | null;
   provenanceEn: string | null;
@@ -1386,7 +1388,7 @@ export async function getPublishedCatalogueEntries(
           .from('linked_records')
           .select('object_uuid, type, content_en, image_ids')
           .in('object_uuid', batch)
-          .in('type', ['photo', 'sayagaki', 'provenance']);
+          .in('type', ['photo', 'cover_image', 'sayagaki', 'provenance']);
         if (data) rows.push(...(data as typeof rows));
       }
       return rows;
@@ -1416,18 +1418,26 @@ export async function getPublishedCatalogueEntries(
     })(),
   ]);
 
-  // 4. Fetch stored_images for photo linked_records (by image_ids)
-  const allPhotoImageIds: string[] = [];
+  // 4. Fetch stored_images for ALL linked_records with image_ids (photo, cover_image, sayagaki, provenance)
+  const allLinkedImageIds: Array<{ id: string; category: CatalogueImage['category'] }> = [];
   for (const lr of linkedRecords) {
-    if (lr.type === 'photo' && lr.image_ids && lr.image_ids.length > 0) {
-      allPhotoImageIds.push(...lr.image_ids);
+    if (lr.image_ids && lr.image_ids.length > 0) {
+      const cat: CatalogueImage['category'] = lr.type === 'photo' ? 'photo'
+        : lr.type === 'cover_image' ? 'cover'
+        : lr.type === 'sayagaki' ? 'sayagaki'
+        : 'provenance';
+      for (const id of lr.image_ids) {
+        allLinkedImageIds.push({ id, category: cat });
+      }
     }
   }
 
-  const photoImagesById = new Map<string, { storage_path: string; image_type: string; width: number | null; height: number | null }>();
-  if (allPhotoImageIds.length > 0) {
-    for (let i = 0; i < allPhotoImageIds.length; i += BATCH_SIZE) {
-      const batch = allPhotoImageIds.slice(i, i + BATCH_SIZE);
+  const linkedImagesById = new Map<string, { storage_path: string; image_type: string; width: number | null; height: number | null; category: CatalogueImage['category'] }>();
+  if (allLinkedImageIds.length > 0) {
+    const uniqueIds = [...new Set(allLinkedImageIds.map(i => i.id))];
+    const categoryById = new Map(allLinkedImageIds.map(i => [i.id, i.category]));
+    for (let i = 0; i < uniqueIds.length; i += BATCH_SIZE) {
+      const batch = uniqueIds.slice(i, i + BATCH_SIZE);
       const { data } = await yuhinkaiClient
         .from('stored_images')
         .select('id, storage_path, image_type, width, height')
@@ -1435,11 +1445,12 @@ export async function getPublishedCatalogueEntries(
         .eq('is_current', true);
       if (data) {
         for (const row of data) {
-          photoImagesById.set(row.id as string, {
+          linkedImagesById.set(row.id as string, {
             storage_path: row.storage_path as string,
             image_type: row.image_type as string,
             width: row.width as number | null,
             height: row.height as number | null,
+            category: categoryById.get(row.id as string) || 'photo',
           });
         }
       }
@@ -1459,21 +1470,23 @@ export async function getPublishedCatalogueEntries(
     imagesByUuid.get(si.object_uuid)!.push({
       url: `${IMAGE_STORAGE_BASE}/storage/v1/object/public/images/${si.storage_path}`,
       type: si.image_type as CatalogueImage['type'],
+      category: 'catalog',
       width: si.width ?? undefined,
       height: si.height ?? undefined,
     });
   }
 
-  // Add photo images from linked_records
+  // Add images from linked_records (photo, cover, sayagaki, provenance)
   for (const lr of linkedRecords) {
-    if (lr.type === 'photo' && lr.image_ids) {
+    if (lr.image_ids) {
       for (const imgId of lr.image_ids) {
-        const img = photoImagesById.get(imgId);
+        const img = linkedImagesById.get(imgId);
         if (img) {
           if (!imagesByUuid.has(lr.object_uuid)) imagesByUuid.set(lr.object_uuid, []);
           imagesByUuid.get(lr.object_uuid)!.push({
             url: `${IMAGE_STORAGE_BASE}/storage/v1/object/public/images/${img.storage_path}`,
-            type: 'photo',
+            type: img.image_type as CatalogueImage['type'],
+            category: img.category,
             width: img.width ?? undefined,
             height: img.height ?? undefined,
           });
@@ -1515,13 +1528,17 @@ export async function getPublishedCatalogueEntries(
       ? `${YUHINKAI_STORAGE_BASE}/storage/v1/render/image/public/images/${profile.avatar_url}?width=64&height=64&resize=cover&quality=80`
       : null;
 
+    const allImages = imagesByUuid.get(uuid) || [];
+    const coverImage = allImages.find(img => img.category === 'cover') || null;
+
     entries.push({
       objectUuid: uuid,
       collection: bestCatalog.collection,
       volume: bestCatalog.volume,
       itemNumber: bestCatalog.item_number,
       formType: formTypeByUuid.get(uuid) || null,
-      images: imagesByUuid.get(uuid) || [],
+      images: allImages,
+      coverImage,
       sayagakiEn: sayagakiByUuid.get(uuid) || null,
       provenanceEn: provenanceByUuid.get(uuid) || null,
       curatorNote: pub.note || null,

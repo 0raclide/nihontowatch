@@ -80,6 +80,13 @@
   --artisan-low: #6A6A6A;              /* Gray - muted for uncertainty */
   --artisan-low-bg: rgba(106, 106, 106, 0.10);
 
+  /* Provenance tier colors — Japanese court rank palette */
+  --prov-imperial: #B8860B;            /* Gold — chrysanthemum seal */
+  --prov-premier: #9B2335;             /* Deep crimson — highest court rank */
+  --prov-major: #2B4570;               /* Indigo — ai-iro, samurai class */
+  --prov-mid: #5B7B8A;                 /* Steel blue — institutional */
+  --prov-minor: #8B8178;               /* Warm gray — documented but common */
+
   /* Alias for backwards compatibility */
   --burgundy: var(--juyo);
 
@@ -178,6 +185,13 @@ html.dark {
   --artisan-low: #888888;              /* Gray - slightly brighter for dark */
   --artisan-low-bg: rgba(136, 136, 136, 0.15);
 
+  /* Provenance tier colors — bright for dark mode */
+  --prov-imperial: #D4A030;            /* Bright gold */
+  --prov-premier: #D04050;             /* Bright crimson */
+  --prov-major: #5080C0;               /* Bright indigo */
+  --prov-mid: #7898A8;                 /* Bright steel */
+  --prov-minor: #A89888;               /* Light warm gray */
+
   /* Shadows - softer for elegance */
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.25);
   --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.35);
@@ -264,6 +278,13 @@ html.theme-opus {
   /* New listing badge - warm green for Opus */
   --new-listing: #68c890;
   --new-listing-bg: rgba(104, 200, 144, 0.20);
+
+  /* Provenance tier colors — warm tints for Opus */
+  --prov-imperial: #D8A838;
+  --prov-premier: #C84848;
+  --prov-major: #5888C8;
+  --prov-mid: #7090A0;
+  --prov-minor: #A09080;
 
   /* Soft contemplative shadows */
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.35);
@@ -386,6 +407,13 @@ html.theme-yuhindo {
   /* New listing badge - soft mint against the purple */
   --new-listing: #80d0a0;
   --new-listing-bg: rgba(128, 208, 160, 0.20);
+
+  /* Provenance tier colors — jewel tones for Yuhindo */
+  --prov-imperial: #D8A840;
+  --prov-premier: #C85060;
+  --prov-major: #6898D0;
+  --prov-mid: #8098A8;
+  --prov-minor: #A89890;
 
   /* Shadows - deep and soft, like velvet folds */
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.45);

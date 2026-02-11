@@ -181,6 +181,7 @@ export async function GET(
       getDenraiForArtisan,
       getDenraiGrouped,
       getArtisanDistributions,
+      getPublishedCatalogueEntries,
     } = await import('@/lib/supabase/yuhinkai');
 
     // Try smith_entities first
@@ -235,7 +236,7 @@ export async function GET(
 
     // Fetch all enrichment data in parallel
     const { getArtisanHeroImage } = await import('@/lib/supabase/yuhinkai');
-    const [profile, students, related, elitePercentile, tokoTaikanPercentile, teacherStub, denraiResult, heroImage] =
+    const [profile, students, related, elitePercentile, tokoTaikanPercentile, teacherStub, denraiResult, heroImage, catalogueEntries] =
       await Promise.all([
         getArtistProfile(entityCode),
         getStudents(entityCode, entity.name_romaji),
@@ -247,6 +248,7 @@ export async function GET(
         entity.teacher ? resolveTeacher(entity.teacher) : Promise.resolve(null),
         getDenraiForArtisan(entityCode, entityType),
         getArtisanHeroImage(entityCode, entityType),
+        getPublishedCatalogueEntries(entityCode, entityType),
       ]);
 
     // Compute grouped denrai from precomputed result (no extra DB queries)
@@ -338,6 +340,7 @@ export async function GET(
       denrai: denraiResult.owners,
       denraiGrouped,
       heroImage,
+      catalogueEntries: catalogueEntries.length > 0 ? catalogueEntries : undefined,
     };
 
     const response = NextResponse.json(pageResponse);
