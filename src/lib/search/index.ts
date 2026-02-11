@@ -42,6 +42,9 @@ export type {
   ParsedNumericFilters,
 } from './numericFilters';
 
+// URL detection (short-circuits search pipeline for URL lookups)
+export { detectUrlQuery } from './urlDetection';
+
 // Semantic query parsing (certifications, item types)
 export {
   parseSemanticQuery,

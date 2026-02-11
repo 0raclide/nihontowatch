@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { normalizeSearchText } from '@/lib/search';
+import { detectUrlQuery } from '@/lib/search/urlDetection';
 import { LISTING_FILTERS } from '@/lib/constants';
 import { logger } from '@/lib/logger';
 import type { SearchSuggestion, SearchSuggestionsResponse } from '@/lib/search/types';
@@ -57,43 +58,70 @@ export async function GET(request: NextRequest) {
     const supabase = await createClient();
     const normalizedQuery = normalizeSearchText(query);
 
-    // Build ILIKE search across relevant fields
-    // Include title, smith, tosogu_maker, school, tosogu_school
-    const searchFields = [
-      `title.ilike.%${normalizedQuery}%`,
-      `smith.ilike.%${normalizedQuery}%`,
-      `tosogu_maker.ilike.%${normalizedQuery}%`,
-      `school.ilike.%${normalizedQuery}%`,
-      `tosogu_school.ilike.%${normalizedQuery}%`,
-    ].join(',');
+    // URL detection: search url column directly instead of text fields
+    const detectedUrl = detectUrlQuery(query);
 
-    let dbQuery = supabase
-      .from('listings')
-      .select(
-        `
-        id,
-        url,
-        title,
-        item_type,
-        price_value,
-        price_currency,
-        images,
-        cert_type,
-        smith,
-        tosogu_maker,
-        dealers!inner(name, domain)
-      `,
-        { count: 'exact' }
-      )
-      .or('status.eq.available,is_available.eq.true')
-      .or(searchFields);
+    let dbQuery;
 
-    // Apply minimum price filter (uses normalized JPY price)
-    // Also exclude NULL price_jpy to prevent unpriced items slipping through
-    if (LISTING_FILTERS.MIN_PRICE_JPY > 0) {
-      dbQuery = dbQuery
-        .not('price_jpy', 'is', null)
-        .gte('price_jpy', LISTING_FILTERS.MIN_PRICE_JPY);
+    if (detectedUrl) {
+      // URL search: ILIKE on url column, no status/price filter (find any matching listing)
+      dbQuery = supabase
+        .from('listings')
+        .select(
+          `
+          id,
+          url,
+          title,
+          item_type,
+          price_value,
+          price_currency,
+          images,
+          cert_type,
+          smith,
+          tosogu_maker,
+          dealers!inner(name, domain)
+        `,
+          { count: 'exact' }
+        )
+        .ilike('url', `%${detectedUrl}%`);
+    } else {
+      // Standard text search across relevant fields
+      const searchFields = [
+        `title.ilike.%${normalizedQuery}%`,
+        `smith.ilike.%${normalizedQuery}%`,
+        `tosogu_maker.ilike.%${normalizedQuery}%`,
+        `school.ilike.%${normalizedQuery}%`,
+        `tosogu_school.ilike.%${normalizedQuery}%`,
+      ].join(',');
+
+      dbQuery = supabase
+        .from('listings')
+        .select(
+          `
+          id,
+          url,
+          title,
+          item_type,
+          price_value,
+          price_currency,
+          images,
+          cert_type,
+          smith,
+          tosogu_maker,
+          dealers!inner(name, domain)
+        `,
+          { count: 'exact' }
+        )
+        .or('status.eq.available,is_available.eq.true')
+        .or(searchFields);
+
+      // Apply minimum price filter (uses normalized JPY price)
+      // Also exclude NULL price_jpy to prevent unpriced items slipping through
+      if (LISTING_FILTERS.MIN_PRICE_JPY > 0) {
+        dbQuery = dbQuery
+          .not('price_jpy', 'is', null)
+          .gte('price_jpy', LISTING_FILTERS.MIN_PRICE_JPY);
+      }
     }
 
     const { data, count, error } = await dbQuery

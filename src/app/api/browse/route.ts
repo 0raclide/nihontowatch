@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { normalizeSearchText, expandSearchAliases } from '@/lib/search';
+import { detectUrlQuery } from '@/lib/search/urlDetection';
 import { parseNumericFilters } from '@/lib/search/numericFilters';
 import { parseSemanticQuery, PROVINCE_VARIANTS } from '@/lib/search/semanticQueryParser';
 import { CACHE, PAGINATION, LISTING_FILTERS } from '@/lib/constants';
@@ -205,6 +206,10 @@ export async function GET(request: NextRequest) {
     const supabase = await createClient();
     const params = parseParams(request.nextUrl.searchParams);
 
+    // Step 0: URL detection — short-circuits the entire search pipeline
+    // When a user pastes a dealer URL, we search the url column directly
+    const detectedUrl = params.query ? detectUrlQuery(params.query) : null;
+
     // Get user subscription to determine data delay
     const subscription = await getUserSubscription();
 
@@ -216,9 +221,12 @@ export async function GET(request: NextRequest) {
       ? Math.max(0, params.offset)
       : (safePage - 1) * params.limit!;
     // Status filter: 'all' = no filter, 'sold' = sold only, otherwise available only (default)
-    const statusFilter = params.tab === 'all'
+    // URL searches override to null (search all statuses — available, sold, etc.)
+    const statusFilter = detectedUrl
       ? null
-      : (params.tab === 'sold' ? STATUS_SOLD : STATUS_AVAILABLE);
+      : params.tab === 'all'
+        ? null
+        : (params.tab === 'sold' ? STATUS_SOLD : STATUS_AVAILABLE);
 
     // Build query
     // Note: listing_yuhinkai_enrichment view already filters to DEFINITIVE matches
@@ -295,7 +303,10 @@ export async function GET(request: NextRequest) {
     }
 
     // Minimum price filter (excludes books, accessories, low-quality items)
-    query = applyMinPriceFilter(query);
+    // Skip for URL searches — specific item lookup shouldn't be filtered by price
+    if (!detectedUrl) {
+      query = applyMinPriceFilter(query);
+    }
 
     // Hide admin-hidden listings from non-admin users
     if (!subscription.isAdmin) {
@@ -303,9 +314,12 @@ export async function GET(request: NextRequest) {
     }
 
     // Exclude non-collectibles (stands, books, other accessories)
-    query = query.not('item_type', 'ilike', 'stand');
-    query = query.not('item_type', 'ilike', 'book');
-    query = query.not('item_type', 'ilike', 'other');
+    // Skip for URL searches — specific item lookup should find any item type
+    if (!detectedUrl) {
+      query = query.not('item_type', 'ilike', 'stand');
+      query = query.not('item_type', 'ilike', 'book');
+      query = query.not('item_type', 'ilike', 'other');
+    }
 
     // Item type filter - use ILIKE for case-insensitive matching
     // Database has mixed case (e.g., "Katana" and "katana")
@@ -428,8 +442,14 @@ export async function GET(request: NextRequest) {
       query = query.is('artisan_id', null);
     }
 
+    // URL search: ILIKE match on url column, skip entire semantic/FTS pipeline
+    if (detectedUrl) {
+      query = query.ilike('url', `%${detectedUrl}%`);
+    }
+
     // Process query with semantic extraction, numeric filters, and text search
-    if (params.query && params.query.trim().length >= 2) {
+    // Skip entirely if URL was detected (already handled above)
+    if (!detectedUrl && params.query && params.query.trim().length >= 2) {
       // Step 1: Extract semantic filters (certifications, item types) from query
       // This ensures "Tanto Juyo" filters by Juyo certification, not text match
       const { extractedFilters, remainingTerms } = parseSemanticQuery(params.query);
