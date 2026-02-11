@@ -103,6 +103,7 @@ interface BrowseResponse {
     signatureStatuses: Facet[];
   };
   lastUpdated: string | null;
+  isUrlSearch?: boolean;
 }
 
 // Format relative time for freshness display
@@ -737,6 +738,8 @@ function HomeContent() {
               searchId={currentSearchIdRef.current}
               isAdmin={authIsAdmin}
               mobileView={mobileView}
+              isUrlSearch={data?.isUrlSearch || false}
+              searchQuery={searchQuery}
             />
           </div>
         </div>

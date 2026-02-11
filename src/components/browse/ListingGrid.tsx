@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { VirtualListingGrid } from './VirtualListingGrid';
 import { ViewportTrackingProvider } from '@/lib/viewport';
 
@@ -78,6 +79,8 @@ interface ListingGridProps {
   searchId?: number; // For CTR tracking
   isAdmin?: boolean; // For admin-only features like artisan code display
   mobileView?: 'grid' | 'gallery'; // Mobile layout mode
+  isUrlSearch?: boolean; // Whether the current search was a URL query
+  searchQuery?: string; // The raw search query (for report missing URL)
 }
 
 function LoadingSkeleton() {
@@ -97,7 +100,38 @@ function LoadingSkeleton() {
   );
 }
 
-function EmptyState() {
+function EmptyState({ isAdmin, isUrlSearch, searchQuery }: {
+  isAdmin?: boolean;
+  isUrlSearch?: boolean;
+  searchQuery?: string;
+}) {
+  const [reportStatus, setReportStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [reportMessage, setReportMessage] = useState('');
+
+  const handleReportMissing = async () => {
+    if (!searchQuery) return;
+    setReportStatus('loading');
+    try {
+      const res = await fetch('/api/admin/report-missing-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ url: searchQuery }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setReportStatus('success');
+        setReportMessage(`Saved for ${data.dealer_name}. Scraper will pick it up.`);
+      } else {
+        setReportStatus('error');
+        setReportMessage(data.error || 'Failed to report URL');
+      }
+    } catch {
+      setReportStatus('error');
+      setReportMessage('Network error');
+    }
+  };
+
   return (
     <div className="text-center py-16">
       <div className="inline-block p-6 bg-paper border border-border">
@@ -118,6 +152,35 @@ function EmptyState() {
         <p className="text-sm text-muted">
           Try adjusting your filters to see more results
         </p>
+
+        {/* Admin: Report missing URL button */}
+        {isAdmin && isUrlSearch && searchQuery && (
+          <div className="mt-4 pt-4 border-t border-border">
+            {reportStatus === 'idle' && (
+              <button
+                onClick={handleReportMissing}
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gold border border-gold/40 rounded hover:bg-gold/10 transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Report Missing URL
+              </button>
+            )}
+            {reportStatus === 'loading' && (
+              <div className="flex items-center justify-center gap-2 text-sm text-muted">
+                <div className="w-4 h-4 border-2 border-gold border-t-transparent rounded-full animate-spin" />
+                Reporting...
+              </div>
+            )}
+            {reportStatus === 'success' && (
+              <p className="text-sm text-sage">{reportMessage}</p>
+            )}
+            {reportStatus === 'error' && (
+              <p className="text-sm text-red-500">{reportMessage}</p>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -150,6 +213,8 @@ export function ListingGrid({
   searchId,
   isAdmin = false,
   mobileView = 'gallery',
+  isUrlSearch,
+  searchQuery,
 }: ListingGridProps) {
   // Loading state
   if (isLoading) {
@@ -158,7 +223,7 @@ export function ListingGrid({
 
   // Empty state
   if (listings.length === 0) {
-    return <EmptyState />;
+    return <EmptyState isAdmin={isAdmin} isUrlSearch={isUrlSearch} searchQuery={searchQuery} />;
   }
 
   // Always use VirtualListingGrid - same component for all screen sizes

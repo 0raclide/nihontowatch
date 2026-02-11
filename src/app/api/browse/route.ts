@@ -812,6 +812,8 @@ export async function GET(request: NextRequest) {
       subscriptionTier: subscription.tier,
       // Admin flag for admin-only filters
       isAdmin: subscription.isAdmin,
+      // URL search flag for "report missing URL" feature
+      isUrlSearch: !!detectedUrl,
     });
 
     // Always use private caching to prevent CDN from caching isAdmin=false responses
