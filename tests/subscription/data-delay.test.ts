@@ -6,7 +6,7 @@
  *
  * Tests cover:
  * 1. getUserSubscription() correctly identifies admin/paid users
- * 2. getDataDelayCutoff() calculates correct 72h cutoff
+ * 2. getDataDelayCutoff() calculates correct 7-day cutoff
  * 3. Browse API applies delay for free users
  * 4. Browse API skips delay for admin/paid users
  * 5. Client fetch includes credentials for auth cookies
@@ -19,7 +19,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 // =============================================================================
 
 describe('getDataDelayCutoff', () => {
-  it('returns ISO string 72 hours in the past', async () => {
+  it('returns ISO string 7 days in the past', async () => {
     // Import the actual function
     const { getDataDelayCutoff, DATA_DELAY_MS } = await import('@/lib/subscription/server');
 
@@ -27,16 +27,16 @@ describe('getDataDelayCutoff', () => {
     const cutoff = getDataDelayCutoff();
     const cutoffTime = new Date(cutoff).getTime();
 
-    // Should be approximately 72 hours ago (within 1 second tolerance)
+    // Should be approximately 7 days ago (within 1 second tolerance)
     const expected = now - DATA_DELAY_MS;
     expect(Math.abs(cutoffTime - expected)).toBeLessThan(1000);
   });
 
-  it('DATA_DELAY_MS equals exactly 72 hours', async () => {
+  it('DATA_DELAY_MS equals exactly 7 days', async () => {
     const { DATA_DELAY_MS } = await import('@/lib/subscription/server');
 
-    const HOURS_72_MS = 72 * 60 * 60 * 1000;
-    expect(DATA_DELAY_MS).toBe(HOURS_72_MS);
+    const DAYS_7_MS = 7 * 24 * 60 * 60 * 1000;
+    expect(DATA_DELAY_MS).toBe(DAYS_7_MS);
   });
 });
 
@@ -45,9 +45,9 @@ describe('getDataDelayCutoff', () => {
 // =============================================================================
 
 describe('isEarlyAccessListing (client-side)', () => {
-  it('returns true for listings within 72 hours', () => {
+  it('returns true for listings within 7 days', () => {
     // This logic is in ListingCard - test the same calculation
-    const EARLY_ACCESS_WINDOW_MS = 72 * 60 * 60 * 1000;
+    const EARLY_ACCESS_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 
     const isEarlyAccessListing = (firstSeenAt: string): boolean => {
       const listingDate = new Date(firstSeenAt).getTime();
@@ -59,13 +59,17 @@ describe('isEarlyAccessListing (client-side)', () => {
     const oneHourAgo = new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString();
     expect(isEarlyAccessListing(oneHourAgo)).toBe(true);
 
-    // Listing from 71 hours ago - should be early access
-    const seventyOneHoursAgo = new Date(Date.now() - 71 * 60 * 60 * 1000).toISOString();
-    expect(isEarlyAccessListing(seventyOneHoursAgo)).toBe(true);
+    // Listing from 3 days ago - should be early access
+    const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
+    expect(isEarlyAccessListing(threeDaysAgo)).toBe(true);
+
+    // Listing from 6 days ago - should be early access
+    const sixDaysAgo = new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString();
+    expect(isEarlyAccessListing(sixDaysAgo)).toBe(true);
   });
 
-  it('returns false for listings older than 72 hours', () => {
-    const EARLY_ACCESS_WINDOW_MS = 72 * 60 * 60 * 1000;
+  it('returns false for listings older than 7 days', () => {
+    const EARLY_ACCESS_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 
     const isEarlyAccessListing = (firstSeenAt: string): boolean => {
       const listingDate = new Date(firstSeenAt).getTime();
@@ -73,13 +77,13 @@ describe('isEarlyAccessListing (client-side)', () => {
       return listingDate > cutoff;
     };
 
-    // Listing from 73 hours ago - should NOT be early access
-    const seventyThreeHoursAgo = new Date(Date.now() - 73 * 60 * 60 * 1000).toISOString();
-    expect(isEarlyAccessListing(seventyThreeHoursAgo)).toBe(false);
+    // Listing from 8 days ago - should NOT be early access
+    const eightDaysAgo = new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString();
+    expect(isEarlyAccessListing(eightDaysAgo)).toBe(false);
 
-    // Listing from 1 week ago - should NOT be early access
-    const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-    expect(isEarlyAccessListing(oneWeekAgo)).toBe(false);
+    // Listing from 2 weeks ago - should NOT be early access
+    const twoWeeksAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString();
+    expect(isEarlyAccessListing(twoWeeksAgo)).toBe(false);
   });
 });
 
@@ -113,9 +117,9 @@ describe('Subscription tier access', () => {
     expect(canAccessFeature('enthusiast', 'fresh_data')).toBe(true);
   });
 
-  it('connoisseur tier should have access to fresh_data', async () => {
+  it('inner_circle tier should have access to fresh_data', async () => {
     const { canAccessFeature } = await import('@/types/subscription');
-    expect(canAccessFeature('connoisseur', 'fresh_data')).toBe(true);
+    expect(canAccessFeature('inner_circle', 'fresh_data')).toBe(true);
   });
 
   it('free tier should NOT have access to fresh_data', async () => {
@@ -260,23 +264,23 @@ describe('Browse API subscription response fields', () => {
 // =============================================================================
 
 describe('Admin subscription access', () => {
-  it('admin role should grant connoisseur tier in SubscriptionContext', async () => {
+  it('admin role should grant inner_circle tier in SubscriptionContext', async () => {
     // This tests the logic in SubscriptionContext
-    // When isAdmin is true, user should get connoisseur access
+    // When isAdmin is true, user should get inner_circle access
 
     // The logic is:
     // if (isAdmin) {
-    //   return { tier: 'connoisseur', canAccess: () => true, ... }
+    //   return { tier: 'inner_circle', canAccess: () => true, ... }
     // }
 
     // We can't easily test React context, but we can verify the types
     const { canAccessFeature } = await import('@/types/subscription');
 
-    // Connoisseur can access everything
-    expect(canAccessFeature('connoisseur', 'fresh_data')).toBe(true);
-    expect(canAccessFeature('connoisseur', 'inquiry_emails')).toBe(true);
-    expect(canAccessFeature('connoisseur', 'saved_searches')).toBe(true);
-    expect(canAccessFeature('connoisseur', 'search_alerts')).toBe(true);
+    // inner_circle can access everything
+    expect(canAccessFeature('inner_circle', 'fresh_data')).toBe(true);
+    expect(canAccessFeature('inner_circle', 'inquiry_emails')).toBe(true);
+    expect(canAccessFeature('inner_circle', 'saved_searches')).toBe(true);
+    expect(canAccessFeature('inner_circle', 'search_alerts')).toBe(true);
   });
 });
 
@@ -424,7 +428,7 @@ describe('CRITICAL: getUserSubscription behavior', () => {
     const { getUserSubscription } = await import('@/lib/subscription/server');
     const result = await getUserSubscription();
 
-    expect(result.tier).toBe('connoisseur');
+    expect(result.tier).toBe('inner_circle');
     expect(result.isDelayed).toBe(false);
     expect(result.userId).toBe(userId);
   });
@@ -466,7 +470,7 @@ describe('CRITICAL: getUserSubscription behavior', () => {
     const result = await getUserSubscription();
 
     // MUST detect admin via fallback
-    expect(result.tier).toBe('connoisseur');
+    expect(result.tier).toBe('inner_circle');
     expect(result.isDelayed).toBe(false);
     expect(result.userId).toBe(userId);
 

@@ -7,11 +7,13 @@ import { vi } from 'vitest';
 
 vi.mock('@/contexts/SubscriptionContext', () => ({
   useSubscription: () => ({
-    tier: 'connoisseur',
+    tier: 'inner_circle',
     status: 'active',
     isFree: false,
-    isEnthusiast: false,
-    isConnoisseur: true,
+    isPro: true,
+    isCollector: true,
+    isInnerCircle: true,
+    isDealer: false,
     canAccess: () => true,
     requireFeature: () => true,
     checkout: vi.fn(),

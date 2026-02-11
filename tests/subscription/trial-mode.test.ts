@@ -9,7 +9,7 @@
  *
  * When trial mode is OFF:
  * 1. Normal feature gating applies
- * 2. Free users see 72h delayed data
+ * 2. Free users see 7-day delayed data
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
@@ -118,13 +118,13 @@ describe('canAccessFeature in trial mode', () => {
 
     const { canAccessFeature } = await import('@/types/subscription');
 
-    // Enthusiast should have enthusiast features
+    // Enthusiast should have Pro features
     expect(canAccessFeature('enthusiast', 'fresh_data')).toBe(true);
-    expect(canAccessFeature('enthusiast', 'setsumei_translation')).toBe(true);
+    expect(canAccessFeature('enthusiast', 'inquiry_emails')).toBe(true);
 
-    // Connoisseur should have all features
-    expect(canAccessFeature('connoisseur', 'private_listings')).toBe(true);
-    expect(canAccessFeature('connoisseur', 'artist_stats')).toBe(true);
+    // Inner circle should have all features
+    expect(canAccessFeature('inner_circle', 'private_listings')).toBe(true);
+    expect(canAccessFeature('inner_circle', 'artist_stats')).toBe(true);
   });
 });
 

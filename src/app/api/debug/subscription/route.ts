@@ -68,14 +68,14 @@ export async function GET() {
       .select('*', { count: 'exact', head: true })
       .or('status.eq.available,is_available.eq.true');
 
-    // Count listings within 72h (fresh listings)
+    // Count listings within 7d (fresh listings)
     const { count: freshListings } = await supabaseForQueries
       .from('listings')
       .select('*', { count: 'exact', head: true })
       .or('status.eq.available,is_available.eq.true')
       .gt('first_seen_at', delayCutoff);
 
-    // Count listings older than 72h (delayed listings)
+    // Count listings older than 7d (delayed listings)
     const { count: delayedListings } = await supabaseForQueries
       .from('listings')
       .select('*', { count: 'exact', head: true })
@@ -121,14 +121,14 @@ export async function GET() {
       timing: {
         now: new Date().toISOString(),
         delayCutoff,
-        cutoffAge: '72 hours ago',
+        cutoffAge: '7 days ago',
       },
       counts: {
         totalAvailable,
         freshListings,
         delayedListings,
         note: subscription.isDelayed
-          ? `You should see ${delayedListings} listings (72h+ old)`
+          ? `You should see ${delayedListings} listings (7d+ old)`
           : `You should see ${totalAvailable} listings (all)`,
       },
       mostRecentListing: mostRecent,

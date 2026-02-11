@@ -286,8 +286,8 @@ export async function GET(request: NextRequest) {
       query = query.or(statusFilter);
     }
 
-    // 72h data delay for free tier users
-    // Free users only see listings discovered more than 72 hours ago
+    // 7-day data delay for free tier users
+    // Free users only see listings discovered more than 7 days ago
     if (subscription.isDelayed) {
       const delayCutoff = getDataDelayCutoff();
       query = query.lte('first_seen_at', delayCutoff);

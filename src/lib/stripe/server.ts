@@ -50,9 +50,13 @@ export const STRIPE_PRICES: Record<
     monthly: process.env.STRIPE_PRICE_ENTHUSIAST_MONTHLY || '',
     annual: process.env.STRIPE_PRICE_ENTHUSIAST_ANNUAL || '',
   },
-  connoisseur: {
-    monthly: process.env.STRIPE_PRICE_CONNOISSEUR_MONTHLY || '',
-    annual: process.env.STRIPE_PRICE_CONNOISSEUR_ANNUAL || '',
+  collector: {
+    monthly: process.env.STRIPE_PRICE_COLLECTOR_MONTHLY || '',
+    annual: process.env.STRIPE_PRICE_COLLECTOR_ANNUAL || '',
+  },
+  inner_circle: {
+    monthly: process.env.STRIPE_PRICE_INNER_CIRCLE_MONTHLY || '',
+    annual: process.env.STRIPE_PRICE_INNER_CIRCLE_ANNUAL || '',
   },
   dealer: {
     monthly: process.env.STRIPE_PRICE_DEALER_MONTHLY || '',

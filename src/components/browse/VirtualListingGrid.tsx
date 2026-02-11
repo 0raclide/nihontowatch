@@ -5,6 +5,7 @@ import { ListingCard } from './ListingCard';
 import { useAdaptiveVirtualScroll } from '@/hooks/useAdaptiveVirtualScroll';
 import { useQuickViewOptional } from '@/contexts/QuickViewContext';
 import type { Listing as QuickViewListing } from '@/types';
+import type { CardStyle } from './CardStyleSelector';
 
 // Detect mobile devices - disable JS virtualization on mobile due to scroll issues
 // Mobile browsers (especially iOS) have transform timing issues that cause "teleport" glitches
@@ -96,6 +97,7 @@ interface VirtualListingGridProps {
   onPageChange?: (page: number) => void;
   searchId?: number; // For CTR tracking
   isAdmin?: boolean; // For admin-only features like artisan code display
+  cardStyle?: CardStyle; // Card design variant
 }
 
 function Pagination({
@@ -208,6 +210,7 @@ export function VirtualListingGrid({
   onPageChange,
   searchId,
   isAdmin = false,
+  cardStyle,
 }: VirtualListingGridProps) {
   const quickView = useQuickViewOptional();
   const loadMoreTriggerRef = useRef<HTMLDivElement>(null);
@@ -351,6 +354,7 @@ export function VirtualListingGrid({
           isNearViewport={true} // All visible items should load images
           searchId={searchId}
           isAdmin={isAdmin}
+          cardStyle={cardStyle}
         />
       ))}
     </div>

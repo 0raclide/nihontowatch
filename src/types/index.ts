@@ -857,11 +857,13 @@ export type {
 
 export {
   TIER_RANK,
+  TIER_DISPLAY_NAMES,
   FEATURE_MIN_TIER,
   TIER_PRICING,
   TIER_INFO,
-  FEATURE_PAYWALL_MESSAGES,
+  PAYWALL_BULLETS,
   canAccessFeature,
   getTierFeatures,
   createSubscriptionState,
+  getPaywallConfig,
 } from './subscription';

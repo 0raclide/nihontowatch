@@ -10,6 +10,7 @@ import {
   type BillingPeriod,
   TIER_INFO,
   TIER_PRICING,
+  getPaywallConfig,
 } from '@/types/subscription';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 
@@ -502,10 +503,11 @@ export function PaywallModal() {
   // Don't render if not open and not in closing animation
   if (!paywallInfo && !isClosing) return null;
 
-  // Use paywallInfo or empty values during closing
-  const title = paywallInfo?.title || '';
-  const message = paywallInfo?.message || '';
+  // Derive paywall content from tier config
   const requiredTier = paywallInfo?.requiredTier || 'enthusiast';
+  const config = getPaywallConfig(requiredTier);
+  const title = config.name;
+  const message = `Unlock ${config.name} features`;
 
   // Detect mobile vs desktop
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 1024;

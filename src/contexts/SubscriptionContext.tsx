@@ -16,7 +16,7 @@ import {
   type SubscriptionState,
   type BillingPeriod,
   createSubscriptionState,
-  FEATURE_PAYWALL_MESSAGES,
+  FEATURE_MIN_TIER,
 } from '@/types/subscription';
 import { startCheckout, openBillingPortal } from '@/lib/stripe/client';
 
@@ -26,8 +26,6 @@ import { startCheckout, openBillingPortal } from '@/lib/stripe/client';
 
 interface PaywallInfo {
   feature: Feature;
-  title: string;
-  message: string;
   requiredTier: SubscriptionTier;
 }
 
@@ -71,18 +69,19 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
   const [isCheckingOut, setIsCheckingOut] = useState(false);
 
   // Derive subscription state from profile
-  // Admins get full access (connoisseur tier) regardless of actual subscription
+  // Admins get full access (inner_circle tier) regardless of actual subscription
   const subscriptionState = useMemo(() => {
     // Admins always have full access
     if (isAdmin) {
       return {
-        tier: 'connoisseur' as SubscriptionTier,
+        tier: 'inner_circle' as SubscriptionTier,
         status: 'active' as SubscriptionStatus,
         isActive: true,
         expiresAt: null,
         isFree: false,
-        isEnthusiast: true,
-        isConnoisseur: true,
+        isPro: true,
+        isCollector: true,
+        isInnerCircle: true,
         isDealer: false,
         canAccess: () => true, // Admins can access everything
       };
@@ -103,12 +102,9 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
 
   // Show paywall for a feature
   const showPaywall = useCallback((feature: Feature) => {
-    const paywallMessage = FEATURE_PAYWALL_MESSAGES[feature];
     setPaywallInfo({
       feature,
-      title: paywallMessage.title,
-      message: paywallMessage.message,
-      requiredTier: paywallMessage.requiredTier,
+      requiredTier: FEATURE_MIN_TIER[feature],
     });
   }, []);
 

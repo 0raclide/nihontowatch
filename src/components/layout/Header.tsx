@@ -52,7 +52,11 @@ function HeaderContent() {
     if (prefersReduced) return;
 
     const header = headerRef.current;
-    if (header) header.style.willChange = 'transform';
+    if (header) {
+      header.style.willChange = 'transform';
+      // Set initial visible height for sticky toolbar coordination
+      document.documentElement.style.setProperty('--header-visible-h', `${header.offsetHeight}px`);
+    }
 
     /** Update shadow + backdrop blur proportional to reveal amount */
     const applyDepth = (offset: number, h: number, scrollY: number) => {
@@ -86,6 +90,7 @@ function HeaderContent() {
           header.style.transition = 'transform 0.3s ease-out, box-shadow 0.3s ease-out, backdrop-filter 0.3s ease-out';
           header.style.transform = 'translateY(0)';
         }
+        document.documentElement.style.setProperty('--header-visible-h', `${h}px`);
         applyDepth(0, h, y);
         upAccum.current = 0;
         lastScrollY.current = y;
@@ -118,6 +123,8 @@ function HeaderContent() {
       header.style.transition = 'none';
       offsetRef.current = Math.max(-h, Math.min(0, offsetRef.current - delta));
       header.style.transform = `translateY(${offsetRef.current}px)`;
+      // Broadcast visible height so sticky toolbar can coordinate
+      document.documentElement.style.setProperty('--header-visible-h', `${Math.max(0, h + offsetRef.current)}px`);
       applyDepth(offsetRef.current, h, y);
 
       // ── Asymmetric snap on idle ──
@@ -129,11 +136,13 @@ function HeaderContent() {
           // Not enough revealed → snap closed
           offsetRef.current = -h;
           header.style.transform = `translateY(${-h}px)`;
+          document.documentElement.style.setProperty('--header-visible-h', '0px');
           applyDepth(-h, h, y);
         } else if (revealed > SNAP_CLOSE_RATIO) {
           // Mostly revealed → snap open
           offsetRef.current = 0;
           header.style.transform = 'translateY(0)';
+          document.documentElement.style.setProperty('--header-visible-h', `${h}px`);
           applyDepth(0, h, window.scrollY);
         }
         // Between thresholds: stay put (prevents indecisive snapping)

@@ -2,6 +2,7 @@
 
 import { VirtualListingGrid } from './VirtualListingGrid';
 import { ViewportTrackingProvider } from '@/lib/viewport';
+import type { CardStyle } from './CardStyleSelector';
 
 interface Listing {
   id: string;
@@ -76,6 +77,7 @@ interface ListingGridProps {
   onLoadMore?: () => void;
   searchId?: number; // For CTR tracking
   isAdmin?: boolean; // For admin-only features like artisan code display
+  cardStyle?: CardStyle; // Card design variant
 }
 
 function LoadingSkeleton() {
@@ -147,6 +149,7 @@ export function ListingGrid({
   onLoadMore,
   searchId,
   isAdmin = false,
+  cardStyle,
 }: ListingGridProps) {
   // Loading state
   if (isLoading) {
@@ -177,6 +180,7 @@ export function ListingGrid({
         onLoadMore={onLoadMore}
         searchId={searchId}
         isAdmin={isAdmin}
+        cardStyle={cardStyle}
       />
     </ViewportTrackingProvider>
   );

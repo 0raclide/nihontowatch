@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
     const { tier, billingPeriod } = body;
 
     // Validate tier
-    if (!['enthusiast', 'connoisseur', 'dealer'].includes(tier)) {
+    if (!['enthusiast', 'collector', 'inner_circle', 'dealer'].includes(tier)) {
       return NextResponse.json(
         { error: 'Invalid subscription tier' },
         { status: 400 }

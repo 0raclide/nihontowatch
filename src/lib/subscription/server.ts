@@ -9,9 +9,9 @@ import type { SubscriptionTier, SubscriptionStatus } from '@/types/subscription'
 import { isTrialModeActive } from '@/types/subscription';
 
 /**
- * 72 hours in milliseconds - data delay for free tier
+ * 7 days in milliseconds - data delay for free tier
  */
-export const DATA_DELAY_MS = 72 * 60 * 60 * 1000;
+export const DATA_DELAY_MS = 7 * 24 * 60 * 60 * 1000;
 
 /**
  * Get subscription info for the current user (from auth session)
@@ -90,13 +90,13 @@ export async function getUserSubscription(): Promise<{
       }
     }
 
-    // Admins get full access (connoisseur tier)
+    // Admins get full access (inner_circle tier)
     const isAdmin = profile?.role === 'admin';
     console.log('[Subscription] User:', user.id, 'Role:', profile?.role, 'IsAdmin:', isAdmin);
     if (isAdmin) {
       console.log('[Subscription] Admin detected, granting full access');
       return {
-        tier: 'connoisseur',
+        tier: 'inner_circle',
         status: 'active',
         userId: user.id,
         isDelayed: false,
@@ -131,7 +131,7 @@ export async function getUserSubscription(): Promise<{
 
 /**
  * Get the cutoff date for free tier data delay
- * Returns an ISO string 72 hours in the past
+ * Returns an ISO string 7 days in the past
  */
 export function getDataDelayCutoff(): string {
   return new Date(Date.now() - DATA_DELAY_MS).toISOString();

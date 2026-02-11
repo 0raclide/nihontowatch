@@ -4,7 +4,7 @@ import { useSubscription } from '@/contexts/SubscriptionContext';
 import { isTrialModeActive } from '@/types/subscription';
 
 /**
- * Banner shown to free tier users indicating their data is delayed 72h
+ * Banner shown to free tier users indicating their data is delayed 7 days
  * Includes CTA to upgrade for real-time listings
  * Hidden during trial mode when all features are free
  */
@@ -23,12 +23,12 @@ export function DataDelayBanner() {
           <div className="flex items-center gap-2">
             <ClockIcon className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
             <p className="text-amber-800 dark:text-amber-200">
-              <span className="font-medium">72-hour delay:</span>{' '}
+              <span className="font-medium">7-day delay:</span>{' '}
               <span className="hidden sm:inline">
-                Free members see listings after a 72-hour window.
+                Free members see listings after a 7-day window.
               </span>
               <span className="sm:hidden">
-                Listings delayed 72 hours.
+                Listings delayed 7 days.
               </span>
             </p>
           </div>

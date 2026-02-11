@@ -29,8 +29,10 @@ vi.mock('@/contexts/SubscriptionContext', () => ({
     tier: 'free',
     status: 'inactive',
     isFree: true,
-    isEnthusiast: false,
-    isConnoisseur: false,
+    isPro: false,
+    isCollector: false,
+    isInnerCircle: false,
+    isDealer: false,
     canAccess: mockCanAccess,
     requireFeature: vi.fn(),
     checkout: vi.fn(),
@@ -213,24 +215,39 @@ describe('Feature access matrix', () => {
     expect(canAccessFeature('free', 'saved_searches')).toBe(false);
   });
 
-  it('enthusiast tier should have access to core paid features', async () => {
+  it('enthusiast tier should have access to Pro features but not Collector features', async () => {
     const { canAccessFeature } = await import('@/types/subscription');
 
     expect(canAccessFeature('enthusiast', 'fresh_data')).toBe(true);
-    expect(canAccessFeature('enthusiast', 'setsumei_translation')).toBe(true);
     expect(canAccessFeature('enthusiast', 'inquiry_emails')).toBe(true);
     expect(canAccessFeature('enthusiast', 'saved_searches')).toBe(true);
+    // Setsumei moved to collector tier
+    expect(canAccessFeature('enthusiast', 'setsumei_translation')).toBe(false);
+    expect(canAccessFeature('enthusiast', 'artist_stats')).toBe(false);
   });
 
-  it('connoisseur tier should have access to all features', async () => {
+  it('collector tier should have access to Pro + Collector features', async () => {
     const { canAccessFeature } = await import('@/types/subscription');
 
-    expect(canAccessFeature('connoisseur', 'fresh_data')).toBe(true);
-    expect(canAccessFeature('connoisseur', 'setsumei_translation')).toBe(true);
-    expect(canAccessFeature('connoisseur', 'inquiry_emails')).toBe(true);
-    expect(canAccessFeature('connoisseur', 'saved_searches')).toBe(true);
-    expect(canAccessFeature('connoisseur', 'search_alerts')).toBe(true);
-    expect(canAccessFeature('connoisseur', 'private_listings')).toBe(true);
+    expect(canAccessFeature('collector', 'fresh_data')).toBe(true);
+    expect(canAccessFeature('collector', 'setsumei_translation')).toBe(true);
+    expect(canAccessFeature('collector', 'inquiry_emails')).toBe(true);
+    expect(canAccessFeature('collector', 'saved_searches')).toBe(true);
+    expect(canAccessFeature('collector', 'search_alerts')).toBe(true);
+    expect(canAccessFeature('collector', 'artist_stats')).toBe(true);
+    // Inner circle features not accessible
+    expect(canAccessFeature('collector', 'private_listings')).toBe(false);
+  });
+
+  it('inner_circle tier should have access to all features', async () => {
+    const { canAccessFeature } = await import('@/types/subscription');
+
+    expect(canAccessFeature('inner_circle', 'fresh_data')).toBe(true);
+    expect(canAccessFeature('inner_circle', 'setsumei_translation')).toBe(true);
+    expect(canAccessFeature('inner_circle', 'inquiry_emails')).toBe(true);
+    expect(canAccessFeature('inner_circle', 'saved_searches')).toBe(true);
+    expect(canAccessFeature('inner_circle', 'search_alerts')).toBe(true);
+    expect(canAccessFeature('inner_circle', 'private_listings')).toBe(true);
   });
 });
 
