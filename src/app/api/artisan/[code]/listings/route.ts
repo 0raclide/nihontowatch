@@ -14,7 +14,7 @@ const LISTING_FIELDS = `
   cert_type, cert_session,
   images, stored_images,
   description, description_en,
-  is_available, is_sold, status,
+  is_available, is_sold, status, admin_hidden,
   first_seen_at, last_scraped_at,
   artisan_id, artisan_confidence, artisan_method, artisan_candidates, artisan_verified,
   nagasa_cm, sori_cm,
@@ -70,7 +70,8 @@ export async function GET(
 
     let query = supabase
       .from('listings')
-      .select(LISTING_FIELDS);
+      .select(LISTING_FIELDS)
+      .or('admin_hidden.eq.false,admin_hidden.is.null');
 
     if (artisanCodes.length === 1) {
       query = query.eq('artisan_id', code);
