@@ -63,9 +63,26 @@ interface CollectionViewContentProps {
 }
 
 export function CollectionViewContent({ item }: CollectionViewContentProps) {
-  const { openEditForm } = useCollectionQuickView();
+  const { openEditForm, closeQuickView, onSaved } = useCollectionQuickView();
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [imageError, setImageError] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDelete = useCallback(async () => {
+    setIsDeleting(true);
+    try {
+      const res = await fetch(`/api/collection/items/${item.id}`, { method: 'DELETE' });
+      if (res.ok) {
+        onSaved();
+        closeQuickView();
+      }
+    } catch {
+      // ignore
+    } finally {
+      setIsDeleting(false);
+    }
+  }, [item.id, onSaved, closeQuickView]);
 
   const images = item.images || [];
   const activeImage = images[activeImageIndex] || null;
@@ -139,12 +156,38 @@ export function CollectionViewContent({ item }: CollectionViewContentProps) {
               </p>
             )}
           </div>
-          <button
-            onClick={() => openEditForm(item)}
-            className="shrink-0 px-3 py-1.5 text-[11px] uppercase tracking-[0.1em] font-medium text-gold border border-gold/30 rounded hover:bg-gold/10 transition-colors"
-          >
-            Edit
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => openEditForm(item)}
+              className="px-3 py-1.5 text-[11px] uppercase tracking-[0.1em] font-medium text-gold border border-gold/30 rounded hover:bg-gold/10 transition-colors"
+            >
+              Edit
+            </button>
+            {!confirmDelete ? (
+              <button
+                onClick={() => setConfirmDelete(true)}
+                className="px-3 py-1.5 text-[11px] uppercase tracking-[0.1em] font-medium text-muted border border-border/30 rounded hover:text-red-600 hover:border-red-300 transition-colors"
+              >
+                Delete
+              </button>
+            ) : (
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={handleDelete}
+                  disabled={isDeleting}
+                  className="px-3 py-1.5 text-[11px] uppercase tracking-[0.1em] font-medium text-white bg-red-600 rounded hover:bg-red-700 disabled:opacity-50 transition-colors"
+                >
+                  {isDeleting ? 'Deleting...' : 'Confirm'}
+                </button>
+                <button
+                  onClick={() => setConfirmDelete(false)}
+                  className="px-3 py-1.5 text-[11px] uppercase tracking-[0.1em] font-medium text-muted border border-border/30 rounded hover:bg-hover transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Metadata Grid */}
