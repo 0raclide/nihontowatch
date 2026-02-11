@@ -209,12 +209,12 @@ export function ArtistsPageClient({
           {attributedItemCount.toLocaleString()} items across {(facets.totals.smiths + facets.totals.tosogu).toLocaleString()} renowned artisans
         </p>
         <LiveStatsBanner lastUpdated={lastUpdated} artisanCount={facets.totals.smiths + facets.totals.tosogu} schoolCount={facets.schools.length} />
-        {/* Mobile: simpler heading */}
+        {/* Mobile heading */}
         <h1 className="lg:hidden font-serif text-2xl text-ink tracking-tight">
-          Artist Directory
+          Artists
         </h1>
         <p className="lg:hidden mt-2 text-sm text-ink/50">
-          {(facets.totals.smiths + facets.totals.tosogu).toLocaleString()} artisans across {facets.schools.length.toLocaleString()}+ schools
+          {(facets.totals.smiths + facets.totals.tosogu).toLocaleString()} renowned artisans
         </p>
       </div>
 
