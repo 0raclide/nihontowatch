@@ -301,7 +301,7 @@ describe('ListingCard Component', () => {
       vi.useRealTimers();
     });
 
-    it('shows "New" badge for recently discovered listing (after baseline)', () => {
+    it('shows "Early Access" badge for recently discovered listing (after baseline)', () => {
       const newListing = {
         ...mockListing,
         first_seen_at: '2026-01-12T12:00:00Z', // 3 days ago, well after baseline
@@ -311,7 +311,8 @@ describe('ListingCard Component', () => {
 
       const newBadge = screen.getByTestId('new-listing-badge');
       expect(newBadge).toBeInTheDocument();
-      expect(newBadge).toHaveTextContent('New');
+      // Within 7-day early access window + trial mode off = "Early Access"
+      expect(newBadge).toHaveTextContent('Early Access');
     });
 
     it('shows badge for listing discovered today', () => {

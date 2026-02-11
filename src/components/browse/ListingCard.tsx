@@ -14,11 +14,11 @@ import { trackSearchClick } from '@/lib/tracking/searchTracker';
 import { isTrialModeActive } from '@/types/subscription';
 import { useImagePreloader } from '@/hooks/useImagePreloader';
 
-// 72 hours in milliseconds - matches the data delay for free tier
-const EARLY_ACCESS_WINDOW_MS = 72 * 60 * 60 * 1000;
+// 7 days in milliseconds - matches the data delay for free tier
+const EARLY_ACCESS_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 
 /**
- * Check if a listing is within the "early access" window (72 hours)
+ * Check if a listing is within the "early access" window (7 days)
  * This means free tier users can't see this listing yet
  */
 function isEarlyAccessListing(firstSeenAt: string): boolean {
