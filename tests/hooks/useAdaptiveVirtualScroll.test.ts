@@ -147,8 +147,8 @@ describe('useAdaptiveVirtualScroll', () => {
         vi.runAllTimers();
       });
 
-      // Mobile should have taller rows (437px)
-      expect(result.current.rowHeight).toBe(437);
+      // Mobile should have taller rows (625px) — 3:4 aspect ratio card
+      expect(result.current.rowHeight).toBe(625);
     });
 
     it('uses shorter rows for desktop (2+ columns)', () => {
@@ -162,8 +162,8 @@ describe('useAdaptiveVirtualScroll', () => {
         vi.runAllTimers();
       });
 
-      // Desktop xl (4 columns) should have 372px rows
-      expect(result.current.rowHeight).toBe(372);
+      // Desktop xl (4 columns) should have 460px rows — 3:4 aspect ratio card
+      expect(result.current.rowHeight).toBe(460);
     });
   });
 
@@ -180,8 +180,8 @@ describe('useAdaptiveVirtualScroll', () => {
       });
 
       // 100 items / 4 columns = 25 rows
-      // 25 rows * 372px = 9300px
-      expect(result.current.totalHeight).toBe(9300);
+      // 25 rows * 460px = 11500px
+      expect(result.current.totalHeight).toBe(11500);
     });
 
     it('includes overscan in visible items', () => {
@@ -195,9 +195,9 @@ describe('useAdaptiveVirtualScroll', () => {
         vi.runAllTimers();
       });
 
-      // With 800px viewport, 372px rows, and 2 overscan
-      // visible rows = ceil(800/372) + 4 = 7 rows
-      // 7 rows * 4 columns = 28 items
+      // With 800px viewport, 460px rows, and 2 overscan
+      // visible rows = ceil(800/460) + 4 = 6 rows
+      // 6 rows * 4 columns = 24 items
       expect(result.current.visibleItems.length).toBeGreaterThan(8);
     });
 
@@ -311,7 +311,7 @@ describe('useAdaptiveVirtualScroll', () => {
 
   describe('scroll jumping fix', () => {
     it('updates startRow only when crossing row boundary', async () => {
-      mockWindowProperties(1280, 800); // 4 columns, 372px row height
+      mockWindowProperties(1280, 800); // 4 columns, 460px row height
       const items = createItems(200);
       const { result } = renderHook(() =>
         useAdaptiveVirtualScroll({ items, overscan: 2 })
@@ -326,26 +326,26 @@ describe('useAdaptiveVirtualScroll', () => {
 
       // Scroll within same row boundary (less than rowHeight)
       await act(async () => {
-        await simulateScroll(100); // Well below 372px threshold
+        await simulateScroll(100); // Well below 460px threshold
       });
 
-      // startRow should still be 0 (with overscan: 2, startRow stays 0 until scroll > 3*372)
+      // startRow should still be 0 (with overscan: 2, startRow stays 0 until scroll > 3*460)
       expect(result.current.startIndex).toBe(0);
 
       // Scroll past the row boundary that would change startRow
-      // With overscan: 2, startRow changes when floor(scrollY/372) - 2 > 0
-      // That's when floor(scrollY/372) > 2, meaning scrollY >= 3*372 = 1116
+      // With overscan: 2, startRow changes when floor(scrollY/460) - 2 > 0
+      // That's when floor(scrollY/460) > 2, meaning scrollY >= 3*460 = 1380
       await act(async () => {
-        await simulateScroll(1116);
+        await simulateScroll(1380);
       });
 
       // Now startRow should be 1
       expect(result.current.startIndex).toBe(4); // 1 row * 4 columns
-      expect(result.current.offsetY).toBe(372); // 1 row * 372px
+      expect(result.current.offsetY).toBe(460); // 1 row * 460px
     });
 
     it('offsetY only jumps in row-height increments', async () => {
-      mockWindowProperties(1280, 800); // 4 columns, 372px row height
+      mockWindowProperties(1280, 800); // 4 columns, 460px row height
       const items = createItems(200);
       const { result } = renderHook(() =>
         useAdaptiveVirtualScroll({ items, overscan: 2 })
@@ -355,7 +355,7 @@ describe('useAdaptiveVirtualScroll', () => {
         await vi.runAllTimersAsync();
       });
 
-      const scrollPositions = [0, 100, 500, 1000, 1116, 1488, 2000];
+      const scrollPositions = [0, 100, 500, 1000, 1380, 1840, 2000];
       const offsetHistory: number[] = [];
 
       for (const scrollY of scrollPositions) {
@@ -365,12 +365,12 @@ describe('useAdaptiveVirtualScroll', () => {
         offsetHistory.push(result.current.offsetY);
       }
 
-      // Verify offsetY only increases in rowHeight (372px) increments
+      // Verify offsetY only increases in rowHeight (460px) increments
       for (let i = 1; i < offsetHistory.length; i++) {
         const diff = offsetHistory[i] - offsetHistory[i - 1];
-        // Difference should either be 0 (same row) or a multiple of 372
+        // Difference should either be 0 (same row) or a multiple of 460
         if (diff !== 0) {
-          expect(diff % 372).toBe(0);
+          expect(diff % 460).toBe(0);
         }
       }
     });
@@ -410,7 +410,7 @@ describe('useAdaptiveVirtualScroll', () => {
     });
 
     it('responds to every row boundary crossing without threshold delay', async () => {
-      mockWindowProperties(1280, 800); // 4 columns, 372px row height
+      mockWindowProperties(1280, 800); // 4 columns, 460px row height
       const items = createItems(200);
       const { result } = renderHook(() =>
         useAdaptiveVirtualScroll({ items, overscan: 0 }) // No overscan for clearer test
@@ -420,29 +420,29 @@ describe('useAdaptiveVirtualScroll', () => {
         await vi.runAllTimersAsync();
       });
 
-      // With overscan: 0, startRow = floor(scrollY/372)
-      // At scrollY = 371, startRow = 0
-      // At scrollY = 372, startRow = 1
+      // With overscan: 0, startRow = floor(scrollY/460)
+      // At scrollY = 459, startRow = 0
+      // At scrollY = 460, startRow = 1
 
       await act(async () => {
-        await simulateScroll(371);
+        await simulateScroll(459);
       });
       expect(result.current.offsetY).toBe(0);
 
       await act(async () => {
-        await simulateScroll(372);
+        await simulateScroll(460);
       });
-      expect(result.current.offsetY).toBe(372);
+      expect(result.current.offsetY).toBe(460);
 
       await act(async () => {
-        await simulateScroll(743);
+        await simulateScroll(919);
       });
-      expect(result.current.offsetY).toBe(372);
+      expect(result.current.offsetY).toBe(460);
 
       await act(async () => {
-        await simulateScroll(744);
+        await simulateScroll(920);
       });
-      expect(result.current.offsetY).toBe(744);
+      expect(result.current.offsetY).toBe(920);
     });
   });
 
@@ -462,8 +462,8 @@ describe('useAdaptiveVirtualScroll', () => {
 
       // Height should be based on totalCount (200), not items.length (50)
       // 200 items / 4 columns = 50 rows
-      // 50 rows * 372px = 18600px
-      expect(result.current.totalHeight).toBe(18600);
+      // 50 rows * 460px = 23000px
+      expect(result.current.totalHeight).toBe(23000);
     });
 
     it('falls back to items.length when totalCount not provided', () => {
@@ -480,8 +480,8 @@ describe('useAdaptiveVirtualScroll', () => {
 
       // Height should be based on items.length (50)
       // 50 items / 4 columns = 13 rows (ceil)
-      // 13 rows * 372px = 4836px
-      expect(result.current.totalHeight).toBe(4836);
+      // 13 rows * 460px = 5980px
+      expect(result.current.totalHeight).toBe(5980);
     });
 
     it('keeps height stable when more items load with totalCount', () => {

@@ -97,6 +97,8 @@ interface VirtualListingGridProps {
   onPageChange?: (page: number) => void;
   searchId?: number; // For CTR tracking
   isAdmin?: boolean; // For admin-only features like artisan code display
+  mobileView?: 'grid' | 'gallery'; // Mobile layout mode
+  fontSize?: 'compact' | 'standard' | 'large'; // Font size (both views)
 }
 
 function Pagination({
@@ -209,6 +211,8 @@ export function VirtualListingGrid({
   onPageChange,
   searchId,
   isAdmin = false,
+  mobileView = 'gallery',
+  fontSize = 'large',
 }: VirtualListingGridProps) {
   const quickView = useQuickViewOptional();
   const loadMoreTriggerRef = useRef<HTMLDivElement>(null);
@@ -335,10 +339,16 @@ export function VirtualListingGrid({
   // On mobile (when JS virtualization is disabled), add ios-native-virtualize class
   // for CSS content-visibility virtualization - this enables native browser virtualization
   // without the transform timing issues that cause "teleport" glitches on iOS
+  // Mobile grid classes: grid mode = 2 cols compact, gallery mode = 1 col with breathing room
+  // sm: and up are unchanged regardless of mobileView
+  const mobileGridClasses = mobileView === 'grid'
+    ? 'grid grid-cols-2 gap-2.5 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5'
+    : 'grid grid-cols-1 gap-10 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5';
+
   const renderGrid = () => (
     <div
       data-testid="virtual-listing-grid"
-      className={`grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5${
+      className={`${mobileGridClasses}${
         !isVirtualized && isMobileDevice ? ' ios-native-virtualize' : ''
       }`}
     >
@@ -349,16 +359,21 @@ export function VirtualListingGrid({
           currency={currency}
           exchangeRates={exchangeRates}
           priority={startIndex + idx < PRIORITY_COUNT}
-          isNearViewport={true} // All visible items should load images
+          isNearViewport={true}
           searchId={searchId}
           isAdmin={isAdmin}
+          mobileView={mobileView}
+          fontSize={fontSize}
         />
       ))}
     </div>
   );
 
+  // Gallery wrapper — inset cards from screen edges on mobile for shadow breathing room
+  const galleryWrapperClass = mobileView === 'gallery' ? 'px-3 sm:px-0' : '';
+
   return (
-    <div>
+    <div className={galleryWrapperClass}>
       {/* Results count - hidden on mobile */}
       <div className="hidden lg:flex items-center justify-between mb-6">
         <p className="text-sm text-muted">

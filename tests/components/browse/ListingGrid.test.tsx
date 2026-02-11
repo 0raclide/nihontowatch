@@ -142,7 +142,8 @@ describe('ListingGrid Component', () => {
       render(<ListingGrid {...defaultProps} />);
 
       const grid = document.querySelector('.grid');
-      expect(grid).toHaveClass('gap-3');
+      // Gallery mode (default): gap-10 on mobile, sm:gap-4 on tablet+
+      expect(grid).toHaveClass('gap-10');
       expect(grid).toHaveClass('sm:gap-4');
     });
   });

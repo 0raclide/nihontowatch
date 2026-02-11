@@ -77,6 +77,8 @@ interface ListingGridProps {
   onLoadMore?: () => void;
   searchId?: number; // For CTR tracking
   isAdmin?: boolean; // For admin-only features like artisan code display
+  mobileView?: 'grid' | 'gallery'; // Mobile layout mode
+  fontSize?: 'compact' | 'standard' | 'large';
 }
 
 function LoadingSkeleton() {
@@ -84,7 +86,7 @@ function LoadingSkeleton() {
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4">
       {[...Array(20)].map((_, i) => (
         <div key={i} className="bg-paper border border-border">
-          <div className="aspect-[4/3] img-loading" />
+          <div className="aspect-[3/4] img-loading" />
           <div className="p-3 space-y-2">
             <div className="h-2.5 w-16 img-loading rounded" />
             <div className="h-4 w-full img-loading rounded" />
@@ -148,6 +150,8 @@ export function ListingGrid({
   onLoadMore,
   searchId,
   isAdmin = false,
+  mobileView = 'gallery',
+  fontSize = 'large',
 }: ListingGridProps) {
   // Loading state
   if (isLoading) {
@@ -178,6 +182,8 @@ export function ListingGrid({
         onLoadMore={onLoadMore}
         searchId={searchId}
         isAdmin={isAdmin}
+        mobileView={mobileView}
+        fontSize={fontSize}
       />
     </ViewportTrackingProvider>
   );

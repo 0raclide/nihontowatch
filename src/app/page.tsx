@@ -229,6 +229,22 @@ function HomeContent() {
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
   const [artisanCode, setArtisanCode] = useState(searchParams.get('artisan') || '');
 
+  // Mobile view toggle (grid = 2-col compact, gallery = 1-col breathing)
+  const [mobileView, setMobileView] = useState<'grid' | 'gallery'>(() => {
+    if (typeof window !== 'undefined') {
+      return (localStorage.getItem('nihontowatch-mobile-view') as 'grid' | 'gallery') || 'gallery';
+    }
+    return 'gallery';
+  });
+
+  // Font size option (applies to both views)
+  const [fontSize, setFontSize] = useState<'compact' | 'standard' | 'large'>(() => {
+    if (typeof window !== 'undefined') {
+      return (localStorage.getItem('nihontowatch-font-size') as 'compact' | 'standard' | 'large') || 'large';
+    }
+    return 'large';
+  });
+
   // Sync searchQuery state with URL when it changes (e.g., from header search)
   const urlQuery = searchParams.get('q') || '';
   useEffect(() => {
@@ -326,6 +342,22 @@ function HomeContent() {
     setCurrency(newCurrency);
     if (typeof window !== 'undefined') {
       localStorage.setItem('preferred_currency', newCurrency);
+    }
+  }, []);
+
+  // Persist mobile view preference
+  const handleMobileViewChange = useCallback((view: 'grid' | 'gallery') => {
+    setMobileView(view);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('nihontowatch-mobile-view', view);
+    }
+  }, []);
+
+  // Persist font size preference (both views)
+  const handleFontSizeChange = useCallback((size: 'compact' | 'standard' | 'large') => {
+    setFontSize(size);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('nihontowatch-font-size', size);
     }
   }, []);
 
@@ -625,9 +657,63 @@ function HomeContent() {
           </div>
         )}
 
-        {/* Mobile item count */}
-        <div className="lg:hidden text-[13px] text-muted mb-4">
-          {isLoading ? 'Loading...' : `${data?.total?.toLocaleString() || 0} items${searchQuery ? ` for "${searchQuery}"` : ''}`}
+        {/* Mobile item count + view toggle */}
+        <div className="lg:hidden flex items-center justify-between mb-4">
+          <span className="text-[13px] text-muted">
+            {isLoading ? 'Loading...' : `${data?.total?.toLocaleString() || 0} items${searchQuery ? ` for "${searchQuery}"` : ''}`}
+          </span>
+          {/* View toggle — only on phone-sized screens */}
+          <div className="flex items-center gap-0.5 sm:hidden">
+            <button
+              onClick={() => handleMobileViewChange('gallery')}
+              className={`p-1.5 rounded transition-colors ${mobileView === 'gallery' ? 'text-gold' : 'text-muted/50'}`}
+              aria-label="Gallery view"
+            >
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <rect x="3" y="4" width="12" height="10" rx="1" stroke="currentColor" strokeWidth="1.5" />
+              </svg>
+            </button>
+            <button
+              onClick={() => handleMobileViewChange('grid')}
+              className={`p-1.5 rounded transition-colors ${mobileView === 'grid' ? 'text-gold' : 'text-muted/50'}`}
+              aria-label="Grid view"
+            >
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <rect x="2.5" y="2.5" width="5.5" height="5.5" rx="0.75" stroke="currentColor" strokeWidth="1.5" />
+                <rect x="10" y="2.5" width="5.5" height="5.5" rx="0.75" stroke="currentColor" strokeWidth="1.5" />
+                <rect x="2.5" y="10" width="5.5" height="5.5" rx="0.75" stroke="currentColor" strokeWidth="1.5" />
+                <rect x="10" y="10" width="5.5" height="5.5" rx="0.75" stroke="currentColor" strokeWidth="1.5" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        {/* Sub-options — phone only: font size (both views) + wall texture (gallery only) */}
+        <div className="sm:hidden flex items-center gap-4 mb-4">
+          {/* Font size — shared across both views for accessibility */}
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] text-muted/70 uppercase tracking-widest font-medium">Size</span>
+            <div className="flex items-center gap-0.5 bg-border/30 rounded-full p-0.5">
+              {([
+                { key: 'compact' as const, label: 'S' },
+                { key: 'standard' as const, label: 'M' },
+                { key: 'large' as const, label: 'L' },
+              ]).map(opt => (
+                <button
+                  key={opt.key}
+                  onClick={() => handleFontSizeChange(opt.key)}
+                  className={`px-3 py-1 text-[11px] font-medium rounded-full transition-all ${
+                    fontSize === opt.key
+                      ? 'bg-cream text-gold shadow-sm'
+                      : 'text-muted hover:text-ink'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
         </div>
 
         {/* Main Content */}
@@ -683,6 +769,8 @@ function HomeContent() {
               onLoadMore={loadMore}
               searchId={currentSearchIdRef.current}
               isAdmin={authIsAdmin}
+              mobileView={mobileView}
+              fontSize={fontSize}
             />
           </div>
         </div>

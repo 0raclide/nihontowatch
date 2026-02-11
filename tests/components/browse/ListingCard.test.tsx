@@ -149,56 +149,56 @@ describe('ListingCard Component', () => {
     it('has responsive content padding', () => {
       render(<ListingCard {...defaultProps} />);
 
-      // Find content container with responsive padding (p-2.5 lg:p-4)
-      const contentDiv = document.querySelector('.p-2\\.5.lg\\:p-4');
+      // Content container uses sz.cPad (gallery/large: px-6 pt-4 pb-5) with sm:/lg: overrides
+      const contentDiv = document.querySelector('.px-6.sm\\:px-3.lg\\:px-4');
       expect(contentDiv).toBeInTheDocument();
     });
 
     it('has responsive title font size', () => {
       render(<ListingCard {...defaultProps} />);
 
-      // Title should have responsive font classes (text-[15px] lg:text-base)
-      const title = document.querySelector('.text-\\[15px\\].lg\\:text-base');
+      // Title uses sz.type (gallery/large: text-[24px]) with sm:text-[15px] lg:text-base
+      const title = document.querySelector('.text-\\[24px\\].sm\\:text-\\[15px\\].lg\\:text-base');
       expect(title).toBeInTheDocument();
     });
 
     it('has responsive price font size', () => {
       render(<ListingCard {...defaultProps} />);
 
-      // Price should have responsive font classes (text-[15px] lg:text-base)
-      const price = document.querySelector('.text-\\[15px\\].lg\\:text-base');
+      // Price uses sz.price (gallery/large: text-[17px]) with sm:text-[14px] lg:text-[15px]
+      const price = document.querySelector('.text-\\[17px\\].sm\\:text-\\[14px\\].lg\\:text-\\[15px\\]');
       expect(price).toBeInTheDocument();
     });
 
     it('has responsive dealer header padding', () => {
       render(<ListingCard {...defaultProps} />);
 
-      // Dealer header should have responsive padding (px-2.5 py-2 lg:px-4 lg:py-2.5)
-      const dealerHeader = document.querySelector('.px-2\\.5.py-2.lg\\:px-4.lg\\:py-2\\.5');
+      // Dealer header uses sz.hPad (gallery/large: px-5 py-3) with sm:px-3 sm:py-2 lg:px-4 lg:py-2.5
+      const dealerHeader = document.querySelector('.px-5.py-3.sm\\:px-3.sm\\:py-2.lg\\:px-4.lg\\:py-2\\.5');
       expect(dealerHeader).toBeInTheDocument();
     });
 
     it('has responsive dealer header font size', () => {
       render(<ListingCard {...defaultProps} />);
 
-      // Dealer domain should have responsive font (text-[10px] lg:text-[12px])
-      const dealerDomain = document.querySelector('.text-\\[10px\\].lg\\:text-\\[12px\\]');
-      expect(dealerDomain).toBeInTheDocument();
+      // Dealer name uses sz.hText (gallery/large: text-[12px]) with sm:text-[9px] lg:text-[10px]
+      const dealerName = document.querySelector('.text-\\[12px\\].sm\\:text-\\[9px\\].lg\\:text-\\[10px\\]');
+      expect(dealerName).toBeInTheDocument();
     });
 
     it('has responsive certification badge font size', () => {
       render(<ListingCard {...defaultProps} />);
 
-      // Cert badge should have responsive font (text-[9px] lg:text-[10px])
-      const certBadge = document.querySelector('.text-\\[9px\\].lg\\:text-\\[10px\\]');
+      // Cert text uses sz.hText (gallery/large: text-[12px]) with sm:text-[9px] lg:text-[10px]
+      const certBadge = document.querySelector('.text-\\[12px\\].sm\\:text-\\[9px\\].lg\\:text-\\[10px\\].uppercase');
       expect(certBadge).toBeInTheDocument();
     });
 
     it('has responsive artisan font size', () => {
       render(<ListingCard {...defaultProps} />);
 
-      // Artisan text should have responsive font (text-[12px] lg:text-[13px])
-      const artisan = document.querySelector('.text-\\[12px\\].lg\\:text-\\[13px\\]');
+      // Artisan text uses sz.attr (gallery/large: text-[16px]) with sm:text-[11px] lg:text-[12px]
+      const artisan = document.querySelector('.text-\\[16px\\].sm\\:text-\\[11px\\].lg\\:text-\\[12px\\]');
       expect(artisan).toBeInTheDocument();
     });
   });
@@ -224,8 +224,8 @@ describe('ListingCard Component', () => {
     it('shows juyo tier styling for Juyo', () => {
       render(<ListingCard {...defaultProps} />);
 
-      // Current styling uses bg-juyo-bg class
-      const badge = document.querySelector('.bg-juyo-bg');
+      // Current styling uses text-juyo class (colored text, no background badge)
+      const badge = document.querySelector('.text-juyo');
       expect(badge).toBeInTheDocument();
     });
 
@@ -233,8 +233,8 @@ describe('ListingCard Component', () => {
       const tokuHozonListing = { ...mockListing, cert_type: 'TokuHozon' };
       render(<ListingCard {...defaultProps} listing={tokuHozonListing} />);
 
-      // Current styling uses bg-toku-hozon-bg class
-      const badge = document.querySelector('.bg-toku-hozon-bg');
+      // Current styling uses text-toku-hozon class (colored text, no background badge)
+      const badge = document.querySelector('.text-toku-hozon');
       expect(badge).toBeInTheDocument();
     });
 
@@ -242,8 +242,8 @@ describe('ListingCard Component', () => {
       const hozonListing = { ...mockListing, cert_type: 'Hozon' };
       render(<ListingCard {...defaultProps} listing={hozonListing} />);
 
-      // Current styling uses bg-hozon-bg class
-      const badge = document.querySelector('.bg-hozon-bg');
+      // Current styling uses text-hozon class (colored text, no background badge)
+      const badge = document.querySelector('.text-hozon');
       expect(badge).toBeInTheDocument();
     });
 

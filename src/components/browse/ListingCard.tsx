@@ -111,7 +111,58 @@ interface ListingCardProps {
   isNearViewport?: boolean; // For lazy loading optimization
   searchId?: number; // For CTR tracking
   isAdmin?: boolean; // For admin-only features like artisan code display
+  mobileView?: 'grid' | 'gallery'; // Mobile layout mode (only affects < sm breakpoint)
+  fontSize?: 'compact' | 'standard' | 'large'; // Font size preference (both views)
 }
+
+/**
+ * Mobile sizing presets — only affect base (< sm) classes.
+ * sm: and lg: overrides in the JSX restore tablet/desktop styling.
+ */
+interface SizePreset {
+  hPad: string; hText: string; cPad: string; type: string;
+  attr: string; attrH: string; price: string; pPad: string;
+}
+const GALLERY_SIZES: Record<string, SizePreset> = {
+  compact: {
+    hPad: 'px-3 py-2',      hText: 'text-[10px]',
+    cPad: 'px-4 pt-3 pb-3', type: 'text-[17px]',
+    attr: 'text-[12px]',    attrH: 'h-[22px]',
+    price: 'text-[14px]',   pPad: 'pt-2 mt-1',
+  },
+  standard: {
+    hPad: 'px-4 py-2.5',    hText: 'text-[11px]',
+    cPad: 'px-5 pt-3.5 pb-4', type: 'text-[21px]',
+    attr: 'text-[14px]',    attrH: 'h-[24px]',
+    price: 'text-[16px]',   pPad: 'pt-2.5 mt-1',
+  },
+  large: {
+    hPad: 'px-5 py-3',      hText: 'text-[12px]',
+    cPad: 'px-6 pt-4 pb-5', type: 'text-[24px]',
+    attr: 'text-[16px]',    attrH: 'h-[28px]',
+    price: 'text-[17px]',   pPad: 'pt-3 mt-2',
+  },
+};
+const GRID_SIZES: Record<string, SizePreset> = {
+  compact: {
+    hPad: 'px-2 py-1',      hText: 'text-[7px]',
+    cPad: 'px-1.5 pt-1.5 pb-1.5', type: 'text-[11px]',
+    attr: 'text-[8px]',     attrH: 'h-[14px]',
+    price: 'text-[11px]',   pPad: 'pt-1 mt-0.5',
+  },
+  standard: {
+    hPad: 'px-2 py-1.5',    hText: 'text-[8px]',
+    cPad: 'px-2 pt-2 pb-2', type: 'text-[13px]',
+    attr: 'text-[10px]',    attrH: 'h-[17px]',
+    price: 'text-[13px]',   pPad: 'pt-1.5 mt-0.5',
+  },
+  large: {
+    hPad: 'px-2.5 py-2',    hText: 'text-[9px]',
+    cPad: 'px-2.5 pt-2.5 pb-2', type: 'text-[14px]',
+    attr: 'text-[11px]',    attrH: 'h-[19px]',
+    price: 'text-[14px]',   pPad: 'pt-1.5 mt-0.5',
+  },
+};
 
 // Normalize Japanese kanji and variants to standard English keys
 const ITEM_TYPE_NORMALIZE: Record<string, string> = {
@@ -413,7 +464,15 @@ export const ListingCard = memo(function ListingCard({
   isNearViewport = true, // Default to true for backward compatibility
   searchId,
   isAdmin = false,
+  mobileView = 'gallery',
+  fontSize = 'large',
 }: ListingCardProps) {
+  // Mobile view helpers — only affect base (mobile) classes; sm:/lg: overrides restore tablet/desktop
+  const isGridMobile = mobileView === 'grid';
+  const sz = isGridMobile
+    ? (GRID_SIZES[fontSize] || GRID_SIZES.large)
+    : (GALLERY_SIZES[fontSize] || GALLERY_SIZES.large);
+
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [fallbackIndex, setFallbackIndex] = useState(0);
@@ -586,7 +645,7 @@ export const ListingCard = memo(function ListingCard({
       className={`object-cover group-hover:scale-105 transition-all duration-500 ${
         isLoading ? 'opacity-0' : 'opacity-100'
       }`}
-      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+      sizes={isGridMobile ? '(max-width: 640px) 50vw, (max-width: 1024px) 50vw, 25vw' : '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw'}
       priority={priority}
       fetchPriority={priority ? 'high' : undefined}
       loading={priority ? undefined : 'lazy'}
@@ -689,17 +748,19 @@ export const ListingCard = memo(function ListingCard({
           handleClick(e as unknown as React.MouseEvent);
         }
       }}
-      className="group block bg-cream border border-border hover:border-gold/40 transition-all duration-300 cursor-pointer"
+      className={`group block bg-cream border border-border hover:border-gold/40 transition-all duration-300 cursor-pointer${
+        !isGridMobile ? ' shadow rounded overflow-hidden sm:shadow-none sm:rounded-none sm:overflow-visible' : ''
+      }`}
     >
       {/* Header: dealer (left) + book icon + cert (right) */}
-      <div className="px-3 py-2 lg:px-4 lg:py-2.5 flex items-center justify-between">
-        <span className="text-[9px] lg:text-[10px] font-medium tracking-[0.14em] text-muted lowercase">
+      <div className={`${sz.hPad} sm:px-3 sm:py-2 lg:px-4 lg:py-2.5 flex items-center justify-between`}>
+        <span className={`${sz.hText} sm:text-[9px] lg:text-[10px] font-medium tracking-[0.14em] text-muted capitalize`}>
           {listing.dealers?.name}
         </span>
-        <div className="flex items-center gap-2">
+        <div className={`flex items-center ${isGridMobile ? 'gap-1' : 'gap-2'}`}>
           {hasSetsumeiTranslation(listing) && <SetsumeiZufuBadge iconOnly />}
           {certInfo && (
-            <span className={`text-[9px] lg:text-[10px] uppercase tracking-wider font-bold ${certTextColor}`}>
+            <span className={`${sz.hText} sm:text-[9px] lg:text-[10px] uppercase tracking-wider font-bold ${certTextColor}`}>
               {certInfo.label}
             </span>
           )}
@@ -715,21 +776,22 @@ export const ListingCard = memo(function ListingCard({
       </div>
 
       {/* Content */}
-      <div className="px-3 pt-3 pb-3 lg:px-4 lg:pt-3.5 lg:pb-4 flex flex-col gap-0.5">
+      <div className={`${sz.cPad} sm:px-3 sm:pt-3 sm:pb-3 lg:px-4 lg:pt-3.5 lg:pb-4 flex flex-col gap-0.5`}>
         {/* Type — primary identifier */}
-        <h3 className="text-[15px] lg:text-base font-semibold leading-snug text-ink group-hover:text-gold transition-colors">
+        <h3 className={`${sz.type} sm:text-[15px] lg:text-base font-semibold leading-snug text-ink group-hover:text-gold transition-colors`}>
           {itemType || cleanedTitle}
         </h3>
 
         {/* Attribution — gold underline on artisan, plain text fallback */}
         {primaryName ? (
-          <div className="h-[20px] lg:h-[22px] flex items-baseline overflow-hidden">
+          <div className={`${sz.attrH} sm:h-[20px] lg:h-[22px] flex items-baseline overflow-hidden`}>
+            <span className={`${sz.attr} sm:text-[11px] lg:text-[12px] text-muted font-normal mr-1 shrink-0`}>By</span>
             {isLinked ? (
               <a
                 href={linkHref}
                 data-artisan-tooltip
                 onClick={(e) => e.stopPropagation()}
-                className="text-[11px] lg:text-[12px] font-medium text-ink border-b border-gold/40 pb-px hover:border-gold transition-colors truncate"
+                className={`${sz.attr} sm:text-[11px] lg:text-[12px] font-medium text-ink border-b border-gold/40 pb-px hover:border-gold transition-colors truncate`}
               >
                 {primaryName}
               </a>
@@ -742,33 +804,33 @@ export const ListingCard = memo(function ListingCard({
                 candidates={listing.artisan_candidates}
                 verified={listing.artisan_verified}
               >
-                <span className="text-[11px] lg:text-[12px] font-medium text-ink border-b border-gold/40 pb-px truncate">
+                <span className={`${sz.attr} sm:text-[11px] lg:text-[12px] font-medium text-ink border-b border-gold/40 pb-px truncate`}>
                   {primaryName}
                 </span>
               </ArtisanTooltip>
             ) : hasArtisanTag ? (
-              <span className="text-[11px] lg:text-[12px] font-medium text-ink border-b border-gold/40 pb-px truncate">
+              <span className={`${sz.attr} sm:text-[11px] lg:text-[12px] font-medium text-ink border-b border-gold/40 pb-px truncate`}>
                 {primaryName}
               </span>
             ) : (
-              <span className="text-[11px] lg:text-[12px] text-charcoal truncate">
+              <span className={`${sz.attr} sm:text-[11px] lg:text-[12px] text-charcoal truncate`}>
                 {primaryName}
               </span>
             )}
           </div>
         ) : isAdmin && !listing.artisan_id ? (
-          <div className="h-[20px] lg:h-[22px] flex items-baseline">
+          <div className={`${sz.attrH} sm:h-[20px] lg:h-[22px] flex items-baseline`}>
             <ArtisanTooltip listingId={parseInt(listing.id)} startInSearchMode>
               <span className="text-[10px] font-medium text-muted hover:text-ink transition-colors cursor-pointer">
                 Set artisan
               </span>
             </ArtisanTooltip>
           </div>
-        ) : <div className="h-[20px] lg:h-[22px]" />}
+        ) : <div className={`${sz.attrH} sm:h-[20px] lg:h-[22px]`} />}
 
         {/* Price row */}
-        <div className="pt-2 mt-1 border-t border-border/40 flex items-center justify-between">
-          <span className={`text-[15px] lg:text-base tabular-nums ${isAskPrice ? 'text-charcoal' : 'text-ink font-semibold'}`}>
+        <div className={`${sz.pPad} sm:pt-2 sm:mt-1 border-t border-border/40 flex items-center justify-between`}>
+          <span className={`${sz.price} sm:text-[14px] lg:text-[15px] tabular-nums ${isAskPrice ? 'text-charcoal' : 'text-ink font-medium'}`}>
             {priceDisplay}
           </span>
           <div className="flex items-center gap-1.5">
@@ -791,6 +853,8 @@ export const ListingCard = memo(function ListingCard({
     prevProps.listing.listing_yuhinkai_enrichment?.length === nextProps.listing.listing_yuhinkai_enrichment?.length &&
     prevProps.listing.artisan_id === nextProps.listing.artisan_id &&
     prevProps.listing.artisan_display_name === nextProps.listing.artisan_display_name &&
-    prevProps.listing.artisan_confidence === nextProps.listing.artisan_confidence
+    prevProps.listing.artisan_confidence === nextProps.listing.artisan_confidence &&
+    prevProps.mobileView === nextProps.mobileView &&
+    prevProps.fontSize === nextProps.fontSize
   );
 });
