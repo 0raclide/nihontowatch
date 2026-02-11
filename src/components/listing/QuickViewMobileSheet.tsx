@@ -429,20 +429,26 @@ export function QuickViewMobileSheet({
                 onClick={(e) => e.stopPropagation()}
                 onTouchStart={(e) => e.stopPropagation()}
               >
-                <a
-                  href={`/artists/${listing.artisan_id}`}
-                  onClick={(e) => e.stopPropagation()}
-                  onTouchStart={(e) => e.stopPropagation()}
-                  className={`text-[10px] font-mono font-medium px-2 py-0.5 rounded hover:opacity-80 transition-opacity ${
-                    listing.artisan_confidence === 'HIGH'
-                      ? 'bg-artisan-high-bg text-artisan-high'
-                      : listing.artisan_confidence === 'MEDIUM'
-                      ? 'bg-artisan-medium-bg text-artisan-medium'
-                      : 'bg-artisan-low-bg text-artisan-low'
-                  }`}
-                >
-                  {listing.artisan_display_name || listing.artisan_id}
-                </a>
+                {listing.artisan_id === 'UNKNOWN' ? (
+                  <span className="text-[10px] italic font-medium px-2 py-0.5 rounded bg-artisan-low-bg text-muted">
+                    Unlisted artist
+                  </span>
+                ) : (
+                  <a
+                    href={`/artists/${listing.artisan_id}`}
+                    onClick={(e) => e.stopPropagation()}
+                    onTouchStart={(e) => e.stopPropagation()}
+                    className={`text-[10px] font-mono font-medium px-2 py-0.5 rounded hover:opacity-80 transition-opacity ${
+                      listing.artisan_confidence === 'HIGH'
+                        ? 'bg-artisan-high-bg text-artisan-high'
+                        : listing.artisan_confidence === 'MEDIUM'
+                        ? 'bg-artisan-medium-bg text-artisan-medium'
+                        : 'bg-artisan-low-bg text-artisan-low'
+                    }`}
+                  >
+                    {listing.artisan_display_name || listing.artisan_id}
+                  </a>
+                )}
                 <ArtisanTooltip
                   listingId={listing.id}
                   artisanId={listing.artisan_id}
@@ -455,7 +461,7 @@ export function QuickViewMobileSheet({
                     artisan_confidence: newId === 'UNKNOWN' ? 'LOW' : 'HIGH',
                     artisan_method: 'ADMIN_CORRECTION',
                     artisan_verified: 'correct' as const,
-                    artisan_display_name: newId === 'UNKNOWN' ? 'Unknown' : newId,
+                    artisan_display_name: newId === 'UNKNOWN' ? 'Unlisted artist' : newId,
                   })}
                   adminHidden={listing.admin_hidden}
                   onToggleHidden={handleToggleHidden}
@@ -468,21 +474,27 @@ export function QuickViewMobileSheet({
                 </ArtisanTooltip>
               </span>
             ) : (
-              <a
-                href={`/artists/${listing.artisan_id}`}
-                data-artisan-tooltip
-                onClick={(e) => e.stopPropagation()}
-                onTouchStart={(e) => e.stopPropagation()}
-                className={`text-[10px] font-mono font-medium px-2 py-0.5 rounded hover:opacity-80 transition-opacity ${
-                  listing.artisan_confidence === 'HIGH'
-                    ? 'bg-artisan-high-bg text-artisan-high'
-                    : listing.artisan_confidence === 'MEDIUM'
-                    ? 'bg-artisan-medium-bg text-artisan-medium'
-                    : 'bg-artisan-low-bg text-artisan-low'
-                }`}
-              >
-                {listing.artisan_display_name || listing.artisan_id}
-              </a>
+              listing.artisan_id === 'UNKNOWN' ? (
+                <span className="text-[10px] italic font-medium px-2 py-0.5 rounded bg-artisan-low-bg text-muted">
+                  Unlisted artist
+                </span>
+              ) : (
+                <a
+                  href={`/artists/${listing.artisan_id}`}
+                  data-artisan-tooltip
+                  onClick={(e) => e.stopPropagation()}
+                  onTouchStart={(e) => e.stopPropagation()}
+                  className={`text-[10px] font-mono font-medium px-2 py-0.5 rounded hover:opacity-80 transition-opacity ${
+                    listing.artisan_confidence === 'HIGH'
+                      ? 'bg-artisan-high-bg text-artisan-high'
+                      : listing.artisan_confidence === 'MEDIUM'
+                      ? 'bg-artisan-medium-bg text-artisan-medium'
+                      : 'bg-artisan-low-bg text-artisan-low'
+                  }`}
+                >
+                  {listing.artisan_display_name || listing.artisan_id}
+                </a>
+              )
             )
           )}
           <QuickMeasurement listing={listing} />

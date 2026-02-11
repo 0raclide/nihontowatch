@@ -173,7 +173,7 @@ export function ArtisanTooltip({
               artisan_confidence: 'LOW',
               artisan_method: 'ADMIN_CORRECTION',
               artisan_verified: 'correct',
-              artisan_display_name: 'Unknown',
+              artisan_display_name: 'Unlisted artist',
             },
           }));
         }

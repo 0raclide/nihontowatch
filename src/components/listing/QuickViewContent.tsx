@@ -146,19 +146,25 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
                (isAdmin || !listing.artisan_id.startsWith('tmp')) ? (
                 isAdmin ? (
                   <span className="inline-flex items-center gap-0.5" data-artisan-tooltip>
-                    <a
-                      href={`/artists/${listing.artisan_id}`}
-                      onClick={(e) => e.stopPropagation()}
-                      className={`text-[10px] font-mono font-medium px-2 py-0.5 rounded hover:opacity-80 transition-opacity ${
-                        listing.artisan_confidence === 'HIGH'
-                          ? 'bg-artisan-high-bg text-artisan-high'
-                          : listing.artisan_confidence === 'MEDIUM'
-                          ? 'bg-artisan-medium-bg text-artisan-medium'
-                          : 'bg-artisan-low-bg text-artisan-low'
-                      }`}
-                    >
-                      {listing.artisan_display_name || listing.artisan_id}
-                    </a>
+                    {listing.artisan_id === 'UNKNOWN' ? (
+                      <span className="text-[10px] italic font-medium px-2 py-0.5 rounded bg-artisan-low-bg text-muted">
+                        Unlisted artist
+                      </span>
+                    ) : (
+                      <a
+                        href={`/artists/${listing.artisan_id}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className={`text-[10px] font-mono font-medium px-2 py-0.5 rounded hover:opacity-80 transition-opacity ${
+                          listing.artisan_confidence === 'HIGH'
+                            ? 'bg-artisan-high-bg text-artisan-high'
+                            : listing.artisan_confidence === 'MEDIUM'
+                            ? 'bg-artisan-medium-bg text-artisan-medium'
+                            : 'bg-artisan-low-bg text-artisan-low'
+                        }`}
+                      >
+                        {listing.artisan_display_name || listing.artisan_id}
+                      </a>
+                    )}
                     <ArtisanTooltip
                       listingId={listing.id}
                       artisanId={listing.artisan_id}
@@ -171,7 +177,7 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
                         artisan_confidence: newId === 'UNKNOWN' ? 'LOW' : 'HIGH',
                         artisan_method: 'ADMIN_CORRECTION',
                         artisan_verified: 'correct' as const,
-                        artisan_display_name: newId === 'UNKNOWN' ? 'Unknown' : newId,
+                        artisan_display_name: newId === 'UNKNOWN' ? 'Unlisted artist' : newId,
                       })}
                       adminHidden={listing.admin_hidden}
                       onToggleHidden={handleToggleHidden}
@@ -184,19 +190,25 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
                     </ArtisanTooltip>
                   </span>
                 ) : (
-                  <a
-                    href={`/artists/${listing.artisan_id}`}
-                    data-artisan-tooltip
-                    className={`text-[10px] font-mono font-medium px-2 py-0.5 rounded hover:opacity-80 transition-opacity ${
-                      listing.artisan_confidence === 'HIGH'
-                        ? 'bg-artisan-high-bg text-artisan-high'
-                        : listing.artisan_confidence === 'MEDIUM'
-                        ? 'bg-artisan-medium-bg text-artisan-medium'
-                        : 'bg-artisan-low-bg text-artisan-low'
-                    }`}
-                  >
-                    {listing.artisan_display_name || listing.artisan_id}
-                  </a>
+                  listing.artisan_id === 'UNKNOWN' ? (
+                    <span className="text-[10px] italic font-medium px-2 py-0.5 rounded bg-artisan-low-bg text-muted">
+                      Unlisted artist
+                    </span>
+                  ) : (
+                    <a
+                      href={`/artists/${listing.artisan_id}`}
+                      data-artisan-tooltip
+                      className={`text-[10px] font-mono font-medium px-2 py-0.5 rounded hover:opacity-80 transition-opacity ${
+                        listing.artisan_confidence === 'HIGH'
+                          ? 'bg-artisan-high-bg text-artisan-high'
+                          : listing.artisan_confidence === 'MEDIUM'
+                          ? 'bg-artisan-medium-bg text-artisan-medium'
+                          : 'bg-artisan-low-bg text-artisan-low'
+                      }`}
+                    >
+                      {listing.artisan_display_name || listing.artisan_id}
+                    </a>
+                  )
                 )
               ) : isAdmin && !listing.artisan_id ? (
                 /* Admin: show "Set ID" badge with pen icon for unmatched listings */
@@ -208,7 +220,7 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
                     artisan_confidence: newId === 'UNKNOWN' ? 'LOW' : 'HIGH',
                     artisan_method: 'ADMIN_CORRECTION',
                     artisan_verified: 'correct' as const,
-                    artisan_display_name: newId === 'UNKNOWN' ? 'Unknown' : newId,
+                    artisan_display_name: newId === 'UNKNOWN' ? 'Unlisted artist' : newId,
                   })}
                   adminHidden={listing.admin_hidden}
                   onToggleHidden={handleToggleHidden}
@@ -322,7 +334,7 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
                 artisan_confidence: newId === 'UNKNOWN' ? 'LOW' : 'HIGH',
                 artisan_method: 'ADMIN_CORRECTION',
                 artisan_verified: 'correct' as const,
-                artisan_display_name: newId === 'UNKNOWN' ? 'Unknown' : newId,
+                artisan_display_name: newId === 'UNKNOWN' ? 'Unlisted artist' : newId,
               })}
             />
           </div>

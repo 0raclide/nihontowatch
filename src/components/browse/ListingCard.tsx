@@ -8,7 +8,7 @@ import { ArtisanTooltip } from '@/components/artisan/ArtisanTooltip';
 import { useActivityOptional } from '@/components/activity/ActivityProvider';
 import { useQuickViewOptional } from '@/contexts/QuickViewContext';
 import { useViewportTrackingOptional } from '@/lib/viewport';
-import { getAllImages, getCachedValidation, setCachedValidation, dealerDoesNotPublishImages } from '@/lib/images';
+import { getAllImages, getCachedValidation, isRenderFailed, setRenderFailed, dealerDoesNotPublishImages } from '@/lib/images';
 import { shouldShowNewBadge } from '@/lib/newListing';
 import { trackSearchClick } from '@/lib/tracking/searchTracker';
 import { isTrialModeActive } from '@/types/subscription';
@@ -523,18 +523,15 @@ export const ListingCard = memo(function ListingCard({
   ]);
 
   // Derive thumbnail URL, skipping images known to be broken.
-  // Checks in-memory validationCache (survives SPA navigation) and
-  // sessionStorage (survives hard reload). fallbackIndex as dependency
-  // triggers re-evaluation after each onError marks a URL as broken.
+  // Two independent checks:
+  // 1. validationCache: dimension-invalid (tiny icons/buttons) — from useValidatedImages
+  // 2. renderFailedSet: Next.js Image render failure — from this component's onError
+  // These caches are intentionally separate to prevent cross-contamination.
+  // fallbackIndex dependency triggers re-evaluation after each onError.
   const imageUrl = useMemo(() => {
     for (const url of allImages) {
       if (getCachedValidation(url) === 'invalid') continue;
-      try {
-        if (typeof window !== 'undefined' && sessionStorage.getItem(`nw:img:bad:${url}`)) {
-          setCachedValidation(url, 'invalid');
-          continue;
-        }
-      } catch { /* SSR or storage unavailable */ }
+      if (isRenderFailed(url)) continue;
       return url;
     }
     return null;
@@ -658,10 +655,11 @@ export const ListingCard = memo(function ListingCard({
       onLoad={() => setIsLoading(false)}
       onError={() => {
         if (imageUrl) {
-          setCachedValidation(imageUrl, 'invalid');
-          try { sessionStorage.setItem(`nw:img:bad:${imageUrl}`, '1'); } catch {}
+          setRenderFailed(imageUrl);
         }
-        const hasRemaining = allImages.some(url => getCachedValidation(url) !== 'invalid');
+        const hasRemaining = allImages.some(url =>
+          getCachedValidation(url) !== 'invalid' && !isRenderFailed(url)
+        );
         if (hasRemaining) {
           setFallbackIndex(prev => prev + 1);
         } else {
@@ -715,7 +713,8 @@ export const ListingCard = memo(function ListingCard({
   );
 
   // Artisan display name (resolved server-side from Yuhinkai)
-  const artisanDisplayName = listing.artisan_display_name || listing.artisan_id;
+  const isUnknownArtisan = listing.artisan_id === 'UNKNOWN';
+  const artisanDisplayName = isUnknownArtisan ? 'Unlisted artist' : (listing.artisan_display_name || listing.artisan_id);
 
   // Price display
   const priceDisplay = formatPrice(listing.price_value, listing.price_currency, currency, exchangeRates);
@@ -732,7 +731,7 @@ export const ListingCard = memo(function ListingCard({
   // Attribution priority: artisan tag takes absolute priority over smith/school
   const hasArtisanTag = !!(artisanDisplayName && listing.artisan_id && listing.artisan_confidence !== 'NONE');
   const primaryName = hasArtisanTag ? artisanDisplayName! : (artisan || school || null);
-  const isLinked = hasArtisanTag && !!listing.artisan_id && !isAdmin;
+  const isLinked = hasArtisanTag && !!listing.artisan_id && !isAdmin && !isUnknownArtisan;
   const linkHref = listing.artisan_id ? `/artists/${listing.artisan_id}` : '#';
 
   return (
@@ -815,10 +814,14 @@ export const ListingCard = memo(function ListingCard({
                 candidates={listing.artisan_candidates}
                 verified={listing.artisan_verified}
               >
-                <span className={`${sz.attr} sm:text-[11px] lg:text-[12px] font-medium text-ink border-b border-gold/40 pb-px truncate`}>
+                <span className={`${sz.attr} sm:text-[11px] lg:text-[12px] ${isUnknownArtisan ? 'italic text-muted' : 'font-medium text-ink border-b border-gold/40 pb-px'} truncate`}>
                   {primaryName}
                 </span>
               </ArtisanTooltip>
+            ) : hasArtisanTag && isUnknownArtisan ? (
+              <span className={`${sz.attr} sm:text-[11px] lg:text-[12px] italic text-muted truncate`}>
+                {primaryName}
+              </span>
             ) : hasArtisanTag ? (
               <span className={`${sz.attr} sm:text-[11px] lg:text-[12px] font-medium text-ink border-b border-gold/40 pb-px truncate`}>
                 {primaryName}
