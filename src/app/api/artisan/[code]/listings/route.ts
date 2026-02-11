@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { getArtisanNames } from '@/lib/supabase/yuhinkai';
+import { getArtisanDisplayName } from '@/lib/artisan/displayName';
 import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
@@ -16,7 +18,7 @@ const LISTING_FIELDS = `
   first_seen_at, last_scraped_at,
   artisan_id, artisan_confidence, artisan_method, artisan_candidates, artisan_verified,
   nagasa_cm, sori_cm,
-  dealer:dealers(id, name, domain)
+  dealers:dealers(id, name, domain)
 `;
 
 /**
@@ -68,7 +70,8 @@ export async function GET(
 
     let query = supabase
       .from('listings')
-      .select(LISTING_FIELDS);
+      .select(LISTING_FIELDS)
+      .eq('admin_hidden', false);
 
     if (artisanCodes.length === 1) {
       query = query.eq('artisan_id', code);
@@ -93,7 +96,26 @@ export async function GET(
       return NextResponse.json({ error: 'Database error' }, { status: 500 });
     }
 
-    const response = NextResponse.json({ listings: listings || [] });
+    // Enrich with artisan display names from Yuhinkai (same as browse API)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let enriched: any[] = listings || [];
+    const uniqueCodes = [...new Set(enriched.map((l: any) => l.artisan_id).filter(Boolean))] as string[];
+    if (uniqueCodes.length > 0) {
+      try {
+        const nameMap = await getArtisanNames(uniqueCodes);
+        enriched = enriched.map((listing: any) => {
+          if (listing.artisan_id && nameMap.has(listing.artisan_id)) {
+            const { name_romaji, school } = nameMap.get(listing.artisan_id)!;
+            return { ...listing, artisan_display_name: getArtisanDisplayName(name_romaji, school) };
+          }
+          return listing;
+        });
+      } catch {
+        // Non-fatal — cards fall back to artisan code
+      }
+    }
+
+    const response = NextResponse.json({ listings: enriched });
     response.headers.set(
       'Cache-Control',
       'private, no-store, must-revalidate'
