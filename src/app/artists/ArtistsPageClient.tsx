@@ -206,7 +206,7 @@ export function ArtistsPageClient({
       <div className="mb-8">
         <h1 className="hidden lg:block font-serif text-2xl text-ink tracking-tight">Artists</h1>
         <p className="hidden lg:block text-[13px] text-muted mt-1">
-          {attributedItemCount.toLocaleString()} items across {(facets.totals.smiths + facets.totals.tosogu).toLocaleString()} renowned artisans
+          {attributedItemCount.toLocaleString()} items across {(facets.totals.smiths + facets.totals.tosogu).toLocaleString()} renowned artists
         </p>
         <LiveStatsBanner lastUpdated={lastUpdated} artisanCount={facets.totals.smiths + facets.totals.tosogu} schoolCount={facets.schools.length} />
         {/* Mobile heading */}
@@ -214,7 +214,7 @@ export function ArtistsPageClient({
           Artists
         </h1>
         <p className="lg:hidden mt-2 text-sm text-ink/50">
-          {(facets.totals.smiths + facets.totals.tosogu).toLocaleString()} renowned artisans
+          {(facets.totals.smiths + facets.totals.tosogu).toLocaleString()} renowned artists
         </p>
       </div>
 
@@ -238,7 +238,7 @@ export function ArtistsPageClient({
           {/* Desktop count header */}
           {!isLoading && artists.length > 0 && (
             <p className="hidden lg:block text-[11px] text-ink/45 mb-4">
-              {pagination.totalCount.toLocaleString()} artisan{pagination.totalCount !== 1 ? 's' : ''}
+              {pagination.totalCount.toLocaleString()} artist{pagination.totalCount !== 1 ? 's' : ''}
             </p>
           )}
 
@@ -263,7 +263,7 @@ export function ArtistsPageClient({
             </div>
           ) : artists.length === 0 ? (
             <div className="py-20 text-center">
-              <p className="text-ink/50 text-sm">No artisans found matching your criteria.</p>
+              <p className="text-ink/50 text-sm">No artists found matching your criteria.</p>
               <button
                 onClick={clearAllFilters}
                 className="mt-3 text-[12px] text-gold hover:text-gold-light underline"
@@ -846,7 +846,7 @@ function LiveStatsBanner({ lastUpdated, artisanCount, schoolCount }: { lastUpdat
       <span className="text-muted/30 mx-0.5">&middot;</span>
       <span>Scanned {elapsed} ago</span>
       <span className="text-muted/30 mx-0.5">&middot;</span>
-      <span>{artisanCount.toLocaleString()} artisans</span>
+      <span>{artisanCount.toLocaleString()} artists</span>
       <span className="text-muted/30 mx-0.5">&middot;</span>
       <span>{schoolCount.toLocaleString()} schools</span>
     </div>
