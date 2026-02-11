@@ -329,14 +329,22 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
   const soldListingsExist = soldListings !== null && soldListings.length > 0;
 
   // Scroll to hash anchor after dynamic content loads (e.g. #listings from artist directory)
+  // Uses requestAnimationFrame + setTimeout to ensure DOM has committed after React render
   useEffect(() => {
     const hash = window.location.hash.replace('#', '');
     if (!hash || listings === null) return;
-    // Small delay to let the DOM render after state update
-    const timer = setTimeout(() => {
-      document.getElementById(hash)?.scrollIntoView({ behavior: 'smooth' });
-    }, 100);
-    return () => clearTimeout(timer);
+    const raf = requestAnimationFrame(() => {
+      const el = document.getElementById(hash);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth' });
+      } else {
+        // Fallback: element may not be painted yet, retry after a frame
+        setTimeout(() => {
+          document.getElementById(hash)?.scrollIntoView({ behavior: 'smooth' });
+        }, 200);
+      }
+    });
+    return () => cancelAnimationFrame(raf);
   }, [listings]);
 
   const handleShare = useCallback(() => {

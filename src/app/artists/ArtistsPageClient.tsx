@@ -811,6 +811,7 @@ function ArtistCard({ artist }: { artist: ArtistWithSlug }) {
           <div className="mt-1.5 flex justify-end text-[11px] tabular-nums">
             <Link
               href={forSaleUrl}
+              scroll={false}
               onClick={(e) => e.stopPropagation()}
               className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium hover:text-emerald-500 dark:hover:text-emerald-300 transition-colors"
             >
