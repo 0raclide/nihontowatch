@@ -41,6 +41,8 @@ interface ArtistsPageClientProps {
   initialPagination: Pagination;
   initialFacets: DirectoryFacets;
   initialFilters: Filters;
+  lastUpdated: string | null;
+  attributedItemCount: number;
 }
 
 // =============================================================================
@@ -52,6 +54,8 @@ export function ArtistsPageClient({
   initialPagination,
   initialFacets,
   initialFilters,
+  lastUpdated,
+  attributedItemCount,
 }: ArtistsPageClientProps) {
   const [artists, setArtists] = useState(initialArtists);
   const [pagination, setPagination] = useState(initialPagination);
@@ -200,11 +204,17 @@ export function ArtistsPageClient({
     <div className="max-w-[1600px] mx-auto px-4 py-8 lg:px-6">
       {/* Page Header */}
       <div className="mb-8">
-        <h1 className="font-serif text-2xl lg:text-3xl text-ink tracking-tight">
+        <h1 className="hidden lg:block font-serif text-2xl text-ink tracking-tight">Artists</h1>
+        <p className="hidden lg:block text-[13px] text-muted mt-1">
+          {attributedItemCount.toLocaleString()} items across {(facets.totals.smiths + facets.totals.tosogu).toLocaleString()} renowned artisans
+        </p>
+        <LiveStatsBanner lastUpdated={lastUpdated} artisanCount={facets.totals.smiths + facets.totals.tosogu} schoolCount={facets.schools.length} />
+        {/* Mobile: simpler heading */}
+        <h1 className="lg:hidden font-serif text-2xl text-ink tracking-tight">
           Artist Directory
         </h1>
-        <p className="mt-2 text-sm text-ink/50 max-w-2xl">
-          {(facets.totals.smiths + facets.totals.tosogu).toLocaleString()} artisans across {facets.schools.length.toLocaleString()}+ schools — ranked by certified works.
+        <p className="lg:hidden mt-2 text-sm text-ink/50">
+          {(facets.totals.smiths + facets.totals.tosogu).toLocaleString()} artisans across {facets.schools.length.toLocaleString()}+ schools
         </p>
       </div>
 
@@ -790,6 +800,55 @@ function PaginationBar({
           Next
         </button>
       </div>
+    </div>
+  );
+}
+
+// =============================================================================
+// LIVE STATS BANNER
+// =============================================================================
+
+function useElapsedSince(isoDate: string | null): string | null {
+  const [elapsed, setElapsed] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isoDate) return;
+
+    function compute() {
+      const diffMs = Date.now() - new Date(isoDate!).getTime();
+      if (diffMs < 0) return '0s';
+      const totalSec = Math.floor(diffMs / 1000);
+      const d = Math.floor(totalSec / 86400);
+      const h = Math.floor((totalSec % 86400) / 3600);
+      const m = Math.floor((totalSec % 3600) / 60);
+      const s = totalSec % 60;
+      if (d > 0) return `${d}d ${h}h ${m}m`;
+      if (h > 0) return `${h}h ${m}m ${s}s`;
+      return `${m}m ${s}s`;
+    }
+
+    setElapsed(compute());
+    const id = setInterval(() => setElapsed(compute()), 1000);
+    return () => clearInterval(id);
+  }, [isoDate]);
+
+  return elapsed;
+}
+
+function LiveStatsBanner({ lastUpdated, artisanCount, schoolCount }: { lastUpdated: string | null; artisanCount: number; schoolCount: number }) {
+  const elapsed = useElapsedSince(lastUpdated);
+  if (!elapsed) return null;
+
+  return (
+    <div className="hidden lg:flex items-center gap-1.5 mt-1.5 text-[11px] text-muted/70 font-mono tabular-nums">
+      <div className="w-1.5 h-1.5 rounded-full bg-sage animate-pulse" />
+      <span className="text-sage font-medium tracking-wide">LIVE</span>
+      <span className="text-muted/30 mx-0.5">&middot;</span>
+      <span>Scanned {elapsed} ago</span>
+      <span className="text-muted/30 mx-0.5">&middot;</span>
+      <span>{artisanCount.toLocaleString()} artisans</span>
+      <span className="text-muted/30 mx-0.5">&middot;</span>
+      <span>{schoolCount.toLocaleString()} schools</span>
     </div>
   );
 }

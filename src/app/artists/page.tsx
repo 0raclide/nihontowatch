@@ -181,6 +181,30 @@ export default async function ArtistsPage({ searchParams }: ArtistsPageProps) {
     }
   }
 
+  // Fetch live stats: last scrape time + total attributed items
+  let lastUpdated: string | null = null;
+  let attributedItemCount = 0;
+  try {
+    const supabase = await createClient();
+    const [freshnessRes, countRes] = await Promise.all([
+      supabase
+        .from('listings')
+        .select('last_scraped_at')
+        .order('last_scraped_at' as string, { ascending: false })
+        .limit(1)
+        .single(),
+      supabase
+        .from('listings')
+        .select('id', { count: 'exact', head: true })
+        .not('artisan_id' as string, 'is', null)
+        .eq('is_available', true),
+    ]);
+    lastUpdated = (freshnessRes.data as { last_scraped_at: string } | null)?.last_scraped_at || null;
+    attributedItemCount = countRes.count ?? 0;
+  } catch {
+    // Non-critical — banner just won't show
+  }
+
   // Fetch percentiles, school member counts, and hero images in parallel
   const [percentileMap, memberCountMap, heroImages] = await Promise.all([
     getBulkElitePercentiles(
@@ -232,6 +256,8 @@ export default async function ArtistsPage({ searchParams }: ArtistsPageProps) {
         initialPagination={{ page, pageSize: 50, totalPages, totalCount: total }}
         initialFacets={facets}
         initialFilters={{ type, school, province, era, q, sort, notable }}
+        lastUpdated={lastUpdated}
+        attributedItemCount={attributedItemCount}
       />
     </>
   );
