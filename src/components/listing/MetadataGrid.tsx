@@ -111,30 +111,50 @@ interface MetadataItemProps {
 // CERTIFICATION CONFIG
 // =============================================================================
 
-export const CERT_CONFIG: Record<string, { label: string; shortLabel: string; tier: 'premier' | 'high' | 'standard' }> = {
-  // Pre-war government designation (highest prestige)
-  'Juyo Bijutsuhin': { label: 'Juyo Bijutsuhin', shortLabel: 'JuBi', tier: 'premier' },
-  // NBTHK
-  Juyo: { label: 'Juyo', shortLabel: 'Juyo', tier: 'premier' },
-  juyo: { label: 'Juyo', shortLabel: 'Juyo', tier: 'premier' },
-  'Tokubetsu Juyo': { label: 'Tokubetsu Juyo', shortLabel: 'TokuJu', tier: 'premier' },
-  tokubetsu_juyo: { label: 'Tokubetsu Juyo', shortLabel: 'TokuJu', tier: 'premier' },
-  Tokuju: { label: 'Tokubetsu Juyo', shortLabel: 'TokuJu', tier: 'premier' },
-  tokuju: { label: 'Tokubetsu Juyo', shortLabel: 'TokuJu', tier: 'premier' },
-  'Tokubetsu Hozon': { label: 'Tokubetsu Hozon', shortLabel: 'TokuHo', tier: 'high' },
-  tokubetsu_hozon: { label: 'Tokubetsu Hozon', shortLabel: 'TokuHo', tier: 'high' },
-  TokuHozon: { label: 'Tokubetsu Hozon', shortLabel: 'TokuHo', tier: 'high' },
-  Hozon: { label: 'Hozon', shortLabel: 'Hozon', tier: 'standard' },
-  hozon: { label: 'Hozon', shortLabel: 'Hozon', tier: 'standard' },
-  'Juyo Tosogu': { label: 'Juyo Tosogu', shortLabel: 'Juyo', tier: 'premier' },
-  'Tokubetsu Hozon Tosogu': { label: 'Toku Hozon Tosogu', shortLabel: 'TokuHo', tier: 'high' },
-  'Hozon Tosogu': { label: 'Hozon Tosogu', shortLabel: 'Hozon', tier: 'standard' },
-  'NTHK Kanteisho': { label: 'NTHK', shortLabel: 'NTHK', tier: 'standard' },
+export const CERT_CONFIG: Record<string, { label: string; shortLabel: string; tier: 'tokuju' | 'jubi' | 'juyo' | 'tokuho' | 'hozon' }> = {
+  // Pre-war government designation (highest prestige — orange)
+  'Juyo Bijutsuhin': { label: 'Juyo Bijutsuhin', shortLabel: 'Jubi', tier: 'jubi' },
+  JuyoBijutsuhin: { label: 'Juyo Bijutsuhin', shortLabel: 'Jubi', tier: 'jubi' },
+  juyo_bijutsuhin: { label: 'Juyo Bijutsuhin', shortLabel: 'Jubi', tier: 'jubi' },
+  // NBTHK — Tokubetsu Juyo (purple)
+  'Tokubetsu Juyo': { label: 'Tokubetsu Juyo', shortLabel: 'Tokuju', tier: 'tokuju' },
+  tokubetsu_juyo: { label: 'Tokubetsu Juyo', shortLabel: 'Tokuju', tier: 'tokuju' },
+  Tokuju: { label: 'Tokubetsu Juyo', shortLabel: 'Tokuju', tier: 'tokuju' },
+  tokuju: { label: 'Tokubetsu Juyo', shortLabel: 'Tokuju', tier: 'tokuju' },
+  // NBTHK — Juyo (blue)
+  Juyo: { label: 'Juyo', shortLabel: 'Jūyō', tier: 'juyo' },
+  juyo: { label: 'Juyo', shortLabel: 'Jūyō', tier: 'juyo' },
+  'Juyo Tosogu': { label: 'Juyo Tosogu', shortLabel: 'Jūyō', tier: 'juyo' },
+  // NBTHK — Tokubetsu Hozon (brown)
+  'Tokubetsu Hozon': { label: 'Tokubetsu Hozon', shortLabel: 'Tokuho', tier: 'tokuho' },
+  tokubetsu_hozon: { label: 'Tokubetsu Hozon', shortLabel: 'Tokuho', tier: 'tokuho' },
+  TokuHozon: { label: 'Tokubetsu Hozon', shortLabel: 'Tokuho', tier: 'tokuho' },
+  'Tokubetsu Hozon Tosogu': { label: 'Toku Hozon Tosogu', shortLabel: 'Tokuho', tier: 'tokuho' },
+  // NBTHK — Hozon (olive)
+  Hozon: { label: 'Hozon', shortLabel: 'Hozon', tier: 'hozon' },
+  hozon: { label: 'Hozon', shortLabel: 'Hozon', tier: 'hozon' },
+  'Hozon Tosogu': { label: 'Hozon Tosogu', shortLabel: 'Hozon', tier: 'hozon' },
+  'NTHK Kanteisho': { label: 'NTHK', shortLabel: 'NTHK', tier: 'hozon' },
 };
 
 // =============================================================================
 // HELPERS
 // =============================================================================
+
+/**
+ * Strip school prefix from artisan name to avoid duplication when displayed as "School Artisan".
+ * E.g., school="Rai", artisan="Rai Kunitoshi" → artisan="Kunitoshi"
+ */
+function stripSchoolPrefix(artisan: string | null, school: string | null): string | null {
+  if (!artisan || !school) return artisan;
+  // If artisan is just the school name, hide artisan (school already shown separately)
+  if (artisan.toLowerCase() === school.toLowerCase()) return null;
+  // Strip "School " prefix from "School Artisan" to avoid "School School Artisan"
+  if (artisan.toLowerCase().startsWith(school.toLowerCase() + ' ')) {
+    return artisan.slice(school.length).trim() || artisan;
+  }
+  return artisan;
+}
 
 export function getArtisanInfo(listing: Listing | ListingWithEnrichment): {
   artisan: string | null;
@@ -147,9 +167,11 @@ export function getArtisanInfo(listing: Listing | ListingWithEnrichment): {
   const listingWithEnrichment = listing as ListingWithEnrichment;
   if (hasVerifiedEnrichment(listingWithEnrichment)) {
     const enrichment = listingWithEnrichment.yuhinkai_enrichment!;
+    const school = enrichment.enriched_school || null;
+    const artisan = stripSchoolPrefix(enrichment.enriched_maker || null, school);
     return {
-      artisan: enrichment.enriched_maker || null,
-      school: enrichment.enriched_school || null,
+      artisan,
+      school,
       artisanLabel: isTosogu(listing.item_type) ? 'Maker' : 'Smith',
       era: enrichment.enriched_period || listing.era || null,
       isEnriched: true,
@@ -169,9 +191,10 @@ export function getArtisanInfo(listing: Listing | ListingWithEnrichment): {
       artisan = rawMaker || null;
     }
 
+    const displaySchool = school && !containsJapanese(school) ? school : null;
     return {
-      artisan,
-      school: school && !containsJapanese(school) ? school : null,
+      artisan: stripSchoolPrefix(artisan, displaySchool),
+      school: displaySchool,
       artisanLabel: 'Maker',
       era: listing.era || null,
       isEnriched: false,
@@ -189,9 +212,10 @@ export function getArtisanInfo(listing: Listing | ListingWithEnrichment): {
     artisan = rawSmith || null;
   }
 
+  const displaySchool = school && !containsJapanese(school) ? school : null;
   return {
-    artisan,
-    school: school && !containsJapanese(school) ? school : null,
+    artisan: stripSchoolPrefix(artisan, displaySchool),
+    school: displaySchool,
     artisanLabel: 'Smith',
     era: listing.era || null,
     isEnriched: false,
@@ -201,7 +225,7 @@ export function getArtisanInfo(listing: Listing | ListingWithEnrichment): {
 export function getCertInfo(certType: string | undefined): {
   label: string;
   shortLabel: string;
-  tier: 'premier' | 'high' | 'standard';
+  tier: 'tokuju' | 'jubi' | 'juyo' | 'tokuho' | 'hozon';
 } | null {
   if (!certType) return null;
   return CERT_CONFIG[certType] || null;

@@ -326,7 +326,7 @@ describe('QuickViewMobileSheet', () => {
           isExpanded={true}
         />
       );
-      expect(screen.getByText('TokuJu')).toBeInTheDocument();
+      expect(screen.getByText('Tokuju')).toBeInTheDocument();
     });
 
     it('displays Tokubetsu Hozon certification', () => {
@@ -338,7 +338,7 @@ describe('QuickViewMobileSheet', () => {
           isExpanded={true}
         />
       );
-      expect(screen.getByText('TokuHo')).toBeInTheDocument();
+      expect(screen.getByText('Tokuho')).toBeInTheDocument();
     });
 
     it('displays Hozon certification', () => {

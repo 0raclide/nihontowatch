@@ -237,14 +237,6 @@ function HomeContent() {
     return 'gallery';
   });
 
-  // Font size option (applies to both views)
-  const [fontSize, setFontSize] = useState<'compact' | 'standard' | 'large'>(() => {
-    if (typeof window !== 'undefined') {
-      return (localStorage.getItem('nihontowatch-font-size') as 'compact' | 'standard' | 'large') || 'large';
-    }
-    return 'large';
-  });
-
   // Sync searchQuery state with URL when it changes (e.g., from header search)
   const urlQuery = searchParams.get('q') || '';
   useEffect(() => {
@@ -350,14 +342,6 @@ function HomeContent() {
     setMobileView(view);
     if (typeof window !== 'undefined') {
       localStorage.setItem('nihontowatch-mobile-view', view);
-    }
-  }, []);
-
-  // Persist font size preference (both views)
-  const handleFontSizeChange = useCallback((size: 'compact' | 'standard' | 'large') => {
-    setFontSize(size);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('nihontowatch-font-size', size);
     }
   }, []);
 
@@ -688,34 +672,6 @@ function HomeContent() {
           </div>
         </div>
 
-        {/* Sub-options — phone only: font size (both views) + wall texture (gallery only) */}
-        <div className="sm:hidden flex items-center gap-4 mb-4">
-          {/* Font size — shared across both views for accessibility */}
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] text-muted/70 uppercase tracking-widest font-medium">Size</span>
-            <div className="flex items-center gap-0.5 bg-border/30 rounded-full p-0.5">
-              {([
-                { key: 'compact' as const, label: 'S' },
-                { key: 'standard' as const, label: 'M' },
-                { key: 'large' as const, label: 'L' },
-              ]).map(opt => (
-                <button
-                  key={opt.key}
-                  onClick={() => handleFontSizeChange(opt.key)}
-                  className={`px-3 py-1 text-[11px] font-medium rounded-full transition-all ${
-                    fontSize === opt.key
-                      ? 'bg-cream text-gold shadow-sm'
-                      : 'text-muted hover:text-ink'
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-        </div>
-
         {/* Main Content */}
         <div className="flex flex-col lg:flex-row lg:gap-10">
           <FilterSidebar
@@ -770,7 +726,6 @@ function HomeContent() {
               searchId={currentSearchIdRef.current}
               isAdmin={authIsAdmin}
               mobileView={mobileView}
-              fontSize={fontSize}
             />
           </div>
         </div>

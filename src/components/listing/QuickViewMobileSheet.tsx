@@ -377,12 +377,12 @@ export function QuickViewMobileSheet({
           </span>
           {certInfo && (
             <span
-              className={`text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded ${
-                certInfo.tier === 'premier'
-                  ? 'bg-juyo-bg text-juyo'
-                  : certInfo.tier === 'high'
-                  ? 'bg-toku-hozon-bg text-toku-hozon'
-                  : 'bg-hozon-bg text-hozon'
+              className={`text-[10px] uppercase tracking-wider font-bold ${
+                certInfo.tier === 'tokuju' ? 'text-tokuju'
+                  : certInfo.tier === 'jubi' ? 'text-jubi'
+                  : certInfo.tier === 'juyo' ? 'text-juyo'
+                  : certInfo.tier === 'tokuho' ? 'text-toku-hozon'
+                  : 'text-hozon'
               }`}
             >
               {certInfo.shortLabel}

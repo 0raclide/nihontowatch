@@ -78,7 +78,6 @@ interface ListingGridProps {
   searchId?: number; // For CTR tracking
   isAdmin?: boolean; // For admin-only features like artisan code display
   mobileView?: 'grid' | 'gallery'; // Mobile layout mode
-  fontSize?: 'compact' | 'standard' | 'large';
 }
 
 function LoadingSkeleton() {
@@ -151,7 +150,6 @@ export function ListingGrid({
   searchId,
   isAdmin = false,
   mobileView = 'gallery',
-  fontSize = 'large',
 }: ListingGridProps) {
   // Loading state
   if (isLoading) {
@@ -183,7 +181,6 @@ export function ListingGrid({
         searchId={searchId}
         isAdmin={isAdmin}
         mobileView={mobileView}
-        fontSize={fontSize}
       />
     </ViewportTrackingProvider>
   );

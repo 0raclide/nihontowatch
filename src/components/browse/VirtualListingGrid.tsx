@@ -98,7 +98,6 @@ interface VirtualListingGridProps {
   searchId?: number; // For CTR tracking
   isAdmin?: boolean; // For admin-only features like artisan code display
   mobileView?: 'grid' | 'gallery'; // Mobile layout mode
-  fontSize?: 'compact' | 'standard' | 'large'; // Font size (both views)
 }
 
 function Pagination({
@@ -212,7 +211,6 @@ export function VirtualListingGrid({
   searchId,
   isAdmin = false,
   mobileView = 'gallery',
-  fontSize = 'large',
 }: VirtualListingGridProps) {
   const quickView = useQuickViewOptional();
   const loadMoreTriggerRef = useRef<HTMLDivElement>(null);
@@ -363,7 +361,6 @@ export function VirtualListingGrid({
           searchId={searchId}
           isAdmin={isAdmin}
           mobileView={mobileView}
-          fontSize={fontSize}
         />
       ))}
     </div>

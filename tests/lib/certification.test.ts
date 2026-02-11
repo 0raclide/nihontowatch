@@ -55,12 +55,12 @@ describe('Juyo Bijutsuhin Certification', () => {
       expect(CERT_CONFIG['Juyo Bijutsuhin'].label).toBe('Juyo Bijutsuhin');
     });
 
-    it('has short label "JuBi" for Juyo Bijutsuhin', () => {
-      expect(CERT_CONFIG['Juyo Bijutsuhin'].shortLabel).toBe('JuBi');
+    it('has short label "Jubi" for Juyo Bijutsuhin', () => {
+      expect(CERT_CONFIG['Juyo Bijutsuhin'].shortLabel).toBe('Jubi');
     });
 
-    it('has premier tier for Juyo Bijutsuhin', () => {
-      expect(CERT_CONFIG['Juyo Bijutsuhin'].tier).toBe('premier');
+    it('has jubi tier for Juyo Bijutsuhin', () => {
+      expect(CERT_CONFIG['Juyo Bijutsuhin'].tier).toBe('jubi');
     });
   });
 });
@@ -124,27 +124,19 @@ describe('CERT_CONFIG Completeness', () => {
     expect(CERT_CONFIG[cert]).toBeDefined();
     expect(CERT_CONFIG[cert].label).toBeTruthy();
     expect(CERT_CONFIG[cert].shortLabel).toBeTruthy();
-    expect(['premier', 'high', 'standard']).toContain(CERT_CONFIG[cert].tier);
+    expect(['tokuju', 'jubi', 'juyo', 'tokuho', 'hozon']).toContain(CERT_CONFIG[cert].tier);
   });
 
-  it('assigns premier tier to Juyo-level certifications', () => {
-    const premierCerts = ['Juyo Bijutsuhin', 'Juyo', 'Tokuju', 'Juyo Tosogu'];
-    for (const cert of premierCerts) {
-      expect(CERT_CONFIG[cert].tier).toBe('premier');
-    }
-  });
-
-  it('assigns high tier to Tokubetsu Hozon certifications', () => {
-    const highCerts = ['Tokubetsu Hozon', 'TokuHozon', 'Tokubetsu Hozon Tosogu'];
-    for (const cert of highCerts) {
-      expect(CERT_CONFIG[cert].tier).toBe('high');
-    }
-  });
-
-  it('assigns standard tier to Hozon certifications', () => {
-    const standardCerts = ['Hozon', 'Hozon Tosogu', 'NTHK Kanteisho'];
-    for (const cert of standardCerts) {
-      expect(CERT_CONFIG[cert].tier).toBe('standard');
-    }
+  it('assigns correct 5-tier classification', () => {
+    expect(CERT_CONFIG['Juyo Bijutsuhin'].tier).toBe('jubi');
+    expect(CERT_CONFIG['Tokuju'].tier).toBe('tokuju');
+    expect(CERT_CONFIG['Juyo'].tier).toBe('juyo');
+    expect(CERT_CONFIG['Juyo Tosogu'].tier).toBe('juyo');
+    expect(CERT_CONFIG['Tokubetsu Hozon'].tier).toBe('tokuho');
+    expect(CERT_CONFIG['TokuHozon'].tier).toBe('tokuho');
+    expect(CERT_CONFIG['Tokubetsu Hozon Tosogu'].tier).toBe('tokuho');
+    expect(CERT_CONFIG['Hozon'].tier).toBe('hozon');
+    expect(CERT_CONFIG['Hozon Tosogu'].tier).toBe('hozon');
+    expect(CERT_CONFIG['NTHK Kanteisho'].tier).toBe('hozon');
   });
 });
