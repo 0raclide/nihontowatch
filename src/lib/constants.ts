@@ -359,6 +359,13 @@ export const ROUTES = {
 // =============================================================================
 
 /**
+ * Number of active dealers on the platform.
+ * Used in marketing copy (signup modals, landing page, etc.)
+ * Update this when adding or removing dealers.
+ */
+export const ACTIVE_DEALER_COUNT = 44;
+
+/**
  * Dealers that are known to never publish product images.
  * Listings from these dealers will show a custom placeholder
  * instead of the generic "no image" icon.

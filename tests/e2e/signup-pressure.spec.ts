@@ -287,11 +287,11 @@ test.describe('Signup Pressure System', () => {
       await expect(modal).toBeVisible({ timeout: 5000 });
     });
 
-    test('modal has correct copy ("Track what matters." headline)', async ({
+    test('modal has correct copy (dealer count headline)', async ({
       page,
     }) => {
-      // Check headline
-      const headline = page.getByRole('heading', { name: 'Track what matters.' });
+      // Check headline — uses dynamic dealer count from ACTIVE_DEALER_COUNT
+      const headline = page.getByRole('heading', { name: /\d+ dealers\. One watchlist\./ });
       await expect(headline).toBeVisible();
     });
 
@@ -324,7 +324,7 @@ test.describe('Signup Pressure System', () => {
     });
 
     test('modal has social proof text', async ({ page }) => {
-      const socialProof = page.getByText('The entire nihonto market in one place');
+      const socialProof = page.getByText('Every major dealer — Japanese and international');
       await expect(socialProof).toBeVisible();
     });
 
@@ -472,7 +472,7 @@ test.describe('Signup Pressure - Responsive Design', () => {
 
       // On mobile, verify the modal is visible and contains expected content
       // The mobile sheet has rounded-t-2xl class and is positioned at bottom
-      const headline = page.getByRole('heading', { name: 'Track what matters.' });
+      const headline = page.getByRole('heading', { name: /\d+ dealers\. One watchlist\./ });
       await expect(headline).toBeVisible();
 
       // The modal should have the expected mobile-specific visual elements
@@ -539,7 +539,7 @@ test.describe('Signup Pressure - Responsive Design', () => {
       await expect(modal).toBeVisible({ timeout: 10000 });
 
       // Verify the modal is functional on desktop
-      const headline = page.getByRole('heading', { name: 'Track what matters.' });
+      const headline = page.getByRole('heading', { name: /\d+ dealers\. One watchlist\./ });
       await expect(headline).toBeVisible();
 
       // On desktop, the modal should have desktop-specific styling (centered, not bottom sheet)

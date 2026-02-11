@@ -6,6 +6,7 @@
  */
 
 import type { SignupPressureConfig, SignupModalCopyVariants } from './types';
+import { ACTIVE_DEALER_COUNT } from '../constants';
 
 /**
  * Trigger configuration.
@@ -43,24 +44,24 @@ export const SIGNUP_PRESSURE_CONFIG: SignupPressureConfig = {
  */
 export const SIGNUP_MODAL_COPY: SignupModalCopyVariants = {
   engagement: {
-    headline: 'Track what matters.',
-    body: "Create an account to save the pieces you're watching, receive alerts when prices shift, and never lose track of a listing that caught your eye.",
+    headline: `${ACTIVE_DEALER_COUNT} dealers. One watchlist.`,
+    body: 'Save the pieces that caught your eye. Get alerted when new inventory appears across the market. Never miss a price drop.',
     cta: 'Create Account',
     dismiss: 'Continue browsing',
-    socialProof: 'The entire nihonto market in one place',
+    socialProof: 'Every major dealer — Japanese and international',
   },
 
   favorite: {
     headline: 'Keep this one close.',
-    body: "Create an account to save this piece to your collection. You'll be notified if the price changes or if it sells.",
+    body: "Sign up to save this piece. You'll be notified if the price drops or it sells.",
     cta: 'Create Account',
     dismiss: 'Continue browsing',
     socialProof: 'Price alerts delivered within minutes',
   },
 
   alert: {
-    headline: 'Never miss the moment.',
-    body: 'Price drops and new listings move fast. Create an account to receive instant alerts tailored to your criteria.',
+    headline: 'New pieces move fast.',
+    body: `Listings from ${ACTIVE_DEALER_COUNT} dealers, the moment they appear. Create an account to set alerts tailored to exactly what you collect.`,
     cta: 'Create Account',
     dismiss: 'Continue browsing',
     socialProof: 'Alerts delivered within minutes of changes',
