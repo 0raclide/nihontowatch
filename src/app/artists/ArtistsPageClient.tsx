@@ -723,7 +723,7 @@ function ArtistCard({ artist }: { artist: ArtistWithSlug }) {
 
   // Build browse URL for "for sale" link — opens QuickView if we have a first listing ID
   const forSaleUrl = availableCount > 0
-    ? `/?artisan=${encodeURIComponent(artist.code)}${artist.first_listing_id ? `&listing=${artist.first_listing_id}` : ''}`
+    ? `/artists/${artist.slug}#listings`
     : undefined;
 
   // Designation shortcodes — ordered by prestige, only shown when > 0
