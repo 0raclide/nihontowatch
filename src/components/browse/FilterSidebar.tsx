@@ -88,9 +88,9 @@ export function FilterSidebar({ facets, filters, onFilterChange, isAdmin, varian
 
     return (
       <aside className="hidden lg:block w-[264px] flex-shrink-0">
-        <div className="sticky top-20">
+        <div className="sticky top-24">
           <div
-            className={`bg-surface-elevated ${cardRadius} border border-border/40 flex flex-col max-h-[calc(100vh-6rem)]`}
+            className={`bg-surface-elevated ${cardRadius} border border-border/40 flex flex-col max-h-[calc(100vh-7rem)]`}
             style={{ boxShadow: '0 1px 2px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.06)' }}
           >
             {/* ── Zone 1: View Controls (pinned, when active) ── */}
