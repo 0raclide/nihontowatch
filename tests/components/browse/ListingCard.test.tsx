@@ -40,6 +40,8 @@ vi.mock('@/lib/freshness', () => ({
 // Mock images helper
 vi.mock('@/lib/images', () => ({
   getImageUrl: (listing: { images?: string[] | null }) => listing.images?.[0] || null,
+  getAllImages: (listing: { images?: string[] | null; stored_images?: string[] | null }) =>
+    listing.stored_images?.length ? listing.stored_images : (listing.images || []),
   dealerDoesNotPublishImages: () => false,
 }));
 

@@ -8,7 +8,7 @@ import { ArtisanTooltip } from '@/components/artisan/ArtisanTooltip';
 import { useActivityOptional } from '@/components/activity/ActivityProvider';
 import { useQuickViewOptional } from '@/contexts/QuickViewContext';
 import { useViewportTrackingOptional } from '@/lib/viewport';
-import { getImageUrl, dealerDoesNotPublishImages } from '@/lib/images';
+import { getAllImages, dealerDoesNotPublishImages } from '@/lib/images';
 import { shouldShowNewBadge } from '@/lib/newListing';
 import { trackSearchClick } from '@/lib/tracking/searchTracker';
 import { isTrialModeActive } from '@/types/subscription';
@@ -416,6 +416,7 @@ export const ListingCard = memo(function ListingCard({
 }: ListingCardProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
+  const [fallbackIndex, setFallbackIndex] = useState(0);
   const activity = useActivityOptional();
   const quickView = useQuickViewOptional();
   const viewportTracking = useViewportTrackingOptional();
@@ -436,8 +437,8 @@ export const ListingCard = memo(function ListingCard({
 
   // Memoize expensive computations that derive from listing data
   // These run on every render otherwise, and with 100 cards that's significant
-  const { imageUrl, school, artisan, itemType, cleanedTitle, certInfo } = useMemo(() => ({
-    imageUrl: getImageUrl(listing),
+  const { allImages, school, artisan, itemType, cleanedTitle, certInfo } = useMemo(() => ({
+    allImages: getAllImages(listing),
     school: getSchoolName(listing.school) || getSchoolName(listing.tosogu_school),
     artisan: getArtisanName(listing.smith, listing.school, listing.title_en)
       || getArtisanName(listing.tosogu_maker, listing.tosogu_school, listing.title_en),
@@ -457,6 +458,10 @@ export const ListingCard = memo(function ListingCard({
     listing.item_type,
     listing.cert_type,
   ]);
+
+  // Derive thumbnail URL from allImages with fallback support.
+  // When an image fails to load, fallbackIndex increments to try the next one.
+  const imageUrl = allImages[fallbackIndex] || null;
 
   // Check if item is definitively sold (for showing sale data)
   const isSold = listing.is_sold || listing.status === 'sold' || listing.status === 'presumed_sold';
@@ -607,8 +612,13 @@ export const ListingCard = memo(function ListingCard({
             blurDataURL={BLUR_PLACEHOLDER}
             onLoad={() => setIsLoading(false)}
             onError={() => {
-              setIsLoading(false);
-              setHasError(true);
+              // Try next image in the array before showing error state
+              if (fallbackIndex + 1 < allImages.length) {
+                setFallbackIndex(fallbackIndex + 1);
+              } else {
+                setIsLoading(false);
+                setHasError(true);
+              }
             }}
           />
         ) : (
