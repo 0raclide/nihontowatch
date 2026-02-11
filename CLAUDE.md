@@ -16,6 +16,7 @@
 - Dealer analytics dashboard (admin)
 - Artisan code display & search (admin-only badges with confidence levels)
 - Artist directory (`/artists`) with filters, pagination, and sitemap integration
+- Personal collection manager (`/collection`) with Yuhinkai catalog lookup and "I Own This" import
 
 **Trial Mode:** All premium features currently free (toggle via `NEXT_PUBLIC_TRIAL_MODE` env var)
 
@@ -568,9 +569,29 @@ Two-tier artisan discovery system for 13,566 artisans (12,447 smiths + 1,119 tos
 | Slug utils | `src/lib/artisan/slugs.ts` |
 | **Full documentation** | `docs/ARTIST_FEATURE.md` (includes display name rules + how to fix) |
 
+### Collection Manager (`/collection`)
+
+Personal item cataloging for authenticated users. Four entry paths: manual, artisan-linked, Yuhinkai catalog lookup, and "I Own This" from browse. Client-side image resize + Supabase Storage upload.
+
+**Key files:**
+| Component | Location |
+|-----------|----------|
+| Collection page | `src/app/collection/page.tsx` + `CollectionPageClient.tsx` |
+| Components (9) | `src/components/collection/` (Card, Grid, QuickView, Form, ImageUpload, etc.) |
+| API routes (6) | `src/app/api/collection/` (items, images, catalog-search, artisan-search, folders) |
+| Context | `src/contexts/CollectionQuickViewContext.tsx` |
+| Utilities | `src/lib/collection/catalogMapping.ts`, `listingImport.ts` |
+| Types | `src/types/collection.ts` |
+| DB migration | `supabase/migrations/057_collection_tables.sql` |
+| Storage bucket | `collection-images` (Supabase Storage, public) |
+| "I Own This" button | `src/components/listing/QuickViewContent.tsx` (line ~375) |
+| Nav links | `src/components/layout/Header.tsx`, `MobileNavDrawer.tsx` (auth-gated) |
+| **Full documentation** | `docs/COLLECTION_MANAGER.md` |
+
 ### Documentation
 
 For detailed implementation docs, see:
+- `docs/COLLECTION_MANAGER.md` - **Collection Manager** (cataloging, Yuhinkai lookup, image upload, all file paths)
 - `docs/ARTIST_FEATURE.md` - **Comprehensive artist feature documentation** (directory + profiles + admin badges)
 - `docs/SUBSCRIPTION_HANDOFF.md` - Current status and changelog
 - `docs/PRO_TIER_IMPLEMENTATION.md` - Implementation checklist

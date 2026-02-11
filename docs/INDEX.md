@@ -28,6 +28,7 @@
 | [TESTING.md](./TESTING.md) | Test suite docs, concordance tests, CI/CD integration |
 | [USER_ENGAGEMENT_ANALYTICS.md](./USER_ENGAGEMENT_ANALYTICS.md) | Admin engagement dashboard - user growth, funnel, search analytics |
 | [YUHINKAI_REGISTRY_VISION.md](./YUHINKAI_REGISTRY_VISION.md) | **Strategic vision** - Yuhinkai as canonical nihonto registry, work tracking, price index |
+| [COLLECTION_MANAGER.md](./COLLECTION_MANAGER.md) | **Collection Manager** — personal cataloging, Yuhinkai lookup, "I Own This" import, image upload, all file paths |
 | [ARTIST_FEATURE.md](./ARTIST_FEATURE.md) | **Comprehensive artist feature docs** — directory, profiles, admin badges, data model, all file paths |
 | [ARTISAN_TOOLTIP_VERIFICATION.md](./ARTISAN_TOOLTIP_VERIFICATION.md) | Admin QA tool - click artisan badges for details & verification |
 | [SYNC_ELITE_FACTOR_API.md](./SYNC_ELITE_FACTOR_API.md) | Webhook API for syncing elite_factor from Yuhinkai to listings |
@@ -264,6 +265,17 @@
 3. Check `Oshi-scrapper/models/yuhinkai.py` - Yuhinkai data models
 4. See database schema in vision doc for `works`, `work_appearances`, `price_index` tables
 
+### "I need to work on the collection manager"
+1. **Start here:** Read [COLLECTION_MANAGER.md](./COLLECTION_MANAGER.md) - Comprehensive docs with every file path, API, data model
+2. Check `src/app/collection/` - Collection page (server + client)
+3. Check `src/components/collection/` - All 9 UI components
+4. Check `src/app/api/collection/` - 6 API route files (items, images, catalog-search, artisan-search, folders)
+5. Check `src/contexts/CollectionQuickViewContext.tsx` - QuickView state management
+6. Check `src/lib/collection/` - Catalog mapping + listing import utilities
+7. Check `src/types/collection.ts` - All type definitions
+8. Check `supabase/migrations/057_collection_tables.sql` - DB schema, RLS, indexes
+9. Storage bucket: `collection-images` in Supabase (public, 5MB limit)
+
 ### "I need to work on the artist feature (directory, profiles, badges)"
 1. **Start here:** Read [ARTIST_FEATURE.md](./ARTIST_FEATURE.md) - Comprehensive docs with every file path, type, data flow
 2. Check `src/app/artists/` - Directory page + profile page
@@ -335,4 +347,5 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for:
 | Testing | [TESTING.md](./TESTING.md) - Unit, concordance, integration tests |
 | SEO & Structured Data | [SEO.md](./SEO.md) - sitemap, robots.txt, JSON-LD schemas |
 | Artisan tooltip & QA | [ARTISAN_TOOLTIP_VERIFICATION.md](./ARTISAN_TOOLTIP_VERIFICATION.md) - Admin verification tool |
+| Collection manager | [COLLECTION_MANAGER.md](./COLLECTION_MANAGER.md) - Personal cataloging, Yuhinkai lookup, image upload |
 | Deployment | [CLAUDE.md](../CLAUDE.md#deployment) |
