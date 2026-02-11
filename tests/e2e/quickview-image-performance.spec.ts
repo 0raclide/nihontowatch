@@ -139,23 +139,25 @@ test.describe('QuickView Image Performance', () => {
     await page.locator('[data-testid="listing-card"]').first().click();
     await page.waitForSelector('[data-testid="quickview-modal"]', { timeout: 5000 });
 
-    // Check initial counter
-    const counter = page.locator('[data-testid="listing-counter"]');
-    await expect(counter).toContainText('1 /');
+    // Get initial listing from URL
+    const getListingParam = () => new URL(page.url()).searchParams.get('listing');
+    const initialListing = getListingParam();
 
     // Navigate to next
     await page.keyboard.press('j');
     await page.waitForTimeout(500);
 
-    // Counter should update
-    await expect(counter).toContainText('2 /');
+    // URL listing param should change
+    const afterNext = getListingParam();
+    expect(afterNext).not.toBe(initialListing);
 
     // Navigate back
     await page.keyboard.press('k');
     await page.waitForTimeout(500);
 
-    // Counter should go back
-    await expect(counter).toContainText('1 /');
+    // Should return to original
+    const afterBack = getListingParam();
+    expect(afterBack).toBe(initialListing);
   });
 
   test('images display correctly on mobile layout', async ({ page }) => {

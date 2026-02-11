@@ -231,32 +231,31 @@ test.describe('Desktop QuickView', () => {
     // Check if navigation is available
     const nextButton = page.locator('[data-testid="nav-next"]');
     const prevButton = page.locator('[data-testid="nav-previous"]');
-    const counter = page.locator('[data-testid="listing-counter"]');
 
     // If navigation buttons exist
     const hasNavigation = (await nextButton.count()) > 0;
 
     if (hasNavigation) {
-      // Get initial counter text
-      const initialCounter = await counter.textContent();
-      console.log(`Initial position: ${initialCounter}`);
+      // Get initial URL listing param
+      const initialParam = await getUrlListingParam(page);
+      console.log(`Initial listing: ${initialParam}`);
 
       // Click next
       await nextButton.click();
       await page.waitForTimeout(ANIMATION_WAIT);
 
-      // Verify counter changed
-      const afterNextCounter = await counter.textContent();
-      expect(afterNextCounter).not.toBe(initialCounter);
-      console.log(`After next: ${afterNextCounter}`);
+      // Verify listing changed via URL
+      const afterNextParam = await getUrlListingParam(page);
+      expect(afterNextParam).not.toBe(initialParam);
+      console.log(`After next: ${afterNextParam}`);
 
       // Click previous
       await prevButton.click();
       await page.waitForTimeout(ANIMATION_WAIT);
 
-      // Verify counter returned to original (or wrapped)
-      const afterPrevCounter = await counter.textContent();
-      console.log(`After previous: ${afterPrevCounter}`);
+      // Verify navigation returned
+      const afterPrevParam = await getUrlListingParam(page);
+      console.log(`After previous: ${afterPrevParam}`);
 
       console.log('Navigation arrows work correctly');
     } else {
@@ -268,27 +267,27 @@ test.describe('Desktop QuickView', () => {
     await openQuickView(page, 0);
     await verifyModalOpen(page);
 
-    const counter = page.locator('[data-testid="listing-counter"]');
-    const hasNavigation = (await counter.count()) > 0;
+    const nextButton = page.locator('[data-testid="nav-next"]');
+    const hasNavigation = (await nextButton.count()) > 0;
 
     if (hasNavigation) {
-      const initialCounter = await counter.textContent();
-      console.log(`Initial position: ${initialCounter}`);
+      const initialParam = await getUrlListingParam(page);
+      console.log(`Initial listing: ${initialParam}`);
 
       // Press J for next
       await page.keyboard.press('j');
       await page.waitForTimeout(ANIMATION_WAIT);
-      const afterJCounter = await counter.textContent();
-      console.log(`After J key: ${afterJCounter}`);
+      const afterJParam = await getUrlListingParam(page);
+      console.log(`After J key: ${afterJParam}`);
 
       // Press K for previous
       await page.keyboard.press('k');
       await page.waitForTimeout(ANIMATION_WAIT);
-      const afterKCounter = await counter.textContent();
-      console.log(`After K key: ${afterKCounter}`);
+      const afterKParam = await getUrlListingParam(page);
+      console.log(`After K key: ${afterKParam}`);
 
       // Verify navigation occurred
-      expect(afterJCounter).not.toBe(initialCounter);
+      expect(afterJParam).not.toBe(initialParam);
 
       console.log('Keyboard navigation (J/K) works correctly');
     } else {

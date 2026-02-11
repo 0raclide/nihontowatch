@@ -426,12 +426,6 @@ export function QuickView() {
                 </svg>
               </button>
 
-              {/* Listing counter */}
-              <div data-testid="listing-counter" className="absolute bottom-3 left-2 z-20 px-2 py-1 rounded bg-ink/60 backdrop-blur-sm">
-                <span className="text-[11px] text-white font-medium tabular-nums">
-                  {currentIndex + 1} / {listings.length}
-                </span>
-              </div>
             </>
           )}
         </div>
