@@ -15,6 +15,7 @@ import {
   getDenraiGrouped,
   getArtisanDistributions,
   getArtisanHeroImage,
+  getPublishedCatalogueEntries,
 } from '@/lib/supabase/yuhinkai';
 import { createServiceClient } from '@/lib/supabase/server';
 import { generateBreadcrumbJsonLd, jsonLdScriptProps } from '@/lib/seo/jsonLd';
@@ -44,7 +45,7 @@ async function getArtistData(code: string): Promise<ArtisanPageResponse | null> 
   const eliteFactor = entity.elite_factor ?? 0;
   const slug = generateArtisanSlug(entity.name_romaji, entityCode);
 
-  const [profile, students, related, elitePercentile, tokoTaikanPercentile, teacherStub, denraiResult, heroImage] =
+  const [profile, students, related, elitePercentile, tokoTaikanPercentile, teacherStub, denraiResult, heroImage, catalogueEntries] =
     await Promise.all([
       getArtistProfile(entityCode),
       getStudents(entityCode, entity.name_romaji),
@@ -56,6 +57,7 @@ async function getArtistData(code: string): Promise<ArtisanPageResponse | null> 
       entity.teacher ? resolveTeacher(entity.teacher) : Promise.resolve(null),
       getDenraiForArtisan(entityCode, entityType),
       getArtisanHeroImage(entityCode, entityType),
+      getPublishedCatalogueEntries(entityCode, entityType),
     ]);
 
   // Compute grouped denrai from precomputed result (no extra DB queries)
@@ -172,6 +174,7 @@ async function getArtistData(code: string): Promise<ArtisanPageResponse | null> 
     denrai: denraiResult.owners,
     denraiGrouped,
     heroImage,
+    catalogueEntries: catalogueEntries.length > 0 ? catalogueEntries : undefined,
   };
 }
 

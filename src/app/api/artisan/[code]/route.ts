@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import { generateArtisanSlug } from '@/lib/artisan/slugs';
+import type { CatalogueEntry } from '@/lib/supabase/yuhinkai';
 
 export const revalidate = 0;
 export const dynamic = 'force-dynamic';
@@ -134,6 +135,7 @@ export interface ArtisanPageResponse {
     formType: string | null;
     imageType: string;
   } | null;
+  catalogueEntries?: CatalogueEntry[];
 }
 
 /**
