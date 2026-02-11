@@ -42,8 +42,10 @@ vi.mock('@/lib/images', () => ({
   getAllImages: (listing: { images?: string[] | null; stored_images?: string[] | null }) =>
     listing.stored_images?.length ? listing.stored_images : (listing.images || []),
   getCachedValidation: () => undefined,
-  setCachedValidation: () => {},
+  isRenderFailed: () => false,
+  setRenderFailed: () => {},
   dealerDoesNotPublishImages: () => false,
+  getPlaceholderKanji: (itemType: string | null) => itemType === 'tsuba' ? '鍔' : '刀',
 }));
 
 // We DON'T mock newListing - we want to test the real integration
