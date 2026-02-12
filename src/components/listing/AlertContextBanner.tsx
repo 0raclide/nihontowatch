@@ -20,12 +20,20 @@ export function AlertContextBanner() {
   const { isOpen, currentIndex, listings } = useQuickView();
   const [alertContext, setAlertContext] = useState<AlertContext | null>(null);
 
-  // Read alert context from sessionStorage on mount
+  // Read alert context from sessionStorage on mount.
+  // Only use it if the URL still has multi-listing params — prevents stale
+  // sessionStorage from showing the banner during normal browsing (e.g., if
+  // the user hard-navigated away while QuickView was open from an alert link).
   useEffect(() => {
     try {
       const stored = sessionStorage.getItem('quickview_alert_context');
       if (stored) {
-        setAlertContext(JSON.parse(stored));
+        const url = new URL(window.location.href);
+        if (url.searchParams.has('listings') || url.searchParams.has('alert_search')) {
+          setAlertContext(JSON.parse(stored));
+        } else {
+          sessionStorage.removeItem('quickview_alert_context');
+        }
       }
     } catch {
       // sessionStorage unavailable
