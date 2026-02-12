@@ -78,6 +78,13 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
   // Cooldown to prevent immediate re-opening after close
   const closeCooldown = useRef(false);
 
+  // Ref for current index — avoids stale closures in async callbacks
+  const currentIndexRef = useRef(-1);
+  currentIndexRef.current = currentIndex;
+
+  // Guard: when refreshCurrentListing is active, suppress fetchFullListing overwrites
+  const refreshInFlightRef = useRef(false);
+
   // Update URL synchronously using history API (no React re-renders)
   const updateUrl = useCallback((listingId: number | null) => {
     if (typeof window === 'undefined') return;
@@ -146,7 +153,7 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
     // Fetch full listing data (with enrichment) asynchronously
     // This ensures YuhinkaiEnrichmentSection has the data it needs
     fetchFullListing(listing.id).then((fullListing) => {
-      if (fullListing) {
+      if (fullListing && !refreshInFlightRef.current) {
         setCurrentListing(fullListing);
         // Also update in listings array if present
         if (index !== -1) {
@@ -192,7 +199,7 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
 
     // Fetch full listing data (with enrichment) asynchronously
     fetchFullListing(nextListing.id).then((fullListing) => {
-      if (fullListing) {
+      if (fullListing && !refreshInFlightRef.current) {
         setCurrentListing(fullListing);
         setListingsState((prev) => {
           const newListings = [...prev];
@@ -217,7 +224,7 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
 
     // Fetch full listing data (with enrichment) asynchronously
     fetchFullListing(prevListing.id).then((fullListing) => {
-      if (fullListing) {
+      if (fullListing && !refreshInFlightRef.current) {
         setCurrentListing(fullListing);
         setListingsState((prev) => {
           const newListings = [...prev];
@@ -246,6 +253,9 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
   const refreshCurrentListing = useCallback(async (optimisticFields?: Partial<Listing>) => {
     if (!currentListing) return;
 
+    // Prevent concurrent fetchFullListing from overwriting our data
+    refreshInFlightRef.current = true;
+
     // Optimistic update: immediately apply fields while we fetch full listing
     if (optimisticFields) {
       const optimisticListing = {
@@ -254,11 +264,13 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
       };
       setCurrentListing(optimisticListing);
 
-      // Also update in listings array for consistency
-      if (currentIndex !== -1 && listings.length > 0) {
+      // Also update in listings array for consistency (use functional update to avoid stale closure)
+      const idx = currentIndexRef.current;
+      if (idx !== -1) {
         setListingsState(prev => {
+          if (idx >= prev.length) return prev;
           const newListings = [...prev];
-          newListings[currentIndex] = optimisticListing;
+          newListings[idx] = optimisticListing;
           return newListings;
         });
       }
@@ -279,22 +291,35 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
       const data = await response.json();
       const refreshedListing = data.listing as Listing;
 
+      if (!refreshedListing) {
+        console.error('Refresh returned no listing data');
+        return;
+      }
+
       // Update current listing state
       setCurrentListing(refreshedListing);
 
       // Also update the listing in the listings array if present
-      if (currentIndex !== -1 && listings.length > 0) {
-        const newListings = [...listings];
-        newListings[currentIndex] = refreshedListing;
-        setListingsState(newListings);
+      // Use ref for current index to avoid stale closure, and functional update
+      // for listings to avoid overwriting concurrent setListings() calls
+      const idx = currentIndexRef.current;
+      if (idx !== -1) {
+        setListingsState(prev => {
+          if (idx >= prev.length) return prev;
+          const newListings = [...prev];
+          newListings[idx] = refreshedListing;
+          return newListings;
+        });
       }
 
       // Notify any listeners (e.g. ArtisanListings) that a listing was refreshed
       window.dispatchEvent(new CustomEvent('listing-refreshed', { detail: refreshedListing }));
     } catch (error) {
       console.error('Error refreshing listing:', error);
+    } finally {
+      refreshInFlightRef.current = false;
     }
-  }, [currentListing, currentIndex, listings]);
+  }, [currentListing]);
 
   // Recalculate currentIndex when listings change while a listing is displayed.
   // This handles the race condition where setListings() and openQuickView() are
