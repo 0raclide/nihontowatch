@@ -38,6 +38,8 @@
 
 | Document | Date | Summary |
 |----------|------|---------|
+| [SESSION_20260212_ARTISAN_NAME_SEARCH.md](./SESSION_20260212_ARTISAN_NAME_SEARCH.md) | 2026-02-12 | **Artisan name resolution in search** — "Soshu Norishige" now finds artisan-matched listings (0→5 results), fixes saved search matcher count bug |
+| [SESSION_20260212_PRICE_SANITY_BUG010.md](./SESSION_20260212_PRICE_SANITY_BUG010.md) | 2026-02-12 | **LLM price extraction fix (BUG-010)** — Choshuya catalog numbers extracted as prices ($5 sword), 4-layer defense, 3 DB fixes, 37 new tests |
 | [SESSION_20260212_CERT_FALSE_POSITIVE_FIX.md](./SESSION_20260212_CERT_FALSE_POSITIVE_FIX.md) | 2026-02-12 | **Cert false positive fix** — Related Products text bleed (listing 54248 fake Masamune as Tokuju), 5-layer defense, 3 DB fixes, 12 regression tests |
 | [SESSION_20260210_DENRAI_DEDUP.md](./SESSION_20260210_DENRAI_DEDUP.md) | 2026-02-10 | **Denrai within-item dedup** — category-based rules (person trumps family), eliminates inflated provenance counts, -1 DB query |
 | [SESSION_20260209_ARTISAN_DISPLAY_NAMES.md](./SESSION_20260209_ARTISAN_DISPLAY_NAMES.md) | 2026-02-09 | **Artisan display names on badges** — server-side enrichment from Yuhinkai, `getArtisanNames()` batch lookup |
@@ -49,6 +51,7 @@
 
 | Document | Date | Issue |
 |----------|------|-------|
+| [SESSION_20260212_PRICE_SANITY_BUG010.md](./SESSION_20260212_PRICE_SANITY_BUG010.md) | 2026-02-12 | **BUG-010: LLM price extraction** — Choshuya catalog numbers mistaken for prices, 4-layer defense (LLM sanity, normalizer, prompt, frontend filter), 37 tests |
 | [CERT_EXTRACTION_BUGS.md](./CERT_EXTRACTION_BUGS.md) | Living doc | **Certification extraction bug tracker** — all cert false positives/negatives, patterns, exclusions, diagnostic queries |
 | [POSTMORTEM_STALE_REFRESH_SSL.md](./POSTMORTEM_STALE_REFRESH_SSL.md) | 2026-02-11 | **Nipponto SSL + circuit breaker** — 8/10 runs failed for 48h, SSL fix + per-dealer circuit breaker, 13 golden tests |
 | [POSTMORTEM_STALE_REFRESH_CRISIS.md](./POSTMORTEM_STALE_REFRESH_CRISIS.md) | 2026-02-11 | **Stale refresh throughput crisis** — 65% World Seiyudo false positives, Tier 3 queue never draining, 427 items corrected |
