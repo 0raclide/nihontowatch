@@ -3,6 +3,10 @@ import type { SavedSearchCriteria, Listing } from '@/types';
 import { normalizeSearchText, expandSearchAliases } from '@/lib/search';
 import { parseNumericFilters } from '@/lib/search/numericFilters';
 import { parseSemanticQuery } from '@/lib/search/semanticQueryParser';
+import { resolveArtisanCodesFromText } from '@/lib/supabase/yuhinkai';
+
+// Artisan code pattern (same as browse API) — detects codes like MAS590, NS-Ko-Bizen, etc.
+const ARTISAN_CODE_PATTERN = /^[A-Z]{1,4}\d{1,5}(?:[.\-]\d)?[A-Za-z]?$|^NS-[A-Za-z]+(?:-[A-Za-z]+)*$|^NC-[A-Z]+\d+[A-Za-z]?$|^tmp[A-Z]{1,4}\d+[A-Za-z]?$|^[A-Z]+(?:_[A-Z]+)+\d+$/i;
 
 // Item type categories
 const NIHONTO_TYPES = [
@@ -203,12 +207,32 @@ export async function findMatchingListings(
         'mei_type',
       ];
 
-      for (const word of textWords) {
-        const expandedTerms = expandSearchAliases(word).map(normalizeSearchText);
-        const conditions = expandedTerms.flatMap((term) =>
-          searchFields.map((field) => `${field}.ilike.%${term}%`)
+      // Fix A: Detect artisan codes (e.g., "MAS590") and search artisan_id directly
+      const potentialArtisanCode = textWords.find(w => ARTISAN_CODE_PATTERN.test(w));
+      if (potentialArtisanCode) {
+        query = query.ilike('artisan_id', `%${potentialArtisanCode}%`);
+      }
+
+      // Fix B: Resolve artisan names to codes via Yuhinkai
+      // e.g., "norishige" → [NOR312, NOR567] so artisan-matched listings are found
+      const nonCodeWords = potentialArtisanCode
+        ? textWords.filter(w => w !== potentialArtisanCode)
+        : textWords;
+
+      if (nonCodeWords.length > 0) {
+        const artisanCodes = await resolveArtisanCodesFromText(
+          nonCodeWords.map(w => normalizeSearchText(w)).filter(w => w.length >= 2)
         );
-        query = query.or(conditions.join(','));
+        const artisanConditions = artisanCodes.map(code => `artisan_id.eq.${code}`);
+
+        for (const word of nonCodeWords) {
+          const expandedTerms = expandSearchAliases(word).map(normalizeSearchText);
+          const conditions = expandedTerms.flatMap((term) =>
+            searchFields.map((field) => `${field}.ilike.%${term}%`)
+          );
+          // Add artisan_id conditions alongside field ILIKEs
+          query = query.or([...conditions, ...artisanConditions].join(','));
+        }
       }
     }
   }
@@ -319,11 +343,52 @@ export async function countMatchingListings(
       query = query.in('signature_status', extractedFilters.signatureStatuses);
     }
 
-    // Parse and apply numeric filters
+    // Parse and apply numeric filters + text search
     const remainingQuery = remainingTerms.join(' ');
-    const { filters } = parseNumericFilters(remainingQuery);
+    const { filters, textWords } = parseNumericFilters(remainingQuery);
     for (const { field, op, value } of filters) {
       query = query.filter(field, op, value);
+    }
+
+    // Fix C: Apply text search (was previously dropped, inflating counts)
+    if (textWords.length > 0) {
+      const searchFields = [
+        'title',
+        'description',
+        'smith',
+        'tosogu_maker',
+        'school',
+        'tosogu_school',
+        'province',
+        'era',
+        'mei_type',
+      ];
+
+      // Detect artisan codes
+      const potentialArtisanCode = textWords.find(w => ARTISAN_CODE_PATTERN.test(w));
+      if (potentialArtisanCode) {
+        query = query.ilike('artisan_id', `%${potentialArtisanCode}%`);
+      }
+
+      // Resolve artisan names to codes via Yuhinkai
+      const nonCodeWords = potentialArtisanCode
+        ? textWords.filter(w => w !== potentialArtisanCode)
+        : textWords;
+
+      if (nonCodeWords.length > 0) {
+        const artisanCodes = await resolveArtisanCodesFromText(
+          nonCodeWords.map(w => normalizeSearchText(w)).filter(w => w.length >= 2)
+        );
+        const artisanConditions = artisanCodes.map(code => `artisan_id.eq.${code}`);
+
+        for (const word of nonCodeWords) {
+          const expandedTerms = expandSearchAliases(word).map(normalizeSearchText);
+          const conditions = expandedTerms.flatMap((term) =>
+            searchFields.map((field) => `${field}.ilike.%${term}%`)
+          );
+          query = query.or([...conditions, ...artisanConditions].join(','));
+        }
+      }
     }
   }
 

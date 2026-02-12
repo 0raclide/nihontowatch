@@ -143,6 +143,66 @@ export async function getTosoguMaker(code: string): Promise<TosoguMaker | null> 
 }
 
 // =============================================================================
+// ARTISAN CODE RESOLUTION (for text search → artisan_id matching)
+// =============================================================================
+
+/**
+ * Resolve human-readable artisan names to Yuhinkai artisan codes.
+ *
+ * Given text words (e.g., ['norishige'] or ['rai', 'kunimitsu']), queries
+ * smith_entities and tosogu_makers for matching name_romaji, name_kanji, or school.
+ * Multiple words create AND logic — all words must match the same artisan.
+ *
+ * Used by browse API and saved search matcher to find artisan-matched listings
+ * where the smith/tosogu_maker field may be empty or kanji-only.
+ *
+ * Returns deduplicated artisan codes (e.g., ['NOR312', 'NOR567']).
+ * Returns empty array if Yuhinkai is not configured or no matches found.
+ */
+export async function resolveArtisanCodesFromText(textWords: string[]): Promise<string[]> {
+  if (!yuhinkaiConfigured || textWords.length === 0) return [];
+
+  try {
+    const [smithCodes, tosoguCodes] = await Promise.all([
+      // Search smith_entities
+      (async () => {
+        let query = yuhinkaiClient
+          .from('smith_entities')
+          .select('smith_id')
+          .eq('is_school_code', false);
+
+        for (const word of textWords) {
+          query = query.or(`name_romaji.ilike.%${word}%,name_kanji.ilike.%${word}%,school.ilike.%${word}%`);
+        }
+
+        const { data } = await query.limit(100);
+        return (data || []).map((r: { smith_id: string }) => r.smith_id);
+      })(),
+      // Search tosogu_makers
+      (async () => {
+        let query = yuhinkaiClient
+          .from('tosogu_makers')
+          .select('maker_id')
+          .eq('is_school_code', false);
+
+        for (const word of textWords) {
+          query = query.or(`name_romaji.ilike.%${word}%,name_kanji.ilike.%${word}%,school.ilike.%${word}%`);
+        }
+
+        const { data } = await query.limit(100);
+        return (data || []).map((r: { maker_id: string }) => r.maker_id);
+      })(),
+    ]);
+
+    // Deduplicate codes
+    return [...new Set([...smithCodes, ...tosoguCodes])];
+  } catch (error) {
+    console.error('[Yuhinkai] Error resolving artisan codes from text:', error);
+    return [];
+  }
+}
+
+// =============================================================================
 // BATCH NAME LOOKUP (for badge display names)
 // =============================================================================
 
@@ -1440,13 +1500,14 @@ export async function getPublishedCatalogueEntries(
   artisanCode: string,
   entityType: 'smith' | 'tosogu'
 ): Promise<CatalogueEntry[]> {
-  const codeColumn = entityType === 'smith' ? 'gold_smith_id' : 'gold_maker_id';
-
-  // 1. Get object UUIDs for this artisan
+  // Query BOTH gold_smith_id and gold_maker_id — an artisan's objects may span
+  // both columns (e.g. a tosogu maker with swords, or a smith with tsuba).
+  // The synthesize pipeline assigns the code to one column based on item form,
+  // so we need to check both to capture all attributed objects.
   const { data: goldRows, error: goldErr } = await yuhinkaiClient
     .from('gold_values')
     .select('object_uuid, gold_form_type')
-    .eq(codeColumn, artisanCode);
+    .or(`gold_smith_id.eq.${artisanCode},gold_maker_id.eq.${artisanCode}`);
 
   if (goldErr || !goldRows || goldRows.length === 0) return [];
 

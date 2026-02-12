@@ -5,7 +5,7 @@ import { detectUrlQuery } from '@/lib/search/urlDetection';
 import { parseNumericFilters } from '@/lib/search/numericFilters';
 import { parseSemanticQuery, PROVINCE_VARIANTS } from '@/lib/search/semanticQueryParser';
 import { CACHE, PAGINATION, LISTING_FILTERS } from '@/lib/constants';
-import { getArtisanNames } from '@/lib/supabase/yuhinkai';
+import { getArtisanNames, resolveArtisanCodesFromText } from '@/lib/supabase/yuhinkai';
 import { getArtisanDisplayName } from '@/lib/artisan/displayName';
 import { getUserSubscription, getDataDelayCutoff } from '@/lib/subscription/server';
 import { logger } from '@/lib/logger';
@@ -515,36 +515,61 @@ export async function GET(request: NextRequest) {
       // This prevents substring pollution (e.g., "rai" matching "grained")
       // Skip FTS if we already matched an artisan code (avoid zero results from FTS miss)
       if (textWords.length > 0 && !potentialArtisanCode) {
-        // Build FTS query parts for each word, expanding aliases with OR
-        const queryParts: string[] = [];
+        // Resolve artisan codes from Yuhinkai for name-based search
+        // e.g., "norishige" → [NOR312, NOR567] so artisan-matched listings are found
+        const artisanCodes = await resolveArtisanCodesFromText(
+          textWords.map(w => normalizeSearchText(w)).filter(w => w.length >= 2)
+        );
 
-        for (const word of textWords) {
-          // Get aliases for this word (e.g., 'koto' -> ['koto', 'kotou'])
-          const aliases = expandSearchAliases(word)
-            .map(normalizeSearchText)
-            .filter(term => term.length >= 2);
+        if (artisanCodes.length > 0) {
+          // Artisan codes found — use ILIKE on structured fields + artisan_id match
+          // Each word gets its own .or() call, creating AND across words
+          // A listing matches if for EVERY word, it matches either a field ILIKE or has a matching artisan_id
+          const artisanConditions = artisanCodes.map(code => `artisan_id.eq.${code}`);
 
-          if (aliases.length === 0) continue;
-
-          if (aliases.length === 1) {
-            // Single term - use prefix match
-            queryParts.push(`${aliases[0]}:*`);
-          } else {
-            // Multiple aliases - join with OR, wrap in parens
-            // e.g., (koto:* | kotou:*)
-            const orParts = aliases.map(a => `${a}:*`).join(' | ');
-            queryParts.push(`(${orParts})`);
+          for (const word of textWords) {
+            const expandedTerms = expandSearchAliases(word).map(normalizeSearchText);
+            const fieldConditions = expandedTerms.flatMap(term => [
+              `title.ilike.%${term}%`,
+              `smith.ilike.%${term}%`,
+              `tosogu_maker.ilike.%${term}%`,
+              `school.ilike.%${term}%`,
+              `tosogu_school.ilike.%${term}%`,
+            ]);
+            query = query.or([...fieldConditions, ...artisanConditions].join(','));
           }
-        }
+        } else {
+          // No artisan match — use existing FTS path
+          const queryParts: string[] = [];
 
-        if (queryParts.length > 0) {
-          // Join all word groups with AND
-          // e.g., "(koto:* | kotou:*) & tanto:*"
-          const tsquery = queryParts.join(' & ');
+          for (const word of textWords) {
+            // Get aliases for this word (e.g., 'koto' -> ['koto', 'kotou'])
+            const aliases = expandSearchAliases(word)
+              .map(normalizeSearchText)
+              .filter(term => term.length >= 2);
 
-          query = query.textSearch('search_vector', tsquery, {
-            config: 'simple',  // 'simple' config for Japanese romanization (no stemming)
-          });
+            if (aliases.length === 0) continue;
+
+            if (aliases.length === 1) {
+              // Single term - use prefix match
+              queryParts.push(`${aliases[0]}:*`);
+            } else {
+              // Multiple aliases - join with OR, wrap in parens
+              // e.g., (koto:* | kotou:*)
+              const orParts = aliases.map(a => `${a}:*`).join(' | ');
+              queryParts.push(`(${orParts})`);
+            }
+          }
+
+          if (queryParts.length > 0) {
+            // Join all word groups with AND
+            // e.g., "(koto:* | kotou:*) & tanto:*"
+            const tsquery = queryParts.join(' & ');
+
+            query = query.textSearch('search_vector', tsquery, {
+              config: 'simple',  // 'simple' config for Japanese romanization (no stemming)
+            });
+          }
         }
       }
     }
