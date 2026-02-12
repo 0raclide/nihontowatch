@@ -194,9 +194,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json(response);
   } catch (error) {
     logger.logError('Inquiry API error', error);
-    const errorMessage = error instanceof Error ? error.message : String(error);
     return NextResponse.json(
-      { error: `Failed to generate inquiry email: ${errorMessage}` },
+      { error: 'Failed to generate inquiry email. Please try again later.' },
       { status: 500 }
     );
   }

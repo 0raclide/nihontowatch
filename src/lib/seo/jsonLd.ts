@@ -389,16 +389,22 @@ export function generateArtistDirectoryJsonLd(
 // =============================================================================
 
 /**
- * Serialize JSON-LD object to script tag content
+ * Serialize JSON-LD object to script tag content.
+ * Escapes HTML-special characters to prevent XSS via </script> injection.
  */
 export function jsonLdScriptProps(jsonLd: object): {
   type: 'application/ld+json';
   dangerouslySetInnerHTML: { __html: string };
 } {
+  const serialized = JSON.stringify(jsonLd)
+    .replace(/</g, '\\u003c')
+    .replace(/>/g, '\\u003e')
+    .replace(/&/g, '\\u0026');
+
   return {
     type: 'application/ld+json',
     dangerouslySetInnerHTML: {
-      __html: JSON.stringify(jsonLd),
+      __html: serialized,
     },
   };
 }
