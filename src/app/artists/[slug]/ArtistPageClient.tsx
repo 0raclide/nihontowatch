@@ -115,7 +115,7 @@ function StatsBar({ data, availableCount }: { data: ArtisanPageResponse; availab
     items.push({ label: 'Jūyō', value: certifications.juyo_count.toString() });
   }
   if (availableCount !== null && availableCount > 0) {
-    items.push({ label: 'Available Now', value: availableCount.toString(), highlight: true });
+    items.push({ label: 'On the Market', value: availableCount.toString(), highlight: true });
   }
 
   if (items.length === 0) return null;
