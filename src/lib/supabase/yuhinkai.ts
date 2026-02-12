@@ -563,7 +563,8 @@ export async function getArtistsForDirectory(
 
   const safeLimit = Math.min(Math.max(limit, 1), 100);
   const offset = (Math.max(page, 1) - 1) * safeLimit;
-  const sortCol = sort === 'name' ? 'name_romaji' : (sort === 'for_sale' ? 'elite_factor' : sort);
+  // provenance_factor column requires DB migration — fall back to elite_factor until applied
+  const sortCol = sort === 'name' ? 'name_romaji' : (sort === 'for_sale' || sort === 'provenance_factor' ? 'elite_factor' : sort);
 
   const table = type === 'tosogu' ? 'tosogu_makers' : 'smith_entities';
   const idCol = type === 'tosogu' ? 'maker_id' : 'smith_id';
@@ -571,7 +572,7 @@ export async function getArtistsForDirectory(
 
   let query = yuhinkaiClient
     .from(table)
-    .select(`${idCol}, name_romaji, name_kanji, school, province, era, kokuho_count, jubun_count, jubi_count, gyobutsu_count, tokuju_count, juyo_count, total_items, elite_factor, provenance_factor, is_school_code`, { count: 'exact' });
+    .select(`${idCol}, name_romaji, name_kanji, school, province, era, kokuho_count, jubun_count, jubi_count, gyobutsu_count, tokuju_count, juyo_count, total_items, elite_factor, is_school_code`, { count: 'exact' });
 
   if (notable) query = query.gt('total_items', 0);
   if (school) query = query.eq('school', school);
@@ -618,7 +619,7 @@ export async function getArtistsForDirectory(
     juyo_count: (row.juyo_count as number) || 0,
     total_items: (row.total_items as number) || 0,
     elite_factor: (row.elite_factor as number) || 0,
-    provenance_factor: (row.provenance_factor as number) ?? null,
+    provenance_factor: null, // Column added by migration 288 — null until applied
     is_school_code: (row.is_school_code as boolean) || false,
   }));
 
@@ -652,7 +653,7 @@ export async function getFilteredArtistsByCodes(
     const batch = codes.slice(i, i + BATCH_SIZE);
     let query = yuhinkaiClient
       .from(table)
-      .select(`${idCol}, name_romaji, name_kanji, school, province, era, kokuho_count, jubun_count, jubi_count, gyobutsu_count, tokuju_count, juyo_count, total_items, elite_factor, provenance_factor, is_school_code`)
+      .select(`${idCol}, name_romaji, name_kanji, school, province, era, kokuho_count, jubun_count, jubi_count, gyobutsu_count, tokuju_count, juyo_count, total_items, elite_factor, is_school_code`)
       .in(idCol, batch);
 
     if (filters.notable !== false) query = query.gt('total_items', 0);
@@ -694,7 +695,7 @@ export async function getFilteredArtistsByCodes(
         juyo_count: (row.juyo_count as number) || 0,
         total_items: (row.total_items as number) || 0,
         elite_factor: (row.elite_factor as number) || 0,
-        provenance_factor: (row.provenance_factor as number) ?? null,
+        provenance_factor: null, // Column added by migration 288 — null until applied
         is_school_code: (row.is_school_code as boolean) || false,
       });
     }
