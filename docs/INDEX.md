@@ -38,6 +38,7 @@
 
 | Document | Date | Summary |
 |----------|------|---------|
+| [SESSION_20260212_CATALOGUE_PUBLICATION_BUG.md](./SESSION_20260212_CATALOGUE_PUBLICATION_BUG.md) | 2026-02-12 | **Catalogue publication invisible on artist page** — HIT041 dual-column mismatch (tosogu maker with sword objects), OR query fix, force-dynamic artist pages |
 | [SESSION_20260212_ARTISAN_NAME_SEARCH.md](./SESSION_20260212_ARTISAN_NAME_SEARCH.md) | 2026-02-12 | **Artisan name resolution in search** — "Soshu Norishige" now finds artisan-matched listings (0→5 results), fixes saved search matcher count bug |
 | [SESSION_20260212_PRICE_SANITY_BUG010.md](./SESSION_20260212_PRICE_SANITY_BUG010.md) | 2026-02-12 | **LLM price extraction fix (BUG-010)** — Choshuya catalog numbers extracted as prices ($5 sword), 4-layer defense, 3 DB fixes, 37 new tests |
 | [SESSION_20260212_CERT_FALSE_POSITIVE_FIX.md](./SESSION_20260212_CERT_FALSE_POSITIVE_FIX.md) | 2026-02-12 | **Cert false positive fix** — Related Products text bleed (listing 54248 fake Masamune as Tokuju), 5-layer defense, 3 DB fixes, 12 regression tests |
@@ -308,11 +309,12 @@
 ### "I need to work on the catalogue publication pipe"
 1. **Start here:** Read [CATALOGUE_PUBLICATION_PIPE.md](./CATALOGUE_PUBLICATION_PIPE.md) - Full cross-repo feature docs
 2. Check `src/lib/supabase/yuhinkai.ts` - `getPublishedCatalogueEntries()` query + `CatalogueEntry` types
-3. Check `src/app/artists/[slug]/page.tsx` - Data wiring (catalogueEntries in Promise.all)
+3. Check `src/app/artists/[slug]/page.tsx` - Data wiring (catalogueEntries in Promise.all, `force-dynamic`)
 4. Check `src/app/api/artisan/[code]/route.ts` - ArtisanPageResponse type extension
-5. Run `npm test -- cataloguePublications` - 11 unit tests
-6. **oshi-v2 side:** `src/app/api/catalogue/publish/route.ts` (API), `src/app/item/.../ItemDetailClient.tsx` (button)
-7. **Next step:** Build NihontoWatch artist page UI to render CatalogueEntry[]
+5. Check `src/components/artisan/CatalogueShowcase.tsx` - Display component (cover, photos, sayagaki, provenance)
+6. Run `npm test -- cataloguePublications` - 15 unit tests
+7. **oshi-v2 side:** `src/app/api/catalogue/publish/route.ts` (API), `src/app/item/.../ItemDetailClient.tsx` (button)
+8. **Known issue (fixed):** Query uses `.or()` on both `gold_smith_id` and `gold_maker_id` — see [SESSION_20260212_CATALOGUE_PUBLICATION_BUG.md](./SESSION_20260212_CATALOGUE_PUBLICATION_BUG.md)
 
 ### "I need to work on SEO"
 1. Read [SEO.md](./SEO.md) - Complete SEO documentation
