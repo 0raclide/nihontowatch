@@ -51,20 +51,30 @@ describe.skipIf(shouldSkip)('Initial Import Detection Trigger', () => {
   async function createTestListing(data: {
     dealer_id: number;
     first_seen_at?: string;
+    is_initial_import?: boolean;
   }) {
     const url = `${TEST_PREFIX}/${Date.now()}-${Math.random().toString(36).slice(2)}`;
     testUrls.push(url);
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const insertData: Record<string, any> = {
+      url,
+      dealer_id: data.dealer_id,
+      title: 'Test Listing',
+      price_value: 100000,
+      price_currency: 'JPY',
+      first_seen_at: data.first_seen_at || new Date().toISOString(),
+    };
+
+    // Only include is_initial_import when explicitly provided
+    // (tests the trigger's "respect explicit TRUE" behavior)
+    if (data.is_initial_import !== undefined) {
+      insertData.is_initial_import = data.is_initial_import;
+    }
+
     const { data: listing, error } = await supabase
       .from('listings')
-      .insert({
-        url,
-        dealer_id: data.dealer_id,
-        title: 'Test Listing',
-        price_value: 100000,
-        price_currency: 'JPY',
-        first_seen_at: data.first_seen_at || new Date().toISOString(),
-      })
+      .insert(insertData)
       .select('id, dealer_id, first_seen_at, is_initial_import')
       .single();
 
@@ -151,6 +161,92 @@ describe.skipIf(shouldSkip)('Initial Import Detection Trigger', () => {
       });
 
       expect(listing.is_initial_import).toBe(false);
+    });
+  });
+
+  describe('explicit is_initial_import override (migration 058)', () => {
+    it('should respect explicit is_initial_import=TRUE even when trigger would compute FALSE', async () => {
+      // For an established dealer, a listing with current timestamp would normally
+      // get is_initial_import=FALSE (well past the 24h baseline window).
+      // But if the caller explicitly passes TRUE, the trigger should respect it.
+      // This is the "scraper override" path for known bulk discoveries.
+      const baseline = await getDealerBaseline(1);
+
+      if (!baseline) {
+        console.log('Skipping: Dealer 1 has no baseline');
+        return;
+      }
+
+      const baselineDate = new Date(baseline);
+      const now = new Date();
+      const hoursSinceBaseline = (now.getTime() - baselineDate.getTime()) / (1000 * 60 * 60);
+
+      if (hoursSinceBaseline < 24) {
+        console.log('Skipping: Dealer 1 baseline is too recent');
+        return;
+      }
+
+      // Without explicit override: should be FALSE (existing behavior)
+      const normalListing = await createTestListing({
+        dealer_id: 1,
+      });
+      expect(normalListing.is_initial_import).toBe(false);
+
+      // With explicit override: should stay TRUE (new behavior)
+      const overriddenListing = await createTestListing({
+        dealer_id: 1,
+        is_initial_import: true,
+      });
+      expect(overriddenListing.is_initial_import).toBe(true);
+    });
+
+    it('should NOT override when is_initial_import=FALSE is passed explicitly', async () => {
+      // Passing FALSE explicitly should let the trigger compute normally.
+      // For an established dealer with a current timestamp, this means FALSE.
+      const baseline = await getDealerBaseline(1);
+
+      if (!baseline) {
+        console.log('Skipping: Dealer 1 has no baseline');
+        return;
+      }
+
+      const baselineDate = new Date(baseline);
+      const now = new Date();
+      const hoursSinceBaseline = (now.getTime() - baselineDate.getTime()) / (1000 * 60 * 60);
+
+      if (hoursSinceBaseline < 24) {
+        console.log('Skipping: Dealer 1 baseline is too recent');
+        return;
+      }
+
+      const listing = await createTestListing({
+        dealer_id: 1,
+        is_initial_import: false,
+      });
+
+      // Trigger computes FALSE for current timestamp on established dealer,
+      // so explicit FALSE has no visible effect — still FALSE
+      expect(listing.is_initial_import).toBe(false);
+    });
+
+    it('should still auto-detect initial import when no explicit value given', async () => {
+      // Verify the original trigger logic still works: a listing within 24h of
+      // baseline (without explicit override) should be auto-flagged as initial import
+      const baseline = await getDealerBaseline(1);
+
+      if (!baseline) {
+        console.log('Skipping: Dealer 1 has no baseline');
+        return;
+      }
+
+      const withinBaseline = new Date(new Date(baseline).getTime() + 6 * 60 * 60 * 1000);
+      const listing = await createTestListing({
+        dealer_id: 1,
+        first_seen_at: withinBaseline.toISOString(),
+        // No explicit is_initial_import — trigger should auto-compute TRUE
+      });
+
+      expect(listing.is_initial_import).toBe(true);
     });
   });
 
