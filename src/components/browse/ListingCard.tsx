@@ -507,7 +507,29 @@ export const ListingCard = memo(function ListingCard({
       || getArtisanName(listing.tosogu_maker, listing.tosogu_school, listing.title_en),
     itemType: normalizeItemType(listing.item_type),
     cleanedTitle: cleanTitle(listing.title, listing.smith, listing.tosogu_maker),
-    certInfo: listing.cert_type ? CERT_LABELS[listing.cert_type] : null,
+    certInfo: (() => {
+      if (!listing.cert_type) return null;
+      const info = CERT_LABELS[listing.cert_type];
+      if (!info) return null;
+      // Defense-in-depth: suppress cert badges where price/cert combination is implausible.
+      // A Tokuju under ¥5M or Juyo under ¥1M is almost certainly a false-positive extraction.
+      // Exception: if the cert appears in the title, it's almost certainly correct regardless
+      // of price (e.g. consignment sales, estate pieces).
+      const title = (listing.title ?? '') + ' ' + (listing.title_en ?? '');
+      const titleHasCert = /tokubetsu[- ]juyo|特別重要刀剣|特別重要刀装具/i.test(title)
+        || (info.tier === 'juyo' && /\bjuyo\b|重要刀剣|重要刀装具/i.test(title));
+      if (!titleHasCert) {
+        const price = listing.price_value;
+        const currency = listing.price_currency;
+        if (price && price > 0 && currency) {
+          const toJpy: Record<string, number> = { USD: 150, EUR: 160, GBP: 185, AUD: 95 };
+          const priceJpy = currency === 'JPY' ? price : price * (toJpy[currency] ?? 150);
+          if (info.tier === 'tokuju' && priceJpy < 5_000_000) return null;
+          if (info.tier === 'juyo' && priceJpy < 1_000_000) return null;
+        }
+      }
+      return info;
+    })(),
   }), [
     listing.id,
     listing.images,
@@ -520,6 +542,8 @@ export const ListingCard = memo(function ListingCard({
     listing.title_en,
     listing.item_type,
     listing.cert_type,
+    listing.price_value,
+    listing.price_currency,
   ]);
 
   // Derive thumbnail URL, skipping images known to be broken.
