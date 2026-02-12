@@ -360,30 +360,28 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
       {/* Sticky CTA Buttons */}
       <div className="px-4 py-3 lg:px-5 lg:py-4 bg-cream border-t border-border safe-area-bottom shrink-0">
         <div className="flex gap-2">
-          {/* Inquire Button — icon-only on mobile, full text on desktop */}
+          {/* Inquire Button — icon-only (panel is always narrow) */}
           <button
             onClick={handleInquire}
             data-testid="inquire-button"
             title="Inquire"
-            className="flex items-center justify-center gap-2 px-3 lg:px-4 py-3 text-[13px] lg:text-[14px] font-medium text-charcoal bg-linen hover:bg-hover border border-border rounded-lg transition-colors"
+            className="flex items-center justify-center px-3 py-3 text-[13px] font-medium text-charcoal bg-linen hover:bg-hover border border-border rounded-lg transition-colors"
           >
             <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
             </svg>
-            <span className="hidden lg:inline">Inquire</span>
           </button>
 
-          {/* I Own This Button — icon-only on mobile, full text on desktop */}
+          {/* I Own This Button — icon-only (panel is always narrow) */}
           {user && (
             <button
               onClick={handleIOwn}
               title="I Own This"
-              className="flex items-center justify-center gap-2 px-3 lg:px-4 py-3 text-[13px] lg:text-[14px] font-medium text-charcoal bg-linen hover:bg-hover border border-border rounded-lg transition-colors"
+              className="flex items-center justify-center px-3 py-3 text-[13px] font-medium text-charcoal bg-linen hover:bg-hover border border-border rounded-lg transition-colors"
             >
               <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
               </svg>
-              <span className="hidden lg:inline">I Own This</span>
             </button>
           )}
 
