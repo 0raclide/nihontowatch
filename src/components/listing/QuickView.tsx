@@ -1,11 +1,11 @@
 'use client';
 
 import { Suspense, useRef, useEffect, useState, useCallback, useMemo } from 'react';
-import Image from 'next/image';
 import { QuickViewModal } from './QuickViewModal';
 import { QuickViewContent } from './QuickViewContent';
 import { QuickViewMobileSheet } from './QuickViewMobileSheet';
 import { StudySetsumeiView } from './StudySetsumeiView';
+import { LazyImage } from '@/components/ui/LazyImage';
 import { useQuickView } from '@/contexts/QuickViewContext';
 import { useActivityTrackerOptional } from '@/lib/tracking/ActivityTracker';
 import { trackListingView } from '@/lib/tracking/viewTracker';
@@ -15,9 +15,6 @@ import { getAllImages, dealerDoesNotPublishImages, getCachedDimensions, getPlace
 import { useValidatedImages } from '@/hooks/useValidatedImages';
 import { useAuth } from '@/lib/auth/AuthContext';
 import type { ListingWithEnrichment } from '@/types';
-
-// Blur placeholder for lazy images
-const BLUR_PLACEHOLDER = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjVmNGYwIi8+PC9zdmc+';
 
 /**
  * QuickView with vertical scrolling image layout.
@@ -242,9 +239,10 @@ export function QuickView() {
                       onVisible={handleImageVisible}
                       isFirst={index === 0}
                       showScrollHint={index === 0 && images.length > 1 && !hasScrolled}
-                      listingTitle={currentListing.title}
+                      title={currentListing.title}
                       itemType={currentListing.item_type}
                       certType={currentListing.cert_type}
+                      cachedDimensions={getCachedDimensions(src)}
                     />
                   ))
                 )}
@@ -333,9 +331,10 @@ export function QuickView() {
                       onVisible={handleImageVisible}
                       isFirst={index === 0}
                       showScrollHint={index === 0 && images.length > 1 && !hasScrolled}
-                      listingTitle={currentListing.title}
+                      title={currentListing.title}
                       itemType={currentListing.item_type}
                       certType={currentListing.cert_type}
+                      cachedDimensions={getCachedDimensions(src)}
                     />
                   ))
                 )}
@@ -431,244 +430,6 @@ export function QuickView() {
         </div>
       </QuickViewModal>
     </Suspense>
-  );
-}
-
-/**
- * Lazy-loaded image component with intersection observer and retry logic.
- *
- * On error, it retries once with unoptimized=true (bypasses Next.js image optimization),
- * which can help when the optimization service has issues with certain images.
- */
-function LazyImage({
-  src,
-  index,
-  totalImages,
-  isVisible,
-  onVisible,
-  isFirst,
-  showScrollHint,
-  listingTitle,
-  itemType,
-  certType,
-}: {
-  src: string;
-  index: number;
-  totalImages: number;
-  isVisible: boolean;
-  onVisible: (index: number) => void;
-  isFirst: boolean;
-  showScrollHint: boolean;
-  listingTitle?: string;
-  itemType?: string;
-  certType?: string | null;
-}) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [loaded, setLoaded] = useState(false);
-  const [error, setError] = useState(false);
-  const [retryCount, setRetryCount] = useState(0);
-  const [useUnoptimized, setUseUnoptimized] = useState(false);
-
-  // Get cached dimensions from preload (if available)
-  // This allows us to set the correct aspect ratio before the image loads
-  const cachedDimensions = getCachedDimensions(src);
-  const hasKnownDimensions = !!cachedDimensions;
-
-  // Reset state when src changes
-  useEffect(() => {
-    setLoaded(false);
-    setError(false);
-    setRetryCount(0);
-    setUseUnoptimized(false);
-  }, [src]);
-
-  // Mobile Safari fix: onLoad doesn't always fire on initial page load from deep links.
-  // This effect checks if the image is already complete (cached) or uses a fallback timeout.
-  // See: https://bugs.webkit.org/show_bug.cgi?id=233419
-  useEffect(() => {
-    if (!isVisible || loaded || error) return;
-
-    // Check if the image is already complete (e.g., from browser cache)
-    // Need to wait a tick for the img element to be available in the DOM
-    const checkComplete = () => {
-      // Find the img element within our container (Next.js Image renders an img)
-      const container = ref.current;
-      if (!container) return false;
-
-      const img = container.querySelector('img');
-      if (img && img.complete && img.naturalWidth > 0) {
-        setLoaded(true);
-        return true;
-      }
-      return false;
-    };
-
-    // Check immediately after render
-    const immediateCheck = requestAnimationFrame(() => {
-      checkComplete();
-    });
-
-    // Fallback timeout for first image: if onLoad doesn't fire within 3 seconds,
-    // assume the image loaded (mobile Safari sometimes doesn't fire onLoad)
-    let fallbackTimeout: ReturnType<typeof setTimeout> | undefined;
-    if (isFirst) {
-      fallbackTimeout = setTimeout(() => {
-        if (!loaded && !error) {
-          // Double-check if image is complete before forcing loaded state
-          if (checkComplete()) return;
-
-          // Force loaded state - the image is likely rendered but onLoad didn't fire
-          // This is better UX than showing a perpetual loading spinner
-          console.warn(`[LazyImage] Fallback: forcing loaded state for image ${index} after timeout`);
-          setLoaded(true);
-        }
-      }, 3000);
-    }
-
-    return () => {
-      cancelAnimationFrame(immediateCheck);
-      if (fallbackTimeout) clearTimeout(fallbackTimeout);
-    };
-  }, [isVisible, loaded, error, isFirst, index]);
-
-  useEffect(() => {
-    const element = ref.current;
-    if (!element) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            onVisible(index);
-          }
-        });
-      },
-      {
-        rootMargin: '200px 0px', // Load images 200px before they enter viewport
-        threshold: 0.1
-      }
-    );
-
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, [index, onVisible]);
-
-  const handleError = () => {
-    // On first error, retry with unoptimized (bypasses Next.js image optimization)
-    if (retryCount === 0) {
-      setRetryCount(1);
-      setUseUnoptimized(true);
-      setLoaded(false);
-      // Don't set error yet, let the retry happen
-    } else {
-      // After retry failed, show error state
-      setError(true);
-    }
-  };
-
-  // Container style with dynamic aspect ratio when dimensions are known
-  const containerStyle = hasKnownDimensions
-    ? { aspectRatio: `${cachedDimensions.width} / ${cachedDimensions.height}` }
-    : undefined;
-
-  // When dimensions are unknown, use min-height as fallback
-  const containerClass = `relative bg-linen rounded overflow-hidden ${
-    !hasKnownDimensions && !loaded && !error && isVisible ? 'min-h-[300px]' : ''
-  }`;
-
-  return (
-    <div
-      ref={ref}
-      className={containerClass}
-      style={containerStyle}
-    >
-      {isVisible ? (
-        <>
-          {/* Loading skeleton - maintains height while image loads */}
-          {!loaded && !error && (
-            <div className={`absolute inset-0 img-loading ${!hasKnownDimensions ? 'min-h-[300px]' : ''}`} />
-          )}
-
-          {/* Error state */}
-          {error && (
-            <div className="aspect-[3/4] flex items-center justify-center bg-linen">
-              <span className="text-muted text-sm">Failed to load</span>
-            </div>
-          )}
-
-          {/* Actual image - Next.js Image for optimization (AVIF/WebP, sizing) */}
-          {/* Uses fill + object-contain when dimensions are known for stable layout */}
-          {!error && (
-            <Image
-              key={`${src}-${retryCount}`}
-              src={src}
-              alt={[
-                itemType,
-                certType,
-                listingTitle,
-                `Photo ${index + 1} of ${totalImages}`,
-              ].filter(Boolean).join(' - ')}
-              {...(hasKnownDimensions
-                ? { fill: true, className: `object-contain transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}` }
-                : {
-                    width: 800,
-                    height: 600,
-                    className: `w-full h-auto transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`,
-                    style: { width: '100%', height: 'auto' },
-                  }
-              )}
-              onLoad={() => setLoaded(true)}
-              onError={handleError}
-              loading={isFirst ? 'eager' : 'lazy'}
-              fetchPriority={isFirst ? 'high' : undefined}
-              placeholder="blur"
-              blurDataURL={BLUR_PLACEHOLDER}
-              sizes="(max-width: 1024px) 100vw, 60vw"
-              unoptimized={useUnoptimized}
-            />
-          )}
-
-          {/* Image position indicator - elegant pill */}
-          {loaded && totalImages > 1 && (
-            <div className="absolute bottom-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-ink/70 backdrop-blur-sm">
-              <span className="text-[11px] text-white/90 font-medium tabular-nums">
-                {index + 1}
-              </span>
-              <span className="text-[11px] text-white/50">/</span>
-              <span className="text-[11px] text-white/50 tabular-nums">
-                {totalImages}
-              </span>
-            </div>
-          )}
-
-          {/* Scroll hint on first image - subtle fade animation */}
-          {showScrollHint && loaded && (
-            <div className="absolute bottom-16 inset-x-0 flex justify-center pointer-events-none animate-pulse">
-              <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-ink/60 backdrop-blur-md">
-                <svg className="w-4 h-4 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 9l-7 7-7-7" />
-                </svg>
-                <span className="text-[12px] text-white/90 font-medium">
-                  {totalImages - 1} more photos
-                </span>
-              </div>
-            </div>
-          )}
-        </>
-      ) : (
-        // Placeholder before image enters viewport range
-        // Uses cached dimensions if available, otherwise falls back to 3:4
-        <div
-          className="bg-linen flex items-center justify-center"
-          style={hasKnownDimensions
-            ? { aspectRatio: `${cachedDimensions.width} / ${cachedDimensions.height}` }
-            : { aspectRatio: '3 / 4' }
-          }
-        >
-          <div className="w-8 h-8 border-2 border-border border-t-gold rounded-full animate-spin" />
-        </div>
-      )}
-    </div>
   );
 }
 

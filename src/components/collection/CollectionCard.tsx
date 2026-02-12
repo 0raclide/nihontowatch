@@ -5,60 +5,15 @@ import Image from 'next/image';
 import type { CollectionItem } from '@/types/collection';
 import { getPlaceholderKanji } from '@/lib/images';
 import { getArtisanDisplayName } from '@/lib/artisan/displayName';
+import { CERT_LABELS, STATUS_LABELS, CONDITION_LABELS, getCertTierClass, getItemTypeLabel, formatPrice } from '@/lib/collection/labels';
 
-// Cert label mapping (same as ListingCard)
-const CERT_LABELS: Record<string, { label: string; tier: 'tokuju' | 'jubi' | 'juyo' | 'tokuho' | 'hozon' }> = {
-  Tokuju: { label: 'Tokuju', tier: 'tokuju' },
-  tokuju: { label: 'Tokuju', tier: 'tokuju' },
-  'Tokubetsu Juyo': { label: 'Tokuju', tier: 'tokuju' },
-  'Juyo Bijutsuhin': { label: 'Jubi', tier: 'jubi' },
-  'Juyo Bunkazai': { label: 'JuBun', tier: 'jubi' },
-  Juyo: { label: 'Juyo', tier: 'juyo' },
-  juyo: { label: 'Juyo', tier: 'juyo' },
-  TokuHozon: { label: 'Tokuho', tier: 'tokuho' },
-  'Tokubetsu Hozon': { label: 'Tokuho', tier: 'tokuho' },
-  Hozon: { label: 'Hozon', tier: 'hozon' },
-  hozon: { label: 'Hozon', tier: 'hozon' },
-  Kokuho: { label: 'Kokuho', tier: 'tokuju' },
+// Card-specific status colors (presentation concern, not shared)
+const STATUS_COLORS: Record<string, string> = {
+  owned: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+  sold: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+  lent: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+  consignment: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
 };
-
-const STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  owned: { label: 'Owned', color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
-  sold: { label: 'Sold', color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
-  lent: { label: 'Lent', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
-  consignment: { label: 'Consignment', color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' },
-};
-
-const CONDITION_LABELS: Record<string, string> = {
-  mint: 'Mint',
-  excellent: 'Excellent',
-  good: 'Good',
-  fair: 'Fair',
-  project: 'Project',
-};
-
-// Item type display labels
-function getItemTypeLabel(itemType: string | null): string {
-  if (!itemType) return 'Item';
-  const labels: Record<string, string> = {
-    katana: 'Katana', wakizashi: 'Wakizashi', tanto: 'Tanto', tachi: 'Tachi',
-    naginata: 'Naginata', yari: 'Yari', ken: 'Ken', kodachi: 'Kodachi',
-    tsuba: 'Tsuba', kozuka: 'Kozuka', kogai: 'Kogai', menuki: 'Menuki',
-    'fuchi-kashira': 'Fuchi-Kashira', fuchi_kashira: 'Fuchi-Kashira',
-    koshirae: 'Koshirae', armor: 'Armor', helmet: 'Kabuto', tosogu: 'Tosogu',
-  };
-  return labels[itemType.toLowerCase()] || itemType.charAt(0).toUpperCase() + itemType.slice(1);
-}
-
-function formatPrice(value: number | null, currency: string | null): string {
-  if (!value) return '';
-  const curr = currency || 'JPY';
-  try {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: curr, maximumFractionDigits: 0 }).format(value);
-  } catch {
-    return `${curr} ${value.toLocaleString()}`;
-  }
-}
 
 interface CollectionCardProps {
   item: CollectionItem;
@@ -71,7 +26,8 @@ export const CollectionCard = memo(function CollectionCard({ item, onClick, onEd
   const [imageLoaded, setImageLoaded] = useState(false);
 
   const certInfo = item.cert_type ? CERT_LABELS[item.cert_type] : null;
-  const statusInfo = STATUS_LABELS[item.status] || STATUS_LABELS.owned;
+  const statusLabel = STATUS_LABELS[item.status] || 'Owned';
+  const statusColor = STATUS_COLORS[item.status] || STATUS_COLORS.owned;
   const itemTypeLabel = getItemTypeLabel(item.item_type);
   const displayName = item.artisan_display_name || (item.smith ? getArtisanDisplayName(item.smith, item.school) : null);
   const priceDisplay = formatPrice(item.current_value || item.price_paid, item.current_value_currency || item.price_paid_currency);
@@ -89,13 +45,7 @@ export const CollectionCard = memo(function CollectionCard({ item, onClick, onEd
     onEdit?.(item);
   }, [item, onEdit]);
 
-  const certTextColor = certInfo
-    ? certInfo.tier === 'tokuju' ? 'text-tokuju'
-      : certInfo.tier === 'jubi' ? 'text-jubi'
-      : certInfo.tier === 'juyo' ? 'text-juyo'
-      : certInfo.tier === 'tokuho' ? 'text-toku-hozon'
-      : 'text-hozon'
-    : '';
+  const certTextColor = certInfo ? getCertTierClass(certInfo.tier) : '';
 
   return (
     <div
@@ -118,7 +68,7 @@ export const CollectionCard = memo(function CollectionCard({ item, onClick, onEd
         <div className="flex items-center gap-1.5 shrink-0">
           {certInfo && (
             <span className={`text-[9px] uppercase tracking-wider font-bold ${certTextColor}`}>
-              {certInfo.label}
+              {certInfo.shortLabel}
             </span>
           )}
           {/* Edit button */}
@@ -163,8 +113,8 @@ export const CollectionCard = memo(function CollectionCard({ item, onClick, onEd
         {/* Status badge overlay */}
         {item.status !== 'owned' && (
           <div className="absolute top-2 left-2">
-            <span className={`text-[9px] uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded ${statusInfo.color}`}>
-              {statusInfo.label}
+            <span className={`text-[9px] uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded ${statusColor}`}>
+              {statusLabel}
             </span>
           </div>
         )}

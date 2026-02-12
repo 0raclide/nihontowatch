@@ -1,180 +1,13 @@
 'use client';
 
-import { Suspense, useRef, useEffect, useState, useCallback, useMemo } from 'react';
-import Image from 'next/image';
+import { useRef, useEffect, useState, useCallback, useMemo } from 'react';
 import { QuickViewModal } from '@/components/listing/QuickViewModal';
+import { LazyImage } from '@/components/ui/LazyImage';
 import { CollectionItemContent } from './CollectionItemContent';
 import { CollectionMobileSheet } from './CollectionMobileSheet';
 import { CollectionFormContent } from './CollectionFormContent';
 import { useCollectionQuickView } from '@/contexts/CollectionQuickViewContext';
 import { getPlaceholderKanji } from '@/lib/images';
-
-// Blur placeholder for lazy images (same as browse QuickView)
-const BLUR_PLACEHOLDER = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjVmNGYwIi8+PC9zdmc+';
-
-// =============================================================================
-// LazyImage — copied from browse QuickView, simplified for collection
-// =============================================================================
-
-function LazyImage({
-  src,
-  index,
-  totalImages,
-  isVisible,
-  onVisible,
-  isFirst,
-  showScrollHint,
-  itemTitle,
-  itemType,
-}: {
-  src: string;
-  index: number;
-  totalImages: number;
-  isVisible: boolean;
-  onVisible: (index: number) => void;
-  isFirst: boolean;
-  showScrollHint: boolean;
-  itemTitle?: string;
-  itemType?: string | null;
-}) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [loaded, setLoaded] = useState(false);
-  const [error, setError] = useState(false);
-  const [retryCount, setRetryCount] = useState(0);
-  const [useUnoptimized, setUseUnoptimized] = useState(false);
-
-  // Reset state when src changes
-  useEffect(() => {
-    setLoaded(false);
-    setError(false);
-    setRetryCount(0);
-    setUseUnoptimized(false);
-  }, [src]);
-
-  // Mobile Safari onLoad fix
-  useEffect(() => {
-    if (!isVisible || loaded || error) return;
-
-    const checkComplete = () => {
-      const container = ref.current;
-      if (!container) return false;
-      const img = container.querySelector('img');
-      if (img && img.complete && img.naturalWidth > 0) {
-        setLoaded(true);
-        return true;
-      }
-      return false;
-    };
-
-    const immediateCheck = requestAnimationFrame(() => { checkComplete(); });
-
-    let fallbackTimeout: ReturnType<typeof setTimeout> | undefined;
-    if (isFirst) {
-      fallbackTimeout = setTimeout(() => {
-        if (!loaded && !error) {
-          if (checkComplete()) return;
-          setLoaded(true);
-        }
-      }, 3000);
-    }
-
-    return () => {
-      cancelAnimationFrame(immediateCheck);
-      if (fallbackTimeout) clearTimeout(fallbackTimeout);
-    };
-  }, [isVisible, loaded, error, isFirst]);
-
-  // IntersectionObserver for lazy loading
-  useEffect(() => {
-    const element = ref.current;
-    if (!element) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) onVisible(index);
-        });
-      },
-      { rootMargin: '200px 0px', threshold: 0.1 }
-    );
-
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, [index, onVisible]);
-
-  const handleError = () => {
-    if (retryCount === 0) {
-      setRetryCount(1);
-      setUseUnoptimized(true);
-      setLoaded(false);
-    } else {
-      setError(true);
-    }
-  };
-
-  return (
-    <div ref={ref} className="relative bg-linen rounded overflow-hidden min-h-[200px]">
-      {isVisible ? (
-        <>
-          {!loaded && !error && (
-            <div className="absolute inset-0 img-loading min-h-[200px]" />
-          )}
-          {error && (
-            <div className="aspect-[3/4] flex items-center justify-center bg-linen">
-              <span className="text-muted text-sm">Failed to load</span>
-            </div>
-          )}
-          {!error && (
-            <Image
-              key={`${src}-${retryCount}`}
-              src={src}
-              alt={[itemType, itemTitle, `Photo ${index + 1} of ${totalImages}`].filter(Boolean).join(' - ')}
-              width={800}
-              height={600}
-              className={`w-full h-auto transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
-              style={{ width: '100%', height: 'auto' }}
-              onLoad={() => setLoaded(true)}
-              onError={handleError}
-              loading={isFirst ? 'eager' : 'lazy'}
-              fetchPriority={isFirst ? 'high' : undefined}
-              placeholder="blur"
-              blurDataURL={BLUR_PLACEHOLDER}
-              sizes="(max-width: 1024px) 100vw, 60vw"
-              unoptimized={useUnoptimized}
-            />
-          )}
-
-          {/* Image position indicator */}
-          {loaded && totalImages > 1 && (
-            <div className="absolute bottom-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-ink/70 backdrop-blur-sm">
-              <span className="text-[11px] text-white/90 font-medium tabular-nums">{index + 1}</span>
-              <span className="text-[11px] text-white/50">/</span>
-              <span className="text-[11px] text-white/50 tabular-nums">{totalImages}</span>
-            </div>
-          )}
-
-          {/* Scroll hint on first image */}
-          {showScrollHint && loaded && (
-            <div className="absolute bottom-16 inset-x-0 flex justify-center pointer-events-none animate-pulse">
-              <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-ink/60 backdrop-blur-md">
-                <svg className="w-4 h-4 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 9l-7 7-7-7" />
-                </svg>
-                <span className="text-[12px] text-white/90 font-medium">
-                  {totalImages - 1} more photos
-                </span>
-              </div>
-            </div>
-          )}
-        </>
-      ) : (
-        <div className="bg-linen flex items-center justify-center" style={{ aspectRatio: '3 / 4' }}>
-          <div className="w-8 h-8 border-2 border-border border-t-gold rounded-full animate-spin" />
-        </div>
-      )}
-    </div>
-  );
-}
 
 // =============================================================================
 // CollectionQuickView — mirrors browse QuickView layout
@@ -264,14 +97,13 @@ export function CollectionQuickView() {
         onVisible={handleImageVisible}
         isFirst={index === 0}
         showScrollHint={index === 0 && images.length > 1 && !hasScrolled}
-        itemTitle={currentItem?.title || undefined}
+        title={currentItem?.title || undefined}
         itemType={currentItem?.item_type}
       />
     ));
 
   return (
-    <Suspense fallback={null}>
-      <QuickViewModal isOpen={isOpen} onClose={closeQuickView}>
+    <QuickViewModal isOpen={isOpen} onClose={closeQuickView}>
         {/* ====== FORM MODE: Full-width single column ====== */}
         {isFormMode ? (
           <div className="h-full flex flex-col overflow-hidden">
@@ -419,7 +251,6 @@ export function CollectionQuickView() {
             </div>
           </>
         ) : null}
-      </QuickViewModal>
-    </Suspense>
+    </QuickViewModal>
   );
 }

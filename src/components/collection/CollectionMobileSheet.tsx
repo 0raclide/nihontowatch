@@ -3,6 +3,7 @@
 import { useRef, useCallback, useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import type { CollectionItem } from '@/types/collection';
+import { CERT_LABELS, STATUS_LABELS, CONDITION_LABELS, getCertTierClass, getItemTypeLabel, formatPrice, formatDate } from '@/lib/collection/labels';
 import { useCollectionQuickView } from '@/contexts/CollectionQuickViewContext';
 
 // =============================================================================
@@ -13,64 +14,6 @@ const COLLAPSED_HEIGHT = 116;
 const SWIPE_THRESHOLD = 40;
 const VELOCITY_THRESHOLD = 0.4;
 const EXPANDED_RATIO = 0.60;
-
-// =============================================================================
-// Helpers
-// =============================================================================
-
-const CERT_LABELS: Record<string, { label: string; tier: string }> = {
-  Tokuju: { label: 'Tokuju', tier: 'tokuju' },
-  tokuju: { label: 'Tokuju', tier: 'tokuju' },
-  'Tokubetsu Juyo': { label: 'Tokuju', tier: 'tokuju' },
-  'Juyo Bijutsuhin': { label: 'Jubi', tier: 'jubi' },
-  'Juyo Bunkazai': { label: 'JuBun', tier: 'jubi' },
-  Juyo: { label: 'Juyo', tier: 'juyo' },
-  juyo: { label: 'Juyo', tier: 'juyo' },
-  TokuHozon: { label: 'Tokuho', tier: 'tokuho' },
-  'Tokubetsu Hozon': { label: 'Tokuho', tier: 'tokuho' },
-  Hozon: { label: 'Hozon', tier: 'hozon' },
-  hozon: { label: 'Hozon', tier: 'hozon' },
-  Kokuho: { label: 'Kokuho', tier: 'tokuju' },
-};
-
-const STATUS_LABELS: Record<string, string> = {
-  owned: 'Owned', sold: 'Sold', lent: 'Lent', consignment: 'Consignment',
-};
-
-const CONDITION_LABELS: Record<string, string> = {
-  mint: 'Mint', excellent: 'Excellent', good: 'Good', fair: 'Fair', project: 'Project',
-};
-
-function getItemTypeLabel(t: string | null): string {
-  if (!t) return 'Item';
-  const map: Record<string, string> = {
-    katana: 'Katana', wakizashi: 'Wakizashi', tanto: 'Tanto', tachi: 'Tachi',
-    naginata: 'Naginata', yari: 'Yari', ken: 'Ken', tsuba: 'Tsuba',
-    kozuka: 'Kozuka', kogai: 'Kogai', menuki: 'Menuki',
-    'fuchi-kashira': 'Fuchi-Kashira', koshirae: 'Koshirae',
-    armor: 'Armor', tosogu: 'Tosogu',
-  };
-  return map[t.toLowerCase()] || t.charAt(0).toUpperCase() + t.slice(1);
-}
-
-function formatPrice(value: number | null, currency: string | null): string | null {
-  if (!value) return null;
-  const curr = currency || 'JPY';
-  try {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: curr, maximumFractionDigits: 0 }).format(value);
-  } catch {
-    return `${curr} ${value.toLocaleString()}`;
-  }
-}
-
-function formatDate(date: string | null): string | null {
-  if (!date) return null;
-  try {
-    return new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-  } catch {
-    return date;
-  }
-}
 
 // =============================================================================
 // Component
@@ -290,16 +233,8 @@ export function CollectionMobileSheet({
             {itemTypeLabel}
           </span>
           {certInfo && (
-            <span
-              className={`text-[10px] uppercase tracking-wider font-bold ${
-                certInfo.tier === 'tokuju' ? 'text-tokuju'
-                  : certInfo.tier === 'jubi' ? 'text-jubi'
-                  : certInfo.tier === 'juyo' ? 'text-juyo'
-                  : certInfo.tier === 'tokuho' ? 'text-toku-hozon'
-                  : 'text-hozon'
-              }`}
-            >
-              {certInfo.label}
+            <span className={`text-[10px] uppercase tracking-wider font-bold ${getCertTierClass(certInfo.tier)}`}>
+              {certInfo.shortLabel}
             </span>
           )}
           {item.status !== 'owned' && (

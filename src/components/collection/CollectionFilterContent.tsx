@@ -2,33 +2,7 @@
 
 import { useState } from 'react';
 import type { CollectionFacets, CollectionFilters } from '@/types/collection';
-
-// =============================================================================
-// Constants (shared between sidebar and drawer)
-// =============================================================================
-
-const SORT_OPTIONS = [
-  { value: 'newest', label: 'Newest Added' },
-  { value: 'value_desc', label: 'Value: High to Low' },
-  { value: 'value_asc', label: 'Value: Low to High' },
-  { value: 'type', label: 'Item Type' },
-];
-
-const STATUS_LABELS: Record<string, string> = {
-  owned: 'Owned', sold: 'Sold', lent: 'Lent', consignment: 'On Consignment',
-};
-
-const CONDITION_LABELS: Record<string, string> = {
-  mint: 'Mint', excellent: 'Excellent', good: 'Good', fair: 'Fair', project: 'Project',
-};
-
-const TYPE_LABELS: Record<string, string> = {
-  katana: 'Katana', wakizashi: 'Wakizashi', tanto: 'Tanto', tachi: 'Tachi',
-  naginata: 'Naginata', yari: 'Yari', ken: 'Ken',
-  tsuba: 'Tsuba', kozuka: 'Kozuka', kogai: 'Kogai', menuki: 'Menuki',
-  'fuchi-kashira': 'Fuchi-Kashira', koshirae: 'Koshirae',
-  armor: 'Armor', helmet: 'Kabuto', tosogu: 'Tosogu',
-};
+import { SORT_OPTIONS, STATUS_LABELS, CONDITION_LABELS, ITEM_TYPE_LABELS } from '@/lib/collection/labels';
 
 // =============================================================================
 // Sub-components
@@ -177,7 +151,7 @@ export function CollectionFilterContent({
             {facets.itemTypes.map(f => (
               <FilterCheckbox
                 key={f.value}
-                label={TYPE_LABELS[f.value] || f.value}
+                label={ITEM_TYPE_LABELS[f.value] || f.value}
                 count={f.count}
                 checked={filters.itemType === f.value}
                 onChange={() => onFilterChange({

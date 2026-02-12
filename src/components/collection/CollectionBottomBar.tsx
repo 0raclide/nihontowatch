@@ -1,14 +1,6 @@
 'use client';
 
-import type { CollectionFilters } from '@/types/collection';
-
-// Sort option labels for the sheet
-const SORT_OPTIONS = [
-  { value: 'newest', label: 'Newest Added' },
-  { value: 'value_desc', label: 'Value: High to Low' },
-  { value: 'value_asc', label: 'Value: Low to High' },
-  { value: 'type', label: 'Item Type' },
-];
+import { SORT_OPTIONS } from '@/lib/collection/labels';
 
 interface CollectionBottomBarProps {
   activeFilterCount: number;
