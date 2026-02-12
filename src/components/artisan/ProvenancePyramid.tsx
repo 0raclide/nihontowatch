@@ -147,13 +147,18 @@ function ProvenanceHistogram({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const peerLabel = entityType === 'smith' ? 'smiths' : 'tosogu makers';
 
-  // Find the last non-zero bucket to trim empty tail
+  // Trim leading and trailing empty buckets for a tight view
+  let firstNonZero = 0;
+  while (firstNonZero < buckets.length && buckets[firstNonZero] === 0) firstNonZero++;
   let lastNonZero = buckets.length - 1;
   while (lastNonZero > 0 && buckets[lastNonZero] === 0) lastNonZero--;
-  // Show at least up to the artisan's bucket + a little margin, min 10 buckets
-  const activeBucket = Math.min(Math.floor(factor * 10), 99);
-  const visibleCount = Math.max(lastNonZero + 2, activeBucket + 3, 10);
-  const visible = buckets.slice(0, visibleCount);
+
+  const rawActiveBucket = Math.min(Math.floor(factor * 10), 99);
+  // Pad 1 bucket before first data, extend past last data / active bucket
+  const startBucket = Math.max(firstNonZero - 1, 0);
+  const endBucket = Math.min(Math.max(lastNonZero + 2, rawActiveBucket + 3), buckets.length);
+  const visible = buckets.slice(startBucket, endBucket);
+  const activeBucket = rawActiveBucket - startBucket; // index within visible slice
 
   const maxCount = Math.max(...visible);
 
@@ -207,15 +212,15 @@ function ProvenanceHistogram({
     ctx.closePath();
     ctx.fill();
 
-    // Axis labels (score units, not %)
+    // Axis labels (score units, reflecting trimmed range)
     ctx.fillStyle = 'rgba(128, 128, 128, 0.35)';
     ctx.font = '9px system-ui, sans-serif';
     ctx.textBaseline = 'bottom';
     ctx.textAlign = 'start';
-    ctx.fillText('0', 0, h);
+    ctx.fillText((startBucket / 10).toFixed(1), 0, h);
     ctx.textAlign = 'end';
-    ctx.fillText((visibleCount / 10).toFixed(1), w, h);
-  }, [visible, maxCount, activeBucket, visibleCount]);
+    ctx.fillText((endBucket / 10).toFixed(1), w, h);
+  }, [visible, maxCount, activeBucket, startBucket, endBucket]);
 
   return (
     <div className="mt-3">
