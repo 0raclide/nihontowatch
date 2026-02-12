@@ -67,9 +67,23 @@ export function ArtistsPageClient({
   const abortRef = useRef<AbortController | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Track serialized initial filters to detect *actual* external navigation vs spurious re-renders.
+  // replaceState updates the URL without triggering SSR, so the SSR-provided initialFilters
+  // still reflect the original navigation URL (e.g. type=smith). If the effect fires due to
+  // reference-only changes (same values, new object), we must NOT overwrite client-managed state.
+  const prevInitialFiltersRef = useRef<string | null>(null);
+
   // Sync state when SSR props change from external navigation (e.g. header search)
   // useState only reads initialValue on mount — subsequent prop changes need this effect.
   useEffect(() => {
+    const key = JSON.stringify(initialFilters);
+    // On mount (null) always sync. After mount, only sync if SSR filters actually changed
+    // (i.e. a real navigation occurred, not a spurious re-render with stale props).
+    if (prevInitialFiltersRef.current !== null && key === prevInitialFiltersRef.current) {
+      return;
+    }
+    prevInitialFiltersRef.current = key;
+
     setArtists(initialArtists);
     setPagination(initialPagination);
     setFilters(initialFilters);
