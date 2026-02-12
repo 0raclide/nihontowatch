@@ -17,7 +17,7 @@ interface Filters {
   province?: string;
   era?: string;
   q?: string;
-  sort: 'elite_factor' | 'name' | 'total_items' | 'for_sale';
+  sort: 'elite_factor' | 'provenance_factor' | 'name' | 'total_items' | 'for_sale';
   notable: boolean;
 }
 
@@ -100,7 +100,8 @@ export function ArtistFilterSidebar({
                   backgroundSize: '11px',
                 }}
               >
-                <option value="elite_factor">Elite Factor</option>
+                <option value="elite_factor">Elite Standing</option>
+                <option value="provenance_factor">Provenance Standing</option>
                 <option value="total_items">Total Works</option>
                 <option value="for_sale">On the Market</option>
                 <option value="name">Name A-Z</option>

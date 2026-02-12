@@ -32,7 +32,7 @@ interface Filters {
   province?: string;
   era?: string;
   q?: string;
-  sort: 'elite_factor' | 'name' | 'total_items' | 'for_sale';
+  sort: 'elite_factor' | 'provenance_factor' | 'name' | 'total_items' | 'for_sale';
   notable: boolean;
 }
 
@@ -538,7 +538,8 @@ export function ArtistsPageClient({
               onChange={(e) => handleFilterChange('sort', e.target.value)}
               className="w-full px-3 py-2.5 bg-cream border border-border text-[13px] text-ink focus:outline-none focus:border-gold/40 cursor-pointer"
             >
-              <option value="elite_factor">Elite Factor</option>
+              <option value="elite_factor">Elite Standing</option>
+              <option value="provenance_factor">Provenance Standing</option>
               <option value="total_items">Total Works</option>
               <option value="for_sale">On the Market</option>
               <option value="name">Name A-Z</option>

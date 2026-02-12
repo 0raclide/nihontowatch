@@ -9,6 +9,7 @@ import {
   getStudents,
   getRelatedArtisans,
   getElitePercentile,
+  getProvenancePercentile,
   getTokoTaikanPercentile,
   resolveTeacher,
   getDenraiForArtisan,
@@ -43,14 +44,20 @@ async function getArtistData(code: string): Promise<ArtisanPageResponse | null> 
   const entityCode = isSmith ? smithEntity!.smith_id : tosoguMaker!.maker_id;
   const entityType = isSmith ? 'smith' as const : 'tosogu' as const;
   const eliteFactor = entity.elite_factor ?? 0;
+  const provenanceFactor = entity.provenance_factor ?? null;
+  const provenanceCount = entity.provenance_count ?? 0;
+  const provenanceApex = entity.provenance_apex ?? 0;
   const slug = generateArtisanSlug(entity.name_romaji, entityCode);
 
-  const [profile, students, related, elitePercentile, tokoTaikanPercentile, teacherStub, denraiResult, heroImage, catalogueEntries] =
+  const [profile, students, related, elitePercentile, provenancePercentile, tokoTaikanPercentile, teacherStub, denraiResult, heroImage, catalogueEntries] =
     await Promise.all([
       getArtistProfile(entityCode),
       getStudents(entityCode, entity.name_romaji),
       getRelatedArtisans(entityCode, entity.school, entityType),
       getElitePercentile(eliteFactor, entityType),
+      provenanceFactor != null
+        ? getProvenancePercentile(provenanceFactor, entityType)
+        : Promise.resolve(null),
       isSmith && smithEntity!.toko_taikan
         ? getTokoTaikanPercentile(smithEntity!.toko_taikan!)
         : Promise.resolve(null),
@@ -122,6 +129,12 @@ async function getArtistData(code: string): Promise<ArtisanPageResponse | null> 
     rankings: {
       elite_percentile: elitePercentile,
       toko_taikan_percentile: tokoTaikanPercentile,
+      provenance_percentile: provenancePercentile,
+    },
+    provenance: {
+      factor: provenanceFactor,
+      count: provenanceCount,
+      apex: provenanceApex,
     },
     profile: profile
       ? {

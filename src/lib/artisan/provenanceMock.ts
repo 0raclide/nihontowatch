@@ -4,27 +4,29 @@
  * This file will be REPLACED by DB-backed prestige scores from
  * denrai_canonical_names.prestige_score once the backend is built.
  *
- * Scoring: 10 = Imperial/Shogunal, 8 = Premier Daimyō (500K+ koku),
- * 6 = Major Daimyō (200K+), 4 = Mid Daimyō/Institution, 2 = Minor/Named
+ * Scoring: 10 = Imperial, 9 = Shogunal, 8 = Premier Daimyō (500K+ koku),
+ * 6 = Major Daimyō (200K+), 4 = Other Daimyō, 3.5 = Zaibatsu, 3 = Institutions, 2 = Named
  */
 
 export interface CollectorMeta {
   score: number;
   koku?: number;
   domain?: string;
-  type?: string; // shinpan, tozama, fudai, gosanke, gosankyo, imperial, shogunal, institution, shrine, merchant
+  type?: string; // shinpan, tozama, fudai, gosanke, gosankyo, imperial, shogunal, institution, shrine, zaibatsu, merchant
 }
 
 // ─── PRESTIGE MAPPING ──────────────────────────────────────────────────────
 // Keys must match canonical owner names from denrai_canonical_names
 
 const PRESTIGE: Record<string, CollectorMeta> = {
-  // Score 10 — Imperial & Shogunal
+  // Score 10 — Imperial
   'Imperial Family':               { score: 10, type: 'imperial' },
-  'Tokugawa Family':               { score: 10, type: 'shogunal' },
-  'Tokugawa Shogun Family':        { score: 10, type: 'shogunal' },
-  'Ashikaga Family':               { score: 10, type: 'shogunal' },
-  'Toyotomi Family':               { score: 10, type: 'shogunal' },
+
+  // Score 9 — Shogunal
+  'Tokugawa Family':               { score: 9, type: 'shogunal' },
+  'Tokugawa Shogun Family':        { score: 9, type: 'shogunal' },
+  'Ashikaga Family':               { score: 9, type: 'shogunal' },
+  'Toyotomi Family':               { score: 9, type: 'shogunal' },
 
   // Score 8 — Premier Daimyō (500K+ koku or Gosanke/Gosankyō political status)
   'Maeda Family':                  { score: 8, koku: 1025000, domain: 'Kaga', type: 'tozama' },
@@ -82,21 +84,23 @@ const PRESTIGE: Record<string, CollectorMeta> = {
   'Kamei Family':                  { score: 4, type: 'tozama' },
   'Takeda Family':                 { score: 4, type: 'tozama' },
   'Konoe Family':                  { score: 4, type: 'court' },
-  // Institutions
-  'Seikado Bunko':                 { score: 4, type: 'institution' },
-  'Eisei Bunko':                   { score: 4, type: 'institution' },
-  'Nezu Museum':                   { score: 4, type: 'institution' },
-  'Sano Art Museum':               { score: 4, type: 'institution' },
-  'Kurokawa Institute':            { score: 4, type: 'institution' },
-  'Tokugawa Reimeikai Foundation': { score: 4, type: 'institution' },
-  'Iwasaki Family':                { score: 4, type: 'merchant' },
-  'Mitsui Family':                 { score: 4, type: 'merchant' },
-  'Konoike Family':                { score: 4, type: 'merchant' },
-  // Shrines
-  'Kasuga Taisha':                 { score: 4, type: 'shrine' },
-  'Atsuta Shrine':                 { score: 4, type: 'shrine' },
-  'Tanzan Shrine':                 { score: 4, type: 'shrine' },
-  'Yasukuni Shrine':               { score: 4, type: 'shrine' },
+  // Score 3.5 — Zaibatsu / Major Merchants (own tier, unscored)
+  'Iwasaki Family':                { score: 3.5, type: 'zaibatsu' },  // Mitsubishi
+  'Mitsui Family':                 { score: 3.5, type: 'zaibatsu' },
+  'Sumitomo Family':               { score: 3.5, type: 'zaibatsu' },
+  'Konoike Family':                { score: 3.5, type: 'merchant' },  // Major Osaka merchant
+
+  // Score 3 — Institutions & Shrines (own tier, unscored)
+  'Seikado Bunko':                 { score: 3, type: 'institution' },
+  'Eisei Bunko':                   { score: 3, type: 'institution' },
+  'Nezu Museum':                   { score: 3, type: 'institution' },
+  'Sano Art Museum':               { score: 3, type: 'institution' },
+  'Kurokawa Institute':            { score: 3, type: 'institution' },
+  'Tokugawa Reimeikai Foundation': { score: 3, type: 'institution' },
+  'Kasuga Taisha':                 { score: 3, type: 'shrine' },
+  'Atsuta Shrine':                 { score: 3, type: 'shrine' },
+  'Tanzan Shrine':                 { score: 3, type: 'shrine' },
+  'Yasukuni Shrine':               { score: 3, type: 'shrine' },
 };
 
 // ─── HELPERS ───────────────────────────────────────────────────────────────
@@ -128,11 +132,14 @@ export function formatKoku(koku: number): string {
 // ─── TIER DEFINITIONS ──────────────────────────────────────────────────────
 
 export const PROVENANCE_TIERS = [
-  { key: 'imperial', label: 'Imperial & Shogunal', score: 10, indent: 0 },
-  { key: 'premier',  label: 'Premier Daimyō', score: 8, indent: 1 },
-  { key: 'major',    label: 'Major Daimyō', score: 6, indent: 2 },
-  { key: 'mid',      label: 'Institutions & Daimyō', score: 4, indent: 3 },
-  { key: 'minor',    label: 'Named Collectors', score: 2, indent: 3 },
+  { key: 'imperial',    label: 'Imperial',          score: 10,  indent: 0, scored: true },
+  { key: 'shogunal',    label: 'Shogunal',          score: 9,   indent: 0, scored: true },
+  { key: 'premier',     label: 'Premier Daimyō',    score: 8,   indent: 1, scored: true },
+  { key: 'major',       label: 'Major Daimyō',      score: 6,   indent: 2, scored: true },
+  { key: 'mid',         label: 'Other Daimyō',      score: 4,   indent: 3, scored: false },
+  { key: 'zaibatsu',    label: 'Zaibatsu',          score: 3.5, indent: 3, scored: false },
+  { key: 'institution', label: 'Institutions',       score: 3,   indent: 3, scored: false },
+  { key: 'minor',       label: 'Named Collectors',   score: 2,   indent: 3, scored: false },
 ] as const;
 
 export type TierKey = typeof PROVENANCE_TIERS[number]['key'];
@@ -163,15 +170,18 @@ export interface ProvenanceAnalysis {
 
 // ─── COMPUTATION ───────────────────────────────────────────────────────────
 
-/** Bayesian prior constants — same philosophy as elite_factor */
-const PRIOR_STRENGTH = 5;  // phantom observations
-const PRIOR_MEAN = 2;      // "minor documented" baseline
+/** Bayesian prior constants — V4: weighted average of ALL observations */
+const PRIOR_STRENGTH = 20;  // phantom observations (heavier than elite_factor's effective C=10)
+const PRIOR_MEAN = 2;       // Named Collector baseline = population mean
 
 function scoreToTier(score: number): TierKey {
-  if (score >= 10) return 'imperial';
-  if (score >= 8)  return 'premier';
-  if (score >= 6)  return 'major';
-  if (score >= 4)  return 'mid';
+  if (score >= 10)  return 'imperial';
+  if (score >= 9)   return 'shogunal';
+  if (score >= 8)   return 'premier';
+  if (score >= 6)   return 'major';
+  if (score >= 4)   return 'mid';
+  if (score >= 3.5) return 'zaibatsu';
+  if (score >= 3)   return 'institution';
   return 'minor';
 }
 
@@ -191,19 +201,19 @@ export function computeProvenanceAnalysis(
 
   // Build tier buckets
   const tierMap: Record<TierKey, TierCollector[]> = {
-    imperial: [], premier: [], major: [], mid: [], minor: [],
+    imperial: [], shogunal: [], premier: [], major: [], mid: [], zaibatsu: [], institution: [], minor: [],
   };
   const tierCounts: Record<TierKey, number> = {
-    imperial: 0, premier: 0, major: 0, mid: 0, minor: 0,
+    imperial: 0, shogunal: 0, premier: 0, major: 0, mid: 0, zaibatsu: 0, institution: 0, minor: 0,
   };
 
-  let totalWorks = 0;
-  let scoreSum = 0;
+  // V4: ALL observations contribute to the weighted average
+  let totalObservations = 0;  // every owner-item pair
+  let weightedSum = 0;        // Σ(prestige_score × count)
+  let totalWorks = 0;         // all tiers (for display — same as totalObservations in grouped view)
   let apex = 0;
 
   for (const group of denraiGrouped) {
-    // For groups (families), score by the parent family name
-    // For singletons, score by the individual owner
     const parentMeta = getPrestigeScore(group.parent);
     const tierKey = scoreToTier(parentMeta.score);
 
@@ -219,14 +229,18 @@ export function computeProvenanceAnalysis(
 
     tierCounts[tierKey] += group.totalCount;
     totalWorks += group.totalCount;
-    scoreSum += parentMeta.score * group.totalCount;
+
+    // V4: every observation counts — weighted by prestige score
+    totalObservations += group.totalCount;
+    weightedSum += parentMeta.score * group.totalCount;
     apex = Math.max(apex, parentMeta.score);
   }
 
   if (totalWorks === 0) return null;
 
-  // Bayesian smoothed average: (C × m + Σscores) / (C + n)
-  const factor = (PRIOR_STRENGTH * PRIOR_MEAN + scoreSum) / (PRIOR_STRENGTH + totalWorks);
+  // V4 Bayesian smoothed weighted average over ALL observations
+  // (C × m + Σ(prestige_score × count)) / (C + Σ(count))
+  const factor = (PRIOR_STRENGTH * PRIOR_MEAN + weightedSum) / (PRIOR_STRENGTH + totalObservations);
 
   // Build tier data, sorted by score descending, collectors by works descending
   const tiers: ProvenanceTierData[] = PROVENANCE_TIERS.map(t => ({

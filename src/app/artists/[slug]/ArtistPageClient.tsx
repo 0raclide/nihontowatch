@@ -291,7 +291,7 @@ function ImageLightbox({ src, alt, caption, onClose }: { src: string; alt: strin
 // ─── MAIN COMPONENT ─────────────────────────────────────────────────────────
 
 export function ArtistPageClient({ data }: ArtistPageClientProps) {
-  const { entity, certifications, rankings, profile, stats, lineage, related, denraiGrouped: rawDenraiGrouped, heroImage } = data;
+  const { entity, certifications, rankings, profile, stats, lineage, related, denraiGrouped: rawDenraiGrouped, heroImage, provenance: dbProvenance } = data;
   const noisePattern = /^(own(er|ed)\s+(at|by)\s|at\s+time\s+of\s|current\s+owner|listed\s+in\s|formerly\s+(owned|held)\s+by\s|needs\s+research|meibutsu|known\s+as\s|identified\s+with\s|said\s+to\s|reportedly\s|tradition:|thereafter\s|transmitted\s+to\s|later\s+held\s+by\s|presented\s+to\s|bestowed\s+by\s|koshigatani?\s)/i;
   const denraiGrouped = useMemo(() => {
     if (!rawDenraiGrouped) return [];
@@ -373,11 +373,11 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
   const sections = useMemo(() => {
     const s: Array<{ id: string; label: string }> = [];
     s.push({ id: 'overview', label: 'Overview' });
-    if (certifications.total_items > 0) s.push({ id: 'certifications', label: 'Certifications' });
     if (data.catalogueEntries?.length) s.push({ id: 'catalogue', label: 'Catalogue' });
+    if (certifications.total_items > 0) s.push({ id: 'certifications', label: 'Designations' });
+    if (denraiGrouped.length > 0) s.push({ id: 'provenance', label: 'Provenance' });
     if (hasFormStats) s.push({ id: 'blade-forms', label: entity.entity_type === 'smith' ? 'Blade Forms' : 'Work Types' });
     if (hasMeiStats) s.push({ id: 'signatures', label: 'Signatures' });
-    if (denraiGrouped.length > 0) s.push({ id: 'provenance', label: 'Provenance' });
     if (listingsExist) s.push({ id: 'listings', label: 'Available' });
     if (soldListingsExist) s.push({ id: 'sold', label: 'Previously Sold' });
     if (lineage.teacher || lineage.students.length > 0) s.push({ id: 'lineage', label: 'Lineage' });
@@ -607,12 +607,26 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
         </section>
 
         {/* ═══════════════════════════════════════════════════════════════════
+            PUBLISHED WORKS — Catalogue showcase (lead with the showpiece)
+        ═══════════════════════════════════════════════════════════════════ */}
+        {data.catalogueEntries && data.catalogueEntries.length > 0 && (
+          <section>
+            <SectionHeader id="catalogue" title="Published Works" className="mb-7" />
+            <CatalogueShowcase
+              entry={data.catalogueEntries[0]}
+              totalEntries={data.catalogueEntries.length}
+              artisanName={entity.name_romaji}
+            />
+          </section>
+        )}
+
+        {/* ═══════════════════════════════════════════════════════════════════
             CERTIFICATIONS — Pyramid + Elite Standing
         ═══════════════════════════════════════════════════════════════════ */}
         {certifications.total_items > 0 && (
           <>
             <section>
-              <SectionHeader id="certifications" title="Certifications" className="mb-7" />
+              <SectionHeader id="certifications" title="Designations" className="mb-7" />
 
               <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr] gap-6 sm:gap-10">
                 {/* Hierarchy */}
@@ -646,17 +660,39 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
         )}
 
         {/* ═══════════════════════════════════════════════════════════════════
-            PUBLISHED WORKS — Catalogue showcase
+            PROVENANCE — Historical collections (Provenance Pyramid + Factor)
         ═══════════════════════════════════════════════════════════════════ */}
-        {data.catalogueEntries && data.catalogueEntries.length > 0 && (
-          <section>
-            <SectionHeader id="catalogue" title="Published Works" subtitle="Documented by the community" className="mb-7" />
-            <CatalogueShowcase
-              entry={data.catalogueEntries[0]}
-              totalEntries={data.catalogueEntries.length}
-              artisanName={entity.name_romaji}
-            />
-          </section>
+        {provenanceAnalysis && (
+          <>
+            <section>
+              <SectionHeader
+                id="provenance"
+                title="Provenance"
+                subtitle={`${provenanceAnalysis.count} documented provenance${provenanceAnalysis.count !== 1 ? 's' : ''} across certified works by ${entity.name_romaji || entity.code}`}
+                className="mb-7"
+              />
+
+              <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr] gap-6 sm:gap-10">
+                {/* Provenance Pyramid — tier distribution */}
+                <div>
+                  <ProvenancePyramid analysis={provenanceAnalysis} />
+                </div>
+
+                {/* Provenance Standing — the score */}
+                <div className="flex flex-col justify-between">
+                  <div>
+                    <h3 className="text-[12px] uppercase tracking-[0.12em] text-ink/50 font-medium mb-3">Provenance Standing</h3>
+                    <ProvenanceFactorDisplay
+                      analysis={provenanceAnalysis}
+                      entityType={entity.entity_type}
+                      percentile={rankings.provenance_percentile}
+                      dbFactor={dbProvenance?.factor}
+                    />
+                  </div>
+                </div>
+              </div>
+            </section>
+          </>
         )}
 
         {/* ═══════════════════════════════════════════════════════════════════
@@ -692,34 +728,6 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
                 className="mb-6"
               />
               <MeiDistributionBar distribution={stats.mei_distribution} />
-            </section>
-          </>
-        )}
-
-        {/* ═══════════════════════════════════════════════════════════════════
-            PROVENANCE — Historical collections (Provenance Pyramid + Factor)
-        ═══════════════════════════════════════════════════════════════════ */}
-        {provenanceAnalysis && (
-          <>
-            <section>
-              <SectionHeader
-                id="provenance"
-                title="Provenance"
-                subtitle={`Certified works by ${entity.name_romaji || entity.code} have been held in ${provenanceAnalysis.count} documented collection${provenanceAnalysis.count !== 1 ? 's' : ''}`}
-                className="mb-7"
-              />
-
-              <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr] gap-6 sm:gap-10">
-                {/* Provenance Pyramid — tier distribution */}
-                <div>
-                  <ProvenancePyramid analysis={provenanceAnalysis} />
-                </div>
-
-                {/* Provenance Factor — the number */}
-                <div className="flex flex-col justify-between">
-                  <ProvenanceFactorDisplay analysis={provenanceAnalysis} />
-                </div>
-              </div>
             </section>
           </>
         )}

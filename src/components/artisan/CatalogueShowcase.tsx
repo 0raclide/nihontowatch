@@ -225,28 +225,45 @@ export function CatalogueShowcase({ entry, totalEntries, artisanName }: Catalogu
       )}
 
       {/* ─── PHOTO GRID ──────────────────────────────────────────────── */}
-      {photoImages.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-4">
-          {photoImages.map((img, i) => (
-            <button
-              key={i}
-              type="button"
-              onClick={() => openGallery(img)}
-              className="aspect-[4/3] overflow-hidden border border-border/15 cursor-zoom-in
-                hover:border-border/30 transition-all duration-150 bg-black/5"
-              aria-label={`Photo ${i + 1}`}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={img.url}
-                alt={`Photo ${i + 1}`}
-                className="w-full h-full object-cover"
-                loading="lazy"
-              />
-            </button>
-          ))}
-        </div>
-      )}
+      {photoImages.length > 0 && (() => {
+        const maxVisible = 6;
+        const visible = photoImages.slice(0, maxVisible);
+        const overflow = photoImages.length - maxVisible;
+        return (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-8">
+            {visible.map((img, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => openGallery(img)}
+                className="aspect-[4/3] overflow-hidden border border-border/15 cursor-zoom-in
+                  hover:border-border/30 transition-all duration-150 bg-black/5"
+                aria-label={`Photo ${i + 1}`}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={img.url}
+                  alt={`Photo ${i + 1}`}
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
+              </button>
+            ))}
+            {overflow > 0 && (
+              <button
+                type="button"
+                onClick={() => openGallery(photoImages[maxVisible])}
+                className="aspect-[4/3] overflow-hidden border border-border/15 cursor-zoom-in
+                  hover:border-border/30 transition-all duration-150 bg-black/5
+                  flex items-center justify-center"
+                aria-label={`View ${overflow} more photos`}
+              >
+                <span className="text-sm text-ink/40 font-light">+{overflow} more</span>
+              </button>
+            )}
+          </div>
+        );
+      })()}
 
       {/* ─── SAYAGAKI ────────────────────────────────────────────────── */}
       {entry.sayagakiEn && (
@@ -260,7 +277,7 @@ export function CatalogueShowcase({ entry, totalEntries, artisanName }: Catalogu
       {(entry.provenanceEn || provenanceImages.length > 0) && (
         <div>
           <SubHeader title="Provenance" />
-          <div className="grid grid-cols-1 sm:grid-cols-[1fr_200px] gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-[1fr_280px] gap-6">
             <div>
               {entry.provenanceEn && <TextBlock text={entry.provenanceEn} />}
             </div>
@@ -318,13 +335,6 @@ export function CatalogueShowcase({ entry, totalEntries, artisanName }: Catalogu
           </span>
         </div>
       </div>
-
-      {/* ─── MORE ENTRIES HINT ───────────────────────────────────────── */}
-      {totalEntries > 1 && (
-        <p className="mt-5 text-center text-[11px] text-ink/35">
-          {totalEntries - 1} more published work{totalEntries - 1 !== 1 ? 's' : ''} &middot; full catalogue coming soon
-        </p>
-      )}
 
       {/* ─── GALLERY LIGHTBOX ────────────────────────────────────────── */}
       {galleryIndex !== null && (

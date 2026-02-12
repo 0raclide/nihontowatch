@@ -70,6 +70,12 @@ export interface ArtisanPageResponse {
   rankings: {
     elite_percentile: number;
     toko_taikan_percentile: number | null;
+    provenance_percentile: number | null;
+  };
+  provenance: {
+    factor: number | null;
+    count: number;
+    apex: number;
   };
   profile: {
     profile_md: string;
@@ -176,6 +182,7 @@ export async function GET(
       getStudents,
       getRelatedArtisans,
       getElitePercentile,
+      getProvenancePercentile,
       getTokoTaikanPercentile,
       resolveTeacher,
       getDenraiForArtisan,
@@ -232,16 +239,22 @@ export async function GET(
 
     // Rich response for artist page
     const eliteFactor = entity.elite_factor ?? 0;
+    const provenanceFactor = entity.provenance_factor ?? null;
+    const provenanceCount = entity.provenance_count ?? 0;
+    const provenanceApex = entity.provenance_apex ?? 0;
     const slug = generateArtisanSlug(entity.name_romaji, entityCode);
 
     // Fetch all enrichment data in parallel
     const { getArtisanHeroImage } = await import('@/lib/supabase/yuhinkai');
-    const [profile, students, related, elitePercentile, tokoTaikanPercentile, teacherStub, denraiResult, heroImage, catalogueEntries] =
+    const [profile, students, related, elitePercentile, provenancePercentile, tokoTaikanPercentile, teacherStub, denraiResult, heroImage, catalogueEntries] =
       await Promise.all([
         getArtistProfile(entityCode),
         getStudents(entityCode, entity.name_romaji),
         getRelatedArtisans(entityCode, entity.school, entityType),
         getElitePercentile(eliteFactor, entityType),
+        provenanceFactor != null
+          ? getProvenancePercentile(provenanceFactor, entityType)
+          : Promise.resolve(null),
         isSmith && (entity as typeof smithEntity)!.toko_taikan
           ? getTokoTaikanPercentile((entity as typeof smithEntity)!.toko_taikan!)
           : Promise.resolve(null),
@@ -290,6 +303,12 @@ export async function GET(
       rankings: {
         elite_percentile: elitePercentile,
         toko_taikan_percentile: tokoTaikanPercentile,
+        provenance_percentile: provenancePercentile,
+      },
+      provenance: {
+        factor: provenanceFactor,
+        count: provenanceCount,
+        apex: provenanceApex,
       },
       profile: profile
         ? {

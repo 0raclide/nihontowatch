@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import { getArtistsForDirectory, getArtistDirectoryFacets, getBulkElitePercentiles, getFilteredArtistsByCodes, getSchoolMemberCounts, getSchoolMemberCodes, getBulkArtisanHeroImages } from '@/lib/supabase/yuhinkai';
+import { getArtistsForDirectory, getArtistDirectoryFacets, getBulkElitePercentiles, getBulkProvenancePercentiles, getFilteredArtistsByCodes, getSchoolMemberCounts, getSchoolMemberCodes, getBulkArtisanHeroImages } from '@/lib/supabase/yuhinkai';
 import { generateArtisanSlug } from '@/lib/artisan/slugs';
 import { generateBreadcrumbJsonLd, jsonLdScriptProps } from '@/lib/seo/jsonLd';
 import { generateArtistDirectoryJsonLd } from '@/lib/seo/jsonLd';
@@ -123,8 +123,8 @@ export default async function ArtistsPage({ searchParams }: ArtistsPageProps) {
   const era = getStringParam(params, 'era');
   const q = getStringParam(params, 'q');
   const sortParam = getStringParam(params, 'sort');
-  const sort = (['elite_factor', 'name', 'total_items', 'for_sale'].includes(sortParam || '')
-    ? sortParam as 'elite_factor' | 'name' | 'total_items' | 'for_sale'
+  const sort = (['elite_factor', 'provenance_factor', 'name', 'total_items', 'for_sale'].includes(sortParam || '')
+    ? sortParam as 'elite_factor' | 'provenance_factor' | 'name' | 'total_items' | 'for_sale'
     : 'elite_factor');
   const page = Math.max(parseInt(getStringParam(params, 'page') || '1', 10) || 1, 1);
   const notable = getStringParam(params, 'notable') !== 'false';
@@ -206,10 +206,15 @@ export default async function ArtistsPage({ searchParams }: ArtistsPageProps) {
   }
 
   // Fetch percentiles, school member counts, and hero images in parallel
+  // When sorting by provenance, show provenance percentile on the card bar
   const [percentileMap, memberCountMap, heroImages] = await Promise.all([
-    getBulkElitePercentiles(
-      artists.map(a => ({ code: a.code, elite_factor: a.elite_factor, entity_type: a.entity_type }))
-    ),
+    sort === 'provenance_factor'
+      ? getBulkProvenancePercentiles(
+          artists.map(a => ({ code: a.code, provenance_factor: a.provenance_factor, entity_type: a.entity_type as 'smith' | 'tosogu' }))
+        )
+      : getBulkElitePercentiles(
+          artists.map(a => ({ code: a.code, elite_factor: a.elite_factor, entity_type: a.entity_type }))
+        ),
     getSchoolMemberCounts(
       artists.map(a => ({ code: a.code, school: a.school, entity_type: a.entity_type, is_school_code: a.is_school_code }))
     ),

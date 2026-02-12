@@ -7,6 +7,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   type ReactNode,
 } from 'react';
 import type { CollectionItem } from '@/types/collection';
@@ -63,21 +64,44 @@ export function CollectionQuickViewProvider({ children }: CollectionQuickViewPro
   const [currentIndex, setCurrentIndex] = useState(-1);
   const [savedCallback, setSavedCallback] = useState<(() => void) | null>(null);
 
+  // Close cooldown — prevents re-open from click propagation (matching browse QuickViewContext)
+  const closeCooldown = useRef(false);
+
+  // URL sync helper — update ?item=ID in URL without navigation
+  const syncItemToURL = useCallback((itemId: string | null) => {
+    const url = new URL(window.location.href);
+    if (itemId) {
+      url.searchParams.set('item', itemId);
+    } else {
+      url.searchParams.delete('item');
+    }
+    window.history.replaceState(null, '', url.toString());
+  }, []);
+
   const openQuickView = useCallback((item: CollectionItem, openMode: CollectionQuickViewMode = 'view') => {
+    if (closeCooldown.current) return;
+
     const index = items.findIndex(i => i.id === item.id);
     setCurrentItem(index !== -1 ? items[index] : item);
     setMode(openMode);
     setPrefillData(null);
     setIsOpen(true);
     setCurrentIndex(index);
-  }, [items]);
+
+    // Sync to URL
+    syncItemToURL(item.id);
+  }, [items, syncItemToURL]);
 
   const openAddForm = useCallback((prefill?: Partial<CollectionItem>) => {
+    if (closeCooldown.current) return;
+
     setCurrentItem(null);
     setMode('add');
     setPrefillData(prefill || null);
     setIsOpen(true);
     setCurrentIndex(-1);
+
+    // Don't sync add mode to URL (no item ID)
   }, []);
 
   const openEditForm = useCallback((item: CollectionItem) => {
@@ -94,23 +118,34 @@ export function CollectionQuickViewProvider({ children }: CollectionQuickViewPro
     setCurrentItem(null);
     setPrefillData(null);
     setCurrentIndex(-1);
-  }, []);
+
+    // Remove ?item= from URL
+    syncItemToURL(null);
+
+    // Cooldown to prevent re-open from click propagation
+    closeCooldown.current = true;
+    setTimeout(() => { closeCooldown.current = false; }, 300);
+  }, [syncItemToURL]);
 
   const goToNext = useCallback(() => {
     if (items.length === 0 || currentIndex === -1 || currentIndex >= items.length - 1) return;
     const nextIndex = currentIndex + 1;
-    setCurrentItem(items[nextIndex]);
+    const nextItem = items[nextIndex];
+    setCurrentItem(nextItem);
     setCurrentIndex(nextIndex);
     setMode('view');
-  }, [items, currentIndex]);
+    syncItemToURL(nextItem.id);
+  }, [items, currentIndex, syncItemToURL]);
 
   const goToPrevious = useCallback(() => {
     if (items.length === 0 || currentIndex <= 0) return;
     const prevIndex = currentIndex - 1;
-    setCurrentItem(items[prevIndex]);
+    const prevItem = items[prevIndex];
+    setCurrentItem(prevItem);
     setCurrentIndex(prevIndex);
     setMode('view');
-  }, [items, currentIndex]);
+    syncItemToURL(prevItem.id);
+  }, [items, currentIndex, syncItemToURL]);
 
   const setItems = useCallback((newItems: CollectionItem[]) => {
     setItemsState(newItems);
@@ -129,16 +164,14 @@ export function CollectionQuickViewProvider({ children }: CollectionQuickViewPro
   }, []);
 
   // Keyboard: Escape to close, arrows to navigate in view mode
+  // Note: Escape is also handled by QuickViewModal, but we keep it here for
+  // keyboard nav which QuickViewModal doesn't handle
   useEffect(() => {
     if (!isOpen) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLSelectElement) return;
 
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        closeQuickView();
-      }
       if (mode === 'view') {
         if (e.key === 'ArrowRight' || e.key === 'j') { e.preventDefault(); goToNext(); }
         if (e.key === 'ArrowLeft' || e.key === 'k') { e.preventDefault(); goToPrevious(); }
@@ -147,7 +180,41 @@ export function CollectionQuickViewProvider({ children }: CollectionQuickViewPro
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, mode, closeQuickView, goToNext, goToPrevious]);
+  }, [isOpen, mode, goToNext, goToPrevious]);
+
+  // Popstate listener — close modal when browser back button is pressed
+  useEffect(() => {
+    const handlePopstate = () => {
+      const params = new URLSearchParams(window.location.search);
+      if (!params.has('item') && isOpen && mode === 'view') {
+        setIsOpen(false);
+        setCurrentItem(null);
+        setPrefillData(null);
+        setCurrentIndex(-1);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopstate);
+    return () => window.removeEventListener('popstate', handlePopstate);
+  }, [isOpen, mode]);
+
+  // On mount, check URL for ?item=ID and open it
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const itemId = params.get('item');
+    if (itemId && items.length > 0) {
+      const item = items.find(i => i.id === itemId);
+      if (item && !isOpen) {
+        const index = items.indexOf(item);
+        setCurrentItem(item);
+        setMode('view');
+        setIsOpen(true);
+        setCurrentIndex(index);
+      }
+    }
+    // Only run when items are loaded
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items.length]);
 
   const hasNext = items.length > 1 && currentIndex !== -1 && currentIndex < items.length - 1;
   const hasPrevious = items.length > 1 && currentIndex !== -1 && currentIndex > 0;

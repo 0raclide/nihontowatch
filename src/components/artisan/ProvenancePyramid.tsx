@@ -6,28 +6,17 @@ import {
   formatKoku,
   type ProvenanceAnalysis,
   type TierKey,
+  type ProvenanceTierData,
 } from '@/lib/artisan/provenanceMock';
 
 /**
  * ProvenancePyramid — Companion to PrestigePyramid.
  *
  * Shows the distribution of an artisan's provenanced works across
- * collector prestige tiers, from Imperial/Shogunal at the apex
- * to Named Collectors at the base.
- *
- * Visual language mirrors PrestigePyramid: indentation, proportional
- * bars, museum catalog typography. Each tier has its own color
- * (Japanese court rank palette).
+ * collector prestige tiers, from Imperial at the apex to Named
+ * Collectors at the base. Uses uniform gold bars matching the
+ * designation pyramid visual language.
  */
-
-const TIER_COLORS: Record<TierKey, string> = {
-  imperial:    'var(--prov-imperial)',
-  premier:     'var(--prov-premier)',
-  major:       'var(--prov-major)',
-  mid:         'var(--prov-mid)',
-  institution: 'var(--prov-institution)',
-  minor:       'var(--prov-minor)',
-};
 
 interface ProvenancePyramidProps {
   analysis: ProvenanceAnalysis;
@@ -90,12 +79,8 @@ export function ProvenancePyramid({ analysis }: ProvenancePyramidProps) {
               {active && (
                 <div className="h-0.5 bg-border/20 rounded-full overflow-hidden">
                   <div
-                    className="h-full rounded-full transition-all"
-                    style={{
-                      width: `${barWidth}%`,
-                      backgroundColor: TIER_COLORS[tier.key],
-                      opacity: 0.5,
-                    }}
+                    className="h-full bg-gold/40 rounded-full"
+                    style={{ width: `${barWidth}%` }}
                   />
                 </div>
               )}
@@ -150,49 +135,119 @@ export function ProvenancePyramid({ analysis }: ProvenancePyramidProps) {
 
 /**
  * ProvenanceFactorDisplay — Companion to EliteFactorDisplay.
- * Shows the computed provenance factor with interpretation.
+ *
+ * Matches Elite Standing pattern: ratio bar, stats line with (i) icon,
+ * percentile, expandable explanation. Percentile is mocked until
+ * backend provenance_factor column + distribution API exists.
  */
-export function ProvenanceFactorDisplay({ analysis }: { analysis: ProvenanceAnalysis }) {
-  const { factor, count, apex } = analysis;
 
-  // Interpretation based on factor value
-  let interpretation: string;
-  let apexLabel: string;
+interface ProvenanceFactorDisplayProps {
+  analysis: ProvenanceAnalysis;
+  entityType: 'smith' | 'tosogu';
+  /** Real percentile from DB (null = use mock estimate) */
+  percentile?: number | null;
+  /** Real factor from DB (null = use mock from analysis) */
+  dbFactor?: number | null;
+}
 
-  if (factor >= 8) {
-    interpretation = 'Legendary provenance';
-  } else if (factor >= 6) {
-    interpretation = 'Premier provenance';
-  } else if (factor >= 4.5) {
-    interpretation = 'Distinguished provenance';
-  } else if (factor >= 3) {
-    interpretation = 'Notable provenance';
-  } else {
-    interpretation = 'Documented provenance';
-  }
+/** Fallback percentile estimate when DB value not available */
+function estimatePercentile(factor: number): number {
+  if (factor >= 8) return 99;
+  if (factor >= 6) return 95;
+  if (factor >= 4.5) return 85;
+  if (factor >= 3.5) return 70;
+  if (factor >= 2.5) return 50;
+  return 30;
+}
 
-  if (apex >= 10) apexLabel = 'Reached Imperial & Shogunal collections';
-  else if (apex >= 8) apexLabel = 'Reached Premier Daimyō collections';
-  else if (apex >= 6) apexLabel = 'Reached Major Daimyō collections';
-  else if (apex >= 4) apexLabel = 'Held by institutions & mid-rank daimyō';
-  else apexLabel = 'Documented in named collections';
+export function ProvenanceFactorDisplay({ analysis, entityType, percentile: dbPercentile, dbFactor }: ProvenanceFactorDisplayProps) {
+  const { factor: mockFactor, count, apex, tiers } = analysis;
+  const factor = dbFactor ?? mockFactor;
+  const [showInfo, setShowInfo] = useState(false);
+
+  const percentile = dbPercentile ?? estimatePercentile(factor);
+  const topPct = Math.max(100 - percentile, 1);
+  const peerLabel = entityType === 'smith' ? 'smiths' : 'tosogu makers';
+
+  // Bar width: factor is 0-10, show as percentage
+  const barPct = Math.min((factor / 10) * 100, 100);
+
+  // Count scored works (top 4 tiers: imperial, shogunal, premier, major)
+  const scoredTiers = tiers.filter((t: ProvenanceTierData) => {
+    const def = PROVENANCE_TIERS.find(p => p.key === t.key);
+    return def?.scored;
+  });
+  const scoredWorks = scoredTiers.reduce((sum: number, t: ProvenanceTierData) => sum + t.totalWorks, 0);
 
   return (
-    <div>
-      <h3 className="text-[12px] uppercase tracking-[0.12em] text-ink/50 font-medium mb-3">
-        Provenance Factor
-      </h3>
-      <div className="flex items-baseline gap-3 mb-2">
-        <span className="text-3xl font-light tabular-nums text-ink">
-          {factor.toFixed(1)}
-        </span>
-        <span className="text-sm text-ink/40 font-light">/ 10</span>
+    <div className="space-y-4">
+      {/* Ratio bar */}
+      <div className="w-full">
+        <div className="h-1.5 bg-border/30 rounded-full overflow-hidden">
+          <div
+            className="h-full bg-gold/60 rounded-full transition-all duration-700"
+            style={{ width: `${barPct}%` }}
+          />
+        </div>
       </div>
-      <p className="text-sm text-ink/50 font-light mb-1">{interpretation}</p>
-      <p className="text-xs text-ink/30 font-light">{apexLabel}</p>
-      <p className="text-xs text-ink/30 font-light mt-1">
-        Across {count} documented collection{count !== 1 ? 's' : ''}
-      </p>
+
+      {/* Stats line */}
+      <div className="text-xs text-ink/50 leading-relaxed space-y-0.5">
+        <p>
+          <span className="text-ink/80">{scoredWorks}</span> work{scoredWorks !== 1 ? 's' : ''} held
+          in elite collections across{' '}
+          <span className="text-ink/80">{count}</span> documented provenance{count !== 1 ? 's' : ''}
+          {/* Info icon */}
+          <button
+            onClick={() => setShowInfo(!showInfo)}
+            className="inline-flex items-center justify-center w-[15px] h-[15px] ml-1.5 rounded-full
+              border border-ink/20 text-ink/35 hover:text-ink/60 hover:border-ink/40
+              transition-colors align-middle cursor-pointer
+              relative before:absolute before:-inset-3 before:content-['']"
+            aria-label="How is Provenance Standing calculated?"
+            aria-expanded={showInfo}
+          >
+            <svg className="w-[9px] h-[9px]" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M7.25 11.5V7h1.5v4.5h-1.5ZM8 5.75a.875.875 0 1 1 0-1.75.875.875 0 0 1 0 1.75Z" />
+            </svg>
+          </button>
+        </p>
+        <p>
+          Top <span className="text-ink/80">{topPct}%</span> among {peerLabel}
+        </p>
+        <p className="text-ink/30">
+          Raw score: <span className="tabular-nums">{factor.toFixed(2)}</span> / 10
+        </p>
+      </div>
+
+      {/* Explanation panel */}
+      {showInfo && (
+        <div className="border-t border-border/20 pt-3 space-y-3">
+          <div className="text-[12px] text-ink/50 leading-[1.8] space-y-2.5">
+            <p>
+              Provenance Standing measures how consistently an artisan&rsquo;s
+              certified works were held in historically prestigious collections&mdash;Imperial
+              and Shogunal households, premier daim&#x79;&#x14d; clans, and the great
+              domain lords of the Edo period.
+            </p>
+            <p>
+              Each documented owner is scored by historical rank: Imperial &amp;
+              Shogunal collections score highest, followed by premier daim&#x79;&#x14d;
+              houses (500,000+ <em>koku</em>) and major daim&#x79;&#x14d;
+              (200,000+ <em>koku</em>). Every provenance observation contributes
+              to the weighted average&mdash;works held only by lesser-known collectors
+              dilute the score, rewarding both concentration and depth.
+            </p>
+            <p>
+              The score is smoothed with a Bayesian prior so that artisans with
+              only one or two documented provenances can&rsquo;t rank
+              artificially high. This artisan places in the{' '}
+              <span className="text-ink/80">top {topPct}%</span> of
+              all {peerLabel} with documented provenance.
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

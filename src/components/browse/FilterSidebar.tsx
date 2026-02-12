@@ -116,7 +116,7 @@ export function FilterSidebar({ facets, filters, onFilterChange, isAdmin, varian
                       <option value="sale_date">Recently Sold</option>
                       <option value="price_asc">Price: Low → High</option>
                       <option value="price_desc">Price: High → Low</option>
-                      {panelControls!.isAdmin && <option value="elite_factor">Elite Factor</option>}
+                      {panelControls!.isAdmin && <option value="elite_factor">Elite Standing</option>}
                     </select>
                   </div>
                 )}

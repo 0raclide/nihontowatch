@@ -82,9 +82,11 @@
 
   /* Provenance tier colors — Japanese court rank palette */
   --prov-imperial: #B8860B;            /* Gold — chrysanthemum seal */
+  --prov-shogunal: #8B4513;            /* Saddlebrown — shogunal authority */
   --prov-premier: #9B2335;             /* Deep crimson — highest court rank */
   --prov-major: #2B4570;               /* Indigo — ai-iro, samurai class */
-  --prov-mid: #5B7B8A;                 /* Steel blue — institutional */
+  --prov-mid: #5B7B8A;                 /* Steel blue — other daimyō */
+  --prov-institution: #6B7B6B;         /* Muted sage — museums, shrines */
   --prov-minor: #8B8178;               /* Warm gray — documented but common */
 
   /* Alias for backwards compatibility */
@@ -187,9 +189,11 @@ html.dark {
 
   /* Provenance tier colors — bright for dark mode */
   --prov-imperial: #D4A030;            /* Bright gold */
+  --prov-shogunal: #C07030;            /* Bright saddlebrown */
   --prov-premier: #D04050;             /* Bright crimson */
   --prov-major: #5080C0;               /* Bright indigo */
   --prov-mid: #7898A8;                 /* Bright steel */
+  --prov-institution: #88A888;         /* Bright sage */
   --prov-minor: #A89888;               /* Light warm gray */
 
   /* Shadows - softer for elegance */
@@ -281,9 +285,11 @@ html.theme-opus {
 
   /* Provenance tier colors — warm tints for Opus */
   --prov-imperial: #D8A838;
+  --prov-shogunal: #B87030;
   --prov-premier: #C84848;
   --prov-major: #5888C8;
   --prov-mid: #7090A0;
+  --prov-institution: #809880;
   --prov-minor: #A09080;
 
   /* Soft contemplative shadows */
@@ -410,9 +416,11 @@ html.theme-yuhindo {
 
   /* Provenance tier colors — jewel tones for Yuhindo */
   --prov-imperial: #D8A840;
+  --prov-shogunal: #C07838;
   --prov-premier: #C85060;
   --prov-major: #6898D0;
   --prov-mid: #8098A8;
+  --prov-institution: #90A890;
   --prov-minor: #A89890;
 
   /* Shadows - deep and soft, like velvet folds */
@@ -1266,4 +1274,59 @@ html.theme-yuhindo .magical-book:hover {
   margin: 2rem 0;
   border: none;
   border-top: 1px solid var(--border);
+}
+
+/* ==========================================================================
+   Collection Form Utilities
+   ========================================================================== */
+
+.form-input {
+  display: block;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  font-size: 13px;
+  color: var(--text-primary);
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  border-radius: 0.375rem;
+  transition: border-color 0.15s;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.form-input::placeholder {
+  color: var(--text-muted);
+  opacity: 0.5;
+}
+
+.form-select {
+  display: block;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  font-size: 13px;
+  color: var(--text-primary);
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.form-select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+/* Slide-in from right animation for QuickView panel */
+@keyframes slideInRight {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.3s ease-out;
 }

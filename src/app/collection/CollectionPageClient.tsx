@@ -5,6 +5,8 @@ import { useSearchParams } from 'next/navigation';
 import type { CollectionItem, CollectionFilters, CollectionFacets, CollectionListResponse } from '@/types/collection';
 import { CollectionGrid } from '@/components/collection/CollectionGrid';
 import { CollectionFilterSidebar } from '@/components/collection/CollectionFilterSidebar';
+import { CollectionFilterDrawer } from '@/components/collection/CollectionFilterDrawer';
+import { CollectionBottomBar } from '@/components/collection/CollectionBottomBar';
 import { CollectionQuickViewProvider, useCollectionQuickView } from '@/contexts/CollectionQuickViewContext';
 import { CollectionQuickView } from '@/components/collection/CollectionQuickView';
 
@@ -35,6 +37,9 @@ function CollectionPageInner() {
   const [error, setError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
+  // Mobile filter drawer state
+  const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
+
   // Filters from URL or defaults
   const [filters, setFilters] = useState<CollectionFilters>(() => ({
     itemType: searchParams.get('type') || undefined,
@@ -45,6 +50,10 @@ function CollectionPageInner() {
     page: Number(searchParams.get('page')) || 1,
     limit: 100,
   }));
+
+  // Active filter count for bottom bar badge
+  const activeFilterCount = (filters.itemType ? 1 : 0) + (filters.certType ? 1 : 0) +
+    (filters.status ? 1 : 0) + (filters.condition ? 1 : 0);
 
   // Fetch collection items
   const fetchItems = useCallback(async (currentFilters: CollectionFilters) => {
@@ -113,18 +122,21 @@ function CollectionPageInner() {
     setOnSavedCallback(() => fetchItems(filters));
   }, [filters, fetchItems, setOnSavedCallback]);
 
-  // URL sync — update URL params without navigation
+  // URL sync — update filter params without clobbering non-filter params (e.g. ?item=)
   const syncURL = useCallback((newFilters: CollectionFilters) => {
-    const params = new URLSearchParams();
-    if (newFilters.itemType) params.set('type', newFilters.itemType);
-    if (newFilters.certType) params.set('cert', newFilters.certType);
-    if (newFilters.status) params.set('status', newFilters.status);
-    if (newFilters.condition) params.set('condition', newFilters.condition);
-    if (newFilters.sort && newFilters.sort !== 'newest') params.set('sort', newFilters.sort);
+    const url = new URL(window.location.href);
 
-    const qs = params.toString();
-    const url = qs ? `/collection?${qs}` : '/collection';
-    window.history.replaceState(null, '', url);
+    // Clear all filter-specific params, then re-set active ones
+    const filterKeys = ['type', 'cert', 'status', 'condition', 'sort'];
+    filterKeys.forEach(k => url.searchParams.delete(k));
+
+    if (newFilters.itemType) url.searchParams.set('type', newFilters.itemType);
+    if (newFilters.certType) url.searchParams.set('cert', newFilters.certType);
+    if (newFilters.status) url.searchParams.set('status', newFilters.status);
+    if (newFilters.condition) url.searchParams.set('condition', newFilters.condition);
+    if (newFilters.sort && newFilters.sort !== 'newest') url.searchParams.set('sort', newFilters.sort);
+
+    window.history.replaceState(null, '', url.toString());
   }, []);
 
   // Handle filter changes
@@ -136,6 +148,11 @@ function CollectionPageInner() {
       return next;
     });
   }, [syncURL, fetchItems]);
+
+  // Handle sort change (from bottom bar)
+  const handleSortChange = useCallback((sort: string) => {
+    handleFilterChange({ sort: sort as CollectionFilters['sort'] });
+  }, [handleFilterChange]);
 
   // Handlers
   const handleItemClick = useCallback((item: CollectionItem) => {
@@ -151,66 +168,87 @@ function CollectionPageInner() {
   }, [openAddForm]);
 
   return (
-    <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
-      {/* Page Header */}
-      <div className="mb-6 lg:mb-8">
-        <h1 className="text-[22px] lg:text-[28px] font-serif text-ink">
-          My Collection
-        </h1>
-        <p className="text-[13px] text-muted mt-1">
-          {total > 0 ? `${total} ${total === 1 ? 'item' : 'items'} in your collection` : 'Start building your personal collection'}
-        </p>
-      </div>
-
-      {/* Error */}
-      {error && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-[13px] text-red-700">
-          {error}
-          <button onClick={() => fetchItems(filters)} className="ml-2 underline hover:no-underline">
-            Retry
-          </button>
+    <>
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8 pb-24 lg:pb-8">
+        {/* Page Header */}
+        <div className="mb-6 lg:mb-8">
+          <h1 className="text-[22px] lg:text-[28px] font-serif text-ink">
+            My Collection
+          </h1>
+          <p className="text-[13px] text-muted mt-1">
+            {total > 0 ? `${total} ${total === 1 ? 'item' : 'items'} in your collection` : 'Start building your personal collection'}
+          </p>
         </div>
-      )}
 
-      {/* Main Layout */}
-      <div className="flex gap-6 lg:gap-8">
-        {/* Filter Sidebar */}
-        <CollectionFilterSidebar
-          facets={facets}
-          filters={filters}
-          onFilterChange={handleFilterChange}
-          totalItems={total}
-        />
+        {/* Error */}
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-[13px] text-red-700">
+            {error}
+            <button onClick={() => fetchItems(filters)} className="ml-2 underline hover:no-underline">
+              Retry
+            </button>
+          </div>
+        )}
 
-        {/* Grid */}
-        <div className="flex-1 min-w-0">
-          {isLoading ? (
-            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-5">
-              {Array.from({ length: 8 }).map((_, i) => (
-                <div key={i} className="bg-cream border border-border rounded overflow-hidden animate-pulse">
-                  <div className="px-3 py-2"><div className="h-3 bg-linen rounded w-20" /></div>
-                  <div className="aspect-[3/4] bg-linen" />
-                  <div className="px-3 py-3 space-y-2">
-                    <div className="h-4 bg-linen rounded w-3/4" />
-                    <div className="h-3 bg-linen rounded w-1/2" />
+        {/* Main Layout */}
+        <div className="flex gap-6 lg:gap-8">
+          {/* Filter Sidebar (desktop) */}
+          <CollectionFilterSidebar
+            facets={facets}
+            filters={filters}
+            onFilterChange={handleFilterChange}
+            totalItems={total}
+          />
+
+          {/* Grid */}
+          <div className="flex-1 min-w-0">
+            {isLoading ? (
+              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-5">
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <div key={i} className="bg-cream border border-border rounded overflow-hidden animate-pulse">
+                    <div className="px-3 py-2"><div className="h-3 bg-linen rounded w-20" /></div>
+                    <div className="aspect-[3/4] bg-linen" />
+                    <div className="px-3 py-3 space-y-2">
+                      <div className="h-4 bg-linen rounded w-3/4" />
+                      <div className="h-3 bg-linen rounded w-1/2" />
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <CollectionGrid
-              items={items}
-              onItemClick={handleItemClick}
-              onItemEdit={handleItemEdit}
-              onAddClick={handleAddClick}
-            />
-          )}
+                ))}
+              </div>
+            ) : (
+              <CollectionGrid
+                items={items}
+                onItemClick={handleItemClick}
+                onItemEdit={handleItemEdit}
+                onAddClick={handleAddClick}
+              />
+            )}
+          </div>
         </div>
       </div>
+
+      {/* Mobile Filter Drawer */}
+      <CollectionFilterDrawer
+        isOpen={filterDrawerOpen}
+        onClose={() => setFilterDrawerOpen(false)}
+        facets={facets}
+        filters={filters}
+        onFilterChange={handleFilterChange}
+        totalItems={total}
+      />
+
+      {/* Mobile Bottom Bar */}
+      <CollectionBottomBar
+        activeFilterCount={activeFilterCount}
+        onOpenFilters={() => setFilterDrawerOpen(true)}
+        onAddClick={handleAddClick}
+        sort={filters.sort || 'newest'}
+        onSortChange={handleSortChange}
+      />
 
       {/* QuickView Modal */}
       <CollectionQuickView />
-    </div>
+    </>
   );
 }
 

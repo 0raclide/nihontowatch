@@ -720,7 +720,7 @@ export function FilterContent({
               <option value="sale_date">Recently Sold</option>
               <option value="price_asc">Price: Low → High</option>
               <option value="price_desc">Price: High → Low</option>
-              {isAdmin && <option value="elite_factor">Elite Factor</option>}
+              {isAdmin && <option value="elite_factor">Elite Standing</option>}
             </select>
           </div>
 

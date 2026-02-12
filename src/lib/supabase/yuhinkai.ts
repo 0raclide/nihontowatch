@@ -66,6 +66,9 @@ export interface SmithEntity {
   elite_count: number;
   elite_factor: number;
   is_school_code: boolean;
+  provenance_factor: number | null;
+  provenance_count: number | null;
+  provenance_apex: number | null;
 }
 
 export interface TosoguMaker {
@@ -91,6 +94,9 @@ export interface TosoguMaker {
   elite_count: number;
   elite_factor: number;
   is_school_code: boolean;
+  provenance_factor: number | null;
+  provenance_count: number | null;
+  provenance_apex: number | null;
 }
 
 export async function getArtistProfile(code: string): Promise<ArtistProfile | null> {
@@ -377,6 +383,33 @@ export async function getElitePercentile(
 }
 
 /**
+ * Calculate provenance factor percentile among artisans with provenance data.
+ * Same pattern as getElitePercentile: count(below) / count(total with provenance).
+ * Returns a value from 0 to 100 (higher = rarer provenance).
+ */
+export async function getProvenancePercentile(
+  provenanceFactor: number,
+  entityType: 'smith' | 'tosogu'
+): Promise<number> {
+  const table = entityType === 'smith' ? 'smith_entities' : 'tosogu_makers';
+
+  // Count how many have a lower provenance_factor
+  const { count: below } = await yuhinkaiClient
+    .from(table)
+    .select('*', { count: 'exact', head: true })
+    .lt('provenance_factor', provenanceFactor)
+    .not('provenance_factor', 'is', null);
+
+  const { count: total } = await yuhinkaiClient
+    .from(table)
+    .select('*', { count: 'exact', head: true })
+    .not('provenance_factor', 'is', null);
+
+  if (!total || total === 0) return 0;
+  return Math.min(Math.round(((below || 0) / total) * 100), 100);
+}
+
+/**
  * Get elite factor distribution as histogram buckets.
  * Returns 100 buckets at 1% resolution (0–1%, 1–2%, …, 99–100%).
  * Only includes artisans with total_items > 0.
@@ -452,6 +485,7 @@ export interface ArtistDirectoryEntry {
   juyo_count: number;
   total_items: number;
   elite_factor: number;
+  provenance_factor: number | null;
   is_school_code: boolean;
   percentile?: number;
   member_count?: number;
@@ -466,7 +500,7 @@ export interface DirectoryFilters {
   province?: string;
   era?: string;
   q?: string;
-  sort?: 'elite_factor' | 'name' | 'total_items' | 'for_sale';
+  sort?: 'elite_factor' | 'provenance_factor' | 'name' | 'total_items' | 'for_sale';
   page?: number;
   limit?: number;
   notable?: boolean;
@@ -537,7 +571,7 @@ export async function getArtistsForDirectory(
 
   let query = yuhinkaiClient
     .from(table)
-    .select(`${idCol}, name_romaji, name_kanji, school, province, era, kokuho_count, jubun_count, jubi_count, gyobutsu_count, tokuju_count, juyo_count, total_items, elite_factor, is_school_code`, { count: 'exact' });
+    .select(`${idCol}, name_romaji, name_kanji, school, province, era, kokuho_count, jubun_count, jubi_count, gyobutsu_count, tokuju_count, juyo_count, total_items, elite_factor, provenance_factor, is_school_code`, { count: 'exact' });
 
   if (notable) query = query.gt('total_items', 0);
   if (school) query = query.eq('school', school);
@@ -584,6 +618,7 @@ export async function getArtistsForDirectory(
     juyo_count: (row.juyo_count as number) || 0,
     total_items: (row.total_items as number) || 0,
     elite_factor: (row.elite_factor as number) || 0,
+    provenance_factor: (row.provenance_factor as number) ?? null,
     is_school_code: (row.is_school_code as boolean) || false,
   }));
 
@@ -617,7 +652,7 @@ export async function getFilteredArtistsByCodes(
     const batch = codes.slice(i, i + BATCH_SIZE);
     let query = yuhinkaiClient
       .from(table)
-      .select(`${idCol}, name_romaji, name_kanji, school, province, era, kokuho_count, jubun_count, jubi_count, gyobutsu_count, tokuju_count, juyo_count, total_items, elite_factor, is_school_code`)
+      .select(`${idCol}, name_romaji, name_kanji, school, province, era, kokuho_count, jubun_count, jubi_count, gyobutsu_count, tokuju_count, juyo_count, total_items, elite_factor, provenance_factor, is_school_code`)
       .in(idCol, batch);
 
     if (filters.notable !== false) query = query.gt('total_items', 0);
@@ -659,6 +694,7 @@ export async function getFilteredArtistsByCodes(
         juyo_count: (row.juyo_count as number) || 0,
         total_items: (row.total_items as number) || 0,
         elite_factor: (row.elite_factor as number) || 0,
+        provenance_factor: (row.provenance_factor as number) ?? null,
         is_school_code: (row.is_school_code as boolean) || false,
       });
     }
@@ -885,6 +921,67 @@ export async function getBulkElitePercentiles(
     // Assign to each artist
     for (const a of group) {
       result.set(a.code, factorToPercentile.get(a.elite_factor) ?? 0);
+    }
+  });
+
+  await Promise.all(typePromises);
+  return result;
+}
+
+/**
+ * Bulk-calculate provenance factor percentiles for a list of artists.
+ * Same pattern as getBulkElitePercentiles but using provenance_factor.
+ */
+export async function getBulkProvenancePercentiles(
+  artists: Array<{ code: string; provenance_factor: number | null; entity_type: 'smith' | 'tosogu' }>
+): Promise<Map<string, number>> {
+  const result = new Map<string, number>();
+  if (artists.length === 0) return result;
+
+  // Only process artists that have provenance data
+  const withProvenance = artists.filter(a => a.provenance_factor != null);
+  if (withProvenance.length === 0) return result;
+
+  // Group by entity_type
+  const byType = new Map<'smith' | 'tosogu', typeof withProvenance>();
+  for (const a of withProvenance) {
+    if (!byType.has(a.entity_type)) byType.set(a.entity_type, []);
+    byType.get(a.entity_type)!.push(a);
+  }
+
+  const typePromises = Array.from(byType.entries()).map(async ([entityType, group]) => {
+    const table = entityType === 'smith' ? 'smith_entities' : 'tosogu_makers';
+
+    const { count: total } = await yuhinkaiClient
+      .from(table)
+      .select('*', { count: 'exact', head: true })
+      .not('provenance_factor', 'is', null);
+
+    if (!total || total === 0) {
+      for (const a of group) result.set(a.code, 0);
+      return;
+    }
+
+    const uniqueFactors = [...new Set(group.map(a => a.provenance_factor!))];
+
+    const belowCounts = await Promise.all(
+      uniqueFactors.map(async (factor) => {
+        const { count: below } = await yuhinkaiClient
+          .from(table)
+          .select('*', { count: 'exact', head: true })
+          .lt('provenance_factor', factor)
+          .not('provenance_factor', 'is', null);
+        return { factor, below: below || 0 };
+      })
+    );
+
+    const factorToPercentile = new Map<number, number>();
+    for (const { factor, below } of belowCounts) {
+      factorToPercentile.set(factor, Math.min(Math.round((below / total) * 100), 100));
+    }
+
+    for (const a of group) {
+      result.set(a.code, factorToPercentile.get(a.provenance_factor!) ?? 0);
     }
   });
 
@@ -1717,8 +1814,10 @@ export async function getDenraiForArtisan(
     // Apply within-item dedup rules (person trumps family, etc.)
     const deduped = dedupWithinItem(uniqueOwners, canonicalMap);
 
-    // Count each deduped owner once per item
+    // Count each deduped owner once per item (skip non-provenance noise)
     for (const owner of deduped) {
+      const info = canonicalMap.get(owner);
+      if (info?.category === 'non_provenance') continue;
       ownerMap.set(owner, (ownerMap.get(owner) || 0) + 1);
     }
   }

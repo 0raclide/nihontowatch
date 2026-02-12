@@ -725,11 +725,11 @@ export function ArtisanTooltip({
                   </div>
                 )}
 
-                {/* Elite Factor */}
+                {/* Elite Standing */}
                 {artisan && artisan.elite_factor !== null && artisan.elite_factor !== undefined && (
                   <div className="mb-3 py-2 border-t border-border">
                     <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-[10px] uppercase tracking-wider text-muted">Elite Factor</span>
+                      <span className="text-[10px] uppercase tracking-wider text-muted">Elite Standing</span>
                       <span className="text-sm font-semibold text-gold">
                         {(artisan.elite_factor * 100).toFixed(1)}%
                       </span>
