@@ -9,6 +9,7 @@ import { createServiceClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { sendBackInStockNotification } from '@/lib/email/sendgrid';
 import { logger } from '@/lib/logger';
+import { verifyCronAuth } from '@/lib/api/cronAuth';
 import type { Listing } from '@/types';
 import type { Database } from '@/types/database';
 
@@ -24,29 +25,6 @@ const BATCH_SIZE = 20;
 // Cooldown period between notifications for the same alert (24 hours)
 const COOLDOWN_HOURS = 24;
 
-/**
- * Verify the request is authorized
- */
-function isAuthorized(request: NextRequest): boolean {
-  const cronSecret = process.env.CRON_SECRET;
-
-  if (!cronSecret) {
-    logger.warn('CRON_SECRET not configured - allowing unauthenticated access');
-    return true;
-  }
-
-  const authHeader = request.headers.get('authorization');
-  if (authHeader === `Bearer ${cronSecret}`) {
-    return true;
-  }
-
-  const cronHeader = request.headers.get('x-cron-secret');
-  if (cronHeader === cronSecret) {
-    return true;
-  }
-
-  return false;
-}
 
 /**
  * Get the lookback window for detecting status changes
@@ -70,7 +48,7 @@ function isWithinCooldown(lastTriggeredAt: string | null): boolean {
 
 export async function GET(request: NextRequest) {
   // Verify authorization
-  if (!isAuthorized(request)) {
+  if (!verifyCronAuth(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

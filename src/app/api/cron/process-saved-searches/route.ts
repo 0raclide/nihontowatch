@@ -14,6 +14,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { findMatchingListings } from '@/lib/savedSearches/matcher';
 import { sendSavedSearchNotification } from '@/lib/email/sendgrid';
 import { logger } from '@/lib/logger';
+import { verifyCronAuth } from '@/lib/api/cronAuth';
 import type { SavedSearch, SavedSearchCriteria, Listing, NotificationFrequency } from '@/types';
 import type { Database } from '@/types/database';
 
@@ -26,29 +27,6 @@ export const maxDuration = 300; // 5 minutes max for Vercel
 // Process saved searches in batches
 const BATCH_SIZE = 20;
 
-/**
- * Verify the request is authorized
- */
-function isAuthorized(request: NextRequest): boolean {
-  const cronSecret = process.env.CRON_SECRET;
-
-  if (!cronSecret) {
-    logger.warn('CRON_SECRET not configured - allowing unauthenticated access');
-    return true;
-  }
-
-  const authHeader = request.headers.get('authorization');
-  if (authHeader === `Bearer ${cronSecret}`) {
-    return true;
-  }
-
-  const cronHeader = request.headers.get('x-cron-secret');
-  if (cronHeader === cronSecret) {
-    return true;
-  }
-
-  return false;
-}
 
 /**
  * Get the lookback window based on frequency
@@ -67,7 +45,7 @@ function getLookbackWindow(frequency: NotificationFrequency): Date {
 
 export async function GET(request: NextRequest) {
   // Verify authorization
-  if (!isAuthorized(request)) {
+  if (!verifyCronAuth(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

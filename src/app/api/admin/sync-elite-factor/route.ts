@@ -17,6 +17,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/server';
 import { yuhinkaiClient } from '@/lib/supabase/yuhinkai';
 import { logger } from '@/lib/logger';
+import { verifyCronAuth } from '@/lib/api/cronAuth';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300; // 5 minutes max
@@ -36,31 +37,6 @@ interface SyncResult {
   duration_ms: number;
 }
 
-/**
- * Verify the request is authorized via API key
- */
-function isAuthorized(request: NextRequest): boolean {
-  const cronSecret = process.env.CRON_SECRET;
-
-  if (!cronSecret) {
-    logger.warn('[sync-elite-factor] CRON_SECRET not configured');
-    return false;
-  }
-
-  // Check Authorization header
-  const authHeader = request.headers.get('authorization');
-  if (authHeader === `Bearer ${cronSecret}`) {
-    return true;
-  }
-
-  // Check x-cron-secret header
-  const cronHeader = request.headers.get('x-cron-secret');
-  if (cronHeader === cronSecret) {
-    return true;
-  }
-
-  return false;
-}
 
 /**
  * Fetch elite_factor from Yuhinkai for an artisan code
@@ -244,7 +220,7 @@ async function syncAllArtisans(
 
 export async function POST(request: NextRequest) {
   // Verify authorization
-  if (!isAuthorized(request)) {
+  if (!verifyCronAuth(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -284,7 +260,7 @@ export async function POST(request: NextRequest) {
 
 // GET triggers a full sync (cron-compatible)
 export async function GET(request: NextRequest) {
-  if (!isAuthorized(request)) {
+  if (!verifyCronAuth(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

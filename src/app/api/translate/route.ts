@@ -2,8 +2,49 @@
 import { createServiceClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
+import { apiRateLimited } from '@/lib/api/responses';
 
 export const dynamic = 'force-dynamic';
+
+// =============================================================================
+// Rate Limiting (in-memory, per IP)
+// =============================================================================
+
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+const RATE_LIMIT_WINDOW_MS = 60000; // 1 minute
+const RATE_LIMIT_MAX_REQUESTS = 10; // 10 translations/min per IP
+
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(ip);
+
+  if (!entry || now > entry.resetTime) {
+    rateLimitMap.set(ip, { count: 1, resetTime: now + RATE_LIMIT_WINDOW_MS });
+    return true;
+  }
+
+  if (entry.count >= RATE_LIMIT_MAX_REQUESTS) {
+    return false;
+  }
+
+  entry.count++;
+  return true;
+}
+
+// Clean up old rate limit entries periodically
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, entry] of rateLimitMap.entries()) {
+    if (now > entry.resetTime) {
+      rateLimitMap.delete(key);
+    }
+  }
+}, RATE_LIMIT_WINDOW_MS);
+
+/** @internal Exported only for test cleanup */
+export function _resetRateLimitForTesting() {
+  rateLimitMap.clear();
+}
 
 // Japanese character detection regex
 const JAPANESE_REGEX = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/;
@@ -39,6 +80,12 @@ interface OpenRouterResponse {
  * Defaults to 'description' for backwards compatibility
  */
 export async function POST(request: NextRequest) {
+  // Rate limit by IP
+  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+  if (!checkRateLimit(ip)) {
+    return apiRateLimited(60);
+  }
+
   try {
     const body: TranslateRequest = await request.json();
     const { listingId, type = 'description' } = body;

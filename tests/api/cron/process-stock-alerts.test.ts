@@ -80,6 +80,17 @@ describe('Process Stock Alerts Cron', () => {
       const response = await GET(request);
       expect(response.status).not.toBe(401);
     });
+
+    it('should return 401 when CRON_SECRET is not configured', async () => {
+      delete process.env.CRON_SECRET;
+
+      const request = new NextRequest('http://localhost/api/cron/process-stock-alerts', {
+        headers: { authorization: 'Bearer any-value' },
+      });
+
+      const response = await GET(request);
+      expect(response.status).toBe(401);
+    });
   });
 
   describe('Status Change Detection', () => {

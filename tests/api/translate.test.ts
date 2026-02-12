@@ -119,6 +119,9 @@ beforeEach(() => {
 
   vi.clearAllMocks();
 
+  // Reset rate limiter state between tests
+  _resetRateLimitForTesting();
+
   // Set up default Supabase mock
   mockSupabaseClient.from.mockImplementation(() => createMockQueryBuilder());
 
@@ -150,7 +153,7 @@ afterEach(() => {
 });
 
 // Import the route handler after mocks are set up
-import { POST } from '@/app/api/translate/route';
+import { POST, _resetRateLimitForTesting } from '@/app/api/translate/route';
 
 // =============================================================================
 // SERVICE CLIENT USAGE TESTS
@@ -765,6 +768,48 @@ describe('Translate API - Japanese Character Detection', () => {
     // Should have called OpenRouter (Japanese detected)
     const openRouterCalls = fetchCalls.filter(c => c.url.includes('openrouter'));
     expect(openRouterCalls.length).toBe(1);
+  });
+});
+
+// =============================================================================
+// RATE LIMITING TESTS
+// =============================================================================
+
+describe('Translate API - Rate Limiting', () => {
+  it('returns 429 when rate limit is exceeded', async () => {
+    mockListingData = {
+      id: 123,
+      title: 'English title',
+      title_en: 'Cached',
+      description: null,
+      description_en: null,
+      item_type: 'katana',
+    };
+
+    // Send 11 requests from the same IP (limit is 10/min)
+    // Use x-forwarded-for to set a consistent test IP
+    const responses: Response[] = [];
+    for (let i = 0; i < 11; i++) {
+      const request = new Request('http://localhost:3000/api/translate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-forwarded-for': '192.168.1.100',
+        },
+        body: JSON.stringify({ listingId: 123, type: 'title' }),
+      });
+      responses.push(await POST(request as never));
+    }
+
+    // First 10 should succeed
+    for (let i = 0; i < 10; i++) {
+      expect(responses[i].status).toBe(200);
+    }
+
+    // 11th should be rate limited
+    expect(responses[10].status).toBe(429);
+    const json = await responses[10].json();
+    expect(json.code).toBe('RATE_LIMITED');
   });
 });
 
