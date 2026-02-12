@@ -24,6 +24,8 @@ import { ArtistProfileBar } from '@/components/artisan/ArtistProfileBar';
 import { ArtistPageClient } from './ArtistPageClient';
 import type { ArtisanPageResponse } from '@/app/api/artisan/[code]/route';
 
+export const dynamic = 'force-dynamic';
+
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://nihontowatch.com';
 
 interface ArtistPageProps {

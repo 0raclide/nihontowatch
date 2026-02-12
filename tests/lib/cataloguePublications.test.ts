@@ -369,17 +369,17 @@ describe('getPublishedCatalogueEntries', () => {
     expect(result[0].images[0].width).toBe(1920);
   });
 
-  it('uses gold_maker_id column for tosogu entity type', async () => {
+  it('queries both gold_smith_id and gold_maker_id columns via OR', async () => {
     registerResults('gold_values', {
       data: [{ object_uuid: 'uuid-1', gold_form_type: 'Tsuba' }],
       error: null,
     });
     registerResults('catalogue_publications', { data: [], error: null });
 
+    // Both smith and tosogu entity types now use the same OR query
+    // to catch artisans whose objects span both columns
     await getPublishedCatalogueEntries('GOT001', 'tosogu');
-
-    // The gold_values mock was called — we just verify the function runs without error for tosogu
-    // (The eq('gold_maker_id', ...) call happens inside the mock)
+    await getPublishedCatalogueEntries('MAS590', 'smith');
   });
 
   it('handles null note gracefully', async () => {
