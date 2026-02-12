@@ -38,6 +38,7 @@
 
 | Document | Date | Summary |
 |----------|------|---------|
+| [SESSION_20260212_CERT_FALSE_POSITIVE_FIX.md](./SESSION_20260212_CERT_FALSE_POSITIVE_FIX.md) | 2026-02-12 | **Cert false positive fix** — Related Products text bleed (listing 54248 fake Masamune as Tokuju), 5-layer defense, 3 DB fixes, 12 regression tests |
 | [SESSION_20260210_DENRAI_DEDUP.md](./SESSION_20260210_DENRAI_DEDUP.md) | 2026-02-10 | **Denrai within-item dedup** — category-based rules (person trumps family), eliminates inflated provenance counts, -1 DB query |
 | [SESSION_20260209_ARTISAN_DISPLAY_NAMES.md](./SESSION_20260209_ARTISAN_DISPLAY_NAMES.md) | 2026-02-09 | **Artisan display names on badges** — server-side enrichment from Yuhinkai, `getArtisanNames()` batch lookup |
 | [SESSION_20260208_ARTIST_DIRECTORY.md](./SESSION_20260208_ARTIST_DIRECTORY.md) | 2026-02-08 | **Artist directory & profiles** — `/artists` page, designation counts, "for sale" QuickView links, provenance |
@@ -138,6 +139,7 @@
 3. Check `Oshi-scrapper/tests/test_title_first_cert.py` - 70 cert extraction tests
 4. Check `Oshi-scrapper/scrapers/<dealer>.py` - Dealer-specific `_extract_certification()` (regex fallback)
 5. See [NIPPONTO_JUYO_FALSE_POSITIVE_FIX.md](./NIPPONTO_JUYO_FALSE_POSITIVE_FIX.md) - Detailed example of nav menu false positive
+6. See [SESSION_20260212_CERT_FALSE_POSITIVE_FIX.md](./SESSION_20260212_CERT_FALSE_POSITIVE_FIX.md) - Related Products text bleed + English pattern guards
 
 ### "I need to monitor or debug the stale refresh system"
 1. Read [POSTMORTEM_STALE_REFRESH_CRISIS.md](./POSTMORTEM_STALE_REFRESH_CRISIS.md) - Root cause, fixes, monitoring SQL queries, thresholds

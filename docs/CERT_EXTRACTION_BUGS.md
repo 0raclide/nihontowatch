@@ -28,6 +28,9 @@ classify_cert_conservative(title, body)
        7. [cert_type]鑑定書              — cert BEFORE 鑑定書 (broadened, no suffix required)
        8. Standalone 刀剣/刀装具 certs   — with multi-guard system (nav, pipe, product-number)
        9. 重要美術品 + positive marker    — requires structural evidence (証書, 文部省, 白鞘, 指定)
+      10. English Tokubetsu Juyo/Hozon   — with multi-type, parenthetical, and Related proximity guards
+      11. English Juyo/Hozon + price     — requires ¥ or dash after (Choshuya GJ format)
+      12. Japanese cert without suffix   — requires parenthetical, price, or dash after
 ```
 
 **Two extraction paths exist per dealer:**
@@ -39,6 +42,37 @@ classify_cert_conservative(title, body)
 ---
 
 ## Bug Log
+
+### BUG-009: Related Products text bleed — English cert patterns lack context guards
+
+**Date:** 2026-02-12
+**Severity:** High — 3 listings affected, Tokuju false positive on a ¥270k listing
+**Dealers:** Aoi Art (ID 1), Hyozaemon (ID 15), Asahi Token (ID 63)
+**Status:** Resolved (Oshi-scrapper commit `d2d99ff`, NihontoWatch commit `4cd369d`)
+
+**Symptoms:**
+- Listing 54248 (Aoi Art): Displayed Tokuju for a ¥270,000 auction katana with only "Aoi-Art estimation Paper"
+- Listing 5395 (Hyozaemon): Displayed Juyo for a ¥680,000 Hozon sword (biographical reference)
+- Listing 42061 (Asahi Token): Displayed Juyo for a ¥715,000 TokuHozon sword (biographical reference)
+
+**Root cause:** English cert patterns `Tokubetsu[- ]Juyo` and `Tokubetsu[- ]Hozon` (lines 351-358) had **zero context guards**, unlike the Japanese standalone patterns which had multi-type, pipe-list, and product-number guards. The bare `re.search()` matched text from Related Products sections on dealer pages.
+
+For listing 54248, the page text included: `Related Items: ... (25th NBTHK Tokubetsu Juyo Token)` — a completely different listing's cert description.
+
+**Fix (5 layers):**
+1. **Database:** Fixed 3 listings (54248→NULL, 5395→Hozon, 42061→TokuHozon)
+2. **English pattern guards** (`llm_extractor.py`): Multi-type (3+ cert types = nav), parenthetical (match inside `(...)` = other item), Related proximity (within 500 chars of "Related Products" heading)
+3. **HTML stripping** (`base.py`): Strip Related Products sections before text extraction
+4. **QA severity** (`cross_validators.py`): Tokuju<¥5M and Juyo<¥1M elevated from WARNING to ERROR
+5. **Frontend guardrail** (`ListingCard.tsx`): Suppress cert badges when price/cert is implausible (with title exception for legitimate consignment sales)
+
+**Tests:** 12 new tests in `TestRelatedProductsFalsePositives` class. Total: 137 cert extraction tests (136 passed, 1 xfail).
+
+**Known limitation:** Biographical `第XX回重要刀剣に指定されている` session references (describing other swords) still match the high-priority session pattern. Documented as xfail.
+
+**Session doc:** [SESSION_20260212_CERT_FALSE_POSITIVE_FIX.md](./SESSION_20260212_CERT_FALSE_POSITIVE_FIX.md)
+
+---
 
 ### BUG-008: Juyo false positives — biographical smith references + dead pages
 
