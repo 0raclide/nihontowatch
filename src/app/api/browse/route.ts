@@ -818,6 +818,12 @@ export async function GET(request: NextRequest) {
 
     const lastUpdated = (freshnessData as { last_scraped_at: string } | null)?.last_scraped_at || null;
 
+    // Total active dealer count (independent of status filter, for subtitle text)
+    const { count: totalDealerCount } = await supabase
+      .from('dealers')
+      .select('id', { count: 'exact', head: true })
+      .eq('is_active', true);
+
     // Create response with cache headers
     const response = NextResponse.json({
       listings: enrichedListings,
@@ -831,6 +837,7 @@ export async function GET(request: NextRequest) {
         historicalPeriods: periodsFacet,
         signatureStatuses: signatureFacet,
       },
+      totalDealerCount: totalDealerCount || 0,
       lastUpdated,
       // Data freshness indicator for subscription tier
       isDelayed: subscription.isDelayed,

@@ -102,6 +102,7 @@ interface BrowseResponse {
     historicalPeriods: Facet[];
     signatureStatuses: Facet[];
   };
+  totalDealerCount?: number;
   lastUpdated: string | null;
   isUrlSearch?: boolean;
   isAdmin?: boolean;
@@ -157,7 +158,7 @@ function LiveStatsBanner({ data }: { data: BrowseResponse | null }) {
   const elapsed = useElapsedSince(data?.lastUpdated ?? null);
   if (!data || !elapsed) return null;
 
-  const galleryCount = data.facets.dealers.length;
+  const galleryCount = data.totalDealerCount || data.facets.dealers.length;
   const itemCount = data.total.toLocaleString();
 
   return (
@@ -614,7 +615,7 @@ function HomeContent() {
                 const fittingsCount = data.facets.itemTypes
                   .filter(f => tosoguSet.has(f.value))
                   .reduce((sum, f) => sum + f.count, 0);
-                const galleryCount = data.facets.dealers.length;
+                const galleryCount = data.totalDealerCount || data.facets.dealers.length;
                 return `${swordCount.toLocaleString()} Japanese swords and ${fittingsCount.toLocaleString()} fittings from ${galleryCount} galleries worldwide`;
               })() : 'Japanese swords and fittings from specialist galleries worldwide'}
             </p>
