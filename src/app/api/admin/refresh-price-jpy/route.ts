@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
+import { verifyCronAuth } from '@/lib/api/cronAuth';
 
 /**
  * POST /api/admin/refresh-price-jpy
@@ -13,7 +14,12 @@ import { logger } from '@/lib/logger';
  * - After significant exchange rate movements
  * - After bulk listing imports
  */
-export async function POST() {
+export async function POST(request: NextRequest) {
+  // Verify authorization (cron or admin API key)
+  if (!verifyCronAuth(request)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     // Fetch current exchange rates
     const ratesResponse = await fetch(
@@ -79,7 +85,7 @@ export async function POST() {
   }
 }
 
-// Also support GET for easy testing/manual trigger
-export async function GET() {
-  return POST();
+// Also support GET for cron triggers
+export async function GET(request: NextRequest) {
+  return POST(request);
 }

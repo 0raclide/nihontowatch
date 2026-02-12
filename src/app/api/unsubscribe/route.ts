@@ -5,9 +5,15 @@ import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
-// Secret for signing unsubscribe tokens
-// In production, use a dedicated secret from environment
-const UNSUBSCRIBE_SECRET = process.env.UNSUBSCRIBE_SECRET || process.env.CRON_SECRET || 'default-unsubscribe-secret';
+// Secret for signing unsubscribe tokens — MUST be configured in production
+function getUnsubscribeSecret(): string {
+  const secret = process.env.UNSUBSCRIBE_SECRET || process.env.CRON_SECRET;
+  if (!secret) {
+    logger.error('UNSUBSCRIBE_SECRET and CRON_SECRET not configured - unsubscribe tokens will be rejected');
+  }
+  return secret || '';
+}
+const UNSUBSCRIBE_SECRET = getUnsubscribeSecret();
 
 /**
  * Generate an unsubscribe token
@@ -51,6 +57,10 @@ function verifyUnsubscribeToken(token: string): {
   error?: string;
 } {
   try {
+    if (!UNSUBSCRIBE_SECRET) {
+      return { valid: false, error: 'Token verification unavailable' };
+    }
+
     const [payloadStr, signature] = token.split('.');
     if (!payloadStr || !signature) {
       return { valid: false, error: 'Invalid token format' };

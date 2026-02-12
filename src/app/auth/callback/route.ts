@@ -9,7 +9,13 @@ export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
 
   const code = searchParams.get('code');
-  const next = searchParams.get('next') ?? '/';
+  let next = searchParams.get('next') ?? '/';
+
+  // Prevent open redirect: only allow relative paths starting with /
+  // Block protocol-relative URLs (//evil.com) and absolute URLs
+  if (!next.startsWith('/') || next.startsWith('//')) {
+    next = '/';
+  }
 
   if (code) {
     const supabase = await createClient();
