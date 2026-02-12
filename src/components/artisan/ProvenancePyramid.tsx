@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   PROVENANCE_TIERS,
   formatKoku,
@@ -133,6 +133,104 @@ export function ProvenancePyramid({ analysis }: ProvenancePyramidProps) {
   );
 }
 
+function ProvenanceHistogram({
+  buckets,
+  total,
+  factor,
+  entityType,
+}: {
+  buckets: number[];
+  total: number;
+  factor: number;
+  entityType: 'smith' | 'tosogu';
+}) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const peerLabel = entityType === 'smith' ? 'smiths' : 'tosogu makers';
+
+  // Find the last non-zero bucket to trim empty tail
+  let lastNonZero = buckets.length - 1;
+  while (lastNonZero > 0 && buckets[lastNonZero] === 0) lastNonZero--;
+  // Show at least up to the artisan's bucket + a little margin, min 10 buckets
+  const activeBucket = Math.min(Math.floor(factor * 10), 99);
+  const visibleCount = Math.max(lastNonZero + 2, activeBucket + 3, 10);
+  const visible = buckets.slice(0, visibleCount);
+
+  const maxCount = Math.max(...visible);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.scale(dpr, dpr);
+
+    const w = rect.width;
+    const h = rect.height;
+    const barW = w / visible.length;
+    const topPad = 12; // room for the marker above
+
+    ctx.clearRect(0, 0, w, h);
+
+    // Draw bars
+    for (let i = 0; i < visible.length; i++) {
+      const count = visible[i];
+      if (count === 0) continue;
+
+      // Log scale for height
+      const logH = Math.log(count + 1) / Math.log(maxCount + 1);
+      const barH = Math.max(logH * (h - topPad - 14), 1);
+      const x = i * barW;
+      const y = h - 14 - barH;
+
+      const isActive = i === activeBucket;
+
+      ctx.fillStyle = isActive
+        ? 'rgba(196, 164, 105, 0.8)'  // gold
+        : 'rgba(128, 128, 128, 0.18)'; // neutral
+
+      ctx.fillRect(x + 0.5, y, Math.max(barW - 1, 1), barH);
+    }
+
+    // Draw marker arrow above active bucket
+    const markerX = (activeBucket + 0.5) * barW;
+    ctx.fillStyle = 'rgba(196, 164, 105, 0.9)';
+    ctx.beginPath();
+    ctx.moveTo(markerX - 4, 2);
+    ctx.lineTo(markerX + 4, 2);
+    ctx.lineTo(markerX, 8);
+    ctx.closePath();
+    ctx.fill();
+
+    // Axis labels (score units, not %)
+    ctx.fillStyle = 'rgba(128, 128, 128, 0.35)';
+    ctx.font = '9px system-ui, sans-serif';
+    ctx.textBaseline = 'bottom';
+    ctx.textAlign = 'start';
+    ctx.fillText('0', 0, h);
+    ctx.textAlign = 'end';
+    ctx.fillText((visibleCount / 10).toFixed(1), w, h);
+  }, [visible, maxCount, activeBucket, visibleCount]);
+
+  return (
+    <div className="mt-3">
+      <p className="text-[11px] text-ink/35 mb-2">
+        Distribution across {total.toLocaleString()} {peerLabel} with documented provenance
+      </p>
+      <canvas
+        ref={canvasRef}
+        className="w-full h-[68px]"
+        style={{ imageRendering: 'auto' }}
+      />
+    </div>
+  );
+}
+
 /**
  * ProvenanceFactorDisplay — Companion to EliteFactorDisplay.
  *
@@ -164,6 +262,16 @@ export function ProvenanceFactorDisplay({ analysis, entityType, percentile: dbPe
   const { factor: mockFactor, count, apex, tiers } = analysis;
   const factor = dbFactor ?? mockFactor;
   const [showInfo, setShowInfo] = useState(false);
+  const [distribution, setDistribution] = useState<{ buckets: number[]; total: number } | null>(null);
+
+  // Lazy-load distribution when info panel opens
+  useEffect(() => {
+    if (!showInfo || distribution) return;
+    fetch(`/api/artisan/provenance-distribution?type=${entityType}`)
+      .then(r => r.json())
+      .then(d => setDistribution(d))
+      .catch(() => {});
+  }, [showInfo, distribution, entityType]);
 
   const percentile = dbPercentile ?? estimatePercentile(factor);
   const topPct = Math.max(100 - percentile, 1);
@@ -246,6 +354,20 @@ export function ProvenanceFactorDisplay({ analysis, entityType, percentile: dbPe
               all {peerLabel} with documented provenance.
             </p>
           </div>
+
+          {/* Histogram */}
+          {distribution ? (
+            <ProvenanceHistogram
+              buckets={distribution.buckets}
+              total={distribution.total}
+              factor={factor}
+              entityType={entityType}
+            />
+          ) : (
+            <div className="h-[68px] flex items-center justify-center">
+              <div className="w-4 h-4 border-2 border-border/30 border-t-gold/50 rounded-full animate-spin" />
+            </div>
+          )}
         </div>
       )}
     </div>

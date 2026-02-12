@@ -440,6 +440,36 @@ export async function getEliteDistribution(
 }
 
 /**
+ * Get provenance factor distribution as histogram buckets.
+ * Returns 100 buckets at 0.1 resolution (0–0.1, 0.1–0.2, …, 9.9–10.0).
+ * Only includes artisans with a non-null provenance_factor.
+ */
+export async function getProvenanceDistribution(
+  entityType: 'smith' | 'tosogu'
+): Promise<{ buckets: number[]; total: number }> {
+  const table = entityType === 'smith' ? 'smith_entities' : 'tosogu_makers';
+
+  const { data, error } = await yuhinkaiClient
+    .from(table)
+    .select('provenance_factor')
+    .not('provenance_factor', 'is', null);
+
+  if (error || !data) {
+    console.error('[Yuhinkai] Error fetching provenance distribution:', error);
+    return { buckets: Array(100).fill(0), total: 0 };
+  }
+
+  const buckets = Array(100).fill(0);
+  for (const row of data) {
+    const pf = row.provenance_factor ?? 0;
+    const idx = Math.min(Math.floor(pf * 10), 99);
+    buckets[idx]++;
+  }
+
+  return { buckets, total: data.length };
+}
+
+/**
  * Calculate Toko Taikan score percentile (smith only).
  * Returns a value from 0 to 100 (higher = higher rated than peers).
  */
