@@ -16,6 +16,24 @@ export function getListingQuickViewUrl(listingId: number): string {
   return `${BASE_URL}/?listing=${listingId}`;
 }
 
+/**
+ * Generate a multi-listing QuickView carousel URL.
+ * Opens all matched listings in a focused slideshow with prev/next navigation.
+ *
+ * @param listingIds - Array of listing IDs to include in the carousel
+ * @param searchName - Optional search name for context display in the banner
+ * @returns URL like https://nihontowatch.com/?listings=123,456,789&alert_search=Juyo+Katana
+ */
+export function getMultiListingQuickViewUrl(listingIds: number[], searchName?: string): string {
+  const ids = listingIds.slice(0, 50).join(',');
+  const url = new URL(`${BASE_URL}/`);
+  url.searchParams.set('listings', ids);
+  if (searchName) {
+    url.searchParams.set('alert_search', searchName);
+  }
+  return url.toString();
+}
+
 interface EmailRecipient {
   userId: string;
   email: string;
@@ -162,9 +180,19 @@ export function generateSavedSearchNotificationHtml(
           <!-- CTA -->
           <tr>
             <td style="padding: 24px; text-align: center;">
-              <a href="${searchUrl}" style="display: inline-block; padding: 12px 24px; background-color: #b8860b; color: #ffffff; text-decoration: none; font-size: 14px; font-weight: 500; border-radius: 6px;">
-                View All Results
-              </a>
+              ${matchedListings.length <= 50
+                ? `<a href="${getMultiListingQuickViewUrl(matchedListings.map(l => l.id), savedSearch.name || undefined)}" style="display: inline-block; padding: 12px 24px; background-color: #b8860b; color: #ffffff; text-decoration: none; font-size: 14px; font-weight: 500; border-radius: 6px;">
+                View ${matchedListings.length} New Match${matchedListings.length === 1 ? '' : 'es'}
+              </a>`
+                : `<a href="${searchUrl}" style="display: inline-block; padding: 12px 24px; background-color: #b8860b; color: #ffffff; text-decoration: none; font-size: 14px; font-weight: 500; border-radius: 6px;">
+                View ${matchedListings.length} New Matches
+              </a>`
+              }
+              <p style="margin: 12px 0 0; font-size: 12px;">
+                <a href="${searchUrl}" style="color: #666; text-decoration: none;">
+                  Or browse all results →
+                </a>
+              </p>
             </td>
           </tr>
 
@@ -258,7 +286,10 @@ ${listingsText}${moreText}
 
 ---
 
-View all results: ${searchUrl}
+${matchedListings.length <= 50
+    ? `View ${matchedListings.length} new match${matchedListings.length === 1 ? '' : 'es'}: ${getMultiListingQuickViewUrl(matchedListings.map(l => l.id), savedSearch.name || undefined)}`
+    : `View ${matchedListings.length} new matches: ${searchUrl}`}
+Browse all results: ${searchUrl}
 Manage saved searches: ${manageUrl}
 
 ---

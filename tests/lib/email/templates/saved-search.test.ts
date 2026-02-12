@@ -12,6 +12,7 @@ import {
   generateSavedSearchNotificationHtml,
   generateSavedSearchNotificationText,
   getListingQuickViewUrl,
+  getMultiListingQuickViewUrl,
 } from '@/lib/email/templates/saved-search';
 import type { SavedSearch, Listing } from '@/types';
 
@@ -101,6 +102,32 @@ describe('Saved Search Email Templates', () => {
     });
   });
 
+  describe('getMultiListingQuickViewUrl', () => {
+    it('should generate URL with comma-separated listing IDs', () => {
+      const url = getMultiListingQuickViewUrl([100, 200, 300]);
+      expect(url).toContain('listings=100%2C200%2C300');
+    });
+
+    it('should include alert_search param when searchName provided', () => {
+      const url = getMultiListingQuickViewUrl([100], 'Juyo Katana');
+      expect(url).toContain('alert_search=Juyo+Katana');
+    });
+
+    it('should omit alert_search when no searchName', () => {
+      const url = getMultiListingQuickViewUrl([100]);
+      expect(url).not.toContain('alert_search');
+    });
+
+    it('should cap at 50 IDs', () => {
+      const ids = Array.from({ length: 60 }, (_, i) => i + 1);
+      const url = getMultiListingQuickViewUrl(ids);
+      const match = url.match(/listings=([^&]*)/);
+      expect(match).toBeTruthy();
+      const parsedIds = decodeURIComponent(match![1]).split(',');
+      expect(parsedIds.length).toBe(50);
+    });
+  });
+
   describe('generateSavedSearchNotificationHtml', () => {
     it('should link listings to Nihontowatch quickview, not external dealer URLs', () => {
       const html = generateSavedSearchNotificationHtml(
@@ -152,17 +179,20 @@ describe('Saved Search Email Templates', () => {
       expect(html).toContain('Juyo');
     });
 
-    it('should include View All Results button with search URL', () => {
+    it('should include View N New Matches button with multi-listing QuickView URL', () => {
       const html = generateSavedSearchNotificationHtml(
         mockSavedSearch,
         mockListings,
         'instant'
       );
 
-      // View All Results should link to the search criteria, not an individual listing
-      expect(html).toContain('View All Results');
-      // The saved search has certifications: ['Juyo'] so URL should contain cert=Juyo
-      expect(html).toContain(`${BASE_URL}/?`);
+      // Main CTA links to multi-listing QuickView carousel
+      expect(html).toContain('View 2 New Matches');
+      expect(html).toContain('listings=');
+      expect(html).toContain('alert_search=Juyo');
+
+      // Secondary escape hatch links to browse with search criteria
+      expect(html).toContain('Or browse all results');
       expect(html).toContain('cert=Juyo');
     });
 
@@ -225,14 +255,19 @@ describe('Saved Search Email Templates', () => {
       expect(text).toContain('2. Katana: Kuniyuki');
     });
 
-    it('should include View all results link', () => {
+    it('should include multi-listing QuickView link and browse link', () => {
       const text = generateSavedSearchNotificationText(
         mockSavedSearch,
         mockListings,
         'instant'
       );
 
-      expect(text).toContain('View all results:');
+      // Multi-listing carousel link
+      expect(text).toContain('View 2 new matches:');
+      expect(text).toContain('listings=');
+
+      // Browse escape hatch
+      expect(text).toContain('Browse all results:');
     });
   });
 

@@ -5,6 +5,7 @@ import { QuickViewModal } from './QuickViewModal';
 import { QuickViewContent } from './QuickViewContent';
 import { QuickViewMobileSheet } from './QuickViewMobileSheet';
 import { StudySetsumeiView } from './StudySetsumeiView';
+import { AlertContextBanner } from './AlertContextBanner';
 import { LazyImage } from '@/components/ui/LazyImage';
 import { useQuickView } from '@/contexts/QuickViewContext';
 import { useActivityTrackerOptional } from '@/lib/tracking/ActivityTracker';
@@ -182,6 +183,7 @@ export function QuickView() {
       >
         {/* Mobile layout (show below lg, hide on lg+) */}
         <div className="lg:hidden h-full flex flex-col" data-testid="quickview-mobile-layout">
+          <AlertContextBanner />
           {/* Study mode or image scroller */}
           {isStudyMode ? (
             <div className="flex-1 min-h-0 overflow-hidden">
@@ -354,6 +356,7 @@ export function QuickView() {
 
           {/* Content Section - Fixed on desktop */}
           <div data-testid="desktop-content-panel" className="w-2/5 max-w-md border-l border-border bg-cream flex flex-col min-h-0 overflow-hidden">
+            <AlertContextBanner />
             {/* Desktop image progress - hide in study mode */}
             {!isStudyMode && images.length > 1 && (
               <div className="border-b border-border">

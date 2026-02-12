@@ -88,6 +88,9 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
       url.searchParams.set('listing', String(listingId));
     } else {
       url.searchParams.delete('listing');
+      // Also clean up multi-listing params (from alert email deep links)
+      url.searchParams.delete('listings');
+      url.searchParams.delete('alert_search');
     }
 
     // Use replaceState to update URL without triggering navigation
@@ -292,6 +295,20 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
       console.error('Error refreshing listing:', error);
     }
   }, [currentListing, currentIndex, listings]);
+
+  // Recalculate currentIndex when listings change while a listing is displayed.
+  // This handles the race condition where setListings() and openQuickView() are
+  // called in the same tick (e.g., DeepLinkHandler multi-listing deep links):
+  // openQuickView's closure still has the old empty listings array, so findIndex
+  // returns -1. Once React processes both state updates, this effect corrects it.
+  useEffect(() => {
+    if (isOpen && currentListing && listings.length > 0 && currentIndex === -1) {
+      const index = listings.findIndex((l) => l.id === currentListing.id);
+      if (index !== -1) {
+        setCurrentIndex(index);
+      }
+    }
+  }, [isOpen, listings, currentListing, currentIndex]);
 
   // Handle browser back button (popstate)
   useEffect(() => {

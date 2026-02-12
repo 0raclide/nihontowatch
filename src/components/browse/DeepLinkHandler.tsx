@@ -6,75 +6,131 @@ import { useQuickViewOptional } from '@/contexts/QuickViewContext';
 import type { Listing } from '@/types';
 
 /**
- * Handles deep links to listings via the ?listing= URL parameter.
+ * Map raw API listing data to the format QuickView expects.
+ * The API returns 'dealers' (plural) from Supabase join;
+ * we add a 'dealer' (singular) alias for component compatibility.
+ */
+function mapApiListing(listingData: Record<string, unknown>): Listing {
+  return {
+    ...listingData,
+    dealer: listingData.dealers ? {
+      id: (listingData.dealers as Record<string, unknown>).id,
+      name: (listingData.dealers as Record<string, unknown>).name,
+      domain: (listingData.dealers as Record<string, unknown>).domain,
+    } : undefined,
+  } as Listing;
+}
+
+/**
+ * Handles deep links to listings via URL parameters.
  *
- * When the page loads with ?listing=<id>, this component:
- * 1. Fetches the listing from the API (same endpoint used by QuickView)
- * 2. Opens the QuickView modal with that listing
+ * Supports two modes:
+ * 1. Single listing: ?listing=<id> — opens one listing in QuickView
+ * 2. Multi-listing carousel: ?listings=<id1>,<id2>,... — fetches all in parallel,
+ *    opens a navigable QuickView carousel (used by alert email CTAs)
  *
- * This enables shareable URLs that open specific listings.
+ * Optional ?alert_search=<name> stores context in sessionStorage for the
+ * AlertContextBanner to display "Match 1 of N — <name>".
  *
- * Uses the /api/listing/[id] endpoint instead of direct Supabase queries
- * to ensure consistent data format and avoid RLS/client-side issues.
+ * ?listings= takes priority over ?listing= if both are present.
  */
 export function DeepLinkHandler() {
   const searchParams = useSearchParams();
   const quickView = useQuickViewOptional();
   const hasHandledRef = useRef(false);
   const listingParam = searchParams.get('listing');
+  const listingsParam = searchParams.get('listings');
+  const alertSearchParam = searchParams.get('alert_search');
 
   useEffect(() => {
-    // Only handle once per mount
     if (hasHandledRef.current) return;
+    if (!quickView) return;
 
-    // Skip if no listing param or no QuickView context
-    if (!listingParam || !quickView) return;
+    // Multi-listing carousel (?listings= takes priority)
+    if (listingsParam) {
+      const ids = listingsParam
+        .split(',')
+        .map((s) => parseInt(s.trim(), 10))
+        .filter((n) => !isNaN(n));
 
-    const listingId = parseInt(listingParam, 10);
-    if (isNaN(listingId)) return;
+      if (ids.length === 0) return;
 
-    // Fetch and open the listing using the API endpoint
-    // This ensures we get the same data format as QuickView's fetchFullListing
-    const fetchAndOpenListing = async () => {
-      try {
-        const response = await fetch(`/api/listing/${listingId}`);
+      const fetchAndOpenMultiple = async () => {
+        try {
+          const results = await Promise.allSettled(
+            ids.map((id) =>
+              fetch(`/api/listing/${id}`).then(async (res) => {
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json();
+                if (!data.listing) throw new Error('No listing data');
+                return mapApiListing(data.listing);
+              })
+            )
+          );
 
-        if (!response.ok) {
-          console.error('Failed to fetch listing for deep link:', response.status);
-          return;
+          const listings = results
+            .filter((r): r is PromiseFulfilledResult<Listing> => r.status === 'fulfilled')
+            .map((r) => r.value);
+
+          if (listings.length === 0) return;
+
+          // Store alert context for the banner
+          if (alertSearchParam) {
+            try {
+              sessionStorage.setItem(
+                'quickview_alert_context',
+                JSON.stringify({
+                  searchName: alertSearchParam,
+                  totalMatches: ids.length,
+                })
+              );
+            } catch {
+              // sessionStorage may be unavailable
+            }
+          }
+
+          quickView.setListings(listings);
+          quickView.openQuickView(listings[0]);
+          hasHandledRef.current = true;
+        } catch (err) {
+          console.error('Error handling multi-listing deep link:', err);
         }
+      };
 
-        const data = await response.json();
-        const listingData = data.listing;
+      fetchAndOpenMultiple();
+      return;
+    }
 
-        if (!listingData) {
-          console.error('No listing data in response for deep link');
-          return;
+    // Single listing (?listing=)
+    if (listingParam) {
+      const listingId = parseInt(listingParam, 10);
+      if (isNaN(listingId)) return;
+
+      const fetchAndOpenListing = async () => {
+        try {
+          const response = await fetch(`/api/listing/${listingId}`);
+          if (!response.ok) {
+            console.error('Failed to fetch listing for deep link:', response.status);
+            return;
+          }
+
+          const data = await response.json();
+          if (!data.listing) {
+            console.error('No listing data in response for deep link');
+            return;
+          }
+
+          const listing = mapApiListing(data.listing);
+          quickView.openQuickView(listing);
+          hasHandledRef.current = true;
+        } catch (err) {
+          console.error('Error handling deep link:', err);
         }
+      };
 
-        // The API returns the listing with 'dealers' (plural) from Supabase join
-        // Map to both 'dealers' and 'dealer' for compatibility with all components
-        const listing = {
-          ...listingData,
-          // Ensure both singular and plural dealer references work
-          dealer: listingData.dealers ? {
-            id: listingData.dealers.id,
-            name: listingData.dealers.name,
-            domain: listingData.dealers.domain,
-          } : undefined,
-        } as Listing;
+      fetchAndOpenListing();
+    }
+  }, [listingParam, listingsParam, alertSearchParam, quickView]);
 
-        // Open the QuickView with complete listing data
-        quickView.openQuickView(listing);
-        hasHandledRef.current = true;
-      } catch (err) {
-        console.error('Error handling deep link:', err);
-      }
-    };
-
-    fetchAndOpenListing();
-  }, [listingParam, quickView]);
-
-  // This component doesn't render anything
   return null;
 }
