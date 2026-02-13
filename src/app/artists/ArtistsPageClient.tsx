@@ -2,7 +2,6 @@
 
 import { useState, useCallback, useRef, useEffect, type SyntheticEvent } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import type { ArtistDirectoryEntry, DirectoryFacets } from '@/lib/supabase/yuhinkai';
 import { getArtisanDisplayParts } from '@/lib/artisan/displayName';
 import { eraToBroadPeriod } from '@/lib/artisan/eraPeriods';
@@ -91,11 +90,14 @@ export function ArtistsPageClient({
     return p.toString();
   }, []);
 
-  // Update URL without navigation (keeps it shareable)
+  // Update URL without navigation (keeps it shareable).
+  // Uses native History.prototype.replaceState to bypass Next.js's monkey-patched
+  // version, which would otherwise notify the router and re-trigger the Suspense
+  // boundary from loading.tsx — unmounting the component and destroying client state.
   const updateUrl = useCallback((f: Filters, page: number) => {
     const qs = buildQueryString(f, page);
     const url = `/artists${qs ? `?${qs}` : ''}`;
-    window.history.replaceState(null, '', url);
+    History.prototype.replaceState.call(window.history, window.history.state, '', url);
   }, [buildQueryString]);
 
   // Client-side fetch — the only data-fetching path for filter interactions
@@ -149,30 +151,17 @@ export function ArtistsPageClient({
     };
   }, []);
 
-  // Sync state when SSR props change from external navigation (e.g. header search).
-  // The server's type may differ from the client's preserved type (e.g. header search
-  // navigated to /artists?q=... without type=tosogu). In that case we keep the client
-  // type and re-fetch to get the correct data for the correct type.
+  // Sync state from server on external navigation (header link, back/forward).
+  // Client-side filter changes use native History.prototype.replaceState which
+  // bypasses Next.js, so this effect only fires on genuine navigations where
+  // we want a full state reset from the server-rendered data.
   useEffect(() => {
-    const clientType = filtersRef.current.type;
-    const serverType = initialFilters.type;
-
-    if (clientType !== serverType) {
-      // Server rendered with wrong type — preserve client type and re-fetch
-      const correctedFilters = { ...initialFilters, type: clientType };
-      setFilters(correctedFilters);
-      setSearchInput(initialFilters.q || '');
-      fetchArtists(correctedFilters, initialPagination.page);
-      updateUrl(correctedFilters, initialPagination.page);
-    } else {
-      // Types match — safe to sync all state from server
-      setArtists(initialArtists);
-      setPagination(initialPagination);
-      setFilters(initialFilters);
-      setFacets(initialFacets);
-      setSearchInput(initialFilters.q || '');
-    }
-  }, [initialArtists, initialPagination, initialFilters, initialFacets, fetchArtists, updateUrl]);
+    setArtists(initialArtists);
+    setPagination(initialPagination);
+    setFilters(initialFilters);
+    setFacets(initialFacets);
+    setSearchInput(initialFilters.q || '');
+  }, [initialArtists, initialPagination, initialFilters, initialFacets]);
 
   const applyFilters = useCallback((newFilters: Filters, page: number) => {
     setFilters(newFilters);
@@ -637,17 +626,11 @@ function SkeletonCard() {
 }
 
 function ArtistCard({ artist }: { artist: ArtistWithSlug }) {
-  const router = useRouter();
   const percentile = artist.percentile ?? 0;
   const isSchool = artist.is_school_code;
 
   const profileUrl = `/artists/${artist.slug}`;
   const availableCount = artist.available_count ?? 0;
-
-  // Build browse URL for "for sale" link — opens QuickView if we have a first listing ID
-  const forSaleUrl = availableCount > 0
-    ? `/artists/${artist.slug}#listings`
-    : undefined;
 
   // Designation shortcodes — ordered by prestige, only shown when > 0
   const certBadges: Array<{ label: string; value: number }> = [];
@@ -669,9 +652,9 @@ function ArtistCard({ artist }: { artist: ArtistWithSlug }) {
   }
 
   return (
-    <div
-      onClick={() => router.push(profileUrl)}
-      className={`group cursor-pointer bg-cream border border-border hover:border-gold/40 transition-colors flex flex-row overflow-hidden${
+    <Link
+      href={profileUrl}
+      className={`group bg-cream border border-border hover:border-gold/40 transition-colors flex flex-row overflow-hidden${
         isSchool ? ' border-l-2 border-l-gold/60' : ''
       }`}
     >
@@ -729,20 +712,15 @@ function ArtistCard({ artist }: { artist: ArtistWithSlug }) {
           </div>
         )}
 
-        {/* Row 4: For sale link */}
-        {availableCount > 0 && forSaleUrl && (
+        {/* Row 4: For sale count */}
+        {availableCount > 0 && (
           <div className="mt-1.5 flex justify-end text-[11px] tabular-nums">
-            <Link
-              href={forSaleUrl}
-              scroll={false}
-              onClick={(e) => e.stopPropagation()}
-              className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium hover:text-emerald-500 dark:hover:text-emerald-300 transition-colors"
-            >
+            <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
               {availableCount} on the market
               <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
               </svg>
-            </Link>
+            </span>
           </div>
         )}
 
@@ -758,7 +736,7 @@ function ArtistCard({ artist }: { artist: ArtistWithSlug }) {
           </div>
         )}
       </div>
-    </div>
+    </Link>
   );
 }
 

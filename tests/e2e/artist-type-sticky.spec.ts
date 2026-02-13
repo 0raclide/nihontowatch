@@ -9,145 +9,94 @@ test.describe('Artist type filter (nihonto/tosogu) must be sticky', () => {
     // 2. Click the Tosogu toggle button (sidebar)
     const tosoguBtn = page.locator('button', { hasText: 'Tosogu' }).first();
     await tosoguBtn.click();
-    await page.waitForTimeout(2000); // wait for fetch to complete
+    await page.waitForTimeout(2000);
 
     // Verify URL now has type=tosogu
-    const urlAfterTosogu = page.url();
-    console.log('Step 2 - After clicking Tosogu:', urlAfterTosogu);
-    expect(urlAfterTosogu).toContain('type=tosogu');
-
-    // Verify the Tosogu button is highlighted
+    expect(page.url()).toContain('type=tosogu');
     await expect(tosoguBtn).toHaveClass(/text-gold/);
 
-    // 3. Search for "Katsuhira" in the SIDEBAR search input (not header!)
+    // 3. Search for "Katsuhira" in the SIDEBAR search input
     const sidebarSearch = page.locator('input[placeholder*="Name, kanji"]');
     await sidebarSearch.fill('Katsuhira');
-    await page.waitForTimeout(2000); // wait for debounce + fetch
+    await page.waitForTimeout(2000);
 
-    const urlAfterSearch1 = page.url();
-    console.log('Step 3 - After searching Katsuhira:', urlAfterSearch1);
-    expect(urlAfterSearch1).toContain('type=tosogu');
-
-    // Verify Tosogu is still active
+    expect(page.url()).toContain('type=tosogu');
     await expect(tosoguBtn).toHaveClass(/text-gold/);
+    expect(await page.locator('text=Katsuhira').count()).toBeGreaterThan(0);
 
-    // Verify Katsuhira result is shown
-    const resultCount1 = await page.locator('text=Katsuhira').count();
-    console.log('Step 3 - Katsuhira results found:', resultCount1);
-    expect(resultCount1).toBeGreaterThan(0);
-
-    // 4. Now search for "Nobuie" — THIS IS WHERE THE BUG HAPPENS
+    // 4. Search for "Nobuie"
     await sidebarSearch.fill('');
     await page.waitForTimeout(500);
     await sidebarSearch.fill('Nobuie');
-    await page.waitForTimeout(2000); // wait for debounce + fetch
+    await page.waitForTimeout(2000);
 
-    const urlAfterSearch2 = page.url();
-    console.log('Step 4 - After searching Nobuie:', urlAfterSearch2);
+    expect(page.url()).toContain('type=tosogu');
+    await expect(tosoguBtn).toHaveClass(/text-gold/);
 
-    // CHECK: Is type=tosogu still in the URL?
-    const hasTosoguInUrl = urlAfterSearch2.includes('type=tosogu');
-    console.log('Step 4 - type=tosogu in URL:', hasTosoguInUrl);
-
-    // CHECK: Is the Tosogu button still highlighted?
-    const tosoguClass2 = await tosoguBtn.getAttribute('class');
-    console.log('Step 4 - Tosogu button classes:', tosoguClass2);
-    const isTosoguActive = tosoguClass2?.includes('text-gold');
-    console.log('Step 4 - Tosogu still active:', isTosoguActive);
-
-    // CHECK: What does the Nihonto button look like?
-    const nihontoBtn = page.locator('button', { hasText: 'Nihonto' }).first();
-    const nihontoClass = await nihontoBtn.getAttribute('class');
-    console.log('Step 4 - Nihonto button classes:', nihontoClass);
-    const isNihontoActive = nihontoClass?.includes('text-gold');
-    console.log('Step 4 - Nihonto active (BUG if true):', isNihontoActive);
-
-    // Log actual page content for debugging
-    const artistNames = await page.locator('[class*="cursor-pointer"]').allTextContents();
-    console.log('Step 4 - Visible artists:', artistNames.slice(0, 3).join(' | '));
-
-    // The assertions
-    expect(hasTosoguInUrl, 'URL should still have type=tosogu after second search').toBe(true);
-    expect(isTosoguActive, 'Tosogu toggle should still be active after second search').toBe(true);
-    expect(isNihontoActive, 'Nihonto toggle should NOT be active').toBeFalsy();
-
-    // 5. Do a third search to be thorough
+    // 5. Third search
     await sidebarSearch.fill('');
     await page.waitForTimeout(500);
     await sidebarSearch.fill('Goto');
     await page.waitForTimeout(2000);
 
-    const urlAfterSearch3 = page.url();
-    console.log('Step 5 - After searching Goto:', urlAfterSearch3);
-    expect(urlAfterSearch3).toContain('type=tosogu');
+    expect(page.url()).toContain('type=tosogu');
     await expect(tosoguBtn).toHaveClass(/text-gold/);
   });
 
-  test('Type stays tosogu after clicking artist card and navigating back', async ({ page }) => {
-    // 1. Go to artists page with tosogu + search
+  test('Artist card navigates to profile page', async ({ page }) => {
+    // Navigate to artists page with a search to get a known result
     await page.goto('/artists?type=tosogu&q=Katsuhira', { waitUntil: 'networkidle' });
 
-    // Verify we're on tosogu
-    const tosoguBtn = page.locator('button', { hasText: 'Tosogu' }).first();
-    await expect(tosoguBtn).toHaveClass(/text-gold/);
+    // Click the artist card link (now a proper <a> element)
+    const artistLink = page.locator('a[href*="/artists/"]').first();
+    const href = await artistLink.getAttribute('href');
+    console.log('Artist link href:', href);
 
-    // 2. Click on the artist card
-    const artistCard = page.locator('[class*="cursor-pointer"]').first();
-    if (await artistCard.isVisible()) {
-      console.log('Nav test - Clicking artist card...');
-      await artistCard.click();
-      await page.waitForTimeout(3000);
+    await artistLink.click();
+    await page.waitForTimeout(3000);
 
-      const profileUrl = page.url();
-      console.log('Nav test - After click URL:', profileUrl);
+    const profileUrl = page.url();
+    console.log('Profile URL:', profileUrl);
+    expect(profileUrl).toMatch(/\/artists\/[a-z]/);
 
-      // If we navigated to an artist profile page, go back
-      if (profileUrl.includes('/artists/')) {
-        await page.goBack();
-        await page.waitForTimeout(2000);
+    // Go back to directory
+    await page.goBack();
+    await page.waitForTimeout(2000);
 
-        const backUrl = page.url();
-        console.log('Nav test - After going back:', backUrl);
-
-        // Check if type=tosogu is preserved
-        const hasTosogu = backUrl.includes('type=tosogu');
-        console.log('Nav test - type=tosogu preserved after back:', hasTosogu);
-      } else {
-        console.log('Nav test - Card click did not navigate to profile. URL:', profileUrl);
-      }
-    }
+    const backUrl = page.url();
+    console.log('After back:', backUrl);
+    expect(backUrl).toContain('type=tosogu');
   });
 
-  test('Header Artists link navigation behavior', async ({ page }) => {
-    // 1. Start on artists page with tosogu selected
-    await page.goto('/artists?type=tosogu', { waitUntil: 'networkidle' });
+  test('Header Artists link resets to default state', async ({ page }) => {
+    // 1. Start on artists page with tosogu + search
+    await page.goto('/artists?type=tosogu&q=Katsuhira', { waitUntil: 'networkidle' });
 
     const tosoguBtn = page.locator('button', { hasText: 'Tosogu' }).first();
     await expect(tosoguBtn).toHaveClass(/text-gold/);
 
-    // 2. Click "ARTISTS" link in the header
+    // 2. Click "ARTISTS" link in the header — should reset to defaults
     const headerArtistsLink = page.locator('header a', { hasText: 'ARTISTS' }).first();
-    const linkExists = await headerArtistsLink.isVisible().catch(() => false);
-    console.log('Header test - Artists link exists:', linkExists);
+    await headerArtistsLink.click();
+    await page.waitForTimeout(2000);
 
-    if (linkExists) {
-      await headerArtistsLink.click();
-      await page.waitForTimeout(2000);
+    const url = page.url();
+    console.log('After header Artists click:', url);
 
-      const afterHeaderUrl = page.url();
-      console.log('Header test - URL after clicking header link:', afterHeaderUrl);
+    // Should have navigated to /artists without type param (fresh default)
+    const nihontoBtn = page.locator('button', { hasText: 'Nihonto' }).first();
+    const nihontoClass = await nihontoBtn.getAttribute('class');
+    const tosoguClass = await tosoguBtn.getAttribute('class');
+    console.log('Nihonto class:', nihontoClass);
+    console.log('Tosogu class:', tosoguClass);
 
-      // After clicking header link, check what type is active
-      const nihontoBtn = page.locator('button', { hasText: 'Nihonto' }).first();
-      const nihontoClass = await nihontoBtn.getAttribute('class');
-      const tosoguClass = await tosoguBtn.getAttribute('class');
-      console.log('Header test - Nihonto class:', nihontoClass);
-      console.log('Header test - Tosogu class:', tosoguClass);
+    // Nihonto should be active (default), Tosogu should not
+    expect(nihontoClass).toContain('text-gold');
+    expect(tosoguClass).not.toContain('text-gold');
 
-      // The page should load correctly regardless
-      const hasContent = await page.locator('[class*="cursor-pointer"]').count();
-      console.log('Header test - Artist cards visible:', hasContent);
-      expect(hasContent).toBeGreaterThan(0);
-    }
+    // Page should show artist cards
+    const cardCount = await page.locator('a[href*="/artists/"]').count();
+    console.log('Artist cards visible:', cardCount);
+    expect(cardCount).toBeGreaterThan(0);
   });
 });
