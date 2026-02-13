@@ -79,6 +79,16 @@ export function getArtisanDisplayParts(
   const name = nameRomaji || '';
   if (!school || !name) return { prefix: school || null, name };
 
+  // Schools with "/" separator (e.g., "Natsuo / Tokyo Fine Arts") indicate
+  // founder name / institutional alias.  Using these as display prefixes
+  // produces misleading results:
+  //   "Natsuo / Tokyo Fine Arts Shomin"  (Rule 6 — school prepended to student)
+  //   "Natsuo / Tokyo Fine Arts"          (Rule 2b — replaces founder's own name)
+  // Just display the artisan's own name.
+  if (school.includes('/')) {
+    return { prefix: null, name };
+  }
+
   const sNorm = norm(school);
   const nNorm = norm(name);
 
@@ -109,8 +119,8 @@ export function getArtisanDisplayParts(
     return { prefix: null, name: school };
   }
 
-  // Rule 3b: name appears as a token in school (handles "/" separators etc.)
-  // e.g. school="Natsuo / Tokyo Fine Arts", name="Natsuo"
+  // Rule 3b: name appears as a token in school
+  // e.g. school="Bizen Osafune", name="Osafune"
   const sTokens = schoolTokens(school).map(norm);
   if (sTokens.includes(nNorm)) {
     return { prefix: null, name: school };
