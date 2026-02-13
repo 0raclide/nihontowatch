@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter, usePathname } from 'next/navigation';
 import { Drawer } from '@/components/ui/Drawer';
 import { ThemeSelector } from '@/components/ui/ThemeToggle';
 import { useMobileUI } from '@/contexts/MobileUIContext';
@@ -10,6 +11,8 @@ import { LoginModal } from '@/components/auth/LoginModal';
 import { useConsent } from '@/contexts/ConsentContext';
 
 export function MobileNavDrawer() {
+  const router = useRouter();
+  const pathname = usePathname();
   const { navDrawerOpen, closeNavDrawer } = useMobileUI();
   const { user, profile, isAdmin, signOut, isLoading: authLoading } = useAuth();
   const { openPreferences } = useConsent();
@@ -128,7 +131,13 @@ export function MobileNavDrawer() {
           </Link>
           <Link
             href="/artists"
-            onClick={closeNavDrawer}
+            onClick={(e) => {
+              closeNavDrawer();
+              if (pathname.startsWith('/artists')) {
+                e.preventDefault();
+                router.push('/artists');
+              }
+            }}
             className="flex items-center px-4 py-3 text-[13px] uppercase tracking-[0.15em] text-text-secondary hover:bg-hover rounded-lg transition-colors"
           >
             Artists

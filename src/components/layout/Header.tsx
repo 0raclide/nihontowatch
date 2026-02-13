@@ -325,6 +325,14 @@ function HeaderContent() {
               </Link>
               <Link
                 href="/artists"
+                onClick={(e) => {
+                  // Force full navigation when already on an artists page with filters —
+                  // Next.js soft navigation may skip same-pathname navigations.
+                  if (isArtistPage) {
+                    e.preventDefault();
+                    router.push('/artists');
+                  }
+                }}
                 className="text-[11px] uppercase tracking-[0.2em] text-muted hover:text-gold transition-colors"
               >
                 Artists
