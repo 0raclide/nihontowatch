@@ -594,13 +594,18 @@ export async function GET(request: NextRequest) {
     }
 
     // Sorting - use price_jpy for currency-normalized price sorting (cross-currency fix)
+    // Price sorts use has_price (generated column) as primary key to reliably push
+    // ASK items (NULL price) to the end. Boolean DESC puts TRUE before FALSE.
     switch (params.sort) {
       case 'price_asc':
-        query = query.order('price_jpy', { ascending: true, nullsFirst: false });
+        query = query
+          .order('has_price', { ascending: false })
+          .order('price_jpy', { ascending: true });
         break;
       case 'price_desc':
-        // ASK items (NULL price) appear last, after all priced items
-        query = query.order('price_jpy', { ascending: false, nullsFirst: false });
+        query = query
+          .order('has_price', { ascending: false })
+          .order('price_jpy', { ascending: false });
         break;
       case 'name':
         query = query.order('title', { ascending: true });

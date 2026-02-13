@@ -516,6 +516,45 @@ function HomeContent() {
             <LiveStatsBanner data={data} />
           </div>
 
+          {/* Desktop: Sort + item count + Save Search — inline with header */}
+          <div className="hidden lg:flex items-center gap-3 shrink-0">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] uppercase tracking-[0.08em] text-muted/60 font-medium">Sort</span>
+              <select
+                value={sort}
+                onChange={(e) => { setSort(e.target.value); setPage(1); }}
+                className="bg-transparent text-[12px] text-ink font-medium focus:outline-none cursor-pointer pr-4 appearance-none"
+                style={{
+                  border: 'none',
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239ca3af'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                  backgroundRepeat: 'no-repeat',
+                  backgroundPosition: 'right 0 center',
+                  backgroundSize: '11px',
+                }}
+              >
+                <option value="recent">Newest</option>
+                <option value="sale_date">Recently Sold</option>
+                <option value="price_asc">Price: Low → High</option>
+                <option value="price_desc">Price: High → Low</option>
+                {authIsAdmin && <option value="elite_factor">Elite Standing</option>}
+              </select>
+            </div>
+            <div className="w-px h-3 bg-border/30" />
+            <span className="text-[11px] text-muted tabular-nums">
+              {isLoading ? 'Loading...' : `${data?.total?.toLocaleString() || 0} items`}
+            </span>
+            <div className="w-px h-3 bg-border/30" />
+            <SaveSearchButton
+              criteria={{
+                tab: activeTab, category: filters.category, itemTypes: filters.itemTypes,
+                certifications: filters.certifications, dealers: filters.dealers,
+                schools: filters.schools, askOnly: filters.askOnly,
+                minPrice: filters.priceMin, maxPrice: filters.priceMax,
+                query: searchQuery || undefined, sort,
+              } as SavedSearchCriteria}
+              currentMatchCount={data?.total}
+            />
+          </div>
         </div>
 
         {/* Subtle divider */}
@@ -599,49 +638,6 @@ function HomeContent() {
           />
 
           <div className="flex-1 min-w-0">
-            {/* Grid header — Sort + item count + Save Search */}
-            <div className="hidden lg:flex items-center justify-between pb-3 mb-1">
-              <div className="flex items-center gap-3">
-                {/* Sort — borderless inline select */}
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] uppercase tracking-[0.08em] text-muted/60 font-medium">Sort</span>
-                  <select
-                    value={sort}
-                    onChange={(e) => { setSort(e.target.value); setPage(1); }}
-                    className="bg-transparent text-[12px] text-ink font-medium focus:outline-none cursor-pointer pr-4 appearance-none"
-                    style={{
-                      border: 'none',
-                      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239ca3af'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
-                      backgroundRepeat: 'no-repeat',
-                      backgroundPosition: 'right 0 center',
-                      backgroundSize: '11px',
-                    }}
-                  >
-                    <option value="recent">Newest</option>
-                    <option value="sale_date">Recently Sold</option>
-                    <option value="price_asc">Price: Low → High</option>
-                    <option value="price_desc">Price: High → Low</option>
-                    {authIsAdmin && <option value="elite_factor">Elite Standing</option>}
-                  </select>
-                </div>
-                <div className="w-px h-3 bg-border/30" />
-                <span className="text-[11px] text-muted tabular-nums">
-                  {isLoading ? 'Loading...' : `${data?.total?.toLocaleString() || 0} items`}
-                </span>
-              </div>
-              <div className="flex items-center gap-3">
-                <SaveSearchButton
-                  criteria={{
-                    tab: activeTab, category: filters.category, itemTypes: filters.itemTypes,
-                    certifications: filters.certifications, dealers: filters.dealers,
-                    schools: filters.schools, askOnly: filters.askOnly,
-                    minPrice: filters.priceMin, maxPrice: filters.priceMax,
-                    query: searchQuery || undefined, sort,
-                  } as SavedSearchCriteria}
-                  currentMatchCount={data?.total}
-                />
-              </div>
-            </div>
             <ListingGrid
               listings={allListings}
               total={data?.total || 0}
