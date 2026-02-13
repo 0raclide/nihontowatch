@@ -93,6 +93,7 @@ interface ListingWithDealer {
     id: number;
     name: string;
     domain: string;
+    earliest_listing_at: string | null;
   };
   // Yuhinkai enrichment (from view, returns array but we want first item)
   listing_yuhinkai_enrichment?: YuhinkaiEnrichment[];
@@ -177,7 +178,8 @@ export async function GET(
         dealers (
           id,
           name,
-          domain
+          domain,
+          earliest_listing_at
         ),
         listing_yuhinkai_enrichment (
           enrichment_id,
@@ -220,23 +222,9 @@ export async function GET(
 
     const typedListing = listing as unknown as ListingWithDealer;
 
-    // Fetch dealer baseline for "New this week" badge
-    // This is the earliest listing from this dealer
-    let dealerEarliestSeenAt: string | null = null;
-
-    if (typedListing.dealer_id) {
-      const { data: baseline } = await supabase
-        .from('listings')
-        .select('first_seen_at')
-        .eq('dealer_id', typedListing.dealer_id)
-        .order('first_seen_at', { ascending: true })
-        .limit(1)
-        .single();
-
-      if (baseline) {
-        dealerEarliestSeenAt = (baseline as { first_seen_at: string }).first_seen_at;
-      }
-    }
+    // Dealer baseline for "New this week" badge — read directly from joined dealer data
+    // dealers.earliest_listing_at is a synced column (migration 037), eliminating a separate query
+    const dealerEarliestSeenAt: string | null = typedListing.dealers?.earliest_listing_at || null;
 
     // Extract Yuhinkai enrichment (view returns array, we want first item or null)
     const yuhinkai_enrichment = typedListing.listing_yuhinkai_enrichment?.[0] || null;

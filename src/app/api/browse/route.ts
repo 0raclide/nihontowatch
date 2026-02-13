@@ -281,7 +281,7 @@ export async function GET(request: NextRequest) {
         artisan_method,
         artisan_candidates,
         artisan_verified,
-        dealers:dealers!inner(id, name, domain),
+        dealers:dealers!inner(id, name, domain, earliest_listing_at),
         listing_yuhinkai_enrichment(
           setsumei_en,
           match_confidence,
@@ -632,45 +632,17 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // Get dealer baselines for "new" badge logic
-    // A dealer's baseline is their earliest listing's first_seen_at date
-    // This prevents showing "NEW" badges on items that were part of initial import
+    // Enrich listings with dealer baseline (from join) and sold data
+    // dealer.earliest_listing_at is a synced column on the dealers table (migration 037)
+    // This eliminates N+1 queries that previously fetched baselines per dealer
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let enrichedListings: any[] = listings || [];
 
     if (listings && listings.length > 0) {
-      // Get unique dealer IDs from results
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const dealerIds = [...new Set(listings.map((l: any) => l.dealer_id as number))];
-
-      // Query earliest first_seen_at for each dealer individually
-      // This avoids the 1000-row Supabase limit that was causing missing baselines
-      const baselinePromises = dealerIds.map(async (dealerId) => {
-        const { data } = await supabase
-          .from('listings')
-          .select('dealer_id, first_seen_at')
-          .eq('dealer_id', dealerId)
-          .order('first_seen_at', { ascending: true })
-          .limit(1)
-          .single();
-        return data as { dealer_id: number; first_seen_at: string } | null;
-      });
-
-      const baselines = await Promise.all(baselinePromises);
-
-      // Build map of dealer_id -> earliest first_seen_at
-      const baselineMap: Record<number, string> = {};
-      for (const row of baselines) {
-        if (row) {
-          baselineMap[row.dealer_id] = row.first_seen_at;
-        }
-      }
-
-      // Enrich listings with dealer baseline and sold data
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       enrichedListings = listings.map((listing: any) => ({
         ...listing,
-        dealer_earliest_seen_at: baselineMap[listing.dealer_id] || null,
+        dealer_earliest_seen_at: listing.dealers?.earliest_listing_at || null,
         sold_data: computeSoldData(listing),
       }));
 
@@ -745,64 +717,41 @@ export async function GET(request: NextRequest) {
     // Get data delay cutoff for free tier (used by facets too)
     const delayCutoff = subscription.isDelayed ? getDataDelayCutoff() : undefined;
 
-    // Get facet counts - computed fresh to reflect current filter state
-    // Each facet is filtered by all OTHER active filters (standard faceted search pattern)
-    const [typesFacet, certsFacet, dealersFacet, periodsFacet, signatureFacet] = await Promise.all([
-      // Item type facets: filtered by certifications, dealers, askOnly (NOT by category/itemTypes)
-      getItemTypeFacets(supabase, statusFilter, {
-        certifications: params.certifications,
-        dealers: params.dealers,
-        historicalPeriods: params.historicalPeriods,
-        signatureStatuses: params.signatureStatuses,
-        askOnly: params.askOnly,
-        query: params.query,
-        delayCutoff,
-      }),
-      // Certification facets: filtered by category/itemTypes, dealers, askOnly
-      getCertificationFacets(supabase, statusFilter, {
-        category: params.category,
-        itemTypes: params.itemTypes,
-        dealers: params.dealers,
-        historicalPeriods: params.historicalPeriods,
-        signatureStatuses: params.signatureStatuses,
-        askOnly: params.askOnly,
-        query: params.query,
-        delayCutoff,
-      }),
-      // Dealer facets: filtered by category/itemTypes, certifications, askOnly
-      getDealerFacets(supabase, statusFilter, {
-        category: params.category,
-        itemTypes: params.itemTypes,
-        certifications: params.certifications,
-        historicalPeriods: params.historicalPeriods,
-        signatureStatuses: params.signatureStatuses,
-        askOnly: params.askOnly,
-        query: params.query,
-        delayCutoff,
-      }),
-      // Historical period facets
-      getHistoricalPeriodFacets(supabase, statusFilter, {
-        category: params.category,
-        itemTypes: params.itemTypes,
-        certifications: params.certifications,
-        dealers: params.dealers,
-        signatureStatuses: params.signatureStatuses,
-        askOnly: params.askOnly,
-        query: params.query,
-        delayCutoff,
-      }),
-      // Signature status facets
-      getSignatureStatusFacets(supabase, statusFilter, {
-        category: params.category,
-        itemTypes: params.itemTypes,
-        certifications: params.certifications,
-        dealers: params.dealers,
-        historicalPeriods: params.historicalPeriods,
-        askOnly: params.askOnly,
-        delayCutoff,
-        query: params.query,
-      }),
-    ]);
+    // Get facet counts via single SQL RPC call (replaces 50-100+ JS-side round-trips)
+    // Each facet dimension is filtered by all OTHER active filters (standard cross-filter pattern)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: facetsData, error: facetsError } = await (supabase.rpc as any)('get_browse_facets', {
+      p_tab: params.tab === 'all' ? 'all' : params.tab,
+      p_admin_hidden: subscription.isAdmin || false,
+      p_delay_cutoff: delayCutoff || null,
+      p_min_price_jpy: LISTING_FILTERS.MIN_PRICE_JPY,
+      p_item_types: params.itemTypes || null,
+      p_category: params.category || 'all',
+      p_certifications: params.certifications || null,
+      p_dealers: params.dealers || null,
+      p_historical_periods: params.historicalPeriods || null,
+      p_signature_statuses: params.signatureStatuses || null,
+      p_ask_only: params.askOnly || false,
+    });
+
+    // Parse facets from RPC response (already in the correct shape for FilterContent)
+    const facets = facetsError ? {
+      itemTypes: [] as { value: string; count: number }[],
+      certifications: [] as { value: string; count: number }[],
+      dealers: [] as { id: number; name: string; count: number }[],
+      historicalPeriods: [] as { value: string; count: number }[],
+      signatureStatuses: [] as { value: string; count: number }[],
+    } : facetsData as {
+      itemTypes: { value: string; count: number }[];
+      certifications: { value: string; count: number }[];
+      dealers: { id: number; name: string; count: number }[];
+      historicalPeriods: { value: string; count: number }[];
+      signatureStatuses: { value: string; count: number }[];
+    };
+
+    if (facetsError) {
+      logger.error('Facets RPC error', { error: facetsError });
+    }
 
     // Get the most recent scrape timestamp for freshness indicator
     let freshnessQuery = supabase
@@ -830,13 +779,7 @@ export async function GET(request: NextRequest) {
       total: count || 0,
       page: safePage,
       totalPages: Math.ceil((count || 0) / params.limit!),
-      facets: {
-        itemTypes: typesFacet,
-        certifications: certsFacet,
-        dealers: dealersFacet,
-        historicalPeriods: periodsFacet,
-        signatureStatuses: signatureFacet,
-      },
+      facets,
       totalDealerCount: totalDealerCount || 0,
       lastUpdated,
       // Data freshness indicator for subscription tier
@@ -862,460 +805,3 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// Facet filter options
-interface FacetFilterOptions {
-  category?: 'all' | 'nihonto' | 'tosogu' | 'armor';
-  itemTypes?: string[];
-  certifications?: string[];
-  dealers?: number[];
-  historicalPeriods?: string[];
-  signatureStatuses?: string[];
-  askOnly?: boolean;
-  query?: string;
-  /** Data delay cutoff for free tier (ISO string) */
-  delayCutoff?: string;
-}
-
-// Facet functions - apply filters to reflect user's current selection
-// Uses JS-side filtering for category/itemTypes since Supabase .or() calls
-// don't combine with AND when filtering by both status and item type
-//
-// IMPORTANT: Supabase limits queries to 1000 rows by default, so we must
-// paginate to get accurate facet counts for large result sets.
-
-const FACET_PAGE_SIZE = 1000;
-
-async function getItemTypeFacets(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  statusFilter: string | null,
-  options: FacetFilterOptions
-) {
-  // Aggregate counts with pagination
-  const counts: Record<string, number> = {};
-  let offset = 0;
-  let hasMore = true;
-
-  while (hasMore) {
-    // Build query with filters (excluding category/itemTypes since we're counting those)
-    let query = supabase
-      .from('listings')
-      .select('item_type')
-      .not('item_type', 'ilike', 'stand')  // Exclude non-collectibles to match main query
-      .not('item_type', 'ilike', 'book')
-      .not('item_type', 'ilike', 'other')
-      .eq('admin_hidden', false);
-
-    // Status filter (only apply if not 'all')
-    if (statusFilter) {
-      query = query.or(statusFilter);
-    }
-
-    // Apply minimum price filter
-    query = applyMinPriceFilter(query);
-
-    // Apply certification, dealer, askOnly filters
-    if (options.certifications?.length) {
-      const allVariants = options.certifications.flatMap(c => CERT_VARIANTS[c] || [c]);
-      query = query.in('cert_type', allVariants);
-    }
-    if (options.dealers?.length) {
-      query = query.in('dealer_id', options.dealers);
-    }
-    if (options.askOnly) {
-      query = query.is('price_value', null);
-    }
-    // Apply data delay for free tier
-    if (options.delayCutoff) {
-      query = query.lte('first_seen_at', options.delayCutoff);
-    }
-
-    // Fetch page
-    const { data, error } = await query.range(offset, offset + FACET_PAGE_SIZE - 1);
-    if (error || !data) break;
-
-    // Count this page
-    (data as Array<{ item_type: string | null }>).forEach(row => {
-      const type = row.item_type;
-      if (type) {
-        const normalized = type.toLowerCase().replace('fuchi_kashira', 'fuchi-kashira');
-        counts[normalized] = (counts[normalized] || 0) + 1;
-      }
-    });
-
-    hasMore = data.length === FACET_PAGE_SIZE;
-    offset += FACET_PAGE_SIZE;
-
-    // Safety limit
-    if (offset > 50000) break;
-  }
-
-  return Object.entries(counts)
-    .map(([value, count]) => ({ value, count }))
-    .sort((a, b) => b.count - a.count);
-}
-
-async function getCertificationFacets(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  statusFilter: string | null,
-  options: FacetFilterOptions
-) {
-  // Determine which item types to include based on category
-  const effectiveItemTypes = options.itemTypes?.length
-    ? options.itemTypes
-    : options.category === 'nihonto'
-      ? NIHONTO_TYPES
-      : options.category === 'tosogu'
-        ? TOSOGU_TYPES
-        : options.category === 'armor'
-          ? ARMOR_TYPES
-          : undefined;
-
-  // Normalize cert function
-  const normalizeCert = (cert: string): string => {
-    const lower = cert.toLowerCase();
-    if (['juyo bijutsuhin', 'jubi', 'important art object'].includes(lower)) return 'Juyo Bijutsuhin';
-    if (lower === 'juyo') return 'Juyo';
-    if (['tokuju', 'tokubetsu juyo', 'tokubetsu_juyo'].includes(lower)) return 'Tokuju';
-    if (['tokuhozon', 'tokubetsu hozon', 'tokubetsu_hozon'].includes(lower)) return 'TokuHozon';
-    if (lower === 'hozon') return 'Hozon';
-    if (['tokukicho', 'tokubetsu kicho', 'tokubetsu_kicho'].includes(lower)) return 'TokuKicho';
-    return cert;
-  };
-
-  // Aggregate counts with pagination
-  const counts: Record<string, number> = {};
-  let offset = 0;
-  let hasMore = true;
-
-  while (hasMore) {
-    // Build query - fetch item_type along with cert_type for JS-side filtering
-    let query = supabase
-      .from('listings')
-      .select('cert_type, item_type')
-      .not('item_type', 'ilike', 'stand')  // Exclude non-collectibles to match main query
-      .not('item_type', 'ilike', 'book')
-      .not('item_type', 'ilike', 'other')
-      .eq('admin_hidden', false);
-
-    // Status filter (only apply if not 'all')
-    if (statusFilter) {
-      query = query.or(statusFilter);
-    }
-
-    // Apply minimum price filter
-    query = applyMinPriceFilter(query);
-
-    // Apply dealer filter at DB level (this works with AND)
-    if (options.dealers?.length) {
-      query = query.in('dealer_id', options.dealers);
-    }
-    if (options.askOnly) {
-      query = query.is('price_value', null);
-    }
-    // Apply data delay for free tier
-    if (options.delayCutoff) {
-      query = query.lte('first_seen_at', options.delayCutoff);
-    }
-
-    // Fetch page
-    const { data, error } = await query.range(offset, offset + FACET_PAGE_SIZE - 1);
-    if (error || !data) break;
-
-    // Filter and count this page
-    (data as Array<{ cert_type: string | null; item_type: string | null }>).forEach(row => {
-      // Filter by item type if category is set
-      if (effectiveItemTypes) {
-        const itemType = row.item_type?.toLowerCase().replace('fuchi_kashira', 'fuchi-kashira');
-        if (!itemType || !effectiveItemTypes.some(t => t.toLowerCase() === itemType)) {
-          return; // Skip this row - doesn't match category
-        }
-      }
-
-      const cert = row.cert_type;
-      if (cert && cert !== 'null') {
-        const normalized = normalizeCert(cert);
-        counts[normalized] = (counts[normalized] || 0) + 1;
-      }
-    });
-
-    hasMore = data.length === FACET_PAGE_SIZE;
-    offset += FACET_PAGE_SIZE;
-
-    // Safety limit
-    if (offset > 50000) break;
-  }
-
-  return Object.entries(counts)
-    .map(([value, count]) => ({ value, count }))
-    .sort((a, b) => b.count - a.count);
-}
-
-async function getDealerFacets(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  statusFilter: string | null,
-  options: FacetFilterOptions
-) {
-  // Determine which item types to include based on category
-  const effectiveItemTypes = options.itemTypes?.length
-    ? options.itemTypes
-    : options.category === 'nihonto'
-      ? NIHONTO_TYPES
-      : options.category === 'tosogu'
-        ? TOSOGU_TYPES
-        : options.category === 'armor'
-          ? ARMOR_TYPES
-          : undefined;
-
-  // Aggregate counts with pagination
-  const counts: Record<string, { id: number; name: string; count: number }> = {};
-  let offset = 0;
-  let hasMore = true;
-
-  while (hasMore) {
-    // Build query - fetch item_type and cert_type for JS-side filtering
-    let query = supabase
-      .from('listings')
-      .select('dealer_id, dealers!inner(name), item_type')
-      .not('item_type', 'ilike', 'stand')  // Exclude non-collectibles to match main query
-      .not('item_type', 'ilike', 'book')
-      .not('item_type', 'ilike', 'other')
-      .eq('admin_hidden', false);
-
-    // Status filter (only apply if not 'all')
-    if (statusFilter) {
-      query = query.or(statusFilter);
-    }
-
-    // Apply minimum price filter
-    query = applyMinPriceFilter(query);
-
-    // Apply certification filter at DB level (this works with AND)
-    if (options.certifications?.length) {
-      const allVariants = options.certifications.flatMap(c => CERT_VARIANTS[c] || [c]);
-      query = query.in('cert_type', allVariants);
-    }
-    if (options.askOnly) {
-      query = query.is('price_value', null);
-    }
-    // Apply data delay for free tier
-    if (options.delayCutoff) {
-      query = query.lte('first_seen_at', options.delayCutoff);
-    }
-
-    // Fetch page
-    const { data, error } = await query.range(offset, offset + FACET_PAGE_SIZE - 1);
-    if (error || !data) break;
-
-    // Filter and count this page
-    (data as Array<{ dealer_id: number; dealers: { name: string }; item_type: string | null }>).forEach(row => {
-      // Filter by item type if category is set
-      if (effectiveItemTypes) {
-        const itemType = row.item_type?.toLowerCase().replace('fuchi_kashira', 'fuchi-kashira');
-        if (!itemType || !effectiveItemTypes.some(t => t.toLowerCase() === itemType)) {
-          return; // Skip this row - doesn't match category
-        }
-      }
-
-      const id = row.dealer_id;
-      const name = row.dealers?.name || 'Unknown';
-      if (!counts[id]) {
-        counts[id] = { id, name, count: 0 };
-      }
-      counts[id].count++;
-    });
-
-    hasMore = data.length === FACET_PAGE_SIZE;
-    offset += FACET_PAGE_SIZE;
-
-    // Safety limit
-    if (offset > 50000) break;
-  }
-
-  return Object.values(counts).sort((a, b) => b.count - a.count);
-}
-
-// Historical period order (chronological)
-const HISTORICAL_PERIOD_ORDER = [
-  'Heian', 'Kamakura', 'Nanbokucho', 'Muromachi', 'Momoyama',
-  'Edo', 'Meiji', 'Taisho', 'Showa', 'Heisei', 'Reiwa'
-];
-
-async function getHistoricalPeriodFacets(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  statusFilter: string | null,
-  options: FacetFilterOptions
-) {
-  // Determine which item types to include based on category
-  const effectiveItemTypes = options.itemTypes?.length
-    ? options.itemTypes
-    : options.category === 'nihonto'
-      ? NIHONTO_TYPES
-      : options.category === 'tosogu'
-        ? TOSOGU_TYPES
-        : options.category === 'armor'
-          ? ARMOR_TYPES
-          : undefined;
-
-  // Aggregate counts with pagination
-  const counts: Record<string, number> = {};
-  let offset = 0;
-  let hasMore = true;
-
-  while (hasMore) {
-    let query = supabase
-      .from('listings')
-      .select('historical_period, item_type')
-      .not('item_type', 'ilike', 'stand')  // Exclude non-collectibles
-      .not('item_type', 'ilike', 'book')
-      .not('item_type', 'ilike', 'other')
-      .eq('admin_hidden', false);
-
-    // Status filter (only apply if not 'all')
-    if (statusFilter) {
-      query = query.or(statusFilter);
-    }
-
-    // Apply minimum price filter
-    query = applyMinPriceFilter(query);
-
-    // Apply filters
-    if (options.certifications?.length) {
-      const allVariants = options.certifications.flatMap(c => CERT_VARIANTS[c] || [c]);
-      query = query.in('cert_type', allVariants);
-    }
-    if (options.dealers?.length) {
-      query = query.in('dealer_id', options.dealers);
-    }
-    if (options.signatureStatuses?.length) {
-      query = query.in('signature_status', options.signatureStatuses);
-    }
-    if (options.askOnly) {
-      query = query.is('price_value', null);
-    }
-    // Apply data delay for free tier
-    if (options.delayCutoff) {
-      query = query.lte('first_seen_at', options.delayCutoff);
-    }
-
-    const { data, error } = await query.range(offset, offset + FACET_PAGE_SIZE - 1);
-    if (error || !data) break;
-
-    (data as Array<{ historical_period: string | null; item_type: string | null }>).forEach(row => {
-      // Filter by item type if category is set
-      if (effectiveItemTypes) {
-        const itemType = row.item_type?.toLowerCase().replace('fuchi_kashira', 'fuchi-kashira');
-        if (!itemType || !effectiveItemTypes.some(t => t.toLowerCase() === itemType)) {
-          return;
-        }
-      }
-
-      const period = row.historical_period;
-      if (period && period !== 'null') {
-        counts[period] = (counts[period] || 0) + 1;
-      }
-    });
-
-    hasMore = data.length === FACET_PAGE_SIZE;
-    offset += FACET_PAGE_SIZE;
-    if (offset > 50000) break;
-  }
-
-  // Sort by chronological order
-  return Object.entries(counts)
-    .map(([value, count]) => ({ value, count }))
-    .sort((a, b) => {
-      const aIdx = HISTORICAL_PERIOD_ORDER.indexOf(a.value);
-      const bIdx = HISTORICAL_PERIOD_ORDER.indexOf(b.value);
-      return (aIdx === -1 ? 999 : aIdx) - (bIdx === -1 ? 999 : bIdx);
-    });
-}
-
-async function getSignatureStatusFacets(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  statusFilter: string | null,
-  options: FacetFilterOptions
-) {
-  // Determine which item types to include based on category
-  const effectiveItemTypes = options.itemTypes?.length
-    ? options.itemTypes
-    : options.category === 'nihonto'
-      ? NIHONTO_TYPES
-      : options.category === 'tosogu'
-        ? TOSOGU_TYPES
-        : options.category === 'armor'
-          ? ARMOR_TYPES
-          : undefined;
-
-  // Aggregate counts with pagination
-  const counts: Record<string, number> = {};
-  let offset = 0;
-  let hasMore = true;
-
-  while (hasMore) {
-    let query = supabase
-      .from('listings')
-      .select('signature_status, item_type')
-      .not('item_type', 'ilike', 'stand')  // Exclude non-collectibles
-      .not('item_type', 'ilike', 'book')
-      .not('item_type', 'ilike', 'other')
-      .eq('admin_hidden', false);
-
-    // Status filter (only apply if not 'all')
-    if (statusFilter) {
-      query = query.or(statusFilter);
-    }
-
-    // Apply minimum price filter
-    query = applyMinPriceFilter(query);
-
-    // Apply filters
-    if (options.certifications?.length) {
-      const allVariants = options.certifications.flatMap(c => CERT_VARIANTS[c] || [c]);
-      query = query.in('cert_type', allVariants);
-    }
-    if (options.dealers?.length) {
-      query = query.in('dealer_id', options.dealers);
-    }
-    if (options.historicalPeriods?.length) {
-      query = query.in('historical_period', options.historicalPeriods);
-    }
-    if (options.askOnly) {
-      query = query.is('price_value', null);
-    }
-    // Apply data delay for free tier
-    if (options.delayCutoff) {
-      query = query.lte('first_seen_at', options.delayCutoff);
-    }
-
-    const { data, error } = await query.range(offset, offset + FACET_PAGE_SIZE - 1);
-    if (error || !data) break;
-
-    (data as Array<{ signature_status: string | null; item_type: string | null }>).forEach(row => {
-      // Filter by item type if category is set
-      if (effectiveItemTypes) {
-        const itemType = row.item_type?.toLowerCase().replace('fuchi_kashira', 'fuchi-kashira');
-        if (!itemType || !effectiveItemTypes.some(t => t.toLowerCase() === itemType)) {
-          return;
-        }
-      }
-
-      const status = row.signature_status;
-      if (status && status !== 'null') {
-        counts[status] = (counts[status] || 0) + 1;
-      }
-    });
-
-    hasMore = data.length === FACET_PAGE_SIZE;
-    offset += FACET_PAGE_SIZE;
-    if (offset > 50000) break;
-  }
-
-  // Sort: signed first, then unsigned/mumei
-  return Object.entries(counts)
-    .map(([value, count]) => ({ value, count }))
-    .sort((a, b) => {
-      if (a.value === 'signed') return -1;
-      if (b.value === 'signed') return 1;
-      return a.value.localeCompare(b.value);
-    });
-}

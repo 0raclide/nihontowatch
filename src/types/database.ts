@@ -703,6 +703,22 @@ export interface Database {
           rank: number;
         }[];
       };
+      get_browse_facets: {
+        Args: {
+          p_tab?: string;
+          p_admin_hidden?: boolean;
+          p_delay_cutoff?: string | null;
+          p_min_price_jpy?: number;
+          p_item_types?: string[] | null;
+          p_category?: string;
+          p_certifications?: string[] | null;
+          p_dealers?: number[] | null;
+          p_historical_periods?: string[] | null;
+          p_signature_statuses?: string[] | null;
+          p_ask_only?: boolean;
+        };
+        Returns: Record<string, unknown>;
+      };
     };
     Enums: {
       action_type: 'view' | 'search' | 'favorite' | 'alert_create' | 'alert_delete' | 'login' | 'logout';
