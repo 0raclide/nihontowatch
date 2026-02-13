@@ -67,26 +67,20 @@ export function ArtistsPageClient({
   const abortRef = useRef<AbortController | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Track serialized initial filters to detect *actual* external navigation vs spurious re-renders.
-  // replaceState updates the URL without triggering SSR, so the SSR-provided initialFilters
-  // still reflect the original navigation URL (e.g. type=smith). If the effect fires due to
-  // reference-only changes (same values, new object), we must NOT overwrite client-managed state.
-  const prevInitialFiltersRef = useRef<string | null>(null);
+  // Live ref for filters — used inside setTimeout callbacks to avoid stale closures.
+  const filtersRef = useRef(filters);
+  filtersRef.current = filters;
 
-  // Sync state when SSR props change from external navigation (e.g. header search)
-  // useState only reads initialValue on mount — subsequent prop changes need this effect.
+  // Sync state when SSR props change from external navigation (e.g. header search).
+  // IMPORTANT: type is always preserved from client state. replaceState updates the URL
+  // but the server still renders with the original navigation URL. If a Suspense boundary
+  // (loading.tsx) or RSC re-render causes this effect to fire, the SSR-provided type will
+  // be the default ('smith') — NOT the user's client-side selection. Using the functional
+  // updater for setFilters guarantees the user's type choice survives any re-render.
   useEffect(() => {
-    const key = JSON.stringify(initialFilters);
-    // On mount (null) always sync. After mount, only sync if SSR filters actually changed
-    // (i.e. a real navigation occurred, not a spurious re-render with stale props).
-    if (prevInitialFiltersRef.current !== null && key === prevInitialFiltersRef.current) {
-      return;
-    }
-    prevInitialFiltersRef.current = key;
-
     setArtists(initialArtists);
     setPagination(initialPagination);
-    setFilters(initialFilters);
+    setFilters(prev => ({ ...initialFilters, type: prev.type }));
     setFacets(initialFacets);
     setSearchInput(initialFilters.q || '');
   }, [initialArtists, initialPagination, initialFilters, initialFacets]);
@@ -176,7 +170,7 @@ export function ArtistsPageClient({
   }, [updateUrl, fetchArtists]);
 
   const handleFilterChange = useCallback((key: keyof Filters, value: string | boolean) => {
-    const newFilters = { ...filters, [key]: value };
+    const newFilters = { ...filtersRef.current, [key]: value };
     // Clear school/province/era when switching types — they won't be valid for the other type
     if (key === 'type') {
       newFilters.school = undefined;
@@ -184,45 +178,47 @@ export function ArtistsPageClient({
       newFilters.era = undefined;
     }
     applyFilters(newFilters, 1);
-  }, [filters, applyFilters]);
+  }, [applyFilters]);
 
   const handlePageChange = useCallback((page: number) => {
-    applyFilters(filters, page);
+    applyFilters(filtersRef.current, page);
     document.getElementById('artist-grid')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }, [filters, applyFilters]);
+  }, [applyFilters]);
 
-  // Debounced search — fires 300ms after user stops typing
-  const debouncedSearch = useCallback((value: string, currentFilters: Filters) => {
+  // Debounced search — fires 300ms after user stops typing.
+  // Uses filtersRef.current inside the timeout to always read the LATEST filters,
+  // avoiding stale closures that could reset the type.
+  const debouncedSearch = useCallback((value: string) => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       const trimmed = value.trim();
-      applyFilters({ ...currentFilters, q: trimmed || undefined }, 1);
+      applyFilters({ ...filtersRef.current, q: trimmed || undefined }, 1);
     }, 300);
   }, [applyFilters]);
 
   const handleSearchInput = useCallback((value: string) => {
     setSearchInput(value);
-    debouncedSearch(value, filters);
-  }, [filters, debouncedSearch]);
+    debouncedSearch(value);
+  }, [debouncedSearch]);
 
   const handleSearch = useCallback((e: React.FormEvent) => {
     e.preventDefault();
     // Immediate search on Enter — cancel any pending debounce
     if (debounceRef.current) clearTimeout(debounceRef.current);
     const trimmed = searchInput.trim();
-    applyFilters({ ...filters, q: trimmed || undefined }, 1);
-  }, [searchInput, filters, applyFilters]);
+    applyFilters({ ...filtersRef.current, q: trimmed || undefined }, 1);
+  }, [searchInput, applyFilters]);
 
   const clearSearch = useCallback(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     setSearchInput('');
-    applyFilters({ ...filters, q: undefined }, 1);
-  }, [filters, applyFilters]);
+    applyFilters({ ...filtersRef.current, q: undefined }, 1);
+  }, [applyFilters]);
 
   const clearAllFilters = useCallback(() => {
     setSearchInput('');
-    applyFilters({ type: filters.type, sort: 'elite_factor', notable: true }, 1);
-  }, [filters.type, applyFilters]);
+    applyFilters({ type: filtersRef.current.type, sort: 'elite_factor', notable: true }, 1);
+  }, [applyFilters]);
 
   return (
     <div className="max-w-[1600px] mx-auto px-4 py-8 lg:px-6">
@@ -402,7 +398,7 @@ export function ArtistsPageClient({
               e.preventDefault();
               if (debounceRef.current) clearTimeout(debounceRef.current);
               const trimmed = searchInput.trim();
-              applyFilters({ ...filters, q: trimmed || undefined }, 1);
+              applyFilters({ ...filtersRef.current, q: trimmed || undefined }, 1);
               setSearchDrawerOpen(false);
             }}
           >
@@ -451,7 +447,7 @@ export function ArtistsPageClient({
                     key={s.value}
                     onClick={() => {
                       setSearchInput('');
-                      applyFilters({ ...filters, q: undefined, school: s.value }, 1);
+                      applyFilters({ ...filtersRef.current, q: undefined, school: s.value }, 1);
                       setSearchDrawerOpen(false);
                     }}
                     className="px-3 py-1.5 text-[12px] bg-hover border border-border text-ink/60 hover:text-gold hover:border-gold/40 transition-colors"
