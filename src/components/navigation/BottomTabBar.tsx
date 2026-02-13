@@ -5,6 +5,11 @@ import { useMobileUI } from '@/contexts/MobileUIContext';
 
 interface BottomTabBarProps {
   activeFilterCount?: number;
+  /**
+   * When true, renders as a flex child (for contained-scroll layouts)
+   * instead of position:fixed. Eliminates iOS Safari viewport-resize jump.
+   */
+  contained?: boolean;
 }
 
 /**
@@ -14,7 +19,8 @@ interface BottomTabBarProps {
  * - Menu: Opens navigation drawer
  */
 export const BottomTabBar = memo(function BottomTabBar({
-  activeFilterCount = 0
+  activeFilterCount = 0,
+  contained = false,
 }: BottomTabBarProps) {
   const { openSearch, openFilterDrawer, openNavDrawer } = useMobileUI();
 
@@ -22,7 +28,11 @@ export const BottomTabBar = memo(function BottomTabBar({
     <>
       {/* Bottom Tab Bar */}
       <nav
-        className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-cream/95 backdrop-blur-sm border-t border-border"
+        className={`lg:hidden bg-cream/95 backdrop-blur-sm border-t border-border ${
+          contained
+            ? 'shrink-0'
+            : 'fixed bottom-0 inset-x-0 z-40'
+        }`}
         style={{
           paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         }}
@@ -72,14 +82,16 @@ export const BottomTabBar = memo(function BottomTabBar({
         </div>
       </nav>
 
-      {/* Spacer to prevent content from being hidden behind the nav */}
-      <div
-        className="lg:hidden flex-shrink-0"
-        style={{
-          height: 'calc(64px + env(safe-area-inset-bottom, 0px))',
-        }}
-        aria-hidden="true"
-      />
+      {/* Spacer only needed in fixed-position mode */}
+      {!contained && (
+        <div
+          className="lg:hidden flex-shrink-0"
+          style={{
+            height: 'calc(64px + env(safe-area-inset-bottom, 0px))',
+          }}
+          aria-hidden="true"
+        />
+      )}
     </>
   );
 });

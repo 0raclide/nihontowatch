@@ -202,6 +202,9 @@ export function QuickViewMobileSheet({
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
     if (!isDragging) return;
 
+    // Prevent browser from also scrolling/bouncing the underlying image scroller
+    e.preventDefault();
+
     const touch = e.touches[0];
     const currentY = touch.clientY;
     const currentTime = Date.now();
@@ -311,6 +314,7 @@ export function QuickViewMobileSheet({
       {/* Draggable header area - entire top section responds to drag gestures */}
       <div
         className="cursor-grab active:cursor-grabbing shrink-0"
+        style={{ touchAction: 'none' }}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
@@ -563,7 +567,7 @@ export function QuickViewMobileSheet({
               showMeasurements={true}
             />
 
-            {/* Artist Profile CTA — prominent link to artist page */}
+            {/* Artist Profile CTA — elevated gold treatment matching SetsumeiSection warmth */}
             {listing.artisan_id &&
              listing.artisan_id !== 'UNKNOWN' &&
              listing.artisan_confidence && listing.artisan_confidence !== 'NONE' &&
@@ -578,18 +582,18 @@ export function QuickViewMobileSheet({
                 }}
                 onTouchStart={(e) => e.stopPropagation()}
                 onTouchEnd={(e) => e.stopPropagation()}
-                className="group flex items-center gap-3 px-4 py-3 min-h-[44px] border-b border-border active:bg-linen/50 transition-colors cursor-pointer"
+                className="group flex items-center gap-3 px-4 py-3 min-h-[44px] bg-gold/5 border-b border-border active:bg-gold/10 transition-colors cursor-pointer"
               >
-                <svg className="w-5 h-5 text-muted shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 text-gold shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
                 <div className="flex-1 min-w-0">
-                  <div className="text-[10px] uppercase tracking-wider text-muted font-medium leading-tight">Artist Profile</div>
-                  <div className="text-[13px] font-medium text-ink truncate">
+                  <div className="text-[10px] uppercase tracking-wider text-gold font-medium leading-tight">Artist Profile</div>
+                  <div className="text-[14px] font-medium text-ink truncate">
                     {listing.artisan_display_name || listing.artisan_id}
                   </div>
                 </div>
-                <svg className="w-4 h-4 text-muted shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 text-gold/60 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
               </a>

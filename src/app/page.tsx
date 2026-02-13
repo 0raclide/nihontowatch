@@ -223,6 +223,7 @@ function HomeContent() {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const loadingMoreRef = useRef(false); // Ref for synchronous guard against rapid calls
   const currentSearchIdRef = useRef<number | undefined>(undefined); // For CTR tracking
+  const scrollContainerRef = useRef<HTMLDivElement>(null); // Mobile contained-scroll container
 
   // Currency state - default to JPY
   const [currency, setCurrency] = useState<Currency>(() => {
@@ -338,6 +339,11 @@ function HomeContent() {
         setPage(1);
         filtersChangedRef.current = false;
 
+        // Scroll to top of contained scroll container on filter/search change
+        if (scrollContainerRef.current) {
+          scrollContainerRef.current.scrollTo({ top: 0 });
+        }
+
         // Track search if there's a query or active filters
         if (searchQuery || hasActiveFilters()) {
           const sessionId = getSessionId();
@@ -443,14 +449,29 @@ function HomeContent() {
   }, [filters, sort, activity]);
 
 
-  const handlePageChange = useCallback((newPage: number) => {
-    setPage(newPage);
+  // Scroll to top of content — uses contained scroll container on mobile, window on desktop
+  const scrollToTop = useCallback(() => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
+  const handlePageChange = useCallback((newPage: number) => {
+    setPage(newPage);
+    scrollToTop();
+  }, [scrollToTop]);
+
   return (
-    <div className="min-h-screen bg-surface transition-colors">
+    <div className="flex flex-col h-[100dvh] overflow-hidden lg:block lg:h-auto lg:min-h-screen lg:overflow-visible bg-surface transition-colors">
+      {/* Desktop header — hidden on mobile, sticky on desktop (unaffected by contained scroll) */}
       <Header />
+
+      {/* Scrollable content area: contained scroll on mobile, normal body scroll on desktop */}
+      <div
+        ref={scrollContainerRef}
+        className="flex-1 min-h-0 overflow-y-auto overscroll-none lg:overflow-visible"
+      >
       <DataDelayBanner />
       <NewSinceLastVisitBanner />
 
@@ -636,9 +657,6 @@ function HomeContent() {
           onAvailabilityChange={handleAvailabilityChange}
         />
 
-        {/* Mobile Bottom Tab Bar */}
-        <BottomTabBar activeFilterCount={getActiveFilterCount(filters)} />
-
       </main>
 
       {/* Footer - Minimal, scholarly */}
@@ -671,6 +689,10 @@ function HomeContent() {
           </div>
         </div>
       </footer>
+      </div>{/* end scrollable content */}
+
+      {/* Mobile bottom bar — flex child at bottom of contained layout, never jumps */}
+      <BottomTabBar activeFilterCount={getActiveFilterCount(filters)} contained />
     </div>
   );
 }

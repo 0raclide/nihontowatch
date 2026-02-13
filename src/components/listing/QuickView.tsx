@@ -212,7 +212,7 @@ export function QuickView() {
               data-testid="mobile-image-scroller"
               onScroll={handleScroll}
               onClick={toggleSheet}
-              className="flex-1 min-h-0 overflow-y-auto overscroll-contain bg-ink/5 relative"
+              className="flex-1 min-h-0 overflow-y-auto overscroll-none bg-ink/5 relative"
             >
               {/* Sold overlay */}
               {isSold && (
