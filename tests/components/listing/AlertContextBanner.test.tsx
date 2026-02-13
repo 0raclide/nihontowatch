@@ -1,12 +1,20 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { AlertContextBanner } from '@/components/listing/AlertContextBanner';
 
+// Navigation function mocks
+const mockGoToNext = vi.fn();
+const mockGoToPrevious = vi.fn();
+
 // Control QuickView context per test
-let mockQuickViewState = {
+let mockQuickViewState: Record<string, unknown> = {
   isOpen: true,
   currentIndex: 0,
   listings: [{ id: 1 }, { id: 2 }, { id: 3 }],
+  goToNext: mockGoToNext,
+  goToPrevious: mockGoToPrevious,
+  hasNext: true,
+  hasPrevious: true,
 };
 
 vi.mock('@/contexts/QuickViewContext', () => ({
@@ -45,6 +53,10 @@ describe('AlertContextBanner', () => {
       isOpen: true,
       currentIndex: 0,
       listings: [{ id: 1 }, { id: 2 }, { id: 3 }],
+      goToNext: mockGoToNext,
+      goToPrevious: mockGoToPrevious,
+      hasNext: true,
+      hasPrevious: true,
     };
     setWindowUrl('http://localhost:3000/?listings=1,2,3&alert_search=Juyo');
   });
@@ -57,7 +69,7 @@ describe('AlertContextBanner', () => {
 
     render(<AlertContextBanner />);
 
-    expect(screen.getByText(/Match 1 of 3/)).toBeInTheDocument();
+    expect(screen.getByText(/1 of 3/)).toBeInTheDocument();
     expect(screen.getByText(/Juyo Katana/)).toBeInTheDocument();
   });
 
@@ -70,7 +82,7 @@ describe('AlertContextBanner', () => {
 
     render(<AlertContextBanner />);
 
-    expect(screen.getByText(/Match 3 of 3/)).toBeInTheDocument();
+    expect(screen.getByText(/3 of 3/)).toBeInTheDocument();
   });
 
   it('returns null when no alert context in sessionStorage', () => {
@@ -126,10 +138,10 @@ describe('AlertContextBanner', () => {
 
     render(<AlertContextBanner />);
 
-    expect(screen.getByText(/Match 1 of 3/)).toBeInTheDocument();
+    expect(screen.getByText(/1 of 3/)).toBeInTheDocument();
   });
 
-  it('handles searchName being empty string', () => {
+  it('shows fallback label when searchName is empty', () => {
     mockSessionData['quickview_alert_context'] = JSON.stringify({
       searchName: '',
       totalMatches: 2,
@@ -137,8 +149,65 @@ describe('AlertContextBanner', () => {
 
     render(<AlertContextBanner />);
 
-    // Should show counter but no search name
-    expect(screen.getByText(/Match 1 of 3/)).toBeInTheDocument();
-    expect(screen.queryByText('—')).not.toBeInTheDocument();
+    // Should show counter and fallback label
+    expect(screen.getByText(/1 of 3/)).toBeInTheDocument();
+    expect(screen.getByText('Alert matches')).toBeInTheDocument();
+  });
+
+  // Navigation button tests
+
+  it('calls goToNext when next button is clicked', () => {
+    mockSessionData['quickview_alert_context'] = JSON.stringify({
+      searchName: 'Test',
+      totalMatches: 3,
+    });
+
+    render(<AlertContextBanner />);
+
+    const nextButton = screen.getByLabelText('Next match');
+    fireEvent.click(nextButton);
+
+    expect(mockGoToNext).toHaveBeenCalledOnce();
+  });
+
+  it('calls goToPrevious when previous button is clicked', () => {
+    mockSessionData['quickview_alert_context'] = JSON.stringify({
+      searchName: 'Test',
+      totalMatches: 3,
+    });
+    mockQuickViewState.currentIndex = 1;
+
+    render(<AlertContextBanner />);
+
+    const prevButton = screen.getByLabelText('Previous match');
+    fireEvent.click(prevButton);
+
+    expect(mockGoToPrevious).toHaveBeenCalledOnce();
+  });
+
+  it('disables previous button on first item', () => {
+    mockSessionData['quickview_alert_context'] = JSON.stringify({
+      searchName: 'Test',
+      totalMatches: 3,
+    });
+    mockQuickViewState.currentIndex = 0;
+
+    render(<AlertContextBanner />);
+
+    const prevButton = screen.getByLabelText('Previous match');
+    expect(prevButton).toBeDisabled();
+  });
+
+  it('disables next button on last item', () => {
+    mockSessionData['quickview_alert_context'] = JSON.stringify({
+      searchName: 'Test',
+      totalMatches: 3,
+    });
+    mockQuickViewState.currentIndex = 2;
+
+    render(<AlertContextBanner />);
+
+    const nextButton = screen.getByLabelText('Next match');
+    expect(nextButton).toBeDisabled();
   });
 });
