@@ -1,22 +1,32 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useImagePreloader, clearPreloadCache } from '@/hooks/useImagePreloader';
+import { getCachedValidation, clearValidationCache } from '@/lib/images';
 
-// Mock Image constructor
-const mockImageInstances: { src: string; onload?: () => void; onerror?: () => void }[] = [];
+// Mock Image constructor — includes naturalWidth/Height for validation cache tests
+const mockImageInstances: {
+  src: string;
+  onload: (() => void) | null;
+  onerror: (() => void) | null;
+  naturalWidth: number;
+  naturalHeight: number;
+}[] = [];
 
 beforeEach(() => {
   mockImageInstances.length = 0;
   clearPreloadCache();
+  clearValidationCache();
 
   // Mock window.Image
   vi.stubGlobal('Image', class MockImage {
     src = '';
     onload: (() => void) | null = null;
     onerror: (() => void) | null = null;
+    naturalWidth = 800;
+    naturalHeight = 600;
 
     constructor() {
-      mockImageInstances.push(this);
+      mockImageInstances.push(this as unknown as typeof mockImageInstances[number]);
     }
   });
 });
@@ -298,5 +308,139 @@ describe('clearPreloadCache', () => {
 
     // Should create a new Image instance
     expect(mockImageInstances.length).toBe(2);
+  });
+});
+
+/**
+ * GOLDEN TESTS: Cache Poisoning Prevention (BUG-011)
+ *
+ * These tests guard the invariant that transient preload failures must NEVER
+ * write 'invalid' to the shared validation cache. Violating this invariant
+ * causes images to permanently disappear in QuickView.
+ *
+ * History: This bug was fixed in commit 20b6662 in two locations
+ * (QuickViewContext, useValidatedImages) but missed in useImagePreloader.
+ * The third location was the most dangerous because it fires on hover,
+ * before the user even clicks. See:
+ * docs/SESSION_20260213_IMAGE_CACHE_POISONING_POSTMORTEM.md
+ */
+describe('cache poisoning prevention (BUG-011 golden tests)', () => {
+  const TEST_URL = 'https://cdn.example.com/listing-1277/image1.jpg';
+
+  it('onerror must NOT cache image as invalid', () => {
+    const { result } = renderHook(() => useImagePreloader());
+
+    act(() => {
+      result.current.preloadImage(TEST_URL);
+    });
+
+    // Simulate a transient load failure (network timeout, Vercel optimizer error, etc.)
+    act(() => {
+      mockImageInstances[0].onerror?.();
+    });
+
+    // The validation cache must NOT contain 'invalid' for this URL.
+    // If this assertion fails, QuickView will permanently hide this image.
+    expect(getCachedValidation(TEST_URL)).toBeUndefined();
+  });
+
+  it('cancelPreloads must NOT trigger cache poisoning', () => {
+    const { result } = renderHook(() => useImagePreloader());
+
+    act(() => {
+      result.current.preloadImage(TEST_URL);
+    });
+
+    // Cancel simulates user moving mouse away from the listing card.
+    // Internally this sets img.src = '' which triggers onerror in most browsers.
+    act(() => {
+      result.current.cancelPreloads();
+    });
+
+    // Even after cancellation, the cache must not be poisoned.
+    expect(getCachedValidation(TEST_URL)).toBeUndefined();
+  });
+
+  it('cancelPreloads detaches event handlers before aborting', () => {
+    const { result } = renderHook(() => useImagePreloader());
+
+    act(() => {
+      result.current.preloadImage(TEST_URL);
+    });
+
+    const img = mockImageInstances[0];
+    expect(img.onload).not.toBeNull();
+    expect(img.onerror).not.toBeNull();
+
+    act(() => {
+      result.current.cancelPreloads();
+    });
+
+    // Handlers must be detached BEFORE src is cleared, so the browser's
+    // onerror event (fired by setting src='') finds no handler to call.
+    expect(img.onload).toBeNull();
+    expect(img.onerror).toBeNull();
+  });
+
+  it('full scenario: hover → transient error → click → images must survive', () => {
+    // This test reproduces the exact user flow from BUG-011:
+    // 1. User hovers over listing card (triggers preload of 3 images)
+    // 2. Image 2 gets a transient network error during preload
+    // 3. User clicks → QuickView opens → checks validation cache
+    // 4. Image 2 must NOT be cached as 'invalid'
+
+    const { result } = renderHook(() => useImagePreloader());
+
+    const listing = {
+      stored_images: [
+        'https://cdn.example.com/listing-1277/image1.jpg',
+        'https://cdn.example.com/listing-1277/image2.jpg',
+        'https://cdn.example.com/listing-1277/cert.jpg',
+      ],
+      images: null,
+    };
+
+    // Step 1: Hover triggers preload
+    act(() => {
+      result.current.preloadListing(listing);
+    });
+
+    expect(mockImageInstances.length).toBe(3);
+
+    // Step 2: Image 1 loads OK, image 2 fails, image 3 (cert) loads OK
+    act(() => {
+      mockImageInstances[0].onload?.(); // image1 — success
+      mockImageInstances[1].onerror?.(); // image2 — transient failure
+      mockImageInstances[2].onload?.(); // cert   — success
+    });
+
+    // Step 3: Simulate QuickView checking the validation cache
+    // Image 1: should be 'valid' (loaded successfully, dimensions are 800x600)
+    expect(getCachedValidation(listing.stored_images[0])).toBe('valid');
+
+    // Image 2: must NOT be 'invalid' — transient error must not poison cache
+    expect(getCachedValidation(listing.stored_images[1])).toBeUndefined();
+
+    // Image 3: should be 'valid'
+    expect(getCachedValidation(listing.stored_images[2])).toBe('valid');
+  });
+
+  it('successful preload caches valid images correctly', () => {
+    // Sanity check: onload DOES cache valid images (we only removed
+    // the onerror poisoning, not the onload caching)
+    const { result } = renderHook(() => useImagePreloader());
+
+    act(() => {
+      result.current.preloadImage(TEST_URL);
+    });
+
+    // Simulate successful load with valid dimensions
+    act(() => {
+      mockImageInstances[0].naturalWidth = 1200;
+      mockImageInstances[0].naturalHeight = 900;
+      mockImageInstances[0].onload?.();
+    });
+
+    expect(getCachedValidation(TEST_URL)).toBe('valid');
   });
 });

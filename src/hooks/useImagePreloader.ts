@@ -93,10 +93,11 @@ export function useImagePreloader() {
         activePreloads.current.splice(index, 1);
       }
 
-      // Cache as invalid on error
-      if (getCachedValidation(url) === undefined) {
-        setCachedValidation(url, 'invalid');
-      }
+      // Don't poison validation cache on transient load failures.
+      // Preload errors can be caused by network timeouts, Vercel image
+      // optimizer hiccups, CORS issues, or cancelPreloads() aborting
+      // in-flight requests. If we cache 'invalid' here, QuickView will
+      // permanently hide the image even though it may load fine on retry.
     };
 
     // Start loading
@@ -131,7 +132,11 @@ export function useImagePreloader() {
    */
   const cancelPreloads = useCallback(() => {
     activePreloads.current.forEach(img => {
-      img.src = ''; // Abort the request
+      // Detach handlers BEFORE aborting to prevent onerror from firing
+      // (setting src='' triggers onerror in most browsers)
+      img.onload = null;
+      img.onerror = null;
+      img.src = '';
     });
     activePreloads.current = [];
   }, []);
