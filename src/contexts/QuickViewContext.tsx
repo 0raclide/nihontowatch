@@ -90,6 +90,10 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
   // Guard: when refreshCurrentListing is active, suppress fetchFullListing overwrites
   const refreshInFlightRef = useRef(false);
 
+  // History management: pushState on open so browser back closes the modal
+  const pushedHistoryRef = useRef(false);      // true if we pushed a history entry on open
+  const historyBackInProgressRef = useRef(false); // guards popstate from our own history.back()
+
   // Update URL synchronously using history API (no React re-renders)
   const updateUrl = useCallback((listingId: number | null) => {
     if (typeof window === 'undefined') return;
@@ -149,7 +153,19 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
     setIsOpen(true);
     setCurrentIndex(index);
 
-    // Update URL
+    // Push a history entry so browser back closes the modal instead of leaving the page.
+    // Only push if no ?listing= currently in URL — avoids double-push on deep links
+    // or when navigating between listings (which use replaceState via updateUrl).
+    if (typeof window !== 'undefined') {
+      const currentUrl = new URL(window.location.href);
+      if (!currentUrl.searchParams.has('listing')) {
+        // Snapshot the clean URL (without ?listing=) as a history entry first
+        window.history.pushState({ quickview: true }, '', window.location.href);
+        pushedHistoryRef.current = true;
+      }
+    }
+
+    // Update the current history entry's URL with the listing param (replaceState)
     updateUrl(listing.id);
 
     // Track for signup pressure system
@@ -184,12 +200,21 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
     setCurrentIndex(-1);
     setIsAlertMode(false);
 
-    // Remove listing from URL
-    updateUrl(null);
+    if (pushedHistoryRef.current) {
+      // We pushed a history entry on open — pop it so the URL reverts cleanly.
+      // Guard so our own popstate handler doesn't double-close.
+      historyBackInProgressRef.current = true;
+      window.history.back();
+      pushedHistoryRef.current = false;
+    } else {
+      // Deep link or already-open navigation — just clean up the URL via replaceState
+      updateUrl(null);
+    }
 
     // Reset cooldown after animation completes
     setTimeout(() => {
       closeCooldown.current = false;
+      historyBackInProgressRef.current = false;
     }, 300);
   }, [updateUrl]);
 
@@ -353,11 +378,15 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
     if (typeof window === 'undefined') return;
 
     const handlePopState = () => {
+      // Ignore popstate triggered by our own history.back() in closeQuickView
+      if (historyBackInProgressRef.current) return;
+
       const url = new URL(window.location.href);
       const listingIdParam = url.searchParams.get('listing');
 
       if (!listingIdParam && isOpen) {
-        // User pressed back, close the modal
+        // User pressed back — close the modal without further navigation
+        pushedHistoryRef.current = false;
         setIsOpen(false);
         setCurrentListing(null);
         setCurrentIndex(-1);

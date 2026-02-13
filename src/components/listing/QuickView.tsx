@@ -43,7 +43,7 @@ export function QuickView() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [hasScrolled, setHasScrolled] = useState(false);
   const [failedImageIndices, setFailedImageIndices] = useState<Set<number>>(new Set());
-  const [isSheetExpanded, setIsSheetExpanded] = useState(true);
+  const [isSheetExpanded, setIsSheetExpanded] = useState(false);
   const [isStudyMode, setIsStudyMode] = useState(false);
 
   // Track when the sheet state last changed for dwell time calculation
@@ -87,7 +87,7 @@ export function QuickView() {
       setCurrentImageIndex(0);
       setHasScrolled(false);
       setFailedImageIndices(new Set());
-      setIsSheetExpanded(true);
+      setIsSheetExpanded(false);
       setIsStudyMode(false); // Reset study mode when navigating to new listing
       sheetStateChangeTimeRef.current = Date.now(); // Reset timing for new listing
       if (scrollContainerRef.current) {
