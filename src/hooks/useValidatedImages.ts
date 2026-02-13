@@ -148,8 +148,9 @@ export function useValidatedImages(imageUrls: string[]) {
 
         img.onerror = () => {
           clearTimeout(timeout);
-          // Treat load errors as invalid
-          finish(false);
+          // Load errors ≠ dimension failures. Give benefit of doubt
+          // (matches timeout behavior). LazyImage handles render failures.
+          finish(true);
         };
 
         img.src = url;

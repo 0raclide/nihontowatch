@@ -30,7 +30,7 @@ interface QuickViewContextType {
   /** The currently displayed listing */
   currentListing: Listing | null;
   /** Open quick view for a specific listing */
-  openQuickView: (listing: Listing) => void;
+  openQuickView: (listing: Listing, options?: { skipFetch?: boolean }) => void;
   /** Close the quick view modal */
   closeQuickView: () => void;
   /** Array of listings for navigation (optional) */
@@ -121,7 +121,7 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
   }, []);
 
   // Open quick view
-  const openQuickView = useCallback((listing: Listing) => {
+  const openQuickView = useCallback((listing: Listing, options?: { skipFetch?: boolean }) => {
     // Prevent re-opening during cooldown (after close)
     if (closeCooldown.current) {
       return;
@@ -151,20 +151,22 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
     signupPressure?.trackQuickView();
 
     // Fetch full listing data (with enrichment) asynchronously
-    // This ensures YuhinkaiEnrichmentSection has the data it needs
-    fetchFullListing(listing.id).then((fullListing) => {
-      if (fullListing && !refreshInFlightRef.current) {
-        setCurrentListing(fullListing);
-        // Also update in listings array if present
-        if (index !== -1) {
-          setListingsState((prev) => {
-            const newListings = [...prev];
-            newListings[index] = fullListing;
-            return newListings;
-          });
+    // Skip if caller already fetched the complete listing (e.g., DeepLinkHandler)
+    if (!options?.skipFetch) {
+      fetchFullListing(listing.id).then((fullListing) => {
+        if (fullListing && !refreshInFlightRef.current) {
+          setCurrentListing(fullListing);
+          // Also update in listings array if present
+          if (index !== -1) {
+            setListingsState((prev) => {
+              const newListings = [...prev];
+              newListings[index] = fullListing;
+              return newListings;
+            });
+          }
         }
-      }
-    });
+      });
+    }
   }, [listings, updateUrl, signupPressure, fetchFullListing]);
 
   // Close quick view
@@ -416,9 +418,8 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
         };
 
         img.onerror = () => {
-          if (getCachedValidation(url) === undefined) {
-            setCachedValidation(url, 'invalid');
-          }
+          // Don't poison cache on transient load failures
+          // LazyImage handles actual render errors
         };
 
         img.src = url;

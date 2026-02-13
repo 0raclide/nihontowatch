@@ -90,7 +90,7 @@ export function DeepLinkHandler() {
           }
 
           quickView.setListings(listings);
-          quickView.openQuickView(listings[0]);
+          quickView.openQuickView(listings[0], { skipFetch: true });
           hasHandledRef.current = true;
         } catch (err) {
           console.error('Error handling multi-listing deep link:', err);
@@ -121,7 +121,7 @@ export function DeepLinkHandler() {
           }
 
           const listing = mapApiListing(data.listing);
-          quickView.openQuickView(listing);
+          quickView.openQuickView(listing, { skipFetch: true });
           hasHandledRef.current = true;
         } catch (err) {
           console.error('Error handling deep link:', err);

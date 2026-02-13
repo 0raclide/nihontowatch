@@ -42,6 +42,7 @@ export function QuickView() {
   const [visibleImages, setVisibleImages] = useState<Set<number>>(new Set([0, 1]));
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [hasScrolled, setHasScrolled] = useState(false);
+  const [failedImageIndices, setFailedImageIndices] = useState<Set<number>>(new Set());
   const [isSheetExpanded, setIsSheetExpanded] = useState(true);
   const [isStudyMode, setIsStudyMode] = useState(false);
 
@@ -85,6 +86,7 @@ export function QuickView() {
       setVisibleImages(new Set([0, 1]));
       setCurrentImageIndex(0);
       setHasScrolled(false);
+      setFailedImageIndices(new Set());
       setIsSheetExpanded(true);
       setIsStudyMode(false); // Reset study mode when navigating to new listing
       sheetStateChangeTimeRef.current = Date.now(); // Reset timing for new listing
@@ -150,6 +152,11 @@ export function QuickView() {
     setCurrentImageIndex(index);
   }, []);
 
+  // Track images that fail to load (after all retries exhausted)
+  const handleImageLoadFailed = useCallback((index: number) => {
+    setFailedImageIndices(prev => new Set(prev).add(index));
+  }, []);
+
   // Toggle study mode (setsumei reading view)
   const toggleStudyMode = useCallback(() => {
     setIsStudyMode(prev => !prev);
@@ -167,7 +174,13 @@ export function QuickView() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [imageFingerprint]
   );
-  const { validatedImages: images } = useValidatedImages(rawImages);
+  const { validatedImages: validImages } = useValidatedImages(rawImages);
+
+  // Filter out images that failed to render (after LazyImage retries exhausted)
+  const images = useMemo(
+    () => validImages.filter((_, i) => !failedImageIndices.has(i)),
+    [validImages, failedImageIndices]
+  );
 
   if (!currentListing) return null;
 
@@ -239,6 +252,7 @@ export function QuickView() {
                       totalImages={images.length}
                       isVisible={visibleImages.has(index)}
                       onVisible={handleImageVisible}
+                      onLoadFailed={handleImageLoadFailed}
                       isFirst={index === 0}
                       showScrollHint={index === 0 && images.length > 1 && !hasScrolled}
                       title={currentListing.title}
@@ -331,6 +345,7 @@ export function QuickView() {
                       totalImages={images.length}
                       isVisible={visibleImages.has(index)}
                       onVisible={handleImageVisible}
+                      onLoadFailed={handleImageLoadFailed}
                       isFirst={index === 0}
                       showScrollHint={index === 0 && images.length > 1 && !hasScrolled}
                       title={currentListing.title}
