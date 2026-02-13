@@ -75,12 +75,43 @@ export async function GET() {
       // Table doesn't exist, use default
     }
 
+    // Get image upload completeness
+    let images = { completed: 0, partial: 0, pending: 0, failed: 0, total: 0, rate: 0 };
+    try {
+      const [completedRes, partialRes, pendingRes, failedRes, totalRes] = await Promise.all([
+        serviceClient.from('listings').select('id', { count: 'exact', head: true })
+          .eq('images_upload_status', 'completed').not('images', 'is', null).neq('images', '[]'),
+        serviceClient.from('listings').select('id', { count: 'exact', head: true })
+          .eq('images_upload_status', 'partial').not('images', 'is', null).neq('images', '[]'),
+        serviceClient.from('listings').select('id', { count: 'exact', head: true })
+          .eq('images_upload_status', 'pending').not('images', 'is', null).neq('images', '[]'),
+        serviceClient.from('listings').select('id', { count: 'exact', head: true })
+          .eq('images_upload_status', 'failed').not('images', 'is', null).neq('images', '[]'),
+        serviceClient.from('listings').select('id', { count: 'exact', head: true })
+          .not('images', 'is', null).neq('images', '[]'),
+      ]);
+
+      const total = totalRes.count || 0;
+      const completed = completedRes.count || 0;
+      images = {
+        completed,
+        partial: partialRes.count || 0,
+        pending: pendingRes.count || 0,
+        failed: failedRes.count || 0,
+        total,
+        rate: total > 0 ? Math.round((completed / total) * 100) : 0,
+      };
+    } catch {
+      // Table or column doesn't exist, use defaults
+    }
+
     return NextResponse.json({
       lastScrape,
       totalListings: listingsResult.count || 0,
       availableListings: availableResult.count || 0,
       qaPassRate,
       pendingUrls,
+      images,
     });
   } catch (error) {
     logger.logError('Scraper stats error', error);
