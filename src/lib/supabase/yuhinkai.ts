@@ -1191,12 +1191,12 @@ export async function getArtisanDistributions(
   mei_distribution: Record<string, number>;
   measurements_by_form: MeasurementsByForm;
 } | null> {
-  const idCol = entityType === 'smith' ? 'gold_smith_id' : 'gold_maker_id';
-
+  // Query both columns — artisan code may be in either due to historical misrouting
+  // (migration 290 fix). DO NOT revert to single-column .eq() query.
   const { data, error } = await yuhinkaiClient
     .from('gold_values')
     .select('gold_form_type, gold_mei_status, gold_collections, gold_nagasa, gold_sori, gold_motohaba, gold_sakihaba')
-    .eq(idCol, code);
+    .or(`gold_smith_id.eq.${code},gold_maker_id.eq.${code}`);
 
   if (error || !data || data.length === 0) return null;
 
@@ -1266,13 +1266,13 @@ export async function getArtisanHeroImage(
   code: string,
   entityType: 'smith' | 'tosogu'
 ): Promise<ArtisanHeroImage | null> {
-  const codeColumn = entityType === 'smith' ? 'gold_smith_id' : 'gold_maker_id';
-
   // 1. Get all objects for this artisan with their collections + form type
+  // Query both columns — artisan code may be in either due to historical misrouting
+  // (migration 290 fix). DO NOT revert to single-column .eq() query.
   const { data: goldRows, error } = await yuhinkaiClient
     .from('gold_values')
     .select('object_uuid, gold_collections, gold_form_type')
-    .eq(codeColumn, code);
+    .or(`gold_smith_id.eq.${code},gold_maker_id.eq.${code}`);
 
   if (error || !goldRows || goldRows.length === 0) return null;
 
@@ -1826,12 +1826,12 @@ export async function getDenraiForArtisan(
   code: string,
   entityType: 'smith' | 'tosogu'
 ): Promise<DenraiResult> {
-  const codeColumn = entityType === 'smith' ? 'gold_smith_id' : 'gold_maker_id';
-
+  // Query both columns — artisan code may be in either due to historical misrouting
+  // (migration 290 fix). DO NOT revert to single-column .eq() query.
   const { data, error } = await yuhinkaiClient
     .from('gold_values')
     .select('gold_denrai_owners, gold_collections')
-    .eq(codeColumn, code)
+    .or(`gold_smith_id.eq.${code},gold_maker_id.eq.${code}`)
     .not('gold_denrai_owners', 'is', null);
 
   if (error) {
