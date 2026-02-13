@@ -45,6 +45,16 @@ vi.mock('@/components/auth/LoginModal', () => ({
   LoginModal: () => null,
 }));
 
+// Mock next/navigation
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: vi.fn(),
+    replace: vi.fn(),
+    back: vi.fn(),
+    prefetch: vi.fn(),
+  }),
+}));
+
 // Sample listing data for testing
 // Note: Item types should be lowercase to match the getItemTypeLabel function
 const createMockListing = (overrides: Partial<Listing> = {}): Listing => ({

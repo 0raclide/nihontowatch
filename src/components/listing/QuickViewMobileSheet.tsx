@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useCallback, useEffect, useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import type { Listing, ListingWithEnrichment } from '@/types';
 import { isTosogu, getItemTypeLabel, hasSetsumeiData } from '@/types';
 import { useCurrency, formatPriceWithConversion } from '@/hooks/useCurrency';
@@ -70,6 +71,9 @@ export function QuickViewMobileSheet({
   const [sheetHeight, setSheetHeight] = useState(COLLAPSED_HEIGHT);
   const [isDragging, setIsDragging] = useState(false);
   const [viewportHeight, setViewportHeight] = useState(0);
+
+  // Navigation
+  const router = useRouter();
 
   // Inquiry modal state
   const { user, isAdmin } = useAuth();
@@ -507,7 +511,25 @@ export function QuickViewMobileSheet({
               <svg className="w-3 h-3 mr-1 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
               </svg>
-              <span className="truncate">{dealerName}</span>
+              {listing.dealer_id ? (
+                <a
+                  href={`/?dealer=${listing.dealer_id}`}
+                  data-testid="dealer-name"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onClose();
+                    router.push(`/?dealer=${listing.dealer_id}`);
+                  }}
+                  onTouchStart={(e) => e.stopPropagation()}
+                  onTouchEnd={(e) => e.stopPropagation()}
+                  className="truncate hover:text-accent hover:underline transition-colors"
+                >
+                  {dealerName}
+                </a>
+              ) : (
+                <span className="truncate">{dealerName}</span>
+              )}
             </div>
           </div>
         )}
@@ -540,6 +562,38 @@ export function QuickViewMobileSheet({
               showAttribution={true}
               showMeasurements={true}
             />
+
+            {/* Artist Profile CTA — prominent link to artist page */}
+            {listing.artisan_id &&
+             listing.artisan_id !== 'UNKNOWN' &&
+             listing.artisan_confidence && listing.artisan_confidence !== 'NONE' &&
+             (isAdmin || !listing.artisan_id.startsWith('tmp')) && (
+              <a
+                href={`/artists/${listing.artisan_id}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onClose();
+                  router.push(`/artists/${listing.artisan_id}`);
+                }}
+                onTouchStart={(e) => e.stopPropagation()}
+                onTouchEnd={(e) => e.stopPropagation()}
+                className="group flex items-center gap-3 px-4 py-3 min-h-[44px] border-b border-border active:bg-linen/50 transition-colors cursor-pointer"
+              >
+                <svg className="w-5 h-5 text-muted shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                <div className="flex-1 min-w-0">
+                  <div className="text-[10px] uppercase tracking-wider text-muted font-medium leading-tight">Artist Profile</div>
+                  <div className="text-[13px] font-medium text-ink truncate">
+                    {listing.artisan_display_name || listing.artisan_id}
+                  </div>
+                </div>
+                <svg className="w-4 h-4 text-muted shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </a>
+            )}
 
             {/* Title (auto-translated if Japanese) */}
             <div className="px-4 py-3 border-b border-border">
@@ -583,7 +637,7 @@ export function QuickViewMobileSheet({
               <a
                 href={listing.url}
                 target="_blank"
-                rel="noopener noreferrer"
+                rel="noopener noreferrer nofollow"
                 onTouchStart={(e) => e.stopPropagation()}
                 onTouchEnd={(e) => e.stopPropagation()}
                 onClick={(e) => {

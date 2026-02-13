@@ -313,7 +313,22 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
               </svg>
-              <span data-testid="dealer-name">{dealerName}</span>
+              {listing.dealer_id ? (
+                <a
+                  href={`/?dealer=${listing.dealer_id}`}
+                  data-testid="dealer-name"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    quickView?.closeQuickView?.();
+                    router.push(`/?dealer=${listing.dealer_id}`);
+                  }}
+                  className="hover:text-accent hover:underline transition-colors"
+                >
+                  {dealerName}
+                </a>
+              ) : (
+                <span data-testid="dealer-name">{dealerName}</span>
+              )}
             </div>
           </div>
         </div>
@@ -325,6 +340,35 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
           showAttribution={true}
           showMeasurements={true}
         />
+
+        {/* Artist Profile CTA — prominent link to artist page */}
+        {listing.artisan_id &&
+         listing.artisan_id !== 'UNKNOWN' &&
+         listing.artisan_confidence && listing.artisan_confidence !== 'NONE' &&
+         (isAdmin || !listing.artisan_id.startsWith('tmp')) && (
+          <a
+            href={`/artists/${listing.artisan_id}`}
+            onClick={(e) => {
+              e.preventDefault();
+              quickView?.closeQuickView?.();
+              router.push(`/artists/${listing.artisan_id}`);
+            }}
+            className="group flex items-center gap-3 px-4 py-3 lg:px-5 border-b border-border hover:bg-linen/50 transition-colors cursor-pointer"
+          >
+            <svg className="w-5 h-5 text-muted group-hover:text-accent transition-colors shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+            <div className="flex-1 min-w-0">
+              <div className="text-[10px] uppercase tracking-wider text-muted font-medium leading-tight">Artist Profile</div>
+              <div className="text-[13px] font-medium text-ink group-hover:text-accent transition-colors truncate">
+                {listing.artisan_display_name || listing.artisan_id}
+              </div>
+            </div>
+            <svg className="w-4 h-4 text-muted group-hover:text-accent group-hover:translate-x-0.5 transition-all shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </a>
+        )}
 
         {/* Title (auto-translated if Japanese) */}
         <div className="px-4 py-3 lg:px-5 border-b border-border">
@@ -389,7 +433,7 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
           <a
             href={listing.url}
             target="_blank"
-            rel="noopener noreferrer"
+            rel="noopener noreferrer nofollow"
             onClick={handleDealerLinkClick}
             data-testid="cta-button"
             className="flex-1 flex items-center justify-center gap-2 px-5 py-3 text-[13px] lg:text-[14px] font-medium text-white bg-gold hover:bg-gold-light rounded-lg transition-colors"
