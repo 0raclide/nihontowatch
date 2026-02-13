@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useMemo, memo } from 'react';
+import { PRICE_RANGE_BRACKETS } from '@/lib/constants';
 
 export type SidebarVariant = 'default' | 'a' | 'b';
 
@@ -31,13 +32,15 @@ export interface FilterContentProps {
     signatureStatuses: Facet[];
   };
   filters: {
-    category: 'all' | 'nihonto' | 'tosogu' | 'armor';
+    category: 'nihonto' | 'tosogu' | 'armor';
     itemTypes: string[];
     certifications: string[];
     schools: string[];
     dealers: number[];
     historicalPeriods: string[];
     signatureStatuses: string[];
+    priceMin?: number;
+    priceMax?: number;
     askOnly?: boolean;
     missingSetsumei?: boolean;
     missingArtisanCode?: boolean;
@@ -428,11 +431,10 @@ export function FilterContent({
 
   // Filter item types based on category selection
   const visibleItemTypes = useMemo(() => {
-    if (filters.category === 'nihonto') return nihontoTypes;
     if (filters.category === 'tosogu') return tosoguTypes;
     if (filters.category === 'armor') return armorTypes;
-    return [...nihontoTypes, ...tosoguTypes, ...armorTypes, ...otherTypes];
-  }, [filters.category, nihontoTypes, tosoguTypes, armorTypes, otherTypes]);
+    return nihontoTypes; // nihonto is default
+  }, [filters.category, nihontoTypes, tosoguTypes, armorTypes]);
 
   // Sort certifications by rank
   const sortedCertifications = useMemo(() => {
@@ -496,7 +498,7 @@ export function FilterContent({
     [armorTypes]
   );
 
-  const handleCategoryChange = useCallback((category: 'all' | 'nihonto' | 'tosogu' | 'armor') => {
+  const handleCategoryChange = useCallback((category: 'nihonto' | 'tosogu' | 'armor') => {
     onFilterChange('category', category);
     onFilterChange('itemTypes', []);
   }, [onFilterChange]);
@@ -557,37 +559,40 @@ export function FilterContent({
   );
 
   const clearAllFilters = useCallback(() => {
-    onFilterChange('category', 'all');
+    // Category is a mode — don't reset it
     onFilterChange('itemTypes', []);
     onFilterChange('certifications', []);
     onFilterChange('dealers', []);
     onFilterChange('schools', []);
     onFilterChange('historicalPeriods', []);
     onFilterChange('signatureStatuses', []);
+    onFilterChange('priceMin', undefined);
+    onFilterChange('priceMax', undefined);
     onFilterChange('askOnly', false);
     onFilterChange('missingSetsumei', false);
     onFilterChange('missingArtisanCode', false);
   }, [onFilterChange]);
 
   const hasActiveFilters =
-    filters.category !== 'all' ||
     filters.itemTypes.length > 0 ||
     filters.certifications.length > 0 ||
     filters.dealers.length > 0 ||
     filters.schools.length > 0 ||
     filters.historicalPeriods.length > 0 ||
     filters.signatureStatuses.length > 0 ||
+    filters.priceMin !== undefined ||
+    filters.priceMax !== undefined ||
     filters.askOnly ||
     filters.missingSetsumei ||
     filters.missingArtisanCode;
 
   const activeFilterCount =
-    (filters.category !== 'all' ? 1 : 0) +
     filters.itemTypes.length +
     filters.certifications.length +
     filters.dealers.length +
     filters.historicalPeriods.length +
     filters.signatureStatuses.length +
+    (filters.priceMin || filters.priceMax ? 1 : 0) +
     (filters.askOnly ? 1 : 0) +
     (filters.missingSetsumei ? 1 : 0) +
     (filters.missingArtisanCode ? 1 : 0);
@@ -596,13 +601,15 @@ export function FilterContent({
   const activeFilterPills = useMemo(() => {
     if (!isA) return [];
     const pills: { key: string; label: string; onRemove: () => void }[] = [];
-    if (filters.category !== 'all') {
-      pills.push({ key: 'cat', label: CATEGORY_LABELS[filters.category] || filters.category, onRemove: () => onFilterChange('category', 'all') });
-    }
+    // Category is a mode — no pill for it
     filters.certifications.forEach(c => pills.push({ key: `cert-${c}`, label: CERT_LABELS[c] || c, onRemove: () => handleCertChange(c, false) }));
     filters.itemTypes.forEach(t => pills.push({ key: `type-${t}`, label: ITEM_TYPE_LABELS[t] || t, onRemove: () => handleItemTypeChange(t, false) }));
     filters.historicalPeriods.forEach(p => pills.push({ key: `period-${p}`, label: PERIOD_LABELS[p] || p, onRemove: () => handlePeriodChange(p, false) }));
     filters.signatureStatuses.forEach(s => pills.push({ key: `sig-${s}`, label: SIGNATURE_LABELS[s] || s, onRemove: () => handleSignatureChange(s, false) }));
+    if (filters.priceMin || filters.priceMax) {
+      const bracket = PRICE_RANGE_BRACKETS.find(b => b.min === filters.priceMin && (b.max ?? undefined) === filters.priceMax);
+      pills.push({ key: 'price', label: bracket?.label || 'Price range', onRemove: () => { onFilterChange('priceMin', undefined); onFilterChange('priceMax', undefined); } });
+    }
     filters.dealers.forEach(id => {
       const d = facets.dealers.find(dl => dl.id === id);
       if (d) pills.push({ key: `dealer-${id}`, label: DEALER_LABELS[d.name] || d.name, onRemove: () => handleDealerChange(id, false) });
@@ -688,6 +695,32 @@ export function FilterContent({
         </div>
       )}
 
+      {/* Category — Mobile first element (3-segment control) */}
+      <div className="lg:hidden mb-3">
+        <label className="text-[12px] text-muted mb-2 block">Category</label>
+        <div className="flex rounded-lg border-2 border-border overflow-hidden">
+          {([
+            { key: 'nihonto' as const, label: 'Nihonto' },
+            { key: 'tosogu' as const, label: 'Tosogu' },
+            { key: 'armor' as const, label: 'Armor' },
+          ]).map(({ key, label }, i) => (
+            <button
+              key={key}
+              onClick={() => handleCategoryChange(key)}
+              className={`flex-1 py-3 text-[15px] font-semibold transition-colors ${
+                i > 0 ? 'border-l border-border' : ''
+              } ${
+                filters.category === key
+                  ? 'bg-gold/15 text-gold'
+                  : 'text-muted hover:text-ink hover:bg-hover/30'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Availability - Mobile only */}
       {onAvailabilityChange && (
         <div className="lg:hidden mb-3">
@@ -741,79 +774,7 @@ export function FilterContent({
       )}
 
       <div className={elevated ? 'space-y-0' : 'divide-y divide-border/50'}>
-        {/* 1. Category Toggle */}
-        <div className={isB ? 'pt-1.5 pb-1' : elevated ? 'pt-3 pb-2' : 'py-5'}>
-          {!isB && (
-            <h3 className={
-              isA ? 'text-[14px] font-semibold text-ink mb-3'
-                : 'text-[13px] uppercase tracking-[0.15em] font-semibold text-ink mb-4'
-            }>
-              Category
-            </h3>
-          )}
-          {isB ? (
-            /* Variant B: segmented control — no gaps, shared border */
-            <div className={`flex ${cornerStyle === 'sharp' ? 'rounded-none' : cornerStyle === 'subtle' ? 'rounded-sm' : 'rounded-lg'} border border-border/30 overflow-hidden`}>
-              {[
-                { key: 'all', label: 'All' },
-                { key: 'nihonto', label: 'Nihonto' },
-                { key: 'tosogu', label: 'Tosogu' },
-                { key: 'armor', label: 'Armor' },
-              ].map(({ key, label }, i) => (
-                <button
-                  key={key}
-                  onClick={() => handleCategoryChange(key as 'all' | 'nihonto' | 'tosogu' | 'armor')}
-                  className={`flex-1 py-[7px] text-[11px] font-semibold tracking-[0.03em] transition-colors ${
-                    i > 0 ? 'border-l border-border/20' : ''
-                  } ${
-                    filters.category === key
-                      ? selectStyle === 'bold'
-                        ? 'bg-gold text-white'
-                        : selectStyle === 'tint'
-                          ? 'bg-gold/12 text-gold'
-                          : 'border border-gold/50 text-gold -m-px'
-                      : 'text-muted hover:text-ink hover:bg-hover/30'
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          ) : (
-            <div className={`flex gap-1.5 ${elevated ? '' : 'lg:mr-2'}`}>
-              {[
-                { key: 'all', label: 'All' },
-                { key: 'nihonto', label: 'Nihonto' },
-                { key: 'tosogu', label: 'Tosogu' },
-                { key: 'armor', label: 'Armor' },
-              ].map(({ key, label }) => (
-                <button
-                  key={key}
-                  onClick={() => handleCategoryChange(key as 'all' | 'nihonto' | 'tosogu' | 'armor')}
-                  className={
-                    isA
-                      ? `flex-1 px-3 py-2 text-[13px] font-medium rounded-md transition-all duration-200 ${
-                          filters.category === key
-                            ? 'bg-gold/12 text-gold border border-gold/30'
-                            : 'text-charcoal hover:text-ink hover:bg-hover border border-transparent'
-                        }`
-                      : `flex-1 px-4 py-3 lg:py-2.5 text-[15px] lg:text-[14px] font-medium rounded-lg transition-all duration-200 ${
-                          filters.category === key
-                            ? 'bg-gold text-white shadow-sm'
-                            : 'bg-linen text-charcoal hover:bg-hover'
-                        }`
-                  }
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {elevated && <div className={`border-t ${isB ? 'border-border/15' : 'border-border/30'}`} />}
-
-        {/* 2. Certification */}
+        {/* 1. Designation (checkboxes, open) */}
         <FilterSection title="Designation" variant={variant} activeCount={filters.certifications.length}>
           <div className={elevated ? 'space-y-0' : 'space-y-1'}>
             {sortedCertifications.map((facet) => (
@@ -825,8 +786,8 @@ export function FilterContent({
 
         {elevated && <div className={`border-t ${isB ? 'border-border/15' : 'border-border/30'}`} />}
 
-        {/* 3. Historical Period */}
-        <FilterSection title="Period" defaultOpen={false} variant={variant} activeCount={filters.historicalPeriods.length}>
+        {/* 2. Period (checkboxes, OPEN by default) */}
+        <FilterSection title="Period" defaultOpen={true} variant={variant} activeCount={filters.historicalPeriods.length}>
           <div className={elevated ? 'space-y-0' : 'space-y-1'}>
             {facets.historicalPeriods?.map((facet) => (
               <Checkbox key={facet.value} label={PERIOD_LABELS[facet.value] || facet.value} count={facet.count} checked={filters.historicalPeriods.includes(facet.value)} onChange={(checked) => handlePeriodChange(facet.value, checked)} variant={variant} />
@@ -837,19 +798,7 @@ export function FilterContent({
 
         {elevated && <div className={`border-t ${isB ? 'border-border/15' : 'border-border/30'}`} />}
 
-        {/* 4. Signature Status */}
-        <FilterSection title="Signature" defaultOpen={false} variant={variant} activeCount={filters.signatureStatuses.length}>
-          <div className={elevated ? 'space-y-0' : 'space-y-1'}>
-            {facets.signatureStatuses?.map((facet) => (
-              <Checkbox key={facet.value} label={SIGNATURE_LABELS[facet.value] || facet.value} count={facet.count} checked={filters.signatureStatuses.includes(facet.value)} onChange={(checked) => handleSignatureChange(facet.value, checked)} variant={variant} />
-            ))}
-            {(!facets.signatureStatuses || facets.signatureStatuses.length === 0) && <p className={`${isB ? 'text-[11px]' : 'text-[14px]'} text-muted italic py-2`}>No signature data</p>}
-          </div>
-        </FilterSection>
-
-        {elevated && <div className={`border-t ${isB ? 'border-border/15' : 'border-border/30'}`} />}
-
-        {/* 5. Item Type */}
+        {/* 3. Type (checkboxes, closed) */}
         <FilterSection title="Type" defaultOpen={false} variant={variant} activeCount={filters.itemTypes.length}>
           <div className={elevated ? 'space-y-0' : 'space-y-1'}>
             {visibleItemTypes.filter((facet) => facet.value !== 'other').map((facet) => (
@@ -858,6 +807,104 @@ export function FilterContent({
             {visibleItemTypes.length === 0 && <p className={`${isB ? 'text-[11px]' : 'text-[14px]'} text-muted italic py-2`}>No items available</p>}
           </div>
         </FilterSection>
+
+        {elevated && <div className={`border-t ${isB ? 'border-border/15' : 'border-border/30'}`} />}
+
+        {/* 4. Signature — inline 3-way toggle (not collapsible) */}
+        <div className={isB ? 'py-2' : elevated ? 'py-3' : 'py-5'}>
+          <span className={
+            isB
+              ? 'text-[11px] uppercase tracking-[0.06em] font-semibold text-muted block mb-1.5'
+              : elevated
+                ? 'text-[14px] font-semibold text-ink block mb-2'
+                : 'text-[13px] uppercase tracking-[0.15em] font-semibold text-ink block mb-3'
+          }>
+            Signature
+          </span>
+          <div className={`flex ${cornerStyle === 'sharp' ? 'rounded-none' : cornerStyle === 'subtle' ? 'rounded-sm' : 'rounded-lg'} border border-border/30 overflow-hidden`}>
+            {([
+              { key: 'all', label: 'All' },
+              { key: 'signed', label: 'Signed' },
+              { key: 'unsigned', label: 'Mumei' },
+            ]).map(({ key, label }, i) => {
+              const isActive = key === 'all'
+                ? filters.signatureStatuses.length === 0
+                : filters.signatureStatuses.length === 1 && filters.signatureStatuses[0] === key;
+              return (
+                <button
+                  key={key}
+                  onClick={() => {
+                    if (key === 'all') {
+                      onFilterChange('signatureStatuses', []);
+                    } else {
+                      // Toggle: if already selected, clear; otherwise set
+                      if (isActive) {
+                        onFilterChange('signatureStatuses', []);
+                      } else {
+                        onFilterChange('signatureStatuses', [key]);
+                      }
+                    }
+                  }}
+                  className={`flex-1 py-[7px] text-[11px] font-semibold tracking-[0.03em] transition-colors ${
+                    i > 0 ? 'border-l border-border/20' : ''
+                  } ${
+                    isActive
+                      ? selectStyle === 'bold'
+                        ? 'bg-gold text-white'
+                        : selectStyle === 'tint'
+                          ? 'bg-gold/12 text-gold'
+                          : 'border border-gold/50 text-gold -m-px'
+                      : 'text-muted hover:text-ink hover:bg-hover/30'
+                  }`}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {elevated && <div className={`border-t ${isB ? 'border-border/15' : 'border-border/30'}`} />}
+
+        {/* 5. Price — 2-column bracket pills */}
+        <div className={isB ? 'py-2' : elevated ? 'py-3' : 'py-5'}>
+          <span className={
+            isB
+              ? 'text-[11px] uppercase tracking-[0.06em] font-semibold text-muted block mb-1.5'
+              : elevated
+                ? 'text-[14px] font-semibold text-ink block mb-2'
+                : 'text-[13px] uppercase tracking-[0.15em] font-semibold text-ink block mb-3'
+          }>
+            Price
+          </span>
+          <div className="grid grid-cols-2 gap-1">
+            {PRICE_RANGE_BRACKETS.map((bracket) => {
+              const isActive = filters.priceMin === bracket.min && filters.priceMax === (bracket.max ?? undefined);
+              return (
+                <button
+                  key={bracket.label}
+                  onClick={() => {
+                    if (isActive) {
+                      // Deselect
+                      onFilterChange('priceMin', undefined);
+                      onFilterChange('priceMax', undefined);
+                    } else {
+                      onFilterChange('priceMin', bracket.min);
+                      onFilterChange('priceMax', bracket.max ?? undefined);
+                    }
+                  }}
+                  className={`px-2 py-[6px] text-[11px] font-medium rounded-md transition-colors ${
+                    isActive
+                      ? 'bg-gold/12 text-gold border border-gold/25'
+                      : 'border border-border/25 text-muted hover:text-ink hover:border-border/40 hover:bg-hover/20'
+                  }`}
+                >
+                  {bracket.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
         {elevated && <div className={`border-t ${isB ? 'border-border/15' : 'border-border/30'}`} />}
 
@@ -983,12 +1030,12 @@ export function FilterContent({
 // Export the active filter count helper for use elsewhere
 export function getActiveFilterCount(filters: FilterContentProps['filters']): number {
   return (
-    (filters.category !== 'all' ? 1 : 0) +
     filters.itemTypes.length +
     filters.certifications.length +
     filters.dealers.length +
     filters.historicalPeriods.length +
     filters.signatureStatuses.length +
+    (filters.priceMin || filters.priceMax ? 1 : 0) +
     (filters.askOnly ? 1 : 0) +
     (filters.missingSetsumei ? 1 : 0) +
     (filters.missingArtisanCode ? 1 : 0)

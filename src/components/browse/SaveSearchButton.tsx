@@ -36,7 +36,9 @@ export function SaveSearchButton({
     (criteria.schools?.length ?? 0) > 0 ||
     criteria.askOnly ||
     criteria.query ||
-    (criteria.category && criteria.category !== 'all');
+    !!criteria.category ||
+    criteria.minPrice !== undefined ||
+    criteria.maxPrice !== undefined;
 
   // Don't show button if no filters
   if (!hasFilters) {

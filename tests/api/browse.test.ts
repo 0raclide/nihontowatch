@@ -323,10 +323,10 @@ describe('Parameter Parsing', () => {
   });
 
   describe('Category parameter', () => {
-    it('defaults to "all" when not specified', () => {
+    it('defaults to "nihonto" when not specified', () => {
       const params = new URLSearchParams('');
-      const category = params.get('cat') || 'all';
-      expect(category).toBe('all');
+      const category = params.get('cat') || 'nihonto';
+      expect(category).toBe('nihonto');
     });
 
     it('accepts "nihonto" category', () => {

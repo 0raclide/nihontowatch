@@ -38,6 +38,14 @@ const TOSOGU_TYPES = [
   'mitokoromono',
 ];
 
+const ARMOR_TYPES = [
+  'armor', 'yoroi', 'gusoku',
+  'helmet', 'kabuto',
+  'menpo', 'mengu',
+  'kote', 'suneate', 'do',
+  'tanegashima', 'hinawaju',
+];
+
 // Certification variants mapping
 const CERT_VARIANTS: Record<string, string[]> = {
   'Juyo Bijutsuhin': ['Juyo Bijutsuhin', 'JuBi', 'jubi'], // Pre-war government designation
@@ -115,6 +123,8 @@ export async function findMatchingListings(
     ? NIHONTO_TYPES
     : criteria.category === 'tosogu'
     ? TOSOGU_TYPES
+    : criteria.category === 'armor'
+    ? ARMOR_TYPES
     : undefined;
 
   if (effectiveItemTypes?.length) {
@@ -178,7 +188,7 @@ export async function findMatchingListings(
     // Apply extracted item type filters (exact match on item_type)
     // Only apply if no explicit item type filter was already set
     // Note: category === 'all' means no category restriction, so semantic extraction should apply
-    if (extractedFilters.itemTypes.length > 0 && !criteria.itemTypes?.length && (!criteria.category || criteria.category === 'all')) {
+    if (extractedFilters.itemTypes.length > 0 && !criteria.itemTypes?.length && (!criteria.category || (criteria.category as string) === 'all')) {
       const typeConditions = extractedFilters.itemTypes
         .map((t) => `item_type.ilike.${t}`)
         .join(',');
@@ -294,6 +304,8 @@ export async function countMatchingListings(
     ? NIHONTO_TYPES
     : criteria.category === 'tosogu'
     ? TOSOGU_TYPES
+    : criteria.category === 'armor'
+    ? ARMOR_TYPES
     : undefined;
 
   if (effectiveItemTypes?.length) {
@@ -346,7 +358,7 @@ export async function countMatchingListings(
 
     // Apply extracted item type filters
     // Note: category === 'all' means no category restriction, so semantic extraction should apply
-    if (extractedFilters.itemTypes.length > 0 && !criteria.itemTypes?.length && (!criteria.category || criteria.category === 'all')) {
+    if (extractedFilters.itemTypes.length > 0 && !criteria.itemTypes?.length && (!criteria.category || (criteria.category as string) === 'all')) {
       const typeConditions = extractedFilters.itemTypes
         .map((t) => `item_type.ilike.${t}`)
         .join(',');

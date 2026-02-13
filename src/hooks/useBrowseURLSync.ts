@@ -3,19 +3,22 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import type { AvailabilityStatus } from '@/components/ui/AvailabilityToggle';
+import { CATEGORY_DEFAULT, CATEGORY_STORAGE_KEY } from '@/lib/constants';
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
 export interface BrowseFilters {
-  category: 'all' | 'nihonto' | 'tosogu' | 'armor';
+  category: 'nihonto' | 'tosogu' | 'armor';
   itemTypes: string[];
   certifications: string[];
   schools: string[];
   dealers: number[];
   historicalPeriods: string[];
   signatureStatuses: string[];
+  priceMin?: number;
+  priceMax?: number;
   askOnly?: boolean;
   enriched?: boolean;
   missingSetsumei?: boolean;
@@ -50,18 +53,38 @@ function parseBool(value: string | null): boolean {
 // Pure functions — bidirectional URL ↔ State mapping
 // ---------------------------------------------------------------------------
 
+/** Resolve category from URL param, localStorage, or default */
+function resolveCategory(urlValue: string | null): BrowseFilters['category'] {
+  // Explicit URL param (nihonto/tosogu/armor) takes precedence
+  if (urlValue === 'nihonto' || urlValue === 'tosogu' || urlValue === 'armor') {
+    return urlValue;
+  }
+  // Legacy ?cat=all or absent → check localStorage, then fall back to default
+  if (typeof window !== 'undefined') {
+    const stored = localStorage.getItem(CATEGORY_STORAGE_KEY);
+    if (stored === 'nihonto' || stored === 'tosogu' || stored === 'armor') {
+      return stored;
+    }
+  }
+  return CATEGORY_DEFAULT;
+}
+
 /** URL → canonical state snapshot (single source of truth for parsing) */
 export function parseURLState(sp: URLSearchParams): BrowseURLState {
+  const priceMinRaw = sp.get('priceMin');
+  const priceMaxRaw = sp.get('priceMax');
   return {
     activeTab: (sp.get('tab') as AvailabilityStatus) || 'available',
     filters: {
-      category: (sp.get('cat') as BrowseFilters['category']) || 'all',
+      category: resolveCategory(sp.get('cat')),
       itemTypes: parseCSV(sp.get('type')),
       certifications: parseCSV(sp.get('cert')),
       schools: parseCSV(sp.get('school')),
       dealers: parseCSVNumbers(sp.get('dealer')),
       historicalPeriods: parseCSV(sp.get('period')),
       signatureStatuses: parseCSV(sp.get('sig')),
+      priceMin: priceMinRaw ? Number(priceMinRaw) : undefined,
+      priceMax: priceMaxRaw ? Number(priceMaxRaw) : undefined,
       askOnly: parseBool(sp.get('ask')),
       enriched: parseBool(sp.get('enriched')),
       missingSetsumei: parseBool(sp.get('missing_setsumei')),
@@ -84,13 +107,15 @@ export function buildParamsFromState(
   const params = new URLSearchParams();
 
   params.set('tab', activeTab);
-  if (filters.category !== 'all') params.set('cat', filters.category);
+  if (filters.category !== CATEGORY_DEFAULT) params.set('cat', filters.category);
   if (filters.itemTypes.length) params.set('type', filters.itemTypes.join(','));
   if (filters.certifications.length) params.set('cert', filters.certifications.join(','));
   if (filters.schools.length) params.set('school', filters.schools.join(','));
   if (filters.dealers.length) params.set('dealer', filters.dealers.join(','));
   if (filters.historicalPeriods.length) params.set('period', filters.historicalPeriods.join(','));
   if (filters.signatureStatuses.length) params.set('sig', filters.signatureStatuses.join(','));
+  if (filters.priceMin) params.set('priceMin', String(filters.priceMin));
+  if (filters.priceMax) params.set('priceMax', String(filters.priceMax));
   if (filters.askOnly) params.set('ask', 'true');
   if (filters.enriched) params.set('enriched', 'true');
   if (filters.missingSetsumei) params.set('missing_setsumei', 'true');
@@ -188,6 +213,13 @@ export function useBrowseURLSync() {
     prevUrlRef.current = newUrl;
     router.replace(newUrl, { scroll: false });
   }, [activeTab, filters, sort, searchQuery, artisanCode, router]);
+
+  // ---- Persist category to localStorage ----
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(CATEGORY_STORAGE_KEY, filters.category);
+    }
+  }, [filters.category]);
 
   // ---- buildFetchParams — for API calls (excludes page, which is local) ----
   const buildFetchParams = useCallback(() => {

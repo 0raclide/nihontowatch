@@ -79,7 +79,7 @@ describe('Saved Search Matcher', () => {
 
       const criteria: SavedSearchCriteria = {
         tab: 'available',
-        category: 'all',
+        category: 'all' as unknown as SavedSearchCriteria['category'], // Legacy value in existing DB records
         itemTypes: [],
         certifications: [],
         query: 'kamakura tachi', // "tachi" should be extracted as item type
@@ -97,7 +97,7 @@ describe('Saved Search Matcher', () => {
 
       const criteria: SavedSearchCriteria = {
         tab: 'available',
-        category: 'all',
+        category: 'all' as unknown as SavedSearchCriteria['category'], // Legacy value in existing DB records
         itemTypes: [],
         certifications: [],
         query: 'kamakura signed', // "signed" should be extracted as signature status
@@ -116,7 +116,7 @@ describe('Saved Search Matcher', () => {
 
       const criteria: SavedSearchCriteria = {
         tab: 'available',
-        category: 'all',
+        category: 'all' as unknown as SavedSearchCriteria['category'], // Legacy value in existing DB records
         itemTypes: [],
         certifications: [],
         query: 'kamakura tachi signed',
@@ -139,7 +139,7 @@ describe('Saved Search Matcher', () => {
 
       const criteria: SavedSearchCriteria = {
         tab: 'available',
-        category: 'all',
+        category: 'all' as unknown as SavedSearchCriteria['category'], // Legacy value in existing DB records
         itemTypes: [],
         certifications: [],
         query: 'juyo katana',
@@ -212,7 +212,7 @@ describe('Saved Search Matcher', () => {
 
       const criteria: SavedSearchCriteria = {
         tab: 'available',
-        category: 'all',
+        category: 'all' as unknown as SavedSearchCriteria['category'], // Legacy value in existing DB records
         itemTypes: ['wakizashi'], // Explicit item type set
         certifications: [],
         query: 'katana goto', // "katana" in query but explicit itemTypes takes precedence
@@ -235,7 +235,7 @@ describe('Saved Search Matcher', () => {
 
       const criteria: SavedSearchCriteria = {
         tab: 'available',
-        category: 'all',
+        category: 'all' as unknown as SavedSearchCriteria['category'], // Legacy value in existing DB records
         itemTypes: [],
         certifications: [],
         signatureStatuses: ['unsigned'], // Explicit signature status
@@ -257,7 +257,7 @@ describe('Saved Search Matcher', () => {
 
       const criteria: SavedSearchCriteria = {
         tab: 'available',
-        category: 'all',
+        category: 'all' as unknown as SavedSearchCriteria['category'], // Legacy value in existing DB records
         itemTypes: [],
         certifications: [],
         query: '',
@@ -292,7 +292,7 @@ describe('Saved Search Matcher', () => {
 
       const criteria: SavedSearchCriteria = {
         tab: 'available',
-        category: 'all',
+        category: 'all' as unknown as SavedSearchCriteria['category'], // Legacy value in existing DB records
         itemTypes: [],
         certifications: [],
         query: 'mumei tsuba kamakura', // "mumei" = unsigned
@@ -323,7 +323,7 @@ describe('Saved Search Matcher', () => {
         askOnly: false,
         dealers: [],
         schools: [],
-        category: 'all',
+        category: 'all' as unknown as SavedSearchCriteria['category'], // Legacy value in existing DB records
         itemTypes: [],
         certifications: [],
       };

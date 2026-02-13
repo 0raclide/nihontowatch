@@ -46,14 +46,15 @@ export function FilterSidebar({ facets, filters, onFilterChange, isAdmin, varian
   }, []);
 
   // Active filter count for variant B header badge
+  // Category is a mode (not a filter), so it doesn't count. Price range does.
   const activeFilterCount = useMemo(() => {
     return (
-      (filters.category !== 'all' ? 1 : 0) +
       filters.itemTypes.length +
       filters.certifications.length +
       filters.dealers.length +
       (filters.historicalPeriods?.length || 0) +
       (filters.signatureStatuses?.length || 0) +
+      ((filters as Record<string, unknown>).priceMin || (filters as Record<string, unknown>).priceMax ? 1 : 0) +
       (filters.askOnly ? 1 : 0) +
       (filters.missingSetsumei ? 1 : 0) +
       (filters.missingArtisanCode ? 1 : 0)
@@ -61,13 +62,15 @@ export function FilterSidebar({ facets, filters, onFilterChange, isAdmin, varian
   }, [filters]);
 
   const clearAllFilters = useCallback(() => {
-    onFilterChange('category', 'all');
+    // Category is a mode — don't reset it
     onFilterChange('itemTypes', []);
     onFilterChange('certifications', []);
     onFilterChange('dealers', []);
     onFilterChange('schools', []);
     onFilterChange('historicalPeriods', []);
     onFilterChange('signatureStatuses', []);
+    onFilterChange('priceMin', undefined);
+    onFilterChange('priceMax', undefined);
     onFilterChange('askOnly', false);
     onFilterChange('missingSetsumei', false);
     onFilterChange('missingArtisanCode', false);
@@ -93,33 +96,37 @@ export function FilterSidebar({ facets, filters, onFilterChange, isAdmin, varian
             className={`bg-surface-elevated ${cardRadius} border border-border/40 flex flex-col max-h-[calc(100vh-7rem)]`}
             style={{ boxShadow: '0 1px 2px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.06)' }}
           >
-            {/* ── Zone 1: View Controls (pinned, when active) ── */}
+            {/* ── Zone 1: Category + Availability (pinned) ── */}
             {hasViewControls && (
               <div className="flex-shrink-0 px-4 pt-3.5 pb-3 border-b border-border/15">
-                {/* Sort — inline label + borderless select */}
-                {hasPanelSort && (
-                  <div className="flex items-center justify-center gap-2 mb-2.5">
-                    <span className="text-[10px] uppercase tracking-[0.08em] text-muted/60 font-medium">Sort</span>
-                    <select
-                      value={panelControls!.sort}
-                      onChange={(e) => panelControls!.onSortChange!(e.target.value)}
-                      className="bg-transparent text-[11px] text-ink font-medium focus:outline-none cursor-pointer pr-4 appearance-none"
-                      style={{
-                        border: 'none',
-                        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239ca3af'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
-                        backgroundRepeat: 'no-repeat',
-                        backgroundPosition: 'right 0 center',
-                        backgroundSize: '11px',
-                      }}
-                    >
-                      <option value="recent">Newest</option>
-                      <option value="sale_date">Recently Sold</option>
-                      <option value="price_asc">Price: Low → High</option>
-                      <option value="price_desc">Price: High → Low</option>
-                      {panelControls!.isAdmin && <option value="elite_factor">Elite Standing</option>}
-                    </select>
+                {/* Category — 3-segment: Nihonto | Tosogu | Armor */}
+                <div className="mb-2.5">
+                  <span className="text-[10px] uppercase tracking-[0.08em] text-muted/50 font-medium block mb-1.5">Category</span>
+                  <div className={`flex ${controlRadius} border border-border/30 overflow-hidden`}>
+                    {([
+                      { key: 'nihonto' as const, label: 'Nihonto' },
+                      { key: 'tosogu' as const, label: 'Tosogu' },
+                      { key: 'armor' as const, label: 'Armor' },
+                    ]).map(({ key, label }, i) => (
+                      <button
+                        key={key}
+                        onClick={() => {
+                          onFilterChange('category', key);
+                          onFilterChange('itemTypes', []);
+                        }}
+                        className={`flex-1 py-[9px] text-[12px] font-semibold tracking-[0.02em] transition-colors ${
+                          i > 0 ? 'border-l border-border/20' : ''
+                        } ${
+                          filters.category === key
+                            ? 'bg-gold/15 text-gold'
+                            : 'text-muted hover:text-ink hover:bg-hover/30'
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
                   </div>
-                )}
+                </div>
 
                 {/* Availability — full-width segmented control */}
                 <div className={`flex ${controlRadius} border border-border/30 overflow-hidden`}>

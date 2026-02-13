@@ -245,6 +245,26 @@ export function getEnrichedSchoolName(listing: ListingWithEnrichment): string | 
 // =============================================================================
 
 /**
+ * Certification types that actually have NBTHK setsumei (zufu commentary).
+ * Only Juyo and Tokubetsu Juyo items receive setsumei from NBTHK.
+ * All setsumei display logic MUST check this before showing translations.
+ *
+ * This prevents hallucinated setsumei from persisting when a listing's
+ * cert_type is corrected away from Juyo/Tokuju.
+ */
+const SETSUMEI_ELIGIBLE_CERTS = ['Juyo', 'Tokubetsu Juyo'];
+
+/**
+ * Check if a listing's certification type is eligible for setsumei display.
+ * Single source of truth — used by hasSetsumeiData, getSetsumeiContent,
+ * hasSetsumeiTranslation, and display components.
+ */
+export function isSetsumeiEligibleCert(certType?: string | null): boolean {
+  if (!certType) return false;
+  return SETSUMEI_ELIGIBLE_CERTS.includes(certType);
+}
+
+/**
  * Setsumei content returned by getSetsumeiContent
  */
 export interface SetsumeiContent {
@@ -260,10 +280,18 @@ export interface SetsumeiContent {
 /**
  * Check if listing has any setsumei data available for study mode.
  * Returns true if listing has:
- * - OCR setsumei (setsumei_text_en) for Juyo/Tokuju items
- * - Verified Yuhinkai enrichment with setsumei_en
+ * - OCR setsumei (setsumei_text_en) AND cert is Juyo/Tokuju
+ * - Verified Yuhinkai enrichment with setsumei_en AND cert is Juyo/Tokuju
+ *
+ * Cert check prevents hallucinated setsumei from showing on items
+ * that were wrongly classified and later corrected.
  */
 export function hasSetsumeiData(listing: ListingWithEnrichment): boolean {
+  // Setsumei only exists for Juyo/Tokubetsu Juyo — guard against orphaned data
+  if (!isSetsumeiEligibleCert(listing.cert_type)) {
+    return false;
+  }
+
   // Check for OCR setsumei
   if (listing.setsumei_text_en) {
     return true;
@@ -283,10 +311,16 @@ export function hasSetsumeiData(listing: ListingWithEnrichment): boolean {
 /**
  * Get the best available setsumei content for a listing.
  * Prefers Yuhinkai enrichment (professional translation) over OCR setsumei.
+ * Returns null if listing cert is not Juyo/Tokuju (prevents orphaned setsumei).
  *
  * @returns SetsumeiContent or null if no setsumei available
  */
 export function getSetsumeiContent(listing: ListingWithEnrichment): SetsumeiContent | null {
+  // Setsumei only exists for Juyo/Tokubetsu Juyo — guard against orphaned data
+  if (!isSetsumeiEligibleCert(listing.cert_type)) {
+    return null;
+  }
+
   // Prefer Yuhinkai enrichment (higher quality professional translation)
   if (hasVerifiedEnrichment(listing)) {
     const enrichment = listing.yuhinkai_enrichment;
@@ -746,7 +780,7 @@ export type NotificationFrequency = 'instant' | 'daily' | 'none';
  */
 export interface SavedSearchCriteria {
   tab?: 'available' | 'sold' | 'all';
-  category?: 'all' | 'nihonto' | 'tosogu';
+  category?: 'nihonto' | 'tosogu' | 'armor';
   itemTypes?: string[];
   certifications?: string[];
   dealers?: number[];

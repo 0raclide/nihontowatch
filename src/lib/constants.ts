@@ -78,6 +78,26 @@ export const PRICE_RANGES = [
   { label: 'Over ¥10,000,000', min: 10000000, max: Infinity },
 ] as const;
 
+/** Compact price brackets for filter pill UI (skips Under ¥100K since MIN_PRICE_JPY filters those) */
+export const PRICE_RANGE_BRACKETS = [
+  { label: '¥100K–500K', min: 100000, max: 500000 },
+  { label: '¥500K–1M', min: 500000, max: 1000000 },
+  { label: '¥1M–3M', min: 1000000, max: 3000000 },
+  { label: '¥3M–5M', min: 3000000, max: 5000000 },
+  { label: '¥5M–10M', min: 5000000, max: 10000000 },
+  { label: '¥10M+', min: 10000000, max: undefined },
+] as const;
+
+// =============================================================================
+// CATEGORY DEFAULTS
+// =============================================================================
+
+/** Default category when no URL param or localStorage value exists */
+export const CATEGORY_DEFAULT = 'nihonto' as const;
+
+/** localStorage key for persisting category selection */
+export const CATEGORY_STORAGE_KEY = 'nihontowatch-category';
+
 // =============================================================================
 // ITEM TYPES
 // =============================================================================

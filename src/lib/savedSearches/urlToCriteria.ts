@@ -18,7 +18,7 @@ export function urlParamsToSearchCriteria(
 
   // Category
   const category = params.get('cat');
-  if (category === 'all' || category === 'nihonto' || category === 'tosogu') {
+  if (category === 'nihonto' || category === 'tosogu' || category === 'armor') {
     criteria.category = category;
   }
 
@@ -52,6 +52,16 @@ export function urlParamsToSearchCriteria(
   // Ask only (price on request)
   if (params.get('ask') === 'true') {
     criteria.askOnly = true;
+  }
+
+  // Price range (explicit URL params)
+  const priceMin = params.get('priceMin');
+  if (priceMin) {
+    criteria.minPrice = Number(priceMin);
+  }
+  const priceMax = params.get('priceMax');
+  if (priceMax) {
+    criteria.maxPrice = Number(priceMax);
   }
 
   // Search query
@@ -102,8 +112,8 @@ export function criteriaToUrlParams(criteria: SavedSearchCriteria): string {
     params.set('tab', criteria.tab);
   }
 
-  // Category
-  if (criteria.category && criteria.category !== 'all') {
+  // Category (nihonto is default, only serialize non-default)
+  if (criteria.category && criteria.category !== 'nihonto') {
     params.set('cat', criteria.category);
   }
 
@@ -130,6 +140,14 @@ export function criteriaToUrlParams(criteria: SavedSearchCriteria): string {
   // Ask only
   if (criteria.askOnly) {
     params.set('ask', 'true');
+  }
+
+  // Price range
+  if (criteria.minPrice !== undefined) {
+    params.set('priceMin', String(criteria.minPrice));
+  }
+  if (criteria.maxPrice !== undefined) {
+    params.set('priceMax', String(criteria.maxPrice));
   }
 
   // Query
@@ -163,10 +181,13 @@ export function criteriaToHumanReadable(
   const parts: string[] = [];
 
   // Category
-  if (criteria.category && criteria.category !== 'all') {
-    parts.push(
-      criteria.category === 'nihonto' ? 'Nihonto (blades)' : 'Tosogu (fittings)'
-    );
+  if (criteria.category) {
+    const categoryLabels: Record<string, string> = {
+      nihonto: 'Nihonto (blades)',
+      tosogu: 'Tosogu (fittings)',
+      armor: 'Armor & Military',
+    };
+    parts.push(categoryLabels[criteria.category] || criteria.category);
   }
 
   // Item types
@@ -270,8 +291,9 @@ export function generateSearchName(criteria: SavedSearchCriteria): string {
     }
   }
 
-  if (criteria.category && criteria.category !== 'all') {
-    return criteria.category === 'nihonto' ? 'All Nihonto' : 'All Tosogu';
+  if (criteria.category) {
+    const names: Record<string, string> = { nihonto: 'All Nihonto', tosogu: 'All Tosogu', armor: 'All Armor' };
+    return names[criteria.category] || 'Custom search';
   }
 
   return 'Custom search';

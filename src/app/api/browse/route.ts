@@ -19,7 +19,7 @@ export const dynamic = 'force-dynamic';
 
 interface BrowseParams {
   tab: 'available' | 'sold' | 'all';
-  category?: 'all' | 'nihonto' | 'tosogu' | 'armor';
+  category?: 'nihonto' | 'tosogu' | 'armor';
   itemTypes?: string[];
   certifications?: string[];
   schools?: string[];
@@ -27,6 +27,10 @@ interface BrowseParams {
   historicalPeriods?: string[];
   signatureStatuses?: string[];
   askOnly?: boolean;
+  /** Price range filter (JPY) — min threshold */
+  priceMin?: number;
+  /** Price range filter (JPY) — max threshold */
+  priceMax?: number;
   /** Admin filter: show Juyo/Tokuju items missing setsumei (no OCR and no manual Yuhinkai) */
   missingSetsumei?: boolean;
   /** Admin filter: show items missing artisan code match */
@@ -147,15 +151,19 @@ function parseParams(searchParams: URLSearchParams): BrowseParams {
   const dealersRaw = searchParams.get('dealer');
   const historicalPeriodsRaw = searchParams.get('period');
   const signatureStatusesRaw = searchParams.get('sig');
-  const categoryRaw = searchParams.get('cat') as 'all' | 'nihonto' | 'tosogu' | 'armor' | null;
+  const categoryRaw = searchParams.get('cat') as 'nihonto' | 'tosogu' | 'armor' | null;
 
   // Parse offset if provided (explicit offset takes precedence over page-based calculation)
   const offsetRaw = searchParams.get('offset');
   const explicitOffset = offsetRaw ? Number(offsetRaw) : undefined;
 
+  // Parse price range
+  const priceMinRaw = searchParams.get('priceMin');
+  const priceMaxRaw = searchParams.get('priceMax');
+
   return {
     tab: (searchParams.get('tab') as 'available' | 'sold') || 'available',
-    category: categoryRaw || 'all',
+    category: categoryRaw || 'nihonto',
     itemTypes: itemTypesRaw ? itemTypesRaw.split(',').map(t => t.toLowerCase()) : undefined,
     certifications: certificationsRaw ? certificationsRaw.split(',') : undefined,
     schools: schoolsRaw ? schoolsRaw.split(',') : undefined,
@@ -163,6 +171,8 @@ function parseParams(searchParams: URLSearchParams): BrowseParams {
     historicalPeriods: historicalPeriodsRaw ? historicalPeriodsRaw.split(',') : undefined,
     signatureStatuses: signatureStatusesRaw ? signatureStatusesRaw.split(',') : undefined,
     askOnly: searchParams.get('ask') === 'true',
+    priceMin: priceMinRaw ? Number(priceMinRaw) : undefined,
+    priceMax: priceMaxRaw ? Number(priceMaxRaw) : undefined,
     missingSetsumei: searchParams.get('missing_setsumei') === 'true',
     missingArtisanCode: searchParams.get('missing_artisan') === 'true',
     artisanCode: searchParams.get('artisan') || undefined,
@@ -347,6 +357,15 @@ export async function GET(request: NextRequest) {
       query = query.is('price_value', null);
     }
 
+    // Price range filter (uses price_jpy for currency-normalized comparison)
+    // ASK listings (price_value IS NULL) pass through — same pattern as applyMinPriceFilter
+    if (params.priceMin) {
+      query = query.or(`price_value.is.null,price_jpy.gte.${params.priceMin}`);
+    }
+    if (params.priceMax) {
+      query = query.or(`price_value.is.null,price_jpy.lte.${params.priceMax}`);
+    }
+
     // Certification filter (handles variants until data is normalized)
     if (params.certifications?.length) {
       const allVariants = params.certifications.flatMap(c => CERT_VARIANTS[c] || [c]);
@@ -463,7 +482,7 @@ export async function GET(request: NextRequest) {
 
       // Apply extracted item type filters (exact match on item_type)
       // Only apply if no explicit item type filter was already set via URL params
-      if (extractedFilters.itemTypes.length > 0 && !params.itemTypes?.length && params.category === 'all') {
+      if (extractedFilters.itemTypes.length > 0 && !params.itemTypes?.length) {
         const typeConditions = extractedFilters.itemTypes
           .map(t => `item_type.ilike.${t}`)
           .join(',');
@@ -726,7 +745,7 @@ export async function GET(request: NextRequest) {
       p_delay_cutoff: delayCutoff || null,
       p_min_price_jpy: LISTING_FILTERS.MIN_PRICE_JPY,
       p_item_types: params.itemTypes || null,
-      p_category: params.category || 'all',
+      p_category: params.category || 'nihonto',
       p_certifications: params.certifications || null,
       p_dealers: params.dealers || null,
       p_historical_periods: params.historicalPeriods || null,

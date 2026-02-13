@@ -26,7 +26,7 @@ describe('FilterContent Component', () => {
   };
 
   const defaultFilters = {
-    category: 'all' as 'all' | 'nihonto' | 'tosogu' | 'armor',
+    category: 'nihonto' as 'nihonto' | 'tosogu' | 'armor',
     itemTypes: [] as string[],
     certifications: [] as string[],
     schools: [] as string[],
@@ -187,7 +187,8 @@ describe('FilterContent Component', () => {
     const clearButtons = screen.getAllByRole('button', { name: /clear all/i });
     fireEvent.click(clearButtons[0]);
 
-    expect(mockOnFilterChange).toHaveBeenCalledWith('category', 'all');
+    // Category is a mode — not reset by "clear all"
+    expect(mockOnFilterChange).not.toHaveBeenCalledWith('category', expect.anything());
     expect(mockOnFilterChange).toHaveBeenCalledWith('itemTypes', []);
     expect(mockOnFilterChange).toHaveBeenCalledWith('certifications', []);
     expect(mockOnFilterChange).toHaveBeenCalledWith('dealers', []);
@@ -335,7 +336,7 @@ describe('Mobile Availability Select', () => {
   };
 
   const defaultFilters = {
-    category: 'all' as 'all' | 'nihonto' | 'tosogu' | 'armor',
+    category: 'nihonto' as 'nihonto' | 'tosogu' | 'armor',
     itemTypes: [] as string[],
     certifications: [] as string[],
     schools: [] as string[],
@@ -453,7 +454,7 @@ describe('Mobile Availability Select', () => {
 describe('getActiveFilterCount', () => {
   it('returns 0 for default filters', () => {
     const filters = {
-      category: 'all' as const,
+      category: 'nihonto' as const,
       itemTypes: [] as string[],
       certifications: [] as string[],
       schools: [] as string[],
@@ -466,9 +467,9 @@ describe('getActiveFilterCount', () => {
     expect(getActiveFilterCount(filters)).toBe(0);
   });
 
-  it('counts category change to nihonto as 1', () => {
+  it('does not count category as a filter (it is a mode)', () => {
     const filters = {
-      category: 'nihonto' as const,
+      category: 'tosogu' as const,
       itemTypes: [] as string[],
       certifications: [] as string[],
       schools: [] as string[],
@@ -478,10 +479,10 @@ describe('getActiveFilterCount', () => {
       askOnly: false,
     };
 
-    expect(getActiveFilterCount(filters)).toBe(1);
+    expect(getActiveFilterCount(filters)).toBe(0);
   });
 
-  it('counts category change to armor as 1', () => {
+  it('does not count armor category as a filter', () => {
     const filters = {
       category: 'armor' as const,
       itemTypes: [] as string[],
@@ -493,12 +494,12 @@ describe('getActiveFilterCount', () => {
       askOnly: false,
     };
 
-    expect(getActiveFilterCount(filters)).toBe(1);
+    expect(getActiveFilterCount(filters)).toBe(0);
   });
 
   it('counts each item type', () => {
     const filters = {
-      category: 'all' as const,
+      category: 'nihonto' as const,
       itemTypes: ['katana', 'wakizashi'],
       certifications: [] as string[],
       schools: [] as string[],
@@ -513,7 +514,7 @@ describe('getActiveFilterCount', () => {
 
   it('counts each certification', () => {
     const filters = {
-      category: 'all' as const,
+      category: 'nihonto' as const,
       itemTypes: [] as string[],
       certifications: ['Juyo', 'Hozon', 'TokuHozon'],
       schools: [] as string[],
@@ -528,7 +529,7 @@ describe('getActiveFilterCount', () => {
 
   it('counts each dealer', () => {
     const filters = {
-      category: 'all' as const,
+      category: 'nihonto' as const,
       itemTypes: [] as string[],
       certifications: [] as string[],
       schools: [] as string[],
@@ -543,7 +544,7 @@ describe('getActiveFilterCount', () => {
 
   it('counts askOnly as 1', () => {
     const filters = {
-      category: 'all' as const,
+      category: 'nihonto' as const,
       itemTypes: [] as string[],
       certifications: [] as string[],
       schools: [] as string[],
@@ -556,9 +557,26 @@ describe('getActiveFilterCount', () => {
     expect(getActiveFilterCount(filters)).toBe(1);
   });
 
-  it('counts all filters combined', () => {
+  it('counts price range as 1', () => {
     const filters = {
-      category: 'nihonto' as const, // 1
+      category: 'nihonto' as const,
+      itemTypes: [] as string[],
+      certifications: [] as string[],
+      schools: [] as string[],
+      dealers: [] as number[],
+      historicalPeriods: [] as string[],
+      signatureStatuses: [] as string[],
+      priceMin: 1000000,
+      priceMax: 3000000,
+      askOnly: false,
+    };
+
+    expect(getActiveFilterCount(filters)).toBe(1);
+  });
+
+  it('counts all filters combined (category excluded)', () => {
+    const filters = {
+      category: 'nihonto' as const, // mode, not counted
       itemTypes: ['katana', 'wakizashi'], // 2
       certifications: ['Juyo'], // 1
       schools: [] as string[],
@@ -568,6 +586,6 @@ describe('getActiveFilterCount', () => {
       askOnly: true, // 1
     };
 
-    expect(getActiveFilterCount(filters)).toBe(6);
+    expect(getActiveFilterCount(filters)).toBe(5);
   });
 });
