@@ -4,6 +4,7 @@ import { normalizeSearchText, expandSearchAliases } from '@/lib/search';
 import { parseNumericFilters } from '@/lib/search/numericFilters';
 import { parseSemanticQuery } from '@/lib/search/semanticQueryParser';
 import { resolveArtisanCodesFromText } from '@/lib/supabase/yuhinkai';
+import { LISTING_FILTERS } from '@/lib/constants';
 
 // Artisan code pattern (same as browse API) — detects codes like MAS590, NS-Ko-Bizen, etc.
 const ARTISAN_CODE_PATTERN = /^[A-Z]{1,4}\d{1,5}(?:[.\-]\d)?[A-Za-z]?$|^NS-[A-Za-z]+(?:-[A-Za-z]+)*$|^NC-[A-Z]+\d+[A-Za-z]?$|^tmp[A-Z]{1,4}\d+[A-Za-z]?$|^[A-Z]+(?:_[A-Z]+)+\d+$/i;
@@ -93,7 +94,14 @@ export async function findMatchingListings(
     `
     )
     .or(statusFilter)
-    .neq('item_type', 'Stand');
+    .not('item_type', 'ilike', 'stand')
+    .not('item_type', 'ilike', 'book')
+    .not('item_type', 'ilike', 'other');
+
+  // Minimum price filter (same as browse — excludes books, accessories, low-quality items)
+  if (LISTING_FILTERS.MIN_PRICE_JPY > 0) {
+    query = query.or(`price_value.is.null,price_jpy.gte.${LISTING_FILTERS.MIN_PRICE_JPY}`);
+  }
 
   // Time filter for new listings
   if (sinceTimestamp) {
@@ -266,7 +274,14 @@ export async function countMatchingListings(
     .from('listings')
     .select('id', { count: 'exact', head: true })
     .or(statusFilter)
-    .neq('item_type', 'Stand');
+    .not('item_type', 'ilike', 'stand')
+    .not('item_type', 'ilike', 'book')
+    .not('item_type', 'ilike', 'other');
+
+  // Minimum price filter (same as browse — excludes books, accessories, low-quality items)
+  if (LISTING_FILTERS.MIN_PRICE_JPY > 0) {
+    query = query.or(`price_value.is.null,price_jpy.gte.${LISTING_FILTERS.MIN_PRICE_JPY}`);
+  }
 
   if (sinceTimestamp) {
     query = query.gte('first_seen_at', sinceTimestamp.toISOString());

@@ -41,6 +41,7 @@ function createMockSupabase(): { client: SupabaseClient; calls: QueryBuilderCall
       return queryBuilder;
     }),
     neq: vi.fn().mockReturnThis(),
+    not: vi.fn().mockReturnThis(),
     gte: vi.fn((column: string, value: string) => {
       calls.gte.push({ column, value });
       return queryBuilder;
