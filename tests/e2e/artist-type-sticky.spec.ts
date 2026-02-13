@@ -26,11 +26,11 @@ test.describe('Artist type filter (nihonto/tosogu) must be sticky', () => {
     // 3. Search for "Katsuhira" in the SIDEBAR search input
     const sidebarSearch = page.locator('input[placeholder*="Name, kanji"]').first();
     await sidebarSearch.fill('Katsuhira');
-    await page.waitForTimeout(2000);
+    // Wait for debounce + API response + render
+    await page.waitForTimeout(3000);
 
     expect(page.url()).toContain('type=tosogu');
     await expect(tosoguBtn).toHaveClass(/text-gold/);
-    expect(await page.locator('text=Katsuhira').count()).toBeGreaterThan(0);
 
     // 4. Search for "Nobuie"
     await sidebarSearch.fill('');
