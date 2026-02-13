@@ -8,6 +8,7 @@ import { eraToBroadPeriod } from '@/lib/artisan/eraPeriods';
 import { Drawer } from '@/components/ui/Drawer';
 import { useMobileUI } from '@/contexts/MobileUIContext';
 import { ArtistFilterSidebar } from '@/components/artisan/ArtistFilterSidebar';
+import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 
 // =============================================================================
 // TYPES
@@ -48,17 +49,20 @@ export function ArtistsPageClient({
   initialFilters,
   initialPage,
 }: ArtistsPageClientProps) {
-  const [artists, setArtists] = useState<ArtistWithSlug[]>([]);
+  const [allArtists, setAllArtists] = useState<ArtistWithSlug[]>([]);
   const [pagination, setPagination] = useState<Pagination>({ page: initialPage, pageSize: 50, totalPages: 0, totalCount: 0 });
   const [filters, setFilters] = useState(initialFilters);
   const [facets, setFacets] = useState<DirectoryFacets>({ schools: [], provinces: [], eras: [], totals: { smiths: 0, tosogu: 0 } });
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchInput, setSearchInput] = useState(initialFilters.q || '');
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [attributedItemCount, setAttributedItemCount] = useState(0);
   const abortRef = useRef<AbortController | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const currentPageRef = useRef(1);
+  const hasMore = currentPageRef.current < pagination.totalPages;
 
   // Live ref for filters — used inside setTimeout callbacks to avoid stale closures.
   const filtersRef = useRef(filters);
@@ -70,8 +74,8 @@ export function ArtistsPageClient({
   const { openNavDrawer } = useMobileUI();
   const drawerSearchRef = useRef<HTMLInputElement>(null);
 
-  // Build URL search string from filters
-  const buildQueryString = useCallback((f: Filters, page: number) => {
+  // Build URL search string from filters (no page param — infinite scroll)
+  const buildQueryString = useCallback((f: Filters) => {
     const p = new URLSearchParams();
     if (f.type === 'tosogu') p.set('type', 'tosogu');
     if (f.school) p.set('school', f.school);
@@ -79,7 +83,6 @@ export function ArtistsPageClient({
     if (f.era) p.set('era', f.era);
     if (f.q) p.set('q', f.q);
     if (f.sort !== 'elite_factor') p.set('sort', f.sort);
-    if (page > 1) p.set('page', page.toString());
     if (!f.notable) p.set('notable', 'false');
     return p.toString();
   }, []);
@@ -88,20 +91,26 @@ export function ArtistsPageClient({
   // Uses native History.prototype.replaceState to bypass Next.js's monkey-patched
   // version, which would otherwise notify the router and re-trigger the Suspense
   // boundary from loading.tsx — unmounting the component and destroying client state.
-  const updateUrl = useCallback((f: Filters, page: number) => {
-    const qs = buildQueryString(f, page);
+  const updateUrl = useCallback((f: Filters) => {
+    const qs = buildQueryString(f);
     const url = `/artists${qs ? `?${qs}` : ''}`;
     History.prototype.replaceState.call(window.history, window.history.state, '', url);
   }, [buildQueryString]);
 
-  // Client-side fetch — the only data-fetching path (initial load + filter changes)
-  const fetchArtists = useCallback(async (f: Filters, page: number) => {
+  // Client-side fetch — the only data-fetching path (initial load + filter changes + scroll)
+  // append=false: replace allArtists (filter/search change), append=true: concat (infinite scroll)
+  const fetchArtists = useCallback(async (f: Filters, page: number, append: boolean = false) => {
     // Abort any in-flight request
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
 
-    setIsLoading(true);
+    if (append) {
+      setIsLoadingMore(true);
+    } else {
+      setIsLoading(true);
+      setIsLoadingMore(false); // Clear in case an append request was just aborted
+    }
     setError(null);
 
     const p = new URLSearchParams();
@@ -121,7 +130,12 @@ export function ArtistsPageClient({
       });
       if (res.ok) {
         const data = await res.json();
-        setArtists(data.artists);
+        if (append) {
+          setAllArtists(prev => [...prev, ...data.artists]);
+        } else {
+          setAllArtists(data.artists);
+        }
+        currentPageRef.current = page;
         setPagination(data.pagination);
         if (data.facets) setFacets(data.facets);
         if (data.lastUpdated !== undefined) setLastUpdated(data.lastUpdated);
@@ -134,7 +148,11 @@ export function ArtistsPageClient({
       setError('Network error. Please check your connection.');
     } finally {
       if (!controller.signal.aborted) {
-        setIsLoading(false);
+        if (append) {
+          setIsLoadingMore(false);
+        } else {
+          setIsLoading(false);
+        }
       }
     }
   }, []);
@@ -153,10 +171,12 @@ export function ArtistsPageClient({
     };
   }, []);
 
-  const applyFilters = useCallback((newFilters: Filters, page: number) => {
+  const applyFilters = useCallback((newFilters: Filters) => {
     setFilters(newFilters);
-    updateUrl(newFilters, page);
-    fetchArtists(newFilters, page);
+    updateUrl(newFilters);
+    currentPageRef.current = 1;
+    window.scrollTo({ top: 0 });
+    fetchArtists(newFilters, 1, false);
   }, [updateUrl, fetchArtists]);
 
   const handleFilterChange = useCallback((key: keyof Filters, value: string | boolean) => {
@@ -167,13 +187,20 @@ export function ArtistsPageClient({
       newFilters.province = undefined;
       newFilters.era = undefined;
     }
-    applyFilters(newFilters, 1);
+    applyFilters(newFilters);
   }, [applyFilters]);
 
-  const handlePageChange = useCallback((page: number) => {
-    applyFilters(filtersRef.current, page);
-    document.getElementById('artist-grid')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }, [applyFilters]);
+  const loadMore = useCallback(() => {
+    const nextPage = currentPageRef.current + 1;
+    fetchArtists(filtersRef.current, nextPage, true);
+  }, [fetchArtists]);
+
+  useInfiniteScroll({
+    onLoadMore: loadMore,
+    hasMore,
+    isLoading: isLoadingMore,
+    threshold: 600,
+  });
 
   // Debounced search — fires 300ms after user stops typing.
   // Uses filtersRef.current inside the timeout to always read the LATEST filters,
@@ -182,7 +209,7 @@ export function ArtistsPageClient({
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       const trimmed = value.trim();
-      applyFilters({ ...filtersRef.current, q: trimmed || undefined }, 1);
+      applyFilters({ ...filtersRef.current, q: trimmed || undefined });
     }, 300);
   }, [applyFilters]);
 
@@ -196,18 +223,18 @@ export function ArtistsPageClient({
     // Immediate search on Enter — cancel any pending debounce
     if (debounceRef.current) clearTimeout(debounceRef.current);
     const trimmed = searchInput.trim();
-    applyFilters({ ...filtersRef.current, q: trimmed || undefined }, 1);
+    applyFilters({ ...filtersRef.current, q: trimmed || undefined });
   }, [searchInput, applyFilters]);
 
   const clearSearch = useCallback(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     setSearchInput('');
-    applyFilters({ ...filtersRef.current, q: undefined }, 1);
+    applyFilters({ ...filtersRef.current, q: undefined });
   }, [applyFilters]);
 
   const clearAllFilters = useCallback(() => {
     setSearchInput('');
-    applyFilters({ type: filtersRef.current.type, sort: 'elite_factor', notable: true }, 1);
+    applyFilters({ type: filtersRef.current.type, sort: 'elite_factor', notable: true });
   }, [applyFilters]);
 
   return (
@@ -250,9 +277,9 @@ export function ArtistsPageClient({
         {/* Results */}
         <div id="artist-grid" className="flex-1 min-w-0 mt-8 lg:mt-0">
           {/* Desktop count header */}
-          {!isLoading && artists.length > 0 && (
+          {!isLoading && allArtists.length > 0 && (
             <p className="hidden lg:block text-[11px] text-ink/45 mb-4">
-              {pagination.totalCount.toLocaleString()} artist{pagination.totalCount !== 1 ? 's' : ''}
+              Showing {allArtists.length.toLocaleString()} of {pagination.totalCount.toLocaleString()} artist{pagination.totalCount !== 1 ? 's' : ''}
             </p>
           )}
 
@@ -261,7 +288,7 @@ export function ArtistsPageClient({
             <div className="mb-4 px-4 py-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/30 flex items-center justify-between">
               <p className="text-[12px] text-red-700 dark:text-red-400">{error}</p>
               <button
-                onClick={() => fetchArtists(filters, pagination.page)}
+                onClick={() => fetchArtists(filters, currentPageRef.current)}
                 className="text-[11px] text-red-700 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 underline underline-offset-2 ml-4 shrink-0"
               >
                 Retry
@@ -275,7 +302,7 @@ export function ArtistsPageClient({
                 <SkeletonCard key={i} />
               ))}
             </div>
-          ) : artists.length === 0 ? (
+          ) : allArtists.length === 0 ? (
             <div className="py-20 text-center">
               <p className="text-ink/50 text-sm">No artists found matching your criteria.</p>
               <button
@@ -289,20 +316,25 @@ export function ArtistsPageClient({
             <>
               {/* Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                {artists.map((artist) => (
+                {allArtists.map((artist) => (
                   <ArtistCard key={artist.code} artist={artist} />
                 ))}
               </div>
 
-              {/* Pagination */}
-              {pagination.totalPages > 1 && (
-                <PaginationBar
-                  page={pagination.page}
-                  totalPages={pagination.totalPages}
-                  totalCount={pagination.totalCount}
-                  onPageChange={handlePageChange}
-                  disabled={isLoading}
-                />
+              {/* Loading more skeletons */}
+              {isLoadingMore && (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-4">
+                  {[...Array(3)].map((_, i) => (
+                    <SkeletonCard key={`more-${i}`} />
+                  ))}
+                </div>
+              )}
+
+              {/* End of results */}
+              {!hasMore && allArtists.length > 0 && (
+                <p className="text-center text-[11px] text-ink/30 mt-8">
+                  All {pagination.totalCount.toLocaleString()} artists loaded
+                </p>
               )}
             </>
           )}
@@ -392,7 +424,7 @@ export function ArtistsPageClient({
               e.preventDefault();
               if (debounceRef.current) clearTimeout(debounceRef.current);
               const trimmed = searchInput.trim();
-              applyFilters({ ...filtersRef.current, q: trimmed || undefined }, 1);
+              applyFilters({ ...filtersRef.current, q: trimmed || undefined });
               setSearchDrawerOpen(false);
             }}
           >
@@ -441,7 +473,7 @@ export function ArtistsPageClient({
                     key={s.value}
                     onClick={() => {
                       setSearchInput('');
-                      applyFilters({ ...filtersRef.current, q: undefined, school: s.value }, 1);
+                      applyFilters({ ...filtersRef.current, q: undefined, school: s.value });
                       setSearchDrawerOpen(false);
                     }}
                     className="px-3 py-1.5 text-[12px] bg-hover border border-border text-ink/60 hover:text-gold hover:border-gold/40 transition-colors"
@@ -657,7 +689,7 @@ function ArtistCard({ artist }: { artist: ArtistWithSlug }) {
         <div className="w-20 sm:w-28 shrink-0 bg-white/[0.04] dark:bg-white/[0.04] border-r border-border/50 flex items-center justify-center p-2 sm:p-3 overflow-hidden">
           <img
             src={artist.cover_image}
-            alt=""
+            alt={`${artist.name_romaji || artist.code} — ${artist.entity_type === 'smith' ? 'swordsmith' : 'tosogu maker'}${artist.school ? `, ${artist.school} school` : ''}`}
             className="max-w-full max-h-full object-contain"
             loading="lazy"
             onError={(e: SyntheticEvent<HTMLImageElement>) => {
@@ -731,80 +763,6 @@ function ArtistCard({ artist }: { artist: ArtistWithSlug }) {
         )}
       </div>
     </Link>
-  );
-}
-
-function PaginationBar({
-  page,
-  totalPages,
-  totalCount,
-  onPageChange,
-  disabled,
-}: {
-  page: number;
-  totalPages: number;
-  totalCount: number;
-  onPageChange: (page: number) => void;
-  disabled?: boolean;
-}) {
-  // Generate page numbers with ellipsis
-  const pages: (number | 'ellipsis')[] = [];
-  const delta = 2;
-
-  for (let i = 1; i <= totalPages; i++) {
-    if (i === 1 || i === totalPages || (i >= page - delta && i <= page + delta)) {
-      pages.push(i);
-    } else if (pages[pages.length - 1] !== 'ellipsis') {
-      pages.push('ellipsis');
-    }
-  }
-
-  return (
-    <div className={`mt-8 flex flex-col sm:flex-row items-center justify-between gap-4 ${disabled ? 'opacity-50 pointer-events-none' : ''}`}>
-      <p className="text-[11px] text-ink/45">
-        Showing {((page - 1) * 50) + 1}–{Math.min(page * 50, totalCount)} of {totalCount.toLocaleString()}
-      </p>
-
-      <div className="flex items-center gap-1">
-        {/* Prev */}
-        <button
-          onClick={() => onPageChange(page - 1)}
-          disabled={page <= 1}
-          className="px-3 py-2.5 sm:px-2.5 sm:py-1.5 text-[11px] text-ink/50 hover:text-ink hover:bg-hover disabled:opacity-30 disabled:pointer-events-none transition-colors"
-        >
-          Prev
-        </button>
-
-        {pages.map((p, i) =>
-          p === 'ellipsis' ? (
-            <span key={`e${i}`} className="px-1 text-ink/30 text-[11px]">
-              ...
-            </span>
-          ) : (
-            <button
-              key={p}
-              onClick={() => onPageChange(p)}
-              className={`min-w-[36px] sm:min-w-[32px] px-2 py-2.5 sm:py-1.5 text-[11px] transition-colors ${
-                p === page
-                  ? 'bg-gold/10 text-gold font-medium border border-gold/30'
-                  : 'text-ink/50 hover:text-ink hover:bg-hover'
-              }`}
-            >
-              {p}
-            </button>
-          )
-        )}
-
-        {/* Next */}
-        <button
-          onClick={() => onPageChange(page + 1)}
-          disabled={page >= totalPages}
-          className="px-3 py-2.5 sm:px-2.5 sm:py-1.5 text-[11px] text-ink/50 hover:text-ink hover:bg-hover disabled:opacity-30 disabled:pointer-events-none transition-colors"
-        >
-          Next
-        </button>
-      </div>
-    </div>
   );
 }
 
