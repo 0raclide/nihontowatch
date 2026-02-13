@@ -12,6 +12,7 @@ import { getAllImages, getCachedValidation, isRenderFailed, setRenderFailed, dea
 import { shouldShowNewBadge } from '@/lib/newListing';
 import { trackSearchClick } from '@/lib/tracking/searchTracker';
 import { isTrialModeActive } from '@/types/subscription';
+import { isSetsumeiEligibleCert } from '@/types';
 import { useImagePreloader } from '@/hooks/useImagePreloader';
 
 // 7 days in milliseconds - matches the data delay for free tier
@@ -392,8 +393,14 @@ function formatPrice(
 /**
  * Check if a listing has English setsumei translation available.
  * Checks both OCR-extracted setsumei AND Yuhinkai enrichment.
+ * Requires Juyo/Tokuju cert — prevents showing orphaned hallucinated setsumei.
  */
 function hasSetsumeiTranslation(listing: Listing): boolean {
+  // Setsumei only exists for Juyo/Tokubetsu Juyo
+  if (!isSetsumeiEligibleCert(listing.cert_type)) {
+    return false;
+  }
+
   // Check OCR-extracted setsumei
   if (listing.setsumei_text_en) {
     return true;
@@ -669,7 +676,7 @@ export const ListingCard = memo(function ListingCard({
       src={imageUrl}
       alt={altText}
       fill
-      className={`object-cover group-hover:scale-105 transition-all duration-500 ${
+      className={`object-cover group-hover:scale-105 transition-[opacity,transform] duration-500 ${
         isLoading ? 'opacity-0' : 'opacity-100'
       }`}
       sizes={isGridMobile ? '(max-width: 640px) 50vw, (max-width: 1024px) 50vw, 25vw' : '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw'}

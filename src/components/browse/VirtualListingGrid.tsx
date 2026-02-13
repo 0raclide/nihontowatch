@@ -347,6 +347,7 @@ export function VirtualListingGrid({
   const renderGrid = () => (
     <div
       data-testid="virtual-listing-grid"
+      data-mobile-view={mobileView}
       className={`${mobileGridClasses}${
         !isVirtualized && isMobileDevice ? ' ios-native-virtualize' : ''
       }`}
