@@ -190,6 +190,19 @@ function HeaderContent() {
     }
   }, [showAdminMenu]);
 
+  // Build a search URL that preserves the type param on artist pages
+  const buildSearchUrl = useCallback((q?: string) => {
+    const params = new URLSearchParams();
+    if (q) params.set('q', q);
+    // Preserve type=tosogu on artist pages so the toggle stays sticky
+    if (isArtistPage) {
+      const type = searchParams.get('type');
+      if (type) params.set('type', type);
+    }
+    const qs = params.toString();
+    return `${searchAction}${qs ? `?${qs}` : ''}`;
+  }, [isArtistPage, searchAction, searchParams]);
+
   const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
@@ -205,7 +218,7 @@ function HeaderContent() {
         activity.trackSearch(trimmedQuery);
       }
       // Use router.push to create history entry (allows back button)
-      router.push(`${searchAction}?q=${encodeURIComponent(trimmedQuery)}`);
+      router.push(buildSearchUrl(trimmedQuery));
     }
   };
 
@@ -252,7 +265,7 @@ function HeaderContent() {
                     // ESC key clears search
                     if (e.key === 'Escape' && currentQuery) {
                       e.currentTarget.value = '';
-                      router.push(searchAction);
+                      router.push(buildSearchUrl());
                     }
                   }}
                   className={`w-full pl-4 ${currentQuery ? 'pr-20' : 'pr-12'} py-2.5 bg-linen/50 border border-transparent text-[13px] text-ink placeholder:text-muted/40 focus:outline-none focus:border-gold/40 focus:bg-paper focus:shadow-[0_0_0_3px_rgba(181,142,78,0.1)] transition-all duration-200 disabled:opacity-60`}
@@ -262,10 +275,10 @@ function HeaderContent() {
                   <button
                     type="button"
                     onClick={() => {
-                      // Clear the input and navigate to base route
+                      // Clear the input and navigate to base route (preserve type on artist pages)
                       const input = document.querySelector('header form[role="search"] input') as HTMLInputElement;
                       if (input) input.value = '';
-                      router.push(searchAction);
+                      router.push(buildSearchUrl());
                     }}
                     aria-label="Clear search"
                     className="absolute right-10 top-1/2 -translate-y-1/2 p-1.5 text-muted/40 hover:text-muted hover:bg-linen rounded transition-colors"

@@ -55,6 +55,17 @@ export function MobileSearchSheet() {
     setIsSearching(false);
   }, [currentQuery]);
 
+  // Build search URL preserving type param on artist pages
+  const buildSearchUrl = (q: string) => {
+    const params = new URLSearchParams();
+    params.set('q', q);
+    if (isArtistPage) {
+      const type = searchParams.get('type');
+      if (type) params.set('type', type);
+    }
+    return `${searchAction}?${params.toString()}`;
+  };
+
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const query = inputValue.trim();
@@ -69,7 +80,7 @@ export function MobileSearchSheet() {
       }
       closeSearch();
       // Use router.push to create history entry (allows back button)
-      router.push(`${searchAction}?q=${encodeURIComponent(query)}`);
+      router.push(buildSearchUrl(query));
     }
   };
 
@@ -84,7 +95,7 @@ export function MobileSearchSheet() {
     }
     closeSearch();
     // Use router.push to create history entry
-    router.push(`${searchAction}?q=${encodeURIComponent(term)}`);
+    router.push(buildSearchUrl(term));
   };
 
   const handleClearInput = () => {

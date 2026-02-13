@@ -71,20 +71,6 @@ export function ArtistsPageClient({
   const filtersRef = useRef(filters);
   filtersRef.current = filters;
 
-  // Sync state when SSR props change from external navigation (e.g. header search).
-  // IMPORTANT: type is always preserved from client state. replaceState updates the URL
-  // but the server still renders with the original navigation URL. If a Suspense boundary
-  // (loading.tsx) or RSC re-render causes this effect to fire, the SSR-provided type will
-  // be the default ('smith') — NOT the user's client-side selection. Using the functional
-  // updater for setFilters guarantees the user's type choice survives any re-render.
-  useEffect(() => {
-    setArtists(initialArtists);
-    setPagination(initialPagination);
-    setFilters(prev => ({ ...initialFilters, type: prev.type }));
-    setFacets(initialFacets);
-    setSearchInput(initialFilters.q || '');
-  }, [initialArtists, initialPagination, initialFilters, initialFacets]);
-
   // Mobile drawer state (local — not via MobileUIContext)
   const [searchDrawerOpen, setSearchDrawerOpen] = useState(false);
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
@@ -162,6 +148,31 @@ export function ArtistsPageClient({
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
   }, []);
+
+  // Sync state when SSR props change from external navigation (e.g. header search).
+  // The server's type may differ from the client's preserved type (e.g. header search
+  // navigated to /artists?q=... without type=tosogu). In that case we keep the client
+  // type and re-fetch to get the correct data for the correct type.
+  useEffect(() => {
+    const clientType = filtersRef.current.type;
+    const serverType = initialFilters.type;
+
+    if (clientType !== serverType) {
+      // Server rendered with wrong type — preserve client type and re-fetch
+      const correctedFilters = { ...initialFilters, type: clientType };
+      setFilters(correctedFilters);
+      setSearchInput(initialFilters.q || '');
+      fetchArtists(correctedFilters, initialPagination.page);
+      updateUrl(correctedFilters, initialPagination.page);
+    } else {
+      // Types match — safe to sync all state from server
+      setArtists(initialArtists);
+      setPagination(initialPagination);
+      setFilters(initialFilters);
+      setFacets(initialFacets);
+      setSearchInput(initialFilters.q || '');
+    }
+  }, [initialArtists, initialPagination, initialFilters, initialFacets, fetchArtists, updateUrl]);
 
   const applyFilters = useCallback((newFilters: Filters, page: number) => {
     setFilters(newFilters);
