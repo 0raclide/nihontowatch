@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback, Suspense, useRef } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Header } from '@/components/layout/Header';
@@ -14,6 +14,7 @@ import { getActiveFilterCount } from '@/components/browse/FilterContent';
 import { SaveSearchButton } from '@/components/browse/SaveSearchButton';
 import type { SavedSearchCriteria } from '@/types';
 import { useIsMobile } from '@/hooks/useIsMobile';
+import { useBrowseURLSync, type BrowseFilters } from '@/hooks/useBrowseURLSync';
 import { BottomTabBar } from '@/components/navigation/BottomTabBar';
 import { PAGINATION, BLADE_TYPES, TOSOGU_TYPES } from '@/lib/constants';
 import { useActivityOptional } from '@/components/activity/ActivityProvider';
@@ -175,19 +176,7 @@ function LiveStatsBanner({ data }: { data: BrowseResponse | null }) {
   );
 }
 
-interface Filters {
-  category: 'all' | 'nihonto' | 'tosogu' | 'armor';
-  itemTypes: string[];
-  certifications: string[];
-  schools: string[];
-  dealers: number[];
-  historicalPeriods: string[];
-  signatureStatuses: string[];
-  askOnly?: boolean;
-  enriched?: boolean;
-  missingSetsumei?: boolean;
-  missingArtisanCode?: boolean;
-}
+type Filters = BrowseFilters;
 
 interface ExchangeRates {
   base: string;
@@ -199,38 +188,23 @@ type Currency = 'USD' | 'JPY' | 'EUR';
 
 function HomeContent() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const isMobile = useIsMobile();
-  const filtersChangedRef = useRef(false);
+  const {
+    activeTab, filters, sort, searchQuery, artisanCode,
+    setActiveTab, setFilters, setSort, setSearchQuery, setArtisanCode,
+    buildFetchParams, filtersChangedRef,
+  } = useBrowseURLSync();
+
   const activity = useActivityOptional();
   // Use auth context for admin status - more reliable than API response
   const { isAdmin: authIsAdmin, user } = useAuth();
   const { recordVisit } = useNewSinceLastVisit();
-  const [activeTab, setActiveTab] = useState<AvailabilityStatus>(
-    (searchParams.get('tab') as AvailabilityStatus) || 'available'
-  );
-  const [filters, setFilters] = useState<Filters>({
-    category: (searchParams.get('cat') as 'all' | 'nihonto' | 'tosogu' | 'armor') || 'all',
-    itemTypes: searchParams.get('type')?.split(',').filter(Boolean) || [],
-    certifications: searchParams.get('cert')?.split(',').filter(Boolean) || [],
-    schools: searchParams.get('school')?.split(',').filter(Boolean) || [],
-    dealers: searchParams.get('dealer')?.split(',').map(Number).filter(Boolean) || [],
-    historicalPeriods: searchParams.get('period')?.split(',').filter(Boolean) || [],
-    signatureStatuses: searchParams.get('sig')?.split(',').filter(Boolean) || [],
-    askOnly: searchParams.get('ask') === 'true',
-    enriched: searchParams.get('enriched') === 'true',
-    missingSetsumei: searchParams.get('missing_setsumei') === 'true',
-    missingArtisanCode: searchParams.get('missing_artisan') === 'true',
-  });
-  const [sort, setSort] = useState(searchParams.get('sort') || 'recent');
   // Sidebar design: Panel variant with soft corners and tint selection
   const sidebarVariant: SidebarVariant = 'b';
   const toolbarVariant = 'panel' as const;
   const cornerStyle = 'soft' as const;
   const selectStyle = 'tint' as const;
-  const [page, setPage] = useState(Number(searchParams.get('page')) || 1);
-  const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
-  const [artisanCode, setArtisanCode] = useState(searchParams.get('artisan') || '');
+  const [page, setPage] = useState(1);
 
   // Mobile view toggle (grid = 2-col compact, gallery = 1-col breathing)
   const [mobileView, setMobileView] = useState<'grid' | 'gallery'>(() => {
@@ -239,38 +213,6 @@ function HomeContent() {
     }
     return 'gallery';
   });
-
-  // Sync searchQuery state with URL when it changes (e.g., from header search)
-  const urlQuery = searchParams.get('q') || '';
-  useEffect(() => {
-    if (urlQuery !== searchQuery) {
-      setSearchQuery(urlQuery);
-    }
-  }, [urlQuery]); // Only depend on urlQuery, not searchQuery to avoid loops
-
-  // Sync enriched filter from URL (needed for SSR hydration - useSearchParams is empty on server)
-  const urlEnriched = searchParams.get('enriched') === 'true';
-  useEffect(() => {
-    if (urlEnriched !== filters.enriched) {
-      setFilters(prev => ({ ...prev, enriched: urlEnriched }));
-    }
-  }, [urlEnriched]); // Only depend on urlEnriched to avoid loops
-
-  // Sync sort from URL (needed for SSR hydration - mobile browsers often serve cached pages)
-  const urlSort = searchParams.get('sort') || 'recent';
-  useEffect(() => {
-    if (urlSort !== sort) {
-      setSort(urlSort);
-    }
-  }, [urlSort]); // Only depend on urlSort to avoid loops
-
-  // Sync artisan code from URL (for admin artisan search)
-  const urlArtisan = searchParams.get('artisan') || '';
-  useEffect(() => {
-    if (urlArtisan !== artisanCode) {
-      setArtisanCode(urlArtisan);
-    }
-  }, [urlArtisan]); // Only depend on urlArtisan to avoid loops
 
   const [data, setData] = useState<BrowseResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -360,76 +302,6 @@ function HomeContent() {
     }
   }, [sort]);
 
-  // Build URL params from state (for URL sync - filters and sort only, not page)
-  const buildUrlParams = useCallback(() => {
-    const params = new URLSearchParams();
-
-    params.set('tab', activeTab);
-    if (filters.category !== 'all') params.set('cat', filters.category);
-    if (filters.itemTypes.length) params.set('type', filters.itemTypes.join(','));
-    if (filters.certifications.length) params.set('cert', filters.certifications.join(','));
-    if (filters.schools.length) params.set('school', filters.schools.join(','));
-    if (filters.dealers.length) params.set('dealer', filters.dealers.join(','));
-    if (filters.historicalPeriods.length) params.set('period', filters.historicalPeriods.join(','));
-    if (filters.signatureStatuses.length) params.set('sig', filters.signatureStatuses.join(','));
-    if (filters.askOnly) params.set('ask', 'true');
-    if (filters.enriched) params.set('enriched', 'true');
-    if (filters.missingSetsumei) params.set('missing_setsumei', 'true');
-    if (filters.missingArtisanCode) params.set('missing_artisan', 'true');
-    if (sort !== 'recent') params.set('sort', sort);
-    // Note: page not synced to URL - infinite scroll manages page internally
-    if (searchQuery) params.set('q', searchQuery);
-    if (artisanCode) params.set('artisan', artisanCode);
-
-    return params;
-  }, [activeTab, filters, sort, searchQuery, artisanCode]);
-
-  // Build params for data fetching (excludes page - page changes handled by loadMore)
-  const buildFetchParams = useCallback(() => {
-    const params = new URLSearchParams();
-
-    params.set('tab', activeTab);
-    if (filters.category !== 'all') params.set('cat', filters.category);
-    if (filters.itemTypes.length) params.set('type', filters.itemTypes.join(','));
-    if (filters.certifications.length) params.set('cert', filters.certifications.join(','));
-    if (filters.schools.length) params.set('school', filters.schools.join(','));
-    if (filters.dealers.length) params.set('dealer', filters.dealers.join(','));
-    if (filters.historicalPeriods.length) params.set('period', filters.historicalPeriods.join(','));
-    if (filters.signatureStatuses.length) params.set('sig', filters.signatureStatuses.join(','));
-    if (filters.askOnly) params.set('ask', 'true');
-    if (filters.enriched) params.set('enriched', 'true');
-    if (filters.missingSetsumei) params.set('missing_setsumei', 'true');
-    if (filters.missingArtisanCode) params.set('missing_artisan', 'true');
-    if (sort !== 'recent') params.set('sort', sort);
-    // Note: page is NOT included - handled by loadMore
-    if (searchQuery) params.set('q', searchQuery);
-    if (artisanCode) params.set('artisan', artisanCode);
-
-    return params;
-  }, [activeTab, filters, sort, searchQuery, artisanCode]); // Note: page is NOT in deps
-
-  // Track previous URL to avoid unnecessary replaces that break history
-  const prevUrlRef = useRef<string | null>(null);
-
-  // Sync URL with state - only replace when URL actually changes
-  // This prevents infinite loops and preserves router.push() history entries
-  useEffect(() => {
-    const params = buildUrlParams();
-    const newUrl = `/${params.toString() ? `?${params.toString()}` : ''}`;
-
-    // Skip if URL hasn't changed (prevents infinite loop and history overwrites)
-    if (prevUrlRef.current === newUrl) return;
-
-    // On initial mount, just record the URL without replacing
-    // This preserves the history entry created by router.push() from search
-    if (prevUrlRef.current === null) {
-      prevUrlRef.current = newUrl;
-      return;
-    }
-
-    prevUrlRef.current = newUrl;
-    router.replace(newUrl, { scroll: false });
-  }, [buildUrlParams, router]);
 
   // Helper to check if there are active filters (for search tracking)
   const hasActiveFilters = useCallback(() => {
