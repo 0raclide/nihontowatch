@@ -43,6 +43,7 @@ export async function GET(request: NextRequest) {
     const page = Math.max(parseInt(params.get('page') || '1', 10) || 1, 1);
     const limit = Math.min(Math.max(parseInt(params.get('limit') || '50', 10) || 50, 1), 100);
     const notable = params.get('notable') !== 'false';
+    const skipMeta = params.get('skipMeta') === 'true'; // Skip facets + live stats (used by infinite scroll appends)
 
     let artists;
     let total: number;
@@ -75,83 +76,99 @@ export async function GET(request: NextRequest) {
       listingData = await getListingDataForArtists(codes);
     }
 
-    // For school codes, aggregate listing counts from member artisans
-    const schoolArtists = artists.filter(a => a.is_school_code && a.school);
-    if (schoolArtists.length > 0) {
-      const memberCodesMap = await getSchoolMemberCodes(
-        schoolArtists.map(a => ({ code: a.code, school: a.school!, entity_type: a.entity_type }))
-      );
+    // ── Run all enrichment in parallel ──
+    // These groups are independent and were previously sequential:
+    //   A) Listing data + school member aggregation (sequential chain, depends on artist codes)
+    //   B) Facets (depends on type only)
+    //   C) Percentiles + school member counts (depends on artist rows)
+    //   D) Hero images (depends on artist codes)
+    //   E) Live stats (independent)
 
-      // Collect all member codes we need listing data for
-      const allMemberCodes: string[] = [];
-      for (const [, members] of memberCodesMap) {
-        allMemberCodes.push(...members);
-      }
+    // A) Listing data + school member aggregation
+    const enrichListingData = async () => {
+      const schoolArtists = artists.filter(a => a.is_school_code && a.school);
+      if (schoolArtists.length > 0) {
+        const memberCodesMap = await getSchoolMemberCodes(
+          schoolArtists.map(a => ({ code: a.code, school: a.school!, entity_type: a.entity_type }))
+        );
 
-      if (allMemberCodes.length > 0) {
-        const memberListingData = await getListingDataForArtists(allMemberCodes);
+        const allMemberCodes: string[] = [];
+        for (const [, members] of memberCodesMap) {
+          allMemberCodes.push(...members);
+        }
 
-        for (const [schoolCode, memberCodes] of memberCodesMap) {
-          const existing = listingData.get(schoolCode) || { count: 0 };
-          for (const memberCode of memberCodes) {
-            const memberData = memberListingData.get(memberCode);
-            if (memberData) {
-              existing.count += memberData.count;
-              if (!existing.firstId && memberData.firstId) {
-                existing.firstId = memberData.firstId;
+        if (allMemberCodes.length > 0) {
+          const memberListingData = await getListingDataForArtists(allMemberCodes);
+
+          for (const [schoolCode, memberCodes] of memberCodesMap) {
+            const existing = listingData.get(schoolCode) || { count: 0 };
+            for (const memberCode of memberCodes) {
+              const memberData = memberListingData.get(memberCode);
+              if (memberData) {
+                existing.count += memberData.count;
+                if (!existing.firstId && memberData.firstId) {
+                  existing.firstId = memberData.firstId;
+                }
               }
             }
+            listingData.set(schoolCode, existing);
           }
-          listingData.set(schoolCode, existing);
         }
       }
-    }
+    };
 
-    const facets = await getArtistDirectoryFacets(type);
+    // E) Live stats
+    const fetchLiveStats = async (): Promise<{ lastUpdated: string | null; attributedItemCount: number }> => {
+      if (skipMeta) return { lastUpdated: null, attributedItemCount: 0 };
+      try {
+        const supabase = createServiceClient();
+        const [freshnessRes, countRes] = await Promise.all([
+          supabase
+            .from('listings')
+            .select('last_scraped_at')
+            .order('last_scraped_at' as string, { ascending: false })
+            .limit(1)
+            .single(),
+          supabase
+            .from('listings')
+            .select('id', { count: 'exact', head: true })
+            .not('artisan_id' as string, 'is', null)
+            .eq('is_available', true),
+        ]);
+        return {
+          lastUpdated: (freshnessRes.data as { last_scraped_at: string } | null)?.last_scraped_at || null,
+          attributedItemCount: countRes.count ?? 0,
+        };
+      } catch {
+        return { lastUpdated: null, attributedItemCount: 0 };
+      }
+    };
 
-    // Fetch percentiles and school member counts for artist cards
-    // When sorting by provenance, show provenance percentile on the card bar
-    const [percentileMap, memberCountMap] = await Promise.all([
-      sort === 'provenance_factor'
-        ? getBulkProvenancePercentiles(
-            artists.map(a => ({ code: a.code, provenance_factor: a.provenance_factor, entity_type: a.entity_type as 'smith' | 'tosogu' }))
-          )
-        : getBulkElitePercentiles(
-            artists.map(a => ({ code: a.code, elite_factor: a.elite_factor, entity_type: a.entity_type }))
-          ),
-      getSchoolMemberCounts(
-        artists.map(a => ({ code: a.code, school: a.school, entity_type: a.entity_type, is_school_code: a.is_school_code }))
+    const [, facets, [percentileMap, memberCountMap], heroImages, liveStats] = await Promise.all([
+      // A) School member listing aggregation
+      enrichListingData(),
+      // B) Facets
+      skipMeta ? null : getArtistDirectoryFacets(type),
+      // C) Percentiles + school member counts
+      Promise.all([
+        sort === 'provenance_factor'
+          ? getBulkProvenancePercentiles(
+              artists.map(a => ({ code: a.code, provenance_factor: a.provenance_factor, entity_type: a.entity_type as 'smith' | 'tosogu' }))
+            )
+          : getBulkElitePercentiles(
+              artists.map(a => ({ code: a.code, elite_factor: a.elite_factor, entity_type: a.entity_type }))
+            ),
+        getSchoolMemberCounts(
+          artists.map(a => ({ code: a.code, school: a.school, entity_type: a.entity_type, is_school_code: a.is_school_code }))
+        ),
+      ]),
+      // D) Hero images
+      getBulkArtisanHeroImages(
+        artists.map(a => ({ code: a.code, entityType: a.entity_type as 'smith' | 'tosogu' }))
       ),
+      // E) Live stats
+      fetchLiveStats(),
     ]);
-
-    // Fetch hero images from Yuhinkai catalog for current page's artists
-    const heroImages = await getBulkArtisanHeroImages(
-      artists.map(a => ({ code: a.code, entityType: a.entity_type as 'smith' | 'tosogu' }))
-    );
-
-    // Fetch live stats: last scrape time + total attributed items (for banner)
-    let lastUpdated: string | null = null;
-    let attributedItemCount = 0;
-    try {
-      const supabase = createServiceClient();
-      const [freshnessRes, countRes] = await Promise.all([
-        supabase
-          .from('listings')
-          .select('last_scraped_at')
-          .order('last_scraped_at' as string, { ascending: false })
-          .limit(1)
-          .single(),
-        supabase
-          .from('listings')
-          .select('id', { count: 'exact', head: true })
-          .not('artisan_id' as string, 'is', null)
-          .eq('is_available', true),
-      ]);
-      lastUpdated = (freshnessRes.data as { last_scraped_at: string } | null)?.last_scraped_at || null;
-      attributedItemCount = countRes.count ?? 0;
-    } catch {
-      // Non-critical — banner just won't show
-    }
 
     // Add slugs, percentiles, member counts, listing data, and hero images
     const artistsWithSlugs = artists.map(a => {
@@ -177,9 +194,8 @@ export async function GET(request: NextRequest) {
         totalPages,
         totalCount: total,
       },
-      facets,
-      lastUpdated,
-      attributedItemCount,
+      ...(facets && { facets }),
+      ...(!skipMeta && { lastUpdated: liveStats.lastUpdated, attributedItemCount: liveStats.attributedItemCount }),
     });
 
     response.headers.set(

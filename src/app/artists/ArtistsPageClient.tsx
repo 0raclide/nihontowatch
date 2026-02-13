@@ -123,6 +123,7 @@ export function ArtistsPageClient({
     p.set('page', page.toString());
     p.set('limit', '50');
     if (!f.notable) p.set('notable', 'false');
+    if (append) p.set('skipMeta', 'true');
 
     try {
       const res = await fetch(`/api/artists/directory?${p.toString()}`, {
@@ -271,13 +272,13 @@ export function ArtistsPageClient({
           onClearSearch={clearSearch}
           onClearAll={clearAllFilters}
           searchInput={searchInput}
-          isLoading={isLoading}
+          isLoading={isLoading && allArtists.length === 0}
         />
 
         {/* Results */}
         <div id="artist-grid" className="flex-1 min-w-0 mt-8 lg:mt-0">
           {/* Desktop count header */}
-          {!isLoading && allArtists.length > 0 && (
+          {allArtists.length > 0 && (
             <p className="hidden lg:block text-[11px] text-ink/45 mb-4">
               Showing {allArtists.length.toLocaleString()} of {pagination.totalCount.toLocaleString()} artist{pagination.totalCount !== 1 ? 's' : ''}
             </p>
@@ -296,13 +297,13 @@ export function ArtistsPageClient({
             </div>
           )}
 
-          {isLoading ? (
+          {isLoading && allArtists.length === 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               {[...Array(6)].map((_, i) => (
                 <SkeletonCard key={i} />
               ))}
             </div>
-          ) : allArtists.length === 0 ? (
+          ) : !isLoading && allArtists.length === 0 ? (
             <div className="py-20 text-center">
               <p className="text-ink/50 text-sm">No artists found matching your criteria.</p>
               <button
@@ -314,8 +315,10 @@ export function ArtistsPageClient({
             </div>
           ) : (
             <>
-              {/* Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {/* Grid — dims during filter changes, stays visible */}
+              <div className={`grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 transition-opacity duration-150 ${
+                isLoading ? 'opacity-40 pointer-events-none' : ''
+              }`}>
                 {allArtists.map((artist) => (
                   <ArtistCard key={artist.code} artist={artist} />
                 ))}
@@ -331,7 +334,7 @@ export function ArtistsPageClient({
               )}
 
               {/* End of results */}
-              {!hasMore && allArtists.length > 0 && (
+              {!hasMore && allArtists.length > 0 && !isLoading && (
                 <p className="text-center text-[11px] text-ink/30 mt-8">
                   All {pagination.totalCount.toLocaleString()} artists loaded
                 </p>
@@ -502,7 +505,6 @@ export function ArtistsPageClient({
                 <button
                   key={t}
                   onClick={() => handleFilterChange('type', t)}
-                  disabled={isLoading}
                   className={`flex-1 px-4 py-2.5 min-h-[44px] text-[12px] uppercase tracking-[0.12em] transition-colors ${
                     filters.type === t
                       ? 'bg-gold/10 text-gold font-medium'
