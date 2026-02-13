@@ -169,14 +169,6 @@ export function LazyImage({
             />
           )}
 
-          {/* Image position indicator */}
-          {loaded && totalImages > 1 && (
-            <div className="absolute bottom-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-ink/70 backdrop-blur-sm">
-              <span className="text-[11px] text-white/90 font-medium tabular-nums">{index + 1}</span>
-              <span className="text-[11px] text-white/50">/</span>
-              <span className="text-[11px] text-white/50 tabular-nums">{totalImages}</span>
-            </div>
-          )}
 
           {/* Scroll hint on first image */}
           {showScrollHint && loaded && (
