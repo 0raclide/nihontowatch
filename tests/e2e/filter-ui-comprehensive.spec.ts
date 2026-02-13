@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { dismissCookieBanner } from './helpers';
 
 test.describe('Filter UI - Desktop Sidebar', () => {
   test.beforeEach(async ({ page }) => {
@@ -6,6 +7,7 @@ test.describe('Filter UI - Desktop Sidebar', () => {
     await page.goto('/browse');
     // Wait for page to load
     await page.waitForLoadState('networkidle');
+    await dismissCookieBanner(page);
   });
 
   test('category buttons should not be clipped by scrollbar', async ({ page }) => {
@@ -46,6 +48,7 @@ test.describe('Filter UI - Mobile Drawer', () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/browse');
     await page.waitForLoadState('networkidle');
+    await dismissCookieBanner(page);
   });
 
   test('should open filter drawer and show all content', async ({ page }) => {

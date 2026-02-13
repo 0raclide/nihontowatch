@@ -1,4 +1,5 @@
 import { test, expect, Page } from '@playwright/test';
+import { dismissCookieBanner } from './helpers';
 
 /**
  * Signup Pressure System E2E Tests
@@ -92,6 +93,7 @@ test.describe('Signup Pressure System', () => {
     // Navigate to browse page which has listings
     await page.goto('/browse');
     await page.waitForLoadState('networkidle');
+    await dismissCookieBanner(page);
 
     // Clear any existing signup pressure state
     await clearSignupPressureState(page);
@@ -609,6 +611,7 @@ test.describe('Signup Pressure - Integration with QuickView', () => {
   test('quick view opens increment the quick view counter', async ({ page }) => {
     await page.goto('/browse');
     await page.waitForLoadState('networkidle');
+    await dismissCookieBanner(page);
 
     // Clear state
     await clearSignupPressureState(page);
@@ -647,6 +650,7 @@ test.describe('Signup Pressure - Authenticated Users', () => {
   test('modal does not appear for signed up users', async ({ page }) => {
     await page.goto('/browse');
     await page.waitForLoadState('networkidle');
+    await dismissCookieBanner(page);
 
     // Set state with thresholds met BUT user has signed up
     const fourMinutesAgo = Date.now() - 4 * 60 * 1000;

@@ -11,8 +11,7 @@ test.describe('Server-Rendered Form', () => {
     // Intercept the initial HTML response
     let initialHtml = '';
     await page.route('**/*', async route => {
-      if (route.request().url().includes('localhost:3000') &&
-          route.request().resourceType() === 'document') {
+      if (route.request().resourceType() === 'document') {
         const response = await route.fetch();
         initialHtml = await response.text();
         route.fulfill({ response });

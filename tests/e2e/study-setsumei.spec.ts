@@ -31,7 +31,7 @@ test.describe('Study Setsumei Feature', () => {
     await page.waitForSelector('[data-testid="quickview-scrollable-content"]', { timeout: 15000 });
 
     // Wait for enrichment data to be fetched
-    await page.waitForTimeout(3000);
+    await page.waitForLoadState('networkidle');
 
     // Look for the study button in the desktop QuickView content
     // Scope to quickview-scrollable-content to avoid matching mobile sheet button
@@ -46,12 +46,13 @@ test.describe('Study Setsumei Feature', () => {
     // Open QuickView
     await page.goto(`/?listing=${LISTING_WITH_SETSUMEI}`, { timeout: 60000 });
     await page.waitForSelector('[data-testid="quickview-scrollable-content"]', { timeout: 15000 });
-    await page.waitForTimeout(3000);
+    await page.waitForLoadState('networkidle');
 
-    // Click the study button in desktop content
+    // Click the study button in desktop content (force: button animates in with enrichment data)
     const desktopContent = page.locator('[data-testid="quickview-scrollable-content"]');
     const studyButton = desktopContent.locator('button[aria-label="Study setsumei"]');
-    await studyButton.click();
+    await expect(studyButton).toBeVisible({ timeout: 10000 });
+    await studyButton.click({ force: true });
 
     // Wait for StudySetsumeiView to appear (scope to desktop layout)
     const desktopLayout = page.locator('[data-testid="quickview-desktop-layout"]');
@@ -72,13 +73,14 @@ test.describe('Study Setsumei Feature', () => {
   test('study mode should display markdown content with glossary highlighting', async ({ page }) => {
     await page.goto(`/?listing=${LISTING_WITH_SETSUMEI}`, { timeout: 60000 });
     await page.waitForSelector('[data-testid="quickview-scrollable-content"]', { timeout: 15000 });
-    await page.waitForTimeout(3000);
+    await page.waitForLoadState('networkidle');
 
-    // Enter study mode using desktop content button
+    // Enter study mode using desktop content button (force: button animates in with enrichment data)
     const desktopContent = page.locator('[data-testid="quickview-scrollable-content"]');
     const desktopLayout = page.locator('[data-testid="quickview-desktop-layout"]');
     const studyButton = desktopContent.locator('button[aria-label="Study setsumei"]');
-    await studyButton.click();
+    await expect(studyButton).toBeVisible({ timeout: 10000 });
+    await studyButton.click({ force: true });
 
     // Wait for content to render (scope to desktop layout)
     const studyView = desktopLayout.locator('[data-testid="study-setsumei-view"]');
@@ -98,12 +100,14 @@ test.describe('Study Setsumei Feature', () => {
   test('toggle back to photos should work', async ({ page }) => {
     await page.goto(`/?listing=${LISTING_WITH_SETSUMEI}`, { timeout: 60000 });
     await page.waitForSelector('[data-testid="quickview-scrollable-content"]', { timeout: 15000 });
-    await page.waitForTimeout(3000);
+    await page.waitForLoadState('networkidle');
 
-    // Enter study mode using desktop content button
+    // Enter study mode using desktop content button (force: button animates in with enrichment data)
     const desktopContent = page.locator('[data-testid="quickview-scrollable-content"]');
     const desktopLayout = page.locator('[data-testid="quickview-desktop-layout"]');
-    await desktopContent.locator('button[aria-label="Study setsumei"]').click();
+    const _studyBtn = desktopContent.locator('button[aria-label="Study setsumei"]');
+    await expect(_studyBtn).toBeVisible({ timeout: 10000 });
+    await _studyBtn.click({ force: true });
     await expect(desktopLayout.locator('[data-testid="study-setsumei-view"]')).toBeVisible({ timeout: 10000 });
 
     // Click "View Photos" to go back (scope to desktop)
@@ -123,12 +127,14 @@ test.describe('Study Setsumei Feature', () => {
   test('study button should also work via the toggle button in study mode', async ({ page }) => {
     await page.goto(`/?listing=${LISTING_WITH_SETSUMEI}`, { timeout: 60000 });
     await page.waitForSelector('[data-testid="quickview-scrollable-content"]', { timeout: 15000 });
-    await page.waitForTimeout(3000);
+    await page.waitForLoadState('networkidle');
 
-    // Enter study mode using desktop content button
+    // Enter study mode using desktop content button (force: button animates in with enrichment data)
     const desktopContent = page.locator('[data-testid="quickview-scrollable-content"]');
     const desktopLayout = page.locator('[data-testid="quickview-desktop-layout"]');
-    await desktopContent.locator('button[aria-label="Study setsumei"]').click();
+    const _studyBtn = desktopContent.locator('button[aria-label="Study setsumei"]');
+    await expect(_studyBtn).toBeVisible({ timeout: 10000 });
+    await _studyBtn.click({ force: true });
     await expect(desktopLayout.locator('[data-testid="study-setsumei-view"]')).toBeVisible({ timeout: 10000 });
 
     // Click the same button (now labeled "View photos") to toggle back
@@ -144,12 +150,14 @@ test.describe('Study Setsumei Feature', () => {
   test('language toggle should switch between English and Japanese', async ({ page }) => {
     await page.goto(`/?listing=${LISTING_WITH_SETSUMEI}`, { timeout: 60000 });
     await page.waitForSelector('[data-testid="quickview-scrollable-content"]', { timeout: 15000 });
-    await page.waitForTimeout(3000);
+    await page.waitForLoadState('networkidle');
 
-    // Enter study mode using desktop content button
+    // Enter study mode using desktop content button (force: button animates in with enrichment data)
     const desktopContent = page.locator('[data-testid="quickview-scrollable-content"]');
     const desktopLayout = page.locator('[data-testid="quickview-desktop-layout"]');
-    await desktopContent.locator('button[aria-label="Study setsumei"]').click();
+    const _studyBtn = desktopContent.locator('button[aria-label="Study setsumei"]');
+    await expect(_studyBtn).toBeVisible({ timeout: 10000 });
+    await _studyBtn.click({ force: true });
     const studyView = desktopLayout.locator('[data-testid="study-setsumei-view"]');
     await expect(studyView).toBeVisible({ timeout: 10000 });
 
@@ -175,13 +183,14 @@ test.describe('Study Setsumei Feature', () => {
   test('study button should have gold background when active', async ({ page }) => {
     await page.goto(`/?listing=${LISTING_WITH_SETSUMEI}`, { timeout: 60000 });
     await page.waitForSelector('[data-testid="quickview-scrollable-content"]', { timeout: 15000 });
-    await page.waitForTimeout(3000);
+    await page.waitForLoadState('networkidle');
 
-    // Enter study mode using desktop content button
+    // Enter study mode using desktop content button (force: button animates in with enrichment data)
     const desktopContent = page.locator('[data-testid="quickview-scrollable-content"]');
     const desktopLayout = page.locator('[data-testid="quickview-desktop-layout"]');
     const studyButton = desktopContent.locator('button[aria-label="Study setsumei"]');
-    await studyButton.click();
+    await expect(studyButton).toBeVisible({ timeout: 10000 });
+    await studyButton.click({ force: true });
     await expect(desktopLayout.locator('[data-testid="study-setsumei-view"]')).toBeVisible({ timeout: 10000 });
 
     // The toggled button should have gold background
@@ -211,15 +220,15 @@ test.describe('Study Setsumei - Mobile', () => {
 
     // Wait for mobile sheet to appear
     await page.waitForSelector('[data-testid="mobile-sheet"]', { timeout: 15000 });
-    await page.waitForTimeout(3000);
+    await page.waitForLoadState('networkidle');
 
     // Study button should be visible in mobile sheet header
     const mobileSheet = page.locator('[data-testid="mobile-sheet"]');
     const studyButton = mobileSheet.locator('button[aria-label="Study setsumei"]');
     await expect(studyButton).toBeVisible({ timeout: 10000 });
 
-    // Click study button
-    await studyButton.click();
+    // Click study button (force: button animates in with enrichment data)
+    await studyButton.click({ force: true });
 
     // Should show setsumei content
     const studyView = page.locator('[data-testid="study-setsumei-view"]').first();
@@ -231,11 +240,13 @@ test.describe('Study Setsumei - Mobile', () => {
   test('mobile study mode should replace image scroller', async ({ page }) => {
     await page.goto(`/?listing=${LISTING_WITH_SETSUMEI}`, { timeout: 60000 });
     await page.waitForSelector('[data-testid="mobile-sheet"]', { timeout: 15000 });
-    await page.waitForTimeout(3000);
+    await page.waitForLoadState('networkidle');
 
     // Enter study mode using mobile sheet button
     const mobileSheet = page.locator('[data-testid="mobile-sheet"]');
-    await mobileSheet.locator('button[aria-label="Study setsumei"]').click();
+    const studyBtn = mobileSheet.locator('button[aria-label="Study setsumei"]');
+    await expect(studyBtn).toBeVisible({ timeout: 10000 });
+    await studyBtn.click({ force: true });
     await expect(page.locator('[data-testid="study-setsumei-view"]').first()).toBeVisible({ timeout: 10000 });
 
     // Mobile image scroller should NOT be visible
@@ -294,12 +305,14 @@ test.describe('Study Setsumei - Edge Cases', () => {
     // Open QuickView for listing with setsumei
     await page.goto(`/?listing=${7057}`, { timeout: 60000 });
     await page.waitForSelector('[data-testid="quickview-scrollable-content"]', { timeout: 15000 });
-    await page.waitForTimeout(3000);
+    await page.waitForLoadState('networkidle');
 
-    // Enter study mode using desktop content button
+    // Enter study mode using desktop content button (force: button animates in with enrichment data)
     const desktopContent = page.locator('[data-testid="quickview-scrollable-content"]');
     const desktopLayout = page.locator('[data-testid="quickview-desktop-layout"]');
-    await desktopContent.locator('button[aria-label="Study setsumei"]').click();
+    const _studyBtn = desktopContent.locator('button[aria-label="Study setsumei"]');
+    await expect(_studyBtn).toBeVisible({ timeout: 10000 });
+    await _studyBtn.click({ force: true });
     await expect(desktopLayout.locator('[data-testid="study-setsumei-view"]')).toBeVisible({ timeout: 10000 });
 
     // Now navigate to home and open a different listing

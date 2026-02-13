@@ -120,8 +120,9 @@ test.describe('Dealer Analytics Tracking', () => {
     // Intercept the new tab/window to prevent it from opening
     await context.route('**/*', async (route) => {
       const url = route.request().url();
-      // Block external navigation but allow API calls
-      if (!url.includes('localhost:3000') && !url.includes('/api/')) {
+      // Block external navigation (dealer sites) but allow our own app requests
+      const appOrigin = new URL(page.url()).origin;
+      if (!url.startsWith(appOrigin)) {
         await route.abort();
       } else {
         await route.continue();
@@ -171,7 +172,7 @@ test.describe('Dealer Analytics Tracking', () => {
     // Block external navigation
     await context.route('**/*', async (route) => {
       const url = route.request().url();
-      if (!url.includes('localhost:3000') && !url.includes('/api/')) {
+      if (!new URL(url).pathname.startsWith('/')) {
         await route.abort();
       } else {
         await route.continue();
@@ -267,7 +268,7 @@ test.describe('Dealer Analytics Tracking - Mobile', () => {
     // Block external navigation
     await context.route('**/*', async (route) => {
       const url = route.request().url();
-      if (!url.includes('localhost:3000') && !url.includes('/api/')) {
+      if (!new URL(url).pathname.startsWith('/')) {
         await route.abort();
       } else {
         await route.continue();

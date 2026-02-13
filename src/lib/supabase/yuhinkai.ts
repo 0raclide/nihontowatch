@@ -1365,17 +1365,37 @@ export async function getArtisanHeroImage(
 }
 
 /**
+ * In-memory hero image cache with TTL.
+ * Hero images are derived from the Yuhinkai catalog which rarely changes,
+ * so a 1-hour TTL eliminates ~750-1000 DB queries + ~75 HTTP HEAD requests
+ * per uncached directory page load.
+ */
+const heroImageCache = new Map<string, { url: string | null; expiresAt: number }>();
+const HERO_IMAGE_TTL_MS = 60 * 60 * 1000; // 1 hour
+
+function getCachedHeroImage(code: string): { url: string | null; hit: boolean } {
+  const entry = heroImageCache.get(code);
+  if (entry && Date.now() < entry.expiresAt) {
+    return { url: entry.url, hit: true };
+  }
+  return { url: null, hit: false };
+}
+
+function setCachedHeroImage(code: string, url: string | null): void {
+  heroImageCache.set(code, { url, expiresAt: Date.now() + HERO_IMAGE_TTL_MS });
+}
+
+/**
  * Batch-fetch hero image URLs for multiple artisans.
  *
  * Delegates to getArtisanHeroImage() for each artisan in parallel to guarantee
  * identical image selection between directory thumbnails and profile hero images.
+ * Results are cached in-memory for 1 hour to avoid repeated DB+HEAD requests.
  *
  * Previous batch-optimized implementation used .limit(5000) on bulk queries
  * which truncated data across artisans, causing different images to be selected
  * for the directory vs profile page.  Delegating to the single-artist function
  * is "correct by construction" — both paths execute the exact same code.
- *
- * Performance: 50 artists/page × parallel queries, cached for 1 hour (s-maxage=3600).
  */
 export async function getBulkArtisanHeroImages(
   artists: Array<{ code: string; entityType: 'smith' | 'tosogu' }>
@@ -1383,15 +1403,31 @@ export async function getBulkArtisanHeroImages(
   const result = new Map<string, string>();
   if (artists.length === 0) return result;
 
-  const images = await Promise.all(
-    artists.map(async ({ code, entityType }) => {
-      const heroImage = await getArtisanHeroImage(code, entityType);
-      return { code, url: heroImage?.imageUrl ?? null };
-    })
-  );
+  // Separate cached hits from misses
+  const misses: Array<{ code: string; entityType: 'smith' | 'tosogu' }> = [];
+  for (const artist of artists) {
+    const cached = getCachedHeroImage(artist.code);
+    if (cached.hit) {
+      if (cached.url) result.set(artist.code, cached.url);
+    } else {
+      misses.push(artist);
+    }
+  }
 
-  for (const { code, url } of images) {
-    if (url) result.set(code, url);
+  // Fetch only cache misses
+  if (misses.length > 0) {
+    const images = await Promise.all(
+      misses.map(async ({ code, entityType }) => {
+        const heroImage = await getArtisanHeroImage(code, entityType);
+        const url = heroImage?.imageUrl ?? null;
+        setCachedHeroImage(code, url);
+        return { code, url };
+      })
+    );
+
+    for (const { code, url } of images) {
+      if (url) result.set(code, url);
+    }
   }
 
   return result;

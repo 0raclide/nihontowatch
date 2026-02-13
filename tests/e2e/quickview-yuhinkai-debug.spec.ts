@@ -14,7 +14,7 @@ test.describe('QuickView Yuhinkai Enrichment', () => {
     const listingId = 7057;
 
     // First check the API response to confirm it's a manual connection
-    const apiResponse = await page.request.get(`http://localhost:3000/api/listing/${listingId}?nocache=1`);
+    const apiResponse = await page.request.get(`/api/listing/${listingId}?nocache=1`);
     const apiData = await apiResponse.json();
     const enrichment = apiData.listing?.yuhinkai_enrichment;
 
@@ -43,7 +43,7 @@ test.describe('QuickView Yuhinkai Enrichment', () => {
     const listingId = 6758;
 
     // First check the API response to confirm it's an auto connection
-    const apiResponse = await page.request.get(`http://localhost:3000/api/listing/${listingId}?nocache=1`);
+    const apiResponse = await page.request.get(`/api/listing/${listingId}?nocache=1`);
     const apiData = await apiResponse.json();
     const enrichment = apiData.listing?.yuhinkai_enrichment;
 
@@ -74,7 +74,7 @@ test.describe('QuickView Yuhinkai Enrichment', () => {
 
   test('API should include connection_source field', async ({ page }) => {
     // Verify the API returns connection_source for debugging
-    const response = await page.request.get('http://localhost:3000/api/listing/7057?nocache=1');
+    const response = await page.request.get('/api/listing/7057?nocache=1');
     const data = await response.json();
 
     expect(data.listing.yuhinkai_enrichment).toBeDefined();

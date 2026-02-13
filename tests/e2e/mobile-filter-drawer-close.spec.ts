@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { dismissCookieBanner } from './helpers';
 
 test.describe('Mobile Filter Drawer - Close Functionality', () => {
   // Use a mobile device with touch support
@@ -11,6 +12,7 @@ test.describe('Mobile Filter Drawer - Close Functionality', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
     await page.waitForLoadState('networkidle');
+    await dismissCookieBanner(page);
   });
 
   async function openFilterDrawer(page: import('@playwright/test').Page) {
