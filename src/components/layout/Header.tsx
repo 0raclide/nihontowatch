@@ -325,14 +325,6 @@ function HeaderContent() {
               </Link>
               <Link
                 href="/artists"
-                onClick={(e) => {
-                  // Force hard navigation when already on an artists page —
-                  // Next.js soft navigation is a no-op for same-pathname routes.
-                  if (isArtistPage) {
-                    e.preventDefault();
-                    window.location.href = '/artists';
-                  }
-                }}
                 className="text-[11px] uppercase tracking-[0.2em] text-muted hover:text-gold transition-colors"
               >
                 Artists

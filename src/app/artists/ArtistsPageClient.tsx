@@ -36,12 +36,8 @@ interface Filters {
 }
 
 interface ArtistsPageClientProps {
-  initialArtists: ArtistWithSlug[];
-  initialPagination: Pagination;
-  initialFacets: DirectoryFacets;
   initialFilters: Filters;
-  lastUpdated: string | null;
-  attributedItemCount: number;
+  initialPage: number;
 }
 
 // =============================================================================
@@ -49,20 +45,18 @@ interface ArtistsPageClientProps {
 // =============================================================================
 
 export function ArtistsPageClient({
-  initialArtists,
-  initialPagination,
-  initialFacets,
   initialFilters,
-  lastUpdated,
-  attributedItemCount,
+  initialPage,
 }: ArtistsPageClientProps) {
-  const [artists, setArtists] = useState(initialArtists);
-  const [pagination, setPagination] = useState(initialPagination);
+  const [artists, setArtists] = useState<ArtistWithSlug[]>([]);
+  const [pagination, setPagination] = useState<Pagination>({ page: initialPage, pageSize: 50, totalPages: 0, totalCount: 0 });
   const [filters, setFilters] = useState(initialFilters);
-  const [facets, setFacets] = useState(initialFacets);
-  const [isLoading, setIsLoading] = useState(false);
+  const [facets, setFacets] = useState<DirectoryFacets>({ schools: [], provinces: [], eras: [], totals: { smiths: 0, tosogu: 0 } });
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchInput, setSearchInput] = useState(initialFilters.q || '');
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+  const [attributedItemCount, setAttributedItemCount] = useState(0);
   const abortRef = useRef<AbortController | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -100,7 +94,7 @@ export function ArtistsPageClient({
     History.prototype.replaceState.call(window.history, window.history.state, '', url);
   }, [buildQueryString]);
 
-  // Client-side fetch — the only data-fetching path for filter interactions
+  // Client-side fetch — the only data-fetching path (initial load + filter changes)
   const fetchArtists = useCallback(async (f: Filters, page: number) => {
     // Abort any in-flight request
     abortRef.current?.abort();
@@ -130,6 +124,8 @@ export function ArtistsPageClient({
         setArtists(data.artists);
         setPagination(data.pagination);
         if (data.facets) setFacets(data.facets);
+        if (data.lastUpdated !== undefined) setLastUpdated(data.lastUpdated);
+        if (data.attributedItemCount !== undefined) setAttributedItemCount(data.attributedItemCount);
       } else {
         setError('Failed to load artists. Please try again.');
       }
@@ -143,6 +139,12 @@ export function ArtistsPageClient({
     }
   }, []);
 
+  // Fetch data on mount
+  useEffect(() => {
+    fetchArtists(initialFilters, initialPage);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Cleanup abort and debounce on unmount
   useEffect(() => {
     return () => {
@@ -150,18 +152,6 @@ export function ArtistsPageClient({
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
   }, []);
-
-  // Sync state from server on external navigation (header link, back/forward).
-  // Client-side filter changes use native History.prototype.replaceState which
-  // bypasses Next.js, so this effect only fires on genuine navigations where
-  // we want a full state reset from the server-rendered data.
-  useEffect(() => {
-    setArtists(initialArtists);
-    setPagination(initialPagination);
-    setFilters(initialFilters);
-    setFacets(initialFacets);
-    setSearchInput(initialFilters.q || '');
-  }, [initialArtists, initialPagination, initialFilters, initialFacets]);
 
   const applyFilters = useCallback((newFilters: Filters, page: number) => {
     setFilters(newFilters);
@@ -225,17 +215,21 @@ export function ArtistsPageClient({
       {/* Page Header */}
       <div className="mb-8">
         <h1 className="hidden lg:block font-serif text-2xl text-ink tracking-tight">Artists</h1>
-        <p className="hidden lg:block text-[13px] text-muted mt-1">
-          {attributedItemCount.toLocaleString()} items by {(facets.totals.smiths + facets.totals.tosogu).toLocaleString()} celebrated artisans across {facets.schools.length.toLocaleString()} schools
-        </p>
+        {!isLoading && (facets.totals.smiths + facets.totals.tosogu) > 0 && (
+          <p className="hidden lg:block text-[13px] text-muted mt-1">
+            {attributedItemCount.toLocaleString()} items by {(facets.totals.smiths + facets.totals.tosogu).toLocaleString()} celebrated artisans across {facets.schools.length.toLocaleString()} schools
+          </p>
+        )}
         <LiveStatsBanner lastUpdated={lastUpdated} artisanCount={facets.totals.smiths + facets.totals.tosogu} schoolCount={facets.schools.length} />
         {/* Mobile heading */}
         <h1 className="lg:hidden font-serif text-2xl text-ink tracking-tight">
           Artists
         </h1>
-        <p className="lg:hidden mt-2 text-sm text-ink/50">
-          {attributedItemCount.toLocaleString()} items by {(facets.totals.smiths + facets.totals.tosogu).toLocaleString()} celebrated artisans
-        </p>
+        {!isLoading && (facets.totals.smiths + facets.totals.tosogu) > 0 && (
+          <p className="lg:hidden mt-2 text-sm text-ink/50">
+            {attributedItemCount.toLocaleString()} items by {(facets.totals.smiths + facets.totals.tosogu).toLocaleString()} celebrated artisans
+          </p>
+        )}
       </div>
 
       {/* Desktop: Sidebar + Content layout */}

@@ -129,6 +129,30 @@ export async function GET(request: NextRequest) {
       artists.map(a => ({ code: a.code, entityType: a.entity_type as 'smith' | 'tosogu' }))
     );
 
+    // Fetch live stats: last scrape time + total attributed items (for banner)
+    let lastUpdated: string | null = null;
+    let attributedItemCount = 0;
+    try {
+      const supabase = createServiceClient();
+      const [freshnessRes, countRes] = await Promise.all([
+        supabase
+          .from('listings')
+          .select('last_scraped_at')
+          .order('last_scraped_at' as string, { ascending: false })
+          .limit(1)
+          .single(),
+        supabase
+          .from('listings')
+          .select('id', { count: 'exact', head: true })
+          .not('artisan_id' as string, 'is', null)
+          .eq('is_available', true),
+      ]);
+      lastUpdated = (freshnessRes.data as { last_scraped_at: string } | null)?.last_scraped_at || null;
+      attributedItemCount = countRes.count ?? 0;
+    } catch {
+      // Non-critical — banner just won't show
+    }
+
     // Add slugs, percentiles, member counts, listing data, and hero images
     const artistsWithSlugs = artists.map(a => {
       const ld = listingData.get(a.code);
@@ -154,6 +178,8 @@ export async function GET(request: NextRequest) {
         totalCount: total,
       },
       facets,
+      lastUpdated,
+      attributedItemCount,
     });
 
     response.headers.set(
