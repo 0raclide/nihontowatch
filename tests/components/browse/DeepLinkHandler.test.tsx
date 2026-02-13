@@ -5,6 +5,7 @@ import { DeepLinkHandler } from '@/components/browse/DeepLinkHandler';
 // Track QuickView calls
 const mockOpenQuickView = vi.fn();
 const mockSetListings = vi.fn();
+const mockSetAlertMode = vi.fn();
 
 // Control searchParams per test
 let mockSearchParamValues: Record<string, string | null> = {};
@@ -19,6 +20,7 @@ vi.mock('@/contexts/QuickViewContext', () => ({
   useQuickViewOptional: () => ({
     openQuickView: mockOpenQuickView,
     setListings: mockSetListings,
+    setAlertMode: mockSetAlertMode,
   }),
 }));
 

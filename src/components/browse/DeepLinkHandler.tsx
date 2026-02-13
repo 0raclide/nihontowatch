@@ -90,6 +90,7 @@ export function DeepLinkHandler() {
           }
 
           quickView.setListings(listings);
+          quickView.setAlertMode(true);
           quickView.openQuickView(listings[0], { skipFetch: true });
           hasHandledRef.current = true;
         } catch (err) {

@@ -96,8 +96,9 @@ export function ArtisanListings({ code, artisanName, initialListings, status = '
   );
 
   // Pass listings to QuickView context for prev/next navigation
+  // Skip when in alert carousel mode to prevent overwriting alert listings
   useEffect(() => {
-    if (quickView && visibleListings.length > 0) {
+    if (quickView && visibleListings.length > 0 && !quickView.isAlertMode) {
       quickView.setListings(visibleListings);
     }
   }, [quickView, visibleListings]);

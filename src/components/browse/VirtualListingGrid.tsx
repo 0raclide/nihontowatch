@@ -258,8 +258,9 @@ export function VirtualListingGrid({
   const lastSetListingsRef = useRef<QuickViewListing[] | null>(null);
 
   // Pass listings to QuickView context for navigation
+  // Skip when in alert carousel mode to prevent overwriting the alert listings
   useEffect(() => {
-    if (quickView && quickViewListings.length > 0) {
+    if (quickView && quickViewListings.length > 0 && !quickView.isAlertMode) {
       if (lastSetListingsRef.current !== quickViewListings) {
         lastSetListingsRef.current = quickViewListings;
         quickView.setListings(quickViewListings);

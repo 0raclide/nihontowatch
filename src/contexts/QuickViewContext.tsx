@@ -47,6 +47,10 @@ interface QuickViewContextType {
   hasPrevious: boolean;
   /** Set the listings array for navigation */
   setListings: (listings: Listing[]) => void;
+  /** Whether QuickView is in alert carousel mode (prevents browse grid from overwriting listings) */
+  isAlertMode: boolean;
+  /** Enter/exit alert carousel mode */
+  setAlertMode: (mode: boolean) => void;
   /** Refresh the current listing data from the API (e.g., after admin changes)
    *  Accepts optional partial listing fields for optimistic update (instant UI feedback) */
   refreshCurrentListing: (optimisticFields?: Partial<Listing>) => Promise<void>;
@@ -74,6 +78,7 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
   const [currentListing, setCurrentListing] = useState<Listing | null>(null);
   const [listings, setListingsState] = useState<Listing[]>([]);
   const [currentIndex, setCurrentIndex] = useState(-1);
+  const [isAlertMode, setIsAlertMode] = useState(false);
 
   // Cooldown to prevent immediate re-opening after close
   const closeCooldown = useRef(false);
@@ -177,6 +182,7 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
     setIsOpen(false);
     setCurrentListing(null);
     setCurrentIndex(-1);
+    setIsAlertMode(false);
 
     // Remove listing from URL
     updateUrl(null);
@@ -247,6 +253,11 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
       setCurrentIndex(index);
     }
   }, [currentListing]);
+
+  // Enter/exit alert carousel mode (prevents browse grid from overwriting listings)
+  const setAlertMode = useCallback((mode: boolean) => {
+    setIsAlertMode(mode);
+  }, []);
 
   // Refresh the current listing from the API
   // Used after admin actions like connecting setsumei to reload updated data
@@ -454,6 +465,8 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
       hasNext,
       hasPrevious,
       setListings,
+      isAlertMode,
+      setAlertMode,
       refreshCurrentListing,
     }),
     [
@@ -468,6 +481,8 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
       hasNext,
       hasPrevious,
       setListings,
+      isAlertMode,
+      setAlertMode,
       refreshCurrentListing,
     ]
   );

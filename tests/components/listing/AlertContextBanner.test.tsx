@@ -15,6 +15,8 @@ let mockQuickViewState: Record<string, unknown> = {
   goToPrevious: mockGoToPrevious,
   hasNext: true,
   hasPrevious: true,
+  isAlertMode: false,
+  setAlertMode: vi.fn(),
 };
 
 vi.mock('@/contexts/QuickViewContext', () => ({
@@ -57,6 +59,8 @@ describe('AlertContextBanner', () => {
       goToPrevious: mockGoToPrevious,
       hasNext: true,
       hasPrevious: true,
+      isAlertMode: false,
+      setAlertMode: vi.fn(),
     };
     setWindowUrl('http://localhost:3000/?listings=1,2,3&alert_search=Juyo');
   });
