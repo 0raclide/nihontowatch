@@ -2,21 +2,29 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Artist type filter (nihonto/tosogu) must be sticky', () => {
 
+  // Increase timeout — production pages may load slowly
+  test.setTimeout(60000);
+
   test('Type stays tosogu across multiple searches', async ({ page }) => {
     // 1. Navigate to /artists (default = nihonto/smith)
-    await page.goto('/artists', { waitUntil: 'networkidle' });
+    await page.goto('/artists', { waitUntil: 'domcontentloaded' });
 
-    // 2. Click the Tosogu toggle button (sidebar)
+    // 2. Click the Tosogu toggle button (sidebar) — wait for hydration first
     const tosoguBtn = page.locator('button', { hasText: 'Tosogu' }).first();
+    await tosoguBtn.waitFor();
+    // Wait for hydration: sidebar search becomes interactive
+    await page.locator('input[placeholder*="Name, kanji"]').first().waitFor();
+    await page.waitForTimeout(500);
+
     await tosoguBtn.click();
-    await page.waitForTimeout(2000);
+    // Wait for the click to take effect (class change confirms React handled it)
+    await expect(tosoguBtn).toHaveClass(/text-gold/, { timeout: 5000 });
 
     // Verify URL now has type=tosogu
     expect(page.url()).toContain('type=tosogu');
-    await expect(tosoguBtn).toHaveClass(/text-gold/);
 
     // 3. Search for "Katsuhira" in the SIDEBAR search input
-    const sidebarSearch = page.locator('input[placeholder*="Name, kanji"]');
+    const sidebarSearch = page.locator('input[placeholder*="Name, kanji"]').first();
     await sidebarSearch.fill('Katsuhira');
     await page.waitForTimeout(2000);
 
@@ -45,7 +53,8 @@ test.describe('Artist type filter (nihonto/tosogu) must be sticky', () => {
 
   test('Artist card navigates to profile page', async ({ page }) => {
     // Navigate to artists page with a search to get a known result
-    await page.goto('/artists?type=tosogu&q=Katsuhira', { waitUntil: 'networkidle' });
+    await page.goto('/artists?type=tosogu&q=Katsuhira', { waitUntil: 'domcontentloaded' });
+    await page.locator('a[href*="/artists/"]').first().waitFor();
 
     // Click the artist card link (now a proper <a> element)
     const artistLink = page.locator('a[href*="/artists/"]').first();
@@ -70,15 +79,14 @@ test.describe('Artist type filter (nihonto/tosogu) must be sticky', () => {
 
   test('Header Artists link resets to default state', async ({ page }) => {
     // 1. Start on artists page with tosogu + search
-    await page.goto('/artists?type=tosogu&q=Katsuhira', { waitUntil: 'networkidle' });
-
+    await page.goto('/artists?type=tosogu&q=Katsuhira', { waitUntil: 'domcontentloaded' });
     const tosoguBtn = page.locator('button', { hasText: 'Tosogu' }).first();
     await expect(tosoguBtn).toHaveClass(/text-gold/);
 
     // 2. Click "ARTISTS" link in the header — should reset to defaults
     const headerArtistsLink = page.locator('header a', { hasText: 'ARTISTS' }).first();
     await headerArtistsLink.click();
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(3000);
 
     const url = page.url();
     console.log('After header Artists click:', url);
