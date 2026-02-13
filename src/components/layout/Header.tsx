@@ -349,7 +349,7 @@ function HeaderContent() {
               >
                 Saved
               </Link>
-              {user && (
+              {user && process.env.NEXT_PUBLIC_COLLECTION_ENABLED === 'true' && (
                 <Link
                   href="/collection"
                   className="text-[11px] uppercase tracking-[0.2em] text-muted hover:text-gold transition-colors"

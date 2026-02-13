@@ -373,7 +373,7 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
           </button>
 
           {/* I Own This Button — icon-only (panel is always narrow) */}
-          {user && (
+          {user && process.env.NEXT_PUBLIC_COLLECTION_ENABLED === 'true' && (
             <button
               onClick={handleIOwn}
               title="I Own This"

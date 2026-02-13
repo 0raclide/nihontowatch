@@ -10,6 +10,10 @@ export const metadata = {
 };
 
 export default async function CollectionPage() {
+  if (process.env.NEXT_PUBLIC_COLLECTION_ENABLED !== 'true') {
+    redirect('/browse');
+  }
+
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
