@@ -1153,17 +1153,14 @@ html.theme-yuhindo .magical-book:hover {
   min-height: 64px;
 }
 
-/* iOS Safari virtualization - use native content-visibility instead of JS transform
+/* iOS Safari virtualization - use native content-visibility instead of JS transform.
    This avoids the transform glitches that cause cards to "teleport" on iOS.
-   contain-intrinsic-block-size must match actual card height per view mode,
-   otherwise fast upward scroll causes cascading layout shifts (flicker). */
+   The --card-intrinsic-height custom property is set by VirtualListingGrid from the
+   shared cardHeight.ts module — single source of truth for card dimensions. */
 @supports (content-visibility: auto) {
   .ios-native-virtualize > * {
     content-visibility: auto;
-    contain-intrinsic-block-size: auto 350px; /* Grid mode: 2-col ~350px cards */
-  }
-  .ios-native-virtualize[data-mobile-view="gallery"] > * {
-    contain-intrinsic-block-size: auto 650px; /* Gallery mode: 1-col ~650px cards */
+    contain-intrinsic-block-size: auto var(--card-intrinsic-height, 450px);
   }
 }
 

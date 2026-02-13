@@ -147,8 +147,8 @@ describe('useAdaptiveVirtualScroll', () => {
         vi.runAllTimers();
       });
 
-      // Mobile should have taller rows (625px) — 3:4 aspect ratio card
-      expect(result.current.rowHeight).toBe(625);
+      // Mobile should have taller rows — 3:4 aspect ratio card + gap-10 (40px) gallery gap
+      expect(result.current.rowHeight).toBe(653);
     });
 
     it('uses shorter rows for desktop (2+ columns)', () => {

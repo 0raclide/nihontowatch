@@ -4,6 +4,7 @@ import { useEffect, useRef, useMemo, useState } from 'react';
 import { ListingCard } from './ListingCard';
 import { useAdaptiveVirtualScroll } from '@/hooks/useAdaptiveVirtualScroll';
 import { useQuickViewOptional } from '@/contexts/QuickViewContext';
+import { MOBILE_CARD_HEIGHTS } from '@/lib/rendering/cardHeight';
 import type { Listing as QuickViewListing } from '@/types';
 
 
@@ -187,14 +188,24 @@ function Pagination({
 /**
  * Virtual scrolling grid for listings.
  *
- * Features:
- * - Adaptive columns: 1 (mobile) to 5 (large desktop)
- * - Virtual scrolling: Only renders visible items
- * - SSR-safe: Renders initial batch without virtualization on server
- * - Scroll anchoring: Maintains position when items are added
+ * Three rendering strategies coexist, selected at runtime:
  *
- * The grid uses CSS for responsive layout (no JS conditional rendering),
- * ensuring hydration compatibility.
+ *  1. **SSR / small list** — All items rendered without virtualization.
+ *     Active when: server-side render OR items <= 15 OR pagination mode.
+ *
+ *  2. **CSS content-visibility** (mobile) — All items rendered in the DOM
+ *     but the browser skips layout/paint for off-screen cards via
+ *     `content-visibility: auto`. Card height hint comes from the
+ *     `--card-intrinsic-height` CSS custom property (set here, sourced
+ *     from `cardHeight.ts`).
+ *     Active when: touch device with small screen (< 768px).
+ *
+ *  3. **JS virtual scroll** (desktop) — Only visible rows are in the DOM,
+ *     positioned with `translateY`. Row height computed from first
+ *     principles in `cardHeight.ts`.
+ *     Active when: not mobile, infinite scroll mode, > 15 items.
+ *
+ * The single source of truth for card heights is `src/lib/rendering/cardHeight.ts`.
  */
 export function VirtualListingGrid({
   listings,
@@ -347,10 +358,12 @@ export function VirtualListingGrid({
   const renderGrid = () => (
     <div
       data-testid="virtual-listing-grid"
-      data-mobile-view={mobileView}
       className={`${mobileGridClasses}${
         !isVirtualized && isMobileDevice ? ' ios-native-virtualize' : ''
       }`}
+      style={!isVirtualized && isMobileDevice ? {
+        '--card-intrinsic-height': `${MOBILE_CARD_HEIGHTS[mobileView]}px`,
+      } as React.CSSProperties : undefined}
     >
       {visibleItems.map((listing, idx) => (
         <ListingCard
@@ -359,7 +372,6 @@ export function VirtualListingGrid({
           currency={currency}
           exchangeRates={exchangeRates}
           priority={startIndex + idx < PRIORITY_COUNT}
-          isNearViewport={true}
           searchId={searchId}
           isAdmin={isAdmin}
           mobileView={mobileView}

@@ -2,69 +2,7 @@
 
 import { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { isScrollLockActive } from './useBodyScrollLock';
-
-/**
- * Responsive breakpoints matching Tailwind defaults.
- * Used to determine column count for virtualization calculations.
- */
-const BREAKPOINTS = {
-  sm: 640,
-  lg: 1024,
-  xl: 1280,
-  '2xl': 1536,
-};
-
-/**
- * Calculate column count based on viewport width.
- * Matches the CSS grid: grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5
- */
-function getColumnCount(width: number): number {
-  if (width >= BREAKPOINTS['2xl']) return 5;
-  if (width >= BREAKPOINTS.xl) return 4;
-  if (width >= BREAKPOINTS.lg) return 3;
-  if (width >= BREAKPOINTS.sm) return 2;
-  return 1;
-}
-
-/**
- * Estimate row height dynamically from viewport width + column count.
- *
- * Instead of hardcoded pixel values (which break when card design changes),
- * this computes the card height from first principles:
- *   card = header + image(3:4 aspect) + content + border
- *   row  = card + grid gap
- *
- * Card structure (Refined layout):
- *   Header:  px-3 py-2  (lg: px-4 py-2.5) — dealer + cert text
- *   Image:   aspect-[3/4] — height = cardWidth * 4/3
- *   Content: px-3 pt-3 pb-3 (lg: px-4 pt-3.5 pb-4) — type + attribution + price
- *   Border:  1px top + 1px bottom
- */
-function getRowHeight(columns: number, viewportWidth?: number): number {
-  // Fallback to a reasonable mid-range estimate if viewport not yet known
-  const vw = viewportWidth || (columns >= 3 ? 1280 : 768);
-
-  // Container: max-w-[1600px] with px-4 (lg: px-6)
-  const px = vw >= 1024 ? 24 : 16;
-  const containerWidth = Math.min(vw - px * 2, 1600 - px * 2);
-
-  // Sidebar: w-[264px] + lg:gap-10 (40px), only on lg+
-  const sidebarSpace = vw >= 1024 ? 264 + 40 : 0;
-  const gridWidth = containerWidth - sidebarSpace;
-
-  // Grid gap: gap-3 (12px) mobile, sm:gap-4 (16px) tablet+
-  const gap = columns === 1 ? 12 : 16;
-  const cardWidth = (gridWidth - (columns - 1) * gap) / columns;
-
-  // Card height from CSS values
-  const isLg = vw >= 1024;
-  const headerH = isLg ? 34 : 28;           // py-2/py-2.5 + text
-  const imageH = Math.round(cardWidth * 4 / 3); // aspect-[3/4]
-  const contentH = isLg ? 115 : 106;        // padding + type + attribution + price
-  const borderH = 2;                         // border top + bottom
-
-  return headerH + imageH + contentH + borderH + gap;
-}
+import { getColumnCount, getRowHeight } from '@/lib/rendering/cardHeight';
 
 // Use useLayoutEffect on client, useEffect on server (for SSR safety)
 const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;

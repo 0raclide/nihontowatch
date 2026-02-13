@@ -110,7 +110,6 @@ interface ListingCardProps {
   exchangeRates: ExchangeRates | null;
   priority?: boolean; // For above-the-fold images
   showFavoriteButton?: boolean;
-  isNearViewport?: boolean; // For lazy loading optimization
   searchId?: number; // For CTR tracking
   isAdmin?: boolean; // For admin-only features like artisan code display
   mobileView?: 'grid' | 'gallery'; // Mobile layout mode (only affects < sm breakpoint)
@@ -471,7 +470,6 @@ export const ListingCard = memo(function ListingCard({
   exchangeRates,
   priority = false,
   showFavoriteButton = true,
-  isNearViewport = true, // Default to true for backward compatibility
   searchId,
   isAdmin = false,
   mobileView = 'gallery',
@@ -670,7 +668,7 @@ export const ListingCard = memo(function ListingCard({
         {placeholderKanji}
       </span>
     </div>
-  ) : isNearViewport ? (
+  ) : (
     <Image
       key={imageUrl}
       src={imageUrl}
@@ -701,8 +699,6 @@ export const ListingCard = memo(function ListingCard({
         }
       }}
     />
-  ) : (
-    <div className="absolute inset-0 bg-linen" />
   );
 
   // Shared unavailable overlay
@@ -893,7 +889,6 @@ export const ListingCard = memo(function ListingCard({
     prevProps.listing.id === nextProps.listing.id &&
     prevProps.currency === nextProps.currency &&
     prevProps.priority === nextProps.priority &&
-    prevProps.isNearViewport === nextProps.isNearViewport &&
     prevProps.showFavoriteButton === nextProps.showFavoriteButton &&
     prevProps.exchangeRates?.timestamp === nextProps.exchangeRates?.timestamp &&
     prevProps.listing.setsumei_text_en === nextProps.listing.setsumei_text_en &&
