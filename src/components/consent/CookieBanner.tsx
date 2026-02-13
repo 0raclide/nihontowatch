@@ -61,7 +61,7 @@ export function CookieBanner() {
 
   const banner = (
     <div
-      className={`fixed bottom-0 left-0 right-0 z-50 transition-transform duration-300 ease-out ${
+      className={`fixed left-0 right-0 z-50 bottom-16 lg:bottom-0 transition-transform duration-300 ease-out ${
         isVisible ? 'translate-y-0' : 'translate-y-full'
       }`}
       role="dialog"
