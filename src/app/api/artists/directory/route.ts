@@ -25,7 +25,15 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const { getArtistsForDirectory, getArtistDirectoryFacets, getBulkElitePercentiles, getBulkProvenancePercentiles, getFilteredArtistsByCodes, getSchoolMemberCounts, getSchoolMemberCodes, getBulkArtisanHeroImages } = await import('@/lib/supabase/yuhinkai');
+    const {
+      callDirectoryEnrichment,
+      getHeroImagesFromTable,
+      getFilteredArtistsByCodes,
+      getArtistDirectoryFacets,
+      getBulkElitePercentiles,
+      getSchoolMemberCounts,
+      getSchoolMemberCodes,
+    } = await import('@/lib/supabase/yuhinkai');
     const { generateArtisanSlug } = await import('@/lib/artisan/slugs');
 
     const params = request.nextUrl.searchParams;
@@ -45,12 +53,15 @@ export async function GET(request: NextRequest) {
     const notable = params.get('notable') !== 'false';
     const skipMeta = params.get('skipMeta') === 'true'; // Skip facets + live stats (used by infinite scroll appends)
 
-    let artists;
+    let artists: Awaited<ReturnType<typeof callDirectoryEnrichment>>['artists'];
     let total: number;
     let listingData: Map<string, { count: number; firstId?: number }>;
+    let facets: Awaited<ReturnType<typeof callDirectoryEnrichment>>['facets'] = null;
+    let heroImages: Map<string, string>;
 
     if (sort === 'for_sale') {
-      // Special flow: sort by available listings count.
+      // ── FOR_SALE SORT (special path) ──
+      // Cannot use RPC: artist selection comes from listings, not Yuhinkai filters.
       // 1. Get all available listing counts from main DB
       const allListingData = await getAllAvailableListingCounts();
 
@@ -66,25 +77,52 @@ export async function GET(request: NextRequest) {
       const offset = (page - 1) * limit;
       artists = matchedArtists.slice(offset, offset + limit);
       listingData = allListingData;
-    } else {
-      const result = await getArtistsForDirectory({ type, school, province, era, q, sort, page, limit, notable });
-      artists = result.artists;
-      total = result.total;
 
-      // Fetch listing data for this page's artists
+      // 5. Enrich with percentiles, member counts, facets, hero images (old path)
+      const [forSaleFacets, [percentileMap, memberCountMap], forSaleHeroImages] = await Promise.all([
+        skipMeta ? null : getArtistDirectoryFacets(type),
+        Promise.all([
+          getBulkElitePercentiles(
+            artists.map(a => ({ code: a.code, elite_factor: a.elite_factor, entity_type: a.entity_type }))
+          ),
+          getSchoolMemberCounts(
+            artists.map(a => ({ code: a.code, school: a.school, entity_type: a.entity_type, is_school_code: a.is_school_code }))
+          ),
+        ]),
+        getHeroImagesFromTable(artists.map(a => a.code), type),
+      ]);
+
+      facets = forSaleFacets;
+      heroImages = forSaleHeroImages;
+      // Attach percentiles + member_count to artists
+      for (const a of artists) {
+        a.percentile = percentileMap.get(a.code) ?? 0;
+        const mc = memberCountMap.get(a.code);
+        if (mc != null) a.member_count = mc;
+      }
+    } else {
+      // ── STANDARD PATH (1 RPC call) ──
+      const rpcResult = await callDirectoryEnrichment({
+        type, school, province, era, q, sort, page, limit, notable, skipMeta,
+      });
+      artists = rpcResult.artists;
+      total = rpcResult.total;
+      facets = rpcResult.facets;
+
+      // Percentiles + member_count already populated by RPC
+      // Fetch listing data + hero images in parallel
       const codes = artists.map(a => a.code);
-      listingData = await getListingDataForArtists(codes);
+      const [ld, standardHeroImages] = await Promise.all([
+        getListingDataForArtists(codes),
+        getHeroImagesFromTable(codes, type),
+      ]);
+      listingData = ld;
+      heroImages = standardHeroImages;
     }
 
-    // ── Run all enrichment in parallel ──
-    // These groups are independent and were previously sequential:
-    //   A) Listing data + school member aggregation (sequential chain, depends on artist codes)
-    //   B) Facets (depends on type only)
-    //   C) Percentiles + school member counts (depends on artist rows)
-    //   D) Hero images (depends on artist codes)
-    //   E) Live stats (independent)
+    // ── Shared enrichment: school member listing aggregation + live stats ──
 
-    // A) Listing data + school member aggregation
+    // School member listing aggregation (adds member listing counts to school codes)
     const enrichListingData = async () => {
       const schoolArtists = artists.filter(a => a.is_school_code && a.school);
       if (schoolArtists.length > 0) {
@@ -117,7 +155,7 @@ export async function GET(request: NextRequest) {
       }
     };
 
-    // E) Live stats
+    // Live stats (last updated, attributed item count)
     const fetchLiveStats = async (): Promise<{ lastUpdated: string | null; attributedItemCount: number }> => {
       if (skipMeta) return { lastUpdated: null, attributedItemCount: 0 };
       try {
@@ -144,40 +182,19 @@ export async function GET(request: NextRequest) {
       }
     };
 
-    const [, facets, [percentileMap, memberCountMap], heroImages, liveStats] = await Promise.all([
-      // A) School member listing aggregation
+    const [, liveStats] = await Promise.all([
       enrichListingData(),
-      // B) Facets
-      skipMeta ? null : getArtistDirectoryFacets(type),
-      // C) Percentiles + school member counts
-      Promise.all([
-        sort === 'provenance_factor'
-          ? getBulkProvenancePercentiles(
-              artists.map(a => ({ code: a.code, provenance_factor: a.provenance_factor, entity_type: a.entity_type as 'smith' | 'tosogu' }))
-            )
-          : getBulkElitePercentiles(
-              artists.map(a => ({ code: a.code, elite_factor: a.elite_factor, entity_type: a.entity_type }))
-            ),
-        getSchoolMemberCounts(
-          artists.map(a => ({ code: a.code, school: a.school, entity_type: a.entity_type, is_school_code: a.is_school_code }))
-        ),
-      ]),
-      // D) Hero images
-      getBulkArtisanHeroImages(
-        artists.map(a => ({ code: a.code, entityType: a.entity_type as 'smith' | 'tosogu' }))
-      ),
-      // E) Live stats
       fetchLiveStats(),
     ]);
 
-    // Add slugs, percentiles, member counts, listing data, and hero images
+    // Add slugs, listing data, and hero images to response
     const artistsWithSlugs = artists.map(a => {
       const ld = listingData.get(a.code);
       return {
         ...a,
         slug: generateArtisanSlug(a.name_romaji, a.code),
-        percentile: percentileMap.get(a.code) ?? 0,
-        member_count: memberCountMap.get(a.code),
+        percentile: a.percentile ?? 0,
+        member_count: a.member_count,
         available_count: ld?.count || 0,
         first_listing_id: ld?.firstId,
         cover_image: heroImages.get(a.code) || null,

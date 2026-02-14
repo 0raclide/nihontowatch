@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { eraToBroadPeriod, PERIOD_ORDER, BROAD_PERIODS } from '@/lib/artisan/eraPeriods';
+import { eraToBroadPeriod, PERIOD_ORDER } from '@/lib/artisan/eraPeriods';
 
 /**
  * Supabase client for Yuhinkai database (artist profiles, smith entities, etc.)
@@ -604,9 +604,133 @@ export interface DirectoryFacets {
 }
 
 /**
+ * Call the `get_directory_enrichment` RPC on the Yuhinkai database.
+ * Returns artists (with percentile + member_count baked in), total count,
+ * and optionally facets — all in a single DB round-trip.
+ *
+ * Replaces: getArtistsForDirectory + getBulkElitePercentiles/getBulkProvenancePercentiles
+ *           + getArtistDirectoryFacets + getSchoolMemberCounts
+ */
+export async function callDirectoryEnrichment(
+  filters: DirectoryFilters & { skipMeta?: boolean }
+): Promise<{
+  artists: ArtistDirectoryEntry[];
+  total: number;
+  facets: DirectoryFacets | null;
+}> {
+  const {
+    type = 'smith',
+    school,
+    province,
+    era,
+    q,
+    sort = 'elite_factor',
+    page = 1,
+    limit = 50,
+    notable = true,
+    skipMeta = false,
+  } = filters;
+
+  const { data, error } = await yuhinkaiClient.rpc('get_directory_enrichment', {
+    p_type: type,
+    p_school: school || null,
+    p_province: province || null,
+    p_era: era || null,
+    p_q: q || null,
+    p_sort: sort === 'for_sale' ? 'elite_factor' : sort,
+    p_page: Math.max(page, 1),
+    p_limit: Math.min(Math.max(limit, 1), 100),
+    p_notable: notable,
+    p_skip_meta: skipMeta,
+  });
+
+  if (error) {
+    console.error('[Yuhinkai] get_directory_enrichment RPC error:', error);
+    return { artists: [], total: 0, facets: null };
+  }
+
+  // RPC returns JSONB with { artists, total, facets }
+  const result = data as {
+    artists: Array<Record<string, unknown>>;
+    total: number;
+    facets: {
+      schools: Array<{ value: string; count: number }>;
+      provinces: Array<{ value: string; count: number }>;
+      eras: Array<{ value: string; count: number }>;
+      totals: { smiths: number; tosogu: number };
+    } | null;
+  };
+
+  const entityType = type === 'tosogu' ? 'tosogu' : 'smith';
+
+  const artists: ArtistDirectoryEntry[] = (result.artists || []).map(row => ({
+    code: row.code as string,
+    name_romaji: row.name_romaji as string | null,
+    name_kanji: row.name_kanji as string | null,
+    school: row.school as string | null,
+    province: row.province as string | null,
+    era: row.era as string | null,
+    entity_type: entityType,
+    kokuho_count: (row.kokuho_count as number) || 0,
+    jubun_count: (row.jubun_count as number) || 0,
+    jubi_count: (row.jubi_count as number) || 0,
+    gyobutsu_count: (row.gyobutsu_count as number) || 0,
+    tokuju_count: (row.tokuju_count as number) || 0,
+    juyo_count: (row.juyo_count as number) || 0,
+    total_items: (row.total_items as number) || 0,
+    elite_factor: (row.elite_factor as number) || 0,
+    provenance_factor: (row.provenance_factor as number) ?? null,
+    is_school_code: (row.is_school_code as boolean) || false,
+    percentile: (row.percentile as number) ?? 0,
+    member_count: row.member_count != null ? (row.member_count as number) : undefined,
+  }));
+
+  return {
+    artists,
+    total: result.total || 0,
+    facets: skipMeta ? null : (result.facets || null),
+  };
+}
+
+/**
+ * Fetch hero image URLs from the pre-computed `artisan_hero_images` table.
+ * Replaces getBulkArtisanHeroImages (which did N+1 queries + HTTP HEAD checks).
+ * Returns Map<code, imageUrl>.
+ */
+export async function getHeroImagesFromTable(
+  codes: string[],
+  entityType: 'smith' | 'tosogu'
+): Promise<Map<string, string>> {
+  const result = new Map<string, string>();
+  if (codes.length === 0) return result;
+
+  const BATCH_SIZE = 200;
+  for (let i = 0; i < codes.length; i += BATCH_SIZE) {
+    const batch = codes.slice(i, i + BATCH_SIZE);
+    const { data, error } = await yuhinkaiClient
+      .from('artisan_hero_images')
+      .select('code, image_url')
+      .in('code', batch)
+      .eq('entity_type', entityType)
+      .not('image_url', 'is', null);
+
+    if (error) {
+      console.error('[Yuhinkai] artisan_hero_images query error:', error);
+      continue;
+    }
+
+    for (const row of data || []) {
+      result.set(row.code as string, row.image_url as string);
+    }
+  }
+
+  return result;
+}
+
+/**
  * Resolve a broad period name (e.g. "Muromachi") to the list of specific era
- * strings in the database that map to it. Fetches all distinct eras from the
- * given entity table and filters through eraToBroadPeriod().
+ * strings in the database that map to it. Still needed by getArtistsForDirectory
+ * and getFilteredArtistsByCodes (used in the `for_sale` sort path).
  */
 async function getErasForBroadPeriod(
   broadPeriod: string,
@@ -620,7 +744,6 @@ async function getErasForBroadPeriod(
 
   if (!data) return [];
 
-  // Collect unique era strings that map to this broad period
   const matching = new Set<string>();
   for (const row of data) {
     const era = row.era as string;
@@ -635,6 +758,9 @@ async function getErasForBroadPeriod(
 /**
  * Fetch paginated artisan list for the directory page.
  * Queries either smith_entities or tosogu_makers based on the type filter.
+ *
+ * NOTE: Still used by the `for_sale` sort path (via getFilteredArtistsByCodes)
+ * and internally. The standard path now uses callDirectoryEnrichment() instead.
  */
 export async function getArtistsForDirectory(
   filters: DirectoryFilters = {}
@@ -1364,74 +1490,6 @@ export async function getArtisanHeroImage(
   return null;
 }
 
-/**
- * In-memory hero image cache with TTL.
- * Hero images are derived from the Yuhinkai catalog which rarely changes,
- * so a 1-hour TTL eliminates ~750-1000 DB queries + ~75 HTTP HEAD requests
- * per uncached directory page load.
- */
-const heroImageCache = new Map<string, { url: string | null; expiresAt: number }>();
-const HERO_IMAGE_TTL_MS = 60 * 60 * 1000; // 1 hour
-
-function getCachedHeroImage(code: string): { url: string | null; hit: boolean } {
-  const entry = heroImageCache.get(code);
-  if (entry && Date.now() < entry.expiresAt) {
-    return { url: entry.url, hit: true };
-  }
-  return { url: null, hit: false };
-}
-
-function setCachedHeroImage(code: string, url: string | null): void {
-  heroImageCache.set(code, { url, expiresAt: Date.now() + HERO_IMAGE_TTL_MS });
-}
-
-/**
- * Batch-fetch hero image URLs for multiple artisans.
- *
- * Delegates to getArtisanHeroImage() for each artisan in parallel to guarantee
- * identical image selection between directory thumbnails and profile hero images.
- * Results are cached in-memory for 1 hour to avoid repeated DB+HEAD requests.
- *
- * Previous batch-optimized implementation used .limit(5000) on bulk queries
- * which truncated data across artisans, causing different images to be selected
- * for the directory vs profile page.  Delegating to the single-artist function
- * is "correct by construction" — both paths execute the exact same code.
- */
-export async function getBulkArtisanHeroImages(
-  artists: Array<{ code: string; entityType: 'smith' | 'tosogu' }>
-): Promise<Map<string, string>> {
-  const result = new Map<string, string>();
-  if (artists.length === 0) return result;
-
-  // Separate cached hits from misses
-  const misses: Array<{ code: string; entityType: 'smith' | 'tosogu' }> = [];
-  for (const artist of artists) {
-    const cached = getCachedHeroImage(artist.code);
-    if (cached.hit) {
-      if (cached.url) result.set(artist.code, cached.url);
-    } else {
-      misses.push(artist);
-    }
-  }
-
-  // Fetch only cache misses
-  if (misses.length > 0) {
-    const images = await Promise.all(
-      misses.map(async ({ code, entityType }) => {
-        const heroImage = await getArtisanHeroImage(code, entityType);
-        const url = heroImage?.imageUrl ?? null;
-        setCachedHeroImage(code, url);
-        return { code, url };
-      })
-    );
-
-    for (const { code, url } of images) {
-      if (url) result.set(code, url);
-    }
-  }
-
-  return result;
-}
 
 // =============================================================================
 // TEACHER RESOLUTION
