@@ -101,14 +101,13 @@ export function FilterSidebar({ facets, filters, onFilterChange, isAdmin, varian
             {/* ── Zone 1: Category + Availability (pinned) ── */}
             {hasViewControls && (
               <div className="flex-shrink-0 px-4 pt-3.5 pb-3 border-b border-border/15">
-                {/* Category — 3-segment: Nihonto | Tosogu | Armor */}
+                {/* Category — 2-segment: Nihonto | Tosogu */}
                 <div className="mb-2.5">
                   <span className="text-[10px] uppercase tracking-[0.08em] text-muted/50 font-medium block mb-1.5">Category</span>
                   <div className={`flex ${controlRadius} border border-border/30 overflow-hidden`}>
                     {([
                       { key: 'nihonto' as const, label: 'Nihonto' },
                       { key: 'tosogu' as const, label: 'Tosogu' },
-                      { key: 'armor' as const, label: 'Armor' },
                     ]).map(({ key, label }, i) => (
                       <button
                         key={key}

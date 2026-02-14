@@ -706,14 +706,13 @@ export function FilterContent({
         </div>
       )}
 
-      {/* Category — Mobile first element (3-segment control) */}
+      {/* Category — Mobile first element (2-segment control) */}
       <div className="lg:hidden mb-3">
         <label className="text-[12px] text-muted mb-2 block">Category</label>
         <div className="flex rounded-lg border-2 border-border overflow-hidden">
           {([
             { key: 'nihonto' as const, label: 'Nihonto' },
             { key: 'tosogu' as const, label: 'Tosogu' },
-            { key: 'armor' as const, label: 'Armor' },
           ]).map(({ key, label }, i) => (
             <button
               key={key}
@@ -859,59 +858,15 @@ export function FilterContent({
 
         {elevated && <div className={`border-t ${isB ? 'border-border/15' : 'border-border/30'}`} />}
 
-        {/* 4. Signature — inline 3-way toggle (not collapsible) */}
-        <div className={isB ? 'py-2' : elevated ? 'py-3' : 'py-5'}>
-          <span className={
-            isB
-              ? 'text-[11px] uppercase tracking-[0.06em] font-semibold text-muted block mb-1.5'
-              : elevated
-                ? 'text-[14px] font-semibold text-ink block mb-2'
-                : 'text-[13px] uppercase tracking-[0.15em] font-semibold text-ink block mb-3'
-          }>
-            Signature
-          </span>
-          <div className={`flex ${cornerStyle === 'sharp' ? 'rounded-none' : cornerStyle === 'subtle' ? 'rounded-sm' : 'rounded-lg'} border border-border/30 overflow-hidden`}>
-            {([
-              { key: 'all', label: 'All' },
-              { key: 'signed', label: 'Signed' },
-              { key: 'unsigned', label: 'Mumei' },
-            ]).map(({ key, label }, i) => {
-              const isActive = key === 'all'
-                ? filters.signatureStatuses.length === 0
-                : filters.signatureStatuses.length === 1 && filters.signatureStatuses[0] === key;
-              return (
-                <button
-                  key={key}
-                  onClick={() => {
-                    if (key === 'all') {
-                      onFilterChange('signatureStatuses', []);
-                    } else {
-                      // Toggle: if already selected, clear; otherwise set
-                      if (isActive) {
-                        onFilterChange('signatureStatuses', []);
-                      } else {
-                        onFilterChange('signatureStatuses', [key]);
-                      }
-                    }
-                  }}
-                  className={`flex-1 py-[7px] text-[11px] font-semibold tracking-[0.03em] transition-colors ${
-                    i > 0 ? 'border-l border-border/20' : ''
-                  } ${
-                    isActive
-                      ? selectStyle === 'bold'
-                        ? 'bg-gold text-white'
-                        : selectStyle === 'tint'
-                          ? 'bg-gold/12 text-gold'
-                          : 'border border-gold/50 text-gold -m-px'
-                      : 'text-muted hover:text-ink hover:bg-hover/30'
-                  }`}
-                >
-                  {label}
-                </button>
-              );
-            })}
+        {/* 5. Signature (collapsed by default) */}
+        <FilterSection title="Signature" defaultOpen={false} variant={variant} activeCount={filters.signatureStatuses.length}>
+          <div className={elevated ? 'space-y-0' : 'space-y-1'}>
+            {facets.signatureStatuses?.map((facet) => (
+              <Checkbox key={facet.value} label={SIGNATURE_LABELS[facet.value] || facet.value} count={facet.count} checked={filters.signatureStatuses.includes(facet.value)} onChange={(checked) => handleSignatureChange(facet.value, checked)} variant={variant} />
+            ))}
+            {(!facets.signatureStatuses || facets.signatureStatuses.length === 0) && <p className={`${isB ? 'text-[11px]' : 'text-[14px]'} text-muted italic py-2`}>No signature data</p>}
           </div>
-        </div>
+        </FilterSection>
 
         {elevated && <div className={`border-t ${isB ? 'border-border/15' : 'border-border/30'}`} />}
 
