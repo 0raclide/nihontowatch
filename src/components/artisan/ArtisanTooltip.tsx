@@ -637,7 +637,7 @@ export function ArtisanTooltip({
               onTouchMove={handleTouchDragMove}
               onTouchEnd={handleTouchDragEnd}
               className={`flex items-center justify-between px-4 pt-3 pb-2 border-b border-border/50 select-none ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
-              style={{ touchAction: 'none' }}
+              style={{ touchAction: isDragging ? 'none' : 'auto' }}
             >
               <div className="flex items-center gap-2">
                 {/* Drag grip */}

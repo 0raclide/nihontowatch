@@ -325,7 +325,7 @@ export function QuickViewMobileSheet({
       {/* Draggable header area - entire top section responds to drag gestures */}
       <div
         className="cursor-grab active:cursor-grabbing shrink-0"
-        style={{ touchAction: 'none' }}
+        style={{ touchAction: isDragging ? 'none' : 'auto' }}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
