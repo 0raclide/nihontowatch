@@ -7,6 +7,7 @@ import { parseSemanticQuery, PROVINCE_VARIANTS } from '@/lib/search/semanticQuer
 import { CACHE, PAGINATION, LISTING_FILTERS } from '@/lib/constants';
 import { getArtisanNames, resolveArtisanCodesFromText } from '@/lib/supabase/yuhinkai';
 import { getArtisanDisplayName } from '@/lib/artisan/displayName';
+import { getArtisanTier } from '@/lib/artisan/tier';
 import { getUserSubscription, getDataDelayCutoff } from '@/lib/subscription/server';
 import { logger } from '@/lib/logger';
 
@@ -678,10 +679,11 @@ export async function GET(request: NextRequest) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         enrichedListings = enrichedListings.map((listing: any) => {
           if (listing.artisan_id && artisanNameMap.has(listing.artisan_id)) {
-            const { name_romaji, school } = artisanNameMap.get(listing.artisan_id)!;
+            const entry = artisanNameMap.get(listing.artisan_id)!;
             return {
               ...listing,
-              artisan_display_name: getArtisanDisplayName(name_romaji, school),
+              artisan_display_name: getArtisanDisplayName(entry.name_romaji, entry.school),
+              artisan_tier: getArtisanTier(entry),
             };
           }
           return listing;

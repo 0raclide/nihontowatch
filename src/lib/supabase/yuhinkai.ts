@@ -211,24 +211,37 @@ export async function resolveArtisanCodesFromText(textWords: string[]): Promise<
  * Queries smith_entities and tosogu_makers in parallel.
  * Used by browse/listing APIs to enrich badges with display names.
  */
+export interface ArtisanNameEntry {
+  name_romaji: string | null;
+  school: string | null;
+  kokuho_count: number;
+  jubun_count: number;
+  jubi_count: number;
+  gyobutsu_count: number;
+  tokuju_count: number;
+  juyo_count: number;
+}
+
 export async function getArtisanNames(
   codes: string[]
-): Promise<Map<string, { name_romaji: string | null; school: string | null }>> {
-  const result = new Map<string, { name_romaji: string | null; school: string | null }>();
+): Promise<Map<string, ArtisanNameEntry>> {
+  const result = new Map<string, ArtisanNameEntry>();
   if (codes.length === 0) return result;
 
   const BATCH_SIZE = 200;
+  const selectFields = 'smith_id, name_romaji, school, kokuho_count, jubun_count, jubi_count, gyobutsu_count, tokuju_count, juyo_count';
+  const tosoguFields = 'maker_id, name_romaji, school, kokuho_count, jubun_count, jubi_count, gyobutsu_count, tokuju_count, juyo_count';
 
   // Query both tables in parallel
   const [smithResults, tosoguResults] = await Promise.all([
     // Smith entities
     (async () => {
-      const rows: Array<{ smith_id: string; name_romaji: string | null; school: string | null }> = [];
+      const rows: Array<{ smith_id: string; name_romaji: string | null; school: string | null; kokuho_count: number; jubun_count: number; jubi_count: number; gyobutsu_count: number; tokuju_count: number; juyo_count: number }> = [];
       for (let i = 0; i < codes.length; i += BATCH_SIZE) {
         const batch = codes.slice(i, i + BATCH_SIZE);
         const { data } = await yuhinkaiClient
           .from('smith_entities')
-          .select('smith_id, name_romaji, school')
+          .select(selectFields)
           .in('smith_id', batch);
         if (data) rows.push(...(data as typeof rows));
       }
@@ -236,12 +249,12 @@ export async function getArtisanNames(
     })(),
     // Tosogu makers
     (async () => {
-      const rows: Array<{ maker_id: string; name_romaji: string | null; school: string | null }> = [];
+      const rows: Array<{ maker_id: string; name_romaji: string | null; school: string | null; kokuho_count: number; jubun_count: number; jubi_count: number; gyobutsu_count: number; tokuju_count: number; juyo_count: number }> = [];
       for (let i = 0; i < codes.length; i += BATCH_SIZE) {
         const batch = codes.slice(i, i + BATCH_SIZE);
         const { data } = await yuhinkaiClient
           .from('tosogu_makers')
-          .select('maker_id, name_romaji, school')
+          .select(tosoguFields)
           .in('maker_id', batch);
         if (data) rows.push(...(data as typeof rows));
       }
@@ -250,11 +263,29 @@ export async function getArtisanNames(
   ]);
 
   for (const row of smithResults) {
-    result.set(row.smith_id, { name_romaji: row.name_romaji, school: row.school });
+    result.set(row.smith_id, {
+      name_romaji: row.name_romaji,
+      school: row.school,
+      kokuho_count: row.kokuho_count || 0,
+      jubun_count: row.jubun_count || 0,
+      jubi_count: row.jubi_count || 0,
+      gyobutsu_count: row.gyobutsu_count || 0,
+      tokuju_count: row.tokuju_count || 0,
+      juyo_count: row.juyo_count || 0,
+    });
   }
   for (const row of tosoguResults) {
     if (!result.has(row.maker_id)) {
-      result.set(row.maker_id, { name_romaji: row.name_romaji, school: row.school });
+      result.set(row.maker_id, {
+        name_romaji: row.name_romaji,
+        school: row.school,
+        kokuho_count: row.kokuho_count || 0,
+        jubun_count: row.jubun_count || 0,
+        jubi_count: row.jubi_count || 0,
+        gyobutsu_count: row.gyobutsu_count || 0,
+        tokuju_count: row.tokuju_count || 0,
+        juyo_count: row.juyo_count || 0,
+      });
     }
   }
 

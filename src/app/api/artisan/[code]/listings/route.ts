@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getArtisanNames } from '@/lib/supabase/yuhinkai';
 import { getArtisanDisplayName } from '@/lib/artisan/displayName';
+import { getArtisanTier } from '@/lib/artisan/tier';
 import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
@@ -104,8 +105,12 @@ export async function GET(
         const nameMap = await getArtisanNames(uniqueCodes);
         enriched = enriched.map((listing: any) => {
           if (listing.artisan_id && nameMap.has(listing.artisan_id)) {
-            const { name_romaji, school } = nameMap.get(listing.artisan_id)!;
-            return { ...listing, artisan_display_name: getArtisanDisplayName(name_romaji, school) };
+            const entry = nameMap.get(listing.artisan_id)!;
+            return {
+              ...listing,
+              artisan_display_name: getArtisanDisplayName(entry.name_romaji, entry.school),
+              artisan_tier: getArtisanTier(entry),
+            };
           }
           return listing;
         });

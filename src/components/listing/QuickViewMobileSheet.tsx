@@ -485,6 +485,29 @@ export function QuickViewMobileSheet({
                   {listing.artisan_display_name || listing.artisan_id}
                 </div>
               </div>
+              {listing.artisan_tier && (
+                <svg
+                  className={`w-3.5 h-3.5 shrink-0 ${
+                    listing.artisan_tier === 'kokuho' ? 'text-amber-400' :
+                    listing.artisan_tier === 'elite' ? 'text-purple-400' :
+                    'text-blue-400'
+                  }`}
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  aria-label={
+                    listing.artisan_tier === 'kokuho' ? 'National Treasure designated' :
+                    listing.artisan_tier === 'elite' ? 'Elite designated' :
+                    'Juyo designated'
+                  }
+                >
+                  <title>{
+                    listing.artisan_tier === 'kokuho' ? 'National Treasure' :
+                    listing.artisan_tier === 'elite' ? 'Elite' :
+                    'Juyo'
+                  }</title>
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                </svg>
+              )}
               <svg className="w-3.5 h-3.5 text-gold/60 group-hover:text-gold transition-all shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>

@@ -466,6 +466,7 @@ export interface Listing {
   artisan_id?: string;
   artisan_confidence?: 'HIGH' | 'MEDIUM' | 'LOW' | 'NONE';
   artisan_display_name?: string;
+  artisan_tier?: 'kokuho' | 'elite' | 'juyo' | null;
   artisan_method?: string | null;
   artisan_candidates?: Array<{
     artisan_id: string;

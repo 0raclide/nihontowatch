@@ -4,6 +4,7 @@ import { CACHE } from '@/lib/constants';
 import { logger } from '@/lib/logger';
 import { getArtisanNames } from '@/lib/supabase/yuhinkai';
 import { getArtisanDisplayName } from '@/lib/artisan/displayName';
+import { getArtisanTier } from '@/lib/artisan/tier';
 
 // Disable ISR caching - use HTTP Cache-Control instead
 // This allows ?nocache=1 to properly bypass all caching layers for debugging
@@ -251,13 +252,15 @@ export async function GET(
       }
     }
 
-    // Resolve artisan display name from Yuhinkai
+    // Resolve artisan display name and tier from Yuhinkai
     let artisanDisplayName: string | undefined;
+    let artisanTier: 'kokuho' | 'elite' | 'juyo' | null = null;
     if (typedListing.artisan_id) {
       const artisanNameMap = await getArtisanNames([typedListing.artisan_id]);
       const artisanData = artisanNameMap.get(typedListing.artisan_id);
       if (artisanData) {
         artisanDisplayName = getArtisanDisplayName(artisanData.name_romaji, artisanData.school);
+        artisanTier = getArtisanTier(artisanData);
       }
     }
 
@@ -269,8 +272,9 @@ export async function GET(
       yuhinkai_enrichment,
       // Remove the array version
       listing_yuhinkai_enrichment: undefined,
-      // Artisan display name from Yuhinkai
+      // Artisan display name and tier from Yuhinkai
       ...(artisanDisplayName && { artisan_display_name: artisanDisplayName }),
+      ...(artisanTier && { artisan_tier: artisanTier }),
       // Add sale price from history if available
       ...(priceFromHistory && {
         price_value: salePrice,
