@@ -343,7 +343,7 @@ export function ArtisanTooltip({
     }
   }, [isOpen, showCorrectionSearch]);
 
-  // Drag-to-reposition handlers
+  // Drag-to-reposition handlers (mouse)
   const handleDragStart = useCallback((e: React.MouseEvent) => {
     // Only drag from left mouse button, ignore clicks on buttons/inputs
     if (e.button !== 0) return;
@@ -358,6 +358,63 @@ export function ArtisanTooltip({
     if (el) {
       const rect = el.getBoundingClientRect();
       dragOffsetRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    }
+  }, []);
+
+  // Drag-to-reposition handlers (touch — press-hold to move on mobile)
+  const touchHoldTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const touchStartPos = useRef({ x: 0, y: 0 });
+
+  const handleTouchDragStart = useCallback((e: React.TouchEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.closest('button') || target.closest('input') || target.closest('a')) return;
+
+    const touch = e.touches[0];
+    touchStartPos.current = { x: touch.clientX, y: touch.clientY };
+
+    // Start drag after 200ms hold
+    touchHoldTimer.current = setTimeout(() => {
+      setIsDragging(true);
+      isDraggingRef.current = true;
+
+      const el = tooltipRef.current;
+      if (el) {
+        const rect = el.getBoundingClientRect();
+        dragOffsetRef.current = { x: touch.clientX - rect.left, y: touch.clientY - rect.top };
+      }
+    }, 200);
+  }, []);
+
+  const handleTouchDragMove = useCallback((e: React.TouchEvent) => {
+    const touch = e.touches[0];
+
+    // Cancel hold timer if finger moved before hold threshold
+    if (touchHoldTimer.current && !isDraggingRef.current) {
+      const dx = touch.clientX - touchStartPos.current.x;
+      const dy = touch.clientY - touchStartPos.current.y;
+      if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+        clearTimeout(touchHoldTimer.current);
+        touchHoldTimer.current = null;
+      }
+      return;
+    }
+
+    if (!isDraggingRef.current) return;
+    e.preventDefault();
+
+    const newLeft = touch.clientX - dragOffsetRef.current.x;
+    const newTop = touch.clientY - dragOffsetRef.current.y;
+    setTooltipStyle(prev => ({ ...prev, top: `${newTop}px`, left: `${newLeft}px` }));
+  }, []);
+
+  const handleTouchDragEnd = useCallback(() => {
+    if (touchHoldTimer.current) {
+      clearTimeout(touchHoldTimer.current);
+      touchHoldTimer.current = null;
+    }
+    if (isDraggingRef.current) {
+      setIsDragging(false);
+      isDraggingRef.current = false;
     }
   }, []);
 
@@ -465,10 +522,14 @@ export function ArtisanTooltip({
             aria-live="polite"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Draggable header — grab to reposition */}
+            {/* Draggable header — grab to reposition (mouse or touch-hold) */}
             <div
               onMouseDown={handleDragStart}
+              onTouchStart={handleTouchDragStart}
+              onTouchMove={handleTouchDragMove}
+              onTouchEnd={handleTouchDragEnd}
               className={`flex items-center justify-between px-4 pt-3 pb-2 border-b border-border/50 select-none ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+              style={{ touchAction: 'none' }}
             >
               <div className="flex items-center gap-2">
                 {/* Drag grip */}

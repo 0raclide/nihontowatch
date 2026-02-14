@@ -13,7 +13,6 @@ import { LoginModal } from '@/components/auth/LoginModal';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { useActivityTrackerOptional } from '@/lib/tracking/ActivityTracker';
 import { MetadataGrid, getCertInfo, getArtisanInfo } from './MetadataGrid';
-import { ArtisanTooltip } from '@/components/artisan/ArtisanTooltip';
 import { useQuickViewOptional } from '@/contexts/QuickViewContext';
 import { SetsumeiSection } from './SetsumeiSection';
 import { TranslatedDescription } from './TranslatedDescription';
@@ -474,31 +473,6 @@ export function QuickViewMobileSheet({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             </a>
-            {isAdmin && (
-              <ArtisanTooltip
-                listingId={listing.id}
-                artisanId={listing.artisan_id}
-                confidence={listing.artisan_confidence as 'HIGH' | 'MEDIUM' | 'LOW'}
-                method={listing.artisan_method}
-                candidates={listing.artisan_candidates}
-                verified={listing.artisan_verified}
-                onArtisanFixed={(newId) => quickView?.refreshCurrentListing({
-                  artisan_id: newId,
-                  artisan_confidence: newId === 'UNKNOWN' ? 'LOW' : 'HIGH',
-                  artisan_method: 'ADMIN_CORRECTION',
-                  artisan_verified: 'correct' as const,
-                  artisan_display_name: newId === 'UNKNOWN' ? 'Unlisted artist' : newId,
-                })}
-                adminHidden={listing.admin_hidden}
-                onToggleHidden={handleToggleHidden}
-              >
-                <span className="text-muted hover:text-ink transition-colors p-1 cursor-pointer shrink-0">
-                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                  </svg>
-                </span>
-              </ArtisanTooltip>
-            )}
           </div>
         )}
 
