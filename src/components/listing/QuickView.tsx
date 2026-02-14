@@ -111,31 +111,62 @@ export function QuickView() {
   // We avoid dynamically toggling overscrollBehaviorY because iOS Safari's
   // scroll engine locks up after the first bounce when the property is mutated
   // inside a scroll handler.
+  //
+  // IMPORTANT: The non-passive touchmove is only attached while an at-top
+  // gesture is live, and uses an 8px direction-lock threshold before calling
+  // preventDefault. A permanent { passive: false } touchmove on the scroller
+  // kills two-finger scroll in Chrome DevTools emulation (see commit 6502af4).
   useEffect(() => {
     const scroller = mobileScrollContainerRef.current;
     if (!scroller) return;
 
     let startY = 0;
     let startScrollTop = 0;
+    let committed = false;
+
+    const onTouchMove = (e: TouchEvent) => {
+      const dy = e.touches[0].clientY - startY; // positive = pulling down
+
+      // Direction lock: wait for 8px of movement before deciding
+      if (!committed) {
+        if (Math.abs(dy) < 8) return;
+        committed = true;
+        if (dy <= 0) {
+          // Scrolling down (finger up) — not a top-bounce gesture, release
+          scroller.removeEventListener('touchmove', onTouchMove);
+          return;
+        }
+      }
+
+      // Committed upward pull while at top — block top bounce
+      if (startScrollTop <= 0 && dy > 0) {
+        e.preventDefault();
+      }
+    };
 
     const onTouchStart = (e: TouchEvent) => {
       startY = e.touches[0].clientY;
       startScrollTop = scroller.scrollTop;
-    };
+      committed = false;
 
-    const onTouchMove = (e: TouchEvent) => {
-      const dy = e.touches[0].clientY - startY; // positive = pulling down
-      if (startScrollTop <= 0 && dy > 0) {
-        e.preventDefault(); // block top bounce
+      // Only attach non-passive handler when at the top where bounce can occur.
+      // When scrolled down, no listener → compositor fast-paths scroll.
+      if (startScrollTop <= 2) {
+        scroller.addEventListener('touchmove', onTouchMove, { passive: false });
       }
     };
 
+    const onTouchEnd = () => {
+      scroller.removeEventListener('touchmove', onTouchMove);
+    };
+
     scroller.addEventListener('touchstart', onTouchStart, { passive: true });
-    scroller.addEventListener('touchmove', onTouchMove, { passive: false });
+    scroller.addEventListener('touchend', onTouchEnd, { passive: true });
 
     return () => {
       scroller.removeEventListener('touchstart', onTouchStart);
       scroller.removeEventListener('touchmove', onTouchMove);
+      scroller.removeEventListener('touchend', onTouchEnd);
     };
   }, [isStudyMode, isOpen]);
 
