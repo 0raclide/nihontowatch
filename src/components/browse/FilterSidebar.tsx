@@ -25,9 +25,10 @@ interface FilterSidebarProps {
   panelControls?: PanelControls;
   cornerStyle?: CornerStyle;
   selectStyle?: SelectStyle;
+  priceHistogram?: FilterContentProps['priceHistogram'];
 }
 
-export function FilterSidebar({ facets, filters, onFilterChange, isAdmin, variant = 'default', panelControls, cornerStyle = 'soft', selectStyle = 'bold' }: FilterSidebarProps) {
+export function FilterSidebar({ facets, filters, onFilterChange, isAdmin, variant = 'default', panelControls, cornerStyle = 'soft', selectStyle = 'bold', priceHistogram }: FilterSidebarProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Prevent scroll events from propagating to the page when at scroll boundaries
@@ -194,6 +195,7 @@ export function FilterSidebar({ facets, filters, onFilterChange, isAdmin, varian
                   variant="b"
                   cornerStyle={cornerStyle}
                   selectStyle={selectStyle}
+                  priceHistogram={priceHistogram}
                 />
                 {/* Currency — quiet preference */}
                 {hasPanelCurrency && (
@@ -249,6 +251,7 @@ export function FilterSidebar({ facets, filters, onFilterChange, isAdmin, varian
             filters={filters}
             onFilterChange={onFilterChange}
             isAdmin={isAdmin}
+            priceHistogram={priceHistogram}
           />
         </div>
       </div>

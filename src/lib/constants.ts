@@ -411,3 +411,22 @@ export const DEALERS_WITHOUT_IMAGES: string[] = [
  * @see docs/YUHINKAI_SETSUMEI_CONNECTION.md for details
  */
 export const SHOW_AUTO_MATCHED_ENRICHMENTS = false;
+
+// =============================================================================
+// PRICE HISTOGRAM
+// =============================================================================
+
+export const PRICE_HISTOGRAM = {
+  /** Log-spaced bucket boundaries in JPY */
+  BOUNDARIES: [
+    100_000, 150_000, 200_000, 300_000, 400_000, 500_000, 700_000,
+    1_000_000, 1_500_000, 2_000_000, 3_000_000, 4_000_000, 5_000_000,
+    7_000_000, 10_000_000, 15_000_000, 20_000_000, 30_000_000, 45_000_000, 60_000_000,
+  ],
+  /** Maximum bar height in pixels */
+  MAX_BAR_HEIGHT: 48,
+  /** Minimum bar height in pixels (so buckets with 1 item are still visible) */
+  MIN_BAR_HEIGHT: 2,
+  /** Debounce delay for API calls after drag ends (ms) */
+  DEBOUNCE_MS: 300,
+} as const;

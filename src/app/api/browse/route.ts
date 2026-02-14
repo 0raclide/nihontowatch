@@ -741,10 +741,8 @@ export async function GET(request: NextRequest) {
     // Get data delay cutoff for free tier (used by facets too)
     const delayCutoff = subscription.isDelayed ? getDataDelayCutoff() : undefined;
 
-    // Get facet counts via single SQL RPC call (replaces 50-100+ JS-side round-trips)
-    // Each facet dimension is filtered by all OTHER active filters (standard cross-filter pattern)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: facetsData, error: facetsError } = await (supabase.rpc as any)('get_browse_facets', {
+    // Shared RPC params (used by both facets and histogram)
+    const rpcBaseParams = {
       p_tab: params.tab === 'all' ? 'all' : params.tab,
       p_admin_hidden: subscription.isAdmin || false,
       p_delay_cutoff: delayCutoff || null,
@@ -756,7 +754,19 @@ export async function GET(request: NextRequest) {
       p_historical_periods: params.historicalPeriods || null,
       p_signature_statuses: params.signatureStatuses || null,
       p_ask_only: params.askOnly || false,
-    });
+    };
+
+    // Get facet counts + price histogram in parallel via SQL RPC calls
+    // Each facet dimension is filtered by all OTHER active filters (standard cross-filter pattern)
+    // Histogram is cross-filtered by all dimensions EXCEPT price (shows full price distribution)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [facetsResult, histogramResult] = await Promise.all([
+      (supabase.rpc as any)('get_browse_facets', rpcBaseParams),
+      (supabase.rpc as any)('get_price_histogram', rpcBaseParams),
+    ]);
+
+    const { data: facetsData, error: facetsError } = facetsResult;
+    const { data: histogramData, error: histogramError } = histogramResult;
 
     // Parse facets from RPC response (already in the correct shape for FilterContent)
     const facets = facetsError ? {
@@ -775,6 +785,10 @@ export async function GET(request: NextRequest) {
 
     if (facetsError) {
       logger.error('Facets RPC error', { error: facetsError });
+    }
+
+    if (histogramError) {
+      logger.error('Histogram RPC error', { error: histogramError });
     }
 
     // Get the most recent scrape timestamp for freshness indicator
@@ -797,6 +811,14 @@ export async function GET(request: NextRequest) {
       .select('id', { count: 'exact', head: true })
       .eq('is_active', true);
 
+    // Parse histogram from RPC response
+    const priceHistogram = histogramError ? null : (histogramData as {
+      buckets: { idx: number; count: number }[];
+      boundaries: number[];
+      totalPriced: number;
+      maxPrice: number;
+    } | null);
+
     // Create response with cache headers
     const response = NextResponse.json({
       listings: enrichedListings,
@@ -804,6 +826,7 @@ export async function GET(request: NextRequest) {
       page: safePage,
       totalPages: Math.ceil((count || 0) / params.limit!),
       facets,
+      priceHistogram,
       totalDealerCount: totalDealerCount || 0,
       lastUpdated,
       // Data freshness indicator for subscription tier

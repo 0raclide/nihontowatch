@@ -26,6 +26,7 @@ import { NewSinceLastVisitBanner } from '@/components/browse/NewSinceLastVisitBa
 import { useAuth } from '@/lib/auth/AuthContext';
 import { useNewSinceLastVisit } from '@/contexts/NewSinceLastVisitContext';
 import { NEW_SINCE_LAST_VISIT } from '@/lib/constants';
+import type { PriceHistogramData } from '@/components/browse/PriceHistogramSlider';
 
 
 interface Listing {
@@ -103,6 +104,7 @@ interface BrowseResponse {
     historicalPeriods: Facet[];
     signatureStatuses: Facet[];
   };
+  priceHistogram?: PriceHistogramData | null;
   totalDealerCount?: number;
   lastUpdated: string | null;
   isUrlSearch?: boolean;
@@ -628,6 +630,7 @@ function HomeContent() {
             variant={sidebarVariant}
             cornerStyle={cornerStyle}
             selectStyle={selectStyle}
+            priceHistogram={data?.priceHistogram}
             panelControls={{
               currency,
               onCurrencyChange: handleCurrencyChange,
@@ -666,6 +669,7 @@ function HomeContent() {
           onFilterChange={handleFilterChange}
           isUpdating={isLoading}
           isAdmin={authIsAdmin}
+          priceHistogram={data?.priceHistogram}
           sort={sort}
           onSortChange={(newSort) => {
             setSort(newSort);

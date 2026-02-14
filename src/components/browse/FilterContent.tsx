@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useMemo, memo } from 'react';
+import { PriceHistogramSlider, type PriceHistogramData } from './PriceHistogramSlider';
 
 export type SidebarVariant = 'default' | 'a' | 'b';
 
@@ -52,6 +53,8 @@ export interface FilterContentProps {
   variant?: SidebarVariant;
   cornerStyle?: CornerStyle;
   selectStyle?: SelectStyle;
+  /** Price histogram data for visual range slider */
+  priceHistogram?: PriceHistogramData | null;
   // Sort, currency, and availability for mobile drawer
   sort?: string;
   onSortChange?: (sort: string) => void;
@@ -371,6 +374,7 @@ export function FilterContent({
   variant,
   cornerStyle = 'soft',
   selectStyle = 'bold',
+  priceHistogram,
   sort,
   onSortChange,
   currency,
@@ -880,7 +884,7 @@ export function FilterContent({
 
         {elevated && <div className={`border-t ${isB ? 'border-border/15' : 'border-border/30'}`} />}
 
-        {/* 5. Price — min/max range inputs */}
+        {/* 5. Price — histogram slider with min/max inputs */}
         <div className={isB ? 'py-2' : elevated ? 'py-3' : 'py-5'}>
           <span className={
             isB
@@ -891,29 +895,16 @@ export function FilterContent({
           }>
             Price (¥)
           </span>
-          <div className="flex items-center gap-2">
-            <input
-              type="number"
-              placeholder="Min"
-              value={filters.priceMin ?? ''}
-              onChange={(e) => {
-                const v = e.target.value ? Number(e.target.value) : undefined;
-                onFilterChange('priceMin', v);
-              }}
-              className={`w-full ${isB ? 'px-2 py-1 text-[11px]' : 'px-2.5 py-1.5 text-[12px]'} rounded-md border border-border/25 bg-transparent text-ink placeholder:text-muted/50 focus:outline-none focus:border-gold/40 focus:ring-1 focus:ring-gold/20 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none`}
-            />
-            <span className="text-muted text-[11px] shrink-0">–</span>
-            <input
-              type="number"
-              placeholder="Max"
-              value={filters.priceMax ?? ''}
-              onChange={(e) => {
-                const v = e.target.value ? Number(e.target.value) : undefined;
-                onFilterChange('priceMax', v);
-              }}
-              className={`w-full ${isB ? 'px-2 py-1 text-[11px]' : 'px-2.5 py-1.5 text-[12px]'} rounded-md border border-border/25 bg-transparent text-ink placeholder:text-muted/50 focus:outline-none focus:border-gold/40 focus:ring-1 focus:ring-gold/20 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none`}
-            />
-          </div>
+          <PriceHistogramSlider
+            histogram={priceHistogram ?? null}
+            priceMin={filters.priceMin}
+            priceMax={filters.priceMax}
+            onPriceChange={(min, max) => {
+              onFilterChange('priceMin', min);
+              onFilterChange('priceMax', max);
+            }}
+            variant={variant}
+          />
         </div>
 
         {elevated && <div className={`border-t ${isB ? 'border-border/15' : 'border-border/30'}`} />}
