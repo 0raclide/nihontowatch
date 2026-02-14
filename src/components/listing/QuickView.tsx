@@ -36,7 +36,7 @@ export function QuickView() {
   } = useQuickView();
 
   const activityTracker = useActivityTrackerOptional();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const mobileScrollContainerRef = useRef<HTMLDivElement>(null);
   const [visibleImages, setVisibleImages] = useState<Set<number>>(new Set([0, 1]));
@@ -95,6 +95,7 @@ export function QuickView() {
       }
       if (mobileScrollContainerRef.current) {
         mobileScrollContainerRef.current.scrollTop = 0;
+        mobileScrollContainerRef.current.style.overscrollBehaviorY = 'none';
       }
     }
   }, [currentListing?.id]);
@@ -105,6 +106,29 @@ export function QuickView() {
       setHasScrolled(true);
     }
   }, [hasScrolled]);
+
+  // Directional overscroll for mobile image scroller:
+  // Allow bounce at bottom (natural end-of-content feel), prevent at top.
+  useEffect(() => {
+    const scroller = mobileScrollContainerRef.current;
+    if (!scroller) return;
+
+    scroller.style.overscrollBehaviorY = 'none';
+
+    const onScroll = () => {
+      const value = scroller.scrollTop > 0 ? 'auto' : 'none';
+      if (scroller.style.overscrollBehaviorY !== value) {
+        scroller.style.overscrollBehaviorY = value;
+      }
+    };
+
+    scroller.addEventListener('scroll', onScroll, { passive: true });
+
+    return () => {
+      scroller.removeEventListener('scroll', onScroll);
+      scroller.style.overscrollBehaviorY = '';
+    };
+  }, [isStudyMode, isOpen]);
 
   // Track pinch zoom gestures on images
   const handlePinchZoom = useCallback(
@@ -188,6 +212,15 @@ export function QuickView() {
   const isSold = currentListing.is_sold || currentListing.status === 'sold' || currentListing.status === 'presumed_sold';
   const placeholderKanji = getPlaceholderKanji(currentListing.item_type);
 
+  // Bottom padding so last image isn't hidden behind collapsed sheet
+  const hasArtistBlock = !!(
+    currentListing.artisan_id &&
+    currentListing.artisan_id !== 'UNKNOWN' &&
+    currentListing.artisan_confidence && currentListing.artisan_confidence !== 'NONE' &&
+    (isAdmin || !currentListing.artisan_id.startsWith('tmp'))
+  );
+  const mobileBottomPad = (hasArtistBlock ? 160 : 116) + 16;
+
   return (
     <Suspense fallback={null}>
       <QuickViewModal
@@ -212,7 +245,7 @@ export function QuickView() {
               data-testid="mobile-image-scroller"
               onScroll={handleScroll}
               onClick={toggleSheet}
-              className="flex-1 min-h-0 overflow-y-auto overscroll-none bg-ink/5 relative"
+              className="flex-1 min-h-0 overflow-y-auto bg-ink/5 relative"
             >
               {/* Sold overlay */}
               {isSold && (
@@ -273,6 +306,9 @@ export function QuickView() {
                   {images.length} images
                 </div>
               )}
+
+              {/* Spacer — clearance for collapsed metadata sheet */}
+              <div style={{ height: mobileBottomPad }} aria-hidden="true" />
             </div>
           )}
 
