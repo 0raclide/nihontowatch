@@ -24,9 +24,9 @@ interface PriceHistogramSliderProps {
 
 const { BOUNDARIES, MAX_BAR_HEIGHT, MIN_BAR_HEIGHT, DEBOUNCE_MS } = PRICE_HISTOGRAM;
 const BUCKET_COUNT = BOUNDARIES.length;
-const HANDLE_SIZE = 14; // px — diameter of drag handles
+const HANDLE_SIZE = 10; // px — diameter of drag handles
 const HANDLE_RADIUS = HANDLE_SIZE / 2;
-const BAR_GAP = 4; // px — gap between bottom of bars and handle center line
+const BAR_GAP = 6; // px — gap between bottom of bars and handle center line
 
 /** Format price value as compact label, currency-aware */
 function formatPrice(jpyValue: number, currency?: Currency, rates?: ExchangeRates | null): string {
@@ -274,24 +274,7 @@ export function PriceHistogramSlider({
           })}
         </div>
 
-        {/* Handle center line — positioned below bars with BAR_GAP clearance */}
-        {/* Baseline — thin full-width line */}
-        <div
-          className="absolute inset-x-0 h-px bg-border/8"
-          style={{ top: `${MAX_BAR_HEIGHT + BAR_GAP}px` }}
-        />
-
-        {/* Active range line — accent between handles */}
-        <div
-          className="absolute h-[1.5px] bg-gold/40 rounded-full"
-          style={{
-            top: `${MAX_BAR_HEIGHT + BAR_GAP - 0.25}px`,
-            left: `${minPct}%`,
-            right: `${100 - maxPct}%`,
-          }}
-        />
-
-        {/* Min handle — white circle, centered on baseline */}
+        {/* Min handle — white circle below bars */}
         <div
           className="absolute rounded-full bg-white cursor-grab active:cursor-grabbing z-10"
           style={{
@@ -332,24 +315,6 @@ export function PriceHistogramSlider({
         </span>
       </div>
 
-      {/* Min/Max text inputs */}
-      <div className="flex items-center gap-2">
-        <input
-          type="number"
-          placeholder="Min"
-          value={priceMin ?? ''}
-          onChange={(e) => handleMinInputChange(e.target.value)}
-          className={`w-full ${isB ? 'px-2 py-1 text-[11px]' : 'px-2.5 py-1.5 text-[12px]'} rounded-md border border-border/20 bg-transparent text-ink placeholder:text-muted/40 focus:outline-none focus:border-gold/40 focus:ring-1 focus:ring-gold/15 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none`}
-        />
-        <span className="text-muted/30 text-[10px] shrink-0">&ndash;</span>
-        <input
-          type="number"
-          placeholder="Max"
-          value={priceMax ?? ''}
-          onChange={(e) => handleMaxInputChange(e.target.value)}
-          className={`w-full ${isB ? 'px-2 py-1 text-[11px]' : 'px-2.5 py-1.5 text-[12px]'} rounded-md border border-border/20 bg-transparent text-ink placeholder:text-muted/40 focus:outline-none focus:border-gold/40 focus:ring-1 focus:ring-gold/15 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none`}
-        />
-      </div>
     </div>
   );
 }
