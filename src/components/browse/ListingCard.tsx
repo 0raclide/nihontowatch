@@ -492,6 +492,25 @@ export const ListingCard = memo(function ListingCard({
   const hoverTimerRef = useRef<NodeJS.Timeout | null>(null);
   const { preloadListing, cancelPreloads } = useImagePreloader();
 
+  // Admin: toggle hide/unhide listing
+  const handleToggleHidden = useCallback(async () => {
+    const newHidden = !listing.admin_hidden;
+    try {
+      const res = await fetch(`/api/listing/${listing.id}/hide`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ hidden: newHidden }),
+      });
+      if (res.ok) {
+        window.dispatchEvent(new CustomEvent('listing-refreshed', {
+          detail: { id: Number(listing.id), admin_hidden: newHidden },
+        }));
+      }
+    } catch {
+      // silently fail
+    }
+  }, [listing.id, listing.admin_hidden]);
+
   // Register for viewport tracking when mounted
   useEffect(() => {
     const element = cardRef.current;
@@ -843,6 +862,8 @@ export const ListingCard = memo(function ListingCard({
                 candidates={listing.artisan_candidates}
                 verified={listing.artisan_verified}
                 certType={listing.cert_type}
+                adminHidden={listing.admin_hidden}
+                onToggleHidden={handleToggleHidden}
               >
                 <span className={`${sz.attr} sm:text-[11px] lg:text-[12px] ${isUnknownArtisan ? 'italic text-muted' : 'font-medium text-ink border-b border-gold/40 pb-px'} truncate`}>
                   {primaryName}
@@ -864,7 +885,7 @@ export const ListingCard = memo(function ListingCard({
           </div>
         ) : isAdmin && !listing.artisan_id ? (
           <div className={`${sz.attrH} sm:h-[20px] lg:h-[22px] flex items-baseline`}>
-            <ArtisanTooltip listingId={parseInt(listing.id)} startInSearchMode certType={listing.cert_type}>
+            <ArtisanTooltip listingId={parseInt(listing.id)} startInSearchMode certType={listing.cert_type} adminHidden={listing.admin_hidden} onToggleHidden={handleToggleHidden}>
               <span className="text-[10px] font-medium text-muted hover:text-ink transition-colors cursor-pointer">
                 Set artisan
               </span>
