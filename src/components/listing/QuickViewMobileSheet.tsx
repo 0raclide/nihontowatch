@@ -15,7 +15,6 @@ import { useActivityTrackerOptional } from '@/lib/tracking/ActivityTracker';
 import { saveListingReturnContext } from '@/lib/listing/returnContext';
 import { MetadataGrid, getCertInfo, getArtisanInfo } from './MetadataGrid';
 import { useQuickViewOptional } from '@/contexts/QuickViewContext';
-import { SetsumeiSection } from './SetsumeiSection';
 import { TranslatedDescription } from './TranslatedDescription';
 import { TranslatedTitle } from './TranslatedTitle';
 import { QuickMeasurement } from './QuickMeasurement';
@@ -559,13 +558,6 @@ export function QuickViewMobileSheet({
 
             {/* Description */}
             <TranslatedDescription listing={listing} maxLines={12} />
-
-            {/* NBTHK Zufu Commentary (Juyo/Tokuju only) - expands in-place */}
-            <SetsumeiSection
-              listing={listing}
-              variant="preview"
-              previewLength={300}
-            />
           </div>
 
           {/* Sticky CTA - extra padding for iOS browser chrome */}
