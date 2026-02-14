@@ -470,8 +470,9 @@ export function QuickViewMobileSheet({
                 e.preventDefault();
                 // Save return context so artist page can show a "Return to Listing" pill
                 saveListingReturnContext(listing);
-                // Navigate directly — don't call closeQuickView() first because
-                // its history.back() races with router.push() and cancels navigation on mobile.
+                // Dismiss QuickView UI without history.back() to avoid the race
+                // that cancels router.push() on mobile.
+                quickView?.dismissForNavigation?.();
                 router.push(`/artists/${listing.artisan_id}`);
               }}
               className="group flex items-center gap-3 flex-1 min-w-0 cursor-pointer"

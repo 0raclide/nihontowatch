@@ -33,6 +33,8 @@ interface QuickViewContextType {
   openQuickView: (listing: Listing, options?: { skipFetch?: boolean }) => void;
   /** Close the quick view modal */
   closeQuickView: () => void;
+  /** Dismiss QuickView UI without history.back() — for use before router.push() navigation */
+  dismissForNavigation: () => void;
   /** Array of listings for navigation (optional) */
   listings: Listing[];
   /** Current index in the listings array */
@@ -217,6 +219,19 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
       historyBackInProgressRef.current = false;
     }, 300);
   }, [updateUrl]);
+
+  // Dismiss QuickView UI without calling history.back().
+  // Use before router.push() to avoid the history.back() ↔ pushState race
+  // that cancels navigation on mobile.
+  const dismissForNavigation = useCallback(() => {
+    setIsOpen(false);
+    setCurrentListing(null);
+    setCurrentIndex(-1);
+    setIsAlertMode(false);
+    // Don't pop history — router.push() will push a new entry on top.
+    // The old ?listing= entry stays in the stack so browser-back reopens it.
+    pushedHistoryRef.current = false;
+  }, []);
 
   // Navigate to next listing
   const goToNext = useCallback(() => {
@@ -487,6 +502,7 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
       currentListing,
       openQuickView,
       closeQuickView,
+      dismissForNavigation,
       listings,
       currentIndex,
       goToNext,
@@ -503,6 +519,7 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
       currentListing,
       openQuickView,
       closeQuickView,
+      dismissForNavigation,
       listings,
       currentIndex,
       goToNext,
