@@ -95,7 +95,6 @@ export function QuickView() {
       }
       if (mobileScrollContainerRef.current) {
         mobileScrollContainerRef.current.scrollTop = 0;
-        mobileScrollContainerRef.current.style.overscrollBehaviorY = 'none';
       }
     }
   }, [currentListing?.id]);
@@ -108,25 +107,35 @@ export function QuickView() {
   }, [hasScrolled]);
 
   // Directional overscroll for mobile image scroller:
-  // Allow bounce at bottom (natural end-of-content feel), prevent at top.
+  // CSS allows bounce everywhere; JS blocks top bounce via touch interception.
+  // We avoid dynamically toggling overscrollBehaviorY because iOS Safari's
+  // scroll engine locks up after the first bounce when the property is mutated
+  // inside a scroll handler.
   useEffect(() => {
     const scroller = mobileScrollContainerRef.current;
     if (!scroller) return;
 
-    scroller.style.overscrollBehaviorY = 'none';
+    let startY = 0;
+    let startScrollTop = 0;
 
-    const onScroll = () => {
-      const value = scroller.scrollTop > 0 ? 'auto' : 'none';
-      if (scroller.style.overscrollBehaviorY !== value) {
-        scroller.style.overscrollBehaviorY = value;
+    const onTouchStart = (e: TouchEvent) => {
+      startY = e.touches[0].clientY;
+      startScrollTop = scroller.scrollTop;
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      const dy = e.touches[0].clientY - startY; // positive = pulling down
+      if (startScrollTop <= 0 && dy > 0) {
+        e.preventDefault(); // block top bounce
       }
     };
 
-    scroller.addEventListener('scroll', onScroll, { passive: true });
+    scroller.addEventListener('touchstart', onTouchStart, { passive: true });
+    scroller.addEventListener('touchmove', onTouchMove, { passive: false });
 
     return () => {
-      scroller.removeEventListener('scroll', onScroll);
-      scroller.style.overscrollBehaviorY = '';
+      scroller.removeEventListener('touchstart', onTouchStart);
+      scroller.removeEventListener('touchmove', onTouchMove);
     };
   }, [isStudyMode, isOpen]);
 
@@ -219,7 +228,7 @@ export function QuickView() {
     currentListing.artisan_confidence && currentListing.artisan_confidence !== 'NONE' &&
     (isAdmin || !currentListing.artisan_id.startsWith('tmp'))
   );
-  const mobileBottomPad = (hasArtistBlock ? 160 : 116) + 16;
+  const mobileBottomPad = hasArtistBlock ? 160 : 116;
 
   return (
     <Suspense fallback={null}>
@@ -245,7 +254,7 @@ export function QuickView() {
               data-testid="mobile-image-scroller"
               onScroll={handleScroll}
               onClick={toggleSheet}
-              className="flex-1 min-h-0 overflow-y-auto bg-ink/5 relative"
+              className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain bg-ink/5 relative"
             >
               {/* Sold overlay */}
               {isSold && (
