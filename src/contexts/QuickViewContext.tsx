@@ -13,6 +13,7 @@ import {
 import { usePathname } from 'next/navigation';
 import type { Listing } from '@/types';
 import { useSignupPressureOptional } from './SignupPressureContext';
+import { useAuth } from '@/lib/auth/AuthContext';
 import {
   getAllImages,
   isValidItemImage,
@@ -75,6 +76,7 @@ interface QuickViewProviderProps {
 export function QuickViewProvider({ children }: QuickViewProviderProps) {
   const pathname = usePathname();
   const signupPressure = useSignupPressureOptional();
+  const { isAdmin } = useAuth();
 
   const [isOpen, setIsOpen] = useState(false);
   const [currentListing, setCurrentListing] = useState<Listing | null>(null);
@@ -116,9 +118,13 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
   }, []);
 
   // Fetch full listing data from API (includes enrichment)
+  // Admin users bypass Vercel edge cache to see admin corrections immediately
   const fetchFullListing = useCallback(async (listingId: number) => {
     try {
-      const response = await fetch(`/api/listing/${listingId}`);
+      const url = isAdmin
+        ? `/api/listing/${listingId}?nocache=1`
+        : `/api/listing/${listingId}`;
+      const response = await fetch(url);
       if (!response.ok) {
         console.error('Failed to fetch full listing:', response.status);
         return null;
@@ -129,7 +135,7 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
       console.error('Error fetching full listing:', error);
       return null;
     }
-  }, []);
+  }, [isAdmin]);
 
   // Open quick view
   const openQuickView = useCallback((listing: Listing, options?: { skipFetch?: boolean }) => {
