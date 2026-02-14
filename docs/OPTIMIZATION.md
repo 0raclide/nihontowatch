@@ -37,21 +37,6 @@ const PRIORITY_COUNT = 10;        // Above-the-fold images
 const INTERSECTION_MARGIN = '200px'; // Load buffer zone
 ```
 
-### ListingCard Visibility Prop
-
-**File**: `src/components/browse/ListingCard.tsx`
-
-Cards accept an `isNearViewport` prop that controls image loading:
-- `true`: Load the actual image with Next.js Image optimization
-- `false`: Show a placeholder div (no network request)
-
-```typescript
-interface ListingCardProps {
-  // ...
-  isNearViewport?: boolean; // Controls lazy loading
-}
-```
-
 ### QuickView Image Optimization
 
 **File**: `src/components/listing/QuickView.tsx`
@@ -334,9 +319,9 @@ Consider adding `react-window` or `@tanstack/react-virtual` if:
 ### Images Not Loading Lazily
 
 Check that:
-1. `isNearViewport` prop is being passed to ListingCard
+1. `loading="lazy"` is set on non-priority images (handled automatically by ListingCard)
 2. IntersectionObserver is supported (all modern browsers)
-3. Cards have `data-index` attribute
+3. CSS `content-visibility: auto` is active on mobile (`.ios-native-virtualize` class)
 
 ### Cache Not Working
 

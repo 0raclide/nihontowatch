@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { createServiceClient } from '@/lib/supabase/server';
 import { Header } from '@/components/layout/Header';
+import { Breadcrumbs } from '@/components/ui/Breadcrumbs';
+import { Footer } from '@/components/layout/Footer';
 import { BottomTabBar } from '@/components/navigation/BottomTabBar';
 import {
   generateDealerJsonLd,
@@ -79,7 +81,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   if (!dealer) {
     return {
-      title: 'Dealer Not Found | Nihontowatch',
+      title: 'Dealer Not Found | NihontoWatch',
       description: 'The requested dealer could not be found.',
     };
   }
@@ -95,7 +97,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const flag = getCountryFlag(dealer.country);
 
   return {
-    title: `${dealer.name} ${flag} | Japanese Sword Dealer | Nihontowatch`,
+    title: `${dealer.name} ${flag} | Japanese Sword Dealer | NihontoWatch`,
     description: `Browse ${listingCount} Japanese swords and tosogu from ${dealer.name}. Find authentic katana, wakizashi, tanto, and sword fittings from this trusted dealer.`,
     alternates: {
       canonical: `${baseUrl}/dealers/${slug}`,
@@ -105,11 +107,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description: `Browse ${listingCount} Japanese swords and tosogu from ${dealer.name}.`,
       type: 'website',
       url: `${baseUrl}/dealers/${slug}`,
-      siteName: 'Nihontowatch',
+      siteName: 'NihontoWatch',
     },
     twitter: {
       card: 'summary',
-      title: `${dealer.name} | Nihontowatch`,
+      title: `${dealer.name} | NihontoWatch`,
       description: `Browse ${listingCount} listings from ${dealer.name}.`,
     },
   };
@@ -193,24 +195,14 @@ export default async function DealerPage({ params }: Props) {
         <Header />
 
         <main className="max-w-6xl mx-auto px-4 py-8 pb-24 md:pb-8">
-          {/* Breadcrumb */}
-          <nav className="mb-6 text-sm">
-            <ol className="flex items-center gap-2 text-muted dark:text-muted-dark">
-              <li>
-                <Link href="/" className="hover:text-gold transition-colors">
-                  Home
-                </Link>
-              </li>
-              <li>/</li>
-              <li>
-                <Link href="/dealers" className="hover:text-gold transition-colors">
-                  Dealers
-                </Link>
-              </li>
-              <li>/</li>
-              <li className="text-ink dark:text-cream">{dealer.name}</li>
-            </ol>
-          </nav>
+          <Breadcrumbs
+            items={[
+              { name: 'Home', url: '/' },
+              { name: 'Dealers', url: '/dealers' },
+              { name: dealer.name },
+            ]}
+            className="mb-6"
+          />
 
           {/* Dealer Header */}
           <div className="mb-8">
@@ -226,7 +218,7 @@ export default async function DealerPage({ params }: Props) {
               <a
                 href={`https://${dealer.domain}`}
                 target="_blank"
-                rel="noopener noreferrer"
+                rel="noopener noreferrer nofollow"
                 className="hover:text-gold transition-colors flex items-center gap-1"
               >
                 {dealer.domain}
@@ -320,6 +312,7 @@ export default async function DealerPage({ params }: Props) {
           )}
         </main>
 
+        <Footer />
         <BottomTabBar />
       </div>
     </>

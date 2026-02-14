@@ -2,7 +2,7 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'Unsubscribe - Nihontowatch',
+  title: 'Unsubscribe - NihontoWatch',
   description: 'Manage your email subscription preferences',
   robots: 'noindex',
 };
@@ -36,7 +36,7 @@ export default async function UnsubscribePage({ searchParams }: PageProps) {
       case 'all':
         return {
           title: 'Successfully Unsubscribed',
-          message: 'You have been unsubscribed from all Nihontowatch email notifications. You will no longer receive any alerts or marketing emails from us.',
+          message: 'You have been unsubscribed from all NihontoWatch email notifications. You will no longer receive any alerts or marketing emails from us.',
           icon: (
             <svg className="w-16 h-16 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />

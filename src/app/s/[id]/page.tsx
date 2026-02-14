@@ -75,8 +75,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   if (isNaN(listingId)) {
     return {
-      title: 'Share | Nihontowatch',
-      description: 'View Japanese sword and tosogu listings on Nihontowatch.',
+      title: 'Share | NihontoWatch',
+      description: 'View Japanese sword and tosogu listings on NihontoWatch.',
     };
   }
 

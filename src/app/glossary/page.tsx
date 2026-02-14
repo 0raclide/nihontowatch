@@ -2,6 +2,8 @@ import { Metadata } from 'next';
 import { GlossaryPageClient } from './GlossaryPageClient';
 import { getMetadata, getTermCount } from '@/lib/glossary';
 import { Header } from '@/components/layout/Header';
+import { Breadcrumbs } from '@/components/ui/Breadcrumbs';
+import { Footer } from '@/components/layout/Footer';
 import { BottomTabBar } from '@/components/navigation/BottomTabBar';
 
 export const metadata: Metadata = {
@@ -37,6 +39,7 @@ export default function GlossaryPage() {
       {/* Page Header */}
       <div className="bg-surface border-b border-border">
         <div className="max-w-[1200px] mx-auto px-4 py-8 lg:px-6 lg:py-12">
+          <Breadcrumbs items={[{ name: 'Home', url: '/' }, { name: 'Glossary' }]} className="mb-4" />
           <h1 className="font-serif text-3xl lg:text-4xl text-ink mb-2">
             Japanese Sword & Fittings Glossary
           </h1>
@@ -54,6 +57,7 @@ export default function GlossaryPage() {
       {/* Client-side interactive content */}
       <GlossaryPageClient />
 
+      <Footer />
       <BottomTabBar />
     </div>
   );

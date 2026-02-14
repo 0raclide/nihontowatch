@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'Terms of Service | Nihontowatch',
-  description: 'Terms of Service for Nihontowatch - the Japanese sword and tosogu marketplace aggregator.',
+  title: 'Terms of Service | NihontoWatch',
+  description: 'Terms of Service for NihontoWatch - the Japanese sword and tosogu marketplace aggregator.',
   alternates: {
     canonical: '/terms',
   },

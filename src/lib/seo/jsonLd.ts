@@ -162,10 +162,19 @@ export function generateProductJsonLd(listing: Listing, dealer?: Dealer): Produc
   const artisan = listing.smith || listing.tosogu_maker;
   const images = listing.stored_images || listing.images || [];
 
+  // Build a descriptive name — Google requires a non-empty 'name' field
+  const productName = listing.title
+    || [
+        listing.item_type?.charAt(0).toUpperCase() + (listing.item_type?.slice(1) || ''),
+        artisan,
+        listing.cert_type,
+      ].filter(Boolean).join(' - ')
+    || `Listing #${listing.id}`;
+
   const product: ProductJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Product',
-    name: listing.title,
+    name: productName,
     sku: listing.id.toString(),
     category: getCategoryFromItemType(listing.item_type),
     offers: {
@@ -290,7 +299,8 @@ export function generateBreadcrumbJsonLd(
     itemListElement: items.map((item, index) => ({
       '@type': 'ListItem',
       position: index + 1,
-      name: item.name,
+      // Google requires a non-empty 'name' in every ListItem
+      name: item.name || 'Page',
       ...(item.url ? { item: item.url } : {}),
     })),
   };
@@ -303,7 +313,7 @@ export function generateOrganizationJsonLd(): OrganizationJsonLd {
   return {
     '@context': 'https://schema.org',
     '@type': 'Organization',
-    name: 'Nihontowatch',
+    name: 'NihontoWatch',
     url: BASE_URL,
     logo: `${BASE_URL}/logo-mon.png`,
     description:
@@ -318,7 +328,7 @@ export function generateWebsiteJsonLd(): WebsiteJsonLd {
   return {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
-    name: 'Nihontowatch',
+    name: 'NihontoWatch',
     url: BASE_URL,
     description:
       'The premier aggregator for Japanese swords and sword fittings from dealers worldwide.',
@@ -406,6 +416,34 @@ export function jsonLdScriptProps(jsonLd: object): {
     dangerouslySetInnerHTML: {
       __html: serialized,
     },
+  };
+}
+
+/**
+ * Generate ItemList JSON-LD for category pages.
+ * Shows preview listings as a structured list in search results.
+ */
+export function generateItemListJsonLd(
+  items: Array<{ id: number; title: string; price_value: number | null; price_currency: string | null; images: string[] | null; stored_images: string[] | null }>,
+  listName: string,
+  listUrl: string
+): object {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: listName,
+    url: listUrl,
+    numberOfItems: items.length,
+    itemListElement: items.map((item, index) => {
+      const imageUrl = item.stored_images?.[0] || item.images?.[0];
+      return {
+        '@type': 'ListItem',
+        position: index + 1,
+        url: `${BASE_URL}/listing/${item.id}`,
+        name: item.title,
+        ...(imageUrl ? { image: imageUrl } : {}),
+      };
+    }),
   };
 }
 

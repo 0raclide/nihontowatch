@@ -15,6 +15,7 @@ import { ArtisanListings } from '@/components/artisan/ArtisanListings';
 import { RelatedArtisans } from '@/components/artisan/RelatedArtisans';
 import type { ArtisanPageResponse } from '@/app/api/artisan/[code]/route';
 import { getArtisanDisplayParts } from '@/lib/artisan/displayName';
+import { Breadcrumbs } from '@/components/ui/Breadcrumbs';
 import { CatalogueShowcase } from '@/components/artisan/CatalogueShowcase';
 
 interface ArtistPageClientProps {
@@ -399,13 +400,14 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
         <section id="overview" className="scroll-mt-24">
           {/* Breadcrumb + Share */}
           <div className="flex items-center justify-between mb-6 sm:mb-8">
-            <nav className="text-[11px] text-ink/40 tracking-widest uppercase">
-              <Link href="/" className="hover:text-ink/60 transition-colors">Browse</Link>
-              <span className="mx-2 text-ink/20">/</span>
-              <Link href="/artists" className="hover:text-ink/60 transition-colors">Artists</Link>
-              <span className="mx-2 text-ink/20">/</span>
-              <span className="hidden sm:inline text-ink/50">{entity.name_romaji || entity.code}</span>
-            </nav>
+            <Breadcrumbs
+              items={[
+                { name: 'Browse', url: '/' },
+                { name: 'Artists', url: '/artists' },
+                { name: entity.name_romaji || entity.code },
+              ]}
+              className="mb-0"
+            />
             <button
               onClick={handleShare}
               className="text-[11px] text-ink/40 hover:text-ink/60 transition-colors flex items-center gap-1.5"

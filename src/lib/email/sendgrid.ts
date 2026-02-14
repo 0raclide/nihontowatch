@@ -19,7 +19,7 @@ if (process.env.SENDGRID_API_KEY) {
 }
 
 const FROM_EMAIL = process.env.SENDGRID_FROM_EMAIL || 'notifications@nihontowatch.com';
-const FROM_NAME = 'Nihontowatch';
+const FROM_NAME = 'NihontoWatch';
 
 interface SendEmailResult {
   success: boolean;

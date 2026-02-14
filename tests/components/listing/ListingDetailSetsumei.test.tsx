@@ -3,7 +3,7 @@
  *
  * CRITICAL REGRESSION TESTS:
  * - SetsumeiZufuBadge must appear when setsumei_text_en is present
- * - SetsumeiSection must always render (not conditional on Yuhinkai)
+ * - Inline SetsumeiSection removed from detail page (setsumei via QuickView book icon only)
  * - No references to CatalogEnrichedBadge or YuhinkaiEnrichmentSection
  *
  * These tests prevent reverting to the old Yuhinkai-based system.
@@ -73,13 +73,13 @@ describe('ListingDetailClient Import Checks', () => {
     expect(content).toContain('SetsumeiZufuBadge');
   });
 
-  it('should import SetsumeiSection', async () => {
+  it('should NOT import SetsumeiSection (inline removed; setsumei accessed via QuickView book icon only)', async () => {
     const fs = await import('fs');
     const path = await import('path');
     const filePath = path.join(process.cwd(), 'src/app/listing/[id]/ListingDetailClient.tsx');
     const content = fs.readFileSync(filePath, 'utf-8');
 
-    expect(content).toContain('SetsumeiSection');
+    expect(content).not.toContain('SetsumeiSection');
   });
 });
 
@@ -98,7 +98,7 @@ describe('ListingDetailClient Setsumei Logic', () => {
     expect(content).not.toMatch(/listing\.yuhinkai_enrichment\s*&&\s*\(\s*<.*Badge/);
   });
 
-  it('should render SetsumeiSection unconditionally (not wrapped in Yuhinkai check)', async () => {
+  it('should not have inline SetsumeiSection (setsumei accessed via QuickView book icon only)', async () => {
     const fs = await import('fs');
     const path = await import('path');
     const filePath = path.join(process.cwd(), 'src/app/listing/[id]/ListingDetailClient.tsx');
@@ -107,8 +107,8 @@ describe('ListingDetailClient Setsumei Logic', () => {
     // SetsumeiSection should NOT be conditional on !hasVerifiedEnrichment
     expect(content).not.toContain('!hasVerifiedEnrichment');
 
-    // SetsumeiSection should exist in the file
-    expect(content).toContain('<SetsumeiSection');
+    // Inline SetsumeiSection removed — setsumei now only via QuickView study mode
+    expect(content).not.toContain('<SetsumeiSection');
   });
 
   it('should NOT reference enrichment-based artisan/school indicators', async () => {

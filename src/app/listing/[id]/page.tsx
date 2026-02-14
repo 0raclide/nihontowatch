@@ -2,12 +2,15 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import ListingDetailClient from './ListingDetailClient';
+import { RelatedListingsServer } from '@/components/listing/RelatedListingsServer';
+import type { RelatedItem } from '@/components/listing/RelatedListingsServer';
 import {
   generateProductJsonLd,
   generateBreadcrumbJsonLd,
   jsonLdScriptProps,
   getItemTypeBreadcrumbLabel,
 } from '@/lib/seo/jsonLd';
+import { buildSeoTitle, buildSeoDescription } from '@/lib/seo/metaTitle';
 import type { Listing, Dealer, ItemType, Currency } from '@/types';
 
 // Force dynamic rendering - needed for Supabase server client with cookies
@@ -19,45 +22,25 @@ const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://nihontowatch.com';
 interface ListingMetadata {
   id: number;
   title: string;
+  title_en: string | null;
   price_value: number | null;
   price_currency: string | null;
   item_type: string | null;
   cert_type: string | null;
   smith: string | null;
   tosogu_maker: string | null;
+  school: string | null;
+  tosogu_school: string | null;
+  era: string | null;
+  tosogu_era: string | null;
+  province: string | null;
+  nagasa_cm: number | null;
+  mei_type: string | null;
+  tosogu_material: string | null;
   og_image_url: string | null;  // Pre-generated OG image URL
   is_sold: boolean;
   is_available: boolean;
   dealers: { name: string; domain: string } | null;
-}
-
-// Item type labels for meta description
-const ITEM_TYPE_LABELS: Record<string, string> = {
-  katana: 'Katana',
-  wakizashi: 'Wakizashi',
-  tanto: 'Tanto',
-  tachi: 'Tachi',
-  naginata: 'Naginata',
-  yari: 'Yari',
-  tsuba: 'Tsuba',
-  'fuchi-kashira': 'Fuchi-Kashira',
-  fuchi_kashira: 'Fuchi-Kashira',
-  kozuka: 'Kozuka',
-  menuki: 'Menuki',
-  koshirae: 'Koshirae',
-};
-
-function formatPrice(value: number | null, currency: string | null): string {
-  if (!value) return 'Price on Request';
-
-  const curr = currency || 'JPY';
-  const formatter = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: curr,
-    maximumFractionDigits: 0,
-  });
-
-  return formatter.format(value);
 }
 
 type Props = {
@@ -70,7 +53,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   if (isNaN(listingId)) {
     return {
-      title: 'Listing Not Found | Nihontowatch',
+      title: 'Listing Not Found | NihontoWatch',
       description: 'The requested listing could not be found.',
     };
   }
@@ -82,12 +65,21 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       .select(`
         id,
         title,
+        title_en,
         price_value,
         price_currency,
         item_type,
         cert_type,
         smith,
         tosogu_maker,
+        school,
+        tosogu_school,
+        era,
+        province,
+        nagasa_cm,
+        mei_type,
+        tosogu_material,
+        tosogu_era,
         og_image_url,
         is_sold,
         is_available,
@@ -104,29 +96,42 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
     if (!listing || error) {
       return {
-        title: 'Listing Not Found | Nihontowatch',
+        title: 'Listing Not Found | NihontoWatch',
         description: 'The requested listing could not be found.',
       };
     }
 
-    // Build title
-    const itemType = listing.item_type
-      ? ITEM_TYPE_LABELS[listing.item_type.toLowerCase()] || listing.item_type
-      : null;
-    const title = `${listing.title}${itemType ? ` - ${itemType}` : ''} | Nihontowatch`;
+    // Build structured SEO title and description
+    const seoFields = {
+      title: listing.title,
+      title_en: listing.title_en,
+      item_type: listing.item_type,
+      cert_type: listing.cert_type,
+      smith: listing.smith,
+      tosogu_maker: listing.tosogu_maker,
+      school: listing.school,
+      tosogu_school: listing.tosogu_school,
+      era: listing.era,
+      tosogu_era: listing.tosogu_era,
+      province: listing.province,
+      tosogu_material: listing.tosogu_material,
+      nagasa_cm: listing.nagasa_cm,
+      mei_type: listing.mei_type,
+      price_value: listing.price_value,
+      price_currency: listing.price_currency,
+      is_sold: listing.is_sold,
+      is_available: listing.is_available,
+      dealer_name: listing.dealers?.name,
+    };
 
-    // Build description
-    const artisan = listing.smith || listing.tosogu_maker;
-    const price = formatPrice(listing.price_value, listing.price_currency);
-    const dealerName = listing.dealers?.name || 'Unknown Dealer';
+    const title = buildSeoTitle(seoFields);
+    const description = buildSeoDescription(seoFields);
     const isSold = listing.is_sold || !listing.is_available;
 
-    let description = listing.title;
-    if (artisan) description += ` by ${artisan}`;
-    if (listing.cert_type) description += ` (${listing.cert_type})`;
-    description += isSold
-      ? `. ${price}. Previously listed by ${dealerName} on Nihontowatch.`
-      : `. ${price}. Available from ${dealerName} on Nihontowatch.`;
+    // OG title: structured title without " | NihontoWatch" suffix
+    const ogTitle = title.endsWith(' | NihontoWatch')
+      ? title.slice(0, -' | NihontoWatch'.length)
+      : listing.title;
 
     // Use pre-generated OG image if available, otherwise fall back to dynamic generation
     const ogImageUrl = listing.og_image_url || `${baseUrl}/api/og?id=${listingId}`;
@@ -140,31 +145,31 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       // Noindex sold items so Google deindexes them
       robots: isSold ? { index: false, follow: true } : { index: true, follow: true },
       openGraph: {
-        title: listing.title,
-        description: `${price}${artisan ? ` - ${artisan}` : ''}${listing.cert_type ? ` - ${listing.cert_type}` : ''}`,
+        title: ogTitle,
+        description,
         type: 'website',
         url: `${baseUrl}/listing/${listingId}`,
-        siteName: 'Nihontowatch',
+        siteName: 'NihontoWatch',
         images: [
           {
             url: ogImageUrl,
             width: 1200,
             height: 630,
-            alt: listing.title,
+            alt: ogTitle,
           },
         ],
       },
       twitter: {
         card: 'summary_large_image',
-        title: listing.title,
-        description: `${price}${artisan ? ` - ${artisan}` : ''}`,
+        title: ogTitle,
+        description,
         images: [ogImageUrl],
       },
     };
   } catch {
     return {
-      title: 'Listing | Nihontowatch',
-      description: 'View Japanese sword and tosogu listings on Nihontowatch.',
+      title: 'Listing | NihontoWatch',
+      description: 'View Japanese sword and tosogu listings on NihontoWatch.',
     };
   }
 }
@@ -191,7 +196,9 @@ interface ListingForJsonLd {
   images: string[] | null;
   is_sold: boolean;
   is_available: boolean;
-  dealers: { name: string; domain: string } | null;
+  dealer_id: number;
+  artisan_id: string | null;
+  dealers: { id: number; name: string; domain: string } | null;
 }
 
 export default async function ListingPage({ params }: Props) {
@@ -230,7 +237,10 @@ export default async function ListingPage({ params }: Props) {
       images,
       is_sold,
       is_available,
+      dealer_id,
+      artisan_id,
       dealers (
+        id,
         name,
         domain
       )
@@ -288,12 +298,14 @@ export default async function ListingPage({ params }: Props) {
     ? getItemTypeBreadcrumbLabel(typedListing.item_type as ItemType)
     : null;
 
+  const listingTitle = typedListing.title || `Listing #${typedListing.id}`;
+
   const breadcrumbItems = [
     { name: 'Home', url: baseUrl },
     ...(itemTypeLabel
       ? [{ name: itemTypeLabel, url: `${baseUrl}/?type=${typedListing.item_type}` }]
       : []),
-    { name: typedListing.title },
+    { name: listingTitle },
   ];
 
   const breadcrumbJsonLd = generateBreadcrumbJsonLd(breadcrumbItems);
@@ -302,6 +314,52 @@ export default async function ListingPage({ params }: Props) {
     product: productJsonLd,
     breadcrumb: breadcrumbJsonLd,
   };
+
+  // Fetch related listings server-side for SEO (visible in initial HTML)
+  const artisanId = typedListing.artisan_id;
+  const dealerId = typedListing.dealer_id;
+  const artisanName = typedListing.smith || typedListing.tosogu_maker;
+  const dealerName = typedListing.dealers?.name || 'Unknown Dealer';
+
+  const relatedQueries = [];
+
+  // Related by artisan
+  if (artisanId) {
+    relatedQueries.push(
+      supabase
+        .from('listings')
+        .select('id, title, price_value, price_currency, images, stored_images')
+        .eq('is_available', true)
+        .eq('artisan_id', artisanId)
+        .neq('id', listingId)
+        .order('first_seen_at', { ascending: false })
+        .limit(4)
+        .then(({ data }) => ({ type: 'artisan' as const, items: (data || []) as RelatedItem[] }))
+    );
+  }
+
+  // Related by dealer (same item type if available)
+  let dealerQuery = supabase
+    .from('listings')
+    .select('id, title, price_value, price_currency, images, stored_images')
+    .eq('is_available', true)
+    .eq('dealer_id', dealerId)
+    .neq('id', listingId);
+
+  if (typedListing.item_type) {
+    dealerQuery = dealerQuery.eq('item_type', typedListing.item_type);
+  }
+
+  relatedQueries.push(
+    dealerQuery
+      .order('first_seen_at', { ascending: false })
+      .limit(4)
+      .then(({ data }) => ({ type: 'dealer' as const, items: (data || []) as RelatedItem[] }))
+  );
+
+  const relatedResults = await Promise.all(relatedQueries);
+  const artisanItems = relatedResults.find(r => r.type === 'artisan')?.items || [];
+  const dealerItems = relatedResults.find(r => r.type === 'dealer')?.items || [];
 
   return (
     <>
@@ -314,6 +372,16 @@ export default async function ListingPage({ params }: Props) {
         </>
       )}
       <ListingDetailClient />
+
+      {/* Server-rendered related listings — links visible to Googlebot in initial HTML */}
+      <RelatedListingsServer
+        artisanItems={artisanItems}
+        artisanName={artisanName}
+        artisanId={artisanId}
+        dealerItems={dealerItems}
+        dealerName={dealerName}
+        dealerId={dealerId}
+      />
     </>
   );
 }

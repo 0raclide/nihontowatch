@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'Privacy Policy | Nihontowatch',
-  description: 'Privacy Policy for Nihontowatch - how we collect, use, and protect your personal data under GDPR.',
+  title: 'Privacy Policy | NihontoWatch',
+  description: 'Privacy Policy for NihontoWatch - how we collect, use, and protect your personal data under GDPR.',
   alternates: {
     canonical: '/privacy',
   },

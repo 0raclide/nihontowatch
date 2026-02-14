@@ -1,71 +1,213 @@
-# SEO Optimization
+# SEO Architecture
 
-This document covers the SEO implementation for Nihontowatch, including technical SEO foundations, structured data, and best practices.
+This document covers the full SEO implementation for NihontoWatch — how metadata is generated, what structured data exists, where the code lives, and what remains to be done.
+
+**Last updated:** 2026-02-14
 
 ---
 
 ## Table of Contents
 
-1. [Overview](#overview)
-2. [Technical SEO](#technical-seo)
-   - [robots.txt](#robotstxt)
-   - [sitemap.xml](#sitemapxml)
-   - [noindex Pages](#noindex-pages)
-3. [Metadata](#metadata)
-   - [Root Layout](#root-layout-metadata)
-   - [Listing Pages](#listing-page-metadata)
-   - [Canonical URLs](#canonical-urls)
-4. [Structured Data (JSON-LD)](#structured-data-json-ld)
-   - [Organization Schema](#organization-schema)
-   - [WebSite Schema](#website-schema)
-   - [Product Schema](#product-schema)
-   - [BreadcrumbList Schema](#breadcrumblist-schema)
-   - [LocalBusiness Schema](#localbusiness-schema)
-5. [OpenGraph & Twitter Cards](#opengraph--twitter-cards)
-6. [Image Optimization](#image-optimization)
-7. [New SEO Pages](#new-seo-pages)
-8. [Testing & Validation](#testing--validation)
-9. [Google Search Console](#google-search-console)
+1. [How It Works](#how-it-works)
+2. [Page-Level SEO Coverage](#page-level-seo-coverage)
+3. [Listing Detail Metadata (the structured title system)](#listing-detail-metadata)
+4. [Category Landing Pages](#category-landing-pages)
+5. [Structured Data (JSON-LD)](#structured-data-json-ld)
+6. [Technical SEO](#technical-seo)
+7. [Brand Name](#brand-name)
+8. [Key Files](#key-files)
+9. [Field Population Reality](#field-population-reality)
+10. [High-Priority Remaining Work](#high-priority-remaining-work)
+11. [Testing & Validation](#testing--validation)
 
 ---
 
-## Overview
+## How It Works
 
-### What's Implemented
+SEO metadata is generated at three levels:
 
-| Feature | Status | File |
-|---------|--------|------|
-| robots.txt | ✅ | `src/app/robots.ts` |
-| sitemap.xml | ✅ | `src/app/sitemap.ts` |
-| noindex (admin/auth) | ✅ | Various layout files |
-| Organization JSON-LD | ✅ | `src/app/layout.tsx` |
-| WebSite JSON-LD | ✅ | `src/app/layout.tsx` |
-| Product JSON-LD | ✅ | `src/app/listing/[id]/page.tsx` |
-| Breadcrumb JSON-LD | ✅ | `src/app/listing/[id]/page.tsx` |
-| Canonical URLs | ✅ | Metadata in page files |
-| OG Images | ✅ | `/api/og` dynamic generation |
-| Dealer Directory | ✅ | `src/app/dealers/page.tsx` |
-| Individual Dealer Pages | ✅ | `src/app/dealers/[slug]/page.tsx` |
+1. **Root layout** (`src/app/layout.tsx`) — Default title/description inherited by all pages. Also renders site-wide Organization and WebSite JSON-LD.
 
-### Key Files
+2. **Page-level `generateMetadata()`** — Next.js server functions that override the root defaults with page-specific titles and descriptions. These run server-side before the page renders, so crawlers see the final metadata in the initial HTML.
+
+3. **Category definitions** (`src/lib/seo/categories.ts`) — Static data objects that define keyword-optimized titles, descriptions, and intro copy for each category landing page (`/swords/*`, `/fittings/*`, `/certified/*`).
+
+The listing detail page (`/listing/[id]`) uses a **structured title builder** (`src/lib/seo/metaTitle.ts`) that assembles titles from database fields following collector search patterns:
 
 ```
-src/
-├── app/
-│   ├── robots.ts              # robots.txt generation
-│   ├── sitemap.ts             # Dynamic sitemap generation
-│   ├── layout.tsx             # Root metadata + JSON-LD
-│   ├── listing/[id]/page.tsx  # Product + Breadcrumb JSON-LD
-│   ├── dealers/
-│   │   ├── page.tsx           # Dealer directory
-│   │   └── [slug]/page.tsx    # Individual dealer pages
-│   ├── admin/layout.tsx       # noindex metadata
-│   ├── saved/layout.tsx       # noindex metadata
-│   └── profile/layout.tsx     # noindex metadata
-└── lib/
-    └── seo/
-        └── jsonLd.ts          # JSON-LD schema generators
+{Cert} {Artisan} {Type} — {Qualifier} | NihontoWatch
 ```
+
+This matches how collectors actually search Google ("Juyo Masamune Katana", "Tokubetsu Hozon Tsuba Shakudo").
+
+---
+
+## Page-Level SEO Coverage
+
+### Pages with full structured metadata
+
+| Page | Title Pattern | JSON-LD | Notes |
+|------|---------------|---------|-------|
+| `/` (home) | Static: "NihontoWatch \| Japanese Sword & Tosogu Marketplace" | Organization, WebSite | Does NOT adapt to query params — see [remaining work](#high-priority-remaining-work) |
+| `/listing/[id]` | Structured: `{Cert} {Artisan} {Type} — {Qualifier} \| NihontoWatch` | Product, Breadcrumb | Full artisan resolution, 60-char guard |
+| `/swords/[type]` | "Katana for Sale — Japanese Long Swords \| NihontoWatch" | ItemList, Breadcrumb | 6 pages (katana, wakizashi, tanto, tachi, naginata, yari) |
+| `/fittings/[type]` | "Tsuba for Sale — Japanese Sword Guards \| NihontoWatch" | ItemList, Breadcrumb | 4 pages (tsuba, fuchi-kashira, kozuka, menuki) |
+| `/certified/[cert]` | "Juyo Token Swords for Sale — NBTHK \| NihontoWatch" | ItemList, Breadcrumb | 4 pages (juyo, tokubetsu-juyo, hozon, tokubetsu-hozon) |
+| `/artists` | Dynamic: adapts to school/province/era/type filters | Breadcrumb | Server-rendered initial load, client fetch on filter change |
+| `/artists/[slug]` | "{Name} — {School} {Type} \| NihontoWatch" | Breadcrumb | Individual artisan profiles |
+| `/dealers` | "Japanese Sword Dealers \| NihontoWatch" | LocalBusiness per dealer | Static metadata |
+| `/dealers/[slug]` | "{Dealer Name} \| Japanese Sword Dealer \| NihontoWatch" | Breadcrumb | Dynamic metadata with listing count |
+| `/glossary` | "Japanese Sword & Fittings Glossary \| NihontoWatch" | — | Static |
+| `/glossary/[term]` | "{Term} — Japanese Sword Glossary \| NihontoWatch" | — | Dynamic per term |
+
+### Pages with noindex
+
+| Page | Reason |
+|------|--------|
+| `/admin/*` | Admin-only |
+| `/saved` | User-specific |
+| `/profile` | User-specific |
+| `/collection` | User-specific |
+| `/s/[id]` | Share proxy — canonical points to `/listing/[id]` |
+| Sold listings | `robots: { index: false, follow: true }` |
+
+---
+
+## Listing Detail Metadata
+
+### The Structured Title System
+
+**File:** `src/lib/seo/metaTitle.ts`
+
+The title builder assembles keyword-rich titles from database fields instead of echoing raw dealer titles (which are often Japanese-only).
+
+**Pattern:**
+```
+{Cert} {Artisan} {Type} — {Qualifier} | NihontoWatch
+```
+
+**Examples:**
+```
+Juyo Masamune Katana — Soshu, Kamakura | NihontoWatch
+Tokubetsu Hozon Masatsune Tsuba — Shakudo | NihontoWatch
+Hozon Ichimonji Wakizashi — Bizen, Kamakura | NihontoWatch
+Katana — Bizen, Muromachi | NihontoWatch
+Juyo Katana | NihontoWatch
+```
+
+### Artisan Name Resolution (fallback chain)
+
+`resolveArtisanNameForSeo()` follows this chain:
+
+1. **`smith` / `tosogu_maker`** — use directly if already romanized (no Japanese characters)
+2. **Extract from `title_en`** — strip item type prefix, apply school pattern to extract individual name (e.g., "Katana: Soshu Yukimitsu" → "Yukimitsu")
+3. **`school` / `tosogu_school`** — if no individual name, use school (matches queries like "Juyo Ichimonji")
+4. **Omit** — artisan segment left out entirely
+
+### Qualifier (after em-dash)
+
+- **Swords:** `{Province}, {Era}` (e.g., "Bizen, Kamakura")
+- **Tosogu:** `{tosogu_material}` or `{school}` (e.g., "Shakudo")
+- Omitted if nothing to add or if it would push title over 60 chars
+
+### Length guard
+
+Google truncates titles at ~60 characters. The builder tries progressively shorter variants:
+1. Full title with qualifier
+2. Core without qualifier
+3. Truncated core with ellipsis
+
+### Description Template
+
+```
+Available: "{Cert} {Artisan} {Type} for sale. {Price}. Nagasa {N}cm. {Era} period, {Province} province. Available from {Dealer} on NihontoWatch."
+Sold:      "{Cert} {Artisan} {Type} — sold. Was {Price}. Nagasa {N}cm. Previously listed by {Dealer} on NihontoWatch."
+```
+
+Key signals: "for sale" (transactional intent), price (attracts clicks), nagasa (spec collectors search), dealer name (brand recognition). Descriptions over 160 chars drop context/specs segments to stay within Google's display limit.
+
+### Dual-Path Field Access (sword vs tosogu)
+
+The database stores sword and tosogu attributes in different columns:
+
+| Attribute | Sword column | Tosogu column |
+|-----------|-------------|---------------|
+| Artisan | `smith` | `tosogu_maker` |
+| School | `school` | `tosogu_school` |
+| Era | `era` | `tosogu_era` |
+| Material | — | `tosogu_material` |
+
+The SEO builder checks both paths for every field. The metadata query in `page.tsx` fetches all six columns.
+
+### OG / Twitter metadata
+
+- `og:title` and `twitter:title` use the structured title without the ` | NihontoWatch` suffix
+- `og:description` and `twitter:description` use the full structured description
+- `og:image` uses pre-generated OG image if available (`og_image_url`), falls back to dynamic `/api/og?id={id}`
+- `og:siteName` is "NihontoWatch"
+
+---
+
+## Category Landing Pages
+
+### Architecture
+
+Three sets of static landing pages target head terms:
+
+```
+/swords/katana    → "Katana for Sale — Japanese Long Swords | NihontoWatch"
+/swords/wakizashi → "Wakizashi for Sale — Japanese Short Swords | NihontoWatch"
+/certified/juyo   → "Juyo Token Swords for Sale — NBTHK Important Swords | NihontoWatch"
+/fittings/tsuba   → "Tsuba for Sale — Japanese Sword Guards | NihontoWatch"
+```
+
+All defined in `src/lib/seo/categories.ts` with:
+- Keyword-rich title and description
+- H1 heading and intro paragraph
+- Filter values that map to browse API params
+- Static generation via `generateStaticParams()`
+
+Each page renders a preview grid of listings (fetched server-side via `src/lib/seo/fetchCategoryPreview.ts`) and includes ItemList + Breadcrumb JSON-LD.
+
+### Pages
+
+**Swords (6):** katana, wakizashi, tanto, tachi, naginata, yari
+**Fittings (4):** tsuba, fuchi-kashira, kozuka, menuki
+**Certifications (4):** juyo, tokubetsu-juyo, hozon, tokubetsu-hozon
+
+---
+
+## Structured Data (JSON-LD)
+
+**File:** `src/lib/seo/jsonLd.ts`
+
+### Site-wide (root layout)
+
+| Schema | Purpose |
+|--------|---------|
+| `Organization` | Site identity, logo, name — authority signal |
+| `WebSite` + `SearchAction` | Enables sitelinks search box in Google |
+
+### Listing detail pages
+
+| Schema | Purpose |
+|--------|---------|
+| `Product` | Price, availability, seller, certification — rich snippet eligibility |
+| `BreadcrumbList` | Navigation path: Home → {Type} → {Title} |
+
+### Category landing pages
+
+| Schema | Purpose |
+|--------|---------|
+| `ItemList` | List of products with position, name, URL |
+| `BreadcrumbList` | Navigation path: Home → {Category} |
+
+### Dealer pages
+
+| Schema | Purpose |
+|--------|---------|
+| `LocalBusiness` | Per-dealer structured data on directory page |
+| `BreadcrumbList` | On individual dealer pages |
 
 ---
 
@@ -75,503 +217,201 @@ src/
 
 **File:** `src/app/robots.ts`
 
-Generates a robots.txt that:
-- Allows crawling of all public content
-- Blocks admin, API, and user-specific pages
-- References the sitemap
-
-```typescript
-import { MetadataRoute } from 'next';
-
-export default function robots(): MetadataRoute.Robots {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://nihontowatch.com';
-
-  return {
-    rules: [
-      {
-        userAgent: '*',
-        allow: '/',
-        disallow: [
-          '/admin/',
-          '/api/',
-          '/saved',
-          '/profile',
-          '/auth/',
-          '/favorites',
-          '/saved-searches',
-          '/alerts',
-        ],
-      },
-    ],
-    sitemap: `${baseUrl}/sitemap.xml`,
-  };
-}
-```
-
-**Live URL:** https://nihontowatch.com/robots.txt
+Allows all public content, blocks `/admin/`, `/api/`, `/saved`, `/profile`, `/auth/`, `/favorites`. References sitemap.
 
 ### sitemap.xml
 
 **File:** `src/app/sitemap.ts`
 
-Dynamic sitemap with:
-- **ISR revalidation** every hour (`export const revalidate = 3600`)
-- **Core pages**: Homepage, dealers directory
-- **Dealer pages**: All 30 dealers with slugified URLs
-- **Listing pages**: All available listings (not sold)
-- **Batch fetching** to handle Supabase's 1000-row limit
+Dynamic sitemap with ISR (1-hour revalidation). Includes:
+- Core pages (home, dealers directory)
+- All dealer pages (`/dealers/[slug]`)
+- All available listings (`/listing/[id]`) — sold items excluded
+- Category landing pages (`/swords/*`, `/fittings/*`, `/certified/*`)
+- Artist pages (`/artists/[slug]`) — all 13,566 artisans from Yuhinkai
 
-```typescript
-export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  // Fetches all dealers and listings
-  // Returns ~1000+ URLs with lastModified, changeFreq, priority
-}
-```
-
-**URL Structure:**
-- `/` - priority 1.0, daily
-- `/dealers` - priority 0.8, weekly
-- `/dealers/[slug]` - priority 0.8, weekly
-- `/listing/[id]` - priority 0.7, weekly
-
-**Live URL:** https://nihontowatch.com/sitemap.xml
-
-### noindex Pages
-
-Pages that should not be indexed have `robots: { index: false, follow: false }` in their metadata:
-
-| Page | Layout File |
-|------|-------------|
-| `/admin/*` | `src/app/admin/layout.tsx` |
-| `/saved` | `src/app/saved/layout.tsx` |
-| `/profile` | `src/app/profile/layout.tsx` |
-
-```typescript
-export const metadata: Metadata = {
-  title: 'Admin Dashboard | Nihontowatch',
-  robots: {
-    index: false,
-    follow: false,
-    noarchive: true,
-    nosnippet: true,
-  },
-};
-```
-
----
-
-## Metadata
-
-### Root Layout Metadata
-
-**File:** `src/app/layout.tsx`
-
-```typescript
-export const metadata: Metadata = {
-  metadataBase: new URL(baseUrl),
-  title: "Nihontowatch | Japanese Sword & Tosogu Marketplace",
-  description: "The premier aggregator for Japanese swords...",
-  keywords: ["nihonto", "japanese sword", "katana", ...],
-  alternates: {
-    canonical: baseUrl,
-  },
-  formatDetection: {
-    telephone: false,
-  },
-  category: "shopping",
-  icons: {
-    icon: "/logo-mon.png",
-    apple: "/logo-mon.png",
-  },
-  openGraph: { ... },
-  twitter: { ... },
-};
-```
-
-### Listing Page Metadata
-
-**File:** `src/app/listing/[id]/page.tsx`
-
-Dynamic metadata generated per listing:
-
-```typescript
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  // Fetch listing from Supabase
-  // Build title: "Listing Title - Item Type | Nihontowatch"
-  // Build description: "Title by Smith (Cert). Price. Available from Dealer."
-  return {
-    title,
-    description,
-    alternates: {
-      canonical: `${baseUrl}/listing/${listingId}`,
-    },
-    openGraph: {
-      images: [`${baseUrl}/api/og?id=${listingId}`], // Dynamic OG image
-    },
-    twitter: { ... },
-  };
-}
-```
+Batch-fetches in groups of 1000 to handle Supabase row limits.
 
 ### Canonical URLs
 
-All pages include canonical URLs via `alternates.canonical`:
+All pages set `alternates.canonical`. The share proxy (`/s/[id]`) canonicalizes to `/listing/[id]` to prevent duplicate indexing.
 
-- **Homepage:** `https://nihontowatch.com`
-- **Listings:** `https://nihontowatch.com/listing/[id]`
-- **Dealers:** `https://nihontowatch.com/dealers/[slug]`
+### Sold items
 
-This prevents duplicate content issues from query parameters (filters, pagination).
+- `robots: { index: false, follow: true }` — tells Google to deindex
+- Description changes from "for sale" to "sold" / "Previously listed by"
+- Excluded from sitemap
 
----
+### Share proxy (`/s/[id]`)
 
-## Structured Data (JSON-LD)
-
-### Helper Library
-
-**File:** `src/lib/seo/jsonLd.ts`
-
-Provides schema generators and a helper for rendering:
-
-```typescript
-// Render JSON-LD in React
-export function jsonLdScriptProps(jsonLd: object) {
-  return {
-    type: 'application/ld+json',
-    dangerouslySetInnerHTML: { __html: JSON.stringify(jsonLd) },
-  };
-}
-
-// Usage in component:
-<script {...jsonLdScriptProps(productJsonLd)} />
-```
-
-### Organization Schema
-
-Added to root layout for site-wide authority signals:
-
-```json
-{
-  "@context": "https://schema.org",
-  "@type": "Organization",
-  "name": "Nihontowatch",
-  "url": "https://nihontowatch.com",
-  "logo": "https://nihontowatch.com/logo-mon.png",
-  "description": "The premier aggregator for Japanese swords (nihonto) and sword fittings (tosogu) from dealers worldwide.",
-  "sameAs": []
-}
-```
-
-### WebSite Schema
-
-Enables sitelinks search box in Google:
-
-```json
-{
-  "@context": "https://schema.org",
-  "@type": "WebSite",
-  "name": "Nihontowatch",
-  "url": "https://nihontowatch.com",
-  "potentialAction": {
-    "@type": "SearchAction",
-    "target": {
-      "@type": "EntryPoint",
-      "urlTemplate": "https://nihontowatch.com/?search={search_term_string}"
-    },
-    "query-input": "required name=search_term_string"
-  }
-}
-```
-
-### Product Schema
-
-Added to listing detail pages (`/listing/[id]`):
-
-```json
-{
-  "@context": "https://schema.org",
-  "@type": "Product",
-  "name": "Katana by Kotetsu",
-  "description": "Fine Edo period katana...",
-  "image": ["https://..."],
-  "sku": "12345",
-  "brand": {
-    "@type": "Brand",
-    "name": "Kotetsu"
-  },
-  "offers": {
-    "@type": "Offer",
-    "url": "https://nihontowatch.com/listing/12345",
-    "priceCurrency": "JPY",
-    "price": 5000000,
-    "availability": "https://schema.org/InStock",
-    "seller": {
-      "@type": "Organization",
-      "name": "Aoi Art"
-    }
-  },
-  "additionalProperty": [
-    { "@type": "PropertyValue", "name": "Certification", "value": "NBTHK Juyo" },
-    { "@type": "PropertyValue", "name": "Era", "value": "Edo Period" },
-    { "@type": "PropertyValue", "name": "Length", "value": "70.5 cm" }
-  ]
-}
-```
-
-### BreadcrumbList Schema
-
-Navigation breadcrumbs for listing pages:
-
-```json
-{
-  "@context": "https://schema.org",
-  "@type": "BreadcrumbList",
-  "itemListElement": [
-    { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://nihontowatch.com" },
-    { "@type": "ListItem", "position": 2, "name": "Katana", "item": "https://nihontowatch.com/?type=katana" },
-    { "@type": "ListItem", "position": 3, "name": "Katana by Kotetsu" }
-  ]
-}
-```
-
-### LocalBusiness Schema
-
-Added to dealer directory for each dealer:
-
-```json
-{
-  "@context": "https://schema.org",
-  "@type": "LocalBusiness",
-  "name": "Aoi Art",
-  "url": "https://aoijapan.com",
-  "address": {
-    "@type": "PostalAddress",
-    "addressCountry": "JP"
-  },
-  "description": "Japanese sword and tosogu dealer",
-  "priceRange": "$$$$"
-}
-```
+Solves Discord's OG image caching problem. URLs include a version parameter derived from `og_image_url` timestamp. `noindex` prevents duplicate content. Human visitors are immediately redirected to `/listing/[id]`.
 
 ---
 
-## OpenGraph & Twitter Cards
+## Brand Name
 
-### Dynamic OG Images
+The canonical brand name is **NihontoWatch** (capital W). This is used consistently across:
+- All page titles (` | NihontoWatch` suffix)
+- OpenGraph `siteName`
+- JSON-LD Organization and WebSite `name`
+- Email sender name
+- Share text
+- Legal page metadata
 
-**Endpoint:** `/api/og`
-
-Generates dynamic 1200x630 images with:
-- Product image
-- Price
-- Title
-- Branding
-
-Usage in metadata:
-```typescript
-openGraph: {
-  images: [{
-    url: `${baseUrl}/api/og?id=${listingId}`,
-    width: 1200,
-    height: 630,
-    alt: listing.title,
-  }],
-}
-```
-
-### Twitter Cards
-
-All pages use `summary_large_image` card type:
-
-```typescript
-twitter: {
-  card: 'summary_large_image',
-  title: listing.title,
-  description: `${price} - ${artisan}`,
-  images: [`${baseUrl}/api/og?id=${listingId}`],
-}
-```
+The only exceptions are legal page body prose (terms of service, privacy policy document text) and internal API headers (`X-Title` to OpenRouter), which are not user/SEO facing.
 
 ---
 
-## Image Optimization
+## Key Files
 
-### Alt Text
+### Metadata generation
 
-Enhanced alt text generation in `ListingCard.tsx` and `QuickView.tsx`:
+| File | Purpose |
+|------|---------|
+| `src/lib/seo/metaTitle.ts` | `buildSeoTitle()`, `buildSeoDescription()`, `resolveArtisanNameForSeo()` — structured metadata builders for listing pages |
+| `src/lib/seo/jsonLd.ts` | All JSON-LD schema generators + `jsonLdScriptProps()` render helper |
+| `src/lib/seo/categories.ts` | Category definitions (titles, descriptions, filter mappings) for /swords, /fittings, /certified |
+| `src/lib/seo/fetchCategoryPreview.ts` | Server-side listing preview fetcher for category pages |
 
-```typescript
-const altText = [
-  itemType,                              // "Katana"
-  certInfo?.label,                       // "NBTHK Juyo"
-  artisan ? `by ${artisan}` : null,      // "by Kotetsu"
-  cleanedTitle !== itemType ? cleanedTitle : null
-].filter(Boolean).join(' - ') || listing.title || 'Japanese sword listing';
+### Pages with `generateMetadata()`
 
-// Result: "Katana - NBTHK Juyo - by Kotetsu - Fine example of Edo period"
-```
+| File | Pattern |
+|------|---------|
+| `src/app/layout.tsx` | Root default metadata + site-wide JSON-LD |
+| `src/app/listing/[id]/page.tsx` | Structured title/description via `buildSeoTitle()` |
+| `src/app/dealers/page.tsx` | Static dealer directory metadata |
+| `src/app/dealers/[slug]/page.tsx` | Dynamic per-dealer metadata with listing count |
+| `src/app/artists/page.tsx` | Dynamic, adapts to filter params |
+| `src/app/artists/[slug]/page.tsx` | Dynamic per-artisan metadata |
+| `src/app/glossary/page.tsx` | Static with dynamic term count |
+| `src/app/glossary/[term]/page.tsx` | Dynamic per-term |
+| `src/app/swords/[type]/page.tsx` | From category definitions |
+| `src/app/fittings/[type]/page.tsx` | From category definitions |
+| `src/app/certified/[cert]/page.tsx` | From category definitions |
+| `src/app/s/[id]/page.tsx` | Share proxy (noindex) |
 
-### Image Formats
+### Technical SEO
 
-- AVIF/WebP with fallback
-- Next.js Image optimization
-- 30-day cache headers
-- Lazy loading with skeleton placeholders
+| File | Purpose |
+|------|---------|
+| `src/app/robots.ts` | robots.txt generation |
+| `src/app/sitemap.ts` | Dynamic sitemap (listings, dealers, artists, categories) |
 
 ---
 
-## New SEO Pages
+## Field Population Reality
 
-### Dealer Directory
+Measured 2026-02-14 against 6,069 available listings:
 
-**URL:** `/dealers`
+| Field | Count | Coverage | Notes |
+|-------|------:|--------:|-------|
+| `item_type` | 5,910 | **97.4%** | Nearly universal |
+| `title_en` | 5,889 | **97.0%** | Populated by LLM extraction during scraping — key artisan name extraction source |
+| `era` | 5,476 | **90.2%** | Almost all romanized (5,474) |
+| `province` | 3,659 | 60.3% | 3,579 romanized |
+| `smith` | 3,406 | 56.1% | 1,305 romanized / 2,101 Japanese-only |
+| `cert_type` | 3,075 | **50.7%** | Half of inventory is certified |
+| `school` | 2,246 | 37.0% | 1,856 romanized (83% of those with school) |
+| `nagasa_cm` | 2,262 | 37.3% | Used in meta descriptions |
+| `tosogu_maker` | 526 | 8.7% | 176 romanized / 350 Japanese-only |
+| `tosogu_school` | 264 | 4.3% | 191 romanized |
+| `tosogu_material` | — | — | Not yet measured |
+| `tosogu_era` | — | — | Not yet measured |
 
-Server component showing all 27 dealers:
-- Grouped by country (Japanese vs Western)
-- Listing counts per dealer
-- LocalBusiness JSON-LD for each
+### Title quality tiers
 
-**Metadata:**
-```typescript
-title: "Japanese Sword Dealers | 27 Trusted Nihonto Dealers | Nihontowatch"
-description: "Browse 27 verified Japanese sword and tosogu dealers..."
-```
+| Tier | Count | % | Description |
+|------|------:|--:|-------------|
+| **Excellent** | 2,959 | 48.8% | cert_type + artisan name + item_type |
+| **Good** | 1,899 | 31.3% | item_type + at least one of cert/smith/school |
+| Minimal | 1,052 | 17.3% | item_type only (no cert or artisan) |
+| Fallback | 159 | 2.6% | No item_type — raw title used |
 
-### Individual Dealer Pages
+**80.1% of listings produce a Good or Excellent structured title.** The `title_en` field (97% coverage) is the critical enabler — when `smith` is in Japanese (2,101 listings), `extractArtisanFromTitleEn()` can usually recover a romanized artisan name from the LLM-generated English title.
 
-**URL:** `/dealers/[slug]`
+### Remaining gaps
 
-Dynamic pages for each dealer:
-- Dealer info and stats
-- Sample listings
-- Link to filtered browse view
-- Breadcrumb JSON-LD
+- **159 listings** missing `item_type` entirely — the only true fallbacks
+- **2,101 listings** with Japanese-only `smith` rely on `title_en` extraction (covered by 97% `title_en` population)
+- **Tosogu fields are sparse** (`tosogu_maker` 8.7%, `tosogu_school` 4.3%) — tsuba/fittings are more likely to produce Minimal-tier titles
 
-**Slug Generation:**
-```typescript
-function createDealerSlug(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '');
-}
-// "Aoi Art" → "aoi-art"
-```
+---
+
+## High-Priority Remaining Work
+
+### 1. Home page metadata adaptation to query params
+
+**Impact: HIGH** — The home page (`/`) handles all browse functionality via query params (`?type=katana`, `?cert=juyo`). The title stays generic regardless of filters. When users share filtered URLs or Google crawls them, the metadata doesn't reflect the content.
+
+**Gap:** `/?type=katana` shows "NihontoWatch | Japanese Sword & Tosogu Marketplace" instead of "Katana for Sale | NihontoWatch".
+
+**Mitigation:** The static category landing pages (`/swords/katana`) already cover the most important head terms with excellent metadata. The gap is specifically for direct browse URLs with query params. A `generateMetadata()` function that reads `searchParams` would close this.
+
+### 2. Server-render listing content for Googlebot
+
+**Impact: MEDIUM** — The listing detail page fetches data twice: once server-side for metadata/JSON-LD, then again client-side for the interactive UI. This means the actual listing content (description, specs, images) is NOT in the initial HTML — Googlebot must execute JavaScript to see it.
+
+**Current architecture:** Server component renders JSON-LD + empty `<ListingDetailClient />`. Client component fetches via `/api/listing/[id]` on mount.
+
+**Fix:** Pass server-fetched data as `initialData` prop to the client component. The client can hydrate immediately and still refetch on demand (admin actions). This gives Googlebot the full content in initial HTML and eliminates one DB roundtrip.
+
+### 3. `tosogu_era` and `tosogu_material` exposure in browse API
+
+**Impact: LOW-MEDIUM** — The browse API (`/api/browse/route.ts`) doesn't return `tosogu_material` or `tosogu_era`. These fields are available in the DB and now used by listing detail metadata, but browse-level features (e.g., faceted filtering by material) can't access them.
+
+### 4. Internal linking from listing pages
+
+**Impact: MEDIUM** — Listing detail pages link to related listings (by artisan and dealer) via `<RelatedListingsServer>`, which is good. Additional internal links could be added:
+- Link cert type to `/certified/{cert}` page
+- Link item type to `/swords/{type}` or `/fittings/{type}` page
+- Link artisan to `/artists/{slug}` page
+
+These links would distribute PageRank to category pages and help Google discover them faster.
 
 ---
 
 ## Testing & Validation
 
-### Validate Structured Data
+### Automated tests
 
-1. **Google Rich Results Test:**
-   https://search.google.com/test/rich-results
+`tests/app/listing-page-seo.test.ts` — 8 tests covering:
+- HTTP 404 for missing/invalid listings
+- `noindex` for sold/unavailable items
+- `index: true` for available items
+- Description accuracy (sold vs available)
+- Share proxy noindex
 
-   Test URLs:
-   - `https://nihontowatch.com` (Organization, WebSite)
-   - `https://nihontowatch.com/listing/123` (Product, Breadcrumb)
-   - `https://nihontowatch.com/dealers` (LocalBusiness)
+### Manual validation
 
-2. **Schema.org Validator:**
-   https://validator.schema.org/
+1. **Google Rich Results Test:** https://search.google.com/test/rich-results
+   - Test `/listing/{id}` for Product + Breadcrumb
+   - Test `/swords/katana` for ItemList
+   - Test `/dealers` for LocalBusiness
 
-### Validate robots.txt
+2. **Schema.org Validator:** https://validator.schema.org/
 
-Visit: https://nihontowatch.com/robots.txt
+3. **Title length check:** Verify representative titles stay under 60 chars:
+   ```
+   "Juyo Masamune Katana — Soshu, Kamakura | NihontoWatch"  → 55 chars ✓
+   "Tokubetsu Hozon Wakizashi — Bizen | NihontoWatch"       → 50 chars ✓
+   "Katana | NihontoWatch"                                    → 21 chars ✓
+   ```
 
-Expected content:
-```
-User-Agent: *
-Allow: /
-Disallow: /admin/
-Disallow: /api/
-...
-Sitemap: https://nihontowatch.com/sitemap.xml
-```
+### Google Search Console
 
-### Validate Sitemap
-
-Visit: https://nihontowatch.com/sitemap.xml
-
-Check:
-- Valid XML structure
-- All listings included
-- All dealer pages included
-- `lastmod` dates present
+Monitor:
+- **Pages → Indexing:** Watch soft 404s (should be ~0 after Jan 2026 fix)
+- **Enhancements → Product:** Rich result eligibility from Product JSON-LD
+- **Core Web Vitals:** LCP target <3s
+- **Sitemaps:** Verify all URLs are discovered
 
 ---
 
-## Google Search Console
+## Changelog
 
-### Setup
-
-1. Go to https://search.google.com/search-console
-2. Add property for `nihontowatch.com`
-3. Verify ownership (DNS or HTML file)
-
-### Submit Sitemap
-
-1. Navigate to **Sitemaps** in left sidebar
-2. Enter `sitemap.xml`
-3. Click **Submit**
-
-Note: Initial fetch may show "Couldn't fetch" - this is normal. Google will crawl within 24-48 hours.
-
-### Monitor
-
-Check regularly for:
-- **Coverage:** Indexed pages vs excluded
-- **Enhancements:** Rich results eligibility
-- **Core Web Vitals:** Performance metrics
-- **Mobile Usability:** Mobile-friendly issues
-
----
-
-## Maintenance
-
-### Adding New Pages
-
-When creating new public pages:
-1. Add metadata with title, description, canonical
-2. Add to sitemap if needed
-3. Include appropriate JSON-LD schema
-
-### Updating Schemas
-
-When changing listing fields:
-1. Update `generateProductJsonLd()` in `src/lib/seo/jsonLd.ts`
-2. Test with Rich Results Test
-3. Monitor Search Console for errors
-
-### Sitemap Revalidation
-
-The sitemap uses ISR with 1-hour revalidation. For immediate updates:
-```bash
-# Trigger revalidation via Vercel
-curl -X POST "https://nihontowatch.com/api/revalidate?path=/sitemap.xml"
-```
-
----
-
-## SEO Checklist
-
-### Per-Page Checklist
-
-- [ ] Unique `<title>` (50-60 chars)
-- [ ] Unique `<meta name="description">` (150-160 chars)
-- [ ] Canonical URL set
-- [ ] OpenGraph tags present
-- [ ] Twitter card tags present
-- [ ] Appropriate JSON-LD schema
-- [ ] Images have descriptive alt text
-- [ ] Mobile-friendly layout
-
-### Site-Wide Checklist
-
-- [ ] robots.txt accessible
-- [ ] sitemap.xml accessible and valid
-- [ ] Admin pages noindexed
-- [ ] Core Web Vitals passing
-- [ ] HTTPS enforced
-- [ ] No broken internal links
-- [ ] Structured data validated
+| Date | Change |
+|------|--------|
+| 2026-02-14 | Structured title system for listing pages (`metaTitle.ts`), brand unification to "NihontoWatch", tosogu dual-path field fix. Field coverage measured against live DB — corrected `title_en` from "~5-10%" to **97%** (populated by LLM extraction, not on-demand) |
+| 2026-01-25 | Soft 404 fix (proper `notFound()`), noindex for sold items, noindex for share proxy |
+| 2026-01-xx | Category landing pages (`/swords/*`, `/fittings/*`, `/certified/*`) with ItemList JSON-LD |
+| 2025-xx-xx | Initial SEO implementation: robots.txt, sitemap, JSON-LD, OG images |

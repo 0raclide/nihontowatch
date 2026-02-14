@@ -3,8 +3,8 @@ import { ReactNode } from 'react';
 import AdminLayoutClient from './AdminLayoutClient';
 
 export const metadata: Metadata = {
-  title: 'Admin Dashboard | Nihontowatch',
-  description: 'Admin dashboard for Nihontowatch.',
+  title: 'Admin Dashboard | NihontoWatch',
+  description: 'Admin dashboard for NihontoWatch.',
   robots: {
     index: false,
     follow: false,

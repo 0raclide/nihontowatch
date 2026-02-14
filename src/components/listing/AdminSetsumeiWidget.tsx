@@ -335,7 +335,7 @@ export function AdminSetsumeiWidget({ listing, onConnectionChanged }: AdminSetsu
                 <a
                   href={preview.catalogRecord.catalog_url}
                   target="_blank"
-                  rel="noopener noreferrer"
+                  rel="noopener noreferrer nofollow"
                   className="inline-flex items-center gap-1 mt-3 text-[12px] text-gold hover:text-gold-light"
                 >
                   View in Yuhinkai

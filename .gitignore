@@ -45,3 +45,6 @@ next-env.d.ts
 # Playwright test artifacts
 test-results/
 tests/screenshots/
+
+# Private infrastructure docs
+docs/private/

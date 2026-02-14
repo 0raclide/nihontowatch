@@ -2,6 +2,7 @@ import { MetadataRoute } from 'next';
 import { createServiceClient } from '@/lib/supabase/server';
 import { yuhinkaiClient } from '@/lib/supabase/yuhinkai';
 import { generateArtisanSlug } from '@/lib/artisan/slugs';
+import { getAllSwordSlugs, getAllFittingSlugs, getAllCertSlugs } from '@/lib/seo/categories';
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://nihontowatch.com';
 
@@ -160,7 +161,45 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }));
 
-  return [...staticPages, ...dealerPages, ...listingPages, ...artistPages];
+  // Category landing pages (SEO)
+  const categoryPages: MetadataRoute.Sitemap = [
+    ...getAllSwordSlugs().map((slug) => ({
+      url: `${baseUrl}/swords/${slug}`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly' as const,
+      priority: 0.8,
+    })),
+    ...getAllFittingSlugs().map((slug) => ({
+      url: `${baseUrl}/fittings/${slug}`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly' as const,
+      priority: 0.8,
+    })),
+    ...getAllCertSlugs().map((slug) => ({
+      url: `${baseUrl}/certified/${slug}`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly' as const,
+      priority: 0.8,
+    })),
+  ];
+
+  // Glossary term pages (featured terms only)
+  const glossaryTermSlugs = [
+    'juyo', 'hozon', 'tokubetsu-hozon', 'tokubetsu-juyo', 'setsumei', 'origami', 'shinsa',
+    'katana', 'wakizashi', 'tanto', 'tachi', 'naginata', 'yari', 'daisho',
+    'hamon', 'nagasa', 'sugata', 'kissaki', 'nakago', 'mei', 'boshi', 'sori',
+    'kitae', 'jigane', 'jihada', 'yakiba',
+    'tsuba', 'menuki', 'kozuka', 'kogai', 'fuchi', 'kashira', 'koshirae',
+    'gokaden', 'shinto', 'koto', 'shinshinto',
+    'shakudo', 'shibuichi',
+  ];
+  const glossaryTermPages: MetadataRoute.Sitemap = glossaryTermSlugs.map((slug) => ({
+    url: `${baseUrl}/glossary/${slug}`,
+    changeFrequency: 'monthly' as const,
+    priority: 0.6,
+  }));
+
+  return [...staticPages, ...categoryPages, ...glossaryTermPages, ...dealerPages, ...listingPages, ...artistPages];
 }
 
 // Revalidate sitemap every hour

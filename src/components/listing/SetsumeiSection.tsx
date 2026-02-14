@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { HighlightedMarkdown } from '@/components/glossary/HighlightedMarkdown';
-import type { Listing, ListingWithEnrichment, CertificationType } from '@/types';
-import { getSetsumeiContent } from '@/types';
+import type { Listing, ListingWithEnrichment } from '@/types';
+import { getSetsumeiContent, isSetsumeiEligibleCert } from '@/types';
 
 // =============================================================================
 // TYPES
@@ -19,18 +19,6 @@ interface SetsumeiSectionProps {
   previewLength?: number;
   /** Callback when user clicks "Read full evaluation" in preview mode */
   onReadMore?: () => void;
-}
-
-// Certification types that have setsumei
-const SETSUMEI_CERT_TYPES: CertificationType[] = ['Juyo', 'Tokubetsu Juyo'];
-
-// =============================================================================
-// HELPERS
-// =============================================================================
-
-function hasSetsumeiCertification(certType?: CertificationType | string): boolean {
-  if (!certType) return false;
-  return SETSUMEI_CERT_TYPES.includes(certType as CertificationType);
 }
 
 function truncateText(text: string, maxLength: number): string {
@@ -62,7 +50,7 @@ export function SetsumeiSection({
   const { canAccess, showPaywall } = useSubscription();
 
   // Only show for Juyo/Tokubetsu Juyo items
-  if (!hasSetsumeiCertification(listing.cert_type)) {
+  if (!isSetsumeiEligibleCert(listing.cert_type)) {
     return null;
   }
 
@@ -175,6 +163,8 @@ export function SetsumeiSection({
     ? setsumei?.text_ja || setsumei?.text_en
     : setsumei?.text_en;
   const certLabel = setsumei?.cert_type || listing.cert_type;
+  const isFull = variant === 'full';
+  const HeadingTag = isFull ? 'h2' : 'h3';
 
   // For preview mode, truncate the text
   const isPreview = variant === 'preview';
@@ -184,13 +174,13 @@ export function SetsumeiSection({
     : displayText;
 
   return (
-    <div className={`${baseClasses} ${className}`}>
+    <div id={isFull ? 'setsumei' : undefined} className={`${baseClasses} ${className}`}>
       {/* Header */}
       <div className="flex items-center justify-between mb-1">
         <div className="flex items-center gap-2">
-          <h3 className="text-[10px] uppercase tracking-wider text-gold font-medium">
+          <HeadingTag className={`${isFull ? 'text-[13px]' : 'text-[10px]'} uppercase tracking-wider text-gold font-medium`}>
             {isYuhinkai ? 'Official Catalog Translation' : 'NBTHK Zufu Commentary'}
-          </h3>
+          </HeadingTag>
           <span className="text-[9px] px-1.5 py-0.5 bg-gold/10 text-gold rounded">
             {certLabel}
             {setsumei?.cert_session && ` #${setsumei.cert_session}`}
@@ -251,16 +241,7 @@ export function SetsumeiSection({
           </button>
         )}
 
-        {/* Full mode: also show expand for long text even if not truncated by previewLength */}
-        {variant === 'full' && !needsTruncation && displayText && displayText.length > 1000 && (
-          <button
-            type="button"
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="text-[12px] text-gold hover:text-gold-light transition-colors mt-3 font-medium"
-          >
-            {isExpanded ? 'Show less' : 'Read full evaluation'}
-          </button>
-        )}
+        {/* Full mode: all text visible for SEO — no collapse */}
       </div>
 
       {/* Source attribution for Yuhinkai */}

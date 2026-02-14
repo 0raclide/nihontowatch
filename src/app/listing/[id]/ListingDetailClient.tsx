@@ -4,7 +4,9 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
+import { Breadcrumbs } from '@/components/ui/Breadcrumbs';
 import { Header } from '@/components/layout/Header';
+import { Footer } from '@/components/layout/Footer';
 import { BottomTabBar } from '@/components/navigation/BottomTabBar';
 import { CreateAlertModal } from '@/components/alerts/CreateAlertModal';
 import { LoginModal } from '@/components/auth/LoginModal';
@@ -14,13 +16,13 @@ import { useAuth } from '@/lib/auth/AuthContext';
 import { getAllImages } from '@/lib/images';
 import { useValidatedImages } from '@/hooks/useValidatedImages';
 import { shouldShowNewBadge } from '@/lib/newListing';
-import { SetsumeiSection } from '@/components/listing/SetsumeiSection';
 import { SetsumeiZufuBadge } from '@/components/ui/SetsumeiZufuBadge';
 import { AdminSetsumeiWidget } from '@/components/listing/AdminSetsumeiWidget';
 import { useActivityTrackerOptional } from '@/lib/tracking/ActivityTracker';
 import { trackListingView, getViewReferrer } from '@/lib/tracking/viewTracker';
 import { getSessionId } from '@/lib/activity/sessionManager';
 import type { Listing, CreateAlertInput } from '@/types';
+import { isSetsumeiEligibleCert } from '@/types';
 
 // Extended listing type for this page
 interface ListingDetail extends Listing {
@@ -236,20 +238,11 @@ export default function ListingDetailPage() {
       <Header />
 
       <main className="max-w-[1200px] mx-auto px-4 py-4 lg:px-6 lg:py-8">
-        {/* Breadcrumb */}
-        <nav className="mb-4 lg:mb-6">
-          <ol className="flex items-center gap-2 text-[12px] text-muted">
-            <li>
-              <Link href="/" className="hover:text-gold transition-colors">
-                Collection
-              </Link>
-            </li>
-            <li>/</li>
-            <li className="text-charcoal truncate max-w-[200px]">
-              {listing.title}
-            </li>
-          </ol>
-        </nav>
+        <Breadcrumbs items={[
+          { name: 'Browse', url: '/' },
+          ...(itemType ? [{ name: itemType, url: `/?type=${listing.item_type}` }] : []),
+          { name: listing.title },
+        ]} />
 
         <div className="grid lg:grid-cols-2 gap-8 lg:gap-12">
           {/* Image Gallery */}
@@ -298,7 +291,7 @@ export default function ListingDetailPage() {
                   >
                     <Image
                       src={img}
-                      alt={`Image ${index + 1}`}
+                      alt={`${listing.title} - Photo ${index + 1}`}
                       fill
                       className="object-cover"
                       sizes="64px"
@@ -328,7 +321,7 @@ export default function ListingDetailPage() {
                   {certInfo.label}
                 </span>
               )}
-              {listing.setsumei_text_en && (
+              {listing.setsumei_text_en && isSetsumeiEligibleCert(listing.cert_type) && (
                 <SetsumeiZufuBadge />
               )}
               {shouldShowNewBadge(listing.first_seen_at, listing.dealer_earliest_seen_at, listing.is_initial_import) && (
@@ -429,13 +422,6 @@ export default function ListingDetailPage() {
               </div>
             )}
 
-            {/* Official NBTHK Zufu Translation (Juyo/Tokuju only) */}
-            <SetsumeiSection
-              listing={listing as unknown as Listing}
-              variant="full"
-              className="mb-6 pb-6 border-b border-border px-0"
-            />
-
             {/* Admin: Manual Yuhinkai Connection Widget */}
             {isAdmin && (
               <AdminSetsumeiWidget
@@ -467,7 +453,7 @@ export default function ListingDetailPage() {
               <a
                 href={listing.url}
                 target="_blank"
-                rel="noopener noreferrer"
+                rel="noopener noreferrer nofollow"
                 onClick={handleExternalLinkClick}
                 className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 text-[14px] font-medium text-white bg-gold hover:bg-gold-light rounded-lg transition-colors"
               >
@@ -522,6 +508,7 @@ export default function ListingDetailPage() {
       {/* Login Modal */}
       <LoginModal isOpen={showLoginModal} onClose={() => setShowLoginModal(false)} />
 
+      <Footer />
       <BottomTabBar activeFilterCount={0} />
     </div>
   );

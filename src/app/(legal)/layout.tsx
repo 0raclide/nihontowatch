@@ -29,12 +29,12 @@ export default function LegalLayout({
           <Link href="/" className="flex items-center gap-2">
             <Image
               src="/logo-mon.png"
-              alt="Nihontowatch"
+              alt="NihontoWatch"
               width={28}
               height={28}
               className="opacity-80"
             />
-            <span className="font-serif text-xl text-ink">Nihontowatch</span>
+            <span className="font-serif text-xl text-ink">NihontoWatch</span>
           </Link>
           <Link
             href="/browse"

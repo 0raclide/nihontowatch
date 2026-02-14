@@ -54,7 +54,7 @@ function WatchlistItem({
         <a
           href={listing.url}
           target="_blank"
-          rel="noopener noreferrer"
+          rel="noopener noreferrer nofollow"
           className="w-20 h-20 lg:w-24 lg:h-24 flex-shrink-0 overflow-hidden bg-linen rounded"
         >
           {imageUrl ? (
@@ -84,7 +84,7 @@ function WatchlistItem({
               <a
                 href={listing.url}
                 target="_blank"
-                rel="noopener noreferrer"
+                rel="noopener noreferrer nofollow"
                 className="block"
               >
                 <h3 className="text-[14px] font-medium text-ink truncate hover:text-gold transition-colors">

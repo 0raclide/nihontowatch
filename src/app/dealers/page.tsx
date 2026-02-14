@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { createServiceClient } from '@/lib/supabase/server';
 import { Header } from '@/components/layout/Header';
+import { Breadcrumbs } from '@/components/ui/Breadcrumbs';
+import { Footer } from '@/components/layout/Footer';
 import { BottomTabBar } from '@/components/navigation/BottomTabBar';
 import {
   generateDealerJsonLd,
@@ -12,23 +14,23 @@ import type { Dealer } from '@/types';
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://nihontowatch.com';
 
 export const metadata: Metadata = {
-  title: 'Japanese Sword Dealers | 27 Trusted Nihonto Dealers Worldwide | Nihontowatch',
+  title: 'Japanese Sword Dealers | 27 Trusted Nihonto Dealers Worldwide | NihontoWatch',
   description:
     'Browse 27 verified Japanese sword dealers from Japan and USA. Find authentic katana, wakizashi, tanto, and tosogu from trusted dealers like Aoi Art, Nipponto, and more.',
   alternates: {
     canonical: `${baseUrl}/dealers`,
   },
   openGraph: {
-    title: 'Japanese Sword Dealers | Nihontowatch',
+    title: 'Japanese Sword Dealers | NihontoWatch',
     description:
       'Browse 27 verified Japanese sword dealers from Japan and USA. Find authentic katana, wakizashi, tanto, and tosogu from trusted dealers.',
     type: 'website',
     url: `${baseUrl}/dealers`,
-    siteName: 'Nihontowatch',
+    siteName: 'NihontoWatch',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Japanese Sword Dealers | Nihontowatch',
+    title: 'Japanese Sword Dealers | NihontoWatch',
     description: 'Browse 27 verified Japanese sword dealers from Japan and USA.',
   },
 };
@@ -142,6 +144,8 @@ export default async function DealersPage() {
         <Header />
 
         <main className="max-w-6xl mx-auto px-4 py-8 pb-24 md:pb-8">
+          <Breadcrumbs items={[{ name: 'Home', url: '/' }, { name: 'Dealers' }]} />
+
           {/* Page Header */}
           <div className="mb-8">
             <h1 className="font-serif text-3xl md:text-4xl text-ink dark:text-cream mb-2">
@@ -207,6 +211,7 @@ export default async function DealersPage() {
           )}
         </main>
 
+        <Footer />
         <BottomTabBar />
       </div>
     </>

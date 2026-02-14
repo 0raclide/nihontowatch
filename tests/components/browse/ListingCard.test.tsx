@@ -495,7 +495,7 @@ describe('ListingCard Component', () => {
       expect(screen.getByTestId('setsumei-zufu-badge')).toBeInTheDocument();
     });
 
-    it('shows Zufu badge even without certification', () => {
+    it('does NOT show Zufu badge when cert_type is not Juyo/Tokuju (orphaned setsumei)', () => {
       const noCertWithSetsumei = {
         ...mockListing,
         cert_type: null,
@@ -503,8 +503,21 @@ describe('ListingCard Component', () => {
       };
       render(<ListingCard {...defaultProps} listing={noCertWithSetsumei} />);
 
+      // Setsumei data without Juyo/Tokuju cert is orphaned — badge must NOT show
       expect(screen.queryByText('Jūyō')).not.toBeInTheDocument();
-      expect(screen.getByTestId('setsumei-zufu-badge')).toBeInTheDocument();
+      expect(screen.queryByTestId('setsumei-zufu-badge')).not.toBeInTheDocument();
+    });
+
+    it('does NOT show Zufu badge when cert_type is Hozon with orphaned setsumei', () => {
+      const hozonWithSetsumei = {
+        ...mockListing,
+        cert_type: 'Hozon',
+        setsumei_text_en: '## Hallucinated setsumei from wrong cert assignment',
+      };
+      render(<ListingCard {...defaultProps} listing={hozonWithSetsumei} />);
+
+      // Hozon items never have setsumei — this is orphaned data
+      expect(screen.queryByTestId('setsumei-zufu-badge')).not.toBeInTheDocument();
     });
 
     // Yuhinkai enrichment tests (manual connections)

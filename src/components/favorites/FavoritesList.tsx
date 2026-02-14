@@ -186,7 +186,7 @@ export function FavoritesListCompact({ currency }: Omit<FavoritesListProps, 'exc
           <a
             href={item.listing.url}
             target="_blank"
-            rel="noopener noreferrer"
+            rel="noopener noreferrer nofollow"
             className="w-20 h-20 flex-shrink-0 overflow-hidden bg-linen"
           >
             {getImageUrl(item.listing) ? (
@@ -209,7 +209,7 @@ export function FavoritesListCompact({ currency }: Omit<FavoritesListProps, 'exc
             <a
               href={item.listing.url}
               target="_blank"
-              rel="noopener noreferrer"
+              rel="noopener noreferrer nofollow"
               className="block"
             >
               <h3 className="text-sm font-medium text-ink truncate hover:text-gold transition-colors">

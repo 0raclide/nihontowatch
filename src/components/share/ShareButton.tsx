@@ -45,7 +45,7 @@ function extractVersion(ogImageUrl: string | null | undefined): string {
  */
 export function ShareButton({
   listingId,
-  title = 'Check out this listing on Nihontowatch',
+  title = 'Check out this listing on NihontoWatch',
   className = '',
   size = 'md',
   ogImageUrl,
@@ -77,7 +77,7 @@ export function ShareButton({
     // (macOS Safari has navigator.share but opens a sheet instead of sharing)
     if (isMobile && navigator.share) {
       const shareData = {
-        title: 'Nihontowatch',
+        title: 'NihontoWatch',
         text: title,
         url: shareUrl,
       };

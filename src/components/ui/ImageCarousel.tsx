@@ -18,6 +18,8 @@ export interface ImageCarouselProps {
   className?: string;
   showDots?: boolean;
   enableZoom?: boolean;
+  /** Base alt text for images (e.g. listing title). Falls back to "Image N" if not provided. */
+  altText?: string;
 }
 
 // Tiny placeholder for blur effect
@@ -43,6 +45,7 @@ export default function ImageCarousel({
   className = '',
   showDots = true,
   enableZoom = false,
+  altText,
 }: ImageCarouselProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
@@ -444,7 +447,7 @@ export default function ImageCarousel({
               >
                 <Image
                   src={src}
-                  alt={`Image ${index + 1}`}
+                  alt={altText ? `${altText} - Photo ${index + 1}` : `Image ${index + 1}`}
                   fill
                   className="object-contain pointer-events-none"
                   sizes="(max-width: 1024px) 100vw, 50vw"

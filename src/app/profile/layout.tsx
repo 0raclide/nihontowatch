@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import { ReactNode } from 'react';
 
 export const metadata: Metadata = {
-  title: 'Profile | Nihontowatch',
-  description: 'Manage your Nihontowatch profile and settings.',
+  title: 'Profile | NihontoWatch',
+  description: 'Manage your NihontoWatch profile and settings.',
   robots: {
     index: false,
     follow: false,
