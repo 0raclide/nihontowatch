@@ -445,16 +445,20 @@ export function QuickViewMobileSheet({
          listing.artisan_id !== 'UNKNOWN' &&
          listing.artisan_confidence && listing.artisan_confidence !== 'NONE' &&
          (isAdmin || !listing.artisan_id.startsWith('tmp')) && (
-          <div className="flex items-center gap-2 mx-4 mb-2 px-3 py-2 bg-gold/5 rounded-lg">
+          <div
+            className="flex items-center gap-2 mx-4 mb-2 px-3 py-2 bg-gold/5 rounded-lg"
+            onClick={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+            onTouchEnd={(e) => e.stopPropagation()}
+            onTouchMove={(e) => e.stopPropagation()}
+          >
             <a
               href={`/artists/${listing.artisan_id}`}
               onClick={(e) => {
                 e.preventDefault();
-                e.stopPropagation();
                 quickView?.closeQuickView?.();
                 router.push(`/artists/${listing.artisan_id}`);
               }}
-              onTouchStart={(e) => e.stopPropagation()}
               className="group flex items-center gap-3 flex-1 min-w-0 cursor-pointer"
             >
               <svg className="w-4 h-4 text-gold shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -488,11 +492,7 @@ export function QuickViewMobileSheet({
                 adminHidden={listing.admin_hidden}
                 onToggleHidden={handleToggleHidden}
               >
-                <span
-                  className="text-muted hover:text-ink transition-colors p-1 cursor-pointer shrink-0"
-                  onClick={(e) => e.stopPropagation()}
-                  onTouchStart={(e) => e.stopPropagation()}
-                >
+                <span className="text-muted hover:text-ink transition-colors p-1 cursor-pointer shrink-0">
                   <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                   </svg>
