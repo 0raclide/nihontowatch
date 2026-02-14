@@ -842,6 +842,7 @@ export const ListingCard = memo(function ListingCard({
                 method={listing.artisan_method}
                 candidates={listing.artisan_candidates}
                 verified={listing.artisan_verified}
+                certType={listing.cert_type}
               >
                 <span className={`${sz.attr} sm:text-[11px] lg:text-[12px] ${isUnknownArtisan ? 'italic text-muted' : 'font-medium text-ink border-b border-gold/40 pb-px'} truncate`}>
                   {primaryName}
@@ -863,7 +864,7 @@ export const ListingCard = memo(function ListingCard({
           </div>
         ) : isAdmin && !listing.artisan_id ? (
           <div className={`${sz.attrH} sm:h-[20px] lg:h-[22px] flex items-baseline`}>
-            <ArtisanTooltip listingId={parseInt(listing.id)} startInSearchMode>
+            <ArtisanTooltip listingId={parseInt(listing.id)} startInSearchMode certType={listing.cert_type}>
               <span className="text-[10px] font-medium text-muted hover:text-ink transition-colors cursor-pointer">
                 Set artisan
               </span>
@@ -896,6 +897,7 @@ export const ListingCard = memo(function ListingCard({
     prevProps.listing.artisan_id === nextProps.listing.artisan_id &&
     prevProps.listing.artisan_display_name === nextProps.listing.artisan_display_name &&
     prevProps.listing.artisan_confidence === nextProps.listing.artisan_confidence &&
+    prevProps.listing.cert_type === nextProps.listing.cert_type &&
     prevProps.mobileView === nextProps.mobileView &&
     prevProps.fontSize === nextProps.fontSize &&
     prevProps.imageAspect === nextProps.imageAspect

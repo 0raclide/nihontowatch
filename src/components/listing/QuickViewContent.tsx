@@ -170,6 +170,8 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
                   })}
                   adminHidden={listing.admin_hidden}
                   onToggleHidden={handleToggleHidden}
+                  certType={listing.cert_type}
+                  onCertChanged={(newCert) => quickView?.refreshCurrentListing({ cert_type: newCert } as Partial<Listing>)}
                 >
                   <span className="inline-flex items-center gap-0.5 text-[10px] font-mono font-medium px-2 py-0.5 rounded bg-muted/10 text-muted hover:text-ink transition-colors" data-artisan-tooltip>
                     Set ID
@@ -273,6 +275,8 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
                   })}
                   adminHidden={listing.admin_hidden}
                   onToggleHidden={handleToggleHidden}
+                  certType={listing.cert_type}
+                  onCertChanged={(newCert) => quickView?.refreshCurrentListing({ cert_type: newCert } as Partial<Listing>)}
                 >
                   <span className="text-muted hover:text-ink transition-colors p-1 cursor-pointer shrink-0">
                     <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
