@@ -117,6 +117,14 @@ export function ArtisanTooltip({
   const [fixSuccess, setFixSuccess] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
+  // Local admin_hidden state for optimistic toggle
+  const [localHidden, setLocalHidden] = useState(adminHidden ?? false);
+
+  // Sync when prop changes (e.g., parent re-renders with fresh data)
+  useEffect(() => {
+    setLocalHidden(adminHidden ?? false);
+  }, [adminHidden]);
+
   // Cert editing state
   const showCertSection = certTypeProp !== undefined;
   const [currentCert, setCurrentCert] = useState<string | null>(normalizeCertValue(certTypeProp));
@@ -129,6 +137,13 @@ export function ArtisanTooltip({
     suppressScrollCloseRef.current = true;
     setTimeout(() => { suppressScrollCloseRef.current = false; }, 1000);
   }, []);
+
+  // Wrap onToggleHidden with optimistic update
+  const handleToggleHidden = useCallback(() => {
+    setLocalHidden(prev => !prev);
+    suppressScrollClose();
+    onToggleHidden?.();
+  }, [onToggleHidden, suppressScrollClose]);
 
   // Drag state for repositioning the tooltip
   const [isDragging, setIsDragging] = useState(false);
@@ -760,14 +775,14 @@ export function ArtisanTooltip({
                 {onToggleHidden && (
                   <div className="mb-3">
                     <button
-                      onClick={onToggleHidden}
+                      onClick={handleToggleHidden}
                       className={`w-full flex items-center justify-center gap-1.5 py-1.5 rounded text-xs font-medium transition-colors ${
-                        adminHidden
+                        localHidden
                           ? 'bg-surface border border-green-500/30 text-green-600 hover:bg-green-500/10 dark:text-green-400'
                           : 'bg-surface border border-red-500/30 text-red-600 hover:bg-red-500/10 dark:text-red-400'
                       }`}
                     >
-                      {adminHidden ? (
+                      {localHidden ? (
                         <>
                           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
