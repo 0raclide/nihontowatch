@@ -197,7 +197,10 @@ export function QuickViewMobileSheet({
     };
   }, [isExpanded]);
 
-  // Handle touch start on the drag handle area
+  // Track whether the touch has committed to a drag (past threshold)
+  const isDragCommitted = useRef(false);
+
+  // Handle touch start on the drag handle area — record start position but don't commit to drag yet
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     const touch = e.touches[0];
     dragStartY.current = touch.clientY;
@@ -206,19 +209,27 @@ export function QuickViewMobileSheet({
     lastY.current = touch.clientY;
     lastTime.current = Date.now();
     velocity.current = 0;
+    isDragCommitted.current = false;
     setIsDragging(true);
   }, [sheetHeight]);
 
-  // Handle touch move - update sheet height based on gesture
+  // Handle touch move - only commit to drag after 8px vertical movement
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
     if (!isDragging) return;
-
-    // Prevent browser from also scrolling/bouncing the underlying image scroller
-    e.preventDefault();
 
     const touch = e.touches[0];
     const currentY = touch.clientY;
     const currentTime = Date.now();
+
+    // Don't commit to drag until finger moves enough — lets page scroll through in DevTools
+    if (!isDragCommitted.current) {
+      const distance = Math.abs(currentY - dragStartY.current);
+      if (distance < 8) return; // Below threshold — let browser handle (scroll)
+      isDragCommitted.current = true;
+    }
+
+    // Now committed — prevent browser scroll and handle drag
+    e.preventDefault();
 
     // Calculate velocity for momentum
     const dt = currentTime - lastTime.current;
@@ -255,6 +266,7 @@ export function QuickViewMobileSheet({
   // Handle touch end - snap to nearest state
   const handleTouchEnd = useCallback(() => {
     if (!isDragging) return;
+    isDragCommitted.current = false;
     setIsDragging(false);
 
     const midpoint = (collapsedHeight + expandedHeight) / 2;
