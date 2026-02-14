@@ -89,20 +89,9 @@ export function QuickViewModal({
     let locked = false;
     let horizontal = false;
 
-    const onTouchStart = (e: TouchEvent) => {
-      if (window.innerWidth >= 1024) return;
-      const x = e.touches[0].clientX;
-      if (x > EDGE_ZONE) return;
-
-      active = true;
-      startX = x;
-      startY = e.touches[0].clientY;
-      startTime = Date.now();
-      tx = 0;
-      locked = false;
-      horizontal = false;
-    };
-
+    // The touchmove handler uses { passive: false } so it can call
+    // preventDefault(). To avoid blocking the compositor during normal
+    // scrolling we only attach it while an edge-zone touch is active.
     const onTouchMove = (e: TouchEvent) => {
       if (!active) return;
 
@@ -114,7 +103,11 @@ export function QuickViewModal({
         if (Math.abs(dx) > DIRECTION_LOCK_PX || Math.abs(dy) > DIRECTION_LOCK_PX) {
           locked = true;
           horizontal = Math.abs(dx) > Math.abs(dy);
-          if (!horizontal) { active = false; return; }
+          if (!horizontal) {
+            active = false;
+            content.removeEventListener('touchmove', onTouchMove);
+            return;
+          }
         } else {
           return; // wait for more movement
         }
@@ -134,7 +127,27 @@ export function QuickViewModal({
       }
     };
 
+    const onTouchStart = (e: TouchEvent) => {
+      if (window.innerWidth >= 1024) return;
+      const x = e.touches[0].clientX;
+      if (x > EDGE_ZONE) return;
+
+      active = true;
+      startX = x;
+      startY = e.touches[0].clientY;
+      startTime = Date.now();
+      tx = 0;
+      locked = false;
+      horizontal = false;
+
+      // Attach non-passive touchmove only while edge gesture is live
+      content.addEventListener('touchmove', onTouchMove, { passive: false });
+    };
+
     const onTouchEnd = () => {
+      // Always detach the non-passive touchmove so scroll is never blocked
+      content.removeEventListener('touchmove', onTouchMove);
+
       if (!active || !horizontal) { active = false; return; }
 
       const elapsed = Math.max(1, Date.now() - startTime);
@@ -170,12 +183,11 @@ export function QuickViewModal({
     };
 
     content.addEventListener('touchstart', onTouchStart, { passive: true });
-    content.addEventListener('touchmove', onTouchMove, { passive: false });
     content.addEventListener('touchend', onTouchEnd, { passive: true });
 
     return () => {
       content.removeEventListener('touchstart', onTouchStart);
-      content.removeEventListener('touchmove', onTouchMove);
+      content.removeEventListener('touchmove', onTouchMove); // in case gesture is mid-flight
       content.removeEventListener('touchend', onTouchEnd);
       // Clean up any lingering inline styles on teardown
       content.style.transform = '';
