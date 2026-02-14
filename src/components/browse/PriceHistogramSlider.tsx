@@ -26,6 +26,7 @@ const { BOUNDARIES, MAX_BAR_HEIGHT, MIN_BAR_HEIGHT, DEBOUNCE_MS } = PRICE_HISTOG
 const BUCKET_COUNT = BOUNDARIES.length;
 const HANDLE_SIZE = 14; // px — diameter of drag handles
 const HANDLE_RADIUS = HANDLE_SIZE / 2;
+const BAR_GAP = 4; // px — gap between bottom of bars and handle center line
 
 /** Format price value as compact label, currency-aware */
 function formatPrice(jpyValue: number, currency?: Currency, rates?: ExchangeRates | null): string {
@@ -239,20 +240,21 @@ export function PriceHistogramSlider({
       <div
         ref={trackRef}
         className="relative select-none touch-none cursor-pointer"
-        style={{ height: `${MAX_BAR_HEIGHT + HANDLE_RADIUS}px` }}
+        style={{ height: `${MAX_BAR_HEIGHT + BAR_GAP + HANDLE_RADIUS}px` }}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
       >
-        {/* Bars — continuous silhouette, no gaps */}
+        {/* Bars — continuous silhouette, stop above the handle line */}
         <div
           className="absolute inset-x-0 top-0 flex items-end"
           style={{ height: `${MAX_BAR_HEIGHT}px`, gap: '0.5px' }}
         >
           {bucketCounts.slice(0, visibleBucketCount).map((count, i) => {
             const inRange = i >= localMinIdx && i <= localMaxIdx;
+            const barMax = MAX_BAR_HEIGHT - BAR_GAP; // bars never reach the baseline
             const height = count > 0 && maxCount > 0
-              ? Math.max(MIN_BAR_HEIGHT, (count / maxCount) * MAX_BAR_HEIGHT)
+              ? Math.max(MIN_BAR_HEIGHT, (count / maxCount) * barMax)
               : 0;
 
             return (
@@ -272,46 +274,47 @@ export function PriceHistogramSlider({
           })}
         </div>
 
-        {/* Baseline — thin full-width line at bottom of bars */}
+        {/* Handle center line — positioned below bars with BAR_GAP clearance */}
+        {/* Baseline — thin full-width line */}
         <div
-          className="absolute inset-x-0 h-px bg-border/10"
-          style={{ top: `${MAX_BAR_HEIGHT}px` }}
+          className="absolute inset-x-0 h-px bg-border/8"
+          style={{ top: `${MAX_BAR_HEIGHT + BAR_GAP}px` }}
         />
 
-        {/* Active range line — sits on the baseline between handles */}
+        {/* Active range line — accent between handles */}
         <div
           className="absolute h-[1.5px] bg-gold/40 rounded-full"
           style={{
-            top: `${MAX_BAR_HEIGHT - 0.25}px`,
+            top: `${MAX_BAR_HEIGHT + BAR_GAP - 0.25}px`,
             left: `${minPct}%`,
             right: `${100 - maxPct}%`,
           }}
         />
 
-        {/* Min handle — centered on baseline */}
+        {/* Min handle — white circle, centered on baseline */}
         <div
-          className="absolute rounded-full bg-surface cursor-grab active:cursor-grabbing z-10 transition-shadow hover:shadow-md"
+          className="absolute rounded-full bg-white cursor-grab active:cursor-grabbing z-10"
           style={{
             width: `${HANDLE_SIZE}px`,
             height: `${HANDLE_SIZE}px`,
-            top: `${MAX_BAR_HEIGHT - HANDLE_RADIUS}px`,
+            top: `${MAX_BAR_HEIGHT + BAR_GAP - HANDLE_RADIUS}px`,
             left: `${minPct}%`,
             transform: 'translateX(-50%)',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.06)',
+            boxShadow: '0 1px 4px rgba(0,0,0,0.25), 0 0 0 0.5px rgba(0,0,0,0.1)',
           }}
           onPointerDown={handlePointerDown('min')}
         />
 
-        {/* Max handle — centered on baseline */}
+        {/* Max handle — white circle, centered on baseline */}
         <div
-          className="absolute rounded-full bg-surface cursor-grab active:cursor-grabbing z-10 transition-shadow hover:shadow-md"
+          className="absolute rounded-full bg-white cursor-grab active:cursor-grabbing z-10"
           style={{
             width: `${HANDLE_SIZE}px`,
             height: `${HANDLE_SIZE}px`,
-            top: `${MAX_BAR_HEIGHT - HANDLE_RADIUS}px`,
+            top: `${MAX_BAR_HEIGHT + BAR_GAP - HANDLE_RADIUS}px`,
             left: `${maxPct}%`,
             transform: 'translateX(-50%)',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.06)',
+            boxShadow: '0 1px 4px rgba(0,0,0,0.25), 0 0 0 0.5px rgba(0,0,0,0.1)',
           }}
           onPointerDown={handlePointerDown('max')}
         />
