@@ -24,8 +24,11 @@ interface PriceHistogramSliderProps {
 
 const { BOUNDARIES, MAX_BAR_HEIGHT, MIN_BAR_HEIGHT, DEBOUNCE_MS } = PRICE_HISTOGRAM;
 const BUCKET_COUNT = BOUNDARIES.length;
-const HANDLE_SIZE = 10; // px — diameter of drag handles
+const HANDLE_SIZE = 10; // px — diameter of visible drag dot
 const HANDLE_RADIUS = HANDLE_SIZE / 2;
+const TOUCH_SIZE = 44; // px — minimum touch target (Apple HIG / WCAG 2.5.8)
+const TOUCH_OFFSET = (TOUCH_SIZE - HANDLE_SIZE) / 2; // 17px — centering offset
+const TOUCH_TOP = MAX_BAR_HEIGHT - TOUCH_SIZE + HANDLE_RADIUS; // touch zone bottom aligns with handle bottom
 const BAR_GAP = 6; // px — gap between bottom of bars and handle center line
 
 /** Format price value as compact label, currency-aware */
@@ -55,6 +58,15 @@ function priceToBucketIndex(price: number): number {
 /** Convert bucket index to JPY boundary value */
 function bucketIndexToPrice(index: number): number {
   return BOUNDARIES[Math.max(0, Math.min(index, BUCKET_COUNT - 1))];
+}
+
+/**
+ * CSS `left` for the 44px touch zone, centered on the inset handle position.
+ * At 0%: handle center at HANDLE_RADIUS from track edge.
+ * At 100%: handle center at HANDLE_RADIUS from opposite edge.
+ */
+function touchLeft(pct: number): string {
+  return `calc(${pct}% - ${(pct / 100) * HANDLE_SIZE + TOUCH_OFFSET}px)`;
 }
 
 export function PriceHistogramSlider({
@@ -142,13 +154,16 @@ export function PriceHistogramSlider({
     const track = trackRef.current;
     if (!track) return 0;
     const rect = track.getBoundingClientRect();
-    const fraction = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    // Account for handle inset: usable range starts at HANDLE_RADIUS, ends at width - HANDLE_RADIUS
+    const fraction = Math.max(0, Math.min(1,
+      (clientX - rect.left - HANDLE_RADIUS) / (rect.width - HANDLE_SIZE)
+    ));
     return Math.round(fraction * (visibleCountRef.current - 1));
   }, []);
 
   const handlePointerDown = useCallback((handle: 'min' | 'max') => (e: React.PointerEvent) => {
     e.preventDefault();
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     draggingRef.current = handle;
   }, []);
 
@@ -173,6 +188,27 @@ export function PriceHistogramSlider({
       commitPriceChange(minIdxRef.current, maxIdxRef.current);
     }
   }, [commitPriceChange]);
+
+  // Tap-on-track: tap a histogram bar to jump the nearest handle
+  const handleTrackTap = useCallback((e: React.PointerEvent) => {
+    // Skip if a handle drag was just initiated (event bubbled from touch zone)
+    if (draggingRef.current) return;
+    const idx = getBucketFromPointer(e.clientX);
+    const distToMin = Math.abs(idx - minIdxRef.current);
+    const distToMax = Math.abs(idx - maxIdxRef.current);
+
+    if (distToMin <= distToMax) {
+      const clamped = Math.min(idx, maxIdxRef.current);
+      setLocalMinIdx(clamped);
+      minIdxRef.current = clamped;
+      commitPriceChange(clamped, maxIdxRef.current);
+    } else {
+      const clamped = Math.max(idx, minIdxRef.current);
+      setLocalMaxIdx(clamped);
+      maxIdxRef.current = clamped;
+      commitPriceChange(minIdxRef.current, clamped);
+    }
+  }, [getBucketFromPointer, commitPriceChange]);
 
   // Text input handlers
   const handleMinInputChange = useCallback((value: string) => {
@@ -236,19 +272,25 @@ export function PriceHistogramSlider({
 
   return (
     <div className="space-y-2">
-      {/* Unified histogram + handles — single interactive element */}
+      {/* Unified histogram + handles — single interactive track */}
       <div
         ref={trackRef}
         className="relative select-none touch-none cursor-pointer"
         style={{ height: `${MAX_BAR_HEIGHT + BAR_GAP + HANDLE_RADIUS}px` }}
+        onPointerDown={handleTrackTap}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
       >
-        {/* Bars — continuous silhouette, stop above the handle line */}
+        {/* Bars — inset by HANDLE_RADIUS so bar edges align with handle center positions */}
         <div
-          className="absolute inset-x-0 top-0 flex items-end"
-          style={{ height: `${MAX_BAR_HEIGHT}px`, gap: '0.5px' }}
+          className="absolute top-0 flex items-end"
+          style={{
+            height: `${MAX_BAR_HEIGHT}px`,
+            gap: '0.5px',
+            left: `${HANDLE_RADIUS}px`,
+            right: `${HANDLE_RADIUS}px`,
+          }}
         >
           {bucketCounts.slice(0, visibleBucketCount).map((count, i) => {
             const inRange = i >= localMinIdx && i <= localMaxIdx;
@@ -274,37 +316,57 @@ export function PriceHistogramSlider({
           })}
         </div>
 
-        {/* Min handle — white circle below bars */}
+        {/* Min handle — 44px touch zone with visible 10px dot at bottom */}
         <div
-          className="absolute rounded-full bg-white cursor-grab active:cursor-grabbing z-10"
+          className="absolute z-10 cursor-grab active:cursor-grabbing"
           style={{
-            width: `${HANDLE_SIZE}px`,
-            height: `${HANDLE_SIZE}px`,
-            top: `${MAX_BAR_HEIGHT + BAR_GAP - HANDLE_RADIUS}px`,
-            left: `${minPct}%`,
-            transform: 'translateX(-50%)',
-            boxShadow: '0 1px 4px rgba(0,0,0,0.25), 0 0 0 0.5px rgba(0,0,0,0.1)',
+            width: `${TOUCH_SIZE}px`,
+            height: `${TOUCH_SIZE}px`,
+            top: `${TOUCH_TOP}px`,
+            left: touchLeft(minPct),
           }}
           onPointerDown={handlePointerDown('min')}
-        />
+        >
+          <div
+            className="absolute rounded-full bg-white pointer-events-none"
+            style={{
+              width: `${HANDLE_SIZE}px`,
+              height: `${HANDLE_SIZE}px`,
+              bottom: 0,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              boxShadow: '0 1px 4px rgba(0,0,0,0.25), 0 0 0 0.5px rgba(0,0,0,0.1)',
+            }}
+          />
+        </div>
 
-        {/* Max handle — white circle, centered on baseline */}
+        {/* Max handle — 44px touch zone with visible 10px dot at bottom */}
         <div
-          className="absolute rounded-full bg-white cursor-grab active:cursor-grabbing z-10"
+          className="absolute z-10 cursor-grab active:cursor-grabbing"
           style={{
-            width: `${HANDLE_SIZE}px`,
-            height: `${HANDLE_SIZE}px`,
-            top: `${MAX_BAR_HEIGHT + BAR_GAP - HANDLE_RADIUS}px`,
-            left: `${maxPct}%`,
-            transform: 'translateX(-50%)',
-            boxShadow: '0 1px 4px rgba(0,0,0,0.25), 0 0 0 0.5px rgba(0,0,0,0.1)',
+            width: `${TOUCH_SIZE}px`,
+            height: `${TOUCH_SIZE}px`,
+            top: `${TOUCH_TOP}px`,
+            left: touchLeft(maxPct),
           }}
           onPointerDown={handlePointerDown('max')}
-        />
+        >
+          <div
+            className="absolute rounded-full bg-white pointer-events-none"
+            style={{
+              width: `${HANDLE_SIZE}px`,
+              height: `${HANDLE_SIZE}px`,
+              bottom: 0,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              boxShadow: '0 1px 4px rgba(0,0,0,0.25), 0 0 0 0.5px rgba(0,0,0,0.1)',
+            }}
+          />
+        </div>
       </div>
 
-      {/* Range labels */}
-      <div className="flex justify-between -mt-0.5">
+      {/* Range labels — inset to align with handle centers */}
+      <div className="flex justify-between -mt-0.5" style={{ paddingLeft: `${HANDLE_RADIUS}px`, paddingRight: `${HANDLE_RADIUS}px` }}>
         <span className={`${isB ? 'text-[9px]' : 'text-[10px]'} text-muted/50 tabular-nums`}>
           {formatPrice(bucketIndexToPrice(localMinIdx), currency, exchangeRates)}
         </span>
