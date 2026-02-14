@@ -40,7 +40,8 @@ interface QuickViewMobileSheetProps {
 // =============================================================================
 
 // Sheet heights
-const COLLAPSED_HEIGHT = 116; // Compact bar height - shows price, badges, and dealer
+const COLLAPSED_HEIGHT_BASE = 116; // Compact bar height - price, badges, and dealer
+const COLLAPSED_HEIGHT_ARTIST = 160; // Extra height when artist identity block is shown
 const HANDLE_HEIGHT = 16; // Swipe handle area
 
 // Gesture thresholds
@@ -67,16 +68,27 @@ export function QuickViewMobileSheet({
   const sheetRef = useRef<HTMLDivElement>(null);
   const scrollContentRef = useRef<HTMLDivElement>(null);
 
-  // Track current sheet height for smooth gestures
-  const [sheetHeight, setSheetHeight] = useState(COLLAPSED_HEIGHT);
-  const [isDragging, setIsDragging] = useState(false);
-  const [viewportHeight, setViewportHeight] = useState(0);
-
   // Navigation
   const router = useRouter();
 
-  // Inquiry modal state
+  // Auth — needed early for collapsed height calculation
   const { user, isAdmin } = useAuth();
+
+  // Dynamic collapsed height — taller when artist identity block is shown
+  const hasArtistBlock = !!(
+    listing.artisan_id &&
+    listing.artisan_id !== 'UNKNOWN' &&
+    listing.artisan_confidence && listing.artisan_confidence !== 'NONE' &&
+    (isAdmin || !listing.artisan_id.startsWith('tmp'))
+  );
+  const collapsedHeight = hasArtistBlock ? COLLAPSED_HEIGHT_ARTIST : COLLAPSED_HEIGHT_BASE;
+
+  // Track current sheet height for smooth gestures
+  const [sheetHeight, setSheetHeight] = useState(collapsedHeight);
+  const [isDragging, setIsDragging] = useState(false);
+  const [viewportHeight, setViewportHeight] = useState(0);
+
+  // Inquiry modal state
   const quickView = useQuickViewOptional();
   const activityTracker = useActivityTrackerOptional();
   const [isInquiryModalOpen, setIsInquiryModalOpen] = useState(false);
@@ -170,7 +182,7 @@ export function QuickViewMobileSheet({
   // Sync sheet height with isExpanded prop (for external control)
   useEffect(() => {
     if (!isDragging && viewportHeight > 0) {
-      setSheetHeight(isExpanded ? expandedHeight : COLLAPSED_HEIGHT);
+      setSheetHeight(isExpanded ? expandedHeight : collapsedHeight);
     }
   }, [isExpanded, expandedHeight, isDragging, viewportHeight]);
 
@@ -222,7 +234,7 @@ export function QuickViewMobileSheet({
     const newHeight = dragStartHeight.current + deltaY;
 
     // Clamp height with rubber-band effect at boundaries
-    const minH = COLLAPSED_HEIGHT;
+    const minH = collapsedHeight;
     const maxH = expandedHeight;
 
     let clampedHeight: number;
@@ -246,7 +258,7 @@ export function QuickViewMobileSheet({
     if (!isDragging) return;
     setIsDragging(false);
 
-    const midpoint = (COLLAPSED_HEIGHT + expandedHeight) / 2;
+    const midpoint = (collapsedHeight + expandedHeight) / 2;
     const currentVelocity = velocity.current;
 
     // Determine target based on velocity or position
@@ -272,7 +284,7 @@ export function QuickViewMobileSheet({
       onToggle();
     } else {
       // Snap back to current state
-      setSheetHeight(isExpanded ? expandedHeight : COLLAPSED_HEIGHT);
+      setSheetHeight(isExpanded ? expandedHeight : collapsedHeight);
     }
   }, [isDragging, sheetHeight, expandedHeight, isExpanded, onToggle]);
 
@@ -286,11 +298,11 @@ export function QuickViewMobileSheet({
 
   // Calculate progress from collapsed to expanded (0-1)
   const progress = useMemo(() => {
-    if (expandedHeight <= COLLAPSED_HEIGHT) return 0;
+    if (expandedHeight <= collapsedHeight) return 0;
     return Math.max(0, Math.min(1,
-      (sheetHeight - COLLAPSED_HEIGHT) / (expandedHeight - COLLAPSED_HEIGHT)
+      (sheetHeight - collapsedHeight) / (expandedHeight - collapsedHeight)
     ));
-  }, [sheetHeight, expandedHeight]);
+  }, [sheetHeight, expandedHeight, collapsedHeight]);
 
   // Determine if we're in "expanded mode" (for content visibility)
   const showExpandedContent = progress > 0.1;
@@ -425,12 +437,9 @@ export function QuickViewMobileSheet({
               Hidden
             </span>
           )}
-          {/* Artisan badge — links to profile; admin gets edit pen with ArtisanTooltip */}
-          {/* Hide tmp-prefixed provisional codes from non-admin users */}
-          {listing.artisan_id &&
-           listing.artisan_confidence && listing.artisan_confidence !== 'NONE' &&
-           (isAdmin || !listing.artisan_id.startsWith('tmp')) && (
-            isAdmin ? (
+          {/* Artisan badge — admin only: confidence badge + edit pen for QA */}
+          {isAdmin && listing.artisan_id &&
+           listing.artisan_confidence && listing.artisan_confidence !== 'NONE' && (
               <span
                 className="inline-flex items-center gap-0.5"
                 data-artisan-tooltip
@@ -481,32 +490,40 @@ export function QuickViewMobileSheet({
                   </span>
                 </ArtisanTooltip>
               </span>
-            ) : (
-              listing.artisan_id === 'UNKNOWN' ? (
-                <span className="text-[10px] italic font-medium px-2 py-0.5 rounded bg-artisan-low-bg text-muted">
-                  Unlisted artist
-                </span>
-              ) : (
-                <a
-                  href={`/artists/${listing.artisan_id}`}
-                  data-artisan-tooltip
-                  onClick={(e) => e.stopPropagation()}
-                  onTouchStart={(e) => e.stopPropagation()}
-                  className={`text-[10px] font-mono font-medium px-2 py-0.5 rounded hover:opacity-80 transition-opacity ${
-                    listing.artisan_confidence === 'HIGH'
-                      ? 'bg-artisan-high-bg text-artisan-high'
-                      : listing.artisan_confidence === 'MEDIUM'
-                      ? 'bg-artisan-medium-bg text-artisan-medium'
-                      : 'bg-artisan-low-bg text-artisan-low'
-                  }`}
-                >
-                  {listing.artisan_display_name || listing.artisan_id}
-                </a>
-              )
-            )
           )}
           <QuickMeasurement listing={listing} />
         </div>
+
+        {/* Artist identity block — always visible in collapsed state */}
+        {listing.artisan_id &&
+         listing.artisan_id !== 'UNKNOWN' &&
+         listing.artisan_confidence && listing.artisan_confidence !== 'NONE' &&
+         (isAdmin || !listing.artisan_id.startsWith('tmp')) && (
+          <a
+            href={`/artists/${listing.artisan_id}`}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              quickView?.closeQuickView?.();
+              router.push(`/artists/${listing.artisan_id}`);
+            }}
+            onTouchStart={(e) => e.stopPropagation()}
+            className="group flex items-center gap-3 mx-4 mb-2 px-3 py-2 bg-gold/5 rounded-lg cursor-pointer"
+          >
+            <svg className="w-4 h-4 text-gold shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+            <div className="flex-1 min-w-0">
+              <div className="text-[9px] uppercase tracking-wider text-gold font-medium leading-tight">Artist Profile</div>
+              <div className="text-[14px] font-semibold text-ink group-hover:text-gold transition-colors truncate">
+                {listing.artisan_display_name || listing.artisan_id}
+              </div>
+            </div>
+            <svg className="w-3.5 h-3.5 text-gold/60 group-hover:text-gold transition-all shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </a>
+        )}
 
         {/* Dealer row - Always visible if we have a real dealer name */}
         {hasRealDealerName && (

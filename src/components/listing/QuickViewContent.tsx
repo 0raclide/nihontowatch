@@ -274,7 +274,7 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
             </div>
           </div>
 
-          {/* Artist Profile CTA — compact single-line above price */}
+          {/* Artist identity block — auction-house style: artist as headline above price */}
           {listing.artisan_id &&
            listing.artisan_id !== 'UNKNOWN' &&
            listing.artisan_confidence && listing.artisan_confidence !== 'NONE' &&
@@ -286,13 +286,18 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
                 quickView?.closeQuickView?.();
                 router.push(`/artists/${listing.artisan_id}`);
               }}
-              className="group inline-flex items-center gap-1.5 mb-1.5 text-[12px] text-gold hover:text-gold-light transition-colors"
+              className="group flex items-center gap-3 mb-2 py-2 cursor-pointer"
             >
-              <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 text-gold shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
-              <span className="font-medium truncate">{listing.artisan_display_name || listing.artisan_id}</span>
-              <svg className="w-3 h-3 shrink-0 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="flex-1 min-w-0">
+                <div className="text-[10px] uppercase tracking-wider text-gold font-medium leading-tight">Artist Profile</div>
+                <div className="text-[16px] font-semibold text-ink group-hover:text-gold transition-colors truncate">
+                  {listing.artisan_display_name || listing.artisan_id}
+                </div>
+              </div>
+              <svg className="w-4 h-4 text-gold/60 group-hover:text-gold group-hover:translate-x-0.5 transition-all shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             </a>
