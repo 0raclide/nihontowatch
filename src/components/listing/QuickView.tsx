@@ -95,6 +95,7 @@ export function QuickView() {
       }
       if (mobileScrollContainerRef.current) {
         mobileScrollContainerRef.current.scrollTop = 0;
+        mobileScrollContainerRef.current.style.overscrollBehaviorY = '';
       }
     }
   }, [currentListing?.id]);
@@ -107,66 +108,31 @@ export function QuickView() {
   }, [hasScrolled]);
 
   // Directional overscroll for mobile image scroller:
-  // CSS allows bounce everywhere; JS blocks top bounce via touch interception.
-  // We avoid dynamically toggling overscrollBehaviorY because iOS Safari's
-  // scroll engine locks up after the first bounce when the property is mutated
-  // inside a scroll handler.
+  // CSS class `overscroll-none` blocks bounce everywhere by default.
+  // A passive scroll listener overrides to `contain` once scrolled past
+  // the top, which re-enables the native bottom bounce on iOS.
   //
-  // IMPORTANT: The non-passive touchmove is only attached while an at-top
-  // gesture is live, and uses an 8px direction-lock threshold before calling
-  // preventDefault. A permanent { passive: false } touchmove on the scroller
-  // kills two-finger scroll in Chrome DevTools emulation (see commit 6502af4).
+  // No touchmove handlers — ANY { passive: false } touchmove on the
+  // scroller kills two-finger scroll in Chrome DevTools emulation,
+  // even if briefly attached (see commit 6502af4).
   useEffect(() => {
     const scroller = mobileScrollContainerRef.current;
     if (!scroller) return;
 
-    let startY = 0;
-    let startScrollTop = 0;
-    let committed = false;
-
-    const onTouchMove = (e: TouchEvent) => {
-      const dy = e.touches[0].clientY - startY; // positive = pulling down
-
-      // Direction lock: wait for 8px of movement before deciding
-      if (!committed) {
-        if (Math.abs(dy) < 8) return;
-        committed = true;
-        if (dy <= 0) {
-          // Scrolling down (finger up) — not a top-bounce gesture, release
-          scroller.removeEventListener('touchmove', onTouchMove);
-          return;
-        }
-      }
-
-      // Committed upward pull while at top — block top bounce
-      if (startScrollTop <= 0 && dy > 0) {
-        e.preventDefault();
+    const onScroll = () => {
+      // Scrolled away from top → allow bottom bounce (contain)
+      // Back at top → block top bounce (class default: none)
+      const value = scroller.scrollTop > 0 ? 'contain' : '';
+      if (scroller.style.overscrollBehaviorY !== value) {
+        scroller.style.overscrollBehaviorY = value;
       }
     };
 
-    const onTouchStart = (e: TouchEvent) => {
-      startY = e.touches[0].clientY;
-      startScrollTop = scroller.scrollTop;
-      committed = false;
-
-      // Only attach non-passive handler when at the top where bounce can occur.
-      // When scrolled down, no listener → compositor fast-paths scroll.
-      if (startScrollTop <= 2) {
-        scroller.addEventListener('touchmove', onTouchMove, { passive: false });
-      }
-    };
-
-    const onTouchEnd = () => {
-      scroller.removeEventListener('touchmove', onTouchMove);
-    };
-
-    scroller.addEventListener('touchstart', onTouchStart, { passive: true });
-    scroller.addEventListener('touchend', onTouchEnd, { passive: true });
+    scroller.addEventListener('scroll', onScroll, { passive: true });
 
     return () => {
-      scroller.removeEventListener('touchstart', onTouchStart);
-      scroller.removeEventListener('touchmove', onTouchMove);
-      scroller.removeEventListener('touchend', onTouchEnd);
+      scroller.removeEventListener('scroll', onScroll);
+      scroller.style.overscrollBehaviorY = '';
     };
   }, [isStudyMode, isOpen]);
 
@@ -285,7 +251,7 @@ export function QuickView() {
               data-testid="mobile-image-scroller"
               onScroll={handleScroll}
               onClick={toggleSheet}
-              className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain bg-ink/5 relative"
+              className="flex-1 min-h-0 overflow-y-auto overscroll-none bg-ink/5 relative"
             >
               {/* Sold overlay */}
               {isSold && (
