@@ -240,7 +240,9 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
                 href={`/artists/${listing.artisan_id}`}
                 onClick={(e) => {
                   e.preventDefault();
-                  quickView?.closeQuickView?.();
+                  // Navigate directly — don't call closeQuickView() first because
+                  // its history.back() races with router.push() and cancels navigation on mobile.
+                  // The QuickView unmounts naturally on route change.
                   router.push(`/artists/${listing.artisan_id}`);
                 }}
                 className="group flex items-center gap-3 flex-1 min-w-0 cursor-pointer"

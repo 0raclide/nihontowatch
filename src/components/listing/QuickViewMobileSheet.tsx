@@ -467,7 +467,8 @@ export function QuickViewMobileSheet({
               href={`/artists/${listing.artisan_id}`}
               onClick={(e) => {
                 e.preventDefault();
-                quickView?.closeQuickView?.();
+                // Navigate directly — don't call closeQuickView() first because
+                // its history.back() races with router.push() and cancels navigation on mobile.
                 router.push(`/artists/${listing.artisan_id}`);
               }}
               className="group flex items-center gap-3 flex-1 min-w-0 cursor-pointer"
@@ -557,7 +558,8 @@ export function QuickViewMobileSheet({
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  onClose();
+                  // Navigate directly — don't call onClose() (closeQuickView) first because
+                  // its history.back() races with router.push() and cancels navigation on mobile.
                   router.push(`/artists/${listing.artisan_id}`);
                 }}
                 onTouchStart={(e) => e.stopPropagation()}
