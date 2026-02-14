@@ -535,7 +535,7 @@ function HomeContent() {
                 }}
               >
                 <option value="recent">Newest</option>
-                <option value="sale_date">Recently Sold</option>
+                {activeTab === 'sold' && <option value="sale_date">Recently Sold</option>}
                 <option value="price_asc">Price: Low → High</option>
                 <option value="price_desc">Price: High → Low</option>
                 {authIsAdmin && <option value="elite_factor">Elite Standing</option>}
@@ -631,6 +631,7 @@ function HomeContent() {
             cornerStyle={cornerStyle}
             selectStyle={selectStyle}
             priceHistogram={data?.priceHistogram}
+            exchangeRates={exchangeRates}
             panelControls={{
               currency,
               onCurrencyChange: handleCurrencyChange,
@@ -670,6 +671,7 @@ function HomeContent() {
           isUpdating={isLoading}
           isAdmin={authIsAdmin}
           priceHistogram={data?.priceHistogram}
+          exchangeRates={exchangeRates}
           sort={sort}
           onSortChange={(newSort) => {
             setSort(newSort);

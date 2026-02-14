@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useMemo, memo } from 'react';
 import { PriceHistogramSlider, type PriceHistogramData } from './PriceHistogramSlider';
+import type { ExchangeRates } from '@/hooks/useCurrency';
 
 export type SidebarVariant = 'default' | 'a' | 'b';
 
@@ -55,6 +56,8 @@ export interface FilterContentProps {
   selectStyle?: SelectStyle;
   /** Price histogram data for visual range slider */
   priceHistogram?: PriceHistogramData | null;
+  /** Exchange rates for currency conversion in histogram */
+  exchangeRates?: ExchangeRates | null;
   // Sort, currency, and availability for mobile drawer
   sort?: string;
   onSortChange?: (sort: string) => void;
@@ -375,6 +378,7 @@ export function FilterContent({
   cornerStyle = 'soft',
   selectStyle = 'bold',
   priceHistogram,
+  exchangeRates,
   sort,
   onSortChange,
   currency,
@@ -768,7 +772,7 @@ export function FilterContent({
               className="w-full px-3 py-3 bg-paper border-2 border-border rounded-lg text-[15px] text-ink focus:outline-none focus:border-gold"
             >
               <option value="recent">Newest</option>
-              <option value="sale_date">Recently Sold</option>
+              {availability === 'sold' && <option value="sale_date">Recently Sold</option>}
               <option value="price_asc">Price: Low → High</option>
               <option value="price_desc">Price: High → Low</option>
               {isAdmin && <option value="elite_factor">Elite Standing</option>}
@@ -893,7 +897,7 @@ export function FilterContent({
                 ? 'text-[14px] font-semibold text-ink block mb-2'
                 : 'text-[13px] uppercase tracking-[0.15em] font-semibold text-ink block mb-3'
           }>
-            Price (¥)
+            Price {currency === 'USD' ? '($)' : currency === 'EUR' ? '(€)' : '(¥)'}
           </span>
           <PriceHistogramSlider
             histogram={priceHistogram ?? null}
@@ -904,6 +908,8 @@ export function FilterContent({
               onFilterChange('priceMax', max);
             }}
             variant={variant}
+            currency={currency}
+            exchangeRates={exchangeRates}
           />
         </div>
 
