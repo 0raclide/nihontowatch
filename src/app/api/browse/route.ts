@@ -358,12 +358,12 @@ export async function GET(request: NextRequest) {
     }
 
     // Price range filter (uses price_jpy for currency-normalized comparison)
-    // ASK listings (price_value IS NULL) pass through — same pattern as applyMinPriceFilter
+    // When a user explicitly selects a price bracket, ASK items (no price) are excluded
     if (params.priceMin) {
-      query = query.or(`price_value.is.null,price_jpy.gte.${params.priceMin}`);
+      query = query.gte('price_jpy', params.priceMin);
     }
     if (params.priceMax) {
-      query = query.or(`price_value.is.null,price_jpy.lte.${params.priceMax}`);
+      query = query.lte('price_jpy', params.priceMax);
     }
 
     // Certification filter (handles variants until data is normalized)
