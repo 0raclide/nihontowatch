@@ -13,6 +13,7 @@ interface FilterDrawerProps {
   isUpdating?: boolean;
   isAdmin?: boolean;
   priceHistogram?: FilterContentProps['priceHistogram'];
+  exchangeRates?: FilterContentProps['exchangeRates'];
   sort?: string;
   onSortChange?: (sort: string) => void;
   currency?: Currency;
@@ -28,6 +29,7 @@ export function FilterDrawer({
   isUpdating,
   isAdmin,
   priceHistogram,
+  exchangeRates,
   sort,
   onSortChange,
   currency,
@@ -47,6 +49,7 @@ export function FilterDrawer({
         isUpdating={isUpdating}
         isAdmin={isAdmin}
         priceHistogram={priceHistogram}
+        exchangeRates={exchangeRates}
         sort={sort}
         onSortChange={onSortChange}
         currency={currency}

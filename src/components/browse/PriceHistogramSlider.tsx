@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { PRICE_HISTOGRAM } from '@/lib/constants';
+import { convertPrice, type ExchangeRates, type Currency } from '@/hooks/useCurrency';
 import type { SidebarVariant } from './FilterContent';
 
 export interface PriceHistogramData {
@@ -17,16 +18,31 @@ interface PriceHistogramSliderProps {
   priceMax?: number;
   onPriceChange: (min: number | undefined, max: number | undefined) => void;
   variant?: SidebarVariant;
+  currency?: Currency;
+  exchangeRates?: ExchangeRates | null;
 }
 
 const { BOUNDARIES, MAX_BAR_HEIGHT, MIN_BAR_HEIGHT, DEBOUNCE_MS } = PRICE_HISTOGRAM;
 const BUCKET_COUNT = BOUNDARIES.length;
 
-/** Format JPY value as compact label */
-function formatPrice(value: number): string {
-  if (value >= 10_000_000) return `¥${(value / 1_000_000).toFixed(0)}M`;
-  if (value >= 1_000_000) return `¥${(value / 1_000_000).toFixed(value % 1_000_000 === 0 ? 0 : 1)}M`;
-  return `¥${(value / 1_000).toFixed(0)}K`;
+/** Format price value as compact label, currency-aware */
+function formatPrice(jpyValue: number, currency?: Currency, rates?: ExchangeRates | null): string {
+  if (!currency || currency === 'JPY' || !rates) {
+    if (jpyValue >= 10_000_000) return `¥${(jpyValue / 1_000_000).toFixed(0)}M`;
+    if (jpyValue >= 1_000_000) return `¥${(jpyValue / 1_000_000).toFixed(jpyValue % 1_000_000 === 0 ? 0 : 1)}M`;
+    return `¥${(jpyValue / 1_000).toFixed(0)}K`;
+  }
+
+  const converted = convertPrice(jpyValue, 'JPY', currency, rates);
+  const symbol = currency === 'USD' ? '$' : '€';
+
+  if (currency === 'USD' || currency === 'EUR') {
+    if (converted >= 1_000_000) return `${symbol}${(converted / 1_000_000).toFixed(converted % 1_000_000 === 0 ? 0 : 1)}M`;
+    if (converted >= 1_000) return `${symbol}${(converted / 1_000).toFixed(converted % 1_000 < 100 ? 0 : 1)}K`;
+    return `${symbol}${converted.toFixed(0)}`;
+  }
+
+  return `${symbol}${converted.toFixed(0)}`;
 }
 
 /** Find the closest bucket index for a JPY value */
@@ -48,6 +64,8 @@ export function PriceHistogramSlider({
   priceMax,
   onPriceChange,
   variant,
+  currency,
+  exchangeRates,
 }: PriceHistogramSliderProps) {
   const isB = variant === 'b';
 
@@ -198,15 +216,15 @@ export function PriceHistogramSlider({
     return (
       <div className="space-y-2">
         <div className="flex items-end gap-[1px] h-[48px]">
-          {Array.from({ length: 16 }).map((_, i) => (
+          {Array.from({ length: 20 }).map((_, i) => (
             <div
               key={i}
-              className="flex-1 bg-border/20 rounded-t-sm animate-pulse"
-              style={{ height: `${8 + Math.random() * 32}px` }}
+              className="flex-1 bg-border/15 rounded-t-sm animate-pulse"
+              style={{ height: `${6 + Math.random() * 36}px` }}
             />
           ))}
         </div>
-        <div className="h-2 bg-border/15 rounded-full animate-pulse" />
+        <div className="h-1.5 bg-border/10 rounded-full animate-pulse" />
       </div>
     );
   }
@@ -225,7 +243,7 @@ export function PriceHistogramSlider({
   const maxPct = visibleBucketCount > 1 ? (localMaxIdx / (visibleBucketCount - 1)) * 100 : 100;
 
   return (
-    <div className="space-y-1.5">
+    <div className="space-y-2">
       {/* Histogram bars + slider track */}
       <div
         className="relative select-none touch-none"
@@ -234,7 +252,7 @@ export function PriceHistogramSlider({
         onPointerCancel={handlePointerUp}
       >
         {/* Bars */}
-        <div className="flex items-end gap-[1px]" style={{ height: `${MAX_BAR_HEIGHT}px` }}>
+        <div className="flex items-end gap-px" style={{ height: `${MAX_BAR_HEIGHT}px` }}>
           {bucketCounts.slice(0, visibleBucketCount).map((count, i) => {
             const inRange = i >= localMinIdx && i <= localMaxIdx;
             const height = count > 0 && maxCount > 0
@@ -244,55 +262,58 @@ export function PriceHistogramSlider({
             return (
               <div
                 key={i}
-                className={`flex-1 rounded-t-sm transition-colors duration-100 ${
+                className={`flex-1 rounded-t-[2px] transition-colors duration-150 ${
                   count === 0
                     ? ''
                     : inRange
-                      ? 'bg-gold/50'
-                      : 'bg-border/25'
+                      ? 'bg-gold/40'
+                      : 'bg-border/15'
                 }`}
                 style={{ height: count > 0 ? `${height}px` : '0px' }}
-                title={count > 0 ? `${formatPrice(BOUNDARIES[i])}: ${count} items` : undefined}
+                title={count > 0 ? `${formatPrice(BOUNDARIES[i], currency, exchangeRates)}: ${count} items` : undefined}
               />
             );
           })}
         </div>
 
+        {/* Spacer between bars and slider */}
+        <div className="h-2" />
+
         {/* Slider track */}
-        <div ref={trackRef} className="relative h-4 mt-0.5">
+        <div ref={trackRef} className="relative h-3">
           {/* Track background */}
-          <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-[3px] bg-border/20 rounded-full" />
+          <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-[2px] bg-border/15 rounded-full" />
 
           {/* Active range highlight */}
           <div
-            className="absolute top-1/2 -translate-y-1/2 h-[3px] bg-gold/50 rounded-full"
+            className="absolute top-1/2 -translate-y-1/2 h-[2px] bg-gold/40 rounded-full"
             style={{ left: `${minPct}%`, right: `${100 - maxPct}%` }}
           />
 
           {/* Min handle */}
           <div
-            className="absolute top-1/2 -translate-y-1/2 w-3 h-[18px] rounded-[4px] border-[1.5px] border-gold bg-surface cursor-grab active:cursor-grabbing shadow-sm z-10"
+            className="absolute top-1/2 -translate-y-1/2 w-[10px] h-[10px] rounded-full border-[1.5px] border-gold/70 bg-surface cursor-grab active:cursor-grabbing z-10 hover:border-gold hover:scale-110 transition-transform"
             style={{ left: `${minPct}%`, transform: 'translate(-50%, -50%)' }}
             onPointerDown={handlePointerDown('min')}
           />
 
           {/* Max handle */}
           <div
-            className="absolute top-1/2 -translate-y-1/2 w-3 h-[18px] rounded-[4px] border-[1.5px] border-gold bg-surface cursor-grab active:cursor-grabbing shadow-sm z-10"
+            className="absolute top-1/2 -translate-y-1/2 w-[10px] h-[10px] rounded-full border-[1.5px] border-gold/70 bg-surface cursor-grab active:cursor-grabbing z-10 hover:border-gold hover:scale-110 transition-transform"
             style={{ left: `${maxPct}%`, transform: 'translate(-50%, -50%)' }}
             onPointerDown={handlePointerDown('max')}
           />
         </div>
 
         {/* Range labels */}
-        <div className="flex justify-between mt-0">
-          <span className={`${isB ? 'text-[9px]' : 'text-[10px]'} text-muted/70 tabular-nums`}>
-            {formatPrice(bucketIndexToPrice(localMinIdx))}
+        <div className="flex justify-between mt-0.5">
+          <span className={`${isB ? 'text-[9px]' : 'text-[10px]'} text-muted/60 tabular-nums`}>
+            {formatPrice(bucketIndexToPrice(localMinIdx), currency, exchangeRates)}
           </span>
-          <span className={`${isB ? 'text-[9px]' : 'text-[10px]'} text-muted/70 tabular-nums`}>
+          <span className={`${isB ? 'text-[9px]' : 'text-[10px]'} text-muted/60 tabular-nums`}>
             {localMaxIdx >= visibleBucketCount - 1
-              ? `${formatPrice(bucketIndexToPrice(Math.min(localMaxIdx, BUCKET_COUNT - 1)))}+`
-              : formatPrice(bucketIndexToPrice(localMaxIdx))}
+              ? `${formatPrice(bucketIndexToPrice(Math.min(localMaxIdx, BUCKET_COUNT - 1)), currency, exchangeRates)}+`
+              : formatPrice(bucketIndexToPrice(localMaxIdx), currency, exchangeRates)}
           </span>
         </div>
       </div>
@@ -304,15 +325,15 @@ export function PriceHistogramSlider({
           placeholder="Min"
           value={priceMin ?? ''}
           onChange={(e) => handleMinInputChange(e.target.value)}
-          className={`w-full ${isB ? 'px-2 py-1 text-[11px]' : 'px-2.5 py-1.5 text-[12px]'} rounded-md border border-border/25 bg-transparent text-ink placeholder:text-muted/50 focus:outline-none focus:border-gold/40 focus:ring-1 focus:ring-gold/20 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none`}
+          className={`w-full ${isB ? 'px-2 py-1 text-[11px]' : 'px-2.5 py-1.5 text-[12px]'} rounded-md border border-border/20 bg-transparent text-ink placeholder:text-muted/40 focus:outline-none focus:border-gold/40 focus:ring-1 focus:ring-gold/15 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none`}
         />
-        <span className="text-muted text-[11px] shrink-0">&ndash;</span>
+        <span className="text-muted/40 text-[10px] shrink-0">&ndash;</span>
         <input
           type="number"
           placeholder="Max"
           value={priceMax ?? ''}
           onChange={(e) => handleMaxInputChange(e.target.value)}
-          className={`w-full ${isB ? 'px-2 py-1 text-[11px]' : 'px-2.5 py-1.5 text-[12px]'} rounded-md border border-border/25 bg-transparent text-ink placeholder:text-muted/50 focus:outline-none focus:border-gold/40 focus:ring-1 focus:ring-gold/20 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none`}
+          className={`w-full ${isB ? 'px-2 py-1 text-[11px]' : 'px-2.5 py-1.5 text-[12px]'} rounded-md border border-border/20 bg-transparent text-ink placeholder:text-muted/40 focus:outline-none focus:border-gold/40 focus:ring-1 focus:ring-gold/15 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none`}
         />
       </div>
     </div>
