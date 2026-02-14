@@ -17,6 +17,42 @@ interface ArtisanCandidate {
   retrieval_score?: number;
 }
 
+// Cert options for the pill row
+const CERT_OPTIONS: { value: string | null; label: string; tier: 'tokuju' | 'jubi' | 'juyo' | 'tokuho' | 'hozon' | 'none' }[] = [
+  { value: 'Tokuju', label: 'Tokuju', tier: 'tokuju' },
+  { value: 'Juyo', label: 'Jūyō', tier: 'juyo' },
+  { value: 'TokuHozon', label: 'Tokuho', tier: 'tokuho' },
+  { value: 'Hozon', label: 'Hozon', tier: 'hozon' },
+  { value: 'juyo_bijutsuhin', label: 'Jubi', tier: 'jubi' },
+  { value: 'TokuKicho', label: 'TokuKichō', tier: 'tokuho' },
+  { value: null, label: 'None', tier: 'none' },
+];
+
+// Normalize cert_type from DB to the canonical value used in CERT_OPTIONS
+function normalizeCertValue(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  const map: Record<string, string> = {
+    tokubetsu_juyo: 'Tokuju', tokuju: 'Tokuju', Tokuju: 'Tokuju',
+    juyo: 'Juyo', Juyo: 'Juyo',
+    tokubetsu_hozon: 'TokuHozon', TokuHozon: 'TokuHozon',
+    hozon: 'Hozon', Hozon: 'Hozon',
+    juyo_bijutsuhin: 'juyo_bijutsuhin', JuyoBijutsuhin: 'juyo_bijutsuhin', 'Juyo Bijutsuhin': 'juyo_bijutsuhin',
+    TokuKicho: 'TokuKicho',
+    nbthk: 'Hozon', nthk: 'Hozon',
+  };
+  return map[raw] ?? raw;
+}
+
+// Tier → Tailwind color classes for active pill
+const CERT_TIER_COLORS: Record<string, string> = {
+  tokuju: 'bg-tokuju/20 text-tokuju ring-tokuju/50',
+  jubi: 'bg-jubi/20 text-jubi ring-jubi/50',
+  juyo: 'bg-juyo/20 text-juyo ring-juyo/50',
+  tokuho: 'bg-toku-hozon/20 text-toku-hozon ring-toku-hozon/50',
+  hozon: 'bg-hozon/20 text-hozon ring-hozon/50',
+  none: 'bg-muted/20 text-muted ring-muted/50',
+};
+
 interface ArtisanTooltipProps {
   listingId: number;
   artisanId?: string | null;
@@ -32,6 +68,10 @@ interface ArtisanTooltipProps {
   adminHidden?: boolean;
   /** Callback when admin toggles hide/unhide */
   onToggleHidden?: () => void;
+  /** Current cert_type for inline editing (undefined = hide section) */
+  certType?: string | null;
+  /** Callback when admin changes cert via pill row */
+  onCertChanged?: (newCert: string | null) => void;
   children: React.ReactNode;
 }
 
@@ -47,6 +87,8 @@ export function ArtisanTooltip({
   startInSearchMode = false,
   adminHidden,
   onToggleHidden,
+  certType: certTypeProp,
+  onCertChanged,
   children,
 }: ArtisanTooltipProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -75,6 +117,19 @@ export function ArtisanTooltip({
   const [fixSuccess, setFixSuccess] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
+  // Cert editing state
+  const showCertSection = certTypeProp !== undefined;
+  const [currentCert, setCurrentCert] = useState<string | null>(normalizeCertValue(certTypeProp));
+  const [certSaving, setCertSaving] = useState(false);
+  const [certSuccess, setCertSuccess] = useState(false);
+
+  // Suppress scroll-close briefly after mutations that trigger card re-renders
+  const suppressScrollCloseRef = useRef(false);
+  const suppressScrollClose = useCallback(() => {
+    suppressScrollCloseRef.current = true;
+    setTimeout(() => { suppressScrollCloseRef.current = false; }, 1000);
+  }, []);
+
   // Drag state for repositioning the tooltip
   const [isDragging, setIsDragging] = useState(false);
   const isDraggingRef = useRef(false);
@@ -94,6 +149,11 @@ export function ArtisanTooltip({
   useEffect(() => {
     setArtisanId(initialArtisanId || '');
   }, [initialArtisanId]);
+
+  // Sync cert type when prop changes
+  useEffect(() => {
+    setCurrentCert(normalizeCertValue(certTypeProp));
+  }, [certTypeProp]);
 
   // Focus search input when correction mode opens
   useEffect(() => {
@@ -137,6 +197,49 @@ export function ArtisanTooltip({
     return () => clearTimeout(debounceTimeout);
   }, [searchQuery]);
 
+  // Handle cert change via pill row
+  const handleCertChange = async (newCert: string | null) => {
+    if (certSaving || newCert === currentCert) return;
+
+    setCertSaving(true);
+    setCertSuccess(false);
+
+    // Optimistic update
+    const prevCert = currentCert;
+    setCurrentCert(newCert);
+
+    try {
+      const response = await fetch(`/api/listing/${listingId}/fix-cert`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cert_type: newCert }),
+      });
+
+      if (response.ok) {
+        setCertSuccess(true);
+        suppressScrollClose();
+        onCertChanged?.(newCert);
+
+        // Also dispatch listing-refreshed event for browse card updates
+        window.dispatchEvent(new CustomEvent('listing-refreshed', {
+          detail: { id: listingId, cert_type: newCert },
+        }));
+
+        setTimeout(() => setCertSuccess(false), 3000);
+      } else {
+        // Revert on failure
+        setCurrentCert(prevCert);
+        const data = await response.json();
+        setError(data.error || 'Failed to update designation');
+      }
+    } catch {
+      setCurrentCert(prevCert);
+      setError('Failed to update designation');
+    } finally {
+      setCertSaving(false);
+    }
+  };
+
   // Handle setting artisan as UNKNOWN (for later refinement)
   const handleSetUnknown = async () => {
     if (fixing) return;
@@ -162,6 +265,7 @@ export function ArtisanTooltip({
         setSearchResults([]);
         setArtisan(null);
         fetchedForRef.current = 'UNKNOWN'; // Prevent fetch loop
+        suppressScrollClose();
 
         if (onArtisanFixed) {
           onArtisanFixed('UNKNOWN');
@@ -231,6 +335,7 @@ export function ArtisanTooltip({
         }
 
         // Notify parent (QuickView flow) or dispatch event directly (browse card flow)
+        suppressScrollClose();
         if (onArtisanFixed) {
           onArtisanFixed(result.code);
         } else {
@@ -453,6 +558,8 @@ export function ArtisanTooltip({
       if (tooltipRef.current && tooltipRef.current.contains(e.target as Node)) return;
       // Don't close while dragging
       if (isDraggingRef.current) return;
+      // Don't close right after a mutation (card re-render causes layout shift → scroll)
+      if (suppressScrollCloseRef.current) return;
       setIsOpen(false);
     };
 
@@ -483,6 +590,7 @@ export function ArtisanTooltip({
 
       if (response.ok) {
         setVerified(status);
+        suppressScrollClose();
         onVerify?.(status);
 
         // Show correction search when marked as incorrect
@@ -562,6 +670,42 @@ export function ArtisanTooltip({
 
             {/* Scrollable content area */}
             <div className="px-4 py-3 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 120px)' }}>
+
+            {/* Cert designation pill row — shown when certType prop is passed */}
+            {showCertSection && (
+              <div className="mb-3 pb-3 border-b border-border">
+                <div className="text-[10px] uppercase tracking-wider text-muted mb-2">
+                  Designation
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {CERT_OPTIONS.map((opt) => {
+                    const isActive = currentCert === opt.value;
+                    return (
+                      <button
+                        key={opt.label}
+                        onClick={() => handleCertChange(opt.value)}
+                        disabled={certSaving}
+                        className={`px-2.5 py-1 rounded-full text-[10px] font-medium transition-all ring-1 ${
+                          isActive
+                            ? `${CERT_TIER_COLORS[opt.tier]} ring-2`
+                            : 'bg-surface text-muted ring-border hover:ring-gold/40 hover:text-ink'
+                        } ${certSaving ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                      >
+                        {opt.label}
+                      </button>
+                    );
+                  })}
+                </div>
+                {certSuccess && (
+                  <div className="mt-2 flex items-center gap-1.5 text-[10px] text-green-500">
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Designation updated
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Loading state */}
             {loading && (
