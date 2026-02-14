@@ -185,10 +185,9 @@ export function SectionJumpNav({ sections }: SectionJumpNavProps) {
         </div>
       </nav>
 
-      {/* ═══ MOBILE: Fixed bottom section nav, above BottomTabBar (hidden on sm+) ═══ */}
+      {/* ═══ MOBILE: Fixed bottom section nav — HIDDEN to reclaim screen space ═══ */}
       <div
-        className="sm:hidden fixed left-0 right-0 z-30"
-        style={{ bottom: 'calc(64px + env(safe-area-inset-bottom, 0px))' }}
+        className="hidden"
       >
         {/* Backdrop overlay when menu is open */}
         {mobileMenuOpen && (
