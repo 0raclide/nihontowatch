@@ -437,60 +437,6 @@ export function QuickViewMobileSheet({
               Hidden
             </span>
           )}
-          {/* Artisan badge — admin only: confidence badge + edit pen for QA */}
-          {isAdmin && listing.artisan_id &&
-           listing.artisan_confidence && listing.artisan_confidence !== 'NONE' && (
-              <span
-                className="inline-flex items-center gap-0.5"
-                data-artisan-tooltip
-                onClick={(e) => e.stopPropagation()}
-                onTouchStart={(e) => e.stopPropagation()}
-              >
-                {listing.artisan_id === 'UNKNOWN' ? (
-                  <span className="text-[10px] italic font-medium px-2 py-0.5 rounded bg-artisan-low-bg text-muted">
-                    Unlisted artist
-                  </span>
-                ) : (
-                  <a
-                    href={`/artists/${listing.artisan_id}`}
-                    onClick={(e) => e.stopPropagation()}
-                    onTouchStart={(e) => e.stopPropagation()}
-                    className={`text-[10px] font-mono font-medium px-2 py-0.5 rounded hover:opacity-80 transition-opacity ${
-                      listing.artisan_confidence === 'HIGH'
-                        ? 'bg-artisan-high-bg text-artisan-high'
-                        : listing.artisan_confidence === 'MEDIUM'
-                        ? 'bg-artisan-medium-bg text-artisan-medium'
-                        : 'bg-artisan-low-bg text-artisan-low'
-                    }`}
-                  >
-                    {listing.artisan_display_name || listing.artisan_id}
-                  </a>
-                )}
-                <ArtisanTooltip
-                  listingId={listing.id}
-                  artisanId={listing.artisan_id}
-                  confidence={listing.artisan_confidence as 'HIGH' | 'MEDIUM' | 'LOW'}
-                  method={listing.artisan_method}
-                  candidates={listing.artisan_candidates}
-                  verified={listing.artisan_verified}
-                  onArtisanFixed={(newId) => quickView?.refreshCurrentListing({
-                    artisan_id: newId,
-                    artisan_confidence: newId === 'UNKNOWN' ? 'LOW' : 'HIGH',
-                    artisan_method: 'ADMIN_CORRECTION',
-                    artisan_verified: 'correct' as const,
-                    artisan_display_name: newId === 'UNKNOWN' ? 'Unlisted artist' : newId,
-                  })}
-                  adminHidden={listing.admin_hidden}
-                  onToggleHidden={handleToggleHidden}
-                >
-                  <span className="text-muted hover:text-ink transition-colors p-0.5 cursor-pointer">
-                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                    </svg>
-                  </span>
-                </ArtisanTooltip>
-              </span>
-          )}
           <QuickMeasurement listing={listing} />
         </div>
 
@@ -499,30 +445,61 @@ export function QuickViewMobileSheet({
          listing.artisan_id !== 'UNKNOWN' &&
          listing.artisan_confidence && listing.artisan_confidence !== 'NONE' &&
          (isAdmin || !listing.artisan_id.startsWith('tmp')) && (
-          <a
-            href={`/artists/${listing.artisan_id}`}
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              quickView?.closeQuickView?.();
-              router.push(`/artists/${listing.artisan_id}`);
-            }}
-            onTouchStart={(e) => e.stopPropagation()}
-            className="group flex items-center gap-3 mx-4 mb-2 px-3 py-2 bg-gold/5 rounded-lg cursor-pointer"
-          >
-            <svg className="w-4 h-4 text-gold shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
-            <div className="flex-1 min-w-0">
-              <div className="text-[9px] uppercase tracking-wider text-gold font-medium leading-tight">Artist Profile</div>
-              <div className="text-[14px] font-semibold text-ink group-hover:text-gold transition-colors truncate">
-                {listing.artisan_display_name || listing.artisan_id}
+          <div className="flex items-center gap-2 mx-4 mb-2 px-3 py-2 bg-gold/5 rounded-lg">
+            <a
+              href={`/artists/${listing.artisan_id}`}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                quickView?.closeQuickView?.();
+                router.push(`/artists/${listing.artisan_id}`);
+              }}
+              onTouchStart={(e) => e.stopPropagation()}
+              className="group flex items-center gap-3 flex-1 min-w-0 cursor-pointer"
+            >
+              <svg className="w-4 h-4 text-gold shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              <div className="flex-1 min-w-0">
+                <div className="text-[9px] uppercase tracking-wider text-gold font-medium leading-tight">Artist Profile</div>
+                <div className="text-[14px] font-semibold text-ink group-hover:text-gold transition-colors truncate">
+                  {listing.artisan_display_name || listing.artisan_id}
+                </div>
               </div>
-            </div>
-            <svg className="w-3.5 h-3.5 text-gold/60 group-hover:text-gold transition-all shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </a>
+              <svg className="w-3.5 h-3.5 text-gold/60 group-hover:text-gold transition-all shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </a>
+            {isAdmin && (
+              <ArtisanTooltip
+                listingId={listing.id}
+                artisanId={listing.artisan_id}
+                confidence={listing.artisan_confidence as 'HIGH' | 'MEDIUM' | 'LOW'}
+                method={listing.artisan_method}
+                candidates={listing.artisan_candidates}
+                verified={listing.artisan_verified}
+                onArtisanFixed={(newId) => quickView?.refreshCurrentListing({
+                  artisan_id: newId,
+                  artisan_confidence: newId === 'UNKNOWN' ? 'LOW' : 'HIGH',
+                  artisan_method: 'ADMIN_CORRECTION',
+                  artisan_verified: 'correct' as const,
+                  artisan_display_name: newId === 'UNKNOWN' ? 'Unlisted artist' : newId,
+                })}
+                adminHidden={listing.admin_hidden}
+                onToggleHidden={handleToggleHidden}
+              >
+                <span
+                  className="text-muted hover:text-ink transition-colors p-1 cursor-pointer shrink-0"
+                  onClick={(e) => e.stopPropagation()}
+                  onTouchStart={(e) => e.stopPropagation()}
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                  </svg>
+                </span>
+              </ArtisanTooltip>
+            )}
+          </div>
         )}
 
         {/* Dealer row - Always visible if we have a real dealer name */}
