@@ -796,7 +796,34 @@ export function FilterContent({
       )}
 
       <div className={elevated ? 'space-y-0' : 'divide-y divide-border/50'}>
-        {/* 1. Designation (checkboxes, open) */}
+        {/* 1. Price — histogram slider (most visual, universal filter) */}
+        <div className={isB ? 'py-2' : elevated ? 'py-3' : 'py-5'}>
+          <span className={
+            isB
+              ? 'text-[11px] uppercase tracking-[0.06em] font-semibold text-muted block mb-1.5'
+              : elevated
+                ? 'text-[14px] font-semibold text-ink block mb-2'
+                : 'text-[13px] uppercase tracking-[0.15em] font-semibold text-ink block mb-3'
+          }>
+            Price {currency === 'USD' ? '($)' : currency === 'EUR' ? '(€)' : '(¥)'}
+          </span>
+          <PriceHistogramSlider
+            histogram={priceHistogram ?? null}
+            priceMin={filters.priceMin}
+            priceMax={filters.priceMax}
+            onPriceChange={(min, max) => {
+              onFilterChange('priceMin', min);
+              onFilterChange('priceMax', max);
+            }}
+            variant={variant}
+            currency={currency}
+            exchangeRates={exchangeRates}
+          />
+        </div>
+
+        {elevated && <div className={`border-t ${isB ? 'border-border/15' : 'border-border/30'}`} />}
+
+        {/* 2. Designation (checkboxes, open) */}
         <FilterSection title="Designation" variant={variant} activeCount={filters.certifications.length}>
           <div className={elevated ? 'space-y-0' : 'space-y-1'}>
             {sortedCertifications.map((facet) => (
@@ -884,33 +911,6 @@ export function FilterContent({
               );
             })}
           </div>
-        </div>
-
-        {elevated && <div className={`border-t ${isB ? 'border-border/15' : 'border-border/30'}`} />}
-
-        {/* 5. Price — histogram slider with min/max inputs */}
-        <div className={isB ? 'py-2' : elevated ? 'py-3' : 'py-5'}>
-          <span className={
-            isB
-              ? 'text-[11px] uppercase tracking-[0.06em] font-semibold text-muted block mb-1.5'
-              : elevated
-                ? 'text-[14px] font-semibold text-ink block mb-2'
-                : 'text-[13px] uppercase tracking-[0.15em] font-semibold text-ink block mb-3'
-          }>
-            Price {currency === 'USD' ? '($)' : currency === 'EUR' ? '(€)' : '(¥)'}
-          </span>
-          <PriceHistogramSlider
-            histogram={priceHistogram ?? null}
-            priceMin={filters.priceMin}
-            priceMax={filters.priceMax}
-            onPriceChange={(min, max) => {
-              onFilterChange('priceMin', min);
-              onFilterChange('priceMax', max);
-            }}
-            variant={variant}
-            currency={currency}
-            exchangeRates={exchangeRates}
-          />
         </div>
 
         {elevated && <div className={`border-t ${isB ? 'border-border/15' : 'border-border/30'}`} />}
