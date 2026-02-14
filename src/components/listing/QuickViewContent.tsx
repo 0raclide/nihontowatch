@@ -155,12 +155,9 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
                   Hidden
                 </span>
               )}
-              {/* Artisan badge — links to profile; admin gets edit pen with ArtisanTooltip */}
-              {/* Hide tmp-prefixed provisional codes from non-admin users */}
-              {listing.artisan_id &&
-               listing.artisan_confidence && listing.artisan_confidence !== 'NONE' &&
-               (isAdmin || !listing.artisan_id.startsWith('tmp')) ? (
-                isAdmin ? (
+              {/* Artisan badge — admin only: edit pen with ArtisanTooltip for QA workflow */}
+              {isAdmin && listing.artisan_id &&
+               listing.artisan_confidence && listing.artisan_confidence !== 'NONE' ? (
                   <span className="inline-flex items-center gap-0.5" data-artisan-tooltip>
                     {listing.artisan_id === 'UNKNOWN' ? (
                       <span className="text-[10px] italic font-medium px-2 py-0.5 rounded bg-artisan-low-bg text-muted">
@@ -205,27 +202,6 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
                       </span>
                     </ArtisanTooltip>
                   </span>
-                ) : (
-                  listing.artisan_id === 'UNKNOWN' ? (
-                    <span className="text-[10px] italic font-medium px-2 py-0.5 rounded bg-artisan-low-bg text-muted">
-                      Unlisted artist
-                    </span>
-                  ) : (
-                    <a
-                      href={`/artists/${listing.artisan_id}`}
-                      data-artisan-tooltip
-                      className={`text-[10px] font-mono font-medium px-2 py-0.5 rounded hover:opacity-80 transition-opacity ${
-                        listing.artisan_confidence === 'HIGH'
-                          ? 'bg-artisan-high-bg text-artisan-high'
-                          : listing.artisan_confidence === 'MEDIUM'
-                          ? 'bg-artisan-medium-bg text-artisan-medium'
-                          : 'bg-artisan-low-bg text-artisan-low'
-                      }`}
-                    >
-                      {listing.artisan_display_name || listing.artisan_id}
-                    </a>
-                  )
-                )
               ) : isAdmin && !listing.artisan_id ? (
                 /* Admin: show "Set ID" badge with pen icon for unmatched listings */
                 <ArtisanTooltip
@@ -298,6 +274,30 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
             </div>
           </div>
 
+          {/* Artist Profile CTA — compact single-line above price */}
+          {listing.artisan_id &&
+           listing.artisan_id !== 'UNKNOWN' &&
+           listing.artisan_confidence && listing.artisan_confidence !== 'NONE' &&
+           (isAdmin || !listing.artisan_id.startsWith('tmp')) && (
+            <a
+              href={`/artists/${listing.artisan_id}`}
+              onClick={(e) => {
+                e.preventDefault();
+                quickView?.closeQuickView?.();
+                router.push(`/artists/${listing.artisan_id}`);
+              }}
+              className="group inline-flex items-center gap-1.5 mb-1.5 text-[12px] text-gold hover:text-gold-light transition-colors"
+            >
+              <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              <span className="font-medium truncate">{listing.artisan_display_name || listing.artisan_id}</span>
+              <svg className="w-3 h-3 shrink-0 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </a>
+          )}
+
           {/* Price - Large and prominent */}
           <div className="mb-2">
             <span className={`text-2xl lg:text-3xl font-semibold tabular-nums ${
@@ -340,35 +340,6 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
           showAttribution={true}
           showMeasurements={true}
         />
-
-        {/* Artist Profile CTA — prominent link to artist page */}
-        {listing.artisan_id &&
-         listing.artisan_id !== 'UNKNOWN' &&
-         listing.artisan_confidence && listing.artisan_confidence !== 'NONE' &&
-         (isAdmin || !listing.artisan_id.startsWith('tmp')) && (
-          <a
-            href={`/artists/${listing.artisan_id}`}
-            onClick={(e) => {
-              e.preventDefault();
-              quickView?.closeQuickView?.();
-              router.push(`/artists/${listing.artisan_id}`);
-            }}
-            className="group flex items-center gap-3 px-4 py-3 lg:px-5 border-b border-border hover:bg-linen/50 transition-colors cursor-pointer"
-          >
-            <svg className="w-5 h-5 text-muted group-hover:text-accent transition-colors shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
-            <div className="flex-1 min-w-0">
-              <div className="text-[10px] uppercase tracking-wider text-muted font-medium leading-tight">Artist Profile</div>
-              <div className="text-[13px] font-medium text-ink group-hover:text-accent transition-colors truncate">
-                {listing.artisan_display_name || listing.artisan_id}
-              </div>
-            </div>
-            <svg className="w-4 h-4 text-muted group-hover:text-accent group-hover:translate-x-0.5 transition-all shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </a>
-        )}
 
         {/* Title (auto-translated if Japanese) */}
         <div className="px-4 py-3 lg:px-5 border-b border-border">
