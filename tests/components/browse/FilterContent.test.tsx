@@ -354,7 +354,7 @@ describe('Mobile Availability Select', () => {
     mockOnAvailabilityChange.mockClear();
   });
 
-  it('renders availability select when onAvailabilityChange is provided', () => {
+  it('renders availability buttons when onAvailabilityChange is provided', () => {
     render(
       <FilterContent
         facets={mockFacets}
@@ -365,10 +365,11 @@ describe('Mobile Availability Select', () => {
       />
     );
 
-    expect(screen.getByLabelText(/show/i)).toBeInTheDocument();
+    expect(screen.getByText(/show/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /for sale/i })).toBeInTheDocument();
   });
 
-  it('does not render availability select when onAvailabilityChange is not provided', () => {
+  it('does not render availability buttons when onAvailabilityChange is not provided', () => {
     render(
       <FilterContent
         facets={mockFacets}
@@ -377,10 +378,10 @@ describe('Mobile Availability Select', () => {
       />
     );
 
-    expect(screen.queryByLabelText(/show/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /for sale/i })).not.toBeInTheDocument();
   });
 
-  it('shows all three availability options', () => {
+  it('shows all three availability buttons', () => {
     render(
       <FilterContent
         facets={mockFacets}
@@ -391,16 +392,13 @@ describe('Mobile Availability Select', () => {
       />
     );
 
-    const select = screen.getByLabelText(/show/i);
-    expect(select).toBeInTheDocument();
-
-    // Check all options exist
-    expect(screen.getByRole('option', { name: /for sale/i })).toBeInTheDocument();
-    expect(screen.getByRole('option', { name: /sold/i })).toBeInTheDocument();
-    expect(screen.getByRole('option', { name: /^all$/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /for sale/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^sold$/i })).toBeInTheDocument();
+    // "All" button exists in both availability and signature sections
+    expect(screen.getAllByRole('button', { name: /^all$/i }).length).toBeGreaterThanOrEqual(1);
   });
 
-  it('displays correct value based on availability prop', () => {
+  it('highlights active button based on availability prop', () => {
     render(
       <FilterContent
         facets={mockFacets}
@@ -411,11 +409,11 @@ describe('Mobile Availability Select', () => {
       />
     );
 
-    const select = screen.getByLabelText(/show/i) as HTMLSelectElement;
-    expect(select.value).toBe('sold');
+    const soldBtn = screen.getByRole('button', { name: /^sold$/i });
+    expect(soldBtn.className).toContain('text-gold');
   });
 
-  it('calls onAvailabilityChange when selection changes', () => {
+  it('calls onAvailabilityChange when button is clicked', () => {
     render(
       <FilterContent
         facets={mockFacets}
@@ -426,14 +424,13 @@ describe('Mobile Availability Select', () => {
       />
     );
 
-    const select = screen.getByLabelText(/show/i);
-    fireEvent.change(select, { target: { value: 'sold' } });
+    fireEvent.click(screen.getByRole('button', { name: /^sold$/i }));
 
     expect(mockOnAvailabilityChange).toHaveBeenCalledTimes(1);
     expect(mockOnAvailabilityChange).toHaveBeenCalledWith('sold');
   });
 
-  it('calls onAvailabilityChange with "all" when All is selected', () => {
+  it('calls onAvailabilityChange with "all" when All is clicked', () => {
     render(
       <FilterContent
         facets={mockFacets}
@@ -444,8 +441,9 @@ describe('Mobile Availability Select', () => {
       />
     );
 
-    const select = screen.getByLabelText(/show/i);
-    fireEvent.change(select, { target: { value: 'all' } });
+    // First "All" button is in the availability section
+    const allButtons = screen.getAllByRole('button', { name: /^all$/i });
+    fireEvent.click(allButtons[0]);
 
     expect(mockOnAvailabilityChange).toHaveBeenCalledWith('all');
   });

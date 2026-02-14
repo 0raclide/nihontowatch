@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useCallback, useMemo, memo } from 'react';
-import { PRICE_RANGE_BRACKETS } from '@/lib/constants';
 
 export type SidebarVariant = 'default' | 'a' | 'b';
 
@@ -437,9 +436,12 @@ export function FilterContent({
   }, [filters.category, nihontoTypes, tosoguTypes, armorTypes]);
 
   // Sort certifications by rank
+  // Certifications hidden from filter (not serious for nihonto/tosogu collectors)
+  const HIDDEN_CERTS = new Set(['nthk', 'TokuKicho']);
+
   const sortedCertifications = useMemo(() => {
     return [...facets.certifications]
-      .filter(f => f.value !== 'null' && CERT_LABELS[f.value])
+      .filter(f => f.value !== 'null' && CERT_LABELS[f.value] && !HIDDEN_CERTS.has(f.value))
       .sort((a, b) => {
         const aIndex = CERT_ORDER.indexOf(a.value);
         const bIndex = CERT_ORDER.indexOf(b.value);
@@ -607,8 +609,9 @@ export function FilterContent({
     filters.historicalPeriods.forEach(p => pills.push({ key: `period-${p}`, label: PERIOD_LABELS[p] || p, onRemove: () => handlePeriodChange(p, false) }));
     filters.signatureStatuses.forEach(s => pills.push({ key: `sig-${s}`, label: SIGNATURE_LABELS[s] || s, onRemove: () => handleSignatureChange(s, false) }));
     if (filters.priceMin || filters.priceMax) {
-      const bracket = PRICE_RANGE_BRACKETS.find(b => b.min === filters.priceMin && (b.max ?? undefined) === filters.priceMax);
-      pills.push({ key: 'price', label: bracket?.label || 'Price range', onRemove: () => { onFilterChange('priceMin', undefined); onFilterChange('priceMax', undefined); } });
+      const fmt = (v: number) => v >= 1000000 ? `¥${(v / 1000000).toFixed(v % 1000000 === 0 ? 0 : 1)}M` : `¥${(v / 1000).toFixed(0)}K`;
+      const label = filters.priceMin && filters.priceMax ? `${fmt(filters.priceMin)}–${fmt(filters.priceMax)}` : filters.priceMin ? `${fmt(filters.priceMin)}+` : `Up to ${fmt(filters.priceMax!)}`;
+      pills.push({ key: 'price', label, onRemove: () => { onFilterChange('priceMin', undefined); onFilterChange('priceMax', undefined); } });
     }
     filters.dealers.forEach(id => {
       const d = facets.dealers.find(dl => dl.id === id);
@@ -721,20 +724,31 @@ export function FilterContent({
         </div>
       </div>
 
-      {/* Availability - Mobile only */}
+      {/* Availability - Mobile only (subtle segmented buttons) */}
       {onAvailabilityChange && (
         <div className="lg:hidden mb-3">
-          <label htmlFor="availability-select" className="text-[12px] text-muted mb-2 block">Show</label>
-          <select
-            id="availability-select"
-            value={availability}
-            onChange={(e) => onAvailabilityChange(e.target.value as AvailabilityStatus)}
-            className="w-full px-3 py-3 bg-paper border-2 border-border rounded-lg text-[15px] text-ink focus:outline-none focus:border-gold"
-          >
-            <option value="available">For sale</option>
-            <option value="sold">Sold</option>
-            <option value="all">All</option>
-          </select>
+          <label className="text-[12px] text-muted mb-2 block">Show</label>
+          <div className="flex rounded-md border border-border overflow-hidden">
+            {([
+              { key: 'available' as const, label: 'For Sale' },
+              { key: 'sold' as const, label: 'Sold' },
+              { key: 'all' as const, label: 'All' },
+            ]).map(({ key, label }, i) => (
+              <button
+                key={key}
+                onClick={() => onAvailabilityChange(key)}
+                className={`flex-1 py-2 text-[13px] font-medium transition-colors ${
+                  i > 0 ? 'border-l border-border' : ''
+                } ${
+                  availability === key
+                    ? 'bg-gold/10 text-gold'
+                    : 'text-muted hover:text-ink hover:bg-hover/20'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
@@ -786,8 +800,8 @@ export function FilterContent({
 
         {elevated && <div className={`border-t ${isB ? 'border-border/15' : 'border-border/30'}`} />}
 
-        {/* 2. Period (checkboxes, OPEN by default) */}
-        <FilterSection title="Period" defaultOpen={true} variant={variant} activeCount={filters.historicalPeriods.length}>
+        {/* 2. Period (checkboxes, closed by default) */}
+        <FilterSection title="Period" defaultOpen={false} variant={variant} activeCount={filters.historicalPeriods.length}>
           <div className={elevated ? 'space-y-0' : 'space-y-1'}>
             {facets.historicalPeriods?.map((facet) => (
               <Checkbox key={facet.value} label={PERIOD_LABELS[facet.value] || facet.value} count={facet.count} checked={filters.historicalPeriods.includes(facet.value)} onChange={(checked) => handlePeriodChange(facet.value, checked)} variant={variant} />
@@ -866,7 +880,7 @@ export function FilterContent({
 
         {elevated && <div className={`border-t ${isB ? 'border-border/15' : 'border-border/30'}`} />}
 
-        {/* 5. Price — 2-column bracket pills */}
+        {/* 5. Price — min/max range inputs */}
         <div className={isB ? 'py-2' : elevated ? 'py-3' : 'py-5'}>
           <span className={
             isB
@@ -875,34 +889,30 @@ export function FilterContent({
                 ? 'text-[14px] font-semibold text-ink block mb-2'
                 : 'text-[13px] uppercase tracking-[0.15em] font-semibold text-ink block mb-3'
           }>
-            Price
+            Price (¥)
           </span>
-          <div className="grid grid-cols-2 gap-1">
-            {PRICE_RANGE_BRACKETS.map((bracket) => {
-              const isActive = filters.priceMin === bracket.min && filters.priceMax === (bracket.max ?? undefined);
-              return (
-                <button
-                  key={bracket.label}
-                  onClick={() => {
-                    if (isActive) {
-                      // Deselect
-                      onFilterChange('priceMin', undefined);
-                      onFilterChange('priceMax', undefined);
-                    } else {
-                      onFilterChange('priceMin', bracket.min);
-                      onFilterChange('priceMax', bracket.max ?? undefined);
-                    }
-                  }}
-                  className={`px-2 py-[6px] text-[11px] font-medium rounded-md transition-colors ${
-                    isActive
-                      ? 'bg-gold/12 text-gold border border-gold/25'
-                      : 'border border-border/25 text-muted hover:text-ink hover:border-border/40 hover:bg-hover/20'
-                  }`}
-                >
-                  {bracket.label}
-                </button>
-              );
-            })}
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              placeholder="Min"
+              value={filters.priceMin ?? ''}
+              onChange={(e) => {
+                const v = e.target.value ? Number(e.target.value) : undefined;
+                onFilterChange('priceMin', v);
+              }}
+              className={`w-full ${isB ? 'px-2 py-1 text-[11px]' : 'px-2.5 py-1.5 text-[12px]'} rounded-md border border-border/25 bg-transparent text-ink placeholder:text-muted/50 focus:outline-none focus:border-gold/40 focus:ring-1 focus:ring-gold/20 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none`}
+            />
+            <span className="text-muted text-[11px] shrink-0">–</span>
+            <input
+              type="number"
+              placeholder="Max"
+              value={filters.priceMax ?? ''}
+              onChange={(e) => {
+                const v = e.target.value ? Number(e.target.value) : undefined;
+                onFilterChange('priceMax', v);
+              }}
+              className={`w-full ${isB ? 'px-2 py-1 text-[11px]' : 'px-2.5 py-1.5 text-[12px]'} rounded-md border border-border/25 bg-transparent text-ink placeholder:text-muted/50 focus:outline-none focus:border-gold/40 focus:ring-1 focus:ring-gold/20 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none`}
+            />
           </div>
         </div>
 
