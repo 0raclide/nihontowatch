@@ -557,8 +557,15 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   transition: background-color 0.3s ease, color 0.3s ease;
-  /* Prevent iOS Safari rubber-band bounce at page boundaries */
-  overscroll-behavior-y: contain;
+}
+
+/* Prevent rubber-band bounce on desktop body scroll only.
+   On mobile, the contained scroll div handles scrolling — applying
+   overscroll-behavior on body can block iOS Safari touch gestures. */
+@media (min-width: 1024px) {
+  body {
+    overscroll-behavior-y: contain;
+  }
 }
 
 /* Typography - Scholarly hierarchy */

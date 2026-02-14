@@ -472,7 +472,7 @@ function HomeContent() {
       {/* Scrollable content area: contained scroll on mobile, normal body scroll on desktop */}
       <div
         ref={scrollContainerRef}
-        className="flex-1 min-h-0 overflow-y-auto overscroll-none lg:overflow-visible"
+        className="flex-1 min-h-0 overflow-y-auto lg:overflow-visible"
       >
       <DataDelayBanner />
       <NewSinceLastVisitBanner />
