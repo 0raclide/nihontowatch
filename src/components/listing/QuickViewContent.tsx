@@ -10,6 +10,7 @@ import { useAuth } from '@/lib/auth/AuthContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { useQuickViewOptional } from '@/contexts/QuickViewContext';
 import { mapListingToCollectionItem } from '@/lib/collection/listingImport';
+import { saveListingReturnContext } from '@/lib/listing/returnContext';
 import { useActivityTrackerOptional } from '@/lib/tracking/ActivityTracker';
 import { useCurrency, formatPriceWithConversion } from '@/hooks/useCurrency';
 import { shouldShowNewBadge } from '@/lib/newListing';
@@ -240,6 +241,8 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
                 href={`/artists/${listing.artisan_id}`}
                 onClick={(e) => {
                   e.preventDefault();
+                  // Save return context so artist page can show a "Return to Listing" pill
+                  saveListingReturnContext(listing);
                   // Navigate directly — don't call closeQuickView() first because
                   // its history.back() races with router.push() and cancels navigation on mobile.
                   // The QuickView unmounts naturally on route change.

@@ -21,6 +21,7 @@ import {
 import { createServiceClient } from '@/lib/supabase/server';
 import { generateBreadcrumbJsonLd, jsonLdScriptProps } from '@/lib/seo/jsonLd';
 import { ArtistProfileBar } from '@/components/artisan/ArtistProfileBar';
+import { ListingReturnBar } from '@/components/artisan/ListingReturnBar';
 import { ArtistPageClient } from './ArtistPageClient';
 import type { ArtisanPageResponse } from '@/app/api/artisan/[code]/route';
 
@@ -302,6 +303,7 @@ export default async function ArtistSlugPage({ params }: ArtistPageProps) {
 
       <ArtistPageClient data={data} />
 
+      <ListingReturnBar />
       <ArtistProfileBar />
     </>
   );

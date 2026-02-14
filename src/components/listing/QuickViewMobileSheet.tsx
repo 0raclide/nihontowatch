@@ -12,6 +12,7 @@ import { InquiryModal } from '@/components/inquiry';
 import { LoginModal } from '@/components/auth/LoginModal';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { useActivityTrackerOptional } from '@/lib/tracking/ActivityTracker';
+import { saveListingReturnContext } from '@/lib/listing/returnContext';
 import { MetadataGrid, getCertInfo, getArtisanInfo } from './MetadataGrid';
 import { useQuickViewOptional } from '@/contexts/QuickViewContext';
 import { SetsumeiSection } from './SetsumeiSection';
@@ -467,6 +468,8 @@ export function QuickViewMobileSheet({
               href={`/artists/${listing.artisan_id}`}
               onClick={(e) => {
                 e.preventDefault();
+                // Save return context so artist page can show a "Return to Listing" pill
+                saveListingReturnContext(listing);
                 // Navigate directly — don't call closeQuickView() first because
                 // its history.back() races with router.push() and cancels navigation on mobile.
                 router.push(`/artists/${listing.artisan_id}`);
