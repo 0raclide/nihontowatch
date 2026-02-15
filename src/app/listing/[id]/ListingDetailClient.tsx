@@ -23,16 +23,13 @@ import { trackListingView, getViewReferrer } from '@/lib/tracking/viewTracker';
 import { getSessionId } from '@/lib/activity/sessionManager';
 import type { Listing, CreateAlertInput } from '@/types';
 import { isSetsumeiEligibleCert } from '@/types';
+import type { EnrichedListingDetail } from '@/lib/listing/getListingDetail';
 
-// Extended listing type for this page
-interface ListingDetail extends Listing {
-  stored_images?: string[] | null;
-  dealer_earliest_seen_at?: string | null; // For "New this week" badge
-  dealers: {
-    id: number;
-    name: string;
-    domain: string;
-  };
+// Use EnrichedListingDetail as the canonical listing type for this page
+type ListingDetail = EnrichedListingDetail;
+
+interface ListingDetailPageProps {
+  initialData?: EnrichedListingDetail | null;
 }
 
 // Certification display config
@@ -71,14 +68,14 @@ const ITEM_TYPE_LABELS: Record<string, string> = {
   koshirae: 'Koshirae',
 };
 
-export default function ListingDetailPage() {
+export default function ListingDetailPage({ initialData }: ListingDetailPageProps) {
   const params = useParams();
   const router = useRouter();
   const listingId = params.id as string;
   const { user, isAdmin } = useAuth();
 
-  const [listing, setListing] = useState<ListingDetail | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [listing, setListing] = useState<ListingDetail | null>(initialData ?? null);
+  const [isLoading, setIsLoading] = useState(!initialData);
   const [error, setError] = useState<string | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
@@ -131,8 +128,10 @@ export default function ListingDetailPage() {
     }
   }, [validatedImages.length, selectedImageIndex]);
 
-  // Fetch listing data via API route (enables edge caching)
+  // Fetch listing data via API route — skip when server-rendered initialData is available
   useEffect(() => {
+    if (initialData) return;
+
     const fetchListing = async () => {
       if (!listingId) return;
 
@@ -162,7 +161,7 @@ export default function ListingDetailPage() {
     };
 
     fetchListing();
-  }, [listingId]);
+  }, [listingId, initialData]);
 
   const handleCreateAlert = useCallback(async (input: CreateAlertInput): Promise<boolean> => {
     const result = await createAlert(input);
