@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/server';
-import { LISTING_FILTERS, CACHE } from '@/lib/constants';
+import { LISTING_FILTERS } from '@/lib/constants';
 import { createDealerSlug, getCountryRegion, formatItemType } from '@/lib/dealers/utils';
 
-export const revalidate = CACHE.DEALERS; // 1 hour
+export const revalidate = 3600; // 1 hour
 
 interface DealerRow {
   id: number;
