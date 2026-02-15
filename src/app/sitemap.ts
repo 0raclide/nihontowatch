@@ -3,6 +3,7 @@ import { createServiceClient } from '@/lib/supabase/server';
 import { yuhinkaiClient } from '@/lib/supabase/yuhinkai';
 import { generateArtisanSlug } from '@/lib/artisan/slugs';
 import { getAllSwordSlugs, getAllFittingSlugs, getAllCertSlugs } from '@/lib/seo/categories';
+import { createDealerSlug } from '@/lib/dealers/utils';
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://nihontowatch.com';
 
@@ -18,14 +19,6 @@ interface ListingForSitemap {
 interface DealerForSitemap {
   id: number;
   name: string;
-}
-
-// Helper to create URL-friendly slug from dealer name
-function createDealerSlug(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '');
 }
 
 async function getAllDealers(): Promise<DealerForSitemap[]> {

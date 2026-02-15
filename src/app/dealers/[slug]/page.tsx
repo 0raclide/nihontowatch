@@ -1,8 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { notFound, redirect } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import { createServiceClient } from '@/lib/supabase/server';
-import { Header } from '@/components/layout/Header';
 import { Breadcrumbs } from '@/components/ui/Breadcrumbs';
 import { Footer } from '@/components/layout/Footer';
 import { BottomTabBar } from '@/components/navigation/BottomTabBar';
@@ -11,51 +10,15 @@ import {
   generateBreadcrumbJsonLd,
   jsonLdScriptProps,
 } from '@/lib/seo/jsonLd';
-import type { Dealer, Listing } from '@/types';
+import { createDealerSlug, getCountryFlag } from '@/lib/dealers/utils';
+import type { Dealer } from '@/types';
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://nihontowatch.com';
 
-// Helper to create URL-friendly slug from dealer name
-function createDealerSlug(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '');
-}
-
-// Derive country from domain TLD (fallback when country column doesn't exist)
-function getCountryFromDomain(domain: string): string {
-  // Specific overrides for known international dealers
-  if (domain === 'giuseppepiva.com') return 'Italy';
-
-  if (domain.endsWith('.jp') || domain.endsWith('.co.jp')) return 'JP';
-  if (domain.endsWith('.com') || domain.endsWith('.net')) return 'USA';
-  if (domain.endsWith('.uk') || domain.endsWith('.co.uk')) return 'UK';
-  if (domain.endsWith('.de')) return 'DE';
-  return 'JP'; // Default to Japan for nihonto dealers
-}
-
-// Country flag emoji
-function getCountryFlag(country: string): string {
-  const flags: Record<string, string> = {
-    JP: '🇯🇵',
-    Japan: '🇯🇵',
-    US: '🇺🇸',
-    USA: '🇺🇸',
-    UK: '🇬🇧',
-    DE: '🇩🇪',
-    Germany: '🇩🇪',
-    Italy: '🇮🇹',
-    IT: '🇮🇹',
-  };
-  return flags[country] || '🌐';
-}
-
-// Find dealer by slug
+// Find dealer by slug — uses the country column from DB
 async function findDealerBySlug(slug: string) {
   const supabase = createServiceClient();
 
-  // Fetch all dealers and find the one whose slug matches
   const { data: dealers } = await supabase
     .from('dealers')
     .select('*')
@@ -63,12 +26,9 @@ async function findDealerBySlug(slug: string) {
 
   if (!dealers || dealers.length === 0) return null;
 
-  type DealerRow = { id: number; name: string; domain: string; is_active: boolean; created_at: string };
+  type DealerRow = { id: number; name: string; domain: string; country: string; is_active: boolean; created_at: string };
   const dealer = (dealers as DealerRow[]).find((d) => createDealerSlug(d.name) === slug);
-  if (!dealer) return null;
-
-  // Add country derived from domain
-  return { ...dealer, country: getCountryFromDomain(dealer.domain) };
+  return dealer || null;
 }
 
 type Props = {
@@ -191,9 +151,7 @@ export default async function DealerPage({ params }: Props) {
       <script {...jsonLdScriptProps(dealerJsonLd)} />
       <script {...jsonLdScriptProps(breadcrumbJsonLd)} />
 
-      <div className="min-h-screen bg-linen dark:bg-ink">
-        <Header />
-
+      <div>
         <main className="max-w-6xl mx-auto px-4 py-8 pb-24 md:pb-8">
           <Breadcrumbs
             items={[
@@ -207,14 +165,14 @@ export default async function DealerPage({ params }: Props) {
           {/* Dealer Header */}
           <div className="mb-8">
             <div className="flex items-center gap-3 mb-2">
-              <h1 className="font-serif text-3xl md:text-4xl text-ink dark:text-cream">
+              <h1 className="font-serif text-3xl md:text-4xl text-ink">
                 {dealer.name}
               </h1>
               <span className="text-3xl" title={dealer.country}>
                 {flag}
               </span>
             </div>
-            <div className="flex flex-wrap items-center gap-4 text-muted dark:text-muted-dark">
+            <div className="flex flex-wrap items-center gap-4 text-muted">
               <a
                 href={`https://${dealer.domain}`}
                 target="_blank"
@@ -241,34 +199,49 @@ export default async function DealerPage({ params }: Props) {
             </div>
           </div>
 
-          {/* Stats Row */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            <div className="bg-cream dark:bg-charcoal rounded-lg p-4 border border-border dark:border-border-dark">
-              <div className="text-2xl font-serif text-ink dark:text-cream">
-                {listingCount.toLocaleString()}
-              </div>
-              <div className="text-sm text-muted dark:text-muted-dark">Available Items</div>
+          {/* Inventory Breakdown */}
+          <div className="bg-cream rounded-lg border border-border p-5 mb-8">
+            <div className="flex items-baseline justify-between mb-4">
+              <h2 className="text-[13px] uppercase tracking-[0.1em] text-ink/50 font-medium">Inventory</h2>
+              <span className="text-2xl font-serif text-ink tabular-nums">{listingCount.toLocaleString()}</span>
             </div>
-            {sortedTypes.slice(0, 3).map(([type, count]) => (
-              <div
-                key={type}
-                className="bg-cream dark:bg-charcoal rounded-lg p-4 border border-border dark:border-border-dark"
-              >
-                <div className="text-2xl font-serif text-ink dark:text-cream">
-                  {count.toLocaleString()}
-                </div>
-                <div className="text-sm text-muted dark:text-muted-dark capitalize">
-                  {type.replace(/_/g, ' ')}
-                </div>
+            {/* Proportional bar */}
+            {sortedTypes.length > 0 && (
+              <div className="flex h-2 rounded-full overflow-hidden mb-4">
+                {sortedTypes.map(([type, count], i) => (
+                  <div
+                    key={type}
+                    className="transition-all duration-300"
+                    style={{
+                      width: `${(count / listingCount) * 100}%`,
+                      backgroundColor: `color-mix(in srgb, var(--accent) ${90 - i * 15}%, var(--border))`,
+                    }}
+                  />
+                ))}
               </div>
-            ))}
+            )}
+            {/* Legend */}
+            <div className="flex flex-wrap gap-x-5 gap-y-2">
+              {sortedTypes.map(([type, count], i) => (
+                <div key={type} className="flex items-center gap-2">
+                  <div
+                    className="w-2.5 h-2.5 rounded-full"
+                    style={{
+                      backgroundColor: `color-mix(in srgb, var(--accent) ${90 - i * 15}%, var(--border))`,
+                    }}
+                  />
+                  <span className="text-[12px] text-ink capitalize">{type.replace(/_/g, ' ')}</span>
+                  <span className="text-[11px] text-muted tabular-nums">{count}</span>
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* Browse All Button */}
           <div className="mb-8">
             <Link
               href={`/?dealer=${dealer.id}`}
-              className="inline-flex items-center gap-2 bg-gold hover:bg-gold/90 text-ink px-6 py-3 rounded-lg font-medium transition-colors"
+              className="inline-flex items-center gap-2 bg-gold hover:bg-gold/90 text-white px-6 py-3 rounded-lg font-medium transition-colors shadow-sm"
             >
               Browse All {listingCount.toLocaleString()} Listings
               <svg
@@ -290,7 +263,7 @@ export default async function DealerPage({ params }: Props) {
           {/* Sample Listings */}
           {sampleListings && sampleListings.length > 0 && (
             <section>
-              <h2 className="font-serif text-2xl text-ink dark:text-cream mb-4">
+              <h2 className="font-serif text-2xl text-ink mb-4">
                 Featured Items
               </h2>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -346,10 +319,10 @@ function ListingPreviewCard({ listing }: { listing: ListingPreview }) {
   return (
     <Link
       href={`/listing/${listing.id}`}
-      className="block bg-cream dark:bg-charcoal rounded-lg overflow-hidden border border-border dark:border-border-dark hover:border-gold dark:hover:border-gold transition-colors group"
+      className="card-hover block bg-cream rounded-lg overflow-hidden border border-border shadow-sm hover:border-gold/40 group"
     >
       {/* Image */}
-      <div className="aspect-square bg-linen dark:bg-ink relative overflow-hidden">
+      <div className="aspect-square bg-surface relative overflow-hidden">
         {firstImage ? (
           <img
             src={firstImage}
@@ -358,7 +331,7 @@ function ListingPreviewCard({ listing }: { listing: ListingPreview }) {
             loading="lazy"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-muted dark:text-muted-dark">
+          <div className="w-full h-full flex items-center justify-center text-muted">
             <svg
               className="w-12 h-12"
               fill="none"
@@ -384,7 +357,7 @@ function ListingPreviewCard({ listing }: { listing: ListingPreview }) {
 
       {/* Info */}
       <div className="p-3">
-        <h3 className="font-serif text-sm text-ink dark:text-cream line-clamp-2 mb-1 group-hover:text-gold transition-colors">
+        <h3 className="font-serif text-sm text-ink line-clamp-2 mb-1 group-hover:text-gold transition-colors">
           {listing.title}
         </h3>
         <div className="text-sm text-gold font-medium">

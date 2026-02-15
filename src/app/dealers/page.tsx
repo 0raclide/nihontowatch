@@ -1,254 +1,75 @@
-import type { Metadata } from 'next';
-import Link from 'next/link';
+import { Metadata } from 'next';
 import { createServiceClient } from '@/lib/supabase/server';
-import { Header } from '@/components/layout/Header';
-import { Breadcrumbs } from '@/components/ui/Breadcrumbs';
-import { Footer } from '@/components/layout/Footer';
-import { BottomTabBar } from '@/components/navigation/BottomTabBar';
-import {
-  generateDealerJsonLd,
-  jsonLdScriptProps,
-} from '@/lib/seo/jsonLd';
-import type { Dealer } from '@/types';
+import { generateBreadcrumbJsonLd, jsonLdScriptProps } from '@/lib/seo/jsonLd';
+import { DealersPageClient } from './DealersPageClient';
 
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://nihontowatch.com';
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://nihontowatch.com';
 
-export const metadata: Metadata = {
-  title: 'Japanese Sword Dealers | 27 Trusted Nihonto Dealers Worldwide | NihontoWatch',
-  description:
-    'Browse 27 verified Japanese sword dealers from Japan and USA. Find authentic katana, wakizashi, tanto, and tosogu from trusted dealers like Aoi Art, Nipponto, and more.',
-  alternates: {
-    canonical: `${baseUrl}/dealers`,
-  },
-  openGraph: {
-    title: 'Japanese Sword Dealers | NihontoWatch',
-    description:
-      'Browse 27 verified Japanese sword dealers from Japan and USA. Find authentic katana, wakizashi, tanto, and tosogu from trusted dealers.',
-    type: 'website',
-    url: `${baseUrl}/dealers`,
-    siteName: 'NihontoWatch',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Japanese Sword Dealers | NihontoWatch',
-    description: 'Browse 27 verified Japanese sword dealers from Japan and USA.',
-  },
-};
-
-interface DealerWithCount extends Dealer {
-  listing_count: number;
+interface DealersPageProps {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
-// Helper to create URL-friendly slug from dealer name
-function createDealerSlug(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '');
+function getStringParam(
+  params: { [key: string]: string | string[] | undefined },
+  key: string,
+): string | undefined {
+  const val = params[key];
+  return typeof val === 'string' ? val : undefined;
 }
 
-// Derive country from domain TLD (fallback when country column doesn't exist)
-function getCountryFromDomain(domain: string): string {
-  // Specific overrides for known international dealers
-  if (domain === 'giuseppepiva.com') return 'Italy';
-
-  if (domain.endsWith('.jp') || domain.endsWith('.co.jp')) return 'JP';
-  if (domain.endsWith('.com') || domain.endsWith('.net')) return 'USA';
-  if (domain.endsWith('.uk') || domain.endsWith('.co.uk')) return 'UK';
-  if (domain.endsWith('.de')) return 'DE';
-  return 'JP'; // Default to Japan for nihonto dealers
-}
-
-// Country flag emoji
-function getCountryFlag(country: string): string {
-  const flags: Record<string, string> = {
-    JP: '🇯🇵',
-    Japan: '🇯🇵',
-    US: '🇺🇸',
-    USA: '🇺🇸',
-    UK: '🇬🇧',
-    DE: '🇩🇪',
-    Germany: '🇩🇪',
-    Italy: '🇮🇹',
-    IT: '🇮🇹',
-  };
-  return flags[country] || '🌐';
-}
-
-export default async function DealersPage() {
+export async function generateMetadata(): Promise<Metadata> {
   const supabase = createServiceClient();
-
-  // Fetch all active dealers with their listing counts
-  // Note: country column may not exist in all environments, handled with fallback
-  const { data: dealers, error } = await supabase
+  const { count } = await supabase
     .from('dealers')
-    .select(`
-      id,
-      name,
-      domain,
-      is_active,
-      created_at
-    `)
-    .eq('is_active', true)
-    .order('name');
+    .select('*', { count: 'exact', head: true })
+    .eq('is_active', true);
 
-  if (error) {
-    console.error('[DealersPage] Error fetching dealers:', error);
-  }
+  const dealerCount = count || 0;
 
-  // Fetch listing counts for each dealer
-  const dealersWithCounts: DealerWithCount[] = [];
+  return {
+    title: `Japanese Sword Dealers | ${dealerCount} Trusted Nihonto Dealers Worldwide | NihontoWatch`,
+    description: `Browse ${dealerCount} verified Japanese sword dealers from Japan and worldwide. Find authentic katana, wakizashi, tanto, and tosogu from trusted dealers.`,
+    alternates: { canonical: `${BASE_URL}/dealers` },
+    openGraph: {
+      title: `Japanese Sword Dealers | ${dealerCount} Dealers | NihontoWatch`,
+      description: `Browse ${dealerCount} verified Japanese sword dealers from Japan and worldwide.`,
+      type: 'website',
+      url: `${BASE_URL}/dealers`,
+      siteName: 'NihontoWatch',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `Japanese Sword Dealers | NihontoWatch`,
+      description: `Browse ${dealerCount} verified dealers from Japan and worldwide.`,
+    },
+  };
+}
 
-  if (dealers && dealers.length > 0) {
-    for (const dealer of dealers as Array<{ id: number; name: string; domain: string; is_active: boolean; created_at: string }>) {
-      const { count } = await supabase
-        .from('listings')
-        .select('*', { count: 'exact', head: true })
-        .eq('dealer_id', dealer.id)
-        .eq('is_available', true);
+export default async function DealersPage({ searchParams }: DealersPageProps) {
+  const params = await searchParams;
 
-      dealersWithCounts.push({
-        ...dealer,
-        country: getCountryFromDomain(dealer.domain),
-        listing_count: count || 0,
-      } as DealerWithCount);
-    }
-  }
+  const sortParam = getStringParam(params, 'sort');
+  const sort = (['listing_count', 'name', 'country'].includes(sortParam || '')
+    ? sortParam as 'listing_count' | 'name' | 'country'
+    : 'listing_count');
+  const q = getStringParam(params, 'q');
+  const regionParam = getStringParam(params, 'region');
+  const region = (['japan', 'international'].includes(regionParam || '')
+    ? regionParam as 'japan' | 'international'
+    : undefined);
 
-  // Group by country
-  const japaneseDealer = dealersWithCounts.filter(
-    (d) => d.country === 'JP' || d.country === 'Japan'
-  );
-  const westernDealers = dealersWithCounts.filter(
-    (d) => d.country !== 'JP' && d.country !== 'Japan'
-  );
-
-  // Calculate totals
-  const totalListings = dealersWithCounts.reduce((sum, d) => sum + d.listing_count, 0);
-  const totalDealers = dealersWithCounts.length;
-
-  // Generate JSON-LD for each dealer
-  const dealerJsonLdScripts = dealersWithCounts.map((dealer) => {
-    const jsonLd = generateDealerJsonLd(dealer);
-    return jsonLdScriptProps(jsonLd);
-  });
+  const breadcrumbJsonLd = generateBreadcrumbJsonLd([
+    { name: 'Home', url: BASE_URL },
+    { name: 'Dealers' },
+  ]);
 
   return (
     <>
-      {/* JSON-LD Structured Data for each dealer */}
-      {dealerJsonLdScripts.map((props, i) => (
-        <script key={i} {...props} />
-      ))}
+      <script {...jsonLdScriptProps(breadcrumbJsonLd)} />
 
-      <div className="min-h-screen bg-linen dark:bg-ink">
-        <Header />
-
-        <main className="max-w-6xl mx-auto px-4 py-8 pb-24 md:pb-8">
-          <Breadcrumbs items={[{ name: 'Home', url: '/' }, { name: 'Dealers' }]} />
-
-          {/* Page Header */}
-          <div className="mb-8">
-            <h1 className="font-serif text-3xl md:text-4xl text-ink dark:text-cream mb-2">
-              Japanese Sword Dealers
-            </h1>
-            <p className="text-muted dark:text-muted-dark text-lg">
-              Browse {totalListings.toLocaleString()} listings from {totalDealers} trusted dealers worldwide
-            </p>
-          </div>
-
-          {/* Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            <div className="bg-cream dark:bg-charcoal rounded-lg p-4 border border-border dark:border-border-dark">
-              <div className="text-2xl font-serif text-ink dark:text-cream">
-                {totalDealers}
-              </div>
-              <div className="text-sm text-muted dark:text-muted-dark">Active Dealers</div>
-            </div>
-            <div className="bg-cream dark:bg-charcoal rounded-lg p-4 border border-border dark:border-border-dark">
-              <div className="text-2xl font-serif text-ink dark:text-cream">
-                {totalListings.toLocaleString()}
-              </div>
-              <div className="text-sm text-muted dark:text-muted-dark">Total Listings</div>
-            </div>
-            <div className="bg-cream dark:bg-charcoal rounded-lg p-4 border border-border dark:border-border-dark">
-              <div className="text-2xl font-serif text-ink dark:text-cream">
-                {japaneseDealer.length}
-              </div>
-              <div className="text-sm text-muted dark:text-muted-dark">Japanese Dealers</div>
-            </div>
-            <div className="bg-cream dark:bg-charcoal rounded-lg p-4 border border-border dark:border-border-dark">
-              <div className="text-2xl font-serif text-ink dark:text-cream">
-                {westernDealers.length}
-              </div>
-              <div className="text-sm text-muted dark:text-muted-dark">Western Dealers</div>
-            </div>
-          </div>
-
-          {/* Japanese Dealers */}
-          <section className="mb-12">
-            <h2 className="font-serif text-2xl text-ink dark:text-cream mb-4 flex items-center gap-2">
-              <span>🇯🇵</span> Japanese Dealers
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {japaneseDealer.map((dealer) => (
-                <DealerCard key={dealer.id} dealer={dealer} />
-              ))}
-            </div>
-          </section>
-
-          {/* Western Dealers */}
-          {westernDealers.length > 0 && (
-            <section>
-              <h2 className="font-serif text-2xl text-ink dark:text-cream mb-4 flex items-center gap-2">
-                <span>🌐</span> International Dealers
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {westernDealers.map((dealer) => (
-                  <DealerCard key={dealer.id} dealer={dealer} />
-                ))}
-              </div>
-            </section>
-          )}
-        </main>
-
-        <Footer />
-        <BottomTabBar />
-      </div>
+      <DealersPageClient
+        initialFilters={{ sort, q, region }}
+      />
     </>
   );
 }
-
-function DealerCard({ dealer }: { dealer: DealerWithCount }) {
-  const slug = createDealerSlug(dealer.name);
-  const flag = getCountryFlag(dealer.country);
-
-  return (
-    <Link
-      href={`/dealers/${slug}`}
-      className="block bg-cream dark:bg-charcoal rounded-lg p-4 border border-border dark:border-border-dark hover:border-gold dark:hover:border-gold transition-colors group"
-    >
-      <div className="flex items-start justify-between mb-2">
-        <h3 className="font-serif text-lg text-ink dark:text-cream group-hover:text-gold transition-colors">
-          {dealer.name}
-        </h3>
-        <span className="text-xl" title={dealer.country}>
-          {flag}
-        </span>
-      </div>
-      <p className="text-sm text-muted dark:text-muted-dark mb-3 truncate">
-        {dealer.domain}
-      </p>
-      <div className="flex items-center justify-between">
-        <span className="text-sm text-muted dark:text-muted-dark">
-          {dealer.listing_count.toLocaleString()} listings
-        </span>
-        <span className="text-xs text-gold group-hover:underline">
-          View inventory →
-        </span>
-      </div>
-    </Link>
-  );
-}
-
-// Revalidate every hour
-export const revalidate = 3600;
