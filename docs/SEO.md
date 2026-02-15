@@ -2,7 +2,7 @@
 
 This document covers the full SEO implementation for NihontoWatch — how metadata is generated, what structured data exists, where the code lives, and what remains to be done.
 
-**Last updated:** 2026-02-14
+**Last updated:** 2026-02-15
 
 ---
 
@@ -30,7 +30,9 @@ SEO metadata is generated at three levels:
 
 2. **Page-level `generateMetadata()`** — Next.js server functions that override the root defaults with page-specific titles and descriptions. These run server-side before the page renders, so crawlers see the final metadata in the initial HTML.
 
-3. **Category definitions** (`src/lib/seo/categories.ts`) — Static data objects that define keyword-optimized titles, descriptions, and intro copy for each category landing page (`/swords/*`, `/fittings/*`, `/certified/*`).
+3. **Server-rendered listing content** — The listing detail page (`/listing/[id]`) uses a shared `getListingDetail()` function to fetch and enrich data server-side. The enriched listing is passed as `initialData` to the client component, so the full content (h1, price, specs, dealer info, images) appears in the initial HTML that Googlebot receives. See [Listing Detail SSR Architecture](#listing-detail-ssr-architecture).
+
+4. **Category definitions** (`src/lib/seo/categories.ts`) — Static data objects that define keyword-optimized titles, descriptions, and intro copy for each category landing page (`/swords/*`, `/fittings/*`, `/certified/*`).
 
 The listing detail page (`/listing/[id]`) uses a **structured title builder** (`src/lib/seo/metaTitle.ts`) that assembles titles from database fields following collector search patterns:
 
@@ -145,6 +147,79 @@ The SEO builder checks both paths for every field. The metadata query in `page.t
 - `og:description` and `twitter:description` use the full structured description
 - `og:image` uses pre-generated OG image if available (`og_image_url`), falls back to dynamic `/api/og?id={id}`
 - `og:siteName` is "NihontoWatch"
+
+---
+
+## Listing Detail SSR Architecture
+
+**Deployed:** 2026-02-15 (commit `1145920`)
+
+### Problem
+
+Google Search Console showed **2,423 listing pages as "Crawled - currently not indexed"**. Root cause: `ListingDetailClient` was a `'use client'` component that fetched all data via `useEffect` on mount. The server-rendered HTML had good metadata (`<title>`, `<meta>`, JSON-LD) but an **empty body** — no h1, no title text, no price, no specs. Google treated this as thin content and refused to index.
+
+### Solution
+
+Extracted the API route's data-fetching + enrichment logic into a shared function (`getListingDetail`), called it from `page.tsx`, and passed the result as `initialData` to the client component. Since Next.js SSRs `'use client'` components when they receive data as props, the full listing content now appears in the initial HTML.
+
+### Data flow
+
+```
+page.tsx (server component)
+  │
+  ├─ generateMetadata() ──► getListingDetail() ──► Supabase
+  │                                                  │
+  │                                                  ▼
+  │                                           EnrichedListingDetail
+  │                                                  │
+  │                                                  ▼
+  │                                        <title>, <meta>, og:*
+  │
+  └─ ListingPage() ────────► getListingDetail() ──► Supabase
+                                                     │
+                                                     ▼
+                                              EnrichedListingDetail
+                                                     │
+                                    ┌────────────────┼──────────────┐
+                                    ▼                ▼              ▼
+                              JSON-LD scripts   <ListingDetail    <RelatedListings
+                                                 Client            Server />
+                                                 initialData=
+                                                 {listing} />
+```
+
+### What Googlebot now sees
+
+| Element | Before | After |
+|---------|--------|-------|
+| `<h1>` | Missing | Listing title |
+| Price | Missing | Formatted price or "Price on request" |
+| Certification badge | Missing | Juyo/Hozon/etc. badge text |
+| Artisan/school | Missing | Smith + school attribution |
+| Specs | Missing | Nagasa, sori, motohaba, sakihaba |
+| Dealer info | Missing | Dealer name + domain |
+| Images | Missing | `<img>` tags with alt text |
+| Action buttons | Missing | "View on {Dealer}", "Inquire", "Set Alert" |
+| Loading spinner | Present | Gone |
+
+### Key files
+
+| File | Purpose |
+|------|---------|
+| `src/lib/listing/getListingDetail.ts` | Shared function: Supabase query + all enrichments (dealer baseline, Yuhinkai, artisan name/tier, price history) |
+| `src/app/api/listing/[id]/route.ts` | API route: calls `getListingDetail()`, adds cache headers |
+| `src/app/listing/[id]/page.tsx` | Server component: calls `getListingDetail()` for metadata + `initialData` prop |
+| `src/app/listing/[id]/ListingDetailClient.tsx` | Client component: accepts `initialData`, skips fetch when provided |
+
+### How admin re-fetch works
+
+When an admin uses `AdminSetsumeiWidget` to update a Yuhinkai connection, `onConnectionChanged` fires a client-side `fetch('/api/listing/{id}?nocache=1')` and calls `setListing()` with the fresh data. This bypasses `initialData` and works unchanged.
+
+### Monitoring
+
+- **Google Search Console → Coverage:** Watch "Crawled - currently not indexed" count (was 2,423) decline over 2-4 weeks
+- **URL Inspection tool:** Test individual listing URLs to verify Googlebot sees full content
+- **Indexed page count:** Should trend upward as Google recrawls
 
 ---
 
@@ -272,6 +347,7 @@ The only exceptions are legal page body prose (terms of service, privacy policy 
 | `src/lib/seo/jsonLd.ts` | All JSON-LD schema generators + `jsonLdScriptProps()` render helper |
 | `src/lib/seo/categories.ts` | Category definitions (titles, descriptions, filter mappings) for /swords, /fittings, /certified |
 | `src/lib/seo/fetchCategoryPreview.ts` | Server-side listing preview fetcher for category pages |
+| `src/lib/listing/getListingDetail.ts` | Shared listing data-fetching + enrichment for SSR (used by page.tsx and API route) |
 
 ### Pages with `generateMetadata()`
 
@@ -347,13 +423,11 @@ Measured 2026-02-14 against 6,069 available listings:
 
 **Mitigation:** The static category landing pages (`/swords/katana`) already cover the most important head terms with excellent metadata. The gap is specifically for direct browse URLs with query params. A `generateMetadata()` function that reads `searchParams` would close this.
 
-### 2. Server-render listing content for Googlebot
+### ~~2. Server-render listing content for Googlebot~~ ✅ DONE (2026-02-15)
 
-**Impact: MEDIUM** — The listing detail page fetches data twice: once server-side for metadata/JSON-LD, then again client-side for the interactive UI. This means the actual listing content (description, specs, images) is NOT in the initial HTML — Googlebot must execute JavaScript to see it.
+**Deployed:** commit `1145920`. See [Listing Detail SSR Architecture](#listing-detail-ssr-architecture) for full details.
 
-**Current architecture:** Server component renders JSON-LD + empty `<ListingDetailClient />`. Client component fetches via `/api/listing/[id]` on mount.
-
-**Fix:** Pass server-fetched data as `initialData` prop to the client component. The client can hydrate immediately and still refetch on demand (admin actions). This gives Googlebot the full content in initial HTML and eliminates one DB roundtrip.
+Extracted `getListingDetail()` shared function, passed enriched listing as `initialData` prop to client component. Googlebot now sees h1, price, specs, dealer info, and images in the initial HTML. Monitoring via Search Console for "Crawled - currently not indexed" count to decline from 2,423 over 2-4 weeks.
 
 ### 3. `tosogu_era` and `tosogu_material` exposure in browse API
 
@@ -411,6 +485,7 @@ Monitor:
 
 | Date | Change |
 |------|--------|
+| 2026-02-15 | **Server-render listing detail content for SEO.** Created `getListingDetail()` shared function, passed enriched listing as `initialData` to client component. Googlebot now sees full listing content (h1, price, specs, dealer, images) in initial HTML. Addresses 2,423 "Crawled - currently not indexed" pages in Search Console. |
 | 2026-02-14 | Structured title system for listing pages (`metaTitle.ts`), brand unification to "NihontoWatch", tosogu dual-path field fix. Field coverage measured against live DB — corrected `title_en` from "~5-10%" to **97%** (populated by LLM extraction, not on-demand) |
 | 2026-01-25 | Soft 404 fix (proper `notFound()`), noindex for sold items, noindex for share proxy |
 | 2026-01-xx | Category landing pages (`/swords/*`, `/fittings/*`, `/certified/*`) with ItemList JSON-LD |

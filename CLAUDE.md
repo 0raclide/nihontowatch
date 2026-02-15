@@ -648,6 +648,9 @@ Every page needs:
 - `<meta property="og:*">` - Social sharing
 - `<link rel="canonical">` - Canonical URL
 
+### Listing Detail SSR
+The listing detail page (`/listing/[id]`) server-renders the full listing content via `getListingDetail()` (`src/lib/listing/getListingDetail.ts`). This shared function fetches from Supabase and applies all enrichments (dealer baseline, Yuhinkai, artisan display name/tier, price history fallback). The enriched listing is passed as `initialData` to the client component, so Googlebot sees h1, price, specs, dealer info, and images in the initial HTML. See `docs/SEO.md` for full architecture.
+
 ### Structured Data
 Use JSON-LD for:
 - Product listings (schema.org/Product)
