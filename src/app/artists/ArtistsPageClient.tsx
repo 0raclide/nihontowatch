@@ -82,7 +82,7 @@ export function ArtistsPageClient({
     if (f.province) p.set('province', f.province);
     if (f.era) p.set('era', f.era);
     if (f.q) p.set('q', f.q);
-    if (f.sort !== 'elite_factor') p.set('sort', f.sort);
+    if (f.sort !== 'total_items') p.set('sort', f.sort);
     if (!f.notable) p.set('notable', 'false');
     return p.toString();
   }, []);
@@ -235,7 +235,7 @@ export function ArtistsPageClient({
 
   const clearAllFilters = useCallback(() => {
     setSearchInput('');
-    applyFilters({ type: filtersRef.current.type, sort: 'elite_factor', notable: true });
+    applyFilters({ type: filtersRef.current.type, sort: 'total_items', notable: true });
   }, [applyFilters]);
 
   return (
@@ -576,9 +576,9 @@ export function ArtistsPageClient({
               onChange={(e) => handleFilterChange('sort', e.target.value)}
               className="w-full px-3 py-2.5 bg-cream border border-border text-[13px] text-ink focus:outline-none focus:border-gold/40 cursor-pointer"
             >
+              <option value="total_items">Total Works</option>
               <option value="elite_factor">Elite Standing</option>
               <option value="provenance_factor">Provenance Standing</option>
-              <option value="total_items">Total Works</option>
               <option value="for_sale">On the Market</option>
               <option value="name">Name A-Z</option>
             </select>

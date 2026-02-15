@@ -100,9 +100,9 @@ export function ArtistFilterSidebar({
                   backgroundSize: '11px',
                 }}
               >
+                <option value="total_items">Total Works</option>
                 <option value="elite_factor">Elite Standing</option>
                 <option value="provenance_factor">Provenance Standing</option>
-                <option value="total_items">Total Works</option>
                 <option value="for_sale">On the Market</option>
                 <option value="name">Name A-Z</option>
               </select>

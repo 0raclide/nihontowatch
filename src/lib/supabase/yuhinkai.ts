@@ -716,6 +716,18 @@ export async function callDirectoryEnrichment(
     member_count: row.member_count != null ? (row.member_count as number) : undefined,
   }));
 
+  // Re-sort client-side: the RPC's jsonb_agg() doesn't preserve the ORDER BY
+  // from the paginated CTE, so the correct rows are returned but in arbitrary order.
+  if (sort === 'name') {
+    artists.sort((a, b) => (a.name_romaji || '').localeCompare(b.name_romaji || ''));
+  } else if (sort === 'provenance_factor') {
+    artists.sort((a, b) => (b.provenance_factor ?? -1) - (a.provenance_factor ?? -1));
+  } else if (sort === 'total_items') {
+    artists.sort((a, b) => b.total_items - a.total_items);
+  } else {
+    artists.sort((a, b) => b.elite_factor - a.elite_factor);
+  }
+
   return {
     artists,
     total: result.total || 0,
