@@ -41,8 +41,11 @@ export function buildBrowseUrl(cat: CategoryDef): string {
   // Include tab=available to signal "go to browse UI" and avoid
   // the canonical redirect (which fires on bare /?type=katana).
   params.set('tab', 'available');
+  // Map category filter params to browse URL params.
+  // The browse page reads 'period' for eras, not 'era'.
+  const BROWSE_PARAM: Record<string, string> = { era: 'period' };
   for (const [param, values] of Object.entries(cat.filters)) {
-    params.set(param, values[0]);
+    params.set(BROWSE_PARAM[param] || param, values[0]);
   }
   return `/?${params.toString()}`;
 }
