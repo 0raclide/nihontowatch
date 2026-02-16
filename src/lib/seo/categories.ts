@@ -652,3 +652,74 @@ export function getCertUrl(certType: string): string | null {
 export function getDealerUrl(dealerName: string): string {
   return `/dealers/${createDealerSlug(dealerName)}`;
 }
+
+// ── Canonical Redirect Map ──────────────────────────────────────────────────
+
+// Build lookup: normalized param combo → route (for 301 redirects from /?type=katana → /swords/katana)
+const _redirectMap: Record<string, string> = {};
+
+(function buildRedirectMap() {
+  for (const cat of ALL_CATEGORIES) {
+    const paramEntries = Object.entries(cat.filters)
+      .map(([param, values]) => ({
+        param,
+        uniqueValues: [...new Set(values.map(v => v.toLowerCase()))],
+      }))
+      .sort((a, b) => a.param.localeCompare(b.param));
+
+    // Cartesian product of all value variants
+    let combos: string[][] = [[]];
+    for (const { param, uniqueValues } of paramEntries) {
+      const next: string[][] = [];
+      for (const existing of combos) {
+        for (const val of uniqueValues) {
+          next.push([...existing, `${param}=${val}`]);
+        }
+      }
+      combos = next;
+    }
+
+    for (const combo of combos) {
+      _redirectMap[combo.join('&')] = cat.route;
+    }
+  }
+})();
+
+/**
+ * Given URL search params from a request to `/`, return the canonical
+ * category route for 301 redirect, or null if no match.
+ *
+ * Only redirects when the URL contains ONLY category-filter params
+ * (type, cert, school, era/period) with no browse-UI params like sort,
+ * dealer, q, tab, etc. This ensures active browse sessions are untouched
+ * while legacy/indexed query-param URLs consolidate to canonical routes.
+ */
+export function findCategoryRedirect(searchParams: URLSearchParams): string | null {
+  const categoryValues: Record<string, string> = {};
+
+  for (const [key, value] of searchParams.entries()) {
+    // tab is a browse-UI param — if present, user is in browse UI, skip redirect
+    if (key === 'tab') return null;
+
+    // Normalize 'period' (browse URL convention) to 'era' (category convention)
+    const normalized = key === 'period' ? 'era' : key;
+
+    if (normalized === 'type' || normalized === 'cert' ||
+        normalized === 'school' || normalized === 'era') {
+      // CSV multi-values (e.g., type=katana,wakizashi) don't map to a single category
+      if (value.includes(',')) return null;
+      categoryValues[normalized] = value;
+    } else {
+      // Any non-category param (dealer, sort, q, priceMin, cat, etc.) → don't redirect
+      return null;
+    }
+  }
+
+  if (Object.keys(categoryValues).length === 0) return null;
+
+  const parts = Object.entries(categoryValues)
+    .map(([k, v]) => `${k}=${v.toLowerCase()}`)
+    .sort();
+
+  return _redirectMap[parts.join('&')] || null;
+}

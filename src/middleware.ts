@@ -8,8 +8,21 @@
  */
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
+import { findCategoryRedirect } from '@/lib/seo/categories';
 
 export async function middleware(request: NextRequest) {
+  // Canonical redirect: /?type=katana → /swords/katana (301)
+  // Only fires on bare category-param URLs (no tab, sort, dealer, q, etc.)
+  if (request.nextUrl.pathname === '/' && request.nextUrl.search) {
+    const redirectRoute = findCategoryRedirect(request.nextUrl.searchParams);
+    if (redirectRoute) {
+      const url = request.nextUrl.clone();
+      url.pathname = redirectRoute;
+      url.search = '';
+      return NextResponse.redirect(url, 301);
+    }
+  }
+
   // Skip middleware if Supabase credentials aren't available (during build)
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     return NextResponse.next();

@@ -35,9 +35,12 @@ export function buildCategoryMetadata(cat: CategoryDef, baseUrl: string): Metada
   };
 }
 
-/** Build browse URL from category filters (e.g., '/?type=katana&cert=juyo'). */
+/** Build browse URL from category filters (e.g., '/?tab=available&type=katana&cert=juyo'). */
 export function buildBrowseUrl(cat: CategoryDef): string {
   const params = new URLSearchParams();
+  // Include tab=available to signal "go to browse UI" and avoid
+  // the canonical redirect (which fires on bare /?type=katana).
+  params.set('tab', 'available');
   for (const [param, values] of Object.entries(cat.filters)) {
     params.set(param, values[0]);
   }
