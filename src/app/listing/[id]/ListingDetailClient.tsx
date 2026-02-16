@@ -24,6 +24,7 @@ import { getSessionId } from '@/lib/activity/sessionManager';
 import type { Listing, CreateAlertInput } from '@/types';
 import { isSetsumeiEligibleCert } from '@/types';
 import type { EnrichedListingDetail } from '@/lib/listing/getListingDetail';
+import { getValidatedCertInfo } from '@/lib/cert/validation';
 
 // Use EnrichedListingDetail as the canonical listing type for this page
 type ListingDetail = EnrichedListingDetail;
@@ -32,26 +33,7 @@ interface ListingDetailPageProps {
   initialData?: EnrichedListingDetail | null;
 }
 
-// Certification display config
-const CERT_LABELS: Record<string, { label: string; tier: 'tokuju' | 'jubi' | 'juyo' | 'tokuho' | 'hozon' }> = {
-  // Tokubetsu Juyo - highest tier (purple)
-  Tokuju: { label: 'Tokuju', tier: 'tokuju' },
-  tokuju: { label: 'Tokuju', tier: 'tokuju' },
-  tokubetsu_juyo: { label: 'Tokuju', tier: 'tokuju' },
-  // Juyo Bijutsuhin - Important Cultural Property (orange/gold)
-  'Juyo Bijutsuhin': { label: 'Jubi', tier: 'jubi' },
-  JuyoBijutsuhin: { label: 'Jubi', tier: 'jubi' },
-  juyo_bijutsuhin: { label: 'Jubi', tier: 'jubi' },
-  // Juyo - high tier (blue)
-  Juyo: { label: 'Juyo', tier: 'juyo' },
-  juyo: { label: 'Juyo', tier: 'juyo' },
-  // Tokubetsu Hozon - mid tier (brown)
-  TokuHozon: { label: 'Tokuho', tier: 'tokuho' },
-  tokubetsu_hozon: { label: 'Tokuho', tier: 'tokuho' },
-  // Hozon - standard tier (yellow)
-  Hozon: { label: 'Hozon', tier: 'hozon' },
-  hozon: { label: 'Hozon', tier: 'hozon' },
-};
+// CERT_LABELS and defense-in-depth logic in src/lib/cert/validation.ts
 
 // Item type labels
 const ITEM_TYPE_LABELS: Record<string, string> = {
@@ -225,7 +207,7 @@ export default function ListingDetailPage({ initialData }: ListingDetailPageProp
 
   const isSold = listing.is_sold || listing.status === 'sold' || listing.status === 'presumed_sold';
   const itemType = listing.item_type ? (ITEM_TYPE_LABELS[listing.item_type.toLowerCase()] || listing.item_type) : null;
-  const certInfo = listing.cert_type ? CERT_LABELS[listing.cert_type] : null;
+  const certInfo = getValidatedCertInfo(listing);
   const images = validatedImages; // Use validated images (filtered for minimum dimensions)
 
   // Artisan and school from listing data

@@ -14,6 +14,7 @@ import { trackSearchClick } from '@/lib/tracking/searchTracker';
 import { isTrialModeActive } from '@/types/subscription';
 import { isSetsumeiEligibleCert } from '@/types';
 import { useImagePreloader } from '@/hooks/useImagePreloader';
+import { getValidatedCertInfo } from '@/lib/cert/validation';
 
 // 7 days in milliseconds - matches the data delay for free tier
 const EARLY_ACCESS_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
@@ -327,28 +328,7 @@ function getSchoolName(school: string | null): string | null {
   return school;
 }
 
-const CERT_LABELS: Record<string, { label: string; tier: 'tokuju' | 'jubi' | 'juyo' | 'tokuho' | 'hozon' }> = {
-  // Tokubetsu Juyo - highest tier (purple)
-  Tokuju: { label: 'Tokuju', tier: 'tokuju' },
-  tokuju: { label: 'Tokuju', tier: 'tokuju' },
-  tokubetsu_juyo: { label: 'Tokuju', tier: 'tokuju' },
-  // Juyo Bijutsuhin - Important Cultural Property (orange/gold)
-  'Juyo Bijutsuhin': { label: 'Jubi', tier: 'jubi' },
-  JuyoBijutsuhin: { label: 'Jubi', tier: 'jubi' },
-  juyo_bijutsuhin: { label: 'Jubi', tier: 'jubi' },
-  // Juyo - high tier (blue)
-  Juyo: { label: 'Jūyō', tier: 'juyo' },
-  juyo: { label: 'Jūyō', tier: 'juyo' },
-  // Tokubetsu Hozon - mid tier (brown)
-  TokuHozon: { label: 'Tokuho', tier: 'tokuho' },
-  tokubetsu_hozon: { label: 'Tokuho', tier: 'tokuho' },
-  TokuKicho: { label: 'Tokubetsu Kichō', tier: 'tokuho' },
-  // Hozon - standard tier (yellow)
-  Hozon: { label: 'Hozon', tier: 'hozon' },
-  hozon: { label: 'Hozon', tier: 'hozon' },
-  nbthk: { label: 'NBTHK', tier: 'hozon' },
-  nthk: { label: 'NTHK', tier: 'hozon' },
-};
+// CERT_LABELS and defense-in-depth logic moved to src/lib/cert/validation.ts
 
 function convertPrice(
   value: number,
@@ -531,29 +511,7 @@ export const ListingCard = memo(function ListingCard({
       || getArtisanName(listing.tosogu_maker, listing.tosogu_school, listing.title_en),
     itemType: normalizeItemType(listing.item_type),
     cleanedTitle: cleanTitle(listing.title, listing.smith, listing.tosogu_maker),
-    certInfo: (() => {
-      if (!listing.cert_type) return null;
-      const info = CERT_LABELS[listing.cert_type];
-      if (!info) return null;
-      // Defense-in-depth: suppress cert badges where price/cert combination is implausible.
-      // A Tokuju under ¥5M or Juyo under ¥1M is almost certainly a false-positive extraction.
-      // Exception: if the cert appears in the title, it's almost certainly correct regardless
-      // of price (e.g. consignment sales, estate pieces).
-      const title = (listing.title ?? '') + ' ' + (listing.title_en ?? '');
-      const titleHasCert = /tokubetsu[- ]juyo|特別重要刀剣|特別重要刀装具/i.test(title)
-        || (info.tier === 'juyo' && /\bjuyo\b|重要刀剣|重要刀装具/i.test(title));
-      if (!titleHasCert) {
-        const price = listing.price_value;
-        const currency = listing.price_currency;
-        if (price && price > 0 && currency) {
-          const toJpy: Record<string, number> = { USD: 150, EUR: 160, GBP: 185, AUD: 95 };
-          const priceJpy = currency === 'JPY' ? price : price * (toJpy[currency] ?? 150);
-          if (info.tier === 'tokuju' && priceJpy < 5_000_000) return null;
-          if (info.tier === 'juyo' && priceJpy < 1_000_000) return null;
-        }
-      }
-      return info;
-    })(),
+    certInfo: getValidatedCertInfo(listing),
   }), [
     listing.id,
     listing.images,
