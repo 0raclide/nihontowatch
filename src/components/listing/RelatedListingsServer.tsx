@@ -1,5 +1,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
+import { generateArtisanSlug } from '@/lib/artisan/slugs';
+import { createDealerSlug } from '@/lib/dealers/utils';
 
 export interface RelatedItem {
   id: number;
@@ -11,7 +13,7 @@ export interface RelatedItem {
 }
 
 interface RelatedSectionProps {
-  title: string;
+  title: React.ReactNode;
   browseUrl: string;
   items: RelatedItem[];
 }
@@ -90,6 +92,7 @@ function RelatedSection({ title, browseUrl, items }: RelatedSectionProps) {
 interface RelatedListingsServerProps {
   artisanItems: RelatedItem[];
   artisanName: string | null;
+  artisanDisplayName: string | null;
   artisanId: string | null;
   dealerItems: RelatedItem[];
   dealerName: string;
@@ -103,6 +106,7 @@ interface RelatedListingsServerProps {
 export function RelatedListingsServer({
   artisanItems,
   artisanName,
+  artisanDisplayName,
   artisanId,
   dealerItems,
   dealerName,
@@ -110,19 +114,33 @@ export function RelatedListingsServer({
 }: RelatedListingsServerProps) {
   if (artisanItems.length === 0 && dealerItems.length === 0) return null;
 
+  // Build artisan and dealer links for heading text
+  const artisanSlug = artisanId && artisanDisplayName
+    ? generateArtisanSlug(artisanDisplayName, artisanId)
+    : null;
+  const dealerSlug = createDealerSlug(dealerName);
+
+  const artisanHeading = artisanSlug ? (
+    <>More by <Link href={`/artists/${artisanSlug}`} className="text-gold hover:text-gold-light transition-colors">{artisanName || 'this artisan'}</Link></>
+  ) : `More by ${artisanName || 'this artisan'}`;
+
+  const dealerHeading = (
+    <>More from <Link href={`/dealers/${dealerSlug}`} className="text-gold hover:text-gold-light transition-colors">{dealerName}</Link></>
+  );
+
   return (
     <section className="max-w-[1200px] mx-auto px-4 lg:px-6 pb-8">
       <div className="pt-8 border-t border-border">
         {artisanItems.length > 0 && artisanId && (
           <RelatedSection
-            title={`More by ${artisanName || 'this artisan'}`}
+            title={artisanHeading}
             browseUrl={`/?artisan=${artisanId}`}
             items={artisanItems}
           />
         )}
         {dealerItems.length > 0 && (
           <RelatedSection
-            title={`More from ${dealerName}`}
+            title={dealerHeading}
             browseUrl={`/?dealer=${dealerId}`}
             items={dealerItems}
           />

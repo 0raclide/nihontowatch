@@ -1,5 +1,6 @@
 import { createServiceClient } from '@/lib/supabase/server';
 import type { CategoryDef } from './categories';
+import { PARAM_TO_COLUMN } from './categories';
 
 interface PreviewListing {
   id: number;
@@ -27,11 +28,12 @@ export async function fetchCategoryPreview(
     .eq('is_available', true)
     .eq('admin_hidden', false);
 
-  // Apply the correct filter based on param type
-  if (category.filterParam === 'type') {
-    query = query.in('item_type', category.filterValues);
-  } else if (category.filterParam === 'cert') {
-    query = query.in('cert_type', category.filterValues);
+  // Apply all filters via the PARAM_TO_COLUMN mapping
+  for (const [param, values] of Object.entries(category.filters)) {
+    const column = PARAM_TO_COLUMN[param];
+    if (column) {
+      query = query.in(column, values);
+    }
   }
 
   query = query

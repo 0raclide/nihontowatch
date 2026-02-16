@@ -2,7 +2,7 @@ import { MetadataRoute } from 'next';
 import { createServiceClient } from '@/lib/supabase/server';
 import { yuhinkaiClient } from '@/lib/supabase/yuhinkai';
 import { generateArtisanSlug } from '@/lib/artisan/slugs';
-import { getAllSwordSlugs, getAllFittingSlugs, getAllCertSlugs } from '@/lib/seo/categories';
+import { getAllSlugsByRoute } from '@/lib/seo/categories';
 import { createDealerSlug } from '@/lib/dealers/utils';
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://nihontowatch.com';
@@ -99,6 +99,38 @@ async function getAllListings(): Promise<ListingForSitemap[]> {
   return allListings;
 }
 
+async function getAllSoldListings(): Promise<ListingForSitemap[]> {
+  const supabase = createServiceClient();
+  const allListings: ListingForSitemap[] = [];
+  let offset = 0;
+  let hasMore = true;
+
+  while (hasMore) {
+    const { data, error } = await supabase
+      .from('listings')
+      .select('id, last_scraped_at, item_type')
+      .eq('is_available', false)
+      .in('status', ['sold', 'presumed_sold'])
+      .order('id', { ascending: true })
+      .range(offset, offset + BATCH_SIZE - 1);
+
+    if (error) {
+      console.error('[Sitemap] Error fetching sold listings:', error);
+      break;
+    }
+
+    if (data && data.length > 0) {
+      allListings.push(...data);
+      offset += BATCH_SIZE;
+      hasMore = data.length === BATCH_SIZE;
+    } else {
+      hasMore = false;
+    }
+  }
+
+  return allListings;
+}
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Static pages
   const staticPages: MetadataRoute.Sitemap = [
@@ -122,10 +154,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ];
 
-  // Fetch dealers, listings, and artisans in parallel
-  const [dealers, listings, artisans] = await Promise.all([
+  // Fetch dealers, listings, sold listings, and artisans in parallel
+  const [dealers, listings, soldListings, artisans] = await Promise.all([
     getAllDealers(),
     getAllListings(),
+    getAllSoldListings(),
     getAllNotableArtisans(),
   ]);
 
@@ -137,7 +170,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.8,
   }));
 
-  // Dynamic listing pages
+  // Dynamic listing pages (available)
   const listingPages: MetadataRoute.Sitemap = listings.map((listing) => ({
     url: `${baseUrl}/listing/${listing.id}`,
     lastModified: listing.last_scraped_at
@@ -147,6 +180,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
+  // Sold listing pages (archive — lower priority, less frequent changes)
+  const soldListingPages: MetadataRoute.Sitemap = soldListings.map((listing) => ({
+    url: `${baseUrl}/listing/${listing.id}`,
+    lastModified: listing.last_scraped_at
+      ? new Date(listing.last_scraped_at)
+      : new Date(),
+    changeFrequency: 'monthly' as const,
+    priority: 0.4,
+  }));
+
   // Individual artist pages
   const artistPages: MetadataRoute.Sitemap = artisans.map((artisan) => ({
     url: `${baseUrl}/artists/${generateArtisanSlug(artisan.name_romaji, artisan.code)}`,
@@ -154,27 +197,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }));
 
-  // Category landing pages (SEO)
-  const categoryPages: MetadataRoute.Sitemap = [
-    ...getAllSwordSlugs().map((slug) => ({
-      url: `${baseUrl}/swords/${slug}`,
+  // Category landing pages (SEO) — all routes use unified slug API
+  const routePrefixes = ['swords', 'fittings', 'certified'] as const;
+  const categoryPages: MetadataRoute.Sitemap = routePrefixes.flatMap((prefix) =>
+    getAllSlugsByRoute(prefix).map((slug) => ({
+      url: `${baseUrl}/${prefix}/${slug}`,
       lastModified: new Date(),
       changeFrequency: 'weekly' as const,
       priority: 0.8,
-    })),
-    ...getAllFittingSlugs().map((slug) => ({
-      url: `${baseUrl}/fittings/${slug}`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly' as const,
-      priority: 0.8,
-    })),
-    ...getAllCertSlugs().map((slug) => ({
-      url: `${baseUrl}/certified/${slug}`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly' as const,
-      priority: 0.8,
-    })),
-  ];
+    }))
+  );
 
   // Glossary term pages (featured terms only)
   const glossaryTermSlugs = [
@@ -192,7 +224,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }));
 
-  return [...staticPages, ...categoryPages, ...glossaryTermPages, ...dealerPages, ...listingPages, ...artistPages];
+  return [...staticPages, ...categoryPages, ...glossaryTermPages, ...dealerPages, ...listingPages, ...soldListingPages, ...artistPages];
 }
 
 // Revalidate sitemap every hour

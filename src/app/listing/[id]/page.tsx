@@ -11,6 +11,7 @@ import {
   getItemTypeBreadcrumbLabel,
 } from '@/lib/seo/jsonLd';
 import { buildSeoTitle, buildSeoDescription } from '@/lib/seo/metaTitle';
+import { getItemTypeUrl } from '@/lib/seo/categories';
 import { getListingDetail } from '@/lib/listing/getListingDetail';
 import type { EnrichedListingDetail } from '@/lib/listing/getListingDetail';
 import type { Listing, Dealer, ItemType, Currency } from '@/types';
@@ -87,8 +88,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       alternates: {
         canonical: `${baseUrl}/listing/${listingId}`,
       },
-      // Noindex sold items so Google deindexes them
-      robots: isSold ? { index: false, follow: true } : { index: true, follow: true },
+      // Index all listings — sold items retain SEO equity as archive pages
+      // (Product JSON-LD already sets availability: SoldOut for sold items)
+      robots: { index: true, follow: true },
       openGraph: {
         title: ogTitle,
         description,
@@ -180,10 +182,14 @@ export default async function ListingPage({ params }: Props) {
 
   const listingTitle = listing.title || `Listing #${listing.id}`;
 
+  const itemTypePageUrl = listing.item_type
+    ? getItemTypeUrl(listing.item_type)
+    : null;
+
   const breadcrumbItems = [
     { name: 'Home', url: baseUrl },
     ...(itemTypeLabel
-      ? [{ name: itemTypeLabel, url: `${baseUrl}/?type=${listing.item_type}` }]
+      ? [{ name: itemTypeLabel, url: itemTypePageUrl ? `${baseUrl}${itemTypePageUrl}` : `${baseUrl}/?type=${listing.item_type}` }]
       : []),
     { name: listingTitle },
   ];
@@ -249,6 +255,7 @@ export default async function ListingPage({ params }: Props) {
       <RelatedListingsServer
         artisanItems={artisanItems}
         artisanName={artisanName}
+        artisanDisplayName={listing.artisan_display_name || null}
         artisanId={artisanId}
         dealerItems={dealerItems}
         dealerName={dealerName}

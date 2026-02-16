@@ -2,7 +2,7 @@
 
 This document covers the full SEO implementation for NihontoWatch — how metadata is generated, what structured data exists, where the code lives, and what remains to be done.
 
-**Last updated:** 2026-02-15
+**Last updated:** 2026-02-16
 
 ---
 
@@ -12,13 +12,15 @@ This document covers the full SEO implementation for NihontoWatch — how metada
 2. [Page-Level SEO Coverage](#page-level-seo-coverage)
 3. [Listing Detail Metadata (the structured title system)](#listing-detail-metadata)
 4. [Category Landing Pages](#category-landing-pages)
-5. [Structured Data (JSON-LD)](#structured-data-json-ld)
-6. [Technical SEO](#technical-seo)
-7. [Brand Name](#brand-name)
-8. [Key Files](#key-files)
-9. [Field Population Reality](#field-population-reality)
-10. [High-Priority Remaining Work](#high-priority-remaining-work)
-11. [Testing & Validation](#testing--validation)
+5. [Internal Linking Mesh](#internal-linking-mesh)
+6. [Sold Archive](#sold-archive)
+7. [Structured Data (JSON-LD)](#structured-data-json-ld)
+8. [Technical SEO](#technical-seo)
+9. [Brand Name](#brand-name)
+10. [Key Files](#key-files)
+11. [Field Population Reality](#field-population-reality)
+12. [High-Priority Remaining Work](#high-priority-remaining-work)
+13. [Testing & Validation](#testing--validation)
 
 ---
 
@@ -32,7 +34,7 @@ SEO metadata is generated at three levels:
 
 3. **Server-rendered listing content** — The listing detail page (`/listing/[id]`) uses a shared `getListingDetail()` function to fetch and enrich data server-side. The enriched listing is passed as `initialData` to the client component, so the full content (h1, price, specs, dealer info, images) appears in the initial HTML that Googlebot receives. See [Listing Detail SSR Architecture](#listing-detail-ssr-architecture).
 
-4. **Category definitions** (`src/lib/seo/categories.ts`) — Static data objects that define keyword-optimized titles, descriptions, and intro copy for each category landing page (`/swords/*`, `/fittings/*`, `/certified/*`).
+4. **Category definitions** (`src/lib/seo/categories.ts`) — Dimension-based generation system that produces 34 category landing pages from type dimensions × secondary dimensions (cert, era, school). See [Category Landing Pages](#category-landing-pages).
 
 The listing detail page (`/listing/[id]`) uses a **structured title builder** (`src/lib/seo/metaTitle.ts`) that assembles titles from database fields following collector search patterns:
 
@@ -52,8 +54,8 @@ This matches how collectors actually search Google ("Juyo Masamune Katana", "Tok
 |------|---------------|---------|-------|
 | `/` (home) | Static: "NihontoWatch \| Japanese Sword & Tosogu Marketplace" | Organization, WebSite | Does NOT adapt to query params — see [remaining work](#high-priority-remaining-work) |
 | `/listing/[id]` | Structured: `{Cert} {Artisan} {Type} — {Qualifier} \| NihontoWatch` | Product, Breadcrumb | Full artisan resolution, 60-char guard |
-| `/swords/[type]` | "Katana for Sale — Japanese Long Swords \| NihontoWatch" | ItemList, Breadcrumb | 6 pages (katana, wakizashi, tanto, tachi, naginata, yari) |
-| `/fittings/[type]` | "Tsuba for Sale — Japanese Sword Guards \| NihontoWatch" | ItemList, Breadcrumb | 4 pages (tsuba, fuchi-kashira, kozuka, menuki) |
+| `/swords/[type]` | "Katana for Sale — Japanese Long Swords \| NihontoWatch" | ItemList, Breadcrumb | 24 pages: 6 base types + 18 combinations (juyo-katana, koto-katana, bizen-katana, etc.) |
+| `/fittings/[type]` | "Tsuba for Sale — Japanese Sword Guards \| NihontoWatch" | ItemList, Breadcrumb | 6 pages: 4 base types + 2 combinations (juyo-tsuba, hozon-tsuba) |
 | `/certified/[cert]` | "Juyo Token Swords for Sale — NBTHK \| NihontoWatch" | ItemList, Breadcrumb | 4 pages (juyo, tokubetsu-juyo, hozon, tokubetsu-hozon) |
 | `/artists` | Dynamic: adapts to school/province/era/type filters | Breadcrumb | Server-rendered initial load, client fetch on filter change |
 | `/artists/[slug]` | "{Name} — {School} {Type} \| NihontoWatch" | Breadcrumb | Individual artisan profiles |
@@ -71,7 +73,6 @@ This matches how collectors actually search Google ("Juyo Masamune Katana", "Tok
 | `/profile` | User-specific |
 | `/collection` | User-specific |
 | `/s/[id]` | Share proxy — canonical points to `/listing/[id]` |
-| Sold listings | `robots: { index: false, follow: true }` |
 
 ---
 
@@ -225,30 +226,166 @@ When an admin uses `AdminSetsumeiWidget` to update a Yuhinkai connection, `onCon
 
 ## Category Landing Pages
 
-### Architecture
+### Architecture: Dimension-Based Generation
 
-Three sets of static landing pages target head terms:
+**34 static landing pages** are generated from a dimension system in `src/lib/seo/categories.ts`. Instead of hand-crafting each `CategoryDef` record, the system defines **type dimensions** and **secondary dimensions**, then generates pages from their combinations.
 
 ```
-/swords/katana    → "Katana for Sale — Japanese Long Swords | NihontoWatch"
-/swords/wakizashi → "Wakizashi for Sale — Japanese Short Swords | NihontoWatch"
-/certified/juyo   → "Juyo Token Swords for Sale — NBTHK Important Swords | NihontoWatch"
-/fittings/tsuba   → "Tsuba for Sale — Japanese Sword Guards | NihontoWatch"
+TYPE_DIMS (10):  katana, wakizashi, tanto, tachi, naginata, yari, tsuba, fuchi-kashira, kozuka, menuki
+  × SECONDARY_DIMS (12): juyo, tokubetsu-juyo, hozon, tokubetsu-hozon, koto, shinto, shinshinto, bizen, soshu, yamashiro, mino, yamato
+  → COMBO_SPECS selects which combinations to generate (20 pages)
+  + 10 base type pages + 4 cert pages = 34 total
 ```
 
-All defined in `src/lib/seo/categories.ts` with:
-- Keyword-rich title and description
-- H1 heading and intro paragraph
-- Filter values that map to browse API params
-- Static generation via `generateStaticParams()`
+### How it works
 
-Each page renders a preview grid of listings (fetched server-side via `src/lib/seo/fetchCategoryPreview.ts`) and includes ItemList + Breadcrumb JSON-LD.
+1. **`TYPE_DIMS`** — Each entry defines: label, DB values (for Supabase `.in()` query), route prefix (`swords` or `fittings`), and a title subtitle.
 
-### Pages
+2. **`SECONDARY_DIMS`** — Each defines: label, DB values, filter param (`cert`, `era`, or `school`), and a title suffix for combination pages.
 
-**Swords (6):** katana, wakizashi, tanto, tachi, naginata, yari
-**Fittings (4):** tsuba, fuchi-kashira, kozuka, menuki
+3. **`COMBO_SPECS`** — A compact array that declares which `{dim} × {type}` combinations to create:
+   ```typescript
+   { dim: 'juyo', types: ['katana', 'wakizashi', 'tanto', 'tsuba'] },
+   { dim: 'bizen', types: ['katana', 'wakizashi', 'tanto'] },
+   // ...12 entries total → 20 combination pages
+   ```
+
+4. **Content registries** — `TYPE_CONTENT`, `CERT_CONTENT`, `COMBO_CONTENT` hold only the hand-written `metaDescription` and `intro` text, keyed by slug. Titles and h1s are auto-generated from dimension labels (cert pages get custom overrides).
+
+5. **Generator functions** — `generateBaseTypes()`, `generateCertPages()`, `generateCombos()` produce `CategoryDef[]` arrays from dimensions + content.
+
+6. **`computeRelatedLinks()`** — Walks the category graph to auto-produce 3-6 related page links per page (parent type, parent cert, same-dim siblings, same-type siblings). No manual curation needed.
+
+7. **`PARAM_TO_COLUMN`** mapping — `{ type: 'item_type', cert: 'cert_type', era: 'era', school: 'school' }`. Used by `fetchCategoryPreview.ts` to apply filters in a single loop instead of if/else chains. Adding a new filter dimension = adding one entry here.
+
+### CategoryDef interface
+
+```typescript
+export interface CategoryDef {
+  slug: string;
+  route: string;              // e.g., '/swords/juyo-katana'
+  routePrefix: string;        // 'swords' | 'fittings' | 'certified'
+  filters: Record<string, string[]>;  // { type: ['katana'], cert: ['juyo', 'Juyo'] }
+  parentSlug?: string;        // For breadcrumbs on combination pages
+  relatedLinks: Array<{ label: string; url: string }>;
+  title: string;
+  h1: string;
+  metaDescription: string;
+  intro: string;
+}
+```
+
+The unified `filters` field replaces the old `filterParam`/`filterValues`/`extraFilters` triple. Each key is a URL param name, each value array contains all DB values to match (handling casing variants like `['juyo', 'Juyo']`).
+
+### Shared route handler helper
+
+`src/lib/seo/categoryPage.ts` provides `buildCategoryMetadata()`, `buildBrowseUrl()`, and `buildBreadcrumbs()`, used by all three route handlers (`swords/[type]`, `fittings/[type]`, `certified/[cert]`). Each handler is ~45 lines.
+
+### Lookup API
+
+```typescript
+getCategoryByRoute('swords', 'juyo-katana')  // → CategoryDef
+getAllSlugsByRoute('swords')                  // → all sword slugs (base + combo)
+```
+
+Backward-compatible wrappers (`getSwordCategory`, `getAllSwordSlugs`, etc.) are preserved.
+
+### Entity URL helpers
+
+`getItemTypeUrl()`, `getCertUrl()`, and `getDealerUrl()` are exported from `categories.ts` (not a separate file). They build reverse lookups from the generated registry — item type values → `/swords/{slug}`, cert values → `/certified/{slug}`.
+
+### Pages (34 total)
+
+**Base types (10):** katana, wakizashi, tanto, tachi, naginata, yari, tsuba, fuchi-kashira, kozuka, menuki
 **Certifications (4):** juyo, tokubetsu-juyo, hozon, tokubetsu-hozon
+**Cert × type (8):** juyo-katana, juyo-wakizashi, juyo-tanto, juyo-tsuba, hozon-katana, hozon-tsuba, tokubetsu-hozon-katana, tokubetsu-juyo-katana
+**Era × type (5):** koto-katana, koto-wakizashi, koto-tanto, shinto-katana, shinshinto-katana
+**School × type (7):** bizen-katana, bizen-wakizashi, bizen-tanto, soshu-katana, yamashiro-katana, mino-katana, yamato-katana
+
+### Adding a new combination page
+
+1. Add content to `COMBO_CONTENT` in `categories.ts` (metaDescription + intro)
+2. Add the type key to the relevant dim's `types` array in `COMBO_SPECS`
+3. That's it — title, h1, filters, route, related links, sitemap entry, and static params are all auto-generated
+
+---
+
+## Internal Linking Mesh
+
+**Deployed:** 2026-02-16
+
+Every entity mention on listing detail pages is now a contextual link to its canonical page, distributing PageRank across the site and helping Google discover category pages.
+
+### Linked entities on `/listing/[id]`
+
+| Entity | Links to | Source |
+|--------|----------|--------|
+| Certification badge | `/certified/{cert}` | `getCertUrl(listing.cert_type)` |
+| Item type | `/swords/{type}` or `/fittings/{type}` | `getItemTypeUrl(listing.item_type)` |
+| Artisan name | `/artists/{slug}` | `generateArtisanSlug()` when `artisan_id` exists |
+| School | `/artists?school={school}` | Direct URL construction |
+| Dealer name | `/dealers/{slug}` | `getDealerUrl(listing.dealers.name)` |
+
+### Linked entities in related listings headings
+
+`RelatedListingsServer` section headings ("More by {artisan}", "More from {dealer}") now link artisan/dealer names to their respective pages.
+
+### Breadcrumb links
+
+Listing detail breadcrumbs link item type to its canonical category page instead of `/?type={type}`:
+```
+Home → Katana for Sale → {Listing Title}
+         ↓ links to /swords/katana
+```
+
+### Category page cross-links
+
+Each category landing page includes a "Related Categories" section with 3-6 auto-computed links to related pages (parent types, sibling combos, related certs).
+
+### Key files
+
+| File | Purpose |
+|------|---------|
+| `src/lib/seo/categories.ts` | `getItemTypeUrl()`, `getCertUrl()`, `getDealerUrl()` |
+| `src/app/listing/[id]/ListingDetailClient.tsx` | Entity links in cert badge, type, artisan, school, dealer |
+| `src/app/listing/[id]/page.tsx` | Breadcrumb JSON-LD with category page URLs |
+| `src/components/listing/RelatedListingsServer.tsx` | Linked headings |
+| `src/components/seo/CategoryLandingPage.tsx` | Related Categories section |
+
+---
+
+## Sold Archive
+
+**Deployed:** 2026-02-16
+
+Sold listings are now indexed instead of noindexed, preserving accumulated SEO equity on one-of-a-kind collectible pages.
+
+### What changed
+
+| Aspect | Before | After |
+|--------|--------|-------|
+| robots | `index: false, follow: true` | `index: true, follow: true` |
+| Sitemap | Excluded | Included (priority 0.4, monthly) |
+| Product JSON-LD | Already `SoldOut` availability | Unchanged |
+| Meta description | Already says "sold" | Unchanged |
+| Price display | Shown normally | "Sold price" label above price, muted styling |
+| Primary CTA | "View on {Dealer}" | "View Similar Items" → filtered browse |
+| Dealer link | Primary button | Secondary text link with `rel="nofollow"` |
+
+### "View Similar Items" CTA logic
+
+```
+cert_type + item_type → /?type={item_type}&cert={cert_type}
+item_type only        → /?type={item_type}
+fallback              → /
+```
+
+### Sitemap treatment
+
+Sold items appear in `sitemap.xml` with:
+- `priority: 0.4` (vs 0.7 for available items)
+- `changeFrequency: 'monthly'` (vs weekly for available)
+- Fetched via `getAllSoldListings()` which queries `is_available = false AND status IN ('sold', 'presumed_sold')`
 
 ---
 
@@ -299,10 +436,12 @@ Allows all public content, blocks `/admin/`, `/api/`, `/saved`, `/profile`, `/au
 **File:** `src/app/sitemap.ts`
 
 Dynamic sitemap with ISR (1-hour revalidation). Includes:
-- Core pages (home, dealers directory)
+- Core pages (home, dealers directory, artists directory)
 - All dealer pages (`/dealers/[slug]`)
-- All available listings (`/listing/[id]`) — sold items excluded
-- Category landing pages (`/swords/*`, `/fittings/*`, `/certified/*`)
+- All available listings (`/listing/[id]`) — priority 0.7, weekly
+- All sold listings (`/listing/[id]`) — priority 0.4, monthly (sold archive)
+- Category landing pages (34 total: `/swords/*`, `/fittings/*`, `/certified/*`) — priority 0.8
+- Glossary pages (`/glossary/[term]`)
 - Artist pages (`/artists/[slug]`) — all 13,566 artisans from Yuhinkai
 
 Batch-fetches in groups of 1000 to handle Supabase row limits.
@@ -311,11 +450,13 @@ Batch-fetches in groups of 1000 to handle Supabase row limits.
 
 All pages set `alternates.canonical`. The share proxy (`/s/[id]`) canonicalizes to `/listing/[id]` to prevent duplicate indexing.
 
-### Sold items
+### Sold items (archived)
 
-- `robots: { index: false, follow: true }` — tells Google to deindex
-- Description changes from "for sale" to "sold" / "Previously listed by"
-- Excluded from sitemap
+- `robots: { index: true, follow: true }` — preserved for SEO equity (changed 2026-02-16)
+- Product JSON-LD sets `availability: SoldOut`
+- Description says "sold" / "Previously listed by"
+- Included in sitemap (priority 0.4, monthly)
+- See [Sold Archive](#sold-archive) for full details
 
 ### Share proxy (`/s/[id]`)
 
@@ -345,8 +486,9 @@ The only exceptions are legal page body prose (terms of service, privacy policy 
 |------|---------|
 | `src/lib/seo/metaTitle.ts` | `buildSeoTitle()`, `buildSeoDescription()`, `resolveArtisanNameForSeo()` — structured metadata builders for listing pages |
 | `src/lib/seo/jsonLd.ts` | All JSON-LD schema generators + `jsonLdScriptProps()` render helper |
-| `src/lib/seo/categories.ts` | Category definitions (titles, descriptions, filter mappings) for /swords, /fittings, /certified |
-| `src/lib/seo/fetchCategoryPreview.ts` | Server-side listing preview fetcher for category pages |
+| `src/lib/seo/categories.ts` | Dimension-based category generation: `CategoryDef`, `PARAM_TO_COLUMN`, entity URL helpers (`getItemTypeUrl`, `getCertUrl`, `getDealerUrl`), all lookup functions |
+| `src/lib/seo/categoryPage.ts` | Shared route handler helpers: `buildCategoryMetadata()`, `buildBrowseUrl()`, `buildBreadcrumbs()` |
+| `src/lib/seo/fetchCategoryPreview.ts` | Server-side listing preview fetcher, uses `PARAM_TO_COLUMN` for filter application |
 | `src/lib/listing/getListingDetail.ts` | Shared listing data-fetching + enrichment for SSR (used by page.tsx and API route) |
 
 ### Pages with `generateMetadata()`
@@ -433,14 +575,9 @@ Extracted `getListingDetail()` shared function, passed enriched listing as `init
 
 **Impact: LOW-MEDIUM** — The browse API (`/api/browse/route.ts`) doesn't return `tosogu_material` or `tosogu_era`. These fields are available in the DB and now used by listing detail metadata, but browse-level features (e.g., faceted filtering by material) can't access them.
 
-### 4. Internal linking from listing pages
+### ~~4. Internal linking from listing pages~~ ✅ DONE (2026-02-16)
 
-**Impact: MEDIUM** — Listing detail pages link to related listings (by artisan and dealer) via `<RelatedListingsServer>`, which is good. Additional internal links could be added:
-- Link cert type to `/certified/{cert}` page
-- Link item type to `/swords/{type}` or `/fittings/{type}` page
-- Link artisan to `/artists/{slug}` page
-
-These links would distribute PageRank to category pages and help Google discover them faster.
+**Deployed:** Full internal linking mesh. Every entity mention on listing detail pages (cert badge, item type, artisan, school, dealer) is now a link to its canonical page. Related listings headings link artisan/dealer names. Breadcrumbs use category page URLs. Category landing pages have auto-computed "Related Categories" cross-links. See [Internal Linking Mesh](#internal-linking-mesh).
 
 ---
 
@@ -450,8 +587,7 @@ These links would distribute PageRank to category pages and help Google discover
 
 `tests/app/listing-page-seo.test.ts` — 8 tests covering:
 - HTTP 404 for missing/invalid listings
-- `noindex` for sold/unavailable items
-- `index: true` for available items
+- `index: true` for all listings (available and sold — sold archive)
 - Description accuracy (sold vs available)
 - Share proxy noindex
 
@@ -485,6 +621,8 @@ Monitor:
 
 | Date | Change |
 |------|--------|
+| 2026-02-16 | **Refactor: Dimension-based category generation.** Rewrote `categories.ts` from 686 lines of hand-crafted records to dimension-based generation. Unified `filters: Record<string, string[]>` replaces `filterParam`/`filterValues`/`extraFilters`. `PARAM_TO_COLUMN` mapping replaces if/else chains. New `categoryPage.ts` shared helper deduplicates three route handlers (~100 lines → ~45 lines each). `computeRelatedLinks()` auto-generates cross-links. Entity URL helpers (`getItemTypeUrl`, `getCertUrl`, `getDealerUrl`) absorbed from deleted `entityLinks.ts`. |
+| 2026-02-16 | **SEO 80/20: Sold archive + 20 combination pages + internal linking mesh.** (1) Sold items now indexed with `SoldOut` JSON-LD, "Sold price" label, "View Similar Items" CTA, included in sitemap at 0.4 priority. (2) 20 combination category pages (cert×type, era×type, school×type) targeting queries like "juyo katana for sale", "koto katana", "bizen katana". (3) Full internal linking: cert badges, item types, artisans, schools, and dealers on listing detail pages link to canonical category/directory pages. Category pages have auto-computed Related Categories sections. |
 | 2026-02-15 | **Server-render listing detail content for SEO.** Created `getListingDetail()` shared function, passed enriched listing as `initialData` to client component. Googlebot now sees full listing content (h1, price, specs, dealer, images) in initial HTML. Addresses 2,423 "Crawled - currently not indexed" pages in Search Console. |
 | 2026-02-14 | Structured title system for listing pages (`metaTitle.ts`), brand unification to "NihontoWatch", tosogu dual-path field fix. Field coverage measured against live DB — corrected `title_en` from "~5-10%" to **97%** (populated by LLM extraction, not on-demand) |
 | 2026-01-25 | Soft 404 fix (proper `notFound()`), noindex for sold items, noindex for share proxy |

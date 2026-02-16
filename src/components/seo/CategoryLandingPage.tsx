@@ -124,6 +124,26 @@ export function CategoryLandingPage({
             </svg>
           </Link>
         </div>
+
+        {/* Related Categories */}
+        {category.relatedLinks && category.relatedLinks.length > 0 && (
+          <div className="border-t border-border dark:border-border-dark pt-8 pb-4">
+            <h2 className="text-[13px] uppercase tracking-wider text-muted dark:text-muted-dark font-medium mb-4">
+              Related Categories
+            </h2>
+            <div className="flex flex-wrap gap-2">
+              {category.relatedLinks.map((link) => (
+                <Link
+                  key={link.url}
+                  href={link.url}
+                  className="text-[13px] text-charcoal dark:text-cream/80 bg-paper dark:bg-charcoal border border-border dark:border-border-dark hover:border-gold/40 hover:text-gold px-3 py-1.5 rounded-full transition-colors"
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
       </main>
 
       <Footer />

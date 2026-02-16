@@ -25,6 +25,8 @@ import type { Listing, CreateAlertInput } from '@/types';
 import { isSetsumeiEligibleCert } from '@/types';
 import type { EnrichedListingDetail } from '@/lib/listing/getListingDetail';
 import { getValidatedCertInfo } from '@/lib/cert/validation';
+import { getItemTypeUrl, getCertUrl, getDealerUrl } from '@/lib/seo/categories';
+import { generateArtisanSlug } from '@/lib/artisan/slugs';
 
 // Use EnrichedListingDetail as the canonical listing type for this page
 type ListingDetail = EnrichedListingDetail;
@@ -210,6 +212,17 @@ export default function ListingDetailPage({ initialData }: ListingDetailPageProp
   const certInfo = getValidatedCertInfo(listing);
   const images = validatedImages; // Use validated images (filtered for minimum dimensions)
 
+  // Pre-compute entity URLs for internal linking (avoids IIFEs in JSX)
+  const certUrl = listing.cert_type ? getCertUrl(listing.cert_type) : null;
+  const typeUrl = listing.item_type ? getItemTypeUrl(listing.item_type) : null;
+  const certBadgeClass = certInfo ? `text-[11px] uppercase tracking-wider font-medium px-2.5 py-1 rounded ${
+    certInfo.tier === 'tokuju' ? 'bg-tokuju-bg text-tokuju'
+    : certInfo.tier === 'jubi' ? 'bg-jubi-bg text-jubi'
+    : certInfo.tier === 'juyo' ? 'bg-juyo-bg text-juyo'
+    : certInfo.tier === 'tokuho' ? 'bg-toku-hozon-bg text-toku-hozon'
+    : 'bg-hozon-bg text-hozon'
+  }` : '';
+
   // Artisan and school from listing data
   const artisan = listing.smith || listing.tosogu_maker;
   const school = listing.school || listing.tosogu_school;
@@ -221,7 +234,7 @@ export default function ListingDetailPage({ initialData }: ListingDetailPageProp
       <main className="max-w-[1200px] mx-auto px-4 py-4 lg:px-6 lg:py-8">
         <Breadcrumbs items={[
           { name: 'Browse', url: '/' },
-          ...(itemType ? [{ name: itemType, url: `/?type=${listing.item_type}` }] : []),
+          ...(itemType ? [{ name: itemType, url: (listing.item_type ? getItemTypeUrl(listing.item_type) : null) || `/?type=${listing.item_type}` }] : []),
           { name: listing.title },
         ]} />
 
@@ -287,21 +300,11 @@ export default function ListingDetailPage({ initialData }: ListingDetailPageProp
           <div>
             {/* Status & Certification */}
             <div className="flex items-center flex-wrap gap-3 mb-4">
-              {certInfo && (
-                <span className={`text-[11px] uppercase tracking-wider font-medium px-2.5 py-1 rounded ${
-                  certInfo.tier === 'tokuju'
-                    ? 'bg-tokuju-bg text-tokuju'
-                    : certInfo.tier === 'jubi'
-                    ? 'bg-jubi-bg text-jubi'
-                    : certInfo.tier === 'juyo'
-                    ? 'bg-juyo-bg text-juyo'
-                    : certInfo.tier === 'tokuho'
-                    ? 'bg-toku-hozon-bg text-toku-hozon'
-                    : 'bg-hozon-bg text-hozon'
-                }`}>
-                  {certInfo.label}
-                </span>
-              )}
+              {certInfo && certUrl ? (
+                <Link href={certUrl} className={certBadgeClass}>{certInfo.label}</Link>
+              ) : certInfo ? (
+                <span className={certBadgeClass}>{certInfo.label}</span>
+              ) : null}
               {listing.setsumei_text_en && isSetsumeiEligibleCert(listing.cert_type) && (
                 <SetsumeiZufuBadge />
               )}
@@ -325,14 +328,23 @@ export default function ListingDetailPage({ initialData }: ListingDetailPageProp
             {/* Item Type */}
             {itemType && (
               <p className="text-[14px] text-charcoal mb-4">
-                {itemType}
+                {typeUrl ? (
+                  <Link href={typeUrl} className="hover:text-gold transition-colors">
+                    {itemType}
+                  </Link>
+                ) : itemType}
               </p>
             )}
 
             {/* Price */}
             <div className="mb-6 pb-6 border-b border-border">
+              {isSold && listing.price_value && (
+                <p className="text-[11px] uppercase tracking-wider text-muted mb-1">
+                  Sold price
+                </p>
+              )}
               {listing.price_value ? (
-                <p className="text-2xl lg:text-3xl font-semibold text-ink tabular-nums">
+                <p className={`text-2xl lg:text-3xl font-semibold tabular-nums ${isSold ? 'text-muted' : 'text-ink'}`}>
                   {new Intl.NumberFormat('en-US', {
                     style: 'currency',
                     currency: listing.price_currency || 'JPY',
@@ -353,7 +365,14 @@ export default function ListingDetailPage({ initialData }: ListingDetailPageProp
                       {listing.smith ? 'Smith' : 'Maker'}
                     </span>
                     <p className="text-[15px] text-ink font-medium">
-                      {artisan}
+                      {listing.artisan_id && listing.artisan_display_name ? (
+                        <Link
+                          href={`/artists/${generateArtisanSlug(listing.artisan_display_name, listing.artisan_id)}`}
+                          className="hover:text-gold transition-colors"
+                        >
+                          {artisan}
+                        </Link>
+                      ) : artisan}
                     </p>
                   </div>
                 )}
@@ -361,7 +380,9 @@ export default function ListingDetailPage({ initialData }: ListingDetailPageProp
                   <div>
                     <span className="text-[11px] uppercase tracking-wider text-muted">School</span>
                     <p className="text-[15px] text-ink font-medium">
-                      {school}
+                      <Link href={`/artists?school=${encodeURIComponent(school)}`} className="hover:text-gold transition-colors">
+                        {school}
+                      </Link>
                     </p>
                   </div>
                 )}
@@ -424,47 +445,89 @@ export default function ListingDetailPage({ initialData }: ListingDetailPageProp
             {/* Dealer */}
             <div className="mb-6 pb-6 border-b border-border">
               <span className="text-[11px] uppercase tracking-wider text-muted">Dealer</span>
-              <p className="text-[15px] text-ink font-medium">{listing.dealers?.name}</p>
+              <p className="text-[15px] text-ink font-medium">
+                {listing.dealers?.name ? (
+                  <Link href={getDealerUrl(listing.dealers.name)} className="hover:text-gold transition-colors">
+                    {listing.dealers.name}
+                  </Link>
+                ) : 'Unknown Dealer'}
+              </p>
               <p className="text-[12px] text-muted">{listing.dealers?.domain}</p>
             </div>
 
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row gap-3">
-              {/* View on Dealer Site */}
-              <a
-                href={listing.url}
-                target="_blank"
-                rel="noopener noreferrer nofollow"
-                onClick={handleExternalLinkClick}
-                className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 text-[14px] font-medium text-white bg-gold hover:bg-gold-light rounded-lg transition-colors"
-              >
-                View on {listing.dealers?.name}
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                </svg>
-              </a>
+              {isSold ? (
+                <>
+                  {/* View Similar Items — primary CTA for sold listings */}
+                  <Link
+                    href={
+                      listing.cert_type && listing.item_type
+                        ? `/?type=${listing.item_type}&cert=${listing.cert_type}`
+                        : listing.item_type
+                          ? `/?type=${listing.item_type}`
+                          : '/'
+                    }
+                    className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 text-[14px] font-medium text-white bg-gold hover:bg-gold-light rounded-lg transition-colors"
+                  >
+                    View Similar Items
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                    </svg>
+                  </Link>
+                  {/* Secondary: View on dealer site (may still exist) */}
+                  <a
+                    href={listing.url}
+                    target="_blank"
+                    rel="noopener noreferrer nofollow"
+                    onClick={handleExternalLinkClick}
+                    className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 text-[14px] font-medium text-charcoal bg-paper border border-border hover:border-gold hover:text-gold rounded-lg transition-colors"
+                  >
+                    View on {listing.dealers?.name}
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  </a>
+                </>
+              ) : (
+                <>
+                  {/* View on Dealer Site */}
+                  <a
+                    href={listing.url}
+                    target="_blank"
+                    rel="noopener noreferrer nofollow"
+                    onClick={handleExternalLinkClick}
+                    className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 text-[14px] font-medium text-white bg-gold hover:bg-gold-light rounded-lg transition-colors"
+                  >
+                    View on {listing.dealers?.name}
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  </a>
 
-              {/* Inquire Button */}
-              <button
-                onClick={handleInquire}
-                className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 text-[14px] font-medium text-charcoal bg-paper border border-border hover:border-gold hover:text-gold rounded-lg transition-colors"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
-                Inquire
-              </button>
+                  {/* Inquire Button */}
+                  <button
+                    onClick={handleInquire}
+                    className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 text-[14px] font-medium text-charcoal bg-paper border border-border hover:border-gold hover:text-gold rounded-lg transition-colors"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                    Inquire
+                  </button>
 
-              {/* Set Alert Button */}
-              <button
-                onClick={handleSetAlert}
-                className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 text-[14px] font-medium text-charcoal bg-paper border border-border hover:border-gold hover:text-gold rounded-lg transition-colors"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                </svg>
-                Set Alert
-              </button>
+                  {/* Set Alert Button */}
+                  <button
+                    onClick={handleSetAlert}
+                    className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 text-[14px] font-medium text-charcoal bg-paper border border-border hover:border-gold hover:text-gold rounded-lg transition-colors"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                    </svg>
+                    Set Alert
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>

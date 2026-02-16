@@ -76,8 +76,8 @@ describe('Listing Page SEO Behavior', () => {
     });
   });
 
-  describe('robots meta tag for sold vs available items', () => {
-    it('should set noindex for sold items (is_sold=true)', async () => {
+  describe('robots meta tag — all listings indexed (sold archive)', () => {
+    it('should set index: true for sold items (archive SEO equity)', async () => {
       // Mock a sold listing
       mockSupabaseClient.from.mockReturnValue({
         select: vi.fn().mockReturnValue({
@@ -109,10 +109,10 @@ describe('Listing Page SEO Behavior', () => {
         params: Promise.resolve({ id: '123' }),
       });
 
-      expect(metadata.robots).toEqual({ index: false, follow: true });
+      expect(metadata.robots).toEqual({ index: true, follow: true });
     });
 
-    it('should set noindex for unavailable items (is_available=false)', async () => {
+    it('should set index: true for unavailable items (archive SEO equity)', async () => {
       // Mock an unavailable listing
       mockSupabaseClient.from.mockReturnValue({
         select: vi.fn().mockReturnValue({
@@ -144,7 +144,7 @@ describe('Listing Page SEO Behavior', () => {
         params: Promise.resolve({ id: '124' }),
       });
 
-      expect(metadata.robots).toEqual({ index: false, follow: true });
+      expect(metadata.robots).toEqual({ index: true, follow: true });
     });
 
     it('should set index: true for available items', async () => {
