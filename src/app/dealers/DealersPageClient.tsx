@@ -352,10 +352,10 @@ export function DealersPageClient({ initialFilters }: DealersPageClientProps) {
                 </FilterSection>
               )}
 
-              {/* Zone 5: Certification filter */}
+              {/* Zone 5: Designation filter */}
               {certFacets.length > 0 && (
                 <FilterSection
-                  title="Certification"
+                  title="Designation"
                   activeCount={filters.certs?.length || 0}
                   onReset={() => applyFilters({ ...filtersRef.current, certs: undefined })}
                   defaultOpen={!!filters.certs?.length}
@@ -634,9 +634,11 @@ export function DealersPageClient({ initialFilters }: DealersPageClientProps) {
                 {typeFacets.map((item) => {
                   const checked = filters.types?.includes(item.value) || false;
                   return (
-                    <label
+                    <button
                       key={item.value}
-                      className="flex items-center cursor-pointer group gap-3 py-2.5 min-h-[48px]"
+                      type="button"
+                      onClick={() => toggleArrayFilter('types', item.value)}
+                      className="flex items-center cursor-pointer group gap-3 py-2.5 min-h-[48px] w-full text-left"
                     >
                       <div
                         className={`w-5 h-5 rounded-[3px] border-[1.5px] flex-shrink-0 flex items-center justify-center transition-all duration-150 ${
@@ -657,18 +659,18 @@ export function DealersPageClient({ initialFilters }: DealersPageClientProps) {
                       <span className="text-[13px] text-muted/70 tabular-nums flex-shrink-0">
                         {item.dealerCount}
                       </span>
-                    </label>
+                    </button>
                   );
                 })}
               </div>
             </div>
           )}
 
-          {/* Certification */}
+          {/* Designation */}
           {certFacets.length > 0 && (
             <div>
               <div className="flex items-center justify-between mb-2">
-                <p className="text-[11px] uppercase tracking-[0.12em] text-ink/40">Certification</p>
+                <p className="text-[11px] uppercase tracking-[0.12em] text-ink/40">Designation</p>
                 {(filters.certs?.length || 0) > 0 && (
                   <button
                     onClick={() => applyFilters({ ...filtersRef.current, certs: undefined })}
@@ -682,9 +684,11 @@ export function DealersPageClient({ initialFilters }: DealersPageClientProps) {
                 {certFacets.map((item) => {
                   const checked = filters.certs?.includes(item.value) || false;
                   return (
-                    <label
+                    <button
                       key={item.value}
-                      className="flex items-center cursor-pointer group gap-3 py-2.5 min-h-[48px]"
+                      type="button"
+                      onClick={() => toggleArrayFilter('certs', item.value)}
+                      className="flex items-center cursor-pointer group gap-3 py-2.5 min-h-[48px] w-full text-left"
                     >
                       <div
                         className={`w-5 h-5 rounded-[3px] border-[1.5px] flex-shrink-0 flex items-center justify-center transition-all duration-150 ${
@@ -705,7 +709,7 @@ export function DealersPageClient({ initialFilters }: DealersPageClientProps) {
                       <span className="text-[13px] text-muted/70 tabular-nums flex-shrink-0">
                         {item.dealerCount}
                       </span>
-                    </label>
+                    </button>
                   );
                 })}
               </div>
@@ -846,9 +850,11 @@ function CheckboxList({
       {visible.map((item) => {
         const checked = selected.includes(item.value);
         return (
-          <label
+          <button
             key={item.value}
-            className="flex items-center cursor-pointer group gap-2.5 py-[4px] min-h-[28px] rounded -mx-1 px-1 hover:bg-hover/30"
+            type="button"
+            onClick={() => onToggle(item.value)}
+            className="flex items-center cursor-pointer group gap-2.5 py-[4px] min-h-[28px] rounded -mx-1 px-1 hover:bg-hover/30 w-full text-left"
           >
             <div
               className={`w-[15px] h-[15px] rounded-[2px] border-[1.5px] flex-shrink-0 flex items-center justify-center transition-all duration-150 ${
@@ -870,7 +876,7 @@ function CheckboxList({
             <span className="text-[10px] text-muted/70 tabular-nums flex-shrink-0">
               {item.dealerCount}
             </span>
-          </label>
+          </button>
         );
       })}
       {hasMore && (

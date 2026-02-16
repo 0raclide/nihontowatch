@@ -49,16 +49,20 @@ async function fetchAllListings(supabase: ReturnType<typeof createServiceClient>
   return all;
 }
 
-// Canonical cert labels for display
+// Canonical cert labels for display — matches browse FilterContent.tsx
 const CERT_LABELS: Record<string, string> = {
-  'Juyo Bijutsuhin': 'Juyo Bijutsuhin',
-  'Juyo': 'Juyo',
-  'Tokuju': 'Tokuju',
+  'Juyo Bijutsuhin': 'Jūyō Bijutsuhin',
+  'Tokuju': 'Tokubetsu Jūyō',
+  'Juyo': 'Jūyō',
   'TokuHozon': 'Tokubetsu Hozon',
   'Hozon': 'Hozon',
-  'TokuKicho': 'Tokubetsu Kicho',
-  'NTHK': 'NTHK',
 };
+
+// Certs hidden from filter (not serious for collectors) — matches browse
+const HIDDEN_CERTS = new Set(['NTHK', 'TokuKicho']);
+
+// Sort order: highest prestige first — matches browse CERT_ORDER
+const CERT_SORT_ORDER = ['Juyo Bijutsuhin', 'Tokuju', 'Juyo', 'TokuHozon', 'Hozon'];
 
 // Map raw cert_type values to canonical keys
 const CERT_NORMALIZE: Record<string, string> = {
@@ -190,7 +194,15 @@ export async function GET(request: NextRequest) {
     .map(([value, dealerCount]) => ({ value, label: formatItemType(value), dealerCount }));
 
   const certFacets = [...certDealerCounts.entries()]
-    .sort((a, b) => b[1] - a[1])
+    .filter(([value]) => !HIDDEN_CERTS.has(value) && CERT_LABELS[value])
+    .sort((a, b) => {
+      const aIdx = CERT_SORT_ORDER.indexOf(a[0]);
+      const bIdx = CERT_SORT_ORDER.indexOf(b[0]);
+      if (aIdx === -1 && bIdx === -1) return b[1] - a[1];
+      if (aIdx === -1) return 1;
+      if (bIdx === -1) return -1;
+      return aIdx - bIdx;
+    })
     .map(([value, dealerCount]) => ({ value, label: CERT_LABELS[value] || value, dealerCount }));
 
   // Apply search filter
