@@ -14,13 +14,14 @@ This document covers the full SEO implementation for NihontoWatch — how metada
 4. [Category Landing Pages](#category-landing-pages)
 5. [Internal Linking Mesh](#internal-linking-mesh)
 6. [Sold Archive](#sold-archive)
-7. [Structured Data (JSON-LD)](#structured-data-json-ld)
-8. [Technical SEO](#technical-seo)
-9. [Brand Name](#brand-name)
-10. [Key Files](#key-files)
-11. [Field Population Reality](#field-population-reality)
-12. [High-Priority Remaining Work](#high-priority-remaining-work)
-13. [Testing & Validation](#testing--validation)
+7. [Canonical Redirects](#canonical-redirects)
+8. [Structured Data (JSON-LD)](#structured-data-json-ld)
+9. [Technical SEO](#technical-seo)
+10. [Brand Name](#brand-name)
+11. [Key Files](#key-files)
+12. [Field Population Reality](#field-population-reality)
+13. [High-Priority Remaining Work](#high-priority-remaining-work)
+14. [Testing & Validation](#testing--validation)
 
 ---
 
@@ -389,6 +390,48 @@ Sold items appear in `sitemap.xml` with:
 
 ---
 
+## Canonical Redirects
+
+**Files:** `src/middleware.ts`, `src/lib/seo/categories.ts` (`findCategoryRedirect`)
+
+301 permanent redirects consolidate browse query-param URLs to their canonical category pages, preventing ranking signal dilution between duplicate URLs.
+
+### How it works
+
+The middleware intercepts requests to `/` with query params and checks if they match a category page:
+
+| Browse URL | Redirects to | Status |
+|------------|-------------|--------|
+| `/?type=katana` | `/swords/katana` | 301 |
+| `/?cert=juyo` | `/certified/juyo` | 301 |
+| `/?type=katana&cert=juyo` | `/swords/juyo-katana` | 301 |
+| `/?type=katana&school=bizen` | `/swords/bizen-katana` | 301 |
+| `/?type=katana&era=koto` | `/swords/koto-katana` | 301 |
+| `/?type=katana&period=koto` | `/swords/koto-katana` | 301 (`period` aliased to `era`) |
+| `/?cert=tokubetsu_hozon` | `/certified/tokubetsu-hozon` | 301 |
+| `/?type=tsuba` | `/fittings/tsuba` | 301 |
+
+### When redirects do NOT fire
+
+The redirect only fires when the URL contains **exclusively** category-filter params (`type`, `cert`, `school`, `era`/`period`). Any browse-UI param causes the redirect to be skipped:
+
+- **`tab` present** (e.g., `/?tab=available&type=katana`) — user is in the browse UI
+- **`sort`, `dealer`, `q`, `artisan`** — browse-specific filters
+- **`priceMin`, `priceMax`, `cat`** — additional browse state
+- **CSV multi-values** (e.g., `/?type=katana,wakizashi`) — not a single category
+
+The `buildBrowseUrl()` in `categoryPage.ts` includes `tab=available` so "Browse all" CTAs on category landing pages correctly bypass the redirect and open the full browse UI.
+
+### Lookup mechanism
+
+A static `_redirectMap` is built at module load from all 34 `CategoryDef` entries. Keys are sorted, lowercased `param=value` pairs (e.g., `cert=juyo&type=katana`). The cartesian product of all DB value variants for each filter is registered, so alternative spellings (`tokubetsu_hozon`, `TokuHozon`) all redirect correctly.
+
+### Tests
+
+`tests/lib/seo/categoryRedirect.test.ts` — 21 tests covering all redirect scenarios and non-redirect edge cases.
+
+---
+
 ## Structured Data (JSON-LD)
 
 **File:** `src/lib/seo/jsonLd.ts`
@@ -448,7 +491,7 @@ Batch-fetches in groups of 1000 to handle Supabase row limits.
 
 ### Canonical URLs
 
-All pages set `alternates.canonical`. The share proxy (`/s/[id]`) canonicalizes to `/listing/[id]` to prevent duplicate indexing.
+All pages set `alternates.canonical`. The share proxy (`/s/[id]`) canonicalizes to `/listing/[id]` to prevent duplicate indexing. Browse query-param URLs (`/?type=katana`) are 301-redirected to their canonical category pages (`/swords/katana`) via middleware. See [Canonical Redirects](#canonical-redirects).
 
 ### Sold items (archived)
 
@@ -512,6 +555,7 @@ The only exceptions are legal page body prose (terms of service, privacy policy 
 
 | File | Purpose |
 |------|---------|
+| `src/middleware.ts` | Canonical 301 redirects from browse query-param URLs to category pages |
 | `src/app/robots.ts` | robots.txt generation |
 | `src/app/sitemap.ts` | Dynamic sitemap (listings, dealers, artists, categories) |
 
@@ -557,13 +601,9 @@ Measured 2026-02-14 against 6,069 available listings:
 
 ## High-Priority Remaining Work
 
-### 1. Home page metadata adaptation to query params
+### ~~1. Home page metadata adaptation to query params~~ ✅ SUPERSEDED (2026-02-16)
 
-**Impact: HIGH** — The home page (`/`) handles all browse functionality via query params (`?type=katana`, `?cert=juyo`). The title stays generic regardless of filters. When users share filtered URLs or Google crawls them, the metadata doesn't reflect the content.
-
-**Gap:** `/?type=katana` shows "NihontoWatch | Japanese Sword & Tosogu Marketplace" instead of "Katana for Sale | NihontoWatch".
-
-**Mitigation:** The static category landing pages (`/swords/katana`) already cover the most important head terms with excellent metadata. The gap is specifically for direct browse URLs with query params. A `generateMetadata()` function that reads `searchParams` would close this.
+**Resolved by:** Canonical 301 redirects. Browse query-param URLs (`/?type=katana`) now redirect to their canonical category pages (`/swords/katana`) which have full metadata. No need for dynamic metadata on the home page — the redirect consolidates ranking signals to the purpose-built category pages with excellent titles, descriptions, JSON-LD, and intro content. See [Canonical Redirects](#canonical-redirects).
 
 ### ~~2. Server-render listing content for Googlebot~~ ✅ DONE (2026-02-15)
 
@@ -590,6 +630,12 @@ Extracted `getListingDetail()` shared function, passed enriched listing as `init
 - `index: true` for all listings (available and sold — sold archive)
 - Description accuracy (sold vs available)
 - Share proxy noindex
+
+`tests/lib/seo/categoryRedirect.test.ts` — 21 tests covering:
+- Single-filter redirects (type, cert)
+- Combination redirects (type+cert, type+school, type+era)
+- Case insensitivity and period→era aliasing
+- Non-redirect edge cases (tab, sort, dealer, q, CSV values, unknown types)
 
 ### Manual validation
 
@@ -621,6 +667,7 @@ Monitor:
 
 | Date | Change |
 |------|--------|
+| 2026-02-16 | **Canonical 301 redirects.** Browse query-param URLs (`/?type=katana`, `/?cert=juyo`, `/?type=katana&cert=juyo`) now 301 redirect to their canonical category pages (`/swords/katana`, `/certified/juyo`, `/swords/juyo-katana`). Implemented in middleware via `findCategoryRedirect()`. Supports all 34 category pages, `period`→`era` aliasing, case-insensitive matching, and DB value variants. Browse-UI params (`tab`, `sort`, `dealer`, etc.) bypass the redirect. `buildBrowseUrl()` includes `tab=available` to prevent "Browse all" CTA redirect loops. Supersedes the "home page metadata adaptation" work item. |
 | 2026-02-16 | **Refactor: Dimension-based category generation.** Rewrote `categories.ts` from 686 lines of hand-crafted records to dimension-based generation. Unified `filters: Record<string, string[]>` replaces `filterParam`/`filterValues`/`extraFilters`. `PARAM_TO_COLUMN` mapping replaces if/else chains. New `categoryPage.ts` shared helper deduplicates three route handlers (~100 lines → ~45 lines each). `computeRelatedLinks()` auto-generates cross-links. Entity URL helpers (`getItemTypeUrl`, `getCertUrl`, `getDealerUrl`) absorbed from deleted `entityLinks.ts`. |
 | 2026-02-16 | **SEO 80/20: Sold archive + 20 combination pages + internal linking mesh.** (1) Sold items now indexed with `SoldOut` JSON-LD, "Sold price" label, "View Similar Items" CTA, included in sitemap at 0.4 priority. (2) 20 combination category pages (cert×type, era×type, school×type) targeting queries like "juyo katana for sale", "koto katana", "bizen katana". (3) Full internal linking: cert badges, item types, artisans, schools, and dealers on listing detail pages link to canonical category/directory pages. Category pages have auto-computed Related Categories sections. |
 | 2026-02-15 | **Server-render listing detail content for SEO.** Created `getListingDetail()` shared function, passed enriched listing as `initialData` to client component. Googlebot now sees full listing content (h1, price, specs, dealer, images) in initial HTML. Addresses 2,423 "Crawled - currently not indexed" pages in Search Console. |
