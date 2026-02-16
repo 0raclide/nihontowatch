@@ -624,28 +624,42 @@ export function DealersPageClient({ initialFilters }: DealersPageClientProps) {
                 {(filters.types?.length || 0) > 0 && (
                   <button
                     onClick={() => applyFilters({ ...filtersRef.current, types: undefined })}
-                    className="text-[10px] text-muted/50 hover:text-gold transition-colors"
+                    className="text-[14px] text-gold hover:text-gold-light transition-colors font-medium"
                   >
-                    Reset
+                    Clear
                   </button>
                 )}
               </div>
-              <div className="space-y-0.5">
-                {typeFacets.map((item) => (
-                  <label
-                    key={item.value}
-                    className="flex items-center gap-2.5 min-h-[44px] px-1 cursor-pointer"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={filters.types?.includes(item.value) || false}
-                      onChange={() => toggleArrayFilter('types', item.value)}
-                      className="w-4 h-4 rounded border-border text-gold focus:ring-gold/30 flex-shrink-0"
-                    />
-                    <span className="text-[13px] text-ink flex-1">{item.label}</span>
-                    <span className="text-[11px] text-muted/50 tabular-nums">{item.dealerCount}</span>
-                  </label>
-                ))}
+              <div className="space-y-0">
+                {typeFacets.map((item) => {
+                  const checked = filters.types?.includes(item.value) || false;
+                  return (
+                    <label
+                      key={item.value}
+                      className="flex items-center cursor-pointer group gap-3 py-2.5 min-h-[48px]"
+                    >
+                      <div
+                        className={`w-5 h-5 rounded-[3px] border-[1.5px] flex-shrink-0 flex items-center justify-center transition-all duration-150 ${
+                          checked
+                            ? 'border-gold bg-gold'
+                            : 'border-charcoal/30 group-hover:border-charcoal/50'
+                        }`}
+                      >
+                        {checked && (
+                          <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </div>
+                      <span className="text-[15px] text-charcoal group-hover:text-ink transition-colors flex-1 leading-tight">
+                        {item.label}
+                      </span>
+                      <span className="text-[13px] text-muted/70 tabular-nums flex-shrink-0">
+                        {item.dealerCount}
+                      </span>
+                    </label>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -658,28 +672,42 @@ export function DealersPageClient({ initialFilters }: DealersPageClientProps) {
                 {(filters.certs?.length || 0) > 0 && (
                   <button
                     onClick={() => applyFilters({ ...filtersRef.current, certs: undefined })}
-                    className="text-[10px] text-muted/50 hover:text-gold transition-colors"
+                    className="text-[14px] text-gold hover:text-gold-light transition-colors font-medium"
                   >
-                    Reset
+                    Clear
                   </button>
                 )}
               </div>
-              <div className="space-y-0.5">
-                {certFacets.map((item) => (
-                  <label
-                    key={item.value}
-                    className="flex items-center gap-2.5 min-h-[44px] px-1 cursor-pointer"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={filters.certs?.includes(item.value) || false}
-                      onChange={() => toggleArrayFilter('certs', item.value)}
-                      className="w-4 h-4 rounded border-border text-gold focus:ring-gold/30 flex-shrink-0"
-                    />
-                    <span className="text-[13px] text-ink flex-1">{item.label}</span>
-                    <span className="text-[11px] text-muted/50 tabular-nums">{item.dealerCount}</span>
-                  </label>
-                ))}
+              <div className="space-y-0">
+                {certFacets.map((item) => {
+                  const checked = filters.certs?.includes(item.value) || false;
+                  return (
+                    <label
+                      key={item.value}
+                      className="flex items-center cursor-pointer group gap-3 py-2.5 min-h-[48px]"
+                    >
+                      <div
+                        className={`w-5 h-5 rounded-[3px] border-[1.5px] flex-shrink-0 flex items-center justify-center transition-all duration-150 ${
+                          checked
+                            ? 'border-gold bg-gold'
+                            : 'border-charcoal/30 group-hover:border-charcoal/50'
+                        }`}
+                      >
+                        {checked && (
+                          <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </div>
+                      <span className="text-[15px] text-charcoal group-hover:text-ink transition-colors flex-1 leading-tight">
+                        {item.label}
+                      </span>
+                      <span className="text-[13px] text-muted/70 tabular-nums flex-shrink-0">
+                        {item.dealerCount}
+                      </span>
+                    </label>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -749,17 +777,17 @@ function FilterSection({
   const [open, setOpen] = useState(defaultOpen);
 
   return (
-    <div className="border-t border-border/10">
+    <div className="py-1 border-t border-border/15">
       <button
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between px-4 py-2.5 group"
+        className={`flex items-center justify-between w-full text-left group py-0.5 ${open ? 'mb-1' : 'mb-0'} px-4`}
       >
         <div className="flex items-center gap-1.5">
-          <span className="text-[10px] uppercase tracking-[0.08em] text-muted/60 font-medium group-hover:text-muted transition-colors">
+          <h3 className="text-[11px] uppercase tracking-[0.06em] font-semibold text-muted">
             {title}
-          </span>
+          </h3>
           {activeCount > 0 && (
-            <span className="inline-flex items-center justify-center min-w-[14px] h-[14px] px-0.5 text-[8px] font-bold bg-gold/80 text-white rounded-full leading-none">
+            <span className="inline-flex items-center justify-center min-w-[14px] h-[14px] px-0.5 text-[8px] font-bold text-white bg-gold rounded-full leading-none">
               {activeCount}
             </span>
           )}
@@ -771,26 +799,26 @@ function FilterSection({
                 e.stopPropagation();
                 onReset();
               }}
-              className="text-[9px] text-muted/40 hover:text-gold transition-colors cursor-pointer"
+              className="text-[10px] text-muted/50 hover:text-gold transition-colors cursor-pointer font-medium"
             >
               Reset
             </span>
           )}
           <svg
-            className={`w-3 h-3 text-muted/40 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+            className={`w-2.5 h-2.5 text-muted/60 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
           >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
           </svg>
         </div>
       </button>
       <div
-        className="overflow-hidden transition-all duration-200"
-        style={{ maxHeight: open ? '400px' : '0px', opacity: open ? 1 : 0 }}
+        className="transition-all duration-200 overflow-hidden"
+        style={{ maxHeight: open ? '4000px' : '0px', opacity: open ? 1 : 0 }}
       >
-        <div className="px-4 pb-3">
+        <div className="px-4 pb-2">
           {children}
         </div>
       </div>
@@ -814,30 +842,41 @@ function CheckboxList({
   const hasMore = items.length > limit;
 
   return (
-    <div className="space-y-0.5">
-      {visible.map((item) => (
-        <label
-          key={item.value}
-          className="flex items-center gap-2 py-[3px] cursor-pointer group/check"
-        >
-          <input
-            type="checkbox"
-            checked={selected.includes(item.value)}
-            onChange={() => onToggle(item.value)}
-            className="w-3 h-3 rounded-sm border-border/50 text-gold focus:ring-gold/30 flex-shrink-0"
-          />
-          <span className="text-[11px] text-ink/70 group-hover/check:text-ink transition-colors flex-1 truncate">
-            {item.label}
-          </span>
-          <span className="text-[10px] text-muted/40 tabular-nums flex-shrink-0">
-            {item.dealerCount}
-          </span>
-        </label>
-      ))}
+    <div className="space-y-0">
+      {visible.map((item) => {
+        const checked = selected.includes(item.value);
+        return (
+          <label
+            key={item.value}
+            className="flex items-center cursor-pointer group gap-2.5 py-[4px] min-h-[28px] rounded -mx-1 px-1 hover:bg-hover/30"
+          >
+            <div
+              className={`w-[15px] h-[15px] rounded-[2px] border-[1.5px] flex-shrink-0 flex items-center justify-center transition-all duration-150 ${
+                checked
+                  ? 'border-gold bg-gold'
+                  : 'border-border/60 group-hover:border-border'
+              }`}
+              style={checked ? { boxShadow: '0 0 6px rgba(184, 157, 105, 0.2)' } : undefined}
+            >
+              {checked && (
+                <svg className="w-[15px] h-[15px] text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                </svg>
+              )}
+            </div>
+            <span className="text-[12px] text-charcoal group-hover:text-ink transition-colors flex-1 leading-tight truncate">
+              {item.label}
+            </span>
+            <span className="text-[10px] text-muted/70 tabular-nums flex-shrink-0">
+              {item.dealerCount}
+            </span>
+          </label>
+        );
+      })}
       {hasMore && (
         <button
           onClick={() => setExpanded(!expanded)}
-          className="text-[10px] text-gold/70 hover:text-gold transition-colors mt-1"
+          className="text-[10px] text-gold/70 hover:text-gold transition-colors mt-1 ml-0"
         >
           {expanded ? 'Show less' : `+${items.length - limit} more`}
         </button>
