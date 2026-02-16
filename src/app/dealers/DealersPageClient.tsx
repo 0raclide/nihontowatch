@@ -16,6 +16,12 @@ interface TypeBreakdown {
   count: number;
 }
 
+interface CertBreakdown {
+  cert: string;
+  label: string;
+  count: number;
+}
+
 interface DealerEntry {
   id: number;
   name: string;
@@ -24,6 +30,7 @@ interface DealerEntry {
   slug: string;
   listing_count: number;
   type_breakdown: TypeBreakdown[];
+  cert_breakdown: CertBreakdown[];
 }
 
 interface Totals {
@@ -33,10 +40,18 @@ interface Totals {
   internationalDealers: number;
 }
 
+interface FacetItem {
+  value: string;
+  label: string;
+  dealerCount: number;
+}
+
 interface Filters {
   sort: 'listing_count' | 'name' | 'country';
   q?: string;
   region?: 'japan' | 'international';
+  types?: string[];
+  certs?: string[];
 }
 
 interface DealersPageClientProps {
@@ -50,6 +65,8 @@ interface DealersPageClientProps {
 export function DealersPageClient({ initialFilters }: DealersPageClientProps) {
   const [dealers, setDealers] = useState<DealerEntry[]>([]);
   const [totals, setTotals] = useState<Totals>({ dealers: 0, listings: 0, japanDealers: 0, internationalDealers: 0 });
+  const [typeFacets, setTypeFacets] = useState<FacetItem[]>([]);
+  const [certFacets, setCertFacets] = useState<FacetItem[]>([]);
   const [filters, setFilters] = useState(initialFilters);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -70,6 +87,8 @@ export function DealersPageClient({ initialFilters }: DealersPageClientProps) {
     if (f.sort !== 'listing_count') p.set('sort', f.sort);
     if (f.q) p.set('q', f.q);
     if (f.region) p.set('region', f.region);
+    if (f.types?.length) p.set('type', f.types.join(','));
+    if (f.certs?.length) p.set('cert', f.certs.join(','));
     return p.toString();
   }, []);
 
@@ -93,6 +112,8 @@ export function DealersPageClient({ initialFilters }: DealersPageClientProps) {
     p.set('sort', f.sort);
     if (f.q) p.set('q', f.q);
     if (f.region) p.set('region', f.region);
+    if (f.types?.length) p.set('type', f.types.join(','));
+    if (f.certs?.length) p.set('cert', f.certs.join(','));
 
     try {
       const res = await fetch(`/api/dealers/directory?${p.toString()}`, {
@@ -102,6 +123,8 @@ export function DealersPageClient({ initialFilters }: DealersPageClientProps) {
         const data = await res.json();
         setDealers(data.dealers);
         setTotals(data.totals);
+        if (data.facets?.types) setTypeFacets(data.facets.types);
+        if (data.facets?.certs) setCertFacets(data.facets.certs);
       } else {
         setError('Failed to load dealers. Please try again.');
       }
@@ -169,13 +192,24 @@ export function DealersPageClient({ initialFilters }: DealersPageClientProps) {
 
   const clearAllFilters = useCallback(() => {
     setSearchInput('');
-    applyFilters({ sort: 'listing_count', q: undefined, region: undefined });
+    applyFilters({ sort: 'listing_count', q: undefined, region: undefined, types: undefined, certs: undefined });
+  }, [applyFilters]);
+
+  // Toggle a value in a multi-select filter array
+  const toggleArrayFilter = useCallback((key: 'types' | 'certs', value: string) => {
+    const current = filtersRef.current[key] || [];
+    const next = current.includes(value)
+      ? current.filter((v) => v !== value)
+      : [...current, value];
+    applyFilters({ ...filtersRef.current, [key]: next.length > 0 ? next : undefined });
   }, [applyFilters]);
 
   // Active filter count for badge
   const activeFilterCount = useMemo(() => {
-    return [filters.q, filters.region].filter(Boolean).length;
-  }, [filters.q, filters.region]);
+    return [filters.q, filters.region].filter(Boolean).length
+      + (filters.types?.length || 0)
+      + (filters.certs?.length || 0);
+  }, [filters.q, filters.region, filters.types, filters.certs]);
 
   return (
     <div className="max-w-[1600px] mx-auto px-4 py-8 lg:px-6">
@@ -275,7 +309,7 @@ export function DealersPageClient({ initialFilters }: DealersPageClientProps) {
               </div>
 
               {/* Zone 3: Search */}
-              <div className="px-4 pb-4 pt-2">
+              <div className="px-4 pb-3 pt-2">
                 <form onSubmit={handleSearch} className="relative">
                   <svg className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -300,6 +334,40 @@ export function DealersPageClient({ initialFilters }: DealersPageClientProps) {
                   )}
                 </form>
               </div>
+
+              {/* Zone 4: Inventory Type filter */}
+              {typeFacets.length > 0 && (
+                <FilterSection
+                  title="Inventory Type"
+                  activeCount={filters.types?.length || 0}
+                  onReset={() => applyFilters({ ...filtersRef.current, types: undefined })}
+                  defaultOpen={!!filters.types?.length}
+                >
+                  <CheckboxList
+                    items={typeFacets}
+                    selected={filters.types || []}
+                    onToggle={(v) => toggleArrayFilter('types', v)}
+                    limit={8}
+                  />
+                </FilterSection>
+              )}
+
+              {/* Zone 5: Certification filter */}
+              {certFacets.length > 0 && (
+                <FilterSection
+                  title="Certification"
+                  activeCount={filters.certs?.length || 0}
+                  onReset={() => applyFilters({ ...filtersRef.current, certs: undefined })}
+                  defaultOpen={!!filters.certs?.length}
+                >
+                  <CheckboxList
+                    items={certFacets}
+                    selected={filters.certs || []}
+                    onToggle={(v) => toggleArrayFilter('certs', v)}
+                    limit={10}
+                  />
+                </FilterSection>
+              )}
             </div>
           </div>
         </aside>
@@ -548,6 +616,74 @@ export function DealersPageClient({ initialFilters }: DealersPageClientProps) {
             </div>
           </div>
 
+          {/* Inventory Type */}
+          {typeFacets.length > 0 && (
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-[11px] uppercase tracking-[0.12em] text-ink/40">Inventory Type</p>
+                {(filters.types?.length || 0) > 0 && (
+                  <button
+                    onClick={() => applyFilters({ ...filtersRef.current, types: undefined })}
+                    className="text-[10px] text-muted/50 hover:text-gold transition-colors"
+                  >
+                    Reset
+                  </button>
+                )}
+              </div>
+              <div className="space-y-0.5">
+                {typeFacets.map((item) => (
+                  <label
+                    key={item.value}
+                    className="flex items-center gap-2.5 min-h-[44px] px-1 cursor-pointer"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={filters.types?.includes(item.value) || false}
+                      onChange={() => toggleArrayFilter('types', item.value)}
+                      className="w-4 h-4 rounded border-border text-gold focus:ring-gold/30 flex-shrink-0"
+                    />
+                    <span className="text-[13px] text-ink flex-1">{item.label}</span>
+                    <span className="text-[11px] text-muted/50 tabular-nums">{item.dealerCount}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Certification */}
+          {certFacets.length > 0 && (
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-[11px] uppercase tracking-[0.12em] text-ink/40">Certification</p>
+                {(filters.certs?.length || 0) > 0 && (
+                  <button
+                    onClick={() => applyFilters({ ...filtersRef.current, certs: undefined })}
+                    className="text-[10px] text-muted/50 hover:text-gold transition-colors"
+                  >
+                    Reset
+                  </button>
+                )}
+              </div>
+              <div className="space-y-0.5">
+                {certFacets.map((item) => (
+                  <label
+                    key={item.value}
+                    className="flex items-center gap-2.5 min-h-[44px] px-1 cursor-pointer"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={filters.certs?.includes(item.value) || false}
+                      onChange={() => toggleArrayFilter('certs', item.value)}
+                      className="w-4 h-4 rounded border-border text-gold focus:ring-gold/30 flex-shrink-0"
+                    />
+                    <span className="text-[13px] text-ink flex-1">{item.label}</span>
+                    <span className="text-[11px] text-muted/50 tabular-nums">{item.dealerCount}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Clear All */}
           <button
             onClick={() => {
@@ -593,6 +729,119 @@ function SkeletonCard() {
           <div className="h-3 w-24 img-loading rounded" />
         </div>
       </div>
+    </div>
+  );
+}
+
+function FilterSection({
+  title,
+  activeCount,
+  onReset,
+  defaultOpen = false,
+  children,
+}: {
+  title: string;
+  activeCount: number;
+  onReset: () => void;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+
+  return (
+    <div className="border-t border-border/10">
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between px-4 py-2.5 group"
+      >
+        <div className="flex items-center gap-1.5">
+          <span className="text-[10px] uppercase tracking-[0.08em] text-muted/60 font-medium group-hover:text-muted transition-colors">
+            {title}
+          </span>
+          {activeCount > 0 && (
+            <span className="inline-flex items-center justify-center min-w-[14px] h-[14px] px-0.5 text-[8px] font-bold bg-gold/80 text-white rounded-full leading-none">
+              {activeCount}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-1.5">
+          {activeCount > 0 && (
+            <span
+              onClick={(e) => {
+                e.stopPropagation();
+                onReset();
+              }}
+              className="text-[9px] text-muted/40 hover:text-gold transition-colors cursor-pointer"
+            >
+              Reset
+            </span>
+          )}
+          <svg
+            className={`w-3 h-3 text-muted/40 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
+      </button>
+      <div
+        className="overflow-hidden transition-all duration-200"
+        style={{ maxHeight: open ? '400px' : '0px', opacity: open ? 1 : 0 }}
+      >
+        <div className="px-4 pb-3">
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CheckboxList({
+  items,
+  selected,
+  onToggle,
+  limit = 8,
+}: {
+  items: FacetItem[];
+  selected: string[];
+  onToggle: (value: string) => void;
+  limit?: number;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const visible = expanded ? items : items.slice(0, limit);
+  const hasMore = items.length > limit;
+
+  return (
+    <div className="space-y-0.5">
+      {visible.map((item) => (
+        <label
+          key={item.value}
+          className="flex items-center gap-2 py-[3px] cursor-pointer group/check"
+        >
+          <input
+            type="checkbox"
+            checked={selected.includes(item.value)}
+            onChange={() => onToggle(item.value)}
+            className="w-3 h-3 rounded-sm border-border/50 text-gold focus:ring-gold/30 flex-shrink-0"
+          />
+          <span className="text-[11px] text-ink/70 group-hover/check:text-ink transition-colors flex-1 truncate">
+            {item.label}
+          </span>
+          <span className="text-[10px] text-muted/40 tabular-nums flex-shrink-0">
+            {item.dealerCount}
+          </span>
+        </label>
+      ))}
+      {hasMore && (
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="text-[10px] text-gold/70 hover:text-gold transition-colors mt-1"
+        >
+          {expanded ? 'Show less' : `+${items.length - limit} more`}
+        </button>
+      )}
     </div>
   );
 }

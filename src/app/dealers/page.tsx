@@ -57,6 +57,10 @@ export default async function DealersPage({ searchParams }: DealersPageProps) {
   const region = (['japan', 'international'].includes(regionParam || '')
     ? regionParam as 'japan' | 'international'
     : undefined);
+  const typeParam = getStringParam(params, 'type');
+  const types = typeParam ? typeParam.split(',').filter(Boolean) : undefined;
+  const certParam = getStringParam(params, 'cert');
+  const certs = certParam ? certParam.split(',').filter(Boolean) : undefined;
 
   const breadcrumbJsonLd = generateBreadcrumbJsonLd([
     { name: 'Home', url: BASE_URL },
@@ -68,7 +72,7 @@ export default async function DealersPage({ searchParams }: DealersPageProps) {
       <script {...jsonLdScriptProps(breadcrumbJsonLd)} />
 
       <DealersPageClient
-        initialFilters={{ sort, q, region }}
+        initialFilters={{ sort, q, region, types, certs }}
       />
     </>
   );

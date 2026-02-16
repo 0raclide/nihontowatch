@@ -14,6 +14,7 @@ interface DealerRow {
 interface ListingRow {
   dealer_id: number;
   item_type: string | null;
+  cert_type: string | null;
 }
 
 const BATCH_SIZE = 1000;
@@ -26,7 +27,7 @@ async function fetchAllListings(supabase: ReturnType<typeof createServiceClient>
   while (hasMore) {
     const { data, error } = await supabase
       .from('listings')
-      .select('dealer_id, item_type')
+      .select('dealer_id, item_type, cert_type')
       .eq('is_available', true)
       .or(`price_value.is.null,price_jpy.gte.${LISTING_FILTERS.MIN_PRICE_JPY}`)
       .range(offset, offset + BATCH_SIZE - 1);
@@ -48,11 +49,53 @@ async function fetchAllListings(supabase: ReturnType<typeof createServiceClient>
   return all;
 }
 
+// Canonical cert labels for display
+const CERT_LABELS: Record<string, string> = {
+  'Juyo Bijutsuhin': 'Juyo Bijutsuhin',
+  'Juyo': 'Juyo',
+  'Tokuju': 'Tokuju',
+  'TokuHozon': 'Tokubetsu Hozon',
+  'Hozon': 'Hozon',
+  'TokuKicho': 'Tokubetsu Kicho',
+  'NTHK': 'NTHK',
+};
+
+// Map raw cert_type values to canonical keys
+const CERT_NORMALIZE: Record<string, string> = {
+  'Juyo Bijutsuhin': 'Juyo Bijutsuhin',
+  'JuBi': 'Juyo Bijutsuhin',
+  'jubi': 'Juyo Bijutsuhin',
+  'Juyo': 'Juyo',
+  'juyo': 'Juyo',
+  'Tokuju': 'Tokuju',
+  'tokuju': 'Tokuju',
+  'Tokubetsu Juyo': 'Tokuju',
+  'tokubetsu_juyo': 'Tokuju',
+  'TokuHozon': 'TokuHozon',
+  'Tokubetsu Hozon': 'TokuHozon',
+  'tokubetsu_hozon': 'TokuHozon',
+  'Hozon': 'Hozon',
+  'hozon': 'Hozon',
+  'TokuKicho': 'TokuKicho',
+  'Tokubetsu Kicho': 'TokuKicho',
+  'tokubetsu_kicho': 'TokuKicho',
+  'NTHK': 'NTHK',
+  'nthk': 'NTHK',
+};
+
+function normalizeCert(raw: string): string | null {
+  return CERT_NORMALIZE[raw] || null;
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const sort = searchParams.get('sort') || 'listing_count';
   const q = searchParams.get('q')?.trim().toLowerCase() || '';
   const region = searchParams.get('region') || ''; // 'japan' | 'international' | ''
+  const typeParam = searchParams.get('type')?.trim() || '';
+  const certParam = searchParams.get('cert')?.trim() || '';
+  const typeFilters = typeParam ? typeParam.split(',').filter(Boolean) : [];
+  const certFilters = certParam ? certParam.split(',').filter(Boolean) : [];
 
   const supabase = createServiceClient();
 
@@ -73,17 +116,23 @@ export async function GET(request: NextRequest) {
 
   const dealers = (dealersResult.data || []) as DealerRow[];
 
-  // Aggregate listing counts and type breakdowns per dealer
-  const dealerStats = new Map<number, { count: number; types: Map<string, number> }>();
+  // Aggregate listing counts, type breakdowns, and cert breakdowns per dealer
+  const dealerStats = new Map<number, { count: number; types: Map<string, number>; certs: Map<string, number> }>();
   for (const listing of listings) {
     let stats = dealerStats.get(listing.dealer_id);
     if (!stats) {
-      stats = { count: 0, types: new Map() };
+      stats = { count: 0, types: new Map(), certs: new Map() };
       dealerStats.set(listing.dealer_id, stats);
     }
     stats.count++;
     if (listing.item_type) {
       stats.types.set(listing.item_type, (stats.types.get(listing.item_type) || 0) + 1);
+    }
+    if (listing.cert_type) {
+      const normalized = normalizeCert(listing.cert_type);
+      if (normalized) {
+        stats.certs.set(normalized, (stats.certs.get(normalized) || 0) + 1);
+      }
     }
   }
 
@@ -98,6 +147,11 @@ export async function GET(request: NextRequest) {
       ? [...stats.types.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5)
       : [];
 
+    // Cert breakdown sorted by count
+    const certEntries = stats
+      ? [...stats.certs.entries()].sort((a, b) => b[1] - a[1])
+      : [];
+
     return {
       id: d.id,
       name: d.name,
@@ -110,8 +164,34 @@ export async function GET(request: NextRequest) {
         label: formatItemType(type),
         count,
       })),
+      cert_breakdown: certEntries.map(([cert, count]) => ({
+        cert,
+        label: CERT_LABELS[cert] || cert,
+        count,
+      })),
     };
   });
+
+  // Compute global facets from all enriched dealers BEFORE filtering
+  // so counts remain stable regardless of active filters
+  const typeDealerCounts = new Map<string, number>();
+  const certDealerCounts = new Map<string, number>();
+  for (const d of enrichedDealers) {
+    for (const t of d.type_breakdown) {
+      typeDealerCounts.set(t.type, (typeDealerCounts.get(t.type) || 0) + 1);
+    }
+    for (const c of d.cert_breakdown) {
+      certDealerCounts.set(c.cert, (certDealerCounts.get(c.cert) || 0) + 1);
+    }
+  }
+
+  const typeFacets = [...typeDealerCounts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([value, dealerCount]) => ({ value, label: formatItemType(value), dealerCount }));
+
+  const certFacets = [...certDealerCounts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([value, dealerCount]) => ({ value, label: CERT_LABELS[value] || value, dealerCount }));
 
   // Apply search filter
   if (q) {
@@ -127,6 +207,20 @@ export async function GET(request: NextRequest) {
     enrichedDealers = enrichedDealers.filter((d) => getCountryRegion(d.country) === 'Japan');
   } else if (region === 'international') {
     enrichedDealers = enrichedDealers.filter((d) => getCountryRegion(d.country) === 'International');
+  }
+
+  // Apply type filter — keep dealers that carry at least one of the selected types
+  if (typeFilters.length > 0) {
+    enrichedDealers = enrichedDealers.filter((d) =>
+      d.type_breakdown.some((t) => typeFilters.includes(t.type))
+    );
+  }
+
+  // Apply cert filter — keep dealers that have at least one of the selected cert types
+  if (certFilters.length > 0) {
+    enrichedDealers = enrichedDealers.filter((d) =>
+      d.cert_breakdown.some((c) => certFilters.includes(c.cert))
+    );
   }
 
   // Sort
@@ -161,6 +255,8 @@ export async function GET(request: NextRequest) {
     dealers: enrichedDealers,
     facets: {
       countries: [...countryCounts.entries()].map(([value, count]) => ({ value, count })),
+      types: typeFacets,
+      certs: certFacets,
     },
     totals: {
       dealers: dealers.length,
