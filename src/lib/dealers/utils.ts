@@ -54,6 +54,25 @@ export function getCountryDisplayName(country: string): string {
   return DISPLAY_NAMES[country] || country;
 }
 
+/**
+ * Derive country from dealer domain.
+ * International dealers are explicitly mapped; everything else defaults to Japan.
+ */
+const INTERNATIONAL_DOMAINS: Record<string, string> = {
+  'giuseppepiva.com': 'Italy',
+  'legacyswords.com': 'USA',
+  'nihonto.com': 'USA',
+  'nihontoart.com': 'USA',
+  'nihonto.com.au': 'Australia',
+  'nihontocraft.com': 'USA',
+  'swordsofjapan.com': 'USA',
+  'tetsugendo.com': 'USA',
+};
+
+export function getCountryFromDomain(domain: string): string {
+  return INTERNATIONAL_DOMAINS[domain] || 'Japan';
+}
+
 /** Format an item type slug for display (e.g. "fuchi_kashira" → "Fuchi Kashira"). */
 export function formatItemType(type: string): string {
   return type

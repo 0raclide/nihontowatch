@@ -10,12 +10,12 @@ import {
   generateBreadcrumbJsonLd,
   jsonLdScriptProps,
 } from '@/lib/seo/jsonLd';
-import { createDealerSlug, getCountryFlag } from '@/lib/dealers/utils';
+import { createDealerSlug, getCountryFlag, getCountryFromDomain } from '@/lib/dealers/utils';
 import type { Dealer } from '@/types';
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://nihontowatch.com';
 
-// Find dealer by slug — uses the country column from DB
+// Find dealer by slug — derives country from domain TLD
 async function findDealerBySlug(slug: string) {
   const supabase = createServiceClient();
 
@@ -26,9 +26,10 @@ async function findDealerBySlug(slug: string) {
 
   if (!dealers || dealers.length === 0) return null;
 
-  type DealerRow = { id: number; name: string; domain: string; country: string; is_active: boolean; created_at: string };
+  type DealerRow = { id: number; name: string; domain: string; is_active: boolean; created_at: string };
   const dealer = (dealers as DealerRow[]).find((d) => createDealerSlug(d.name) === slug);
-  return dealer || null;
+  if (!dealer) return null;
+  return { ...dealer, country: getCountryFromDomain(dealer.domain) };
 }
 
 type Props = {

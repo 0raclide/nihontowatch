@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/server';
 import { LISTING_FILTERS } from '@/lib/constants';
-import { createDealerSlug, getCountryRegion, formatItemType } from '@/lib/dealers/utils';
+import { createDealerSlug, getCountryFromDomain, getCountryRegion, formatItemType } from '@/lib/dealers/utils';
 
 export const revalidate = 3600; // 1 hour
 
@@ -9,12 +9,43 @@ interface DealerRow {
   id: number;
   name: string;
   domain: string;
-  country: string;
 }
 
 interface ListingRow {
   dealer_id: number;
   item_type: string | null;
+}
+
+const BATCH_SIZE = 1000;
+
+async function fetchAllListings(supabase: ReturnType<typeof createServiceClient>): Promise<ListingRow[]> {
+  const all: ListingRow[] = [];
+  let offset = 0;
+  let hasMore = true;
+
+  while (hasMore) {
+    const { data, error } = await supabase
+      .from('listings')
+      .select('dealer_id, item_type')
+      .eq('is_available', true)
+      .or(`price_value.is.null,price_jpy.gte.${LISTING_FILTERS.MIN_PRICE_JPY}`)
+      .range(offset, offset + BATCH_SIZE - 1);
+
+    if (error) {
+      console.error('[Dealers API] Error fetching listings batch:', error);
+      break;
+    }
+
+    if (data && data.length > 0) {
+      all.push(...(data as ListingRow[]));
+      offset += BATCH_SIZE;
+      hasMore = data.length === BATCH_SIZE;
+    } else {
+      hasMore = false;
+    }
+  }
+
+  return all;
 }
 
 export async function GET(request: NextRequest) {
@@ -25,18 +56,14 @@ export async function GET(request: NextRequest) {
 
   const supabase = createServiceClient();
 
-  // Two parallel queries instead of O(n) per-dealer counts
-  const [dealersResult, listingsResult] = await Promise.all([
+  // Fetch dealers + all listings in parallel
+  const [dealersResult, listings] = await Promise.all([
     supabase
       .from('dealers')
-      .select('id, name, domain, country')
+      .select('id, name, domain')
       .eq('is_active', true)
       .order('name'),
-    supabase
-      .from('listings')
-      .select('dealer_id, item_type')
-      .eq('is_available', true)
-      .or(`price_value.is.null,price_jpy.gte.${LISTING_FILTERS.MIN_PRICE_JPY}`),
+    fetchAllListings(supabase),
   ]);
 
   if (dealersResult.error) {
@@ -45,7 +72,6 @@ export async function GET(request: NextRequest) {
   }
 
   const dealers = (dealersResult.data || []) as DealerRow[];
-  const listings = (listingsResult.data || []) as ListingRow[];
 
   // Aggregate listing counts and type breakdowns per dealer
   const dealerStats = new Map<number, { count: number; types: Map<string, number> }>();
@@ -65,6 +91,7 @@ export async function GET(request: NextRequest) {
   let enrichedDealers = dealers.map((d) => {
     const stats = dealerStats.get(d.id);
     const listing_count = stats?.count || 0;
+    const country = getCountryFromDomain(d.domain);
 
     // Top 5 types sorted by count
     const typeEntries = stats
@@ -75,7 +102,7 @@ export async function GET(request: NextRequest) {
       id: d.id,
       name: d.name,
       domain: d.domain,
-      country: d.country,
+      country,
       slug: createDealerSlug(d.name),
       listing_count,
       type_breakdown: typeEntries.map(([type, count]) => ({
@@ -122,12 +149,12 @@ export async function GET(request: NextRequest) {
   // Build facets
   const countryCounts = new Map<string, number>();
   for (const d of dealers) {
-    const r = getCountryRegion(d.country);
+    const r = getCountryRegion(getCountryFromDomain(d.domain));
     countryCounts.set(r, (countryCounts.get(r) || 0) + 1);
   }
 
   const totalListings = listings.length;
-  const japanDealers = dealers.filter((d) => getCountryRegion(d.country) === 'Japan').length;
+  const japanDealers = dealers.filter((d) => getCountryRegion(getCountryFromDomain(d.domain)) === 'Japan').length;
   const internationalDealers = dealers.length - japanDealers;
 
   return NextResponse.json({
