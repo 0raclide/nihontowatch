@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect, useCallback, useRef, type ReactNode } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import type { Listing } from '@/types';
@@ -17,6 +17,7 @@ import type { ArtisanPageResponse } from '@/app/api/artisan/[code]/route';
 import { getArtisanDisplayParts, getArtisanAlias } from '@/lib/artisan/displayName';
 import { Breadcrumbs } from '@/components/ui/Breadcrumbs';
 import { CatalogueShowcase } from '@/components/artisan/CatalogueShowcase';
+import ReactMarkdown from 'react-markdown';
 
 interface ArtistPageClientProps {
   data: ArtisanPageResponse;
@@ -46,49 +47,6 @@ const FUJISHIRO_LABELS: Record<string, string> = {
 };
 
 // ─── HELPERS ────────────────────────────────────────────────────────────────
-
-/**
- * Render inline markdown formatting: **bold**, *italic*, [links](url)
- */
-function renderInlineMarkdown(text: string): ReactNode[] {
-  // Combined pattern: **bold**, *italic*, [text](url)
-  const pattern = /\*\*(.+?)\*\*|\*(.+?)\*|\[([^\]]+)\]\(([^)]+)\)/g;
-  const parts: ReactNode[] = [];
-  let lastIndex = 0;
-  let match: RegExpExecArray | null;
-  let key = 0;
-
-  while ((match = pattern.exec(text)) !== null) {
-    // Text before match
-    if (match.index > lastIndex) {
-      parts.push(text.slice(lastIndex, match.index));
-    }
-
-    if (match[1]) {
-      // **bold**
-      parts.push(<strong key={key++} className="font-medium text-ink">{match[1]}</strong>);
-    } else if (match[2]) {
-      // *italic*
-      parts.push(<em key={key++}>{match[2]}</em>);
-    } else if (match[3] && match[4]) {
-      // [text](url)
-      parts.push(
-        <a key={key++} href={match[4]} className="text-gold hover:text-gold-light underline underline-offset-2" target="_blank" rel="noopener noreferrer">
-          {match[3]}
-        </a>
-      );
-    }
-
-    lastIndex = match.index + match[0].length;
-  }
-
-  // Remaining text
-  if (lastIndex < text.length) {
-    parts.push(text.slice(lastIndex));
-  }
-
-  return parts.length > 0 ? parts : [text];
-}
 
 // ─── SUB-COMPONENTS ─────────────────────────────────────────────────────────
 
@@ -139,91 +97,21 @@ function StatsBar({ data, availableCount }: { data: ArtisanPageResponse; availab
   );
 }
 
-/** Expandable biography section */
-function Biography({ markdown, hook }: { markdown: string; hook: string | null }) {
-  const [expanded, setExpanded] = useState(false);
-
-  // Parse markdown sections, removing hook duplication
-  const sections = useMemo(() => {
-    const hasHeaders = /^## /m.test(markdown);
-
-    if (!hasHeaders) {
-      // Plain paragraph text (e.g. ai_description from artisan_makers)
-      return [{ title: '', body: markdown.trim() }];
-    }
-
-    const parts = markdown.split(/^## /m).filter(Boolean);
-    return parts.map((part, i) => {
-      const lines = part.split('\n');
-      const title = lines[0].trim();
-      let body = lines.slice(1).join('\n').trim();
-
-      // For the first section, remove the leading paragraph if it matches the hook
-      if (i === 0 && hook) {
-        const hookNorm = hook.replace(/[^\w\s]/g, '').toLowerCase().slice(0, 60);
-        const bodyNorm = body.replace(/[^\w\s]/g, '').toLowerCase().slice(0, 60);
-        if (bodyNorm.startsWith(hookNorm.slice(0, 40))) {
-          // Remove the first paragraph (up to double newline)
-          const firstBreak = body.indexOf('\n\n');
-          if (firstBreak > 0) {
-            body = body.slice(firstBreak + 2).trim();
-          }
-        }
-      }
-
-      return { title, body };
-    });
-  }, [markdown, hook]);
-
-  // Show first section always, rest on expand
-  const visibleSections = expanded ? sections : sections.slice(0, 1);
-  const hasMore = sections.length > 1;
-
+/** Biography section — renders markdown from artisan_makers.ai_description */
+function Biography({ markdown }: { markdown: string }) {
   return (
-    <div>
-      <div className="space-y-6">
-        {visibleSections.map((section, i) => (
-          <div key={i}>
-            {/* Don't show the first section title if it matches generic pattern */}
-            {(i > 0 || !section.title.match(/^THE SMITH|THE MAKER|OVERVIEW/i)) && (
-              <h3 className="text-xs font-serif font-light tracking-wide text-gold/70 mb-3">
-                {section.title}
-              </h3>
-            )}
-            <div className="text-[13.5px] text-ink/80 leading-[1.9] font-light space-y-4">
-              {section.body.split('\n\n').map((paragraph, j) => {
-                // Handle bullet points
-                if (paragraph.includes('\n•') || paragraph.startsWith('•')) {
-                  const bullets = paragraph.split('\n').filter(l => l.startsWith('•'));
-                  return (
-                    <ul key={j} className="space-y-1.5 pl-1">
-                      {bullets.map((bullet, k) => (
-                        <li key={k} className="flex gap-2.5 text-[13.5px] text-ink/70">
-                          <span className="text-gold/50 flex-shrink-0 leading-[1.9]">·</span>
-                          <span>{renderInlineMarkdown(bullet.replace(/^•\s*/, ''))}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  );
-                }
-                if (paragraph.trim()) {
-                  return <p key={j}>{renderInlineMarkdown(paragraph.trim())}</p>;
-                }
-                return null;
-              })}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {hasMore && (
-        <button
-          onClick={() => setExpanded(!expanded)}
-          className="mt-6 text-[11px] text-gold hover:text-gold-light transition-colors tracking-[0.15em] uppercase"
-        >
-          {expanded ? 'Show less' : `Read full profile (${sections.length} sections)`}
-        </button>
-      )}
+    <div className="biography-prose text-[13.5px] text-ink/80 leading-[1.9] font-light
+      [&_p]:mb-4 [&_p:last-child]:mb-0
+      [&_h2]:text-xs [&_h2]:font-serif [&_h2]:font-light [&_h2]:tracking-wide [&_h2]:text-gold/70 [&_h2]:mb-3 [&_h2]:mt-8 [&_h2:first-child]:mt-0
+      [&_h3]:text-xs [&_h3]:font-serif [&_h3]:font-light [&_h3]:tracking-wide [&_h3]:text-gold/70 [&_h3]:mb-3 [&_h3]:mt-6
+      [&_strong]:font-medium [&_strong]:text-ink
+      [&_a]:text-gold [&_a]:hover:text-gold-light [&_a]:underline [&_a]:underline-offset-2
+      [&_ul]:space-y-1.5 [&_ul]:pl-4 [&_ul]:list-disc [&_ul]:marker:text-gold/50
+      [&_ol]:space-y-1.5 [&_ol]:pl-4 [&_ol]:list-decimal [&_ol]:marker:text-gold/50
+      [&_li]:text-ink/70
+      [&_blockquote]:pl-4 [&_blockquote]:border-l-2 [&_blockquote]:border-gold/30 [&_blockquote]:italic [&_blockquote]:text-ink/60
+    ">
+      <ReactMarkdown>{markdown}</ReactMarkdown>
     </div>
   );
 }
@@ -621,7 +509,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
         {profile?.profile_md && (
           <section>
             <SectionHeader id="biography" title="Biography" className="mb-7" />
-            <Biography markdown={profile.profile_md} hook={profile.hook} />
+            <Biography markdown={profile.profile_md} />
           </section>
         )}
 
