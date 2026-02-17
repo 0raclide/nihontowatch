@@ -141,15 +141,15 @@ async function getArtistData(code: string): Promise<ArtisanPageResponse | null> 
       count: provenanceCount,
       apex: provenanceApex,
     },
-    profile: profile
-      ? {
-          profile_md: profile.profile_md,
-          hook: profile.hook,
-          setsumei_count: profile.setsumei_count,
-          generated_at: profile.generated_at,
-        }
-      : aiDescription
-        ? { profile_md: aiDescription, hook: null, setsumei_count: 0, generated_at: '' }
+    profile: aiDescription
+      ? { profile_md: aiDescription, hook: null, setsumei_count: 0, generated_at: '' }
+      : profile
+        ? {
+            profile_md: profile.profile_md,
+            hook: profile.hook,
+            setsumei_count: profile.setsumei_count,
+            generated_at: profile.generated_at,
+          }
         : null,
     stats,
     lineage: {
