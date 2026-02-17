@@ -178,7 +178,7 @@ export async function GET(
     const {
       getSmithEntity,
       getTosoguMaker,
-      getArtistProfile,
+      getAiDescription,
       getStudents,
       getRelatedArtisans,
       getElitePercentile,
@@ -246,9 +246,9 @@ export async function GET(
 
     // Fetch all enrichment data in parallel
     const { getArtisanHeroImage } = await import('@/lib/supabase/yuhinkai');
-    const [profile, students, related, elitePercentile, provenancePercentile, tokoTaikanPercentile, teacherStub, denraiResult, heroImage, catalogueEntries] =
+    const [aiDescription, students, related, elitePercentile, provenancePercentile, tokoTaikanPercentile, teacherStub, denraiResult, heroImage, catalogueEntries] =
       await Promise.all([
-        getArtistProfile(entityCode),
+        getAiDescription(entityCode),
         getStudents(entityCode, entity.name_romaji),
         getRelatedArtisans(entityCode, entity.school, entityType),
         getElitePercentile(eliteFactor, entityType),
@@ -310,13 +310,8 @@ export async function GET(
         count: provenanceCount,
         apex: provenanceApex,
       },
-      profile: profile
-        ? {
-            profile_md: profile.profile_md,
-            hook: profile.hook,
-            setsumei_count: profile.setsumei_count,
-            generated_at: profile.generated_at,
-          }
+      profile: aiDescription
+        ? { profile_md: aiDescription, hook: null, setsumei_count: 0, generated_at: '' }
         : null,
       stats,
       lineage: {

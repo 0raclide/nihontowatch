@@ -24,25 +24,6 @@ export const yuhinkaiClient = createClient(
   yuhinkaiKey || 'placeholder-key'
 );
 
-export interface ArtistProfile {
-  id: string;
-  artist_code: string;
-  artist_type: 'smith' | 'tosogu_maker';
-  profile_md: string;
-  hook: string | null;
-  setsumei_count: number;
-  extraction_json: Record<string, unknown>;
-  stats_snapshot: Record<string, unknown>;
-  profile_depth: 'full' | 'standard' | 'brief';
-  human_reviewed: boolean;
-  quality_flags: string[];
-  generated_at: string;
-  model_version: string;
-  pipeline_version: string;
-  created_at: string;
-  updated_at: string;
-}
-
 export interface SmithEntity {
   smith_id: string;
   name_kanji: string | null;
@@ -110,20 +91,6 @@ export async function getAiDescription(code: string): Promise<string | null> {
   return data.ai_description as string;
 }
 
-export async function getArtistProfile(code: string): Promise<ArtistProfile | null> {
-  const { data, error } = await yuhinkaiClient
-    .from('artist_profiles')
-    .select('*')
-    .eq('artist_code', code)
-    .single();
-
-  if (error || !data) {
-    console.error('[Yuhinkai] Error fetching artist profile:', error);
-    return null;
-  }
-
-  return data as ArtistProfile;
-}
 
 export async function getSmithEntity(code: string): Promise<SmithEntity | null> {
   const { data, error } = await yuhinkaiClient
