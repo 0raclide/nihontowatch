@@ -45,6 +45,7 @@ vi.mock('@/lib/artisan/displayName', () => ({
     prefix: null,
     name: name || 'Unknown',
   }),
+  getArtisanAlias: () => null,
 }));
 
 // Suppress fetch calls for listings

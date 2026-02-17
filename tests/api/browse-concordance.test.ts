@@ -137,8 +137,9 @@ describe('Browse API Concordance Tests', () => {
 
   beforeAll(async () => {
     // Fetch all four category responses in parallel
+    // NOTE: cat=all is required to get unfiltered results — the API defaults to 'nihonto' when no cat is specified
     [allResponse, nihontoResponse, tosoguResponse, armorResponse] = await Promise.all([
-      fetchBrowse({}),
+      fetchBrowse({ cat: 'all' }),
       fetchBrowse({ cat: 'nihonto' }),
       fetchBrowse({ cat: 'tosogu' }),
       fetchBrowse({ cat: 'armor' }),
@@ -399,7 +400,7 @@ describe('Browse API Concordance Tests', () => {
       'facet count should approximately match filtered total (same request)',
       async () => {
         // Make a fresh request and verify internal consistency
-        const fresh = await fetchBrowse({});
+        const fresh = await fetchBrowse({ cat: 'all' });
         const firstCert = fresh.facets.certifications[0];
         if (!firstCert) return;
 
@@ -588,12 +589,12 @@ describe('Browse API Concordance Tests', () => {
 // =============================================================================
 
 describe('Browse API Edge Cases', () => {
-  it('empty category should default to all', async () => {
+  it('empty category should default to nihonto', async () => {
     const response = await fetchBrowse({ cat: '' });
-    const allResponse = await fetchBrowse({});
+    const nihontoResponse = await fetchBrowse({ cat: 'nihonto' });
 
-    // Should behave like 'all'
-    expect(response.total).toBe(allResponse.total);
+    // Both should default to nihonto (the API default category)
+    expect(response.total).toBe(nihontoResponse.total);
   });
 
   it('invalid category should fallback gracefully', async () => {

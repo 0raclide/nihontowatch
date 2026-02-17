@@ -60,7 +60,7 @@ describe('FilterContent Component', () => {
     expect(screen.getByText('Dealer')).toBeInTheDocument();
   });
 
-  it('renders category toggle buttons including Armor', () => {
+  it('renders category toggle buttons (Nihonto and Tosogu)', () => {
     render(
       <FilterContent
         facets={mockFacets}
@@ -69,11 +69,9 @@ describe('FilterContent Component', () => {
       />
     );
 
-    // Find buttons within the category toggle section
-    expect(screen.getByRole('button', { name: /^all$/i })).toBeInTheDocument();
+    // Category toggle is a 2-segment control: Nihonto | Tosogu
     expect(screen.getByRole('button', { name: /^nihonto$/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^tosogu$/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /^armor$/i })).toBeInTheDocument();
   });
 
   it('calls onFilterChange when category is changed to nihonto', () => {
@@ -91,7 +89,7 @@ describe('FilterContent Component', () => {
     expect(mockOnFilterChange).toHaveBeenCalledWith('itemTypes', []);
   });
 
-  it('calls onFilterChange when category is changed to armor', () => {
+  it('calls onFilterChange when category is changed to tosogu', () => {
     render(
       <FilterContent
         facets={mockFacets}
@@ -100,9 +98,9 @@ describe('FilterContent Component', () => {
       />
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /armor/i }));
+    fireEvent.click(screen.getByRole('button', { name: /tosogu/i }));
 
-    expect(mockOnFilterChange).toHaveBeenCalledWith('category', 'armor');
+    expect(mockOnFilterChange).toHaveBeenCalledWith('category', 'tosogu');
     expect(mockOnFilterChange).toHaveBeenCalledWith('itemTypes', []);
   });
 
