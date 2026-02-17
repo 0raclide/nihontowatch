@@ -1,8 +1,7 @@
 'use client';
 
-import { useState, useCallback, useRef, useEffect, startTransition, type SyntheticEvent } from 'react';
+import { useState, useCallback, useRef, useEffect, type SyntheticEvent } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import type { ArtistDirectoryEntry, DirectoryFacets } from '@/lib/supabase/yuhinkai';
 import { getArtisanDisplayParts } from '@/lib/artisan/displayName';
 import { eraToBroadPeriod } from '@/lib/artisan/eraPeriods';
@@ -73,7 +72,6 @@ export function ArtistsPageClient({
   const [searchDrawerOpen, setSearchDrawerOpen] = useState(false);
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
   const { openNavDrawer } = useMobileUI();
-  const router = useRouter();
   const drawerSearchRef = useRef<HTMLInputElement>(null);
 
   // Build URL search string from filters (no page param — infinite scroll)
@@ -89,16 +87,20 @@ export function ArtistsPageClient({
     return p.toString();
   }, []);
 
-  // Update URL via Next.js router so it tracks the change for back-navigation.
-  // Wrapped in startTransition to prevent the Suspense boundary (loading.tsx)
-  // from flashing — the current UI stays visible while the router syncs.
+  // Update URL without triggering Next.js navigation (avoids Suspense/loading.tsx flash).
+  // Uses native replaceState to bypass Next.js's monkey-patched version.
+  // Stores filters in history.state so they survive back/forward navigation — Next.js's
+  // internal routing state doesn't track replaceState URL changes, but history.state does.
   const updateUrl = useCallback((f: Filters) => {
     const qs = buildQueryString(f);
     const url = `/artists${qs ? `?${qs}` : ''}`;
-    startTransition(() => {
-      router.replace(url, { scroll: false });
-    });
-  }, [buildQueryString, router]);
+    History.prototype.replaceState.call(
+      window.history,
+      { ...window.history.state, _artistFilters: f },
+      '',
+      url
+    );
+  }, [buildQueryString]);
 
   // Client-side fetch — the only data-fetching path (initial load + filter changes + scroll)
   // append=false: replace allArtists (filter/search change), append=true: concat (infinite scroll)
@@ -161,19 +163,44 @@ export function ArtistsPageClient({
     }
   }, []);
 
-  // Fetch data on mount
+  // On mount: restore filters from history.state (survives back-nav via replaceState).
+  // Falls back to initialFilters for fresh page loads (no _artistFilters in state).
   useEffect(() => {
-    fetchArtists(initialFilters, initialPage);
+    const stored = window.history.state?._artistFilters as Filters | undefined;
+    if (stored?.sort && stored?.type) {
+      setFilters(stored);
+      setSearchInput(stored.q || '');
+      filtersRef.current = stored;
+      fetchArtists(stored, 1);
+    } else {
+      fetchArtists(initialFilters, initialPage);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Cleanup abort and debounce on unmount
+  // Popstate: restore filters on browser back/forward (component may not remount).
   useEffect(() => {
+    const onPopState = (e: PopStateEvent) => {
+      const stored = e.state?._artistFilters as Filters | undefined;
+      if (!stored?.sort || !stored?.type) return;
+      const cur = filtersRef.current;
+      if (stored.sort === cur.sort && stored.type === cur.type
+        && stored.school === cur.school && stored.province === cur.province
+        && stored.era === cur.era && stored.q === cur.q
+        && stored.notable === cur.notable) return;
+      setFilters(stored);
+      setSearchInput(stored.q || '');
+      filtersRef.current = stored;
+      currentPageRef.current = 1;
+      fetchArtists(stored, 1);
+    };
+    window.addEventListener('popstate', onPopState);
     return () => {
+      window.removeEventListener('popstate', onPopState);
       abortRef.current?.abort();
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, []);
+  }, [fetchArtists]);
 
   const applyFilters = useCallback((newFilters: Filters) => {
     setFilters(newFilters);
