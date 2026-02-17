@@ -5,6 +5,8 @@ import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import type { ArtisanDetails } from '@/app/api/artisan/[code]/route';
 import type { ArtisanSearchResult } from '@/app/api/artisan/search/route';
+import { CertPillRow } from '@/components/admin/CertPillRow';
+import { ArtisanSearchPanel } from '@/components/admin/ArtisanSearchPanel';
 
 interface ArtisanCandidate {
   artisan_id: string;
@@ -16,42 +18,6 @@ interface ArtisanCandidate {
   retrieval_method?: string;
   retrieval_score?: number;
 }
-
-// Cert options for the pill row
-const CERT_OPTIONS: { value: string | null; label: string; tier: 'tokuju' | 'jubi' | 'juyo' | 'tokuho' | 'hozon' | 'none' }[] = [
-  { value: 'Tokuju', label: 'Tokuju', tier: 'tokuju' },
-  { value: 'Juyo', label: 'Jūyō', tier: 'juyo' },
-  { value: 'TokuHozon', label: 'Tokuho', tier: 'tokuho' },
-  { value: 'Hozon', label: 'Hozon', tier: 'hozon' },
-  { value: 'juyo_bijutsuhin', label: 'Jubi', tier: 'jubi' },
-  { value: 'TokuKicho', label: 'TokuKichō', tier: 'tokuho' },
-  { value: null, label: 'None', tier: 'none' },
-];
-
-// Normalize cert_type from DB to the canonical value used in CERT_OPTIONS
-function normalizeCertValue(raw: string | null | undefined): string | null {
-  if (!raw) return null;
-  const map: Record<string, string> = {
-    tokubetsu_juyo: 'Tokuju', tokuju: 'Tokuju', Tokuju: 'Tokuju',
-    juyo: 'Juyo', Juyo: 'Juyo',
-    tokubetsu_hozon: 'TokuHozon', TokuHozon: 'TokuHozon',
-    hozon: 'Hozon', Hozon: 'Hozon',
-    juyo_bijutsuhin: 'juyo_bijutsuhin', JuyoBijutsuhin: 'juyo_bijutsuhin', 'Juyo Bijutsuhin': 'juyo_bijutsuhin',
-    TokuKicho: 'TokuKicho',
-    nbthk: 'Hozon', nthk: 'Hozon',
-  };
-  return map[raw] ?? raw;
-}
-
-// Tier → Tailwind color classes for active pill
-const CERT_TIER_COLORS: Record<string, string> = {
-  tokuju: 'bg-tokuju/20 text-tokuju ring-tokuju/50',
-  jubi: 'bg-jubi/20 text-jubi ring-jubi/50',
-  juyo: 'bg-juyo/20 text-juyo ring-juyo/50',
-  tokuho: 'bg-toku-hozon/20 text-toku-hozon ring-toku-hozon/50',
-  hozon: 'bg-hozon/20 text-hozon ring-hozon/50',
-  none: 'bg-muted/20 text-muted ring-muted/50',
-};
 
 interface ArtisanTooltipProps {
   listingId: number;
@@ -109,27 +75,20 @@ export function ArtisanTooltip({
 
   // Correction mode state — auto-open search when no artisan assigned
   const [showCorrectionSearch, setShowCorrectionSearch] = useState(startInSearchMode && !initialArtisanId);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<ArtisanSearchResult[]>([]);
-  const [searchLoading, setSearchLoading] = useState(false);
-  const [searchError, setSearchError] = useState<string | null>(null);
   const [fixing, setFixing] = useState(false);
   const [fixSuccess, setFixSuccess] = useState(false);
-  const searchInputRef = useRef<HTMLInputElement>(null);
+  const [searchError, setSearchError] = useState<string | null>(null);
 
   // Local admin_hidden state for optimistic toggle
   const [localHidden, setLocalHidden] = useState(adminHidden ?? false);
+
+  // Cert section visibility
+  const showCertSection = certTypeProp !== undefined;
 
   // Sync when prop changes (e.g., parent re-renders with fresh data)
   useEffect(() => {
     setLocalHidden(adminHidden ?? false);
   }, [adminHidden]);
-
-  // Cert editing state
-  const showCertSection = certTypeProp !== undefined;
-  const [currentCert, setCurrentCert] = useState<string | null>(normalizeCertValue(certTypeProp));
-  const [certSaving, setCertSaving] = useState(false);
-  const [certSuccess, setCertSuccess] = useState(false);
 
   // Suppress scroll-close briefly after mutations that trigger card re-renders
   const suppressScrollCloseRef = useRef(false);
@@ -165,101 +124,19 @@ export function ArtisanTooltip({
     setArtisanId(initialArtisanId || '');
   }, [initialArtisanId]);
 
-  // Sync cert type when prop changes
+  // Auto-open search when tooltip opens in search mode with no artisan
   useEffect(() => {
-    setCurrentCert(normalizeCertValue(certTypeProp));
-  }, [certTypeProp]);
-
-  // Focus search input when correction mode opens
-  useEffect(() => {
-    if (showCorrectionSearch && searchInputRef.current) {
-      searchInputRef.current.focus();
+    if (isOpen && startInSearchMode && !artisanId) {
+      setShowCorrectionSearch(true);
     }
-  }, [showCorrectionSearch]);
-
-  // Debounced search effect
-  useEffect(() => {
-    if (!searchQuery || searchQuery.length < 2) {
-      setSearchResults([]);
-      setSearchError(null);
-      return;
-    }
-
-    const debounceTimeout = setTimeout(async () => {
-      setSearchLoading(true);
-      setSearchError(null);
-
-      try {
-        const response = await fetch(
-          `/api/artisan/search?q=${encodeURIComponent(searchQuery)}&limit=10`
-        );
-        if (response.ok) {
-          const data = await response.json();
-          setSearchResults(data.results || []);
-        } else {
-          const data = await response.json();
-          setSearchError(data.error || 'Search failed');
-          setSearchResults([]);
-        }
-      } catch {
-        setSearchError('Search failed');
-        setSearchResults([]);
-      } finally {
-        setSearchLoading(false);
-      }
-    }, 300);
-
-    return () => clearTimeout(debounceTimeout);
-  }, [searchQuery]);
-
-  // Handle cert change via pill row
-  const handleCertChange = async (newCert: string | null) => {
-    if (certSaving || newCert === currentCert) return;
-
-    setCertSaving(true);
-    setCertSuccess(false);
-
-    // Optimistic update
-    const prevCert = currentCert;
-    setCurrentCert(newCert);
-
-    try {
-      const response = await fetch(`/api/listing/${listingId}/fix-cert`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cert_type: newCert }),
-      });
-
-      if (response.ok) {
-        setCertSuccess(true);
-        suppressScrollClose();
-        onCertChanged?.(newCert);
-
-        // Also dispatch listing-refreshed event for browse card updates
-        window.dispatchEvent(new CustomEvent('listing-refreshed', {
-          detail: { id: listingId, cert_type: newCert },
-        }));
-
-        setTimeout(() => setCertSuccess(false), 3000);
-      } else {
-        // Revert on failure
-        setCurrentCert(prevCert);
-        const data = await response.json();
-        setError(data.error || 'Failed to update designation');
-      }
-    } catch {
-      setCurrentCert(prevCert);
-      setError('Failed to update designation');
-    } finally {
-      setCertSaving(false);
-    }
-  };
+  }, [isOpen, startInSearchMode, artisanId]);
 
   // Handle setting artisan as UNKNOWN (for later refinement)
   const handleSetUnknown = async () => {
     if (fixing) return;
 
     setFixing(true);
+    setSearchError(null);
     try {
       const response = await fetch(`/api/listing/${listingId}/fix-artisan`, {
         method: 'POST',
@@ -276,8 +153,6 @@ export function ArtisanTooltip({
         setVerified('correct');
         setFixSuccess(true);
         setShowCorrectionSearch(false);
-        setSearchQuery('');
-        setSearchResults([]);
         setArtisan(null);
         fetchedForRef.current = 'UNKNOWN'; // Prevent fetch loop
         suppressScrollClose();
@@ -315,6 +190,7 @@ export function ArtisanTooltip({
     if (fixing) return;
 
     setFixing(true);
+    setSearchError(null);
     try {
       const response = await fetch(`/api/listing/${listingId}/fix-artisan`, {
         method: 'POST',
@@ -332,8 +208,6 @@ export function ArtisanTooltip({
         setVerified('correct');
         setFixSuccess(true);
         setShowCorrectionSearch(false);
-        setSearchQuery('');
-        setSearchResults([]);
 
         // Refetch artisan details for the new code
         setArtisan(null);
@@ -424,13 +298,6 @@ export function ArtisanTooltip({
       fetchArtisan();
     }
   }, [isOpen, artisanId, artisan, loading, fetchArtisan]);
-
-  // Auto-open search when tooltip opens in search mode with no artisan
-  useEffect(() => {
-    if (isOpen && startInSearchMode && !artisanId) {
-      setShowCorrectionSearch(true);
-    }
-  }, [isOpen, startInSearchMode, artisanId]);
 
   // Position tooltip relative to viewport using fixed positioning.
   // This works correctly even when body scroll is locked (QuickView modal uses
@@ -556,8 +423,6 @@ export function ArtisanTooltip({
           setShowCorrectionSearch(true);
         } else {
           setShowCorrectionSearch(false);
-          setSearchQuery('');
-          setSearchResults([]);
         }
       } else {
         console.error('Failed to save verification');
@@ -628,36 +493,17 @@ export function ArtisanTooltip({
             {/* Cert designation pill row — shown when certType prop is passed */}
             {showCertSection && (
               <div className="mb-3 pb-3 border-b border-border">
-                <div className="text-[10px] uppercase tracking-wider text-muted mb-2">
-                  Designation
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {CERT_OPTIONS.map((opt) => {
-                    const isActive = currentCert === opt.value;
-                    return (
-                      <button
-                        key={opt.label}
-                        onClick={() => handleCertChange(opt.value)}
-                        disabled={certSaving}
-                        className={`px-2.5 py-1 rounded-full text-[10px] font-medium transition-all ring-1 ${
-                          isActive
-                            ? `${CERT_TIER_COLORS[opt.tier]} ring-2`
-                            : 'bg-surface text-muted ring-border hover:ring-gold/40 hover:text-ink'
-                        } ${certSaving ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-                      >
-                        {opt.label}
-                      </button>
-                    );
-                  })}
-                </div>
-                {certSuccess && (
-                  <div className="mt-2 flex items-center gap-1.5 text-[10px] text-green-500">
-                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    Designation updated
-                  </div>
-                )}
+                <CertPillRow
+                  listingId={listingId}
+                  initialCertType={certTypeProp}
+                  onChanged={(cert) => {
+                    suppressScrollClose();
+                    onCertChanged?.(cert);
+                    window.dispatchEvent(new CustomEvent('listing-refreshed', {
+                      detail: { id: listingId, cert_type: cert },
+                    }));
+                  }}
+                />
               </div>
             )}
 
@@ -754,119 +600,16 @@ export function ArtisanTooltip({
                 {/* Correction search panel */}
                 {showCorrectionSearch && !fixSuccess && (
                   <div className="mb-3 pb-3 border-b border-border">
-                    <div className="text-[10px] uppercase tracking-wider text-muted mb-2">
-                      Search for correct artisan:
-                    </div>
-
-                    {/* Search input */}
-                    <div className="relative mb-2">
-                      <input
-                        ref={searchInputRef}
-                        type="text"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Name, code, or school..."
-                        className="w-full px-3 py-2 text-xs bg-surface border border-border rounded focus:outline-none focus:border-gold/50 text-ink placeholder:text-muted"
-                      />
-                      {searchLoading && (
-                        <div className="absolute right-2 top-1/2 -translate-y-1/2">
-                          <div className="w-4 h-4 border-2 border-muted border-t-gold rounded-full animate-spin" />
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Search error */}
-                    {searchError && (
-                      <p className="text-[10px] text-red-500 mb-2">{searchError}</p>
-                    )}
-
-                    {/* Search results */}
-                    {searchResults.length > 0 && (
-                      <div className="max-h-48 overflow-y-auto space-y-1 scrollbar-thin">
-                        {searchResults.map((result) => (
-                          <button
-                            key={result.code}
-                            onClick={() => handleSelectArtisan(result)}
-                            disabled={fixing}
-                            className={`w-full text-left p-2 rounded border border-border hover:border-gold/50 hover:bg-gold/5 transition-colors ${
-                              fixing ? 'opacity-50 cursor-not-allowed' : ''
-                            }`}
-                          >
-                            <div className="flex items-center justify-between mb-0.5">
-                              <span className="font-mono text-xs font-medium text-gold">
-                                {result.code}
-                              </span>
-                              <span className="text-[9px] text-muted uppercase">
-                                {result.type === 'smith' ? 'Smith' : 'Tosogu'}
-                              </span>
-                            </div>
-                            <div className="text-xs text-ink">
-                              {result.name_kanji && (
-                                <span className="font-jp mr-1">{result.name_kanji}</span>
-                              )}
-                              {result.name_romaji && (
-                                <span>{result.name_romaji}</span>
-                              )}
-                              {result.generation && (
-                                <span className="text-muted ml-1">({result.generation})</span>
-                              )}
-                            </div>
-                            {(result.school || result.province || result.era) && (
-                              <div className="text-[10px] text-muted mt-0.5">
-                                {[result.school, result.province, result.era].filter(Boolean).join(' · ')}
-                              </div>
-                            )}
-                            {(result.juyo_count > 0 || result.tokuju_count > 0) && (
-                              <div className="text-[10px] text-muted mt-0.5">
-                                {result.tokuju_count > 0 && `${result.tokuju_count} Tokuju`}
-                                {result.tokuju_count > 0 && result.juyo_count > 0 && ' · '}
-                                {result.juyo_count > 0 && `${result.juyo_count} Juyo`}
-                              </div>
-                            )}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* No results */}
-                    {searchQuery.length >= 2 && !searchLoading && searchResults.length === 0 && !searchError && (
-                      <p className="text-[10px] text-muted text-center py-2">
-                        No artisans found for &quot;{searchQuery}&quot;
-                      </p>
-                    )}
-
-                    {/* UNKNOWN option */}
-                    <div className="pt-2 mt-2 border-t border-border/50">
-                      <button
-                        onClick={handleSetUnknown}
-                        disabled={fixing}
-                        className={`w-full text-left p-2 rounded border border-dashed border-muted/40 hover:border-gold/50 hover:bg-gold/5 transition-colors ${
-                          fixing ? 'opacity-50 cursor-not-allowed' : ''
-                        }`}
-                      >
-                        <div className="flex items-center gap-2">
-                          <span className="text-[11px] font-medium text-muted">?</span>
-                          <span className="text-[11px] text-muted">
-                            Mark as <span className="font-mono font-medium">UNKNOWN</span>
-                          </span>
-                        </div>
-                        <p className="text-[9px] text-muted/70 mt-0.5 ml-5">
-                          Flag for later identification
-                        </p>
-                      </button>
-                    </div>
-
-                    {/* Cancel button */}
-                    <button
-                      onClick={() => {
+                    <ArtisanSearchPanel
+                      onSelect={handleSelectArtisan}
+                      onSetUnknown={handleSetUnknown}
+                      onCancel={() => {
                         setShowCorrectionSearch(false);
-                        setSearchQuery('');
-                        setSearchResults([]);
                       }}
-                      className="mt-2 w-full py-1.5 text-[10px] text-muted hover:text-ink transition-colors"
-                    >
-                      Cancel search
-                    </button>
+                      disabled={fixing}
+                      successMessage={fixSuccess ? 'Artisan updated' : null}
+                      errorMessage={searchError}
+                    />
                   </div>
                 )}
 
@@ -1057,105 +800,14 @@ export function ArtisanTooltip({
 
                 {/* Search panel (always visible when no artisan) */}
                 {!fixSuccess && (
-                  <div>
-                    <div className="text-[10px] uppercase tracking-wider text-muted mb-2">
-                      Search for artisan:
-                    </div>
-
-                    <div className="relative mb-2">
-                      <input
-                        ref={searchInputRef}
-                        type="text"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Name, code, or school..."
-                        className="w-full px-3 py-2 text-xs bg-surface border border-border rounded focus:outline-none focus:border-gold/50 text-ink placeholder:text-muted"
-                      />
-                      {searchLoading && (
-                        <div className="absolute right-2 top-1/2 -translate-y-1/2">
-                          <div className="w-4 h-4 border-2 border-muted border-t-gold rounded-full animate-spin" />
-                        </div>
-                      )}
-                    </div>
-
-                    {searchError && (
-                      <p className="text-[10px] text-red-500 mb-2">{searchError}</p>
-                    )}
-
-                    {searchResults.length > 0 && (
-                      <div className="max-h-48 overflow-y-auto space-y-1 scrollbar-thin">
-                        {searchResults.map((result) => (
-                          <button
-                            key={result.code}
-                            onClick={() => handleSelectArtisan(result)}
-                            disabled={fixing}
-                            className={`w-full text-left p-2 rounded border border-border hover:border-gold/50 hover:bg-gold/5 transition-colors ${
-                              fixing ? 'opacity-50 cursor-not-allowed' : ''
-                            }`}
-                          >
-                            <div className="flex items-center justify-between mb-0.5">
-                              <span className="font-mono text-xs font-medium text-gold">
-                                {result.code}
-                              </span>
-                              <span className="text-[9px] text-muted uppercase">
-                                {result.type === 'smith' ? 'Smith' : 'Tosogu'}
-                              </span>
-                            </div>
-                            <div className="text-xs text-ink">
-                              {result.name_kanji && (
-                                <span className="font-jp mr-1">{result.name_kanji}</span>
-                              )}
-                              {result.name_romaji && (
-                                <span>{result.name_romaji}</span>
-                              )}
-                              {result.generation && (
-                                <span className="text-muted ml-1">({result.generation})</span>
-                              )}
-                            </div>
-                            {(result.school || result.province || result.era) && (
-                              <div className="text-[10px] text-muted mt-0.5">
-                                {[result.school, result.province, result.era].filter(Boolean).join(' · ')}
-                              </div>
-                            )}
-                            {(result.juyo_count > 0 || result.tokuju_count > 0) && (
-                              <div className="text-[10px] text-muted mt-0.5">
-                                {result.tokuju_count > 0 && `${result.tokuju_count} Tokuju`}
-                                {result.tokuju_count > 0 && result.juyo_count > 0 && ' · '}
-                                {result.juyo_count > 0 && `${result.juyo_count} Juyo`}
-                              </div>
-                            )}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-
-                    {searchQuery.length >= 2 && !searchLoading && searchResults.length === 0 && !searchError && (
-                      <p className="text-[10px] text-muted text-center py-2">
-                        No artisans found for &quot;{searchQuery}&quot;
-                      </p>
-                    )}
-
-                    {/* UNKNOWN option */}
-                    <div className="pt-2 mt-2 border-t border-border/50">
-                      <button
-                        onClick={handleSetUnknown}
-                        disabled={fixing}
-                        className={`w-full text-left p-2 rounded border border-dashed border-muted/40 hover:border-gold/50 hover:bg-gold/5 transition-colors ${
-                          fixing ? 'opacity-50 cursor-not-allowed' : ''
-                        }`}
-                      >
-                        <div className="flex items-center gap-2">
-                          <span className="text-[11px] font-medium text-muted">?</span>
-                          <span className="text-[11px] text-muted">
-                            Mark as <span className="font-mono font-medium">UNKNOWN</span>
-                          </span>
-                        </div>
-                        <p className="text-[9px] text-muted/70 mt-0.5 ml-5">
-                          Flag for later identification
-                        </p>
-                      </button>
-                    </div>
-                  </div>
+                  <ArtisanSearchPanel
+                    onSelect={handleSelectArtisan}
+                    onSetUnknown={handleSetUnknown}
+                    disabled={fixing}
+                    successMessage={fixSuccess ? 'Artisan assigned' : null}
+                    errorMessage={searchError}
+                    autoFocus
+                  />
                 )}
               </>
             )}

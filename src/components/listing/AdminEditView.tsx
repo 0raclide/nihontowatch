@@ -1,8 +1,10 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { Listing } from '@/types';
 import type { ArtisanSearchResult } from '@/app/api/artisan/search/route';
+import { CertPillRow } from '@/components/admin/CertPillRow';
+import { ArtisanSearchPanel } from '@/components/admin/ArtisanSearchPanel';
 
 // =============================================================================
 // TYPES
@@ -14,51 +16,11 @@ interface AdminEditViewProps {
   onRefresh: (optimisticFields?: Partial<Listing>) => void;
 }
 
-// Cert options for the pill row (duplicated from ArtisanTooltip to avoid cross-dependency)
-const CERT_OPTIONS: { value: string | null; label: string; tier: string }[] = [
-  { value: 'Tokuju', label: 'Tokuju', tier: 'tokuju' },
-  { value: 'Juyo', label: 'Juyo', tier: 'juyo' },
-  { value: 'TokuHozon', label: 'Tokuho', tier: 'tokuho' },
-  { value: 'Hozon', label: 'Hozon', tier: 'hozon' },
-  { value: 'juyo_bijutsuhin', label: 'Jubi', tier: 'jubi' },
-  { value: 'TokuKicho', label: 'TokuKicho', tier: 'tokuho' },
-  { value: null, label: 'None', tier: 'none' },
-];
-
-const CERT_TIER_COLORS: Record<string, string> = {
-  tokuju: 'bg-tokuju/20 text-tokuju ring-tokuju/50',
-  jubi: 'bg-jubi/20 text-jubi ring-jubi/50',
-  juyo: 'bg-juyo/20 text-juyo ring-juyo/50',
-  tokuho: 'bg-toku-hozon/20 text-toku-hozon ring-toku-hozon/50',
-  hozon: 'bg-hozon/20 text-hozon ring-hozon/50',
-  none: 'bg-muted/20 text-muted ring-muted/50',
-};
-
-// Normalize cert_type from DB to the canonical value used in CERT_OPTIONS
-function normalizeCertValue(raw: string | null | undefined): string | null {
-  if (!raw) return null;
-  const map: Record<string, string> = {
-    tokubetsu_juyo: 'Tokuju', tokuju: 'Tokuju', Tokuju: 'Tokuju',
-    juyo: 'Juyo', Juyo: 'Juyo',
-    tokubetsu_hozon: 'TokuHozon', TokuHozon: 'TokuHozon',
-    hozon: 'Hozon', Hozon: 'Hozon',
-    juyo_bijutsuhin: 'juyo_bijutsuhin', JuyoBijutsuhin: 'juyo_bijutsuhin', 'Juyo Bijutsuhin': 'juyo_bijutsuhin',
-    TokuKicho: 'TokuKicho',
-    nbthk: 'Hozon', nthk: 'Hozon',
-  };
-  return map[raw] ?? raw;
-}
-
 // =============================================================================
 // COMPONENT
 // =============================================================================
 
 export function AdminEditView({ listing, onBackToPhotos, onRefresh }: AdminEditViewProps) {
-  // --- Cert state ---
-  const [currentCert, setCurrentCert] = useState<string | null>(normalizeCertValue(listing.cert_type));
-  const [certSaving, setCertSaving] = useState(false);
-  const [certSuccess, setCertSuccess] = useState(false);
-
   // --- Artisan state ---
   const [artisanId, setArtisanId] = useState(listing.artisan_id || '');
   const [confidence, setConfidence] = useState<'HIGH' | 'MEDIUM' | 'LOW'>(
@@ -72,13 +34,9 @@ export function AdminEditView({ listing, onBackToPhotos, onRefresh }: AdminEditV
 
   // --- Search state ---
   const [showSearch, setShowSearch] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<ArtisanSearchResult[]>([]);
-  const [searchLoading, setSearchLoading] = useState(false);
-  const [searchError, setSearchError] = useState<string | null>(null);
   const [fixing, setFixing] = useState(false);
   const [fixSuccess, setFixSuccess] = useState(false);
-  const searchInputRef = useRef<HTMLInputElement>(null);
+  const [searchError, setSearchError] = useState<string | null>(null);
 
   // --- Hide state ---
   const [localHidden, setLocalHidden] = useState(listing.admin_hidden ?? false);
@@ -88,57 +46,15 @@ export function AdminEditView({ listing, onBackToPhotos, onRefresh }: AdminEditV
 
   // Sync state when listing changes
   useEffect(() => {
-    setCurrentCert(normalizeCertValue(listing.cert_type));
     setArtisanId(listing.artisan_id || '');
     setConfidence((listing.artisan_confidence as 'HIGH' | 'MEDIUM' | 'LOW') || 'LOW');
     setVerified((listing.artisan_verified as 'correct' | 'incorrect' | null) ?? null);
     setLocalHidden(listing.admin_hidden ?? false);
     setShowSearch(false);
-    setSearchQuery('');
-    setSearchResults([]);
     setFixSuccess(false);
-    setCertSuccess(false);
+    setSearchError(null);
     setError(null);
   }, [listing.id]);
-
-  // Focus search input when search opens
-  useEffect(() => {
-    if (showSearch && searchInputRef.current) {
-      searchInputRef.current.focus();
-    }
-  }, [showSearch]);
-
-  // Debounced search
-  useEffect(() => {
-    if (!searchQuery || searchQuery.length < 2) {
-      setSearchResults([]);
-      setSearchError(null);
-      return;
-    }
-
-    const timeout = setTimeout(async () => {
-      setSearchLoading(true);
-      setSearchError(null);
-      try {
-        const res = await fetch(`/api/artisan/search?q=${encodeURIComponent(searchQuery)}&limit=10`);
-        if (res.ok) {
-          const data = await res.json();
-          setSearchResults(data.results || []);
-        } else {
-          const data = await res.json();
-          setSearchError(data.error || 'Search failed');
-          setSearchResults([]);
-        }
-      } catch {
-        setSearchError('Search failed');
-        setSearchResults([]);
-      } finally {
-        setSearchLoading(false);
-      }
-    }, 300);
-
-    return () => clearTimeout(timeout);
-  }, [searchQuery]);
 
   // Helper to dispatch listing-refreshed event
   const dispatchRefresh = useCallback((fields: Record<string, unknown>) => {
@@ -146,38 +62,6 @@ export function AdminEditView({ listing, onBackToPhotos, onRefresh }: AdminEditV
       detail: { id: listing.id, ...fields },
     }));
   }, [listing.id]);
-
-  // --- Cert change ---
-  const handleCertChange = async (newCert: string | null) => {
-    if (certSaving || newCert === currentCert) return;
-    setCertSaving(true);
-    setCertSuccess(false);
-    const prevCert = currentCert;
-    setCurrentCert(newCert);
-
-    try {
-      const res = await fetch(`/api/listing/${listing.id}/fix-cert`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cert_type: newCert }),
-      });
-      if (res.ok) {
-        setCertSuccess(true);
-        onRefresh({ cert_type: newCert } as Partial<Listing>);
-        dispatchRefresh({ cert_type: newCert });
-        setTimeout(() => setCertSuccess(false), 3000);
-      } else {
-        setCurrentCert(prevCert);
-        const data = await res.json();
-        setError(data.error || 'Failed to update designation');
-      }
-    } catch {
-      setCurrentCert(prevCert);
-      setError('Failed to update designation');
-    } finally {
-      setCertSaving(false);
-    }
-  };
 
   // --- Verify artisan ---
   const handleVerify = async (newStatus: 'correct' | 'incorrect') => {
@@ -196,8 +80,6 @@ export function AdminEditView({ listing, onBackToPhotos, onRefresh }: AdminEditV
           setShowSearch(true);
         } else {
           setShowSearch(false);
-          setSearchQuery('');
-          setSearchResults([]);
         }
       }
     } catch {
@@ -211,6 +93,7 @@ export function AdminEditView({ listing, onBackToPhotos, onRefresh }: AdminEditV
   const handleSelectArtisan = async (result: ArtisanSearchResult) => {
     if (fixing) return;
     setFixing(true);
+    setSearchError(null);
     try {
       const res = await fetch(`/api/listing/${listing.id}/fix-artisan`, {
         method: 'POST',
@@ -223,8 +106,6 @@ export function AdminEditView({ listing, onBackToPhotos, onRefresh }: AdminEditV
         setVerified('correct');
         setFixSuccess(true);
         setShowSearch(false);
-        setSearchQuery('');
-        setSearchResults([]);
         const optimistic = {
           artisan_id: result.code,
           artisan_confidence: 'HIGH',
@@ -250,6 +131,7 @@ export function AdminEditView({ listing, onBackToPhotos, onRefresh }: AdminEditV
   const handleSetUnknown = async () => {
     if (fixing) return;
     setFixing(true);
+    setSearchError(null);
     try {
       const res = await fetch(`/api/listing/${listing.id}/fix-artisan`, {
         method: 'POST',
@@ -262,8 +144,6 @@ export function AdminEditView({ listing, onBackToPhotos, onRefresh }: AdminEditV
         setVerified('correct');
         setFixSuccess(true);
         setShowSearch(false);
-        setSearchQuery('');
-        setSearchResults([]);
         const optimistic = {
           artisan_id: 'UNKNOWN',
           artisan_confidence: 'LOW',
@@ -361,36 +241,14 @@ export function AdminEditView({ listing, onBackToPhotos, onRefresh }: AdminEditV
 
           {/* ─── Certification Designation ─── */}
           <div className="pb-4 border-b border-border">
-            <div className="text-[10px] uppercase tracking-wider text-muted mb-2.5">
-              Designation
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              {CERT_OPTIONS.map((opt) => {
-                const isActive = currentCert === opt.value;
-                return (
-                  <button
-                    key={opt.label}
-                    onClick={() => handleCertChange(opt.value)}
-                    disabled={certSaving}
-                    className={`px-3 py-1.5 rounded-full text-[11px] font-medium transition-all ring-1 ${
-                      isActive
-                        ? `${CERT_TIER_COLORS[opt.tier]} ring-2`
-                        : 'bg-surface text-muted ring-border hover:ring-gold/40 hover:text-ink'
-                    } ${certSaving ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-                  >
-                    {opt.label}
-                  </button>
-                );
-              })}
-            </div>
-            {certSuccess && (
-              <div className="mt-2 flex items-center gap-1.5 text-[11px] text-green-500">
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                Designation updated
-              </div>
-            )}
+            <CertPillRow
+              listingId={listing.id}
+              initialCertType={listing.cert_type}
+              onChanged={(cert) => {
+                onRefresh({ cert_type: cert } as Partial<Listing>);
+                dispatchRefresh({ cert_type: cert });
+              }}
+            />
           </div>
 
           {/* ─── Artisan Section ─── */}
@@ -478,117 +336,18 @@ export function AdminEditView({ listing, onBackToPhotos, onRefresh }: AdminEditV
             {/* Search panel */}
             {showSearch && !fixSuccess && (
               <div className="mt-3 p-3 bg-cream/50 border border-border rounded-lg">
-                <div className="text-[10px] uppercase tracking-wider text-muted mb-2">
-                  Search for artisan:
-                </div>
-
-                <div className="relative mb-2">
-                  <input
-                    ref={searchInputRef}
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Name, code, or school..."
-                    className="w-full px-3 py-2.5 text-sm bg-surface border border-border rounded-lg focus:outline-none focus:border-gold/50 text-ink placeholder:text-muted"
-                  />
-                  {searchLoading && (
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                      <div className="w-4 h-4 border-2 border-muted border-t-gold rounded-full animate-spin" />
-                    </div>
-                  )}
-                </div>
-
-                {searchError && (
-                  <p className="text-[10px] text-red-500 mb-2">{searchError}</p>
-                )}
-
-                {/* Results */}
-                {searchResults.length > 0 && (
-                  <div className="max-h-64 overflow-y-auto space-y-1.5 mb-2">
-                    {searchResults.map((result) => (
-                      <button
-                        key={result.code}
-                        onClick={() => handleSelectArtisan(result)}
-                        disabled={fixing}
-                        className={`w-full text-left p-2.5 rounded-lg border border-border hover:border-gold/50 hover:bg-gold/5 transition-colors ${
-                          fixing ? 'opacity-50 cursor-not-allowed' : ''
-                        }`}
-                      >
-                        <div className="flex items-center justify-between mb-0.5">
-                          <span className="font-mono text-xs font-medium text-gold">
-                            {result.code}
-                          </span>
-                          <span className="text-[9px] text-muted uppercase">
-                            {result.type === 'smith' ? 'Smith' : 'Tosogu'}
-                          </span>
-                        </div>
-                        <div className="text-xs text-ink">
-                          {result.name_kanji && (
-                            <span className="font-jp mr-1">{result.name_kanji}</span>
-                          )}
-                          {result.name_romaji && (
-                            <span>{result.name_romaji}</span>
-                          )}
-                          {result.generation && (
-                            <span className="text-muted ml-1">({result.generation})</span>
-                          )}
-                        </div>
-                        {(result.school || result.province || result.era) && (
-                          <div className="text-[10px] text-muted mt-0.5">
-                            {[result.school, result.province, result.era].filter(Boolean).join(' · ')}
-                          </div>
-                        )}
-                        {(result.juyo_count > 0 || result.tokuju_count > 0) && (
-                          <div className="text-[10px] text-muted mt-0.5">
-                            {result.tokuju_count > 0 && `${result.tokuju_count} Tokuju`}
-                            {result.tokuju_count > 0 && result.juyo_count > 0 && ' · '}
-                            {result.juyo_count > 0 && `${result.juyo_count} Juyo`}
-                          </div>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                )}
-
-                {searchQuery.length >= 2 && !searchLoading && searchResults.length === 0 && !searchError && (
-                  <p className="text-[10px] text-muted text-center py-2">
-                    No artisans found for &quot;{searchQuery}&quot;
-                  </p>
-                )}
-
-                {/* Mark as UNKNOWN */}
-                <div className="pt-2 mt-2 border-t border-border/50">
-                  <button
-                    onClick={handleSetUnknown}
-                    disabled={fixing}
-                    className={`w-full text-left p-2.5 rounded-lg border border-dashed border-muted/40 hover:border-gold/50 hover:bg-gold/5 transition-colors ${
-                      fixing ? 'opacity-50 cursor-not-allowed' : ''
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="text-[11px] font-medium text-muted">?</span>
-                      <span className="text-[11px] text-muted">
-                        Mark as <span className="font-mono font-medium">UNKNOWN</span>
-                      </span>
-                    </div>
-                    <p className="text-[9px] text-muted/70 mt-0.5 ml-5">
-                      Flag for later identification
-                    </p>
-                  </button>
-                </div>
-
-                {/* Cancel */}
-                <button
-                  onClick={() => {
+                <ArtisanSearchPanel
+                  onSelect={handleSelectArtisan}
+                  onSetUnknown={handleSetUnknown}
+                  onCancel={() => {
                     setShowSearch(false);
-                    setSearchQuery('');
-                    setSearchResults([]);
                     setSearchError(null);
                   }}
-                  className="mt-2 w-full py-1.5 text-[11px] text-muted hover:text-ink transition-colors"
-                >
-                  Cancel search
-                </button>
+                  disabled={fixing}
+                  successMessage={fixSuccess ? 'Artisan updated' : null}
+                  errorMessage={searchError}
+                  autoFocus
+                />
               </div>
             )}
           </div>
