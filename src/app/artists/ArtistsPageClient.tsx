@@ -158,25 +158,44 @@ export function ArtistsPageClient({
     }
   }, []);
 
-  // On mount, read the browser URL to recover sort/filter state that may have
-  // been set via replaceState (which Next.js RSC cache doesn't see on back-nav).
-  useEffect(() => {
+  // Parse current browser URL into a Filters object.
+  const parseUrlFilters = useCallback((): Filters => {
     const url = new URLSearchParams(window.location.search);
-    const urlType = url.get('type') === 'tosogu' ? 'tosogu' as const : 'smith' as const;
-    const urlSort = (['elite_factor', 'provenance_factor', 'name', 'total_items', 'for_sale'] as const)
-      .find(s => s === url.get('sort')) ?? 'total_items';
-    const urlNotable = url.get('notable') !== 'false';
-    const resolved: Filters = {
-      type: urlType,
+    return {
+      type: url.get('type') === 'tosogu' ? 'tosogu' : 'smith',
       school: url.get('school') || undefined,
       province: url.get('province') || undefined,
       era: url.get('era') || undefined,
       q: url.get('q') || undefined,
-      sort: urlSort,
-      notable: urlNotable,
+      sort: (['elite_factor', 'provenance_factor', 'name', 'total_items', 'for_sale'] as const)
+        .find(s => s === url.get('sort')) ?? 'total_items',
+      notable: url.get('notable') !== 'false',
     };
-    // If the browser URL disagrees with the server-rendered initialFilters,
-    // the URL wins (it was updated via replaceState before we navigated away).
+  }, []);
+
+  // Sync state from browser URL. Called on mount and on popstate (back/forward).
+  const syncFromUrl = useCallback(() => {
+    const resolved = parseUrlFilters();
+    const current = filtersRef.current;
+    const changed = resolved.sort !== current.sort
+      || resolved.type !== current.type
+      || resolved.school !== current.school
+      || resolved.province !== current.province
+      || resolved.era !== current.era
+      || resolved.q !== current.q
+      || resolved.notable !== current.notable;
+    if (changed) {
+      setFilters(resolved);
+      setSearchInput(resolved.q || '');
+      filtersRef.current = resolved;
+      currentPageRef.current = 1;
+      fetchArtists(resolved, 1);
+    }
+  }, [parseUrlFilters, fetchArtists]);
+
+  // On mount: read browser URL (may differ from stale initialFilters on back-nav).
+  useEffect(() => {
+    const resolved = parseUrlFilters();
     const stale = resolved.sort !== initialFilters.sort
       || resolved.type !== initialFilters.type
       || resolved.school !== initialFilters.school
@@ -195,13 +214,16 @@ export function ArtistsPageClient({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Cleanup abort and debounce on unmount
+  // Listen for popstate (browser back/forward) — component may not remount,
+  // so the mount effect alone is insufficient.
   useEffect(() => {
+    window.addEventListener('popstate', syncFromUrl);
     return () => {
+      window.removeEventListener('popstate', syncFromUrl);
       abortRef.current?.abort();
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, []);
+  }, [syncFromUrl]);
 
   const applyFilters = useCallback((newFilters: Filters) => {
     setFilters(newFilters);
