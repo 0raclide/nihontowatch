@@ -158,9 +158,40 @@ export function ArtistsPageClient({
     }
   }, []);
 
-  // Fetch data on mount
+  // On mount, read the browser URL to recover sort/filter state that may have
+  // been set via replaceState (which Next.js RSC cache doesn't see on back-nav).
   useEffect(() => {
-    fetchArtists(initialFilters, initialPage);
+    const url = new URLSearchParams(window.location.search);
+    const urlType = url.get('type') === 'tosogu' ? 'tosogu' as const : 'smith' as const;
+    const urlSort = (['elite_factor', 'provenance_factor', 'name', 'total_items', 'for_sale'] as const)
+      .find(s => s === url.get('sort')) ?? 'total_items';
+    const urlNotable = url.get('notable') !== 'false';
+    const resolved: Filters = {
+      type: urlType,
+      school: url.get('school') || undefined,
+      province: url.get('province') || undefined,
+      era: url.get('era') || undefined,
+      q: url.get('q') || undefined,
+      sort: urlSort,
+      notable: urlNotable,
+    };
+    // If the browser URL disagrees with the server-rendered initialFilters,
+    // the URL wins (it was updated via replaceState before we navigated away).
+    const stale = resolved.sort !== initialFilters.sort
+      || resolved.type !== initialFilters.type
+      || resolved.school !== initialFilters.school
+      || resolved.province !== initialFilters.province
+      || resolved.era !== initialFilters.era
+      || resolved.q !== initialFilters.q
+      || resolved.notable !== initialFilters.notable;
+    if (stale) {
+      setFilters(resolved);
+      setSearchInput(resolved.q || '');
+      filtersRef.current = resolved;
+      fetchArtists(resolved, 1);
+    } else {
+      fetchArtists(initialFilters, initialPage);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
