@@ -143,7 +143,7 @@ export function GlossaryTerm({ entry, children }: GlossaryTermProps) {
         ref={termRef}
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="text-gold font-medium hover:text-gold-light cursor-pointer transition-colors"
+        className="underline decoration-dotted decoration-gold/40 underline-offset-2 hover:decoration-gold cursor-pointer transition-colors"
         aria-expanded={isOpen}
         aria-haspopup="true"
       >
