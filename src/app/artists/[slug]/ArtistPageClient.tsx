@@ -507,7 +507,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
         ═══════════════════════════════════════════════════════════════════ */}
         {profile?.profile_md && (
           <section>
-            <SectionHeader id="biography" title="Biography" className="mb-7" />
+            <SectionHeader id="overview" title="Overview" className="mb-7" />
             <Biography markdown={profile.profile_md} />
           </section>
         )}
