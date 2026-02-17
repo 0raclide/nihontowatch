@@ -60,7 +60,11 @@ export function buildTermMatcher(): RegExp {
       // Match with or without hyphens, case insensitive
       // e.g., "ko-itame" also matches "ko itame" or "koitame"
       const flexible = escaped.replace(/-/g, '[- ]?');
-      return flexible;
+      // Match macron variants: o↔ō, u↔ū
+      const withMacrons = flexible
+        .replace(/o/gi, '[oō]')
+        .replace(/u/gi, '[uū]');
+      return withMacrons;
     });
 
   // Build regex WITHOUT word boundaries - we'll check boundaries manually
