@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useCallback, useRef, useEffect, type SyntheticEvent } from 'react';
+import { useState, useCallback, useRef, useEffect, startTransition, type SyntheticEvent } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import type { ArtistDirectoryEntry, DirectoryFacets } from '@/lib/supabase/yuhinkai';
 import { getArtisanDisplayParts } from '@/lib/artisan/displayName';
 import { eraToBroadPeriod } from '@/lib/artisan/eraPeriods';
@@ -72,6 +73,7 @@ export function ArtistsPageClient({
   const [searchDrawerOpen, setSearchDrawerOpen] = useState(false);
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
   const { openNavDrawer } = useMobileUI();
+  const router = useRouter();
   const drawerSearchRef = useRef<HTMLInputElement>(null);
 
   // Build URL search string from filters (no page param — infinite scroll)
@@ -87,15 +89,16 @@ export function ArtistsPageClient({
     return p.toString();
   }, []);
 
-  // Update URL without navigation (keeps it shareable).
-  // Uses native History.prototype.replaceState to bypass Next.js's monkey-patched
-  // version, which would otherwise notify the router and re-trigger the Suspense
-  // boundary from loading.tsx — unmounting the component and destroying client state.
+  // Update URL via Next.js router so it tracks the change for back-navigation.
+  // Wrapped in startTransition to prevent the Suspense boundary (loading.tsx)
+  // from flashing — the current UI stays visible while the router syncs.
   const updateUrl = useCallback((f: Filters) => {
     const qs = buildQueryString(f);
     const url = `/artists${qs ? `?${qs}` : ''}`;
-    History.prototype.replaceState.call(window.history, window.history.state, '', url);
-  }, [buildQueryString]);
+    startTransition(() => {
+      router.replace(url, { scroll: false });
+    });
+  }, [buildQueryString, router]);
 
   // Client-side fetch — the only data-fetching path (initial load + filter changes + scroll)
   // append=false: replace allArtists (filter/search change), append=true: concat (infinite scroll)
@@ -158,72 +161,19 @@ export function ArtistsPageClient({
     }
   }, []);
 
-  // Parse current browser URL into a Filters object.
-  const parseUrlFilters = useCallback((): Filters => {
-    const url = new URLSearchParams(window.location.search);
-    return {
-      type: url.get('type') === 'tosogu' ? 'tosogu' : 'smith',
-      school: url.get('school') || undefined,
-      province: url.get('province') || undefined,
-      era: url.get('era') || undefined,
-      q: url.get('q') || undefined,
-      sort: (['elite_factor', 'provenance_factor', 'name', 'total_items', 'for_sale'] as const)
-        .find(s => s === url.get('sort')) ?? 'total_items',
-      notable: url.get('notable') !== 'false',
-    };
-  }, []);
-
-  // Sync state from browser URL. Called on mount and on popstate (back/forward).
-  const syncFromUrl = useCallback(() => {
-    const resolved = parseUrlFilters();
-    const current = filtersRef.current;
-    const changed = resolved.sort !== current.sort
-      || resolved.type !== current.type
-      || resolved.school !== current.school
-      || resolved.province !== current.province
-      || resolved.era !== current.era
-      || resolved.q !== current.q
-      || resolved.notable !== current.notable;
-    if (changed) {
-      setFilters(resolved);
-      setSearchInput(resolved.q || '');
-      filtersRef.current = resolved;
-      currentPageRef.current = 1;
-      fetchArtists(resolved, 1);
-    }
-  }, [parseUrlFilters, fetchArtists]);
-
-  // On mount: read browser URL (may differ from stale initialFilters on back-nav).
+  // Fetch data on mount
   useEffect(() => {
-    const resolved = parseUrlFilters();
-    const stale = resolved.sort !== initialFilters.sort
-      || resolved.type !== initialFilters.type
-      || resolved.school !== initialFilters.school
-      || resolved.province !== initialFilters.province
-      || resolved.era !== initialFilters.era
-      || resolved.q !== initialFilters.q
-      || resolved.notable !== initialFilters.notable;
-    if (stale) {
-      setFilters(resolved);
-      setSearchInput(resolved.q || '');
-      filtersRef.current = resolved;
-      fetchArtists(resolved, 1);
-    } else {
-      fetchArtists(initialFilters, initialPage);
-    }
+    fetchArtists(initialFilters, initialPage);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Listen for popstate (browser back/forward) — component may not remount,
-  // so the mount effect alone is insufficient.
+  // Cleanup abort and debounce on unmount
   useEffect(() => {
-    window.addEventListener('popstate', syncFromUrl);
     return () => {
-      window.removeEventListener('popstate', syncFromUrl);
       abortRef.current?.abort();
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [syncFromUrl]);
+  }, []);
 
   const applyFilters = useCallback((newFilters: Filters) => {
     setFilters(newFilters);
