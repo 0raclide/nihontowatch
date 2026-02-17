@@ -17,7 +17,7 @@ import type { ArtisanPageResponse } from '@/app/api/artisan/[code]/route';
 import { getArtisanDisplayParts, getArtisanAlias } from '@/lib/artisan/displayName';
 import { Breadcrumbs } from '@/components/ui/Breadcrumbs';
 import { CatalogueShowcase } from '@/components/artisan/CatalogueShowcase';
-import ReactMarkdown from 'react-markdown';
+import { HighlightedMarkdown } from '@/components/glossary/HighlightedMarkdown';
 
 interface ArtistPageClientProps {
   data: ArtisanPageResponse;
@@ -97,21 +97,20 @@ function StatsBar({ data, availableCount }: { data: ArtisanPageResponse; availab
   );
 }
 
-/** Biography section — renders markdown from artisan_makers.ai_description */
+/** Biography section — renders markdown with glossary-linked technical terms */
 function Biography({ markdown }: { markdown: string }) {
   return (
-    <div className="biography-prose text-[13.5px] text-ink/80 leading-[1.9] font-light
+    <div className="text-[13.5px] text-ink/80 leading-[1.9] font-light
       [&_p]:mb-4 [&_p:last-child]:mb-0
       [&_h2]:text-xs [&_h2]:font-serif [&_h2]:font-light [&_h2]:tracking-wide [&_h2]:text-gold/70 [&_h2]:mb-3 [&_h2]:mt-8 [&_h2:first-child]:mt-0
       [&_h3]:text-xs [&_h3]:font-serif [&_h3]:font-light [&_h3]:tracking-wide [&_h3]:text-gold/70 [&_h3]:mb-3 [&_h3]:mt-6
       [&_strong]:font-medium [&_strong]:text-ink
-      [&_a]:text-gold [&_a]:hover:text-gold-light [&_a]:underline [&_a]:underline-offset-2
       [&_ul]:space-y-1.5 [&_ul]:pl-4 [&_ul]:list-disc [&_ul]:marker:text-gold/50
       [&_ol]:space-y-1.5 [&_ol]:pl-4 [&_ol]:list-decimal [&_ol]:marker:text-gold/50
       [&_li]:text-ink/70
       [&_blockquote]:pl-4 [&_blockquote]:border-l-2 [&_blockquote]:border-gold/30 [&_blockquote]:italic [&_blockquote]:text-ink/60
     ">
-      <ReactMarkdown>{markdown}</ReactMarkdown>
+      <HighlightedMarkdown content={markdown} variant="translation" />
     </div>
   );
 }
