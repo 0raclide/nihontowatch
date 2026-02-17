@@ -5,6 +5,7 @@ import { QuickViewModal } from './QuickViewModal';
 import { QuickViewContent } from './QuickViewContent';
 import { QuickViewMobileSheet } from './QuickViewMobileSheet';
 import { StudySetsumeiView } from './StudySetsumeiView';
+import { AdminEditView } from './AdminEditView';
 import { AlertContextBanner } from './AlertContextBanner';
 import { LazyImage } from '@/components/ui/LazyImage';
 import { useQuickView } from '@/contexts/QuickViewContext';
@@ -33,6 +34,7 @@ export function QuickView() {
     goToPrevious,
     currentIndex,
     listings,
+    refreshCurrentListing,
   } = useQuickView();
 
   const activityTracker = useActivityTrackerOptional();
@@ -45,6 +47,7 @@ export function QuickView() {
   const [failedImageIndices, setFailedImageIndices] = useState<Set<number>>(new Set());
   const [isSheetExpanded, setIsSheetExpanded] = useState(false);
   const [isStudyMode, setIsStudyMode] = useState(false);
+  const [isAdminEditMode, setIsAdminEditMode] = useState(false);
 
   // Track when the sheet state last changed for dwell time calculation
   const sheetStateChangeTimeRef = useRef<number>(Date.now());
@@ -89,6 +92,7 @@ export function QuickView() {
       setFailedImageIndices(new Set());
       setIsSheetExpanded(false);
       setIsStudyMode(false); // Reset study mode when navigating to new listing
+      setIsAdminEditMode(false); // Reset admin edit mode when navigating to new listing
       sheetStateChangeTimeRef.current = Date.now(); // Reset timing for new listing
       if (scrollContainerRef.current) {
         scrollContainerRef.current.scrollTop = 0;
@@ -134,7 +138,7 @@ export function QuickView() {
       scroller.removeEventListener('scroll', onScroll);
       scroller.style.overscrollBehaviorY = '';
     };
-  }, [isStudyMode, isOpen]);
+  }, [isStudyMode, isAdminEditMode, isOpen]);
 
   // Track pinch zoom gestures on images
   const handlePinchZoom = useCallback(
@@ -187,9 +191,20 @@ export function QuickView() {
     setFailedImageIndices(prev => new Set(prev).add(index));
   }, []);
 
-  // Toggle study mode (setsumei reading view)
+  // Toggle study mode (setsumei reading view) — exits admin edit mode
   const toggleStudyMode = useCallback(() => {
-    setIsStudyMode(prev => !prev);
+    setIsStudyMode(prev => {
+      if (!prev) setIsAdminEditMode(false); // entering study → exit edit
+      return !prev;
+    });
+  }, []);
+
+  // Toggle admin edit mode — exits study mode
+  const toggleAdminEditMode = useCallback(() => {
+    setIsAdminEditMode(prev => {
+      if (!prev) setIsStudyMode(false); // entering edit → exit study
+      return !prev;
+    });
   }, []);
 
   // Get all images and validate them to filter out icons/buttons/tiny UI elements
@@ -236,8 +251,16 @@ export function QuickView() {
         {/* Mobile layout (show below lg, hide on lg+) */}
         <div className="lg:hidden h-full flex flex-col" data-testid="quickview-mobile-layout">
           <AlertContextBanner />
-          {/* Study mode or image scroller */}
-          {isStudyMode ? (
+          {/* Admin edit mode, study mode, or image scroller */}
+          {isAdminEditMode ? (
+            <div className="flex-1 min-h-0 overflow-hidden">
+              <AdminEditView
+                listing={currentListing}
+                onBackToPhotos={toggleAdminEditMode}
+                onRefresh={(fields) => refreshCurrentListing(fields)}
+              />
+            </div>
+          ) : isStudyMode ? (
             <div className="flex-1 min-h-0 overflow-hidden">
               <StudySetsumeiView
                 listing={currentListing as ListingWithEnrichment}
@@ -328,6 +351,8 @@ export function QuickView() {
             currentImageIndex={currentImageIndex}
             isStudyMode={isStudyMode}
             onToggleStudyMode={toggleStudyMode}
+            isAdminEditMode={isAdminEditMode}
+            onToggleAdminEditMode={toggleAdminEditMode}
           />
         </div>
 

@@ -1,0 +1,634 @@
+'use client';
+
+import { useState, useRef, useEffect, useCallback } from 'react';
+import type { Listing } from '@/types';
+import type { ArtisanSearchResult } from '@/app/api/artisan/search/route';
+
+// =============================================================================
+// TYPES
+// =============================================================================
+
+interface AdminEditViewProps {
+  listing: Listing;
+  onBackToPhotos: () => void;
+  onRefresh: (optimisticFields?: Partial<Listing>) => void;
+}
+
+// Cert options for the pill row (duplicated from ArtisanTooltip to avoid cross-dependency)
+const CERT_OPTIONS: { value: string | null; label: string; tier: string }[] = [
+  { value: 'Tokuju', label: 'Tokuju', tier: 'tokuju' },
+  { value: 'Juyo', label: 'Juyo', tier: 'juyo' },
+  { value: 'TokuHozon', label: 'Tokuho', tier: 'tokuho' },
+  { value: 'Hozon', label: 'Hozon', tier: 'hozon' },
+  { value: 'juyo_bijutsuhin', label: 'Jubi', tier: 'jubi' },
+  { value: 'TokuKicho', label: 'TokuKicho', tier: 'tokuho' },
+  { value: null, label: 'None', tier: 'none' },
+];
+
+const CERT_TIER_COLORS: Record<string, string> = {
+  tokuju: 'bg-tokuju/20 text-tokuju ring-tokuju/50',
+  jubi: 'bg-jubi/20 text-jubi ring-jubi/50',
+  juyo: 'bg-juyo/20 text-juyo ring-juyo/50',
+  tokuho: 'bg-toku-hozon/20 text-toku-hozon ring-toku-hozon/50',
+  hozon: 'bg-hozon/20 text-hozon ring-hozon/50',
+  none: 'bg-muted/20 text-muted ring-muted/50',
+};
+
+// Normalize cert_type from DB to the canonical value used in CERT_OPTIONS
+function normalizeCertValue(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  const map: Record<string, string> = {
+    tokubetsu_juyo: 'Tokuju', tokuju: 'Tokuju', Tokuju: 'Tokuju',
+    juyo: 'Juyo', Juyo: 'Juyo',
+    tokubetsu_hozon: 'TokuHozon', TokuHozon: 'TokuHozon',
+    hozon: 'Hozon', Hozon: 'Hozon',
+    juyo_bijutsuhin: 'juyo_bijutsuhin', JuyoBijutsuhin: 'juyo_bijutsuhin', 'Juyo Bijutsuhin': 'juyo_bijutsuhin',
+    TokuKicho: 'TokuKicho',
+    nbthk: 'Hozon', nthk: 'Hozon',
+  };
+  return map[raw] ?? raw;
+}
+
+// =============================================================================
+// COMPONENT
+// =============================================================================
+
+export function AdminEditView({ listing, onBackToPhotos, onRefresh }: AdminEditViewProps) {
+  // --- Cert state ---
+  const [currentCert, setCurrentCert] = useState<string | null>(normalizeCertValue(listing.cert_type));
+  const [certSaving, setCertSaving] = useState(false);
+  const [certSuccess, setCertSuccess] = useState(false);
+
+  // --- Artisan state ---
+  const [artisanId, setArtisanId] = useState(listing.artisan_id || '');
+  const [confidence, setConfidence] = useState<'HIGH' | 'MEDIUM' | 'LOW'>(
+    (listing.artisan_confidence as 'HIGH' | 'MEDIUM' | 'LOW') || 'LOW'
+  );
+  const [verified, setVerified] = useState<'correct' | 'incorrect' | null>(
+    (listing.artisan_verified as 'correct' | 'incorrect' | null) ?? null
+  );
+  const [verifying, setVerifying] = useState(false);
+  const hasArtisan = !!artisanId && artisanId !== 'UNKNOWN';
+
+  // --- Search state ---
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<ArtisanSearchResult[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [fixing, setFixing] = useState(false);
+  const [fixSuccess, setFixSuccess] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // --- Hide state ---
+  const [localHidden, setLocalHidden] = useState(listing.admin_hidden ?? false);
+
+  // --- Error ---
+  const [error, setError] = useState<string | null>(null);
+
+  // Sync state when listing changes
+  useEffect(() => {
+    setCurrentCert(normalizeCertValue(listing.cert_type));
+    setArtisanId(listing.artisan_id || '');
+    setConfidence((listing.artisan_confidence as 'HIGH' | 'MEDIUM' | 'LOW') || 'LOW');
+    setVerified((listing.artisan_verified as 'correct' | 'incorrect' | null) ?? null);
+    setLocalHidden(listing.admin_hidden ?? false);
+    setShowSearch(false);
+    setSearchQuery('');
+    setSearchResults([]);
+    setFixSuccess(false);
+    setCertSuccess(false);
+    setError(null);
+  }, [listing.id]);
+
+  // Focus search input when search opens
+  useEffect(() => {
+    if (showSearch && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [showSearch]);
+
+  // Debounced search
+  useEffect(() => {
+    if (!searchQuery || searchQuery.length < 2) {
+      setSearchResults([]);
+      setSearchError(null);
+      return;
+    }
+
+    const timeout = setTimeout(async () => {
+      setSearchLoading(true);
+      setSearchError(null);
+      try {
+        const res = await fetch(`/api/artisan/search?q=${encodeURIComponent(searchQuery)}&limit=10`);
+        if (res.ok) {
+          const data = await res.json();
+          setSearchResults(data.results || []);
+        } else {
+          const data = await res.json();
+          setSearchError(data.error || 'Search failed');
+          setSearchResults([]);
+        }
+      } catch {
+        setSearchError('Search failed');
+        setSearchResults([]);
+      } finally {
+        setSearchLoading(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timeout);
+  }, [searchQuery]);
+
+  // Helper to dispatch listing-refreshed event
+  const dispatchRefresh = useCallback((fields: Record<string, unknown>) => {
+    window.dispatchEvent(new CustomEvent('listing-refreshed', {
+      detail: { id: listing.id, ...fields },
+    }));
+  }, [listing.id]);
+
+  // --- Cert change ---
+  const handleCertChange = async (newCert: string | null) => {
+    if (certSaving || newCert === currentCert) return;
+    setCertSaving(true);
+    setCertSuccess(false);
+    const prevCert = currentCert;
+    setCurrentCert(newCert);
+
+    try {
+      const res = await fetch(`/api/listing/${listing.id}/fix-cert`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cert_type: newCert }),
+      });
+      if (res.ok) {
+        setCertSuccess(true);
+        onRefresh({ cert_type: newCert } as Partial<Listing>);
+        dispatchRefresh({ cert_type: newCert });
+        setTimeout(() => setCertSuccess(false), 3000);
+      } else {
+        setCurrentCert(prevCert);
+        const data = await res.json();
+        setError(data.error || 'Failed to update designation');
+      }
+    } catch {
+      setCurrentCert(prevCert);
+      setError('Failed to update designation');
+    } finally {
+      setCertSaving(false);
+    }
+  };
+
+  // --- Verify artisan ---
+  const handleVerify = async (newStatus: 'correct' | 'incorrect') => {
+    if (verifying) return;
+    const status = verified === newStatus ? null : newStatus;
+    setVerifying(true);
+    try {
+      const res = await fetch(`/api/listing/${listing.id}/verify-artisan`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ verified: status }),
+      });
+      if (res.ok) {
+        setVerified(status);
+        if (status === 'incorrect') {
+          setShowSearch(true);
+        } else {
+          setShowSearch(false);
+          setSearchQuery('');
+          setSearchResults([]);
+        }
+      }
+    } catch {
+      // silent
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  // --- Select artisan from search ---
+  const handleSelectArtisan = async (result: ArtisanSearchResult) => {
+    if (fixing) return;
+    setFixing(true);
+    try {
+      const res = await fetch(`/api/listing/${listing.id}/fix-artisan`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ artisan_id: result.code, confidence: 'HIGH' }),
+      });
+      if (res.ok) {
+        setArtisanId(result.code);
+        setConfidence('HIGH');
+        setVerified('correct');
+        setFixSuccess(true);
+        setShowSearch(false);
+        setSearchQuery('');
+        setSearchResults([]);
+        const optimistic = {
+          artisan_id: result.code,
+          artisan_confidence: 'HIGH',
+          artisan_method: 'ADMIN_CORRECTION',
+          artisan_verified: 'correct',
+          artisan_display_name: result.name_romaji || result.code,
+        };
+        onRefresh(optimistic as Partial<Listing>);
+        dispatchRefresh(optimistic);
+        setTimeout(() => setFixSuccess(false), 3000);
+      } else {
+        const data = await res.json();
+        setSearchError(data.error || 'Failed to update artisan');
+      }
+    } catch {
+      setSearchError('Failed to update artisan');
+    } finally {
+      setFixing(false);
+    }
+  };
+
+  // --- Mark as UNKNOWN ---
+  const handleSetUnknown = async () => {
+    if (fixing) return;
+    setFixing(true);
+    try {
+      const res = await fetch(`/api/listing/${listing.id}/fix-artisan`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ artisan_id: 'UNKNOWN', confidence: 'LOW' }),
+      });
+      if (res.ok) {
+        setArtisanId('UNKNOWN');
+        setConfidence('LOW');
+        setVerified('correct');
+        setFixSuccess(true);
+        setShowSearch(false);
+        setSearchQuery('');
+        setSearchResults([]);
+        const optimistic = {
+          artisan_id: 'UNKNOWN',
+          artisan_confidence: 'LOW',
+          artisan_method: 'ADMIN_CORRECTION',
+          artisan_verified: 'correct',
+          artisan_display_name: 'Unlisted artist',
+        };
+        onRefresh(optimistic as Partial<Listing>);
+        dispatchRefresh(optimistic);
+        setTimeout(() => setFixSuccess(false), 3000);
+      } else {
+        const data = await res.json();
+        setSearchError(data.error || 'Failed to mark as unknown');
+      }
+    } catch {
+      setSearchError('Failed to mark as unknown');
+    } finally {
+      setFixing(false);
+    }
+  };
+
+  // --- Toggle hide ---
+  const handleToggleHidden = async () => {
+    const newHidden = !localHidden;
+    const action = newHidden ? 'hide' : 'unhide';
+    if (!window.confirm(`Are you sure you want to ${action} this listing?`)) return;
+
+    setLocalHidden(newHidden);
+    try {
+      const res = await fetch(`/api/listing/${listing.id}/hide`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ hidden: newHidden }),
+      });
+      if (res.ok) {
+        onRefresh({ admin_hidden: newHidden } as Partial<Listing>);
+        dispatchRefresh({ admin_hidden: newHidden });
+      } else {
+        setLocalHidden(!newHidden); // revert
+      }
+    } catch {
+      setLocalHidden(!newHidden); // revert
+    }
+  };
+
+  // Confidence badge color
+  const confidenceColor = hasArtisan ? ({
+    HIGH: 'text-artisan-high',
+    MEDIUM: 'text-artisan-medium',
+    LOW: 'text-artisan-low',
+  } as Record<string, string>)[confidence] || 'text-muted' : 'text-muted';
+
+  return (
+    <div className="h-full flex flex-col bg-linen" data-testid="admin-edit-view">
+      {/* Sticky header — matches StudySetsumeiView pattern */}
+      <div className="px-4 py-3 border-b border-gold/20 bg-cream/80 backdrop-blur-sm sticky top-0 z-10">
+        <div className="flex items-center justify-between">
+          <h2 className="text-[12px] uppercase tracking-wider text-gold font-semibold">
+            Admin Edit
+          </h2>
+          <button
+            onClick={onBackToPhotos}
+            className="flex items-center gap-1.5 text-[12px] text-gold hover:text-gold-light transition-colors font-medium"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            View Photos
+          </button>
+        </div>
+      </div>
+
+      {/* Scrollable content */}
+      <div className="flex-1 overflow-y-auto overscroll-contain">
+        <div className="px-4 py-4 space-y-4">
+
+          {/* Error banner */}
+          {error && (
+            <div className="py-2 px-3 bg-red-500/10 border border-red-500/30 rounded text-xs text-red-500">
+              {error}
+            </div>
+          )}
+
+          {/* Hidden status banner */}
+          {localHidden && (
+            <div className="py-2 px-3 bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700 rounded-lg flex items-center gap-2">
+              <svg className="w-4 h-4 text-red-600 dark:text-red-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+              </svg>
+              <span className="text-xs font-medium text-red-700 dark:text-red-400">
+                This listing is hidden from public views
+              </span>
+            </div>
+          )}
+
+          {/* ─── Certification Designation ─── */}
+          <div className="pb-4 border-b border-border">
+            <div className="text-[10px] uppercase tracking-wider text-muted mb-2.5">
+              Designation
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {CERT_OPTIONS.map((opt) => {
+                const isActive = currentCert === opt.value;
+                return (
+                  <button
+                    key={opt.label}
+                    onClick={() => handleCertChange(opt.value)}
+                    disabled={certSaving}
+                    className={`px-3 py-1.5 rounded-full text-[11px] font-medium transition-all ring-1 ${
+                      isActive
+                        ? `${CERT_TIER_COLORS[opt.tier]} ring-2`
+                        : 'bg-surface text-muted ring-border hover:ring-gold/40 hover:text-ink'
+                    } ${certSaving ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                  >
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
+            {certSuccess && (
+              <div className="mt-2 flex items-center gap-1.5 text-[11px] text-green-500">
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                Designation updated
+              </div>
+            )}
+          </div>
+
+          {/* ─── Artisan Section ─── */}
+          <div className="pb-4 border-b border-border">
+            <div className="text-[10px] uppercase tracking-wider text-muted mb-2.5">
+              Artisan
+            </div>
+
+            {/* Current artisan info */}
+            {hasArtisan ? (
+              <div className="mb-3 p-3 bg-cream/50 border border-border rounded-lg">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="font-mono text-sm font-semibold text-ink">
+                    {listing.artisan_display_name || artisanId}
+                  </span>
+                  <span className={`text-[10px] font-medium ${confidenceColor}`}>
+                    {confidence}
+                  </span>
+                </div>
+                <div className="text-[10px] font-mono text-muted">
+                  {artisanId}
+                </div>
+              </div>
+            ) : (
+              <p className="text-xs text-muted mb-3">No artisan assigned</p>
+            )}
+
+            {/* Verify buttons */}
+            {(hasArtisan || artisanId === 'UNKNOWN') && (
+              <div className="flex gap-2 mb-3">
+                <button
+                  onClick={() => handleVerify('correct')}
+                  disabled={verifying}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium transition-colors ${
+                    verified === 'correct'
+                      ? 'bg-green-500/20 text-green-600 dark:text-green-400 border border-green-500/50'
+                      : 'bg-surface border border-border text-muted hover:text-ink hover:border-green-500/50'
+                  } ${verifying ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  Correct
+                </button>
+                <button
+                  onClick={() => handleVerify('incorrect')}
+                  disabled={verifying}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium transition-colors ${
+                    verified === 'incorrect'
+                      ? 'bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500/50'
+                      : 'bg-surface border border-border text-muted hover:text-ink hover:border-red-500/50'
+                  } ${verifying ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  Incorrect
+                </button>
+              </div>
+            )}
+
+            {/* Success message */}
+            {fixSuccess && (
+              <div className="mb-3 py-2 px-3 bg-green-500/10 border border-green-500/30 rounded-lg text-xs text-green-500 flex items-center gap-2">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                Artisan updated
+              </div>
+            )}
+
+            {/* Search / Reassign button */}
+            {!showSearch && !fixSuccess && (
+              <button
+                onClick={() => setShowSearch(true)}
+                className="w-full flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-medium bg-surface border border-border text-muted hover:text-ink hover:border-gold/50 transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                {hasArtisan ? 'Reassign Artisan' : 'Search & Assign'}
+              </button>
+            )}
+
+            {/* Search panel */}
+            {showSearch && !fixSuccess && (
+              <div className="mt-3 p-3 bg-cream/50 border border-border rounded-lg">
+                <div className="text-[10px] uppercase tracking-wider text-muted mb-2">
+                  Search for artisan:
+                </div>
+
+                <div className="relative mb-2">
+                  <input
+                    ref={searchInputRef}
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Name, code, or school..."
+                    className="w-full px-3 py-2.5 text-sm bg-surface border border-border rounded-lg focus:outline-none focus:border-gold/50 text-ink placeholder:text-muted"
+                  />
+                  {searchLoading && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      <div className="w-4 h-4 border-2 border-muted border-t-gold rounded-full animate-spin" />
+                    </div>
+                  )}
+                </div>
+
+                {searchError && (
+                  <p className="text-[10px] text-red-500 mb-2">{searchError}</p>
+                )}
+
+                {/* Results */}
+                {searchResults.length > 0 && (
+                  <div className="max-h-64 overflow-y-auto space-y-1.5 mb-2">
+                    {searchResults.map((result) => (
+                      <button
+                        key={result.code}
+                        onClick={() => handleSelectArtisan(result)}
+                        disabled={fixing}
+                        className={`w-full text-left p-2.5 rounded-lg border border-border hover:border-gold/50 hover:bg-gold/5 transition-colors ${
+                          fixing ? 'opacity-50 cursor-not-allowed' : ''
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-0.5">
+                          <span className="font-mono text-xs font-medium text-gold">
+                            {result.code}
+                          </span>
+                          <span className="text-[9px] text-muted uppercase">
+                            {result.type === 'smith' ? 'Smith' : 'Tosogu'}
+                          </span>
+                        </div>
+                        <div className="text-xs text-ink">
+                          {result.name_kanji && (
+                            <span className="font-jp mr-1">{result.name_kanji}</span>
+                          )}
+                          {result.name_romaji && (
+                            <span>{result.name_romaji}</span>
+                          )}
+                          {result.generation && (
+                            <span className="text-muted ml-1">({result.generation})</span>
+                          )}
+                        </div>
+                        {(result.school || result.province || result.era) && (
+                          <div className="text-[10px] text-muted mt-0.5">
+                            {[result.school, result.province, result.era].filter(Boolean).join(' · ')}
+                          </div>
+                        )}
+                        {(result.juyo_count > 0 || result.tokuju_count > 0) && (
+                          <div className="text-[10px] text-muted mt-0.5">
+                            {result.tokuju_count > 0 && `${result.tokuju_count} Tokuju`}
+                            {result.tokuju_count > 0 && result.juyo_count > 0 && ' · '}
+                            {result.juyo_count > 0 && `${result.juyo_count} Juyo`}
+                          </div>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {searchQuery.length >= 2 && !searchLoading && searchResults.length === 0 && !searchError && (
+                  <p className="text-[10px] text-muted text-center py-2">
+                    No artisans found for &quot;{searchQuery}&quot;
+                  </p>
+                )}
+
+                {/* Mark as UNKNOWN */}
+                <div className="pt-2 mt-2 border-t border-border/50">
+                  <button
+                    onClick={handleSetUnknown}
+                    disabled={fixing}
+                    className={`w-full text-left p-2.5 rounded-lg border border-dashed border-muted/40 hover:border-gold/50 hover:bg-gold/5 transition-colors ${
+                      fixing ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] font-medium text-muted">?</span>
+                      <span className="text-[11px] text-muted">
+                        Mark as <span className="font-mono font-medium">UNKNOWN</span>
+                      </span>
+                    </div>
+                    <p className="text-[9px] text-muted/70 mt-0.5 ml-5">
+                      Flag for later identification
+                    </p>
+                  </button>
+                </div>
+
+                {/* Cancel */}
+                <button
+                  onClick={() => {
+                    setShowSearch(false);
+                    setSearchQuery('');
+                    setSearchResults([]);
+                    setSearchError(null);
+                  }}
+                  className="mt-2 w-full py-1.5 text-[11px] text-muted hover:text-ink transition-colors"
+                >
+                  Cancel search
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* ─── Hide / Unhide ─── */}
+          <div>
+            <button
+              onClick={handleToggleHidden}
+              className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-medium transition-colors ${
+                localHidden
+                  ? 'bg-surface border border-green-500/30 text-green-600 hover:bg-green-500/10 dark:text-green-400'
+                  : 'bg-surface border border-red-500/30 text-red-600 hover:bg-red-500/10 dark:text-red-400'
+              }`}
+            >
+              {localHidden ? (
+                <>
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                  Unhide Listing
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                  </svg>
+                  Hide Listing
+                </>
+              )}
+            </button>
+          </div>
+
+        </div>
+
+        {/* Bottom safe area padding */}
+        <div className="h-4" />
+      </div>
+    </div>
+  );
+}
+
+export default AdminEditView;
