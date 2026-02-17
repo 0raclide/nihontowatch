@@ -269,7 +269,6 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
   const sections = useMemo(() => {
     const s: Array<{ id: string; label: string }> = [];
     s.push({ id: 'overview', label: 'Overview' });
-    if (profile?.profile_md) s.push({ id: 'biography', label: 'Biography' });
     if (data.catalogueEntries?.length) s.push({ id: 'catalogue', label: 'Catalogue' });
     if (certifications.total_items > 0) s.push({ id: 'certifications', label: 'Designations' });
     if (denraiGrouped.length > 0) s.push({ id: 'provenance', label: 'Provenance' });
@@ -280,7 +279,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
     if (lineage.teacher || lineage.students.length > 0) s.push({ id: 'lineage', label: 'Lineage' });
     if (related.length > 0) s.push({ id: 'related', label: 'School' });
     return s;
-  }, [entity.entity_type, profile, certifications.total_items, data.catalogueEntries, hasFormStats, hasMeiStats, listingsExist, soldListingsExist, lineage, related, denraiGrouped]);
+  }, [entity.entity_type, certifications.total_items, data.catalogueEntries, hasFormStats, hasMeiStats, listingsExist, soldListingsExist, lineage, related, denraiGrouped]);
 
   const fujishiroLabel = entity.fujishiro ? FUJISHIRO_LABELS[entity.fujishiro] : null;
 
