@@ -609,6 +609,16 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
         </section>
 
         {/* ═══════════════════════════════════════════════════════════════════
+            BIOGRAPHY — AI-generated profile from setsumei analysis
+        ═══════════════════════════════════════════════════════════════════ */}
+        {profile?.profile_md && (
+          <section>
+            <SectionHeader id="biography" title="Biography" className="mb-7" />
+            <Biography markdown={profile.profile_md} hook={profile.hook} />
+          </section>
+        )}
+
+        {/* ═══════════════════════════════════════════════════════════════════
             PUBLISHED WORKS — Catalogue showcase (lead with the showpiece)
         ═══════════════════════════════════════════════════════════════════ */}
         {data.catalogueEntries && data.catalogueEntries.length > 0 && (
