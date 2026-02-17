@@ -6,6 +6,7 @@ import {
   getSmithEntity,
   getTosoguMaker,
   getArtistProfile,
+  getAiDescription,
   getStudents,
   getRelatedArtisans,
   getElitePercentile,
@@ -52,9 +53,10 @@ async function getArtistData(code: string): Promise<ArtisanPageResponse | null> 
   const provenanceApex = entity.provenance_apex ?? 0;
   const slug = generateArtisanSlug(entity.name_romaji, entityCode);
 
-  const [profile, students, related, elitePercentile, provenancePercentile, tokoTaikanPercentile, teacherStub, denraiResult, heroImage, catalogueEntries] =
+  const [profile, aiDescription, students, related, elitePercentile, provenancePercentile, tokoTaikanPercentile, teacherStub, denraiResult, heroImage, catalogueEntries] =
     await Promise.all([
       getArtistProfile(entityCode),
+      getAiDescription(entityCode),
       getStudents(entityCode, entity.name_romaji),
       getRelatedArtisans(entityCode, entity.school, entityType),
       getElitePercentile(eliteFactor, entityType),
@@ -146,7 +148,9 @@ async function getArtistData(code: string): Promise<ArtisanPageResponse | null> 
           setsumei_count: profile.setsumei_count,
           generated_at: profile.generated_at,
         }
-      : null,
+      : aiDescription
+        ? { profile_md: aiDescription, hook: null, setsumei_count: 0, generated_at: '' }
+        : null,
     stats,
     lineage: {
       teacher: teacherStub

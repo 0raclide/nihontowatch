@@ -145,6 +145,13 @@ function Biography({ markdown, hook }: { markdown: string; hook: string | null }
 
   // Parse markdown sections, removing hook duplication
   const sections = useMemo(() => {
+    const hasHeaders = /^## /m.test(markdown);
+
+    if (!hasHeaders) {
+      // Plain paragraph text (e.g. ai_description from artisan_makers)
+      return [{ title: '', body: markdown.trim() }];
+    }
+
     const parts = markdown.split(/^## /m).filter(Boolean);
     return parts.map((part, i) => {
       const lines = part.split('\n');

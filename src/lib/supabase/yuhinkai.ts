@@ -99,6 +99,17 @@ export interface TosoguMaker {
   provenance_apex: number | null;
 }
 
+export async function getAiDescription(code: string): Promise<string | null> {
+  const { data, error } = await yuhinkaiClient
+    .from('artisan_makers')
+    .select('ai_description')
+    .eq('maker_id', code)
+    .single();
+
+  if (error || !data?.ai_description) return null;
+  return data.ai_description as string;
+}
+
 export async function getArtistProfile(code: string): Promise<ArtistProfile | null> {
   const { data, error } = await yuhinkaiClient
     .from('artist_profiles')
