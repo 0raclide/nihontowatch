@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
 import { extractCodeFromSlug, isBareCode, generateArtisanSlug } from '@/lib/artisan/slugs';
-import { getArtisanDisplayParts } from '@/lib/artisan/displayName';
+import { getArtisanDisplayParts, getArtisanAlias } from '@/lib/artisan/displayName';
 import {
   getSmithEntity,
   getTosoguMaker,
@@ -211,12 +211,14 @@ export async function generateMetadata({ params }: ArtistPageProps): Promise<Met
   const juyo = entity.juyo_count || 0;
   const tokuju = entity.tokuju_count || 0;
 
+  const entityCode = smith ? smith.smith_id : tosogu!.maker_id;
   const { prefix } = getArtisanDisplayParts(name, entity.school);
   const schoolLabel = prefix || entity.school || 'Japanese';
-  const title = `${name} — ${schoolLabel} ${type} | NihontoWatch`;
-  const description = `Comprehensive profile of ${name}${province}, ${entity.era || 'Japanese'} ${type}. ${juyo} Jūyō, ${tokuju} Tokubetsu Jūyō certified works. Certification statistics, biography, and available listings.`;
+  const alias = getArtisanAlias(entityCode);
+  const displayName = alias ? `${name} (${alias})` : name;
+  const title = `${displayName} — ${schoolLabel} ${type} | NihontoWatch`;
+  const description = `Comprehensive profile of ${displayName}${province}, ${entity.era || 'Japanese'} ${type}. ${juyo} Jūyō, ${tokuju} Tokubetsu Jūyō certified works. Certification statistics, biography, and available listings.`;
 
-  const entityCode = smith ? smith.smith_id : tosogu!.maker_id;
   const canonicalSlug = generateArtisanSlug(entity.name_romaji, entityCode);
   const canonical = `${BASE_URL}/artists/${canonicalSlug}`;
   const ogImageUrl = `${BASE_URL}/api/og?artist=${encodeURIComponent(entityCode)}`;
@@ -226,15 +228,15 @@ export async function generateMetadata({ params }: ArtistPageProps): Promise<Met
     description,
     alternates: { canonical },
     openGraph: {
-      title: `${name} — Artist Profile`,
+      title: `${displayName} — Artist Profile`,
       description,
       type: 'profile',
       url: canonical,
-      images: [{ url: ogImageUrl, width: 1200, height: 630, alt: `${name} — ${schoolLabel} ${type}` }],
+      images: [{ url: ogImageUrl, width: 1200, height: 630, alt: `${displayName} — ${schoolLabel} ${type}` }],
     },
     twitter: {
       card: 'summary_large_image',
-      title: `${name} — Artist Profile`,
+      title: `${displayName} — Artist Profile`,
       description,
       images: [ogImageUrl],
     },

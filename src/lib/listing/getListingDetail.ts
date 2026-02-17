@@ -1,6 +1,6 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { getArtisanNames } from '@/lib/supabase/yuhinkai';
-import { getArtisanDisplayName } from '@/lib/artisan/displayName';
+import { getArtisanDisplayName, getArtisanAlias } from '@/lib/artisan/displayName';
 import { getArtisanTier } from '@/lib/artisan/tier';
 import type { YuhinkaiEnrichment } from '@/types';
 
@@ -308,7 +308,7 @@ export async function getListingDetail(
     const artisanNameMap = await getArtisanNames([typedListing.artisan_id]);
     const artisanData = artisanNameMap.get(typedListing.artisan_id);
     if (artisanData) {
-      artisanDisplayName = getArtisanDisplayName(artisanData.name_romaji, artisanData.school);
+      artisanDisplayName = getArtisanAlias(typedListing.artisan_id!) || getArtisanDisplayName(artisanData.name_romaji, artisanData.school);
       artisanTier = getArtisanTier(artisanData);
     }
   }

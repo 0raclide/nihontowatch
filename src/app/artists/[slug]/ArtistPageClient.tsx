@@ -14,7 +14,7 @@ import { SectionJumpNav } from '@/components/artisan/SectionJumpNav';
 import { ArtisanListings } from '@/components/artisan/ArtisanListings';
 import { RelatedArtisans } from '@/components/artisan/RelatedArtisans';
 import type { ArtisanPageResponse } from '@/app/api/artisan/[code]/route';
-import { getArtisanDisplayParts } from '@/lib/artisan/displayName';
+import { getArtisanDisplayParts, getArtisanAlias } from '@/lib/artisan/displayName';
 import { Breadcrumbs } from '@/components/ui/Breadcrumbs';
 import { CatalogueShowcase } from '@/components/artisan/CatalogueShowcase';
 
@@ -432,7 +432,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
             <div className="sm:hidden mb-4">
               <div className="w-8 h-[2px] bg-gold/50 mb-3" />
               <h1 className="text-2xl font-serif font-light text-ink leading-[1.1] tracking-tight">
-                {(() => { const dp = getArtisanDisplayParts(entity.name_romaji, entity.school); return <>{dp.prefix && <>{dp.prefix} </>}{dp.name || entity.code}</>; })()}
+                {(() => { const dp = getArtisanDisplayParts(entity.name_romaji, entity.school); const alias = getArtisanAlias(entity.code); return <>{dp.prefix && <>{dp.prefix} </>}{dp.name || entity.code}{alias && <span className="text-ink/40"> ({alias})</span>}</>; })()}
               </h1>
               {entity.name_kanji && (
                 <p className="text-base text-ink/35 font-serif font-light mt-1 tracking-[0.08em]">
@@ -478,7 +478,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
                 <div className="hidden sm:block">
                   <div className="w-10 h-[2px] bg-gold/50 mb-4" />
                   <h1 className="text-[2.5rem] font-serif font-light text-ink leading-[1.1] tracking-tight">
-                    {(() => { const dp = getArtisanDisplayParts(entity.name_romaji, entity.school); return <>{dp.prefix && <>{dp.prefix} </>}{dp.name || entity.code}</>; })()}
+                    {(() => { const dp = getArtisanDisplayParts(entity.name_romaji, entity.school); const alias = getArtisanAlias(entity.code); return <>{dp.prefix && <>{dp.prefix} </>}{dp.name || entity.code}{alias && <span className="text-ink/40"> ({alias})</span>}</>; })()}
                   </h1>
                   {entity.name_kanji && (
                     <p className="text-lg text-ink/35 font-serif font-light mt-1.5 tracking-[0.08em]">

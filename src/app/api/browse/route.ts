@@ -6,7 +6,7 @@ import { parseNumericFilters } from '@/lib/search/numericFilters';
 import { parseSemanticQuery, PROVINCE_VARIANTS } from '@/lib/search/semanticQueryParser';
 import { CACHE, PAGINATION, LISTING_FILTERS } from '@/lib/constants';
 import { getArtisanNames, resolveArtisanCodesFromText } from '@/lib/supabase/yuhinkai';
-import { getArtisanDisplayName } from '@/lib/artisan/displayName';
+import { getArtisanDisplayName, getArtisanAlias } from '@/lib/artisan/displayName';
 import { getArtisanTier } from '@/lib/artisan/tier';
 import { getUserSubscription, getDataDelayCutoff } from '@/lib/subscription/server';
 import { logger } from '@/lib/logger';
@@ -682,7 +682,7 @@ export async function GET(request: NextRequest) {
             const entry = artisanNameMap.get(listing.artisan_id)!;
             return {
               ...listing,
-              artisan_display_name: getArtisanDisplayName(entry.name_romaji, entry.school),
+              artisan_display_name: getArtisanAlias(listing.artisan_id) || getArtisanDisplayName(entry.name_romaji, entry.school),
               artisan_tier: getArtisanTier(entry),
             };
           }

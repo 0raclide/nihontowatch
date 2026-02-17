@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getArtisanNames } from '@/lib/supabase/yuhinkai';
-import { getArtisanDisplayName } from '@/lib/artisan/displayName';
+import { getArtisanDisplayName, getArtisanAlias } from '@/lib/artisan/displayName';
 import { getArtisanTier } from '@/lib/artisan/tier';
 import { logger } from '@/lib/logger';
 
@@ -108,7 +108,7 @@ export async function GET(
             const entry = nameMap.get(listing.artisan_id)!;
             return {
               ...listing,
-              artisan_display_name: getArtisanDisplayName(entry.name_romaji, entry.school),
+              artisan_display_name: getArtisanAlias(listing.artisan_id) || getArtisanDisplayName(entry.name_romaji, entry.school),
               artisan_tier: getArtisanTier(entry),
             };
           }

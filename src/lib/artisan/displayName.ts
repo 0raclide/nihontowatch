@@ -43,6 +43,19 @@ const GEO_PREFIXES = new Set([
 const GENERIC_WORDS = new Set(['province', 'school', 'group', 'branch', 'style']);
 
 // ---------------------------------------------------------------------------
+// Artisan aliases — common names that differ from the Yuhinkai name_romaji
+// ---------------------------------------------------------------------------
+
+const ARTISAN_ALIASES: Record<string, string> = {
+  'KAN1670': 'Kencho',   // Osafune Kanenaga, commonly known as "Kencho Kanenaga"
+};
+
+/** Return the well-known alias for an artisan, or null if none. */
+export function getArtisanAlias(code: string): string | null {
+  return ARTISAN_ALIASES[code] || null;
+}
+
+// ---------------------------------------------------------------------------
 // Core logic
 // ---------------------------------------------------------------------------
 
