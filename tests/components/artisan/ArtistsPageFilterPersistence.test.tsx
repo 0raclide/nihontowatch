@@ -81,13 +81,13 @@ import { ArtistsPageClient } from '@/app/artists/ArtistsPageClient';
 
 const DEFAULT_FILTERS = {
   type: 'smith' as const,
-  sort: 'total_items' as const,
+  sort: 'elite_factor' as const,
   notable: true,
 };
 
-const ELITE_FILTERS = {
+const TOTAL_ITEMS_FILTERS = {
   type: 'smith' as const,
-  sort: 'elite_factor' as const,
+  sort: 'total_items' as const,
   notable: true,
 };
 
@@ -173,7 +173,7 @@ describe('ArtistsPageClient — history.state filter persistence', () => {
     // Trigger sort change via the sidebar callback
     expect(capturedOnFilterChange).toBeTruthy();
     act(() => {
-      capturedOnFilterChange!('sort', 'elite_factor');
+      capturedOnFilterChange!('sort', 'total_items');
     });
 
     // replaceState should have been called with _artistFilters in state
@@ -183,9 +183,9 @@ describe('ArtistsPageClient — history.state filter persistence', () => {
 
     const [stateArg, , urlArg] = lastCall;
     expect(stateArg._artistFilters).toBeDefined();
-    expect(stateArg._artistFilters.sort).toBe('elite_factor');
+    expect(stateArg._artistFilters.sort).toBe('total_items');
     expect(stateArg._artistFilters.type).toBe('smith');
-    expect(urlArg).toBe('/artists?sort=elite_factor');
+    expect(urlArg).toBe('/artists?sort=total_items');
   });
 
   // =========================================================================
@@ -214,9 +214,9 @@ describe('ArtistsPageClient — history.state filter persistence', () => {
   it('restores filters from history.state._artistFilters on mount', async () => {
     // Simulate back-nav: history.state has _artistFilters from a previous visit
     window.history.replaceState(
-      { _artistFilters: ELITE_FILTERS },
+      { _artistFilters: TOTAL_ITEMS_FILTERS },
       '',
-      '/artists?sort=elite_factor'
+      '/artists?sort=total_items'
     );
 
     render(
@@ -225,13 +225,13 @@ describe('ArtistsPageClient — history.state filter persistence', () => {
 
     // The sidebar should reflect the restored sort, not initialFilters
     await waitFor(() => {
-      expect(screen.getByTestId('current-sort').textContent).toBe('elite_factor');
+      expect(screen.getByTestId('current-sort').textContent).toBe('total_items');
     });
 
     // Fetch should have been called with the restored sort
     await waitFor(() => {
       const fetchUrl = fetchMock.mock.calls[0]?.[0] as string;
-      expect(fetchUrl).toContain('sort=elite_factor');
+      expect(fetchUrl).toContain('sort=total_items');
     });
   });
 
@@ -247,12 +247,12 @@ describe('ArtistsPageClient — history.state filter persistence', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByTestId('current-sort').textContent).toBe('total_items');
+      expect(screen.getByTestId('current-sort').textContent).toBe('elite_factor');
     });
 
     await waitFor(() => {
       const fetchUrl = fetchMock.mock.calls[0]?.[0] as string;
-      expect(fetchUrl).toContain('sort=total_items');
+      expect(fetchUrl).toContain('sort=elite_factor');
     });
   });
 
@@ -269,20 +269,20 @@ describe('ArtistsPageClient — history.state filter persistence', () => {
     // Simulate back-navigation: popstate fires with stored filters
     act(() => {
       const event = new PopStateEvent('popstate', {
-        state: { _artistFilters: ELITE_FILTERS },
+        state: { _artistFilters: TOTAL_ITEMS_FILTERS },
       });
       window.dispatchEvent(event);
     });
 
     // Component should sync to the restored filters
     await waitFor(() => {
-      expect(screen.getByTestId('current-sort').textContent).toBe('elite_factor');
+      expect(screen.getByTestId('current-sort').textContent).toBe('total_items');
     });
 
     // Should fetch with restored sort
     await waitFor(() => {
       const lastFetchUrl = fetchMock.mock.calls[fetchMock.mock.calls.length - 1]?.[0] as string;
-      expect(lastFetchUrl).toContain('sort=elite_factor');
+      expect(lastFetchUrl).toContain('sort=total_items');
     });
   });
 
@@ -290,11 +290,11 @@ describe('ArtistsPageClient — history.state filter persistence', () => {
   // GOLDEN TEST 6: popstate without _artistFilters is a no-op
   // =========================================================================
   it('does not crash or reset on popstate without _artistFilters', async () => {
-    // Start with elite_factor via history.state
+    // Start with total_items via history.state
     window.history.replaceState(
-      { _artistFilters: ELITE_FILTERS },
+      { _artistFilters: TOTAL_ITEMS_FILTERS },
       '',
-      '/artists?sort=elite_factor'
+      '/artists?sort=total_items'
     );
 
     render(
@@ -302,7 +302,7 @@ describe('ArtistsPageClient — history.state filter persistence', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByTestId('current-sort').textContent).toBe('elite_factor');
+      expect(screen.getByTestId('current-sort').textContent).toBe('total_items');
     });
 
     const fetchCountBefore = fetchMock.mock.calls.length;
@@ -314,7 +314,7 @@ describe('ArtistsPageClient — history.state filter persistence', () => {
     });
 
     // Should not change sort or trigger a new fetch
-    expect(screen.getByTestId('current-sort').textContent).toBe('elite_factor');
+    expect(screen.getByTestId('current-sort').textContent).toBe('total_items');
     expect(fetchMock.mock.calls.length).toBe(fetchCountBefore);
   });
 
@@ -368,27 +368,27 @@ describe('ArtistsPageClient — history.state filter persistence', () => {
   });
 
   // =========================================================================
-  // GOLDEN TEST 9: Default sort (total_items) omitted from URL
+  // GOLDEN TEST 9: Default sort (elite_factor) omitted from URL
   // =========================================================================
-  it('omits sort param from URL when set to default (total_items)', async () => {
-    // Start with elite_factor
+  it('omits sort param from URL when set to default (elite_factor)', async () => {
+    // Start with total_items
     window.history.replaceState(
-      { _artistFilters: ELITE_FILTERS },
+      { _artistFilters: TOTAL_ITEMS_FILTERS },
       '',
-      '/artists?sort=elite_factor'
+      '/artists?sort=total_items'
     );
 
-    render(<ArtistsPageClient initialFilters={ELITE_FILTERS} initialPage={1} />);
+    render(<ArtistsPageClient initialFilters={TOTAL_ITEMS_FILTERS} initialPage={1} />);
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
 
     // Change back to default sort
-    act(() => { capturedOnFilterChange!('sort', 'total_items'); });
+    act(() => { capturedOnFilterChange!('sort', 'elite_factor'); });
 
     const calls = replaceStateSpy.mock.calls;
     const lastCall = calls[calls.length - 1];
     // URL should be bare /artists (no sort param for default)
     expect(lastCall[2]).toBe('/artists');
     // But history.state should still have the filters
-    expect(lastCall[0]._artistFilters.sort).toBe('total_items');
+    expect(lastCall[0]._artistFilters.sort).toBe('elite_factor');
   });
 });

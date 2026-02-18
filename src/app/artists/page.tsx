@@ -73,7 +73,7 @@ export default async function ArtistsPage({ searchParams }: ArtistsPageProps) {
   const sortParam = getStringParam(params, 'sort');
   const sort = (['elite_factor', 'provenance_factor', 'name', 'total_items', 'for_sale'].includes(sortParam || '')
     ? sortParam as 'elite_factor' | 'provenance_factor' | 'name' | 'total_items' | 'for_sale'
-    : 'total_items');
+    : 'elite_factor');
   const page = Math.max(parseInt(getStringParam(params, 'page') || '1', 10) || 1, 1);
   const notable = getStringParam(params, 'notable') !== 'false';
 

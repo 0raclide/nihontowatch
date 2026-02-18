@@ -88,7 +88,7 @@ export function ArtistsPageClient({
     if (f.province) p.set('province', f.province);
     if (f.era) p.set('era', f.era);
     if (f.q) p.set('q', f.q);
-    if (f.sort !== 'total_items') p.set('sort', f.sort);
+    if (f.sort !== 'elite_factor') p.set('sort', f.sort);
     if (!f.notable) p.set('notable', 'false');
     return p.toString();
   }, []);
@@ -279,7 +279,7 @@ export function ArtistsPageClient({
 
   const clearAllFilters = useCallback(() => {
     setSearchInput('');
-    applyFilters({ type: filtersRef.current.type, sort: 'total_items', notable: true });
+    applyFilters({ type: filtersRef.current.type, sort: 'elite_factor', notable: true });
   }, [applyFilters]);
 
   return (
