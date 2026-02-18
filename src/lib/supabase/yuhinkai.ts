@@ -1454,6 +1454,11 @@ const FLAT_COLLECTIONS = new Set(['Kokuho', 'JuBun']);
 /** JuBun uses _combined.jpg instead of _oshigata.jpg */
 const COMBINED_COLLECTIONS = new Set(['JuBun']);
 
+/** Volumes with poor scan quality — skip during hero image selection */
+const EXCLUDED_VOLUMES: Array<{ collection: string; volume: number }> = [
+  { collection: 'Tokuju', volume: 11 },
+];
+
 /** Image storage is on a separate Supabase project from the database */
 const IMAGE_STORAGE_BASE = process.env.NEXT_PUBLIC_IMAGE_STORAGE_URL
   || 'https://itbhfhyptogxcjbjfzwx.supabase.co';
@@ -1571,6 +1576,10 @@ export async function getArtisanHeroImage(
       if (!catalogRecords || catalogRecords.length === 0) continue;
 
       const record = catalogRecords[0];
+
+      // Skip volumes with poor scan quality
+      if (EXCLUDED_VOLUMES.some(ev => ev.collection === record.collection && ev.volume === record.volume)) continue;
+
       const candidates = buildStoragePaths(
         record.collection,
         record.volume,
