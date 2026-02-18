@@ -49,7 +49,7 @@ export const metadata: Metadata = {
   category: "shopping",
   icons: {
     icon: "/logo-mon.png",
-    apple: "/logo-mon.png",
+    apple: "/icon-180.png",
   },
   openGraph: {
     title: "NihontoWatch | Japanese Sword & Tosogu Marketplace",
@@ -86,7 +86,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${cormorant.variable} ${inter.variable}`} suppressHydrationWarning>
       <head>
-        <meta name="theme-color" content="#121212" />
+        <meta name="theme-color" content="#020610" />
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         {/* JSON-LD Structured Data */}
         <script {...jsonLdScriptProps(organizationJsonLd)} />
