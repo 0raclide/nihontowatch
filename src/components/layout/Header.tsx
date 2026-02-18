@@ -190,18 +190,23 @@ function HeaderContent() {
     }
   }, [showAdminMenu]);
 
-  // Build a search URL that preserves the type param on artist pages
+  // Build a search URL that preserves filter state on artist pages.
+  // Reads from window.location.search (not useSearchParams) because
+  // the /artists sidebar updates the URL via History.prototype.replaceState
+  // which bypasses Next.js — useSearchParams would be stale.
   const buildSearchUrl = useCallback((q?: string) => {
     const params = new URLSearchParams();
     if (q) params.set('q', q);
-    // Preserve type=tosogu on artist pages so the toggle stays sticky
     if (isArtistPage) {
-      const type = searchParams.get('type');
-      if (type) params.set('type', type);
+      const live = new URLSearchParams(window.location.search);
+      for (const key of ['type', 'sort', 'school', 'province', 'era', 'notable']) {
+        const val = live.get(key);
+        if (val) params.set(key, val);
+      }
     }
     const qs = params.toString();
     return `${searchAction}${qs ? `?${qs}` : ''}`;
-  }, [isArtistPage, searchAction, searchParams]);
+  }, [isArtistPage, searchAction]);
 
   const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
