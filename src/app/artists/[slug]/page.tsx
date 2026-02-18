@@ -15,7 +15,7 @@ import {
   getDenraiForArtisan,
   getDenraiGrouped,
   getArtisanDistributions,
-  getArtisanHeroImage,
+  getHeroImageForDetailPage,
   getPublishedCatalogueEntries,
 } from '@/lib/supabase/yuhinkai';
 import { createServiceClient } from '@/lib/supabase/server';
@@ -66,7 +66,7 @@ async function getArtistData(code: string): Promise<ArtisanPageResponse | null> 
         : Promise.resolve(null),
       entity.teacher ? resolveTeacher(entity.teacher) : Promise.resolve(null),
       getDenraiForArtisan(entityCode, entityType),
-      getArtisanHeroImage(entityCode, entityType),
+      getHeroImageForDetailPage(entityCode, entityType),
       getPublishedCatalogueEntries(entityCode, entityType),
     ]);
 

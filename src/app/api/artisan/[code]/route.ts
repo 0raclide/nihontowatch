@@ -245,7 +245,7 @@ export async function GET(
     const slug = generateArtisanSlug(entity.name_romaji, entityCode);
 
     // Fetch all enrichment data in parallel
-    const { getArtisanHeroImage } = await import('@/lib/supabase/yuhinkai');
+    const { getHeroImageForDetailPage } = await import('@/lib/supabase/yuhinkai');
     const [aiDescription, students, related, elitePercentile, provenancePercentile, tokoTaikanPercentile, teacherStub, denraiResult, heroImage, catalogueEntries] =
       await Promise.all([
         getAiDescription(entityCode),
@@ -260,7 +260,7 @@ export async function GET(
           : Promise.resolve(null),
         entity.teacher ? resolveTeacher(entity.teacher) : Promise.resolve(null),
         getDenraiForArtisan(entityCode, entityType),
-        getArtisanHeroImage(entityCode, entityType),
+        getHeroImageForDetailPage(entityCode, entityType),
         getPublishedCatalogueEntries(entityCode, entityType),
       ]);
 
