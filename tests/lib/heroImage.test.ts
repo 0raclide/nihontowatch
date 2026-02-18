@@ -44,14 +44,12 @@ import {
 /**
  * Tests for hero image functions.
  *
- * getHeroImagesFromTable: Queries the pre-computed artisan_hero_images table.
- * Used by the directory AND detail pages (via getHeroImageForDetailPage).
- *
- * getHeroImageForDetailPage: Reads from the pre-computed table, parses URL
- * metadata, and fetches formType. Guarantees directory == detail page images.
+ * getHeroImagesFromTable: Batch query for directory cards (returns URL only).
+ * getHeroImageForDetailPage: Single query for detail page (returns full metadata).
+ * Both read from the same artisan_hero_images table — guaranteed consistency.
  *
  * getArtisanHeroImage: Live computation from gold_values — used only by the
- * pre-computation batch job.
+ * pre-computation batch job (populate_artisan_hero_images SQL function).
  */
 describe('Hero image functions', () => {
   beforeEach(() => {
@@ -100,20 +98,16 @@ describe('Hero image functions', () => {
       expect(result).toBeNull();
     });
 
-    it('parses volume-based URL and returns full ArtisanHeroImage', async () => {
+    it('reads all metadata columns directly from table', async () => {
       queryResults.set('artisan_hero_images', {
-        data: [
-          { code: 'MAS590', image_url: 'https://example.com/storage/v1/object/public/images/Tokuju/5_42_oshigata.jpg' },
-        ],
-        error: null,
-      });
-      // catalog_records query for formType lookup
-      queryResults.set('catalog_records', {
-        data: [{ object_uuid: 'uuid-1' }],
-        error: null,
-      });
-      queryResults.set('gold_values', {
-        data: [{ gold_form_type: 'Katana' }],
+        data: [{
+          image_url: 'https://example.com/storage/v1/object/public/images/Tokuju/5_42_oshigata.jpg',
+          collection: 'Tokuju',
+          volume: 5,
+          item_number: 42,
+          form_type: 'Katana',
+          image_type: 'oshigata',
+        }],
         error: null,
       });
 
@@ -130,10 +124,17 @@ describe('Hero image functions', () => {
     it('returns same imageUrl as getHeroImagesFromTable (directory match)', async () => {
       const url = 'https://example.com/storage/v1/object/public/images/Juyo/3_7_oshigata.jpg';
       queryResults.set('artisan_hero_images', {
-        data: [{ code: 'TOM134', image_url: url }],
+        data: [{
+          code: 'TOM134',
+          image_url: url,
+          collection: 'Juyo',
+          volume: 3,
+          item_number: 7,
+          form_type: null,
+          image_type: 'oshigata',
+        }],
         error: null,
       });
-      queryResults.set('catalog_records', { data: [], error: null });
 
       const detailResult = await getHeroImageForDetailPage('TOM134', 'smith');
       const directoryResult = await getHeroImagesFromTable(['TOM134'], 'smith');

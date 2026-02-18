@@ -761,81 +761,33 @@ export async function getHeroImagesFromTable(
 }
 
 /**
- * Parse an artisan_hero_images URL back into metadata fields.
- * URL formats:
- *   Volume-based: .../images/{collection}/{volume}_{itemNumber}_{imageType}.jpg
- *   Flat (Kokuho/JuBun): .../images/{collection}/{itemNumber}_{imageType}.jpg
- */
-function parseHeroImageUrl(url: string): { collection: string; volume: number; itemNumber: number; imageType: string } | null {
-  // Extract the path after /images/
-  const match = url.match(/\/images\/([^/]+)\/(.+)\.jpg$/);
-  if (!match) return null;
-
-  const collection = match[1];
-  const filename = match[2]; // e.g. "5_42_oshigata" or "123_combined"
-
-  if (FLAT_COLLECTIONS.has(collection)) {
-    // Flat: {itemNumber}_{imageType}
-    const parts = filename.match(/^(\d+)_(.+)$/);
-    if (!parts) return null;
-    return { collection, volume: 0, itemNumber: parseInt(parts[1], 10), imageType: parts[2] };
-  }
-
-  // Volume-based: {volume}_{itemNumber}_{imageType}
-  const parts = filename.match(/^(\d+)_(\d+)_(.+)$/);
-  if (!parts) return null;
-  return { collection, volume: parseInt(parts[1], 10), itemNumber: parseInt(parts[2], 10), imageType: parts[3] };
-}
-
-/**
  * Fetch the hero image for a detail page from the pre-computed table.
- * Parses URL to reconstruct the full ArtisanHeroImage metadata, and does
- * one small query for formType. Guarantees same image as the directory.
+ * Reads all metadata columns directly (collection, volume, item_number,
+ * form_type, image_type) — no URL parsing or extra queries needed.
+ * Guarantees same image as the directory.
  */
 export async function getHeroImageForDetailPage(
   code: string,
   entityType: 'smith' | 'tosogu'
 ): Promise<ArtisanHeroImage | null> {
-  const map = await getHeroImagesFromTable([code], entityType);
-  const imageUrl = map.get(code);
-  if (!imageUrl) return null;
+  const { data, error } = await yuhinkaiClient
+    .from('artisan_hero_images')
+    .select('image_url, collection, volume, item_number, form_type, image_type')
+    .eq('code', code)
+    .eq('entity_type', entityType)
+    .not('image_url', 'is', null)
+    .limit(1);
 
-  const parsed = parseHeroImageUrl(imageUrl);
-  if (!parsed) return null;
+  if (error || !data || data.length === 0) return null;
 
-  // One small query to get formType from gold_values via catalog_records
-  let formType: string | null = null;
-  try {
-    const { data: catRows } = await yuhinkaiClient
-      .from('catalog_records')
-      .select('object_uuid')
-      .eq('collection', parsed.collection)
-      .eq('volume', parsed.volume)
-      .eq('item_number', parsed.itemNumber)
-      .limit(1);
-
-    if (catRows && catRows.length > 0) {
-      const { data: goldRow } = await yuhinkaiClient
-        .from('gold_values')
-        .select('gold_form_type')
-        .eq('object_uuid', catRows[0].object_uuid as string)
-        .limit(1);
-
-      if (goldRow && goldRow.length > 0) {
-        formType = goldRow[0].gold_form_type as string | null;
-      }
-    }
-  } catch {
-    // formType is optional — continue without it
-  }
-
+  const row = data[0];
   return {
-    imageUrl,
-    collection: parsed.collection,
-    volume: parsed.volume,
-    itemNumber: parsed.itemNumber,
-    formType,
-    imageType: parsed.imageType,
+    imageUrl: row.image_url as string,
+    collection: row.collection as string,
+    volume: (row.volume as number) || 0,
+    itemNumber: row.item_number as number,
+    formType: row.form_type as string | null,
+    imageType: row.image_type as string || 'oshigata',
   };
 }
 
