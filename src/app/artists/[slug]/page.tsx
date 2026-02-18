@@ -210,7 +210,7 @@ export async function generateMetadata({ params }: ArtistPageProps): Promise<Met
   const { prefix } = getArtisanDisplayParts(name, entity.school);
   const schoolLabel = prefix || entity.school || 'Japanese';
   const alias = getArtisanAlias(entityCode);
-  const displayName = alias ? `${name} (${alias})` : name;
+  const displayName = alias ? (alias.toLowerCase().includes(name.toLowerCase()) ? alias : `${name} (${alias})`) : name;
   const title = `${displayName} — ${schoolLabel} ${type} | NihontoWatch`;
   const description = `Comprehensive profile of ${displayName}${province}, ${entity.era || 'Japanese'} ${type}. ${juyo} Jūyō, ${tokuju} Tokubetsu Jūyō certified works. Certification statistics, biography, and available listings.`;
 

@@ -47,7 +47,8 @@ const GENERIC_WORDS = new Set(['province', 'school', 'group', 'branch', 'style']
 // ---------------------------------------------------------------------------
 
 const ARTISAN_ALIASES: Record<string, string> = {
-  'KAN1670': 'Kencho',   // Osafune Kanenaga, commonly known as "Kencho Kanenaga"
+  'KAN1670': 'Kencho',              // Osafune Kanenaga, commonly known as "Kencho Kanenaga"
+  'KUN539': 'Shintogo Kunimitsu',   // Soshu Kunimitsu, commonly known as "Shintogo Kunimitsu"
 };
 
 /** Return the well-known alias for an artisan, or null if none. */
