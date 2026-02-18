@@ -246,13 +246,24 @@ export function getEnrichedSchoolName(listing: ListingWithEnrichment): string | 
 
 /**
  * Certification types that actually have NBTHK setsumei (zufu commentary).
- * Only Juyo and Tokubetsu Juyo items receive setsumei from NBTHK.
+ * Juyo-tier items (blades and tosogu) receive setsumei from NBTHK.
  * All setsumei display logic MUST check this before showing translations.
  *
  * This prevents hallucinated setsumei from persisting when a listing's
  * cert_type is corrected away from Juyo/Tokuju.
+ *
+ * IMPORTANT: The database stores 'Tokuju' (not 'Tokubetsu Juyo') and
+ * 'Juyo Tosogu' / 'Tokubetsu Juyo Tosogu' for fittings. All variants
+ * must be listed here. Mirrors SETSUMEI_ELIGIBLE_CERT_TYPES in
+ * Oshi-scrapper/cert_types.py.
  */
-const SETSUMEI_ELIGIBLE_CERTS = ['Juyo', 'Tokubetsu Juyo'];
+const SETSUMEI_ELIGIBLE_CERTS = [
+  'Juyo',
+  'Tokuju',
+  'Tokubetsu Juyo',        // Legacy variant — some older data uses this
+  'Juyo Tosogu',
+  'Tokubetsu Juyo Tosogu',
+];
 
 /**
  * Check if a listing's certification type is eligible for setsumei display.

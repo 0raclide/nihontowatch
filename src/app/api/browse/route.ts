@@ -669,6 +669,8 @@ export async function GET(request: NextRequest) {
         ...listing,
         dealer_earliest_seen_at: listing.dealers?.earliest_listing_at || null,
         sold_data: computeSoldData(listing),
+        // Normalize Supabase relation name to the key expected by hasSetsumeiData/hasVerifiedEnrichment
+        yuhinkai_enrichment: listing.listing_yuhinkai_enrichment?.[0] || null,
       }));
 
       // Enrich listings with artisan display names from Yuhinkai

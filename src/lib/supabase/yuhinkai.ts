@@ -764,7 +764,8 @@ export async function getHeroImagesFromTable(
  * Fetch the hero image for a detail page from the pre-computed table.
  * Reads all metadata columns directly (collection, volume, item_number,
  * form_type, image_type) — no URL parsing or extra queries needed.
- * Guarantees same image as the directory.
+ * Verifies the image exists via HEAD request; falls back to runtime
+ * selection if the pre-computed URL is stale/broken.
  */
 export async function getHeroImageForDetailPage(
   code: string,
@@ -778,17 +779,30 @@ export async function getHeroImageForDetailPage(
     .not('image_url', 'is', null)
     .limit(1);
 
-  if (error || !data || data.length === 0) return null;
+  if (!error && data && data.length > 0) {
+    const row = data[0];
+    const imageUrl = row.image_url as string;
 
-  const row = data[0];
-  return {
-    imageUrl: row.image_url as string,
-    collection: row.collection as string,
-    volume: (row.volume as number) || 0,
-    itemNumber: row.item_number as number,
-    formType: row.form_type as string | null,
-    imageType: row.image_type as string || 'oshigata',
-  };
+    // Verify the pre-computed URL still resolves to a real file
+    try {
+      const head = await fetch(imageUrl, { method: 'HEAD' });
+      if (head.ok) {
+        return {
+          imageUrl,
+          collection: row.collection as string,
+          volume: (row.volume as number) || 0,
+          itemNumber: row.item_number as number,
+          formType: row.form_type as string | null,
+          imageType: row.image_type as string || 'oshigata',
+        };
+      }
+    } catch {
+      // HEAD failed — fall through to runtime selection
+    }
+  }
+
+  // Fallback: runtime selection with per-candidate HEAD verification
+  return getArtisanHeroImage(code, entityType);
 }
 
 /**
