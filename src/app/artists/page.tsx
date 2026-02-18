@@ -88,6 +88,7 @@ export default async function ArtistsPage({ searchParams }: ArtistsPageProps) {
       <script {...jsonLdScriptProps(breadcrumbJsonLd)} />
 
       <ArtistsPageClient
+        key={[type, school, province, era, q, sort, notable].join('|')}
         initialFilters={{ type, school, province, era, q, sort, notable }}
         initialPage={page}
       />
