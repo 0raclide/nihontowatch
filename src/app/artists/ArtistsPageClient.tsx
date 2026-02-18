@@ -261,15 +261,21 @@ export function ArtistsPageClient({
   });
 
   // Debounced search — fires 300ms after user stops typing.
-  // Uses filtersRef.current inside the timeout to always read the LATEST filters,
-  // avoiding stale closures that could reset the type.
+  // Bypasses applyFilters (which calls updateUrl + scrollTo) and calls
+  // fetchArtists directly. URL only updates on Enter (handleSearch) or
+  // filter change (handleFilterChange) — this avoids History.replaceState
+  // side effects from interfering with the fetch during timer callbacks.
   const debouncedSearch = useCallback((value: string) => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       const trimmed = value.trim();
-      applyFilters({ ...filtersRef.current, q: trimmed || undefined });
+      const newFilters = { ...filtersRef.current, q: trimmed || undefined };
+      setFilters(newFilters);
+      filtersRef.current = newFilters;
+      currentPageRef.current = 1;
+      fetchArtists(newFilters, 1, false);
     }, 300);
-  }, [applyFilters]);
+  }, [fetchArtists]);
 
   const handleSearchInput = useCallback((value: string) => {
     setSearchInput(value);

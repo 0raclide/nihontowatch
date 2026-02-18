@@ -310,9 +310,9 @@ describe('ArtistsPageClient — URL-based filter persistence', () => {
   });
 
   // =========================================================================
-  // GOLDEN TEST 7: Search works without triggering navigation
+  // GOLDEN TEST 7: Debounced search fires fetch without URL update
   // =========================================================================
-  it('search triggers client-side fetch, not router navigation', async () => {
+  it('debounced search fires fetch directly (URL updates on Enter only)', async () => {
     render(
       <ArtistsPageClient initialFilters={DEFAULT_FILTERS} initialPage={1} />
     );
@@ -332,11 +332,11 @@ describe('ArtistsPageClient — URL-based filter persistence', () => {
       expect(searchFetch).toBeDefined();
     }, { timeout: 1000 });
 
-    // replaceState should have been called with URL containing q=masamune
+    // Debounced search should NOT update URL (URL updates on Enter/filter change only)
     const searchReplaceCall = replaceStateSpy.mock.calls.find(
       (c: unknown[]) => String(c[2]).includes('q=masamune')
     );
-    expect(searchReplaceCall).toBeDefined();
+    expect(searchReplaceCall).toBeUndefined();
   });
 
   // =========================================================================
