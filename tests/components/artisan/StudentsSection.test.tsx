@@ -48,6 +48,24 @@ vi.mock('@/lib/artisan/displayName', () => ({
   getArtisanAlias: () => null,
 }));
 
+// Mock auth and subscription hooks
+vi.mock('@/lib/auth/AuthContext', () => ({
+  useAuth: () => ({ user: null, isAdmin: false, isLoading: false }),
+}));
+
+vi.mock('@/contexts/SubscriptionContext', () => ({
+  useSubscription: () => ({ requireFeature: () => true }),
+}));
+
+// Mock modals
+vi.mock('@/components/browse/SaveSearchModal', () => ({
+  SaveSearchModal: () => null,
+}));
+
+vi.mock('@/components/auth/LoginModal', () => ({
+  LoginModal: () => null,
+}));
+
 // Suppress fetch calls for listings
 beforeEach(() => {
   global.fetch = vi.fn().mockResolvedValue({

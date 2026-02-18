@@ -18,6 +18,10 @@ import { getArtisanDisplayParts, getArtisanAlias } from '@/lib/artisan/displayNa
 import { Breadcrumbs } from '@/components/ui/Breadcrumbs';
 import { CatalogueShowcase } from '@/components/artisan/CatalogueShowcase';
 import { HighlightedMarkdown } from '@/components/glossary/HighlightedMarkdown';
+import { SaveSearchModal } from '@/components/browse/SaveSearchModal';
+import { LoginModal } from '@/components/auth/LoginModal';
+import { useAuth } from '@/lib/auth/AuthContext';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 
 interface ArtistPageClientProps {
   data: ArtisanPageResponse;
@@ -187,6 +191,10 @@ function ImageLightbox({ src, alt, caption, onClose }: { src: string; alt: strin
 
 export function ArtistPageClient({ data }: ArtistPageClientProps) {
   const { entity, certifications, rankings, profile, stats, lineage, related, denraiGrouped: rawDenraiGrouped, heroImage, provenance: dbProvenance } = data;
+  const { user } = useAuth();
+  const { requireFeature } = useSubscription();
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
   const noisePattern = /^(own(er|ed)\s+(at|by)\s|at\s+time\s+of\s|current\s+owner|listed\s+in\s|formerly\s+(owned|held)\s+by\s|needs\s+research|meibutsu|known\s+as\s|identified\s+with\s|said\s+to\s|reportedly\s|tradition:|thereafter\s|transmitted\s+to\s|later\s+held\s+by\s|presented\s+to\s|bestowed\s+by\s|koshigatani?\s)/i;
   const denraiGrouped = useMemo(() => {
     if (!rawDenraiGrouped) return [];
@@ -488,16 +496,20 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
                 <span aria-hidden>&rarr;</span>
               </Link>
             )}
-            {listings !== null && listings.length === 0 && (
-              <Link
-                href={`/saved-searches?artisan=${encodeURIComponent(entity.code)}`}
+            {listings !== null && (
+              <button
+                onClick={() => {
+                  if (!user) { setShowLoginModal(true); return; }
+                  if (!requireFeature('saved_searches')) return;
+                  setShowSaveModal(true);
+                }}
                 className="inline-flex items-center gap-1.5 text-xs text-ink/40 hover:text-ink/60 transition-colors tracking-wide"
               >
                 <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
                 </svg>
                 Set alert for new listings
-              </Link>
+              </button>
             )}
           </div>
         </section>
@@ -800,6 +812,23 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
           alt={`${heroImage.imageType === 'oshigata' ? 'Oshigata' : 'Image'} — ${entity.name_romaji || entity.code}`}
           caption={`${COLLECTION_LABELS[heroImage.collection] || heroImage.collection} — Vol. ${heroImage.volume}, No. ${heroImage.itemNumber}${heroImage.formType ? ` · ${heroImage.formType}` : ''}`}
           onClose={() => setLightboxOpen(false)}
+        />
+      )}
+
+      {/* Save Search Modal — only mounted when open to avoid stale criteria refs */}
+      {showSaveModal && (
+        <SaveSearchModal
+          isOpen
+          onClose={() => setShowSaveModal(false)}
+          criteria={{ query: entity.code, tab: 'available' }}
+        />
+      )}
+
+      {/* Login Modal */}
+      {showLoginModal && (
+        <LoginModal
+          isOpen
+          onClose={() => setShowLoginModal(false)}
         />
       )}
     </div>
