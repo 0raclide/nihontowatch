@@ -141,6 +141,64 @@ const school = getSchool(listing);
 
 ---
 
+## Artisan Matching & Index (Cross-Project)
+
+### Two Independent Matching Systems
+
+There are **two separate artisan matching systems** across the ecosystem:
+
+| System | Project | Purpose | Targets | Output |
+|--------|---------|---------|---------|--------|
+| **Dealer matcher** | Oshi-scrapper | Match scraped listings to artisans | `listings` table | `artisan_id`, `artisan_confidence` |
+| **Catalog matcher (V7)** | oshi-v2 | Match catalog records to artisans | `catalog_records` table | `artisan_code_v5` → `gold_smith_id`/`gold_maker_id` |
+
+### Shared Artisan Reference Tables (in oshi-v2 Supabase)
+
+Both systems query the same reference data:
+
+| Table | Records | Purpose |
+|-------|---------|---------|
+| `artisan_makers` | 13,572 | Unified directory (smiths + tosogu makers) |
+| `artisan_schools` | 173 | School hierarchy |
+| `artisan_aliases_v2` | 691+ | Name variants and alternate readings |
+| `smith_entities` | 12,453 | Smith entities (legacy, still used by some queries) |
+| `tosogu_makers` | 1,119 | Tosogu makers (legacy, still used by some queries) |
+
+### Data Flow: Artisan Codes
+
+```
+Oshi-scrapper (Python)                    oshi-v2 (Node.js)
+artisan_matcher/ module                   scripts/artisan-matching-v6.js (V7)
+    ↓                                         ↓
+listings.artisan_id                       catalog_records.artisan_code_v5
+    ↓                                         ↓
+NihontoWatch browse badges               synthesize_object() → gold_values
+(ListingCard artisan badge)               gold_smith_id / gold_maker_id
+                                              ↓
+                                          NihontoWatch artist profiles
+                                          (yuhinkai.ts reads gold_values)
+```
+
+### Key: NihontoWatch Reads From BOTH Databases
+
+- **NihontoWatch Supabase** (`itbhfhyptogxcjbjfzwx`): `listings.artisan_id` — scraper-assigned codes
+- **Yuhinkai Supabase** (`hjhrnhtvmtbecyjzqpyr`): `gold_values`, `smith_entities`, `tosogu_makers` — via `yuhinkaiClient` (anon key)
+
+**Important**: The `yuhinkaiClient` uses the **anon key**, not service_role. Any new tables queried from NihontoWatch need an anon RLS policy.
+
+### Documentation
+
+| Doc | Location | Purpose |
+|-----|----------|---------|
+| `ARTISAN_MATCHING_V7.md` | oshi-v2/docs/ | V7 catalog pipeline (production) |
+| `V5_PRODUCTION_HOOKUP.md` | oshi-v2/docs/ | V7 deployment, data flow, rollback |
+| `ARTISAN_PIPELINE_VERSION_HISTORY.md` | oshi-v2/docs/ | All pipeline versions V1-V7 |
+| `REALTIME_ARTISAN_MATCHING.md` | Oshi-scrapper/docs/ | Scraper integration |
+| `ARTISAN_MATCHER_HANDOFF.md` | Oshi-scrapper/docs/ | Scraper matcher details |
+| `ARTIST_FEATURE.md` | nihontowatch/docs/ | NihontoWatch artist UI |
+
+---
+
 ## Search & Filtering
 
 ### Query Parser (oshi-v2)

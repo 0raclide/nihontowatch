@@ -501,8 +501,15 @@ Displays Yuhinkai artisan codes (e.g., "MAS590", "OWA009") on listing cards for 
 
 **How it works:**
 - Artisan matching runs in Oshi-scrapper (`artisan_matcher/` module)
-- Matches listings to Yuhinkai database entries (12,447 smiths, 1,119 tosogu makers)
+- Matches listings to Yuhinkai database entries (12,453 smiths, 1,119 tosogu makers in `artisan_makers`)
 - Stores `artisan_id` and `artisan_confidence` in listings table
+- This is **separate from** oshi-v2's V7 catalog matching pipeline (see below)
+
+**Oshi-v2 Artisan Index (Yuhinkai):**
+- oshi-v2 has its own V7 pipeline (`scripts/artisan-matching-v6.js`) that links catalog records to artisans
+- Results stored in `catalog_records.artisan_code_v5` and synthesized to `gold_values.gold_smith_id`/`gold_maker_id`
+- NihontoWatch reads `gold_smith_id`/`gold_maker_id` via `yuhinkai.ts` for artist profile pages, form analysis, and provenance
+- See `oshi-v2/docs/ARTISAN_MATCHING_V7.md` and `oshi-v2/docs/ARTISAN_PIPELINE_VERSION_HISTORY.md` for full details
 
 **Display:**
 - Badge appears on **right side** of certification row (e.g., "TOKUBETSU HOZON" left, artisan name right)
@@ -548,7 +555,7 @@ Displays Yuhinkai artisan codes (e.g., "MAS590", "OWA009") on listing cards for 
 
 ### Artist Feature (`/artists` + `/artists/[slug]`)
 
-Two-tier artisan discovery system for 13,566 artisans (12,447 smiths + 1,119 tosogu makers):
+Two-tier artisan discovery system for 13,572 artisans (12,453 smiths + 1,119 tosogu makers) from the Yuhinkai `artisan_makers` directory:
 
 1. **Directory** (`/artists`) — Filterable index with search, type/school/province/era filters, elite factor ranking. Cards show all 6 designation types (Kokuho, Jubun, Jubi, Gyobutsu, Tokuju, Juyo) and "N for sale" links that open browse with QuickView.
 
