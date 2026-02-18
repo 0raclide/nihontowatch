@@ -237,6 +237,19 @@ export function ArtistsPageClient({
     fetchArtists(newFilters, 1, false);
   }, [updateUrl, fetchArtists]);
 
+  // Listen for header search bar events (dispatched instead of router.push
+  // so we stay in the same component instance with all filter state intact).
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const q = (e as CustomEvent).detail?.q as string | undefined;
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      setSearchInput(q || '');
+      applyFilters({ ...filtersRef.current, q: q || undefined });
+    };
+    window.addEventListener('artist-header-search', handler);
+    return () => window.removeEventListener('artist-header-search', handler);
+  }, [applyFilters]);
+
   const handleFilterChange = useCallback((key: keyof Filters, value: string | boolean) => {
     const newFilters = { ...filtersRef.current, [key]: value };
     // Clear school/province/era when switching types — they won't be valid for the other type

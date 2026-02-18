@@ -190,23 +190,12 @@ function HeaderContent() {
     }
   }, [showAdminMenu]);
 
-  // Build a search URL that preserves filter state on artist pages.
-  // Reads from window.location.search (not useSearchParams) because
-  // the /artists sidebar updates the URL via History.prototype.replaceState
-  // which bypasses Next.js — useSearchParams would be stale.
   const buildSearchUrl = useCallback((q?: string) => {
     const params = new URLSearchParams();
     if (q) params.set('q', q);
-    if (isArtistPage) {
-      const live = new URLSearchParams(window.location.search);
-      for (const key of ['type', 'sort', 'school', 'province', 'era', 'notable']) {
-        const val = live.get(key);
-        if (val) params.set(key, val);
-      }
-    }
     const qs = params.toString();
-    return `${searchAction}${qs ? `?${qs}` : ''}`;
-  }, [isArtistPage, searchAction]);
+    return `/${qs ? `?${qs}` : ''}`;
+  }, []);
 
   const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -214,16 +203,20 @@ function HeaderContent() {
     const searchQuery = (formData.get('q') as string) || '';
     const trimmedQuery = searchQuery.trim();
     if (trimmedQuery) {
-      // Only show spinner if query is different (otherwise URL won't change and spinner gets stuck)
-      if (trimmedQuery !== currentQuery) {
-        setIsSearching(true);
-      }
       // Track search event
       if (activity) {
         activity.trackSearch(trimmedQuery);
       }
-      // Use router.push to create history entry (allows back button)
-      router.push(buildSearchUrl(trimmedQuery));
+      // On /artists, dispatch to the client component directly (no router.push)
+      // so the sidebar's replaceState-managed filter state isn't lost.
+      if (isArtistPage) {
+        window.dispatchEvent(new CustomEvent('artist-header-search', { detail: { q: trimmedQuery } }));
+      } else {
+        if (trimmedQuery !== currentQuery) {
+          setIsSearching(true);
+        }
+        router.push(buildSearchUrl(trimmedQuery));
+      }
     }
   };
 
