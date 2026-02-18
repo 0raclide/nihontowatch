@@ -110,8 +110,8 @@ export function SectionJumpNav({ sections }: SectionJumpNavProps) {
 
   return (
     <>
-      {/* ═══ DESKTOP: Sticky top bar (hidden on mobile) ═══ */}
-      <div className="hidden sm:block xl:hidden sticky top-0 lg:top-[77px] z-20 -mx-4 relative">
+      {/* ═══ DESKTOP: Sticky top bar (sm–lg only, sidebar takes over at lg+) ═══ */}
+      <div className="hidden sm:block lg:hidden sticky top-0 z-20 -mx-4 relative">
         {canScrollLeft && (
           <div className="absolute left-0 top-0 bottom-0 w-6 bg-gradient-to-r from-surface to-transparent z-10 pointer-events-none" />
         )}
@@ -146,10 +146,10 @@ export function SectionJumpNav({ sections }: SectionJumpNavProps) {
         </nav>
       </div>
 
-      {/* ═══ XL+: Fixed left-margin sidebar — vertically centered ═══ */}
+      {/* ═══ LG+: Fixed left-margin sidebar — vertically centered ═══ */}
       <nav
-        className="hidden xl:block fixed top-1/2 -translate-y-1/2 z-20"
-        style={{ left: 'max(20px, calc(50vw - 548px))' }}
+        className="hidden lg:block fixed top-1/2 -translate-y-1/2 z-20"
+        style={{ left: 'max(16px, calc(50vw - 520px))' }}
         aria-label="Section navigation"
       >
         <div className="relative pl-3">
