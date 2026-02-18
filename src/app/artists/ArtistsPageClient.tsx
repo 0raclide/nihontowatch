@@ -64,6 +64,12 @@ export function ArtistsPageClient({
   const currentPageRef = useRef(1);
   const hasMore = currentPageRef.current < pagination.totalPages;
 
+  // Guard ref: set synchronously in applyFilters BEFORE scrollTo, so that any
+  // scroll events triggered by scrollTo({ top: 0 }) can't race into loadMore
+  // and abort the in-flight primary fetch. Refs are read by reference (not
+  // captured by closure), so the stale scroll handler sees the updated value.
+  const isFetchingRef = useRef(false);
+
   // Live ref for filters — used inside setTimeout callbacks to avoid stale closures.
   const filtersRef = useRef(filters);
   filtersRef.current = filters;
@@ -158,6 +164,7 @@ export function ArtistsPageClient({
           setIsLoadingMore(false);
         } else {
           setIsLoading(false);
+          isFetchingRef.current = false;
         }
       }
     }
@@ -206,6 +213,9 @@ export function ArtistsPageClient({
     setFilters(newFilters);
     updateUrl(newFilters);
     currentPageRef.current = 1;
+    // Set guard BEFORE scrollTo — prevents the scroll event from racing into
+    // loadMore and aborting the fetch we're about to start.
+    isFetchingRef.current = true;
     window.scrollTo({ top: 0 });
     fetchArtists(newFilters, 1, false);
   }, [updateUrl, fetchArtists]);
@@ -222,6 +232,10 @@ export function ArtistsPageClient({
   }, [applyFilters]);
 
   const loadMore = useCallback(() => {
+    // Guard: don't append-load while a primary fetch (filter/search change) is in flight.
+    // This prevents scrollTo({ top: 0 }) scroll events from racing into fetchArtists
+    // and aborting the search request.
+    if (isFetchingRef.current) return;
     const nextPage = currentPageRef.current + 1;
     fetchArtists(filtersRef.current, nextPage, true);
   }, [fetchArtists]);
