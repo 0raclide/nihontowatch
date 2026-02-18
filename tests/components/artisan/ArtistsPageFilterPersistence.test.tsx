@@ -1,15 +1,16 @@
 /**
- * Tests for artist directory filter persistence via history.state.
+ * Tests for artist directory filter persistence via URL params.
  *
  * The /artists page uses native History.prototype.replaceState (bypassing Next.js)
  * to avoid Suspense/loading.tsx flashes. To survive back/forward navigation,
- * filters are stored in window.history.state._artistFilters alongside Next.js's
- * internal routing data. These tests ensure:
+ * filters are encoded in the URL query string. On mount, the component reads
+ * window.location.search to detect stale initialFilters (from cached RSC payload)
+ * and re-fetches with the correct params. These tests ensure:
  *
- * 1. Filter changes write _artistFilters into history.state
- * 2. On mount, _artistFilters is read from history.state (back-nav restoration)
- * 3. On mount without _artistFilters, initialFilters are used (fresh visit)
- * 4. popstate events restore filters from event.state._artistFilters
+ * 1. Filter changes update the URL via replaceState
+ * 2. On mount with URL params, the component uses them over initialFilters
+ * 3. On mount without URL params, initialFilters are used (fresh visit)
+ * 4. popstate events restore filters from the URL
  * 5. Search (typing in search bar) still works (no navigation triggered)
  */
 
@@ -160,11 +161,11 @@ afterEach(() => {
 // Tests
 // ---------------------------------------------------------------------------
 
-describe('ArtistsPageClient — history.state filter persistence', () => {
+describe('ArtistsPageClient — URL-based filter persistence', () => {
   // =========================================================================
-  // GOLDEN TEST 1: Filter change stores _artistFilters in history.state
+  // GOLDEN TEST 1: Filter change updates URL via replaceState
   // =========================================================================
-  it('stores _artistFilters in history.state when sort changes', async () => {
+  it('updates URL via replaceState when sort changes', async () => {
     render(<ArtistsPageClient initialFilters={DEFAULT_FILTERS} initialPage={1} />);
 
     // Wait for initial fetch to complete
@@ -176,22 +177,19 @@ describe('ArtistsPageClient — history.state filter persistence', () => {
       capturedOnFilterChange!('sort', 'total_items');
     });
 
-    // replaceState should have been called with _artistFilters in state
+    // replaceState should have been called with the correct URL
     const calls = replaceStateSpy.mock.calls;
     const lastCall = calls[calls.length - 1];
     expect(lastCall).toBeDefined();
 
-    const [stateArg, , urlArg] = lastCall;
-    expect(stateArg._artistFilters).toBeDefined();
-    expect(stateArg._artistFilters.sort).toBe('total_items');
-    expect(stateArg._artistFilters.type).toBe('smith');
+    const [, , urlArg] = lastCall;
     expect(urlArg).toBe('/artists?sort=total_items');
   });
 
   // =========================================================================
-  // GOLDEN TEST 2: Filter change stores all filter dimensions
+  // GOLDEN TEST 2: Filter change updates URL with type param
   // =========================================================================
-  it('stores school, era, type, and notable in history.state', async () => {
+  it('updates URL with type param when type changes', async () => {
     render(<ArtistsPageClient initialFilters={DEFAULT_FILTERS} initialPage={1} />);
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
 
@@ -200,24 +198,20 @@ describe('ArtistsPageClient — history.state filter persistence', () => {
 
     const calls = replaceStateSpy.mock.calls;
     const lastCall = calls[calls.length - 1];
-    const stored = lastCall[0]._artistFilters;
-    expect(stored.type).toBe('tosogu');
-    // type switch clears school/province/era
-    expect(stored.school).toBeUndefined();
-    expect(stored.province).toBeUndefined();
-    expect(stored.era).toBeUndefined();
+    const url = String(lastCall[2]);
+    expect(url).toContain('type=tosogu');
+    // type switch clears school/province/era — they should not appear in URL
+    expect(url).not.toContain('school=');
+    expect(url).not.toContain('province=');
+    expect(url).not.toContain('era=');
   });
 
   // =========================================================================
-  // GOLDEN TEST 3: On mount, restores from history.state (back-nav)
+  // GOLDEN TEST 3: On mount, restores from URL params (back-nav)
   // =========================================================================
-  it('restores filters from history.state._artistFilters on mount', async () => {
-    // Simulate back-nav: history.state has _artistFilters from a previous visit
-    window.history.replaceState(
-      { _artistFilters: TOTAL_ITEMS_FILTERS },
-      '',
-      '/artists?sort=total_items'
-    );
+  it('restores filters from URL params on mount (back-nav scenario)', async () => {
+    // Simulate back-nav: URL has sort=total_items from a previous replaceState
+    window.history.replaceState({}, '', '/artists?sort=total_items');
 
     render(
       <ArtistsPageClient initialFilters={DEFAULT_FILTERS} initialPage={1} />
@@ -236,10 +230,10 @@ describe('ArtistsPageClient — history.state filter persistence', () => {
   });
 
   // =========================================================================
-  // GOLDEN TEST 4: On mount without _artistFilters, uses initialFilters
+  // GOLDEN TEST 4: On mount without URL params, uses initialFilters
   // =========================================================================
-  it('uses initialFilters when history.state has no _artistFilters (fresh visit)', async () => {
-    // Clean history state — no _artistFilters
+  it('uses initialFilters when URL has no params (fresh visit)', async () => {
+    // Clean URL — no params
     window.history.replaceState({}, '', '/artists');
 
     render(
@@ -257,20 +251,21 @@ describe('ArtistsPageClient — history.state filter persistence', () => {
   });
 
   // =========================================================================
-  // GOLDEN TEST 5: popstate event restores filters (back/forward without remount)
+  // GOLDEN TEST 5: popstate event restores filters from URL
   // =========================================================================
-  it('restores filters on popstate event with _artistFilters', async () => {
+  it('restores filters on popstate event (reads URL params)', async () => {
     render(
       <ArtistsPageClient initialFilters={DEFAULT_FILTERS} initialPage={1} />
     );
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
 
-    // Simulate back-navigation: popstate fires with stored filters
+    // Simulate back-navigation: browser changes URL, then fires popstate
+    // In jsdom we must manually set the URL before dispatching popstate
+    window.history.replaceState({}, '', '/artists?sort=total_items');
+
     act(() => {
-      const event = new PopStateEvent('popstate', {
-        state: { _artistFilters: TOTAL_ITEMS_FILTERS },
-      });
+      const event = new PopStateEvent('popstate', { state: {} });
       window.dispatchEvent(event);
     });
 
@@ -287,15 +282,11 @@ describe('ArtistsPageClient — history.state filter persistence', () => {
   });
 
   // =========================================================================
-  // GOLDEN TEST 6: popstate without _artistFilters is a no-op
+  // GOLDEN TEST 6: popstate with same URL is a no-op
   // =========================================================================
-  it('does not crash or reset on popstate without _artistFilters', async () => {
-    // Start with total_items via history.state
-    window.history.replaceState(
-      { _artistFilters: TOTAL_ITEMS_FILTERS },
-      '',
-      '/artists?sort=total_items'
-    );
+  it('does not crash or re-fetch on popstate when URL matches current filters', async () => {
+    // Start with total_items via URL
+    window.history.replaceState({}, '', '/artists?sort=total_items');
 
     render(
       <ArtistsPageClient initialFilters={DEFAULT_FILTERS} initialPage={1} />
@@ -307,7 +298,7 @@ describe('ArtistsPageClient — history.state filter persistence', () => {
 
     const fetchCountBefore = fetchMock.mock.calls.length;
 
-    // popstate without _artistFilters (e.g., navigating to a non-artist page)
+    // popstate with same URL — should be a no-op
     act(() => {
       const event = new PopStateEvent('popstate', { state: {} });
       window.dispatchEvent(event);
@@ -341,16 +332,11 @@ describe('ArtistsPageClient — history.state filter persistence', () => {
       expect(searchFetch).toBeDefined();
     }, { timeout: 1000 });
 
-    // replaceState should have been called (URL update), NOT router.replace
-    // Verify it used History.prototype.replaceState (native), not Next.js router
+    // replaceState should have been called with URL containing q=masamune
     const searchReplaceCall = replaceStateSpy.mock.calls.find(
       (c: unknown[]) => String(c[2]).includes('q=masamune')
     );
     expect(searchReplaceCall).toBeDefined();
-
-    // Verify _artistFilters includes the search query
-    const stateArg = searchReplaceCall![0] as { _artistFilters: { q?: string } };
-    expect(stateArg._artistFilters.q).toBe('masamune');
   });
 
   // =========================================================================
@@ -371,12 +357,8 @@ describe('ArtistsPageClient — history.state filter persistence', () => {
   // GOLDEN TEST 9: Default sort (elite_factor) omitted from URL
   // =========================================================================
   it('omits sort param from URL when set to default (elite_factor)', async () => {
-    // Start with total_items
-    window.history.replaceState(
-      { _artistFilters: TOTAL_ITEMS_FILTERS },
-      '',
-      '/artists?sort=total_items'
-    );
+    // Start with total_items via URL
+    window.history.replaceState({}, '', '/artists?sort=total_items');
 
     render(<ArtistsPageClient initialFilters={TOTAL_ITEMS_FILTERS} initialPage={1} />);
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
@@ -388,7 +370,5 @@ describe('ArtistsPageClient — history.state filter persistence', () => {
     const lastCall = calls[calls.length - 1];
     // URL should be bare /artists (no sort param for default)
     expect(lastCall[2]).toBe('/artists');
-    // But history.state should still have the filters
-    expect(lastCall[0]._artistFilters.sort).toBe('elite_factor');
   });
 });

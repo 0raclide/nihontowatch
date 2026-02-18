@@ -64,12 +64,6 @@ export function ArtistsPageClient({
   const currentPageRef = useRef(1);
   const hasMore = currentPageRef.current < pagination.totalPages;
 
-  // Guard ref: set synchronously in applyFilters BEFORE scrollTo, so that any
-  // scroll events triggered by scrollTo({ top: 0 }) can't race into loadMore
-  // and abort the in-flight primary fetch. Refs are read by reference (not
-  // captured by closure), so the stale scroll handler sees the updated value.
-  const isFetchingRef = useRef(false);
-
   // Live ref for filters — used inside setTimeout callbacks to avoid stale closures.
   const filtersRef = useRef(filters);
   filtersRef.current = filters;
@@ -93,19 +87,14 @@ export function ArtistsPageClient({
     return p.toString();
   }, []);
 
-  // Update URL without triggering Next.js navigation (avoids Suspense/loading.tsx flash).
-  // Uses native replaceState to bypass Next.js's monkey-patched version.
-  // Stores filters in history.state so they survive back/forward navigation — Next.js's
-  // internal routing state doesn't track replaceState URL changes, but history.state does.
+  // Update URL without navigation (keeps it shareable).
+  // Uses native History.prototype.replaceState to bypass Next.js's monkey-patched
+  // version, which would otherwise notify the router and re-trigger the Suspense
+  // boundary from loading.tsx — unmounting the component and destroying client state.
   const updateUrl = useCallback((f: Filters) => {
     const qs = buildQueryString(f);
     const url = `/artists${qs ? `?${qs}` : ''}`;
-    History.prototype.replaceState.call(
-      window.history,
-      { ...window.history.state, _artistFilters: f },
-      '',
-      url
-    );
+    History.prototype.replaceState.call(window.history, window.history.state, '', url);
   }, [buildQueryString]);
 
   // Client-side fetch — the only data-fetching path (initial load + filter changes + scroll)
@@ -164,21 +153,39 @@ export function ArtistsPageClient({
           setIsLoadingMore(false);
         } else {
           setIsLoading(false);
-          isFetchingRef.current = false;
         }
       }
     }
   }, []);
 
-  // On mount: restore filters from history.state (survives back-nav via replaceState).
-  // Falls back to initialFilters for fresh page loads (no _artistFilters in state).
+  // On mount: check URL params against initialFilters. On back-nav, Next.js may
+  // serve a stale RSC payload (initialFilters from original visit) even though the
+  // URL has the correct params from replaceState. Read the URL to detect this.
   useEffect(() => {
-    const stored = window.history.state?._artistFilters as Filters | undefined;
-    if (stored?.sort && stored?.type) {
-      setFilters(stored);
-      setSearchInput(stored.q || '');
-      filtersRef.current = stored;
-      fetchArtists(stored, 1);
+    const params = new URLSearchParams(window.location.search);
+    const fromUrl: Filters = {
+      sort: (params.get('sort') as Filters['sort']) || initialFilters.sort,
+      type: (params.get('type') as 'smith' | 'tosogu') || initialFilters.type,
+      school: params.get('school') || initialFilters.school,
+      province: params.get('province') || initialFilters.province,
+      era: params.get('era') || initialFilters.era,
+      q: params.get('q') || initialFilters.q,
+      notable: params.has('notable') ? params.get('notable') !== 'false' : initialFilters.notable,
+    };
+
+    const stale = fromUrl.sort !== initialFilters.sort
+      || fromUrl.type !== initialFilters.type
+      || fromUrl.q !== initialFilters.q
+      || fromUrl.school !== initialFilters.school
+      || fromUrl.province !== initialFilters.province
+      || fromUrl.era !== initialFilters.era
+      || fromUrl.notable !== initialFilters.notable;
+
+    if (stale) {
+      setFilters(fromUrl);
+      setSearchInput(fromUrl.q || '');
+      filtersRef.current = fromUrl;
+      fetchArtists(fromUrl, 1);
     } else {
       fetchArtists(initialFilters, initialPage);
     }
@@ -187,35 +194,45 @@ export function ArtistsPageClient({
 
   // Popstate: restore filters on browser back/forward (component may not remount).
   useEffect(() => {
-    const onPopState = (e: PopStateEvent) => {
-      const stored = e.state?._artistFilters as Filters | undefined;
-      if (!stored?.sort || !stored?.type) return;
+    const onPopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      const fromUrl: Filters = {
+        sort: (params.get('sort') as Filters['sort']) || 'elite_factor',
+        type: (params.get('type') as 'smith' | 'tosogu') || 'smith',
+        school: params.get('school') || undefined,
+        province: params.get('province') || undefined,
+        era: params.get('era') || undefined,
+        q: params.get('q') || undefined,
+        notable: params.has('notable') ? params.get('notable') !== 'false' : true,
+      };
       const cur = filtersRef.current;
-      if (stored.sort === cur.sort && stored.type === cur.type
-        && stored.school === cur.school && stored.province === cur.province
-        && stored.era === cur.era && stored.q === cur.q
-        && stored.notable === cur.notable) return;
-      setFilters(stored);
-      setSearchInput(stored.q || '');
-      filtersRef.current = stored;
+      if (fromUrl.sort === cur.sort && fromUrl.type === cur.type
+        && fromUrl.school === cur.school && fromUrl.province === cur.province
+        && fromUrl.era === cur.era && fromUrl.q === cur.q
+        && fromUrl.notable === cur.notable) return;
+      setFilters(fromUrl);
+      setSearchInput(fromUrl.q || '');
+      filtersRef.current = fromUrl;
       currentPageRef.current = 1;
-      fetchArtists(stored, 1);
+      fetchArtists(fromUrl, 1);
     };
     window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Cleanup abort and debounce on unmount
+  useEffect(() => {
     return () => {
-      window.removeEventListener('popstate', onPopState);
       abortRef.current?.abort();
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [fetchArtists]);
+  }, []);
 
   const applyFilters = useCallback((newFilters: Filters) => {
     setFilters(newFilters);
     updateUrl(newFilters);
     currentPageRef.current = 1;
-    // Set guard BEFORE scrollTo — prevents the scroll event from racing into
-    // loadMore and aborting the fetch we're about to start.
-    isFetchingRef.current = true;
     window.scrollTo({ top: 0 });
     fetchArtists(newFilters, 1, false);
   }, [updateUrl, fetchArtists]);
@@ -232,10 +249,6 @@ export function ArtistsPageClient({
   }, [applyFilters]);
 
   const loadMore = useCallback(() => {
-    // Guard: don't append-load while a primary fetch (filter/search change) is in flight.
-    // This prevents scrollTo({ top: 0 }) scroll events from racing into fetchArtists
-    // and aborting the search request.
-    if (isFetchingRef.current) return;
     const nextPage = currentPageRef.current + 1;
     fetchArtists(filtersRef.current, nextPage, true);
   }, [fetchArtists]);
