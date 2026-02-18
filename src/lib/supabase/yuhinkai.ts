@@ -81,6 +81,17 @@ export interface TosoguMaker {
 }
 
 export async function getAiDescription(code: string): Promise<string | null> {
+  // School codes (NS-*) live in artisan_schools; individual makers in artisan_makers
+  if (code.startsWith('NS-')) {
+    const { data, error } = await yuhinkaiClient
+      .from('artisan_schools')
+      .select('ai_description')
+      .eq('school_id', code)
+      .single();
+    if (error || !data?.ai_description) return null;
+    return data.ai_description as string;
+  }
+
   const { data, error } = await yuhinkaiClient
     .from('artisan_makers')
     .select('ai_description')
