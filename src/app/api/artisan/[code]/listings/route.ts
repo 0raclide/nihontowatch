@@ -47,17 +47,14 @@ export async function GET(
     // Check if this is a school code — if so, include member artisan listings
     let artisanCodes = [code];
     try {
-      const { getSmithEntity, getTosoguMaker, getSchoolMemberCodes } = await import('@/lib/supabase/yuhinkai');
-      const smith = await getSmithEntity(code);
-      const tosogu = !smith ? await getTosoguMaker(code) : null;
-      const entity = smith || tosogu;
+      const { getArtisan, getSchoolMemberCodes } = await import('@/lib/supabase/yuhinkai');
+      const entity = await getArtisan(code);
 
       if (entity?.is_school_code && entity?.school) {
-        const entityType = smith ? 'smith' as const : 'tosogu' as const;
         const memberCodesMap = await getSchoolMemberCodes([{
           code,
           school: entity.school,
-          entity_type: entityType,
+          entity_type: entity.entity_type,
         }]);
         const memberCodes = memberCodesMap.get(code) || [];
         if (memberCodes.length > 0) {
@@ -110,6 +107,13 @@ export async function GET(
               ...listing,
               artisan_display_name: getArtisanAlias(listing.artisan_id) || getArtisanDisplayName(entry.name_romaji, entry.school),
               artisan_tier: getArtisanTier(entry),
+            };
+          }
+          // Fallback: use smith/tosogu_maker when Yuhinkai lookup misses
+          if (listing.artisan_id && !listing.artisan_display_name) {
+            return {
+              ...listing,
+              artisan_display_name: listing.smith || listing.tosogu_maker || null,
             };
           }
           return listing;

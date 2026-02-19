@@ -403,16 +403,13 @@ export async function GET(request: NextRequest) {
       let expanded = false;
       if (params.artisanCode.startsWith('NS-')) {
         try {
-          const { getSmithEntity, getTosoguMaker, getSchoolMemberCodes } = await import('@/lib/supabase/yuhinkai');
-          const smith = await getSmithEntity(params.artisanCode);
-          const tosogu = !smith ? await getTosoguMaker(params.artisanCode) : null;
-          const entity = smith || tosogu;
+          const { getArtisan, getSchoolMemberCodes } = await import('@/lib/supabase/yuhinkai');
+          const entity = await getArtisan(params.artisanCode);
           if (entity?.is_school_code && entity?.school) {
-            const entityType = smith ? 'smith' as const : 'tosogu' as const;
             const memberCodesMap = await getSchoolMemberCodes([{
               code: params.artisanCode,
               school: entity.school,
-              entity_type: entityType,
+              entity_type: entity.entity_type,
             }]);
             const memberCodes = memberCodesMap.get(params.artisanCode) || [];
             if (memberCodes.length > 0) {
@@ -687,6 +684,13 @@ export async function GET(request: NextRequest) {
               ...listing,
               artisan_display_name: getArtisanAlias(listing.artisan_id) || getArtisanDisplayName(entry.name_romaji, entry.school),
               artisan_tier: getArtisanTier(entry),
+            };
+          }
+          // Fallback: use smith/tosogu_maker when Yuhinkai lookup misses
+          if (listing.artisan_id && !listing.artisan_display_name) {
+            return {
+              ...listing,
+              artisan_display_name: listing.smith || listing.tosogu_maker || null,
             };
           }
           return listing;

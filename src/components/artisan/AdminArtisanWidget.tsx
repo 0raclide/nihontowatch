@@ -11,7 +11,7 @@ import type { ArtisanSearchResult } from '@/app/api/artisan/search/route';
 
 interface AdminArtisanWidgetProps {
   listing: Listing;
-  onArtisanChanged?: (newArtisanId: string) => void;
+  onArtisanChanged?: (newArtisanId: string, displayName: string) => void;
 }
 
 // =============================================================================
@@ -120,7 +120,7 @@ export function AdminArtisanWidget({ listing, onArtisanChanged }: AdminArtisanWi
         setSuccessMessage('Marked as UNKNOWN');
         setSearchQuery('');
         setSearchResults([]);
-        onArtisanChanged?.('UNKNOWN');
+        onArtisanChanged?.('UNKNOWN', 'Unlisted artist');
         setTimeout(() => setSuccessMessage(null), 4000);
       } else {
         const data = await response.json();
@@ -157,7 +157,7 @@ export function AdminArtisanWidget({ listing, onArtisanChanged }: AdminArtisanWi
         setSearchResults([]);
 
         // Notify parent to refresh listing data
-        onArtisanChanged?.(result.code);
+        onArtisanChanged?.(result.code, displayName);
 
         // Clear success after delay
         setTimeout(() => setSuccessMessage(null), 4000);

@@ -179,18 +179,18 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
                   Hidden
                 </span>
               )}
-              {/* Admin: "Set ID" badge for unmatched listings */}
-              {isAdmin && !listing.artisan_id ? (
+              {/* Admin: "Set ID" badge for unmatched listings (including UNKNOWN) */}
+              {isAdmin && (!listing.artisan_id || listing.artisan_id === 'UNKNOWN') ? (
                 /* Admin: show "Set ID" badge with pen icon for unmatched listings */
                 <ArtisanTooltip
                   listingId={listing.id}
                   startInSearchMode
-                  onArtisanFixed={(newId) => quickView?.refreshCurrentListing({
+                  onArtisanFixed={(newId, displayName) => quickView?.refreshCurrentListing({
                     artisan_id: newId,
                     artisan_confidence: newId === 'UNKNOWN' ? 'LOW' : 'HIGH',
                     artisan_method: 'ADMIN_CORRECTION',
                     artisan_verified: 'correct' as const,
-                    artisan_display_name: newId === 'UNKNOWN' ? 'Unlisted artist' : newId,
+                    artisan_display_name: displayName,
                   })}
                   adminHidden={listing.admin_hidden}
                   onToggleHidden={handleToggleHidden}
@@ -348,12 +348,12 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
                   method={listing.artisan_method}
                   candidates={listing.artisan_candidates}
                   verified={listing.artisan_verified}
-                  onArtisanFixed={(newId) => quickView?.refreshCurrentListing({
+                  onArtisanFixed={(newId, displayName) => quickView?.refreshCurrentListing({
                     artisan_id: newId,
                     artisan_confidence: newId === 'UNKNOWN' ? 'LOW' : 'HIGH',
                     artisan_method: 'ADMIN_CORRECTION',
                     artisan_verified: 'correct' as const,
-                    artisan_display_name: newId === 'UNKNOWN' ? 'Unlisted artist' : newId,
+                    artisan_display_name: displayName,
                   })}
                   adminHidden={listing.admin_hidden}
                   onToggleHidden={handleToggleHidden}
@@ -432,12 +432,12 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
             />
             <AdminArtisanWidget
               listing={listing}
-              onArtisanChanged={(newId) => quickView?.refreshCurrentListing({
+              onArtisanChanged={(newId, displayName) => quickView?.refreshCurrentListing({
                 artisan_id: newId,
                 artisan_confidence: newId === 'UNKNOWN' ? 'LOW' : 'HIGH',
                 artisan_method: 'ADMIN_CORRECTION',
                 artisan_verified: 'correct' as const,
-                artisan_display_name: newId === 'UNKNOWN' ? 'Unlisted artist' : newId,
+                artisan_display_name: displayName,
               })}
             />
           </div>

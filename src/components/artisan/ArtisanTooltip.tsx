@@ -27,7 +27,7 @@ interface ArtisanTooltipProps {
   candidates?: ArtisanCandidate[] | null;
   verified?: 'correct' | 'incorrect' | null;
   onVerify?: (status: 'correct' | 'incorrect' | null) => void;
-  onArtisanFixed?: (newArtisanId: string) => void;
+  onArtisanFixed?: (newArtisanId: string, displayName: string) => void;
   /** Open directly in search/assign mode (for listings with no artisan) */
   startInSearchMode?: boolean;
   /** Whether the listing is currently hidden from public views */
@@ -158,7 +158,7 @@ export function ArtisanTooltip({
         suppressScrollClose();
 
         if (onArtisanFixed) {
-          onArtisanFixed('UNKNOWN');
+          onArtisanFixed('UNKNOWN', 'Unlisted artist');
         } else {
           window.dispatchEvent(new CustomEvent('listing-refreshed', {
             detail: {
@@ -225,8 +225,9 @@ export function ArtisanTooltip({
 
         // Notify parent (QuickView flow) or dispatch event directly (browse card flow)
         suppressScrollClose();
+        const resolvedName = result.display_name || result.name_romaji || result.code;
         if (onArtisanFixed) {
-          onArtisanFixed(result.code);
+          onArtisanFixed(result.code, resolvedName);
         } else {
           // No parent callback (e.g. ArtisanTooltip on browse card) —
           // dispatch event directly so page.tsx handler updates allListings
@@ -237,7 +238,7 @@ export function ArtisanTooltip({
               artisan_confidence: 'HIGH',
               artisan_method: 'ADMIN_CORRECTION',
               artisan_verified: 'correct',
-              artisan_display_name: result.display_name || result.name_romaji || result.code,
+              artisan_display_name: resolvedName,
             },
           }));
         }

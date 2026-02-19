@@ -313,6 +313,9 @@ export async function getListingDetail(
     if (artisanData) {
       artisanDisplayName = getArtisanAlias(typedListing.artisan_id!) || getArtisanDisplayName(artisanData.name_romaji, artisanData.school);
       artisanTier = getArtisanTier(artisanData);
+    } else {
+      // Fallback: use smith/tosogu_maker when Yuhinkai lookup misses
+      artisanDisplayName = typedListing.smith || typedListing.tosogu_maker || undefined;
     }
   }
 
