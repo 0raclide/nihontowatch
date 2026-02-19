@@ -327,7 +327,10 @@ describe('Header Component', () => {
       expect(screen.getByPlaceholderText(/search artists by name, kanji, or code/i)).toBeInTheDocument();
     });
 
-    it('navigates to /artists?q= on form submit', () => {
+    it('dispatches artist-header-search event on form submit', () => {
+      const eventSpy = vi.fn();
+      window.addEventListener('artist-header-search', eventSpy);
+
       render(
         <MobileUIProvider>
           <Header />
@@ -340,7 +343,13 @@ describe('Header Component', () => {
       const form = searchInput.closest('form');
       fireEvent.submit(form!);
 
-      expect(mockPush).toHaveBeenCalledWith('/artists?q=Masamune');
+      // Artist page search dispatches a custom event (not router.push)
+      // to avoid clobbering the sidebar's replaceState-managed filter state
+      expect(eventSpy).toHaveBeenCalledTimes(1);
+      expect((eventSpy.mock.calls[0][0] as CustomEvent).detail).toEqual({ q: 'Masamune' });
+      expect(mockPush).not.toHaveBeenCalled();
+
+      window.removeEventListener('artist-header-search', eventSpy);
     });
 
     it('form action is /artists on artist pages', () => {

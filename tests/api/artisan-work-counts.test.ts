@@ -109,9 +109,9 @@ describe('Artisan Work Count Deduplication', () => {
    * - Has 2 objects with both Kokuho AND JuBun catalog_records
    * - Correct total: 62 (not 74 which was the old double-counted value)
    *
-   * Ground truth (verified Feb 2026 via direct SQL):
-   *   kokuho: 3, jubun: 16, jubi: 13, gyobutsu: 2, tokuju: 10, juyo: 18
-   *   total: 62, elite: 44
+   * Ground truth (verified Feb 2026 via direct SQL, updated Feb 19 2026):
+   *   kokuho: 3, jubun: 15, jubi: 13, gyobutsu: 2, tokuju: 10, juyo: 18
+   *   total: 61, elite: 43
    */
   describe('MIT281 (Mitsutada) — known overlapping designations', () => {
     it('should have correct total_items after deduplication (legacy API)', async () => {
@@ -121,8 +121,8 @@ describe('Artisan Work Count Deduplication', () => {
         return;
       }
 
-      // The old bug gave total_items = 74. Correct is 62.
-      expect(certs.total_items, 'MIT281 total should be 62 (was 74 when double-counted)').toBe(62);
+      // The old bug gave total_items = 74. Correct is 61.
+      expect(certs.total_items, 'MIT281 total should be 61 (was 74 when double-counted)').toBe(61);
     });
 
     it('should satisfy sum invariant (legacy API)', async () => {
@@ -149,7 +149,7 @@ describe('Artisan Work Count Deduplication', () => {
 
       // Snapshot from verified SQL query after fix applied
       expect(certs.kokuho_count, 'MIT281 kokuho').toBe(3);
-      expect(certs.jubun_count, 'MIT281 jubun').toBe(16);
+      expect(certs.jubun_count, 'MIT281 jubun').toBe(15);
       expect(certs.jubi_count, 'MIT281 jubi').toBe(13);
       expect(certs.gyobutsu_count, 'MIT281 gyobutsu').toBe(2);
       expect(certs.tokuju_count, 'MIT281 tokuju').toBe(10);

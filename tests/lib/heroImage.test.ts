@@ -111,6 +111,7 @@ describe('Hero image functions', () => {
         error: null,
       });
 
+      mockFetch.mockResolvedValue({ ok: true });
       const result = await getHeroImageForDetailPage('MAS590', 'smith');
       expect(result).not.toBeNull();
       expect(result!.collection).toBe('Tokuju');
@@ -136,6 +137,7 @@ describe('Hero image functions', () => {
         error: null,
       });
 
+      mockFetch.mockResolvedValue({ ok: true });
       const detailResult = await getHeroImageForDetailPage('TOM134', 'smith');
       const directoryResult = await getHeroImagesFromTable(['TOM134'], 'smith');
 

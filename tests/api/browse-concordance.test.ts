@@ -404,8 +404,8 @@ describe('Browse API Concordance Tests', () => {
         const firstCert = fresh.facets.certifications[0];
         if (!firstCert) return;
 
-        // Now filter by that cert in the same timeframe
-        const filtered = await fetchBrowse({ cert: firstCert.value });
+        // Now filter by that cert in the same timeframe (preserve cat: 'all' scope)
+        const filtered = await fetchBrowse({ cat: 'all', cert: firstCert.value });
 
         // The filtered total should closely match the facet count
         // Allow 20% tolerance for:
