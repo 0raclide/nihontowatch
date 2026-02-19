@@ -122,7 +122,7 @@ export function ArtisanSearchPanel({
                   {result.code}
                 </span>
                 <span className="text-[9px] text-muted uppercase">
-                  {result.type === 'smith' ? 'Smith' : 'Tosogu'}
+                  {result.type === 'school' ? 'School' : result.type === 'smith' ? 'Smith' : 'Tosogu'}
                 </span>
               </div>
               <div className="text-xs text-ink">
