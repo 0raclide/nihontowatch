@@ -19,6 +19,7 @@ import {
   generateWebsiteJsonLd,
   jsonLdScriptProps,
 } from "@/lib/seo/jsonLd";
+import { NavigationProgress } from "@/components/ui/NavigationProgress";
 
 const cormorant = Cormorant_Garamond({
   variable: "--font-serif",
@@ -93,6 +94,7 @@ export default function RootLayout({
         <script {...jsonLdScriptProps(websiteJsonLd)} />
       </head>
       <body className="antialiased font-sans" suppressHydrationWarning>
+        <NavigationProgress />
         <AuthProvider>
           <NewSinceLastVisitProvider>
             <ConsentProvider>

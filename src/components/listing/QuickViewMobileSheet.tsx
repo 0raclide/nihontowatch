@@ -96,6 +96,7 @@ export function QuickViewMobileSheet({
   const activityTracker = useActivityTrackerOptional();
   const [isInquiryModalOpen, setIsInquiryModalOpen] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [navigatingToArtist, setNavigatingToArtist] = useState(false);
 
   const handleToggleHidden = useCallback(async () => {
     const newHidden = !listing.admin_hidden;
@@ -494,14 +495,14 @@ export function QuickViewMobileSheet({
               href={`/artists/${listing.artisan_id}`}
               onClick={(e) => {
                 e.preventDefault();
-                // Save return context so artist page can show a "Return to Listing" pill
+                if (navigatingToArtist) return;
+                setNavigatingToArtist(true);
+                window.dispatchEvent(new Event('nav-progress-start'));
                 saveListingReturnContext(listing);
-                // Dismiss QuickView UI without history.back() to avoid the race
-                // that cancels router.push() on mobile.
-                quickView?.dismissForNavigation?.();
                 router.push(`/artists/${listing.artisan_id}`);
+                setTimeout(() => quickView?.dismissForNavigation?.(), 300);
               }}
-              className="group flex items-center gap-3 flex-1 min-w-0 cursor-pointer"
+              className={`group flex items-center gap-3 flex-1 min-w-0 cursor-pointer ${navigatingToArtist ? 'opacity-70' : ''}`}
             >
               <svg className="w-4 h-4 text-gold shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -535,9 +536,16 @@ export function QuickViewMobileSheet({
                   <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
                 </svg>
               )}
-              <svg className="w-3.5 h-3.5 text-gold/60 group-hover:text-gold transition-all shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
+              {navigatingToArtist ? (
+                <svg className="w-3.5 h-3.5 text-gold animate-spin shrink-0" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+              ) : (
+                <svg className="w-3.5 h-3.5 text-gold/60 group-hover:text-gold transition-all shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              )}
             </a>
           </div>
         )}
