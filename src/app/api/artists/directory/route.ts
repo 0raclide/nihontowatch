@@ -33,6 +33,7 @@ export async function GET(request: NextRequest) {
       getBulkElitePercentiles,
       getSchoolMemberCounts,
       getSchoolMemberCodes,
+      getSchoolCodesForMembers,
     } = await import('@/lib/supabase/yuhinkai');
     const { generateArtisanSlug } = await import('@/lib/artisan/slugs');
 
@@ -65,7 +66,27 @@ export async function GET(request: NextRequest) {
       // 1. Get all available listing counts from main DB
       const allListingData = await getAllAvailableListingCounts();
 
-      // 2. Query Yuhinkai for matching artists among those with listings
+      // 2. Reverse-map member codes → school codes so schools appear with aggregated counts
+      const memberCodes = [...allListingData.keys()];
+      const schoolMemberMap = await getSchoolCodesForMembers(memberCodes);
+
+      // Aggregate member listing counts into school codes
+      for (const [schoolCode, members] of schoolMemberMap) {
+        let schoolCount = 0;
+        let schoolFirstId: number | undefined;
+        for (const memberCode of members) {
+          const memberData = allListingData.get(memberCode);
+          if (memberData) {
+            schoolCount += memberData.count;
+            if (!schoolFirstId && memberData.firstId) schoolFirstId = memberData.firstId;
+          }
+        }
+        if (schoolCount > 0) {
+          allListingData.set(schoolCode, { count: schoolCount, firstId: schoolFirstId });
+        }
+      }
+
+      // 3. Query Yuhinkai for matching artists among those with listings (includes school codes now)
       const artisanCodes = [...allListingData.keys()];
       const matchedArtists = await getFilteredArtistsByCodes(artisanCodes, type, { school, province, era, q, notable });
 

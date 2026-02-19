@@ -1011,11 +1011,16 @@ export async function getFilteredArtistsByCodes(
   const BATCH_SIZE = 200;
   const results: ArtistDirectoryEntry[] = [];
 
+  // Split codes: NS-* → artisan_schools, others → artisan_makers
+  const schoolCodes = codes.filter(c => c.startsWith('NS-'));
+  const makerCodes = codes.filter(c => !c.startsWith('NS-'));
+
   // Pre-resolve broad period → specific eras once (reused across batches)
   let resolvedEras: string[] | null = null;
 
-  for (let i = 0; i < codes.length; i += BATCH_SIZE) {
-    const batch = codes.slice(i, i + BATCH_SIZE);
+  // Query artisan_makers for individual maker codes
+  for (let i = 0; i < makerCodes.length; i += BATCH_SIZE) {
+    const batch = makerCodes.slice(i, i + BATCH_SIZE);
     let query = yuhinkaiClient
       .from('artisan_makers')
       .select('maker_id, name_romaji, name_kanji, legacy_school_text, province, era, kokuho_count, jubun_count, jubi_count, gyobutsu_count, tokuju_count, juyo_count, total_items, elite_factor, provenance_factor')
@@ -1063,6 +1068,59 @@ export async function getFilteredArtistsByCodes(
         elite_factor: (row.elite_factor as number) || 0,
         provenance_factor: (row.provenance_factor as number) ?? null,
         is_school_code: false,
+      });
+    }
+  }
+
+  // Query artisan_schools for school codes (NS-*)
+  for (let i = 0; i < schoolCodes.length; i += BATCH_SIZE) {
+    const batch = schoolCodes.slice(i, i + BATCH_SIZE);
+    let query = yuhinkaiClient
+      .from('artisan_schools')
+      .select('school_id, name_romaji, name_kanji, province, era_start, kokuho_count, jubun_count, jubi_count, gyobutsu_count, tokuju_count, juyo_count, total_items, elite_factor, provenance_factor')
+      .in('school_id', batch)
+      .in('domain', domainFilter);
+
+    if (filters.notable !== false) query = query.gt('total_items', 0);
+    if (filters.school) query = query.eq('name_romaji', filters.school);
+    if (filters.province) query = query.eq('province', filters.province);
+
+    if (filters.era) {
+      if (!resolvedEras) {
+        resolvedEras = await getErasForBroadPeriod(filters.era, entityType);
+      }
+      if (resolvedEras.length > 0) {
+        query = query.in('era_start', resolvedEras);
+      } else {
+        continue;
+      }
+    }
+
+    if (filters.q) {
+      query = query.or(`name_romaji.ilike.%${filters.q}%,name_kanji.ilike.%${filters.q}%,school_id.ilike.%${filters.q}%,province.ilike.%${filters.q}%`);
+    }
+
+    const { data } = await query;
+
+    for (const row of data || []) {
+      results.push({
+        code: row.school_id as string,
+        name_romaji: row.name_romaji as string | null,
+        name_kanji: row.name_kanji as string | null,
+        school: row.name_romaji as string | null,
+        province: row.province as string | null,
+        era: row.era_start as string | null,
+        entity_type: entityType,
+        kokuho_count: (row.kokuho_count as number) || 0,
+        jubun_count: (row.jubun_count as number) || 0,
+        jubi_count: (row.jubi_count as number) || 0,
+        gyobutsu_count: (row.gyobutsu_count as number) || 0,
+        tokuju_count: (row.tokuju_count as number) || 0,
+        juyo_count: (row.juyo_count as number) || 0,
+        total_items: (row.total_items as number) || 0,
+        elite_factor: (row.elite_factor as number) || 0,
+        provenance_factor: (row.provenance_factor as number) ?? null,
+        is_school_code: true,
       });
     }
   }
@@ -1187,6 +1245,41 @@ export async function getSchoolMemberCodes(
       result.set(code, memberCodes);
     })
   );
+
+  return result;
+}
+
+/**
+ * Reverse-map: given a set of individual maker codes, find which school codes
+ * contain those makers as members. Returns Map<schoolCode, memberCodes[]>
+ * where memberCodes are the subset of `makerCodes` belonging to that school.
+ * Used by the for_sale sort path to aggregate individual listing counts into schools.
+ */
+export async function getSchoolCodesForMembers(
+  makerCodes: string[]
+): Promise<Map<string, string[]>> {
+  const result = new Map<string, string[]>();
+  if (makerCodes.length === 0) return result;
+
+  const BATCH_SIZE = 500;
+  for (let i = 0; i < makerCodes.length; i += BATCH_SIZE) {
+    const batch = makerCodes.slice(i, i + BATCH_SIZE);
+    const { data } = await yuhinkaiClient
+      .from('artisan_school_members')
+      .select('school_id, maker_id')
+      .in('maker_id', batch);
+
+    for (const row of data || []) {
+      const schoolId = row.school_id as string;
+      const makerId = row.maker_id as string;
+      const existing = result.get(schoolId);
+      if (existing) {
+        existing.push(makerId);
+      } else {
+        result.set(schoolId, [makerId]);
+      }
+    }
+  }
 
   return result;
 }
