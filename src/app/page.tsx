@@ -226,6 +226,7 @@ function HomeContent() {
   const loadingMoreRef = useRef(false); // Ref for synchronous guard against rapid calls
   const currentSearchIdRef = useRef<number | undefined>(undefined); // For CTR tracking
   const scrollContainerRef = useRef<HTMLDivElement>(null); // Mobile contained-scroll container
+  const lastTrackedSearchRef = useRef<string>(''); // Dedup: only track when query actually changes
 
   // Currency state - default to JPY
   const [currency, setCurrency] = useState<Currency>(() => {
@@ -346,8 +347,12 @@ function HomeContent() {
           scrollContainerRef.current.scrollTo({ top: 0 });
         }
 
-        // Track search if there's a query or active filters (skip admins)
-        if (!authIsAdmin && (searchQuery || hasActiveFilters())) {
+        // Track search only when the query genuinely changes (not on filter/tab/sort tweaks).
+        // This prevents inflated counts — previously every filter/tab change re-recorded
+        // the same query as a new search event.
+        const queryKey = searchQuery || '';
+        if (!authIsAdmin && queryKey && queryKey !== lastTrackedSearchRef.current) {
+          lastTrackedSearchRef.current = queryKey;
           const sessionId = getSessionId();
           const searchFilters = {
             itemType: filters.itemTypes,
@@ -355,15 +360,16 @@ function HomeContent() {
             certification: filters.certifications,
           };
           const searchId = await trackSearch(
-            searchQuery || '',
+            queryKey,
             searchFilters,
             json.total || 0,
             sessionId,
             user?.id
           );
           currentSearchIdRef.current = searchId;
-        } else {
-          // Clear searchId when not a search (just browsing)
+        } else if (!queryKey) {
+          // Clear searchId and dedup key when search is cleared
+          lastTrackedSearchRef.current = '';
           currentSearchIdRef.current = undefined;
         }
       } catch (error) {
