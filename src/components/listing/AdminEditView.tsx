@@ -117,7 +117,7 @@ export function AdminEditView({ listing, onBackToPhotos, onRefresh }: AdminEditV
           artisan_confidence: 'HIGH',
           artisan_method: 'ADMIN_CORRECTION',
           artisan_verified: 'correct',
-          artisan_display_name: result.name_romaji || result.code,
+          artisan_display_name: result.display_name || result.name_romaji || result.code,
         };
         onRefresh(optimistic as Partial<Listing>);
         dispatchRefresh(optimistic);

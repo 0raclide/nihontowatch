@@ -237,7 +237,7 @@ export function ArtisanTooltip({
               artisan_confidence: 'HIGH',
               artisan_method: 'ADMIN_CORRECTION',
               artisan_verified: 'correct',
-              artisan_display_name: result.name_romaji || result.code,
+              artisan_display_name: result.display_name || result.name_romaji || result.code,
             },
           }));
         }

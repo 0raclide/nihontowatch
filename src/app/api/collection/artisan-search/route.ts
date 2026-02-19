@@ -14,12 +14,13 @@ export interface ArtisanSearchResult {
   type: 'smith' | 'tosogu';
   name_romaji: string | null;
   name_kanji: string | null;
+  display_name: string | null;
   school: string | null;
   province: string | null;
   era: string | null;
-  juyo_count: number;
-  tokuju_count: number;
-  total_items: number;
+  generation: string | null;
+  hawley: number | null;
+  fujishiro: string | null;
 }
 
 export async function GET(request: NextRequest) {
@@ -44,65 +45,48 @@ export async function GET(request: NextRequest) {
     }
 
     const { yuhinkaiClient } = await import('@/lib/supabase/yuhinkai');
-    const results: ArtisanSearchResult[] = [];
 
     const escapedQuery = query.replace(/[%_\\]/g, '\\$&');
     const pattern = `%${escapedQuery}%`;
 
-    // Search smiths
-    if (type === 'all' || type === 'smith') {
-      const { data: smiths } = await yuhinkaiClient
-        .from('smith_entities')
-        .select('smith_id, name_romaji, name_kanji, school, province, era, juyo_count, tokuju_count, total_items')
-        .or(`smith_id.ilike.${pattern},name_romaji.ilike.${pattern},name_kanji.ilike.${pattern},school.ilike.${pattern}`)
-        .order('juyo_count', { ascending: false, nullsFirst: false })
-        .limit(type === 'all' ? Math.ceil(limit / 2) : limit);
+    // Single query to artisan_makers
+    let dbQuery = yuhinkaiClient
+      .from('artisan_makers')
+      .select('maker_id, name_romaji, name_kanji, name_romaji_normalized, display_name, legacy_school_text, province, era, generation, domain, hawley, fujishiro')
+      .or(`maker_id.ilike.${pattern},name_romaji.ilike.${pattern},name_romaji_normalized.ilike.${pattern},name_kanji.ilike.${pattern},legacy_school_text.ilike.${pattern},display_name.ilike.${pattern}`);
 
-      for (const s of smiths || []) {
-        results.push({
-          code: s.smith_id,
-          type: 'smith',
-          name_romaji: s.name_romaji,
-          name_kanji: s.name_kanji,
-          school: s.school,
-          province: s.province,
-          era: s.era,
-          juyo_count: s.juyo_count || 0,
-          tokuju_count: s.tokuju_count || 0,
-          total_items: s.total_items || 0,
-        });
-      }
+    // Domain filter based on type param
+    if (type === 'smith') {
+      dbQuery = dbQuery.in('domain', ['sword', 'both']);
+    } else if (type === 'tosogu') {
+      dbQuery = dbQuery.in('domain', ['tosogu', 'both']);
     }
 
-    // Search tosogu makers
-    if (type === 'all' || type === 'tosogu') {
-      const { data: makers } = await yuhinkaiClient
-        .from('tosogu_makers')
-        .select('maker_id, name_romaji, name_kanji, school, province, era, juyo_count, tokuju_count, total_items')
-        .or(`maker_id.ilike.${pattern},name_romaji.ilike.${pattern},name_kanji.ilike.${pattern},school.ilike.${pattern}`)
-        .order('juyo_count', { ascending: false, nullsFirst: false })
-        .limit(type === 'all' ? Math.ceil(limit / 2) : limit);
+    const { data, error: queryError } = await dbQuery
+      .order('hawley', { ascending: false, nullsFirst: false })
+      .limit(limit);
 
-      for (const m of makers || []) {
-        results.push({
-          code: m.maker_id,
-          type: 'tosogu',
-          name_romaji: m.name_romaji,
-          name_kanji: m.name_kanji,
-          school: m.school,
-          province: m.province,
-          era: m.era,
-          juyo_count: m.juyo_count || 0,
-          tokuju_count: m.tokuju_count || 0,
-          total_items: m.total_items || 0,
-        });
-      }
+    if (queryError) {
+      logger.error('Collection artisan search error', { error: queryError.message });
+      return NextResponse.json({ results: [], error: 'Search query failed' }, { status: 500 });
     }
 
-    results.sort((a, b) => (b.juyo_count + b.tokuju_count) - (a.juyo_count + a.tokuju_count));
+    const results: ArtisanSearchResult[] = (data || []).map((row) => ({
+      code: row.maker_id,
+      type: row.domain === 'tosogu' ? 'tosogu' as const : 'smith' as const,
+      name_romaji: row.name_romaji,
+      name_kanji: row.name_kanji,
+      display_name: row.display_name,
+      school: row.legacy_school_text,
+      province: row.province,
+      era: row.era,
+      generation: row.generation,
+      hawley: row.hawley,
+      fujishiro: row.fujishiro,
+    }));
 
     return NextResponse.json({
-      results: results.slice(0, limit),
+      results,
       query,
       total: results.length,
     });

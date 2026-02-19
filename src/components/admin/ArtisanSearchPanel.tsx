@@ -129,8 +129,8 @@ export function ArtisanSearchPanel({
                 {result.name_kanji && (
                   <span className="font-jp mr-1">{result.name_kanji}</span>
                 )}
-                {result.name_romaji && (
-                  <span>{result.name_romaji}</span>
+                {(result.display_name || result.name_romaji) && (
+                  <span>{result.display_name || result.name_romaji}</span>
                 )}
                 {result.generation && (
                   <span className="text-muted ml-1">({result.generation})</span>
@@ -141,11 +141,11 @@ export function ArtisanSearchPanel({
                   {[result.school, result.province, result.era].filter(Boolean).join(' · ')}
                 </div>
               )}
-              {(result.juyo_count > 0 || result.tokuju_count > 0) && (
+              {(result.hawley || result.fujishiro) && (
                 <div className="text-[10px] text-muted mt-0.5">
-                  {result.tokuju_count > 0 && `${result.tokuju_count} Tokuju`}
-                  {result.tokuju_count > 0 && result.juyo_count > 0 && ' · '}
-                  {result.juyo_count > 0 && `${result.juyo_count} Juyo`}
+                  {result.hawley != null && `Hawley ${result.hawley}`}
+                  {result.hawley != null && result.fujishiro && ' · '}
+                  {result.fujishiro && result.fujishiro}
                 </div>
               )}
             </button>

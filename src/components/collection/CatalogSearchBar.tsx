@@ -13,11 +13,12 @@ interface ArtisanResult {
   type: 'smith' | 'tosogu';
   name_romaji: string | null;
   name_kanji: string | null;
+  display_name: string | null;
   school: string | null;
   province: string | null;
   era: string | null;
-  juyo_count: number;
-  tokuju_count: number;
+  hawley: number | null;
+  fujishiro: string | null;
 }
 
 export function CatalogSearchBar({ onSelect }: CatalogSearchBarProps) {
@@ -206,7 +207,8 @@ export function CatalogSearchBar({ onSelect }: CatalogSearchBarProps) {
                     {a.school && `${a.school}`}
                     {a.province && `, ${a.province}`}
                     {a.era && `, ${a.era}`}
-                    {(a.juyo_count > 0 || a.tokuju_count > 0) && ` — Juyo: ${a.juyo_count}, Tokuju: ${a.tokuju_count}`}
+                    {a.hawley != null && ` — Hawley ${a.hawley}`}
+                    {a.fujishiro && ` · ${a.fujishiro}`}
                   </div>
                 </button>
               ))}
