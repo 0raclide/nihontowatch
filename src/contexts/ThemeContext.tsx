@@ -23,7 +23,7 @@ import {
  *
  * Extensible: Add new themes to THEME_NAMES and THEMES record
  */
-export const THEME_NAMES = ['opus', 'sothebys', 'yuhindo'] as const;
+export const THEME_NAMES = ['opus', 'sothebys', 'classic', 'yuhindo'] as const;
 export type ThemeName = (typeof THEME_NAMES)[number];
 
 export type ThemeMode = 'light' | 'dark';
@@ -64,6 +64,14 @@ export const THEMES: Record<ThemeName, ThemeDefinition> = {
     previewAccent: '#B8860B',
     previewBg: '#FAF9F6',
     metaColor: '#FAF9F6',
+  },
+  classic: {
+    name: 'classic',
+    label: 'Classic',
+    mode: 'light',
+    previewAccent: '#8B7209',
+    previewBg: '#FFFFFF',
+    metaColor: '#FFFFFF',
   },
   yuhindo: {
     name: 'yuhindo',
@@ -300,10 +308,11 @@ export const themeInitScript = `
 (function() {
   try {
     var stored = localStorage.getItem('nihontowatch-theme');
-    var themes = ['opus', 'sothebys', 'yuhindo'];
+    var themes = ['opus', 'sothebys', 'classic', 'yuhindo'];
     var themeData = {
       opus: { mode: 'dark', metaColor: '#0c1220' },
       sothebys: { mode: 'light', metaColor: '#FAF9F6' },
+      classic: { mode: 'light', metaColor: '#FFFFFF' },
       yuhindo: { mode: 'dark', metaColor: '#010000' }
     };
 

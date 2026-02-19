@@ -317,6 +317,137 @@ html.theme-sothebys {
 }
 
 /* ==========================================================================
+   Classic - High-Contrast Light Theme
+   Optimized for maximum readability. Print-like clarity, near-black text,
+   pure white background. Every text level significantly darker than Sothebys.
+   ========================================================================== */
+html.theme-classic {
+  color-scheme: light;
+
+  /* Core palette — maximum contrast base */
+  --background: #FFFFFF;
+  --background-warm: #FEFEFE;
+  --foreground: #111111;
+
+  /* Surfaces */
+  --surface: #F5F4F2;
+  --surface-elevated: #FFFFFF;
+  --surface-overlay: rgba(245, 244, 242, 0.97);
+
+  /* Borders — slightly stronger than Sothebys */
+  --border: #D8D4CE;
+  --border-subtle: #E8E4DE;
+  --border-accent: rgba(139, 114, 9, 0.40);
+
+  /* Interactive states */
+  --hover: #EDEBE7;
+  --active: #E2DFD9;
+
+  /* Primary accent — slightly darker gold for contrast */
+  --accent: #8B7209;
+  --accent-light: #B8960D;
+  --accent-dark: #6E5A07;
+  --accent-glow: rgba(139, 114, 9, 0.18);
+
+  /* Text hierarchy — ALL significantly darker than Sothebys */
+  --text-primary: #111111;
+  --text-secondary: #2A2A2A;
+  --text-tertiary: #3A3A3A;
+  --text-muted: #4A4A4A;
+  --text-accent: #6E5A07;
+
+  /* Semantic colors */
+  --success: #3D7A54;
+  --warning: #9A7A10;
+  --error: #A83030;
+
+  /* Button defaults */
+  --button-bg: var(--accent);
+  --button-bg-hover: var(--accent-dark);
+  --button-text: #ffffff;
+
+  /* Certification colors — same as light mode (already good contrast) */
+  --tokuju: #5B3D8A;
+  --tokuju-bg: rgba(91, 61, 138, 0.12);
+  --jubi: #D4820A;
+  --jubi-bg: rgba(212, 130, 10, 0.12);
+  --juyo: #2D5A8A;
+  --juyo-bg: rgba(45, 90, 138, 0.12);
+  --toku-hozon: #8B5A2B;
+  --toku-hozon-bg: rgba(139, 90, 43, 0.12);
+  --hozon: #8A7A20;
+  --hozon-bg: rgba(138, 122, 32, 0.12);
+  --sage: #8FA67A;
+
+  /* New listing badge */
+  --new-listing: #2D8A5A;
+  --new-listing-bg: rgba(45, 138, 90, 0.12);
+
+  /* Artisan confidence colors */
+  --artisan-high: #2D8A5A;
+  --artisan-high-bg: rgba(45, 138, 90, 0.12);
+  --artisan-medium: #C9A857;
+  --artisan-medium-bg: rgba(201, 168, 87, 0.12);
+  --artisan-low: #6A6A6A;
+  --artisan-low-bg: rgba(106, 106, 106, 0.10);
+
+  /* Provenance tier colors */
+  --prov-imperial: #8B7209;
+  --prov-shogunal: #8B4513;
+  --prov-premier: #9B2335;
+  --prov-major: #2B4570;
+  --prov-mid: #5B7B8A;
+  --prov-institution: #6B7B6B;
+  --prov-minor: #8B8178;
+
+  /* Alias */
+  --burgundy: var(--juyo);
+
+  /* Shadows */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.10);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.12);
+  --shadow-glow: 0 0 32px rgba(139, 114, 9, 0.08);
+
+  /* Legacy aliases */
+  --cream: var(--background);
+  --ivory: var(--background-warm);
+  --linen: var(--surface);
+  --paper: var(--surface-elevated);
+  --charcoal: var(--text-secondary);
+  --ink: var(--text-primary);
+  --gold: var(--accent);
+  --gold-light: var(--accent-light);
+  --muted: var(--text-muted);
+  --border-dark: #C8C4BE;
+}
+
+/* Classic theme readability overrides:
+   Boost opacity-reduced muted text to full muted/tertiary color */
+html.theme-classic .text-muted\/40,
+html.theme-classic .text-muted\/50 {
+  color: var(--text-muted) !important;
+}
+html.theme-classic .text-muted\/60,
+html.theme-classic .text-muted\/70 {
+  color: var(--text-tertiary) !important;
+}
+html.theme-classic .placeholder\:text-muted\/40::placeholder,
+html.theme-classic .placeholder\:text-muted\/50::placeholder,
+html.theme-classic .placeholder\:text-muted\/70::placeholder {
+  color: var(--text-muted) !important;
+}
+
+/* Classic theme: bump tiny text to readable minimums */
+html.theme-classic .text-\[9px\],
+html.theme-classic .text-\[10px\] {
+  font-size: 12px !important;
+}
+html.theme-classic .text-\[11px\] {
+  font-size: 13px !important;
+}
+
+/* ==========================================================================
    Yuhindo Button Overrides
    Forces bg-gold buttons to use rich violet in Yuhindo theme
    ========================================================================== */
