@@ -45,24 +45,24 @@ interface ArtisanForSitemap {
 async function getAllNotableArtisans(): Promise<ArtisanForSitemap[]> {
   const artisans: ArtisanForSitemap[] = [];
 
-  // Fetch smiths (including NS school codes)
-  const { data: smiths } = await yuhinkaiClient
-    .from('smith_entities')
-    .select('smith_id, name_romaji')
-    .gt('total_items', 0);
-
-  for (const s of smiths || []) {
-    artisans.push({ code: s.smith_id, name_romaji: s.name_romaji });
-  }
-
-  // Fetch tosogu makers (including NS school codes)
+  // Fetch individual makers from artisan_makers
   const { data: makers } = await yuhinkaiClient
-    .from('tosogu_makers')
+    .from('artisan_makers')
     .select('maker_id, name_romaji')
     .gt('total_items', 0);
 
   for (const m of makers || []) {
     artisans.push({ code: m.maker_id, name_romaji: m.name_romaji });
+  }
+
+  // Fetch school entries from artisan_schools
+  const { data: schools } = await yuhinkaiClient
+    .from('artisan_schools')
+    .select('school_id, name_romaji')
+    .gt('total_items', 0);
+
+  for (const s of schools || []) {
+    artisans.push({ code: s.school_id, name_romaji: s.name_romaji });
   }
 
   return artisans;

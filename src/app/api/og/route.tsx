@@ -299,62 +299,56 @@ async function fetchArtistData(code: string): Promise<ArtistData | null> {
   const yuKey = process.env.YUHINKAI_SUPABASE_KEY || process.env.OSHI_V2_SUPABASE_KEY || process.env.OSHI_V2_SUPABASE_ANON_KEY || '';
   if (!yuUrl || !yuKey) return null;
 
-  // Try smith_entities first
-  const smithResponse = await fetch(
-    `${yuUrl}/rest/v1/smith_entities?smith_id=eq.${encodeURIComponent(code)}&select=smith_id,name_romaji,school,province,era,juyo_count,tokuju_count,kokuho_count,elite_factor,total_items`,
-    {
-      headers: {
-        apikey: yuKey,
-        Authorization: `Bearer ${yuKey}`,
-      },
-    }
-  );
+  const headers = { apikey: yuKey, Authorization: `Bearer ${yuKey}` };
 
-  if (smithResponse.ok) {
-    const smithRows = await smithResponse.json();
-    if (smithRows.length > 0) {
-      const s = smithRows[0];
-      return {
-        name_romaji: s.name_romaji,
-        school: s.school,
-        province: s.province,
-        era: s.era,
-        entity_type: 'smith',
-        kokuho_count: s.kokuho_count || 0,
-        tokuju_count: s.tokuju_count || 0,
-        juyo_count: s.juyo_count || 0,
-        elite_factor: s.elite_factor || 0,
-        total_items: s.total_items || 0,
-      };
+  // For NS-* school codes, query artisan_schools
+  if (code.startsWith('NS-')) {
+    const schoolResponse = await fetch(
+      `${yuUrl}/rest/v1/artisan_schools?school_id=eq.${encodeURIComponent(code)}&select=school_id,name_romaji,domain,province,juyo_count,tokuju_count,kokuho_count,elite_factor,total_items,era_start`,
+      { headers }
+    );
+    if (schoolResponse.ok) {
+      const schoolRows = await schoolResponse.json();
+      if (schoolRows.length > 0) {
+        const s = schoolRows[0];
+        return {
+          name_romaji: s.name_romaji,
+          school: s.name_romaji,
+          province: s.province,
+          era: s.era_start,
+          entity_type: s.domain === 'tosogu' ? 'tosogu' : 'smith',
+          kokuho_count: s.kokuho_count || 0,
+          tokuju_count: s.tokuju_count || 0,
+          juyo_count: s.juyo_count || 0,
+          elite_factor: s.elite_factor || 0,
+          total_items: s.total_items || 0,
+        };
+      }
     }
+    return null;
   }
 
-  // Fall back to tosogu_makers
-  const tosoguResponse = await fetch(
-    `${yuUrl}/rest/v1/tosogu_makers?maker_id=eq.${encodeURIComponent(code)}&select=maker_id,name_romaji,school,province,era,juyo_count,tokuju_count,kokuho_count,elite_factor,total_items`,
-    {
-      headers: {
-        apikey: yuKey,
-        Authorization: `Bearer ${yuKey}`,
-      },
-    }
+  // Individual makers: single query to artisan_makers
+  const makerResponse = await fetch(
+    `${yuUrl}/rest/v1/artisan_makers?maker_id=eq.${encodeURIComponent(code)}&select=maker_id,name_romaji,legacy_school_text,province,era,domain,juyo_count,tokuju_count,kokuho_count,elite_factor,total_items`,
+    { headers }
   );
 
-  if (tosoguResponse.ok) {
-    const tosoguRows = await tosoguResponse.json();
-    if (tosoguRows.length > 0) {
-      const t = tosoguRows[0];
+  if (makerResponse.ok) {
+    const makerRows = await makerResponse.json();
+    if (makerRows.length > 0) {
+      const m = makerRows[0];
       return {
-        name_romaji: t.name_romaji,
-        school: t.school,
-        province: t.province,
-        era: t.era,
-        entity_type: 'tosogu',
-        kokuho_count: t.kokuho_count || 0,
-        tokuju_count: t.tokuju_count || 0,
-        juyo_count: t.juyo_count || 0,
-        elite_factor: t.elite_factor || 0,
-        total_items: t.total_items || 0,
+        name_romaji: m.name_romaji,
+        school: m.legacy_school_text,
+        province: m.province,
+        era: m.era,
+        entity_type: m.domain === 'tosogu' ? 'tosogu' : 'smith',
+        kokuho_count: m.kokuho_count || 0,
+        tokuju_count: m.tokuju_count || 0,
+        juyo_count: m.juyo_count || 0,
+        elite_factor: m.elite_factor || 0,
+        total_items: m.total_items || 0,
       };
     }
   }

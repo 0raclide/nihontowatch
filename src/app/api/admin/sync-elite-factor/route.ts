@@ -42,26 +42,28 @@ interface SyncResult {
  * Fetch elite_factor from Yuhinkai for an artisan code
  */
 async function getEliteFactor(artisanCode: string): Promise<number | null> {
-  // Try smith_entities first
-  const { data: smith } = await yuhinkaiClient
-    .from('smith_entities')
-    .select('elite_factor')
-    .eq('smith_id', artisanCode)
-    .single();
-
-  if (smith?.elite_factor !== undefined) {
-    return smith.elite_factor;
-  }
-
-  // Try tosogu_makers
-  const { data: maker } = await yuhinkaiClient
-    .from('tosogu_makers')
+  // Check artisan_makers (unified table)
+  const { data: artisan } = await yuhinkaiClient
+    .from('artisan_makers')
     .select('elite_factor')
     .eq('maker_id', artisanCode)
     .single();
 
-  if (maker?.elite_factor !== undefined) {
-    return maker.elite_factor;
+  if (artisan?.elite_factor !== undefined) {
+    return artisan.elite_factor;
+  }
+
+  // Fallback: check artisan_schools for NS-* codes
+  if (artisanCode.startsWith('NS-')) {
+    const { data: school } = await yuhinkaiClient
+      .from('artisan_schools')
+      .select('elite_factor')
+      .eq('school_id', artisanCode)
+      .single();
+
+    if (school?.elite_factor !== undefined) {
+      return school.elite_factor;
+    }
   }
 
   return null;

@@ -56,28 +56,19 @@ export async function GET(request: NextRequest) {
       goldQuery = goldQuery.contains('gold_collections', [collection]);
     }
 
-    // Filter by smith name if q provided (search smith_entities first)
+    // Filter by smith name if q provided (search artisan_makers)
     let targetSmithIds: string[] | null = null;
     if (q && q.length >= 2) {
       const escapedQ = q.replace(/[%_\\]/g, '\\$&');
       const pattern = `%${escapedQ}%`;
 
-      const { data: smiths } = await yuhinkaiClient
-        .from('smith_entities')
-        .select('smith_id')
-        .or(`name_romaji.ilike.${pattern},name_kanji.ilike.${pattern},smith_id.ilike.${pattern}`)
-        .limit(50);
-
-      const { data: makers } = await yuhinkaiClient
-        .from('tosogu_makers')
+      const { data: artisans } = await yuhinkaiClient
+        .from('artisan_makers')
         .select('maker_id')
         .or(`name_romaji.ilike.${pattern},name_kanji.ilike.${pattern},maker_id.ilike.${pattern}`)
-        .limit(50);
+        .limit(100);
 
-      targetSmithIds = [
-        ...(smiths || []).map(s => s.smith_id),
-        ...(makers || []).map(m => m.maker_id),
-      ];
+      targetSmithIds = (artisans || []).map(a => a.maker_id);
 
       if (targetSmithIds.length === 0) {
         return NextResponse.json({ results: [] });
@@ -125,25 +116,19 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ results: [] });
     }
 
-    // Step 3: Get smith/maker names for display
-    const smithIds = [...new Set(goldRows.map(r => r.gold_smith_id).filter(Boolean))] as string[];
-    const makerIds = [...new Set(goldRows.map(r => r.gold_maker_id).filter(Boolean))] as string[];
+    // Step 3: Get artisan names for display
+    const allArtisanIds = [...new Set([
+      ...goldRows.map(r => r.gold_smith_id).filter(Boolean),
+      ...goldRows.map(r => r.gold_maker_id).filter(Boolean),
+    ])] as string[];
 
-    const [{ data: smithEntities }, { data: tosoguMakers }] = await Promise.all([
-      smithIds.length > 0
-        ? yuhinkaiClient.from('smith_entities').select('smith_id, name_romaji, school, province, era').in('smith_id', smithIds)
-        : Promise.resolve({ data: [] }),
-      makerIds.length > 0
-        ? yuhinkaiClient.from('tosogu_makers').select('maker_id, name_romaji, school, province, era').in('maker_id', makerIds)
-        : Promise.resolve({ data: [] }),
-    ]);
+    const { data: artisanEntities } = allArtisanIds.length > 0
+      ? await yuhinkaiClient.from('artisan_makers').select('maker_id, name_romaji, legacy_school_text, province, era').in('maker_id', allArtisanIds)
+      : { data: [] };
 
     const nameMap = new Map<string, { name: string | null; school: string | null; province: string | null; era: string | null }>();
-    for (const s of smithEntities || []) {
-      nameMap.set(s.smith_id, { name: s.name_romaji, school: s.school, province: s.province, era: s.era });
-    }
-    for (const m of tosoguMakers || []) {
-      nameMap.set(m.maker_id, { name: m.name_romaji, school: m.school, province: m.province, era: m.era });
+    for (const a of artisanEntities || []) {
+      nameMap.set(a.maker_id, { name: a.name_romaji, school: a.legacy_school_text, province: a.province, era: a.era });
     }
 
     // Step 4: Build catalog UUID -> gold_values map

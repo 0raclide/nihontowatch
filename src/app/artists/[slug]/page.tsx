@@ -3,8 +3,7 @@ import { notFound, redirect } from 'next/navigation';
 import { extractCodeFromSlug, isBareCode, generateArtisanSlug } from '@/lib/artisan/slugs';
 import { getArtisanDisplayParts, getArtisanAlias } from '@/lib/artisan/displayName';
 import {
-  getSmithEntity,
-  getTosoguMaker,
+  getArtisan,
   getAiDescription,
   getStudents,
   getRelatedArtisans,
@@ -37,15 +36,12 @@ interface ArtistPageProps {
  * Fetch all data for the artist page server-side.
  */
 async function getArtistData(code: string): Promise<ArtisanPageResponse | null> {
-  const smithEntity = await getSmithEntity(code);
-  const isSmith = !!smithEntity;
-  const tosoguMaker = !isSmith ? await getTosoguMaker(code) : null;
-  const entity = smithEntity || tosoguMaker;
+  const entity = await getArtisan(code);
 
   if (!entity) return null;
 
   const entityCode = entity.maker_id;
-  const entityType = isSmith ? 'smith' as const : 'tosogu' as const;
+  const entityType = entity.entity_type;
   const eliteFactor = entity.elite_factor ?? 0;
   const provenanceFactor = entity.provenance_factor ?? null;
   const provenanceCount = entity.provenance_count ?? 0;
@@ -61,8 +57,8 @@ async function getArtistData(code: string): Promise<ArtisanPageResponse | null> 
       provenanceFactor != null
         ? getProvenancePercentile(provenanceFactor, entityType)
         : Promise.resolve(null),
-      isSmith && smithEntity!.toko_taikan
-        ? getTokoTaikanPercentile(smithEntity!.toko_taikan!)
+      entity.toko_taikan
+        ? getTokoTaikanPercentile(entity.toko_taikan)
         : Promise.resolve(null),
       entity.teacher ? resolveTeacher(entity.teacher) : Promise.resolve(null),
       getDenraiForArtisan(entityCode, entityType),
@@ -108,15 +104,15 @@ async function getArtistData(code: string): Promise<ArtisanPageResponse | null> 
       school: entity.school,
       province: entity.province,
       era: entity.era,
-      period: isSmith ? smithEntity!.period : null,
+      period: entity.period,
       generation: entity.generation,
       teacher: entity.teacher,
       entity_type: entityType,
       is_school_code: entity.is_school_code || false,
       slug,
-      fujishiro: isSmith ? smithEntity!.fujishiro : null,
-      toko_taikan: isSmith ? smithEntity!.toko_taikan : null,
-      specialties: !isSmith ? tosoguMaker!.specialties : null,
+      fujishiro: entity.fujishiro,
+      toko_taikan: entity.toko_taikan,
+      specialties: entity.specialties,
     },
     certifications: {
       kokuho_count: entity.kokuho_count || 0,
@@ -194,14 +190,12 @@ export async function generateMetadata({ params }: ArtistPageProps): Promise<Met
   const code = extractCodeFromSlug(slug);
   if (!code) return { title: 'Artist Not Found | NihontoWatch' };
 
-  const smith = await getSmithEntity(code);
-  const tosogu = !smith ? await getTosoguMaker(code) : null;
-  const entity = smith || tosogu;
+  const entity = await getArtisan(code);
 
   if (!entity) return { title: 'Artist Not Found | NihontoWatch' };
 
   const name = entity.name_romaji || code;
-  const type = smith ? 'swordsmith' : 'tosogu maker';
+  const type = entity.entity_type === 'smith' ? 'swordsmith' : 'tosogu maker';
   const province = entity.province ? ` of ${entity.province}` : '';
   const juyo = entity.juyo_count || 0;
   const tokuju = entity.tokuju_count || 0;
@@ -243,9 +237,7 @@ export default async function ArtistSlugPage({ params }: ArtistPageProps) {
 
   // Redirect bare codes to the full slug URL (unless slug already matches)
   if (isBareCode(slug)) {
-    const smith = await getSmithEntity(slug);
-    const tosogu = !smith ? await getTosoguMaker(slug) : null;
-    const entity = smith || tosogu;
+    const entity = await getArtisan(slug);
 
     if (entity) {
       const entityCode = entity.maker_id;

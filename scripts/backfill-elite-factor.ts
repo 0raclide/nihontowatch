@@ -3,7 +3,7 @@
  *
  * This script:
  * 1. Fetches all listings with artisan_id (matched to Yuhinkai)
- * 2. Looks up elite_factor from smith_entities or tosogu_makers
+ * 2. Looks up elite_factor from artisan_makers (or artisan_schools for NS-* codes)
  * 3. Updates listings.artisan_elite_factor in batches
  *
  * Run with: npx tsx scripts/backfill-elite-factor.ts
@@ -19,7 +19,7 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// Yuhinkai Supabase (smith_entities, tosogu_makers)
+// Yuhinkai Supabase (artisan_makers, artisan_schools)
 const yuhinkaiUrl = process.env.YUHINKAI_SUPABASE_URL || process.env.OSHI_V2_SUPABASE_URL || '';
 const yuhinkaiKey =
   process.env.YUHINKAI_SUPABASE_KEY ||
@@ -52,28 +52,30 @@ async function getEliteFactor(artisanCode: string): Promise<number | null> {
     return eliteFactorCache.get(artisanCode)!;
   }
 
-  // Try smith_entities first (blade smiths)
-  const { data: smith } = await yuhinkai
-    .from('smith_entities')
-    .select('elite_factor')
-    .eq('smith_id', artisanCode)
-    .single();
-
-  if (smith?.elite_factor !== undefined) {
-    eliteFactorCache.set(artisanCode, smith.elite_factor);
-    return smith.elite_factor;
-  }
-
-  // Try tosogu_makers (fitting makers)
-  const { data: maker } = await yuhinkai
-    .from('tosogu_makers')
+  // Check artisan_makers (unified table)
+  const { data: artisan } = await yuhinkai
+    .from('artisan_makers')
     .select('elite_factor')
     .eq('maker_id', artisanCode)
     .single();
 
-  if (maker?.elite_factor !== undefined) {
-    eliteFactorCache.set(artisanCode, maker.elite_factor);
-    return maker.elite_factor;
+  if (artisan?.elite_factor !== undefined) {
+    eliteFactorCache.set(artisanCode, artisan.elite_factor);
+    return artisan.elite_factor;
+  }
+
+  // Fallback: check artisan_schools for NS-* codes
+  if (artisanCode.startsWith('NS-')) {
+    const { data: school } = await yuhinkai
+      .from('artisan_schools')
+      .select('elite_factor')
+      .eq('school_id', artisanCode)
+      .single();
+
+    if (school?.elite_factor !== undefined) {
+      eliteFactorCache.set(artisanCode, school.elite_factor);
+      return school.elite_factor;
+    }
   }
 
   eliteFactorCache.set(artisanCode, null);

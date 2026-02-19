@@ -25,7 +25,7 @@ export const yuhinkaiClient = createClient(
 );
 
 /**
- * Unified artisan entity — replaces legacy SmithEntity + TosoguMaker.
+ * Unified artisan entity from artisan_makers / artisan_schools tables.
  * Sourced from `artisan_makers` (individual artisans) or `artisan_schools` (NS-* codes).
  */
 export interface ArtisanEntity {
@@ -73,10 +73,6 @@ export interface ArtisanEntity {
   teacher_id: string | null;
 }
 
-// Legacy type aliases — deprecated, use ArtisanEntity
-export type SmithEntity = ArtisanEntity;
-export type TosoguMaker = ArtisanEntity;
-
 /**
  * Map artisan_makers `domain` column to entity_type.
  */
@@ -93,7 +89,7 @@ function getDomainFilter(entityType: 'smith' | 'tosogu'): string[] {
 
 /**
  * Fetch a single artisan by code from artisan_makers (or artisan_schools for NS-* codes).
- * Unified replacement for getSmithEntity() + getTosoguMaker().
+ * Fetch a single artisan by code.
  */
 export async function getArtisan(code: string): Promise<ArtisanEntity | null> {
   if (code.startsWith('NS-')) {
@@ -181,16 +177,6 @@ export async function getArtisan(code: string): Promise<ArtisanEntity | null> {
   };
 }
 
-/** @deprecated Use getArtisan() instead */
-export async function getSmithEntity(code: string): Promise<ArtisanEntity | null> {
-  return getArtisan(code);
-}
-
-/** @deprecated Use getArtisan() instead */
-export async function getTosoguMaker(code: string): Promise<ArtisanEntity | null> {
-  return getArtisan(code);
-}
-
 export async function getAiDescription(code: string): Promise<string | null> {
   // School codes (NS-*) live in artisan_schools; individual makers in artisan_makers
   if (code.startsWith('NS-')) {
@@ -214,11 +200,6 @@ export async function getAiDescription(code: string): Promise<string | null> {
 }
 
 
-// Legacy getSmithEntity / getTosoguMaker implementations REMOVED.
-// The deprecated wrappers above (lines 184-192) now route through getArtisan(),
-// which queries artisan_schools for NS-* codes and artisan_makers for individuals.
-// Migration 385 populated stats on those tables. DO NOT re-add legacy queries here.
-
 // =============================================================================
 // ARTISAN CODE RESOLUTION (for text search → artisan_id matching)
 // =============================================================================
@@ -227,7 +208,7 @@ export async function getAiDescription(code: string): Promise<string | null> {
  * Resolve human-readable artisan names to Yuhinkai artisan codes.
  *
  * Given text words (e.g., ['norishige'] or ['rai', 'kunimitsu']), queries
- * smith_entities and tosogu_makers for matching name_romaji, name_kanji, or school.
+ * artisan_makers for matching name_romaji, name_kanji, or school.
  * Multiple words create AND logic — all words must match the same artisan.
  *
  * Used by browse API and saved search matcher to find artisan-matched listings
@@ -240,7 +221,7 @@ export async function resolveArtisanCodesFromText(textWords: string[]): Promise<
   if (!yuhinkaiConfigured || textWords.length === 0) return [];
 
   try {
-    // Single query to artisan_makers (replaces parallel smith_entities + tosogu_makers)
+    // Single query to artisan_makers
     let query = yuhinkaiClient
       .from('artisan_makers')
       .select('maker_id');
@@ -263,7 +244,7 @@ export async function resolveArtisanCodesFromText(textWords: string[]): Promise<
 
 /**
  * Fetch name_romaji and school for a batch of artisan codes.
- * Queries smith_entities and tosogu_makers in parallel.
+ * Batch-fetches artisan names from artisan_makers (and artisan_schools for NS-* codes).
  * Used by browse/listing APIs to enrich badges with display names.
  */
 export interface ArtisanNameEntry {
@@ -663,7 +644,7 @@ export async function getTokoTaikanPercentile(
 
 /**
  * Resolve a teacher code/name to a stub with code, name, and slug info.
- * Tries smith_entities first by code, then by name_romaji.
+ * Tries artisan_makers first by code, then by name_romaji.
  */
 // =============================================================================
 // DIRECTORY QUERIES
@@ -927,7 +908,7 @@ async function getErasForBroadPeriod(
 
 /**
  * Fetch paginated artisan list for the directory page.
- * Queries either smith_entities or tosogu_makers based on the type filter.
+ * Queries artisan_makers with domain filter based on the type filter.
  *
  * NOTE: Still used by the `for_sale` sort path (via getFilteredArtistsByCodes)
  * and internally. The standard path now uses callDirectoryEnrichment() instead.
