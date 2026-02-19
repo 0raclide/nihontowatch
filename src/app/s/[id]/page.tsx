@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { createClient } from '@/lib/supabase/server';
+import { getAttributionName } from '@/lib/listing/attribution';
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://nihontowatch.com';
 
@@ -116,7 +117,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const displayTitle = listing.title_en || listing.title;
 
     // Build enticing description - price is on the image, not here
-    const artisan = listing.smith || listing.tosogu_maker;
+    const artisan = getAttributionName(listing);
 
     // Enticing tagline that drives clicks
     const tagline = 'Compare. Decide. Acquire. All the dealers, one search.';

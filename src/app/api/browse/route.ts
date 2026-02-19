@@ -8,6 +8,8 @@ import { CACHE, PAGINATION, LISTING_FILTERS } from '@/lib/constants';
 import { getArtisanNames, resolveArtisanCodesFromText } from '@/lib/supabase/yuhinkai';
 import { getArtisanDisplayName, getArtisanAlias } from '@/lib/artisan/displayName';
 import { getArtisanTier } from '@/lib/artisan/tier';
+import { getAttributionName } from '@/lib/listing/attribution';
+import { expandArtisanCodes } from '@/lib/artisan/schoolExpansion';
 import { getUserSubscription, getDataDelayCutoff } from '@/lib/subscription/server';
 import { logger } from '@/lib/logger';
 
@@ -400,29 +402,10 @@ export async function GET(request: NextRequest) {
     // Artisan code filter (substring match for admin research)
     // For school codes (NS-*), expand to include all member artisan codes
     if (params.artisanCode) {
-      let expanded = false;
-      if (params.artisanCode.startsWith('NS-')) {
-        try {
-          const { getArtisan, getSchoolMemberCodes } = await import('@/lib/supabase/yuhinkai');
-          const entity = await getArtisan(params.artisanCode);
-          if (entity?.is_school_code && entity?.school) {
-            const memberCodesMap = await getSchoolMemberCodes([{
-              code: params.artisanCode,
-              school: entity.school,
-              entity_type: entity.entity_type,
-            }]);
-            const memberCodes = memberCodesMap.get(params.artisanCode) || [];
-            if (memberCodes.length > 0) {
-              const allCodes = [params.artisanCode, ...memberCodes];
-              query = query.in('artisan_id' as string, allCodes);
-              expanded = true;
-            }
-          }
-        } catch {
-          // Fall through to default ilike filter
-        }
-      }
-      if (!expanded) {
+      const expanded = await expandArtisanCodes(params.artisanCode);
+      if (expanded.length > 1) {
+        query = query.in('artisan_id' as string, expanded);
+      } else {
         query = query.ilike('artisan_id', `%${params.artisanCode}%`);
       }
     }
@@ -690,7 +673,7 @@ export async function GET(request: NextRequest) {
           if (listing.artisan_id && !listing.artisan_display_name) {
             return {
               ...listing,
-              artisan_display_name: listing.smith || listing.tosogu_maker || null,
+              artisan_display_name: getAttributionName(listing),
             };
           }
           return listing;

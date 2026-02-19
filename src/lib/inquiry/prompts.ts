@@ -7,6 +7,7 @@
 
 import type { InquiryContext } from './types';
 import { getGreetingContext } from './seasonal';
+import { getAttributionSchool } from '@/lib/listing/attribution';
 
 // =============================================================================
 // System Prompt
@@ -107,8 +108,9 @@ export function buildUserPrompt(context: InquiryContext): string {
   if (listing.tosogu_maker) {
     itemParts.push(`Maker: ${listing.tosogu_maker}`);
   }
-  if (listing.school || listing.tosogu_school) {
-    itemParts.push(`School: ${listing.school || listing.tosogu_school}`);
+  const attributionSchool = getAttributionSchool(listing);
+  if (attributionSchool) {
+    itemParts.push(`School: ${attributionSchool}`);
   }
   if (listing.era) {
     itemParts.push(`Era: ${listing.era}`);

@@ -6,6 +6,7 @@
  */
 
 import type { Listing, Dealer, ItemType } from '@/types';
+import { getAttributionName, getAttributionSchool } from '@/lib/listing/attribution';
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://nihontowatch.com';
 
@@ -159,7 +160,7 @@ function formatSchemaPrice(priceValue: number | undefined | null): number | stri
  * Generate Product JSON-LD for a listing page
  */
 export function generateProductJsonLd(listing: Listing, dealer?: Dealer): ProductJsonLd {
-  const artisan = listing.smith || listing.tosogu_maker;
+  const artisan = getAttributionName(listing);
   const images = listing.stored_images || listing.images || [];
 
   // Build a descriptive name — Google requires a non-empty 'name' field
@@ -264,11 +265,12 @@ export function generateProductJsonLd(listing: Listing, dealer?: Dealer): Produc
     });
   }
 
-  if (listing.school || listing.tosogu_school) {
+  const attributionSchool = getAttributionSchool(listing);
+  if (attributionSchool) {
     additionalProps.push({
       '@type': 'PropertyValue',
       name: 'School',
-      value: (listing.school || listing.tosogu_school)!,
+      value: attributionSchool,
     });
   }
 

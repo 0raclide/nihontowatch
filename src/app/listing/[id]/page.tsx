@@ -13,6 +13,7 @@ import {
 import { buildSeoTitle, buildSeoDescription } from '@/lib/seo/metaTitle';
 import { getItemTypeUrl } from '@/lib/seo/categories';
 import { getListingDetail } from '@/lib/listing/getListingDetail';
+import { getAttributionName } from '@/lib/listing/attribution';
 import type { EnrichedListingDetail } from '@/lib/listing/getListingDetail';
 import type { Listing, Dealer, ItemType, Currency } from '@/types';
 
@@ -199,7 +200,7 @@ export default async function ListingPage({ params }: Props) {
   // Fetch related listings server-side for SEO (visible in initial HTML)
   const artisanId = listing.artisan_id;
   const dealerId = listing.dealer_id;
-  const artisanName = listing.smith || listing.tosogu_maker;
+  const artisanName = getAttributionName(listing);
   const dealerName = listing.dealers?.name || 'Unknown Dealer';
 
   const relatedQueries = [];

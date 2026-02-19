@@ -101,29 +101,29 @@ The Python data model defines the structure for all scraped data.
 
 ### Field Accessor Pattern (Critical)
 
-Swords and tosogu use different field paths:
+Swords and tosogu use different field paths on the `listings` table:
 
 ```typescript
 // Swords (blades)
-metadata.smith?.name_romaji
-metadata.school
-metadata.tradition
+listing.smith       // artisan name
+listing.school      // school name
 
 // Tosogu (fittings)
-metadata.tosogu_maker
-metadata.tosogu_school
-metadata.maker?.name_romaji
+listing.tosogu_maker   // artisan name
+listing.tosogu_school  // school name
 ```
 
-The `fieldAccessors.ts` pattern handles this:
+NihontoWatch provides a unified accessor utility (`src/lib/listing/attribution.ts`):
 
 ```typescript
-import { getArtisanName, getSchool } from '@/lib/fieldAccessors';
+import { getAttributionName, getAttributionSchool } from '@/lib/listing/attribution';
 
-// Works for both swords and tosogu
-const artisan = getArtisanName(listing);
-const school = getSchool(listing);
+// Works for both swords and tosogu — tries smith first, falls back to tosogu
+const artisan = getAttributionName(listing);  // string | null
+const school = getAttributionSchool(listing); // string | null
 ```
+
+These accept any object with the right fields — full `Listing`, raw Supabase rows, `SeoFields`, etc.
 
 ---
 
@@ -154,15 +154,18 @@ There are **two separate artisan matching systems** across the ecosystem:
 
 ### Shared Artisan Reference Tables (in oshi-v2 Supabase)
 
-Both systems query the same reference data:
+Both systems query the same reference data. **NihontoWatch exclusively uses the unified tables** (migrated 2026-02-19):
 
-| Table | Records | Purpose |
-|-------|---------|---------|
-| `artisan_makers` | 13,572 | Unified directory (smiths + tosogu makers) |
-| `artisan_schools` | 173 | School hierarchy |
-| `artisan_aliases_v2` | 691+ | Name variants and alternate readings |
-| `smith_entities` | 12,453 | Smith entities (legacy, still used by some queries) |
-| `tosogu_makers` | 1,119 | Tosogu makers (legacy, still used by some queries) |
+| Table | Records | Purpose | Queried by NihontoWatch? |
+|-------|---------|---------|--------------------------|
+| `artisan_makers` | 13,572 | **Unified directory** (smiths + tosogu makers) | **Yes** — sole source |
+| `artisan_schools` | 173 | School hierarchy (NS-* codes) | **Yes** — sole source |
+| `artisan_school_members` | — | School → member junction table | **Yes** — for school expansion |
+| `artisan_teacher_links` | — | Teacher → student junction table | **Yes** — for lineage |
+| `artisan_aliases_v2` | 691+ | Name variants and alternate readings | **Yes** — via directory RPC |
+| `gold_values` | — | Catalog items (form, mei, denrai, provenance) | **Yes** — for stats/provenance |
+| `smith_entities` | 12,453 | Legacy smith table | **No** — still synced in oshi-v2 but not queried |
+| `tosogu_makers` | 1,119 | Legacy tosogu table | **No** — still synced in oshi-v2 but not queried |
 
 ### Data Flow: Artisan Codes
 
@@ -174,15 +177,15 @@ listings.artisan_id                       catalog_records.artisan_code_v5
     ↓                                         ↓
 NihontoWatch browse badges               synthesize_object() → gold_values
 (ListingCard artisan badge)               gold_smith_id / gold_maker_id
-                                              ↓
-                                          NihontoWatch artist profiles
-                                          (yuhinkai.ts reads gold_values)
+    ↓                                         ↓
+NihontoWatch artist profiles              NihontoWatch artist profiles
+(artisan_makers via getArtisan())         (gold_values via yuhinkai.ts)
 ```
 
 ### Key: NihontoWatch Reads From BOTH Databases
 
 - **NihontoWatch Supabase** (`itbhfhyptogxcjbjfzwx`): `listings.artisan_id` — scraper-assigned codes
-- **Yuhinkai Supabase** (`hjhrnhtvmtbecyjzqpyr`): `gold_values`, `smith_entities`, `tosogu_makers` — via `yuhinkaiClient` (anon key)
+- **Yuhinkai Supabase** (`hjhrnhtvmtbecyjzqpyr`): `artisan_makers`, `artisan_schools`, `gold_values` — via `yuhinkaiClient` (anon key)
 
 **Important**: The `yuhinkaiClient` uses the **anon key**, not service_role. Any new tables queried from NihontoWatch need an anon RLS policy.
 

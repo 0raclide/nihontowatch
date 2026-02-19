@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import type { Listing } from '@/types';
 import { useCurrency, formatPriceWithConversion } from '@/hooks/useCurrency';
+import { getAttributionName } from '@/lib/listing/attribution';
 
 interface SocialPreviewCardProps {
   listing: Listing;
@@ -41,7 +42,7 @@ export function SocialPreviewCard({
   );
 
   // Get artisan name
-  const artisan = listing.smith || listing.tosogu_maker;
+  const artisan = getAttributionName(listing);
 
   // Build description
   let description = `${priceDisplay}`;

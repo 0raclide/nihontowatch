@@ -16,6 +16,7 @@ import { useAuth } from '@/lib/auth/AuthContext';
 import { getAllImages } from '@/lib/images';
 import { useValidatedImages } from '@/hooks/useValidatedImages';
 import { shouldShowNewBadge } from '@/lib/newListing';
+import { getAttributionName, getAttributionSchool } from '@/lib/listing/attribution';
 import { SetsumeiZufuBadge } from '@/components/ui/SetsumeiZufuBadge';
 import { AdminSetsumeiWidget } from '@/components/listing/AdminSetsumeiWidget';
 import { useActivityTrackerOptional } from '@/lib/tracking/ActivityTracker';
@@ -224,8 +225,8 @@ export default function ListingDetailPage({ initialData }: ListingDetailPageProp
   }` : '';
 
   // Artisan and school from listing data
-  const artisan = listing.smith || listing.tosogu_maker;
-  const school = listing.school || listing.tosogu_school;
+  const artisan = getAttributionName(listing);
+  const school = getAttributionSchool(listing);
 
   return (
     <div className="min-h-screen bg-cream transition-colors">

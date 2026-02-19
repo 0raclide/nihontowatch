@@ -43,8 +43,8 @@ The Collection Manager is a personal cataloging system for authenticated users t
 │                   ▼                      ▼                      │
 │  ┌────────────────────────┐  ┌──────────────────────────────┐  │
 │  │  NihontoWatch DB       │  │  Yuhinkai DB (Supabase)      │  │
-│  │  user_collection_items │  │  smith_entities, gold_values  │  │
-│  │  user_collection_folders│  │  tosogu_makers, catalog_records│ │
+│  │  user_collection_items │  │  artisan_makers, gold_values  │  │
+│  │  user_collection_folders│  │  artisan_schools, catalog_records│
 │  └────────────────────────┘  └──────────────────────────────┘  │
 │                   │                                              │
 │                   ▼                                              │
@@ -242,7 +242,7 @@ Search Yuhinkai catalog records. Auth required.
 
 **Response**: `{ results: CatalogSearchResult[], total: number }`
 
-Two-step search: `gold_values` → join `catalog_records` for collection/volume/item_number, then join `smith_entities`/`tosogu_makers` for names.
+Two-step search: `gold_values` → join `catalog_records` for collection/volume/item_number, then join `artisan_makers` for names.
 
 ### `GET /api/collection/artisan-search`
 
@@ -256,7 +256,7 @@ Search Yuhinkai artisans. Auth required.
 
 **Response**: `{ results: ArtisanSearchResult[], query, total }`
 
-Searches both `smith_entities` and `tosogu_makers` in parallel, sorted by Juyo+Tokuju count.
+Searches `artisan_makers` with domain filtering (`sword`/`tosogu`/`both`), sorted by Juyo+Tokuju count.
 
 ### `GET/POST /api/collection/folders`
 
@@ -407,7 +407,7 @@ CatalogSearchBar (300ms debounce)
     ├─▶ GET /api/collection/catalog-search?cert=Juyo&session=63&q=Masamune
     │     │
     │     ▼
-    │   Yuhinkai DB: gold_values → catalog_records → smith_entities
+    │   Yuhinkai DB: gold_values → catalog_records → artisan_makers
     │     │
     │     ▼
     │   Results: [{smith_name, form_type, nagasa, collection, volume, item_number, ...}]
@@ -415,7 +415,7 @@ CatalogSearchBar (300ms debounce)
     └─▶ GET /api/collection/artisan-search?q=Masamune
           │
           ▼
-        Yuhinkai DB: smith_entities + tosogu_makers
+        Yuhinkai DB: artisan_makers (domain-filtered)
           │
           ▼
         Results: [{code, name_kanji, name_romaji, school, province, juyo_count, ...}]

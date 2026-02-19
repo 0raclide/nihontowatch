@@ -1,5 +1,6 @@
 import { ImageResponse } from 'next/og';
 import { NextRequest } from 'next/server';
+import { getAttributionName } from '@/lib/listing/attribution';
 
 export const runtime = 'edge';
 
@@ -652,7 +653,7 @@ export async function GET(request: NextRequest) {
     const title = sanitizeText(rawTitle, 80) || 'Japanese Sword';
 
     // Sanitize artisan name (remove Japanese characters for now)
-    const rawArtisan = listing.smith || listing.tosogu_maker || '';
+    const rawArtisan = getAttributionName(listing) || '';
     const artisan = sanitizeText(rawArtisan, 40);
 
     const priceDisplay = formatPrice(listing.price_value, listing.price_currency);

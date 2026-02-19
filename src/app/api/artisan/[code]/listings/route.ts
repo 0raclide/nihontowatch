@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getArtisanNames } from '@/lib/supabase/yuhinkai';
 import { getArtisanDisplayName, getArtisanAlias } from '@/lib/artisan/displayName';
+import { getAttributionName } from '@/lib/listing/attribution';
 import { getArtisanTier } from '@/lib/artisan/tier';
+import { expandArtisanCodes } from '@/lib/artisan/schoolExpansion';
 import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
@@ -44,27 +46,8 @@ export async function GET(
   try {
     const supabase = await createClient();
 
-    // Check if this is a school code — if so, include member artisan listings
-    let artisanCodes = [code];
-    try {
-      const { getArtisan, getSchoolMemberCodes } = await import('@/lib/supabase/yuhinkai');
-      const entity = await getArtisan(code);
-
-      if (entity?.is_school_code && entity?.school) {
-        const memberCodesMap = await getSchoolMemberCodes([{
-          code,
-          school: entity.school,
-          entity_type: entity.entity_type,
-        }]);
-        const memberCodes = memberCodesMap.get(code) || [];
-        if (memberCodes.length > 0) {
-          artisanCodes = [code, ...memberCodes];
-        }
-      }
-    } catch (err) {
-      // If Yuhinkai lookup fails, fall back to exact code match
-      logger.logError('School member lookup failed', err);
-    }
+    // Expand school codes (NS-*) to include member artisan codes
+    const artisanCodes = await expandArtisanCodes(code);
 
     let query = supabase
       .from('listings')
@@ -113,7 +96,7 @@ export async function GET(
           if (listing.artisan_id && !listing.artisan_display_name) {
             return {
               ...listing,
-              artisan_display_name: listing.smith || listing.tosogu_maker || null,
+              artisan_display_name: getAttributionName(listing),
             };
           }
           return listing;

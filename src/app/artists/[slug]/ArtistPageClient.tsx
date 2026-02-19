@@ -13,7 +13,7 @@ import { MeiDistributionBar } from '@/components/artisan/MeiDistributionBar';
 import { SectionJumpNav } from '@/components/artisan/SectionJumpNav';
 import { ArtisanListings } from '@/components/artisan/ArtisanListings';
 import { RelatedArtisans } from '@/components/artisan/RelatedArtisans';
-import type { ArtisanPageResponse } from '@/app/api/artisan/[code]/route';
+import type { ArtisanPageResponse } from '@/types/artisan';
 import { getArtisanDisplayParts, getArtisanAlias } from '@/lib/artisan/displayName';
 import { Breadcrumbs } from '@/components/ui/Breadcrumbs';
 import { CatalogueShowcase } from '@/components/artisan/CatalogueShowcase';

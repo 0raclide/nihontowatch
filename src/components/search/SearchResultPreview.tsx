@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import type { SearchSuggestion } from '@/lib/search/types';
+import { getAttributionName } from '@/lib/listing/attribution';
 
 interface SearchResultPreviewProps {
   suggestion: SearchSuggestion;
@@ -57,7 +58,7 @@ export function SearchResultPreview({
   isHighlighted = false,
 }: SearchResultPreviewProps) {
   const itemType = formatItemType(suggestion.item_type);
-  const artisan = suggestion.smith || suggestion.tosogu_maker;
+  const artisan = getAttributionName(suggestion);
 
   // Truncate title for compact display
   const displayTitle =

@@ -1,13 +1,13 @@
 # Artist Feature — Comprehensive Documentation
 
-**Last updated**: 2026-02-09
+**Last updated**: 2026-02-19
 **Status**: Live at nihontowatch.com/artists
 
 ---
 
 ## Overview
 
-The Artist feature is a two-tier system for discovering and exploring 13,566 artisans (12,447 swordsmiths + 1,119 tosogu makers) from the Yuhinkai database:
+The Artist feature is a two-tier system for discovering and exploring 13,572 artisans (12,453 swordsmiths + 1,119 tosogu makers) from the Yuhinkai database:
 
 1. **Artist Directory** (`/artists`) — Browseable, filterable index of all artisans
 2. **Artist Profile** (`/artists/[slug]`) — Rich individual profiles with biography, certifications, lineage, provenance, and live listings
@@ -37,8 +37,8 @@ Additionally, artisan codes appear as admin-only badges on listing cards through
 │         ▼                      ▼                      ▼         │
 │  ┌──────────────────────────────────────────────────────────┐   │
 │  │              Yuhinkai Database (Supabase)                │   │
-│  │  smith_entities │ tosogu_makers │ artist_profiles │      │   │
-│  │  gold_values    │               │                        │   │
+│  │  artisan_makers │ artisan_schools │ gold_values │        │   │
+│  │  artisan_school_members │ artisan_teacher_links │        │   │
 │  └──────────────────────────────────────────────────────────┘   │
 │         │                                                       │
 │         ▼                                                       │
@@ -97,9 +97,13 @@ Additionally, artisan codes appear as admin-only badges on listing cards through
 
 | File | Purpose |
 |------|---------|
-| `src/lib/supabase/yuhinkai.ts` | Yuhinkai DB client — all artisan queries, types, directory functions |
+| `src/lib/supabase/yuhinkai.ts` | Yuhinkai DB client — all artisan queries, types, `getArtisan()`, directory RPC |
+| `src/lib/artisan/getArtistPageData.ts` | **Shared service** — `buildArtistPageData(code)` used by both SSR page + API route |
 | `src/lib/artisan/slugs.ts` | URL slug generation + extraction (e.g., `masamune-MAS590`) |
 | `src/lib/artisan/displayName.ts` | **Display name deduplication** — all artisan name rendering goes through here |
+| `src/lib/artisan/schoolExpansion.ts` | `expandArtisanCodes()` — NS-* school code → member codes expansion |
+| `src/lib/listing/attribution.ts` | `getAttributionName()` / `getAttributionSchool()` — dual-path field access |
+| `src/types/artisan.ts` | `ArtisanPageResponse` type — shared between SSR page, API route, client |
 | `src/lib/seo/jsonLd.ts` | JSON-LD generators including `generateArtistDirectoryJsonLd()` |
 
 ### CSS
@@ -120,59 +124,98 @@ Additionally, artisan codes appear as admin-only badges on listing cards through
 
 ## Data Model
 
-### Yuhinkai Database Tables
+### Yuhinkai Database Tables (Unified — migrated 2026-02-19)
 
-**`smith_entities`** — 12,447 swordsmiths
+> **Migration complete**: All NihontoWatch code now reads from `artisan_makers` + `artisan_schools`.
+> Legacy tables (`smith_entities`, `tosogu_makers`) still exist in oshi-v2 DB but are **not queried** by NihontoWatch.
+> The `artist_profiles` table is deprecated/empty — AI bios are stored in `artisan_makers.ai_description`.
+
+**`artisan_makers`** — 13,572 artisans (smiths + tosogu makers, unified)
 ```
-smith_id (PK)        — Code like "MAS590", "BIZ003"
-name_kanji           — Japanese name (e.g., "正宗")
-name_romaji          — Romanized name (e.g., "Masamune")
-province, school, era, period, generation, teacher
-hawley               — Hawley reference number
-fujishiro            — Fujishiro rating (Saijō-saku, Jōjō-saku, etc.)
-toko_taikan          — Tōkō Taikan score
-kokuho_count         — National Treasures
-jubun_count          — Important Cultural Properties (Bunkazai)
-jubi_count           — Important Art Objects (Bijutsuhin)
-gyobutsu_count       — Imperial Collection
-tokuju_count         — Tokubetsu Jūyō
-juyo_count           — Jūyō
-total_items          — Distinct physical works (best-collection priority, mutually exclusive)
-elite_count          — Works with elite designations (Kokuho + JuBun + Jubi + Gyobutsu + Tokuju)
-elite_factor         — 0.0-1.0 Bayesian ratio: (elite + 1) / (total + 10)
-is_school_code       — TRUE for aggregate school entries (excluded from directory)
+maker_id (PK)           — Code like "MAS590", "OWA009", "GOT042"
+name_kanji              — Japanese name (e.g., "正宗")
+name_romaji             — Romanized name (e.g., "Masamune")
+name_romaji_normalized  — Lowercased, macron-stripped (for search)
+domain                  — 'sword' | 'tosogu' | 'both' (replaces table selection)
+province, era, period, generation
+legacy_school_text      — School name (mapped from old `school` column)
+teacher_text            — Teacher name (mapped from old `teacher` column)
+teacher_id              — FK to another artisan_makers row (structured link)
+hawley                  — Hawley reference number (smiths)
+fujishiro               — Fujishiro rating (smiths)
+toko_taikan             — Tōkō Taikan score (smiths)
+specialties             — Array of specialties (tosogu makers)
+kokuho_count            — National Treasures
+jubun_count             — Important Cultural Properties (Bunkazai)
+jubi_count              — Important Art Objects (Bijutsuhin)
+gyobutsu_count          — Imperial Collection
+tokuju_count            — Tokubetsu Jūyō
+juyo_count              — Jūyō
+total_items             — Distinct physical works (best-collection priority, mutually exclusive)
+elite_count             — Works with elite designations (Kokuho + JuBun + Jubi + Gyobutsu + Tokuju)
+elite_factor            — 0.0-1.0 Bayesian ratio: (elite + 1) / (total + 10)
+provenance_factor       — Denrai-based provenance score
+provenance_count        — Total denrai entries
+provenance_apex         — Highest single denrai count
+ai_description          — AI-generated markdown biography (replaces artist_profiles table)
+ai_description_generated_at — Timestamp of last AI generation
 ```
 
-**`tosogu_makers`** — 1,119 fitting makers
+**`artisan_schools`** — 173 school entries (NS-* codes)
 ```
-maker_id (PK)        — Code like "OWA009", "GOT042"
-name_kanji, name_romaji, province, school, era, generation, teacher
-specialties          — Array of specialties (e.g., ["tsuba", "kozuka"])
-alternative_names    — Array of alternate names
-kokuho_count, jubun_count, jubi_count, gyobutsu_count, tokuju_count, juyo_count
-total_items, elite_count, elite_factor, is_school_code  — same best-collection semantics as smiths
+school_id (PK)          — Code like "NS-Osafune", "NS-Goto", "NS-Ko-Bizen"
+name_romaji             — School name (e.g., "Osafune")
+name_kanji              — Japanese school name
+domain                  — 'sword' | 'tosogu' | 'both'
+province, era, period
+(same cert count columns as artisan_makers)
 ```
 
-**`artist_profiles`** — AI-generated biographies
+**`artisan_school_members`** — Junction table: school → member artisans
 ```
-artist_code (FK)     — Links to smith_id or maker_id
-profile_md           — Full markdown biography
-hook                 — One-line pull quote
-setsumei_count       — Number of translated setsumei informing the profile
-stats_snapshot       — JSON with mei_distribution, form_distribution
-profile_depth        — 'full' | 'standard' | 'brief'
-human_reviewed       — Boolean
+school_code (FK)        — References artisan_schools.school_id
+member_code (FK)        — References artisan_makers.maker_id
+```
+
+**`artisan_teacher_links`** — Junction table: teacher → student relationships
+```
+teacher_code (FK)       — References artisan_makers.maker_id
+student_code (FK)       — References artisan_makers.maker_id
+```
+
+**`artisan_aliases_v2`** — 691+ name variants for search
+```
+maker_id (FK)           — References artisan_makers.maker_id
+alias                   — Alternate name (e.g., "Go Yoshihiro" → YOS1434)
 ```
 
 **`gold_values`** — Yuhinkai catalog items (provenance, form/mei distributions)
 ```
 gold_artisan         — Artisan name (matches name_romaji)
-gold_smith_id        — FK to smith_entities (for distribution queries)
-gold_maker_id        — FK to tosogu_makers (for distribution queries)
+gold_smith_id        — FK to artisan_makers (for smith distribution queries)
+gold_maker_id        — FK to artisan_makers (for tosogu distribution queries)
 gold_form_type       — Blade/work type (katana, wakizashi, tanto, tachi, tsuba, etc.)
 gold_mei_status      — Signature status (signed, mumei, den, kinzogan-mei, shu-mei, etc.)
 gold_denrai_owners   — Array of historical collection owners
 ```
+
+### Unified Lookup Pattern
+
+NihontoWatch uses a single function for all artisan lookups:
+
+```typescript
+// src/lib/supabase/yuhinkai.ts
+getArtisan(code: string): Promise<ArtisanEntity | null>
+// NS-* codes → queries artisan_schools
+// All others → queries artisan_makers
+
+// Domain filtering replaces table selection:
+getDomainFilter('smith')  → domain IN ('sword', 'both')
+getDomainFilter('tosogu') → domain IN ('tosogu', 'both')
+```
+
+The `ArtisanEntity` interface is the unified return type for both tables (see `src/lib/supabase/yuhinkai.ts`).
+The `entity_type` field is derived: `sword|both` → `'smith'`, `tosogu` → `'tosogu'`.
 
 ### Designation Counting: Best-Collection Priority
 
@@ -253,7 +296,7 @@ All three files import from `displayName.ts` — never inline the logic:
 
 ### How to Fix a Display Name Bug
 
-1. **If the name renders wrong for a specific artisan:** Check the `school` and `name_romaji` values in the Yuhinkai DB (`smith_entities` or `tosogu_makers` table). If the school value is wrong, fix it there (use oshi-v2 service key). See "Database Corrections" below.
+1. **If the name renders wrong for a specific artisan:** Check the `legacy_school_text` and `name_romaji` values in the Yuhinkai DB (`artisan_makers` table). If the school value is wrong, fix it there (use oshi-v2 service key). See "Database Corrections" below.
 
 2. **If an entire class of names renders wrong:** Add/modify a rule in `getArtisanDisplayParts()`. Rules are ordered — be careful about rule precedence. Test with `npx tsx -e` using the pattern in `docs/SESSION_20260209_DISPLAY_NAME_AUDIT.md`.
 
@@ -267,12 +310,15 @@ The Yuhinkai database is in a **separate Supabase project** from NihontoWatch:
 
 - **URL:** `YUHINKAI_SUPABASE_URL` (in oshi-v2 `.env.local` as `NEXT_PUBLIC_SUPABASE_URL`)
 - **Service key:** `SUPABASE_SERVICE_ROLE_KEY` (in oshi-v2 `.env.local`)
-- **Tables:** `smith_entities` (PK: `smith_id`), `tosogu_makers` (PK: `maker_id`)
+- **Table:** `artisan_makers` (PK: `maker_id`) — unified for both smiths and tosogu makers
+- **Schools:** `artisan_schools` (PK: `school_id`) — for NS-* school codes
 
 Common corrections:
-- Fix a wrong `school` value: `PATCH /rest/v1/smith_entities?smith_id=eq.XXX` with `{"school": "Correct Value"}`
-- Create a missing school code: `POST /rest/v1/smith_entities` with `smith_id: "NS-SchoolName"`, `is_school_code: true`, `name_romaji` = `school` = school name
+- Fix a wrong school value: `PATCH /rest/v1/artisan_makers?maker_id=eq.XXX` with `{"legacy_school_text": "Correct Value"}`
+- Fix a wrong teacher: `PATCH /rest/v1/artisan_makers?maker_id=eq.XXX` with `{"teacher_text": "Correct Value"}`
+- Create a missing school: `POST /rest/v1/artisan_schools` with `school_id: "NS-SchoolName"`, `name_romaji` = school name, `domain` = `'sword'|'tosogu'`
 - NS- code naming: `NS-` + CamelCase school name (e.g., `NS-SueNaminohira`, `NS-KoMihara`)
+- Add a school member: `POST /rest/v1/artisan_school_members` with `school_code: "NS-XXX"`, `member_code: "XXX999"`
 
 ### Audit History
 
@@ -299,11 +345,11 @@ Full audit of 13,605 records completed 2026-02-09. See `docs/SESSION_20260209_DI
 - **School dropdown**: Aggregated from both tables (e.g., Soshu, Bizen, Yamashiro)
 - **Province dropdown**: Aggregated provinces
 - **Era dropdown**: Aggregated eras
-- **Search**: 300ms debounced, matches `name_romaji`, `name_kanji`, `smith_id`/`maker_id` via `ilike`
+- **Search**: 300ms debounced, matches `name_romaji`, `name_kanji`, `maker_id` via `ilike`. Also searches `artisan_aliases_v2` for variant names (e.g., "Go Yoshihiro" → YOS1434).
 - **Sort**: Elite Factor (default), Juyo Count, Total Works, Name A-Z
-- **Notable toggle**: When unchecked, shows all 13,566 artisans including those with zero certified works
+- **Notable toggle**: When unchecked, shows all 13,572 artisans including those with zero certified works
 
-**Pagination:** 50 per page (API supports up to 100). When `type=all`, both tables are queried and merged client-side with proper sorting.
+**Pagination:** 50 per page (API supports up to 100). Uses `get_directory_enrichment()` RPC (migration 386) which queries the unified `artisan_makers` table with domain filtering.
 
 **Artist Cards display:**
 - Name (romaji + kanji)
@@ -422,7 +468,10 @@ interface ArtistDirectoryEntry {
 }
 ```
 
-### `ArtisanPageResponse` (artisan/[code]/route.ts)
+### `ArtisanPageResponse` (src/types/artisan.ts)
+
+Shared between SSR page and API route via `buildArtistPageData()` in `src/lib/artisan/getArtistPageData.ts`.
+
 ```typescript
 interface ArtisanPageResponse {
   entity: { code, name_romaji, name_kanji, school, province, era, period,
@@ -430,14 +479,18 @@ interface ArtisanPageResponse {
             fujishiro, toko_taikan, specialties };
   certifications: { kokuho_count, jubun_count, jubi_count, gyobutsu_count,
                     tokuju_count, juyo_count, total_items, elite_count, elite_factor };
-  rankings: { elite_percentile, elite_grade, toko_taikan_percentile };
+  rankings: { elite_percentile, toko_taikan_percentile, provenance_percentile };
+  provenance: { factor, count, apex };
   profile: { profile_md, hook, setsumei_count, generated_at } | null;
-  stats: { mei_distribution, form_distribution } | null;
+  stats: { mei_distribution, form_distribution, measurements_by_form } | null;
   lineage: { teacher: { code, name_romaji, slug } | null,
-             students: Array<{ code, name_romaji, slug }> };
+             students: Array<{ code, name_romaji, slug, available_count? }> };
   related: Array<{ code, name_romaji, name_kanji, slug, school,
-                   juyo_count, tokuju_count, elite_factor }>;
+                   juyo_count, tokuju_count, elite_factor, available_count? }>;
   denrai: Array<{ owner: string; count: number }>;
+  denraiGrouped: Array<{ parent, totalCount, children, isGroup }>;
+  heroImage: { imageUrl, collection, volume, itemNumber, formType, imageType } | null;
+  catalogueEntries?: CatalogueEntry[];
 }
 ```
 
@@ -474,7 +527,7 @@ D: percentile <  40  — Standard
 In `src/app/sitemap.ts`:
 - `/artists` — priority 0.8, weekly
 - All notable artisan profiles (~8K URLs) — priority 0.6, monthly
-- Fetches from both `smith_entities` and `tosogu_makers` where `is_school_code = false AND total_items > 0`
+- Fetches from `artisan_makers` where `total_items > 0`, using domain filtering for entity_type derivation
 - Uses `generateArtisanSlug()` for each URL
 
 ---
@@ -547,15 +600,13 @@ CRON_SECRET=xxx
 
 ## Known Limitations
 
-1. **Merged "all" type pagination** — When `type=all`, both tables are queried and merged client-side. For very large offsets (page 100+) this could over-fetch. Single-type queries use proper DB-level pagination.
+1. **Facets are static** — `getArtistDirectoryFacets()` always returns counts for notable artisans regardless of other active filters. Cross-filtering facets would require additional queries.
 
-2. **Facets are static** — `getArtistDirectoryFacets()` always returns counts for notable artisans regardless of other active filters. Cross-filtering facets would require additional queries.
+2. **Search is substring + alias match** — Uses `ilike` and `artisan_aliases_v2` for variant names. Not fuzzy — romanization typos (Massamune vs Masamune) won't match unless an alias exists.
 
-3. **Search is substring match** — Uses `ilike` which works but isn't fuzzy. Romanization variants (Massamune vs Masamune) won't match.
+3. **No image/avatar on cards** — Cards are text-only. Could add if artist profile images become available.
 
-4. **No image/avatar on cards** — Cards are text-only. Could add if artist profile images become available.
-
-5. **No tests for directory code** — The directory functions, API route, and page components don't have unit tests.
+4. **No tests for directory code** — The directory functions, API route, and page components don't have unit tests.
 
 ---
 
@@ -574,6 +625,35 @@ CRON_SECRET=xxx
 ---
 
 ## Changelog
+
+### 2026-02-19 — Unified tables migration + code refactors
+
+**Database migration (complete):**
+- All NihontoWatch code migrated from `smith_entities`/`tosogu_makers` → `artisan_makers` + `artisan_schools`
+- `getArtisan(code)` is the single lookup: NS-* → `artisan_schools`, else → `artisan_makers`
+- `ArtisanEntity` unified interface replaces deleted `SmithEntity` + `TosoguMaker`
+- Column mappings: `school` → `legacy_school_text`, `teacher` → `teacher_text`
+- School members via `artisan_school_members` junction table (replaces `WHERE school = X`)
+- Students via `artisan_teacher_links` junction table + `teacher_text` fallback
+- Directory RPC `get_directory_enrichment()` rewritten (migration 386) to query unified tables
+- Legacy tables still exist in oshi-v2 DB but are **not queried** by NihontoWatch
+
+**Refactor 1 — Shared `buildArtistPageData()`:**
+- Extracted 150-line `getArtistData()` from `page.tsx` and 120-line rich response block from `api/artisan/[code]/route.ts` into shared `src/lib/artisan/getArtistPageData.ts`
+- `ArtisanPageResponse` type moved to `src/types/artisan.ts` (re-exported from API route for backward compat)
+- Fixed data gap: API route now includes student/related listing counts (previously only in SSR path)
+
+**Refactor 2 — Attribution utility:**
+- Created `src/lib/listing/attribution.ts` with `getAttributionName()` and `getAttributionSchool()`
+- Replaced 14 inline `listing.smith || listing.tosogu_maker` patterns across 12 files
+- Works with any object shape (full Listing, raw Supabase row, SeoFields, etc.)
+
+**Refactor 3 — School expansion utility:**
+- Created `src/lib/artisan/schoolExpansion.ts` with `expandArtisanCodes()`
+- Replaced 2 copy-pasted ~20-line blocks in browse API and artisan listings API
+- NS-* → [code, ...memberCodes], others → [code], silent fallback on error
+
+**Files changed:** 4 new files, 16 modified, net -423 lines (58 added, 481 removed)
 
 ### 2026-02-09 — Normalize 'attributed' mei status (Migration 267)
 

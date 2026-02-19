@@ -6,6 +6,8 @@
  * Matches collector search patterns like "Juyo Masamune Katana".
  */
 
+import { getAttributionName, getAttributionSchool } from '@/lib/listing/attribution';
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -138,13 +140,13 @@ export interface SeoFields {
  */
 export function resolveArtisanNameForSeo(fields: SeoFields): string | null {
   // 1. Direct smith / maker — only if romanized
-  const directName = fields.smith || fields.tosogu_maker;
+  const directName = getAttributionName(fields);
   if (directName && !containsJapanese(directName)) {
     return directName;
   }
 
   // 2. Extract from title_en
-  const school = fields.school || fields.tosogu_school;
+  const school = getAttributionSchool(fields);
   const extracted = extractArtisanFromTitleEn(fields.title_en, school);
   if (extracted) return extracted;
 
@@ -280,7 +282,7 @@ function buildQualifier(fields: SeoFields, artisanUsed: string | null): string |
     if (fields.tosogu_material && !containsJapanese(fields.tosogu_material)) {
       return fields.tosogu_material;
     }
-    const school = fields.school || fields.tosogu_school;
+    const school = getAttributionSchool(fields);
     if (school && !containsJapanese(school) && school !== artisanUsed) {
       return school;
     }

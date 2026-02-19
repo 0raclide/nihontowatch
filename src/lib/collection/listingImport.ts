@@ -8,6 +8,7 @@
 
 import type { Listing } from '@/types';
 import type { CreateCollectionItemInput } from '@/types/collection';
+import { getAttributionName, getAttributionSchool } from '@/lib/listing/attribution';
 
 /**
  * Convert a browse listing into pre-filled collection item fields.
@@ -25,8 +26,8 @@ export function mapListingToCollectionItem(
   }
 
   // Use smith or tosogu_maker depending on item type
-  const smithName = listing.smith || listing.tosogu_maker || undefined;
-  const schoolName = listing.school || listing.tosogu_school || undefined;
+  const smithName = getAttributionName(listing) ?? undefined;
+  const schoolName = getAttributionSchool(listing) ?? undefined;
 
   // Dealer name for acquired_from
   const dealerName = listing.dealers?.name || listing.dealer?.name || undefined;

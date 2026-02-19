@@ -69,7 +69,7 @@ Sync all artisans (use sparingly, takes longer):
 | Field | Description |
 |-------|-------------|
 | `updated` | Number of artisans successfully synced |
-| `notFound` | Artisan codes not found in Yuhinkai (smith_entities or tosogu_makers) |
+| `notFound` | Artisan codes not found in Yuhinkai (`artisan_makers`) |
 | `errors` | Database update errors |
 | `duration_ms` | Total processing time |
 
@@ -115,7 +115,7 @@ The `GET` handler triggers a full sync (all listings with `artisan_id`) when aut
 │                          ▼                                      │
 │  2. Gold values recompute in Oshi-v2                           │
 │     - elite_factor = (elite_count + 1) / (total_items + 10)    │
-│     - Updated in smith_entities / tosogu_makers                │
+│     - Updated in artisan_makers                                │
 │                          │                                      │
 │                          ▼                                      │
 │  3. Webhook calls Nihontowatch API                             │

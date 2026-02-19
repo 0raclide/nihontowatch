@@ -2,6 +2,7 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import { getArtisanNames } from '@/lib/supabase/yuhinkai';
 import { getArtisanDisplayName, getArtisanAlias } from '@/lib/artisan/displayName';
 import { getArtisanTier } from '@/lib/artisan/tier';
+import { getAttributionName } from '@/lib/listing/attribution';
 import type { YuhinkaiEnrichment } from '@/types';
 
 // Yuhinkai enrichment as returned by the Supabase view (array wrapper)
@@ -315,7 +316,7 @@ export async function getListingDetail(
       artisanTier = getArtisanTier(artisanData);
     } else {
       // Fallback: use smith/tosogu_maker when Yuhinkai lookup misses
-      artisanDisplayName = typedListing.smith || typedListing.tosogu_maker || undefined;
+      artisanDisplayName = getAttributionName(typedListing) ?? undefined;
     }
   }
 

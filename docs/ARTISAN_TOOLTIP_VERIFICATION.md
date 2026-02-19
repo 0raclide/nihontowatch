@@ -88,25 +88,27 @@ CREATE INDEX idx_listings_artisan_verified ON listings(artisan_verified)
   WHERE artisan_verified IS NOT NULL;
 ```
 
-### Yuhinkai (oshi-v2) smith_entities
+### Yuhinkai (oshi-v2) artisan_makers
 
-The tooltip fetches details from the Yuhinkai database:
+The tooltip fetches details from the Yuhinkai database via `getArtisan()`:
 
 ```sql
-smith_id         -- Artisan code (e.g., "MAS590")
+maker_id         -- Artisan code (e.g., "MAS590", "OWA009")
 name_kanji       -- Japanese name (e.g., "正宗")
 name_romaji      -- Romanized name (e.g., "Masamune")
-school           -- School affiliation (e.g., "Soshu")
+legacy_school_text -- School affiliation (e.g., "Soshu")
 province         -- Province (e.g., "Sagami")
 era              -- Era (e.g., "Kamakura")
 period           -- Specific period
+domain           -- 'sword' | 'tosogu' | 'both'
 juyo_count       -- Number of Juyo works
 tokuju_count     -- Number of Tokubetsu Juyo works
 total_items      -- Total items in registry
 elite_count      -- Number of elite works (Kokuho + Gyobutsu + JuBun + Tokuju)
 elite_factor     -- Bayesian elite factor: (elite_count + 1) / (total_items + 10)
-is_school_code   -- TRUE if this is a school entry, not individual smith
 ```
+
+For school codes (NS-*), queries `artisan_schools` instead.
 
 ---
 
