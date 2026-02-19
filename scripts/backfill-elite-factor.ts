@@ -43,10 +43,15 @@ interface ListingWithArtisan {
   artisan_id: string;
 }
 
-// Cache for elite factors to avoid redundant lookups
-const eliteFactorCache = new Map<string, number | null>();
+// Cache for artisan stats to avoid redundant lookups
+const eliteFactorCache = new Map<string, ArtisanStats | null>();
 
-async function getEliteFactor(artisanCode: string): Promise<number | null> {
+interface ArtisanStats {
+  elite_factor: number;
+  elite_count: number;
+}
+
+async function getArtisanStats(artisanCode: string): Promise<ArtisanStats | null> {
   // Check cache first
   if (eliteFactorCache.has(artisanCode)) {
     return eliteFactorCache.get(artisanCode)!;
@@ -55,26 +60,28 @@ async function getEliteFactor(artisanCode: string): Promise<number | null> {
   // Check artisan_makers (unified table)
   const { data: artisan } = await yuhinkai
     .from('artisan_makers')
-    .select('elite_factor')
+    .select('elite_factor, elite_count')
     .eq('maker_id', artisanCode)
     .single();
 
   if (artisan?.elite_factor !== undefined) {
-    eliteFactorCache.set(artisanCode, artisan.elite_factor);
-    return artisan.elite_factor;
+    const stats = { elite_factor: artisan.elite_factor, elite_count: artisan.elite_count ?? 0 };
+    eliteFactorCache.set(artisanCode, stats);
+    return stats;
   }
 
   // Fallback: check artisan_schools for NS-* codes
   if (artisanCode.startsWith('NS-')) {
     const { data: school } = await yuhinkai
       .from('artisan_schools')
-      .select('elite_factor')
+      .select('elite_factor, elite_count')
       .eq('school_id', artisanCode)
       .single();
 
     if (school?.elite_factor !== undefined) {
-      eliteFactorCache.set(artisanCode, school.elite_factor);
-      return school.elite_factor;
+      const stats = { elite_factor: school.elite_factor, elite_count: school.elite_count ?? 0 };
+      eliteFactorCache.set(artisanCode, stats);
+      return stats;
     }
   }
 
@@ -84,10 +91,10 @@ async function getEliteFactor(artisanCode: string): Promise<number | null> {
 
 async function processListing(
   listing: ListingWithArtisan
-): Promise<{ id: string; elite_factor: number } | null> {
-  const eliteFactor = await getEliteFactor(listing.artisan_id);
-  if (eliteFactor !== null) {
-    return { id: listing.id, elite_factor: eliteFactor };
+): Promise<{ id: string; elite_factor: number; elite_count: number } | null> {
+  const stats = await getArtisanStats(listing.artisan_id);
+  if (stats !== null) {
+    return { id: listing.id, elite_factor: stats.elite_factor, elite_count: stats.elite_count };
   }
   return null;
 }
@@ -155,7 +162,7 @@ async function backfillEliteFactors() {
       CONCURRENT_WORKERS
     );
 
-    const updates = results.filter((r): r is { id: string; elite_factor: number } => r !== null);
+    const updates = results.filter((r): r is { id: string; elite_factor: number; elite_count: number } => r !== null);
     notFound += results.filter((r) => r === null).length;
     processed += listings.length;
 
@@ -166,7 +173,10 @@ async function backfillEliteFactors() {
         async (update) => {
           const { error: updateError } = await supabase
             .from('listings')
-            .update({ artisan_elite_factor: update.elite_factor })
+            .update({
+              artisan_elite_factor: update.elite_factor,
+              artisan_elite_count: update.elite_count,
+            })
             .eq('id', update.id);
           return !updateError;
         },

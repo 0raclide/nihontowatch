@@ -302,7 +302,7 @@ function HomeContent() {
     if (status === 'sold') {
       setSort('sale_date');
     } else if (sort === 'sale_date') {
-      setSort('recent'); // Reset to default when leaving sold tab
+      setSort('featured'); // Reset to default when leaving sold tab
     }
   }, [sort]);
 
@@ -540,6 +540,7 @@ function HomeContent() {
                   backgroundSize: '11px',
                 }}
               >
+                <option value="featured">Featured</option>
                 <option value="recent">Newest</option>
                 {activeTab === 'sold' && <option value="sale_date">Recently Sold</option>}
                 <option value="price_asc">Price: Low → High</option>

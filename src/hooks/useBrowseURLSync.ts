@@ -69,6 +69,18 @@ function resolveCategory(urlValue: string | null): BrowseFilters['category'] {
   return CATEGORY_DEFAULT;
 }
 
+const SORT_STORAGE_KEY = 'nihontowatch-sort';
+
+/** Resolve sort from URL param, localStorage, or default */
+function resolveSort(urlValue: string | null): string {
+  if (urlValue) return urlValue;
+  if (typeof window !== 'undefined') {
+    const stored = localStorage.getItem(SORT_STORAGE_KEY);
+    if (stored) return stored;
+  }
+  return 'featured';
+}
+
 /** URL → canonical state snapshot (single source of truth for parsing) */
 export function parseURLState(sp: URLSearchParams): BrowseURLState {
   const priceMinRaw = sp.get('priceMin');
@@ -90,7 +102,7 @@ export function parseURLState(sp: URLSearchParams): BrowseURLState {
       missingSetsumei: parseBool(sp.get('missing_setsumei')),
       missingArtisanCode: parseBool(sp.get('missing_artisan')),
     },
-    sort: sp.get('sort') || 'recent',
+    sort: resolveSort(sp.get('sort')),
     searchQuery: sp.get('q') || '',
     artisanCode: sp.get('artisan') || '',
   };
@@ -120,7 +132,7 @@ export function buildParamsFromState(
   if (filters.enriched) params.set('enriched', 'true');
   if (filters.missingSetsumei) params.set('missing_setsumei', 'true');
   if (filters.missingArtisanCode) params.set('missing_artisan', 'true');
-  if (sort !== 'recent') params.set('sort', sort);
+  if (sort !== 'featured') params.set('sort', sort);
   if (searchQuery) params.set('q', searchQuery);
   if (artisanCode) params.set('artisan', artisanCode);
 
@@ -220,6 +232,13 @@ export function useBrowseURLSync() {
       localStorage.setItem(CATEGORY_STORAGE_KEY, filters.category);
     }
   }, [filters.category]);
+
+  // ---- Persist sort to localStorage ----
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(SORT_STORAGE_KEY, sort);
+    }
+  }, [sort]);
 
   // ---- buildFetchParams — for API calls (excludes page, which is local) ----
   const buildFetchParams = useCallback(() => {

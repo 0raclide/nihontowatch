@@ -770,6 +770,7 @@ export function FilterContent({
               onChange={(e) => onSortChange(e.target.value)}
               className="w-full px-3 py-3 bg-paper border-2 border-border rounded-lg text-[15px] text-ink focus:outline-none focus:border-gold"
             >
+              <option value="featured">Featured</option>
               <option value="recent">Newest</option>
               {availability === 'sold' && <option value="sale_date">Recently Sold</option>}
               <option value="price_asc">Price: Low → High</option>

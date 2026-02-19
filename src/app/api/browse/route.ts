@@ -180,7 +180,7 @@ function parseParams(searchParams: URLSearchParams): BrowseParams {
     missingArtisanCode: searchParams.get('missing_artisan') === 'true',
     artisanCode: searchParams.get('artisan') || undefined,
     query: searchParams.get('q') || undefined,
-    sort: searchParams.get('sort') || 'recent',
+    sort: searchParams.get('sort') || 'featured',
     page: Number(searchParams.get('page')) || 1,
     limit: Math.min(Number(searchParams.get('limit')) || PAGINATION.DEFAULT_PAGE_SIZE, PAGINATION.MAX_PAGE_SIZE),
     offset: explicitOffset,
@@ -213,6 +213,33 @@ const CERT_VARIANTS: Record<string, string[]> = {
   'Hozon': ['Hozon', 'hozon'],
   'TokuKicho': ['TokuKicho', 'Tokubetsu Kicho', 'tokubetsu_kicho'],
 };
+
+/**
+ * Rerank listings to ensure no more than maxConsecutive items from the same dealer
+ * appear in a row. Preserves original score ordering as much as possible.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function applyDealerDiversity(listings: any[], maxConsecutive: number = 2): any[] {
+  if (listings.length <= maxConsecutive) return listings;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const result: any[] = [];
+  const remaining = [...listings];
+
+  while (remaining.length > 0) {
+    const recentDealerIds = result.slice(-maxConsecutive).map(l => l.dealer_id);
+    const idx = remaining.findIndex(l => {
+      const consecutive = recentDealerIds.filter(d => d === l.dealer_id).length;
+      return consecutive < maxConsecutive;
+    });
+    if (idx === -1) {
+      // No candidate breaks the streak — append remaining as-is
+      result.push(...remaining);
+      break;
+    }
+    result.push(remaining.splice(idx, 1)[0]);
+  }
+  return result;
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -295,6 +322,7 @@ export async function GET(request: NextRequest) {
         artisan_method,
         artisan_candidates,
         artisan_verified,
+        featured_score,
         dealers:dealers!inner(id, name, domain, earliest_listing_at),
         listing_yuhinkai_enrichment(
           setsumei_en,
@@ -608,6 +636,12 @@ export async function GET(request: NextRequest) {
         // Listings without artisan match appear last (nullsFirst: false)
         query = query.order('artisan_elite_factor', { ascending: false, nullsFirst: false });
         break;
+      case 'featured':
+        // Algorithmic sort by precomputed featured_score (quality + heat × freshness)
+        // Higher score = more impressive items first
+        // Listings without scores (NULL) appear last
+        query = query.order('featured_score', { ascending: false, nullsFirst: false });
+        break;
       default:
         // "Newest" sort: Genuine new inventory first, then bulk imports
         // is_initial_import: FALSE (genuine new) sorts before TRUE (bulk import)
@@ -728,6 +762,11 @@ export async function GET(request: NextRequest) {
           });
         }
       }
+    }
+
+    // Dealer diversity: rerank featured sort to prevent long runs from one dealer
+    if (params.sort === 'featured') {
+      enrichedListings = applyDealerDiversity(enrichedListings);
     }
 
     // Get data delay cutoff for free tier (used by facets too)

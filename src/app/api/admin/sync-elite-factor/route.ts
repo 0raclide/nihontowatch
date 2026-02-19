@@ -38,31 +38,36 @@ interface SyncResult {
 }
 
 
+interface ArtisanStats {
+  elite_factor: number;
+  elite_count: number;
+}
+
 /**
- * Fetch elite_factor from Yuhinkai for an artisan code
+ * Fetch elite_factor and elite_count from Yuhinkai for an artisan code
  */
-async function getEliteFactor(artisanCode: string): Promise<number | null> {
+async function getArtisanStats(artisanCode: string): Promise<ArtisanStats | null> {
   // Check artisan_makers (unified table)
   const { data: artisan } = await yuhinkaiClient
     .from('artisan_makers')
-    .select('elite_factor')
+    .select('elite_factor, elite_count')
     .eq('maker_id', artisanCode)
     .single();
 
   if (artisan?.elite_factor !== undefined) {
-    return artisan.elite_factor;
+    return { elite_factor: artisan.elite_factor, elite_count: artisan.elite_count ?? 0 };
   }
 
   // Fallback: check artisan_schools for NS-* codes
   if (artisanCode.startsWith('NS-')) {
     const { data: school } = await yuhinkaiClient
       .from('artisan_schools')
-      .select('elite_factor')
+      .select('elite_factor, elite_count')
       .eq('school_id', artisanCode)
       .single();
 
     if (school?.elite_factor !== undefined) {
-      return school.elite_factor;
+      return { elite_factor: school.elite_factor, elite_count: school.elite_count ?? 0 };
     }
   }
 
@@ -98,26 +103,29 @@ async function syncSpecificArtisans(
   let notFound = 0;
   let errors = 0;
 
-  // Fetch elite_factors for all codes concurrently
-  const eliteFactors = await processChunk(
+  // Fetch stats for all codes concurrently
+  const artisanStatsList = await processChunk(
     artisanCodes,
     async (code) => {
-      const factor = await getEliteFactor(code);
-      return { code, factor };
+      const stats = await getArtisanStats(code);
+      return { code, stats };
     },
     CONCURRENT_WORKERS
   );
 
   // Update listings for each artisan
-  for (const { code, factor } of eliteFactors) {
-    if (factor === null) {
+  for (const { code, stats } of artisanStatsList) {
+    if (stats === null) {
       notFound++;
       continue;
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase.from('listings') as any)
-      .update({ artisan_elite_factor: factor })
+      .update({
+        artisan_elite_factor: stats.elite_factor,
+        artisan_elite_count: stats.elite_count,
+      })
       .eq('artisan_id', code);
 
     if (error) {
@@ -173,24 +181,24 @@ async function syncAllArtisans(
   const uniqueCodes = [...new Set(allArtisanIds)];
   logger.info(`[sync-elite-factor] Syncing ${uniqueCodes.length} unique artisans`);
 
-  // Build a map of code -> elite_factor
-  const eliteFactorMap = new Map<string, number>();
+  // Build a map of code -> stats
+  const statsMap = new Map<string, ArtisanStats>();
 
-  // Fetch elite_factors in batches
+  // Fetch stats in batches
   for (let i = 0; i < uniqueCodes.length; i += BATCH_SIZE) {
     const batch = uniqueCodes.slice(i, i + BATCH_SIZE);
     const results = await processChunk(
       batch,
       async (code) => {
-        const factor = await getEliteFactor(code);
-        return { code, factor };
+        const stats = await getArtisanStats(code);
+        return { code, stats };
       },
       CONCURRENT_WORKERS
     );
 
-    for (const { code, factor } of results) {
-      if (factor !== null) {
-        eliteFactorMap.set(code, factor);
+    for (const { code, stats } of results) {
+      if (stats !== null) {
+        statsMap.set(code, stats);
       } else {
         notFound++;
       }
@@ -198,10 +206,13 @@ async function syncAllArtisans(
   }
 
   // Update listings in batches by artisan_id
-  for (const [code, factor] of eliteFactorMap) {
+  for (const [code, stats] of statsMap) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase.from('listings') as any)
-      .update({ artisan_elite_factor: factor })
+      .update({
+        artisan_elite_factor: stats.elite_factor,
+        artisan_elite_count: stats.elite_count,
+      })
       .eq('artisan_id', code);
 
     if (error) {

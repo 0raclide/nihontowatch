@@ -491,6 +491,13 @@ export interface Listing {
   }> | null;
   artisan_verified?: 'correct' | 'incorrect' | null;
 
+  // Artisan metrics (denormalized from Yuhinkai)
+  artisan_elite_factor?: number;
+  artisan_elite_count?: number;
+
+  // Featured sort
+  featured_score?: number;
+
   // Timestamps
   first_seen_at: string;
   last_scraped_at: string;
@@ -557,6 +564,7 @@ export interface BrowseFilters {
 }
 
 export type SortOption =
+  | 'featured'
   | 'recent'
   | 'price_asc'
   | 'price_desc'
