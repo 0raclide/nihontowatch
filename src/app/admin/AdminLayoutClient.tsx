@@ -13,7 +13,6 @@ const navigation = [
   { name: 'Dashboard', href: '/admin', icon: DashboardIcon },
   { name: 'Dealers', href: '/admin/dealers', icon: DealersIcon },
   { name: 'Users', href: '/admin/users', icon: UsersIcon },
-  { name: 'Activity', href: '/admin/activity', icon: ActivityIcon },
   { name: 'Analytics', href: '/admin/analytics', icon: AnalyticsIcon },
   { name: 'Market Intel', href: '/admin/market-intelligence', icon: MarketIntelIcon },
   { name: 'Visitors', href: '/admin/visitors', icon: VisitorsIcon },
@@ -41,14 +40,6 @@ function UsersIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-    </svg>
-  );
-}
-
-function ActivityIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
     </svg>
   );
 }
