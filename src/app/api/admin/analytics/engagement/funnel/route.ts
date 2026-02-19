@@ -31,7 +31,7 @@ export const dynamic = 'force-dynamic';
 // TYPES
 // =============================================================================
 
-type FunnelStageId = 'visitors' | 'searchers' | 'viewers' | 'engagers' | 'high_intent' | 'converted';
+type FunnelStageId = 'visitors' | 'searchers' | 'viewers' | 'signed_up' | 'engagers' | 'high_intent' | 'converted';
 
 interface FunnelStage {
   stage: FunnelStageId;
@@ -114,7 +114,20 @@ export async function GET(request: NextRequest): Promise<NextResponse<AnalyticsA
     const uniqueViewSessions = new Set(viewSessionsData.map(e => e.session_id));
     const viewerCount = uniqueViewSessions.size;
 
-    // 6. Get unique sessions that favorited (Stage 4: Engagers)
+    // 6. Get users that signed up in the period (Stage 4: Signed Up)
+    const { count: signupCount, error: signupError } = await supabase
+      .from('profiles')
+      .select('id', { count: 'exact', head: true })
+      .gte('created_at', startDate.toISOString())
+      .lte('created_at', endDate.toISOString());
+
+    if (signupError) {
+      logger.error('Funnel signup query error', { error: signupError });
+    }
+
+    const signedUpCount = signupCount || 0;
+
+    // 7. Get unique sessions that favorited (Stage 5: Engagers)
     // We need to get favorites created in the period and correlate with sessions
     const { data: favoriteSessions, error: favoriteError } = await supabase
       .from('activity_events')
@@ -165,6 +178,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<AnalyticsA
       { id: 'visitors', label: 'Visitors', count: totalVisitors },
       { id: 'searchers', label: 'Searched', count: searcherCount },
       { id: 'viewers', label: 'Viewed Listing', count: viewerCount },
+      { id: 'signed_up', label: 'Signed Up', count: signedUpCount },
       { id: 'engagers', label: 'Favorited', count: engagerCount },
       { id: 'high_intent', label: 'Saved Search', count: highIntentCount },
       { id: 'converted', label: 'Sent Inquiry', count: convertedCount },
