@@ -77,9 +77,11 @@ export default function ListingDetailPage({ initialData }: ListingDetailPageProp
 
     viewStartTime.current = Date.now();
 
-    // Track view to dedicated listing_views table for analytics
-    const sessionId = getSessionId();
-    trackListingView(Number(listingId), sessionId, user?.id, getViewReferrer());
+    // Track view to dedicated listing_views table for analytics (skip admins)
+    if (!isAdmin) {
+      const sessionId = getSessionId();
+      trackListingView(Number(listingId), sessionId, user?.id, getViewReferrer());
+    }
 
     // Track dwell time when user leaves the page
     return () => {

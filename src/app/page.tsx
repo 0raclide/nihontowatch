@@ -346,8 +346,8 @@ function HomeContent() {
           scrollContainerRef.current.scrollTo({ top: 0 });
         }
 
-        // Track search if there's a query or active filters
-        if (searchQuery || hasActiveFilters()) {
+        // Track search if there's a query or active filters (skip admins)
+        if (!authIsAdmin && (searchQuery || hasActiveFilters())) {
           const sessionId = getSessionId();
           const searchFilters = {
             itemType: filters.itemTypes,

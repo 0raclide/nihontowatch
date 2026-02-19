@@ -75,13 +75,14 @@ export function QuickView() {
     setIsSheetExpanded(prev => !prev);
   }, [isSheetExpanded, activityTracker, currentListing]);
 
-  // Track view to dedicated listing_views table when QuickView opens
+  // Track view to dedicated listing_views table when QuickView opens (skip admins)
   useEffect(() => {
     if (!currentListing || !isOpen) return;
+    if (isAdmin) return;
 
     const sessionId = getSessionId();
     trackListingView(currentListing.id, sessionId, user?.id, 'browse');
-  }, [currentListing?.id, isOpen, user?.id]);
+  }, [currentListing?.id, isOpen, user?.id, isAdmin]);
 
   // Reset scroll and visible images when listing changes
   useEffect(() => {

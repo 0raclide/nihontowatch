@@ -70,6 +70,7 @@ export async function POST(request: NextRequest) {
     if (isCreatePayload(body)) {
       const {
         sessionId,
+        userId,
         userAgent,
         screenWidth,
         screenHeight,
@@ -82,7 +83,7 @@ export async function POST(request: NextRequest) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error } = await (supabase as any).from('user_sessions').insert({
         session_id: sessionId,
-        // user_id left null for anonymous sessions (requires migration to allow NULL)
+        user_id: userId || null,
         started_at: new Date().toISOString(),
         page_views: 0,
         user_agent: userAgent || null,

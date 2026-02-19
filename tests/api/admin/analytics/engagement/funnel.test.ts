@@ -90,25 +90,28 @@ function setupCompleteMocks() {
     Promise.resolve({ data: { role: 'admin' }, error: null })
   );
 
-  // Mock session counts (visitors)
-  const sessionsBuilder = createMockQueryBuilder([], 1000);
+  // Mock session rows (visitors) — now fetched as full rows with user_id for admin filtering
+  const sessionsBuilder = createMockQueryBuilder(
+    Array.from({ length: 1000 }, (_, i) => ({ id: `sess-${i}`, user_id: null })),
+    1000
+  );
 
   // Mock search events
   const searchEventsBuilder = createMockQueryBuilder([
-    { session_id: 's1' },
-    { session_id: 's2' },
-    { session_id: 's3' },
+    { session_id: 's1', user_id: null },
+    { session_id: 's2', user_id: null },
+    { session_id: 's3', user_id: null },
   ], 3);
 
   // Mock view events
   const viewEventsBuilder = createMockQueryBuilder([
-    { session_id: 's1' },
-    { session_id: 's2' },
+    { session_id: 's1', user_id: null },
+    { session_id: 's2', user_id: null },
   ], 2);
 
   // Mock favorite events
   const favoriteEventsBuilder = createMockQueryBuilder([
-    { session_id: 's1' },
+    { session_id: 's1', user_id: null },
   ], 1);
 
   // Mock saved searches
@@ -120,15 +123,15 @@ function setupCompleteMocks() {
   mockSupabaseClient.from.mockImplementation((table: string) => {
     if (table === 'profiles') return profileBuilder;
     if (table === 'user_sessions') return sessionsBuilder;
+    if (table === 'user_searches') return searchEventsBuilder;
+    if (table === 'listing_views') return viewEventsBuilder;
     if (table === 'saved_searches') return savedSearchesBuilder;
     if (table === 'inquiry_history') return inquiriesBuilder;
     if (table === 'activity_events') {
-      // Return different data based on how the builder is used
-      // This is a simplified mock - in reality you'd want more sophisticated tracking
       return createMockQueryBuilder([
-        { session_id: 's1' },
-        { session_id: 's2' },
-        { session_id: 's3' },
+        { session_id: 's1', user_id: null },
+        { session_id: 's2', user_id: null },
+        { session_id: 's3', user_id: null },
       ], 3);
     }
     return createMockQueryBuilder();
@@ -234,7 +237,7 @@ describe('GET /api/admin/analytics/engagement/funnel', () => {
       const response = await GET(request);
       const json = await response.json();
 
-      expect(json.data.stages.length).toBe(6);
+      expect(json.data.stages.length).toBe(7);
     });
 
     it('returns stages in correct order with correct labels', async () => {
@@ -248,6 +251,7 @@ describe('GET /api/admin/analytics/engagement/funnel', () => {
         { stage: 'visitors', label: 'Visitors' },
         { stage: 'searchers', label: 'Searched' },
         { stage: 'viewers', label: 'Viewed Listing' },
+        { stage: 'signed_up', label: 'Signed Up' },
         { stage: 'engagers', label: 'Favorited' },
         { stage: 'high_intent', label: 'Saved Search' },
         { stage: 'converted', label: 'Sent Inquiry' },

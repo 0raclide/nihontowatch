@@ -23,6 +23,7 @@ import {
   errorResponse,
   roundTo,
   safeDivide,
+  getAdminUserIds,
 } from '../_lib/utils';
 
 export const dynamic = 'force-dynamic';
@@ -71,22 +72,30 @@ export async function GET(request: NextRequest): Promise<NextResponse<AnalyticsA
     const period = parsePeriodParam(searchParams);
     const { startDate, endDate } = calculatePeriodDates(period);
 
+    // Get admin user IDs to filter from analytics
+    const adminIds = await getAdminUserIds(supabase);
+    const isAdminUser = (userId: string | null) => userId != null && adminIds.includes(userId);
+
     // 3. Get all unique sessions in the period (Stage 1: Visitors)
-    const { count: visitorCount, error: visitorsError } = await supabase
+    const { data: visitorSessions, error: visitorsError } = await supabase
       .from('user_sessions')
-      .select('id', { count: 'exact', head: true })
+      .select('id, user_id')
       .gte('started_at', startDate.toISOString())
-      .lte('started_at', endDate.toISOString());
+      .lte('started_at', endDate.toISOString())
+      .limit(50000);
 
     if (visitorsError) {
       logger.error('Funnel visitors query error', { error: visitorsError });
     }
 
+    const filteredVisitors = ((visitorSessions || []) as Array<{ id: string; user_id: string | null }>)
+      .filter(s => !isAdminUser(s.user_id));
+
     // 4. Get unique sessions that performed a search (Stage 2: Searchers)
     // Query from dedicated user_searches table
     const { data: searchSessions, error: searchError } = await supabase
       .from('user_searches')
-      .select('session_id')
+      .select('session_id, user_id')
       .gte('searched_at', startDate.toISOString())
       .lte('searched_at', endDate.toISOString());
 
@@ -94,7 +103,8 @@ export async function GET(request: NextRequest): Promise<NextResponse<AnalyticsA
       logger.error('Funnel search query error', { error: searchError });
     }
 
-    const searchSessionsData = (searchSessions || []) as Array<{ session_id: string }>;
+    const searchSessionsData = ((searchSessions || []) as Array<{ session_id: string; user_id: string | null }>)
+      .filter(s => !isAdminUser(s.user_id));
     const uniqueSearchSessions = new Set(searchSessionsData.map(e => e.session_id));
     const searcherCount = uniqueSearchSessions.size;
 
@@ -102,7 +112,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<AnalyticsA
     // Query from dedicated listing_views table
     const { data: viewSessions, error: viewError } = await supabase
       .from('listing_views')
-      .select('session_id')
+      .select('session_id, user_id')
       .gte('viewed_at', startDate.toISOString())
       .lte('viewed_at', endDate.toISOString());
 
@@ -110,7 +120,8 @@ export async function GET(request: NextRequest): Promise<NextResponse<AnalyticsA
       logger.error('Funnel view query error', { error: viewError });
     }
 
-    const viewSessionsData = (viewSessions || []) as Array<{ session_id: string }>;
+    const viewSessionsData = ((viewSessions || []) as Array<{ session_id: string; user_id: string | null }>)
+      .filter(s => !isAdminUser(s.user_id));
     const uniqueViewSessions = new Set(viewSessionsData.map(e => e.session_id));
     const viewerCount = uniqueViewSessions.size;
 
@@ -131,7 +142,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<AnalyticsA
     // We need to get favorites created in the period and correlate with sessions
     const { data: favoriteSessions, error: favoriteError } = await supabase
       .from('activity_events')
-      .select('session_id')
+      .select('session_id, user_id')
       .eq('event_type', 'favorite_add')
       .gte('created_at', startDate.toISOString())
       .lte('created_at', endDate.toISOString());
@@ -140,7 +151,8 @@ export async function GET(request: NextRequest): Promise<NextResponse<AnalyticsA
       logger.error('Funnel favorite query error', { error: favoriteError });
     }
 
-    const favoriteSessionsData = (favoriteSessions || []) as Array<{ session_id: string }>;
+    const favoriteSessionsData = ((favoriteSessions || []) as Array<{ session_id: string; user_id: string | null }>)
+      .filter(s => !isAdminUser(s.user_id));
     const uniqueFavoriteSessions = new Set(favoriteSessionsData.map(e => e.session_id));
     const engagerCount = uniqueFavoriteSessions.size;
 
@@ -172,7 +184,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<AnalyticsA
     const convertedCount = inquiryCount || 0;
 
     // 9. Build funnel stages with conversion and dropoff rates
-    const totalVisitors = visitorCount || 0;
+    const totalVisitors = filteredVisitors.length;
 
     const stageData: Array<{ id: FunnelStageId; label: string; count: number }> = [
       { id: 'visitors', label: 'Visitors', count: totalVisitors },

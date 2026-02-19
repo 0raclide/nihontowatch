@@ -25,6 +25,7 @@ import {
   errorResponse,
   roundTo,
   safeDivide,
+  getAdminUserIds,
 } from '../_lib/utils';
 
 export const dynamic = 'force-dynamic';
@@ -124,7 +125,11 @@ export async function GET(request: NextRequest): Promise<NextResponse<AnalyticsA
       user_id: string | null;
       clicked_listing_id: number | null;
     };
-    const searchData = (searchEvents || []) as SearchRow[];
+    // Filter out admin user activity
+    const adminIds = await getAdminUserIds(supabase);
+    const searchData = ((searchEvents || []) as SearchRow[]).filter(
+      s => !s.user_id || !adminIds.includes(s.user_id)
+    );
 
     for (const search of searchData) {
       const normalizedQuery = search.query_normalized;

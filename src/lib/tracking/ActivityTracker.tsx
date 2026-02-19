@@ -202,10 +202,13 @@ export function ActivityTrackerProvider({
   trackSessions = true,
 }: ActivityTrackerProviderProps) {
   // Get user from auth context
-  const { user } = useAuth();
+  const { user, isAdmin, isLoading } = useAuth();
 
   // Track opt-out state
   const [isOptedOut, setIsOptedOut] = useState(() => hasOptedOutOfTracking());
+
+  // Suppress all tracking for opted-out users AND admin users
+  const isSuppressed = isOptedOut || isAdmin;
 
   // Event queue
   const eventQueueRef = useRef<ActivityEvent[]>([]);
@@ -243,7 +246,7 @@ export function ActivityTrackerProvider({
   const flushEvents = useCallback(async () => {
     if (flushingRef.current) return;
     if (eventQueueRef.current.length === 0) return;
-    if (isOptedOut) {
+    if (isSuppressed) {
       eventQueueRef.current = [];
       return;
     }
@@ -293,13 +296,13 @@ export function ActivityTrackerProvider({
     } finally {
       flushingRef.current = false;
     }
-  }, [getUserId, isOptedOut]);
+  }, [getUserId, isSuppressed]);
 
   // Add event to queue
   const queueEvent = useCallback(
     (event: ActivityEvent) => {
-      // Don't queue events when opted out or page is hidden
-      if (isOptedOut) return;
+      // Don't queue events when suppressed (opted out or admin) or page is hidden
+      if (isSuppressed) return;
       if (isHidden()) return;
 
       eventQueueRef.current.push(event);
@@ -310,14 +313,15 @@ export function ActivityTrackerProvider({
         flushEvents();
       }
     },
-    [flushEvents, isOptedOut]
+    [flushEvents, isSuppressed]
   );
 
   // Initialize session on mount
   useEffect(() => {
     if (!trackSessions) return;
     if (sessionCreatedRef.current) return;
-    if (isOptedOut) return;
+    if (isSuppressed) return;
+    if (isLoading) return; // Wait for auth to resolve before deciding
 
     sessionCreatedRef.current = true;
 
@@ -331,6 +335,7 @@ export function ActivityTrackerProvider({
     const sessionPayload: CreateSessionPayload = {
       action: 'create',
       sessionId: getSessionId(),
+      userId: getUserId(),
       userAgent:
         typeof navigator !== 'undefined' ? navigator.userAgent : undefined,
       screenWidth:
@@ -355,11 +360,11 @@ export function ActivityTrackerProvider({
     });
 
     return cleanupUnload;
-  }, [trackSessions, isOptedOut]);
+  }, [trackSessions, isSuppressed, isLoading, getUserId]);
 
   // Set up batch timer and cleanup
   useEffect(() => {
-    if (isOptedOut) return;
+    if (isSuppressed) return;
 
     isMountedRef.current = true;
 
@@ -392,7 +397,7 @@ export function ActivityTrackerProvider({
         flushEvents();
       }
     };
-  }, [flushEvents, isOptedOut]);
+  }, [flushEvents, isSuppressed]);
 
   // =============================================================================
   // Tracking Methods
@@ -400,7 +405,7 @@ export function ActivityTrackerProvider({
 
   const trackPageView = useCallback(
     (path: string, searchParams?: Record<string, string>) => {
-      if (isOptedOut || !autoTrackPageViews) return;
+      if (isSuppressed || !autoTrackPageViews) return;
 
       updateActivity(true); // Increment page views
 
@@ -415,7 +420,7 @@ export function ActivityTrackerProvider({
 
       queueEvent(event);
     },
-    [createBaseEvent, queueEvent, isOptedOut, autoTrackPageViews]
+    [createBaseEvent, queueEvent, isSuppressed, autoTrackPageViews]
   );
 
   const trackListingView = useCallback(
@@ -424,7 +429,7 @@ export function ActivityTrackerProvider({
       durationMs: number,
       extra?: { scrollDepth?: number; imageViews?: number }
     ) => {
-      if (isOptedOut) return;
+      if (isSuppressed) return;
 
       const event: ListingViewEvent = {
         ...createBaseEvent(),
@@ -437,12 +442,12 @@ export function ActivityTrackerProvider({
 
       queueEvent(event);
     },
-    [createBaseEvent, queueEvent, isOptedOut]
+    [createBaseEvent, queueEvent, isSuppressed]
   );
 
   const trackSearch = useCallback(
     (query: string, resultCount?: number, filters?: SearchFilters) => {
-      if (isOptedOut) return;
+      if (isSuppressed) return;
 
       const event: SearchEvent = {
         ...createBaseEvent(),
@@ -454,7 +459,7 @@ export function ActivityTrackerProvider({
 
       queueEvent(event);
     },
-    [createBaseEvent, queueEvent, isOptedOut]
+    [createBaseEvent, queueEvent, isSuppressed]
   );
 
   const trackFilterChange = useCallback(
@@ -464,7 +469,7 @@ export function ActivityTrackerProvider({
       previousValue?: unknown,
       newValue?: unknown
     ) => {
-      if (isOptedOut) return;
+      if (isSuppressed) return;
 
       const event: FilterChangeEvent = {
         ...createBaseEvent(),
@@ -477,12 +482,12 @@ export function ActivityTrackerProvider({
 
       queueEvent(event);
     },
-    [createBaseEvent, queueEvent, isOptedOut]
+    [createBaseEvent, queueEvent, isSuppressed]
   );
 
   const trackFavoriteAction = useCallback(
     (listingId: number, action: 'add' | 'remove') => {
-      if (isOptedOut) return;
+      if (isSuppressed) return;
 
       const event: FavoriteEvent = {
         ...createBaseEvent(),
@@ -492,7 +497,7 @@ export function ActivityTrackerProvider({
 
       queueEvent(event);
     },
-    [createBaseEvent, queueEvent, isOptedOut]
+    [createBaseEvent, queueEvent, isSuppressed]
   );
 
   const trackAlertAction = useCallback(
@@ -502,7 +507,7 @@ export function ActivityTrackerProvider({
       alertType?: string,
       criteria?: Record<string, unknown>
     ) => {
-      if (isOptedOut) return;
+      if (isSuppressed) return;
 
       const event: AlertEvent = {
         ...createBaseEvent(),
@@ -514,12 +519,12 @@ export function ActivityTrackerProvider({
 
       queueEvent(event);
     },
-    [createBaseEvent, queueEvent, isOptedOut]
+    [createBaseEvent, queueEvent, isSuppressed]
   );
 
   const trackExternalLinkClick = useCallback(
     (url: string, listingId?: number, dealerName?: string) => {
-      if (isOptedOut) return;
+      if (isSuppressed) return;
 
       const event: ExternalLinkClickEvent = {
         ...createBaseEvent(),
@@ -531,7 +536,7 @@ export function ActivityTrackerProvider({
 
       queueEvent(event);
     },
-    [createBaseEvent, queueEvent, isOptedOut]
+    [createBaseEvent, queueEvent, isSuppressed]
   );
 
   const trackViewportDwell = useCallback(
@@ -540,7 +545,7 @@ export function ActivityTrackerProvider({
       dwellMs: number,
       extra?: { intersectionRatio?: number; isRevisit?: boolean }
     ) => {
-      if (isOptedOut) return;
+      if (isSuppressed) return;
 
       const event: ViewportDwellEvent = {
         ...createBaseEvent(),
@@ -553,7 +558,7 @@ export function ActivityTrackerProvider({
 
       queueEvent(event);
     },
-    [createBaseEvent, queueEvent, isOptedOut]
+    [createBaseEvent, queueEvent, isSuppressed]
   );
 
   const trackQuickViewPanelToggle = useCallback(
@@ -562,7 +567,7 @@ export function ActivityTrackerProvider({
       action: 'collapse' | 'expand',
       dwellMs?: number
     ) => {
-      if (isOptedOut) return;
+      if (isSuppressed) return;
 
       const event: QuickViewPanelToggleEvent = {
         ...createBaseEvent(),
@@ -574,7 +579,7 @@ export function ActivityTrackerProvider({
 
       queueEvent(event);
     },
-    [createBaseEvent, queueEvent, isOptedOut]
+    [createBaseEvent, queueEvent, isSuppressed]
   );
 
   const trackQuickViewOpen = useCallback(
@@ -583,7 +588,7 @@ export function ActivityTrackerProvider({
       dealerName?: string,
       source: 'listing_card' | 'search_results' | 'favorites' = 'listing_card'
     ) => {
-      if (isOptedOut) return;
+      if (isSuppressed) return;
 
       const event: QuickViewOpenEvent = {
         ...createBaseEvent(),
@@ -595,7 +600,7 @@ export function ActivityTrackerProvider({
 
       queueEvent(event);
     },
-    [createBaseEvent, queueEvent, isOptedOut]
+    [createBaseEvent, queueEvent, isSuppressed]
   );
 
   const trackImagePinchZoom = useCallback(
@@ -604,7 +609,7 @@ export function ActivityTrackerProvider({
       imageIndex: number,
       extra?: { zoomScale?: number; durationMs?: number }
     ) => {
-      if (isOptedOut) return;
+      if (isSuppressed) return;
 
       const event: ImagePinchZoomEvent = {
         ...createBaseEvent(),
@@ -617,7 +622,7 @@ export function ActivityTrackerProvider({
 
       queueEvent(event);
     },
-    [createBaseEvent, queueEvent, isOptedOut]
+    [createBaseEvent, queueEvent, isSuppressed]
   );
 
   // Memoize the tracker object to prevent unnecessary re-renders in consumers

@@ -82,6 +82,28 @@ export async function verifyAdmin(
 }
 
 // =============================================================================
+// ADMIN USER FILTERING
+// =============================================================================
+
+/**
+ * Get all admin user IDs for filtering analytics data.
+ *
+ * Used to exclude admin browsing activity from engagement metrics.
+ *
+ * @param supabase - Supabase client instance
+ * @returns Array of admin user ID strings
+ */
+export async function getAdminUserIds(
+  supabase: Awaited<ReturnType<typeof createClient>>
+): Promise<string[]> {
+  const { data } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('role', 'admin');
+  return (data || []).map((p: { id: string }) => p.id);
+}
+
+// =============================================================================
 // PARAMETER PARSING
 // =============================================================================
 

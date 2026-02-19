@@ -24,6 +24,7 @@ import {
   calculatePeriodDates,
   successResponse,
   errorResponse,
+  getAdminUserIds,
 } from '../_lib/utils';
 
 export const dynamic = 'force-dynamic';
@@ -99,7 +100,11 @@ export async function GET(request: NextRequest): Promise<NextResponse<AnalyticsA
       session_id: string;
       user_id: string | null;
     };
-    const viewsData = (viewEvents || []) as ViewRow[];
+    // Filter out admin user activity
+    const adminIds = await getAdminUserIds(supabase);
+    const viewsData = ((viewEvents || []) as ViewRow[]).filter(
+      v => !v.user_id || !adminIds.includes(v.user_id)
+    );
 
     for (const view of viewsData) {
       const listingId = view.listing_id;

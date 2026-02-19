@@ -25,6 +25,7 @@ import {
   percentChange,
   roundTo,
   safeDivide,
+  getAdminUserIds,
 } from '../_lib/utils';
 
 export const dynamic = 'force-dynamic';
@@ -134,7 +135,11 @@ export async function GET(request: NextRequest): Promise<NextResponse<AnalyticsA
         .lte('last_visit_at', endDate.toISOString()),
     ]);
 
-    // 4. Query session metrics
+    // Get admin user IDs to filter from analytics
+    const adminIds = await getAdminUserIds(supabase);
+    const isAdminUser = (userId: string | null) => userId != null && adminIds.includes(userId);
+
+    // 4. Query session metrics (include user_id for admin filtering)
     const [
       sessionsCurrentResult,
       sessionsPreviousResult,
@@ -143,25 +148,33 @@ export async function GET(request: NextRequest): Promise<NextResponse<AnalyticsA
       // Sessions in current period
       supabase
         .from('user_sessions')
-        .select('id', { count: 'exact', head: true })
+        .select('id, user_id')
         .gte('started_at', startDate.toISOString())
-        .lte('started_at', endDate.toISOString()),
+        .lte('started_at', endDate.toISOString())
+        .limit(50000),
 
       // Sessions in previous period
       supabase
         .from('user_sessions')
-        .select('id', { count: 'exact', head: true })
+        .select('id, user_id')
         .gte('started_at', previousStartDate.toISOString())
-        .lte('started_at', previousEndDate.toISOString()),
+        .lte('started_at', previousEndDate.toISOString())
+        .limit(50000),
 
       // Session stats for current period (duration, page views)
       supabase
         .from('user_sessions')
-        .select('total_duration_ms, page_views')
+        .select('total_duration_ms, page_views, user_id')
         .gte('started_at', startDate.toISOString())
         .lte('started_at', endDate.toISOString())
         .limit(10000),
     ]);
+
+    // Filter admin sessions
+    const sessionsCurrentCount = ((sessionsCurrentResult.data || []) as Array<{ id: string; user_id: string | null }>)
+      .filter(s => !isAdminUser(s.user_id)).length;
+    const sessionsPreviousCount = ((sessionsPreviousResult.data || []) as Array<{ id: string; user_id: string | null }>)
+      .filter(s => !isAdminUser(s.user_id)).length;
 
     // 5. Query engagement metrics from dedicated tracking tables
     // listing_views and user_searches provide optimized analytics queries
@@ -174,31 +187,46 @@ export async function GET(request: NextRequest): Promise<NextResponse<AnalyticsA
       // Views in current period - from listing_views table
       supabase
         .from('listing_views')
-        .select('id', { count: 'exact', head: true })
+        .select('id, user_id')
         .gte('viewed_at', startDate.toISOString())
-        .lte('viewed_at', endDate.toISOString()),
+        .lte('viewed_at', endDate.toISOString())
+        .limit(50000),
 
       // Views in previous period
       supabase
         .from('listing_views')
-        .select('id', { count: 'exact', head: true })
+        .select('id, user_id')
         .gte('viewed_at', previousStartDate.toISOString())
-        .lte('viewed_at', previousEndDate.toISOString()),
+        .lte('viewed_at', previousEndDate.toISOString())
+        .limit(50000),
 
       // Searches in current period - from user_searches table
       supabase
         .from('user_searches')
-        .select('id', { count: 'exact', head: true })
+        .select('id, user_id')
         .gte('searched_at', startDate.toISOString())
-        .lte('searched_at', endDate.toISOString()),
+        .lte('searched_at', endDate.toISOString())
+        .limit(50000),
 
       // Searches in previous period
       supabase
         .from('user_searches')
-        .select('id', { count: 'exact', head: true })
+        .select('id, user_id')
         .gte('searched_at', previousStartDate.toISOString())
-        .lte('searched_at', previousEndDate.toISOString()),
+        .lte('searched_at', previousEndDate.toISOString())
+        .limit(50000),
     ]);
+
+    // Filter admin activity from engagement counts
+    type IdRow = { id: string; user_id: string | null };
+    const viewsCurrentCount = ((viewsCurrentResult.data || []) as IdRow[])
+      .filter(v => !isAdminUser(v.user_id)).length;
+    const viewsPreviousCount = ((viewsPreviousResult.data || []) as IdRow[])
+      .filter(v => !isAdminUser(v.user_id)).length;
+    const searchesCurrentCount = ((searchesCurrentResult.data || []) as IdRow[])
+      .filter(s => !isAdminUser(s.user_id)).length;
+    const searchesPreviousCount = ((searchesPreviousResult.data || []) as IdRow[])
+      .filter(s => !isAdminUser(s.user_id)).length;
 
     // 6. Query favorites
     const [
@@ -220,8 +248,9 @@ export async function GET(request: NextRequest): Promise<NextResponse<AnalyticsA
         .lte('created_at', previousEndDate.toISOString()),
     ]);
 
-    // 7. Calculate session statistics
-    const sessionsData = (sessionStatsResult.data || []) as Array<{ total_duration_ms: number | null; page_views: number | null }>;
+    // 7. Calculate session statistics (filtered to exclude admin sessions)
+    const sessionsData = ((sessionStatsResult.data || []) as Array<{ total_duration_ms: number | null; page_views: number | null; user_id: string | null }>)
+      .filter(s => !isAdminUser(s.user_id));
     let totalDurationMs = 0;
     let totalPageViews = 0;
     let bounceCount = 0;
@@ -247,8 +276,8 @@ export async function GET(request: NextRequest): Promise<NextResponse<AnalyticsA
     );
 
     const sessionsChange = percentChange(
-      sessionsPreviousResult.count || 0,
-      sessionsCurrentResult.count || 0
+      sessionsPreviousCount,
+      sessionsCurrentCount
     );
 
     // 9. Build response
@@ -262,19 +291,19 @@ export async function GET(request: NextRequest): Promise<NextResponse<AnalyticsA
         activeInPeriod: activeInPeriodResult.count || 0,
       },
       sessions: {
-        total: sessionsCurrentResult.count || 0,
+        total: sessionsCurrentCount,
         avgDurationSeconds,
         avgPageViews,
         bounceRate,
-        totalPrevPeriod: sessionsPreviousResult.count || 0,
+        totalPrevPeriod: sessionsPreviousCount,
         changePercent: roundTo(sessionsChange, 1),
       },
       engagement: {
-        totalViews: viewsCurrentResult.count || 0,
-        totalSearches: searchesCurrentResult.count || 0,
+        totalViews: viewsCurrentCount,
+        totalSearches: searchesCurrentCount,
         totalFavorites: favoritesCurrentResult.count || 0,
-        viewsPrevPeriod: viewsPreviousResult.count || 0,
-        searchesPrevPeriod: searchesPreviousResult.count || 0,
+        viewsPrevPeriod: viewsPreviousCount,
+        searchesPrevPeriod: searchesPreviousCount,
         favoritesPrevPeriod: favoritesPreviousResult.count || 0,
       },
       asOf: new Date().toISOString(),

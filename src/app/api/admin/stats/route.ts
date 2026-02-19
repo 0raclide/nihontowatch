@@ -7,6 +7,7 @@ import {
   apiForbidden,
   apiServerError,
 } from '@/lib/api/responses';
+import { getAdminUserIds } from '@/app/api/admin/analytics/engagement/_lib/utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -97,16 +98,20 @@ export async function GET(request: NextRequest) {
     // Use service client to query listing_views (bypasses RLS for anonymous data)
     const serviceSupabase = createServiceClient();
 
+    // Get admin user IDs to filter from analytics
+    const adminIds = await getAdminUserIds(supabase);
+    const isAdminUser = (userId: string | null) => userId != null && adminIds.includes(userId);
+
     // Get popular listings with both views and favorites
     const [popularFavoritesResult, popularViewsResult] = await Promise.all([
       // Favorites
       (supabase.from('user_favorites') as unknown as UserFavoritesTable)
         .select('listing_id, listings(id, title)')
         .limit(1000) as Promise<{ data: FavoriteWithListing[] | null; error: { message: string } | null }>,
-      // Views from listing_views table
+      // Views from listing_views table (include user_id for admin filtering)
       serviceSupabase
         .from('listing_views')
-        .select('listing_id')
+        .select('listing_id, user_id')
         .limit(10000),
     ]);
 
@@ -129,10 +134,11 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Count views per listing
+    // Count views per listing (excluding admin views)
     const listingViews: Record<number, number> = {};
     if (popularViewsResult.data) {
-      for (const view of popularViewsResult.data as { listing_id: number }[]) {
+      for (const view of popularViewsResult.data as { listing_id: number; user_id: string | null }[]) {
+        if (isAdminUser(view.user_id)) continue;
         listingViews[view.listing_id] = (listingViews[view.listing_id] || 0) + 1;
       }
     }
@@ -173,11 +179,11 @@ export async function GET(request: NextRequest) {
       type ServiceTable = ReturnType<typeof serviceSupabase.from>;
 
       const [sessionsResult, searchTermsResult, alertsResult, totalViewsResult] = await Promise.all([
-        // Session stats (if user_sessions table exists)
+        // Session stats (if user_sessions table exists) — include user_id for admin filtering
         (serviceSupabase.from('user_sessions') as unknown as ServiceTable)
-          .select('total_duration_ms, page_views')
+          .select('total_duration_ms, page_views, user_id')
           .gte('started_at', startDate.toISOString())
-          .limit(1000) as Promise<{ data: SessionData[] | null; error: unknown }>,
+          .limit(1000) as Promise<{ data: (SessionData & { user_id: string | null })[] | null; error: unknown }>,
         // Search terms from user_searches table (new dedicated table)
         serviceSupabase
           .from('user_searches')
@@ -193,14 +199,17 @@ export async function GET(request: NextRequest) {
           .gte('viewed_at', startDate.toISOString()),
       ]);
 
-      // Calculate session stats
+      // Calculate session stats (excluding admin sessions)
       let totalSessions = 0;
       let totalDuration = 0;
       let totalPageViews = 0;
 
       if (sessionsResult.data) {
-        totalSessions = sessionsResult.data.length;
-        for (const session of sessionsResult.data) {
+        const filteredSessions = sessionsResult.data.filter(
+          (s: SessionData & { user_id: string | null }) => !isAdminUser(s.user_id)
+        );
+        totalSessions = filteredSessions.length;
+        for (const session of filteredSessions) {
           totalDuration += (session.total_duration_ms || 0) / 1000;
           totalPageViews += session.page_views || 0;
         }

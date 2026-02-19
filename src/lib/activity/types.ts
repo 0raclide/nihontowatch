@@ -236,6 +236,7 @@ export interface ActivityBatchResponse {
 export interface CreateSessionPayload {
   action: 'create';
   sessionId: string;
+  userId?: string;
   userAgent?: string;
   screenWidth?: number;
   screenHeight?: number;
