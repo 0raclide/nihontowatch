@@ -13,6 +13,7 @@ import {
 import { buildSeoTitle, buildSeoDescription } from '@/lib/seo/metaTitle';
 import { getItemTypeUrl } from '@/lib/seo/categories';
 import { getListingDetail } from '@/lib/listing/getListingDetail';
+import { Footer } from '@/components/layout/Footer';
 import { getAttributionName } from '@/lib/listing/attribution';
 import type { EnrichedListingDetail } from '@/lib/listing/getListingDetail';
 import type { Listing, Dealer, ItemType, Currency } from '@/types';
@@ -262,6 +263,8 @@ export default async function ListingPage({ params }: Props) {
         dealerName={dealerName}
         dealerId={dealerId}
       />
+
+      <Footer />
     </>
   );
 }

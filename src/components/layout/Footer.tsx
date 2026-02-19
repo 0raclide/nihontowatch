@@ -3,14 +3,14 @@
 import Link from 'next/link';
 import { useConsent } from '@/contexts/ConsentContext';
 
-const linkClass = 'text-[12px] text-muted dark:text-muted-dark hover:text-gold transition-colors';
-const headingClass = 'text-[11px] uppercase tracking-wider text-ink dark:text-cream font-medium mb-3';
+const linkClass = 'text-[12px] text-muted hover:text-gold transition-colors';
+const headingClass = 'text-[11px] uppercase tracking-wider text-ink font-medium mb-3';
 
 export function Footer() {
   const { openPreferences } = useConsent();
 
   return (
-    <footer className="border-t border-border dark:border-border-dark bg-surface/30 dark:bg-ink/50 mt-auto">
+    <footer className="border-t border-border bg-surface/30 mt-auto">
       <div className="max-w-7xl mx-auto px-4 py-10 lg:px-6">
         {/* Link Columns */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-8 mb-8">
@@ -62,12 +62,12 @@ export function Footer() {
         </div>
 
         {/* Bottom Bar */}
-        <div className="border-t border-border/50 dark:border-border-dark/50 pt-6 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="border-t border-border/50 pt-6 flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <span className="font-serif text-lg text-ink dark:text-cream">
+            <span className="font-serif text-lg text-ink">
               Nihonto<span className="text-gold">watch</span>
             </span>
-            <span className="text-[11px] text-muted dark:text-muted-dark">
+            <span className="text-[11px] text-muted">
               &copy; {new Date().getFullYear()}
             </span>
           </div>

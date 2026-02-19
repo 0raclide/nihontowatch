@@ -6,7 +6,6 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Breadcrumbs } from '@/components/ui/Breadcrumbs';
 import { Header } from '@/components/layout/Header';
-import { Footer } from '@/components/layout/Footer';
 import { BottomTabBar } from '@/components/navigation/BottomTabBar';
 import { CreateAlertModal } from '@/components/alerts/CreateAlertModal';
 import { LoginModal } from '@/components/auth/LoginModal';
@@ -555,7 +554,6 @@ export default function ListingDetailPage({ initialData }: ListingDetailPageProp
       {/* Login Modal */}
       <LoginModal isOpen={showLoginModal} onClose={() => setShowLoginModal(false)} />
 
-      <Footer />
       <BottomTabBar activeFilterCount={0} />
     </div>
   );
