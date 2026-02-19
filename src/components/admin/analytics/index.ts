@@ -20,3 +20,6 @@ export { ChartSkeleton } from './ChartSkeleton';
 export { ConversionFunnelChart } from './ConversionFunnelChart';
 export { UserGrowthChart } from './UserGrowthChart';
 export { SearchTermsTable } from './SearchTermsTable';
+
+// Visitor Analytics Components
+export { VisitorsChart } from './VisitorsChart';

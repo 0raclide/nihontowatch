@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { VisitorDetailModal } from '@/components/admin/VisitorDetailModal';
+import { VisitorsChart } from '@/components/admin/analytics';
 
 // Country code to flag emoji
 function getFlag(countryCode: string): string {
@@ -149,25 +150,6 @@ export default function VisitorsPage() {
     fetchStats();
   }, [fetchStats]);
 
-  // Simple bar chart component
-  const BarChart = ({ data, maxValue }: { data: { date: string; visitors: number }[]; maxValue: number }) => {
-    return (
-      <div className="flex items-end gap-1 h-32">
-        {data.map((day, i) => (
-          <div
-            key={day.date}
-            className="flex-1 bg-gold/20 hover:bg-gold/40 rounded-t transition-colors relative group"
-            style={{ height: `${maxValue > 0 ? (day.visitors / maxValue) * 100 : 0}%`, minHeight: day.visitors > 0 ? '4px' : '0' }}
-          >
-            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-ink text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
-              {day.date}: {day.visitors} visitors
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  };
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -184,8 +166,6 @@ export default function VisitorsPage() {
       </div>
     );
   }
-
-  const maxVisitors = Math.max(...(stats?.visitorsByDay.map(d => d.visitors) || [1]));
 
   return (
     <div className="space-y-6">
@@ -269,19 +249,7 @@ export default function VisitorsPage() {
       {/* Visitors Chart */}
       <div className="bg-cream rounded-xl border border-border p-6">
         <h2 className="text-sm font-medium text-charcoal mb-4">Visitors Over Time</h2>
-        {stats?.visitorsByDay && stats.visitorsByDay.length > 0 ? (
-          <>
-            <BarChart data={stats.visitorsByDay} maxValue={maxVisitors} />
-            <div className="flex justify-between mt-2 text-xs text-muted">
-              <span>{stats.visitorsByDay[0]?.date}</span>
-              <span>{stats.visitorsByDay[stats.visitorsByDay.length - 1]?.date}</span>
-            </div>
-          </>
-        ) : (
-          <div className="h-32 flex items-center justify-center text-muted text-sm">
-            No data for this period
-          </div>
-        )}
+        <VisitorsChart data={stats?.visitorsByDay || []} loading={isLoading} />
       </div>
 
       {/* Breakdown Grid */}
