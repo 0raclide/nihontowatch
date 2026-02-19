@@ -176,8 +176,7 @@ export async function GET(
 
   try {
     const {
-      getSmithEntity,
-      getTosoguMaker,
+      getArtisan,
       getAiDescription,
       getStudents,
       getRelatedArtisans,
@@ -191,20 +190,14 @@ export async function GET(
       getPublishedCatalogueEntries,
     } = await import('@/lib/supabase/yuhinkai');
 
-    // Try smith_entities first
-    const smithEntity = await getSmithEntity(code);
-    const isSmith = !!smithEntity;
-
-    // Try tosogu_makers if not a smith
-    const tosoguMaker = !isSmith ? await getTosoguMaker(code) : null;
-    const entity = smithEntity || tosoguMaker;
+    const entity = await getArtisan(code);
 
     if (!entity) {
       return NextResponse.json({ artisan: null }, { status: 404 });
     }
 
-    const entityCode = isSmith ? (entity as typeof smithEntity)!.smith_id : (entity as typeof tosoguMaker)!.maker_id;
-    const entityType = isSmith ? 'smith' as const : 'tosogu' as const;
+    const entityCode = entity.maker_id;
+    const entityType = entity.entity_type;
 
     // Legacy response for ArtisanTooltip
     if (!rich) {
@@ -215,7 +208,7 @@ export async function GET(
         school: entity.school,
         province: entity.province,
         era: entity.era,
-        period: isSmith ? (entity as typeof smithEntity)!.period : null,
+        period: entity.period,
         kokuho_count: entity.kokuho_count || 0,
         jubun_count: entity.jubun_count || 0,
         jubi_count: entity.jubi_count || 0,
@@ -255,8 +248,8 @@ export async function GET(
         provenanceFactor != null
           ? getProvenancePercentile(provenanceFactor, entityType)
           : Promise.resolve(null),
-        isSmith && (entity as typeof smithEntity)!.toko_taikan
-          ? getTokoTaikanPercentile((entity as typeof smithEntity)!.toko_taikan!)
+        entity.toko_taikan
+          ? getTokoTaikanPercentile(entity.toko_taikan)
           : Promise.resolve(null),
         entity.teacher ? resolveTeacher(entity.teacher) : Promise.resolve(null),
         getDenraiForArtisan(entityCode, entityType),
@@ -279,15 +272,15 @@ export async function GET(
         school: entity.school,
         province: entity.province,
         era: entity.era,
-        period: isSmith ? (entity as typeof smithEntity)!.period : null,
+        period: entity.period,
         generation: entity.generation,
         teacher: entity.teacher,
         entity_type: entityType,
         is_school_code: entity.is_school_code || false,
         slug,
-        fujishiro: isSmith ? (entity as typeof smithEntity)!.fujishiro : null,
-        toko_taikan: isSmith ? (entity as typeof smithEntity)!.toko_taikan : null,
-        specialties: !isSmith ? (entity as typeof tosoguMaker)!.specialties : null,
+        fujishiro: entity.fujishiro,
+        toko_taikan: entity.toko_taikan,
+        specialties: entity.specialties,
       },
       certifications: {
         kokuho_count: entity.kokuho_count || 0,

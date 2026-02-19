@@ -24,19 +24,36 @@ export const yuhinkaiClient = createClient(
   yuhinkaiKey || 'placeholder-key'
 );
 
-export interface SmithEntity {
-  smith_id: string;
+/**
+ * Unified artisan entity — replaces legacy SmithEntity + TosoguMaker.
+ * Sourced from `artisan_makers` (individual artisans) or `artisan_schools` (NS-* codes).
+ */
+export interface ArtisanEntity {
+  // Identity
+  maker_id: string;
   name_kanji: string | null;
   name_romaji: string | null;
   province: string | null;
-  school: string | null;
+  school: string | null;        // legacy_school_text for makers, name_romaji for schools
   era: string | null;
   period: string | null;
   generation: string | null;
-  teacher: string | null;
+  teacher: string | null;       // teacher_text for makers
+
+  // Domain + type derivation
+  domain: 'sword' | 'tosogu' | 'both';
+  entity_type: 'smith' | 'tosogu';  // derived: sword|both → smith, tosogu → tosogu
+  is_school_code: boolean;           // derived: false for artisan_makers, true for artisan_schools
+
+  // Smith-only (nullable for tosogu)
   hawley: number | null;
   fujishiro: string | null;
   toko_taikan: number | null;
+
+  // Tosogu-only (nullable for smiths)
+  specialties: string[] | null;
+
+  // Certification counts
   kokuho_count: number;
   jubun_count: number;
   jubi_count: number;
@@ -46,38 +63,132 @@ export interface SmithEntity {
   total_items: number;
   elite_count: number;
   elite_factor: number;
-  is_school_code: boolean;
+
+  // Provenance
   provenance_factor: number | null;
   provenance_count: number | null;
   provenance_apex: number | null;
+
+  // Teacher link (FK)
+  teacher_id: string | null;
 }
 
-export interface TosoguMaker {
-  maker_id: string;
-  name_kanji: string | null;
-  name_romaji: string | null;
-  province: string | null;
-  school: string | null;
-  era: string | null;
-  generation: string | null;
-  teacher: string | null;
-  specialties: string[] | null;
-  alternative_names: string[] | null;
-  notes: string | null;
-  // Certification counts (highest prestige first)
-  kokuho_count: number;   // National Treasures
-  jubun_count: number;    // Important Cultural Properties (Bunkazai)
-  jubi_count: number;     // Important Art Objects (Bijutsuhin)
-  gyobutsu_count: number; // Imperial Collection
-  tokuju_count: number;   // Tokubetsu Juyo
-  juyo_count: number;     // Juyo
-  total_items: number;
-  elite_count: number;
-  elite_factor: number;
-  is_school_code: boolean;
-  provenance_factor: number | null;
-  provenance_count: number | null;
-  provenance_apex: number | null;
+// Legacy type aliases — deprecated, use ArtisanEntity
+export type SmithEntity = ArtisanEntity;
+export type TosoguMaker = ArtisanEntity;
+
+/**
+ * Map artisan_makers `domain` column to entity_type.
+ */
+function domainToEntityType(domain: string): 'smith' | 'tosogu' {
+  return domain === 'tosogu' ? 'tosogu' : 'smith';
+}
+
+/**
+ * Map entity_type to domain filter values for artisan_makers queries.
+ */
+function getDomainFilter(entityType: 'smith' | 'tosogu'): string[] {
+  return entityType === 'smith' ? ['sword', 'both'] : ['tosogu', 'both'];
+}
+
+/**
+ * Fetch a single artisan by code from artisan_makers (or artisan_schools for NS-* codes).
+ * Unified replacement for getSmithEntity() + getTosoguMaker().
+ */
+export async function getArtisan(code: string): Promise<ArtisanEntity | null> {
+  if (code.startsWith('NS-')) {
+    // School codes live in artisan_schools
+    const { data, error } = await yuhinkaiClient
+      .from('artisan_schools')
+      .select('school_id, name_romaji, name_kanji, domain, province, era_start, kokuho_count, jubun_count, jubi_count, gyobutsu_count, tokuju_count, juyo_count, total_items, elite_count, elite_factor, provenance_factor, provenance_count, provenance_apex')
+      .eq('school_id', code)
+      .single();
+
+    if (error || !data) return null;
+
+    return {
+      maker_id: data.school_id,
+      name_kanji: data.name_kanji,
+      name_romaji: data.name_romaji,
+      province: data.province,
+      school: data.name_romaji,   // school name IS the name for school codes
+      era: data.era_start,
+      period: null,
+      generation: null,
+      teacher: null,
+      domain: data.domain || 'sword',
+      entity_type: domainToEntityType(data.domain || 'sword'),
+      is_school_code: true,
+      hawley: null,
+      fujishiro: null,
+      toko_taikan: null,
+      specialties: null,
+      kokuho_count: data.kokuho_count || 0,
+      jubun_count: data.jubun_count || 0,
+      jubi_count: data.jubi_count || 0,
+      gyobutsu_count: data.gyobutsu_count || 0,
+      tokuju_count: data.tokuju_count || 0,
+      juyo_count: data.juyo_count || 0,
+      total_items: data.total_items || 0,
+      elite_count: data.elite_count || 0,
+      elite_factor: data.elite_factor || 0,
+      provenance_factor: data.provenance_factor ?? null,
+      provenance_count: data.provenance_count ?? null,
+      provenance_apex: data.provenance_apex ?? null,
+      teacher_id: null,
+    };
+  }
+
+  // Individual makers in artisan_makers
+  const { data, error } = await yuhinkaiClient
+    .from('artisan_makers')
+    .select('maker_id, name_romaji, name_kanji, domain, province, era, period, generation, teacher_text, teacher_id, legacy_school_text, hawley, fujishiro, toko_taikan, specialties, kokuho_count, jubun_count, jubi_count, gyobutsu_count, tokuju_count, juyo_count, total_items, elite_count, elite_factor, provenance_factor, provenance_count, provenance_apex')
+    .eq('maker_id', code)
+    .single();
+
+  if (error || !data) return null;
+
+  return {
+    maker_id: data.maker_id,
+    name_kanji: data.name_kanji,
+    name_romaji: data.name_romaji,
+    province: data.province,
+    school: data.legacy_school_text,
+    era: data.era,
+    period: data.period,
+    generation: data.generation,
+    teacher: data.teacher_text,
+    domain: data.domain || 'sword',
+    entity_type: domainToEntityType(data.domain || 'sword'),
+    is_school_code: false,
+    hawley: data.hawley,
+    fujishiro: data.fujishiro,
+    toko_taikan: data.toko_taikan,
+    specialties: data.specialties,
+    kokuho_count: data.kokuho_count || 0,
+    jubun_count: data.jubun_count || 0,
+    jubi_count: data.jubi_count || 0,
+    gyobutsu_count: data.gyobutsu_count || 0,
+    tokuju_count: data.tokuju_count || 0,
+    juyo_count: data.juyo_count || 0,
+    total_items: data.total_items || 0,
+    elite_count: data.elite_count || 0,
+    elite_factor: data.elite_factor || 0,
+    provenance_factor: data.provenance_factor ?? null,
+    provenance_count: data.provenance_count ?? null,
+    provenance_apex: data.provenance_apex ?? null,
+    teacher_id: data.teacher_id,
+  };
+}
+
+/** @deprecated Use getArtisan() instead */
+export async function getSmithEntity(code: string): Promise<ArtisanEntity | null> {
+  return getArtisan(code);
+}
+
+/** @deprecated Use getArtisan() instead */
+export async function getTosoguMaker(code: string): Promise<ArtisanEntity | null> {
+  return getArtisan(code);
 }
 
 export async function getAiDescription(code: string): Promise<string | null> {
@@ -103,33 +214,10 @@ export async function getAiDescription(code: string): Promise<string | null> {
 }
 
 
-export async function getSmithEntity(code: string): Promise<SmithEntity | null> {
-  const { data, error } = await yuhinkaiClient
-    .from('smith_entities')
-    .select('*')
-    .eq('smith_id', code)
-    .single();
-
-  if (error || !data) {
-    return null;
-  }
-
-  return data as SmithEntity;
-}
-
-export async function getTosoguMaker(code: string): Promise<TosoguMaker | null> {
-  const { data, error } = await yuhinkaiClient
-    .from('tosogu_makers')
-    .select('*')
-    .eq('maker_id', code)
-    .single();
-
-  if (error || !data) {
-    return null;
-  }
-
-  return data as TosoguMaker;
-}
+// Legacy getSmithEntity / getTosoguMaker implementations REMOVED.
+// The deprecated wrappers above (lines 184-192) now route through getArtisan(),
+// which queries artisan_schools for NS-* codes and artisan_makers for individuals.
+// Migration 385 populated stats on those tables. DO NOT re-add legacy queries here.
 
 // =============================================================================
 // ARTISAN CODE RESOLUTION (for text search → artisan_id matching)
@@ -152,39 +240,17 @@ export async function resolveArtisanCodesFromText(textWords: string[]): Promise<
   if (!yuhinkaiConfigured || textWords.length === 0) return [];
 
   try {
-    const [smithCodes, tosoguCodes] = await Promise.all([
-      // Search smith_entities
-      (async () => {
-        let query = yuhinkaiClient
-          .from('smith_entities')
-          .select('smith_id')
-          .eq('is_school_code', false);
+    // Single query to artisan_makers (replaces parallel smith_entities + tosogu_makers)
+    let query = yuhinkaiClient
+      .from('artisan_makers')
+      .select('maker_id');
 
-        for (const word of textWords) {
-          query = query.or(`name_romaji.ilike.%${word}%,name_kanji.ilike.%${word}%,school.ilike.%${word}%`);
-        }
+    for (const word of textWords) {
+      query = query.or(`name_romaji.ilike.%${word}%,name_kanji.ilike.%${word}%,legacy_school_text.ilike.%${word}%,name_romaji_normalized.ilike.%${word}%`);
+    }
 
-        const { data } = await query.limit(100);
-        return (data || []).map((r: { smith_id: string }) => r.smith_id);
-      })(),
-      // Search tosogu_makers
-      (async () => {
-        let query = yuhinkaiClient
-          .from('tosogu_makers')
-          .select('maker_id')
-          .eq('is_school_code', false);
-
-        for (const word of textWords) {
-          query = query.or(`name_romaji.ilike.%${word}%,name_kanji.ilike.%${word}%,school.ilike.%${word}%`);
-        }
-
-        const { data } = await query.limit(100);
-        return (data || []).map((r: { maker_id: string }) => r.maker_id);
-      })(),
-    ]);
-
-    // Deduplicate codes
-    return [...new Set([...smithCodes, ...tosoguCodes])];
+    const { data } = await query.limit(100);
+    return (data || []).map((r: { maker_id: string }) => r.maker_id);
   } catch (error) {
     console.error('[Yuhinkai] Error resolving artisan codes from text:', error);
     return [];
@@ -218,56 +284,23 @@ export async function getArtisanNames(
   if (codes.length === 0) return result;
 
   const BATCH_SIZE = 200;
-  const selectFields = 'smith_id, name_romaji, school, kokuho_count, jubun_count, jubi_count, gyobutsu_count, tokuju_count, juyo_count';
-  const tosoguFields = 'maker_id, name_romaji, school, kokuho_count, jubun_count, jubi_count, gyobutsu_count, tokuju_count, juyo_count';
+  const selectFields = 'maker_id, name_romaji, legacy_school_text, kokuho_count, jubun_count, jubi_count, gyobutsu_count, tokuju_count, juyo_count';
 
-  // Query both tables in parallel
-  const [smithResults, tosoguResults] = await Promise.all([
-    // Smith entities
-    (async () => {
-      const rows: Array<{ smith_id: string; name_romaji: string | null; school: string | null; kokuho_count: number; jubun_count: number; jubi_count: number; gyobutsu_count: number; tokuju_count: number; juyo_count: number }> = [];
-      for (let i = 0; i < codes.length; i += BATCH_SIZE) {
-        const batch = codes.slice(i, i + BATCH_SIZE);
-        const { data } = await yuhinkaiClient
-          .from('smith_entities')
-          .select(selectFields)
-          .in('smith_id', batch);
-        if (data) rows.push(...(data as typeof rows));
-      }
-      return rows;
-    })(),
-    // Tosogu makers
-    (async () => {
-      const rows: Array<{ maker_id: string; name_romaji: string | null; school: string | null; kokuho_count: number; jubun_count: number; jubi_count: number; gyobutsu_count: number; tokuju_count: number; juyo_count: number }> = [];
-      for (let i = 0; i < codes.length; i += BATCH_SIZE) {
-        const batch = codes.slice(i, i + BATCH_SIZE);
-        const { data } = await yuhinkaiClient
-          .from('tosogu_makers')
-          .select(tosoguFields)
-          .in('maker_id', batch);
-        if (data) rows.push(...(data as typeof rows));
-      }
-      return rows;
-    })(),
-  ]);
+  // Split codes: NS-* go to artisan_schools, others to artisan_makers
+  const nsCodes = codes.filter(c => c.startsWith('NS-'));
+  const makerCodes = codes.filter(c => !c.startsWith('NS-'));
 
-  for (const row of smithResults) {
-    result.set(row.smith_id, {
-      name_romaji: row.name_romaji,
-      school: row.school,
-      kokuho_count: row.kokuho_count || 0,
-      jubun_count: row.jubun_count || 0,
-      jubi_count: row.jubi_count || 0,
-      gyobutsu_count: row.gyobutsu_count || 0,
-      tokuju_count: row.tokuju_count || 0,
-      juyo_count: row.juyo_count || 0,
-    });
-  }
-  for (const row of tosoguResults) {
-    if (!result.has(row.maker_id)) {
+  // Query artisan_makers for individual maker codes
+  for (let i = 0; i < makerCodes.length; i += BATCH_SIZE) {
+    const batch = makerCodes.slice(i, i + BATCH_SIZE);
+    const { data } = await yuhinkaiClient
+      .from('artisan_makers')
+      .select(selectFields)
+      .in('maker_id', batch);
+    for (const row of data || []) {
       result.set(row.maker_id, {
         name_romaji: row.name_romaji,
-        school: row.school,
+        school: row.legacy_school_text,
         kokuho_count: row.kokuho_count || 0,
         jubun_count: row.jubun_count || 0,
         jubi_count: row.jubi_count || 0,
@@ -275,6 +308,29 @@ export async function getArtisanNames(
         tokuju_count: row.tokuju_count || 0,
         juyo_count: row.juyo_count || 0,
       });
+    }
+  }
+
+  // Query artisan_schools for NS-* codes
+  for (let i = 0; i < nsCodes.length; i += BATCH_SIZE) {
+    const batch = nsCodes.slice(i, i + BATCH_SIZE);
+    const { data } = await yuhinkaiClient
+      .from('artisan_schools')
+      .select('school_id, name_romaji, kokuho_count, jubun_count, jubi_count, gyobutsu_count, tokuju_count, juyo_count')
+      .in('school_id', batch);
+    for (const row of data || []) {
+      if (!result.has(row.school_id)) {
+        result.set(row.school_id, {
+          name_romaji: row.name_romaji,
+          school: row.name_romaji,  // school name IS the name for school codes
+          kokuho_count: row.kokuho_count || 0,
+          jubun_count: row.jubun_count || 0,
+          jubi_count: row.jubi_count || 0,
+          gyobutsu_count: row.gyobutsu_count || 0,
+          tokuju_count: row.tokuju_count || 0,
+          juyo_count: row.juyo_count || 0,
+        });
+      }
     }
   }
 
@@ -293,49 +349,66 @@ export interface ArtisanStub {
 }
 
 /**
- * Find students of a given smith (smiths whose teacher field matches this code or name).
- * The teacher field in smith_entities stores the teacher's code or name.
+ * Find students of a given artisan.
+ * 1. Query artisan_teacher_links for teacher_id = code → get student maker_ids
+ * 2. Batch-fetch student details from artisan_makers
+ * 3. Fallback: artisan_makers WHERE teacher_text = nameRomaji (for sparse data)
  */
 export async function getStudents(code: string, nameRomaji: string | null): Promise<RelatedArtisan[]> {
-  const selectFields = 'smith_id, name_romaji, name_kanji, school, kokuho_count, jubun_count, jubi_count, gyobutsu_count, juyo_count, tokuju_count, elite_factor';
+  const selectFields = 'maker_id, name_romaji, name_kanji, legacy_school_text, kokuho_count, jubun_count, jubi_count, gyobutsu_count, juyo_count, tokuju_count, elite_factor';
 
-  // Search by code match first
-  const { data: byCode } = await yuhinkaiClient
-    .from('smith_entities')
-    .select(selectFields)
-    .eq('teacher', code)
-    .limit(20);
+  // 1. Query artisan_teacher_links junction table
+  const { data: links } = await yuhinkaiClient
+    .from('artisan_teacher_links')
+    .select('student_id')
+    .eq('teacher_id', code)
+    .limit(30);
 
-  const students: RelatedArtisan[] = (byCode || []).map(s => ({
-    code: s.smith_id,
-    name_romaji: s.name_romaji,
-    name_kanji: s.name_kanji,
-    school: s.school,
-    kokuho_count: s.kokuho_count || 0,
-    jubun_count: s.jubun_count || 0,
-    jubi_count: s.jubi_count || 0,
-    gyobutsu_count: s.gyobutsu_count || 0,
-    juyo_count: s.juyo_count || 0,
-    tokuju_count: s.tokuju_count || 0,
-    elite_factor: s.elite_factor || 0,
-  }));
+  const studentIds = (links || []).map(l => l.student_id as string);
+  const students: RelatedArtisan[] = [];
+  const existingCodes = new Set<string>();
 
-  // Also search by name if available and got few results
-  if (nameRomaji && students.length < 5) {
-    const { data: byName } = await yuhinkaiClient
-      .from('smith_entities')
+  // 2. Batch-fetch student details from artisan_makers
+  if (studentIds.length > 0) {
+    const { data: byLinks } = await yuhinkaiClient
+      .from('artisan_makers')
       .select(selectFields)
-      .eq('teacher', nameRomaji)
+      .in('maker_id', studentIds);
+
+    for (const s of byLinks || []) {
+      students.push({
+        code: s.maker_id,
+        name_romaji: s.name_romaji,
+        name_kanji: s.name_kanji,
+        school: s.legacy_school_text,
+        kokuho_count: s.kokuho_count || 0,
+        jubun_count: s.jubun_count || 0,
+        jubi_count: s.jubi_count || 0,
+        gyobutsu_count: s.gyobutsu_count || 0,
+        juyo_count: s.juyo_count || 0,
+        tokuju_count: s.tokuju_count || 0,
+        elite_factor: s.elite_factor || 0,
+      });
+      existingCodes.add(s.maker_id);
+    }
+  }
+
+  // 3. Fallback: search by teacher_text for artisans not in junction table
+  if (students.length < 5) {
+    // Try code match first
+    const { data: byTeacherCode } = await yuhinkaiClient
+      .from('artisan_makers')
+      .select(selectFields)
+      .eq('teacher_text', code)
       .limit(20);
 
-    const existingCodes = new Set(students.map(s => s.code));
-    for (const s of byName || []) {
-      if (!existingCodes.has(s.smith_id)) {
+    for (const s of byTeacherCode || []) {
+      if (!existingCodes.has(s.maker_id)) {
         students.push({
-          code: s.smith_id,
+          code: s.maker_id,
           name_romaji: s.name_romaji,
           name_kanji: s.name_kanji,
-          school: s.school,
+          school: s.legacy_school_text,
           kokuho_count: s.kokuho_count || 0,
           jubun_count: s.jubun_count || 0,
           jubi_count: s.jubi_count || 0,
@@ -344,6 +417,35 @@ export async function getStudents(code: string, nameRomaji: string | null): Prom
           tokuju_count: s.tokuju_count || 0,
           elite_factor: s.elite_factor || 0,
         });
+        existingCodes.add(s.maker_id);
+      }
+    }
+
+    // Also search by name if available and still sparse
+    if (nameRomaji && students.length < 5) {
+      const { data: byName } = await yuhinkaiClient
+        .from('artisan_makers')
+        .select(selectFields)
+        .eq('teacher_text', nameRomaji)
+        .limit(20);
+
+      for (const s of byName || []) {
+        if (!existingCodes.has(s.maker_id)) {
+          students.push({
+            code: s.maker_id,
+            name_romaji: s.name_romaji,
+            name_kanji: s.name_kanji,
+            school: s.legacy_school_text,
+            kokuho_count: s.kokuho_count || 0,
+            jubun_count: s.jubun_count || 0,
+            jubi_count: s.jubi_count || 0,
+            gyobutsu_count: s.gyobutsu_count || 0,
+            juyo_count: s.juyo_count || 0,
+            tokuju_count: s.tokuju_count || 0,
+            elite_factor: s.elite_factor || 0,
+          });
+          existingCodes.add(s.maker_id);
+        }
       }
     }
   }
@@ -374,7 +476,7 @@ export interface RelatedArtisan {
 
 /**
  * Find related artisans in the same school, ordered by elite_factor descending.
- * Excludes the artisan itself.
+ * Excludes the artisan itself. Uses artisan_makers with domain filter.
  */
 export async function getRelatedArtisans(
   code: string,
@@ -383,52 +485,30 @@ export async function getRelatedArtisans(
 ): Promise<RelatedArtisan[]> {
   if (!school) return [];
 
-  if (entityType === 'smith') {
-    const { data } = await yuhinkaiClient
-      .from('smith_entities')
-      .select('smith_id, name_romaji, name_kanji, school, kokuho_count, jubun_count, jubi_count, gyobutsu_count, juyo_count, tokuju_count, elite_factor')
-      .eq('school', school)
-      .neq('smith_id', code)
-      .eq('is_school_code', false)
-      .order('elite_factor', { ascending: false })
-      .limit(12);
-
-    return (data || []).map(s => ({
-      code: s.smith_id,
-      name_romaji: s.name_romaji,
-      name_kanji: s.name_kanji,
-      school: s.school,
-      kokuho_count: s.kokuho_count || 0,
-      jubun_count: s.jubun_count || 0,
-      jubi_count: s.jubi_count || 0,
-      gyobutsu_count: s.gyobutsu_count || 0,
-      juyo_count: s.juyo_count || 0,
-      tokuju_count: s.tokuju_count || 0,
-      elite_factor: s.elite_factor || 0,
-    }));
-  }
+  const domainFilter = getDomainFilter(entityType);
 
   const { data } = await yuhinkaiClient
-    .from('tosogu_makers')
-    .select('maker_id, name_romaji, name_kanji, school, kokuho_count, jubun_count, jubi_count, gyobutsu_count, juyo_count, tokuju_count, elite_factor')
-    .eq('school', school)
+    .from('artisan_makers')
+    .select('maker_id, name_romaji, name_kanji, legacy_school_text, kokuho_count, jubun_count, jubi_count, gyobutsu_count, juyo_count, tokuju_count, elite_factor')
+    .eq('legacy_school_text', school)
     .neq('maker_id', code)
-    .eq('is_school_code', false)
+    .in('domain', domainFilter)
+    .gt('total_items', 0)
     .order('elite_factor', { ascending: false })
     .limit(12);
 
-  return (data || []).map(m => ({
-    code: m.maker_id,
-    name_romaji: m.name_romaji,
-    name_kanji: m.name_kanji,
-    school: m.school,
-    kokuho_count: m.kokuho_count || 0,
-    jubun_count: m.jubun_count || 0,
-    jubi_count: m.jubi_count || 0,
-    gyobutsu_count: m.gyobutsu_count || 0,
-    juyo_count: m.juyo_count || 0,
-    tokuju_count: m.tokuju_count || 0,
-    elite_factor: m.elite_factor || 0,
+  return (data || []).map(r => ({
+    code: r.maker_id,
+    name_romaji: r.name_romaji,
+    name_kanji: r.name_kanji,
+    school: r.legacy_school_text,
+    kokuho_count: r.kokuho_count || 0,
+    jubun_count: r.jubun_count || 0,
+    jubi_count: r.jubi_count || 0,
+    gyobutsu_count: r.gyobutsu_count || 0,
+    juyo_count: r.juyo_count || 0,
+    tokuju_count: r.tokuju_count || 0,
+    elite_factor: r.elite_factor || 0,
   }));
 }
 
@@ -437,25 +517,28 @@ export async function getRelatedArtisans(
 // =============================================================================
 
 /**
- * Calculate elite factor percentile among all non-school smiths/makers with total_items > 0.
+ * Calculate elite factor percentile among artisan_makers with total_items > 0.
+ * Uses domain filter to compare within the same entity type pool.
  * Returns a value from 0 to 100 (higher = more elite than peers).
  */
 export async function getElitePercentile(
   eliteFactor: number,
   entityType: 'smith' | 'tosogu'
 ): Promise<number> {
-  const table = entityType === 'smith' ? 'smith_entities' : 'tosogu_makers';
+  const domainFilter = getDomainFilter(entityType);
 
   // Count how many have a lower elite_factor
   const { count: below } = await yuhinkaiClient
-    .from(table)
+    .from('artisan_makers')
     .select('*', { count: 'exact', head: true })
     .lt('elite_factor', eliteFactor)
+    .in('domain', domainFilter)
     .gt('total_items', 0);
 
   const { count: total } = await yuhinkaiClient
-    .from(table)
+    .from('artisan_makers')
     .select('*', { count: 'exact', head: true })
+    .in('domain', domainFilter)
     .gt('total_items', 0);
 
   if (!total || total === 0) return 0;
@@ -463,26 +546,28 @@ export async function getElitePercentile(
 }
 
 /**
- * Calculate provenance factor percentile among artisans with provenance data.
- * Same pattern as getElitePercentile: count(below) / count(total with provenance).
+ * Calculate provenance factor percentile among artisan_makers with provenance data.
+ * Uses domain filter to compare within the same entity type pool.
  * Returns a value from 0 to 100 (higher = rarer provenance).
  */
 export async function getProvenancePercentile(
   provenanceFactor: number,
   entityType: 'smith' | 'tosogu'
 ): Promise<number> {
-  const table = entityType === 'smith' ? 'smith_entities' : 'tosogu_makers';
+  const domainFilter = getDomainFilter(entityType);
 
   // Count how many have a lower provenance_factor
   const { count: below } = await yuhinkaiClient
-    .from(table)
+    .from('artisan_makers')
     .select('*', { count: 'exact', head: true })
     .lt('provenance_factor', provenanceFactor)
+    .in('domain', domainFilter)
     .not('provenance_factor', 'is', null);
 
   const { count: total } = await yuhinkaiClient
-    .from(table)
+    .from('artisan_makers')
     .select('*', { count: 'exact', head: true })
+    .in('domain', domainFilter)
     .not('provenance_factor', 'is', null);
 
   if (!total || total === 0) return 0;
@@ -492,16 +577,17 @@ export async function getProvenancePercentile(
 /**
  * Get elite factor distribution as histogram buckets.
  * Returns 100 buckets at 1% resolution (0–1%, 1–2%, …, 99–100%).
- * Only includes artisans with total_items > 0.
+ * Only includes artisan_makers with total_items > 0.
  */
 export async function getEliteDistribution(
   entityType: 'smith' | 'tosogu'
 ): Promise<{ buckets: number[]; total: number }> {
-  const table = entityType === 'smith' ? 'smith_entities' : 'tosogu_makers';
+  const domainFilter = getDomainFilter(entityType);
 
   const { data, error } = await yuhinkaiClient
-    .from(table)
+    .from('artisan_makers')
     .select('elite_factor')
+    .in('domain', domainFilter)
     .gt('total_items', 0);
 
   if (error || !data) {
@@ -522,16 +608,17 @@ export async function getEliteDistribution(
 /**
  * Get provenance factor distribution as histogram buckets.
  * Returns 100 buckets at 0.1 resolution (0–0.1, 0.1–0.2, …, 9.9–10.0).
- * Only includes artisans with a non-null provenance_factor.
+ * Only includes artisan_makers with a non-null provenance_factor.
  */
 export async function getProvenanceDistribution(
   entityType: 'smith' | 'tosogu'
 ): Promise<{ buckets: number[]; total: number }> {
-  const table = entityType === 'smith' ? 'smith_entities' : 'tosogu_makers';
+  const domainFilter = getDomainFilter(entityType);
 
   const { data, error } = await yuhinkaiClient
-    .from(table)
+    .from('artisan_makers')
     .select('provenance_factor')
+    .in('domain', domainFilter)
     .not('provenance_factor', 'is', null);
 
   if (error || !data) {
@@ -551,20 +638,23 @@ export async function getProvenanceDistribution(
 
 /**
  * Calculate Toko Taikan score percentile (smith only).
+ * Filters artisan_makers to sword/both domain (smith pool).
  * Returns a value from 0 to 100 (higher = higher rated than peers).
  */
 export async function getTokoTaikanPercentile(
   tokoTaikan: number
 ): Promise<number> {
   const { count: below } = await yuhinkaiClient
-    .from('smith_entities')
+    .from('artisan_makers')
     .select('*', { count: 'exact', head: true })
     .lt('toko_taikan', tokoTaikan)
+    .in('domain', ['sword', 'both'])
     .not('toko_taikan', 'is', null);
 
   const { count: total } = await yuhinkaiClient
-    .from('smith_entities')
+    .from('artisan_makers')
     .select('*', { count: 'exact', head: true })
+    .in('domain', ['sword', 'both'])
     .not('toko_taikan', 'is', null);
 
   if (!total || total === 0) return 0;
@@ -812,11 +902,13 @@ export async function getHeroImageForDetailPage(
  */
 async function getErasForBroadPeriod(
   broadPeriod: string,
-  table: 'smith_entities' | 'tosogu_makers'
+  entityType: 'smith' | 'tosogu'
 ): Promise<string[]> {
+  const domainFilter = getDomainFilter(entityType);
   const { data } = await yuhinkaiClient
-    .from(table)
+    .from('artisan_makers')
     .select('era')
+    .in('domain', domainFilter)
     .gt('total_items', 0)
     .not('era', 'is', null);
 
@@ -859,21 +951,21 @@ export async function getArtistsForDirectory(
   const offset = (Math.max(page, 1) - 1) * safeLimit;
   const sortCol = sort === 'name' ? 'name_romaji' : (sort === 'for_sale' ? 'elite_factor' : sort);
 
-  const table = type === 'tosogu' ? 'tosogu_makers' : 'smith_entities';
-  const idCol = type === 'tosogu' ? 'maker_id' : 'smith_id';
   const entityType = type === 'tosogu' ? 'tosogu' : 'smith';
+  const domainFilter = getDomainFilter(entityType);
 
   let query = yuhinkaiClient
-    .from(table)
-    .select(`${idCol}, name_romaji, name_kanji, school, province, era, kokuho_count, jubun_count, jubi_count, gyobutsu_count, tokuju_count, juyo_count, total_items, elite_factor, provenance_factor, is_school_code`, { count: 'exact' });
+    .from('artisan_makers')
+    .select('maker_id, name_romaji, name_kanji, legacy_school_text, province, era, kokuho_count, jubun_count, jubi_count, gyobutsu_count, tokuju_count, juyo_count, total_items, elite_factor, provenance_factor', { count: 'exact' })
+    .in('domain', domainFilter);
 
   if (notable) query = query.gt('total_items', 0);
-  if (school) query = query.eq('school', school);
+  if (school) query = query.eq('legacy_school_text', school);
   if (province) query = query.eq('province', province);
 
   // Era filter: resolve broad period name to matching specific era strings
   if (era) {
-    const matchingEras = await getErasForBroadPeriod(era, table);
+    const matchingEras = await getErasForBroadPeriod(era, entityType);
     if (matchingEras.length > 0) {
       query = query.in('era', matchingEras);
     } else {
@@ -883,7 +975,7 @@ export async function getArtistsForDirectory(
   }
 
   if (q) {
-    query = query.or(`name_romaji.ilike.%${q}%,name_kanji.ilike.%${q}%,${idCol}.ilike.%${q}%,school.ilike.%${q}%,province.ilike.%${q}%,name_search_text.ilike.%${q}%`);
+    query = query.or(`name_romaji.ilike.%${q}%,name_kanji.ilike.%${q}%,maker_id.ilike.%${q}%,legacy_school_text.ilike.%${q}%,province.ilike.%${q}%,name_romaji_normalized.ilike.%${q}%`);
   }
 
   query = query
@@ -897,10 +989,10 @@ export async function getArtistsForDirectory(
   }
 
   const artists: ArtistDirectoryEntry[] = (data || []).map((row: Record<string, unknown>) => ({
-    code: row[idCol] as string,
+    code: row.maker_id as string,
     name_romaji: row.name_romaji as string | null,
     name_kanji: row.name_kanji as string | null,
-    school: row.school as string | null,
+    school: row.legacy_school_text as string | null,
     province: row.province as string | null,
     era: row.era as string | null,
     entity_type: entityType,
@@ -913,7 +1005,7 @@ export async function getArtistsForDirectory(
     total_items: (row.total_items as number) || 0,
     elite_factor: (row.elite_factor as number) || 0,
     provenance_factor: (row.provenance_factor as number) ?? null,
-    is_school_code: (row.is_school_code as boolean) || false,
+    is_school_code: false,
   }));
 
   return { artists, total: count || 0 };
@@ -932,9 +1024,8 @@ export async function getFilteredArtistsByCodes(
 ): Promise<ArtistDirectoryEntry[]> {
   if (codes.length === 0) return [];
 
-  const table = type === 'tosogu' ? 'tosogu_makers' : 'smith_entities';
-  const idCol = type === 'tosogu' ? 'maker_id' : 'smith_id';
   const entityType = type === 'tosogu' ? 'tosogu' : 'smith';
+  const domainFilter = getDomainFilter(entityType);
 
   const BATCH_SIZE = 200;
   const results: ArtistDirectoryEntry[] = [];
@@ -945,18 +1036,19 @@ export async function getFilteredArtistsByCodes(
   for (let i = 0; i < codes.length; i += BATCH_SIZE) {
     const batch = codes.slice(i, i + BATCH_SIZE);
     let query = yuhinkaiClient
-      .from(table)
-      .select(`${idCol}, name_romaji, name_kanji, school, province, era, kokuho_count, jubun_count, jubi_count, gyobutsu_count, tokuju_count, juyo_count, total_items, elite_factor, provenance_factor, is_school_code`)
-      .in(idCol, batch);
+      .from('artisan_makers')
+      .select('maker_id, name_romaji, name_kanji, legacy_school_text, province, era, kokuho_count, jubun_count, jubi_count, gyobutsu_count, tokuju_count, juyo_count, total_items, elite_factor, provenance_factor')
+      .in('maker_id', batch)
+      .in('domain', domainFilter);
 
     if (filters.notable !== false) query = query.gt('total_items', 0);
-    if (filters.school) query = query.eq('school', filters.school);
+    if (filters.school) query = query.eq('legacy_school_text', filters.school);
     if (filters.province) query = query.eq('province', filters.province);
 
     // Era filter: resolve broad period name to matching specific era strings
     if (filters.era) {
       if (!resolvedEras) {
-        resolvedEras = await getErasForBroadPeriod(filters.era, table);
+        resolvedEras = await getErasForBroadPeriod(filters.era, entityType);
       }
       if (resolvedEras.length > 0) {
         query = query.in('era', resolvedEras);
@@ -966,17 +1058,17 @@ export async function getFilteredArtistsByCodes(
     }
 
     if (filters.q) {
-      query = query.or(`name_romaji.ilike.%${filters.q}%,name_kanji.ilike.%${filters.q}%,${idCol}.ilike.%${filters.q}%,school.ilike.%${filters.q}%,province.ilike.%${filters.q}%,name_search_text.ilike.%${filters.q}%`);
+      query = query.or(`name_romaji.ilike.%${filters.q}%,name_kanji.ilike.%${filters.q}%,maker_id.ilike.%${filters.q}%,legacy_school_text.ilike.%${filters.q}%,province.ilike.%${filters.q}%,name_romaji_normalized.ilike.%${filters.q}%`);
     }
 
     const { data } = await query;
 
     for (const row of data || []) {
       results.push({
-        code: (row as Record<string, unknown>)[idCol] as string,
+        code: row.maker_id as string,
         name_romaji: row.name_romaji as string | null,
         name_kanji: row.name_kanji as string | null,
-        school: row.school as string | null,
+        school: row.legacy_school_text as string | null,
         province: row.province as string | null,
         era: row.era as string | null,
         entity_type: entityType,
@@ -989,7 +1081,7 @@ export async function getFilteredArtistsByCodes(
         total_items: (row.total_items as number) || 0,
         elite_factor: (row.elite_factor as number) || 0,
         provenance_factor: (row.provenance_factor as number) ?? null,
-        is_school_code: (row.is_school_code as boolean) || false,
+        is_school_code: false,
       });
     }
   }
@@ -1003,8 +1095,7 @@ export async function getFilteredArtistsByCodes(
  * totals for both types (used for tab counts).
  */
 export async function getArtistDirectoryFacets(type: 'smith' | 'tosogu'): Promise<DirectoryFacets> {
-  const table = type === 'smith' ? 'smith_entities' : 'tosogu_makers';
-  const idCol = type === 'smith' ? 'smith_id' : 'maker_id';
+  const domainFilter = getDomainFilter(type);
 
   // Fetch facets for the selected type + totals for both types in parallel
   const [
@@ -1014,16 +1105,16 @@ export async function getArtistDirectoryFacets(type: 'smith' | 'tosogu'): Promis
     { count: smithCount },
     { count: tosoguCount },
   ] = await Promise.all([
-    yuhinkaiClient.from(table).select('school').gt('total_items', 0).not('school', 'is', null),
-    yuhinkaiClient.from(table).select('province').gt('total_items', 0).not('province', 'is', null),
-    yuhinkaiClient.from(table).select('era').gt('total_items', 0).not('era', 'is', null),
-    yuhinkaiClient.from('smith_entities').select('*', { count: 'exact', head: true }).gt('total_items', 0),
-    yuhinkaiClient.from('tosogu_makers').select('*', { count: 'exact', head: true }).gt('total_items', 0),
+    yuhinkaiClient.from('artisan_makers').select('legacy_school_text').in('domain', domainFilter).gt('total_items', 0).not('legacy_school_text', 'is', null),
+    yuhinkaiClient.from('artisan_makers').select('province').in('domain', domainFilter).gt('total_items', 0).not('province', 'is', null),
+    yuhinkaiClient.from('artisan_makers').select('era').in('domain', domainFilter).gt('total_items', 0).not('era', 'is', null),
+    yuhinkaiClient.from('artisan_makers').select('*', { count: 'exact', head: true }).in('domain', ['sword', 'both']).gt('total_items', 0),
+    yuhinkaiClient.from('artisan_makers').select('*', { count: 'exact', head: true }).in('domain', ['tosogu', 'both']).gt('total_items', 0),
   ]);
 
   const schoolMap = new Map<string, number>();
   for (const row of schools || []) {
-    const s = row.school as string;
+    const s = row.legacy_school_text as string;
     schoolMap.set(s, (schoolMap.get(s) || 0) + 1);
   }
 
@@ -1069,41 +1160,25 @@ export async function getArtistDirectoryFacets(type: 'smith' | 'tosogu'): Promis
 // =============================================================================
 
 /**
- * For NS school code entries, count how many individual smiths/makers share the same school.
+ * For NS school code entries, count how many individual makers are members of the school.
+ * Uses artisan_school_members junction table.
  * Returns Map<code, memberCount>.
  */
 export async function getSchoolMemberCounts(
   artists: Array<{ code: string; school: string | null; entity_type: 'smith' | 'tosogu'; is_school_code: boolean }>
 ): Promise<Map<string, number>> {
   const result = new Map<string, number>();
-  const nsCodes = artists.filter(a => a.is_school_code && a.school);
+  const nsCodes = artists.filter(a => a.is_school_code && a.code.startsWith('NS-'));
   if (nsCodes.length === 0) return result;
 
-  // Deduplicate by school+type
-  const uniqueSchools = new Map<string, { school: string; type: 'smith' | 'tosogu'; codes: string[] }>();
-  for (const a of nsCodes) {
-    const key = `${a.entity_type}:${a.school}`;
-    const entry = uniqueSchools.get(key);
-    if (entry) {
-      entry.codes.push(a.code);
-    } else {
-      uniqueSchools.set(key, { school: a.school!, type: a.entity_type, codes: [a.code] });
-    }
-  }
-
   await Promise.all(
-    Array.from(uniqueSchools.values()).map(async ({ school, type, codes }) => {
-      const table = type === 'smith' ? 'smith_entities' : 'tosogu_makers';
+    nsCodes.map(async ({ code }) => {
       const { count } = await yuhinkaiClient
-        .from(table)
+        .from('artisan_school_members')
         .select('*', { count: 'exact', head: true })
-        .eq('school', school)
-        .eq('is_school_code', false)
-        .gt('total_items', 0);
+        .eq('school_id', code);
 
-      for (const code of codes) {
-        result.set(code, count || 0);
-      }
+      result.set(code, count || 0);
     })
   );
 
@@ -1111,7 +1186,7 @@ export async function getSchoolMemberCounts(
 }
 
 /**
- * For school codes, get all individual member codes from the relevant entity table.
+ * For school codes, get all individual member codes from artisan_school_members.
  * Returns Map<schoolCode, memberCodes[]>.
  */
 export async function getSchoolMemberCodes(
@@ -1120,33 +1195,15 @@ export async function getSchoolMemberCodes(
   const result = new Map<string, string[]>();
   if (schools.length === 0) return result;
 
-  // Deduplicate by school+type
-  const uniqueSchools = new Map<string, { school: string; type: 'smith' | 'tosogu'; codes: string[] }>();
-  for (const s of schools) {
-    const key = `${s.entity_type}:${s.school}`;
-    const entry = uniqueSchools.get(key);
-    if (entry) {
-      entry.codes.push(s.code);
-    } else {
-      uniqueSchools.set(key, { school: s.school, type: s.entity_type, codes: [s.code] });
-    }
-  }
-
   await Promise.all(
-    Array.from(uniqueSchools.values()).map(async ({ school, type, codes }) => {
-      const table = type === 'smith' ? 'smith_entities' : 'tosogu_makers';
-      const idCol = type === 'smith' ? 'smith_id' : 'maker_id';
-
+    schools.map(async ({ code }) => {
       const { data } = await yuhinkaiClient
-        .from(table)
-        .select(idCol)
-        .eq('school', school)
-        .eq('is_school_code', false);
+        .from('artisan_school_members')
+        .select('maker_id')
+        .eq('school_id', code);
 
-      const memberCodes = (data || []).map((row: Record<string, unknown>) => row[idCol] as string);
-      for (const code of codes) {
-        result.set(code, memberCodes);
-      }
+      const memberCodes = (data || []).map((row: { maker_id: string }) => row.maker_id);
+      result.set(code, memberCodes);
     })
   );
 
@@ -1176,14 +1233,15 @@ export async function getBulkElitePercentiles(
     byType.get(a.entity_type)!.push(a);
   }
 
-  // Process each type independently
+  // Process each type independently using artisan_makers with domain filter
   const typePromises = Array.from(byType.entries()).map(async ([entityType, group]) => {
-    const table = entityType === 'smith' ? 'smith_entities' : 'tosogu_makers';
+    const domainFilter = getDomainFilter(entityType);
 
     // Get total count for this type
     const { count: total } = await yuhinkaiClient
-      .from(table)
+      .from('artisan_makers')
       .select('*', { count: 'exact', head: true })
+      .in('domain', domainFilter)
       .gt('total_items', 0);
 
     if (!total || total === 0) {
@@ -1198,9 +1256,10 @@ export async function getBulkElitePercentiles(
     const belowCounts = await Promise.all(
       uniqueFactors.map(async (factor) => {
         const { count: below } = await yuhinkaiClient
-          .from(table)
+          .from('artisan_makers')
           .select('*', { count: 'exact', head: true })
           .lt('elite_factor', factor)
+          .in('domain', domainFilter)
           .gt('total_items', 0);
         return { factor, below: below || 0 };
       })
@@ -1244,11 +1303,12 @@ export async function getBulkProvenancePercentiles(
   }
 
   const typePromises = Array.from(byType.entries()).map(async ([entityType, group]) => {
-    const table = entityType === 'smith' ? 'smith_entities' : 'tosogu_makers';
+    const domainFilter = getDomainFilter(entityType);
 
     const { count: total } = await yuhinkaiClient
-      .from(table)
+      .from('artisan_makers')
       .select('*', { count: 'exact', head: true })
+      .in('domain', domainFilter)
       .not('provenance_factor', 'is', null);
 
     if (!total || total === 0) {
@@ -1261,9 +1321,10 @@ export async function getBulkProvenancePercentiles(
     const belowCounts = await Promise.all(
       uniqueFactors.map(async (factor) => {
         const { count: below } = await yuhinkaiClient
-          .from(table)
+          .from('artisan_makers')
           .select('*', { count: 'exact', head: true })
           .lt('provenance_factor', factor)
+          .in('domain', domainFilter)
           .not('provenance_factor', 'is', null);
         return { factor, below: below || 0 };
       })
@@ -1583,16 +1644,16 @@ export async function getArtisanHeroImage(
 // =============================================================================
 
 export async function resolveTeacher(teacherRef: string): Promise<ArtisanStub | null> {
-  // Try as a smith_id code first
+  // Try as a maker_id code first
   const { data: byCode } = await yuhinkaiClient
-    .from('smith_entities')
-    .select('smith_id, name_romaji, name_kanji')
-    .eq('smith_id', teacherRef)
+    .from('artisan_makers')
+    .select('maker_id, name_romaji, name_kanji')
+    .eq('maker_id', teacherRef)
     .single();
 
   if (byCode) {
     return {
-      code: byCode.smith_id,
+      code: byCode.maker_id,
       name_romaji: byCode.name_romaji,
       name_kanji: byCode.name_kanji,
     };
@@ -1600,15 +1661,15 @@ export async function resolveTeacher(teacherRef: string): Promise<ArtisanStub | 
 
   // Try by name_romaji
   const { data: byName } = await yuhinkaiClient
-    .from('smith_entities')
-    .select('smith_id, name_romaji, name_kanji')
+    .from('artisan_makers')
+    .select('maker_id, name_romaji, name_kanji')
     .eq('name_romaji', teacherRef)
     .limit(1)
     .single();
 
   if (byName) {
     return {
-      code: byName.smith_id,
+      code: byName.maker_id,
       name_romaji: byName.name_romaji,
       name_kanji: byName.name_kanji,
     };

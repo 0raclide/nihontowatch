@@ -44,7 +44,7 @@ async function getArtistData(code: string): Promise<ArtisanPageResponse | null> 
 
   if (!entity) return null;
 
-  const entityCode = isSmith ? smithEntity!.smith_id : tosoguMaker!.maker_id;
+  const entityCode = entity.maker_id;
   const entityType = isSmith ? 'smith' as const : 'tosogu' as const;
   const eliteFactor = entity.elite_factor ?? 0;
   const provenanceFactor = entity.provenance_factor ?? null;
@@ -206,7 +206,7 @@ export async function generateMetadata({ params }: ArtistPageProps): Promise<Met
   const juyo = entity.juyo_count || 0;
   const tokuju = entity.tokuju_count || 0;
 
-  const entityCode = smith ? smith.smith_id : tosogu!.maker_id;
+  const entityCode = entity.maker_id;
   const { prefix } = getArtisanDisplayParts(name, entity.school);
   const schoolLabel = prefix || entity.school || 'Japanese';
   const alias = getArtisanAlias(entityCode);
@@ -248,7 +248,7 @@ export default async function ArtistSlugPage({ params }: ArtistPageProps) {
     const entity = smith || tosogu;
 
     if (entity) {
-      const entityCode = smith ? smith.smith_id : tosogu!.maker_id;
+      const entityCode = entity.maker_id;
       const correctSlug = generateArtisanSlug(entity.name_romaji, entityCode);
       // Only redirect if the slug actually changes (avoids loop for NS-* codes)
       if (correctSlug !== slug) {
