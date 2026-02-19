@@ -55,6 +55,7 @@ const UPDATE_BATCH_SIZE = 500;
 
 interface ListingRow {
   id: number;
+  artisan_id: string | null;
   artisan_elite_factor: number | null;
   artisan_elite_count: number | null;
   cert_type: string | null;
@@ -70,9 +71,14 @@ interface ListingRow {
 // Helpers
 // ---------------------------------------------------------------------------
 
+// Artisan IDs that are catch-all buckets, not real artisan matches
+const IGNORE_ARTISAN_IDS = new Set(['UNKNOWN', 'unknown']);
+
 function computeQuality(listing: ListingRow): number {
-  const eliteFactor = listing.artisan_elite_factor ?? 0;
-  const eliteCount = listing.artisan_elite_count ?? 0;
+  // Treat catch-all artisan IDs as no match
+  const hasRealArtisan = listing.artisan_id && !IGNORE_ARTISAN_IDS.has(listing.artisan_id);
+  const eliteFactor = hasRealArtisan ? (listing.artisan_elite_factor ?? 0) : 0;
+  const eliteCount = hasRealArtisan ? (listing.artisan_elite_count ?? 0) : 0;
 
   const artisanStature = (eliteFactor * 200) + Math.min(Math.sqrt(eliteCount) * 18, 100);
   const certPts = listing.cert_type ? (CERT_POINTS[listing.cert_type] ?? 0) : 0;
@@ -228,7 +234,7 @@ export async function GET(request: NextRequest) {
     while (true) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: listings, error } = await (supabase.from('listings') as any)
-        .select('id, artisan_elite_factor, artisan_elite_count, cert_type, price_value, artisan_confidence, images, first_seen_at, is_initial_import, dealer_id')
+        .select('id, artisan_id, artisan_elite_factor, artisan_elite_count, cert_type, price_value, artisan_confidence, images, first_seen_at, is_initial_import, dealer_id')
         .eq('is_available', true)
         .range(offset, offset + PAGE_SIZE - 1) as { data: ListingRow[] | null; error: unknown };
 
