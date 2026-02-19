@@ -41,6 +41,10 @@ export function AdminEditView({ listing, onBackToPhotos, onRefresh }: AdminEditV
   // --- Hide state ---
   const [localHidden, setLocalHidden] = useState(listing.admin_hidden ?? false);
 
+  // --- Status override state ---
+  const [localSold, setLocalSold] = useState(listing.is_sold ?? false);
+  const [localStatusLocked, setLocalStatusLocked] = useState(listing.status_admin_locked ?? false);
+
   // --- Error ---
   const [error, setError] = useState<string | null>(null);
 
@@ -50,6 +54,8 @@ export function AdminEditView({ listing, onBackToPhotos, onRefresh }: AdminEditV
     setConfidence((listing.artisan_confidence as 'HIGH' | 'MEDIUM' | 'LOW') || 'LOW');
     setVerified((listing.artisan_verified as 'correct' | 'incorrect' | null) ?? null);
     setLocalHidden(listing.admin_hidden ?? false);
+    setLocalSold(listing.is_sold ?? false);
+    setLocalStatusLocked(listing.status_admin_locked ?? false);
     setShowSearch(false);
     setFixSuccess(false);
     setSearchError(null);
@@ -186,6 +192,39 @@ export function AdminEditView({ listing, onBackToPhotos, onRefresh }: AdminEditV
       }
     } catch {
       setLocalHidden(!newHidden); // revert
+    }
+  };
+
+  // --- Toggle sold/available ---
+  const handleToggleSold = async () => {
+    const markAsSold = !localSold;
+    const action = markAsSold ? 'mark as sold' : 'mark as available';
+    if (!window.confirm(`Are you sure you want to ${action}?`)) return;
+
+    setLocalSold(markAsSold);
+    setLocalStatusLocked(true);
+    try {
+      const res = await fetch(`/api/listing/${listing.id}/set-status`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sold: markAsSold }),
+      });
+      if (res.ok) {
+        const optimistic = {
+          status: markAsSold ? 'sold' : 'available',
+          is_available: !markAsSold,
+          is_sold: markAsSold,
+          status_admin_locked: true,
+        };
+        onRefresh(optimistic as Partial<Listing>);
+        dispatchRefresh(optimistic);
+      } else {
+        setLocalSold(!markAsSold); // revert
+        setLocalStatusLocked(listing.status_admin_locked ?? false);
+      }
+    } catch {
+      setLocalSold(!markAsSold); // revert
+      setLocalStatusLocked(listing.status_admin_locked ?? false);
     }
   };
 
@@ -350,6 +389,44 @@ export function AdminEditView({ listing, onBackToPhotos, onRefresh }: AdminEditV
                 />
               </div>
             )}
+          </div>
+
+          {/* ─── Status Override (Sold / Available) ─── */}
+          <div>
+            {localStatusLocked && (
+              <div className="flex items-center gap-1.5 mb-2 px-1">
+                <svg className="w-3.5 h-3.5 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                </svg>
+                <span className="text-[10px] font-medium text-amber-500 uppercase tracking-wider">
+                  Status manually overridden
+                </span>
+              </div>
+            )}
+            <button
+              onClick={handleToggleSold}
+              className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-medium transition-colors ${
+                localSold
+                  ? 'bg-surface border border-green-500/30 text-green-600 hover:bg-green-500/10 dark:text-green-400'
+                  : 'bg-surface border border-amber-500/30 text-amber-600 hover:bg-amber-500/10 dark:text-amber-400'
+              }`}
+            >
+              {localSold ? (
+                <>
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Mark as Available
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                  </svg>
+                  Mark as Sold
+                </>
+              )}
+            </button>
           </div>
 
           {/* ─── Hide / Unhide ─── */}

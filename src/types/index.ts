@@ -498,6 +498,7 @@ export interface Listing {
 
   // Admin moderation
   admin_hidden?: boolean; // TRUE = hidden from public views by admin
+  status_admin_locked?: boolean; // TRUE = status manually overridden by admin, protected from scraper
 
   // Sorting / "New" badge
   is_initial_import?: boolean | null; // DB column: TRUE = bulk import, FALSE = genuine new

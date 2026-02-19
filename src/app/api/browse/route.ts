@@ -286,6 +286,7 @@ export async function GET(request: NextRequest) {
         is_sold,
         is_initial_import,
         admin_hidden,
+        status_admin_locked,
         dealer_id,
         artisan_id,
         artisan_confidence,

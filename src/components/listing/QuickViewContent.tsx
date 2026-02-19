@@ -103,6 +103,28 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
     }
   }, [listing.id, listing.admin_hidden, quickView]);
 
+  const handleToggleSold = useCallback(async () => {
+    const markAsSold = listing.is_available; // if available, mark sold; if sold, mark available
+
+    try {
+      const res = await fetch(`/api/listing/${listing.id}/set-status`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sold: markAsSold }),
+      });
+      if (res.ok) {
+        quickView?.refreshCurrentListing({
+          status: markAsSold ? 'sold' : 'available',
+          is_available: !markAsSold,
+          is_sold: markAsSold,
+          status_admin_locked: true,
+        } as Partial<Listing>);
+      }
+    } catch {
+      // silently fail
+    }
+  }, [listing.id, listing.is_available, quickView]);
+
   // Track when user clicks through to dealer's website
   const handleDealerLinkClick = useCallback(() => {
     if (activityTracker && listing) {
@@ -184,6 +206,29 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
               ) : null}
             </div>
             <div className="flex items-center gap-2">
+              {/* Admin: Toggle sold/available status */}
+              {isAdmin && (
+                <button
+                  onClick={handleToggleSold}
+                  className={`w-8 h-8 flex items-center justify-center rounded-full transition-all duration-200 ${
+                    listing.is_sold
+                      ? 'bg-amber-500/20 text-amber-500 hover:bg-amber-500/30'
+                      : 'text-muted hover:text-ink hover:bg-border/50'
+                  }`}
+                  aria-label={listing.is_sold ? 'Mark as available' : 'Mark as sold'}
+                  title={listing.is_sold ? 'Mark as available' : 'Mark as sold'}
+                >
+                  {listing.is_sold ? (
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  ) : (
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                    </svg>
+                  )}
+                </button>
+              )}
               {/* Admin: Hide/unhide listing button */}
               {isAdmin && (
                 <button

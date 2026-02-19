@@ -95,6 +95,7 @@ interface Listing {
   }> | null;
   artisan_verified?: 'correct' | 'incorrect' | null;
   admin_hidden?: boolean;
+  status_admin_locked?: boolean;
 }
 
 interface ExchangeRates {
@@ -491,6 +492,31 @@ export const ListingCard = memo(function ListingCard({
     }
   }, [listing.id, listing.admin_hidden]);
 
+  // Admin: toggle sold/available status
+  const handleToggleSold = useCallback(async () => {
+    const markAsSold = listing.is_available;
+    try {
+      const res = await fetch(`/api/listing/${listing.id}/set-status`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sold: markAsSold }),
+      });
+      if (res.ok) {
+        window.dispatchEvent(new CustomEvent('listing-refreshed', {
+          detail: {
+            id: Number(listing.id),
+            status: markAsSold ? 'sold' : 'available',
+            is_available: !markAsSold,
+            is_sold: markAsSold,
+            status_admin_locked: true,
+          },
+        }));
+      }
+    } catch {
+      // silently fail
+    }
+  }, [listing.id, listing.is_available]);
+
   // Register for viewport tracking when mounted
   useEffect(() => {
     const element = cardRef.current;
@@ -789,6 +815,13 @@ export const ListingCard = memo(function ListingCard({
             </svg>
           </div>
         )}
+        {isAdmin && listing.status_admin_locked && (
+          <div className={`absolute top-2 ${listing.admin_hidden ? 'left-10' : 'left-2'} w-6 h-6 flex items-center justify-center rounded-full bg-amber-500/80 text-white`} title="Status manually overridden">
+            <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+            </svg>
+          </div>
+        )}
       </div>
 
       {/* Content */}
@@ -877,6 +910,10 @@ export const ListingCard = memo(function ListingCard({
     prevProps.listing.artisan_display_name === nextProps.listing.artisan_display_name &&
     prevProps.listing.artisan_confidence === nextProps.listing.artisan_confidence &&
     prevProps.listing.cert_type === nextProps.listing.cert_type &&
+    prevProps.listing.status === nextProps.listing.status &&
+    prevProps.listing.is_sold === nextProps.listing.is_sold &&
+    prevProps.listing.is_available === nextProps.listing.is_available &&
+    prevProps.listing.status_admin_locked === nextProps.listing.status_admin_locked &&
     prevProps.mobileView === nextProps.mobileView &&
     prevProps.fontSize === nextProps.fontSize &&
     prevProps.imageAspect === nextProps.imageAspect
