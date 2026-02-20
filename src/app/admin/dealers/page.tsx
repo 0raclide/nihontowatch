@@ -236,9 +236,9 @@ export default function DealerAnalyticsPage() {
                   <tr key={dealer.dealerId} className="hover:bg-linen/30">
                     <td className="px-4 py-3">
                       <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-medium ${
-                        index < 3 ? 'bg-gold/20 text-gold' : 'bg-linen text-charcoal'
+                        dealer.clicksRank <= 3 ? 'bg-gold/20 text-gold' : 'bg-linen text-charcoal'
                       }`}>
-                        {index + 1}
+                        {dealer.clicksRank}
                       </span>
                     </td>
                     <td className="px-4 py-3">
@@ -293,15 +293,19 @@ export default function DealerAnalyticsPage() {
                 {analytics?.dailyTrend.length || 0} days of data
               </p>
               <div className="mt-4 flex flex-wrap gap-2 justify-center">
-                {analytics?.dailyTrend.slice(-7).map((day) => (
-                  <div key={day.date} className="text-center">
-                    <div
-                      className="w-8 bg-gold/60 rounded-t"
-                      style={{ height: `${Math.max(4, (day.totalClicks / (analytics?.totalClicks || 1)) * 200)}px` }}
-                    />
-                    <p className="text-[10px] mt-1">{day.date.slice(5)}</p>
-                  </div>
-                ))}
+                {(() => {
+                  const last7 = analytics?.dailyTrend.slice(-7) || [];
+                  const maxClicks = Math.max(...last7.map(d => d.totalClicks), 1);
+                  return last7.map((day) => (
+                    <div key={day.date} className="text-center">
+                      <div
+                        className="w-8 bg-gold/60 rounded-t"
+                        style={{ height: `${Math.max(4, (day.totalClicks / maxClicks) * 80)}px` }}
+                      />
+                      <p className="text-[10px] mt-1">{day.date.slice(5)}</p>
+                    </div>
+                  ));
+                })()}
               </div>
             </div>
           </div>

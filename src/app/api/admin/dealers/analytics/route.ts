@@ -18,7 +18,6 @@ interface DealerStats {
 
   // Engagement metrics
   favorites: number;
-  alerts: number;
   totalDwellMs: number;
   avgDwellMs: number;
 
@@ -162,8 +161,22 @@ export async function GET(request: NextRequest) {
         .limit(100000),
     ]);
 
-    if (dealersResult.error) {
-      logger.error('Error fetching dealers', { error: dealersResult.error });
+    // Check for errors in any query
+    const rpcErrors = [
+      { name: 'dealers', error: dealersResult.error },
+      { name: 'click_stats', error: clickStatsResult.error },
+      { name: 'prev_click_stats', error: prevClickStatsResult.error },
+      { name: 'dwell_stats', error: dwellStatsResult.error },
+      { name: 'favorite_stats', error: favoriteStatsResult.error },
+      { name: 'daily_clicks', error: dailyClicksResult.error },
+      { name: 'listing_views', error: listingViewsResult.error },
+      { name: 'listing_stats', error: listingStatsResult.error },
+    ].filter(r => r.error);
+
+    if (rpcErrors.length > 0) {
+      logger.error('Dealer analytics query errors', {
+        errors: rpcErrors.map(r => ({ name: r.name, error: r.error })),
+      });
       return NextResponse.json({ error: 'Database error' }, { status: 500 });
     }
 
@@ -198,7 +211,6 @@ export async function GET(request: NextRequest) {
       dwellCount: number;
       listingViews: number;
       favorites: number;
-      alerts: number;
       activeListings: number;
       totalValue: number;
     }>();
@@ -212,29 +224,29 @@ export async function GET(request: NextRequest) {
         dwellCount: 0,
         listingViews: 0,
         favorites: 0,
-        alerts: 0,
         activeListings: 0,
         totalValue: 0,
       });
     }
 
-    // Process click stats from RPC
+    // Process click stats from RPC (use += because same dealer can appear in multiple rows
+    // when some events have dealer_id and others only have dealerName)
     for (const row of clickStats) {
       const did = row.dealer_id ?? dealerByName.get(row.dealer_name)?.id;
       if (!did) continue;
       const stats = dealerMap.get(did);
       if (stats) {
-        stats.clicks = Number(row.clicks);
-        stats.uniqueVisitors = Number(row.unique_visitors);
+        stats.clicks += Number(row.clicks);
+        stats.uniqueVisitors += Number(row.unique_visitors);
       }
     }
 
-    // Process previous period clicks for trend
+    // Process previous period clicks for trend (use += for same reason as above)
     const prevClicksByDealer = new Map<number, number>();
     for (const row of prevClickStats) {
       const did = row.dealer_id ?? dealerByName.get(row.dealer_name)?.id;
       if (did) {
-        prevClicksByDealer.set(did, Number(row.clicks));
+        prevClicksByDealer.set(did, (prevClicksByDealer.get(did) || 0) + Number(row.clicks));
       }
     }
 
@@ -314,7 +326,6 @@ export async function GET(request: NextRequest) {
         uniqueVisitors: stats.uniqueVisitors,
         listingViews: stats.listingViews,
         favorites: stats.favorites,
-        alerts: stats.alerts,
         totalDwellMs: stats.dwellMs,
         avgDwellMs: stats.dwellCount > 0 ? Math.round(stats.dwellMs / stats.dwellCount) : 0,
         activeListings: stats.activeListings,
@@ -370,10 +381,12 @@ export async function GET(request: NextRequest) {
       .slice(0, 10)
       .map(d => ({ dealerId: d.dealerId, name: d.dealerName, avgDwellMs: d.avgDwellMs }));
 
+    const dealersWithListings = dealerStatsArray.filter(d => d.activeListings > 0).length;
+
     const analytics: DealerAnalytics = {
       totalClicks,
       totalViews,
-      totalDealers: dealers?.length || 0,
+      totalDealers: dealersWithListings,
       periodStart: periodStartISO,
       periodEnd: periodEndISO,
       dealers: filteredDealers,
