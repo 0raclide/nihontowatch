@@ -16,7 +16,7 @@ const MACRON_MAP: Record<string, string> = {
 };
 
 /** Lowercase + strip macrons so "Gotō" and "Goto" compare equal. */
-function norm(s: string): string {
+export function norm(s: string): string {
   return s.toLowerCase().replace(/[āēīōūĀĒĪŌŪ]/g, ch => MACRON_MAP[ch] || ch);
 }
 
@@ -83,6 +83,7 @@ function schoolTokens(school: string): string[] {
  * 2b. School starts with name (whole word) → show school only
  * 3. School ends with name (space or hyphen) → show school only
  * 3b. Name appears as a token in school → show school only
+ * 3c. School appears as a token in name → show name only
  * 4. School ends with name exactly (normalised) → show school only
  * 5. Geographic prefix stripping → first word is province/city → strip it
  *    (but only if remainder is meaningful, not just "Province")
@@ -140,6 +141,13 @@ export function getArtisanDisplayParts(
   const sTokens = schoolTokens(school).map(norm);
   if (sTokens.includes(nNorm)) {
     return { prefix: null, name: school };
+  }
+
+  // Rule 3c: school appears as a token in name (reverse of 3b)
+  // e.g. school="Ichijō", name="Gotō Ichijō"
+  const nTokens = name.split(/[\s-]+/).map(norm);
+  if (nTokens.includes(sNorm)) {
+    return { prefix: null, name };
   }
 
   // Rule 4: lineage substitution — multi-word school where the last word
