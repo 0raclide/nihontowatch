@@ -311,7 +311,8 @@ export function generateBreadcrumbJsonLd(
 /**
  * Generate Organization JSON-LD (site-wide)
  */
-export function generateOrganizationJsonLd(): OrganizationJsonLd {
+export function generateOrganizationJsonLd(dealerCount?: number): OrganizationJsonLd {
+  const dealerPhrase = dealerCount ? `${dealerCount} trusted dealers` : 'trusted dealers worldwide';
   return {
     '@context': 'https://schema.org',
     '@type': 'Organization',
@@ -319,7 +320,7 @@ export function generateOrganizationJsonLd(): OrganizationJsonLd {
     url: BASE_URL,
     logo: `${BASE_URL}/logo-mon.png`,
     description:
-      'The premier aggregator for Japanese swords (nihonto) and sword fittings (tosogu) from dealers worldwide. Find katana, wakizashi, tsuba, and more from 27 trusted dealers.',
+      `The premier aggregator for Japanese swords (nihonto) and sword fittings (tosogu) from dealers worldwide. Find katana, wakizashi, tsuba, and more from ${dealerPhrase}.`,
   };
 }
 

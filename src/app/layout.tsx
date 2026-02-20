@@ -19,6 +19,7 @@ import {
   generateWebsiteJsonLd,
   jsonLdScriptProps,
 } from "@/lib/seo/jsonLd";
+import { getActiveDealerCount } from "@/lib/supabase/dealerCount";
 import { NavigationProgress } from "@/components/ui/NavigationProgress";
 
 const cormorant = Cormorant_Garamond({
@@ -75,15 +76,17 @@ export const metadata: Metadata = {
   },
 };
 
-// Generate JSON-LD schemas once (they're static)
-const organizationJsonLd = generateOrganizationJsonLd();
+// Generate WebSite JSON-LD once (it's static — no dealer count)
 const websiteJsonLd = generateWebsiteJsonLd();
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const dealerCount = await getActiveDealerCount();
+  const organizationJsonLd = generateOrganizationJsonLd(dealerCount);
+
   return (
     <html lang="en" className={`${cormorant.variable} ${inter.variable}`} suppressHydrationWarning>
       <head>
@@ -101,7 +104,7 @@ export default function RootLayout({
               <SubscriptionProvider>
                 <PaywallModal />
                 <FavoritesProvider>
-                  <SignupPressureWrapper>
+                  <SignupPressureWrapper dealerCount={dealerCount}>
                     <MobileUIProvider>
                       <ThemeProvider>
                         <QuickViewProvider>

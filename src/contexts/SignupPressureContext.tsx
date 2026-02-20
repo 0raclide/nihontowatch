@@ -41,11 +41,14 @@ interface SignupPressureProviderProps {
   children: ReactNode;
   /** Override authenticated state (for testing or when auth state is known) */
   isAuthenticated?: boolean;
+  /** Dynamic active dealer count from the database */
+  dealerCount?: number;
 }
 
 export function SignupPressureProvider({
   children,
   isAuthenticated = false,
+  dealerCount = 40,
 }: SignupPressureProviderProps) {
   // Persisted state (survives page refreshes)
   const [persistedState, setPersistedState] = useState<SignupPressurePersistedState>(
@@ -246,6 +249,7 @@ export function SignupPressureProvider({
       thresholdsMet,
       isOnCooldown: onCooldown,
       isAuthenticated,
+      dealerCount,
 
       // Actions
       trackQuickView,
@@ -265,6 +269,7 @@ export function SignupPressureProvider({
       thresholdsMet,
       onCooldown,
       isAuthenticated,
+      dealerCount,
       trackQuickView,
       triggerForAction,
       dismissModal,

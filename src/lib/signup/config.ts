@@ -6,7 +6,6 @@
  */
 
 import type { SignupPressureConfig, SignupModalCopyVariants } from './types';
-import { ACTIVE_DEALER_COUNT } from '../constants';
 
 /**
  * Trigger configuration.
@@ -37,44 +36,47 @@ export const SIGNUP_PRESSURE_CONFIG: SignupPressureConfig = {
 };
 
 /**
- * Copy variants for different trigger contexts.
+ * Generate copy variants for different trigger contexts.
+ * Dealer count is dynamic — fetched from the database at render time.
  *
  * Tone: Elevated, confident, understated.
  * Appeals to the discerning collector.
  */
-export const SIGNUP_MODAL_COPY: SignupModalCopyVariants = {
-  engagement: {
-    headline: `${ACTIVE_DEALER_COUNT} dealers. One watchlist.`,
-    body: 'Save the pieces that caught your eye. Get alerted when new inventory appears across the market. Never miss a price drop.',
-    cta: 'Create Account',
-    dismiss: 'Continue browsing',
-    socialProof: 'Every major dealer — Japanese and international',
-  },
+export function getSignupModalCopy(dealerCount: number): SignupModalCopyVariants {
+  return {
+    engagement: {
+      headline: `${dealerCount} dealers. One watchlist.`,
+      body: 'Save the pieces that caught your eye. Get alerted when new inventory appears across the market. Never miss a price drop.',
+      cta: 'Create Account',
+      dismiss: 'Continue browsing',
+      socialProof: 'Every major dealer — Japanese and international',
+    },
 
-  favorite: {
-    headline: 'Keep this one close.',
-    body: "Sign up to save this piece. You'll be notified if the price drops or it sells.",
-    cta: 'Create Account',
-    dismiss: 'Continue browsing',
-    socialProof: 'Price alerts delivered within minutes',
-  },
+    favorite: {
+      headline: 'Keep this one close.',
+      body: "Sign up to save this piece. You'll be notified if the price drops or it sells.",
+      cta: 'Create Account',
+      dismiss: 'Continue browsing',
+      socialProof: 'Price alerts delivered within minutes',
+    },
 
-  alert: {
-    headline: 'New pieces move fast.',
-    body: `Listings from ${ACTIVE_DEALER_COUNT} dealers, the moment they appear. Create an account to set alerts tailored to exactly what you collect.`,
-    cta: 'Create Account',
-    dismiss: 'Continue browsing',
-    socialProof: 'Alerts delivered within minutes of changes',
-  },
+    alert: {
+      headline: 'New pieces move fast.',
+      body: `Listings from ${dealerCount} dealers, the moment they appear. Create an account to set alerts tailored to exactly what you collect.`,
+      cta: 'Create Account',
+      dismiss: 'Continue browsing',
+      socialProof: 'Alerts delivered within minutes of changes',
+    },
 
-  priceHistory: {
-    headline: 'See the full picture.',
-    body: 'Understanding price history helps you make informed decisions. Create an account to access historical data and market trends.',
-    cta: 'Create Account',
-    dismiss: 'Continue browsing',
-    socialProof: 'Price data across all major dealers',
-  },
-};
+    priceHistory: {
+      headline: 'See the full picture.',
+      body: 'Understanding price history helps you make informed decisions. Create an account to access historical data and market trends.',
+      cta: 'Create Account',
+      dismiss: 'Continue browsing',
+      socialProof: 'Price data across all major dealers',
+    },
+  };
+}
 
 /**
  * localStorage key for persisted state.

@@ -5,7 +5,10 @@ import {
   useSignupPressure,
 } from '@/contexts/SignupPressureContext';
 import { SignupModal } from '@/components/signup/SignupModal';
-import { SIGNUP_MODAL_COPY, ANIMATION_TIMING } from '@/lib/signup/config';
+import { getSignupModalCopy, ANIMATION_TIMING } from '@/lib/signup/config';
+
+// Use a fixed dealer count for test assertions
+const SIGNUP_MODAL_COPY = getSignupModalCopy(40);
 
 // Mock createPortal to render in the same container
 vi.mock('react-dom', async () => {

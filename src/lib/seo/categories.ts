@@ -156,7 +156,7 @@ const SECONDARY_DIMS: Record<string, SecondaryDim> = {
 const TYPE_CONTENT: Record<string, { metaDescription: string; intro: string }> = {
   katana: {
     metaDescription:
-      'Browse authentic Japanese katana for sale from 44 trusted dealers in Japan and worldwide. NBTHK certified, with detailed specifications and provenance.',
+      'Browse authentic Japanese katana for sale from trusted dealers in Japan and worldwide. NBTHK certified, with detailed specifications and provenance.',
     intro:
       'The katana is the iconic long sword of the Japanese samurai, typically measuring over 60 cm in blade length (nagasa). Renowned for its curved, single-edged blade and exceptional craftsmanship, the katana has been the primary weapon and status symbol of the warrior class since the Muromachi period. Browse authenticated katana from leading Japanese and international dealers.',
   },
@@ -192,7 +192,7 @@ const TYPE_CONTENT: Record<string, { metaDescription: string; intro: string }> =
   },
   tsuba: {
     metaDescription:
-      'Browse authentic Japanese tsuba (sword guards) for sale from 44 dealers. Iron, shakudo, and gold tsuba by renowned makers. NBTHK certified pieces available.',
+      'Browse authentic Japanese tsuba (sword guards) for sale from trusted dealers worldwide. Iron, shakudo, and gold tsuba by renowned makers. NBTHK certified pieces available.',
     intro:
       'The tsuba is the hand guard of a Japanese sword, positioned between the blade and the grip. Far more than functional protection, tsuba evolved into miniature works of art featuring intricate designs in iron, copper, shakudo, and precious metals. They are the most widely collected category of Japanese sword fittings (tosogu), with pieces by famous schools like Goto, Nara, and Yokoya commanding premium prices.',
   },

@@ -66,6 +66,9 @@ export interface SignupPressureState {
 
   /** Whether user is authenticated (disables all triggers) */
   isAuthenticated: boolean;
+
+  /** Dynamic active dealer count from the database */
+  dealerCount: number;
 }
 
 /**

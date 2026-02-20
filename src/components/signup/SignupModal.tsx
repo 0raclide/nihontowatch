@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useSignupPressure } from '@/contexts/SignupPressureContext';
-import { SIGNUP_MODAL_COPY, ANIMATION_TIMING } from '@/lib/signup/config';
+import { getSignupModalCopy, ANIMATION_TIMING } from '@/lib/signup/config';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 
 // ============================================================================
@@ -40,13 +40,13 @@ interface SignupModalContentProps {
 }
 
 function SignupModalContent({ onDismiss, onClose }: SignupModalContentProps) {
-  const { triggerContext } = useSignupPressure();
+  const { triggerContext, dealerCount } = useSignupPressure();
   const [email, setEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Get copy based on trigger context
-  const copy = SIGNUP_MODAL_COPY[triggerContext || 'engagement'];
+  // Get copy based on trigger context (dealer count is dynamic from DB)
+  const copy = getSignupModalCopy(dealerCount)[triggerContext || 'engagement'];
 
   // Focus email input on mount (desktop only)
   useEffect(() => {

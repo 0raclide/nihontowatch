@@ -379,11 +379,10 @@ export const ROUTES = {
 // =============================================================================
 
 /**
- * Number of active dealers on the platform.
- * Used in marketing copy (signup modals, landing page, etc.)
- * Update this when adding or removing dealers.
+ * @deprecated Use `getActiveDealerCount()` from `@/lib/supabase/dealerCount` instead.
+ * This was a hardcoded value that drifted out of date. The dynamic function
+ * queries the database with caching so the count is always accurate.
  */
-export const ACTIVE_DEALER_COUNT = 44;
 
 /**
  * Dealers that are known to never publish product images.

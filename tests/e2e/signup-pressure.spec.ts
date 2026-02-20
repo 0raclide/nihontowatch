@@ -292,7 +292,7 @@ test.describe('Signup Pressure System', () => {
     test('modal has correct copy (dealer count headline)', async ({
       page,
     }) => {
-      // Check headline — uses dynamic dealer count from ACTIVE_DEALER_COUNT
+      // Check headline — uses dynamic dealer count from database
       const headline = page.getByRole('heading', { name: /\d+ dealers\. One watchlist\./ });
       await expect(headline).toBeVisible();
     });
