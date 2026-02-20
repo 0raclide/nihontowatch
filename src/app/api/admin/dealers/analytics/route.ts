@@ -108,7 +108,7 @@ export async function GET(request: NextRequest) {
 
     // Fetch all data in parallel — RPC for event aggregation, direct query for dealers/listings
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const rpc = supabase.rpc as any;
+    const rpc = (supabase.rpc as any).bind(supabase);
     const [
       dealersResult,
       clickStatsResult,

@@ -100,7 +100,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<AnalyticsA
     const endISO = endDate.toISOString();
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const rpc = supabase.rpc as any;
+    const rpc = (supabase.rpc as any).bind(supabase);
     const [topSearchesResult, totalsResult] = await Promise.all([
       rpc('get_top_searches', {
         p_start: startISO,
