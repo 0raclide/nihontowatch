@@ -172,12 +172,13 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Fan-out: write to dedicated tables in parallel (best-effort, fire-and-forget)
+    // Fan-out: write to dedicated tables (best-effort)
+    // Search clicks must run AFTER searches (need the row to exist for CTR update)
     await Promise.allSettled([
       fanOutDealerClicks(serviceClient, validEvents, sessionId, userId, visitorId),
       fanOutListingViews(serviceClient, validEvents, sessionId, userId),
-      fanOutSearches(serviceClient, validEvents, sessionId, userId),
-      fanOutSearchClicks(serviceClient, validEvents),
+      fanOutSearches(serviceClient, validEvents, sessionId, userId)
+        .then(() => fanOutSearchClicks(serviceClient, validEvents)),
     ]);
 
     return NextResponse.json({
