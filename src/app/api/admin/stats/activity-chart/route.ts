@@ -107,19 +107,22 @@ export async function GET(request: NextRequest) {
       serviceSupabase
         .from('listing_views')
         .select('viewed_at')
-        .gte('viewed_at', startDateStr),
+        .gte('viewed_at', startDateStr)
+        .limit(100000),
 
       // Searches by day from user_searches
       serviceSupabase
         .from('user_searches')
         .select('searched_at')
-        .gte('searched_at', startDateStr),
+        .gte('searched_at', startDateStr)
+        .limit(100000),
 
       // Favorites by day from user_favorites
       supabase
         .from('user_favorites')
         .select('created_at')
-        .gte('created_at', startDateStr),
+        .gte('created_at', startDateStr)
+        .limit(100000),
     ]);
 
     // Aggregate views by date

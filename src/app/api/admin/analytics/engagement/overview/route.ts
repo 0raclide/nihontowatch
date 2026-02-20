@@ -15,8 +15,8 @@ import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import type { AnalyticsAPIResponse } from '@/types/analytics';
+import { verifyAdmin } from '@/lib/admin/auth';
 import {
-  verifyAdmin,
   parsePeriodParam,
   calculatePeriodDates,
   getStartOfToday,
@@ -84,8 +84,9 @@ export async function GET(request: NextRequest): Promise<NextResponse<AnalyticsA
 
     // 1. Verify admin authentication
     const authResult = await verifyAdmin(supabase);
-    if (!authResult.success) {
-      return authResult.response as NextResponse<AnalyticsAPIResponse<EngagementOverview>>;
+    if (!authResult.isAdmin) {
+      return errorResponse(authResult.error === 'unauthorized' ? 'Unauthorized' : 'Forbidden',
+        authResult.error === 'unauthorized' ? 401 : 403);
     }
 
     // 2. Parse query parameters
@@ -151,7 +152,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<AnalyticsA
         .select('id, user_id')
         .gte('started_at', startDate.toISOString())
         .lte('started_at', endDate.toISOString())
-        .limit(50000),
+        .limit(100000),
 
       // Sessions in previous period
       supabase
@@ -159,7 +160,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<AnalyticsA
         .select('id, user_id')
         .gte('started_at', previousStartDate.toISOString())
         .lte('started_at', previousEndDate.toISOString())
-        .limit(50000),
+        .limit(100000),
 
       // Session stats for current period (duration, page views)
       supabase
@@ -167,7 +168,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<AnalyticsA
         .select('total_duration_ms, page_views, user_id')
         .gte('started_at', startDate.toISOString())
         .lte('started_at', endDate.toISOString())
-        .limit(10000),
+        .limit(100000),
     ]);
 
     // Filter admin sessions
@@ -190,7 +191,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<AnalyticsA
         .select('id, user_id')
         .gte('viewed_at', startDate.toISOString())
         .lte('viewed_at', endDate.toISOString())
-        .limit(50000),
+        .limit(100000),
 
       // Views in previous period
       supabase
@@ -198,7 +199,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<AnalyticsA
         .select('id, user_id')
         .gte('viewed_at', previousStartDate.toISOString())
         .lte('viewed_at', previousEndDate.toISOString())
-        .limit(50000),
+        .limit(100000),
 
       // Searches in current period - from user_searches table
       supabase
@@ -206,7 +207,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<AnalyticsA
         .select('id, user_id')
         .gte('searched_at', startDate.toISOString())
         .lte('searched_at', endDate.toISOString())
-        .limit(50000),
+        .limit(100000),
 
       // Searches in previous period
       supabase
@@ -214,7 +215,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<AnalyticsA
         .select('id, user_id')
         .gte('searched_at', previousStartDate.toISOString())
         .lte('searched_at', previousEndDate.toISOString())
-        .limit(50000),
+        .limit(100000),
     ]);
 
     // Filter admin activity from engagement counts

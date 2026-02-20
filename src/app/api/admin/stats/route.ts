@@ -107,12 +107,12 @@ export async function GET(request: NextRequest) {
       // Favorites
       (supabase.from('user_favorites') as unknown as UserFavoritesTable)
         .select('listing_id, listings(id, title)')
-        .limit(1000) as Promise<{ data: FavoriteWithListing[] | null; error: { message: string } | null }>,
+        .limit(100000) as Promise<{ data: FavoriteWithListing[] | null; error: { message: string } | null }>,
       // Views from listing_views table (include user_id for admin filtering)
       serviceSupabase
         .from('listing_views')
         .select('listing_id, user_id')
-        .limit(10000),
+        .limit(100000),
     ]);
 
     if (popularFavoritesResult.error) {
@@ -183,13 +183,13 @@ export async function GET(request: NextRequest) {
         (serviceSupabase.from('user_sessions') as unknown as ServiceTable)
           .select('total_duration_ms, page_views, user_id')
           .gte('started_at', startDate.toISOString())
-          .limit(1000) as Promise<{ data: (SessionData & { user_id: string | null })[] | null; error: unknown }>,
+          .limit(100000) as Promise<{ data: (SessionData & { user_id: string | null })[] | null; error: unknown }>,
         // Search terms from user_searches table (new dedicated table)
         serviceSupabase
           .from('user_searches')
           .select('query_normalized')
           .gte('searched_at', startDate.toISOString())
-          .limit(1000),
+          .limit(100000),
         // Alerts count
         supabase.from('alerts').select('id', { count: 'exact', head: true }),
         // Total views from listing_views

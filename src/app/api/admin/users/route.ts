@@ -31,9 +31,12 @@ export async function GET(request: NextRequest) {
       .from('profiles')
       .select('id, email, display_name, is_admin, created_at, updated_at', { count: 'exact' });
 
-    // Apply search filter
+    // Apply search filter (sanitize PostgREST operators to prevent filter injection)
     if (search) {
-      query = query.or(`email.ilike.%${search}%,display_name.ilike.%${search}%`);
+      const sanitized = search.replace(/[,().]/g, '');
+      if (sanitized) {
+        query = query.or(`email.ilike.%${sanitized}%,display_name.ilike.%${sanitized}%`);
+      }
     }
 
     const { data: users, count, error } = await query

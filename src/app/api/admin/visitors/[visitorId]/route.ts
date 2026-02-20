@@ -193,6 +193,7 @@ export async function GET(
           pagesViewed.set(path, (pagesViewed.get(path) || 0) + 1);
           break;
         case 'external_link_click':
+        case 'dealer_click':
           dealerClickCount++;
           const dealer = event.event_data?.dealerName;
           if (dealer) {

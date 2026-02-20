@@ -122,6 +122,22 @@ function getEventDisplay(eventType: string): { label: string; icon: string; colo
       return { label: 'Copied Draft', icon: '📋', color: 'text-green-600' };
     case 'inquiry_mailto_click':
       return { label: 'Opened Email', icon: '📧', color: 'text-green-700' };
+    case 'dealer_click':
+      return { label: 'Dealer Click', icon: '🔗', color: 'text-green-600' };
+    case 'listing_detail_view':
+      return { label: 'Listing Detail', icon: '📋', color: 'text-blue-500' };
+    case 'search_click':
+      return { label: 'Search Click', icon: '🔍', color: 'text-blue-600' };
+    case 'quickview_open':
+      return { label: 'Quick View', icon: '👁️', color: 'text-indigo-500' };
+    case 'alert_create':
+      return { label: 'Alert Created', icon: '🔔', color: 'text-amber-500' };
+    case 'alert_delete':
+      return { label: 'Alert Deleted', icon: '🔕', color: 'text-gray-400' };
+    case 'listing_view':
+      return { label: 'Listing View', icon: '👁️', color: 'text-amber-600' };
+    case 'listing_impression':
+      return { label: 'Impression', icon: '📊', color: 'text-gray-400' };
     default:
       return { label: eventType, icon: '•', color: 'text-gray-500' };
   }
@@ -142,16 +158,27 @@ function getEventDescription(event: ActivityEvent): string {
     case 'page_view':
       return data.path as string || '/';
     case 'external_link_click':
+    case 'dealer_click':
       return data.dealerName as string || 'Unknown dealer';
     case 'favorite_add':
     case 'favorite_remove':
       return `Listing #${data.listingId || 'unknown'}`;
     case 'listing_view':
+    case 'listing_detail_view':
       return `#${data.listingId || 'unknown'}`;
     case 'inquiry_copy':
       return `Copied draft for #${data.listingId || 'unknown'}`;
     case 'inquiry_mailto_click':
       return `Opened email for #${data.listingId || 'unknown'}`;
+    case 'search_click':
+      return `Clicked result #${data.listingId || 'unknown'}`;
+    case 'quickview_open':
+      return `Listing #${data.listingId || 'unknown'}`;
+    case 'alert_create':
+    case 'alert_delete':
+      return data.alertName as string || '';
+    case 'listing_impression':
+      return `${data.count || ''} listings`;
     default:
       return '';
   }

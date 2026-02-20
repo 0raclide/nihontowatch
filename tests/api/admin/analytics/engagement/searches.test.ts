@@ -25,6 +25,7 @@ const mockSupabaseClient = {
     getUser: vi.fn(),
   },
   from: vi.fn(),
+  rpc: vi.fn(),
 };
 
 vi.mock('@/lib/supabase/server', () => ({
@@ -90,18 +91,38 @@ function setupCompleteMocks() {
     Promise.resolve({ data: { role: 'admin' }, error: null })
   );
 
-  // Mock data for user_searches table (new schema with direct columns)
-  const searchesBuilder = createMockQueryBuilder([
-    { query_normalized: 'katana', result_count: 50, session_id: 's1', user_id: 'u1', clicked_listing_id: null },
-    { query_normalized: 'katana', result_count: 50, session_id: 's2', user_id: 'u2', clicked_listing_id: null },
-    { query_normalized: 'tsuba', result_count: 25, session_id: 's3', user_id: 'u1', clicked_listing_id: 123 },
-    { query_normalized: 'wakizashi', result_count: 30, session_id: 's4', user_id: null, clicked_listing_id: null },
-  ], 4);
+  // Mock admin IDs query (for getAdminUserIds)
+  const adminProfilesBuilder = createMockQueryBuilder([]);
 
   mockSupabaseClient.from.mockImplementation((table: string) => {
     if (table === 'profiles') return profileBuilder;
-    if (table === 'user_searches') return searchesBuilder;
     return createMockQueryBuilder();
+  });
+
+  // Mock the RPC calls for get_top_searches and get_search_totals
+  const allSearchRows = [
+    { query_normalized: 'katana', search_count: 2, unique_users: 2, avg_results: 50, has_click: 0 },
+    { query_normalized: 'tsuba', search_count: 1, unique_users: 1, avg_results: 25, has_click: 1 },
+    { query_normalized: 'wakizashi', search_count: 1, unique_users: 1, avg_results: 30, has_click: 0 },
+  ];
+
+  mockSupabaseClient.rpc.mockImplementation((fnName: string, args?: Record<string, unknown>) => {
+    if (fnName === 'get_top_searches') {
+      const limit = (args?.p_limit as number) || 20;
+      return Promise.resolve({
+        data: allSearchRows.slice(0, limit),
+        error: null,
+      });
+    }
+    if (fnName === 'get_search_totals') {
+      return Promise.resolve({
+        data: [
+          { total_searches: 4, unique_searchers: 3, total_clicks: 1 },
+        ],
+        error: null,
+      });
+    }
+    return Promise.resolve({ data: [], error: null });
   });
 }
 
@@ -217,17 +238,17 @@ describe('GET /api/admin/analytics/engagement/searches', () => {
       expect(search).toHaveProperty('clickThroughRate');
     });
 
-    it('normalizes and aggregates duplicate queries', async () => {
+    it('returns aggregated search data from RPC', async () => {
       setupCompleteMocks();
 
       const request = createMockRequest();
       const response = await GET(request);
       const json = await response.json();
 
-      // 'katana' and 'Katana' should be normalized to same term
+      // RPC returns pre-aggregated data — katana has count 2
       const katanaSearch = json.data.searches.find((s: { term: string }) => s.term === 'katana');
       expect(katanaSearch).toBeDefined();
-      expect(katanaSearch.count).toBe(2); // Two searches for katana
+      expect(katanaSearch.count).toBe(2);
     });
   });
 

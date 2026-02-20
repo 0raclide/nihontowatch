@@ -127,89 +127,32 @@ export async function GET(request: NextRequest) {
     const thirtyDaysAgo = new Date(now.getTime() - HEAT_30_DAY_MS).toISOString();
 
     // ------------------------------------------------------------------
-    // 1. Fetch behavioral data (30-day window) — single aggregated query per source
+    // 1. Fetch behavioral data (30-day window) — single RPC call
     // ------------------------------------------------------------------
 
-    // Favorites per listing (30-day window)
     const favoriteMap = new Map<number, number>();
-    {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data } = await (supabase.from('user_favorites') as any)
-        .select('listing_id')
-        .gte('created_at', thirtyDaysAgo) as { data: { listing_id: number }[] | null };
-
-      if (data) {
-        for (const row of data) {
-          favoriteMap.set(row.listing_id, (favoriteMap.get(row.listing_id) ?? 0) + 1);
-        }
-      }
-    }
-
-    // Dealer clicks per listing (30-day window)
     const clickMap = new Map<number, number>();
-    {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data } = await (supabase.from('dealer_clicks') as any)
-        .select('listing_id')
-        .not('listing_id', 'is', null)
-        .gte('created_at', thirtyDaysAgo) as { data: { listing_id: number }[] | null };
-
-      if (data) {
-        for (const row of data) {
-          clickMap.set(row.listing_id, (clickMap.get(row.listing_id) ?? 0) + 1);
-        }
-      }
-    }
-
-    // Unique views per listing (30-day window) — listing_views already deduplicates per session/day
     const viewMap = new Map<number, number>();
-    {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data } = await (supabase.from('listing_views') as any)
-        .select('listing_id')
-        .gte('viewed_at', thirtyDaysAgo) as { data: { listing_id: number }[] | null };
-
-      if (data) {
-        for (const row of data) {
-          viewMap.set(row.listing_id, (viewMap.get(row.listing_id) ?? 0) + 1);
-        }
-      }
-    }
-
-    // QuickView opens per listing (30-day window)
     const quickviewMap = new Map<number, number>();
-    {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data } = await (supabase.from('activity_events') as any)
-        .select('event_data')
-        .eq('event_type', 'quickview_open')
-        .gte('created_at', thirtyDaysAgo) as { data: { event_data: { listingId?: number } }[] | null };
-
-      if (data) {
-        for (const row of data) {
-          const listingId = row.event_data?.listingId;
-          if (listingId) {
-            quickviewMap.set(listingId, (quickviewMap.get(listingId) ?? 0) + 1);
-          }
-        }
-      }
-    }
-
-    // Pinch zooms per listing (30-day window)
     const pinchZoomMap = new Map<number, number>();
+
     {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data } = await (supabase.from('activity_events') as any)
-        .select('event_data')
-        .eq('event_type', 'image_pinch_zoom')
-        .gte('created_at', thirtyDaysAgo) as { data: { event_data: { listingId?: number } }[] | null };
+      const { data: engagement, error: engErr } = await (supabase.rpc as any)(
+        'get_listing_engagement_counts',
+        { p_since: thirtyDaysAgo }
+      );
 
-      if (data) {
-        for (const row of data) {
-          const listingId = row.event_data?.listingId;
-          if (listingId) {
-            pinchZoomMap.set(listingId, (pinchZoomMap.get(listingId) ?? 0) + 1);
-          }
+      if (engErr) {
+        logger.error('[featured-scores] Engagement RPC error', { error: engErr });
+      } else if (engagement) {
+        for (const row of engagement as { listing_id: number; favorites: number; dealer_clicks: number; views: number; quickview_opens: number; pinch_zooms: number }[]) {
+          if (!row.listing_id) continue;
+          if (row.favorites > 0) favoriteMap.set(row.listing_id, row.favorites);
+          if (row.dealer_clicks > 0) clickMap.set(row.listing_id, row.dealer_clicks);
+          if (row.views > 0) viewMap.set(row.listing_id, row.views);
+          if (row.quickview_opens > 0) quickviewMap.set(row.listing_id, row.quickview_opens);
+          if (row.pinch_zooms > 0) pinchZoomMap.set(row.listing_id, row.pinch_zooms);
         }
       }
     }

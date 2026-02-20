@@ -16,8 +16,8 @@ import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import type { AnalyticsAPIResponse } from '@/types/analytics';
+import { verifyAdmin } from '@/lib/admin/auth';
 import {
-  verifyAdmin,
   parsePeriodParam,
   parseLimitParam,
   calculatePeriodDates,
@@ -81,8 +81,9 @@ export async function GET(request: NextRequest): Promise<NextResponse<AnalyticsA
 
     // 1. Verify admin authentication
     const authResult = await verifyAdmin(supabase);
-    if (!authResult.success) {
-      return authResult.response as NextResponse<AnalyticsAPIResponse<SearchesData>>;
+    if (!authResult.isAdmin) {
+      return errorResponse(authResult.error === 'unauthorized' ? 'Unauthorized' : 'Forbidden',
+        authResult.error === 'unauthorized' ? 401 : 403);
     }
 
     // 2. Parse query parameters
@@ -91,116 +92,63 @@ export async function GET(request: NextRequest): Promise<NextResponse<AnalyticsA
     const limit = parseLimitParam(searchParams);
     const { startDate, endDate } = calculatePeriodDates(period);
 
-    // 3. Fetch search data from user_searches table
-    // This dedicated table provides cleaner access with direct columns
-    const { data: searchEvents, error: searchError } = await supabase
-      .from('user_searches')
-      .select('query_normalized, result_count, session_id, user_id, clicked_listing_id')
-      .gte('searched_at', startDate.toISOString())
-      .lte('searched_at', endDate.toISOString())
-      .limit(50000); // Cap for performance
+    // 3. Get admin user IDs for filtering
+    const adminIds = await getAdminUserIds(supabase);
 
-    if (searchError) {
-      logger.error('Searches query error', { error: searchError });
+    // 4. Fetch search data and totals via RPC (SQL aggregation, no row limit)
+    const startISO = startDate.toISOString();
+    const endISO = endDate.toISOString();
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const rpc = supabase.rpc as any;
+    const [topSearchesResult, totalsResult] = await Promise.all([
+      rpc('get_top_searches', {
+        p_start: startISO,
+        p_end: endISO,
+        p_admin_ids: adminIds,
+        p_limit: limit,
+      }),
+      rpc('get_search_totals', {
+        p_start: startISO,
+        p_end: endISO,
+        p_admin_ids: adminIds,
+      }),
+    ]);
+
+    if (topSearchesResult.error) {
+      logger.error('Top searches RPC error', { error: topSearchesResult.error });
       return errorResponse('Failed to fetch search data', 500);
     }
 
-    // 4. Aggregate searches by normalized query
-    const searchesByTerm = new Map<string, {
-      count: number;
-      users: Set<string>;
-      sessions: Set<string>;
-      totalResults: number;
-      clicks: number;
-    }>();
-
-    let totalSearches = 0;
-    const allUsers = new Set<string>();
-    let totalClicks = 0;
-
-    type SearchRow = {
+    // 5. Transform RPC results
+    type TopSearchRow = {
       query_normalized: string;
-      result_count: number | null;
-      session_id: string;
-      user_id: string | null;
-      clicked_listing_id: number | null;
+      search_count: number;
+      unique_users: number;
+      avg_results: number | null;
+      has_click: number;
     };
-    // Filter out admin user activity
-    const adminIds = await getAdminUserIds(supabase);
-    const searchData = ((searchEvents || []) as SearchRow[]).filter(
-      s => !s.user_id || !adminIds.includes(s.user_id)
-    );
 
-    for (const search of searchData) {
-      const normalizedQuery = search.query_normalized;
-      if (!normalizedQuery || normalizedQuery.trim() === '') continue;
-
-      totalSearches++;
-
-      // Track unique users
-      if (search.user_id) {
-        allUsers.add(search.user_id);
-      }
-
-      // Get or create aggregation entry
-      let termData = searchesByTerm.get(normalizedQuery);
-      if (!termData) {
-        termData = {
-          count: 0,
-          users: new Set<string>(),
-          sessions: new Set<string>(),
-          totalResults: 0,
-          clicks: 0,
-        };
-        searchesByTerm.set(normalizedQuery, termData);
-      }
-
-      termData.count++;
-      if (search.user_id) {
-        termData.users.add(search.user_id);
-      }
-      if (search.session_id) {
-        termData.sessions.add(search.session_id);
-      }
-
-      // Track result count - direct column access
-      if (typeof search.result_count === 'number') {
-        termData.totalResults += search.result_count;
-      }
-
-      // Track if a click followed this search - clicked_listing_id is set when user clicks
-      if (search.clicked_listing_id !== null) {
-        termData.clicks++;
-        totalClicks++;
-      }
-    }
-
-    // 5. Convert to sorted array
-    const searchesArray: SearchTermData[] = [];
-
-    for (const [term, data] of searchesByTerm.entries()) {
-      const avgResultCount = roundTo(safeDivide(data.totalResults, data.count), 1);
-      const clickThroughRate = roundTo(safeDivide(data.clicks, data.count) * 100, 1);
-
-      searchesArray.push({
-        term,
-        count: data.count,
-        uniqueUsers: data.users.size,
-        avgResultCount,
-        clickThroughRate,
-      });
-    }
-
-    // Sort by count descending and take top N
-    searchesArray.sort((a, b) => b.count - a.count);
-    const topSearches = searchesArray.slice(0, limit);
+    const topSearches: SearchTermData[] = ((topSearchesResult.data || []) as TopSearchRow[]).map(row => ({
+      term: row.query_normalized,
+      count: Number(row.search_count),
+      uniqueUsers: Number(row.unique_users),
+      avgResultCount: roundTo(Number(row.avg_results || 0), 1),
+      clickThroughRate: Number(row.search_count) > 0
+        ? roundTo(safeDivide(Number(row.has_click), Number(row.search_count)) * 100, 1)
+        : 0,
+    }));
 
     // 6. Calculate totals
+    type TotalsRow = { total_searches: number; unique_searchers: number; total_clicks: number };
+    const totalsRow = ((totalsResult.data || []) as TotalsRow[])[0] || { total_searches: 0, unique_searchers: 0, total_clicks: 0 };
+    const totalSearches = Number(totalsRow.total_searches);
+    const totalClicks = Number(totalsRow.total_clicks);
     const avgClickThroughRate = roundTo(safeDivide(totalClicks, totalSearches) * 100, 1);
 
     const totals: SearchesTotals = {
       totalSearches,
-      uniqueSearchers: allUsers.size,
+      uniqueSearchers: Number(totalsRow.unique_searchers),
       avgClickThroughRate,
     };
 

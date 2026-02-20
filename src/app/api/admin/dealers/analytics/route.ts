@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
+import { verifyAdmin } from '@/lib/admin/auth';
+import { apiUnauthorized, apiForbidden } from '@/lib/api/responses';
 
 export const dynamic = 'force-dynamic';
 
@@ -67,9 +69,9 @@ export async function GET(request: NextRequest) {
     const supabase = await createClient();
 
     // Check admin auth
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const authResult = await verifyAdmin(supabase);
+    if (!authResult.isAdmin) {
+      return authResult.error === 'unauthorized' ? apiUnauthorized() : apiForbidden();
     }
 
     // Get time range from query params
@@ -104,206 +106,162 @@ export async function GET(request: NextRequest) {
     const periodEndISO = now.toISOString();
     const previousPeriodStartISO = previousPeriodStart.toISOString();
 
-    // Fetch all data in parallel for better performance
+    // Fetch all data in parallel — RPC for event aggregation, direct query for dealers/listings
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const rpc = supabase.rpc as any;
     const [
       dealersResult,
-      clickEventsResult,
-      prevClickEventsResult,
-      dwellEventsResult,
-      favoriteEventsResult,
+      clickStatsResult,
+      prevClickStatsResult,
+      dwellStatsResult,
+      favoriteStatsResult,
+      dailyClicksResult,
       listingStatsResult,
-      listingDealerMapResult,
     ] = await Promise.all([
-      // Fetch all dealers
       supabase
         .from('dealers')
         .select('id, name, domain, is_active')
         .eq('is_active', true)
         .order('name'),
 
-      // Fetch activity events for the period (click-throughs)
-      supabase
-        .from('activity_events')
-        .select('visitor_id, event_data, created_at')
-        .eq('event_type', 'external_link_click')
-        .gte('created_at', periodStartISO)
-        .order('created_at', { ascending: false })
-        .limit(10000),
+      rpc('get_dealer_click_stats', {
+        p_start: periodStartISO,
+        p_end: periodEndISO,
+      }),
 
-      // Fetch previous period clicks for trend comparison
-      supabase
-        .from('activity_events')
-        .select('event_data')
-        .eq('event_type', 'external_link_click')
-        .gte('created_at', previousPeriodStartISO)
-        .lt('created_at', periodStartISO)
-        .limit(10000),
+      rpc('get_dealer_click_stats_prev', {
+        p_start: previousPeriodStartISO,
+        p_end: periodStartISO,
+      }),
 
-      // Fetch viewport dwell events (engagement)
-      supabase
-        .from('activity_events')
-        .select('event_data, created_at')
-        .eq('event_type', 'viewport_dwell')
-        .gte('created_at', periodStartISO)
-        .limit(20000),
+      rpc('get_dealer_dwell_stats', {
+        p_start: periodStartISO,
+        p_end: periodEndISO,
+      }),
 
-      // Fetch favorites
-      supabase
-        .from('activity_events')
-        .select('event_data')
-        .eq('event_type', 'favorite_add')
-        .gte('created_at', periodStartISO)
-        .limit(5000),
+      rpc('get_dealer_favorite_stats', {
+        p_start: periodStartISO,
+        p_end: periodEndISO,
+      }),
 
-      // Fetch listing counts and values per dealer
+      rpc('get_dealer_daily_clicks', {
+        p_start: periodStartISO,
+        p_end: periodEndISO,
+      }),
+
       supabase
         .from('listings')
         .select('dealer_id, price_jpy')
-        .eq('is_available', true),
-
-      // Build dealer-to-listing mapping for dwell/favorite events
-      supabase
-        .from('listings')
-        .select('id, dealer_id'),
+        .eq('is_available', true)
+        .limit(100000),
     ]);
 
-    // Handle errors
     if (dealersResult.error) {
       logger.error('Error fetching dealers', { error: dealersResult.error });
       return NextResponse.json({ error: 'Database error' }, { status: 500 });
     }
 
-    if (clickEventsResult.error) {
-      logger.error('Error fetching click events', { error: clickEventsResult.error });
-      return NextResponse.json({ error: 'Database error' }, { status: 500 });
-    }
-
-    // Extract data from results with explicit types for better inference
-    type EventData = { dealerName?: string; listingId?: number; dwellMs?: number };
-    type ActivityEvent = { visitor_id: string | null; event_data: EventData | null; created_at: string };
-
     const dealers = dealersResult.data as { id: number; name: string; domain: string; is_active: boolean }[] | null;
-    const clickEvents = clickEventsResult.data as ActivityEvent[] | null;
-    const prevClickEvents = prevClickEventsResult.data as { event_data: EventData | null }[] | null;
-    const dwellEvents = dwellEventsResult.data as { event_data: EventData | null; created_at: string }[] | null;
-    const favoriteEvents = favoriteEventsResult.data as { event_data: EventData | null }[] | null;
-    const listingStats = listingStatsResult.data as { dealer_id: number; price_jpy: number | null }[] | null;
-    const listingDealerMap = listingDealerMapResult.data as { id: number; dealer_id: number }[] | null;
 
-    const listingToDealer: Record<number, number> = {};
-    (listingDealerMap || []).forEach((l) => {
-      listingToDealer[l.id] = l.dealer_id;
-    });
+    type ClickRow = { dealer_name: string; dealer_id: number | null; clicks: number; unique_visitors: number };
+    type PrevClickRow = { dealer_name: string; dealer_id: number | null; clicks: number };
+    type DwellRow = { dealer_id: number; total_dwell_seconds: number };
+    type FavRow = { dealer_id: number; favorites: number };
+    type DailyClickRow = { click_date: string; dealer_name: string; clicks: number };
+
+    const clickStats = (clickStatsResult.data || []) as ClickRow[];
+    const prevClickStats = (prevClickStatsResult.data || []) as PrevClickRow[];
+    const dwellStats = (dwellStatsResult.data || []) as DwellRow[];
+    const favStats = (favoriteStatsResult.data || []) as FavRow[];
+    const dailyClicks = (dailyClicksResult.data || []) as DailyClickRow[];
+    const listingStats = (listingStatsResult.data || []) as { dealer_id: number; price_jpy: number | null }[];
+
+    // Build lookup maps by dealer name → dealer id (for click stats that use dealerName)
+    const dealerByName = new Map<string, { id: number; name: string; domain: string }>();
+    for (const d of dealers || []) {
+      dealerByName.set(d.name, d);
+    }
 
     // Process data by dealer
     const dealerMap = new Map<number, {
       clicks: number;
-      uniqueVisitors: Set<string>;
+      uniqueVisitors: number;
       dwellMs: number;
       dwellCount: number;
       favorites: number;
       alerts: number;
       activeListings: number;
       totalValue: number;
-      dailyClicks: Map<string, number>;
     }>();
 
     // Initialize all dealers
     for (const dealer of dealers || []) {
       dealerMap.set(dealer.id, {
         clicks: 0,
-        uniqueVisitors: new Set(),
+        uniqueVisitors: 0,
         dwellMs: 0,
         dwellCount: 0,
         favorites: 0,
         alerts: 0,
         activeListings: 0,
         totalValue: 0,
-        dailyClicks: new Map(),
       });
     }
 
-    // Process clicks
-    const dailyTotals = new Map<string, { clicks: number; views: number; byDealer: Record<string, number> }>();
-
-    for (const event of clickEvents || []) {
-      const dealerName = event.event_data?.dealerName;
-      if (!dealerName) continue;
-
-      // Find dealer by name
-      const dealer = (dealers || []).find((d: { name: string }) => d.name === dealerName);
-      if (!dealer) continue;
-
-      const stats = dealerMap.get(dealer.id);
+    // Process click stats from RPC
+    for (const row of clickStats) {
+      const did = row.dealer_id ?? dealerByName.get(row.dealer_name)?.id;
+      if (!did) continue;
+      const stats = dealerMap.get(did);
       if (stats) {
-        stats.clicks++;
-        if (event.visitor_id) {
-          stats.uniqueVisitors.add(event.visitor_id);
-        }
-
-        // Daily tracking
-        const dateKey = event.created_at.slice(0, 10);
-        stats.dailyClicks.set(dateKey, (stats.dailyClicks.get(dateKey) || 0) + 1);
-
-        // Overall daily tracking
-        if (!dailyTotals.has(dateKey)) {
-          dailyTotals.set(dateKey, { clicks: 0, views: 0, byDealer: {} });
-        }
-        const dayStats = dailyTotals.get(dateKey)!;
-        dayStats.clicks++;
-        dayStats.byDealer[dealerName] = (dayStats.byDealer[dealerName] || 0) + 1;
+        stats.clicks = Number(row.clicks);
+        stats.uniqueVisitors = Number(row.unique_visitors);
       }
     }
 
     // Process previous period clicks for trend
     const prevClicksByDealer = new Map<number, number>();
-    for (const event of prevClickEvents || []) {
-      const dealerName = event.event_data?.dealerName;
-      if (!dealerName) continue;
-      const dealer = (dealers || []).find((d: { name: string }) => d.name === dealerName);
-      if (dealer) {
-        prevClicksByDealer.set(dealer.id, (prevClicksByDealer.get(dealer.id) || 0) + 1);
+    for (const row of prevClickStats) {
+      const did = row.dealer_id ?? dealerByName.get(row.dealer_name)?.id;
+      if (did) {
+        prevClicksByDealer.set(did, Number(row.clicks));
       }
     }
 
-    // Process dwell events
-    for (const event of dwellEvents || []) {
-      const listingId = event.event_data?.listingId;
-      const dwellMs = event.event_data?.dwellMs || 0;
-      if (!listingId) continue;
-
-      const dealerIdForListing = listingToDealer[listingId];
-      if (dealerIdForListing) {
-        const stats = dealerMap.get(dealerIdForListing);
-        if (stats) {
-          stats.dwellMs += dwellMs;
-          stats.dwellCount++;
-
-          // Count as a "view" in daily totals
-          const dateKey = event.created_at.slice(0, 10);
-          if (dailyTotals.has(dateKey)) {
-            dailyTotals.get(dateKey)!.views++;
-          }
-        }
+    // Process dwell stats from RPC
+    for (const row of dwellStats) {
+      const stats = dealerMap.get(row.dealer_id);
+      if (stats) {
+        stats.dwellMs = Number(row.total_dwell_seconds) * 1000;
+        stats.dwellCount = 1; // dwell is now total seconds, not row count
       }
     }
 
-    // Process favorites
-    for (const event of favoriteEvents || []) {
-      const listingId = event.event_data?.listingId;
-      if (!listingId) continue;
+    // Process favorites from RPC
+    for (const row of favStats) {
+      const stats = dealerMap.get(row.dealer_id);
+      if (stats) {
+        stats.favorites = Number(row.favorites);
+      }
+    }
 
-      const dealerIdForListing = listingToDealer[listingId];
-      if (dealerIdForListing) {
-        const stats = dealerMap.get(dealerIdForListing);
-        if (stats) {
-          stats.favorites++;
-        }
+    // Build daily trend from RPC
+    const dailyTotals = new Map<string, { clicks: number; views: number; byDealer: Record<string, number> }>();
+    for (const row of dailyClicks) {
+      const dateKey = String(row.click_date);
+      if (!dailyTotals.has(dateKey)) {
+        dailyTotals.set(dateKey, { clicks: 0, views: 0, byDealer: {} });
+      }
+      const dayStats = dailyTotals.get(dateKey)!;
+      const n = Number(row.clicks);
+      dayStats.clicks += n;
+      if (row.dealer_name) {
+        dayStats.byDealer[row.dealer_name] = (dayStats.byDealer[row.dealer_name] || 0) + n;
       }
     }
 
     // Process listing stats
-    for (const listing of listingStats || []) {
+    for (const listing of listingStats) {
       const stats = dealerMap.get(listing.dealer_id);
       if (stats) {
         stats.activeListings++;
@@ -335,7 +293,7 @@ export async function GET(request: NextRequest) {
         dealerName: dealer.name,
         domain: dealer.domain,
         clickThroughs: stats.clicks,
-        uniqueVisitors: stats.uniqueVisitors.size,
+        uniqueVisitors: stats.uniqueVisitors,
         listingViews: stats.dwellCount,
         favorites: stats.favorites,
         alerts: stats.alerts,

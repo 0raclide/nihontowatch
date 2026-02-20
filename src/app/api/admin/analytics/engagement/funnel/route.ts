@@ -28,8 +28,8 @@ import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import type { AnalyticsAPIResponse } from '@/types/analytics';
+import { verifyAdmin } from '@/lib/admin/auth';
 import {
-  verifyAdmin,
   parsePeriodParam,
   calculatePeriodDates,
   successResponse,
@@ -104,8 +104,9 @@ export async function GET(request: NextRequest): Promise<NextResponse<AnalyticsA
 
     // 1. Verify admin authentication
     const authResult = await verifyAdmin(supabase);
-    if (!authResult.success) {
-      return authResult.response as NextResponse<AnalyticsAPIResponse<FunnelData>>;
+    if (!authResult.isAdmin) {
+      return errorResponse(authResult.error === 'unauthorized' ? 'Unauthorized' : 'Forbidden',
+        authResult.error === 'unauthorized' ? 401 : 403);
     }
 
     // 2. Parse query parameters
@@ -136,7 +137,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<AnalyticsA
         .select('id, user_id')
         .gte('started_at', start)
         .lte('started_at', end)
-        .limit(50000),
+        .limit(100000),
 
       // Stage 2: Searched — unique sessions that searched
       supabase

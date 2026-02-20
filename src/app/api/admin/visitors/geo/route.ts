@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
+import { verifyAdmin } from '@/lib/admin/auth';
+import { apiUnauthorized, apiForbidden } from '@/lib/api/responses';
 
 export const dynamic = 'force-dynamic';
 
@@ -99,9 +101,9 @@ export async function POST(request: NextRequest) {
     const supabase = await createClient();
 
     // Check admin auth
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const authResult = await verifyAdmin(supabase);
+    if (!authResult.isAdmin) {
+      return authResult.error === 'unauthorized' ? apiUnauthorized() : apiForbidden();
     }
 
     const body = await request.json();

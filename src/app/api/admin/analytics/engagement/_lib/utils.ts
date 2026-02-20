@@ -16,13 +16,6 @@ import type { AnalyticsPeriod, AnalyticsGranularity, AnalyticsAPIResponse } from
 // =============================================================================
 
 /**
- * Result of admin verification
- */
-export type AdminVerifyResult =
-  | { success: true; userId: string }
-  | { success: false; response: NextResponse };
-
-/**
  * Date range with comparison period
  */
 export interface PeriodDateRange {
@@ -37,49 +30,8 @@ export interface PeriodDateRange {
 // AUTHENTICATION
 // =============================================================================
 
-/**
- * Verify that the current user has admin privileges.
- *
- * Checks:
- * 1. User is authenticated
- * 2. User has 'admin' role in profiles table
- *
- * @param supabase - Supabase client instance
- * @returns AdminVerifyResult with either success and userId, or failure with response
- */
-export async function verifyAdmin(
-  supabase: Awaited<ReturnType<typeof createClient>>
-): Promise<AdminVerifyResult> {
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
-    return {
-      success: false,
-      response: NextResponse.json(
-        { success: false, error: 'Unauthorized', timestamp: new Date().toISOString() },
-        { status: 401 }
-      ),
-    };
-  }
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single<{ role: string }>();
-
-  if (profile?.role !== 'admin') {
-    return {
-      success: false,
-      response: NextResponse.json(
-        { success: false, error: 'Forbidden', timestamp: new Date().toISOString() },
-        { status: 403 }
-      ),
-    };
-  }
-
-  return { success: true, userId: user.id };
-}
+// Use the canonical verifyAdmin from '@/lib/admin/auth' instead.
+// See: src/lib/admin/auth.ts
 
 // =============================================================================
 // ADMIN USER FILTERING

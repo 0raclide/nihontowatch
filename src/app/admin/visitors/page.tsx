@@ -97,6 +97,7 @@ type TimeRange = '24h' | '7d' | '30d' | '90d';
 const EVENT_TYPE_LABELS: Record<string, string> = {
   page_view: 'Page Views',
   external_link_click: 'Dealer Clicks',
+  dealer_click: 'Dealer Click',
   filter_change: 'Filter Changes',
   search: 'Searches',
   viewport_dwell: 'Card Views',
@@ -106,6 +107,13 @@ const EVENT_TYPE_LABELS: Record<string, string> = {
   favorite_remove: 'Favorites Removed',
   inquiry_copy: 'Drafts Copied',
   inquiry_mailto_click: 'Email App Opened',
+  listing_detail_view: 'Listing Detail View',
+  search_click: 'Search Click',
+  quickview_open: 'Quick View Open',
+  alert_create: 'Alert Created',
+  alert_delete: 'Alert Deleted',
+  listing_view: 'Listing View',
+  listing_impression: 'Listing Impression',
 };
 
 export default function VisitorsPage() {

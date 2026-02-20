@@ -16,8 +16,8 @@ import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import type { AnalyticsAPIResponse, AnalyticsGranularity } from '@/types/analytics';
+import { verifyAdmin } from '@/lib/admin/auth';
 import {
-  verifyAdmin,
   parsePeriodParam,
   parseGranularityParam,
   calculatePeriodDates,
@@ -146,8 +146,9 @@ export async function GET(request: NextRequest): Promise<NextResponse<AnalyticsA
 
     // 1. Verify admin authentication
     const authResult = await verifyAdmin(supabase);
-    if (!authResult.success) {
-      return authResult.response as NextResponse<AnalyticsAPIResponse<GrowthData>>;
+    if (!authResult.isAdmin) {
+      return errorResponse(authResult.error === 'unauthorized' ? 'Unauthorized' : 'Forbidden',
+        authResult.error === 'unauthorized' ? 401 : 403);
     }
 
     // 2. Parse query parameters

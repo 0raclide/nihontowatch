@@ -25,6 +25,7 @@ const mockSupabaseClient = {
     getUser: vi.fn(),
   },
   from: vi.fn(),
+  rpc: vi.fn(),
 };
 
 vi.mock('@/lib/supabase/server', () => ({
@@ -91,21 +92,8 @@ function setupCompleteMocks() {
     Promise.resolve({ data: { role: 'admin' }, error: null })
   );
 
-  // Mock view events
-  const viewEventsBuilder = createMockQueryBuilder([
-    { event_data: { listing_id: 1 }, session_id: 's1', user_id: 'u1' },
-    { event_data: { listing_id: 1 }, session_id: 's2', user_id: 'u2' },
-    { event_data: { listing_id: 1 }, session_id: 's3', user_id: null },
-    { event_data: { listing_id: 2 }, session_id: 's1', user_id: 'u1' },
-    { event_data: { listing_id: 3 }, session_id: 's4', user_id: 'u3' },
-  ], 5);
-
-  // Mock favorites
-  const favoritesBuilder = createMockQueryBuilder([
-    { listing_id: 2 },
-    { listing_id: 2 },
-    { listing_id: 1 },
-  ], 3);
+  // Mock admin IDs query (for getAdminUserIds)
+  const adminProfilesBuilder = createMockQueryBuilder([]);
 
   // Mock listings with dealer join
   const listingsBuilder = createMockQueryBuilder([
@@ -116,10 +104,23 @@ function setupCompleteMocks() {
 
   mockSupabaseClient.from.mockImplementation((table: string) => {
     if (table === 'profiles') return profileBuilder;
-    if (table === 'activity_events') return viewEventsBuilder;
-    if (table === 'user_favorites') return favoritesBuilder;
     if (table === 'listings') return listingsBuilder;
     return createMockQueryBuilder();
+  });
+
+  // Mock the get_top_listings RPC call
+  mockSupabaseClient.rpc.mockImplementation((fnName: string) => {
+    if (fnName === 'get_top_listings') {
+      return Promise.resolve({
+        data: [
+          { listing_id: 1, view_count: 3, unique_viewers: 3, favorite_count: 1 },
+          { listing_id: 2, view_count: 1, unique_viewers: 1, favorite_count: 2 },
+          { listing_id: 3, view_count: 1, unique_viewers: 1, favorite_count: 0 },
+        ],
+        error: null,
+      });
+    }
+    return Promise.resolve({ data: [], error: null });
   });
 }
 
@@ -359,6 +360,11 @@ describe('GET /api/admin/analytics/engagement/top-listings', () => {
       mockSupabaseClient.from.mockImplementation((table: string) => {
         if (table === 'profiles') return profileBuilder;
         return emptyBuilder;
+      });
+
+      // Mock RPC to return empty results
+      mockSupabaseClient.rpc.mockImplementation(() => {
+        return Promise.resolve({ data: [], error: null });
       });
 
       const request = createMockRequest();

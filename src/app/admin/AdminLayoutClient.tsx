@@ -107,18 +107,12 @@ export default function AdminLayoutClient({ children }: AdminLayoutClientProps) 
   const breadcrumbs = getBreadcrumbs(pathname);
   const { user, isAdmin, isLoading } = useAuth();
 
-  console.log('[AdminLayout] Auth state:', { isLoading, hasUser: !!user, isAdmin });
-
   useEffect(() => {
     if (!isLoading) {
       if (!user) {
-        console.log('[AdminLayout] No user, redirecting to login');
         router.push('/?login=admin');
       } else if (!isAdmin) {
-        console.log('[AdminLayout] Not admin, redirecting to home');
         router.push('/');
-      } else {
-        console.log('[AdminLayout] Admin access confirmed');
       }
     }
   }, [user, isAdmin, isLoading, router]);

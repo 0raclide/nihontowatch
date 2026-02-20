@@ -16,8 +16,8 @@ import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import type { AnalyticsAPIResponse } from '@/types/analytics';
+import { verifyAdmin } from '@/lib/admin/auth';
 import {
-  verifyAdmin,
   parsePeriodParam,
   parseLimitParam,
   parseSortByParam,
@@ -65,8 +65,9 @@ export async function GET(request: NextRequest): Promise<NextResponse<AnalyticsA
 
     // 1. Verify admin authentication
     const authResult = await verifyAdmin(supabase);
-    if (!authResult.success) {
-      return authResult.response as NextResponse<AnalyticsAPIResponse<TopListingsData>>;
+    if (!authResult.isAdmin) {
+      return errorResponse(authResult.error === 'unauthorized' ? 'Unauthorized' : 'Forbidden',
+        authResult.error === 'unauthorized' ? 401 : 403);
     }
 
     // 2. Parse query parameters
@@ -76,81 +77,28 @@ export async function GET(request: NextRequest): Promise<NextResponse<AnalyticsA
     const sortBy = parseSortByParam(searchParams, ['views', 'favorites'] as const, 'views');
     const { startDate, endDate } = calculatePeriodDates(period);
 
-    // 3. Get listing views from listing_views table
-    const { data: viewEvents, error: viewError } = await supabase
-      .from('listing_views')
-      .select('listing_id, session_id, user_id')
-      .gte('viewed_at', startDate.toISOString())
-      .lte('viewed_at', endDate.toISOString())
-      .limit(50000);
+    // 3. Get admin user IDs for filtering
+    const adminIds = await getAdminUserIds(supabase);
 
-    if (viewError) {
-      logger.error('Top listings view query error', { error: viewError });
+    // 4. Fetch top listings via RPC (SQL aggregation, no row limit)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: rpcData, error: rpcError } = await (supabase.rpc as any)('get_top_listings', {
+      p_start: startDate.toISOString(),
+      p_end: endDate.toISOString(),
+      p_admin_ids: adminIds,
+      p_limit: limit * 2, // fetch extra to handle favorites sort
+    });
+
+    if (rpcError) {
+      logger.error('Top listings RPC error', { error: rpcError });
       return errorResponse('Failed to fetch view data', 500);
     }
 
-    // 4. Aggregate views by listing_id
-    const viewsByListing = new Map<number, {
-      views: number;
-      uniqueViewers: Set<string>;
-    }>();
+    // 5. Build metrics from RPC results
+    type RpcRow = { listing_id: number; view_count: number; unique_viewers: number; favorite_count: number };
+    const rpcRows = (rpcData || []) as RpcRow[];
 
-    type ViewRow = {
-      listing_id: number;
-      session_id: string;
-      user_id: string | null;
-    };
-    // Filter out admin user activity
-    const adminIds = await getAdminUserIds(supabase);
-    const viewsData = ((viewEvents || []) as ViewRow[]).filter(
-      v => !v.user_id || !adminIds.includes(v.user_id)
-    );
-
-    for (const view of viewsData) {
-      const listingId = view.listing_id;
-      if (typeof listingId !== 'number') continue;
-
-      let listingData = viewsByListing.get(listingId);
-      if (!listingData) {
-        listingData = { views: 0, uniqueViewers: new Set<string>() };
-        viewsByListing.set(listingId, listingData);
-      }
-
-      listingData.views++;
-      // Use session_id for unique viewer tracking (handles anonymous users)
-      if (view.session_id) {
-        listingData.uniqueViewers.add(view.session_id);
-      } else if (view.user_id) {
-        listingData.uniqueViewers.add(view.user_id);
-      }
-    }
-
-    // 5. Get favorites for the period
-    const { data: favoriteData, error: favoriteError } = await supabase
-      .from('user_favorites')
-      .select('listing_id')
-      .gte('created_at', startDate.toISOString())
-      .lte('created_at', endDate.toISOString());
-
-    if (favoriteError) {
-      logger.error('Top listings favorites query error', { error: favoriteError });
-    }
-
-    // Aggregate favorites by listing_id
-    const favoritesByListing = new Map<number, number>();
-    const favoritesData = (favoriteData || []) as Array<{ listing_id: number }>;
-    for (const fav of favoritesData) {
-      const listingId = fav.listing_id;
-      favoritesByListing.set(listingId, (favoritesByListing.get(listingId) || 0) + 1);
-    }
-
-    // 6. Combine all unique listing IDs
-    const allListingIds = new Set<number>([
-      ...viewsByListing.keys(),
-      ...favoritesByListing.keys(),
-    ]);
-
-    if (allListingIds.size === 0) {
+    if (rpcRows.length === 0) {
       return successResponse({
         listings: [],
         period,
@@ -158,23 +106,20 @@ export async function GET(request: NextRequest): Promise<NextResponse<AnalyticsA
       }, 300);
     }
 
-    // 7. Sort listings by the chosen metric
-    const listingsWithMetrics = Array.from(allListingIds).map((id) => ({
-      id,
-      views: viewsByListing.get(id)?.views || 0,
-      uniqueViewers: viewsByListing.get(id)?.uniqueViewers.size || 0,
-      favorites: favoritesByListing.get(id) || 0,
+    // Sort by chosen metric and take top N
+    let listingsWithMetrics = rpcRows.map(row => ({
+      id: Number(row.listing_id),
+      views: Number(row.view_count),
+      uniqueViewers: Number(row.unique_viewers),
+      favorites: Number(row.favorite_count),
     }));
 
-    listingsWithMetrics.sort((a, b) => {
-      if (sortBy === 'favorites') {
-        return b.favorites - a.favorites;
-      }
-      return b.views - a.views;
-    });
+    if (sortBy === 'favorites') {
+      listingsWithMetrics.sort((a, b) => b.favorites - a.favorites);
+    }
+    listingsWithMetrics = listingsWithMetrics.slice(0, limit);
 
-    // Take top N
-    const topListingIds = listingsWithMetrics.slice(0, limit).map((l) => l.id);
+    const topListingIds = listingsWithMetrics.map((l) => l.id);
 
     // 8. Fetch listing details from database
     const { data: listings, error: listingsError } = await supabase
