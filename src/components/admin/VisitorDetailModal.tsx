@@ -118,6 +118,10 @@ function getEventDisplay(eventType: string): { label: string; icon: string; colo
       return { label: 'Dwell', icon: '⏱️', color: 'text-gray-400' };
     case 'quickview_panel_toggle':
       return { label: 'Panel Toggle', icon: '📸', color: 'text-indigo-500' };
+    case 'inquiry_copy':
+      return { label: 'Copied Draft', icon: '📋', color: 'text-green-600' };
+    case 'inquiry_mailto_click':
+      return { label: 'Opened Email', icon: '📧', color: 'text-green-700' };
     default:
       return { label: eventType, icon: '•', color: 'text-gray-500' };
   }
@@ -144,6 +148,10 @@ function getEventDescription(event: ActivityEvent): string {
       return `Listing #${data.listingId || 'unknown'}`;
     case 'listing_view':
       return `#${data.listingId || 'unknown'}`;
+    case 'inquiry_copy':
+      return `Copied draft for #${data.listingId || 'unknown'}`;
+    case 'inquiry_mailto_click':
+      return `Opened email for #${data.listingId || 'unknown'}`;
     default:
       return '';
   }

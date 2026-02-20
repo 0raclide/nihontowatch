@@ -19,7 +19,7 @@ interface ConversionFunnelChartProps {
  * Skeleton for funnel chart loading state
  */
 function FunnelSkeleton({ height }: { height: number }) {
-  const skeletonStages = [100, 75, 55, 40, 28, 18, 8];
+  const skeletonStages = [100, 75, 55, 40, 28, 18, 10, 5];
 
   return (
     <div

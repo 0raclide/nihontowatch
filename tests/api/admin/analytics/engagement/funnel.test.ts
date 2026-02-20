@@ -3,6 +3,16 @@
  *
  * Tests the /api/admin/analytics/engagement/funnel endpoint.
  * Verifies authentication, response structure, and funnel calculations.
+ *
+ * The funnel has 8 stages, all normalized to unique users/visitors:
+ *   1. Visitors (sessions)
+ *   2. Searched (sessions that searched)
+ *   3. Viewed Listing (sessions that opened a listing)
+ *   4. Signed Up (accounts created)
+ *   5. Favorited (users who favorited, from user_favorites table)
+ *   6. Saved Search (users who created saved searches)
+ *   7. Clicked to Dealer (visitors who clicked through to dealer website)
+ *   8. Generated Draft (users who generated inquiry email drafts)
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
@@ -90,7 +100,7 @@ function setupCompleteMocks() {
     Promise.resolve({ data: { role: 'admin' }, error: null })
   );
 
-  // Mock session rows (visitors) — now fetched as full rows with user_id for admin filtering
+  // Mock session rows (visitors) — fetched as full rows with user_id for admin filtering
   const sessionsBuilder = createMockQueryBuilder(
     Array.from({ length: 1000 }, (_, i) => ({ id: `sess-${i}`, user_id: null })),
     1000
@@ -109,31 +119,36 @@ function setupCompleteMocks() {
     { session_id: 's2', user_id: null },
   ], 2);
 
-  // Mock favorite events
-  const favoriteEventsBuilder = createMockQueryBuilder([
-    { session_id: 's1', user_id: null },
+  // Mock favorites from user_favorites table (NOT activity_events)
+  const favoritesBuilder = createMockQueryBuilder([
+    { user_id: 'user-1' },
   ], 1);
 
-  // Mock saved searches
-  const savedSearchesBuilder = createMockQueryBuilder([], 5);
+  // Mock saved searches (unique users)
+  const savedSearchesBuilder = createMockQueryBuilder([
+    { user_id: 'user-1' },
+  ], 1);
 
-  // Mock inquiries
-  const inquiriesBuilder = createMockQueryBuilder([], 2);
+  // Mock dealer clicks
+  const dealerClicksBuilder = createMockQueryBuilder([
+    { visitor_id: 'v1', session_id: 's1' },
+    { visitor_id: 'v2', session_id: 's2' },
+  ], 2);
+
+  // Mock inquiry drafts (unique users)
+  const inquiriesBuilder = createMockQueryBuilder([
+    { user_id: 'user-1' },
+  ], 1);
 
   mockSupabaseClient.from.mockImplementation((table: string) => {
     if (table === 'profiles') return profileBuilder;
     if (table === 'user_sessions') return sessionsBuilder;
     if (table === 'user_searches') return searchEventsBuilder;
     if (table === 'listing_views') return viewEventsBuilder;
+    if (table === 'user_favorites') return favoritesBuilder;
     if (table === 'saved_searches') return savedSearchesBuilder;
+    if (table === 'dealer_clicks') return dealerClicksBuilder;
     if (table === 'inquiry_history') return inquiriesBuilder;
-    if (table === 'activity_events') {
-      return createMockQueryBuilder([
-        { session_id: 's1', user_id: null },
-        { session_id: 's2', user_id: null },
-        { session_id: 's3', user_id: null },
-      ], 3);
-    }
     return createMockQueryBuilder();
   });
 }
@@ -230,14 +245,14 @@ describe('GET /api/admin/analytics/engagement/funnel', () => {
       });
     });
 
-    it('returns exactly 6 funnel stages', async () => {
+    it('returns exactly 8 funnel stages', async () => {
       setupCompleteMocks();
 
       const request = createMockRequest();
       const response = await GET(request);
       const json = await response.json();
 
-      expect(json.data.stages.length).toBe(7);
+      expect(json.data.stages.length).toBe(8);
     });
 
     it('returns stages in correct order with correct labels', async () => {
@@ -254,7 +269,8 @@ describe('GET /api/admin/analytics/engagement/funnel', () => {
         { stage: 'signed_up', label: 'Signed Up' },
         { stage: 'engagers', label: 'Favorited' },
         { stage: 'high_intent', label: 'Saved Search' },
-        { stage: 'converted', label: 'Sent Inquiry' },
+        { stage: 'dealer_click', label: 'Clicked to Dealer' },
+        { stage: 'converted', label: 'Generated Draft' },
       ];
 
       json.data.stages.forEach((stage: { stage: string; label: string }, index: number) => {
@@ -289,6 +305,41 @@ describe('GET /api/admin/analytics/engagement/funnel', () => {
       expect(visitorsStage.stage).toBe('visitors');
       expect(visitorsStage.conversionRate).toBe(100);
       expect(visitorsStage.dropoffRate).toBe(0);
+    });
+
+    it('reads favorites from user_favorites table, not activity_events', async () => {
+      setupCompleteMocks();
+
+      const request = createMockRequest();
+      await GET(request);
+
+      // Verify user_favorites was queried
+      const fromCalls = mockSupabaseClient.from.mock.calls.map((c: string[]) => c[0]);
+      expect(fromCalls).toContain('user_favorites');
+      // activity_events should NOT be queried for favorites
+      expect(fromCalls).not.toContain('activity_events');
+    });
+
+    it('reads dealer clicks from dealer_clicks table', async () => {
+      setupCompleteMocks();
+
+      const request = createMockRequest();
+      await GET(request);
+
+      const fromCalls = mockSupabaseClient.from.mock.calls.map((c: string[]) => c[0]);
+      expect(fromCalls).toContain('dealer_clicks');
+    });
+
+    it('labels final stage as "Generated Draft" not "Sent Inquiry"', async () => {
+      setupCompleteMocks();
+
+      const request = createMockRequest();
+      const response = await GET(request);
+      const json = await response.json();
+
+      const lastStage = json.data.stages[json.data.stages.length - 1];
+      expect(lastStage.label).toBe('Generated Draft');
+      expect(lastStage.label).not.toBe('Sent Inquiry');
     });
   });
 

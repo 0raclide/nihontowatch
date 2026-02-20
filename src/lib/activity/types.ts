@@ -23,7 +23,9 @@ export type ActivityEventType =
   | 'viewport_dwell'
   | 'quickview_panel_toggle'
   | 'quickview_open'
-  | 'image_pinch_zoom';
+  | 'image_pinch_zoom'
+  | 'inquiry_copy'
+  | 'inquiry_mailto_click';
 
 // =============================================================================
 // Event Payloads
@@ -181,6 +183,24 @@ export interface ImagePinchZoomEvent extends BaseActivityEvent {
   durationMs?: number;
 }
 
+/**
+ * Inquiry email copy event — user copied the generated draft to clipboard.
+ * This is a stronger conversion signal than draft generation.
+ */
+export interface InquiryCopyEvent extends BaseActivityEvent {
+  type: 'inquiry_copy';
+  listingId: number;
+}
+
+/**
+ * Inquiry mailto click event — user clicked "Open in email app" link.
+ * Strongest inquiry conversion signal (pre-filled email client opened).
+ */
+export interface InquiryMailtoClickEvent extends BaseActivityEvent {
+  type: 'inquiry_mailto_click';
+  listingId: number;
+}
+
 // Union type for all events
 export type ActivityEvent =
   | PageViewEvent
@@ -195,7 +215,9 @@ export type ActivityEvent =
   | ViewportDwellEvent
   | QuickViewPanelToggleEvent
   | QuickViewOpenEvent
-  | ImagePinchZoomEvent;
+  | ImagePinchZoomEvent
+  | InquiryCopyEvent
+  | InquiryMailtoClickEvent;
 
 // =============================================================================
 // Search Filters

@@ -73,6 +73,8 @@ const VALID_EVENT_TYPES = [
   'external_link_click',
   'viewport_dwell',
   'quickview_open',
+  'inquiry_copy',
+  'inquiry_mailto_click',
 ] as const;
 
 function isValidEventType(type: string): boolean {
@@ -127,6 +129,10 @@ function validateEvent(event: unknown): event is ActivityEvent {
       if (typeof e.dwellMs !== 'number') return false;
       break;
     case 'quickview_open':
+      if (!e.listingId || typeof e.listingId !== 'number') return false;
+      break;
+    case 'inquiry_copy':
+    case 'inquiry_mailto_click':
       if (!e.listingId || typeof e.listingId !== 'number') return false;
       break;
   }
@@ -334,6 +340,8 @@ function mapEventTypeToActionType(eventType: string): string {
     alert_create: 'alert_create',
     alert_delete: 'alert_delete',
     external_link_click: 'view',
+    inquiry_copy: 'view',
+    inquiry_mailto_click: 'view',
   };
 
   return mapping[eventType] || 'view';

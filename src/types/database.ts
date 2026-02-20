@@ -246,7 +246,7 @@ export interface Database {
           session_id: string;
           user_id: string | null;
           visitor_id: string | null;
-          event_type: 'page_view' | 'listing_view' | 'search' | 'filter_change' | 'favorite_add' | 'favorite_remove' | 'alert_create' | 'alert_delete' | 'external_link_click' | 'viewport_dwell';
+          event_type: 'page_view' | 'listing_view' | 'search' | 'filter_change' | 'favorite_add' | 'favorite_remove' | 'alert_create' | 'alert_delete' | 'external_link_click' | 'viewport_dwell' | 'quickview_open' | 'inquiry_copy' | 'inquiry_mailto_click';
           event_data: Record<string, unknown>;
           created_at: string;
         };
@@ -724,7 +724,7 @@ export interface Database {
       action_type: 'view' | 'search' | 'favorite' | 'alert_create' | 'alert_delete' | 'login' | 'logout';
       alert_type: 'price_drop' | 'new_listing' | 'back_in_stock';
       delivery_status: 'pending' | 'sent' | 'failed';
-      activity_event_type: 'page_view' | 'listing_view' | 'search' | 'filter_change' | 'favorite_add' | 'favorite_remove' | 'alert_create' | 'alert_delete' | 'external_link_click';
+      activity_event_type: 'page_view' | 'listing_view' | 'search' | 'filter_change' | 'favorite_add' | 'favorite_remove' | 'alert_create' | 'alert_delete' | 'external_link_click' | 'viewport_dwell' | 'quickview_open' | 'inquiry_copy' | 'inquiry_mailto_click';
       notification_frequency: 'instant' | 'daily' | 'none';
       saved_search_notification_status: 'pending' | 'sent' | 'failed';
     };

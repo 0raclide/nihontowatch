@@ -83,7 +83,7 @@ export interface SearchesData {
 }
 
 // Funnel types
-export type FunnelStageId = 'visitors' | 'searchers' | 'viewers' | 'engagers' | 'high_intent' | 'converted';
+export type FunnelStageId = 'visitors' | 'searchers' | 'viewers' | 'signed_up' | 'engagers' | 'high_intent' | 'dealer_click' | 'converted';
 
 export interface FunnelStage {
   stage: FunnelStageId;

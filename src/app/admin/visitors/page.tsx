@@ -104,6 +104,8 @@ const EVENT_TYPE_LABELS: Record<string, string> = {
   image_pinch_zoom: 'Image Zooms',
   favorite_add: 'Favorites Added',
   favorite_remove: 'Favorites Removed',
+  inquiry_copy: 'Drafts Copied',
+  inquiry_mailto_click: 'Email App Opened',
 };
 
 export default function VisitorsPage() {

@@ -40,6 +40,8 @@ export interface ActivityTracker {
   trackFavoriteAction: (listingId: number, action: 'add' | 'remove') => void;
   trackAlertAction: (action: 'create' | 'delete', alertId?: string, alertType?: string, criteria?: Record<string, unknown>) => void;
   trackExternalLinkClick: (url: string, listingId?: number, dealerName?: string) => void;
+  trackInquiryCopy: (listingId: number) => void;
+  trackInquiryMailtoClick: (listingId: number) => void;
   flush: () => Promise<void>;
 }
 
@@ -289,6 +291,20 @@ export function useActivityTracker(): ActivityTracker {
     [createBaseEvent, queueEvent]
   );
 
+  const trackInquiryCopy = useCallback(
+    (listingId: number) => {
+      queueEvent({ ...createBaseEvent(), type: 'inquiry_copy' as const, listingId });
+    },
+    [createBaseEvent, queueEvent]
+  );
+
+  const trackInquiryMailtoClick = useCallback(
+    (listingId: number) => {
+      queueEvent({ ...createBaseEvent(), type: 'inquiry_mailto_click' as const, listingId });
+    },
+    [createBaseEvent, queueEvent]
+  );
+
   return {
     trackPageView,
     trackListingView,
@@ -297,6 +313,8 @@ export function useActivityTracker(): ActivityTracker {
     trackFavoriteAction,
     trackAlertAction,
     trackExternalLinkClick,
+    trackInquiryCopy,
+    trackInquiryMailtoClick,
     flush: flushEvents,
   };
 }

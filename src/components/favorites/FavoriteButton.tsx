@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { useFavorites } from '@/hooks/useFavorites';
+import { useActivityTrackerOptional } from '@/lib/tracking/ActivityTracker';
 
 interface WatchButtonProps {
   listingId: number;
@@ -25,6 +26,7 @@ export function FavoriteButton({
   onSignupPrompt,
 }: WatchButtonProps) {
   const { isFavorited, toggleFavorite, isAuthenticated, isLoading } = useFavorites();
+  const activityTracker = useActivityTrackerOptional();
   const [isToggling, setIsToggling] = useState(false);
   const [showPrompt, setShowPrompt] = useState(false);
 
@@ -52,10 +54,14 @@ export function FavoriteButton({
 
     if (isToggling) return;
 
+    const wasWatched = isFavorited(listingId);
     setIsToggling(true);
-    await toggleFavorite(listingId);
+    const success = await toggleFavorite(listingId);
+    if (success) {
+      activityTracker?.trackFavoriteAction(listingId, wasWatched ? 'remove' : 'add');
+    }
     setIsToggling(false);
-  }, [isAuthenticated, isToggling, toggleFavorite, listingId, onSignupPrompt]);
+  }, [isAuthenticated, isToggling, toggleFavorite, listingId, onSignupPrompt, isFavorited, activityTracker]);
 
   const sizeClasses = {
     sm: 'w-7 h-7',
@@ -147,6 +153,7 @@ export function FavoriteButtonInline({
   className = '',
 }: Omit<WatchButtonProps, 'size'>) {
   const { isFavorited, toggleFavorite, isAuthenticated, isLoading } = useFavorites();
+  const activityTracker = useActivityTrackerOptional();
   const [isToggling, setIsToggling] = useState(false);
 
   const initialValue = initialWatched ?? initialFavorited;
@@ -160,10 +167,14 @@ export function FavoriteButtonInline({
 
     if (!isAuthenticated || isToggling) return;
 
+    const wasWatched = isFavorited(listingId);
     setIsToggling(true);
-    await toggleFavorite(listingId);
+    const success = await toggleFavorite(listingId);
+    if (success) {
+      activityTracker?.trackFavoriteAction(listingId, wasWatched ? 'remove' : 'add');
+    }
     setIsToggling(false);
-  }, [isAuthenticated, isToggling, toggleFavorite, listingId]);
+  }, [isAuthenticated, isToggling, toggleFavorite, listingId, isFavorited, activityTracker]);
 
   return (
     <button

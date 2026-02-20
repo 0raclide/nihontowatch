@@ -167,6 +167,8 @@ export interface ActivityTracker {
     imageIndex: number,
     extra?: { zoomScale?: number; durationMs?: number }
   ) => void;
+  trackInquiryCopy: (listingId: number) => void;
+  trackInquiryMailtoClick: (listingId: number) => void;
   flush: () => Promise<void>;
   isOptedOut: boolean;
   setOptOut: (optOut: boolean) => void;
@@ -625,6 +627,22 @@ export function ActivityTrackerProvider({
     [createBaseEvent, queueEvent, isSuppressed]
   );
 
+  const trackInquiryCopy = useCallback(
+    (listingId: number) => {
+      if (isSuppressed) return;
+      queueEvent({ ...createBaseEvent(), type: 'inquiry_copy' as const, listingId });
+    },
+    [createBaseEvent, queueEvent, isSuppressed]
+  );
+
+  const trackInquiryMailtoClick = useCallback(
+    (listingId: number) => {
+      if (isSuppressed) return;
+      queueEvent({ ...createBaseEvent(), type: 'inquiry_mailto_click' as const, listingId });
+    },
+    [createBaseEvent, queueEvent, isSuppressed]
+  );
+
   // Memoize the tracker object to prevent unnecessary re-renders in consumers
   const tracker: ActivityTracker = useMemo(
     () => ({
@@ -639,6 +657,8 @@ export function ActivityTrackerProvider({
       trackQuickViewPanelToggle,
       trackQuickViewOpen,
       trackImagePinchZoom,
+      trackInquiryCopy,
+      trackInquiryMailtoClick,
       flush: flushEvents,
       isOptedOut,
       setOptOut,
@@ -655,6 +675,8 @@ export function ActivityTrackerProvider({
       trackQuickViewPanelToggle,
       trackQuickViewOpen,
       trackImagePinchZoom,
+      trackInquiryCopy,
+      trackInquiryMailtoClick,
       flushEvents,
       isOptedOut,
       setOptOut,

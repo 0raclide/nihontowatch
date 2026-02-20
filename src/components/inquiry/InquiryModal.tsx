@@ -18,6 +18,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { useInquiry } from '@/hooks/useInquiry';
 import { useSubscription } from '@/contexts/SubscriptionContext';
+import { useActivityTrackerOptional } from '@/lib/tracking/ActivityTracker';
 import { CopyButton } from './CopyButton';
 import type { Listing } from '@/types';
 
@@ -225,6 +226,7 @@ export function InquiryModal({ isOpen, onClose, listing }: InquiryModalProps) {
             ) : (
               <ResultStep
                 generatedEmail={generatedEmail!}
+                listingId={listing.id}
                 onStartOver={handleStartOver}
                 onClose={onClose}
               />
@@ -405,13 +407,15 @@ function FormStep({
 
 interface ResultStepProps {
   generatedEmail: GeneratedEmail;
+  listingId: number;
   onStartOver: () => void;
   onClose: () => void;
 }
 
-function ResultStep({ generatedEmail, onStartOver, onClose }: ResultStepProps) {
+function ResultStep({ generatedEmail, listingId, onStartOver, onClose }: ResultStepProps) {
   const [activeTab, setActiveTab] = useState<'japanese' | 'english'>('japanese');
   const [copiedEmail, setCopiedEmail] = useState(false);
+  const activityTracker = useActivityTrackerOptional();
 
   // Build mailto link if dealer email is available
   const mailtoLink = generatedEmail.dealer_email
@@ -423,10 +427,16 @@ function ResultStep({ generatedEmail, onStartOver, onClose }: ResultStepProps) {
     try {
       await navigator.clipboard.writeText(generatedEmail.email_ja);
       setCopiedEmail(true);
+      activityTracker?.trackInquiryCopy(listingId);
       setTimeout(() => setCopiedEmail(false), 2000);
     } catch (err) {
       console.error('Failed to copy:', err);
     }
+  };
+
+  // Handle mailto click
+  const handleMailtoClick = () => {
+    activityTracker?.trackInquiryMailtoClick(listingId);
   };
 
   return (
@@ -521,6 +531,7 @@ function ResultStep({ generatedEmail, onStartOver, onClose }: ResultStepProps) {
           {mailtoLink && (
             <a
               href={mailtoLink}
+              onClick={handleMailtoClick}
               className="px-4 py-3 text-[14px] font-medium text-charcoal bg-paper border border-border rounded-lg hover:bg-hover transition-colors flex items-center gap-2"
               title="Open in your default email app"
             >
