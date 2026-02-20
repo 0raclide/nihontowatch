@@ -19,8 +19,7 @@ import { getAttributionName, getAttributionSchool } from '@/lib/listing/attribut
 import { SetsumeiZufuBadge } from '@/components/ui/SetsumeiZufuBadge';
 import { AdminSetsumeiWidget } from '@/components/listing/AdminSetsumeiWidget';
 import { useActivityTrackerOptional } from '@/lib/tracking/ActivityTracker';
-import { trackListingView, getViewReferrer } from '@/lib/tracking/viewTracker';
-import { getSessionId } from '@/lib/activity/sessionManager';
+import { getViewReferrer } from '@/lib/tracking/referrer';
 import type { Listing, CreateAlertInput } from '@/types';
 import { isSetsumeiEligibleCert } from '@/types';
 import type { EnrichedListingDetail } from '@/lib/listing/getListingDetail';
@@ -76,10 +75,9 @@ export default function ListingDetailPage({ initialData }: ListingDetailPageProp
 
     viewStartTime.current = Date.now();
 
-    // Track view to dedicated listing_views table for analytics (skip admins)
-    if (!isAdmin) {
-      const sessionId = getSessionId();
-      trackListingView(Number(listingId), sessionId, user?.id, getViewReferrer());
+    // Track view via unified pipeline (fans out to listing_views server-side)
+    if (activity) {
+      activity.trackListingDetailView(Number(listingId), getViewReferrer());
     }
 
     // Track dwell time when user leaves the page
@@ -90,15 +88,18 @@ export default function ListingDetailPage({ initialData }: ListingDetailPageProp
         activity.trackViewportDwell(Number(listingId), dwellMs);
       }
     };
-  }, [listing, listingId, activity, user?.id]);
+  }, [listing, listingId, activity]);
 
-  // Track external link click
+  // Track external link click (dealer click-through)
   const handleExternalLinkClick = useCallback(() => {
     if (activity && listing) {
-      activity.trackExternalLinkClick(
-        listing.url,
+      activity.trackDealerClick(
         Number(listingId),
-        listing.dealers?.name
+        listing.dealer_id ?? 0,
+        listing.dealers?.name || 'Unknown',
+        listing.url,
+        'listing_detail',
+        { priceAtClick: listing.price_value ?? undefined, currencyAtClick: listing.price_currency ?? undefined }
       );
     }
   }, [activity, listing, listingId]);

@@ -10,7 +10,6 @@ import { useQuickViewOptional } from '@/contexts/QuickViewContext';
 import { useViewportTrackingOptional } from '@/lib/viewport';
 import { getAllImages, getCachedValidation, isRenderFailed, setRenderFailed, dealerDoesNotPublishImages, getPlaceholderKanji } from '@/lib/images';
 import { shouldShowNewBadge } from '@/lib/newListing';
-import { trackSearchClick } from '@/lib/tracking/searchTracker';
 import { isTrialModeActive } from '@/types/subscription';
 import { isSetsumeiEligibleCert } from '@/types';
 import { useImagePreloader } from '@/hooks/useImagePreloader';
@@ -112,7 +111,7 @@ interface ListingCardProps {
   exchangeRates: ExchangeRates | null;
   priority?: boolean; // For above-the-fold images
   showFavoriteButton?: boolean;
-  searchId?: number; // For CTR tracking
+  searchId?: string; // Correlation ID for CTR tracking
   isAdmin?: boolean; // For admin-only features like artisan code display
   mobileView?: 'grid' | 'gallery'; // Mobile layout mode (only affects < sm breakpoint)
   fontSize?: 'compact' | 'standard' | 'large'; // Font size preference (both views)
@@ -596,8 +595,8 @@ export const ListingCard = memo(function ListingCard({
     }
 
     // Track search click-through for CTR analytics (if this came from a search)
-    if (searchId) {
-      trackSearchClick(searchId, Number(listing.id));
+    if (searchId && activity) {
+      activity.trackSearchClickThrough(searchId, Number(listing.id));
     }
 
     // Track QuickView open (engagement event, not click-through to dealer)

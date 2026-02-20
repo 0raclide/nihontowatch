@@ -157,10 +157,13 @@ export function QuickViewMobileSheet({
   // Track when user clicks through to dealer's website
   const handleDealerLinkClick = useCallback(() => {
     if (activityTracker && listing) {
-      activityTracker.trackExternalLinkClick(
-        listing.url,
+      activityTracker.trackDealerClick(
         Number(listing.id),
-        listing.dealers?.name || listing.dealer?.name
+        listing.dealer_id ?? 0,
+        listing.dealers?.name || listing.dealer?.name || 'Unknown',
+        listing.url,
+        'quickview',
+        { priceAtClick: listing.price_value ?? undefined, currencyAtClick: listing.price_currency ?? undefined }
       );
     }
   }, [activityTracker, listing]);

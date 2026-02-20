@@ -11,8 +11,10 @@
 export type ActivityEventType =
   | 'page_view'
   | 'listing_view'
+  | 'listing_detail_view'
   | 'listing_impression'
   | 'search'
+  | 'search_click'
   | 'filter_change'
   | 'favorite_add'
   | 'favorite_remove'
@@ -184,6 +186,26 @@ export interface ImagePinchZoomEvent extends BaseActivityEvent {
 }
 
 /**
+ * Listing detail view — tracks when a user opens a listing detail page or QuickView.
+ * Distinct from `listing_view` which is dwell-based and fires on unmount.
+ */
+export interface ListingDetailViewEvent extends BaseActivityEvent {
+  type: 'listing_detail_view';
+  listingId: number;
+  referrer?: 'browse' | 'search' | 'direct' | 'external' | 'alert';
+}
+
+/**
+ * Search click-through — user clicked a listing from search results.
+ * Carries correlationId to link back to the search event for CTR.
+ */
+export interface SearchClickEvent extends BaseActivityEvent {
+  type: 'search_click';
+  correlationId: string;
+  listingId: number;
+}
+
+/**
  * Inquiry email copy event — user copied the generated draft to clipboard.
  * This is a stronger conversion signal than draft generation.
  */
@@ -205,8 +227,10 @@ export interface InquiryMailtoClickEvent extends BaseActivityEvent {
 export type ActivityEvent =
   | PageViewEvent
   | ListingViewEvent
+  | ListingDetailViewEvent
   | ListingImpressionEvent
   | SearchEvent
+  | SearchClickEvent
   | FilterChangeEvent
   | FavoriteEvent
   | AlertEvent

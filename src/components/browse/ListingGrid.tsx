@@ -76,7 +76,7 @@ interface ListingGridProps {
   currency: Currency;
   exchangeRates: ExchangeRates | null;
   onLoadMore?: () => void;
-  searchId?: number; // For CTR tracking
+  searchId?: string; // Correlation ID for CTR tracking
   isAdmin?: boolean; // For admin-only features like artisan code display
   mobileView?: 'grid' | 'gallery'; // Mobile layout mode
   isUrlSearch?: boolean; // Whether the current search was a URL query

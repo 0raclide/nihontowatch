@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
+import { useActivityTrackerOptional } from '@/lib/tracking/ActivityTracker';
 import type {
   SavedSearch,
   CreateSavedSearchInput,
@@ -40,6 +41,7 @@ export function useSavedSearches(
   const [isCreating, setIsCreating] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const activity = useActivityTrackerOptional();
 
   // Fetch saved searches
   const fetchSavedSearches = useCallback(async () => {
@@ -97,6 +99,15 @@ export function useSavedSearches(
 
         // Add to local state
         setSavedSearches((prev) => [data.savedSearch, ...prev]);
+
+        // Track alert creation
+        activity?.trackAlertAction(
+          'create',
+          data.savedSearch.id,
+          input.notification_frequency || 'none',
+          input.search_criteria as Record<string, unknown> | undefined
+        );
+
         return data.savedSearch;
       } catch (err) {
         const message = err instanceof Error ? err.message : 'An error occurred';
@@ -106,7 +117,7 @@ export function useSavedSearches(
         setIsCreating(false);
       }
     },
-    []
+    [activity]
   );
 
   // Toggle saved search active state
@@ -205,6 +216,10 @@ export function useSavedSearches(
 
       // Remove from local state
       setSavedSearches((prev) => prev.filter((search) => search.id !== id));
+
+      // Track alert deletion
+      activity?.trackAlertAction('delete', id);
+
       return true;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'An error occurred';
@@ -213,7 +228,7 @@ export function useSavedSearches(
     } finally {
       setIsDeleting(false);
     }
-  }, []);
+  }, [activity]);
 
   return {
     savedSearches,

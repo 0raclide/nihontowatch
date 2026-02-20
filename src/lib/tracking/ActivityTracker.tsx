@@ -42,11 +42,14 @@ import type {
   ActivityEvent,
   PageViewEvent,
   ListingViewEvent,
+  ListingDetailViewEvent,
   SearchEvent,
+  SearchClickEvent,
   FilterChangeEvent,
   FavoriteEvent,
   AlertEvent,
   ExternalLinkClickEvent,
+  DealerClickEvent,
   ViewportDwellEvent,
   QuickViewPanelToggleEvent,
   QuickViewOpenEvent,
@@ -124,11 +127,21 @@ export interface ActivityTracker {
     durationMs: number,
     extra?: { scrollDepth?: number; imageViews?: number }
   ) => void;
+  trackListingDetailView: (
+    listingId: number,
+    referrer?: 'browse' | 'search' | 'direct' | 'external' | 'alert'
+  ) => void;
   trackSearch: (
     query: string,
     resultCount?: number,
     filters?: SearchFilters
   ) => void;
+  trackSearchQuery: (
+    query: string,
+    filters: SearchFilters | undefined,
+    resultCount: number
+  ) => string;
+  trackSearchClickThrough: (correlationId: string, listingId: number) => void;
   trackFilterChange: (
     filters: SearchFilters,
     changedFilter: string,
@@ -146,6 +159,14 @@ export interface ActivityTracker {
     url: string,
     listingId?: number,
     dealerName?: string
+  ) => void;
+  trackDealerClick: (
+    listingId: number,
+    dealerId: number,
+    dealerName: string,
+    url: string,
+    source: 'listing_card' | 'quickview' | 'listing_detail' | 'dealer_page',
+    extra?: { priceAtClick?: number; currencyAtClick?: string }
   ) => void;
   trackViewportDwell: (
     listingId: number,
@@ -643,16 +664,110 @@ export function ActivityTrackerProvider({
     [createBaseEvent, queueEvent, isSuppressed]
   );
 
+  const trackDealerClick = useCallback(
+    (
+      listingId: number,
+      dealerId: number,
+      dealerName: string,
+      url: string,
+      source: 'listing_card' | 'quickview' | 'listing_detail' | 'dealer_page',
+      extra?: { priceAtClick?: number; currencyAtClick?: string }
+    ) => {
+      if (isSuppressed) return;
+
+      const event: DealerClickEvent = {
+        ...createBaseEvent(),
+        type: 'dealer_click',
+        listingId,
+        dealerId,
+        dealerName,
+        url,
+        source,
+        priceAtClick: extra?.priceAtClick,
+        currencyAtClick: extra?.currencyAtClick,
+      };
+
+      queueEvent(event);
+    },
+    [createBaseEvent, queueEvent, isSuppressed]
+  );
+
+  const trackListingDetailView = useCallback(
+    (
+      listingId: number,
+      referrer?: 'browse' | 'search' | 'direct' | 'external' | 'alert'
+    ) => {
+      if (isSuppressed) return;
+
+      const event: ListingDetailViewEvent = {
+        ...createBaseEvent(),
+        type: 'listing_detail_view',
+        listingId,
+        referrer,
+      };
+
+      queueEvent(event);
+    },
+    [createBaseEvent, queueEvent, isSuppressed]
+  );
+
+  const trackSearchQuery = useCallback(
+    (
+      query: string,
+      filters: SearchFilters | undefined,
+      resultCount: number
+    ): string => {
+      // Generate a client-side correlation ID for CTR linking
+      const correlationId = crypto.randomUUID();
+
+      if (!isSuppressed) {
+        const event: SearchEvent & { correlationId: string } = {
+          ...createBaseEvent(),
+          type: 'search',
+          query,
+          resultCount,
+          filters,
+          correlationId,
+        };
+
+        queueEvent(event as unknown as SearchEvent);
+      }
+
+      return correlationId;
+    },
+    [createBaseEvent, queueEvent, isSuppressed]
+  );
+
+  const trackSearchClickThrough = useCallback(
+    (correlationId: string, listingId: number) => {
+      if (isSuppressed) return;
+
+      const event: SearchClickEvent = {
+        ...createBaseEvent(),
+        type: 'search_click',
+        correlationId,
+        listingId,
+      };
+
+      queueEvent(event);
+    },
+    [createBaseEvent, queueEvent, isSuppressed]
+  );
+
   // Memoize the tracker object to prevent unnecessary re-renders in consumers
   const tracker: ActivityTracker = useMemo(
     () => ({
       trackPageView,
       trackListingView,
+      trackListingDetailView,
       trackSearch,
+      trackSearchQuery,
+      trackSearchClickThrough,
       trackFilterChange,
       trackFavoriteAction,
       trackAlertAction,
       trackExternalLinkClick,
+      trackDealerClick,
       trackViewportDwell,
       trackQuickViewPanelToggle,
       trackQuickViewOpen,
@@ -666,11 +781,15 @@ export function ActivityTrackerProvider({
     [
       trackPageView,
       trackListingView,
+      trackListingDetailView,
       trackSearch,
+      trackSearchQuery,
+      trackSearchClickThrough,
       trackFilterChange,
       trackFavoriteAction,
       trackAlertAction,
       trackExternalLinkClick,
+      trackDealerClick,
       trackViewportDwell,
       trackQuickViewPanelToggle,
       trackQuickViewOpen,

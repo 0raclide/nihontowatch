@@ -10,8 +10,6 @@ import { AlertContextBanner } from './AlertContextBanner';
 import { LazyImage } from '@/components/ui/LazyImage';
 import { useQuickView } from '@/contexts/QuickViewContext';
 import { useActivityTrackerOptional } from '@/lib/tracking/ActivityTracker';
-import { trackListingView } from '@/lib/tracking/viewTracker';
-import { getSessionId } from '@/lib/activity/sessionManager';
 import { usePinchZoomTracking } from '@/lib/viewport';
 import { getAllImages, dealerDoesNotPublishImages, getCachedDimensions, getPlaceholderKanji } from '@/lib/images';
 import { useValidatedImages } from '@/hooks/useValidatedImages';
@@ -75,14 +73,14 @@ export function QuickView() {
     setIsSheetExpanded(prev => !prev);
   }, [isSheetExpanded, activityTracker, currentListing]);
 
-  // Track view to dedicated listing_views table when QuickView opens (skip admins)
+  // Track view via unified pipeline when QuickView opens (fans out to listing_views server-side)
   useEffect(() => {
     if (!currentListing || !isOpen) return;
-    if (isAdmin) return;
 
-    const sessionId = getSessionId();
-    trackListingView(currentListing.id, sessionId, user?.id, 'browse');
-  }, [currentListing?.id, isOpen, user?.id, isAdmin]);
+    if (activityTracker) {
+      activityTracker.trackListingDetailView(currentListing.id, 'browse');
+    }
+  }, [currentListing?.id, isOpen, activityTracker]);
 
   // Reset scroll and visible images when listing changes
   useEffect(() => {
