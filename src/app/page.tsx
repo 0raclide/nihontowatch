@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
 import HomeContent from './HomeClient';
 import { getHomePreview, type HomePreviewData } from '@/lib/browse/getHomePreview';
+import { generateItemListJsonLd, jsonLdScriptProps } from '@/lib/seo/jsonLd';
 
 // ISR: revalidate every 5 minutes so the SSR fallback stays fresh
 export const revalidate = 300;
@@ -106,9 +107,20 @@ function HomeSSRFallback({ preview }: { preview: HomePreviewData }) {
 export default async function HomePage() {
   const preview = await getHomePreview();
 
+  const itemListJsonLd = preview.listings.length > 0
+    ? generateItemListJsonLd(
+        preview.listings,
+        'Featured Japanese Swords & Fittings',
+        process.env.NEXT_PUBLIC_BASE_URL || 'https://nihontowatch.com'
+      )
+    : null;
+
   return (
-    <Suspense fallback={<HomeSSRFallback preview={preview} />}>
-      <HomeContent />
-    </Suspense>
+    <>
+      {itemListJsonLd && <script {...jsonLdScriptProps(itemListJsonLd)} />}
+      <Suspense fallback={<HomeSSRFallback preview={preview} />}>
+        <HomeContent />
+      </Suspense>
+    </>
   );
 }
