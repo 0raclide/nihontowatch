@@ -2,7 +2,7 @@
 
 This document covers the full SEO implementation for NihontoWatch — how metadata is generated, what structured data exists, where the code lives, and what remains to be done.
 
-**Last updated:** 2026-02-16
+**Last updated:** 2026-02-20
 
 ---
 
@@ -11,17 +11,19 @@ This document covers the full SEO implementation for NihontoWatch — how metada
 1. [How It Works](#how-it-works)
 2. [Page-Level SEO Coverage](#page-level-seo-coverage)
 3. [Listing Detail Metadata (the structured title system)](#listing-detail-metadata)
-4. [Category Landing Pages](#category-landing-pages)
-5. [Internal Linking Mesh](#internal-linking-mesh)
-6. [Sold Archive](#sold-archive)
-7. [Canonical Redirects](#canonical-redirects)
-8. [Structured Data (JSON-LD)](#structured-data-json-ld)
-9. [Technical SEO](#technical-seo)
-10. [Brand Name](#brand-name)
-11. [Key Files](#key-files)
-12. [Field Population Reality](#field-population-reality)
-13. [High-Priority Remaining Work](#high-priority-remaining-work)
-14. [Testing & Validation](#testing--validation)
+4. [Home Page SSR Architecture](#home-page-ssr-architecture)
+5. [Listing Detail SSR Architecture](#listing-detail-ssr-architecture)
+6. [Category Landing Pages](#category-landing-pages)
+7. [Internal Linking Mesh](#internal-linking-mesh)
+8. [Sold Archive](#sold-archive)
+9. [Canonical Redirects](#canonical-redirects)
+10. [Structured Data (JSON-LD)](#structured-data-json-ld)
+11. [Technical SEO](#technical-seo)
+12. [Brand Name](#brand-name)
+13. [Key Files](#key-files)
+14. [Field Population Reality](#field-population-reality)
+15. [High-Priority Remaining Work](#high-priority-remaining-work)
+16. [Testing & Validation](#testing--validation)
 
 ---
 
@@ -53,17 +55,17 @@ This matches how collectors actually search Google ("Juyo Masamune Katana", "Tok
 
 | Page | Title Pattern | JSON-LD | Notes |
 |------|---------------|---------|-------|
-| `/` (home) | Static: "NihontoWatch \| Japanese Sword & Tosogu Marketplace" | Organization, WebSite | Does NOT adapt to query params — see [remaining work](#high-priority-remaining-work) |
+| `/` (home) | Static: "NihontoWatch \| Japanese Sword & Tosogu Marketplace" | ItemList, Organization*, WebSite* | SSR fallback renders 24 listings with H1, counts, links. ItemList JSON-LD for featured items. (*Org + WebSite from root layout) |
 | `/listing/[id]` | Structured: `{Cert} {Artisan} {Type} — {Qualifier} \| NihontoWatch` | Product, Breadcrumb | Full artisan resolution, 60-char guard |
 | `/swords/[type]` | "Katana for Sale — Japanese Long Swords \| NihontoWatch" | ItemList, Breadcrumb | 24 pages: 6 base types + 18 combinations (juyo-katana, koto-katana, bizen-katana, etc.) |
 | `/fittings/[type]` | "Tsuba for Sale — Japanese Sword Guards \| NihontoWatch" | ItemList, Breadcrumb | 6 pages: 4 base types + 2 combinations (juyo-tsuba, hozon-tsuba) |
 | `/certified/[cert]` | "Juyo Token Swords for Sale — NBTHK \| NihontoWatch" | ItemList, Breadcrumb | 4 pages (juyo, tokubetsu-juyo, hozon, tokubetsu-hozon) |
 | `/artists` | Dynamic: adapts to school/province/era/type filters | Breadcrumb | Server-rendered initial load, client fetch on filter change |
-| `/artists/[slug]` | "{Name} — {School} {Type} \| NihontoWatch" | Breadcrumb | Individual artisan profiles |
-| `/dealers` | "Japanese Sword Dealers \| NihontoWatch" | LocalBusiness per dealer | Static metadata |
-| `/dealers/[slug]` | "{Dealer Name} \| Japanese Sword Dealer \| NihontoWatch" | Breadcrumb | Dynamic metadata with listing count |
+| `/artists/[slug]` | "{Name} — {School} {Type} \| NihontoWatch" | Person, Breadcrumb | Individual artisan profiles |
+| `/dealers` | "Japanese Sword Dealers \| NihontoWatch" | Breadcrumb | Static metadata |
+| `/dealers/[slug]` | "{Dealer Name} \| Japanese Sword Dealer \| NihontoWatch" | LocalBusiness, Breadcrumb | Dynamic metadata with listing count |
 | `/glossary` | "Japanese Sword & Fittings Glossary \| NihontoWatch" | — | Static |
-| `/glossary/[term]` | "{Term} — Japanese Sword Glossary \| NihontoWatch" | — | Dynamic per term |
+| `/glossary/[term]` | "{Term} — Japanese Sword Glossary \| NihontoWatch" | DefinedTerm, Breadcrumb | Dynamic per term |
 
 ### Pages with noindex
 
@@ -72,7 +74,7 @@ This matches how collectors actually search Google ("Juyo Masamune Katana", "Tok
 | `/admin/*` | Admin-only |
 | `/saved` | User-specific |
 | `/profile` | User-specific |
-| `/collection` | User-specific |
+| `/collection` | User-specific (also disallowed in robots.txt) |
 | `/s/[id]` | Share proxy — canonical points to `/listing/[id]` |
 
 ---
@@ -222,6 +224,45 @@ When an admin uses `AdminSetsumeiWidget` to update a Yuhinkai connection, `onCon
 - **Google Search Console → Coverage:** Watch "Crawled - currently not indexed" count (was 2,423) decline over 2-4 weeks
 - **URL Inspection tool:** Test individual listing URLs to verify Googlebot sees full content
 - **Indexed page count:** Should trend upward as Google recrawls
+
+---
+
+## Home Page SSR Architecture
+
+**Deployed:** 2026-02-20
+
+### Problem
+
+The home page (`src/app/page.tsx`) was a `'use client'` component using `useSearchParams()` via `useBrowseURLSync`. Because `useSearchParams()` causes Suspense to suspend during SSR, the only server-rendered content was a loading spinner. Googlebot saw no H1, no listings, no internal links.
+
+### Solution
+
+Split into a server component (`page.tsx`) and a client component (`HomeClient.tsx`). The server component:
+
+1. Fetches 24 featured listings server-side via `getHomePreview()` (uses `createServiceClient()`)
+2. Renders a **Suspense fallback** containing the SEO-critical content (H1, item counts, listing grid with links)
+3. Emits `ItemList` JSON-LD for the 24 featured listings
+4. Wraps the interactive `HomeContent` client component in `<Suspense>`
+
+When the client JS loads and `useSearchParams()` resolves, the full interactive browse UI replaces the fallback. But Googlebot gets the static fallback with all the content it needs.
+
+### What Googlebot sees
+
+| Element | Content |
+|---------|---------|
+| `<h1>` | "Collection" |
+| Description | "{N} Japanese swords and fittings from {N} galleries worldwide" |
+| Listing grid | 24 cards with `<a href="/listing/{id}">`, images, titles, prices, certs, dealers |
+| Navigation | Links to /dealers, /artists, /glossary |
+| JSON-LD | ItemList with 24 featured items |
+
+### Key files
+
+| File | Purpose |
+|------|---------|
+| `src/app/page.tsx` | Server component: fetches preview, renders SSR fallback + JSON-LD |
+| `src/app/HomeClient.tsx` | Client component: full interactive browse UI |
+| `src/lib/browse/getHomePreview.ts` | Server-side data fetcher (24 listings, total count, dealer count) |
 
 ---
 
@@ -436,12 +477,34 @@ A static `_redirectMap` is built at module load from all 34 `CategoryDef` entrie
 
 **File:** `src/lib/seo/jsonLd.ts`
 
+### Coverage matrix
+
+| Page | Schema types |
+|------|-------------|
+| Root layout | `Organization`, `WebSite` + `SearchAction` |
+| `/` (home) | `ItemList` (24 featured listings) |
+| `/listing/[id]` | `Product`, `BreadcrumbList` |
+| `/swords/[type]` | `ItemList`, `BreadcrumbList` |
+| `/fittings/[type]` | `ItemList`, `BreadcrumbList` |
+| `/certified/[cert]` | `ItemList`, `BreadcrumbList` |
+| `/dealers` | `BreadcrumbList` |
+| `/dealers/[slug]` | `LocalBusiness`, `BreadcrumbList` |
+| `/artists` | `BreadcrumbList` |
+| `/artists/[slug]` | `Person`, `BreadcrumbList` |
+| `/glossary/[term]` | `DefinedTerm`, `BreadcrumbList` |
+
 ### Site-wide (root layout)
 
 | Schema | Purpose |
 |--------|---------|
 | `Organization` | Site identity, logo, name — authority signal |
 | `WebSite` + `SearchAction` | Enables sitelinks search box in Google |
+
+### Home page
+
+| Schema | Purpose |
+|--------|---------|
+| `ItemList` | 24 featured listings — enables carousel/product previews in search |
 
 ### Listing detail pages
 
@@ -461,8 +524,35 @@ A static `_redirectMap` is built at module load from all 34 `CategoryDef` entrie
 
 | Schema | Purpose |
 |--------|---------|
-| `LocalBusiness` | Per-dealer structured data on directory page |
+| `LocalBusiness` | Per-dealer structured data on individual dealer page |
 | `BreadcrumbList` | On individual dealer pages |
+
+### Artist pages
+
+| Schema | Purpose |
+|--------|---------|
+| `Person` | Artist identity: name (romaji + kanji), era, province, specialty |
+| `BreadcrumbList` | Navigation path: Home → Artists → {Name} |
+
+### Glossary term pages
+
+| Schema | Purpose |
+|--------|---------|
+| `DefinedTerm` | Term name, definition, parent DefinedTermSet — dictionary rich results |
+| `BreadcrumbList` | Navigation path: Home → Glossary → {Term} |
+
+### Generator functions
+
+| Function | Returns |
+|----------|---------|
+| `generateOrganizationJsonLd(dealerCount?)` | Organization schema |
+| `generateWebsiteJsonLd()` | WebSite + SearchAction |
+| `generateProductJsonLd(listing, dealer?)` | Product with offers, properties |
+| `generateItemListJsonLd(items, name, url)` | ItemList for category/home pages |
+| `generateBreadcrumbJsonLd(items)` | BreadcrumbList |
+| `generateDealerJsonLd(dealer)` | LocalBusiness |
+| `generateArtistDirectoryJsonLd(topArtists)` | CollectionPage (defined, unused) |
+| `jsonLdScriptProps(jsonLd)` | React `<script>` props helper (XSS-safe) |
 
 ---
 
@@ -472,26 +562,55 @@ A static `_redirectMap` is built at module load from all 34 `CategoryDef` entrie
 
 **File:** `src/app/robots.ts`
 
-Allows all public content, blocks `/admin/`, `/api/`, `/saved`, `/profile`, `/auth/`, `/favorites`. References sitemap.
+Allows all public content, blocks `/admin/`, `/api/`, `/saved`, `/profile`, `/collection`, `/auth/`, `/favorites`. References sitemap.
 
 ### sitemap.xml
 
 **File:** `src/app/sitemap.ts`
 
-Dynamic sitemap with ISR (1-hour revalidation). Includes:
-- Core pages (home, dealers directory, artists directory)
-- All dealer pages (`/dealers/[slug]`)
-- All available listings (`/listing/[id]`) — priority 0.7, weekly
-- All sold listings (`/listing/[id]`) — priority 0.4, monthly (sold archive)
-- Category landing pages (34 total: `/swords/*`, `/fittings/*`, `/certified/*`) — priority 0.8
-- Glossary pages (`/glossary/[term]`)
-- Artist pages (`/artists/[slug]`) — all 13,566 artisans from Yuhinkai
+**Architecture:** Split into 4 sub-sitemaps via `generateSitemaps()` to avoid Vercel serverless timeouts. Each sub-sitemap is an independent function invocation.
 
-Batch-fetches in groups of 1000 to handle Supabase row limits.
+| Sub-sitemap ID | Content | Priority | Frequency |
+|----------------|---------|----------|-----------|
+| 0 | Static pages + category pages + glossary terms + dealer pages | 0.6–1.0 | daily–monthly |
+| 1 | Available listings | 0.7 | weekly |
+| 2 | Sold listings (archive) | 0.4 | monthly |
+| 3 | Artist pages (from Yuhinkai) | 0.6 | monthly |
+
+ISR revalidation: 1 hour (`revalidate = 3600`). Batch-fetches listings in groups of 1000 to handle Supabase row limits. Glossary terms imported from shared `FEATURED_TERMS` constant (`src/lib/glossary/featuredTerms.ts`).
+
+### ISR caching
+
+| Page | `revalidate` | Notes |
+|------|-------------|-------|
+| `/` (home) | 300s (5 min) | SSR fallback stays fresh for crawlers |
+| `/listing/[id]` | 300s (5 min) | Uses `createServiceClient()` (stateless, no cookies) for ISR compatibility |
+| `/swords/[type]` | 3600s (1 hr) | Category pages change less frequently |
+| `/fittings/[type]` | 3600s (1 hr) | |
+| `/certified/[cert]` | 3600s (1 hr) | |
+| `sitemap.ts` | 3600s (1 hr) | Per sub-sitemap |
+
+### Trailing slash
+
+`next.config.ts` sets `trailingSlash: false` to prevent duplicate URLs (`/dealers` vs `/dealers/`). Next.js automatically 308 redirects trailing-slash requests.
+
+### Custom 404 page
+
+**File:** `src/app/not-found.tsx`
+
+Branded 404 page with internal links to key pages (home, dealers, artists, glossary, popular category pages). Helps recover link equity from broken links and provides crawlers with discovery paths.
 
 ### Canonical URLs
 
 All pages set `alternates.canonical`. The share proxy (`/s/[id]`) canonicalizes to `/listing/[id]` to prevent duplicate indexing. Browse query-param URLs (`/?type=katana`) are 301-redirected to their canonical category pages (`/swords/katana`) via middleware. See [Canonical Redirects](#canonical-redirects).
+
+### Legal page metadata
+
+| Page | Metadata source | OG tags |
+|------|----------------|---------|
+| `/privacy` | `page.tsx` `export const metadata` | Yes |
+| `/terms` | `page.tsx` `export const metadata` | Yes |
+| `/cookies` | `layout.tsx` (page is `'use client'`, can't export metadata) | Yes |
 
 ### Sold items (archived)
 
@@ -533,6 +652,8 @@ The only exceptions are legal page body prose (terms of service, privacy policy 
 | `src/lib/seo/categoryPage.ts` | Shared route handler helpers: `buildCategoryMetadata()`, `buildBrowseUrl()`, `buildBreadcrumbs()` |
 | `src/lib/seo/fetchCategoryPreview.ts` | Server-side listing preview fetcher, uses `PARAM_TO_COLUMN` for filter application |
 | `src/lib/listing/getListingDetail.ts` | Shared listing data-fetching + enrichment for SSR (used by page.tsx and API route) |
+| `src/lib/browse/getHomePreview.ts` | Server-side home page preview fetcher (24 listings, total count, dealer count) |
+| `src/lib/glossary/featuredTerms.ts` | Shared `FEATURED_TERMS` constant — single source of truth for glossary pages + sitemap |
 
 ### Pages with `generateMetadata()`
 
@@ -549,6 +670,9 @@ The only exceptions are legal page body prose (terms of service, privacy policy 
 | `src/app/swords/[type]/page.tsx` | From category definitions |
 | `src/app/fittings/[type]/page.tsx` | From category definitions |
 | `src/app/certified/[cert]/page.tsx` | From category definitions |
+| `src/app/(legal)/privacy/page.tsx` | Static with OG tags |
+| `src/app/(legal)/terms/page.tsx` | Static with OG tags |
+| `src/app/(legal)/cookies/layout.tsx` | Static with OG tags (via layout, page is `'use client'`) |
 | `src/app/s/[id]/page.tsx` | Share proxy (noindex) |
 
 ### Technical SEO
@@ -556,8 +680,10 @@ The only exceptions are legal page body prose (terms of service, privacy policy 
 | File | Purpose |
 |------|---------|
 | `src/middleware.ts` | Canonical 301 redirects from browse query-param URLs to category pages |
-| `src/app/robots.ts` | robots.txt generation |
-| `src/app/sitemap.ts` | Dynamic sitemap (listings, dealers, artists, categories) |
+| `src/app/robots.ts` | robots.txt generation (disallows admin, API, collection, etc.) |
+| `src/app/sitemap.ts` | Split sitemap with 4 sub-sitemaps via `generateSitemaps()` |
+| `src/app/not-found.tsx` | Custom 404 page with branding and internal links |
+| `next.config.ts` | `trailingSlash: false` to prevent duplicate URLs |
 
 ---
 
@@ -611,11 +737,23 @@ Measured 2026-02-14 against 6,069 available listings:
 
 Extracted `getListingDetail()` shared function, passed enriched listing as `initialData` prop to client component. Googlebot now sees h1, price, specs, dealer info, and images in the initial HTML. Monitoring via Search Console for "Crawled - currently not indexed" count to decline from 2,423 over 2-4 weeks.
 
-### 3. `tosogu_era` and `tosogu_material` exposure in browse API
+### ~~3. Home page SSR~~ ✅ DONE (2026-02-20)
+
+**Deployed:** Home page split into server component + client component. SSR fallback renders 24 featured listings with H1, counts, and internal links. ItemList JSON-LD added for featured items. See [Home Page SSR Architecture](#home-page-ssr-architecture).
+
+### ~~4. Sitemap split~~ ✅ DONE (2026-02-20)
+
+**Deployed:** Monolithic sitemap split into 4 sub-sitemaps via `generateSitemaps()` to avoid Vercel serverless timeouts. Each sub-sitemap is an independent function invocation.
+
+### ~~5. ISR caching & custom 404~~ ✅ DONE (2026-02-20)
+
+**Deployed:** Listing detail switched from `force-dynamic` to `revalidate = 300` with `createServiceClient()`. Category pages get `revalidate = 3600`. Custom 404 page with branding and internal links. `/collection` added to robots.txt. `trailingSlash: false` prevents duplicate URLs. OG tags added to legal pages.
+
+### 6. `tosogu_era` and `tosogu_material` exposure in browse API
 
 **Impact: LOW-MEDIUM** — The browse API (`/api/browse/route.ts`) doesn't return `tosogu_material` or `tosogu_era`. These fields are available in the DB and now used by listing detail metadata, but browse-level features (e.g., faceted filtering by material) can't access them.
 
-### ~~4. Internal linking from listing pages~~ ✅ DONE (2026-02-16)
+### ~~7. Internal linking from listing pages~~ ✅ DONE (2026-02-16)
 
 **Deployed:** Full internal linking mesh. Every entity mention on listing detail pages (cert badge, item type, artisan, school, dealer) is now a link to its canonical page. Related listings headings link artisan/dealer names. Breadcrumbs use category page URLs. Category landing pages have auto-computed "Related Categories" cross-links. See [Internal Linking Mesh](#internal-linking-mesh).
 
@@ -667,6 +805,11 @@ Monitor:
 
 | Date | Change |
 |------|--------|
+| 2026-02-20 | **Home page ItemList JSON-LD.** Added `ItemList` structured data for the 24 featured listings rendered in the SSR fallback. Enables carousel/product preview rich results for the home page. |
+| 2026-02-20 | **P2 SEO fixes.** `trailingSlash: false` in `next.config.ts` to prevent duplicate URLs. Extracted `FEATURED_TERMS` to `src/lib/glossary/featuredTerms.ts` as single source of truth for glossary pages + sitemap. Added cookies page metadata via `layout.tsx` (page is `'use client'`). Added OG tags to `/privacy` and `/terms`. |
+| 2026-02-20 | **P1 SEO fixes.** Listing detail switched from `force-dynamic` to `revalidate = 300` with `createServiceClient()` for ISR caching. Created custom 404 page (`not-found.tsx`) with branding and internal links. Added `/collection` to robots.txt disallow. Added `revalidate = 3600` to all category page types (swords, fittings, certified). |
+| 2026-02-20 | **P0: Home page SSR.** Split `page.tsx` from `'use client'` into server component + client component (`HomeClient.tsx`). Server component fetches 24 featured listings via `getHomePreview()` and renders SEO-rich Suspense fallback (H1, counts, listing grid with links). Googlebot was seeing only a loading spinner; now sees full content. |
+| 2026-02-20 | **P0: Sitemap split.** Rewrote `sitemap.ts` to use `generateSitemaps()` with 4 sub-sitemaps (static+categories+glossary+dealers, available listings, sold listings, artisan pages). Prevents Vercel serverless timeouts on the monolithic sitemap that was trying to fetch 26,000+ URLs in a single invocation. |
 | 2026-02-16 | **Canonical 301 redirects.** Browse query-param URLs (`/?type=katana`, `/?cert=juyo`, `/?type=katana&cert=juyo`) now 301 redirect to their canonical category pages (`/swords/katana`, `/certified/juyo`, `/swords/juyo-katana`). Implemented in middleware via `findCategoryRedirect()`. Supports all 34 category pages, `period`→`era` aliasing, case-insensitive matching, and DB value variants. Browse-UI params (`tab`, `sort`, `dealer`, etc.) bypass the redirect. `buildBrowseUrl()` includes `tab=available` to prevent "Browse all" CTA redirect loops, and maps `era`→`period` so the browse page correctly applies era filters. Supersedes the "home page metadata adaptation" work item. Verified: 34/34 pages 200, all redirect chains single-hop, no loops. |
 | 2026-02-16 | **Refactor: Dimension-based category generation.** Rewrote `categories.ts` from 686 lines of hand-crafted records to dimension-based generation. Unified `filters: Record<string, string[]>` replaces `filterParam`/`filterValues`/`extraFilters`. `PARAM_TO_COLUMN` mapping replaces if/else chains. New `categoryPage.ts` shared helper deduplicates three route handlers (~100 lines → ~45 lines each). `computeRelatedLinks()` auto-generates cross-links. Entity URL helpers (`getItemTypeUrl`, `getCertUrl`, `getDealerUrl`) absorbed from deleted `entityLinks.ts`. |
 | 2026-02-16 | **SEO 80/20: Sold archive + 20 combination pages + internal linking mesh.** (1) Sold items now indexed with `SoldOut` JSON-LD, "Sold price" label, "View Similar Items" CTA, included in sitemap at 0.4 priority. (2) 20 combination category pages (cert×type, era×type, school×type) targeting queries like "juyo katana for sale", "koto katana", "bizen katana". (3) Full internal linking: cert badges, item types, artisans, schools, and dealers on listing detail pages link to canonical category/directory pages. Category pages have auto-computed Related Categories sections. |
