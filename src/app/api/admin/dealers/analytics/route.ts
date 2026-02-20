@@ -116,6 +116,7 @@ export async function GET(request: NextRequest) {
       dwellStatsResult,
       favoriteStatsResult,
       dailyClicksResult,
+      listingViewsResult,
       listingStatsResult,
     ] = await Promise.all([
       supabase
@@ -149,6 +150,11 @@ export async function GET(request: NextRequest) {
         p_end: periodEndISO,
       }),
 
+      rpc('get_dealer_listing_views', {
+        p_start: periodStartISO,
+        p_end: periodEndISO,
+      }),
+
       supabase
         .from('listings')
         .select('dealer_id, price_jpy')
@@ -165,8 +171,9 @@ export async function GET(request: NextRequest) {
 
     type ClickRow = { dealer_name: string; dealer_id: number | null; clicks: number; unique_visitors: number };
     type PrevClickRow = { dealer_name: string; dealer_id: number | null; clicks: number };
-    type DwellRow = { dealer_id: number; total_dwell_seconds: number };
+    type DwellRow = { dealer_id: number; total_dwell_seconds: number; dwell_event_count: number };
     type FavRow = { dealer_id: number; favorites: number };
+    type ListingViewRow = { dealer_id: number; view_count: number; unique_viewers: number };
     type DailyClickRow = { click_date: string; dealer_name: string; clicks: number };
 
     const clickStats = (clickStatsResult.data || []) as ClickRow[];
@@ -174,6 +181,7 @@ export async function GET(request: NextRequest) {
     const dwellStats = (dwellStatsResult.data || []) as DwellRow[];
     const favStats = (favoriteStatsResult.data || []) as FavRow[];
     const dailyClicks = (dailyClicksResult.data || []) as DailyClickRow[];
+    const listingViewStats = (listingViewsResult.data || []) as ListingViewRow[];
     const listingStats = (listingStatsResult.data || []) as { dealer_id: number; price_jpy: number | null }[];
 
     // Build lookup maps by dealer name → dealer id (for click stats that use dealerName)
@@ -188,6 +196,7 @@ export async function GET(request: NextRequest) {
       uniqueVisitors: number;
       dwellMs: number;
       dwellCount: number;
+      listingViews: number;
       favorites: number;
       alerts: number;
       activeListings: number;
@@ -201,6 +210,7 @@ export async function GET(request: NextRequest) {
         uniqueVisitors: 0,
         dwellMs: 0,
         dwellCount: 0,
+        listingViews: 0,
         favorites: 0,
         alerts: 0,
         activeListings: 0,
@@ -233,7 +243,15 @@ export async function GET(request: NextRequest) {
       const stats = dealerMap.get(row.dealer_id);
       if (stats) {
         stats.dwellMs = Number(row.total_dwell_seconds) * 1000;
-        stats.dwellCount = 1; // dwell is now total seconds, not row count
+        stats.dwellCount = Number(row.dwell_event_count);
+      }
+    }
+
+    // Process listing detail views from RPC
+    for (const row of listingViewStats) {
+      const stats = dealerMap.get(row.dealer_id);
+      if (stats) {
+        stats.listingViews = Number(row.view_count);
       }
     }
 
@@ -286,7 +304,7 @@ export async function GET(request: NextRequest) {
         : stats.clicks > 0 ? 100 : 0;
 
       totalClicks += stats.clicks;
-      totalViews += stats.dwellCount;
+      totalViews += stats.listingViews;
 
       dealerStatsArray.push({
         dealerId: dealer.id,
@@ -294,7 +312,7 @@ export async function GET(request: NextRequest) {
         domain: dealer.domain,
         clickThroughs: stats.clicks,
         uniqueVisitors: stats.uniqueVisitors,
-        listingViews: stats.dwellCount,
+        listingViews: stats.listingViews,
         favorites: stats.favorites,
         alerts: stats.alerts,
         totalDwellMs: stats.dwellMs,
@@ -303,7 +321,7 @@ export async function GET(request: NextRequest) {
         totalValueJpy: stats.totalValue,
         avgPriceJpy: stats.activeListings > 0 ? Math.round(stats.totalValue / stats.activeListings) : 0,
         clicksPerListing: stats.activeListings > 0 ? Math.round((stats.clicks / stats.activeListings) * 100) / 100 : 0,
-        viewsPerListing: stats.activeListings > 0 ? Math.round((stats.dwellCount / stats.activeListings) * 100) / 100 : 0,
+        viewsPerListing: stats.activeListings > 0 ? Math.round((stats.listingViews / stats.activeListings) * 100) / 100 : 0,
         clicksRank: 0, // Will be set below
         clicksPercentile: 0, // Will be set below
         clicksTrend,
