@@ -17,6 +17,7 @@ export default function robots(): MetadataRoute.Robots {
           '/favorites',
           '/saved-searches',
           '/alerts',
+          '/collection',
         ],
       },
     ],

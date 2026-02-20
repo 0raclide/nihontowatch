@@ -186,7 +186,7 @@ describe('Browse page fetch credentials', () => {
     const fs = await import('fs');
     const path = await import('path');
 
-    const pagePath = path.resolve(process.cwd(), 'src/app/page.tsx');
+    const pagePath = path.resolve(process.cwd(), 'src/app/HomeClient.tsx');
     const pageContent = fs.readFileSync(pagePath, 'utf-8');
 
     // Find all lines with fetch to /api/browse

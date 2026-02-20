@@ -8,6 +8,9 @@ import { generateBreadcrumbJsonLd, generateItemListJsonLd, jsonLdScriptProps } f
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://nihontowatch.com';
 
+// ISR: refresh category data every hour
+export const revalidate = 3600;
+
 export function generateStaticParams() {
   return getAllSlugsByRoute('swords').map((type) => ({ type }));
 }

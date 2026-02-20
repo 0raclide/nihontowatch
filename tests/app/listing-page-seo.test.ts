@@ -23,6 +23,7 @@ const mockSupabaseClient = {
 
 vi.mock('@/lib/supabase/server', () => ({
   createClient: vi.fn(() => Promise.resolve(mockSupabaseClient)),
+  createServiceClient: vi.fn(() => mockSupabaseClient),
 }));
 
 describe('Listing Page SEO Behavior', () => {

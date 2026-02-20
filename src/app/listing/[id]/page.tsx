@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { createClient } from '@/lib/supabase/server';
+import { createServiceClient } from '@/lib/supabase/server';
 import ListingDetailClient from './ListingDetailClient';
 import { RelatedListingsServer } from '@/components/listing/RelatedListingsServer';
 import type { RelatedItem } from '@/components/listing/RelatedListingsServer';
@@ -18,8 +18,8 @@ import { getAttributionName } from '@/lib/listing/attribution';
 import type { EnrichedListingDetail } from '@/lib/listing/getListingDetail';
 import type { Listing, Dealer, ItemType, Currency } from '@/types';
 
-// Force dynamic rendering - needed for Supabase server client with cookies
-export const dynamic = 'force-dynamic';
+// ISR: revalidate every 5 minutes — listing data is public, no auth needed
+export const revalidate = 300;
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://nihontowatch.com';
 
@@ -39,7 +39,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   try {
-    const supabase = await createClient();
+    const supabase = createServiceClient();
     const listing = await getListingDetail(supabase, listingId);
 
     if (!listing) {
@@ -132,7 +132,7 @@ export default async function ListingPage({ params }: Props) {
     notFound();
   }
 
-  const supabase = await createClient();
+  const supabase = createServiceClient();
   const listing = await getListingDetail(supabase, listingId);
 
   // Listing doesn't exist - return proper HTTP 404
