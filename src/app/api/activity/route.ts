@@ -1,4 +1,4 @@
-import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { createServiceClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import type {
@@ -150,12 +150,12 @@ export async function POST(request: NextRequest) {
       created_at: event.timestamp,
     }));
 
-    // Insert into database
-    const supabase = await createClient();
+    // Use service client for all inserts (bypasses RLS, consistent across main + fan-out)
+    const serviceClient = createServiceClient();
 
-    // Use type assertion since activity_events table may not be in generated types yet
+    // Insert into activity_events
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any).from('activity_events').insert(records);
+    const { error } = await (serviceClient as any).from('activity_events').insert(records);
 
     if (error) {
       // Log error but don't fail the request - activity tracking is best-effort
@@ -173,7 +173,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Fan-out: write to dedicated tables in parallel (best-effort, fire-and-forget)
-    const serviceClient = createServiceClient();
     await Promise.allSettled([
       fanOutDealerClicks(serviceClient, validEvents, sessionId, userId, visitorId),
       fanOutListingViews(serviceClient, validEvents, sessionId, userId),
@@ -229,10 +228,11 @@ async function fanOutDealerClicks(
       listing_id: data.listingId,
       dealer_id: data.dealerId,
       session_id: sessionId,
-      user_id: userId || null,
       visitor_id: visitorId || null,
+      url: data.url || '',
       source: data.source || 'quickview',
-      clicked_at: e.timestamp,
+      price_at_click: data.priceAtClick || null,
+      currency_at_click: data.currencyAtClick || null,
     };
   });
 
