@@ -699,7 +699,7 @@ export async function GET(request: NextRequest) {
             const entry = artisanNameMap.get(listing.artisan_id)!;
             return {
               ...listing,
-              artisan_display_name: getArtisanAlias(listing.artisan_id) || getArtisanDisplayName(entry.name_romaji, entry.school),
+              artisan_display_name: getArtisanAlias(listing.artisan_id) || getArtisanDisplayName(entry.name_romaji, entry.school, listing.artisan_id),
               artisan_tier: getArtisanTier(entry),
             };
           }

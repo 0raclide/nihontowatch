@@ -32,6 +32,7 @@ describe('getArtisanAlias()', () => {
     expect(getArtisanAlias('KUN539')).toBe('Shintogo Kunimitsu');
     expect(getArtisanAlias('KUN636')).toBe('Saburo Kunimune');
     expect(getArtisanAlias('GOT042')).toBe('Goto Ichijo');
+    expect(getArtisanAlias('OWA009')).toBe('Nobuie');
   });
 
   it('returns null for unknown codes', () => {
@@ -244,5 +245,31 @@ describe('GOLDEN — display name regressions', () => {
     // The dedup rules intentionally don't catch this (Waki-Goto and Goto share "Goto"
     // but the hyphenated school is treated as one token)
     expect(getArtisanDisplayName('Goto Ichijo', 'Waki-Goto')).toBe('Waki-Goto Goto Ichijo');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// NS-* school suffix
+// ---------------------------------------------------------------------------
+
+describe('NS-* school suffix', () => {
+  it('appends "School" for NS- codes', () => {
+    expect(getArtisanDisplayName('Gotō', 'Gotō', 'NS-001')).toBe('Gotō School');
+  });
+
+  it('appends "School" with prefix for NS- codes', () => {
+    expect(getArtisanDisplayName('Kanemitsu', 'Osafune', 'NS-042')).toBe('Osafune Kanemitsu School');
+  });
+
+  it('does NOT append "School" for non-NS codes', () => {
+    expect(getArtisanDisplayName('Gotō', 'Gotō', 'GOT042')).toBe('Gotō');
+  });
+
+  it('does NOT append "School" when code is null', () => {
+    expect(getArtisanDisplayName('Gotō', 'Gotō')).toBe('Gotō');
+  });
+
+  it('does NOT double "School" if already present', () => {
+    expect(getArtisanDisplayName('Gassan School', null, 'NS-100')).toBe('Gassan School');
   });
 });

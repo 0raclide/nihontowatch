@@ -51,6 +51,7 @@ const ARTISAN_ALIASES: Record<string, string> = {
   'KUN539': 'Shintogo Kunimitsu',   // Soshu Kunimitsu, commonly known as "Shintogo Kunimitsu"
   'KUN636': 'Saburo Kunimune',      // Naomune Kunimune, commonly known as "Saburo Kunimune"
   'GOT042': 'Goto Ichijo',          // Waki-Goto Goto Ichijo, commonly known as just "Goto Ichijo"
+  'OWA009': 'Nobuie',               // Owari Nobuie, universally known as just "Nobuie"
 };
 
 /** Return the well-known alias for an artisan, or null if none. */
@@ -191,11 +192,20 @@ export function getArtisanDisplayParts(
 /**
  * Convenience: return a single display string (prefix + name).
  * For rendering with separate styling, use `getArtisanDisplayParts` directly.
+ *
+ * When `code` starts with "NS-" the entity is a school, not an individual
+ * maker, so we append " School" (e.g. "Gotō School") unless the base name
+ * already contains the word.
  */
 export function getArtisanDisplayName(
   nameRomaji: string | null,
   school: string | null,
+  code?: string | null,
 ): string {
   const { prefix, name } = getArtisanDisplayParts(nameRomaji, school);
-  return prefix ? `${prefix} ${name}` : name;
+  const base = prefix ? `${prefix} ${name}` : name;
+  if (code?.startsWith('NS-') && base && !norm(base).includes('school')) {
+    return `${base} School`;
+  }
+  return base;
 }

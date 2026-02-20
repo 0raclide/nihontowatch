@@ -36,8 +36,11 @@ export async function generateMetadata({ params }: ArtistPageProps): Promise<Met
   const { prefix } = getArtisanDisplayParts(name, entity.school);
   const schoolLabel = prefix || entity.school || 'Japanese';
   const alias = getArtisanAlias(entityCode);
-  const displayName = alias ? (alias.toLowerCase().includes(name.toLowerCase()) ? alias : `${name} (${alias})`) : name;
-  const title = `${displayName} — ${schoolLabel} ${type} | NihontoWatch`;
+  const isSchool = entityCode.startsWith('NS-');
+  const schoolSuffix = isSchool ? ' School' : '';
+  const baseName = alias ? (alias.toLowerCase().includes(name.toLowerCase()) ? alias : `${name} (${alias})`) : name;
+  const displayName = baseName + schoolSuffix;
+  const title = `${displayName} — ${schoolLabel} ${isSchool ? 'school' : type} | NihontoWatch`;
   const description = `Comprehensive profile of ${displayName}${province}, ${entity.era || 'Japanese'} ${type}. ${juyo} Jūyō, ${tokuju} Tokubetsu Jūyō certified works. Certification statistics, biography, and available listings.`;
 
   const canonicalSlug = generateArtisanSlug(entity.name_romaji, entityCode);

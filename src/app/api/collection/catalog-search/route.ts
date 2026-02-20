@@ -148,7 +148,7 @@ export async function GET(request: NextRequest) {
         volume: cr.volume,
         item_number: cr.item_number,
         smith_id: artisanId,
-        smith_name: artisanInfo ? getArtisanDisplayName(artisanInfo.name, artisanInfo.school) : null,
+        smith_name: artisanInfo ? getArtisanDisplayName(artisanInfo.name, artisanInfo.school, artisanId) : null,
         smith_school: artisanInfo?.school || null,
         form_type: gold.gold_form_type as string | null,
         nagasa: gold.gold_nagasa ? (gold.gold_nagasa as number) / 10 : null,   // Convert mm -> cm

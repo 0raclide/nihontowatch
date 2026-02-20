@@ -312,7 +312,7 @@ export async function getListingDetail(
     const artisanNameMap = await getArtisanNames([typedListing.artisan_id]);
     const artisanData = artisanNameMap.get(typedListing.artisan_id);
     if (artisanData) {
-      artisanDisplayName = getArtisanAlias(typedListing.artisan_id!) || getArtisanDisplayName(artisanData.name_romaji, artisanData.school);
+      artisanDisplayName = getArtisanAlias(typedListing.artisan_id!) || getArtisanDisplayName(artisanData.name_romaji, artisanData.school, typedListing.artisan_id);
       artisanTier = getArtisanTier(artisanData);
     } else {
       // Fallback: use smith/tosogu_maker when Yuhinkai lookup misses
