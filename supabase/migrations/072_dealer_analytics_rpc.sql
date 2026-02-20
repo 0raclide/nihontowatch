@@ -29,14 +29,13 @@ RETURNS TABLE(dealer_id BIGINT, total_dwell_seconds NUMERIC) AS $$
   GROUP BY (ae.event_data->>'dealerId')::BIGINT;
 $$ LANGUAGE sql SECURITY DEFINER;
 
--- Favorites per dealer (joins activity_events to listings to get dealer_id)
+-- Favorites per dealer (uses user_favorites table, not activity_events)
 CREATE OR REPLACE FUNCTION get_dealer_favorite_stats(p_start TIMESTAMPTZ, p_end TIMESTAMPTZ)
 RETURNS TABLE(dealer_id BIGINT, favorites BIGINT) AS $$
   SELECT l.dealer_id, COUNT(*) AS favorites
-  FROM activity_events ae
-  JOIN listings l ON (ae.event_data->>'listingId')::BIGINT = l.id
-  WHERE ae.event_type = 'favorite_add'
-    AND ae.created_at BETWEEN p_start AND p_end
+  FROM user_favorites uf
+  JOIN listings l ON uf.listing_id = l.id
+  WHERE uf.created_at BETWEEN p_start AND p_end
   GROUP BY l.dealer_id;
 $$ LANGUAGE sql SECURITY DEFINER;
 
