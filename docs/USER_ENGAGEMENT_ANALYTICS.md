@@ -3,6 +3,7 @@
 **Status**: ✅ Complete & Fully Operational
 **Implemented**: 2026-02-01
 **Tracking Integration**: 2026-02-01
+**Security & Data Accuracy Overhaul**: 2026-02-20
 **Location**: `/admin/analytics`
 
 ## Overview
@@ -335,7 +336,7 @@ src/
 │       ├── admin/
 │       │   └── analytics/
 │       │       └── engagement/
-│       │           ├── _lib/utils.ts       # Shared utilities
+│       │           ├── _lib/utils.ts       # Shared helpers (param parsing, response builders, getAdminUserIds)
 │       │           ├── overview/route.ts
 │       │           ├── growth/route.ts
 │       │           ├── searches/route.ts
@@ -361,7 +362,10 @@ src/
 supabase/
 └── migrations/
     ├── 044_listing_views.sql
-    └── 045_user_searches.sql
+    ├── 045_user_searches.sql
+    ├── 071_featured_score_rpc.sql      # Engagement counts for featured scoring
+    ├── 072_dealer_analytics_rpc.sql    # Dealer-level click/dwell/favorite aggregation
+    └── 073_engagement_analytics_rpc.sql # Overview, funnel, searches, top-listings
 
 tests/
 ├── api/
@@ -549,4 +553,104 @@ src/components/browse/ListingGrid.tsx                       # Pass searchId prop
 src/components/browse/VirtualListingGrid.tsx                # Pass searchId prop
 src/components/browse/ListingCard.tsx                       # Add CTR tracking
 tests/api/admin/analytics/engagement/searches.test.ts       # Update mocks
+```
+
+---
+
+## Security & Data Accuracy Overhaul (2026-02-20)
+
+A comprehensive audit revealed 19 issues across security, data accuracy, and UI completeness. The root cause of most data issues was the same anti-pattern: fetch N rows with `.limit()` then aggregate in JavaScript. This silently truncates data when row counts exceed the limit. Supabase PostgREST also has an undocumented default 1000-row limit when no `.limit()` is specified.
+
+### What Changed
+
+#### Security Fixes
+
+| Route | Issue | Fix |
+|-------|-------|-----|
+| `/api/admin/dealers/analytics` | No admin role check (any authenticated user could access) | Added `verifyAdmin()` check |
+| `/api/admin/visitors/geo` | No admin role check | Added `verifyAdmin()` check |
+| `/api/admin/users` | PostgREST filter injection via unsanitized `.or()` interpolation | Sanitize search param by stripping `,().` characters |
+
+#### Data Accuracy — SQL RPC Functions
+
+All engagement routes now use server-side SQL aggregation via RPC functions instead of client-side JavaScript counting. This eliminates silent data truncation.
+
+| Migration | RPC Functions | Used By |
+|-----------|--------------|---------|
+| `071_featured_score_rpc.sql` | `get_listing_engagement_counts(p_since)` | `/api/cron/compute-featured-scores` |
+| `072_dealer_analytics_rpc.sql` | `get_dealer_click_stats`, `get_dealer_dwell_stats`, `get_dealer_favorite_stats`, `get_dealer_click_stats_prev`, `get_dealer_daily_clicks` | `/api/admin/dealers/analytics` |
+| `073_engagement_analytics_rpc.sql` | `get_top_searches`, `get_search_totals`, `get_top_listings`, `get_engagement_counts`, `get_funnel_counts` | All 5 engagement routes |
+
+#### Routes Rewritten to Use RPC
+
+| Route | Before | After |
+|-------|--------|-------|
+| `searches/route.ts` | `.from('user_searches').limit(50000)` + JS GROUP BY | `rpc('get_top_searches')` + `rpc('get_search_totals')` |
+| `top-listings/route.ts` | `.from('listing_views').limit(50000)` + JS counting | `rpc('get_top_listings')` |
+| `compute-featured-scores/route.ts` | 5 separate unbounded queries + JS Map merging | Single `rpc('get_listing_engagement_counts')` |
+| `dealers/analytics/route.ts` | 7 parallel unbounded queries | 5 RPC calls + 2 direct queries |
+
+#### Routes with Increased Limits (Pragmatic Fix)
+
+| Route | Before | After |
+|-------|--------|-------|
+| `overview/route.ts` | `.limit(50000)` / `.limit(10000)` | `.limit(100000)` |
+| `funnel/route.ts` | `.limit(50000)` / `.limit(10000)` | `.limit(100000)` |
+| `activity-chart/route.ts` | No `.limit()` (default 1000!) | `.limit(100000)` |
+| `stats/route.ts` | `.limit(1000)` / `.limit(10000)` | `.limit(100000)` |
+
+#### Auth Consolidation
+
+Two incompatible `verifyAdmin` implementations existed:
+- `src/lib/admin/auth.ts` → returns `{ isAdmin, user, error }` (canonical)
+- `src/app/api/admin/analytics/engagement/_lib/utils.ts` → returns `{ success, userId, response }` (duplicate)
+
+The duplicate was removed. All engagement routes now import from `@/lib/admin/auth`. The `_lib/utils.ts` file retains shared helpers (`getAdminUserIds`, parameter parsing, response builders, math utilities).
+
+#### UI Completeness
+
+| File | Fix |
+|------|-----|
+| `src/app/admin/visitors/page.tsx` | Added 8 missing event type labels: `dealer_click`, `listing_detail_view`, `search_click`, `quickview_open`, `alert_create`, `alert_delete`, `listing_view`, `listing_impression` |
+| `src/components/admin/VisitorDetailModal.tsx` | Added 8 missing cases to `getEventDisplay()` and `getEventDescription()` |
+| `src/app/api/admin/visitors/[visitorId]/route.ts` | Added `dealer_click` case to event switch |
+| `src/app/admin/AdminLayoutClient.tsx` | Removed 4 debug `console.log` statements |
+
+### Files Modified
+
+```
+# Security
+src/app/api/admin/dealers/analytics/route.ts       # Admin auth + RPC rewrite
+src/app/api/admin/visitors/geo/route.ts             # Admin auth check
+src/app/api/admin/users/route.ts                    # Sanitize search param
+
+# Data accuracy — RPC rewrites
+src/app/api/cron/compute-featured-scores/route.ts   # 5 queries → 1 RPC
+src/app/api/admin/analytics/engagement/searches/route.ts    # RPC rewrite
+src/app/api/admin/analytics/engagement/top-listings/route.ts # RPC rewrite
+
+# Data accuracy — increased limits
+src/app/api/admin/analytics/engagement/overview/route.ts
+src/app/api/admin/analytics/engagement/funnel/route.ts
+src/app/api/admin/stats/activity-chart/route.ts
+src/app/api/admin/stats/route.ts
+
+# Auth consolidation
+src/app/api/admin/analytics/engagement/_lib/utils.ts  # Removed duplicate verifyAdmin
+src/app/api/admin/analytics/engagement/growth/route.ts # Use canonical auth
+
+# UI completeness
+src/app/admin/visitors/page.tsx
+src/components/admin/VisitorDetailModal.tsx
+src/app/api/admin/visitors/[visitorId]/route.ts
+src/app/admin/AdminLayoutClient.tsx
+
+# Tests updated
+tests/api/admin/analytics/engagement/searches.test.ts   # Added RPC mocks
+tests/api/admin/analytics/engagement/top-listings.test.ts # Added RPC mocks
+
+# New migrations
+supabase/migrations/071_featured_score_rpc.sql
+supabase/migrations/072_dealer_analytics_rpc.sql
+supabase/migrations/073_engagement_analytics_rpc.sql
 ```

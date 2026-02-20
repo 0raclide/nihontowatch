@@ -488,10 +488,13 @@ Comprehensive analytics infrastructure already built for dealer monetization:
 |-----------|----------|
 | Tracking API | `src/app/api/track/route.ts` |
 | Dealer analytics API | `src/app/api/admin/dealers/analytics/route.ts` |
+| Dealer analytics RPC | `supabase/migrations/072_dealer_analytics_rpc.sql` (5 SQL functions) |
 | Admin dashboard | `src/app/admin/dealers/page.tsx` |
 | Individual report | `src/app/admin/dealers/[id]/page.tsx` |
 | Activity tracker | `src/lib/tracking/ActivityTracker.tsx` |
 | Dwell tracking | `src/lib/viewport/DwellTracker.ts` |
+
+**Data accuracy (2026-02-20):** Dealer analytics uses SQL RPC functions for aggregation (`get_dealer_click_stats`, `get_dealer_dwell_stats`, `get_dealer_favorite_stats`, etc.) instead of JS-side counting, which was silently truncating at Supabase's row limits.
 
 **Gap for B2B launch:** Dealer self-serve portal (dealers can't log in to see their own data yet)
 
@@ -611,6 +614,7 @@ For detailed implementation docs, see:
 - `docs/SESSION_20260209_ADMIN_SET_ARTISAN.md` - Admin artisan assignment widget session
 - `docs/SESSION_20260210_ADMIN_LOCK.md` - Admin artisan lock protection (prevents scraper overwrites)
 - `docs/CATALOGUE_PUBLICATION_PIPE.md` - **Catalogue publication pipe** — Yuhinkai→NihontoWatch content flow (cross-repo)
+- `docs/SESSION_20260220_ADMIN_PANEL_OVERHAUL.md` - Admin panel security, data accuracy & UI overhaul (19 fixes, 3 SQL migrations)
 
 ---
 
