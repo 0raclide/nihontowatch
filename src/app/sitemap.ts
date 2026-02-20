@@ -4,6 +4,7 @@ import { yuhinkaiClient, yuhinkaiConfigured } from '@/lib/supabase/yuhinkai';
 import { generateArtisanSlug } from '@/lib/artisan/slugs';
 import { getAllSlugsByRoute } from '@/lib/seo/categories';
 import { createDealerSlug } from '@/lib/dealers/utils';
+import { FEATURED_TERMS } from '@/lib/glossary/featuredTerms';
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://nihontowatch.com';
 
@@ -147,19 +148,7 @@ async function getAllNotableArtisans(): Promise<ArtisanForSitemap[]> {
   return artisans;
 }
 
-// ---------------------------------------------------------------------------
-// Glossary terms (shared constant — keep in sync with glossary page)
-// ---------------------------------------------------------------------------
-
-const GLOSSARY_TERM_SLUGS = [
-  'juyo', 'hozon', 'tokubetsu-hozon', 'tokubetsu-juyo', 'setsumei', 'origami', 'shinsa',
-  'katana', 'wakizashi', 'tanto', 'tachi', 'naginata', 'yari', 'daisho',
-  'hamon', 'nagasa', 'sugata', 'kissaki', 'nakago', 'mei', 'boshi', 'sori',
-  'kitae', 'jigane', 'jihada', 'yakiba',
-  'tsuba', 'menuki', 'kozuka', 'kogai', 'fuchi', 'kashira', 'koshirae',
-  'gokaden', 'shinto', 'koto', 'shinshinto',
-  'shakudo', 'shibuichi',
-];
+// Glossary terms imported from shared constant (src/lib/glossary/featuredTerms.ts)
 
 // ---------------------------------------------------------------------------
 // Sitemap generator — dispatches to the right content type by ID
@@ -217,7 +206,7 @@ export default async function sitemap(
         }))
       );
 
-      const glossaryPages: MetadataRoute.Sitemap = GLOSSARY_TERM_SLUGS.map((slug) => ({
+      const glossaryPages: MetadataRoute.Sitemap = FEATURED_TERMS.map((slug) => ({
         url: `${baseUrl}/glossary/${slug}`,
         changeFrequency: 'monthly' as const,
         priority: 0.6,

@@ -7,6 +7,10 @@ export const metadata: Metadata = {
   alternates: {
     canonical: '/privacy',
   },
+  openGraph: {
+    title: 'Privacy Policy | NihontoWatch',
+    description: 'Privacy Policy for NihontoWatch - how we collect, use, and protect your personal data under GDPR.',
+  },
 };
 
 const lastUpdated = 'January 25, 2026';

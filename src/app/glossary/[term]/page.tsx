@@ -8,28 +8,9 @@ import { Footer } from '@/components/layout/Footer';
 import { Breadcrumbs } from '@/components/ui/Breadcrumbs';
 import { BottomTabBar } from '@/components/navigation/BottomTabBar';
 import { generateBreadcrumbJsonLd, jsonLdScriptProps } from '@/lib/seo/jsonLd';
+import { FEATURED_TERMS } from '@/lib/glossary/featuredTerms';
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://nihontowatch.com';
-
-/**
- * High-value glossary terms — these get individual pages.
- * Selected for search volume and collector relevance.
- */
-const FEATURED_TERMS = [
-  // Certifications & Documentation
-  'juyo', 'hozon', 'tokubetsu-hozon', 'tokubetsu-juyo', 'setsumei', 'origami', 'shinsa',
-  // Blade types
-  'katana', 'wakizashi', 'tanto', 'tachi', 'naginata', 'yari', 'daisho',
-  // Key anatomy
-  'hamon', 'nagasa', 'sugata', 'kissaki', 'nakago', 'mei', 'boshi', 'sori',
-  'kitae', 'jigane', 'jihada', 'yakiba',
-  // Fittings
-  'tsuba', 'menuki', 'kozuka', 'kogai', 'fuchi', 'kashira', 'koshirae',
-  // Schools & assessment
-  'gokaden', 'shinto', 'koto', 'shinshinto',
-  // Metalwork
-  'shakudo', 'shibuichi',
-];
 
 export function generateStaticParams() {
   return FEATURED_TERMS.map((term) => ({ term }));

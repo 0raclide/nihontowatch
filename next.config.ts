@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Prevent /path and /path/ being treated as separate URLs
+  trailingSlash: false,
   images: {
     remotePatterns: [
       // Allow images from any HTTPS source (dealer images vary widely)

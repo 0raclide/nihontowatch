@@ -7,6 +7,10 @@ export const metadata: Metadata = {
   alternates: {
     canonical: '/terms',
   },
+  openGraph: {
+    title: 'Terms of Service | NihontoWatch',
+    description: 'Terms of Service for NihontoWatch - the Japanese sword and tosogu marketplace aggregator.',
+  },
 };
 
 const lastUpdated = 'January 25, 2026';
