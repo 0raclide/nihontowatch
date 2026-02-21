@@ -9,6 +9,7 @@
  */
 
 import { useState, useCallback } from 'react';
+import { useLocale } from '@/i18n/LocaleContext';
 
 // =============================================================================
 // Types
@@ -62,7 +63,7 @@ const iconSizeStyles: Record<ButtonSize, string> = {
 
 export function CopyButton({
   text,
-  label = 'Copy',
+  label,
   variant = 'button',
   size = 'md',
   className = '',
@@ -72,6 +73,8 @@ export function CopyButton({
   onCopy,
   onError,
 }: CopyButtonProps) {
+  const { t } = useLocale();
+  const displayLabel = label ?? t('inquiry.copy');
   const [copied, setCopied] = useState(false);
 
   const handleCopy = useCallback(async () => {
@@ -143,7 +146,7 @@ export function CopyButton({
         onClick={handleCopy}
         disabled={disabled}
         className={`${baseStyles} p-1.5 ${stateStyles} ${className}`}
-        aria-label={copied ? 'Copied' : (ariaLabel || label)}
+        aria-label={copied ? t('inquiry.copiedShort') : (ariaLabel || displayLabel)}
         data-testid={testId}
       >
         {copied ? <CheckIcon /> : <CopyIcon />}
@@ -162,12 +165,12 @@ export function CopyButton({
       {copied ? (
         <>
           <CheckIcon />
-          <span>Copied</span>
+          <span>{t('inquiry.copiedShort')}</span>
         </>
       ) : (
         <>
           <CopyIcon />
-          <span>{label}</span>
+          <span>{displayLabel}</span>
         </>
       )}
     </button>

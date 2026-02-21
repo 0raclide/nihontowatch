@@ -8,11 +8,14 @@ import { useMobileUI } from '@/contexts/MobileUIContext';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { LoginModal } from '@/components/auth/LoginModal';
 import { useConsent } from '@/contexts/ConsentContext';
+import { useLocale } from '@/i18n/LocaleContext';
+import { MobileLocaleSwitcher } from '@/components/ui/LocaleSwitcher';
 
 export function MobileNavDrawer() {
   const { navDrawerOpen, closeNavDrawer } = useMobileUI();
   const { user, profile, isAdmin, signOut, isLoading: authLoading } = useAuth();
   const { openPreferences } = useConsent();
+  const { t } = useLocale();
   const [showLoginModal, setShowLoginModal] = useState(false);
 
   const displayName = profile?.display_name || user?.email?.split('@')[0] || 'User';
@@ -29,7 +32,7 @@ export function MobileNavDrawer() {
 
   return (
     <>
-      <Drawer isOpen={navDrawerOpen} onClose={closeNavDrawer} title="Menu">
+      <Drawer isOpen={navDrawerOpen} onClose={closeNavDrawer} title={t('menu.title')}>
         <nav className="p-4 space-y-1">
           {/* User Section */}
           {!authLoading && (
@@ -69,7 +72,7 @@ export function MobileNavDrawer() {
                     className="flex items-center gap-3 px-4 py-3 text-[13px] text-text-secondary hover:bg-hover rounded-lg transition-colors"
                   >
                     <UserIcon />
-                    Profile
+                    {t('nav.profile')}
                   </Link>
                   <Link
                     href="/saved"
@@ -77,7 +80,7 @@ export function MobileNavDrawer() {
                     className="flex items-center gap-3 px-4 py-3 text-[13px] text-text-secondary hover:bg-hover rounded-lg transition-colors"
                   >
                     <BookmarkIcon />
-                    Saved
+                    {t('nav.saved')}
                   </Link>
                   {process.env.NEXT_PUBLIC_COLLECTION_ENABLED === 'true' && (
                     <Link
@@ -86,7 +89,7 @@ export function MobileNavDrawer() {
                       className="flex items-center gap-3 px-4 py-3 text-[13px] text-text-secondary hover:bg-hover rounded-lg transition-colors"
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
-                      My Collection
+                      {t('nav.myCollection')}
                     </Link>
                   )}
 
@@ -97,7 +100,7 @@ export function MobileNavDrawer() {
                       className="flex items-center gap-3 px-4 py-3 text-[13px] text-text-secondary hover:bg-hover rounded-lg transition-colors"
                     >
                       <ShieldIcon />
-                      Admin
+                      {t('nav.admin')}
                     </Link>
                   )}
 
@@ -111,7 +114,7 @@ export function MobileNavDrawer() {
                     className="w-full flex items-center gap-3 px-4 py-3 text-[13px] text-gold hover:bg-gold/10 rounded-lg transition-colors"
                   >
                     <LoginIcon />
-                    Sign In / Register
+                    {t('auth.signIn')}
                   </button>
 
                   <div className="h-px bg-border/50 my-2" />
@@ -126,38 +129,43 @@ export function MobileNavDrawer() {
             onClick={closeNavDrawer}
             className="flex items-center px-4 py-3 text-[13px] uppercase tracking-[0.15em] text-text-secondary hover:bg-hover rounded-lg transition-colors"
           >
-            Browse Collection
+            {t('nav.browseCollection')}
           </Link>
           <Link
             href="/artists"
             onClick={closeNavDrawer}
             className="flex items-center px-4 py-3 text-[13px] uppercase tracking-[0.15em] text-text-secondary hover:bg-hover rounded-lg transition-colors"
           >
-            Artists
+            {t('nav.artists')}
           </Link>
           <Link
             href="/glossary"
             onClick={closeNavDrawer}
             className="flex items-center px-4 py-3 text-[13px] uppercase tracking-[0.15em] text-text-secondary hover:bg-hover rounded-lg transition-colors"
           >
-            Glossary
+            {t('nav.glossary')}
           </Link>
 
           <div className="h-px bg-border/50 my-4" />
 
           <div className="px-4 py-2">
             <span className="text-[11px] uppercase tracking-[0.15em] text-text-muted mb-2 block">
-              Theme
+              {t('theme.label')}
             </span>
             <ThemeSelector />
           </div>
 
           <div className="h-px bg-border/50 my-4" />
 
+          {/* Language Switcher */}
+          <MobileLocaleSwitcher />
+
+          <div className="h-px bg-border/50 my-4" />
+
           {/* Legal Links */}
           <div className="px-4 py-2">
             <span className="text-[11px] uppercase tracking-[0.15em] text-text-muted mb-2 block">
-              Legal
+              {t('legal.label')}
             </span>
             <div className="flex flex-wrap gap-x-4 gap-y-2 mt-2">
               <Link
@@ -165,21 +173,21 @@ export function MobileNavDrawer() {
                 onClick={closeNavDrawer}
                 className="text-[12px] text-muted hover:text-ink transition-colors"
               >
-                Terms
+                {t('legal.terms')}
               </Link>
               <Link
                 href="/privacy"
                 onClick={closeNavDrawer}
                 className="text-[12px] text-muted hover:text-ink transition-colors"
               >
-                Privacy
+                {t('legal.privacy')}
               </Link>
               <Link
                 href="/cookies"
                 onClick={closeNavDrawer}
                 className="text-[12px] text-muted hover:text-ink transition-colors"
               >
-                Cookies
+                {t('legal.cookies')}
               </Link>
               <button
                 onClick={() => {
@@ -188,7 +196,7 @@ export function MobileNavDrawer() {
                 }}
                 className="text-[12px] text-muted hover:text-ink transition-colors"
               >
-                Cookie Preferences
+                {t('legal.cookiePreferences')}
               </button>
             </div>
           </div>
@@ -202,7 +210,7 @@ export function MobileNavDrawer() {
                 className="w-full flex items-center gap-3 px-4 py-3 text-[13px] text-red-600 hover:bg-red-50 rounded-lg transition-colors"
               >
                 <LogoutIcon />
-                Sign Out
+                {t('auth.signOut')}
               </button>
             </>
           )}

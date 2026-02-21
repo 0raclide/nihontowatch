@@ -1,5 +1,6 @@
 import sgMail from '@sendgrid/mail';
 import type { SavedSearch, Listing } from '@/types';
+import { t, type Locale } from '@/i18n';
 import {
   generateSavedSearchNotificationHtml,
   generateSavedSearchNotificationText,
@@ -35,17 +36,19 @@ export async function sendSavedSearchNotification(
   savedSearch: SavedSearch,
   matchedListings: Listing[],
   frequency: 'instant' | 'daily',
-  userId?: string
+  userId?: string,
+  locale: Locale = 'en'
 ): Promise<SendEmailResult> {
   if (!process.env.SENDGRID_API_KEY) {
     console.warn('SENDGRID_API_KEY not configured, skipping email');
     return { success: false, error: 'SendGrid not configured' };
   }
 
+  const searchName = savedSearch.name || t(locale, 'email.yourSavedSearch');
   const subject =
     frequency === 'instant'
-      ? `New matches for "${savedSearch.name || 'your search'}"`
-      : `Daily digest: ${matchedListings.length} new matches`;
+      ? t(locale, 'email.newMatchesFound') + `: "${searchName}"`
+      : t(locale, 'email.yourDailyDigest') + `: ${matchedListings.length} ${t(locale, matchedListings.length === 1 ? 'email.itemMatch' : 'email.itemsMatch', { count: matchedListings.length })}`;
 
   // Recipient info for unsubscribe links
   const recipient = userId ? { userId, email: to } : undefined;
@@ -58,8 +61,8 @@ export async function sendSavedSearchNotification(
         name: FROM_NAME,
       },
       subject,
-      text: generateSavedSearchNotificationText(savedSearch, matchedListings, frequency, recipient),
-      html: generateSavedSearchNotificationHtml(savedSearch, matchedListings, frequency, recipient),
+      text: generateSavedSearchNotificationText(savedSearch, matchedListings, frequency, recipient, locale),
+      html: generateSavedSearchNotificationHtml(savedSearch, matchedListings, frequency, recipient, locale),
     });
 
     return {
@@ -84,6 +87,7 @@ export async function sendBatchNotifications(
     matchedListings: Listing[];
     frequency: 'instant' | 'daily';
     userId?: string;
+    locale?: Locale;
   }>
 ): Promise<SendEmailResult[]> {
   if (!process.env.SENDGRID_API_KEY) {
@@ -100,7 +104,7 @@ export async function sendBatchNotifications(
 
     const batchResults = await Promise.all(
       batch.map((n) =>
-        sendSavedSearchNotification(n.to, n.savedSearch, n.matchedListings, n.frequency, n.userId)
+        sendSavedSearchNotification(n.to, n.savedSearch, n.matchedListings, n.frequency, n.userId, n.locale)
       )
     );
 
@@ -122,7 +126,8 @@ export async function sendPriceDropNotification(
   to: string,
   listing: Listing,
   oldPrice: number,
-  newPrice: number
+  newPrice: number,
+  locale: Locale = 'en'
 ): Promise<SendEmailResult> {
   if (!process.env.SENDGRID_API_KEY) {
     console.warn('SENDGRID_API_KEY not configured, skipping email');
@@ -130,8 +135,9 @@ export async function sendPriceDropNotification(
   }
 
   const percentChange = ((newPrice - oldPrice) / oldPrice) * 100;
-  const title = listing.title || 'an item you\'re watching';
-  const subject = `Price dropped ${Math.abs(percentChange).toFixed(0)}% on ${title}`;
+  const title = listing.title || t(locale, 'email.untitled');
+  const formattedPercent = Math.abs(percentChange).toFixed(0);
+  const subject = t(locale, 'email.priceDropTitle', { percent: formattedPercent }) + ` — ${title}`;
 
   try {
     const [response] = await sgMail.send({
@@ -141,8 +147,8 @@ export async function sendPriceDropNotification(
         name: FROM_NAME,
       },
       subject,
-      text: generatePriceDropNotificationText(listing, oldPrice, newPrice, percentChange),
-      html: generatePriceDropNotificationHtml(listing, oldPrice, newPrice, percentChange),
+      text: generatePriceDropNotificationText(listing, oldPrice, newPrice, percentChange, locale),
+      html: generatePriceDropNotificationHtml(listing, oldPrice, newPrice, percentChange, locale),
     });
 
     return {
@@ -161,15 +167,16 @@ export async function sendPriceDropNotification(
  */
 export async function sendBackInStockNotification(
   to: string,
-  listing: Listing
+  listing: Listing,
+  locale: Locale = 'en'
 ): Promise<SendEmailResult> {
   if (!process.env.SENDGRID_API_KEY) {
     console.warn('SENDGRID_API_KEY not configured, skipping email');
     return { success: false, error: 'SendGrid not configured' };
   }
 
-  const title = listing.title || 'An item you\'re watching';
-  const subject = `${title} is back in stock!`;
+  const title = listing.title || t(locale, 'email.untitled');
+  const subject = `${title} — ${t(locale, 'email.backInStockTitle')}`;
 
   try {
     const [response] = await sgMail.send({
@@ -179,8 +186,8 @@ export async function sendBackInStockNotification(
         name: FROM_NAME,
       },
       subject,
-      text: generateBackInStockNotificationText(listing),
-      html: generateBackInStockNotificationHtml(listing),
+      text: generateBackInStockNotificationText(listing, locale),
+      html: generateBackInStockNotificationHtml(listing, locale),
     });
 
     return {

@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useRef } from 'react';
 import Image from 'next/image';
+import { useLocale } from '@/i18n/LocaleContext';
 
 interface ImageUploadZoneProps {
   images: string[];
@@ -13,6 +14,7 @@ interface ImageUploadZoneProps {
 }
 
 export function ImageUploadZone({ images, itemId, onChange, onPendingFilesChange }: ImageUploadZoneProps) {
+  const { t } = useLocale();
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
@@ -23,7 +25,7 @@ export function ImageUploadZone({ images, itemId, onChange, onPendingFilesChange
   const handleFiles = useCallback(async (files: FileList) => {
     const totalCount = images.length + pendingFiles.length + files.length;
     if (totalCount > 20) {
-      setUploadError('Maximum 20 images per item');
+      setUploadError(t('collection.maxImages'));
       return;
     }
 
@@ -32,11 +34,11 @@ export function ImageUploadZone({ images, itemId, onChange, onPendingFilesChange
 
     for (const file of Array.from(files)) {
       if (file.size > 5 * 1024 * 1024) {
-        setUploadError(`${file.name} exceeds 5MB limit`);
+        setUploadError(t('collection.fileTooLarge', { name: file.name }));
         continue;
       }
       if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-        setUploadError(`${file.name} is not a supported format (JPEG/PNG/WebP)`);
+        setUploadError(t('collection.unsupportedFormat', { name: file.name }));
         continue;
       }
       validFiles.push(file);
@@ -77,21 +79,21 @@ export function ImageUploadZone({ images, itemId, onChange, onPendingFilesChange
 
           if (!res.ok) {
             const err = await res.json();
-            setUploadError(err.error || 'Upload failed');
+            setUploadError(err.error || t('collection.uploadFailed'));
             continue;
           }
 
           const data = await res.json();
           newImages.push(data.publicUrl);
         } catch {
-          setUploadError('Upload failed. Please try again.');
+          setUploadError(t('collection.uploadFailedRetry'));
         }
       }
 
       onChange(newImages);
       setIsUploading(false);
     }
-  }, [images, pendingFiles, itemId, isAddMode, onChange, onPendingFilesChange]);
+  }, [images, pendingFiles, itemId, isAddMode, onChange, onPendingFilesChange, t]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -157,17 +159,17 @@ export function ImageUploadZone({ images, itemId, onChange, onPendingFilesChange
         {isUploading ? (
           <div className="flex items-center justify-center gap-2 py-2">
             <div className="w-4 h-4 border-2 border-gold border-t-transparent rounded-full animate-spin" />
-            <span className="text-[12px] text-muted">Uploading...</span>
+            <span className="text-[12px] text-muted">{t('collection.uploading')}</span>
           </div>
         ) : (
           <div className="py-2">
             <svg className="w-6 h-6 mx-auto text-muted/40 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
-            <span className="text-[12px] text-muted">Drop images or click to upload</span>
+            <span className="text-[12px] text-muted">{t('collection.dropImages')}</span>
             <span className="block text-[10px] text-muted/50 mt-0.5">
-              JPEG, PNG, WebP. Max 5MB, up to 20 images.
-              {isAddMode && ' Images will be uploaded when you save.'}
+              {t('collection.imageFormats')}
+              {isAddMode && ` ${t('collection.uploadOnSave')}`}
             </span>
           </div>
         )}
@@ -193,13 +195,13 @@ export function ImageUploadZone({ images, itemId, onChange, onPendingFilesChange
               <button
                 onClick={(e) => { e.stopPropagation(); handleRemove(i); }}
                 className="absolute top-0.5 right-0.5 w-5 h-5 flex items-center justify-center bg-black/60 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity text-[10px]"
-                aria-label="Remove image"
+                aria-label={t('collection.removeImage')}
               >
                 &times;
               </button>
               {i === 0 && (
                 <div className="absolute bottom-0 inset-x-0 bg-gold/80 text-white text-[8px] text-center py-0.5">
-                  Cover
+                  {t('collection.cover')}
                 </div>
               )}
             </div>

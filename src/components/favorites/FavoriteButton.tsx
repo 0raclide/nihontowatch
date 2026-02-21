@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useActivityTrackerOptional } from '@/lib/tracking/ActivityTracker';
+import { useLocale } from '@/i18n/LocaleContext';
 
 interface WatchButtonProps {
   listingId: number;
@@ -27,6 +28,7 @@ export function FavoriteButton({
 }: WatchButtonProps) {
   const { isFavorited, toggleFavorite, isAuthenticated, isLoading } = useFavorites();
   const activityTracker = useActivityTrackerOptional();
+  const { t } = useLocale();
   const [isToggling, setIsToggling] = useState(false);
   const [showPrompt, setShowPrompt] = useState(false);
 
@@ -95,8 +97,8 @@ export function FavoriteButton({
           shadow-sm hover:shadow-md
           ${className}
         `}
-        aria-label={watched ? 'Remove from watchlist' : 'Add to watchlist'}
-        title={!isAuthenticated ? 'Sign up to track items' : watched ? 'Remove from watchlist' : 'Add to watchlist'}
+        aria-label={watched ? t('favorite.removeFromWatchlist') : t('favorite.addToWatchlist')}
+        title={!isAuthenticated ? t('favorite.signUpToTrack') : watched ? t('favorite.removeFromWatchlist') : t('favorite.addToWatchlist')}
       >
         {watched ? (
           // Filled star
@@ -129,13 +131,13 @@ export function FavoriteButton({
       {showPrompt && (
         <div className="absolute top-full right-0 mt-2 z-50 w-64 p-3 bg-cream rounded-lg shadow-lg border border-border animate-fadeIn">
           <p className="text-[12px] text-ink leading-relaxed">
-            <span className="font-medium">Sign up</span> to create a watchlist and get alerts when prices drop.
+            {t('favorite.signUpPrompt')}
           </p>
           <a
             href="/auth/login"
             className="mt-2 block text-center text-[11px] font-medium text-gold hover:underline"
           >
-            Sign up free
+            {t('favorite.signUpFree')}
           </a>
         </div>
       )}
@@ -154,6 +156,7 @@ export function FavoriteButtonInline({
 }: Omit<WatchButtonProps, 'size'>) {
   const { isFavorited, toggleFavorite, isAuthenticated, isLoading } = useFavorites();
   const activityTracker = useActivityTrackerOptional();
+  const { t } = useLocale();
   const [isToggling, setIsToggling] = useState(false);
 
   const initialValue = initialWatched ?? initialFavorited;
@@ -192,7 +195,7 @@ export function FavoriteButtonInline({
         disabled:cursor-not-allowed
         ${className}
       `}
-      aria-label={watched ? 'Remove from watchlist' : 'Add to watchlist'}
+      aria-label={watched ? t('favorite.removeFromWatchlist') : t('favorite.addToWatchlist')}
     >
       {watched ? (
         <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">

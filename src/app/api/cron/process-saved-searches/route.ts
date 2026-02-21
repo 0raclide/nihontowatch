@@ -17,6 +17,7 @@ import { logger } from '@/lib/logger';
 import { verifyCronAuth } from '@/lib/api/cronAuth';
 import type { SavedSearch, SavedSearchCriteria, Listing, NotificationFrequency } from '@/types';
 import type { Database } from '@/types/database';
+import { isLocale, type Locale } from '@/i18n';
 
 type SavedSearchRow = Database['public']['Tables']['saved_searches']['Row'];
 type ProfileRow = Database['public']['Tables']['profiles']['Row'];
@@ -87,17 +88,20 @@ export async function GET(request: NextRequest) {
 
     logger.info('Processing saved searches', { count: savedSearches.length, frequency });
 
-    // Get user emails for notifications
+    // Get user emails and locale preferences for notifications
     const userIds = [...new Set(savedSearches.map((s) => s.user_id))];
     const { data: profilesData } = await supabase
       .from('profiles')
-      .select('id, email')
+      .select('id, email, preferences')
       .in('id', userIds);
 
-    const profiles = profilesData as Pick<ProfileRow, 'id' | 'email'>[] | null;
+    const profiles = profilesData as Pick<ProfileRow, 'id' | 'email' | 'preferences'>[] | null;
     const userEmails = new Map<string, string>();
+    const userLocales = new Map<string, Locale>();
     profiles?.forEach((p) => {
       if (p.email) userEmails.set(p.id, p.email);
+      const pref = (p.preferences as Record<string, unknown> | null)?.locale;
+      if (isLocale(pref as string)) userLocales.set(p.id, pref as Locale);
     });
 
     // Process in batches
@@ -146,12 +150,14 @@ export async function GET(request: NextRequest) {
             }
 
             // Send notification (with userId for unsubscribe link)
+            const locale = userLocales.get(savedSearch.user_id) || 'en';
             const result = await sendSavedSearchNotification(
               email,
               savedSearch as unknown as SavedSearch,
               matchedListings as unknown as Listing[],
               frequency as 'instant' | 'daily',
-              savedSearch.user_id
+              savedSearch.user_id,
+              locale
             );
 
             if (result.success) {

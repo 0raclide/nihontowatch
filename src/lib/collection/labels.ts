@@ -104,20 +104,22 @@ export function getCertTierClass(tier: CertTier): string {
   }
 }
 
-export function formatPrice(value: number | null, currency: string | null): string | null {
+export function formatPrice(value: number | null, currency: string | null, locale?: 'en' | 'ja'): string | null {
   if (!value) return null;
   const curr = currency || 'JPY';
+  const numLocale = locale === 'ja' ? 'ja-JP' : 'en-US';
   try {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: curr, maximumFractionDigits: 0 }).format(value);
+    return new Intl.NumberFormat(numLocale, { style: 'currency', currency: curr, maximumFractionDigits: 0 }).format(value);
   } catch {
     return `${curr} ${value.toLocaleString()}`;
   }
 }
 
-export function formatDate(date: string | null): string | null {
+export function formatDate(date: string | null, locale?: 'en' | 'ja'): string | null {
   if (!date) return null;
+  const dateLocale = locale === 'ja' ? 'ja-JP' : 'en-US';
   try {
-    return new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    return new Date(date).toLocaleDateString(dateLocale, { year: 'numeric', month: 'long', day: 'numeric' });
   } catch {
     return date;
   }

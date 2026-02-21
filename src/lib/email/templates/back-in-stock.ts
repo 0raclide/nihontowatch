@@ -1,14 +1,15 @@
 import type { Listing } from '@/types';
 import { getImageUrl } from '@/lib/images';
+import { t, type Locale } from '@/i18n';
 
 const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://nihontowatch.com';
 
 /**
  * Format price for display in email
  */
-function formatPrice(value: number | null | undefined, currency: string): string {
+function formatPrice(value: number | null | undefined, currency: string, locale: Locale = 'en'): string {
   if (value === null || value === undefined) {
-    return 'Ask';
+    return t(locale, 'email.ask');
   }
   return new Intl.NumberFormat('ja-JP', {
     style: 'currency',
@@ -20,13 +21,13 @@ function formatPrice(value: number | null | undefined, currency: string): string
 /**
  * Generate HTML email for back in stock notification
  */
-export function generateBackInStockNotificationHtml(listing: Listing): string {
-  const title = listing.title || 'Untitled listing';
+export function generateBackInStockNotificationHtml(listing: Listing, locale: Locale = 'en'): string {
+  const title = listing.title || t(locale, 'email.untitled');
   const currency = listing.price_currency || 'JPY';
   const imageUrl = getImageUrl(listing);
   const manageUrl = `${BASE_URL}/alerts`;
   const listingUrl = listing.url;
-  const formattedPrice = formatPrice(listing.price_value, currency);
+  const formattedPrice = formatPrice(listing.price_value, currency, locale);
 
   return `
 <!DOCTYPE html>
@@ -60,10 +61,10 @@ export function generateBackInStockNotificationHtml(listing: Listing): string {
           <tr>
             <td style="padding: 24px;">
               <h1 style="margin: 0 0 8px; font-size: 20px; font-weight: 500; color: #1a1a1a;">
-                Back in stock!
+                ${t(locale, 'email.backInStockTitle')}
               </h1>
               <p style="margin: 0; color: #666; font-size: 14px;">
-                An item you were watching is available again
+                ${t(locale, 'email.backInStockSubtitle')}
               </p>
             </td>
           </tr>
@@ -74,7 +75,7 @@ export function generateBackInStockNotificationHtml(listing: Listing): string {
               <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: #f0fdf4; border-radius: 8px; overflow: hidden;">
                 <tr>
                   <td style="padding: 12px 16px; text-align: center;">
-                    <span style="color: #16a34a; font-size: 14px; font-weight: 500;">Available Now</span>
+                    <span style="color: #16a34a; font-size: 14px; font-weight: 500;">${t(locale, 'email.availableNow')}</span>
                   </td>
                 </tr>
               </table>
@@ -101,10 +102,10 @@ export function generateBackInStockNotificationHtml(listing: Listing): string {
                             ${title}
                           </a>
                           <p style="margin: 4px 0 0; color: #666; font-size: 12px;">
-                            ${listing.item_type ? listing.item_type.charAt(0).toUpperCase() + listing.item_type.slice(1) : 'Item'}
+                            ${listing.item_type ? listing.item_type.charAt(0).toUpperCase() + listing.item_type.slice(1) : t(locale, 'email.item')}
                             ${listing.cert_type ? ` · ${listing.cert_type}` : ''}
                           </p>
-                          ${listing.dealer?.name ? `<p style="margin: 4px 0 0; color: #666; font-size: 12px;">From ${listing.dealer.name}</p>` : ''}
+                          ${listing.dealer?.name ? `<p style="margin: 4px 0 0; color: #666; font-size: 12px;">${t(locale, 'email.from')} ${listing.dealer.name}</p>` : ''}
                           <p style="margin: 8px 0 0; color: #b8860b; font-weight: 600; font-size: 16px;">
                             ${formattedPrice}
                           </p>
@@ -121,7 +122,7 @@ export function generateBackInStockNotificationHtml(listing: Listing): string {
           <tr>
             <td style="padding: 0 24px 24px; text-align: center;">
               <a href="${listingUrl}" style="display: inline-block; padding: 12px 24px; background-color: #b8860b; color: #ffffff; text-decoration: none; font-size: 14px; font-weight: 500; border-radius: 6px;">
-                View Listing
+                ${t(locale, 'email.viewListing')}
               </a>
             </td>
           </tr>
@@ -130,15 +131,15 @@ export function generateBackInStockNotificationHtml(listing: Listing): string {
           <tr>
             <td style="padding: 24px; background-color: #faf9f6; border-top: 1px solid #e5e5e5;">
               <p style="margin: 0 0 8px; color: #666; font-size: 12px; text-align: center;">
-                You're receiving this email because you set up a back-in-stock alert on Nihontowatch.
+                ${t(locale, 'email.backInStockFooter')}
               </p>
               <p style="margin: 0; text-align: center;">
                 <a href="${manageUrl}" style="color: #b8860b; text-decoration: none; font-size: 12px;">
-                  Manage alerts
+                  ${t(locale, 'email.manageAlerts')}
                 </a>
                 <span style="color: #ccc; margin: 0 8px;">|</span>
                 <a href="${BASE_URL}" style="color: #666; text-decoration: none; font-size: 12px;">
-                  Visit Nihontowatch
+                  ${t(locale, 'email.visitSite')}
                 </a>
               </p>
             </td>
@@ -155,32 +156,32 @@ export function generateBackInStockNotificationHtml(listing: Listing): string {
 /**
  * Generate plain text email for back in stock notification
  */
-export function generateBackInStockNotificationText(listing: Listing): string {
-  const title = listing.title || 'Untitled listing';
+export function generateBackInStockNotificationText(listing: Listing, locale: Locale = 'en'): string {
+  const title = listing.title || t(locale, 'email.untitled');
   const currency = listing.price_currency || 'JPY';
   const manageUrl = `${BASE_URL}/alerts`;
   const listingUrl = listing.url;
-  const formattedPrice = formatPrice(listing.price_value, currency);
+  const formattedPrice = formatPrice(listing.price_value, currency, locale);
 
   return `
-BACK IN STOCK ALERT
+${t(locale, 'email.backInStockAlert')}
 
-An item you were watching is available again!
+${t(locale, 'email.backInStockText')}
 
 ${title}
 
-Price: ${formattedPrice}
+${t(locale, 'email.price')} ${formattedPrice}
 
-${listing.item_type ? listing.item_type.charAt(0).toUpperCase() + listing.item_type.slice(1) : 'Item'}${listing.cert_type ? ` · ${listing.cert_type}` : ''}
-${listing.dealer?.name ? `From ${listing.dealer.name}` : ''}
-
----
-
-View listing: ${listingUrl}
-Manage alerts: ${manageUrl}
+${listing.item_type ? listing.item_type.charAt(0).toUpperCase() + listing.item_type.slice(1) : t(locale, 'email.item')}${listing.cert_type ? ` · ${listing.cert_type}` : ''}
+${listing.dealer?.name ? `${t(locale, 'email.from')} ${listing.dealer.name}` : ''}
 
 ---
 
-You're receiving this email because you set up a back-in-stock alert on Nihontowatch.
+${t(locale, 'email.viewListingColon')} ${listingUrl}
+${t(locale, 'email.manageAlertsColon')} ${manageUrl}
+
+---
+
+${t(locale, 'email.backInStockFooter')}
   `.trim();
 }

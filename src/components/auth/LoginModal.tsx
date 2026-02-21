@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth/AuthContext';
+import { useLocale } from '@/i18n/LocaleContext';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { createClient } from '@/lib/supabase/client';
 
@@ -24,6 +25,7 @@ interface LoginModalProps {
 export function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const router = useRouter();
   const { signInWithEmail, verifyOtp, signInWithPassword } = useAuth();
+  const { t } = useLocale();
 
   const [step, setStep] = useState<Step>('email');
   const [email, setEmail] = useState('');
@@ -111,14 +113,14 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
       if (signInError) {
         setError(signInError.message);
       } else {
-        setSuccessMessage('Code sent! Check your email.');
+        setSuccessMessage(t('login.codeSent'));
         setTimeout(() => {
           setSuccessMessage(null);
           setStep('otp');
         }, 1000);
       }
     } catch {
-      setError('An unexpected error occurred. Please try again.');
+      setError(t('login.unexpectedError'));
     } finally {
       setIsLoading(false);
     }
@@ -132,7 +134,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
     }
 
     if (code.length !== 6) {
-      setError('Please enter the complete 6-digit code.');
+      setError(t('login.enterComplete'));
       return;
     }
 
@@ -148,7 +150,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
         setOtp(['', '', '', '', '', '']);
         otpInputRefs.current[0]?.focus();
       } else {
-        setSuccessMessage('Login successful!');
+        setSuccessMessage(t('login.loginSuccess'));
         setTimeout(() => {
           onClose();
           // Force router refresh to update all components with new auth state
@@ -157,7 +159,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
         }, 500);
       }
     } catch {
-      setError('An unexpected error occurred. Please try again.');
+      setError(t('login.unexpectedError'));
     } finally {
       setIsLoading(false);
       submitInProgress.current = false;
@@ -226,7 +228,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
     }
 
     if (!password) {
-      setError('Please enter your password.');
+      setError(t('login.enterPasswordPrompt'));
       return;
     }
 
@@ -241,7 +243,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
         setError(signInError.message);
         setPassword('');
       } else {
-        setSuccessMessage('Login successful!');
+        setSuccessMessage(t('login.loginSuccess'));
         setTimeout(() => {
           onClose();
           // Force router refresh to update all components with new auth state
@@ -249,7 +251,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
         }, 500);
       }
     } catch {
-      setError('An unexpected error occurred. Please try again.');
+      setError(t('login.unexpectedError'));
     } finally {
       setIsLoading(false);
       submitInProgress.current = false;
@@ -300,14 +302,14 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
           {/* Header */}
           <div className="text-center mb-6">
             <h2 className="font-serif text-2xl text-ink mb-2">
-              {step === 'email' ? 'Welcome' : step === 'otp' ? 'Enter Code' : 'Enter Password'}
+              {step === 'email' ? t('login.welcome') : step === 'otp' ? t('login.enterCode') : t('login.enterPassword')}
             </h2>
             <p className="text-sm text-muted">
               {step === 'email'
-                ? 'Sign in or create an account'
+                ? t('login.signInOrCreate')
                 : step === 'otp'
-                ? `We sent a code to ${email}`
-                : `Sign in as ${email}`}
+                ? t('login.codeSentTo', { email })
+                : t('login.signInAs', { email })}
             </p>
           </div>
 
@@ -333,7 +335,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                   htmlFor="email"
                   className="block text-xs uppercase tracking-wider text-muted mb-2"
                 >
-                  Email Address
+                  {t('login.emailAddress')}
                 </label>
                 <input
                   ref={emailInputRef}
@@ -356,15 +358,15 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                 {isLoading ? (
                   <>
                     <LoadingSpinner />
-                    Sending...
+                    {t('login.sending')}
                   </>
                 ) : (
-                  'Continue with Email'
+                  t('login.continueWithEmail')
                 )}
               </button>
 
               <p className="text-xs text-muted/70 text-center">
-                No account yet? Just enter your email to get started.
+                {t('login.noAccount')}
               </p>
             </form>
           )}
@@ -374,7 +376,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
             <form onSubmit={handleOtpFormSubmit} className="space-y-4">
               <div>
                 <label className="block text-xs uppercase tracking-wider text-muted mb-3 text-center">
-                  6-Digit Code
+                  {t('login.sixDigitCode')}
                 </label>
                 <div className="flex justify-center gap-2">
                   {otp.map((digit, index) => (
@@ -406,10 +408,10 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                 {isLoading ? (
                   <>
                     <LoadingSpinner />
-                    Verifying...
+                    {t('login.verifying')}
                   </>
                 ) : (
-                  'Sign In'
+                  t('login.signIn')
                 )}
               </button>
 
@@ -424,7 +426,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                 disabled={isLoading}
                 className="w-full py-2 text-sm text-muted hover:text-ink transition-colors disabled:opacity-50"
               >
-                Use a different email
+                {t('login.useDifferentEmail')}
               </button>
             </form>
           )}
@@ -437,7 +439,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                   htmlFor="password"
                   className="block text-xs uppercase tracking-wider text-muted mb-2"
                 >
-                  Password
+                  {t('auth.password')}
                 </label>
                 <input
                   ref={passwordInputRef}
@@ -460,10 +462,10 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                 {isLoading ? (
                   <>
                     <LoadingSpinner />
-                    Signing in...
+                    {t('login.signingIn')}
                   </>
                 ) : (
-                  'Sign In'
+                  t('login.signIn')
                 )}
               </button>
 
@@ -478,14 +480,14 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                 disabled={isLoading}
                 className="w-full py-2 text-sm text-muted hover:text-ink transition-colors disabled:opacity-50"
               >
-                Use a different email
+                {t('login.useDifferentEmail')}
               </button>
             </form>
           )}
 
           {/* Footer */}
           <p className="mt-6 text-xs text-muted text-center">
-            By continuing, you agree to our Terms of Service and Privacy Policy.
+            {t('login.agreeTerms')}
           </p>
         </div>
       </div>

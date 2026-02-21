@@ -12,6 +12,7 @@ import { logger } from '@/lib/logger';
 import { verifyCronAuth } from '@/lib/api/cronAuth';
 import type { Listing } from '@/types';
 import type { Database } from '@/types/database';
+import { isLocale, type Locale } from '@/i18n';
 
 type AlertRow = Database['public']['Tables']['alerts']['Row'];
 type ProfileRow = Database['public']['Tables']['profiles']['Row'];
@@ -134,17 +135,20 @@ export async function GET(request: NextRequest) {
 
     logger.info('Alerts eligible after cooldown filter', { count: eligibleAlerts.length });
 
-    // Step 3: Get user emails
+    // Step 3: Get user emails and locale preferences
     const userIds = [...new Set(eligibleAlerts.map((a) => a.user_id))];
     const { data: profilesData } = await supabase
       .from('profiles')
-      .select('id, email')
+      .select('id, email, preferences')
       .in('id', userIds);
 
-    const profiles = profilesData as Pick<ProfileRow, 'id' | 'email'>[] | null;
+    const profiles = profilesData as Pick<ProfileRow, 'id' | 'email' | 'preferences'>[] | null;
     const userEmails = new Map<string, string>();
+    const userLocales = new Map<string, Locale>();
     profiles?.forEach((p) => {
       if (p.email) userEmails.set(p.id, p.email);
+      const pref = (p.preferences as Record<string, unknown> | null)?.locale;
+      if (isLocale(pref as string)) userLocales.set(p.id, pref as Locale);
     });
 
     // Step 4: Get listing details
@@ -202,11 +206,13 @@ export async function GET(request: NextRequest) {
             processed++;
 
             // Send notification
+            const locale = userLocales.get(alert.user_id) || 'en';
             const result = await sendPriceDropNotification(
               email,
               listing,
               priceChange.old_price || 0,
-              priceChange.new_price || 0
+              priceChange.new_price || 0,
+              locale
             );
 
             if (result.success) {

@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import type { CollectionItem, CreateCollectionItemInput, UpdateCollectionItemInput } from '@/types/collection';
+import { useLocale } from '@/i18n/LocaleContext';
 import { CatalogSearchBar } from './CatalogSearchBar';
 import { ImageUploadZone, uploadPendingFiles } from './ImageUploadZone';
 
@@ -126,6 +127,7 @@ function buildInitialForm(item: CollectionItem | null, prefill: Partial<Collecti
 }
 
 export function CollectionFormContent({ mode, item, prefillData, onSaved, onCancel }: CollectionFormContentProps) {
+  const { t } = useLocale();
   const [form, setForm] = useState<FormData>(() => buildInitialForm(item, prefillData));
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -277,78 +279,78 @@ export function CollectionFormContent({ mode, item, prefillData, onSaved, onCanc
       {/* Form Sections */}
       <div className="flex-1 px-4 lg:px-5 py-4 space-y-1">
         {/* Classification */}
-        <FormSection title="Classification" isOpen={expandedSections.classification} onToggle={() => toggleSection('classification')}>
+        <FormSection title={t('collection.classification')} isOpen={expandedSections.classification} onToggle={() => toggleSection('classification')}>
           <div className="grid grid-cols-2 gap-3">
-            <FormField label="Item Type">
+            <FormField label={t('collection.itemType')}>
               <select value={form.item_type} onChange={e => updateField('item_type', e.target.value)} className="form-select">
-                {ITEM_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                {ITEM_TYPES.map(opt => <option key={opt.value} value={opt.value}>{opt.value === '' ? t('collection.selectType') : t(`itemType.${opt.value}`)}</option>)}
               </select>
             </FormField>
-            <FormField label="Title (optional)">
-              <input type="text" value={form.title} onChange={e => updateField('title', e.target.value)} placeholder="Custom title..." className="form-input" />
+            <FormField label={t('collection.titleOptional')}>
+              <input type="text" value={form.title} onChange={e => updateField('title', e.target.value)} placeholder={t('collection.customTitle')} className="form-input" />
             </FormField>
-            <FormField label="Certification">
+            <FormField label={t('collection.certification')}>
               <select value={form.cert_type} onChange={e => updateField('cert_type', e.target.value)} className="form-select">
-                {CERT_TYPES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                {CERT_TYPES.map(c => <option key={c.value} value={c.value}>{c.value === '' ? t('cert.none') : t(`cert.${c.value}`)}</option>)}
               </select>
             </FormField>
-            <FormField label="Session">
-              <input type="number" value={form.cert_session} onChange={e => updateField('cert_session', e.target.value)} placeholder="e.g. 63" className="form-input" />
+            <FormField label={t('collection.session')}>
+              <input type="number" value={form.cert_session} onChange={e => updateField('cert_session', e.target.value)} placeholder={t('collection.sessionPlaceholder')} className="form-input" />
             </FormField>
           </div>
         </FormSection>
 
         {/* Attribution */}
-        <FormSection title="Attribution" isOpen={expandedSections.attribution} onToggle={() => toggleSection('attribution')}>
+        <FormSection title={t('collection.attribution')} isOpen={expandedSections.attribution} onToggle={() => toggleSection('attribution')}>
           <div className="grid grid-cols-2 gap-3">
-            <FormField label="Smith / Maker">
-              <input type="text" value={form.smith} onChange={e => updateField('smith', e.target.value)} placeholder="Swordsmith name" className="form-input" />
+            <FormField label={t('collection.smithMaker')}>
+              <input type="text" value={form.smith} onChange={e => updateField('smith', e.target.value)} placeholder={t('collection.smithPlaceholder')} className="form-input" />
             </FormField>
-            <FormField label="School">
-              <input type="text" value={form.school} onChange={e => updateField('school', e.target.value)} placeholder="e.g. Soshu" className="form-input" />
+            <FormField label={t('collection.school')}>
+              <input type="text" value={form.school} onChange={e => updateField('school', e.target.value)} placeholder={t('collection.schoolPlaceholder')} className="form-input" />
             </FormField>
-            <FormField label="Province">
-              <input type="text" value={form.province} onChange={e => updateField('province', e.target.value)} placeholder="e.g. Sagami" className="form-input" />
+            <FormField label={t('collection.province')}>
+              <input type="text" value={form.province} onChange={e => updateField('province', e.target.value)} placeholder={t('collection.provincePlaceholder')} className="form-input" />
             </FormField>
-            <FormField label="Era">
-              <input type="text" value={form.era} onChange={e => updateField('era', e.target.value)} placeholder="e.g. Kamakura" className="form-input" />
+            <FormField label={t('collection.era')}>
+              <input type="text" value={form.era} onChange={e => updateField('era', e.target.value)} placeholder={t('collection.eraPlaceholder')} className="form-input" />
             </FormField>
-            <FormField label="Mei Type">
+            <FormField label={t('collection.meiType')}>
               <select value={form.mei_type} onChange={e => updateField('mei_type', e.target.value)} className="form-select">
-                {MEI_TYPES.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+                {MEI_TYPES.map(m => <option key={m.value} value={m.value}>{m.value === '' ? t('collection.selectMeiType') : t(`collection.${({'mei':'meiSigned','mumei':'mumei','gimei':'gimei','orikaeshi-mei':'orikaeshi','gaku-mei':'gakuMei','kinzogan-mei':'kinzogan'} as Record<string,string>)[m.value] || m.value}`)}</option>)}
               </select>
             </FormField>
           </div>
         </FormSection>
 
         {/* Measurements */}
-        <FormSection title="Measurements" isOpen={expandedSections.measurements} onToggle={() => toggleSection('measurements')}>
+        <FormSection title={t('collection.measurements')} isOpen={expandedSections.measurements} onToggle={() => toggleSection('measurements')}>
           <div className="grid grid-cols-2 gap-3">
-            <FormField label="Nagasa (cm)">
+            <FormField label={t('collection.nagasa')}>
               <input type="number" step="0.1" value={form.nagasa_cm} onChange={e => updateField('nagasa_cm', e.target.value)} className="form-input" />
             </FormField>
-            <FormField label="Sori (cm)">
+            <FormField label={t('collection.sori')}>
               <input type="number" step="0.1" value={form.sori_cm} onChange={e => updateField('sori_cm', e.target.value)} className="form-input" />
             </FormField>
-            <FormField label="Motohaba (cm)">
+            <FormField label={t('collection.motohaba')}>
               <input type="number" step="0.01" value={form.motohaba_cm} onChange={e => updateField('motohaba_cm', e.target.value)} className="form-input" />
             </FormField>
-            <FormField label="Sakihaba (cm)">
+            <FormField label={t('collection.sakihaba')}>
               <input type="number" step="0.01" value={form.sakihaba_cm} onChange={e => updateField('sakihaba_cm', e.target.value)} className="form-input" />
             </FormField>
           </div>
         </FormSection>
 
         {/* Provenance */}
-        <FormSection title="Provenance" isOpen={expandedSections.provenance} onToggle={() => toggleSection('provenance')}>
+        <FormSection title={t('collection.provenance')} isOpen={expandedSections.provenance} onToggle={() => toggleSection('provenance')}>
           <div className="grid grid-cols-2 gap-3">
-            <FormField label="Acquired From">
-              <input type="text" value={form.acquired_from} onChange={e => updateField('acquired_from', e.target.value)} placeholder="Dealer, auction, etc." className="form-input" />
+            <FormField label={t('collection.acquiredFrom')}>
+              <input type="text" value={form.acquired_from} onChange={e => updateField('acquired_from', e.target.value)} placeholder={t('collection.acquiredFromPlaceholder')} className="form-input" />
             </FormField>
-            <FormField label="Acquired Date">
+            <FormField label={t('collection.acquiredDate')}>
               <input type="date" value={form.acquired_date} onChange={e => updateField('acquired_date', e.target.value)} className="form-input" />
             </FormField>
-            <FormField label="Price Paid">
+            <FormField label={t('collection.pricePaid')}>
               <div className="flex gap-1">
                 <select value={form.price_paid_currency} onChange={e => updateField('price_paid_currency', e.target.value)} className="form-select w-20">
                   {CURRENCIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
@@ -360,44 +362,44 @@ export function CollectionFormContent({ mode, item, prefillData, onSaved, onCanc
         </FormSection>
 
         {/* Valuation */}
-        <FormSection title="Valuation" isOpen={expandedSections.valuation} onToggle={() => toggleSection('valuation')}>
-          <FormField label="Current Value">
+        <FormSection title={t('collection.valuation')} isOpen={expandedSections.valuation} onToggle={() => toggleSection('valuation')}>
+          <FormField label={t('collection.currentValue')}>
             <div className="flex gap-1">
               <select value={form.current_value_currency} onChange={e => updateField('current_value_currency', e.target.value)} className="form-select w-20">
                 {CURRENCIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
               </select>
-              <input type="number" value={form.current_value} onChange={e => updateField('current_value', e.target.value)} placeholder="Estimated value" className="form-input flex-1" />
+              <input type="number" value={form.current_value} onChange={e => updateField('current_value', e.target.value)} placeholder={t('collection.estimatedValue')} className="form-input flex-1" />
             </div>
           </FormField>
         </FormSection>
 
         {/* Status */}
-        <FormSection title="Status & Condition" isOpen={expandedSections.status} onToggle={() => toggleSection('status')}>
+        <FormSection title={t('collection.statusCondition')} isOpen={expandedSections.status} onToggle={() => toggleSection('status')}>
           <div className="grid grid-cols-2 gap-3">
-            <FormField label="Status">
+            <FormField label={t('collection.status')}>
               <select value={form.status} onChange={e => updateField('status', e.target.value)} className="form-select">
-                {STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                {STATUSES.map(s => <option key={s.value} value={s.value}>{t(`collection.status.${s.value}`)}</option>)}
               </select>
             </FormField>
-            <FormField label="Condition">
+            <FormField label={t('collection.condition')}>
               <select value={form.condition} onChange={e => updateField('condition', e.target.value)} className="form-select">
-                {CONDITIONS.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                {CONDITIONS.map(c => <option key={c.value} value={c.value}>{t(`collection.condition.${c.value}`)}</option>)}
               </select>
             </FormField>
           </div>
           <label className="flex items-center gap-2 mt-2">
             <input type="checkbox" checked={form.is_public} onChange={e => updateField('is_public', e.target.checked)} className="rounded border-border" />
-            <span className="text-[12px] text-muted">Make visible to other users</span>
+            <span className="text-[12px] text-muted">{t('collection.makeVisible')}</span>
           </label>
         </FormSection>
 
         {/* Notes */}
-        <FormSection title="Notes" isOpen={expandedSections.notes} onToggle={() => toggleSection('notes')}>
+        <FormSection title={t('collection.notes')} isOpen={expandedSections.notes} onToggle={() => toggleSection('notes')}>
           <textarea
             value={form.notes}
             onChange={e => updateField('notes', e.target.value)}
             rows={4}
-            placeholder="Personal notes, history, observations..."
+            placeholder={t('collection.notesPlaceholder')}
             className="form-input w-full resize-y"
           />
         </FormSection>
@@ -413,14 +415,14 @@ export function CollectionFormContent({ mode, item, prefillData, onSaved, onCanc
             onClick={onCancel}
             className="px-4 py-2 text-[12px] font-medium text-muted hover:text-ink transition-colors"
           >
-            Cancel
+            {t('common.cancel')}
           </button>
           <button
             onClick={handleSave}
             disabled={isSaving}
             className="px-5 py-2 text-[12px] font-medium text-white bg-gold hover:bg-gold-light rounded-lg transition-colors disabled:opacity-50"
           >
-            {isSaving ? 'Saving...' : mode === 'add' ? 'Add to Collection' : 'Save Changes'}
+            {isSaving ? t('collection.saving') : mode === 'add' ? t('collection.addToCollection') : t('collection.saveChanges')}
           </button>
         </div>
       </div>

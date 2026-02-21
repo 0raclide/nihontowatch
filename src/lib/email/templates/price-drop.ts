@@ -1,14 +1,15 @@
 import type { Listing } from '@/types';
 import { getImageUrl } from '@/lib/images';
+import { t, type Locale } from '@/i18n';
 
 const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://nihontowatch.com';
 
 /**
  * Format price for display in email
  */
-function formatPrice(value: number | null | undefined, currency: string): string {
+function formatPrice(value: number | null | undefined, currency: string, locale: Locale = 'en'): string {
   if (value === null || value === undefined) {
-    return 'Ask';
+    return t(locale, 'email.ask');
   }
   return new Intl.NumberFormat('ja-JP', {
     style: 'currency',
@@ -24,16 +25,17 @@ export function generatePriceDropNotificationHtml(
   listing: Listing,
   oldPrice: number,
   newPrice: number,
-  percentChange: number
+  percentChange: number,
+  locale: Locale = 'en'
 ): string {
-  const title = listing.title || 'Untitled listing';
+  const title = listing.title || t(locale, 'email.untitled');
   const currency = listing.price_currency || 'JPY';
   const imageUrl = getImageUrl(listing);
   const manageUrl = `${BASE_URL}/alerts`;
   const listingUrl = listing.url;
 
-  const formattedOldPrice = formatPrice(oldPrice, currency);
-  const formattedNewPrice = formatPrice(newPrice, currency);
+  const formattedOldPrice = formatPrice(oldPrice, currency, locale);
+  const formattedNewPrice = formatPrice(newPrice, currency, locale);
   const formattedPercent = Math.abs(percentChange).toFixed(0);
 
   return `
@@ -68,10 +70,10 @@ export function generatePriceDropNotificationHtml(
           <tr>
             <td style="padding: 24px;">
               <h1 style="margin: 0 0 8px; font-size: 20px; font-weight: 500; color: #1a1a1a;">
-                Price dropped ${formattedPercent}%
+                ${t(locale, 'email.priceDropTitle', { percent: formattedPercent })}
               </h1>
               <p style="margin: 0; color: #666; font-size: 14px;">
-                An item you're watching just got cheaper
+                ${t(locale, 'email.priceDropSubtitle')}
               </p>
             </td>
           </tr>
@@ -111,10 +113,10 @@ export function generatePriceDropNotificationHtml(
                             ${title}
                           </a>
                           <p style="margin: 4px 0 0; color: #666; font-size: 12px;">
-                            ${listing.item_type ? listing.item_type.charAt(0).toUpperCase() + listing.item_type.slice(1) : 'Item'}
+                            ${listing.item_type ? listing.item_type.charAt(0).toUpperCase() + listing.item_type.slice(1) : t(locale, 'email.item')}
                             ${listing.cert_type ? ` · ${listing.cert_type}` : ''}
                           </p>
-                          ${listing.dealer?.name ? `<p style="margin: 4px 0 0; color: #666; font-size: 12px;">From ${listing.dealer.name}</p>` : ''}
+                          ${listing.dealer?.name ? `<p style="margin: 4px 0 0; color: #666; font-size: 12px;">${t(locale, 'email.from')} ${listing.dealer.name}</p>` : ''}
                         </td>
                       </tr>
                     </table>
@@ -128,7 +130,7 @@ export function generatePriceDropNotificationHtml(
           <tr>
             <td style="padding: 0 24px 24px; text-align: center;">
               <a href="${listingUrl}" style="display: inline-block; padding: 12px 24px; background-color: #b8860b; color: #ffffff; text-decoration: none; font-size: 14px; font-weight: 500; border-radius: 6px;">
-                View Listing
+                ${t(locale, 'email.viewListing')}
               </a>
             </td>
           </tr>
@@ -137,15 +139,15 @@ export function generatePriceDropNotificationHtml(
           <tr>
             <td style="padding: 24px; background-color: #faf9f6; border-top: 1px solid #e5e5e5;">
               <p style="margin: 0 0 8px; color: #666; font-size: 12px; text-align: center;">
-                You're receiving this email because you set up a price alert on Nihontowatch.
+                ${t(locale, 'email.priceDropFooter')}
               </p>
               <p style="margin: 0; text-align: center;">
                 <a href="${manageUrl}" style="color: #b8860b; text-decoration: none; font-size: 12px;">
-                  Manage alerts
+                  ${t(locale, 'email.manageAlerts')}
                 </a>
                 <span style="color: #ccc; margin: 0 8px;">|</span>
                 <a href="${BASE_URL}" style="color: #666; text-decoration: none; font-size: 12px;">
-                  Visit Nihontowatch
+                  ${t(locale, 'email.visitSite')}
                 </a>
               </p>
             </td>
@@ -166,36 +168,37 @@ export function generatePriceDropNotificationText(
   listing: Listing,
   oldPrice: number,
   newPrice: number,
-  percentChange: number
+  percentChange: number,
+  locale: Locale = 'en'
 ): string {
-  const title = listing.title || 'Untitled listing';
+  const title = listing.title || t(locale, 'email.untitled');
   const currency = listing.price_currency || 'JPY';
   const manageUrl = `${BASE_URL}/alerts`;
   const listingUrl = listing.url;
 
-  const formattedOldPrice = formatPrice(oldPrice, currency);
-  const formattedNewPrice = formatPrice(newPrice, currency);
+  const formattedOldPrice = formatPrice(oldPrice, currency, locale);
+  const formattedNewPrice = formatPrice(newPrice, currency, locale);
   const formattedPercent = Math.abs(percentChange).toFixed(0);
 
   return `
-PRICE DROP ALERT
+${t(locale, 'email.priceDropAlert')}
 
-An item you're watching just dropped ${formattedPercent}% in price!
+${t(locale, 'email.priceDropText', { percent: formattedPercent })}
 
 ${title}
 
-Price: ${formattedOldPrice} → ${formattedNewPrice}
+${t(locale, 'email.price')} ${formattedOldPrice} → ${formattedNewPrice}
 
-${listing.item_type ? listing.item_type.charAt(0).toUpperCase() + listing.item_type.slice(1) : 'Item'}${listing.cert_type ? ` · ${listing.cert_type}` : ''}
-${listing.dealer?.name ? `From ${listing.dealer.name}` : ''}
-
----
-
-View listing: ${listingUrl}
-Manage alerts: ${manageUrl}
+${listing.item_type ? listing.item_type.charAt(0).toUpperCase() + listing.item_type.slice(1) : t(locale, 'email.item')}${listing.cert_type ? ` · ${listing.cert_type}` : ''}
+${listing.dealer?.name ? `${t(locale, 'email.from')} ${listing.dealer.name}` : ''}
 
 ---
 
-You're receiving this email because you set up a price alert on Nihontowatch.
+${t(locale, 'email.viewListingColon')} ${listingUrl}
+${t(locale, 'email.manageAlertsColon')} ${manageUrl}
+
+---
+
+${t(locale, 'email.priceDropFooter')}
   `.trim();
 }

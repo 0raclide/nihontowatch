@@ -5,6 +5,7 @@ import Link from 'next/link';
 import type { CollectionItem } from '@/types/collection';
 import { CERT_LABELS, STATUS_LABELS, CONDITION_LABELS, getCertTierClass, getItemTypeLabel, formatPrice, formatDate } from '@/lib/collection/labels';
 import { useCollectionQuickView } from '@/contexts/CollectionQuickViewContext';
+import { useLocale } from '@/i18n/LocaleContext';
 
 // =============================================================================
 // Constants (matching browse QuickViewMobileSheet exactly)
@@ -39,6 +40,7 @@ export function CollectionMobileSheet({
   const sheetRef = useRef<HTMLDivElement>(null);
   const scrollContentRef = useRef<HTMLDivElement>(null);
   const { openEditForm } = useCollectionQuickView();
+  const { t } = useLocale();
 
   const [sheetHeight, setSheetHeight] = useState(COLLAPSED_HEIGHT);
   const [isDragging, setIsDragging] = useState(false);
@@ -197,7 +199,7 @@ export function CollectionMobileSheet({
         <div className="px-4 pb-2">
           <div className="flex items-center justify-between">
             <span className={`text-lg font-semibold tabular-nums ${heroPrice ? 'text-ink' : 'text-muted'}`}>
-              {heroPrice || 'No value set'}
+              {heroPrice || t('collection.noValueSet')}
             </span>
             <div className="flex items-center gap-2">
               <button
@@ -205,7 +207,7 @@ export function CollectionMobileSheet({
                 onTouchStart={(e) => e.stopPropagation()}
                 onTouchEnd={(e) => e.stopPropagation()}
                 className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-ink/10 active:bg-ink/20 transition-colors"
-                aria-label="Edit item"
+                aria-label={t('collection.editItem')}
               >
                 <svg className="w-4 h-4 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
@@ -217,7 +219,7 @@ export function CollectionMobileSheet({
                 onTouchStart={(e) => e.stopPropagation()}
                 onTouchEnd={(e) => e.stopPropagation()}
                 className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-ink/10 active:bg-ink/20 transition-colors"
-                aria-label="Close quick view"
+                aria-label={t('collection.closeQuickView')}
               >
                 <svg className="w-5 h-5 text-ink" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -287,26 +289,26 @@ export function CollectionMobileSheet({
                 {displayName && (
                   <div className="col-span-2">
                     <span className="text-[10px] uppercase tracking-wider text-muted block mb-0.5">
-                      {item.item_type && ['tsuba', 'kozuka', 'kogai', 'menuki', 'fuchi-kashira', 'tosogu'].includes(item.item_type.toLowerCase()) ? 'Maker' : 'Smith'}
+                      {item.item_type && ['tsuba', 'kozuka', 'kogai', 'menuki', 'fuchi-kashira', 'tosogu'].includes(item.item_type.toLowerCase()) ? t('collection.maker') : t('collection.smith')}
                     </span>
                     <span className="text-[13px] text-ink font-medium">{displayName}</span>
                   </div>
                 )}
                 {item.era && (
                   <div>
-                    <span className="text-[10px] uppercase tracking-wider text-muted block mb-0.5">Era</span>
+                    <span className="text-[10px] uppercase tracking-wider text-muted block mb-0.5">{t('collection.era')}</span>
                     <span className="text-[13px] text-ink font-medium">{item.era}</span>
                   </div>
                 )}
                 {item.province && (
                   <div>
-                    <span className="text-[10px] uppercase tracking-wider text-muted block mb-0.5">Province</span>
+                    <span className="text-[10px] uppercase tracking-wider text-muted block mb-0.5">{t('collection.province')}</span>
                     <span className="text-[13px] text-ink font-medium">{item.province}</span>
                   </div>
                 )}
                 {item.mei_type && (
                   <div>
-                    <span className="text-[10px] uppercase tracking-wider text-muted block mb-0.5">Signature</span>
+                    <span className="text-[10px] uppercase tracking-wider text-muted block mb-0.5">{t('collection.signature')}</span>
                     <span className="text-[13px] text-ink font-medium capitalize">{item.mei_type}</span>
                   </div>
                 )}
@@ -319,28 +321,28 @@ export function CollectionMobileSheet({
                     <span className="text-[12px]">
                       <span className="text-muted">Nagasa</span>{' '}
                       <span className="text-ink font-medium tabular-nums">{item.nagasa_cm}</span>
-                      <span className="text-muted/60 text-[10px] ml-0.5">cm</span>
+                      <span className="text-muted/60 text-[10px] ml-0.5">{t('collection.cm')}</span>
                     </span>
                   )}
                   {item.sori_cm && (
                     <span className="text-[12px]">
                       <span className="text-muted">Sori</span>{' '}
                       <span className="text-ink font-medium tabular-nums">{item.sori_cm}</span>
-                      <span className="text-muted/60 text-[10px] ml-0.5">cm</span>
+                      <span className="text-muted/60 text-[10px] ml-0.5">{t('collection.cm')}</span>
                     </span>
                   )}
                   {item.motohaba_cm && (
                     <span className="text-[12px]">
                       <span className="text-muted">Motohaba</span>{' '}
                       <span className="text-ink font-medium tabular-nums">{item.motohaba_cm}</span>
-                      <span className="text-muted/60 text-[10px] ml-0.5">cm</span>
+                      <span className="text-muted/60 text-[10px] ml-0.5">{t('collection.cm')}</span>
                     </span>
                   )}
                   {item.sakihaba_cm && (
                     <span className="text-[12px]">
                       <span className="text-muted">Sakihaba</span>{' '}
                       <span className="text-ink font-medium tabular-nums">{item.sakihaba_cm}</span>
-                      <span className="text-muted/60 text-[10px] ml-0.5">cm</span>
+                      <span className="text-muted/60 text-[10px] ml-0.5">{t('collection.cm')}</span>
                     </span>
                   )}
                 </div>
@@ -356,39 +358,39 @@ export function CollectionMobileSheet({
 
             {/* Provenance */}
             <div className="px-4 py-3 border-b border-border">
-              <h3 className="text-[10px] uppercase tracking-[0.1em] font-semibold text-muted mb-2">Provenance</h3>
+              <h3 className="text-[10px] uppercase tracking-[0.1em] font-semibold text-muted mb-2">{t('collection.provenance')}</h3>
               <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-[13px]">
                 {item.acquired_from && (
                   <div>
-                    <span className="text-muted text-[10px] uppercase tracking-wider block mb-0.5">Source</span>
+                    <span className="text-muted text-[10px] uppercase tracking-wider block mb-0.5">{t('collection.source')}</span>
                     <span className="text-ink font-medium">{item.acquired_from}</span>
                   </div>
                 )}
                 {acquiredDate && (
                   <div>
-                    <span className="text-muted text-[10px] uppercase tracking-wider block mb-0.5">Date</span>
+                    <span className="text-muted text-[10px] uppercase tracking-wider block mb-0.5">{t('collection.date')}</span>
                     <span className="text-ink font-medium">{acquiredDate}</span>
                   </div>
                 )}
                 {pricePaid && (
                   <div>
-                    <span className="text-muted text-[10px] uppercase tracking-wider block mb-0.5">Paid</span>
+                    <span className="text-muted text-[10px] uppercase tracking-wider block mb-0.5">{t('collection.paid')}</span>
                     <span className="text-ink font-medium">{pricePaid}</span>
                   </div>
                 )}
                 {currentValue && (
                   <div>
-                    <span className="text-muted text-[10px] uppercase tracking-wider block mb-0.5">Value</span>
+                    <span className="text-muted text-[10px] uppercase tracking-wider block mb-0.5">{t('collection.value')}</span>
                     <span className="text-ink font-medium">{currentValue}</span>
                   </div>
                 )}
                 <div>
-                  <span className="text-muted text-[10px] uppercase tracking-wider block mb-0.5">Status</span>
+                  <span className="text-muted text-[10px] uppercase tracking-wider block mb-0.5">{t('collection.status')}</span>
                   <span className="text-ink font-medium">{statusLabel}</span>
                 </div>
                 {conditionLabel && (
                   <div>
-                    <span className="text-muted text-[10px] uppercase tracking-wider block mb-0.5">Condition</span>
+                    <span className="text-muted text-[10px] uppercase tracking-wider block mb-0.5">{t('collection.condition')}</span>
                     <span className="text-ink font-medium">{conditionLabel}</span>
                   </div>
                 )}
@@ -398,7 +400,7 @@ export function CollectionMobileSheet({
             {/* Notes */}
             {item.notes && (
               <div className="px-4 py-3 border-b border-border">
-                <h3 className="text-[10px] uppercase tracking-[0.1em] font-semibold text-muted mb-2">Notes</h3>
+                <h3 className="text-[10px] uppercase tracking-[0.1em] font-semibold text-muted mb-2">{t('collection.notes')}</h3>
                 <p className="text-[13px] text-ink whitespace-pre-wrap leading-relaxed">{item.notes}</p>
               </div>
             )}
@@ -416,7 +418,7 @@ export function CollectionMobileSheet({
                 onTouchEnd={(e) => e.stopPropagation()}
                 className="flex-1 flex items-center justify-center gap-2 px-4 py-3 text-[13px] font-medium text-white bg-gold hover:bg-gold-light rounded-lg transition-colors active:scale-[0.98]"
               >
-                Edit Item
+                {t('collection.editItem')}
               </button>
               {item.source_listing_id && (
                 <Link
@@ -425,7 +427,7 @@ export function CollectionMobileSheet({
                   onTouchStart={(e: React.TouchEvent) => e.stopPropagation()}
                   className="flex items-center justify-center gap-2 px-4 py-3 text-[13px] font-medium text-charcoal bg-linen hover:bg-hover border border-border rounded-lg transition-colors active:scale-[0.98]"
                 >
-                  Original
+                  {t('collection.original')}
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                   </svg>

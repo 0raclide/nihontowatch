@@ -1,5 +1,6 @@
 'use client';
 
+import { useLocale } from '@/i18n/LocaleContext';
 import { Drawer } from '@/components/ui/Drawer';
 import { CollectionFilterContent } from './CollectionFilterContent';
 import type { CollectionFacets, CollectionFilters } from '@/types/collection';
@@ -21,8 +22,9 @@ export function CollectionFilterDrawer({
   onFilterChange,
   totalItems,
 }: CollectionFilterDrawerProps) {
+  const { t } = useLocale();
   return (
-    <Drawer isOpen={isOpen} onClose={onClose} title="Filters">
+    <Drawer isOpen={isOpen} onClose={onClose} title={t('collection.filters')}>
       <CollectionFilterContent
         facets={facets}
         filters={filters}

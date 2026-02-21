@@ -2,6 +2,7 @@ import type { SavedSearch, Listing } from '@/types';
 import { criteriaToHumanReadable, criteriaToUrl } from '@/lib/savedSearches/urlToCriteria';
 import { getImageUrl } from '@/lib/images';
 import { getUnsubscribeUrl } from '@/app/api/unsubscribe/route';
+import { t, type Locale } from '@/i18n';
 
 const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://nihontowatch.com';
 
@@ -42,9 +43,9 @@ interface EmailRecipient {
 /**
  * Format price for display in email
  */
-function formatPrice(value: number | null | undefined, currency: string): string {
+function formatPrice(value: number | null | undefined, currency: string, locale: Locale = 'en'): string {
   if (value === null || value === undefined) {
-    return 'Ask';
+    return t(locale, 'email.ask');
   }
   return new Intl.NumberFormat('ja-JP', {
     style: 'currency',
@@ -60,9 +61,10 @@ export function generateSavedSearchNotificationHtml(
   savedSearch: SavedSearch,
   matchedListings: Listing[],
   frequency: 'instant' | 'daily',
-  recipient?: EmailRecipient
+  recipient?: EmailRecipient,
+  locale: Locale = 'en'
 ): string {
-  const searchName = savedSearch.name || 'Your saved search';
+  const searchName = savedSearch.name || t(locale, 'email.yourSavedSearch');
   const criteriaSummary = criteriaToHumanReadable(savedSearch.search_criteria);
   const searchUrl = `${BASE_URL}${criteriaToUrl(savedSearch.search_criteria)}`;
   const manageUrl = `${BASE_URL}/saved`;
@@ -92,14 +94,14 @@ export function generateSavedSearchNotificationHtml(
               </td>
               <td valign="top">
                 <a href="${getListingQuickViewUrl(listing.id)}" style="color: #1a1a1a; text-decoration: none; font-weight: 500; font-size: 14px; line-height: 1.4;">
-                  ${listing.title || 'Untitled listing'}
+                  ${listing.title || t(locale, 'email.untitled')}
                 </a>
                 <p style="margin: 4px 0 0; color: #666; font-size: 12px;">
-                  ${listing.item_type ? listing.item_type.charAt(0).toUpperCase() + listing.item_type.slice(1) : 'Item'}
+                  ${listing.item_type ? listing.item_type.charAt(0).toUpperCase() + listing.item_type.slice(1) : t(locale, 'email.item')}
                   ${listing.cert_type ? ` · ${listing.cert_type}` : ''}
                 </p>
                 <p style="margin: 8px 0 0; color: #b8860b; font-weight: 600; font-size: 14px;">
-                  ${formatPrice(listing.price_value, listing.price_currency || 'JPY')}
+                  ${formatPrice(listing.price_value, listing.price_currency || 'JPY', locale)}
                 </p>
               </td>
             </tr>
@@ -117,7 +119,7 @@ export function generateSavedSearchNotificationHtml(
       <tr>
         <td style="padding: 16px; text-align: center;">
           <a href="${searchUrl}" style="color: #b8860b; text-decoration: none; font-size: 14px;">
-            View ${moreCount} more match${moreCount === 1 ? '' : 'es'} →
+            ${moreCount === 1 ? t(locale, 'email.viewMoreSingular', { count: moreCount }) : t(locale, 'email.viewMore', { count: moreCount })}
           </a>
         </td>
       </tr>
@@ -130,7 +132,7 @@ export function generateSavedSearchNotificationHtml(
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${frequency === 'instant' ? 'New matches' : 'Daily digest'}</title>
+  <title>${frequency === 'instant' ? t(locale, 'email.newMatches') : t(locale, 'email.dailyDigest')}</title>
 </head>
 <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f5f5f0;">
   <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: #f5f5f0;">
@@ -156,13 +158,13 @@ export function generateSavedSearchNotificationHtml(
           <tr>
             <td style="padding: 24px;">
               <h1 style="margin: 0 0 8px; font-size: 20px; font-weight: 500; color: #1a1a1a;">
-                ${frequency === 'instant' ? 'New matches found' : 'Your daily digest'}
+                ${frequency === 'instant' ? t(locale, 'email.newMatchesFound') : t(locale, 'email.yourDailyDigest')}
               </h1>
               <p style="margin: 0 0 16px; color: #666; font-size: 14px;">
-                ${matchedListings.length} new item${matchedListings.length === 1 ? '' : 's'} match${matchedListings.length === 1 ? 'es' : ''} <strong>${searchName}</strong>
+                ${matchedListings.length === 1 ? t(locale, 'email.itemMatch', { count: matchedListings.length }) : t(locale, 'email.itemsMatch', { count: matchedListings.length })} <strong>${searchName}</strong>
               </p>
               <p style="margin: 0; padding: 12px; background-color: #faf9f6; border-radius: 4px; color: #666; font-size: 12px;">
-                <strong style="color: #1a1a1a;">Search criteria:</strong> ${criteriaSummary}
+                <strong style="color: #1a1a1a;">${t(locale, 'email.searchCriteria')}</strong> ${criteriaSummary}
               </p>
             </td>
           </tr>
@@ -182,15 +184,15 @@ export function generateSavedSearchNotificationHtml(
             <td style="padding: 24px; text-align: center;">
               ${matchedListings.length <= 50
                 ? `<a href="${getMultiListingQuickViewUrl(matchedListings.map(l => l.id), savedSearch.name || undefined)}" style="display: inline-block; padding: 12px 24px; background-color: #b8860b; color: #ffffff; text-decoration: none; font-size: 14px; font-weight: 500; border-radius: 6px;">
-                View ${matchedListings.length} New Match${matchedListings.length === 1 ? '' : 'es'}
+                ${matchedListings.length === 1 ? t(locale, 'email.viewMatchButton', { count: matchedListings.length }) : t(locale, 'email.viewMatchesButton', { count: matchedListings.length })}
               </a>`
                 : `<a href="${searchUrl}" style="display: inline-block; padding: 12px 24px; background-color: #b8860b; color: #ffffff; text-decoration: none; font-size: 14px; font-weight: 500; border-radius: 6px;">
-                View ${matchedListings.length} New Matches
+                ${t(locale, 'email.viewMatchesButton', { count: matchedListings.length })}
               </a>`
               }
               <p style="margin: 12px 0 0; font-size: 12px;">
                 <a href="${searchUrl}" style="color: #666; text-decoration: none;">
-                  Or browse all results →
+                  ${t(locale, 'email.orBrowseAll')}
                 </a>
               </p>
             </td>
@@ -200,26 +202,26 @@ export function generateSavedSearchNotificationHtml(
           <tr>
             <td style="padding: 24px; background-color: #faf9f6; border-top: 1px solid #e5e5e5;">
               <p style="margin: 0 0 8px; color: #666; font-size: 12px; text-align: center;">
-                You're receiving this email because you set up a saved search on Nihontowatch.
+                ${t(locale, 'email.savedSearchFooter')}
               </p>
               <p style="margin: 0 0 12px; text-align: center;">
                 <a href="${manageUrl}" style="color: #b8860b; text-decoration: none; font-size: 12px;">
-                  Manage saved searches
+                  ${t(locale, 'email.manageSavedSearches')}
                 </a>
                 <span style="color: #ccc; margin: 0 8px;">|</span>
                 <a href="${BASE_URL}" style="color: #666; text-decoration: none; font-size: 12px;">
-                  Visit Nihontowatch
+                  ${t(locale, 'email.visitSite')}
                 </a>
               </p>
               ${unsubscribeSearchUrl ? `
               <p style="margin: 0; text-align: center; border-top: 1px solid #e5e5e5; padding-top: 12px;">
                 <a href="${unsubscribeSearchUrl}" style="color: #999; text-decoration: none; font-size: 11px;">
-                  Unsubscribe from this alert
+                  ${t(locale, 'email.unsubscribeAlert')}
                 </a>
                 ${unsubscribeAllUrl ? `
                 <span style="color: #ccc; margin: 0 8px;">|</span>
                 <a href="${unsubscribeAllUrl}" style="color: #999; text-decoration: none; font-size: 11px;">
-                  Unsubscribe from all emails
+                  ${t(locale, 'email.unsubscribeAll')}
                 </a>
                 ` : ''}
               </p>
@@ -242,9 +244,10 @@ export function generateSavedSearchNotificationText(
   savedSearch: SavedSearch,
   matchedListings: Listing[],
   frequency: 'instant' | 'daily',
-  recipient?: EmailRecipient
+  recipient?: EmailRecipient,
+  locale: Locale = 'en'
 ): string {
-  const searchName = savedSearch.name || 'Your saved search';
+  const searchName = savedSearch.name || t(locale, 'email.yourSavedSearch');
   const criteriaSummary = criteriaToHumanReadable(savedSearch.search_criteria);
   const searchUrl = `${BASE_URL}${criteriaToUrl(savedSearch.search_criteria)}`;
   const manageUrl = `${BASE_URL}/saved`;
@@ -260,25 +263,25 @@ export function generateSavedSearchNotificationText(
   const listingsText = matchedListings
     .slice(0, 10)
     .map((listing, i) => {
-      const title = listing.title || 'Untitled listing';
-      const price = formatPrice(listing.price_value, listing.price_currency || 'JPY');
+      const title = listing.title || t(locale, 'email.untitled');
+      const price = formatPrice(listing.price_value, listing.price_currency || 'JPY', locale);
       return `${i + 1}. ${title}\n   ${price}\n   ${getListingQuickViewUrl(listing.id)}`;
     })
     .join('\n\n');
 
   const moreCount = matchedListings.length - 10;
-  const moreText = moreCount > 0 ? `\n\n... and ${moreCount} more matches` : '';
+  const moreText = moreCount > 0 ? `\n\n${t(locale, 'email.andMore', { count: moreCount })}` : '';
 
   const unsubscribeText = unsubscribeSearchUrl
-    ? `\n\nUnsubscribe from this alert: ${unsubscribeSearchUrl}${unsubscribeAllUrl ? `\nUnsubscribe from all emails: ${unsubscribeAllUrl}` : ''}`
+    ? `\n\n${t(locale, 'email.unsubscribeAlert')}: ${unsubscribeSearchUrl}${unsubscribeAllUrl ? `\n${t(locale, 'email.unsubscribeAll')}: ${unsubscribeAllUrl}` : ''}`
     : '';
 
   return `
-${frequency === 'instant' ? 'NEW MATCHES FOUND' : 'YOUR DAILY DIGEST'}
+${frequency === 'instant' ? t(locale, 'email.newMatchesFoundText') : t(locale, 'email.yourDailyDigestText')}
 
-${matchedListings.length} new item${matchedListings.length === 1 ? '' : 's'} match${matchedListings.length === 1 ? 'es' : ''} "${searchName}"
+${matchedListings.length === 1 ? t(locale, 'email.itemMatch', { count: matchedListings.length }) : t(locale, 'email.itemsMatch', { count: matchedListings.length })} "${searchName}"
 
-Search criteria: ${criteriaSummary}
+${t(locale, 'email.searchCriteria')} ${criteriaSummary}
 
 ---
 
@@ -287,13 +290,13 @@ ${listingsText}${moreText}
 ---
 
 ${matchedListings.length <= 50
-    ? `View ${matchedListings.length} new match${matchedListings.length === 1 ? '' : 'es'}: ${getMultiListingQuickViewUrl(matchedListings.map(l => l.id), savedSearch.name || undefined)}`
-    : `View ${matchedListings.length} new matches: ${searchUrl}`}
-Browse all results: ${searchUrl}
-Manage saved searches: ${manageUrl}
+    ? `${matchedListings.length === 1 ? t(locale, 'email.viewMatch', { count: matchedListings.length }) : t(locale, 'email.viewMatches', { count: matchedListings.length })}: ${getMultiListingQuickViewUrl(matchedListings.map(l => l.id), savedSearch.name || undefined)}`
+    : `${t(locale, 'email.viewMatches', { count: matchedListings.length })}: ${searchUrl}`}
+${t(locale, 'email.browseAllResults')}: ${searchUrl}
+${t(locale, 'email.manageSavedSearches')}: ${manageUrl}
 
 ---
 
-You're receiving this email because you set up a saved search on Nihontowatch.${unsubscribeText}
+${t(locale, 'email.savedSearchFooter')}${unsubscribeText}
   `.trim();
 }

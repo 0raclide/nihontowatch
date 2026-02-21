@@ -3,6 +3,7 @@
 import { useState, useCallback, useMemo, memo } from 'react';
 import { PriceHistogramSlider, type PriceHistogramData } from './PriceHistogramSlider';
 import type { ExchangeRates } from '@/hooks/useCurrency';
+import { useLocale } from '@/i18n/LocaleContext';
 
 export type SidebarVariant = 'default' | 'a' | 'b';
 
@@ -386,6 +387,15 @@ export function FilterContent({
   availability,
   onAvailabilityChange,
 }: FilterContentProps) {
+  const { t } = useLocale();
+
+  // Localized label lookup: tries t('prefix.value'), falls back to static map, then raw value
+  const tLabel = useCallback((prefix: string, value: string, fallbackMap: Record<string, string>) => {
+    const key = `${prefix}.${value}`;
+    const translated = t(key);
+    return translated !== key ? translated : fallbackMap[value] || value;
+  }, [t]);
+
   const isA = variant === 'a';
   const isB = variant === 'b';
   const elevated = isA || isB;
@@ -612,10 +622,10 @@ export function FilterContent({
     if (!isA) return [];
     const pills: { key: string; label: string; onRemove: () => void }[] = [];
     // Category is a mode — no pill for it
-    filters.certifications.forEach(c => pills.push({ key: `cert-${c}`, label: CERT_LABELS[c] || c, onRemove: () => handleCertChange(c, false) }));
-    filters.itemTypes.forEach(t => pills.push({ key: `type-${t}`, label: ITEM_TYPE_LABELS[t] || t, onRemove: () => handleItemTypeChange(t, false) }));
-    filters.historicalPeriods.forEach(p => pills.push({ key: `period-${p}`, label: PERIOD_LABELS[p] || p, onRemove: () => handlePeriodChange(p, false) }));
-    filters.signatureStatuses.forEach(s => pills.push({ key: `sig-${s}`, label: SIGNATURE_LABELS[s] || s, onRemove: () => handleSignatureChange(s, false) }));
+    filters.certifications.forEach(c => pills.push({ key: `cert-${c}`, label: tLabel('cert', c, CERT_LABELS), onRemove: () => handleCertChange(c, false) }));
+    filters.itemTypes.forEach(tp => pills.push({ key: `type-${tp}`, label: tLabel('itemType', tp, ITEM_TYPE_LABELS), onRemove: () => handleItemTypeChange(tp, false) }));
+    filters.historicalPeriods.forEach(p => pills.push({ key: `period-${p}`, label: tLabel('period', p, PERIOD_LABELS), onRemove: () => handlePeriodChange(p, false) }));
+    filters.signatureStatuses.forEach(s => pills.push({ key: `sig-${s}`, label: tLabel('sig', s, SIGNATURE_LABELS), onRemove: () => handleSignatureChange(s, false) }));
     if (filters.priceMin || filters.priceMax) {
       const fmt = (v: number) => v >= 1000000 ? `¥${(v / 1000000).toFixed(v % 1000000 === 0 ? 0 : 1)}M` : `¥${(v / 1000).toFixed(0)}K`;
       const label = filters.priceMin && filters.priceMax ? `${fmt(filters.priceMin)}–${fmt(filters.priceMax)}` : filters.priceMin ? `${fmt(filters.priceMin)}+` : `Up to ${fmt(filters.priceMax!)}`;
@@ -638,7 +648,7 @@ export function FilterContent({
       <div className="flex items-center justify-between mb-4 py-3 lg:hidden">
         <div className="flex items-center gap-3">
           <h2 className="text-[17px] font-semibold text-ink">
-            Refine Results
+            {t('filter.refineResults')}
           </h2>
           {isUpdating && (
             <div className="w-4 h-4 border-2 border-gold border-t-transparent rounded-full animate-spin" />
@@ -650,7 +660,7 @@ export function FilterContent({
               onClick={clearAllFilters}
               className="text-[14px] text-gold hover:text-gold-light transition-colors font-medium"
             >
-              Clear all
+              {t('filter.clearAll')}
             </button>
           )}
           {onClose && (
@@ -670,9 +680,9 @@ export function FilterContent({
       {/* Desktop header — Variant A: sentence-case with subtle border */}
       {isA && (
         <div className="hidden lg:flex items-center justify-between mb-1 pb-3 border-b border-border/30">
-          <h2 className="text-[15px] font-semibold text-ink">Filters</h2>
+          <h2 className="text-[15px] font-semibold text-ink">{t('filter.filters')}</h2>
           {hasActiveFilters && (
-            <button onClick={clearAllFilters} className="text-[12px] text-gold hover:text-gold-light transition-colors font-medium">Clear all</button>
+            <button onClick={clearAllFilters} className="text-[12px] text-gold hover:text-gold-light transition-colors font-medium">{t('filter.clearAll')}</button>
           )}
         </div>
       )}
@@ -680,9 +690,9 @@ export function FilterContent({
       {/* Default: original uppercase header */}
       {!elevated && (
         <div className="hidden lg:flex items-center justify-between mb-2 py-2">
-          <h2 className="text-[13px] uppercase tracking-[0.15em] font-semibold text-ink">Filters</h2>
+          <h2 className="text-[13px] uppercase tracking-[0.15em] font-semibold text-ink">{t('filter.filters')}</h2>
           {hasActiveFilters && (
-            <button onClick={clearAllFilters} className="text-[12px] text-gold hover:text-gold-light transition-colors font-medium">Clear all</button>
+            <button onClick={clearAllFilters} className="text-[12px] text-gold hover:text-gold-light transition-colors font-medium">{t('filter.clearAll')}</button>
           )}
         </div>
       )}
@@ -708,11 +718,11 @@ export function FilterContent({
 
       {/* Category — Mobile first element (2-segment control) */}
       <div className="lg:hidden mb-3">
-        <label className="text-[12px] text-muted mb-2 block">Category</label>
+        <label className="text-[12px] text-muted mb-2 block">{t('filter.category')}</label>
         <div className="flex rounded-lg border-2 border-border overflow-hidden">
           {([
-            { key: 'nihonto' as const, label: 'Nihonto' },
-            { key: 'tosogu' as const, label: 'Tosogu' },
+            { key: 'nihonto' as const, label: t('category.nihonto') },
+            { key: 'tosogu' as const, label: t('category.tosogu') },
           ]).map(({ key, label }, i) => (
             <button
               key={key}
@@ -734,12 +744,12 @@ export function FilterContent({
       {/* Availability - Mobile only (subtle segmented buttons) */}
       {onAvailabilityChange && (
         <div className="lg:hidden mb-3">
-          <label className="text-[12px] text-muted mb-2 block">Show</label>
+          <label className="text-[12px] text-muted mb-2 block">{t('filter.show')}</label>
           <div className="flex rounded-md border border-border overflow-hidden">
             {([
-              { key: 'available' as const, label: 'For Sale' },
-              { key: 'sold' as const, label: 'Sold' },
-              { key: 'all' as const, label: 'All' },
+              { key: 'available' as const, label: t('availability.forSale') },
+              { key: 'sold' as const, label: t('availability.sold') },
+              { key: 'all' as const, label: t('availability.all') },
             ]).map(({ key, label }, i) => (
               <button
                 key={key}
@@ -764,24 +774,24 @@ export function FilterContent({
         <div className="lg:hidden grid grid-cols-2 gap-3 mb-5 pb-5 border-b border-border/50">
           {/* Sort */}
           <div>
-            <label className="text-[12px] text-muted mb-2 block">Sort by</label>
+            <label className="text-[12px] text-muted mb-2 block">{t('filter.sortBy')}</label>
             <select
               value={sort}
               onChange={(e) => onSortChange(e.target.value)}
               className="w-full px-3 py-3 bg-paper border-2 border-border rounded-lg text-[15px] text-ink focus:outline-none focus:border-gold"
             >
-              <option value="featured">Featured</option>
-              <option value="recent">Newest</option>
-              {availability === 'sold' && <option value="sale_date">Recently Sold</option>}
-              <option value="price_asc">Price: Low → High</option>
-              <option value="price_desc">Price: High → Low</option>
-              {isAdmin && <option value="elite_factor">Elite Standing</option>}
+              <option value="featured">{t('sort.featured')}</option>
+              <option value="recent">{t('sort.newest')}</option>
+              {availability === 'sold' && <option value="sale_date">{t('sort.recentlySold')}</option>}
+              <option value="price_asc">{t('sort.priceLowHigh')}</option>
+              <option value="price_desc">{t('sort.priceHighLow')}</option>
+              {isAdmin && <option value="elite_factor">{t('sort.eliteStanding')}</option>}
             </select>
           </div>
 
           {/* Currency */}
           <div>
-            <label className="text-[12px] text-muted mb-2 block">Currency</label>
+            <label className="text-[12px] text-muted mb-2 block">{t('filter.currency')}</label>
             <select
               value={currency}
               onChange={(e) => onCurrencyChange(e.target.value as Currency)}
@@ -805,7 +815,7 @@ export function FilterContent({
                 ? 'text-[14px] font-semibold text-ink block mb-2'
                 : 'text-[13px] uppercase tracking-[0.15em] font-semibold text-ink block mb-3'
           }>
-            Price {currency === 'USD' ? '($)' : currency === 'EUR' ? '(€)' : '(¥)'}
+            {t('filter.price')} {currency === 'USD' ? '($)' : currency === 'EUR' ? '(€)' : '(¥)'}
           </span>
           <PriceHistogramSlider
             histogram={priceHistogram ?? null}
@@ -824,55 +834,55 @@ export function FilterContent({
         {elevated && <div className={`border-t ${isB ? 'border-border/15' : 'border-border/30'}`} />}
 
         {/* 2. Designation (checkboxes, open) */}
-        <FilterSection title="Designation" variant={variant} activeCount={filters.certifications.length}>
+        <FilterSection title={t('filter.designation')} variant={variant} activeCount={filters.certifications.length}>
           <div className={elevated ? 'space-y-0' : 'space-y-1'}>
             {sortedCertifications.map((facet) => (
-              <Checkbox key={facet.value} label={CERT_LABELS[facet.value] || facet.value} count={facet.count} checked={filters.certifications.includes(facet.value)} onChange={(checked) => handleCertChange(facet.value, checked)} variant={variant} />
+              <Checkbox key={facet.value} label={tLabel('cert', facet.value, CERT_LABELS)} count={facet.count} checked={filters.certifications.includes(facet.value)} onChange={(checked) => handleCertChange(facet.value, checked)} variant={variant} />
             ))}
-            {sortedCertifications.length === 0 && <p className={`${isB ? 'text-[11px]' : 'text-[14px]'} text-muted italic py-2`}>No certifications</p>}
+            {sortedCertifications.length === 0 && <p className={`${isB ? 'text-[11px]' : 'text-[14px]'} text-muted italic py-2`}>{t('filter.noCertifications')}</p>}
           </div>
         </FilterSection>
 
         {elevated && <div className={`border-t ${isB ? 'border-border/15' : 'border-border/30'}`} />}
 
         {/* 2. Period (checkboxes, closed by default) */}
-        <FilterSection title="Period" defaultOpen={false} variant={variant} activeCount={filters.historicalPeriods.length}>
+        <FilterSection title={t('filter.period')} defaultOpen={false} variant={variant} activeCount={filters.historicalPeriods.length}>
           <div className={elevated ? 'space-y-0' : 'space-y-1'}>
             {facets.historicalPeriods?.map((facet) => (
-              <Checkbox key={facet.value} label={PERIOD_LABELS[facet.value] || facet.value} count={facet.count} checked={filters.historicalPeriods.includes(facet.value)} onChange={(checked) => handlePeriodChange(facet.value, checked)} variant={variant} />
+              <Checkbox key={facet.value} label={tLabel('period', facet.value, PERIOD_LABELS)} count={facet.count} checked={filters.historicalPeriods.includes(facet.value)} onChange={(checked) => handlePeriodChange(facet.value, checked)} variant={variant} />
             ))}
-            {(!facets.historicalPeriods || facets.historicalPeriods.length === 0) && <p className={`${isB ? 'text-[11px]' : 'text-[14px]'} text-muted italic py-2`}>No periods available</p>}
+            {(!facets.historicalPeriods || facets.historicalPeriods.length === 0) && <p className={`${isB ? 'text-[11px]' : 'text-[14px]'} text-muted italic py-2`}>{t('filter.noPeriods')}</p>}
           </div>
         </FilterSection>
 
         {elevated && <div className={`border-t ${isB ? 'border-border/15' : 'border-border/30'}`} />}
 
         {/* 3. Type (checkboxes, closed) */}
-        <FilterSection title="Type" defaultOpen={false} variant={variant} activeCount={filters.itemTypes.length}>
+        <FilterSection title={t('filter.type')} defaultOpen={false} variant={variant} activeCount={filters.itemTypes.length}>
           <div className={elevated ? 'space-y-0' : 'space-y-1'}>
             {visibleItemTypes.filter((facet) => facet.value !== 'other').map((facet) => (
-              <Checkbox key={facet.value} label={ITEM_TYPE_LABELS[facet.value] || facet.value} count={facet.count} checked={filters.itemTypes.includes(facet.value)} onChange={(checked) => handleItemTypeChange(facet.value, checked)} variant={variant} />
+              <Checkbox key={facet.value} label={tLabel('itemType', facet.value, ITEM_TYPE_LABELS)} count={facet.count} checked={filters.itemTypes.includes(facet.value)} onChange={(checked) => handleItemTypeChange(facet.value, checked)} variant={variant} />
             ))}
-            {visibleItemTypes.length === 0 && <p className={`${isB ? 'text-[11px]' : 'text-[14px]'} text-muted italic py-2`}>No items available</p>}
+            {visibleItemTypes.length === 0 && <p className={`${isB ? 'text-[11px]' : 'text-[14px]'} text-muted italic py-2`}>{t('filter.noItems')}</p>}
           </div>
         </FilterSection>
 
         {elevated && <div className={`border-t ${isB ? 'border-border/15' : 'border-border/30'}`} />}
 
         {/* 5. Signature (collapsed by default) */}
-        <FilterSection title="Signature" defaultOpen={false} variant={variant} activeCount={filters.signatureStatuses.length}>
+        <FilterSection title={t('filter.signature')} defaultOpen={false} variant={variant} activeCount={filters.signatureStatuses.length}>
           <div className={elevated ? 'space-y-0' : 'space-y-1'}>
             {facets.signatureStatuses?.map((facet) => (
-              <Checkbox key={facet.value} label={SIGNATURE_LABELS[facet.value] || facet.value} count={facet.count} checked={filters.signatureStatuses.includes(facet.value)} onChange={(checked) => handleSignatureChange(facet.value, checked)} variant={variant} />
+              <Checkbox key={facet.value} label={tLabel('sig', facet.value, SIGNATURE_LABELS)} count={facet.count} checked={filters.signatureStatuses.includes(facet.value)} onChange={(checked) => handleSignatureChange(facet.value, checked)} variant={variant} />
             ))}
-            {(!facets.signatureStatuses || facets.signatureStatuses.length === 0) && <p className={`${isB ? 'text-[11px]' : 'text-[14px]'} text-muted italic py-2`}>No signature data</p>}
+            {(!facets.signatureStatuses || facets.signatureStatuses.length === 0) && <p className={`${isB ? 'text-[11px]' : 'text-[14px]'} text-muted italic py-2`}>{t('filter.noSignatureData')}</p>}
           </div>
         </FilterSection>
 
         {elevated && <div className={`border-t ${isB ? 'border-border/15' : 'border-border/30'}`} />}
 
         {/* 6. Dealer */}
-        <FilterSection title="Dealer" defaultOpen={false} variant={variant} activeCount={filters.dealers.length}>
+        <FilterSection title={t('filter.dealer')} defaultOpen={false} variant={variant} activeCount={filters.dealers.length}>
           <div className={elevated ? 'space-y-0' : 'space-y-1'}>
             {/* Dealer search (elevated variants) */}
             {elevated && (
@@ -884,7 +894,7 @@ export function FilterContent({
                   type="text"
                   value={dealerSearch}
                   onChange={(e) => setDealerSearch(e.target.value)}
-                  placeholder="Search dealers..."
+                  placeholder={t('search.searchDealers')}
                   className={`w-full ${isB ? 'pl-7 pr-3 py-1 text-[11px]' : 'pl-8 pr-3 py-1.5 text-[12px]'} rounded-md border transition-colors focus:outline-none focus:border-gold/50 ${
                     isA ? 'bg-transparent border-border/60' : 'bg-transparent border-border/30'
                   } text-ink placeholder:text-muted/70`}
@@ -899,7 +909,7 @@ export function FilterContent({
             {/* Japan dealers */}
             {jpDealers.length > 0 && (
               <>
-                <p className={`${isB ? 'text-[10px] tracking-[0.08em]' : 'text-[11px] tracking-wider'} uppercase text-muted font-medium pt-1 ${isB ? 'pb-0.5' : elevated ? 'pb-1' : 'pb-2'}`}>Japan</p>
+                <p className={`${isB ? 'text-[10px] tracking-[0.08em]' : 'text-[11px] tracking-wider'} uppercase text-muted font-medium pt-1 ${isB ? 'pb-0.5' : elevated ? 'pb-1' : 'pb-2'}`}>{t('filter.japan')}</p>
                 {jpDealers.map((dealer) => (
                   <Checkbox key={dealer.id} label={DEALER_LABELS[dealer.name] || dealer.name} count={dealer.count} checked={filters.dealers.includes(dealer.id)} onChange={(checked) => handleDealerChange(dealer.id, checked)} variant={variant} />
                 ))}
@@ -908,16 +918,16 @@ export function FilterContent({
             {/* International dealers */}
             {intlDealers.length > 0 && (
               <>
-                <p className={`${isB ? 'text-[10px] tracking-[0.08em]' : 'text-[11px] tracking-wider'} uppercase text-muted font-medium ${isB ? 'pt-1.5 pb-0.5' : elevated ? 'pt-2 pb-1' : 'pt-4 pb-2'}`}>International</p>
+                <p className={`${isB ? 'text-[10px] tracking-[0.08em]' : 'text-[11px] tracking-wider'} uppercase text-muted font-medium ${isB ? 'pt-1.5 pb-0.5' : elevated ? 'pt-2 pb-1' : 'pt-4 pb-2'}`}>{t('filter.international')}</p>
                 {intlDealers.map((dealer) => (
                   <Checkbox key={dealer.id} label={`${DEALER_LABELS[dealer.name] || dealer.name} (${DEALER_COUNTRIES[dealer.name]})`} count={dealer.count} checked={filters.dealers.includes(dealer.id)} onChange={(checked) => handleDealerChange(dealer.id, checked)} variant={variant} />
                 ))}
               </>
             )}
             {elevated && filteredJapaneseDealers.length === 0 && filteredInternationalDealers.length === 0 && dealerSearch && (
-              <p className={`${isB ? 'text-[11px]' : 'text-[12px]'} text-muted italic py-2`}>No dealers match &ldquo;{dealerSearch}&rdquo;</p>
+              <p className={`${isB ? 'text-[11px]' : 'text-[12px]'} text-muted italic py-2`}>{t('filter.noDealersMatch', { q: dealerSearch })}</p>
             )}
-            {facets.dealers.length === 0 && <p className={`${isB ? 'text-[11px]' : 'text-[14px]'} text-muted italic py-2`}>No dealers available</p>}
+            {facets.dealers.length === 0 && <p className={`${isB ? 'text-[11px]' : 'text-[14px]'} text-muted italic py-2`}>{t('filter.noDealers')}</p>}
           </div>
         </FilterSection>
 
@@ -927,7 +937,7 @@ export function FilterContent({
         <div className={isB ? 'py-2' : elevated ? 'py-3' : 'py-5'}>
           <label className={`flex items-center justify-between cursor-pointer group ${isB ? 'min-h-[28px]' : elevated ? 'min-h-[36px]' : 'min-h-[48px]'}`}>
             <span className={`${isB ? 'text-[12px]' : elevated ? 'text-[13px]' : 'text-[15px] lg:text-[14px]'} text-charcoal group-hover:text-ink transition-colors`}>
-              Price on request only
+              {t('filter.priceOnRequest')}
             </span>
             <div className="relative">
               <input type="checkbox" checked={filters.askOnly || false} onChange={(e) => onFilterChange('askOnly', e.target.checked)} className="peer sr-only" />
@@ -982,7 +992,7 @@ export function FilterContent({
         <div className="lg:hidden text-center py-3">
           <span className="inline-flex items-center gap-2 text-[13px] text-muted">
             <span className="w-2 h-2 bg-gold rounded-full animate-pulse" />
-            Updating...
+            {t('filter.updating')}
           </span>
         </div>
       )}

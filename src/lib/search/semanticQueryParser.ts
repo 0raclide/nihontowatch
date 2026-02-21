@@ -131,6 +131,7 @@ const CERTIFICATION_TERMS: Record<string, string> = {
   'jūyō': 'Juyo',
   'juuyou': 'Juyo',
   'juyou': 'Juyo',
+  '重要': 'Juyo',
 
   // === TOKUBETSU JUYO (特別重要) - shortname: tokuju ===
   'tokuju': 'Tokuju',
@@ -138,10 +139,12 @@ const CERTIFICATION_TERMS: Record<string, string> = {
   'tokubetsujuyo': 'Tokuju',
   'toku juyo': 'Tokuju',
   'tokubetsu jūyō': 'Tokuju',
+  '特別重要': 'Tokuju',
 
   // === HOZON (保存) ===
   'hozon': 'Hozon',
   'hōzon': 'Hozon',
+  '保存': 'Hozon',
 
   // === TOKUBETSU HOZON (特別保存) - shortname: tokuho ===
   'tokuho': 'TokuHozon',
@@ -149,16 +152,19 @@ const CERTIFICATION_TERMS: Record<string, string> = {
   'tokubetsuhozon': 'TokuHozon',
   'toku hozon': 'TokuHozon',
   'tokubetsu hōzon': 'TokuHozon',
+  '特別保存': 'TokuHozon',
 
   // === KICHO (貴重) ===
   'kicho': 'Kicho',
   'kichō': 'Kicho',
+  '貴重': 'Kicho',
 
   // === TOKUBETSU KICHO (特別貴重) ===
   'tokukicho': 'TokuKicho',
   'tokubetsu kicho': 'TokuKicho',
   'tokubetsukicho': 'TokuKicho',
   'toku kicho': 'TokuKicho',
+  '特別貴重': 'TokuKicho',
 
   // === NTHK ===
   'nthk': 'NTHK',
@@ -170,6 +176,9 @@ const CERTIFICATION_TERMS: Record<string, string> = {
  * These need to be extracted before splitting into individual words.
  */
 const MULTI_WORD_CERT_PHRASES = [
+  '特別重要',
+  '特別保存',
+  '特別貴重',
   'tokubetsu juyo',
   'tokubetsu hozon',
   'tokubetsu kicho',
@@ -203,6 +212,14 @@ const ITEM_TYPE_TERMS: Record<string, string> = {
   'yari': 'yari',
   'ken': 'ken',
   'kodachi': 'kodachi',
+  // Kanji item types
+  '刀': 'katana',
+  '脇差': 'wakizashi',
+  '短刀': 'tanto',
+  '太刀': 'tachi',
+  '薙刀': 'naginata',
+  '槍': 'yari',
+  '剣': 'ken',
 
   // === TOSOGU (Fittings) ===
   'tsuba': 'tsuba',
@@ -218,6 +235,13 @@ const ITEM_TYPE_TERMS: Record<string, string> = {
   'kogai': 'kogai',
   'koshirae': 'koshirae',
   'mitokoromono': 'mitokoromono',
+  // Kanji tosogu types
+  '鍔': 'tsuba',
+  '小柄': 'kozuka',
+  '目貫': 'menuki',
+  '笄': 'kogai',
+  '縁頭': 'fuchi-kashira',
+  '拵': 'koshirae',
 
   // === ARMOR ===
   'kabuto': 'kabuto',
@@ -228,12 +252,19 @@ const ITEM_TYPE_TERMS: Record<string, string> = {
   'suneate': 'suneate',
   'do': 'do',
   'dō': 'do',
+  // Kanji armor types
+  '兜': 'kabuto',
+  '甲冑': 'armor',
 };
 
 /**
  * Multi-word item type phrases to check first.
  */
 const MULTI_WORD_TYPE_PHRASES = [
+  '縁頭',
+  '小柄',
+  '目貫',
+  '甲冑',
   'fuchi kashira',
   'fuchi-kashira',
 ];
@@ -251,6 +282,8 @@ const SIGNATURE_STATUS_TERMS: Record<string, string> = {
   'mei': 'signed',
   'unsigned': 'unsigned',
   'mumei': 'unsigned',
+  '在銘': 'signed',
+  '無銘': 'unsigned',
 };
 
 // =============================================================================
@@ -288,6 +321,26 @@ const PROVINCE_TERMS: Record<string, string> = {
   'bungo': 'Bungo',
   'iwami': 'Iwami',
   'seki': 'Seki',          // Seki city in Mino province
+
+  // Kanji province names
+  '備前': 'Bizen',
+  '山城': 'Yamashiro',
+  '大和': 'Yamato',
+  '相模': 'Soshu',
+  '美濃': 'Mino',
+  '肥前': 'Hizen',
+  '薩摩': 'Satsuma',
+  '越前': 'Echizen',
+  '加賀': 'Kaga',
+  '尾張': 'Owari',
+  '摂津': 'Settsu',
+  '筑前': 'Chikuzen',
+  '土佐': 'Tosa',
+  '近江': 'Omi',
+  '陸奥': 'Mutsu',
+  '阿波': 'Awa',
+  '豊後': 'Bungo',
+  '石見': 'Iwami',
 };
 
 /**
@@ -404,7 +457,9 @@ export function parseSemanticQuery(queryStr: string): ParsedSemanticQuery {
   }
 
   // Step 4: Split remaining query into words and process each
-  const words = workingQuery.split(/\s+/).filter(w => w.length >= 2);
+  // Allow single CJK characters (e.g., 刀) — they are meaningful terms
+  const containsCJK = (s: string) => /[\u3000-\u9fff\uf900-\ufaff]/.test(s);
+  const words = workingQuery.split(/\s+/).filter(w => w.length >= 2 || containsCJK(w));
 
   for (const word of words) {
     // Check if it's a single-word certification term

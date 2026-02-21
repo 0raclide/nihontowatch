@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
-import { Cormorant_Garamond, Inter } from "next/font/google";
+import { Cormorant_Garamond, Inter, Noto_Sans_JP } from "next/font/google";
 import "./globals.css";
+import { LocaleProvider } from "@/i18n/LocaleContext";
+import { getServerLocale } from "@/i18n/server";
 import { MobileUIProvider } from "@/contexts/MobileUIContext";
 import { ThemeProvider, themeInitScript } from "@/contexts/ThemeContext";
 import { QuickViewProvider } from "@/contexts/QuickViewContext";
@@ -33,6 +35,14 @@ const inter = Inter({
   variable: "--font-sans",
   subsets: ["latin"],
   display: "swap",
+});
+
+const notoSansJP = Noto_Sans_JP({
+  variable: "--font-jp",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
+  preload: false,
 });
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://nihontowatch.com';
@@ -84,11 +94,14 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const dealerCount = await getActiveDealerCount();
+  const [dealerCount, locale] = await Promise.all([
+    getActiveDealerCount(),
+    getServerLocale(),
+  ]);
   const organizationJsonLd = generateOrganizationJsonLd(dealerCount);
 
   return (
-    <html lang="en" className={`${cormorant.variable} ${inter.variable}`} suppressHydrationWarning>
+    <html lang={locale} className={`${cormorant.variable} ${inter.variable} ${notoSansJP.variable}`} suppressHydrationWarning>
       <head>
         <meta name="theme-color" content="#020610" />
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
@@ -98,31 +111,33 @@ export default async function RootLayout({
       </head>
       <body className="antialiased font-sans" suppressHydrationWarning>
         <NavigationProgress />
-        <AuthProvider>
-          <NewSinceLastVisitProvider>
-            <ConsentProvider>
-              <SubscriptionProvider>
-                <PaywallModal />
-                <FavoritesProvider>
-                  <SignupPressureWrapper dealerCount={dealerCount}>
-                    <MobileUIProvider>
-                      <ThemeProvider>
-                        <QuickViewProvider>
-                          <ActivityWrapper>
-                            {children}
-                          </ActivityWrapper>
-                          <QuickView />
-                        </QuickViewProvider>
-                      </ThemeProvider>
-                    </MobileUIProvider>
-                  </SignupPressureWrapper>
-                </FavoritesProvider>
-              </SubscriptionProvider>
-              <CookieBanner />
-              <ConsentPreferences />
-            </ConsentProvider>
-          </NewSinceLastVisitProvider>
-        </AuthProvider>
+        <LocaleProvider initialLocale={locale}>
+          <AuthProvider>
+            <NewSinceLastVisitProvider>
+              <ConsentProvider>
+                <SubscriptionProvider>
+                  <PaywallModal />
+                  <FavoritesProvider>
+                    <SignupPressureWrapper dealerCount={dealerCount}>
+                      <MobileUIProvider>
+                        <ThemeProvider>
+                          <QuickViewProvider>
+                            <ActivityWrapper>
+                              {children}
+                            </ActivityWrapper>
+                            <QuickView />
+                          </QuickViewProvider>
+                        </ThemeProvider>
+                      </MobileUIProvider>
+                    </SignupPressureWrapper>
+                  </FavoritesProvider>
+                </SubscriptionProvider>
+                <CookieBanner />
+                <ConsentPreferences />
+              </ConsentProvider>
+            </NewSinceLastVisitProvider>
+          </AuthProvider>
+        </LocaleProvider>
       </body>
     </html>
   );

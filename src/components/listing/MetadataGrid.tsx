@@ -2,6 +2,7 @@
 
 import type { Listing, ListingWithEnrichment } from '@/types';
 import { isBlade, isTosogu, hasVerifiedEnrichment } from '@/types';
+import { useLocale } from '@/i18n/LocaleContext';
 
 // =============================================================================
 // HELPERS - Japanese text detection and romanization
@@ -274,6 +275,7 @@ export function MetadataGrid({
   hideArtisan = false,
   hideSchool = false,
 }: MetadataGridProps) {
+  const { t } = useLocale();
   const { artisan, school, artisanLabel, era, isEnriched } = getArtisanInfo(listing);
   const certInfo = getCertInfo(listing.cert_type);
   const itemIsBlade = isBlade(listing.item_type);
@@ -298,7 +300,7 @@ export function MetadataGrid({
     return (
       <div className={`flex flex-wrap gap-x-4 gap-y-1 ${className}`}>
         {itemIsBlade && listing.nagasa_cm && (
-          <MeasurementItem label="Nagasa" value={listing.nagasa_cm} unit="cm" />
+          <MeasurementItem label={t('metadata.nagasa')} value={listing.nagasa_cm} unit="cm" />
         )}
         {/* Tosogu compact measurements - columns not yet in database */}
       </div>
@@ -317,7 +319,7 @@ export function MetadataGrid({
               {(displayArtisan || displaySchool) && (
                 <div className="col-span-2">
                   <span className="text-[10px] uppercase tracking-wider text-muted block mb-0.5">
-                    {artisanLabel}
+                    {artisanLabel === 'Smith' ? t('metadata.smith') : t('metadata.maker')}
                   </span>
                   <p className="text-[14px] text-ink font-medium">
                     {displaySchool && school}
@@ -327,15 +329,15 @@ export function MetadataGrid({
                 </div>
               )}
 
-              <MetadataItem label="Era" value={era} />
-              <MetadataItem label="Province" value={listing.province} />
-              <MetadataItem label="Signature" value={listing.mei_type} />
+              <MetadataItem label={t('metadata.era')} value={era} />
+              <MetadataItem label={t('metadata.province')} value={listing.province} />
+              <MetadataItem label={t('metadata.signature')} value={listing.mei_type} />
 
               {/* Certification with session */}
               {certInfo && (
                 <div className="col-span-2">
                   <span className="text-[10px] uppercase tracking-wider text-muted block mb-0.5">
-                    Papers
+                    {t('metadata.papers')}
                   </span>
                   <p className="text-[13px] text-ink">
                     {certInfo.label}
@@ -354,18 +356,18 @@ export function MetadataGrid({
         <div className="border-b border-border">
           <div className="px-4 py-3 lg:px-5">
             <h3 className="text-[10px] uppercase tracking-wider text-muted mb-2 font-medium">
-              {itemIsTosogu ? 'Specifications' : 'Measurements'}
+              {itemIsTosogu ? t('metadata.specifications') : t('metadata.measurements')}
             </h3>
             <div className="flex flex-wrap gap-x-4 gap-y-1.5">
               {/* Sword measurements */}
               {itemIsBlade && (
                 <>
-                  <MeasurementItem label="Nagasa" value={listing.nagasa_cm} unit="cm" />
-                  <MeasurementItem label="Sori" value={listing.sori_cm} unit="cm" />
-                  <MeasurementItem label="Motohaba" value={listing.motohaba_cm} unit="cm" />
-                  <MeasurementItem label="Sakihaba" value={listing.sakihaba_cm} unit="cm" />
-                  <MeasurementItem label="Kasane" value={listing.kasane_cm} unit="cm" />
-                  <MeasurementItem label="Weight" value={listing.weight_g} unit="g" />
+                  <MeasurementItem label={t('metadata.nagasa')} value={listing.nagasa_cm} unit="cm" />
+                  <MeasurementItem label={t('metadata.sori')} value={listing.sori_cm} unit="cm" />
+                  <MeasurementItem label={t('metadata.motohaba')} value={listing.motohaba_cm} unit="cm" />
+                  <MeasurementItem label={t('metadata.sakihaba')} value={listing.sakihaba_cm} unit="cm" />
+                  <MeasurementItem label={t('metadata.kasane')} value={listing.kasane_cm} unit="cm" />
+                  <MeasurementItem label={t('metadata.weight')} value={listing.weight_g} unit="g" />
                 </>
               )}
 

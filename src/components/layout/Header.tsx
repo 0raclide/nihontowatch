@@ -12,6 +12,8 @@ import { useAuth } from '@/lib/auth/AuthContext';
 import { LoginModal } from '@/components/auth/LoginModal';
 import { UserMenu } from '@/components/auth/UserMenu';
 import { useActivityOptional } from '@/components/activity/ActivityProvider';
+import { useLocale } from '@/i18n/LocaleContext';
+import { LocaleSwitcher } from '@/components/ui/LocaleSwitcher';
 
 function HeaderContent() {
   // Note: useMobileUI is imported but openSearch/openNavDrawer are used by MobileNavDrawer/MobileSearchSheet
@@ -21,9 +23,10 @@ function HeaderContent() {
   const pathname = usePathname();
   const currentQuery = searchParams.get('q') || '';
   const loginParam = searchParams.get('login');
+  const { t } = useLocale();
   const isArtistPage = pathname.startsWith('/artists');
   const searchAction = isArtistPage ? '/artists' : '/';
-  const searchPlaceholder = isArtistPage ? 'Search artists by name, kanji, or code...' : 'Search swords, smiths, dealers...';
+  const searchPlaceholder = isArtistPage ? t('search.artistPlaceholder') : t('search.placeholder');
   const { user, profile, isLoading: authLoading, isAdmin } = useAuth();
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
@@ -319,36 +322,37 @@ function HeaderContent() {
                 href="/browse"
                 className="text-[11px] uppercase tracking-[0.2em] text-muted hover:text-gold transition-colors"
               >
-                Browse
+                {t('nav.browse')}
               </Link>
               <Link
                 href="/artists"
                 className="text-[11px] uppercase tracking-[0.2em] text-muted hover:text-gold transition-colors"
               >
-                Artists
+                {t('nav.artists')}
               </Link>
               <Link
                 href="/glossary"
                 className="text-[11px] uppercase tracking-[0.2em] text-muted hover:text-gold transition-colors"
               >
-                Glossary
+                {t('nav.glossary')}
               </Link>
               <Link
                 href="/saved"
                 className="text-[11px] uppercase tracking-[0.2em] text-muted hover:text-gold transition-colors"
               >
-                Saved
+                {t('nav.saved')}
               </Link>
               {user && process.env.NEXT_PUBLIC_COLLECTION_ENABLED === 'true' && (
                 <Link
                   href="/collection"
                   className="text-[11px] uppercase tracking-[0.2em] text-muted hover:text-gold transition-colors"
                 >
-                  Collection
+                  {t('nav.collection')}
                 </Link>
               )}
               <div className="h-3 w-px bg-border" />
               <ThemeSwitcher />
+              <LocaleSwitcher />
               {/* Admin Quick Menu */}
               {isAdmin && (
                 <>
@@ -432,7 +436,7 @@ function HeaderContent() {
                   onClick={() => setShowLoginModal(true)}
                   className="text-[11px] uppercase tracking-[0.2em] text-muted hover:text-gold transition-colors"
                 >
-                  Sign In / Register
+                  {t('auth.signIn')}
                 </button>
               )}
             </nav>

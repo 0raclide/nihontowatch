@@ -9,6 +9,7 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 import { findCategoryRedirect } from '@/lib/seo/categories';
+import { LOCALE_COOKIE } from '@/i18n';
 
 export async function middleware(request: NextRequest) {
   // Canonical redirect: /?type=katana → /swords/katana (301)
@@ -27,6 +28,11 @@ export async function middleware(request: NextRequest) {
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     return NextResponse.next();
   }
+
+  // ── Locale detection ──
+  // If the nw-locale cookie is absent, detect from IP country and set it.
+  const localeCookie = request.cookies.get(LOCALE_COOKIE)?.value;
+  const needsLocaleCookie = !localeCookie || (localeCookie !== 'en' && localeCookie !== 'ja');
 
   let supabaseResponse = NextResponse.next({
     request,
@@ -114,6 +120,17 @@ export async function middleware(request: NextRequest) {
     if (profile?.role !== 'admin') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
+  }
+
+  // ── Set locale cookie if needed ──
+  if (needsLocaleCookie) {
+    const country = request.headers.get('x-vercel-ip-country') || '';
+    const detectedLocale = country === 'JP' ? 'ja' : 'en';
+    supabaseResponse.cookies.set(LOCALE_COOKIE, detectedLocale, {
+      path: '/',
+      maxAge: 31536000, // 1 year
+      sameSite: 'lax',
+    });
   }
 
   return supabaseResponse;

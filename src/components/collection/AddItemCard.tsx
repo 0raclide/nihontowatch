@@ -1,10 +1,13 @@
 'use client';
 
+import { useLocale } from '@/i18n/LocaleContext';
+
 interface AddItemCardProps {
   onClick: () => void;
 }
 
 export function AddItemCard({ onClick }: AddItemCardProps) {
+  const { t } = useLocale();
   return (
     <button
       onClick={onClick}
@@ -19,7 +22,7 @@ export function AddItemCard({ onClick }: AddItemCardProps) {
           <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v16m8-8H4" />
           </svg>
-          <span className="text-[13px] font-medium tracking-wide">Add Item</span>
+          <span className="text-[13px] font-medium tracking-wide">{t('collection.addItem')}</span>
         </div>
       </div>
       <div className="px-3 pt-3 pb-3">

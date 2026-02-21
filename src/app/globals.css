@@ -814,6 +814,19 @@ body {
   }
 }
 
+/* Japanese locale — Noto Sans JP for body, Noto Serif JP for headings */
+html[lang="ja"] body {
+  font-family: var(--font-jp), var(--font-sans), "Hiragino Kaku Gothic ProN", "Yu Gothic", system-ui, sans-serif;
+}
+html[lang="ja"] h1,
+html[lang="ja"] h2,
+html[lang="ja"] h3,
+html[lang="ja"] h4,
+html[lang="ja"] h5,
+html[lang="ja"] h6 {
+  font-family: var(--font-jp), var(--font-serif), "Hiragino Mincho ProN", "Yu Mincho", serif;
+}
+
 /* Typography - Scholarly hierarchy */
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-serif), Georgia, "Times New Roman", serif;

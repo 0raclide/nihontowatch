@@ -9,11 +9,29 @@
  * - Modal behavior (close on escape, backdrop click)
  */
 
+import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { InquiryModal } from '@/components/inquiry/InquiryModal';
 import type { GeneratedEmail } from '@/lib/inquiry/types';
+
+vi.mock('@/i18n/LocaleContext', async () => {
+  const en = await import('@/i18n/locales/en.json').then(m => m.default);
+  const t = (key: string, params?: Record<string, string | number>) => {
+    let value: string = (en as Record<string, string>)[key] ?? key;
+    if (params) {
+      for (const [k, v] of Object.entries(params)) {
+        value = value.replace(new RegExp(`\\{${k}\\}`, 'g'), String(v));
+      }
+    }
+    return value;
+  };
+  return {
+    useLocale: () => ({ locale: 'en', setLocale: () => {}, t }),
+    LocaleProvider: ({ children }: { children: React.ReactNode }) => children,
+  };
+});
 
 // =============================================================================
 // MOCK DATA

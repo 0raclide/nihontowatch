@@ -12,6 +12,7 @@ import { logger } from '@/lib/logger';
 import { verifyCronAuth } from '@/lib/api/cronAuth';
 import type { Listing } from '@/types';
 import type { Database } from '@/types/database';
+import { isLocale, type Locale } from '@/i18n';
 
 type AlertRow = Database['public']['Tables']['alerts']['Row'];
 type ProfileRow = Database['public']['Tables']['profiles']['Row'];
@@ -173,17 +174,20 @@ export async function GET(request: NextRequest) {
 
     logger.info('Alerts eligible after cooldown', { count: eligibleAlerts.length });
 
-    // Step 4: Get user emails
+    // Step 4: Get user emails and locale preferences
     const userIds = [...new Set(eligibleAlerts.map((a) => a.user_id))];
     const { data: profilesData } = await supabase
       .from('profiles')
-      .select('id, email')
+      .select('id, email, preferences')
       .in('id', userIds);
 
-    const profiles = profilesData as Pick<ProfileRow, 'id' | 'email'>[] | null;
+    const profiles = profilesData as Pick<ProfileRow, 'id' | 'email' | 'preferences'>[] | null;
     const userEmails = new Map<string, string>();
+    const userLocales = new Map<string, Locale>();
     profiles?.forEach((p) => {
       if (p.email) userEmails.set(p.id, p.email);
+      const pref = (p.preferences as Record<string, unknown> | null)?.locale;
+      if (isLocale(pref as string)) userLocales.set(p.id, pref as Locale);
     });
 
     // Create listings map
@@ -218,7 +222,8 @@ export async function GET(request: NextRequest) {
             processed++;
 
             // Send notification
-            const result = await sendBackInStockNotification(email, listing);
+            const locale = userLocales.get(alert.user_id) || 'en';
+            const result = await sendBackInStockNotification(email, listing, locale);
 
             if (result.success) {
               notificationsSent++;

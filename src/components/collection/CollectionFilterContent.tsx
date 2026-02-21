@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useLocale } from '@/i18n/LocaleContext';
 import type { CollectionFacets, CollectionFilters } from '@/types/collection';
 import { SORT_OPTIONS, STATUS_LABELS, CONDITION_LABELS, ITEM_TYPE_LABELS } from '@/lib/collection/labels';
 
@@ -82,6 +83,7 @@ export function CollectionFilterContent({
   totalItems,
   onClose,
 }: CollectionFilterContentProps) {
+  const { t } = useLocale();
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     type: true,
     cert: true,
@@ -105,7 +107,7 @@ export function CollectionFilterContent({
       {/* Sort */}
       <div className="pb-3 border-b border-border/15">
         <div className="flex items-center gap-2">
-          <label className="text-[10px] uppercase tracking-[0.1em] font-medium text-muted/50 shrink-0">Sort</label>
+          <label className="text-[10px] uppercase tracking-[0.1em] font-medium text-muted/50 shrink-0">{t('collection.sort')}</label>
           <select
             value={filters.sort || 'newest'}
             onChange={e => onFilterChange({ sort: e.target.value as CollectionFilters['sort'] })}
@@ -117,14 +119,14 @@ export function CollectionFilterContent({
           </select>
         </div>
         <div className="mt-1.5 text-[10px] text-muted/40 tabular-nums">
-          {totalItems} {totalItems === 1 ? 'item' : 'items'}
+          {totalItems} {totalItems === 1 ? t('collection.item') : t('collection.items')}
         </div>
       </div>
 
       {/* Filter Header */}
       <div className="py-2 border-b border-border/10 flex items-center justify-between">
         <div className="flex items-center gap-1.5">
-          <span className="text-[10px] uppercase tracking-[0.1em] font-medium text-muted/50">Filters</span>
+          <span className="text-[10px] uppercase tracking-[0.1em] font-medium text-muted/50">{t('collection.filters')}</span>
           {activeFilterCount > 0 && (
             <span className="min-w-[14px] h-[14px] px-0.5 text-[8px] font-bold bg-gold/80 text-white rounded-full flex items-center justify-center leading-none">
               {activeFilterCount}
@@ -133,7 +135,7 @@ export function CollectionFilterContent({
         </div>
         {activeFilterCount > 0 && (
           <button onClick={resetFilters} className="text-[10px] text-muted/50 hover:text-gold transition-colors font-medium">
-            Reset
+            {t('collection.reset')}
           </button>
         )}
       </div>
@@ -143,7 +145,7 @@ export function CollectionFilterContent({
         {/* Item Type */}
         {facets.itemTypes.length > 0 && (
           <FilterSection
-            title="Type"
+            title={t('collection.type')}
             isOpen={openSections.type}
             onToggle={() => toggleSection('type')}
             activeCount={filters.itemType ? 1 : 0}
@@ -165,7 +167,7 @@ export function CollectionFilterContent({
         {/* Certification */}
         {facets.certifications.length > 0 && (
           <FilterSection
-            title="Certification"
+            title={t('collection.certification')}
             isOpen={openSections.cert}
             onToggle={() => toggleSection('cert')}
             activeCount={filters.certType ? 1 : 0}
@@ -187,7 +189,7 @@ export function CollectionFilterContent({
         {/* Status */}
         {facets.statuses.length > 0 && (
           <FilterSection
-            title="Status"
+            title={t('collection.status')}
             isOpen={openSections.status}
             onToggle={() => toggleSection('status')}
             activeCount={filters.status ? 1 : 0}
@@ -209,7 +211,7 @@ export function CollectionFilterContent({
         {/* Condition */}
         {facets.conditions.length > 0 && (
           <FilterSection
-            title="Condition"
+            title={t('collection.condition')}
             isOpen={openSections.condition}
             onToggle={() => toggleSection('condition')}
             activeCount={filters.condition ? 1 : 0}
@@ -236,7 +238,7 @@ export function CollectionFilterContent({
             onClick={onClose}
             className="w-full py-3 text-[13px] font-medium text-white bg-gold hover:bg-gold-light rounded-lg transition-colors"
           >
-            Show {totalItems} {totalItems === 1 ? 'item' : 'items'}
+            {t('collection.showItems', { count: totalItems, label: totalItems === 1 ? t('collection.item') : t('collection.items') })}
           </button>
         </div>
       )}

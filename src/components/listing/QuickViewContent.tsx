@@ -22,6 +22,7 @@ import { AdminArtisanWidget } from '@/components/artisan/AdminArtisanWidget';
 import { ArtisanTooltip } from '@/components/artisan/ArtisanTooltip';
 import { TranslatedDescription } from './TranslatedDescription';
 import { TranslatedTitle } from './TranslatedTitle';
+import { useLocale } from '@/i18n/LocaleContext';
 
 // =============================================================================
 // TYPES
@@ -45,6 +46,7 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
   const { showPaywall, canAccess } = useSubscription();
   const quickView = useQuickViewOptional();
   const activityTracker = useActivityTrackerOptional();
+  const { t } = useLocale();
   const [isInquiryModalOpen, setIsInquiryModalOpen] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [navigatingToArtist, setNavigatingToArtist] = useState(false);
@@ -171,7 +173,7 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
                   data-testid="new-listing-badge"
                   className="text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded bg-new-listing-bg text-new-listing"
                 >
-                  New this week
+                  {t('quickview.newThisWeek')}
                 </span>
               )}
               {isAdmin && listing.admin_hidden && (
@@ -179,7 +181,7 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
                   data-testid="hidden-badge"
                   className="text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
                 >
-                  Hidden
+                  {t('quickview.hidden')}
                 </span>
               )}
               {/* Admin: "Set ID" badge for unmatched listings (including UNKNOWN) */}
@@ -304,7 +306,7 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
                 <div className="flex-1 min-w-0">
-                  <div className="text-[10px] uppercase tracking-wider text-gold font-medium leading-tight">Artist Profile</div>
+                  <div className="text-[10px] uppercase tracking-wider text-gold font-medium leading-tight">{t('quickview.artistProfile')}</div>
                   <div className="text-[16px] font-semibold text-ink group-hover:text-gold transition-colors truncate">
                     {listing.artisan_display_name || listing.artisan_id}
                   </div>
@@ -484,7 +486,7 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
             data-testid="cta-button"
             className="flex-1 flex items-center justify-center gap-2 px-5 py-3 text-[13px] lg:text-[14px] font-medium text-white bg-gold hover:bg-gold-light rounded-lg transition-colors"
           >
-            View on {dealerName}
+            {t('quickview.viewOn', { dealer: dealerName })}
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
             </svg>

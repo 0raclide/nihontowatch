@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useConsent } from '@/contexts/ConsentContext';
+import { useLocale } from '@/i18n/LocaleContext';
 import Link from 'next/link';
 
 // ============================================================================
@@ -37,6 +38,7 @@ function CookieIcon({ className }: { className?: string }) {
 
 export function CookieBanner() {
   const { showBanner, acceptAll, rejectNonEssential, openPreferences } = useConsent();
+  const { t } = useLocale();
   const [mounted, setMounted] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
 
@@ -82,14 +84,12 @@ export function CookieBanner() {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm text-ink leading-relaxed">
-                  <strong>Accept cookies to unlock cool features:</strong> track new items since your last visit,
-                  save your currency preference, remember your searches, and personalize your experience
-                  across the entire market.{' '}
+                  {t('cookie.bannerText')}{' '}
                   <Link
                     href="/privacy"
                     className="text-accent hover:underline focus:underline focus:outline-none"
                   >
-                    Learn more
+                    {t('cookie.learnMore')}
                   </Link>
                   {' · '}
                   <button
@@ -97,7 +97,7 @@ export function CookieBanner() {
                     onClick={openPreferences}
                     className="text-accent hover:underline focus:underline focus:outline-none"
                   >
-                    Manage
+                    {t('cookie.manage')}
                   </button>
                 </p>
               </div>
@@ -111,7 +111,7 @@ export function CookieBanner() {
                 onClick={rejectNonEssential}
                 className="px-5 py-2.5 text-sm font-medium text-ink bg-surface hover:bg-border/50 dark:bg-border dark:hover:bg-border/70 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-accent/30"
               >
-                Decline
+                {t('cookie.decline')}
               </button>
 
               {/* Accept - primary style */}
@@ -120,7 +120,7 @@ export function CookieBanner() {
                 onClick={acceptAll}
                 className="px-5 py-2.5 text-sm font-medium text-cream bg-ink hover:bg-ink/90 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-accent/30"
               >
-                Accept
+                {t('cookie.accept')}
               </button>
             </div>
           </div>

@@ -2,6 +2,8 @@ import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { normalizeSearchText } from '@/lib/search';
 import { detectUrlQuery } from '@/lib/search/urlDetection';
+import { toTraditionalKanji, hasKanjiVariants } from '@/lib/search/textNormalization';
+import { containsCJK } from '@/lib/search/cjkDetection';
 import { LISTING_FILTERS } from '@/lib/constants';
 import { logger } from '@/lib/logger';
 import type { SearchSuggestion, SearchSuggestionsResponse } from '@/lib/search/types';
@@ -42,8 +44,9 @@ export async function GET(request: NextRequest) {
     10
   );
 
-  // Return empty for short queries
-  if (!query || query.trim().length < 2) {
+  // Return empty for short queries (allow single CJK characters like 刀)
+  const trimmedQuery = query?.trim() || '';
+  if (!query || (trimmedQuery.length < 2 && !containsCJK(trimmedQuery))) {
     const response = NextResponse.json({
       suggestions: [],
       total: 0,
@@ -84,8 +87,52 @@ export async function GET(request: NextRequest) {
           { count: 'exact' }
         )
         .ilike('url', `%${detectedUrl}%`);
+    } else if (containsCJK(normalizedQuery)) {
+      // CJK search path: ILIKE on structured fields + description
+      // PostgreSQL FTS can't tokenize CJK with 'simple' config, so use ILIKE
+      // Also expand shinjitai↔kyujitai variants for broader coverage
+      const variants = [normalizedQuery];
+      if (hasKanjiVariants(normalizedQuery)) {
+        variants.push(toTraditionalKanji(normalizedQuery));
+      }
+      const searchFields = variants.flatMap(term => [
+        `title.ilike.%${term}%`,
+        `smith.ilike.%${term}%`,
+        `tosogu_maker.ilike.%${term}%`,
+        `school.ilike.%${term}%`,
+        `tosogu_school.ilike.%${term}%`,
+        `description.ilike.%${term}%`,
+      ]).join(',');
+
+      dbQuery = supabase
+        .from('listings')
+        .select(
+          `
+          id,
+          url,
+          title,
+          item_type,
+          price_value,
+          price_currency,
+          images,
+          cert_type,
+          smith,
+          tosogu_maker,
+          dealers!inner(name, domain)
+        `,
+          { count: 'exact' }
+        )
+        .or('status.eq.available,is_available.eq.true')
+        .or(searchFields);
+
+      // Apply minimum price filter
+      if (LISTING_FILTERS.MIN_PRICE_JPY > 0) {
+        dbQuery = dbQuery
+          .not('price_jpy', 'is', null)
+          .gte('price_jpy', LISTING_FILTERS.MIN_PRICE_JPY);
+      }
     } else {
-      // Standard text search across relevant fields
+      // Standard romaji text search across relevant fields
       const searchFields = [
         `title.ilike.%${normalizedQuery}%`,
         `smith.ilike.%${normalizedQuery}%`,

@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { useLocale } from '@/i18n/LocaleContext';
 import type { CollectionItem, CollectionFilters, CollectionFacets, CollectionListResponse } from '@/types/collection';
 import { CollectionGrid } from '@/components/collection/CollectionGrid';
 import { CollectionFilterSidebar } from '@/components/collection/CollectionFilterSidebar';
@@ -27,6 +28,7 @@ const EMPTY_FACETS: CollectionFacets = {
 // =============================================================================
 
 function CollectionPageInner() {
+  const { t } = useLocale();
   const searchParams = useSearchParams();
   const { openQuickView, openAddForm, openEditForm, setItems, setOnSavedCallback } = useCollectionQuickView();
 
@@ -78,7 +80,7 @@ function CollectionPageInner() {
       });
 
       if (!res.ok) {
-        throw new Error('Failed to fetch collection');
+        throw new Error(t('collection.fetchFailed'));
       }
 
       const data: CollectionListResponse = await res.json();
@@ -88,7 +90,7 @@ function CollectionPageInner() {
       setItems(data.data);
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') return;
-      setError('Failed to load collection. Please try again.');
+      setError(t('collection.loadFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -173,10 +175,10 @@ function CollectionPageInner() {
         {/* Page Header */}
         <div className="mb-6 lg:mb-8">
           <h1 className="text-[22px] lg:text-[28px] font-serif text-ink">
-            My Collection
+            {t('collection.myCollection')}
           </h1>
           <p className="text-[13px] text-muted mt-1">
-            {total > 0 ? `${total} ${total === 1 ? 'item' : 'items'} in your collection` : 'Start building your personal collection'}
+            {total > 0 ? (total === 1 ? t('collection.itemCount', { count: total }) : t('collection.itemCountPlural', { count: total })) : t('collection.startBuilding')}
           </p>
         </div>
 
@@ -185,7 +187,7 @@ function CollectionPageInner() {
           <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-[13px] text-red-700">
             {error}
             <button onClick={() => fetchItems(filters)} className="ml-2 underline hover:no-underline">
-              Retry
+              {t('common.retry')}
             </button>
           </div>
         )}

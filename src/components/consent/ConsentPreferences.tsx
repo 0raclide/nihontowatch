@@ -11,6 +11,7 @@ import {
   OPTIONAL_CATEGORIES,
 } from '@/lib/consent/types';
 import Link from 'next/link';
+import { useLocale } from '@/i18n/LocaleContext';
 
 // Animation timing in ms
 const ANIMATION_TIMING = {
@@ -166,6 +167,7 @@ function PreferencesContent({
   onAcceptAll,
   onRejectAll,
 }: PreferencesContentProps) {
+  const { t } = useLocale();
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
@@ -174,18 +176,17 @@ function PreferencesContent({
           <ShieldIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
         </div>
         <div>
-          <h2 className="font-serif text-xl text-ink">Privacy Preferences</h2>
-          <p className="text-sm text-muted">Manage your cookie settings</p>
+          <h2 className="font-serif text-xl text-ink">{t('cookie.privacyTitle')}</h2>
+          <p className="text-sm text-muted">{t('cookie.privacySubtitle')}</p>
         </div>
       </div>
 
       {/* Scrollable content */}
       <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
         <p className="text-sm text-secondary">
-          We use different types of cookies to optimize your experience.
-          Choose which cookies you want to allow. You can change these settings at any time.{' '}
+          {t('cookie.privacyDescription')}{' '}
           <Link href="/privacy" className="text-accent hover:underline">
-            View our Privacy Policy
+            {t('cookie.viewPrivacy')}
           </Link>
         </p>
 
@@ -216,14 +217,14 @@ function PreferencesContent({
             onClick={onRejectAll}
             className="flex-1 px-4 py-2 text-sm font-medium text-secondary hover:text-ink border border-border hover:border-ink/30 rounded-lg transition-colors"
           >
-            Reject All Optional
+            {t('cookie.rejectAllOptional')}
           </button>
           <button
             type="button"
             onClick={onAcceptAll}
             className="flex-1 px-4 py-2 text-sm font-medium text-secondary hover:text-ink border border-border hover:border-ink/30 rounded-lg transition-colors"
           >
-            Accept All
+            {t('cookie.acceptAll')}
           </button>
         </div>
 
@@ -234,14 +235,14 @@ function PreferencesContent({
             onClick={onCancel}
             className="flex-1 px-4 py-2.5 text-sm font-medium text-ink bg-surface hover:bg-border/50 rounded-lg transition-colors"
           >
-            Cancel
+            {t('cookie.cancel')}
           </button>
           <button
             type="button"
             onClick={onSave}
             className="flex-1 px-4 py-2.5 text-sm font-medium text-cream bg-ink hover:bg-ink/90 rounded-lg transition-colors"
           >
-            Save Preferences
+            {t('cookie.savePreferences')}
           </button>
         </div>
       </div>

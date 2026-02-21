@@ -9,6 +9,7 @@ import {
   generateSearchName,
 } from '@/lib/savedSearches/urlToCriteria';
 import type { SavedSearchCriteria, NotificationFrequency } from '@/types';
+import { useLocale } from '@/i18n/LocaleContext';
 
 interface SaveSearchModalProps {
   isOpen: boolean;
@@ -24,6 +25,7 @@ export function SaveSearchModal({
   currentMatchCount,
 }: SaveSearchModalProps) {
   const router = useRouter();
+  const { t } = useLocale();
   const { createSavedSearch, isCreating, error } = useSavedSearches({
     autoFetch: false,
   });
@@ -108,7 +110,7 @@ export function SaveSearchModal({
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border">
           <h2 className="font-serif text-lg text-ink">
-            Save Search
+            {t('saveSearch.heading')}
           </h2>
           <button
             onClick={onClose}
@@ -148,9 +150,9 @@ export function SaveSearchModal({
                 />
               </svg>
             </div>
-            <p className="text-ink font-medium">Search saved!</p>
+            <p className="text-ink font-medium">{t('saveSearch.searchSaved')}</p>
             <p className="text-[13px] text-muted mt-1">
-              You&apos;ll be notified when new items match.
+              {t('saveSearch.notifyNew')}
             </p>
           </div>
         ) : (
@@ -159,14 +161,14 @@ export function SaveSearchModal({
               {/* Search criteria summary */}
               <div className="p-3 bg-linen rounded-lg">
                 <p className="text-[11px] uppercase tracking-wider text-muted mb-1">
-                  Search Criteria
+                  {t('saveSearch.criteria')}
                 </p>
                 <p className="text-[13px] text-ink">
                   {criteriaToHumanReadable(criteria, dealerNames)}
                 </p>
                 {currentMatchCount !== undefined && (
                   <p className="text-[11px] text-muted mt-1">
-                    Currently matches {currentMatchCount.toLocaleString()} items
+                    {t('saveSearch.currentlyMatches', { count: currentMatchCount.toLocaleString() })}
                   </p>
                 )}
               </div>
@@ -177,14 +179,14 @@ export function SaveSearchModal({
                   htmlFor="search-name"
                   className="block text-[12px] font-medium text-ink mb-1"
                 >
-                  Name (optional)
+                  {t('saveSearch.nameOptional')}
                 </label>
                 <input
                   id="search-name"
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g., Juyo Katana under 3M"
+                  placeholder={t('saveSearch.namePlaceholder')}
                   className="w-full px-3 py-2 text-[14px] border border-border rounded-lg bg-paper text-ink placeholder-muted focus:outline-none focus:ring-2 focus:ring-gold/20 focus:border-gold"
                 />
               </div>
@@ -192,7 +194,7 @@ export function SaveSearchModal({
               {/* Notification frequency */}
               <div>
                 <label className="block text-[12px] font-medium text-ink mb-2">
-                  Notification Frequency
+                  {t('saveSearch.frequency')}
                 </label>
                 <div className="space-y-2">
                   <label className="flex items-start gap-3 p-3 border border-border rounded-lg cursor-pointer hover:bg-linen transition-colors">
@@ -208,10 +210,10 @@ export function SaveSearchModal({
                     />
                     <div>
                       <p className="text-[13px] font-medium text-ink">
-                        Instant
+                        {t('saveSearch.instant')}
                       </p>
                       <p className="text-[11px] text-muted">
-                        Get notified within 15 minutes of new matches
+                        {t('saveSearch.instantDesc')}
                       </p>
                     </div>
                   </label>
@@ -229,10 +231,10 @@ export function SaveSearchModal({
                     />
                     <div>
                       <p className="text-[13px] font-medium text-ink">
-                        Daily Digest
+                        {t('saveSearch.dailyDigest')}
                       </p>
                       <p className="text-[11px] text-muted">
-                        Receive a daily email at 8am UTC with all new matches
+                        {t('saveSearch.dailyDesc')}
                       </p>
                     </div>
                   </label>
@@ -250,10 +252,10 @@ export function SaveSearchModal({
                     />
                     <div>
                       <p className="text-[13px] font-medium text-ink">
-                        No Notifications
+                        {t('saveSearch.noNotifications')}
                       </p>
                       <p className="text-[11px] text-muted">
-                        Save for quick access, no email notifications
+                        {t('saveSearch.noNotificationsDesc')}
                       </p>
                     </div>
                   </label>
@@ -277,7 +279,7 @@ export function SaveSearchModal({
                 onClick={handleGoToSavedSearches}
                 className="text-[12px] text-gold hover:underline"
               >
-                View Saved Searches
+                {t('saveSearch.viewSaved')}
               </button>
 
               <div className="flex items-center gap-2">
@@ -286,7 +288,7 @@ export function SaveSearchModal({
                   onClick={onClose}
                   className="px-4 py-2 text-[13px] font-medium text-muted hover:text-ink transition-colors"
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </button>
                 <button
                   type="submit"
@@ -296,10 +298,10 @@ export function SaveSearchModal({
                   {isCreating ? (
                     <span className="flex items-center gap-2">
                       <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin" />
-                      Saving...
+                      {t('saveSearch.saving')}
                     </span>
                   ) : (
-                    'Save Search'
+                    t('saveSearch.saveSearch')
                   )}
                 </button>
               </div>

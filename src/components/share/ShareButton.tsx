@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { useLocale } from '@/i18n/LocaleContext';
 
 interface ShareButtonProps {
   listingId: number;
@@ -50,6 +51,7 @@ export function ShareButton({
   size = 'md',
   ogImageUrl,
 }: ShareButtonProps) {
+  const { t } = useLocale();
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
 
@@ -96,11 +98,11 @@ export function ShareButton({
     // Desktop and fallback: copy to clipboard
     try {
       await navigator.clipboard.writeText(shareUrl);
-      setToastMessage('Link copied!');
+      setToastMessage(t('share.linkCopied'));
       setShowToast(true);
       setTimeout(() => setShowToast(false), 2000);
     } catch {
-      setToastMessage('Failed to copy');
+      setToastMessage(t('share.failedToCopy'));
       setShowToast(true);
       setTimeout(() => setShowToast(false), 2000);
     }
@@ -133,8 +135,8 @@ export function ShareButton({
           shadow-sm hover:shadow-md
           ${className}
         `}
-        aria-label="Share listing"
-        title="Share listing"
+        aria-label={t('share.shareListing')}
+        title={t('share.shareListing')}
       >
         {/* Share icon - network/nodes style */}
         <svg

@@ -6,6 +6,7 @@ import type { CollectionItem } from '@/types/collection';
 import { getPlaceholderKanji } from '@/lib/images';
 import { getArtisanDisplayName } from '@/lib/artisan/displayName';
 import { CERT_LABELS, STATUS_LABELS, CONDITION_LABELS, getCertTierClass, getItemTypeLabel, formatPrice } from '@/lib/collection/labels';
+import { useLocale } from '@/i18n/LocaleContext';
 
 // Card-specific status colors (presentation concern, not shared)
 const STATUS_COLORS: Record<string, string> = {
@@ -22,11 +23,12 @@ interface CollectionCardProps {
 }
 
 export const CollectionCard = memo(function CollectionCard({ item, onClick, onEdit }: CollectionCardProps) {
+  const { t } = useLocale();
   const [imageError, setImageError] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
 
   const certInfo = item.cert_type ? CERT_LABELS[item.cert_type] : null;
-  const statusLabel = STATUS_LABELS[item.status] || 'Owned';
+  const statusLabel = STATUS_LABELS[item.status] || t('collection.status.owned');
   const statusColor = STATUS_COLORS[item.status] || STATUS_COLORS.owned;
   const itemTypeLabel = getItemTypeLabel(item.item_type);
   const displayName = item.artisan_display_name || (item.smith ? getArtisanDisplayName(item.smith, item.school) : null);
@@ -61,7 +63,7 @@ export const CollectionCard = memo(function CollectionCard({ item, onClick, onEd
             </span>
           ) : (
             <span className="text-[10px] font-medium tracking-[0.14em] text-muted/50 italic">
-              No source
+              {t('collection.noSource')}
             </span>
           )}
         </div>
@@ -76,7 +78,7 @@ export const CollectionCard = memo(function CollectionCard({ item, onClick, onEd
             <button
               onClick={handleEdit}
               className="w-6 h-6 flex items-center justify-center rounded-full text-muted/40 hover:text-gold hover:bg-gold/10 transition-colors opacity-0 group-hover:opacity-100"
-              aria-label="Edit item"
+              aria-label={t('collection.editItem')}
             >
               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
@@ -139,7 +141,7 @@ export const CollectionCard = memo(function CollectionCard({ item, onClick, onEd
         <div className="h-[20px] flex items-baseline overflow-hidden">
           {displayName ? (
             <>
-              <span className="text-[11px] text-muted font-normal mr-1 shrink-0">By</span>
+              <span className="text-[11px] text-muted font-normal mr-1 shrink-0">{t('collection.by')}</span>
               <span className="text-[11px] font-medium text-ink truncate">
                 {displayName}
               </span>
@@ -147,14 +149,14 @@ export const CollectionCard = memo(function CollectionCard({ item, onClick, onEd
           ) : item.school ? (
             <span className="text-[11px] text-muted truncate">{item.school}</span>
           ) : (
-            <span className="text-[11px] text-muted/50 italic">Unknown maker</span>
+            <span className="text-[11px] text-muted/50 italic">{t('collection.unknownMaker')}</span>
           )}
         </div>
 
         {/* Price row */}
         <div className="pt-2 mt-1 border-t border-border/40 flex items-center justify-between">
           <span className={`text-[14px] tabular-nums ${priceDisplay ? 'text-ink font-medium' : 'text-muted/50'}`}>
-            {priceDisplay || 'No value set'}
+            {priceDisplay || t('collection.noValueSet')}
           </span>
           {item.acquired_date && (
             <span className="text-[9px] text-muted tabular-nums">

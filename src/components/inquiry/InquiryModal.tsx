@@ -20,6 +20,7 @@ import { useInquiry } from '@/hooks/useInquiry';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { useActivityTrackerOptional } from '@/lib/tracking/ActivityTracker';
 import { CopyButton } from './CopyButton';
+import { useLocale } from '@/i18n/LocaleContext';
 import type { Listing } from '@/types';
 
 // Extended listing type that includes dealer info
@@ -51,6 +52,7 @@ type Step = 'form' | 'result';
 // =============================================================================
 
 export function InquiryModal({ isOpen, onClose, listing }: InquiryModalProps) {
+  const { t } = useLocale();
   // Form state
   const [step, setStep] = useState<Step>('form');
   const [buyerName, setBuyerName] = useState('');
@@ -97,13 +99,13 @@ export function InquiryModal({ isOpen, onClose, listing }: InquiryModalProps) {
     const errors: string[] = [];
 
     if (!buyerName.trim()) {
-      errors.push('Name is required');
+      errors.push(t('inquiry.nameRequired'));
     }
     if (!buyerCountry.trim()) {
-      errors.push('Country is required');
+      errors.push(t('inquiry.countryRequired'));
     }
     if (!message.trim()) {
-      errors.push('Message is required');
+      errors.push(t('inquiry.messageRequired'));
     }
 
     setValidationErrors(errors);
@@ -182,11 +184,11 @@ export function InquiryModal({ isOpen, onClose, listing }: InquiryModalProps) {
           <div className="flex items-center justify-between px-5 py-4 border-b border-border">
             <div>
               <h2 id="inquiry-modal-title" className="font-serif text-lg text-ink">
-                {step === 'form' ? 'Draft a Japanese Email' : 'Your Email is Ready'}
+                {step === 'form' ? t('inquiry.draftTitle') : t('inquiry.readyTitle')}
               </h2>
               {step === 'form' && (
                 <p className="text-[12px] text-muted mt-0.5">
-                  Professional keigo that gets responses
+                  {t('inquiry.subtitle')}
                 </p>
               )}
             </div>
@@ -271,6 +273,7 @@ function FormStep({
   onSubmit,
   onCancel,
 }: FormStepProps) {
+  const { t } = useLocale();
   return (
     <form onSubmit={onSubmit}>
       <div className="p-5 space-y-5">
@@ -284,7 +287,7 @@ function FormStep({
             </div>
             <div>
               <p className="text-[13px] font-medium text-ink">
-                Save 10% with tax-free export pricing
+                {t('inquiry.taxSave')}
                 {listing.price_value && listing.price_currency === 'JPY' && (
                   <span className="text-gold ml-1">
                     (¥{Math.round(listing.price_value * 0.1).toLocaleString()})
@@ -292,7 +295,7 @@ function FormStep({
                 )}
               </p>
               <p className="text-[12px] text-muted mt-1">
-                Foreign buyers can request exemption from Japan&apos;s 10% consumption tax (消費税). We&apos;ll draft a professional keigo email that asks the right way.
+                {t('inquiry.taxExplain')}
               </p>
             </div>
           </div>
@@ -300,7 +303,7 @@ function FormStep({
 
         {/* Listing Info */}
         <div className="bg-linen rounded-lg p-4">
-          <p className="text-[12px] uppercase tracking-wider text-muted mb-1">Inquiring about</p>
+          <p className="text-[12px] uppercase tracking-wider text-muted mb-1">{t('inquiry.inquiringAbout')}</p>
           <p className="text-[13px] text-charcoal font-medium line-clamp-2">{listing.title}</p>
           <p className="text-[12px] text-muted mt-1">
             {listing.dealers?.name || listing.dealer_name}
@@ -312,7 +315,7 @@ function FormStep({
           {/* Buyer Name */}
           <div>
             <label htmlFor="buyerName" className="block text-[12px] uppercase tracking-wider text-muted mb-2">
-              Your Name
+              {t('inquiry.yourName')}
             </label>
             <input
               id="buyerName"
@@ -327,7 +330,7 @@ function FormStep({
           {/* Buyer Country */}
           <div>
             <label htmlFor="buyerCountry" className="block text-[12px] uppercase tracking-wider text-muted mb-2">
-              Your Country
+              {t('inquiry.yourCountry')}
             </label>
             <input
               id="buyerCountry"
@@ -343,18 +346,18 @@ function FormStep({
         {/* Message */}
         <div>
           <label htmlFor="message" className="block text-[12px] uppercase tracking-wider text-muted mb-2">
-            What would you like to say?
+            {t('inquiry.whatToSay')}
           </label>
           <textarea
             id="message"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            placeholder="Example: I'd like to purchase this sword. Can you ship to the US? What payment methods do you accept?"
+            placeholder={t('inquiry.messagePlaceholder')}
             rows={4}
             className="w-full px-4 py-3 bg-paper border-2 border-border rounded-lg text-[14px] text-ink placeholder:text-muted/50 focus:outline-none focus:border-gold resize-none"
           />
           <p className="mt-2 text-[12px] text-muted">
-            Write in English — we&apos;ll translate it into formal Japanese (keigo).
+            {t('inquiry.writeInEnglish')}
           </p>
         </div>
 
@@ -379,7 +382,7 @@ function FormStep({
             onClick={onCancel}
             className="flex-1 px-4 py-3 text-[14px] font-medium text-charcoal bg-paper border border-border rounded-lg hover:bg-hover transition-colors"
           >
-            Cancel
+            {t('common.cancel')}
           </button>
           <button
             type="submit"
@@ -389,10 +392,10 @@ function FormStep({
             {isGenerating ? (
               <>
                 <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                Generating...
+                {t('inquiry.generating')}
               </>
             ) : (
-              'Generate Email'
+              t('inquiry.generateEmail')
             )}
           </button>
         </div>
@@ -413,6 +416,7 @@ interface ResultStepProps {
 }
 
 function ResultStep({ generatedEmail, listingId, onStartOver, onClose }: ResultStepProps) {
+  const { t } = useLocale();
   const [activeTab, setActiveTab] = useState<'japanese' | 'english'>('japanese');
   const [copiedEmail, setCopiedEmail] = useState(false);
   const activityTracker = useActivityTrackerOptional();
@@ -445,20 +449,20 @@ function ResultStep({ generatedEmail, listingId, onStartOver, onClose }: ResultS
         {/* How to Send - Step by Step */}
         <div className="bg-green-50 border border-green-200 rounded-lg p-4">
           <p className="text-[13px] font-medium text-green-800 mb-3">
-            How to send your email:
+            {t('inquiry.howToSend')}
           </p>
           <ol className="space-y-2 text-[12px] text-green-700">
             <li className="flex gap-2">
               <span className="flex-shrink-0 w-5 h-5 rounded-full bg-green-200 text-green-800 flex items-center justify-center text-[11px] font-bold">1</span>
-              <span>Copy the Japanese email using the button below</span>
+              <span>{t('inquiry.step1')}</span>
             </li>
             <li className="flex gap-2">
               <span className="flex-shrink-0 w-5 h-5 rounded-full bg-green-200 text-green-800 flex items-center justify-center text-[11px] font-bold">2</span>
-              <span>Open your email app (Gmail, Outlook, etc.)</span>
+              <span>{t('inquiry.step2')}</span>
             </li>
             <li className="flex gap-2">
               <span className="flex-shrink-0 w-5 h-5 rounded-full bg-green-200 text-green-800 flex items-center justify-center text-[11px] font-bold">3</span>
-              <span>Paste into a new email and send to the dealer</span>
+              <span>{t('inquiry.step3')}</span>
             </li>
           </ol>
         </div>
@@ -466,14 +470,14 @@ function ResultStep({ generatedEmail, listingId, onStartOver, onClose }: ResultS
         {/* Desktop: Side-by-side layout */}
         <div className="hidden lg:grid lg:grid-cols-2 lg:gap-4">
           <EmailPanel
-            label="Japanese (To Send)"
+            label={t('inquiry.japaneseSend')}
             subject={generatedEmail.subject_ja}
             body={generatedEmail.email_ja}
             dealerEmail={generatedEmail.dealer_email}
             isPrimary={true}
           />
           <EmailPanel
-            label="English (For Reference)"
+            label={t('inquiry.englishRef')}
             subject={generatedEmail.subject_en}
             body={generatedEmail.email_en}
             isPrimary={false}
@@ -485,7 +489,7 @@ function ResultStep({ generatedEmail, listingId, onStartOver, onClose }: ResultS
           <TabButtons activeTab={activeTab} setActiveTab={setActiveTab} />
           {activeTab === 'japanese' ? (
             <EmailPanel
-              label="Japanese (To Send)"
+              label={t('inquiry.japaneseSend')}
               subject={generatedEmail.subject_ja}
               body={generatedEmail.email_ja}
               dealerEmail={generatedEmail.dealer_email}
@@ -493,7 +497,7 @@ function ResultStep({ generatedEmail, listingId, onStartOver, onClose }: ResultS
             />
           ) : (
             <EmailPanel
-              label="English (For Reference)"
+              label={t('inquiry.englishRef')}
               subject={generatedEmail.subject_en}
               body={generatedEmail.email_en}
               isPrimary={false}
@@ -517,14 +521,14 @@ function ResultStep({ generatedEmail, listingId, onStartOver, onClose }: ResultS
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
-                Copied!
+                {t('inquiry.copied')}
               </>
             ) : (
               <>
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                 </svg>
-                Copy Japanese Email
+                {t('inquiry.copyJapanese')}
               </>
             )}
           </button>
@@ -533,7 +537,7 @@ function ResultStep({ generatedEmail, listingId, onStartOver, onClose }: ResultS
               href={mailtoLink}
               onClick={handleMailtoClick}
               className="px-4 py-3 text-[14px] font-medium text-charcoal bg-paper border border-border rounded-lg hover:bg-hover transition-colors flex items-center gap-2"
-              title="Open in your default email app"
+              title={t('inquiry.openInEmail')}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
@@ -547,22 +551,22 @@ function ResultStep({ generatedEmail, listingId, onStartOver, onClose }: ResultS
           <div className="flex flex-wrap gap-2">
             {generatedEmail.dealer_policies.ships_international && (
               <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-[11px]">
-                Ships International
+                {t('inquiry.shipsInternational')}
               </span>
             )}
             {generatedEmail.dealer_policies.accepts_wire_transfer && (
               <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-[11px]">
-                Wire Transfer
+                {t('inquiry.wireTransfer')}
               </span>
             )}
             {generatedEmail.dealer_policies.accepts_paypal && (
               <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-[11px]">
-                PayPal
+                {t('inquiry.paypal')}
               </span>
             )}
             {generatedEmail.dealer_policies.english_support && (
               <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded text-[11px]">
-                English Support
+                {t('inquiry.englishSupport')}
               </span>
             )}
           </div>
@@ -577,14 +581,14 @@ function ResultStep({ generatedEmail, listingId, onStartOver, onClose }: ResultS
             onClick={onStartOver}
             className="px-4 py-2.5 text-[13px] text-muted hover:text-ink transition-colors"
           >
-            Start Over
+            {t('inquiry.startOver')}
           </button>
           <button
             type="button"
             onClick={onClose}
             className="flex-1 px-4 py-2.5 text-[14px] font-medium text-charcoal bg-paper border border-border rounded-lg hover:bg-hover transition-colors"
           >
-            Done
+            {t('inquiry.done')}
           </button>
         </div>
       </div>
@@ -605,6 +609,7 @@ interface EmailPanelProps {
 }
 
 function EmailPanel({ label, subject, body, dealerEmail, isPrimary }: EmailPanelProps) {
+  const { t } = useLocale();
   return (
     <div className={`bg-paper rounded-lg p-4 ${isPrimary ? 'border-2 border-gold' : 'border border-border'}`}>
       <div className="flex items-center justify-between mb-3">
@@ -612,13 +617,13 @@ function EmailPanel({ label, subject, body, dealerEmail, isPrimary }: EmailPanel
           {label}
         </label>
         {isPrimary && dealerEmail && (
-          <span className="text-[11px] text-muted">To: {dealerEmail}</span>
+          <span className="text-[11px] text-muted">{t('inquiry.toLabel')} {dealerEmail}</span>
         )}
       </div>
 
       {/* Subject */}
       <div className="mb-3 pb-3 border-b border-border">
-        <p className="text-[11px] text-muted mb-1">Subject:</p>
+        <p className="text-[11px] text-muted mb-1">{t('inquiry.subjectLabel')}</p>
         <p className="text-[13px] text-ink">{subject}</p>
       </div>
 
@@ -640,6 +645,7 @@ interface TabButtonsProps {
 }
 
 function TabButtons({ activeTab, setActiveTab }: TabButtonsProps) {
+  const { t } = useLocale();
   return (
     <div className="flex mb-4 bg-linen rounded-lg p-1">
       <button
@@ -651,7 +657,7 @@ function TabButtons({ activeTab, setActiveTab }: TabButtonsProps) {
             : 'text-muted hover:text-ink'
         }`}
       >
-        Japanese
+        {t('inquiry.japanese')}
       </button>
       <button
         type="button"
@@ -662,7 +668,7 @@ function TabButtons({ activeTab, setActiveTab }: TabButtonsProps) {
             : 'text-muted hover:text-ink'
         }`}
       >
-        English
+        {t('inquiry.english')}
       </button>
     </div>
   );

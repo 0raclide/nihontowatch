@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import type { CreateCollectionItemInput, CatalogSearchResult } from '@/types/collection';
+import { useLocale } from '@/i18n/LocaleContext';
 import { mapCatalogToCollectionItem } from '@/lib/collection/catalogMapping';
 
 interface CatalogSearchBarProps {
@@ -22,6 +23,7 @@ interface ArtisanResult {
 }
 
 export function CatalogSearchBar({ onSelect }: CatalogSearchBarProps) {
+  const { t } = useLocale();
   const [query, setQuery] = useState('');
   const [cert, setCert] = useState('');
   const [session, setSession] = useState('');
@@ -115,9 +117,9 @@ export function CatalogSearchBar({ onSelect }: CatalogSearchBarProps) {
     <div>
       <div className="flex items-center gap-2 mb-2">
         <label className="text-[11px] uppercase tracking-[0.1em] font-medium text-muted">
-          Catalog Lookup
+          {t('collection.catalogLookup')}
         </label>
-        <span className="text-[10px] text-muted/50">Search Yuhinkai database to auto-fill</span>
+        <span className="text-[10px] text-muted/50">{t('collection.catalogHelper')}</span>
       </div>
 
       {/* Search input */}
@@ -127,7 +129,7 @@ export function CatalogSearchBar({ onSelect }: CatalogSearchBarProps) {
             type="text"
             value={query}
             onChange={e => setQuery(e.target.value)}
-            placeholder='Search "Juyo 63 Masamune" or artisan name...'
+            placeholder={t('collection.catalogPlaceholder')}
             className="form-input w-full pr-8"
           />
           {isSearching && (
@@ -140,7 +142,7 @@ export function CatalogSearchBar({ onSelect }: CatalogSearchBarProps) {
             showRefine ? 'border-gold text-gold bg-gold/5' : 'border-border/60 text-muted hover:border-gold/40'
           }`}
         >
-          Refine
+          {t('collection.refine')}
         </button>
       </div>
 
@@ -148,13 +150,13 @@ export function CatalogSearchBar({ onSelect }: CatalogSearchBarProps) {
       {showRefine && (
         <div className="flex gap-2 mt-2">
           <select value={cert} onChange={e => setCert(e.target.value)} className="form-select text-[12px]">
-            <option value="">Cert type...</option>
-            <option value="Juyo">Juyo</option>
-            <option value="Tokuju">Tokubetsu Juyo</option>
-            <option value="Kokuho">Kokuho</option>
+            <option value="">{t('collection.certType')}</option>
+            <option value="Juyo">{t('cert.Juyo')}</option>
+            <option value="Tokuju">{t('cert.Tokuju')}</option>
+            <option value="Kokuho">{t('cert.Kokuho')}</option>
           </select>
-          <input type="number" value={session} onChange={e => setSession(e.target.value)} placeholder="Session #" className="form-input w-24 text-[12px]" />
-          <input type="number" step="0.1" value={nagasa} onChange={e => setNagasa(e.target.value)} placeholder="Nagasa cm" className="form-input w-28 text-[12px]" />
+          <input type="number" value={session} onChange={e => setSession(e.target.value)} placeholder={t('collection.sessionNum')} className="form-input w-24 text-[12px]" />
+          <input type="number" step="0.1" value={nagasa} onChange={e => setNagasa(e.target.value)} placeholder={t('collection.nagasaCm')} className="form-input w-28 text-[12px]" />
         </div>
       )}
 
@@ -165,7 +167,7 @@ export function CatalogSearchBar({ onSelect }: CatalogSearchBarProps) {
           {catalogResults.length > 0 && (
             <div>
               <div className="px-3 py-1.5 bg-linen/50 text-[10px] uppercase tracking-wider font-semibold text-muted border-b border-border/20">
-                Catalog Records
+                {t('collection.catalogRecords')}
               </div>
               {catalogResults.map((r, i) => (
                 <button
@@ -191,7 +193,7 @@ export function CatalogSearchBar({ onSelect }: CatalogSearchBarProps) {
           {artisanResults.length > 0 && (
             <div>
               <div className="px-3 py-1.5 bg-linen/50 text-[10px] uppercase tracking-wider font-semibold text-muted border-b border-border/20">
-                Artisans
+                {t('collection.artisans')}
               </div>
               {artisanResults.map(a => (
                 <button
@@ -219,13 +221,13 @@ export function CatalogSearchBar({ onSelect }: CatalogSearchBarProps) {
 
       {/* No results */}
       {hasSearched && !isSearching && catalogResults.length === 0 && artisanResults.length === 0 && (
-        <p className="mt-2 text-[11px] text-muted/60">No results found. You can enter details manually below.</p>
+        <p className="mt-2 text-[11px] text-muted/60">{t('collection.noResults')}</p>
       )}
 
       {/* Skip link */}
       {!hasSearched && (
         <p className="mt-2 text-[10px] text-muted/50">
-          Or skip to <button onClick={() => setHasSearched(true)} className="text-gold hover:underline">enter manually</button>
+          {t('collection.orSkipTo')} <button onClick={() => setHasSearched(true)} className="text-gold hover:underline">{t('collection.enterManually')}</button>
         </p>
       )}
     </div>

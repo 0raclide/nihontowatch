@@ -14,6 +14,7 @@ import { isTrialModeActive } from '@/types/subscription';
 import { isSetsumeiEligibleCert } from '@/types';
 import { useImagePreloader } from '@/hooks/useImagePreloader';
 import { getValidatedCertInfo } from '@/lib/cert/validation';
+import { useLocale } from '@/i18n/LocaleContext';
 
 // 7 days in milliseconds - matches the data delay for free tier
 const EARLY_ACCESS_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
@@ -465,6 +466,7 @@ export const ListingCard = memo(function ListingCard({
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [fallbackIndex, setFallbackIndex] = useState(0);
+  const { t } = useLocale();
   const activity = useActivityOptional();
   const quickView = useQuickViewOptional();
   const viewportTracking = useViewportTrackingOptional();
@@ -661,7 +663,7 @@ export const ListingCard = memo(function ListingCard({
         {placeholderKanji}
       </span>
       <span className="text-[9px] text-muted/40 tracking-widest uppercase mt-3">
-        Photos not published
+        {t('listing.photosNotPublished')}
       </span>
     </div>
   ) : (hasError || !imageUrl) ? (
@@ -707,7 +709,7 @@ export const ListingCard = memo(function ListingCard({
   const unavailableOverlay = isUnavailable && (
     <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center">
       <span className="text-[10px] uppercase tracking-widest text-white/90 font-medium">
-        {isSold ? 'Sold' : 'Unavailable'}
+        {isSold ? t('badge.sold') : t('listing.unavailable')}
       </span>
       {isSold && listing.sold_data?.sale_date && (
         <span className="text-[9px] text-white/80 mt-0.5">
@@ -720,7 +722,7 @@ export const ListingCard = memo(function ListingCard({
           listing.sold_data.confidence === 'medium' ? 'text-yellow-400' :
           'text-white/60'
         }`}>
-          Listed {listing.sold_data.days_on_market_display}
+          {t('listing.listed')} {listing.sold_data.days_on_market_display}
         </span>
       )}
     </div>
@@ -739,16 +741,18 @@ export const ListingCard = memo(function ListingCard({
       data-testid="new-listing-badge"
       className="text-[9px] lg:text-[10px] uppercase tracking-wider font-semibold px-1.5 lg:px-2 py-0.5 lg:py-1 bg-new-listing-bg text-new-listing"
     >
-      {isEarlyAccessListing(listing.first_seen_at) && !isTrialModeActive() ? 'Early Access' : 'New'}
+      {isEarlyAccessListing(listing.first_seen_at) && !isTrialModeActive() ? t('badge.earlyAccess') : t('badge.new')}
     </span>
   );
 
   // Artisan display name (resolved server-side from Yuhinkai)
   const isUnknownArtisan = listing.artisan_id === 'UNKNOWN';
-  const artisanDisplayName = isUnknownArtisan ? 'Unlisted artist' : (listing.artisan_display_name || listing.artisan_id);
+  const artisanDisplayName = isUnknownArtisan ? t('listing.unlistedArtist') : (listing.artisan_display_name || listing.artisan_id);
 
   // Price display
-  const priceDisplay = formatPrice(listing.price_value, listing.price_currency, currency, exchangeRates);
+  const priceDisplay = listing.price_value === null
+    ? t('listing.ask')
+    : formatPrice(listing.price_value, listing.price_currency, currency, exchangeRates);
 
   // Cert text color (no bg badge — just colored text in header)
   const certTextColor = certInfo
@@ -833,7 +837,7 @@ export const ListingCard = memo(function ListingCard({
         {/* Attribution — gold underline on artisan, plain text fallback */}
         {primaryName ? (
           <div className={`${sz.attrH} sm:h-[20px] lg:h-[22px] flex items-baseline overflow-hidden`}>
-            <span className={`${sz.attr} sm:text-[11px] lg:text-[12px] text-muted font-normal mr-1 shrink-0`}>By</span>
+            <span className={`${sz.attr} sm:text-[11px] lg:text-[12px] text-muted font-normal mr-1 shrink-0`}>{t('listing.by')}</span>
             {isLinked ? (
               <a
                 href={linkHref}
