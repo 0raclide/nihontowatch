@@ -31,7 +31,8 @@ export async function POST(request: NextRequest) {
       .eq('id', user.id)
       .single();
 
-    const currentPrefs = (profile?.preferences as Record<string, unknown>) || {};
+    const row = profile as { preferences: Record<string, unknown> | null } | null;
+    const currentPrefs = row?.preferences || {};
     await supabase
       .from('profiles')
       .update({ preferences: { ...currentPrefs, locale } } as never)
