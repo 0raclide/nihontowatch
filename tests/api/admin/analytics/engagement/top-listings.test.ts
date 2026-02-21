@@ -25,7 +25,7 @@ const mockSupabaseClient = {
     getUser: vi.fn(),
   },
   from: vi.fn(),
-  rpc: vi.fn(),
+  rpc: Object.assign(vi.fn(), { _lastParams: undefined as Record<string, unknown> | undefined }),
 };
 
 vi.mock('@/lib/supabase/server', () => ({
@@ -108,15 +108,19 @@ function setupCompleteMocks() {
     return createMockQueryBuilder();
   });
 
-  // Mock the get_top_listings RPC call
-  mockSupabaseClient.rpc.mockImplementation((fnName: string) => {
+  // Mock the get_top_listings RPC call (captures params for assertion, respects p_limit)
+  mockSupabaseClient.rpc.mockImplementation((fnName: string, params?: Record<string, unknown>) => {
     if (fnName === 'get_top_listings') {
+      // Store params for test assertions
+      mockSupabaseClient.rpc._lastParams = params;
+      const allRows = [
+        { listing_id: 1, view_count: 3, unique_viewers: 3, favorite_count: 1 },
+        { listing_id: 2, view_count: 1, unique_viewers: 1, favorite_count: 2 },
+        { listing_id: 3, view_count: 1, unique_viewers: 1, favorite_count: 0 },
+      ];
+      const limit = typeof params?.p_limit === 'number' ? params.p_limit : allRows.length;
       return Promise.resolve({
-        data: [
-          { listing_id: 1, view_count: 3, unique_viewers: 3, favorite_count: 1 },
-          { listing_id: 2, view_count: 1, unique_viewers: 1, favorite_count: 2 },
-          { listing_id: 3, view_count: 1, unique_viewers: 1, favorite_count: 0 },
-        ],
+        data: allRows.slice(0, limit),
         error: null,
       });
     }
@@ -339,6 +343,86 @@ describe('GET /api/admin/analytics/engagement/top-listings', () => {
 
       expect(response.status).toBe(200);
       expect(json.data.listings.length).toBeLessThanOrEqual(2);
+    });
+  });
+
+  // ===========================================================================
+  // RPC PARAMETER TESTS
+  // ===========================================================================
+
+  describe('RPC parameter passing', () => {
+    it('passes p_sort matching sortBy query param to RPC', async () => {
+      setupCompleteMocks();
+
+      const request = createMockRequest({ sortBy: 'favorites' });
+      await GET(request);
+
+      expect(mockSupabaseClient.rpc._lastParams).toBeDefined();
+      expect(mockSupabaseClient.rpc._lastParams!.p_sort).toBe('favorites');
+    });
+
+    it('passes p_sort as views by default', async () => {
+      setupCompleteMocks();
+
+      const request = createMockRequest();
+      await GET(request);
+
+      expect(mockSupabaseClient.rpc._lastParams).toBeDefined();
+      expect(mockSupabaseClient.rpc._lastParams!.p_sort).toBe('views');
+    });
+
+    it('passes exact limit as p_limit (not doubled)', async () => {
+      setupCompleteMocks();
+
+      const request = createMockRequest({ limit: '5' });
+      await GET(request);
+
+      expect(mockSupabaseClient.rpc._lastParams).toBeDefined();
+      expect(mockSupabaseClient.rpc._lastParams!.p_limit).toBe(5);
+    });
+
+    it('includes listings with 0 views but >0 favorites when sortBy=favorites', async () => {
+      setupAdminAuth();
+
+      const profileBuilder = createMockQueryBuilder();
+      profileBuilder.single = vi.fn(() =>
+        Promise.resolve({ data: { role: 'admin' }, error: null })
+      );
+
+      // Listing 4 has 0 views but favorites (favorites-only item)
+      const listingsBuilder = createMockQueryBuilder([
+        { id: 4, title: 'Tanto D', item_type: 'tanto', price_jpy: 200000, dealers: { name: 'Dealer C' } },
+      ], 1);
+
+      mockSupabaseClient.from.mockImplementation((table: string) => {
+        if (table === 'profiles') return profileBuilder;
+        if (table === 'listings') return listingsBuilder;
+        return createMockQueryBuilder();
+      });
+
+      // RPC returns a listing with 0 views but favorites (FULL OUTER JOIN result)
+      mockSupabaseClient.rpc.mockImplementation((fnName: string, params?: Record<string, unknown>) => {
+        if (fnName === 'get_top_listings') {
+          mockSupabaseClient.rpc._lastParams = params;
+          return Promise.resolve({
+            data: [
+              { listing_id: 4, view_count: 0, unique_viewers: 0, favorite_count: 5 },
+            ],
+            error: null,
+          });
+        }
+        return Promise.resolve({ data: [], error: null });
+      });
+
+      const request = createMockRequest({ sortBy: 'favorites' });
+      const response = await GET(request);
+      const json = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(json.data.listings).toHaveLength(1);
+      expect(json.data.listings[0].id).toBe(4);
+      expect(json.data.listings[0].views).toBe(0);
+      expect(json.data.listings[0].favorites).toBe(5);
     });
   });
 

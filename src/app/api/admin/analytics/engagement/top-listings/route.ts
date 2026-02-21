@@ -80,13 +80,14 @@ export async function GET(request: NextRequest): Promise<NextResponse<AnalyticsA
     // 3. Get admin user IDs for filtering
     const adminIds = await getAdminUserIds(supabase);
 
-    // 4. Fetch top listings via RPC (SQL aggregation, no row limit)
+    // 4. Fetch top listings via RPC (SQL aggregation with sort)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: rpcData, error: rpcError } = await (supabase.rpc as any)('get_top_listings', {
       p_start: startDate.toISOString(),
       p_end: endDate.toISOString(),
       p_admin_ids: adminIds,
-      p_limit: limit * 2, // fetch extra to handle favorites sort
+      p_limit: limit,
+      p_sort: sortBy,
     });
 
     if (rpcError) {
@@ -106,18 +107,13 @@ export async function GET(request: NextRequest): Promise<NextResponse<AnalyticsA
       }, 300);
     }
 
-    // Sort by chosen metric and take top N
-    let listingsWithMetrics = rpcRows.map(row => ({
+    // Map RPC results (already sorted and limited by SQL)
+    const listingsWithMetrics = rpcRows.map(row => ({
       id: Number(row.listing_id),
       views: Number(row.view_count),
       uniqueViewers: Number(row.unique_viewers),
       favorites: Number(row.favorite_count),
     }));
-
-    if (sortBy === 'favorites') {
-      listingsWithMetrics.sort((a, b) => b.favorites - a.favorites);
-    }
-    listingsWithMetrics = listingsWithMetrics.slice(0, limit);
 
     const topListingIds = listingsWithMetrics.map((l) => l.id);
 
