@@ -111,7 +111,7 @@ export function MobileNavDrawer() {
                     className="w-full flex items-center gap-3 px-4 py-3 text-[13px] text-gold hover:bg-gold/10 rounded-lg transition-colors"
                   >
                     <LoginIcon />
-                    Sign In
+                    Sign In / Register
                   </button>
 
                   <div className="h-px bg-border/50 my-2" />

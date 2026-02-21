@@ -304,7 +304,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
             </h2>
             <p className="text-sm text-muted">
               {step === 'email'
-                ? 'Sign in with your email address'
+                ? 'Sign in or create an account'
                 : step === 'otp'
                 ? `We sent a code to ${email}`
                 : `Sign in as ${email}`}
@@ -362,6 +362,10 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                   'Continue with Email'
                 )}
               </button>
+
+              <p className="text-xs text-muted/70 text-center">
+                No account yet? Just enter your email to get started.
+              </p>
             </form>
           )}
 

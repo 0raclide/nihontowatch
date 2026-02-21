@@ -432,7 +432,7 @@ function HeaderContent() {
                   onClick={() => setShowLoginModal(true)}
                   className="text-[11px] uppercase tracking-[0.2em] text-muted hover:text-gold transition-colors"
                 >
-                  Sign In
+                  Sign In / Register
                 </button>
               )}
             </nav>
