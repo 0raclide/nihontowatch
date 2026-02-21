@@ -16,7 +16,11 @@ import { NEW_SINCE_LAST_VISIT } from '@/lib/constants';
  * - Logged in: "X new items since your last visit Y days ago"
  * - Logged out: Teaser to log in for tracking
  */
-export function NewSinceLastVisitBanner() {
+interface NewSinceLastVisitBannerProps {
+  onViewNewItems?: () => void;
+}
+
+export function NewSinceLastVisitBanner({ onViewNewItems }: NewSinceLastVisitBannerProps) {
   const { user } = useAuth();
   const { count, daysSince, dismiss, isLoading } = useNewSinceLastVisit();
   const shouldShow = useShouldShowNewItemsBanner();
@@ -130,8 +134,8 @@ export function NewSinceLastVisitBanner() {
           <div className="flex items-center gap-3">
             <button
               onClick={() => {
-                // Scroll to top to see the new items (already sorted by newest)
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+                // Reset sort/filters and scroll to top to show newest items
+                onViewNewItems?.();
                 // Dismiss the banner
                 dismiss();
               }}

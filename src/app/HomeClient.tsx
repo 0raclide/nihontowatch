@@ -465,6 +465,30 @@ export default function HomeContent() {
     scrollToTop();
   }, [scrollToTop]);
 
+  // "View new items" banner action: reset to newest sort, clear filters/search, scroll to top
+  const handleViewNewItems = useCallback(() => {
+    setSort('recent');
+    setFilters((prev) => ({
+      ...prev,
+      itemTypes: [],
+      certifications: [],
+      schools: [],
+      dealers: [],
+      historicalPeriods: [],
+      signatureStatuses: [],
+      priceMin: undefined,
+      priceMax: undefined,
+      askOnly: false,
+      enriched: false,
+      missingSetsumei: false,
+      missingArtisanCode: false,
+    }));
+    setSearchQuery('');
+    setArtisanCode('');
+    setPage(1);
+    scrollToTop();
+  }, [setSort, setFilters, setSearchQuery, setArtisanCode, scrollToTop]);
+
   return (
     <div className="flex flex-col h-[100dvh] overflow-hidden lg:block lg:h-auto lg:min-h-screen lg:overflow-visible bg-surface transition-colors">
       {/* Desktop header — hidden on mobile, sticky on desktop (unaffected by contained scroll) */}
@@ -476,7 +500,7 @@ export default function HomeContent() {
         className="flex-1 min-h-0 overflow-y-auto lg:overflow-visible"
       >
       <DataDelayBanner />
-      <NewSinceLastVisitBanner />
+      <NewSinceLastVisitBanner onViewNewItems={handleViewNewItems} />
 
       {/* Handle deep links to specific listings via ?listing= URL param */}
       <DeepLinkHandler />

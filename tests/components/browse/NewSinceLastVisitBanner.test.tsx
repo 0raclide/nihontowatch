@@ -301,9 +301,8 @@ describe('NewSinceLastVisitBanner', () => {
       expect(screen.getByText(/30\+ days ago/i)).toBeInTheDocument();
     });
 
-    it('scrolls to top and dismisses when clicking view new items', () => {
-      const scrollToMock = vi.fn();
-      window.scrollTo = scrollToMock;
+    it('calls onViewNewItems and dismisses when clicking view new items', () => {
+      const onViewNewItems = vi.fn();
 
       mockUseNewSinceLastVisit.mockReturnValue({
         count: 10,
@@ -317,12 +316,12 @@ describe('NewSinceLastVisitBanner', () => {
         refresh: vi.fn(),
       });
 
-      render(<NewSinceLastVisitBanner />);
+      render(<NewSinceLastVisitBanner onViewNewItems={onViewNewItems} />);
 
       const viewButton = screen.getByRole('button', { name: /view new items/i });
       fireEvent.click(viewButton);
 
-      expect(scrollToMock).toHaveBeenCalledWith({ top: 0, behavior: 'smooth' });
+      expect(onViewNewItems).toHaveBeenCalled();
       expect(mockDismiss).toHaveBeenCalled();
     });
 
