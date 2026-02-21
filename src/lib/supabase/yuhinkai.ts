@@ -877,6 +877,37 @@ export async function getHeroImageForDetailPage(
 }
 
 /**
+ * Resolve a school name (e.g. "Osafune") to all matching artisan codes using
+ * the junction table (artisan_school_members) + unlinked fallback.
+ * Uses the `resolve_school_to_makers()` SQL function.
+ * Returns a Set of matching codes (maker_ids + school_ids).
+ * Falls back to empty set on error.
+ */
+export async function resolveSchoolToMakerIds(
+  schoolName: string,
+  entityType: 'smith' | 'tosogu'
+): Promise<Set<string>> {
+  const domains = getDomainFilter(entityType);
+
+  try {
+    const { data, error } = await yuhinkaiClient.rpc('resolve_school_to_makers', {
+      p_school_name: schoolName,
+      p_domains: domains,
+    });
+
+    if (error) {
+      console.error('[Yuhinkai] resolve_school_to_makers RPC error:', error);
+      return new Set();
+    }
+
+    return new Set((data || []).map((row: { code: string }) => row.code));
+  } catch (err) {
+    console.error('[Yuhinkai] resolve_school_to_makers error:', err);
+    return new Set();
+  }
+}
+
+/**
  * Resolve a broad period name (e.g. "Muromachi") to the list of specific era
  * strings in the database that map to it. Still needed by getArtistsForDirectory
  * and getFilteredArtistsByCodes (used in the `for_sale` sort path).
@@ -935,13 +966,22 @@ export async function getArtistsForDirectory(
   const entityType = type === 'tosogu' ? 'tosogu' : 'smith';
   const domainFilter = getDomainFilter(entityType);
 
+  // Pre-resolve school filter to matching codes via junction table
+  let resolvedSchoolIds: Set<string> | null = null;
+  if (school) {
+    resolvedSchoolIds = await resolveSchoolToMakerIds(school, entityType);
+    if (resolvedSchoolIds.size === 0) {
+      return { artists: [], total: 0 };
+    }
+  }
+
   let query = yuhinkaiClient
     .from('artisan_makers')
     .select('maker_id, name_romaji, name_kanji, legacy_school_text, province, era, kokuho_count, jubun_count, jubi_count, gyobutsu_count, tokuju_count, juyo_count, total_items, elite_factor, provenance_factor', { count: 'exact' })
     .in('domain', domainFilter);
 
   if (notable) query = query.gt('total_items', 0);
-  if (school) query = query.eq('legacy_school_text', school);
+  if (resolvedSchoolIds) query = query.in('maker_id', [...resolvedSchoolIds]);
   if (province) query = query.eq('province', province);
 
   // Era filter: resolve broad period name to matching specific era strings
@@ -1012,8 +1052,18 @@ export async function getFilteredArtistsByCodes(
   const results: ArtistDirectoryEntry[] = [];
 
   // Split codes: NS-* → artisan_schools, others → artisan_makers
-  const schoolCodes = codes.filter(c => c.startsWith('NS-'));
-  const makerCodes = codes.filter(c => !c.startsWith('NS-'));
+  let schoolCodes = codes.filter(c => c.startsWith('NS-'));
+  let makerCodes = codes.filter(c => !c.startsWith('NS-'));
+
+  // Pre-resolve school filter via junction table (once, before batch loop)
+  if (filters.school) {
+    const resolvedIds = await resolveSchoolToMakerIds(filters.school, entityType);
+    if (resolvedIds.size === 0) return [];
+    // Filter code arrays against the resolved set
+    makerCodes = makerCodes.filter(c => resolvedIds.has(c));
+    schoolCodes = schoolCodes.filter(c => resolvedIds.has(c));
+    if (makerCodes.length === 0 && schoolCodes.length === 0) return [];
+  }
 
   // Pre-resolve broad period → specific eras once (reused across batches)
   let resolvedEras: string[] | null = null;
@@ -1028,7 +1078,7 @@ export async function getFilteredArtistsByCodes(
       .in('domain', domainFilter);
 
     if (filters.notable !== false) query = query.gt('total_items', 0);
-    if (filters.school) query = query.eq('legacy_school_text', filters.school);
+    // School filter already applied by pre-filtering codes above
     if (filters.province) query = query.eq('province', filters.province);
 
     // Era filter: resolve broad period name to matching specific era strings
@@ -1082,7 +1132,7 @@ export async function getFilteredArtistsByCodes(
       .in('domain', domainFilter);
 
     if (filters.notable !== false) query = query.gt('total_items', 0);
-    if (filters.school) query = query.eq('name_romaji', filters.school);
+    // School filter already applied by pre-filtering codes above
     if (filters.province) query = query.eq('province', filters.province);
 
     if (filters.era) {

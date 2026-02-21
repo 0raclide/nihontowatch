@@ -29,7 +29,6 @@ export async function GET(request: NextRequest) {
       callDirectoryEnrichment,
       getHeroImagesFromTable,
       getFilteredArtistsByCodes,
-      getArtistDirectoryFacets,
       getBulkElitePercentiles,
       getSchoolMemberCounts,
       getSchoolMemberCodes,
@@ -100,8 +99,9 @@ export async function GET(request: NextRequest) {
       listingData = allListingData;
 
       // 5. Enrich with percentiles, member counts, facets, hero images (old path)
+      // Facets: delegate to RPC (single source of truth — junction-table-based school counts)
       const [forSaleFacets, [percentileMap, memberCountMap], forSaleHeroImages] = await Promise.all([
-        skipMeta ? null : getArtistDirectoryFacets(type),
+        skipMeta ? null : callDirectoryEnrichment({ type, page: 1, limit: 1, skipMeta: false }).then(r => r.facets),
         Promise.all([
           getBulkElitePercentiles(
             artists.map(a => ({ code: a.code, elite_factor: a.elite_factor, entity_type: a.entity_type }))
