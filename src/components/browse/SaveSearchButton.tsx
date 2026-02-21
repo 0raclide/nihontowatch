@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
+import { useLocale } from '@/i18n/LocaleContext';
 import { LoginModal } from '@/components/auth/LoginModal';
 import { SaveSearchModal } from './SaveSearchModal';
 import type { SavedSearchCriteria } from '@/types';
@@ -25,6 +26,7 @@ export function SaveSearchButton({
 }: SaveSearchButtonProps) {
   const { user } = useAuth();
   const { requireFeature } = useSubscription();
+  const { t } = useLocale();
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showSaveModal, setShowSaveModal] = useState(false);
 
@@ -66,7 +68,7 @@ export function SaveSearchButton({
       <button
         onClick={handleClick}
         className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium text-gold border border-gold/30 hover:bg-gold/5 rounded-lg transition-colors ${className}`}
-        title="Save this search"
+        title={t('saveSearch.saveSearch')}
       >
         <svg
           className="w-3.5 h-3.5"
@@ -81,7 +83,7 @@ export function SaveSearchButton({
             d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
           />
         </svg>
-        Save Search
+        {t('saveSearch.saveSearch')}
       </button>
 
       {/* Login Modal */}

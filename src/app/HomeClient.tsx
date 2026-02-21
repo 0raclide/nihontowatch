@@ -23,6 +23,7 @@ import { DataDelayBanner } from '@/components/subscription/DataDelayBanner';
 import { NewSinceLastVisitBanner } from '@/components/browse/NewSinceLastVisitBanner';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { useNewSinceLastVisit } from '@/contexts/NewSinceLastVisitContext';
+import { useLocale } from '@/i18n/LocaleContext';
 import { NEW_SINCE_LAST_VISIT } from '@/lib/constants';
 import type { PriceHistogramData } from '@/components/browse/PriceHistogramSlider';
 
@@ -109,9 +110,13 @@ interface BrowseResponse {
   isAdmin?: boolean;
 }
 
-// Format relative time for freshness display
-function formatFreshness(isoDate: string | null): string {
-  if (!isoDate) return 'Unknown';
+// Format relative time for freshness display (locale-aware)
+function formatFreshness(
+  isoDate: string | null,
+  t: (key: string, params?: Record<string, string>) => string,
+  locale: string,
+): string {
+  if (!isoDate) return t('freshness.unknown');
 
   const date = new Date(isoDate);
   const now = new Date();
@@ -120,28 +125,34 @@ function formatFreshness(isoDate: string | null): string {
   const diffHours = Math.floor(diffMins / 60);
   const diffDays = Math.floor(diffHours / 24);
 
-  if (diffMins < 60) return `${diffMins}m ago`;
-  if (diffHours < 24) return `${diffHours}h ago`;
-  if (diffDays === 1) return 'Yesterday';
-  if (diffDays < 7) return `${diffDays}d ago`;
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  if (diffMins < 60) return t('freshness.minutesAgo', { n: String(diffMins) });
+  if (diffHours < 24) return t('freshness.hoursAgo', { n: String(diffHours) });
+  if (diffDays === 1) return t('freshness.yesterday');
+  if (diffDays < 7) return t('freshness.daysAgo', { n: String(diffDays) });
+  return date.toLocaleDateString(locale === 'ja' ? 'ja-JP' : 'en-US', { month: 'short', day: 'numeric' });
 }
 
-// Live-ticking elapsed time since last scan
-function useElapsedSince(isoDate: string | null): string | null {
+// Live-ticking elapsed time since last scan (locale-aware)
+function useElapsedSince(isoDate: string | null, locale: string = 'en'): string | null {
   const [elapsed, setElapsed] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isoDate) return;
+    const ja = locale === 'ja';
 
     function compute() {
       const diffMs = Date.now() - new Date(isoDate!).getTime();
-      if (diffMs < 0) return '0s';
+      if (diffMs < 0) return ja ? '0秒' : '0s';
       const totalSec = Math.floor(diffMs / 1000);
       const d = Math.floor(totalSec / 86400);
       const h = Math.floor((totalSec % 86400) / 3600);
       const m = Math.floor((totalSec % 3600) / 60);
       const s = totalSec % 60;
+      if (ja) {
+        if (d > 0) return `${d}日${h}時間${m}分`;
+        if (h > 0) return `${h}時間${m}分${s}秒`;
+        return `${m}分${s}秒`;
+      }
       if (d > 0) return `${d}d ${h}h ${m}m`;
       if (h > 0) return `${h}h ${m}m ${s}s`;
       return `${m}m ${s}s`;
@@ -150,13 +161,14 @@ function useElapsedSince(isoDate: string | null): string | null {
     setElapsed(compute());
     const id = setInterval(() => setElapsed(compute()), 1000);
     return () => clearInterval(id);
-  }, [isoDate]);
+  }, [isoDate, locale]);
 
   return elapsed;
 }
 
 function LiveStatsBanner({ data }: { data: BrowseResponse | null }) {
-  const elapsed = useElapsedSince(data?.lastUpdated ?? null);
+  const { locale, t } = useLocale();
+  const elapsed = useElapsedSince(data?.lastUpdated ?? null, locale);
   if (!data || !elapsed) return null;
 
   const galleryCount = data.totalDealerCount || data.facets.dealers.length;
@@ -165,13 +177,13 @@ function LiveStatsBanner({ data }: { data: BrowseResponse | null }) {
   return (
     <div className="hidden lg:flex items-center gap-1.5 mt-1.5 text-[11px] text-muted/70 font-mono tabular-nums">
       <div className="w-1.5 h-1.5 rounded-full bg-sage animate-pulse" />
-      <span className="text-sage font-medium tracking-wide">LIVE</span>
+      <span className="text-sage font-medium tracking-wide">{t('home.live')}</span>
       <span className="text-muted/30 mx-0.5">&middot;</span>
-      <span>Scanned {elapsed} ago</span>
+      <span>{t('home.scannedAgo', { elapsed })}</span>
       <span className="text-muted/30 mx-0.5">&middot;</span>
-      <span>{galleryCount} galleries</span>
+      <span>{t('home.galleries', { count: String(galleryCount) })}</span>
       <span className="text-muted/30 mx-0.5">&middot;</span>
-      <span>{itemCount} items</span>
+      <span>{t('home.items', { count: itemCount })}</span>
     </div>
   );
 }
@@ -189,6 +201,7 @@ type Currency = 'USD' | 'JPY' | 'EUR';
 export default function HomeContent() {
   const router = useRouter();
   const isMobile = useIsMobile();
+  const { locale, t } = useLocale();
   const {
     activeTab, filters, sort, searchQuery, artisanCode,
     setActiveTab, setFilters, setSort, setSearchQuery, setArtisanCode,
@@ -524,7 +537,7 @@ export default function HomeContent() {
               </h1>
             </Link>
             {/* Desktop: Show "Collection" */}
-            <h1 className="hidden lg:block font-serif text-2xl text-ink tracking-tight">Collection</h1>
+            <h1 className="hidden lg:block font-serif text-2xl text-ink tracking-tight">{t('home.title')}</h1>
             <p className="hidden lg:block text-[13px] text-muted mt-1">
               {data ? (() => {
                 const bladeSet = new Set(BLADE_TYPES as readonly string[]);
@@ -536,8 +549,12 @@ export default function HomeContent() {
                   .filter(f => tosoguSet.has(f.value))
                   .reduce((sum, f) => sum + f.count, 0);
                 const galleryCount = data.totalDealerCount || data.facets.dealers.length;
-                return `${swordCount.toLocaleString()} Japanese swords and ${fittingsCount.toLocaleString()} fittings from ${galleryCount} galleries worldwide`;
-              })() : 'Japanese swords and fittings from specialist galleries worldwide'}
+                return t('home.description', {
+                  swords: swordCount.toLocaleString(),
+                  fittings: fittingsCount.toLocaleString(),
+                  dealers: String(galleryCount),
+                });
+              })() : t('home.descriptionFallback')}
             </p>
             {/* Live stats banner - desktop only */}
             <LiveStatsBanner data={data} />
@@ -546,7 +563,7 @@ export default function HomeContent() {
           {/* Desktop: Sort + item count + Save Search — inline with header */}
           <div className="hidden lg:flex items-center gap-3 shrink-0">
             <div className="flex items-center gap-2">
-              <span className="text-[10px] uppercase tracking-[0.08em] text-muted/60 font-medium">Sort</span>
+              <span className="text-[10px] uppercase tracking-[0.08em] text-muted/60 font-medium">{t('home.sort')}</span>
               <select
                 value={sort}
                 onChange={(e) => { setSort(e.target.value); setPage(1); }}
@@ -559,17 +576,17 @@ export default function HomeContent() {
                   backgroundSize: '11px',
                 }}
               >
-                <option value="featured">Featured</option>
-                <option value="recent">Newest</option>
-                {activeTab === 'sold' && <option value="sale_date">Recently Sold</option>}
-                <option value="price_asc">Price: Low → High</option>
-                <option value="price_desc">Price: High → Low</option>
-                {authIsAdmin && <option value="elite_factor">Elite Standing</option>}
+                <option value="featured">{t('sort.featured')}</option>
+                <option value="recent">{t('sort.newest')}</option>
+                {activeTab === 'sold' && <option value="sale_date">{t('sort.recentlySold')}</option>}
+                <option value="price_asc">{t('sort.priceLowHigh')}</option>
+                <option value="price_desc">{t('sort.priceHighLow')}</option>
+                {authIsAdmin && <option value="elite_factor">{t('sort.eliteStanding')}</option>}
               </select>
             </div>
             <div className="w-px h-3 bg-border/30" />
             <span className="text-[11px] text-muted tabular-nums">
-              {isLoading ? 'Loading...' : `${data?.total?.toLocaleString() || 0} items`}
+              {isLoading ? t('common.loading') : t('home.itemCount', { count: data?.total?.toLocaleString() || '0' })}
             </span>
             <div className="w-px h-3 bg-border/30" />
             <SaveSearchButton
@@ -618,7 +635,9 @@ export default function HomeContent() {
         {/* Mobile item count + view toggle */}
         <div className="lg:hidden flex items-center justify-between mb-4">
           <span className="text-[13px] text-muted">
-            {isLoading ? 'Loading...' : `${data?.total?.toLocaleString() || 0} items${searchQuery ? ` for "${searchQuery}"` : ''}`}
+            {isLoading ? t('common.loading') : searchQuery
+              ? t('home.itemCountFor', { count: data?.total?.toLocaleString() || '0', query: searchQuery })
+              : t('home.itemCount', { count: data?.total?.toLocaleString() || '0' })}
           </span>
           {/* View toggle — only on phone-sized screens */}
           <div className="flex items-center gap-0.5 sm:hidden">
@@ -721,7 +740,7 @@ export default function HomeContent() {
                 <sup className="ml-1 text-[8px] font-sans font-semibold tracking-widest text-gold/60 border border-gold/25 rounded px-1 py-px align-super">BETA</sup>
               </span>
               <span className="text-[11px] text-muted text-center lg:text-left">
-                Curated Japanese arms from dealers worldwide
+                {t('home.footerTagline')}
               </span>
             </div>
             <div className="flex flex-col items-center gap-2 lg:flex-row lg:gap-4">
@@ -729,9 +748,9 @@ export default function HomeContent() {
               {data?.lastUpdated && (
                 <div className="flex items-center gap-2 text-[10px] text-muted/70">
                   <div className="w-1.5 h-1.5 rounded-full bg-sage animate-pulse" />
-                  <span>Updated {formatFreshness(data.lastUpdated)}</span>
+                  <span>{t('home.updated', { time: formatFreshness(data.lastUpdated, t, locale) })}</span>
                   <span className="text-muted/40 hidden lg:inline">·</span>
-                  <span className="hidden lg:inline">Daily refresh</span>
+                  <span className="hidden lg:inline">{t('home.dailyRefresh')}</span>
                 </div>
               )}
               <span className="text-[10px] text-muted/60">

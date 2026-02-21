@@ -3,6 +3,7 @@
 import { useCallback, useRef, useMemo } from 'react';
 import { FilterContent, type FilterContentProps, type SidebarVariant, type CornerStyle, type SelectStyle } from './FilterContent';
 import type { AvailabilityStatus } from '@/components/ui/AvailabilityToggle';
+import { useLocale } from '@/i18n/LocaleContext';
 
 type Currency = 'USD' | 'JPY' | 'EUR';
 
@@ -30,6 +31,7 @@ interface FilterSidebarProps {
 }
 
 export function FilterSidebar({ facets, filters, onFilterChange, isAdmin, variant = 'default', panelControls, cornerStyle = 'soft', selectStyle = 'bold', priceHistogram, exchangeRates }: FilterSidebarProps) {
+  const { t } = useLocale();
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Prevent scroll events from propagating to the page when at scroll boundaries
@@ -103,11 +105,11 @@ export function FilterSidebar({ facets, filters, onFilterChange, isAdmin, varian
               <div className="flex-shrink-0 px-4 pt-3.5 pb-3 border-b border-border/15">
                 {/* Category — 2-segment: Nihonto | Tosogu */}
                 <div className="mb-2.5">
-                  <span className="text-[10px] uppercase tracking-[0.08em] text-muted/50 font-medium block mb-1.5">Category</span>
+                  <span className="text-[10px] uppercase tracking-[0.08em] text-muted/50 font-medium block mb-1.5">{t('filter.category')}</span>
                   <div className={`flex ${controlRadius} border border-border/30 overflow-hidden`}>
                     {([
-                      { key: 'nihonto' as const, label: 'Nihonto' },
-                      { key: 'tosogu' as const, label: 'Tosogu' },
+                      { key: 'nihonto' as const, label: t('category.nihonto') },
+                      { key: 'tosogu' as const, label: t('category.tosogu') },
                     ]).map(({ key, label }, i) => (
                       <button
                         key={key}
@@ -132,9 +134,9 @@ export function FilterSidebar({ facets, filters, onFilterChange, isAdmin, varian
                 {/* Availability — full-width segmented control */}
                 <div className={`flex ${controlRadius} border border-border/30 overflow-hidden`}>
                   {([
-                    { key: 'available' as const, label: 'For sale' },
-                    { key: 'sold' as const, label: 'Sold' },
-                    { key: 'all' as const, label: 'All' },
+                    { key: 'available' as const, label: t('availability.forSale') },
+                    { key: 'sold' as const, label: t('availability.sold') },
+                    { key: 'all' as const, label: t('availability.all') },
                   ]).map(({ key, label }, i) => (
                     <button
                       key={key}
@@ -162,7 +164,7 @@ export function FilterSidebar({ facets, filters, onFilterChange, isAdmin, varian
             <div className="flex-shrink-0 px-4 py-2 border-b border-border/10">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
-                  <h2 className="text-[10px] uppercase tracking-[0.1em] font-medium text-muted/50">Filters</h2>
+                  <h2 className="text-[10px] uppercase tracking-[0.1em] font-medium text-muted/50">{t('filter.filters')}</h2>
                   {activeFilterCount > 0 && (
                     <span className="inline-flex items-center justify-center min-w-[14px] h-[14px] px-0.5 text-[8px] font-bold bg-gold/80 text-white rounded-full leading-none">
                       {activeFilterCount}
@@ -174,7 +176,7 @@ export function FilterSidebar({ facets, filters, onFilterChange, isAdmin, varian
                     onClick={clearAllFilters}
                     className="text-[10px] text-muted/50 hover:text-gold transition-colors font-medium"
                   >
-                    Reset
+                    {t('filter.reset')}
                   </button>
                 )}
               </div>
@@ -203,7 +205,7 @@ export function FilterSidebar({ facets, filters, onFilterChange, isAdmin, varian
                 {hasPanelCurrency && (
                   <div className="pt-2 border-t border-border/10">
                     <div className="flex items-center justify-between py-1">
-                      <span className="text-[10px] uppercase tracking-[0.08em] text-muted/50 font-medium">Currency</span>
+                      <span className="text-[10px] uppercase tracking-[0.08em] text-muted/50 font-medium">{t('filter.currency')}</span>
                       <div className={`flex ${currencyRadius} border border-border/20 overflow-hidden`}>
                         {(['USD', 'JPY', 'EUR'] as const).map((c, i) => (
                           <button
