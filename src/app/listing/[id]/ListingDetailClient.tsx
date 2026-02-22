@@ -464,7 +464,7 @@ export default function ListingDetailPage({ initialData }: ListingDetailPageProp
             {/* Social Share */}
             <div className="flex items-center gap-2 mb-6">
               <SocialShareButtons
-                url={typeof window !== 'undefined' ? `${window.location.origin}/listing/${listingId}` : `/listing/${listingId}`}
+                path={`/listing/${listingId}`}
                 title={listing.title || 'NihontoWatch'}
                 size="md"
               />

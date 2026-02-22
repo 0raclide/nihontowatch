@@ -839,10 +839,11 @@ html[lang="ja"] h4, html[lang="ja"] h5, html[lang="ja"] h6 {
 }
 
 /* Japanese has no true italic glyphs — oblique rendering looks broken.
-   Use font-weight for emphasis instead. */
-html[lang="ja"] em,
-html[lang="ja"] i,
-html[lang="ja"] .italic {
+   Use font-weight for emphasis instead.
+   :lang(en) escape hatch preserves italic on any embedded English spans. */
+html[lang="ja"] em:not(:lang(en)),
+html[lang="ja"] i:not(:lang(en)),
+html[lang="ja"] .italic:not(:lang(en)) {
   font-style: normal;
   font-weight: 600;
 }

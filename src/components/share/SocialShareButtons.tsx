@@ -2,9 +2,11 @@
 
 import { useLocale } from '@/i18n/LocaleContext';
 
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://nihontowatch.com';
+
 interface SocialShareButtonsProps {
-  /** Full URL to share (e.g. listing page URL) */
-  url: string;
+  /** Path to share (e.g. "/listing/123") — combined with BASE_URL for absolute share links */
+  path: string;
   /** Title/text for tweet or share message */
   title: string;
   /** Render size — matches ShareButton sizes */
@@ -19,10 +21,11 @@ interface SocialShareButtonsProps {
  *
  * Pure URL links — no external scripts, SDKs, or API keys.
  */
-export function SocialShareButtons({ url, title, size = 'sm' }: SocialShareButtonsProps) {
+export function SocialShareButtons({ path, title, size = 'sm' }: SocialShareButtonsProps) {
   const { t, locale } = useLocale();
 
-  const encodedUrl = encodeURIComponent(url);
+  const fullUrl = `${BASE_URL}${path}`;
+  const encodedUrl = encodeURIComponent(fullUrl);
   const encodedTitle = encodeURIComponent(title);
 
   const lineUrl = `https://social-plugins.line.me/lineit/share?url=${encodedUrl}`;

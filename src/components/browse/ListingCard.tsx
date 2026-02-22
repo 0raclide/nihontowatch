@@ -15,6 +15,7 @@ import { isSetsumeiEligibleCert } from '@/types';
 import { useImagePreloader } from '@/hooks/useImagePreloader';
 import { getValidatedCertInfo } from '@/lib/cert/validation';
 import { useLocale } from '@/i18n/LocaleContext';
+import { formatRelativeTime } from '@/lib/time';
 
 // 7 days in milliseconds - matches the data delay for free tier
 const EARLY_ACCESS_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
@@ -376,23 +377,6 @@ function formatPrice(
   return formatter.format(Math.round(converted));
 }
 
-/**
- * Format a timestamp as relative time (e.g. "3h ago" / "3時間前").
- * Uses i18n keys: card.justNow, card.minutesAgo, card.hoursAgo, card.daysAgo
- */
-function formatRelativeTime(
-  isoDate: string,
-  t: (key: string, params?: Record<string, string | number>) => string,
-): string {
-  const diffMs = Date.now() - new Date(isoDate).getTime();
-  const diffMin = Math.floor(diffMs / 60_000);
-  if (diffMin < 1) return t('card.justNow');
-  if (diffMin < 60) return t('card.minutesAgo', { n: diffMin });
-  const diffH = Math.floor(diffMin / 60);
-  if (diffH < 24) return t('card.hoursAgo', { n: diffH });
-  const diffD = Math.floor(diffH / 24);
-  return t('card.daysAgo', { n: diffD });
-}
 
 /**
  * Check if a listing has English setsumei translation available.
@@ -943,7 +927,7 @@ export const ListingCard = memo(function ListingCard({
           <div className="flex items-center gap-1.5">
             {listing.last_scraped_at && (
               <span className="text-[9px] text-muted/60 tabular-nums hidden sm:inline">
-                {formatRelativeTime(listing.last_scraped_at, t)}
+                {t('card.confirmed', { time: formatRelativeTime(listing.last_scraped_at, t) })}
               </span>
             )}
             {newBadge}

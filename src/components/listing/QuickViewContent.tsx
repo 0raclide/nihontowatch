@@ -280,7 +280,7 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
                 </button>
               )}
               <SocialShareButtons
-                url={typeof window !== 'undefined' ? `${window.location.origin}/listing/${listing.id}` : `/listing/${listing.id}`}
+                path={`/listing/${listing.id}`}
                 title={listing.title || 'NihontoWatch'}
                 size="sm"
               />
