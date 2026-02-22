@@ -141,13 +141,15 @@ export async function POST(
       });
     }
 
-    // Recompute featured_score inline, syncing elite factor from Yuhinkai (fire-and-forget)
-    recomputeScoreForListing(serviceClient, listingId, {
-      syncElite: true,
-      artisanId: artisan_id,
-    }).catch((err) => {
+    // Recompute featured_score inline, syncing elite factor from Yuhinkai
+    try {
+      await recomputeScoreForListing(serviceClient, listingId, {
+        syncElite: true,
+        artisanId: artisan_id,
+      });
+    } catch (err) {
       logger.logError('[fix-artisan] Score recompute failed', err, { listingId });
-    });
+    }
 
     logger.info('Artisan corrected on listing', {
       listingId,

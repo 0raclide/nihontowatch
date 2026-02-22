@@ -138,10 +138,12 @@ export async function POST(
       });
     }
 
-    // Recompute featured_score inline (fire-and-forget)
-    recomputeScoreForListing(serviceClient, listingId).catch((err) => {
+    // Recompute featured_score inline
+    try {
+      await recomputeScoreForListing(serviceClient, listingId);
+    } catch (err) {
       logger.logError('[fix-cert] Score recompute failed', err, { listingId });
-    });
+    }
 
     logger.info('Cert corrected on listing', {
       listingId,

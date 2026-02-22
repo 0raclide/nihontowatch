@@ -91,11 +91,13 @@ export async function POST(
       return apiServerError(`Failed to update listing: ${updateError.message}`);
     }
 
-    // If unhiding, restore the correct featured_score (fire-and-forget)
+    // If unhiding, restore the correct featured_score
     if (!body.hidden) {
-      recomputeScoreForListing(serviceClient, listingId).catch((err) => {
+      try {
+        await recomputeScoreForListing(serviceClient, listingId);
+      } catch (err) {
         logger.logError('[hide] Score recompute on unhide failed', err, { listingId });
-      });
+      }
     }
 
     logger.info('Listing visibility toggled', {
