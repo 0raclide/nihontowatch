@@ -108,32 +108,46 @@ export async function GET(request: NextRequest) {
     // Get admin user IDs for filtering
     const adminIds = await getAdminUserIds(supabase);
 
-    // Fetch all sessions with duration data in the period
-    const query = supabase
-      .from('user_sessions')
-      .select('total_duration_ms, user_id')
-      .gte('started_at', startDate.toISOString())
-      .lte('started_at', endDate.toISOString())
-      .not('total_duration_ms', 'is', null)
-      .limit(100000);
+    // Fetch all sessions with duration data, paginating past Supabase's
+    // PostgREST max_rows (default 1,000) to get the full dataset
+    const PAGE_SIZE = 1000;
+    const allSessions: { total_duration_ms: number; user_id: string | null }[] = [];
+    let offset = 0;
+    let hasMore = true;
 
-    const { data: sessions, error } = await query;
+    while (hasMore) {
+      const { data: page, error } = await supabase
+        .from('user_sessions')
+        .select('total_duration_ms, user_id')
+        .gte('started_at', startDate.toISOString())
+        .lte('started_at', endDate.toISOString())
+        .not('total_duration_ms', 'is', null)
+        .range(offset, offset + PAGE_SIZE - 1);
 
-    if (error) {
-      logger.error('Failed to fetch session data', { error: error.message });
-      return errorResponse('Failed to fetch session data', 500);
+      if (error) {
+        logger.error('Failed to fetch session data', { error: error.message });
+        return errorResponse('Failed to fetch session data', 500);
+      }
+
+      if (page && page.length > 0) {
+        allSessions.push(...page);
+        offset += page.length;
+        hasMore = page.length === PAGE_SIZE;
+      } else {
+        hasMore = false;
+      }
     }
 
     // Filter out admin sessions
-    const filteredSessions = (sessions || []).filter(
-      (s: { user_id: string | null }) => !s.user_id || !adminIds.includes(s.user_id)
+    const filteredSessions = allSessions.filter(
+      (s) => !s.user_id || !adminIds.includes(s.user_id)
     );
 
     // Extract durations
     const durations = filteredSessions
-      .map((s: { total_duration_ms: number }) => s.total_duration_ms)
-      .filter((d: number) => d >= 0)
-      .sort((a: number, b: number) => a - b);
+      .map((s) => s.total_duration_ms)
+      .filter((d) => d >= 0)
+      .sort((a, b) => a - b);
 
     const totalSessions = filteredSessions.length;
     const sessionsWithData = durations.length;
@@ -142,7 +156,7 @@ export async function GET(request: NextRequest) {
     const bucketCounts = DURATION_BUCKETS.map((def) => ({
       ...def,
       count: durations.filter(
-        (d: number) => d >= def.startMs && d < def.endMs
+        (d) => d >= def.startMs && d < def.endMs
       ).length,
     }));
 
@@ -163,7 +177,7 @@ export async function GET(request: NextRequest) {
     // Compute statistics
     const mean =
       sessionsWithData > 0
-        ? durations.reduce((sum: number, d: number) => sum + d, 0) / sessionsWithData
+        ? durations.reduce((sum, d) => sum + d, 0) / sessionsWithData
         : 0;
 
     const statistics: SessionStatistics = {
