@@ -71,6 +71,10 @@ const TOSOGU_TYPES = [
   'tosogu',  // generic/unspecified fitting
 ];
 
+// Artisan code pattern — used both for pre-scan (skip category filter) and in-query detection
+// Covers: standard (1-4 letters + 1-5 digits + optional suffix), NS-*, NC-*, tmp*, underscore
+const ARTISAN_CODE_PATTERN = /^[A-Z]{1,4}\d{1,5}(?:[.\-]\d)?[A-Za-z]?$|^NS-[A-Za-z]+(?:-[A-Za-z]+)*$|^NC-[A-Z]+\d+[A-Za-z]?$|^tmp[A-Z]{1,4}\d+[A-Za-z]?$|^[A-Z]+(?:_[A-Z]+)+\d+$/i;
+
 // Armor & accessories
 const ARMOR_TYPES = [
   'armor', 'yoroi', 'gusoku',  // Full armor suits
@@ -325,6 +329,8 @@ export async function GET(request: NextRequest) {
         artisan_candidates,
         artisan_verified,
         featured_score,
+        focal_x,
+        focal_y,
         dealers:dealers!inner(id, name, domain, earliest_listing_at),
         listing_yuhinkai_enrichment(
           setsumei_en,
@@ -368,15 +374,24 @@ export async function GET(request: NextRequest) {
     // Item type filter - use ILIKE for case-insensitive matching
     // Database has mixed case (e.g., "Katana" and "katana")
     // If specific itemTypes are provided, use those; otherwise use category filter
+    //
+    // Skip category filter when an artisan code is present (query or explicit param).
+    // Artisan codes are cross-category — a smith code like YOS1434 should return blades
+    // even when the user is on the tosogu tab.
+    const hasArtisanCode = params.artisanCode ||
+      (params.query && params.query.trim().split(/\s+/).some(w => ARTISAN_CODE_PATTERN.test(w)));
+
     const effectiveItemTypes = params.itemTypes?.length
       ? params.itemTypes
-      : params.category === 'nihonto'
-        ? NIHONTO_TYPES
-        : params.category === 'tosogu'
-          ? TOSOGU_TYPES
-          : params.category === 'armor'
-            ? ARMOR_TYPES
-            : undefined;
+      : hasArtisanCode
+        ? undefined  // artisan code overrides category
+        : params.category === 'nihonto'
+          ? NIHONTO_TYPES
+          : params.category === 'tosogu'
+            ? TOSOGU_TYPES
+            : params.category === 'armor'
+              ? ARMOR_TYPES
+              : undefined;
 
     if (effectiveItemTypes?.length) {
       // Build OR condition for case-insensitive matching
@@ -533,9 +548,7 @@ export async function GET(request: NextRequest) {
       }
 
       // Step 3: Check if query looks like an artisan code (e.g., "MAS590", "MYO3", "NS-Ko-Bizen")
-      // Covers: standard (1-4 letters + 1-5 digits + optional suffix), NS-*, NC-*, tmp*, underscore
-      const artisanCodePattern = /^[A-Z]{1,4}\d{1,5}(?:[.\-]\d)?[A-Za-z]?$|^NS-[A-Za-z]+(?:-[A-Za-z]+)*$|^NC-[A-Z]+\d+[A-Za-z]?$|^tmp[A-Z]{1,4}\d+[A-Za-z]?$|^[A-Z]+(?:_[A-Z]+)+\d+$/i;
-      const potentialArtisanCode = textWords.find(w => artisanCodePattern.test(w));
+      const potentialArtisanCode = textWords.find(w => ARTISAN_CODE_PATTERN.test(w));
       if (potentialArtisanCode) {
         // Search artisan_id field directly (case-insensitive substring match)
         query = query.ilike('artisan_id', `%${potentialArtisanCode}%`);
