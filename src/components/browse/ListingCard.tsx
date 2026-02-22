@@ -205,19 +205,19 @@ const ITEM_TYPE_LABELS: Record<string, string> = {
   // Swords
   katana: 'Katana',
   wakizashi: 'Wakizashi',
-  tanto: 'Tantō',
+  tanto: 'Tanto',
   tachi: 'Tachi',
   naginata: 'Naginata',
   yari: 'Yari',
   kodachi: 'Kodachi',
   ken: 'Ken',
-  daisho: 'Daishō',
+  daisho: 'Daisho',
   // Tosogu (fittings)
   tsuba: 'Tsuba',
   'fuchi-kashira': 'Fuchi-Kashira',
   fuchi_kashira: 'Fuchi-Kashira',
   kozuka: 'Kozuka',
-  kogai: 'Kōgai',
+  kogai: 'Kogai',
   menuki: 'Menuki',
   fuchi: 'Fuchi',
   kashira: 'Kashira',
@@ -911,8 +911,8 @@ export const ListingCard = memo(function ListingCard({
           </div>
         ) : <div className={`${sz.attrH} sm:h-[20px] lg:h-[22px]`} />}
 
-        {/* JA metadata row — nagasa + era (ichimokuryouzen: key specs at a glance) */}
-        {locale === 'ja' && (listing.nagasa_cm || listing.era) && (
+        {/* Metadata row — nagasa + era */}
+        {(listing.nagasa_cm || listing.era) && (
           <div className="flex items-center gap-2 text-[10px] text-muted truncate">
             {listing.nagasa_cm && (
               <span>{listing.nagasa_cm}cm</span>
