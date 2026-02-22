@@ -50,7 +50,14 @@ export function ArtistsPageClient({
   initialFilters,
   initialPage,
 }: ArtistsPageClientProps) {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
+  // Translate data values (school/province/period) — falls back to raw value if no key
+  const td = useCallback((category: string, v: string | null | undefined) => {
+    if (!v) return v;
+    const k = `${category}.${v}`;
+    const r = t(k);
+    return r === k ? v : r;
+  }, [t]);
   const [allArtists, setAllArtists] = useState<ArtistWithSlug[]>([]);
   const [pagination, setPagination] = useState<Pagination>({ page: initialPage, pageSize: 50, totalPages: 0, totalCount: 0 });
   const [filters, setFilters] = useState(initialFilters);
@@ -559,7 +566,7 @@ export function ArtistsPageClient({
                     }}
                     className="px-3 py-1.5 text-[12px] bg-hover border border-border text-ink/60 hover:text-gold hover:border-gold/40 transition-colors"
                   >
-                    {s.value}
+                    {td('school', s.value)}
                   </button>
                 ))}
               </div>
@@ -606,7 +613,7 @@ export function ArtistsPageClient({
               <option value="">{t('artists.allSchools')}</option>
               {facets.schools.map((opt) => (
                 <option key={opt.value} value={opt.value}>
-                  {opt.value} ({opt.count})
+                  {td('school', opt.value)} ({opt.count})
                 </option>
               ))}
             </select>
@@ -623,7 +630,7 @@ export function ArtistsPageClient({
               <option value="">{t('artists.allProvinces')}</option>
               {facets.provinces.map((opt) => (
                 <option key={opt.value} value={opt.value}>
-                  {opt.value} ({opt.count})
+                  {td('province', opt.value)} ({opt.count})
                 </option>
               ))}
             </select>
@@ -640,7 +647,7 @@ export function ArtistsPageClient({
               <option value="">{t('artists.allPeriods')}</option>
               {facets.eras.map((opt) => (
                 <option key={opt.value} value={opt.value}>
-                  {opt.value} ({opt.count})
+                  {td('period', opt.value)} ({opt.count})
                 </option>
               ))}
             </select>
@@ -732,7 +739,13 @@ function SkeletonCard() {
 }
 
 function ArtistCard({ artist }: { artist: ArtistWithSlug }) {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
+  const td = (category: string, v: string | null | undefined) => {
+    if (!v) return v;
+    const k = `${category}.${v}`;
+    const r = t(k);
+    return r === k ? v : r;
+  };
   const percentile = artist.percentile ?? 0;
   const isSchool = artist.is_school_code;
 
@@ -755,7 +768,7 @@ function ArtistCard({ artist }: { artist: ArtistWithSlug }) {
     if (artist.member_count && artist.member_count > 0) {
       subtitleParts.push(`${artist.member_count} ${t('artists.known')}${artist.entity_type === 'tosogu' ? t('artists.makers') : t('artists.smiths')}`);
     }
-    if (artist.province) subtitleParts.push(artist.province);
+    if (artist.province) subtitleParts.push(td('province', artist.province) || artist.province);
   }
 
   return (
@@ -786,11 +799,24 @@ function ArtistCard({ artist }: { artist: ArtistWithSlug }) {
         {/* Row 1: Name + Total works */}
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
-            <span className="text-sm font-medium text-ink group-hover:text-gold transition-colors truncate block">
-              {(() => { const dp = getArtisanDisplayParts(artist.name_romaji, artist.school); return <>{dp.prefix && <span className="font-normal">{dp.prefix} </span>}{dp.name || artist.code}</>; })()}
-            </span>
-            {artist.name_kanji && (
-              <span className="text-xs text-ink/40 ml-2">{artist.name_kanji}</span>
+            {locale === 'ja' && artist.name_kanji ? (
+              <>
+                <span className="text-sm font-medium text-ink group-hover:text-gold transition-colors truncate block">
+                  {artist.name_kanji}
+                </span>
+                {artist.name_romaji && (
+                  <span className="text-xs text-ink/40">{(() => { const dp = getArtisanDisplayParts(artist.name_romaji, artist.school); return dp.prefix ? `${dp.prefix} ${dp.name}` : dp.name || artist.code; })()}</span>
+                )}
+              </>
+            ) : (
+              <>
+                <span className="text-sm font-medium text-ink group-hover:text-gold transition-colors truncate block">
+                  {(() => { const dp = getArtisanDisplayParts(artist.name_romaji, artist.school); return <>{dp.prefix && <span className="font-normal">{dp.prefix} </span>}{dp.name || artist.code}</>; })()}
+                </span>
+                {artist.name_kanji && (
+                  <span className="text-xs text-ink/40 ml-2">{artist.name_kanji}</span>
+                )}
+              </>
             )}
           </div>
           <div className="shrink-0 text-center leading-none">
@@ -805,7 +831,7 @@ function ArtistCard({ artist }: { artist: ArtistWithSlug }) {
         <div className="mt-1.5 text-[11px] text-ink/45 truncate">
           {isSchool
             ? subtitleParts.join(' \u00b7 ')
-            : [artist.school, eraToBroadPeriod(artist.era) || artist.era, artist.province].filter(Boolean).join(' \u00b7 ') || t('artists.unknown')}
+            : [td('school', artist.school), td('period', eraToBroadPeriod(artist.era) || artist.era), td('province', artist.province)].filter(Boolean).join(' \u00b7 ') || t('artists.unknown')}
         </div>
 
         {/* Row 3: Cert counts */}
