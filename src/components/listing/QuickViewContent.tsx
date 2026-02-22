@@ -259,8 +259,8 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
                   )}
                 </button>
               )}
-              {/* Study Setsumei button - only show when setsumei data available */}
-              {hasSetsumeiData(listing as ListingWithEnrichment) && onToggleStudyMode && (
+              {/* Study Setsumei button - only show when setsumei data available. Hidden for JA locale (they can read setsumei natively). */}
+              {locale !== 'ja' && hasSetsumeiData(listing as ListingWithEnrichment) && onToggleStudyMode && (
                 <button
                   onClick={onToggleStudyMode}
                   className={`w-8 h-8 flex items-center justify-center rounded-full transition-all duration-200 ${
@@ -454,17 +454,19 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
       {/* Sticky CTA Buttons */}
       <div className="px-4 py-3 lg:px-5 lg:py-4 bg-cream border-t border-border safe-area-bottom shrink-0">
         <div className="flex gap-2">
-          {/* Inquire Button — icon-only (panel is always narrow) */}
-          <button
-            onClick={handleInquire}
-            data-testid="inquire-button"
-            title={t('listing.inquire')}
-            className="flex items-center justify-center px-3 py-3 text-[13px] font-medium text-charcoal bg-linen hover:bg-hover border border-border rounded-lg transition-colors"
-          >
-            <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-            </svg>
-          </button>
+          {/* Inquire Button — icon-only (panel is always narrow). Hidden for JA locale (no EN→JA translation needed). */}
+          {locale !== 'ja' && (
+            <button
+              onClick={handleInquire}
+              data-testid="inquire-button"
+              title={t('listing.inquire')}
+              className="flex items-center justify-center px-3 py-3 text-[13px] font-medium text-charcoal bg-linen hover:bg-hover border border-border rounded-lg transition-colors"
+            >
+              <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+            </button>
+          )}
 
           {/* I Own This Button — icon-only (panel is always narrow) */}
           {user && process.env.NEXT_PUBLIC_COLLECTION_ENABLED === 'true' && (

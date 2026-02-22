@@ -33,6 +33,7 @@
 | [SMART_CROP_FOCAL_POINTS.md](./SMART_CROP_FOCAL_POINTS.md) | **Smart crop focal points** — AI image cropping, cron pipeline, admin toggle, invalidation trigger, all file paths |
 | [ARTISAN_TOOLTIP_VERIFICATION.md](./ARTISAN_TOOLTIP_VERIFICATION.md) | Admin QA tool - click artisan badges for details & verification |
 | [LEGAL_COMPLIANCE.md](./LEGAL_COMPLIANCE.md) | GDPR geo-gated cookie consent — banner only for EU/EEA/UK, middleware cookie, analytics defaults |
+| [LISTING_DATA_LOCALIZATION.md](./LISTING_DATA_LOCALIZATION.md) | **Listing data i18n** — locale-aware titles, descriptions, artisan names (JA/EN), translation toggles, 57 tests |
 | [SYNC_ELITE_FACTOR_API.md](./SYNC_ELITE_FACTOR_API.md) | Webhook API for syncing elite_factor from Yuhinkai to listings |
 | [CATALOGUE_PUBLICATION_PIPE.md](./CATALOGUE_PUBLICATION_PIPE.md) | **Catalogue publication pipe** — Yuhinkai→NihontoWatch content flow (cross-repo, oshi-v2 + nihontowatch) |
 
@@ -213,6 +214,18 @@
 4. Check `src/app/api/translate/route.ts` - OpenRouter translation API
 5. Run `npx playwright test tests/translation-api.spec.ts` - Translation tests
 
+### "I need to work on localization / i18n"
+1. Read [LISTING_DATA_LOCALIZATION.md](./LISTING_DATA_LOCALIZATION.md) - Listing data locale-aware rendering
+2. Check `src/i18n/LocaleContext.tsx` - `useLocale()` hook (`locale`, `t()`, `setLocale()`)
+3. Check `src/i18n/locales/en.json` / `ja.json` - ~1090 translation keys
+4. Check `src/components/listing/MetadataGrid.tsx` - `getArtisanInfo(listing, locale)` and `td()` helper
+5. Check `src/components/listing/TranslatedTitle.tsx` - Locale-aware title display
+6. Check `src/components/listing/TranslatedDescription.tsx` - Locale-aware description with toggle
+7. Run `npm test -- listing-data-localization` - 16 pure function tests
+8. Run `npm test -- MetadataGrid-locale` - 13 component tests
+9. Run `npm test -- TranslatedTitle.test` - 9 component tests
+10. Run `npm test -- TranslatedDescription.test` - 13 component tests
+
 ### "I need to work on user behavior tracking or recommendations"
 1. Read [USER_BEHAVIOR_TRACKING.md](./USER_BEHAVIOR_TRACKING.md) - Complete tracking docs
 2. Check `src/lib/tracking/ActivityTracker.tsx` - Main tracking provider
@@ -371,6 +384,7 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for:
 | Signup pressure & conversion | [SIGNUP_PRESSURE.md](./SIGNUP_PRESSURE.md) |
 | Mobile UX & gestures | [MOBILE_UX.md](./MOBILE_UX.md) |
 | QuickView metadata & translation | [QUICKVIEW_METADATA.md](./QUICKVIEW_METADATA.md) |
+| Listing data localization (i18n) | [LISTING_DATA_LOCALIZATION.md](./LISTING_DATA_LOCALIZATION.md) |
 | Search features | [SEARCH_FEATURES.md](./SEARCH_FEATURES.md) |
 | Email alerts | [EMAIL_ALERTS.md](./EMAIL_ALERTS.md) - Saved search, price drop, back-in-stock |
 | Testing | [TESTING.md](./TESTING.md) - Unit, concordance, integration tests |

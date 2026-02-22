@@ -26,6 +26,7 @@ import type { EnrichedListingDetail } from '@/lib/listing/getListingDetail';
 import { getValidatedCertInfo } from '@/lib/cert/validation';
 import { getItemTypeUrl, getCertUrl, getDealerUrl } from '@/lib/seo/categories';
 import { generateArtisanSlug } from '@/lib/artisan/slugs';
+import { useLocale } from '@/i18n/LocaleContext';
 
 // Use EnrichedListingDetail as the canonical listing type for this page
 type ListingDetail = EnrichedListingDetail;
@@ -56,6 +57,7 @@ export default function ListingDetailPage({ initialData }: ListingDetailPageProp
   const router = useRouter();
   const listingId = params.id as string;
   const { user, isAdmin } = useAuth();
+  const { locale } = useLocale();
 
   const [listing, setListing] = useState<ListingDetail | null>(initialData ?? null);
   const [isLoading, setIsLoading] = useState(!initialData);
@@ -308,7 +310,7 @@ export default function ListingDetailPage({ initialData }: ListingDetailPageProp
               ) : certInfo ? (
                 <span className={certBadgeClass}>{certInfo.label}</span>
               ) : null}
-              {listing.setsumei_text_en && isSetsumeiEligibleCert(listing.cert_type) && (
+              {locale !== 'ja' && listing.setsumei_text_en && isSetsumeiEligibleCert(listing.cert_type) && (
                 <SetsumeiZufuBadge />
               )}
               {shouldShowNewBadge(listing.first_seen_at, listing.dealer_earliest_seen_at, listing.is_initial_import) && (
@@ -508,16 +510,18 @@ export default function ListingDetailPage({ initialData }: ListingDetailPageProp
                     </svg>
                   </a>
 
-                  {/* Inquire Button */}
-                  <button
-                    onClick={handleInquire}
-                    className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 text-[14px] font-medium text-charcoal bg-paper border border-border hover:border-gold hover:text-gold rounded-lg transition-colors"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                    </svg>
-                    Inquire
-                  </button>
+                  {/* Inquire Button — hidden for JA locale */}
+                  {locale !== 'ja' && (
+                    <button
+                      onClick={handleInquire}
+                      className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 text-[14px] font-medium text-charcoal bg-paper border border-border hover:border-gold hover:text-gold rounded-lg transition-colors"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                      Inquire
+                    </button>
+                  )}
 
                   {/* Set Alert Button */}
                   <button

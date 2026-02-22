@@ -137,11 +137,15 @@ const CERT_CONFIG = {
 #### Helper Functions
 
 ```typescript
-// Get artisan info based on item type
-getArtisanInfo(listing: Listing): {
-  artisan: string | null;   // smith or tosogu_maker
-  school: string | null;    // school or tosogu_school
+// Get artisan info based on item type and locale
+// JA locale: returns original kanji names directly
+// EN locale: romanizes Japanese names via title_en extraction, filters out untranslatable names
+getArtisanInfo(listing: Listing, locale: string = 'en'): {
+  artisan: string | null;   // smith or tosogu_maker (locale-aware)
+  school: string | null;    // school or tosogu_school (locale-aware)
   artisanLabel: string;     // "Smith" or "Maker"
+  era: string | null;
+  isEnriched: boolean;
 }
 
 // Get certification display info
@@ -170,23 +174,33 @@ interface TranslatedDescriptionProps {
 }
 ```
 
-#### Behavior
+#### Behavior (Locale-Aware)
 
+The component is locale-aware via `useLocale()`:
+
+**EN locale (default):**
 1. **Check for cached translation** - If `description_en` exists, display immediately
 2. **Detect Japanese text** - Uses regex: `/[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/`
 3. **Trigger translation** - Calls `/api/translate` if Japanese detected
 4. **Show loading state** - Skeleton animation while translating
 5. **Toggle original** - "Show original" / "Show translation" button
 
+**JA locale:**
+1. **Show original Japanese description** by default (`showOriginal = true`)
+2. **Skip auto-translate** - Never calls `/api/translate`
+3. **Toggle to English** - "翻訳を表示" / "原文を表示" toggle (only if `description_en` exists)
+
+All hardcoded strings localized via `t()`: "Description" → "説明", "Show original" → "原文を表示", "Read more" → "続きを読む", etc.
+
 #### States
 
-| State | Display |
-|-------|---------|
-| Loading | Animated skeleton lines |
-| Translated | English text with toggle button |
-| No Japanese | Original text (no toggle) |
-| Error | Original text with "(Translation unavailable)" |
-| No description | Component returns null |
+| State | EN Display | JA Display |
+|-------|------------|------------|
+| Loading | Animated skeleton lines | N/A (no fetch) |
+| Translated | English text with "Show original" | Japanese text with "翻訳を表示" |
+| No Japanese | Original text (no toggle) | Original text (no toggle) |
+| Error | Original text with "(Translation unavailable)" | Original text with "（翻訳なし）" |
+| No description | Component returns null | Component returns null |
 
 ---
 
@@ -480,6 +494,11 @@ SUPABASE_SERVICE_ROLE_KEY=xxx
 |------|----------|
 | `tests/quickview-regression.spec.ts` | Metadata display, mobile sheet |
 | `tests/translation-api.spec.ts` | Translation API endpoints |
+| `tests/lib/listing-data-localization.test.ts` | `getArtisanInfo()` locale awareness (16 tests) |
+| `tests/components/listing/MetadataGrid-locale.test.tsx` | MetadataGrid locale rendering (13 tests) |
+| `tests/components/listing/TranslatedTitle.test.tsx` | TranslatedTitle locale behavior (9 tests) |
+| `tests/components/listing/TranslatedDescription.test.tsx` | TranslatedDescription locale behavior (13 tests) |
+| `tests/components/listing/listing-data-locale.test.tsx` | ListingCard locale-aware title + artisan kanji (6 tests) |
 
 ### Key Test Cases
 
@@ -580,6 +599,17 @@ The system degrades gracefully at each level:
 ---
 
 ## Changelog
+
+### 2026-02-22
+- **Listing data localization** — all listing data (titles, descriptions, artisan names) locale-aware
+- `getArtisanInfo()` accepts `locale` parameter — JA returns kanji, EN romanizes
+- TranslatedTitle locale-aware — JA shows original title, EN shows `title_en`
+- TranslatedDescription locale-aware — JA defaults to original, toggle labels localized
+- ListingCard `cleanedTitle` uses `title_en` for EN locale
+- QuickViewContent shows `artisan_name_kanji` for JA locale
+- `mei_type` localized via `td('meiType', ...)` — "Signed"/"在銘", "Unsigned"/"無銘"
+- 7 new i18n keys added (`listing.showOriginal`, `listing.showTranslation`, etc.)
+- 57 new tests across 5 test files
 
 ### 2026-01-18
 - Initial implementation

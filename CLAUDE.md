@@ -17,6 +17,7 @@
 - Artisan code display & search (admin-only badges with confidence levels)
 - Artist directory (`/artists`) with filters, pagination, and sitemap integration
 - Personal collection manager (`/collection`) with Yuhinkai catalog lookup and "I Own This" import
+- Full i18n localization (JA/EN) — UI chrome (1090+ keys) + listing data (titles, descriptions, artisan names)
 
 **Trial Mode:** All premium features currently free (toggle via `NEXT_PUBLIC_TRIAL_MODE` env var)
 
@@ -573,6 +574,46 @@ Browse API: SELECT focal_x, focal_y → VirtualListingGrid computes focalPositio
 | Invalidation trigger | `supabase/migrations/080_focal_point_invalidation.sql` |
 | Cron schedule | `vercel.json` (`30 */4 * * *` — offset from featured-scores at :00) |
 | **Full documentation** | `docs/SMART_CROP_FOCAL_POINTS.md` |
+
+### Listing Data Localization (i18n)
+
+UI chrome (labels, buttons, nav) uses the `useLocale()` hook and `t()` function from `LocaleContext.tsx` with ~1090 keys across `en.json` and `ja.json`. **Listing data** (titles, descriptions, artisan names) is also locale-aware:
+
+**Behavior by locale:**
+- **JA locale**: Shows original Japanese data by default — `listing.title`, `listing.description`, kanji smith/maker names. Translation toggle ("翻訳を表示") reveals English version.
+- **EN locale**: Shows English translations by default — `listing.title_en`, `listing.description_en`, romanized names. "Show original" toggle reveals Japanese.
+
+**How it works:**
+1. **TranslatedTitle** — JA shows `title`, EN shows `title_en` (auto-translates via `/api/translate` if missing)
+2. **TranslatedDescription** — JA defaults `showOriginal=true`, EN defaults to translation. Toggle labels localized.
+3. **MetadataGrid `getArtisanInfo(listing, locale)`** — JA returns kanji smith/maker/school directly; EN romanizes via `title_en` extraction, filters out Japanese-only names. Also localizes `mei_type` via `td('meiType', ...)` → "Signed"/"在銘".
+4. **ListingCard** — `cleanedTitle` uses `title_en` for EN locale, `title` for JA.
+5. **QuickViewContent** — Shows `artisan_name_kanji` for JA locale, `artisan_display_name` for EN.
+
+**i18n keys for listing data:**
+
+| Key | EN | JA |
+|-----|----|----|
+| `listing.showOriginal` | Show original | 原文を表示 |
+| `listing.showTranslation` | Show translation | 翻訳を表示 |
+| `listing.readMore` | Read more | 続きを読む |
+| `listing.showLess` | Show less | 閉じる |
+| `listing.translationUnavailable` | (Translation unavailable) | （翻訳なし） |
+| `meiType.mei` | Signed | 在銘 |
+| `meiType.mumei` | Unsigned | 無銘 |
+
+**Key files:**
+| Component | Location |
+|-----------|----------|
+| TranslatedTitle | `src/components/listing/TranslatedTitle.tsx` |
+| TranslatedDescription | `src/components/listing/TranslatedDescription.tsx` |
+| MetadataGrid (`getArtisanInfo`) | `src/components/listing/MetadataGrid.tsx` |
+| ListingCard (cleanedTitle) | `src/components/browse/ListingCard.tsx` |
+| QuickViewContent (artisan kanji) | `src/components/listing/QuickViewContent.tsx` |
+| Locale context | `src/i18n/LocaleContext.tsx` |
+| EN strings | `src/i18n/locales/en.json` |
+| JA strings | `src/i18n/locales/ja.json` |
+| Tests (57) | `tests/lib/listing-data-localization.test.ts`, `tests/components/listing/TranslatedTitle.test.tsx`, `tests/components/listing/TranslatedDescription.test.tsx`, `tests/components/listing/listing-data-locale.test.tsx`, `tests/components/listing/MetadataGrid-locale.test.tsx` |
 
 ### Artisan Code Display & Verification (Admin Feature)
 
