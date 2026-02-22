@@ -8,6 +8,7 @@ import {
   ConversionFunnelChart,
   UserGrowthChart,
   SearchTermsTable,
+  SessionDistributionChart,
 } from '@/components/admin/analytics';
 import { useUserEngagement } from '@/hooks/useUserEngagement';
 import type { TopListing } from '@/hooks/useUserEngagement';
@@ -480,6 +481,7 @@ export default function UserEngagementAnalyticsPage() {
   const funnel = data.funnel;
   const searches = data.searches;
   const topListings = data.topListings;
+  const sessionDistribution = data.sessionDistribution;
 
   // Calculate change percentages for metrics
   const userChangePercent = overview
@@ -546,7 +548,7 @@ export default function UserEngagementAnalyticsPage() {
       </div>
 
       {/* Global error display */}
-      {errors.overview && errors.growth && errors.funnel && errors.searches && errors.topListings && (
+      {errors.overview && errors.growth && errors.funnel && errors.searches && errors.topListings && errors.sessionDistribution && (
         <div className="bg-error/10 text-error rounded-lg p-4">
           <p className="font-medium">Error loading analytics</p>
           <p className="text-sm mt-1">
@@ -611,6 +613,38 @@ export default function UserEngagementAnalyticsPage() {
           icon={<SearchIcon className="w-6 h-6" />}
           loading={loading.overview}
         />
+      </div>
+
+      {/* Session Duration Distribution */}
+      <div className="bg-cream rounded-xl border border-border p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-serif text-lg text-ink">Session Duration Distribution</h2>
+          {sessionDistribution && (
+            <span className="text-xs text-muted">
+              {sessionDistribution.statistics.sessionsWithData.toLocaleString()} of{' '}
+              {sessionDistribution.statistics.totalSessions.toLocaleString()} sessions with data
+            </span>
+          )}
+        </div>
+        {errors.sessionDistribution ? (
+          <ErrorDisplay message={errors.sessionDistribution} />
+        ) : (
+          <SessionDistributionChart
+            buckets={sessionDistribution?.buckets ?? []}
+            statistics={
+              sessionDistribution?.statistics ?? {
+                median: 0,
+                mean: 0,
+                p25: 0,
+                p75: 0,
+                totalSessions: 0,
+                sessionsWithData: 0,
+              }
+            }
+            loading={loading.sessionDistribution}
+            height={300}
+          />
+        )}
       </div>
 
       {/* Charts Row 1: User Growth + Conversion Funnel */}

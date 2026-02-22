@@ -37,12 +37,17 @@ vi.mock('recharts', () => ({
   ComposedChart: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="composed-chart">{children}</div>
   ),
+  BarChart: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="bar-chart-container">{children}</div>
+  ),
   Bar: () => <div data-testid="bar-chart" />,
   Line: () => <div data-testid="line-chart" />,
   XAxis: () => <div data-testid="x-axis" />,
   YAxis: () => <div data-testid="y-axis" />,
   Tooltip: () => <div data-testid="tooltip" />,
   Legend: () => <div data-testid="legend" />,
+  ReferenceLine: () => <div data-testid="reference-line" />,
+  Cell: () => <div data-testid="cell" />,
 }));
 
 // =============================================================================
@@ -148,6 +153,22 @@ const mockTopListings = {
   sortedBy: 'views',
 };
 
+const mockSessionDistribution = {
+  buckets: [
+    { label: '0-10s', rangeStartMs: 0, rangeEndMs: 10000, count: 50, percentage: 25, cumulativePercentage: 25 },
+    { label: '10-30s', rangeStartMs: 10000, rangeEndMs: 30000, count: 30, percentage: 15, cumulativePercentage: 40 },
+  ],
+  statistics: {
+    median: 67,
+    mean: 142,
+    p25: 12,
+    p75: 195,
+    totalSessions: 200,
+    sessionsWithData: 200,
+  },
+  period: '30d',
+};
+
 // Default mock return value (loaded state)
 const createMockHookReturn = (overrides = {}) => ({
   data: {
@@ -156,6 +177,7 @@ const createMockHookReturn = (overrides = {}) => ({
     searches: mockSearches,
     funnel: mockFunnel,
     topListings: mockTopListings,
+    sessionDistribution: mockSessionDistribution,
   },
   loading: {
     overview: false,
@@ -163,6 +185,7 @@ const createMockHookReturn = (overrides = {}) => ({
     searches: false,
     funnel: false,
     topListings: false,
+    sessionDistribution: false,
   },
   errors: {
     overview: null,
@@ -170,6 +193,7 @@ const createMockHookReturn = (overrides = {}) => ({
     searches: null,
     funnel: null,
     topListings: null,
+    sessionDistribution: null,
   },
   refreshAll: mockRefreshAll,
   isLoading: false,
@@ -458,6 +482,7 @@ describe('UserEngagementAnalyticsPage', () => {
             searches: null,
             funnel: null,
             topListings: null,
+            sessionDistribution: null,
           },
           errors: {
             overview: 'Failed to fetch overview',
@@ -465,6 +490,7 @@ describe('UserEngagementAnalyticsPage', () => {
             searches: 'Failed to fetch searches',
             funnel: 'Failed to fetch funnel',
             topListings: 'Failed to fetch top listings',
+            sessionDistribution: 'Failed to fetch session distribution',
           },
           hasErrors: true,
         })

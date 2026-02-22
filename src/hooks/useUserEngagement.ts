@@ -117,6 +117,31 @@ export interface TopListingsData {
   sortedBy: string;
 }
 
+// Session Distribution types
+export interface SessionBucket {
+  label: string;
+  rangeStartMs: number;
+  rangeEndMs: number;
+  count: number;
+  percentage: number;
+  cumulativePercentage: number;
+}
+
+export interface SessionStatistics {
+  median: number;
+  mean: number;
+  p25: number;
+  p75: number;
+  totalSessions: number;
+  sessionsWithData: number;
+}
+
+export interface SessionDistributionData {
+  buckets: SessionBucket[];
+  statistics: SessionStatistics;
+  period: string;
+}
+
 // =============================================================================
 // HOOK TYPES
 // =============================================================================
@@ -130,6 +155,7 @@ export interface UserEngagementData {
   searches: SearchesData | null;
   funnel: FunnelData | null;
   topListings: TopListingsData | null;
+  sessionDistribution: SessionDistributionData | null;
 }
 
 /**
@@ -141,6 +167,7 @@ export interface LoadingState {
   searches: boolean;
   funnel: boolean;
   topListings: boolean;
+  sessionDistribution: boolean;
 }
 
 /**
@@ -152,6 +179,7 @@ export interface ErrorState {
   searches: string | null;
   funnel: string | null;
   topListings: string | null;
+  sessionDistribution: string | null;
 }
 
 /**
@@ -253,6 +281,7 @@ export function useUserEngagement(
     searches: null,
     funnel: null,
     topListings: null,
+    sessionDistribution: null,
   });
 
   // Loading state
@@ -262,6 +291,7 @@ export function useUserEngagement(
     searches: true,
     funnel: true,
     topListings: true,
+    sessionDistribution: true,
   });
 
   // Error state
@@ -271,6 +301,7 @@ export function useUserEngagement(
     searches: null,
     funnel: null,
     topListings: null,
+    sessionDistribution: null,
   });
 
   // Last updated timestamp
@@ -419,6 +450,34 @@ export function useUserEngagement(
     }
   }, [period]);
 
+  // Fetch session distribution data
+  const fetchSessionDistribution = useCallback(async () => {
+    setLoading((prev) => ({ ...prev, sessionDistribution: true }));
+    setErrors((prev) => ({ ...prev, sessionDistribution: null }));
+
+    try {
+      const result = await fetchEngagementData<SessionDistributionData>(
+        '/api/admin/analytics/engagement/sessions',
+        period
+      );
+
+      if (isMountedRef.current) {
+        setData((prev) => ({ ...prev, sessionDistribution: result }));
+      }
+    } catch (err) {
+      if (isMountedRef.current) {
+        setErrors((prev) => ({
+          ...prev,
+          sessionDistribution: err instanceof Error ? err.message : 'Unknown error',
+        }));
+      }
+    } finally {
+      if (isMountedRef.current) {
+        setLoading((prev) => ({ ...prev, sessionDistribution: false }));
+      }
+    }
+  }, [period]);
+
   // Refresh all data in parallel
   const refreshAll = useCallback(async () => {
     await Promise.all([
@@ -427,6 +486,7 @@ export function useUserEngagement(
       fetchSearches(),
       fetchFunnel(),
       fetchTopListings(),
+      fetchSessionDistribution(),
     ]);
 
     if (isMountedRef.current) {
@@ -438,6 +498,7 @@ export function useUserEngagement(
     fetchSearches,
     fetchFunnel,
     fetchTopListings,
+    fetchSessionDistribution,
   ]);
 
   // Fetch data on mount and when period changes

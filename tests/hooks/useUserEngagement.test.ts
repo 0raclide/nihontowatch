@@ -146,6 +146,22 @@ const mockTopListings = {
   sortedBy: 'views',
 };
 
+const mockSessionDistribution = {
+  buckets: [
+    { label: '0-10s', rangeStartMs: 0, rangeEndMs: 10000, count: 50, percentage: 25, cumulativePercentage: 25 },
+    { label: '10-30s', rangeStartMs: 10000, rangeEndMs: 30000, count: 30, percentage: 15, cumulativePercentage: 40 },
+  ],
+  statistics: {
+    median: 45,
+    mean: 120,
+    p25: 10,
+    p75: 180,
+    totalSessions: 200,
+    sessionsWithData: 200,
+  },
+  period: '30d',
+};
+
 // =============================================================================
 // SETUP / TEARDOWN
 // =============================================================================
@@ -166,6 +182,9 @@ function setupDefaultMocks() {
     }
     if (url.includes('/top-listings')) {
       return Promise.resolve(createMockResponse(mockTopListings));
+    }
+    if (url.includes('/sessions')) {
+      return Promise.resolve(createMockResponse(mockSessionDistribution));
     }
     return Promise.resolve(createMockResponse({}));
   });
@@ -234,7 +253,7 @@ describe('useUserEngagement', () => {
   // ===========================================================================
 
   describe('successful data fetch', () => {
-    it('fetches all 5 endpoints on mount', async () => {
+    it('fetches all 6 endpoints on mount', async () => {
       const { result } = renderHook(() =>
         useUserEngagement({ period: '30d' })
       );
@@ -243,8 +262,8 @@ describe('useUserEngagement', () => {
         expect(result.current.isLoading).toBe(false);
       });
 
-      // Should have called all 5 endpoints
-      expect(mockFetch).toHaveBeenCalledTimes(5);
+      // Should have called all 6 endpoints
+      expect(mockFetch).toHaveBeenCalledTimes(6);
     });
 
     it('returns overview data after successful fetch', async () => {
@@ -544,8 +563,8 @@ describe('useUserEngagement', () => {
         await result.current.refreshAll();
       });
 
-      // Should have called 5 more endpoints
-      expect(mockFetch.mock.calls.length).toBe(initialCallCount + 5);
+      // Should have called 6 more endpoints
+      expect(mockFetch.mock.calls.length).toBe(initialCallCount + 6);
     });
 
     it('refreshAll updates lastUpdated timestamp', async () => {

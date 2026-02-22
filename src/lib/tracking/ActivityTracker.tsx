@@ -428,7 +428,7 @@ export function ActivityTrackerProvider({
 
   const trackPageView = useCallback(
     (path: string, searchParams?: Record<string, string>) => {
-      if (isSuppressed || !autoTrackPageViews) return;
+      if (isSuppressed) return;
 
       updateActivity(true); // Increment page views
 
@@ -443,7 +443,7 @@ export function ActivityTrackerProvider({
 
       queueEvent(event);
     },
-    [createBaseEvent, queueEvent, isSuppressed, autoTrackPageViews]
+    [createBaseEvent, queueEvent, isSuppressed]
   );
 
   const trackListingView = useCallback(

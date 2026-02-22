@@ -21,5 +21,8 @@ export { ConversionFunnelChart } from './ConversionFunnelChart';
 export { UserGrowthChart } from './UserGrowthChart';
 export { SearchTermsTable } from './SearchTermsTable';
 
+// Session Analytics Components
+export { SessionDistributionChart } from './SessionDistributionChart';
+
 // Visitor Analytics Components
 export { VisitorsChart } from './VisitorsChart';

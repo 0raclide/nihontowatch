@@ -164,11 +164,20 @@ export function buildSessionEndPayload(): SessionEndPayload | null {
 
   const endedAt = Date.now();
 
+  // If page is currently hidden, include time from last hide
+  let finalHiddenMs = totalHiddenMs;
+  if (isPageHidden && hiddenAtTimestamp) {
+    finalHiddenMs += endedAt - hiddenAtTimestamp;
+  }
+
+  const rawDuration = endedAt - session.startedAt;
+  const activeDuration = Math.max(0, rawDuration - finalHiddenMs);
+
   return {
     sessionId: session.id,
     startedAt: new Date(session.startedAt).toISOString(),
     endedAt: new Date(endedAt).toISOString(),
-    totalDurationMs: endedAt - session.startedAt,
+    totalDurationMs: activeDuration,
     pageViews: session.pageViews,
   };
 }
@@ -213,6 +222,8 @@ export function endSession(): void {
 export function clearSession(): void {
   if (typeof window === 'undefined') return;
 
+  totalHiddenMs = 0;
+
   try {
     sessionStorage.removeItem(SESSION_KEY);
     sessionStorage.removeItem(SESSION_ID_KEY);
@@ -227,6 +238,7 @@ export function clearSession(): void {
 
 let isPageHidden = false;
 let hiddenAtTimestamp: number | null = null;
+let totalHiddenMs = 0;
 
 /**
  * Track page visibility changes
@@ -249,6 +261,7 @@ export function handleVisibilityChange(): { wasHidden: boolean; hiddenDurationMs
     // Page became visible
     if (wasHidden && hiddenAtTimestamp) {
       hiddenDurationMs = now - hiddenAtTimestamp;
+      totalHiddenMs += hiddenDurationMs;
     }
     isPageHidden = false;
     hiddenAtTimestamp = null;
