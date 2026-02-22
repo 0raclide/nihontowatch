@@ -72,6 +72,7 @@ interface Listing {
   dealers: {
     id: number;
     name: string;
+    name_ja?: string | null;
     domain: string;
   };
   dealer_earliest_seen_at?: string | null;
@@ -79,6 +80,9 @@ interface Listing {
   artisan_id?: string | null;
   artisan_confidence?: 'HIGH' | 'MEDIUM' | 'LOW' | 'NONE' | null;
   artisan_display_name?: string | null;
+  // Smart crop focal points
+  focal_x?: number | null;
+  focal_y?: number | null;
 }
 
 interface Facet {
@@ -89,6 +93,7 @@ interface Facet {
 interface DealerFacet {
   id: number;
   name: string;
+  name_ja?: string | null;
   count: number;
 }
 
@@ -257,6 +262,19 @@ export default function HomeContent() {
     return 'JPY';
   });
   const [exchangeRates, setExchangeRates] = useState<ExchangeRates | null>(null);
+
+  // Smart crop admin toggle (persisted in localStorage)
+  const [smartCropEnabled, setSmartCropEnabled] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('nihontowatch-smart-crop');
+      if (stored !== null) return stored === 'true';
+    }
+    return true; // Default on
+  });
+  const handleSmartCropChange = useCallback((enabled: boolean) => {
+    setSmartCropEnabled(enabled);
+    localStorage.setItem('nihontowatch-smart-crop', String(enabled));
+  }, []);
 
   // Fetch exchange rates on mount
   useEffect(() => {
@@ -687,6 +705,8 @@ export default function HomeContent() {
               availability: activeTab,
               onAvailabilityChange: handleAvailabilityChange,
               isAdmin: authIsAdmin,
+              smartCropEnabled,
+              onSmartCropChange: handleSmartCropChange,
             }}
           />
 
@@ -708,6 +728,7 @@ export default function HomeContent() {
               mobileView={mobileView}
               isUrlSearch={data?.isUrlSearch || false}
               searchQuery={searchQuery}
+              smartCropEnabled={smartCropEnabled}
             />
           </div>
         </div>

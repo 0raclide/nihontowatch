@@ -81,6 +81,7 @@ interface Listing {
   dealers: {
     id: number;
     name: string;
+    name_ja?: string | null;
     domain: string;
   };
   // Artisan matching (admin-only display)

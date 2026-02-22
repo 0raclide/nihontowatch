@@ -40,6 +40,7 @@ type AlertWithListing = {
     dealers: {
       id: number;
       name: string;
+      name_ja?: string | null;
       domain: string;
     } | null;
   } | null;

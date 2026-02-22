@@ -69,6 +69,7 @@ interface Listing {
   dealers: {
     id: number;
     name: string;
+    name_ja?: string | null;
     domain: string;
   };
   dealer_earliest_seen_at?: string | null;

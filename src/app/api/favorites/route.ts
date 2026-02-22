@@ -54,6 +54,7 @@ export async function GET() {
         dealers: {
           id: number;
           name: string;
+          name_ja?: string | null;
           domain: string;
         } | null;
       } | null;
@@ -91,6 +92,7 @@ export async function GET() {
           dealers (
             id,
             name,
+            name_ja,
             domain
           )
         )

@@ -14,6 +14,7 @@ export interface Database {
         Row: {
           id: number;
           name: string;
+          name_ja: string | null;
           domain: string;
           catalog_url: string | null;
           country: string;

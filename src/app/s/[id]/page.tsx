@@ -36,7 +36,7 @@ interface ListingForShare {
   smith: string | null;
   tosogu_maker: string | null;
   og_image_url: string | null;
-  dealers: { name: string; domain: string } | null;
+  dealers: { name: string; name_ja?: string | null; domain: string } | null;
 }
 
 // Price formatting moved to OG image - description uses tagline instead
