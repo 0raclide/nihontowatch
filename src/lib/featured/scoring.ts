@@ -150,13 +150,139 @@ export function computeFeaturedScore(
 }
 
 // ---------------------------------------------------------------------------
+// Score breakdown (for admin diagnostics)
+// ---------------------------------------------------------------------------
+
+export interface CompletenessItem {
+  label: string;
+  active: boolean;
+  points: number;
+  max: number;
+  detail?: string;
+}
+
+export interface ScoreBreakdown {
+  quality: { total: number; artisanStature: number; certPoints: number; completeness: number };
+  artisanDetail: {
+    eliteFactor: number;
+    eliteFactorPts: number;
+    eliteCount: number;
+    eliteCountPts: number;
+    artisanId: string | null;
+    isReal: boolean;
+  };
+  certDetail: { certType: string | null; points: number };
+  completenessItems: CompletenessItem[];
+  freshness: {
+    multiplier: number;
+    ageDays: number | null;
+    bracket: string;
+    isInitialImport: boolean;
+    firstSeenAt: string | null;
+  };
+}
+
+/**
+ * Decompose a listing's score into its sub-components for diagnostic display.
+ * Pure function — no DB access.
+ */
+export function computeScoreBreakdown(listing: ListingScoreInput): ScoreBreakdown {
+  // Artisan stature
+  const hasRealArtisan = listing.artisan_id && !IGNORE_ARTISAN_IDS.has(listing.artisan_id);
+  const eliteFactor = hasRealArtisan ? (listing.artisan_elite_factor ?? 0) : 0;
+  const eliteCount = hasRealArtisan ? (listing.artisan_elite_count ?? 0) : 0;
+  const eliteFactorPts = eliteFactor * 200;
+  const eliteCountPts = Math.min(Math.sqrt(eliteCount) * 18, 100);
+  const artisanStature = eliteFactorPts + eliteCountPts;
+
+  // Cert points
+  const certPts = listing.cert_type ? (CERT_POINTS[listing.cert_type] ?? 0) : 0;
+
+  // Completeness
+  const imgCount = imageCount(listing);
+  const hasAttribution = !!(listing.smith || listing.tosogu_maker);
+  const hasMeasurements = !!(listing.nagasa_cm || listing.tosogu_height_cm);
+  const hasDesc = !!(listing.description && listing.description.length > 100);
+  const hasEra = !!listing.era;
+  const hasSchool = !!(listing.school || listing.tosogu_school);
+  const hasHighConf = listing.artisan_confidence === 'HIGH';
+
+  const imgPts = Math.min(imgCount * 3, 15);
+  const pricePts = listing.price_value ? 10 : 0;
+  const attrPts = hasAttribution ? 8 : 0;
+  const measPts = hasMeasurements ? 5 : 0;
+  const descPts = hasDesc ? 5 : 0;
+  const eraPts = hasEra ? 4 : 0;
+  const schoolPts = hasSchool ? 3 : 0;
+  const confPts = hasHighConf ? 5 : 0;
+  const completeness = imgPts + pricePts + attrPts + measPts + descPts + eraPts + schoolPts + confPts;
+
+  const completenessItems: CompletenessItem[] = [
+    { label: 'Images', active: imgCount > 0, points: imgPts, max: 15, detail: `${imgCount} image${imgCount !== 1 ? 's' : ''} × 3` },
+    { label: 'Price', active: !!listing.price_value, points: pricePts, max: 10 },
+    { label: 'Attribution', active: hasAttribution, points: attrPts, max: 8, detail: listing.smith || listing.tosogu_maker || undefined },
+    { label: 'Measurements', active: hasMeasurements, points: measPts, max: 5 },
+    { label: 'Description', active: hasDesc, points: descPts, max: 5, detail: listing.description ? `${listing.description.length} chars` : undefined },
+    { label: 'Era', active: hasEra, points: eraPts, max: 4, detail: listing.era || undefined },
+    { label: 'School', active: hasSchool, points: schoolPts, max: 3, detail: listing.school || listing.tosogu_school || undefined },
+    { label: 'HIGH confidence', active: hasHighConf, points: confPts, max: 5 },
+  ];
+
+  const quality = artisanStature + certPts + completeness;
+
+  // Freshness
+  let multiplier: number;
+  let ageDays: number | null = null;
+  let bracket: string;
+  const isInitialImport = !!listing.is_initial_import;
+
+  if (isInitialImport) {
+    multiplier = 1.0;
+    bracket = 'initial import';
+  } else if (!listing.first_seen_at) {
+    multiplier = 1.0;
+    bracket = 'no date';
+  } else {
+    const ageMs = Date.now() - new Date(listing.first_seen_at).getTime();
+    ageDays = Math.round((ageMs / (1000 * 60 * 60 * 24)) * 10) / 10;
+    if (ageDays < 3) { multiplier = 1.4; bracket = '<3 days'; }
+    else if (ageDays < 7) { multiplier = 1.2; bracket = '<7 days'; }
+    else if (ageDays < 30) { multiplier = 1.0; bracket = '<30 days'; }
+    else if (ageDays < 90) { multiplier = 0.85; bracket = '<90 days'; }
+    else if (ageDays < 180) { multiplier = 0.5; bracket = '<180 days'; }
+    else { multiplier = 0.3; bracket = '≥180 days'; }
+  }
+
+  return {
+    quality: { total: quality, artisanStature, certPoints: certPts, completeness },
+    artisanDetail: {
+      eliteFactor,
+      eliteFactorPts: Math.round(eliteFactorPts * 100) / 100,
+      eliteCount,
+      eliteCountPts: Math.round(eliteCountPts * 100) / 100,
+      artisanId: listing.artisan_id,
+      isReal: !!hasRealArtisan,
+    },
+    certDetail: { certType: listing.cert_type, points: certPts },
+    completenessItems,
+    freshness: {
+      multiplier,
+      ageDays,
+      bracket,
+      isInitialImport,
+      firstSeenAt: listing.first_seen_at,
+    },
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Single-listing recompute (for admin mutation endpoints)
 // ---------------------------------------------------------------------------
 
 const HEAT_30_DAY_MS = 30 * 24 * 60 * 60 * 1000;
 
 /** Select string for the fields we need from listings */
-const LISTING_SCORE_SELECT =
+export const LISTING_SCORE_SELECT =
   'id, artisan_id, artisan_elite_factor, artisan_elite_count, cert_type, price_value, artisan_confidence, images, first_seen_at, is_initial_import, smith, tosogu_maker, school, tosogu_school, era, province, description, nagasa_cm, sori_cm, motohaba_cm, tosogu_height_cm, tosogu_width_cm';
 
 /**

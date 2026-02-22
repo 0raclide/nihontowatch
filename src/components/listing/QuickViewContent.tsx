@@ -17,6 +17,7 @@ import { shouldShowNewBadge } from '@/lib/newListing';
 import type { Listing, ListingWithEnrichment } from '@/types';
 import { getItemTypeLabel, hasSetsumeiData } from '@/types';
 import { MetadataGrid, getCertInfo } from './MetadataGrid';
+import { AdminScoreInspector } from './AdminScoreInspector';
 import { AdminSetsumeiWidget } from './AdminSetsumeiWidget';
 import { AdminArtisanWidget } from '@/components/artisan/AdminArtisanWidget';
 import { ArtisanTooltip } from '@/components/artisan/ArtisanTooltip';
@@ -434,9 +435,13 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
         {/* Translated Description */}
         <TranslatedDescription listing={listing} maxLines={6} />
 
-        {/* Admin: Manual Yuhinkai Connection Widget */}
+        {/* Admin: Score Inspector + Manual Yuhinkai Connection Widget */}
         {isAdmin && (
           <div className="px-4 py-3 lg:px-5">
+            <AdminScoreInspector
+              listing={listing}
+              onScoreRecomputed={(newScore) => quickView?.refreshCurrentListing({ featured_score: newScore } as Partial<Listing>)}
+            />
             <AdminSetsumeiWidget
               listing={listing}
               onConnectionChanged={(enrichment) => quickView?.refreshCurrentListing(

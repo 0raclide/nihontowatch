@@ -16,16 +16,21 @@ ALTER TABLE listing_views ADD CONSTRAINT listing_views_referrer_check
   CHECK (referrer IN ('browse', 'search', 'direct', 'external', 'alert', 'quickview'));
 
 -- Step 2: Backfill historical quickview_open events
+-- Filter to only listing IDs that exist in listings table (orphan events are
+-- possible when listings are deleted after activity was recorded)
 INSERT INTO listing_views (listing_id, session_id, user_id, referrer, viewed_at, view_date)
 SELECT
-  (event_data->>'listingId')::int AS listing_id,
-  session_id,
-  user_id,
+  (ae.event_data->>'listingId')::int AS listing_id,
+  ae.session_id,
+  ae.user_id,
   'quickview' AS referrer,
-  created_at AS viewed_at,
-  created_at::date AS view_date
-FROM activity_events
-WHERE event_type = 'quickview_open'
-  AND (event_data->>'listingId') IS NOT NULL
-  AND session_id IS NOT NULL
+  ae.created_at AS viewed_at,
+  ae.created_at::date AS view_date
+FROM activity_events ae
+WHERE ae.event_type = 'quickview_open'
+  AND (ae.event_data->>'listingId') IS NOT NULL
+  AND ae.session_id IS NOT NULL
+  AND EXISTS (
+    SELECT 1 FROM listings l WHERE l.id = (ae.event_data->>'listingId')::int
+  )
 ON CONFLICT DO NOTHING;
