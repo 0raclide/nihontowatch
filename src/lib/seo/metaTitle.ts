@@ -7,15 +7,7 @@
  */
 
 import { getAttributionName, getAttributionSchool } from '@/lib/listing/attribution';
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-/** Check if string contains Japanese characters (hiragana, katakana, kanji) */
-function containsJapanese(str: string): boolean {
-  return /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(str);
-}
+import { containsJapanese } from '@/lib/text/japanese';
 
 /** Normalize cert_type to a short, human-friendly label */
 function formatCert(certType: string | null | undefined): string | null {

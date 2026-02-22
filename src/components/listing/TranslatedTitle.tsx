@@ -13,8 +13,7 @@ interface TranslatedTitleProps {
   className?: string;
 }
 
-// Japanese character detection regex
-const JAPANESE_REGEX = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/;
+import { containsJapanese } from '@/lib/text/japanese';
 
 // =============================================================================
 // COMPONENT
@@ -24,7 +23,8 @@ const JAPANESE_REGEX = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/;
  * TranslatedTitle displays the listing title with locale-aware selection.
  *
  * Behavior:
- * - JA locale: Shows original title (listing.title). No auto-translate.
+ * - JA locale: Shows cached JP translation (title_ja) for English-source listings,
+ *   otherwise shows original title. Auto-fetches JP translation if missing.
  * - EN locale: Shows cached translation (title_en) if available, otherwise
  *   fetches translation for Japanese titles. Falls back to original title.
  */
@@ -37,17 +37,22 @@ export function TranslatedTitle({
   // Select initial display title based on locale
   const getInitialTitle = useCallback(() => {
     if (locale === 'ja') {
-      return listing.title || t('listing.untitled');
+      // Prefer cached JP translation for English-source listings
+      return listing.title_ja || listing.title || t('listing.untitled');
     }
     return listing.title_en || listing.title || t('listing.untitled');
-  }, [locale, listing.title, listing.title_en, t]);
+  }, [locale, listing.title, listing.title_en, listing.title_ja, t]);
 
   const [displayTitle, setDisplayTitle] = useState<string>(getInitialTitle);
   const [isTranslating, setIsTranslating] = useState(false);
 
-  // Check if title has Japanese text that needs translation
-  const hasJapanese = listing.title ? JAPANESE_REGEX.test(listing.title) : false;
-  const needsTranslation = locale === 'en' && hasJapanese && !listing.title_en;
+  // Check if title has Japanese text
+  const hasJapanese = listing.title ? containsJapanese(listing.title) : false;
+
+  // Needs translation: EN locale with Japanese source, or JA locale with English source
+  const needsTranslation =
+    (locale === 'en' && hasJapanese && !listing.title_en) ||
+    (locale === 'ja' && !hasJapanese && !listing.title_ja);
 
   // Fetch translation if needed (EN locale only)
   const fetchTranslation = useCallback(async () => {

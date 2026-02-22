@@ -462,7 +462,9 @@ export interface Listing {
   og_image_url?: string | null;  // Pre-generated OG image URL in Supabase Storage
   raw_page_text?: string;
   description_en?: string; // Cached English translation of description
+  description_ja?: string; // Cached Japanese translation of description (for EN-source listings)
   title_en?: string; // Cached English translation of title
+  title_ja?: string; // Cached Japanese translation of title (for EN-source listings)
 
   // Setsumei (Official NBTHK/NTHK certification translations - Juyo/Tokuju only)
   setsumei_image_url?: string;       // URL of the detected setsumei image

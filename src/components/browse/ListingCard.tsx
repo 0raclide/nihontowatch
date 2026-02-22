@@ -50,6 +50,7 @@ interface Listing {
   url: string;
   title: string | null;
   title_en?: string | null; // English translation of title
+  title_ja?: string | null; // Japanese translation of title (for EN-source listings)
   item_type: string | null;
   price_value: number | null;
   price_currency: string | null;
@@ -547,7 +548,9 @@ export const ListingCard = memo(function ListingCard({
       || getArtisanName(listing.tosogu_maker, listing.tosogu_school, listing.title_en),
     itemType: normalizeItemType(listing.item_type),
     cleanedTitle: cleanTitle(
-      locale === 'en' && listing.title_en ? listing.title_en : listing.title,
+      locale === 'en' && listing.title_en ? listing.title_en
+        : locale === 'ja' && listing.title_ja ? listing.title_ja
+        : listing.title,
       listing.smith, listing.tosogu_maker, t('listing.untitled')
     ),
     certInfo: getValidatedCertInfo(listing),
@@ -561,6 +564,7 @@ export const ListingCard = memo(function ListingCard({
     listing.tosogu_maker,
     listing.title,
     listing.title_en,
+    listing.title_ja,
     listing.item_type,
     listing.cert_type,
     listing.price_value,

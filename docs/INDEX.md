@@ -42,6 +42,7 @@
 
 | Document | Date | Summary |
 |----------|------|---------|
+| [SESSION_20260222_BIDIRECTIONAL_TRANSLATION.md](./SESSION_20260222_BIDIRECTIONAL_TRANSLATION.md) | 2026-02-22 | **Bidirectional translation (EN→JP)** — JA-locale auto-translates English dealer listings to Japanese via Gemini 3 Flash, shared `containsJapanese` utility, `title_ja`/`description_ja` columns, 55 tests |
 | [SESSION_20260222_JAPANESE_UX.md](./SESSION_20260222_JAPANESE_UX.md) | 2026-02-22 | **Japanese UX improvements** — JA typography (line-height 1.85, italic→bold), filter expand, nagasa+era cards, freshness timestamps, LINE+Twitter/X share, polite empty states, 14 tests |
 | [SESSION_20260222_FEATURED_SCORE_RECOMPUTE.md](./SESSION_20260222_FEATURED_SCORE_RECOMPUTE.md) | 2026-02-22 | **Inline featured score recompute** — admin cert/artisan/hide actions now update browse ranking immediately (not 4h cron lag), shared scoring module, fire-and-forget serverless postmortem, 65 tests |
 | [SESSION_20260212_CATALOGUE_PUBLICATION_BUG.md](./SESSION_20260212_CATALOGUE_PUBLICATION_BUG.md) | 2026-02-12 | **Catalogue publication invisible on artist page** — HIT041 dual-column mismatch (tosogu maker with sword objects), OR query fix, force-dynamic artist pages |
@@ -230,7 +231,7 @@
 11. Run `npm test -- listing-data-localization` - 16 pure function tests
 12. Run `npm test -- MetadataGrid-locale` - 13 component tests
 13. Run `npm test -- TranslatedTitle.test` - 9 component tests
-14. Run `npm test -- TranslatedDescription.test` - 13 component tests
+14. Run `npm test -- TranslatedDescription.test` - 14 component tests
 15. Run `npm test -- time.test` - 14 formatRelativeTime tests
 
 ### "I need to work on user behavior tracking or recommendations"

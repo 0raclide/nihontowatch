@@ -4,14 +4,11 @@ import type { Listing, ListingWithEnrichment } from '@/types';
 import { isBlade, isTosogu, hasVerifiedEnrichment } from '@/types';
 import { useLocale } from '@/i18n/LocaleContext';
 
-// =============================================================================
-// HELPERS - Japanese text detection and romanization
-// =============================================================================
+import { containsJapanese } from '@/lib/text/japanese';
 
-// Check if string contains Japanese characters (hiragana, katakana, kanji)
-function containsJapanese(str: string): boolean {
-  return /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(str);
-}
+// =============================================================================
+// HELPERS - Romanization and artisan extraction
+// =============================================================================
 
 // Item type prefixes to strip from title_en when extracting artisan name
 const ITEM_TYPE_PREFIXES = [

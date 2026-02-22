@@ -46,8 +46,7 @@ export function _resetRateLimitForTesting() {
   rateLimitMap.clear();
 }
 
-// Japanese character detection regex
-const JAPANESE_REGEX = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/;
+import { containsJapanese } from '@/lib/text/japanese';
 
 interface TranslateRequest {
   listingId: number;
@@ -58,8 +57,10 @@ interface ListingForTranslation {
   id: number;
   title: string | null;
   title_en: string | null;
+  title_ja: string | null;
   description: string | null;
   description_en: string | null;
+  description_ja: string | null;
   item_type: string | null;
 }
 
@@ -73,8 +74,11 @@ interface OpenRouterResponse {
 
 /**
  * POST /api/translate
- * Translate a listing title or description to English using OpenRouter
- * Caches the translation in the database for future requests
+ * Bidirectional listing translation using OpenRouter.
+ * Auto-detects direction from source text:
+ *   - Japanese source → translates to English (title_en / description_en)
+ *   - English source  → translates to Japanese (title_ja / description_ja)
+ * Caches the translation in the database for future requests.
  *
  * Body: { listingId: number, type?: 'description' | 'title' }
  * Defaults to 'description' for backwards compatibility
@@ -109,7 +113,7 @@ export async function POST(request: NextRequest) {
     // Fetch the listing with both original and translated fields
     const { data, error: fetchError } = await supabase
       .from('listings')
-      .select('id, title, title_en, description, description_en, item_type')
+      .select('id, title, title_en, title_ja, description, description_en, description_ja, item_type')
       .eq('id', listingId)
       .single();
 
@@ -122,10 +126,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Determine which field to translate
+    // Determine translation direction based on whether source contains Japanese
     const sourceField = type === 'title' ? listing.title : listing.description;
-    const cachedField = type === 'title' ? listing.title_en : listing.description_en;
-    const targetColumn = type === 'title' ? 'title_en' : 'description_en';
 
     // If no source text, return null
     if (!sourceField) {
@@ -136,26 +138,23 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // Auto-detect direction: JP→EN (existing) or EN→JP (new)
+    const hasJapanese = containsJapanese(sourceField);
+    const direction: 'jp_to_en' | 'en_to_jp' = hasJapanese ? 'jp_to_en' : 'en_to_jp';
+
+    // Select the right cached field and target column based on direction
+    const cachedField = direction === 'jp_to_en'
+      ? (type === 'title' ? listing.title_en : listing.description_en)
+      : (type === 'title' ? listing.title_ja : listing.description_ja);
+    const targetColumn = direction === 'jp_to_en'
+      ? (type === 'title' ? 'title_en' : 'description_en')
+      : (type === 'title' ? 'title_ja' : 'description_ja');
+
     // If already translated, return cached version
     if (cachedField) {
       return NextResponse.json({
         translation: cachedField,
         cached: true,
-      });
-    }
-
-    // Check if source contains Japanese
-    if (!JAPANESE_REGEX.test(sourceField)) {
-      // No Japanese text, store original as translation
-      await (supabase as any)
-        .from('listings')
-        .update({ [targetColumn]: sourceField })
-        .eq('id', listingId);
-
-      return NextResponse.json({
-        translation: sourceField,
-        cached: false,
-        reason: 'no_japanese',
       });
     }
 
@@ -182,22 +181,43 @@ export async function POST(request: NextRequest) {
       ? 'sword fitting (tosogu)'
       : 'Japanese sword (nihonto)';
 
-    // Different prompts for title vs description
+    // Build prompt based on direction and type
     let prompt: string;
-    if (type === 'title') {
-      prompt = `Translate this Japanese ${itemContext} listing title to English.
+    if (direction === 'jp_to_en') {
+      // JP→EN prompts (existing)
+      if (type === 'title') {
+        prompt = `Translate this Japanese ${itemContext} listing title to English.
 Keep it concise. Preserve technical terms in romaji (mei, mumei, etc.).
 Preserve proper names (smith names, schools).
 Only output the translation, no explanations.
 
 ${sourceField}`;
-    } else {
-      prompt = `Translate this Japanese ${itemContext} dealer description to English.
+      } else {
+        prompt = `Translate this Japanese ${itemContext} dealer description to English.
 Preserve technical terms in romaji (mei, mumei, nagasa, sori, shakudo, etc.).
 Keep formatting and line breaks.
 Only output the translation, no explanations or preamble.
 
 ${sourceField}`;
+      }
+    } else {
+      // EN→JP prompts (new)
+      if (type === 'title') {
+        prompt = `Translate this English ${itemContext} listing title to natural Japanese.
+Use appropriate kanji for standard sword terminology.
+Preserve proper names in their standard kanji form where known.
+Only output the translation, no explanations.
+
+${sourceField}`;
+      } else {
+        prompt = `Translate this English ${itemContext} dealer description to natural Japanese.
+Write as a knowledgeable Japanese dealer would — formal but accessible.
+Use standard nihonto terminology in kanji (銘, 無銘, 長さ, 反り, 赤銅, 四分一, etc.).
+Keep formatting and line breaks.
+Only output the translation, no explanations or preamble.
+
+${sourceField}`;
+      }
     }
 
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -209,7 +229,7 @@ ${sourceField}`;
         'X-Title': 'Nihontowatch',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.0-flash-001',
+        model: 'google/gemini-3-flash-preview',
         messages: [{
           role: 'user',
           content: prompt,

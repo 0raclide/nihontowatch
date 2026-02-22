@@ -179,6 +179,8 @@ artisan_verified, artisan_verified_at, artisan_verified_by
 artisan_admin_locked  -- BOOLEAN, TRUE = artisan fields protected from automated overwrite
 -- Smart crop (computed by cron/backfill, auto-nulled by trigger when images change)
 focal_x, focal_y  -- REAL, 0-100% crop center for object-position CSS. NULL = center.
+-- Bidirectional translation cache (JP→EN: title_en/description_en, EN→JP: title_ja/description_ja)
+title_ja, description_ja  -- TEXT, cached Japanese translations for EN-source listings
 ```
 
 **price_history**
@@ -581,14 +583,20 @@ Browse API: SELECT focal_x, focal_y → VirtualListingGrid computes focalPositio
 UI chrome (labels, buttons, nav) uses the `useLocale()` hook and `t()` function from `LocaleContext.tsx` with ~1090 keys across `en.json` and `ja.json`. **Listing data** (titles, descriptions, artisan names) is also locale-aware:
 
 **Behavior by locale:**
-- **JA locale**: Shows original Japanese data by default — `listing.title`, `listing.description`, kanji smith/maker names. Translation toggle ("翻訳を表示") reveals English version.
+- **JA locale**: Shows original Japanese data by default for JP-source listings. For EN-source listings (international dealers), shows `title_ja`/`description_ja` (auto-translated). Translation toggle ("翻訳を表示") reveals English version.
 - **EN locale**: Shows English translations by default — `listing.title_en`, `listing.description_en`, romanized names. "Show original" toggle reveals Japanese.
 
+**Bidirectional translation (`/api/translate`):**
+- Auto-detects direction from source text: Japanese → EN (`title_en`/`description_en`), English → JP (`title_ja`/`description_ja`)
+- Model: `google/gemini-3-flash-preview` (via OpenRouter)
+- EN→JP prompts use natural nihonto terminology in kanji (銘, 無銘, 長さ, 反り, 赤銅, 四分一)
+- Shared `containsJapanese()` utility in `src/lib/text/japanese.ts` (single source of truth for JAPANESE_REGEX)
+
 **How it works:**
-1. **TranslatedTitle** — JA shows `title`, EN shows `title_en` (auto-translates via `/api/translate` if missing)
-2. **TranslatedDescription** — JA defaults `showOriginal=true`, EN defaults to translation. Toggle labels localized.
+1. **TranslatedTitle** — JA shows `title_ja` (cached JP translation) for EN-source listings, falls back to `title`. EN shows `title_en` (auto-translates via `/api/translate` if missing). Both directions auto-fetch on demand.
+2. **TranslatedDescription** — Bidirectional: JA locale auto-fetches JP translation for EN-source listings; EN locale auto-fetches EN translation for JP-source listings. Toggle labels localized.
 3. **MetadataGrid `getArtisanInfo(listing, locale)`** — JA returns kanji smith/maker/school directly; EN romanizes via `title_en` extraction, filters out Japanese-only names. Also localizes `mei_type` via `td('meiType', ...)` → "Signed"/"在銘".
-4. **ListingCard** — `cleanedTitle` uses `title_en` for EN locale, `title` for JA.
+4. **ListingCard** — `cleanedTitle` uses `title_en` for EN locale, `title_ja` for JA locale (if available), falls back to `title`.
 5. **QuickViewContent** — Shows `artisan_name_kanji` for JA locale, `artisan_display_name` for EN.
 
 **i18n keys for listing data:**
@@ -606,6 +614,8 @@ UI chrome (labels, buttons, nav) uses the `useLocale()` hook and `t()` function 
 **Key files:**
 | Component | Location |
 |-----------|----------|
+| Translate API (bidirectional) | `src/app/api/translate/route.ts` |
+| `containsJapanese()` utility | `src/lib/text/japanese.ts` |
 | TranslatedTitle | `src/components/listing/TranslatedTitle.tsx` |
 | TranslatedDescription | `src/components/listing/TranslatedDescription.tsx` |
 | MetadataGrid (`getArtisanInfo`) | `src/components/listing/MetadataGrid.tsx` |
@@ -614,7 +624,8 @@ UI chrome (labels, buttons, nav) uses the `useLocale()` hook and `t()` function 
 | Locale context | `src/i18n/LocaleContext.tsx` |
 | EN strings | `src/i18n/locales/en.json` |
 | JA strings | `src/i18n/locales/ja.json` |
-| Tests (57) | `tests/lib/listing-data-localization.test.ts`, `tests/components/listing/TranslatedTitle.test.tsx`, `tests/components/listing/TranslatedDescription.test.tsx`, `tests/components/listing/listing-data-locale.test.tsx`, `tests/components/listing/MetadataGrid-locale.test.tsx` |
+| DB migration | `supabase/migrations/083_ja_translation_columns.sql` |
+| Tests (57+41) | `tests/lib/listing-data-localization.test.ts`, `tests/components/listing/TranslatedTitle.test.tsx`, `tests/components/listing/TranslatedDescription.test.tsx`, `tests/components/listing/listing-data-locale.test.tsx`, `tests/components/listing/MetadataGrid-locale.test.tsx`, `tests/api/translate.test.ts` |
 
 ### Japanese UX Tuning (Locale-Conditional)
 

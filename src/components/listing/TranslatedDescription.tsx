@@ -14,8 +14,7 @@ interface TranslatedDescriptionProps {
   maxLines?: number;
 }
 
-// Japanese character detection regex
-const JAPANESE_REGEX = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/;
+import { containsJapanese } from '@/lib/text/japanese';
 
 // =============================================================================
 // COMPONENT
@@ -27,9 +26,23 @@ export function TranslatedDescription({
   maxLines = 6,
 }: TranslatedDescriptionProps) {
   const { t, locale } = useLocale();
-  const [translation, setTranslation] = useState<string | null>(listing.description_en || null);
+
+  // Check if description has Japanese text
+  const hasJapanese = listing.description ? containsJapanese(listing.description) : false;
+
+  // Initialize translation state based on locale and direction
+  const getInitialTranslation = useCallback(() => {
+    if (locale === 'ja' && !hasJapanese) {
+      // EN→JP: use cached JP translation
+      return listing.description_ja || null;
+    }
+    // JP→EN: use cached EN translation
+    return listing.description_en || null;
+  }, [locale, hasJapanese, listing.description_en, listing.description_ja]);
+
+  const [translation, setTranslation] = useState<string | null>(getInitialTranslation);
   const [isLoading, setIsLoading] = useState(false);
-  // JA locale: default to showing original (Japanese) text
+  // JA locale: default to showing original text
   // EN locale: default to showing translation
   const [showOriginal, setShowOriginal] = useState(locale === 'ja');
   const [error, setError] = useState<string | null>(null);
@@ -37,12 +50,14 @@ export function TranslatedDescription({
   const [isTruncated, setIsTruncated] = useState(false);
   const textRef = useRef<HTMLParagraphElement>(null);
 
-  // Check if description has Japanese text
-  const hasJapanese = listing.description ? JAPANESE_REGEX.test(listing.description) : false;
-
-  // Only fetch translation in EN locale when needed
+  // Fetch translation when needed (both directions)
   const fetchTranslation = useCallback(async () => {
-    if (!listing.description || translation || !hasJapanese || locale === 'ja') return;
+    if (!listing.description || translation) return;
+
+    // EN locale: only fetch if source is Japanese
+    if (locale === 'en' && !hasJapanese) return;
+    // JA locale: only fetch if source is English
+    if (locale === 'ja' && hasJapanese) return;
 
     setIsLoading(true);
     setError(null);
@@ -69,19 +84,23 @@ export function TranslatedDescription({
     }
   }, [listing.id, listing.description, translation, hasJapanese, locale]);
 
-  // Trigger translation on mount if needed (EN locale only)
+  // Trigger translation on mount if needed (both directions)
   useEffect(() => {
     if (locale === 'en' && listing.description && hasJapanese && !listing.description_en) {
       fetchTranslation();
+    } else if (locale === 'ja' && listing.description && !hasJapanese && !listing.description_ja) {
+      fetchTranslation();
     }
-  }, [locale, listing.description, listing.description_en, hasJapanese, fetchTranslation]);
+  }, [locale, listing.description, listing.description_en, listing.description_ja, hasJapanese, fetchTranslation]);
 
-  // Sync translation state when listing.description_en becomes available
+  // Sync translation state when cached translation becomes available
   useEffect(() => {
-    if (listing.description_en && !translation) {
+    if (locale === 'ja' && !hasJapanese && listing.description_ja && !translation) {
+      setTranslation(listing.description_ja);
+    } else if (listing.description_en && !translation) {
       setTranslation(listing.description_en);
     }
-  }, [listing.description_en, translation]);
+  }, [locale, hasJapanese, listing.description_en, listing.description_ja, translation]);
 
   // Reset showOriginal when locale changes
   useEffect(() => {
@@ -128,7 +147,7 @@ export function TranslatedDescription({
           {t('listing.description')}
         </h3>
         {/* Show toggle only if we have both original and translation */}
-        {hasJapanese && translation && translation !== listing.description && (
+        {translation && translation !== listing.description && (
           <button
             type="button"
             onClick={() => setShowOriginal(!showOriginal)}

@@ -40,6 +40,7 @@ interface ListingWithDealer {
   url: string;
   title: string;
   title_en: string | null;
+  title_ja: string | null;
   item_type: string | null;
   item_category: string | null;
   price_value: number | null;
@@ -65,6 +66,7 @@ interface ListingWithDealer {
   tosogu_material: string | null;
   description: string | null;
   description_en: string | null;
+  description_ja: string | null;
   setsumei_image_url: string | null;
   setsumei_text_en: string | null;
   setsumei_text_ja: string | null;
@@ -105,6 +107,7 @@ export interface EnrichedListingDetail {
   url: string;
   title: string;
   title_en: string | null;
+  title_ja: string | null;
   item_type: string | null;
   item_category: string | null;
   price_value: number | null;
@@ -131,6 +134,7 @@ export interface EnrichedListingDetail {
   tosogu_material: string | null;
   description: string | null;
   description_en: string | null;
+  description_ja: string | null;
   setsumei_image_url: string | null;
   setsumei_text_en: string | null;
   setsumei_text_ja: string | null;
@@ -173,6 +177,7 @@ const LISTING_SELECT = `
   url,
   title,
   title_en,
+  title_ja,
   item_type,
   item_category,
   price_value,
@@ -198,6 +203,7 @@ const LISTING_SELECT = `
   tosogu_material,
   description,
   description_en,
+  description_ja,
   setsumei_image_url,
   setsumei_text_en,
   setsumei_text_ja,
@@ -333,6 +339,7 @@ export async function getListingDetail(
     url: typedListing.url,
     title: typedListing.title,
     title_en: typedListing.title_en,
+    title_ja: typedListing.title_ja,
     item_type: typedListing.item_type,
     item_category: typedListing.item_category,
     price_value: priceValue,
@@ -359,6 +366,7 @@ export async function getListingDetail(
     tosogu_material: typedListing.tosogu_material,
     description: typedListing.description,
     description_en: typedListing.description_en,
+    description_ja: typedListing.description_ja,
     setsumei_image_url: typedListing.setsumei_image_url,
     setsumei_text_en: typedListing.setsumei_text_en,
     setsumei_text_ja: typedListing.setsumei_text_ja,

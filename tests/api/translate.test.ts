@@ -8,6 +8,7 @@
  * - New translations are fetched and cached properly
  * - Error handling works correctly
  * - Edge cases are handled (no Japanese, empty content, etc.)
+ * - Bidirectional translation: JP→EN and EN→JP
  *
  * Uses vitest with mocking - no live server required.
  */
@@ -165,8 +166,10 @@ describe('Translate API - Service Client Usage', () => {
       id: 123,
       title: '日本刀 katana',
       title_en: null,
+      title_ja: null,
       description: null,
       description_en: null,
+      description_ja: null,
       item_type: 'katana',
     };
 
@@ -217,10 +220,14 @@ describe('Translate API - Input Validation', () => {
       id: 123,
       title: 'English title only',
       title_en: null,
+      title_ja: null,
       description: null,
       description_en: null,
+      description_ja: null,
       item_type: 'katana',
     };
+
+    vi.stubEnv('OPENROUTER_API_KEY', 'test-api-key');
 
     const request = createMockRequest({ listingId: 123, type: 'title' });
     const response = await POST(request as never);
@@ -233,10 +240,14 @@ describe('Translate API - Input Validation', () => {
       id: 123,
       title: null,
       title_en: null,
+      title_ja: null,
       description: 'English description only',
       description_en: null,
+      description_ja: null,
       item_type: 'katana',
     };
+
+    vi.stubEnv('OPENROUTER_API_KEY', 'test-api-key');
 
     const request = createMockRequest({ listingId: 123, type: 'description' });
     const response = await POST(request as never);
@@ -249,8 +260,10 @@ describe('Translate API - Input Validation', () => {
       id: 123,
       title: null,
       title_en: null,
+      title_ja: null,
       description: null,
       description_en: null,
+      description_ja: null,
       item_type: 'katana',
     };
 
@@ -284,8 +297,10 @@ describe('Translate API - Listing Lookup', () => {
       id: 123,
       title: 'Test',
       title_en: 'Test',
+      title_ja: null,
       description: null,
       description_en: null,
+      description_ja: null,
       item_type: 'katana',
     };
 
@@ -296,24 +311,28 @@ describe('Translate API - Listing Lookup', () => {
     const selectCall = supabaseTracker.selectCalls[0];
     expect(selectCall.columns).toContain('title');
     expect(selectCall.columns).toContain('title_en');
+    expect(selectCall.columns).toContain('title_ja');
     expect(selectCall.columns).toContain('description');
     expect(selectCall.columns).toContain('description_en');
+    expect(selectCall.columns).toContain('description_ja');
     expect(selectCall.columns).toContain('item_type');
   });
 });
 
 // =============================================================================
-// CACHING TESTS
+// CACHING TESTS (JP→EN)
 // =============================================================================
 
-describe('Translate API - Caching Behavior', () => {
+describe('Translate API - Caching Behavior (JP→EN)', () => {
   it('returns cached title_en without calling OpenRouter', async () => {
     mockListingData = {
       id: 123,
       title: '日本刀',
       title_en: 'Cached Japanese Sword',
+      title_ja: null,
       description: null,
       description_en: null,
+      description_ja: null,
       item_type: 'katana',
     };
 
@@ -335,8 +354,10 @@ describe('Translate API - Caching Behavior', () => {
       id: 123,
       title: null,
       title_en: null,
+      title_ja: null,
       description: '日本刀の説明',
       description_en: 'Cached sword description',
+      description_ja: null,
       item_type: 'katana',
     };
 
@@ -353,13 +374,15 @@ describe('Translate API - Caching Behavior', () => {
     expect(openRouterCalls.length).toBe(0);
   });
 
-  it('stores new translation in database after OpenRouter call', async () => {
+  it('stores new JP→EN translation in database after OpenRouter call', async () => {
     mockListingData = {
       id: 123,
       title: '日本刀',
       title_en: null,
+      title_ja: null,
       description: null,
       description_en: null,
+      description_ja: null,
       item_type: 'katana',
     };
 
@@ -376,24 +399,84 @@ describe('Translate API - Caching Behavior', () => {
     const openRouterCalls = fetchCalls.filter(c => c.url.includes('openrouter'));
     expect(openRouterCalls.length).toBe(1);
 
-    // Should have attempted to update the database
+    // Should have attempted to update the database with title_en
     expect(supabaseTracker.updateCalls.length).toBe(1);
     expect(supabaseTracker.updateCalls[0].data).toHaveProperty('title_en');
   });
 });
 
 // =============================================================================
-// NO JAPANESE TEXT TESTS
+// EN→JP TRANSLATION TESTS (Bidirectional)
 // =============================================================================
 
-describe('Translate API - No Japanese Text', () => {
-  it('stores English-only title as title_en without calling OpenRouter', async () => {
+describe('Translate API - EN→JP Translation', () => {
+  it('translates English-only title to Japanese via OpenRouter', async () => {
     mockListingData = {
       id: 123,
       title: 'Antique Katana Blade',
       title_en: null,
+      title_ja: null,
       description: null,
       description_en: null,
+      description_ja: null,
+      item_type: 'katana',
+    };
+
+    vi.stubEnv('OPENROUTER_API_KEY', 'test-api-key');
+
+    const request = createMockRequest({ listingId: 123, type: 'title' });
+    const response = await POST(request as never);
+
+    expect(response.status).toBe(200);
+    const json = await response.json();
+    expect(json.translation).toBe('Translated text from OpenRouter');
+    expect(json.cached).toBe(false);
+
+    // Should have called OpenRouter (EN→JP direction)
+    const openRouterCalls = fetchCalls.filter(c => c.url.includes('openrouter'));
+    expect(openRouterCalls.length).toBe(1);
+
+    // Should cache to title_ja column
+    expect(supabaseTracker.updateCalls.length).toBe(1);
+    expect(supabaseTracker.updateCalls[0].data).toHaveProperty('title_ja');
+  });
+
+  it('translates English-only description to Japanese via OpenRouter', async () => {
+    mockListingData = {
+      id: 123,
+      title: null,
+      title_en: null,
+      title_ja: null,
+      description: 'A fine katana blade by Masamune with excellent hamon.',
+      description_en: null,
+      description_ja: null,
+      item_type: 'katana',
+    };
+
+    vi.stubEnv('OPENROUTER_API_KEY', 'test-api-key');
+
+    const request = createMockRequest({ listingId: 123, type: 'description' });
+    const response = await POST(request as never);
+
+    expect(response.status).toBe(200);
+    const json = await response.json();
+    expect(json.translation).toBe('Translated text from OpenRouter');
+    expect(json.cached).toBe(false);
+
+    // Should cache to description_ja column
+    expect(supabaseTracker.updateCalls.length).toBe(1);
+    expect(supabaseTracker.updateCalls[0].data).toHaveProperty('description_ja');
+  });
+
+  it('returns cached title_ja without calling OpenRouter', async () => {
+    mockListingData = {
+      id: 123,
+      title: 'Antique Katana Blade',
+      title_en: null,
+      title_ja: '骨董刀身',
+      description: null,
+      description_en: null,
+      description_ja: null,
       item_type: 'katana',
     };
 
@@ -402,38 +485,89 @@ describe('Translate API - No Japanese Text', () => {
 
     expect(response.status).toBe(200);
     const json = await response.json();
-    expect(json.translation).toBe('Antique Katana Blade');
-    expect(json.cached).toBe(false);
-    expect(json.reason).toBe('no_japanese');
+    expect(json.translation).toBe('骨董刀身');
+    expect(json.cached).toBe(true);
 
     // Should NOT have called OpenRouter
     const openRouterCalls = fetchCalls.filter(c => c.url.includes('openrouter'));
     expect(openRouterCalls.length).toBe(0);
-
-    // Should still update database to cache the "no translation needed" state
-    expect(supabaseTracker.updateCalls.length).toBe(1);
   });
 
-  it('handles mixed English/Romaji text without Japanese characters', async () => {
+  it('returns cached description_ja without calling OpenRouter', async () => {
+    mockListingData = {
+      id: 123,
+      title: null,
+      title_en: null,
+      title_ja: null,
+      description: 'Fine katana blade.',
+      description_en: null,
+      description_ja: '素晴らしい刀身。',
+      item_type: 'katana',
+    };
+
+    const request = createMockRequest({ listingId: 123, type: 'description' });
+    const response = await POST(request as never);
+
+    expect(response.status).toBe(200);
+    const json = await response.json();
+    expect(json.translation).toBe('素晴らしい刀身。');
+    expect(json.cached).toBe(true);
+
+    // Should NOT have called OpenRouter
+    const openRouterCalls = fetchCalls.filter(c => c.url.includes('openrouter'));
+    expect(openRouterCalls.length).toBe(0);
+  });
+
+  it('sends EN→JP prompt for English title', async () => {
     mockListingData = {
       id: 123,
       title: 'Katana by Masamune - Mumei',
       title_en: null,
+      title_ja: null,
       description: null,
       description_en: null,
+      description_ja: null,
       item_type: 'katana',
     };
 
+    vi.stubEnv('OPENROUTER_API_KEY', 'test-api-key');
+
     const request = createMockRequest({ listingId: 123, type: 'title' });
-    const response = await POST(request as never);
+    await POST(request as never);
 
-    expect(response.status).toBe(200);
-    const json = await response.json();
-    expect(json.reason).toBe('no_japanese');
+    const openRouterCall = fetchCalls.find(c => c.url.includes('openrouter'));
+    expect(openRouterCall).toBeDefined();
 
-    // Should NOT have called OpenRouter
-    const openRouterCalls = fetchCalls.filter(c => c.url.includes('openrouter'));
-    expect(openRouterCalls.length).toBe(0);
+    const body = JSON.parse(openRouterCall!.options.body as string);
+    // EN→JP prompt should mention translating to Japanese
+    expect(body.messages[0].content).toContain('to natural Japanese');
+    expect(body.messages[0].content).toContain('kanji');
+  });
+
+  it('sends EN→JP prompt for English description', async () => {
+    mockListingData = {
+      id: 123,
+      title: null,
+      title_en: null,
+      title_ja: null,
+      description: 'A beautiful katana blade with fine temper.',
+      description_en: null,
+      description_ja: null,
+      item_type: 'katana',
+    };
+
+    vi.stubEnv('OPENROUTER_API_KEY', 'test-api-key');
+
+    const request = createMockRequest({ listingId: 123, type: 'description' });
+    await POST(request as never);
+
+    const openRouterCall = fetchCalls.find(c => c.url.includes('openrouter'));
+    expect(openRouterCall).toBeDefined();
+
+    const body = JSON.parse(openRouterCall!.options.body as string);
+    // EN→JP description prompt should mention Japanese dealer style
+    expect(body.messages[0].content).toContain('to natural Japanese');
+    expect(body.messages[0].content).toContain('銘');
   });
 });
 
@@ -447,8 +581,10 @@ describe('Translate API - Empty Content', () => {
       id: 123,
       title: null,
       title_en: null,
+      title_ja: null,
       description: 'Some description',
       description_en: null,
+      description_ja: null,
       item_type: 'katana',
     };
 
@@ -467,8 +603,10 @@ describe('Translate API - Empty Content', () => {
       id: 123,
       title: 'Some title',
       title_en: null,
+      title_ja: null,
       description: null,
       description_en: null,
+      description_ja: null,
       item_type: 'katana',
     };
 
@@ -493,8 +631,10 @@ describe('Translate API - OpenRouter Integration', () => {
       id: 123,
       title: '日本刀',
       title_en: null,
+      title_ja: null,
       description: null,
       description_en: null,
+      description_ja: null,
       item_type: 'katana',
     };
 
@@ -515,8 +655,10 @@ describe('Translate API - OpenRouter Integration', () => {
       id: 123,
       title: '日本刀',
       title_en: null,
+      title_ja: null,
       description: null,
       description_en: null,
+      description_ja: null,
       item_type: 'katana',
     };
 
@@ -541,8 +683,10 @@ describe('Translate API - OpenRouter Integration', () => {
       id: 123,
       title: '日本刀',
       title_en: null,
+      title_ja: null,
       description: null,
       description_en: null,
+      description_ja: null,
       item_type: 'katana',
     };
 
@@ -569,13 +713,15 @@ describe('Translate API - OpenRouter Integration', () => {
     expect(json.error).toBe('Empty translation');
   });
 
-  it('sends correct prompt for sword items', async () => {
+  it('sends correct JP→EN prompt for sword items', async () => {
     mockListingData = {
       id: 123,
       title: '日本刀',
       title_en: null,
+      title_ja: null,
       description: null,
       description_en: null,
+      description_ja: null,
       item_type: 'katana',
     };
 
@@ -590,15 +736,19 @@ describe('Translate API - OpenRouter Integration', () => {
     const body = JSON.parse(openRouterCall!.options.body as string);
     expect(body.messages[0].content).toContain('Japanese sword');
     expect(body.messages[0].content).toContain('nihonto');
+    // JP→EN prompt should mention translating to English
+    expect(body.messages[0].content).toContain('to English');
   });
 
-  it('sends correct prompt for tosogu items', async () => {
+  it('sends correct JP→EN prompt for tosogu items', async () => {
     mockListingData = {
       id: 123,
       title: '鍔',
       title_en: null,
+      title_ja: null,
       description: null,
       description_en: null,
+      description_ja: null,
       item_type: 'tsuba',
     };
 
@@ -620,8 +770,10 @@ describe('Translate API - OpenRouter Integration', () => {
       id: 123,
       title: '日本刀',
       title_en: null,
+      title_ja: null,
       description: null,
       description_en: null,
+      description_ja: null,
       item_type: 'katana',
     };
 
@@ -640,8 +792,10 @@ describe('Translate API - OpenRouter Integration', () => {
       id: 123,
       title: null,
       title_en: null,
+      title_ja: null,
       description: '日本刀の説明文',
       description_en: null,
+      description_ja: null,
       item_type: 'katana',
     };
 
@@ -653,6 +807,28 @@ describe('Translate API - OpenRouter Integration', () => {
     const openRouterCall = fetchCalls.find(c => c.url.includes('openrouter'));
     const body = JSON.parse(openRouterCall!.options.body as string);
     expect(body.max_tokens).toBe(2000);
+  });
+
+  it('uses gemini-3-flash-preview model', async () => {
+    mockListingData = {
+      id: 123,
+      title: '日本刀',
+      title_en: null,
+      title_ja: null,
+      description: null,
+      description_en: null,
+      description_ja: null,
+      item_type: 'katana',
+    };
+
+    vi.stubEnv('OPENROUTER_API_KEY', 'test-api-key');
+
+    const request = createMockRequest({ listingId: 123, type: 'title' });
+    await POST(request as never);
+
+    const openRouterCall = fetchCalls.find(c => c.url.includes('openrouter'));
+    const body = JSON.parse(openRouterCall!.options.body as string);
+    expect(body.model).toBe('google/gemini-3-flash-preview');
   });
 });
 
@@ -666,8 +842,10 @@ describe('Translate API - Database Update Errors', () => {
       id: 123,
       title: '日本刀',
       title_en: null,
+      title_ja: null,
       description: null,
       description_en: null,
+      description_ja: null,
       item_type: 'katana',
     };
     mockUpdateError = new Error('Database update failed');
@@ -695,8 +873,10 @@ describe('Translate API - Japanese Character Detection', () => {
       id: 123,
       title: 'かたな',
       title_en: null,
+      title_ja: null,
       description: null,
       description_en: null,
+      description_ja: null,
       item_type: 'katana',
     };
 
@@ -705,7 +885,7 @@ describe('Translate API - Japanese Character Detection', () => {
     const request = createMockRequest({ listingId: 123, type: 'title' });
     await POST(request as never);
 
-    // Should have called OpenRouter (Japanese detected)
+    // Should have called OpenRouter (Japanese detected → JP→EN)
     const openRouterCalls = fetchCalls.filter(c => c.url.includes('openrouter'));
     expect(openRouterCalls.length).toBe(1);
   });
@@ -715,8 +895,10 @@ describe('Translate API - Japanese Character Detection', () => {
       id: 123,
       title: 'カタナ',
       title_en: null,
+      title_ja: null,
       description: null,
       description_en: null,
+      description_ja: null,
       item_type: 'katana',
     };
 
@@ -725,7 +907,7 @@ describe('Translate API - Japanese Character Detection', () => {
     const request = createMockRequest({ listingId: 123, type: 'title' });
     await POST(request as never);
 
-    // Should have called OpenRouter (Japanese detected)
+    // Should have called OpenRouter (Japanese detected → JP→EN)
     const openRouterCalls = fetchCalls.filter(c => c.url.includes('openrouter'));
     expect(openRouterCalls.length).toBe(1);
   });
@@ -735,8 +917,10 @@ describe('Translate API - Japanese Character Detection', () => {
       id: 123,
       title: '日本刀',
       title_en: null,
+      title_ja: null,
       description: null,
       description_en: null,
+      description_ja: null,
       item_type: 'katana',
     };
 
@@ -745,7 +929,7 @@ describe('Translate API - Japanese Character Detection', () => {
     const request = createMockRequest({ listingId: 123, type: 'title' });
     await POST(request as never);
 
-    // Should have called OpenRouter (Japanese detected)
+    // Should have called OpenRouter (Japanese detected → JP→EN)
     const openRouterCalls = fetchCalls.filter(c => c.url.includes('openrouter'));
     expect(openRouterCalls.length).toBe(1);
   });
@@ -755,8 +939,10 @@ describe('Translate API - Japanese Character Detection', () => {
       id: 123,
       title: 'Katana 日本刀 Blade',
       title_en: null,
+      title_ja: null,
       description: null,
       description_en: null,
+      description_ja: null,
       item_type: 'katana',
     };
 
@@ -765,7 +951,34 @@ describe('Translate API - Japanese Character Detection', () => {
     const request = createMockRequest({ listingId: 123, type: 'title' });
     await POST(request as never);
 
-    // Should have called OpenRouter (Japanese detected)
+    // Should have called OpenRouter (Japanese detected → JP→EN)
+    const openRouterCalls = fetchCalls.filter(c => c.url.includes('openrouter'));
+    expect(openRouterCalls.length).toBe(1);
+  });
+
+  it('English-only text triggers EN→JP translation (not no_japanese)', async () => {
+    mockListingData = {
+      id: 123,
+      title: 'Katana by Masamune',
+      title_en: null,
+      title_ja: null,
+      description: null,
+      description_en: null,
+      description_ja: null,
+      item_type: 'katana',
+    };
+
+    vi.stubEnv('OPENROUTER_API_KEY', 'test-api-key');
+
+    const request = createMockRequest({ listingId: 123, type: 'title' });
+    const response = await POST(request as never);
+
+    const json = await response.json();
+    // Should NOT return 'no_japanese' — now triggers EN→JP translation
+    expect(json.reason).toBeUndefined();
+    expect(json.cached).toBe(false);
+
+    // Should have called OpenRouter for EN→JP
     const openRouterCalls = fetchCalls.filter(c => c.url.includes('openrouter'));
     expect(openRouterCalls.length).toBe(1);
   });
@@ -779,10 +992,12 @@ describe('Translate API - Rate Limiting', () => {
   it('returns 429 when rate limit is exceeded', async () => {
     mockListingData = {
       id: 123,
-      title: 'English title',
+      title: '日本刀',
       title_en: 'Cached',
+      title_ja: null,
       description: null,
       description_en: null,
+      description_ja: null,
       item_type: 'katana',
     };
 
@@ -826,8 +1041,10 @@ describe('Translate API - Tosogu Detection', () => {
         id: 123,
         title: '鍔',
         title_en: null,
+        title_ja: null,
         description: null,
         description_en: null,
+        description_ja: null,
         item_type: itemType,
       };
 

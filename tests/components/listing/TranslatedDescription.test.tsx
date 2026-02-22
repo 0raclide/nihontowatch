@@ -183,12 +183,29 @@ describe('TranslatedDescription', () => {
       expect(mockFetch).not.toHaveBeenCalled();
     });
 
-    it('shows English description as-is when no Japanese detected', () => {
+    it('fetches EN→JP translation for English description without cached description_ja', () => {
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: async () => ({ translation: 'ビゼンの優れた作例。' }),
+      });
       const listing = baseListing({
         description: 'A fine example of Bizen workmanship.',
       });
       render(<TranslatedDescription listing={listing} />);
+      expect(mockFetch).toHaveBeenCalledWith('/api/translate', expect.objectContaining({
+        method: 'POST',
+      }));
+    });
+
+    it('shows cached description_ja immediately without fetch', () => {
+      const listing = baseListing({
+        description: 'A fine example of Bizen workmanship.',
+        description_ja: 'ビゼンの優れた作例。',
+      });
+      render(<TranslatedDescription listing={listing} />);
+      // showOriginal defaults to true in JA locale → shows original English
       expect(screen.getByText('A fine example of Bizen workmanship.')).toBeInTheDocument();
+      expect(mockFetch).not.toHaveBeenCalled();
     });
   });
 
