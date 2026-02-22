@@ -27,6 +27,8 @@ interface UseNotificationsReturn {
   unreadCount: number;
   hasSavedSearches: boolean;
   isLoading: boolean;
+  /** ISO timestamp of when user last marked notifications as read (null = never) */
+  readSince: string | null;
   markAsRead: () => void;
   refresh: () => Promise<void>;
 }
@@ -40,6 +42,9 @@ export function useNotifications(): UseNotificationsReturn {
   const [unreadCount, setUnreadCount] = useState(0);
   const [hasSavedSearches, setHasSavedSearches] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [readSince, setReadSince] = useState<string | null>(() =>
+    typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null
+  );
   const [didInitialFetch, setDidInitialFetch] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const hasSavedSearchesRef = useRef(false);
@@ -71,7 +76,9 @@ export function useNotifications(): UseNotificationsReturn {
   }, [user]);
 
   const markAsRead = useCallback(() => {
-    localStorage.setItem(STORAGE_KEY, new Date().toISOString());
+    const now = new Date().toISOString();
+    localStorage.setItem(STORAGE_KEY, now);
+    setReadSince(now);
     setUnreadCount(0);
   }, []);
 
@@ -124,6 +131,7 @@ export function useNotifications(): UseNotificationsReturn {
     unreadCount,
     hasSavedSearches,
     isLoading,
+    readSince,
     markAsRead,
     refresh: fetchNotifications,
   };

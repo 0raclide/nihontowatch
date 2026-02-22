@@ -26,9 +26,11 @@ export function NotificationBell() {
   const { t } = useLocale();
   const router = useRouter();
   const quickView = useQuickViewOptional();
-  const { notifications, unreadCount, hasSavedSearches, markAsRead } = useNotifications();
+  const { notifications, unreadCount, hasSavedSearches, readSince, markAsRead } = useNotifications();
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  // Snapshot readSince when dropdown opens so unread styling persists during this session
+  const readSinceSnapshotRef = useRef<string | null>(null);
 
   // Click outside to close
   useEffect(() => {
@@ -58,23 +60,18 @@ export function NotificationBell() {
 
   const handleBellClick = useCallback(() => {
     if (!user) {
-      // Navigate to /saved for non-logged-in users
       window.location.href = '/saved';
       return;
     }
-    setOpen((prev) => !prev);
-  }, [user]);
-
-  const handleOpenDropdown = useCallback(() => {
-    if (open && unreadCount > 0) {
-      markAsRead();
-    }
-  }, [open, unreadCount, markAsRead]);
-
-  // Mark as read when dropdown opens
-  useEffect(() => {
-    handleOpenDropdown();
-  }, [handleOpenDropdown]);
+    setOpen((prev) => {
+      if (!prev) {
+        // Opening: snapshot current readSince BEFORE marking as read
+        readSinceSnapshotRef.current = readSince;
+        if (unreadCount > 0) markAsRead();
+      }
+      return !prev;
+    });
+  }, [user, readSince, unreadCount, markAsRead]);
 
   // Open QuickView for a notification listing
   const handleListingClick = useCallback((listingId: number) => {
@@ -140,14 +137,19 @@ export function NotificationBell() {
             ) : (
               // State: Has notifications
               <div className="divide-y divide-border/50">
-                {notifications.slice(0, 5).map((notif) => (
-                  <NotificationItem
-                    key={notif.id}
-                    notification={notif}
-                    onListingClick={handleListingClick}
-                    t={t}
-                  />
-                ))}
+                {notifications.slice(0, 5).map((notif) => {
+                  const isUnread = !readSinceSnapshotRef.current ||
+                    new Date(notif.created_at) > new Date(readSinceSnapshotRef.current);
+                  return (
+                    <NotificationItem
+                      key={notif.id}
+                      notification={notif}
+                      isUnread={isUnread}
+                      onListingClick={handleListingClick}
+                      t={t}
+                    />
+                  );
+                })}
               </div>
             )}
           </div>
@@ -175,10 +177,12 @@ function EmptyState({ message }: { message: string }) {
 
 function NotificationItem({
   notification,
+  isUnread,
   onListingClick,
   t,
 }: {
   notification: Notification;
+  isUnread: boolean;
   onListingClick: (listingId: number) => void;
   t: (key: string, params?: Record<string, string | number>) => string;
 }) {
@@ -188,7 +192,9 @@ function NotificationItem({
   return (
     <button
       onClick={() => firstListingId ? onListingClick(firstListingId) : undefined}
-      className="flex gap-3 px-4 py-3 hover:bg-linen/50 transition-colors w-full text-left"
+      className={`flex gap-3 px-4 py-3 hover:bg-linen/50 transition-colors w-full text-left ${
+        isUnread ? 'bg-gold/[0.04] border-l-2 border-l-gold' : 'border-l-2 border-l-transparent opacity-70'
+      }`}
     >
       {/* Thumbnails */}
       <div className="flex shrink-0 -space-x-2">
@@ -226,7 +232,7 @@ function NotificationItem({
 
       {/* Text */}
       <div className="flex-1 min-w-0">
-        <p className="text-[12px] font-medium text-ink truncate">
+        <p className={`text-[12px] text-ink truncate ${isUnread ? 'font-semibold' : 'font-normal'}`}>
           {t('notifications.matchedSearch', { name: searchName })}
         </p>
         {notification.listings[0] && (
