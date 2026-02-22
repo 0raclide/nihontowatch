@@ -6,7 +6,14 @@ import { containsCJK } from '@/lib/search/cjkDetection';
 import { detectUrlQuery } from '@/lib/search/urlDetection';
 import { parseNumericFilters } from '@/lib/search/numericFilters';
 import { parseSemanticQuery, PROVINCE_VARIANTS } from '@/lib/search/semanticQueryParser';
-import { CACHE, PAGINATION, LISTING_FILTERS } from '@/lib/constants';
+import {
+  PAGINATION,
+  LISTING_FILTERS,
+  BROWSE_NIHONTO_TYPES,
+  BROWSE_TOSOGU_TYPES,
+  BROWSE_ARMOR_TYPES,
+  CERT_VARIANTS,
+} from '@/lib/constants';
 import { getArtisanNames, resolveArtisanCodesFromText } from '@/lib/supabase/yuhinkai';
 import { getArtisanDisplayName, getArtisanDisplayNameKanji, getArtisanAlias } from '@/lib/artisan/displayName';
 import { getArtisanTier } from '@/lib/artisan/tier';
@@ -50,45 +57,14 @@ interface BrowseParams {
   offset?: number;
 }
 
-// Item type categories for filtering
-const NIHONTO_TYPES = [
-  'katana', 'wakizashi', 'tanto', 'tachi', 'kodachi',
-  'naginata', 'naginata naoshi', 'naginata-naoshi',  // Support both formats
-  'yari', 'ken', 'daisho',
-];
-
-// Comprehensive tosogu types - includes all fittings and variants for database compatibility
-const TOSOGU_TYPES = [
-  'tsuba',
-  'fuchi-kashira', 'fuchi_kashira',  // fuchi+kashira set variants
-  'fuchi', 'kashira',  // individual pieces
-  'kozuka', 'kogatana',  // utility knife handle
-  'kogai',  // hair pick
-  'menuki',
-  'futatokoro',  // 2-piece set (kozuka + kogai)
-  'mitokoromono',  // 3-piece set (kozuka + kogai + menuki)
-  'koshirae',  // complete mounting
-  'tosogu',  // generic/unspecified fitting
-];
-
 // Artisan code pattern — used both for pre-scan (skip category filter) and in-query detection
 // Covers: standard (1-4 letters + 1-5 digits + optional suffix), NS-*, NC-*, tmp*, underscore
 const ARTISAN_CODE_PATTERN = /^[A-Z]{1,4}\d{1,5}(?:[.\-]\d)?[A-Za-z]?$|^NS-[A-Za-z]+(?:-[A-Za-z]+)*$|^NC-[A-Z]+\d+[A-Za-z]?$|^tmp[A-Z]{1,4}\d+[A-Za-z]?$|^[A-Z]+(?:_[A-Z]+)+\d+$/i;
 
-// Armor & accessories
-const ARMOR_TYPES = [
-  'armor', 'yoroi', 'gusoku',  // Full armor suits
-  'helmet', 'kabuto',  // Helmets
-  'menpo', 'mengu',  // Face masks
-  'kote',  // Gauntlets
-  'suneate',  // Shin guards
-  'do',  // Chest armor
-  // Firearms (grouped with armor as military equipment)
-  'tanegashima', 'hinawaju',  // Matchlock guns (火縄銃/種子島)
-];
-
-// Types to exclude from browse results (non-collectibles)
-const EXCLUDED_TYPES = ['stand', 'book', 'other'];
+// Aliases for shared constants (keep local names for minimal diff)
+const NIHONTO_TYPES = BROWSE_NIHONTO_TYPES;
+const TOSOGU_TYPES = BROWSE_TOSOGU_TYPES;
+const ARMOR_TYPES = BROWSE_ARMOR_TYPES;
 
 // Compute sold data with confidence indicator for sold items
 // Items with 0-3 days between first_seen and status_changed are treated as
@@ -210,15 +186,7 @@ function applyMinPriceFilter<T extends { or: (condition: string) => T }>(query: 
   return query;
 }
 
-// Certification variants mapping (for backward compatibility until data is normalized)
-const CERT_VARIANTS: Record<string, string[]> = {
-  'Juyo Bijutsuhin': ['Juyo Bijutsuhin', 'JuBi', 'jubi'], // Pre-war government designation
-  'Juyo': ['Juyo', 'juyo'],
-  'Tokuju': ['Tokuju', 'tokuju', 'Tokubetsu Juyo', 'tokubetsu_juyo'],
-  'TokuHozon': ['TokuHozon', 'Tokubetsu Hozon', 'tokubetsu_hozon'],
-  'Hozon': ['Hozon', 'hozon'],
-  'TokuKicho': ['TokuKicho', 'Tokubetsu Kicho', 'tokubetsu_kicho'],
-};
+// CERT_VARIANTS imported from @/lib/constants
 
 /**
  * Rerank listings to ensure no more than maxConsecutive items from the same dealer
@@ -305,7 +273,9 @@ export async function GET(request: NextRequest) {
         weight_g,
         description,
         description_en,
+        description_ja,
         title_en,
+        title_ja,
         setsumei_text_en,
         setsumei_text_ja,
         setsumei_metadata,

@@ -21,43 +21,20 @@ import {
 } from '@/lib/api/responses';
 import {
   computeScoreBreakdown,
-  computeFeaturedScore,
   imageCount,
   LISTING_SCORE_SELECT,
   type ListingScoreInput,
 } from '@/lib/featured/scoring';
-import { LISTING_FILTERS } from '@/lib/constants';
+import {
+  LISTING_FILTERS,
+  BROWSE_NIHONTO_TYPES,
+  BROWSE_TOSOGU_TYPES,
+  BROWSE_ARMOR_TYPES,
+  CERT_VARIANTS,
+} from '@/lib/constants';
 import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
-
-// Category → item types mapping (mirrors browse/route.ts)
-const NIHONTO_TYPES = [
-  'katana', 'wakizashi', 'tanto', 'tachi', 'kodachi',
-  'naginata', 'naginata naoshi', 'naginata-naoshi',
-  'yari', 'ken', 'daisho',
-];
-
-const TOSOGU_TYPES = [
-  'tsuba', 'fuchi-kashira', 'fuchi_kashira', 'fuchi', 'kashira',
-  'kozuka', 'kogatana', 'kogai', 'menuki',
-  'futatokoro', 'mitokoromono', 'koshirae', 'tosogu',
-];
-
-const ARMOR_TYPES = [
-  'armor', 'yoroi', 'gusoku', 'helmet', 'kabuto',
-  'menpo', 'mengu', 'kote', 'suneate', 'do',
-  'tanegashima', 'hinawaju',
-];
-
-const CERT_VARIANTS: Record<string, string[]> = {
-  'Juyo Bijutsuhin': ['Juyo Bijutsuhin', 'JuBi', 'jubi'],
-  'Juyo': ['Juyo', 'juyo'],
-  'Tokuju': ['Tokuju', 'tokuju', 'Tokubetsu Juyo', 'tokubetsu_juyo'],
-  'TokuHozon': ['TokuHozon', 'Tokubetsu Hozon', 'tokubetsu_hozon'],
-  'Hozon': ['Hozon', 'hozon'],
-  'TokuKicho': ['TokuKicho', 'Tokubetsu Kicho', 'tokubetsu_kicho'],
-};
 
 const HEAT_30_DAY_MS = 30 * 24 * 60 * 60 * 1000;
 
@@ -190,9 +167,9 @@ export async function GET(
         }
 
         // Category filter
-        const effectiveTypes = category === 'nihonto' ? NIHONTO_TYPES
-          : category === 'tosogu' ? TOSOGU_TYPES
-          : category === 'armor' ? ARMOR_TYPES
+        const effectiveTypes = category === 'nihonto' ? BROWSE_NIHONTO_TYPES
+          : category === 'tosogu' ? BROWSE_TOSOGU_TYPES
+          : category === 'armor' ? BROWSE_ARMOR_TYPES
           : undefined;
 
         if (effectiveTypes?.length) {

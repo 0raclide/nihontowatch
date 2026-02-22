@@ -211,6 +211,56 @@ export const MILITARY_TYPES = [
 ] as const;
 
 // =============================================================================
+// BROWSE FILTER ARRAYS
+// =============================================================================
+// Expanded type arrays that include all DB variant strings for ILIKE matching.
+// These are the single source of truth for category → item_type filtering.
+// Used by: browse API, score-breakdown API, saved-search matcher, semantic query parser.
+
+export const BROWSE_NIHONTO_TYPES = [
+  'katana', 'wakizashi', 'tanto', 'tachi', 'kodachi',
+  'naginata', 'naginata naoshi', 'naginata-naoshi',  // both delimiter variants
+  'yari', 'ken', 'daisho',
+  'sword',  // generic alias (used by semantic search)
+] as const;
+
+export const BROWSE_TOSOGU_TYPES = [
+  'tsuba',
+  'fuchi-kashira', 'fuchi_kashira',  // both delimiter variants
+  'fuchi', 'kashira',                 // individual pieces
+  'kozuka', 'kogatana',               // utility knife handle + alias
+  'kogai',
+  'menuki',
+  'futatokoro',                        // 2-piece set
+  'mitokoromono',                      // 3-piece set
+  'koshirae',                          // complete mounting
+  'tosogu',                            // generic fitting
+] as const;
+
+export const BROWSE_ARMOR_TYPES = [
+  'armor', 'yoroi', 'gusoku',         // full armor suits
+  'helmet', 'kabuto',                  // helmets
+  'menpo', 'mengu',                    // face masks
+  'kote', 'suneate', 'do',            // body armor components
+  'tanegashima', 'hinawaju',          // firearms (grouped as military equipment)
+] as const;
+
+// =============================================================================
+// CERTIFICATION VARIANTS
+// =============================================================================
+// Maps canonical cert keys to all variant names in the database.
+// Covers legacy/mixed-case values until data is fully normalized.
+
+export const CERT_VARIANTS: Record<string, string[]> = {
+  'Juyo Bijutsuhin': ['Juyo Bijutsuhin', 'JuBi', 'jubi'],
+  'Juyo': ['Juyo', 'juyo'],
+  'Tokuju': ['Tokuju', 'tokuju', 'Tokubetsu Juyo', 'tokubetsu_juyo'],
+  'TokuHozon': ['TokuHozon', 'Tokubetsu Hozon', 'tokubetsu_hozon'],
+  'Hozon': ['Hozon', 'hozon'],
+  'TokuKicho': ['TokuKicho', 'Tokubetsu Kicho', 'tokubetsu_kicho'],
+};
+
+// =============================================================================
 // CERTIFICATIONS
 // =============================================================================
 

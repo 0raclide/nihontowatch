@@ -17,6 +17,11 @@
  */
 
 import { normalizeSearchText } from './textNormalization';
+import {
+  BROWSE_NIHONTO_TYPES,
+  BROWSE_TOSOGU_TYPES,
+  BROWSE_ARMOR_TYPES,
+} from '@/lib/constants';
 
 // =============================================================================
 // TYPES
@@ -34,38 +39,12 @@ export interface SemanticFilters {
 }
 
 // =============================================================================
-// CATEGORY TYPE DEFINITIONS
+// CATEGORY TYPE DEFINITIONS (imported from shared constants)
 // =============================================================================
 
-/**
- * All nihonto (blade) types for category expansion.
- * Must stay in sync with NIHONTO_TYPES in /src/app/api/browse/route.ts
- */
-const NIHONTO_TYPES = [
-  'katana', 'wakizashi', 'tanto', 'tachi', 'naginata', 'yari', 'kodachi', 'ken', 'naginata naoshi', 'sword'
-];
-
-/**
- * All tosogu (fitting) types for category expansion.
- * Must stay in sync with TOSOGU_TYPES in /src/app/api/browse/route.ts
- */
-const TOSOGU_TYPES = [
-  'tsuba', 'fuchi-kashira', 'fuchi_kashira', 'fuchi', 'kashira',
-  'kozuka', 'kogatana', 'kogai', 'menuki', 'koshirae', 'tosogu', 'mitokoromono'
-];
-
-/**
- * All armor types for category expansion.
- * Must stay in sync with ARMOR_TYPES in /src/app/api/browse/route.ts
- */
-const ARMOR_TYPES = [
-  'armor', 'yoroi', 'gusoku',  // Full armor suits
-  'helmet', 'kabuto',  // Helmets
-  'menpo', 'mengu',  // Face masks
-  'kote',  // Gauntlets
-  'suneate',  // Shin guards
-  'do',  // Chest armor
-];
+const NIHONTO_TYPES: string[] = [...BROWSE_NIHONTO_TYPES];
+const TOSOGU_TYPES: string[] = [...BROWSE_TOSOGU_TYPES];
+const ARMOR_TYPES: string[] = [...BROWSE_ARMOR_TYPES];
 
 // =============================================================================
 // CATEGORY TERM MAPPINGS
@@ -76,7 +55,7 @@ const ARMOR_TYPES = [
  * When a user types "nihonto" or "tosogu", expand to ALL types in that category.
  * This ensures typing "tosogu" gives the same results as selecting the Tosogu filter.
  */
-const CATEGORY_TERMS: Record<string, string[]> = {
+const CATEGORY_TERMS: Record<string, readonly string[]> = {
   // Nihonto category terms
   'nihonto': NIHONTO_TYPES,
   'nihon-to': NIHONTO_TYPES,
@@ -565,7 +544,7 @@ export function getItemTypeKey(term: string): string | undefined {
  * getCategoryTypes('tosogu')  // ['tsuba', 'fuchi-kashira', ...]
  * getCategoryTypes('katana')  // undefined (not a category term)
  */
-export function getCategoryTypes(term: string): string[] | undefined {
+export function getCategoryTypes(term: string): readonly string[] | undefined {
   return CATEGORY_TERMS[normalizeSearchText(term)];
 }
 

@@ -4,57 +4,21 @@ import { normalizeSearchText, expandSearchAliases } from '@/lib/search';
 import { parseNumericFilters } from '@/lib/search/numericFilters';
 import { parseSemanticQuery } from '@/lib/search/semanticQueryParser';
 import { resolveArtisanCodesFromText } from '@/lib/supabase/yuhinkai';
-import { LISTING_FILTERS } from '@/lib/constants';
+import {
+  LISTING_FILTERS,
+  BROWSE_NIHONTO_TYPES,
+  BROWSE_TOSOGU_TYPES,
+  BROWSE_ARMOR_TYPES,
+  CERT_VARIANTS,
+} from '@/lib/constants';
 
 // Artisan code pattern (same as browse API) — detects codes like MAS590, NS-Ko-Bizen, etc.
 const ARTISAN_CODE_PATTERN = /^[A-Z]{1,4}\d{1,5}(?:[.\-]\d)?[A-Za-z]?$|^NS-[A-Za-z]+(?:-[A-Za-z]+)*$|^NC-[A-Z]+\d+[A-Za-z]?$|^tmp[A-Z]{1,4}\d+[A-Za-z]?$|^[A-Z]+(?:_[A-Z]+)+\d+$/i;
 
-// Item type categories
-const NIHONTO_TYPES = [
-  'katana',
-  'wakizashi',
-  'tanto',
-  'tachi',
-  'naginata',
-  'yari',
-  'kodachi',
-  'ken',
-  'naginata naoshi',
-  'sword',
-];
-
-const TOSOGU_TYPES = [
-  'tsuba',
-  'fuchi-kashira',
-  'fuchi_kashira',
-  'fuchi',
-  'kashira',
-  'kozuka',
-  'kogatana',
-  'kogai',
-  'menuki',
-  'koshirae',
-  'tosogu',
-  'mitokoromono',
-];
-
-const ARMOR_TYPES = [
-  'armor', 'yoroi', 'gusoku',
-  'helmet', 'kabuto',
-  'menpo', 'mengu',
-  'kote', 'suneate', 'do',
-  'tanegashima', 'hinawaju',
-];
-
-// Certification variants mapping
-const CERT_VARIANTS: Record<string, string[]> = {
-  'Juyo Bijutsuhin': ['Juyo Bijutsuhin', 'JuBi', 'jubi'], // Pre-war government designation
-  Juyo: ['Juyo', 'juyo'],
-  Tokuju: ['Tokuju', 'tokuju', 'Tokubetsu Juyo', 'tokubetsu_juyo'],
-  TokuHozon: ['TokuHozon', 'Tokubetsu Hozon', 'tokubetsu_hozon'],
-  Hozon: ['Hozon', 'hozon'],
-  TokuKicho: ['TokuKicho', 'Tokubetsu Kicho', 'tokubetsu_kicho'],
-};
+// Aliases for shared constants (keep local names for minimal diff)
+const NIHONTO_TYPES = BROWSE_NIHONTO_TYPES;
+const TOSOGU_TYPES = BROWSE_TOSOGU_TYPES;
+const ARMOR_TYPES = BROWSE_ARMOR_TYPES;
 
 // Status filter constants
 const STATUS_AVAILABLE = 'status.eq.available,is_available.eq.true';
