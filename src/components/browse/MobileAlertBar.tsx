@@ -36,7 +36,7 @@ export function MobileAlertBar({ criteria }: MobileAlertBarProps) {
     (criteria.schools?.length ?? 0) > 0 ||
     criteria.askOnly ||
     criteria.query ||
-    (!!criteria.category && criteria.category !== 'all') ||
+    !!criteria.category ||
     criteria.minPrice !== undefined ||
     criteria.maxPrice !== undefined;
 

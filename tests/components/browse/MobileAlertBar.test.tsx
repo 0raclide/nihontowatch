@@ -87,7 +87,6 @@ vi.mock('@/lib/tracking/ActivityTracker', () => ({
 
 const emptyCriteria: SavedSearchCriteria = {
   tab: 'available',
-  category: 'all',
   itemTypes: [],
   certifications: [],
   dealers: [],

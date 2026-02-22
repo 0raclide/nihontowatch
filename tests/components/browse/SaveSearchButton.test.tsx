@@ -58,7 +58,6 @@ vi.mock('@/components/browse/SaveSearchModal', () => ({
 
 const emptyCriteria: SavedSearchCriteria = {
   tab: 'available',
-  category: 'all',
   itemTypes: [],
   certifications: [],
   dealers: [],
