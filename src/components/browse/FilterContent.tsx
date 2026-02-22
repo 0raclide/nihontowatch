@@ -473,18 +473,18 @@ export function FilterContent({
       });
   }, [facets.certifications]);
 
-  // Group dealers by geography (Japan vs International)
+  // Group dealers by geography (Japan vs International), sorted alphabetically
   const japaneseDealers = useMemo(() =>
     facets.dealers
       .filter(d => !DEALER_COUNTRIES[d.name])
-      .sort((a, b) => b.count - a.count),
+      .sort((a, b) => (DEALER_LABELS[a.name] || a.name).localeCompare(DEALER_LABELS[b.name] || b.name)),
     [facets.dealers]
   );
 
   const internationalDealers = useMemo(() =>
     facets.dealers
       .filter(d => DEALER_COUNTRIES[d.name])
-      .sort((a, b) => b.count - a.count),
+      .sort((a, b) => (DEALER_LABELS[a.name] || a.name).localeCompare(DEALER_LABELS[b.name] || b.name)),
     [facets.dealers]
   );
 

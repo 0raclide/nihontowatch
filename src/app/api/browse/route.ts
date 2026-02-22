@@ -799,7 +799,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Dealer diversity: rerank featured sort to prevent long runs from one dealer
-    if (params.sort === 'featured') {
+    // Skip when exactly 1 dealer is selected — user explicitly chose that dealer
+    if (params.sort === 'featured' && (!params.dealers || params.dealers.length !== 1)) {
       enrichedListings = applyDealerDiversity(enrichedListings);
     }
 
