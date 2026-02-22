@@ -342,6 +342,7 @@ const PERIOD_LABELS: Record<string, string> = {
 // Dealer display name overrides
 const DEALER_LABELS: Record<string, string> = {
   'Nihonto': 'Nihonto.com',
+  'Nihonto Art EU': 'Nihonto Art',
   'Ginza_Seikodo': 'Ginza Seikodo',
   'ginza_seikodo': 'Ginza Seikodo',
   'Katana_Ando': 'Katana Ando',
@@ -354,8 +355,10 @@ const DEALER_COUNTRIES: Record<string, string> = {
   'Nihon Art': 'USA',
   'Nihonto': 'USA',
   'Nihonto Art': 'Canada',
+  'Nihonto Art EU': 'FRA',
   'Nihonto Australia': 'AU',
   'Nihontocraft': 'USA',
+  'SamuraiSword': 'USA',
   'Swords of Japan': 'USA',
   'Tetsugendo': 'USA',
   'Giuseppe Piva': 'Italy',

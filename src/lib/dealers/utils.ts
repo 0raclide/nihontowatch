@@ -23,6 +23,9 @@ const FLAG_MAP: Record<string, string> = {
   IT: '\u{1F1EE}\u{1F1F9}',
   Australia: '\u{1F1E6}\u{1F1FA}',
   AU: '\u{1F1E6}\u{1F1FA}',
+  France: '\u{1F1EB}\u{1F1F7}',
+  FRA: '\u{1F1EB}\u{1F1F7}',
+  FR: '\u{1F1EB}\u{1F1F7}',
 };
 
 /** Return an emoji flag for a country code / name. */
@@ -47,6 +50,9 @@ const DISPLAY_NAMES: Record<string, string> = {
   IT: 'Italy',
   Australia: 'Australia',
   AU: 'Australia',
+  France: 'France',
+  FRA: 'France',
+  FR: 'France',
 };
 
 /** Human-readable country display name. */
@@ -65,6 +71,7 @@ const INTERNATIONAL_DOMAINS: Record<string, string> = {
   'nihontoart.com': 'USA',
   'nihonto.com.au': 'Australia',
   'nihontocraft.com': 'USA',
+  'samuraisword.com': 'USA',
   'swordsofjapan.com': 'USA',
   'tetsugendo.com': 'USA',
 };
