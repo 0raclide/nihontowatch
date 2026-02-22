@@ -357,6 +357,9 @@ const DEALER_COUNTRIES: Record<string, string> = {
   'Swords of Japan': 'USA',
   'Tetsugendo': 'USA',
   'Giuseppe Piva': 'Italy',
+  'Katana Sword': 'USA',
+  'Soryu': 'Poland',
+  'Tsuba Info': 'NL',
 };
 
 // Category display labels for active filter pills
@@ -477,14 +480,14 @@ export function FilterContent({
   const japaneseDealers = useMemo(() =>
     facets.dealers
       .filter(d => !DEALER_COUNTRIES[d.name])
-      .sort((a, b) => getDealerDisplayName(a, locale).localeCompare(getDealerDisplayName(b, locale))),
+      .sort((a, b) => getDealerDisplayName(a, locale).localeCompare(getDealerDisplayName(b, locale), locale)),
     [facets.dealers, locale]
   );
 
   const internationalDealers = useMemo(() =>
     facets.dealers
       .filter(d => DEALER_COUNTRIES[d.name])
-      .sort((a, b) => getDealerDisplayName(a, locale).localeCompare(getDealerDisplayName(b, locale))),
+      .sort((a, b) => getDealerDisplayName(a, locale).localeCompare(getDealerDisplayName(b, locale), locale)),
     [facets.dealers, locale]
   );
 
