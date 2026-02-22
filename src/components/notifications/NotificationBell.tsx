@@ -4,7 +4,9 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { useLocale } from '@/i18n/LocaleContext';
+import { useQuickViewOptional } from '@/contexts/QuickViewContext';
 import { useNotifications, type Notification } from '@/hooks/useNotifications';
+import type { Listing } from '@/types';
 
 function timeAgo(dateStr: string): string {
   const now = Date.now();
@@ -23,6 +25,7 @@ export function NotificationBell() {
   const { user } = useAuth();
   const { t } = useLocale();
   const router = useRouter();
+  const quickView = useQuickViewOptional();
   const { notifications, unreadCount, hasSavedSearches, markAsRead } = useNotifications();
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -72,6 +75,19 @@ export function NotificationBell() {
   useEffect(() => {
     handleOpenDropdown();
   }, [handleOpenDropdown]);
+
+  // Open QuickView for a notification listing
+  const handleListingClick = useCallback((listingId: number) => {
+    setOpen(false);
+    if (quickView) {
+      // Build a minimal Listing stub — openQuickView fetches the full data by id
+      const stub = { id: listingId } as Listing;
+      quickView.openQuickView(stub);
+    } else {
+      // Fallback if QuickView context isn't available
+      router.push(`/listing/${listingId}`);
+    }
+  }, [quickView, router]);
 
   return (
     <div ref={dropdownRef} className="relative">
@@ -128,7 +144,7 @@ export function NotificationBell() {
                   <NotificationItem
                     key={notif.id}
                     notification={notif}
-                    onNavigate={(href) => { setOpen(false); router.push(href); }}
+                    onListingClick={handleListingClick}
                     t={t}
                   />
                 ))}
@@ -159,20 +175,19 @@ function EmptyState({ message }: { message: string }) {
 
 function NotificationItem({
   notification,
-  onNavigate,
+  onListingClick,
   t,
 }: {
   notification: Notification;
-  onNavigate: (href: string) => void;
+  onListingClick: (listingId: number) => void;
   t: (key: string, params?: Record<string, string | number>) => string;
 }) {
   const searchName = notification.searchName || 'Unnamed search';
   const firstListingId = notification.listings[0]?.id;
-  const href = firstListingId ? `/listing/${firstListingId}` : '/saved';
 
   return (
     <button
-      onClick={() => onNavigate(href)}
+      onClick={() => firstListingId ? onListingClick(firstListingId) : undefined}
       className="flex gap-3 px-4 py-3 hover:bg-linen/50 transition-colors w-full text-left"
     >
       {/* Thumbnails */}
