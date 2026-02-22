@@ -16,6 +16,7 @@ import { useImagePreloader } from '@/hooks/useImagePreloader';
 import { getValidatedCertInfo } from '@/lib/cert/validation';
 import { useLocale } from '@/i18n/LocaleContext';
 import { formatRelativeTime } from '@/lib/time';
+import { getDealerDisplayName } from '@/lib/dealers/displayName';
 
 // 7 days in milliseconds - matches the data delay for free tier
 const EARLY_ACCESS_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
@@ -816,8 +817,8 @@ export const ListingCard = memo(function ListingCard({
     >
       {/* Header: dealer (left) + book icon + cert (right) */}
       <div className={`${sz.hPad} sm:px-3 sm:py-2 lg:px-4 lg:py-2.5 flex items-center justify-between`}>
-        <span className={`${sz.hText} sm:text-[9px] lg:text-[10px] font-medium tracking-[0.14em] text-muted capitalize`}>
-          {listing.dealers?.name}
+        <span className={`${sz.hText} sm:text-[9px] lg:text-[10px] font-medium tracking-[0.14em] text-muted ${locale !== 'ja' ? 'capitalize' : ''}`}>
+          {listing.dealers ? getDealerDisplayName(listing.dealers as { name: string; name_ja?: string | null }, locale) : ''}
         </span>
         <div className={`flex items-center ${isGridMobile ? 'gap-1' : 'gap-2'}`}>
           {locale !== 'ja' && hasSetsumeiTranslation(listing) && <SetsumeiZufuBadge iconOnly />}
@@ -855,7 +856,7 @@ export const ListingCard = memo(function ListingCard({
       <div className={`${sz.cPad} sm:px-3 sm:pt-3 sm:pb-3 lg:px-4 lg:pt-3.5 lg:pb-4 flex flex-col gap-0.5`}>
         {/* Type — primary identifier */}
         <h3 className={`${sz.type} sm:text-[15px] lg:text-base font-semibold leading-snug text-ink group-hover:text-gold transition-colors`}>
-          {itemType || cleanedTitle}
+          {itemType ? (() => { const norm = ITEM_TYPE_NORMALIZE[listing.item_type!] || listing.item_type!.toLowerCase(); const k = `itemType.${norm}`; const r = t(k); return r === k ? itemType : r; })() : cleanedTitle}
         </h3>
 
         {/* Attribution — gold underline on artisan, plain text fallback */}

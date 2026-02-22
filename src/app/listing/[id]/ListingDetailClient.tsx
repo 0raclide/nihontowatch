@@ -28,6 +28,7 @@ import { getItemTypeUrl, getCertUrl, getDealerUrl } from '@/lib/seo/categories';
 import { generateArtisanSlug } from '@/lib/artisan/slugs';
 import { useLocale } from '@/i18n/LocaleContext';
 import { SocialShareButtons } from '@/components/share/SocialShareButtons';
+import { getDealerDisplayName } from '@/lib/dealers/displayName';
 
 // Use EnrichedListingDetail as the canonical listing type for this page
 type ListingDetail = EnrichedListingDetail;
@@ -58,7 +59,7 @@ export default function ListingDetailPage({ initialData }: ListingDetailPageProp
   const router = useRouter();
   const listingId = params.id as string;
   const { user, isAdmin } = useAuth();
-  const { locale } = useLocale();
+  const { locale, t } = useLocale();
 
   const [listing, setListing] = useState<ListingDetail | null>(initialData ?? null);
   const [isLoading, setIsLoading] = useState(!initialData);
@@ -214,7 +215,8 @@ export default function ListingDetailPage({ initialData }: ListingDetailPageProp
   }
 
   const isSold = listing.is_sold || listing.status === 'sold' || listing.status === 'presumed_sold';
-  const itemType = listing.item_type ? (ITEM_TYPE_LABELS[listing.item_type.toLowerCase()] || listing.item_type) : null;
+  const rawItemType = listing.item_type ? (ITEM_TYPE_LABELS[listing.item_type.toLowerCase()] || listing.item_type) : null;
+  const itemType = rawItemType && listing.item_type ? (() => { const k = `itemType.${listing.item_type.toLowerCase()}`; const r = t(k); return r === k ? rawItemType : r; })() : rawItemType;
   const certInfo = getValidatedCertInfo(listing);
   const images = validatedImages; // Use validated images (filtered for minimum dimensions)
 
@@ -450,11 +452,11 @@ export default function ListingDetailPage({ initialData }: ListingDetailPageProp
 
             {/* Dealer */}
             <div className="mb-6 pb-6 border-b border-border">
-              <span className="text-[11px] uppercase tracking-wider text-muted">Dealer</span>
+              <span className="text-[11px] uppercase tracking-wider text-muted">{locale === 'ja' ? '取扱店' : 'Dealer'}</span>
               <p className="text-[15px] text-ink font-medium">
                 {listing.dealers?.name ? (
                   <Link href={getDealerUrl(listing.dealers.name)} className="hover:text-gold transition-colors">
-                    {listing.dealers.name}
+                    {getDealerDisplayName(listing.dealers as { name: string; name_ja?: string | null }, locale)}
                   </Link>
                 ) : 'Unknown Dealer'}
               </p>
@@ -498,7 +500,7 @@ export default function ListingDetailPage({ initialData }: ListingDetailPageProp
                     onClick={handleExternalLinkClick}
                     className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 text-[14px] font-medium text-charcoal bg-paper border border-border hover:border-gold hover:text-gold rounded-lg transition-colors"
                   >
-                    View on {listing.dealers?.name}
+                    {locale === 'ja' ? `${listing.dealers ? getDealerDisplayName(listing.dealers as { name: string; name_ja?: string | null }, locale) : ''}で見る` : `View on ${listing.dealers ? getDealerDisplayName(listing.dealers as { name: string; name_ja?: string | null }, locale) : ''}`}
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                     </svg>
@@ -514,7 +516,7 @@ export default function ListingDetailPage({ initialData }: ListingDetailPageProp
                     onClick={handleExternalLinkClick}
                     className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 text-[14px] font-medium text-white bg-gold hover:bg-gold-light rounded-lg transition-colors"
                   >
-                    View on {listing.dealers?.name}
+                    {locale === 'ja' ? `${listing.dealers ? getDealerDisplayName(listing.dealers as { name: string; name_ja?: string | null }, locale) : ''}で見る` : `View on ${listing.dealers ? getDealerDisplayName(listing.dealers as { name: string; name_ja?: string | null }, locale) : ''}`}
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                     </svg>

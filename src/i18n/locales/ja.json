@@ -117,6 +117,7 @@
   "itemType.mitokoromono": "\u4e09\u6240\u7269",
   "itemType.gotokoromono": "\u4e94\u6240\u7269",
   "itemType.futatokoromono": "\u4e8c\u6240\u7269",
+  "itemType.futatokoro": "\u4e8c\u6240\u7269",
   "itemType.soroimono": "\u63c3\u7269",
   "itemType.armor": "\u7532\u5191",
   "itemType.yoroi": "\u93a7",
@@ -131,6 +132,10 @@
   "itemType.tanegashima": "\u7a2e\u5b50\u5cf6",
   "itemType.hinawaju": "\u706b\u7e04\u9283",
   "itemType.other": "\u305d\u306e\u4ed6",
+  "itemType.daisho": "\u5927\u5c0f",
+  "itemType.stand": "\u5200\u639b",
+  "itemType.book": "\u66f8\u7c4d",
+  "itemType.unknown": "\u4e0d\u660e",
 
   "cert.Tokuju": "\u7279\u5225\u91cd\u8981",
   "cert.tokuju": "\u7279\u5225\u91cd\u8981",

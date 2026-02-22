@@ -117,6 +117,7 @@
   "itemType.mitokoromono": "Mitokoromono",
   "itemType.gotokoromono": "Gotokoromono",
   "itemType.futatokoromono": "Futatokoromono",
+  "itemType.futatokoro": "Futatokoromono",
   "itemType.soroimono": "Soroimono",
   "itemType.armor": "Armor",
   "itemType.yoroi": "Yoroi",
@@ -131,6 +132,10 @@
   "itemType.tanegashima": "Tanegashima",
   "itemType.hinawaju": "Hinawaj\u016b",
   "itemType.other": "Other",
+  "itemType.daisho": "Daish\u014d",
+  "itemType.stand": "Stand",
+  "itemType.book": "Book",
+  "itemType.unknown": "Unknown",
 
   "cert.Tokuju": "Tokubetsu J\u016by\u014d",
   "cert.tokuju": "Tokubetsu J\u016by\u014d",

@@ -25,6 +25,7 @@ import { TranslatedDescription } from './TranslatedDescription';
 import { TranslatedTitle } from './TranslatedTitle';
 import { useLocale } from '@/i18n/LocaleContext';
 import { SocialShareButtons } from '@/components/share/SocialShareButtons';
+import { getDealerDisplayName } from '@/lib/dealers/displayName';
 
 // =============================================================================
 // TYPES
@@ -54,9 +55,11 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
   const [navigatingToArtist, setNavigatingToArtist] = useState(false);
 
   const certInfo = getCertInfo(listing.cert_type);
-  const itemTypeLabel = getItemTypeLabel(listing.item_type);
+  const rawItemTypeLabel = getItemTypeLabel(listing.item_type);
+  const itemTypeLabel = (() => { const k = `itemType.${listing.item_type?.toLowerCase()}`; const r = t(k); return r === k ? rawItemTypeLabel : r; })();
   // Note: Supabase returns 'dealers' (plural) from the join, not 'dealer' (singular)
-  const dealerName = listing.dealers?.name || listing.dealer?.name || 'Dealer';
+  const dealerObj = listing.dealers || listing.dealer;
+  const dealerName = dealerObj ? getDealerDisplayName(dealerObj as { name: string; name_ja?: string | null }, locale) : 'Dealer';
   const priceDisplay = formatPriceWithConversion(
     listing.price_value,
     listing.price_currency,

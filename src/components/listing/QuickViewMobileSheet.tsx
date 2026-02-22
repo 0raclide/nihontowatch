@@ -138,7 +138,8 @@ export function QuickViewMobileSheet({
   const { currency, exchangeRates } = useCurrency();
   const certInfo = getCertInfo(listing.cert_type);
   const { artisan, school } = getArtisanInfo(listing, locale);
-  const itemTypeLabel = getItemTypeLabel(listing.item_type);
+  const rawItemTypeLabel = getItemTypeLabel(listing.item_type);
+  const itemTypeLabel = (() => { const k = `itemType.${listing.item_type?.toLowerCase()}`; const r = t(k); return r === k ? rawItemTypeLabel : r; })();
   // Note: Supabase returns 'dealers' (plural) from the join, not 'dealer' (singular)
   const dealerName = listing.dealers?.name || listing.dealer?.name || 'Dealer';
   const priceDisplay = formatPriceWithConversion(
