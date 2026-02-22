@@ -146,6 +146,7 @@ nihontowatch/
 ```sql
 id, name (UNIQUE), domain, catalog_url, is_active, country, created_at
 earliest_listing_at  -- When dealer's first listing was discovered (for initial import detection)
+name_ja              -- TEXT, verified Japanese name (kanji/kana) for JA locale display. NULL for international dealers.
 ```
 
 **listings**
@@ -223,61 +224,74 @@ id, url (UNIQUE), dealer_id, discovered_at, is_scraped, scrape_priority
 
 ---
 
-## Current Dealers (44 Total)
+## Current Dealers (52 Total)
 
-### Japanese Dealers (36)
+### Japanese Dealers (39)
 
-| Dealer | Domain | Status |
-|--------|--------|--------|
-| Aoi Art | aoijapan.com | ✅ Active |
-| Asahi Token | asahitoken.jp | ✅ Active |
-| Ayakashi | ayakashi.co.jp | ✅ Active |
-| Choshuya | choshuya.co.jp | ✅ Active |
-| E-sword | e-sword.jp | ✅ Active |
-| Eirakudo | eirakudo.shop | ✅ Active |
-| Gallery Youyou | galleryyouyou.com | ✅ Active |
-| Giheiya | giheiya.com | ✅ Active |
-| Ginza Seikodo | ginzaseikodo.com | ✅ Active |
-| Goushuya | goushuya-nihontou.com | ✅ Active |
-| Hyozaemon | hyozaemon.jp | ✅ Active |
-| Iida Koendo | iidakoendo.com | ✅ Active |
-| Kanshoan | kanshoan.com | ✅ Active |
-| Katana Ando | katana-ando.co.jp | ✅ Active |
-| Katanahanbai | katanahanbai.com | ✅ Active |
-| Kusanagi | kusanaginosya.com | ✅ Active |
-| Nipponto | nipponto.co.jp | ✅ Active |
-| Premi | premi.co.jp | ✅ Active |
-| Samurai Nippon | samurai-nippon.net | ✅ Active |
-| Samurai Shokai | samuraishokai.jp | ✅ Active |
-| Sanmei | sanmei.com | ✅ Active |
-| Shoubudou | shoubudou.co.jp | ✅ Active |
-| Sugie Art | sugieart.com | ✅ Active |
-| Taiseido | taiseido.biz | ✅ Active |
-| Token-Net | token-net.com | ✅ Active |
-| Tokka Biz | tokka.biz | ✅ Active |
-| Touken Komachi | toukenkomachi.com | ✅ Active |
-| Touken Matsumoto | touken-matsumoto.jp | ✅ Active |
-| Touken Sakata | touken-sakata.com | ✅ Active |
-| Toukentakarado | toukentakarado.com | ✅ Active |
-| Tsuba Info | tsuba.info | ✅ Active |
-| Tsuruginoya | tsuruginoya.com | ✅ Active |
-| Wakeidou | wakeidou.com | ✅ Active |
-| World Seiyudo | world-seiyudo.com | ✅ Active |
-| Yamasiroya | yamasiroya.com | ✅ Active |
-| Yushindou | yushindou.com | ✅ Active |
+All Japanese dealers have verified `name_ja` values for JA locale display. Names sourced from official websites (title tags, headers, footers, 特定商取引法 pages). See `supabase/migrations/084_dealer_name_ja.sql`.
 
-### International Dealers (8)
+| Dealer | Domain | name_ja | Status |
+|--------|--------|---------|--------|
+| Aoi Art | aoijapan.com | 葵美術 | ✅ Active |
+| Asahi Token | asahitoken.jp | あさひ刀剣 | ✅ Active |
+| Ayakashi | ayakashi.co.jp | あやかし堂 | ✅ Active |
+| Choshuya | ginza.choshuya.co.jp | 銀座長州屋 | ✅ Active |
+| E-sword | e-sword.jp | イーソード | ✅ Active |
+| Eirakudo | eirakudo.shop | 永楽堂 | ✅ Active |
+| Gallery Youyou | galleryyouyou.com | ギャラリー陽々 | ✅ Active |
+| Giheiya | giheiya.com | 儀平屋 | ✅ Active |
+| Ginza Seikodo | ginzaseikodo.com | 銀座盛光堂 | ✅ Active |
+| Goushuya | goushuya-nihontou.com | 江州屋刀剣店 | ✅ Active |
+| Hyozaemon | hyozaemon.jp | 兵左衛門百観音堂 | ✅ Active |
+| Iida Koendo | iidakoendo.com | 飯田高遠堂 | ✅ Active |
+| Kanshoan | kanshoan.com | 干将庵 | ✅ Active |
+| Katana Ando | katana-ando.co.jp | 安東貿易 | ✅ Active |
+| Katanahanbai | katanahanbai.com | 丸英刀剣 | ✅ Active |
+| Kusanagi | kusanaginosya.com | 草薙の舎 | ✅ Active |
+| Nipponto | nipponto.co.jp | 明倫産業 | ✅ Active |
+| Premi | premi.co.jp | 刀剣高吉 | ✅ Active |
+| Samurai Nippon | samurai-nippon.net | コレクション情報 | ✅ Active |
+| Samurai Shokai | samuraishokai.jp | サムライ商会 | ✅ Active |
+| Sanmei | sanmei.com | 刀剣徳川 | ✅ Active |
+| Seikeido | seikeido.com | 成蹊堂 | ✅ Active |
+| Shingendou | instagram.com | 眞玄堂 | ✅ Active |
+| Shoubudou | shoubudou.co.jp | 勝武堂 | ✅ Active |
+| Sugie Art | sugieart.com | 杉江美術店 | ✅ Active |
+| Taiseido | taiseido.biz | タイセイ堂 | ✅ Active |
+| Token-Net | token-net.com | 刀剣杉田 | ✅ Active |
+| Tokka Biz | tokka.biz | 十拳 | ✅ Active |
+| Tosa Touken Do | tosatoukendo.com | 土佐刀剣堂 | ✅ Active |
+| Touken Komachi | toukenkomachi.com | 刀剣小町 | ✅ Active |
+| Touken Matsumoto | touken-matsumoto.jp | 美術刀剣松本 | ✅ Active |
+| Touken Sakata | touken-sakata.com | 刀剣坂田 | ✅ Active |
+| Toukentakarado | toukentakarado.com | 宝刀堂 | ✅ Active |
+| Toushin | shop.nihontou.jp | 刀心 | ✅ Active |
+| Tsuruginoya | tsuruginoya.com | つるぎの屋 | ✅ Active |
+| Wakeidou | wakeidou.com | 和敬堂 | ✅ Active |
+| World Seiyudo | world-seiyudo.com | 銀座誠友堂 | ✅ Active |
+| Yamasiroya | yamasiroya.com | 山城屋 | ✅ Active |
+| Yushindou | yushindou.com | 勇進堂 | ✅ Active |
+
+### International Dealers (13)
+
+International dealers have `name_ja = NULL` — English name used in both locales.
 
 | Dealer | Domain | Country | Status |
 |--------|--------|---------|--------|
 | Giuseppe Piva | giuseppepiva.com | Italy | ✅ Active |
+| Katana Sword | katana-sword.com | USA | ✅ Active |
 | Legacy Swords | legacyswords.com | USA | ✅ Active |
+| Nihon Art | nihonart.com | USA | ✅ Active |
 | Nihonto | nihonto.com | USA | ✅ Active |
-| Nihonto Art | nihontoart.com | USA | ✅ Active |
+| Nihonto Art | nihontoart.com | Canada | ✅ Active |
+| Nihonto Art EU | nihonto.art | France | ✅ Active |
 | Nihonto Australia | nihonto.com.au | Australia | ✅ Active |
 | Nihontocraft | nihontocraft.com | USA | ✅ Active |
+| SamuraiSword | samuraisword.com | USA | ✅ Active |
+| Soryu | soryu.pl | Poland | ✅ Active |
 | Swords of Japan | swordsofjapan.com | USA | ✅ Active |
 | Tetsugendo | tetsugendo.com | USA | ✅ Active |
+| Tsuba Info | tsuba.info | Netherlands | ✅ Active |
 
 ---
 
@@ -626,6 +640,36 @@ UI chrome (labels, buttons, nav) uses the `useLocale()` hook and `t()` function 
 | JA strings | `src/i18n/locales/ja.json` |
 | DB migration | `supabase/migrations/083_ja_translation_columns.sql` |
 | Tests (57+41) | `tests/lib/listing-data-localization.test.ts`, `tests/components/listing/TranslatedTitle.test.tsx`, `tests/components/listing/TranslatedDescription.test.tsx`, `tests/components/listing/listing-data-locale.test.tsx`, `tests/components/listing/MetadataGrid-locale.test.tsx`, `tests/api/translate.test.ts` |
+
+### Dealer Name Localization (i18n)
+
+Japanese dealers display their official kanji/kana names when locale is JA (e.g., "Ginza Seikodo" → "銀座盛光堂"). International dealers show English names in both locales.
+
+**How it works:**
+- `dealers.name_ja` column stores verified Japanese names (NULL for international dealers)
+- `getDealerDisplayName(dealer, locale)` centralized utility returns `name_ja` for JA, English name for EN
+- `getDealerDisplayNameEN(dealer)` always returns English (for slugs, SEO, analytics)
+- Filter sidebar groups dealers into "日本" and "International" via `DEALER_COUNTRIES` map in FilterContent.tsx
+- Browse facets RPC (`get_browse_facets`) includes `name_ja` in JSONB response
+
+**Important:** All 39 Japanese names were verified from official dealer websites (title tags, headers, 特定商取引法 pages). AI-guessing is dangerously inaccurate — 24/36 initial guesses were wrong. Always verify against the dealer's own site.
+
+**What stays English (never localized):**
+- URL slugs (`createDealerSlug()`)
+- SEO meta tags (`generateMetadata()`)
+- JSON-LD structured data
+- OG images (`sanitizeText()` strips non-ASCII)
+- Admin pages, analytics tracking
+- Sitemap URLs
+
+**Key files:**
+| Component | Location |
+|-----------|----------|
+| Display name utility | `src/lib/dealers/displayName.ts` |
+| Dealer grouping map | `src/components/browse/FilterContent.tsx` (`DEALER_COUNTRIES`) |
+| DB migration | `supabase/migrations/084_dealer_name_ja.sql` |
+| RPC function | `get_browse_facets` (returns `name_ja` in dealer facets) |
+| Type definition | `src/types/index.ts` (`Dealer.name_ja`) |
 
 ### Japanese UX Tuning (Locale-Conditional)
 
