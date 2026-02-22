@@ -20,6 +20,7 @@ import {
   apiNotFound,
   apiServerError,
 } from '@/lib/api/responses';
+import { recomputeScoreForListing } from '@/lib/featured/scoring';
 
 export const dynamic = 'force-dynamic';
 
@@ -139,6 +140,14 @@ export async function POST(
         error: correctionError.message,
       });
     }
+
+    // Recompute featured_score inline, syncing elite factor from Yuhinkai (fire-and-forget)
+    recomputeScoreForListing(serviceClient, listingId, {
+      syncElite: true,
+      artisanId: artisan_id,
+    }).catch((err) => {
+      logger.logError('[fix-artisan] Score recompute failed', err, { listingId });
+    });
 
     logger.info('Artisan corrected on listing', {
       listingId,

@@ -19,6 +19,7 @@ import {
   apiNotFound,
   apiServerError,
 } from '@/lib/api/responses';
+import { recomputeScoreForListing } from '@/lib/featured/scoring';
 
 export const dynamic = 'force-dynamic';
 
@@ -70,11 +71,16 @@ export async function POST(
       return apiNotFound(`Listing ${listingId}`);
     }
 
-    // Update admin_hidden
+    // Update admin_hidden (and zero out score if hiding)
+    const updatePayload: Record<string, unknown> = { admin_hidden: body.hidden };
+    if (body.hidden) {
+      updatePayload.featured_score = 0;
+    }
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error: updateError } = await (serviceClient
       .from('listings') as any)
-      .update({ admin_hidden: body.hidden })
+      .update(updatePayload)
       .eq('id', listingId);
 
     if (updateError) {
@@ -83,6 +89,13 @@ export async function POST(
         error: updateError.message,
       });
       return apiServerError(`Failed to update listing: ${updateError.message}`);
+    }
+
+    // If unhiding, restore the correct featured_score (fire-and-forget)
+    if (!body.hidden) {
+      recomputeScoreForListing(serviceClient, listingId).catch((err) => {
+        logger.logError('[hide] Score recompute on unhide failed', err, { listingId });
+      });
     }
 
     logger.info('Listing visibility toggled', {

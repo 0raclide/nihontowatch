@@ -2,9 +2,9 @@
  * Compute featured scores for all available listings
  *
  * Scoring model:
- *   quality (0-355) = artisan_stature + cert_points + completeness
+ *   quality (0-395) = artisan_stature + cert_points + completeness
  *   heat (0-160)    = favorites + dealer_clicks + quickview_opens + views + pinch_zooms
- *   freshness       = multiplier based on listing age (0.7 – 1.4)
+ *   freshness       = multiplier based on listing age (0.3 – 1.4)
  *   featured_score  = (quality + heat) × freshness
  *
  * Listings without images get featured_score = 0 (disqualified).
@@ -17,53 +17,25 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/server';
 import { verifyCronAuth } from '@/lib/api/cronAuth';
 import { logger } from '@/lib/logger';
+import {
+  computeQuality,
+  computeFreshness,
+  imageCount,
+  type ListingScoreInput,
+} from '@/lib/featured/scoring';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300; // 5 minutes
-
-// ---------------------------------------------------------------------------
-// Scoring constants
-// ---------------------------------------------------------------------------
-
-const CERT_POINTS: Record<string, number> = {
-  'Tokuju': 40,
-  'Tokubetsu Juyo': 40,
-  'tokubetsu_juyo': 40,
-  'Juyo': 28,
-  'juyo': 28,
-  'Juyo Tosogu': 28,
-  'TokuHozon': 14,
-  'Tokubetsu Hozon': 14,
-  'tokubetsu_hozon': 14,
-  'Tokubetsu Hozon Tosogu': 14,
-  'Hozon': 7,
-  'hozon': 7,
-  'Hozon Tosogu': 7,
-  'Juyo Bijutsuhin': 35,
-  'JuBi': 35,
-  'TokuKicho': 10,
-  'Tokubetsu Kicho': 10,
-};
 
 const HEAT_30_DAY_MS = 30 * 24 * 60 * 60 * 1000;
 const PAGE_SIZE = 1000;
 const UPDATE_BATCH_SIZE = 500;
 
 // ---------------------------------------------------------------------------
-// Types
+// Types (extends ListingScoreInput with cron-only fields)
 // ---------------------------------------------------------------------------
 
-interface ListingRow {
-  id: number;
-  artisan_id: string | null;
-  artisan_elite_factor: number | null;
-  artisan_elite_count: number | null;
-  cert_type: string | null;
-  price_value: number | null;
-  artisan_confidence: string | null;
-  images: unknown;
-  first_seen_at: string | null;
-  is_initial_import: boolean | null;
+interface ListingRow extends ListingScoreInput {
   dealer_id: number;
 }
 
@@ -71,43 +43,8 @@ interface ListingRow {
 // Helpers
 // ---------------------------------------------------------------------------
 
-// Artisan IDs that are catch-all buckets, not real artisan matches
-const IGNORE_ARTISAN_IDS = new Set(['UNKNOWN', 'unknown']);
-
-function computeQuality(listing: ListingRow): number {
-  // Treat catch-all artisan IDs as no match
-  const hasRealArtisan = listing.artisan_id && !IGNORE_ARTISAN_IDS.has(listing.artisan_id);
-  const eliteFactor = hasRealArtisan ? (listing.artisan_elite_factor ?? 0) : 0;
-  const eliteCount = hasRealArtisan ? (listing.artisan_elite_count ?? 0) : 0;
-
-  const artisanStature = (eliteFactor * 200) + Math.min(Math.sqrt(eliteCount) * 18, 100);
-  const certPts = listing.cert_type ? (CERT_POINTS[listing.cert_type] ?? 0) : 0;
-  const completeness =
-    (listing.price_value ? 10 : 0) +
-    (listing.artisan_confidence === 'HIGH' ? 5 : 0);
-
-  return artisanStature + certPts + completeness;
-}
-
-function computeFreshness(listing: ListingRow): number {
-  if (listing.is_initial_import) return 1.0;
-
-  if (!listing.first_seen_at) return 1.0;
-
-  const ageMs = Date.now() - new Date(listing.first_seen_at).getTime();
-  const ageDays = ageMs / (1000 * 60 * 60 * 24);
-
-  if (ageDays < 3) return 1.4;
-  if (ageDays < 7) return 1.2;
-  if (ageDays < 30) return 1.0;
-  if (ageDays < 90) return 0.85;
-  return 0.7;
-}
-
 function hasImages(listing: ListingRow): boolean {
-  if (!listing.images) return false;
-  if (Array.isArray(listing.images)) return listing.images.length > 0;
-  return false;
+  return imageCount(listing) > 0;
 }
 
 // ---------------------------------------------------------------------------
@@ -177,7 +114,7 @@ export async function GET(request: NextRequest) {
     while (true) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: listings, error } = await (supabase.from('listings') as any)
-        .select('id, artisan_id, artisan_elite_factor, artisan_elite_count, cert_type, price_value, artisan_confidence, images, first_seen_at, is_initial_import, dealer_id')
+        .select('id, artisan_id, artisan_elite_factor, artisan_elite_count, cert_type, price_value, artisan_confidence, images, first_seen_at, is_initial_import, dealer_id, smith, tosogu_maker, school, tosogu_school, era, province, description, nagasa_cm, sori_cm, motohaba_cm, height_cm, width_cm')
         .eq('is_available', true)
         .range(offset, offset + PAGE_SIZE - 1) as { data: ListingRow[] | null; error: unknown };
 

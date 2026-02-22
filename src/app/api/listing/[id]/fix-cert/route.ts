@@ -20,6 +20,7 @@ import {
   apiNotFound,
   apiServerError,
 } from '@/lib/api/responses';
+import { recomputeScoreForListing } from '@/lib/featured/scoring';
 
 export const dynamic = 'force-dynamic';
 
@@ -136,6 +137,11 @@ export async function POST(
         error: correctionError.message,
       });
     }
+
+    // Recompute featured_score inline (fire-and-forget)
+    recomputeScoreForListing(serviceClient, listingId).catch((err) => {
+      logger.logError('[fix-cert] Score recompute failed', err, { listingId });
+    });
 
     logger.info('Cert corrected on listing', {
       listingId,
