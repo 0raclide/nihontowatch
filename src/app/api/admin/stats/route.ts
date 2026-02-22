@@ -7,7 +7,7 @@ import {
   apiForbidden,
   apiServerError,
 } from '@/lib/api/responses';
-import { getAdminUserIds } from '@/app/api/admin/analytics/engagement/_lib/utils';
+import { getAdminUserIds, fetchAllRows } from '@/app/api/admin/analytics/engagement/_lib/utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -67,21 +67,38 @@ export async function GET(request: NextRequest) {
     // Type assertion for user_favorites table
     type UserFavoritesTable = ReturnType<typeof supabase.from>;
 
+    // Use service client to query tables that need RLS bypass (anonymous data)
+    const serviceSupabase = createServiceClient();
+
+    const last24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
     // Get basic dashboard stats
     const [
       usersResult,
+      activeVisitorsResult,
       activeUsersResult,
       listingsResult,
       favoritesResult,
       recentSignupsResult,
     ] = await Promise.all([
-      // Total users
+      // Total registered users
       supabase.from('profiles').select('id', { count: 'exact', head: true }),
-      // Active users in last 24h (using last_visit_at for actual site activity)
-      supabase
-        .from('profiles')
-        .select('id', { count: 'exact', head: true })
-        .gte('last_visit_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()),
+      // Active visitors in last 24h — distinct visitor_ids from activity_events
+      // Includes anonymous visitors (everyone except admin + opted-out)
+      serviceSupabase
+        .from('activity_events')
+        .select('visitor_id')
+        .gte('created_at', last24h)
+        .not('visitor_id', 'is', null)
+        .limit(10000),
+      // Active registered users in last 24h — distinct user_ids from activity_events
+      // Only logged-in users who generated events
+      serviceSupabase
+        .from('activity_events')
+        .select('user_id')
+        .gte('created_at', last24h)
+        .not('user_id', 'is', null)
+        .limit(10000),
       // Total listings
       supabase.from('listings').select('id', { count: 'exact', head: true }),
       // Total favorites
@@ -95,24 +112,38 @@ export async function GET(request: NextRequest) {
         .limit(10),
     ]);
 
-    // Use service client to query listing_views (bypasses RLS for anonymous data)
-    const serviceSupabase = createServiceClient();
+    // Count distinct visitors in last 24h (all visitors including anonymous)
+    const uniqueVisitors24h = activeVisitorsResult.data
+      ? new Set(
+          (activeVisitorsResult.data as { visitor_id: string }[]).map(r => r.visitor_id)
+        ).size
+      : 0;
+
+    // Count distinct logged-in users in last 24h
+    const uniqueUsers24h = activeUsersResult.data
+      ? new Set(
+          (activeUsersResult.data as { user_id: string }[]).map(r => r.user_id)
+        ).size
+      : 0;
 
     // Get admin user IDs to filter from analytics
     const adminIds = await getAdminUserIds(supabase);
     const isAdminUser = (userId: string | null) => userId != null && adminIds.includes(userId);
 
     // Get popular listings with both views and favorites
+    // Use fetchAllRows to paginate past PostgREST max_rows (default 1000)
     const [popularFavoritesResult, popularViewsResult] = await Promise.all([
       // Favorites
-      (supabase.from('user_favorites') as unknown as UserFavoritesTable)
-        .select('listing_id, listings(id, title)')
-        .limit(100000) as Promise<{ data: FavoriteWithListing[] | null; error: { message: string } | null }>,
+      fetchAllRows<FavoriteWithListing>(
+        (supabase.from('user_favorites') as unknown as UserFavoritesTable)
+          .select('listing_id, listings(id, title)')
+      ),
       // Views from listing_views table (include user_id for admin filtering)
-      serviceSupabase
-        .from('listing_views')
-        .select('listing_id, user_id')
-        .limit(100000),
+      fetchAllRows<{ listing_id: number; user_id: string | null }>(
+        serviceSupabase
+          .from('listing_views')
+          .select('listing_id, user_id')
+      ),
     ]);
 
     if (popularFavoritesResult.error) {
@@ -121,26 +152,22 @@ export async function GET(request: NextRequest) {
 
     // Count favorites per listing
     const listingFavorites: Record<number, { title: string; count: number }> = {};
-    if (popularFavoritesResult.data) {
-      for (const fav of popularFavoritesResult.data) {
-        const listingId = fav.listing_id;
-        const listing = fav.listings;
-        // Skip if listing was deleted (orphaned favorite)
-        if (!listing) continue;
-        if (!listingFavorites[listingId]) {
-          listingFavorites[listingId] = { title: listing.title || 'Unknown', count: 0 };
-        }
-        listingFavorites[listingId].count++;
+    for (const fav of popularFavoritesResult.data) {
+      const listingId = fav.listing_id;
+      const listing = fav.listings;
+      // Skip if listing was deleted (orphaned favorite)
+      if (!listing) continue;
+      if (!listingFavorites[listingId]) {
+        listingFavorites[listingId] = { title: listing.title || 'Unknown', count: 0 };
       }
+      listingFavorites[listingId].count++;
     }
 
     // Count views per listing (excluding admin views)
     const listingViews: Record<number, number> = {};
-    if (popularViewsResult.data) {
-      for (const view of popularViewsResult.data as { listing_id: number; user_id: string | null }[]) {
-        if (isAdminUser(view.user_id)) continue;
-        listingViews[view.listing_id] = (listingViews[view.listing_id] || 0) + 1;
-      }
+    for (const view of popularViewsResult.data) {
+      if (isAdminUser(view.user_id)) continue;
+      listingViews[view.listing_id] = (listingViews[view.listing_id] || 0) + 1;
     }
 
     // Merge favorites and views, prioritizing listings with most engagement
@@ -166,7 +193,8 @@ export async function GET(request: NextRequest) {
 
     const basicStats = {
       totalUsers: usersResult.count || 0,
-      activeUsers24h: activeUsersResult.count || 0,
+      activeVisitors24h: uniqueVisitors24h,
+      activeUsers24h: uniqueUsers24h,
       totalListings: listingsResult.count || 0,
       favoritesCount: favoritesResult.count || 0,
       recentSignups: recentSignupsResult.data || [],
@@ -180,16 +208,18 @@ export async function GET(request: NextRequest) {
 
       const [sessionsResult, searchTermsResult, alertsResult, totalViewsResult] = await Promise.all([
         // Session stats (if user_sessions table exists) — include user_id for admin filtering
-        (serviceSupabase.from('user_sessions') as unknown as ServiceTable)
-          .select('total_duration_ms, page_views, user_id')
-          .gte('started_at', startDate.toISOString())
-          .limit(100000) as Promise<{ data: (SessionData & { user_id: string | null })[] | null; error: unknown }>,
+        fetchAllRows<SessionData & { user_id: string | null }>(
+          (serviceSupabase.from('user_sessions') as unknown as ServiceTable)
+            .select('total_duration_ms, page_views, user_id')
+            .gte('started_at', startDate.toISOString())
+        ),
         // Search terms from user_searches table (new dedicated table)
-        serviceSupabase
-          .from('user_searches')
-          .select('query_normalized')
-          .gte('searched_at', startDate.toISOString())
-          .limit(100000),
+        fetchAllRows<{ query_normalized: string }>(
+          serviceSupabase
+            .from('user_searches')
+            .select('query_normalized')
+            .gte('searched_at', startDate.toISOString())
+        ),
         // Alerts count
         supabase.from('alerts').select('id', { count: 'exact', head: true }),
         // Total views from listing_views
@@ -204,25 +234,21 @@ export async function GET(request: NextRequest) {
       let totalDuration = 0;
       let totalPageViews = 0;
 
-      if (sessionsResult.data) {
-        const filteredSessions = sessionsResult.data.filter(
-          (s: SessionData & { user_id: string | null }) => !isAdminUser(s.user_id)
-        );
-        totalSessions = filteredSessions.length;
-        for (const session of filteredSessions) {
-          totalDuration += (session.total_duration_ms || 0) / 1000;
-          totalPageViews += session.page_views || 0;
-        }
+      const filteredSessions = sessionsResult.data.filter(
+        (s) => !isAdminUser(s.user_id)
+      );
+      totalSessions = filteredSessions.length;
+      for (const session of filteredSessions) {
+        totalDuration += (session.total_duration_ms || 0) / 1000;
+        totalPageViews += session.page_views || 0;
       }
 
       // Aggregate search terms from user_searches table
       const searchCounts: Record<string, number> = {};
-      if (searchTermsResult.data) {
-        for (const search of searchTermsResult.data as { query_normalized: string }[]) {
-          const normalized = search.query_normalized;
-          if (normalized) {
-            searchCounts[normalized] = (searchCounts[normalized] || 0) + 1;
-          }
+      for (const search of searchTermsResult.data) {
+        const normalized = search.query_normalized;
+        if (normalized) {
+          searchCounts[normalized] = (searchCounts[normalized] || 0) + 1;
         }
       }
 

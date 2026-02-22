@@ -20,6 +20,7 @@ import {
   apiForbidden,
   apiServerError,
 } from '@/lib/api/responses';
+import { fetchAllRows } from '@/app/api/admin/analytics/engagement/_lib/utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -102,54 +103,52 @@ export async function GET(request: NextRequest) {
     const serviceSupabase = createServiceClient();
 
     // Query all three data sources in parallel
+    // Use fetchAllRows to paginate past PostgREST max_rows (default 1000)
     const [viewsResult, searchesResult, favoritesResult] = await Promise.all([
-      // Views by day from listing_views
-      serviceSupabase
-        .from('listing_views')
-        .select('viewed_at')
-        .gte('viewed_at', startDateStr)
-        .limit(100000),
+      // Views by day from listing_views (includes quickview_open + listing_detail_view)
+      fetchAllRows<{ viewed_at: string }>(
+        serviceSupabase
+          .from('listing_views')
+          .select('viewed_at')
+          .gte('viewed_at', startDateStr)
+      ),
 
       // Searches by day from user_searches
-      serviceSupabase
-        .from('user_searches')
-        .select('searched_at')
-        .gte('searched_at', startDateStr)
-        .limit(100000),
+      fetchAllRows<{ searched_at: string }>(
+        serviceSupabase
+          .from('user_searches')
+          .select('searched_at')
+          .gte('searched_at', startDateStr)
+      ),
 
       // Favorites by day from user_favorites
-      supabase
-        .from('user_favorites')
-        .select('created_at')
-        .gte('created_at', startDateStr)
-        .limit(100000),
+      fetchAllRows<{ created_at: string }>(
+        supabase
+          .from('user_favorites')
+          .select('created_at')
+          .gte('created_at', startDateStr)
+      ),
     ]);
 
     // Aggregate views by date
     const viewsByDate: Record<string, number> = {};
-    if (viewsResult.data) {
-      for (const row of viewsResult.data as { viewed_at: string }[]) {
-        const date = row.viewed_at.split('T')[0];
-        viewsByDate[date] = (viewsByDate[date] || 0) + 1;
-      }
+    for (const row of viewsResult.data) {
+      const date = row.viewed_at.split('T')[0];
+      viewsByDate[date] = (viewsByDate[date] || 0) + 1;
     }
 
     // Aggregate searches by date
     const searchesByDate: Record<string, number> = {};
-    if (searchesResult.data) {
-      for (const row of searchesResult.data as { searched_at: string }[]) {
-        const date = row.searched_at.split('T')[0];
-        searchesByDate[date] = (searchesByDate[date] || 0) + 1;
-      }
+    for (const row of searchesResult.data) {
+      const date = row.searched_at.split('T')[0];
+      searchesByDate[date] = (searchesByDate[date] || 0) + 1;
     }
 
     // Aggregate favorites by date
     const favoritesByDate: Record<string, number> = {};
-    if (favoritesResult.data) {
-      for (const row of favoritesResult.data as { created_at: string }[]) {
-        const date = row.created_at.split('T')[0];
-        favoritesByDate[date] = (favoritesByDate[date] || 0) + 1;
-      }
+    for (const row of favoritesResult.data) {
+      const date = row.created_at.split('T')[0];
+      favoritesByDate[date] = (favoritesByDate[date] || 0) + 1;
     }
 
     // Build data points for all dates in range (fill missing with zeros)

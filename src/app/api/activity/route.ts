@@ -244,7 +244,7 @@ async function fanOutDealerClicks(
 }
 
 // =============================================================================
-// Fan-out: listing_detail_view → listing_views table
+// Fan-out: listing_detail_view + quickview_open → listing_views table
 // =============================================================================
 
 async function fanOutListingViews(
@@ -254,7 +254,7 @@ async function fanOutListingViews(
   sessionId: string,
   userId?: string,
 ): Promise<void> {
-  const views = events.filter(e => e.type === 'listing_detail_view');
+  const views = events.filter(e => e.type === 'listing_detail_view' || e.type === 'quickview_open');
   if (views.length === 0) return;
 
   for (const event of views) {
@@ -268,7 +268,7 @@ async function fanOutListingViews(
         listing_id: data.listingId,
         session_id: sessionId,
         user_id: userId || null,
-        referrer: data.referrer || null,
+        referrer: event.type === 'quickview_open' ? 'quickview' : (data.referrer || null),
         viewed_at: event.timestamp,
         view_date: viewDate,
       });
