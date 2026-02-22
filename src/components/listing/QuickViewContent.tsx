@@ -23,6 +23,7 @@ import { ArtisanTooltip } from '@/components/artisan/ArtisanTooltip';
 import { TranslatedDescription } from './TranslatedDescription';
 import { TranslatedTitle } from './TranslatedTitle';
 import { useLocale } from '@/i18n/LocaleContext';
+import { SocialShareButtons } from '@/components/share/SocialShareButtons';
 
 // =============================================================================
 // TYPES
@@ -277,6 +278,11 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
                   </svg>
                 </button>
               )}
+              <SocialShareButtons
+                url={typeof window !== 'undefined' ? `${window.location.origin}/listing/${listing.id}` : `/listing/${listing.id}`}
+                title={listing.title || 'NihontoWatch'}
+                size="sm"
+              />
               <ShareButton listingId={listing.id} title={listing.title} size="sm" ogImageUrl={listing.og_image_url} />
               <FavoriteButton listingId={listing.id} size="sm" />
             </div>

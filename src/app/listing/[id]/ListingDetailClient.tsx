@@ -27,6 +27,7 @@ import { getValidatedCertInfo } from '@/lib/cert/validation';
 import { getItemTypeUrl, getCertUrl, getDealerUrl } from '@/lib/seo/categories';
 import { generateArtisanSlug } from '@/lib/artisan/slugs';
 import { useLocale } from '@/i18n/LocaleContext';
+import { SocialShareButtons } from '@/components/share/SocialShareButtons';
 
 // Use EnrichedListingDetail as the canonical listing type for this page
 type ListingDetail = EnrichedListingDetail;
@@ -458,6 +459,15 @@ export default function ListingDetailPage({ initialData }: ListingDetailPageProp
                 ) : 'Unknown Dealer'}
               </p>
               <p className="text-[12px] text-muted">{listing.dealers?.domain}</p>
+            </div>
+
+            {/* Social Share */}
+            <div className="flex items-center gap-2 mb-6">
+              <SocialShareButtons
+                url={typeof window !== 'undefined' ? `${window.location.origin}/listing/${listingId}` : `/listing/${listingId}`}
+                title={listing.title || 'NihontoWatch'}
+                size="md"
+              />
             </div>
 
             {/* Action Buttons */}

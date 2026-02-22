@@ -67,12 +67,12 @@
   "filter.priceOnRequest": "\u4fa1\u683c\u306f\u304a\u554f\u3044\u5408\u308f\u305b",
   "filter.missingSetsumei": "\u8aac\u660e\u672a\u7ffb\u8a33",
   "filter.missingArtisanCode": "\u5200\u5de5\u30b3\u30fc\u30c9\u672a\u8a2d\u5b9a",
-  "filter.noCertifications": "\u9451\u5b9a\u306a\u3057",
-  "filter.noPeriods": "\u6642\u4ee3\u30c7\u30fc\u30bf\u306a\u3057",
-  "filter.noItems": "\u8a72\u5f53\u306a\u3057",
-  "filter.noSignatureData": "\u9298\u30c7\u30fc\u30bf\u306a\u3057",
-  "filter.noDealers": "\u5200\u5263\u5546\u306a\u3057",
-  "filter.noDealersMatch": "\u300c{q}\u300d\u306b\u4e00\u81f4\u3059\u308b\u5200\u5263\u5546\u306a\u3057",
+  "filter.noCertifications": "この条件に一致する鑑定書はありません",
+  "filter.noPeriods": "この条件に一致する時代区分はありません",
+  "filter.noItems": "この条件に一致する商品はありません。検索条件を変更してお試しください。",
+  "filter.noSignatureData": "この条件に一致する銘データはありません",
+  "filter.noDealers": "登録されている刀剣商はありません",
+  "filter.noDealersMatch": "「{q}」に一致する刀剣商はありません。別のキーワードをお試しください。",
   "filter.updating": "\u66f4\u65b0\u4e2d...",
   "filter.japan": "\u65e5\u672c",
   "filter.international": "\u6d77\u5916",
@@ -1095,5 +1095,15 @@
   "artisan.tierJuyoLabel": "重要指定",
   "artisan.tierKokuho": "国宝",
   "artisan.tierElite": "名工",
-  "artisan.tierJuyo": "重要"
+  "artisan.tierJuyo": "重要",
+
+  "card.confirmed": "{time}に確認",
+  "card.justNow": "たった今",
+  "card.minutesAgo": "{n}分前",
+  "card.hoursAgo": "{n}時間前",
+  "card.daysAgo": "{n}日前",
+
+  "share.line": "LINE",
+  "share.twitter": "ポスト",
+  "share.shareOn": "{platform}で共有"
 }

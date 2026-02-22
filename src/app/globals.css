@@ -827,6 +827,32 @@ html[lang="ja"] h6 {
   font-family: var(--font-jp), var(--font-serif), "Hiragino Mincho ProN", "Yu Mincho", serif;
 }
 
+/* JA body text needs 1.85+ line-height (kanji density — full em-box glyphs) */
+html[lang="ja"] body {
+  line-height: 1.85;
+}
+
+/* JA headings need slightly more air than EN's 1.25 */
+html[lang="ja"] h1, html[lang="ja"] h2, html[lang="ja"] h3,
+html[lang="ja"] h4, html[lang="ja"] h5, html[lang="ja"] h6 {
+  line-height: 1.4;
+}
+
+/* Japanese has no true italic glyphs — oblique rendering looks broken.
+   Use font-weight for emphasis instead. */
+html[lang="ja"] em,
+html[lang="ja"] i,
+html[lang="ja"] .italic {
+  font-style: normal;
+  font-weight: 600;
+}
+
+/* Prose translations in JA need Noto font, not Cormorant Garamond */
+html[lang="ja"] .prose-translation {
+  font-family: var(--font-jp), var(--font-sans), sans-serif;
+  line-height: 2.0;
+}
+
 /* Typography - Scholarly hierarchy */
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-serif), Georgia, "Times New Roman", serif;

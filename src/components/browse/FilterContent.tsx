@@ -390,7 +390,10 @@ export function FilterContent({
   availability,
   onAvailabilityChange,
 }: FilterContentProps) {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
+
+  // JA users expect all info visible at a glance (ichimokuryouzen 一目瞭然)
+  const jaOpen = locale === 'ja';
 
   // Localized label lookup: tries t('prefix.value'), falls back to static map, then raw value
   const tLabel = useCallback((prefix: string, value: string, fallbackMap: Record<string, string>) => {
@@ -848,8 +851,8 @@ export function FilterContent({
 
         {elevated && <div className={`border-t ${isB ? 'border-border/15' : 'border-border/30'}`} />}
 
-        {/* 2. Period (checkboxes, closed by default) */}
-        <FilterSection title={t('filter.period')} defaultOpen={false} variant={variant} activeCount={filters.historicalPeriods.length}>
+        {/* 2. Period (checkboxes, closed by default — open for JA) */}
+        <FilterSection title={t('filter.period')} defaultOpen={jaOpen} variant={variant} activeCount={filters.historicalPeriods.length}>
           <div className={elevated ? 'space-y-0' : 'space-y-1'}>
             {facets.historicalPeriods?.map((facet) => (
               <Checkbox key={facet.value} label={tLabel('period', facet.value, PERIOD_LABELS)} count={facet.count} checked={filters.historicalPeriods.includes(facet.value)} onChange={(checked) => handlePeriodChange(facet.value, checked)} variant={variant} />
@@ -860,8 +863,8 @@ export function FilterContent({
 
         {elevated && <div className={`border-t ${isB ? 'border-border/15' : 'border-border/30'}`} />}
 
-        {/* 3. Type (checkboxes, closed) */}
-        <FilterSection title={t('filter.type')} defaultOpen={false} variant={variant} activeCount={filters.itemTypes.length}>
+        {/* 3. Type (checkboxes, closed — open for JA) */}
+        <FilterSection title={t('filter.type')} defaultOpen={jaOpen} variant={variant} activeCount={filters.itemTypes.length}>
           <div className={elevated ? 'space-y-0' : 'space-y-1'}>
             {visibleItemTypes.filter((facet) => facet.value !== 'other').map((facet) => (
               <Checkbox key={facet.value} label={tLabel('itemType', facet.value, ITEM_TYPE_LABELS)} count={facet.count} checked={filters.itemTypes.includes(facet.value)} onChange={(checked) => handleItemTypeChange(facet.value, checked)} variant={variant} />
@@ -872,8 +875,8 @@ export function FilterContent({
 
         {elevated && <div className={`border-t ${isB ? 'border-border/15' : 'border-border/30'}`} />}
 
-        {/* 5. Signature (collapsed by default) */}
-        <FilterSection title={t('filter.signature')} defaultOpen={false} variant={variant} activeCount={filters.signatureStatuses.length}>
+        {/* 5. Signature (collapsed by default — open for JA) */}
+        <FilterSection title={t('filter.signature')} defaultOpen={jaOpen} variant={variant} activeCount={filters.signatureStatuses.length}>
           <div className={elevated ? 'space-y-0' : 'space-y-1'}>
             {facets.signatureStatuses?.map((facet) => (
               <Checkbox key={facet.value} label={tLabel('sig', facet.value, SIGNATURE_LABELS)} count={facet.count} checked={filters.signatureStatuses.includes(facet.value)} onChange={(checked) => handleSignatureChange(facet.value, checked)} variant={variant} />
@@ -884,8 +887,8 @@ export function FilterContent({
 
         {elevated && <div className={`border-t ${isB ? 'border-border/15' : 'border-border/30'}`} />}
 
-        {/* 6. Dealer */}
-        <FilterSection title={t('filter.dealer')} defaultOpen={false} variant={variant} activeCount={filters.dealers.length}>
+        {/* 6. Dealer (open for JA) */}
+        <FilterSection title={t('filter.dealer')} defaultOpen={jaOpen} variant={variant} activeCount={filters.dealers.length}>
           <div className={elevated ? 'space-y-0' : 'space-y-1'}>
             {/* Dealer search (elevated variants) */}
             {elevated && (

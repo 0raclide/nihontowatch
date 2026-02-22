@@ -58,6 +58,8 @@ interface Listing {
   tosogu_school: string | null;
   cert_type: string | null;
   nagasa_cm: number | null;
+  era?: string | null;
+  last_scraped_at?: string | null;
   images: string[] | null;
   stored_images?: string[] | null;
   first_seen_at: string;
@@ -372,6 +374,24 @@ function formatPrice(
   });
 
   return formatter.format(Math.round(converted));
+}
+
+/**
+ * Format a timestamp as relative time (e.g. "3h ago" / "3時間前").
+ * Uses i18n keys: card.justNow, card.minutesAgo, card.hoursAgo, card.daysAgo
+ */
+function formatRelativeTime(
+  isoDate: string,
+  t: (key: string, params?: Record<string, string | number>) => string,
+): string {
+  const diffMs = Date.now() - new Date(isoDate).getTime();
+  const diffMin = Math.floor(diffMs / 60_000);
+  if (diffMin < 1) return t('card.justNow');
+  if (diffMin < 60) return t('card.minutesAgo', { n: diffMin });
+  const diffH = Math.floor(diffMin / 60);
+  if (diffH < 24) return t('card.hoursAgo', { n: diffH });
+  const diffD = Math.floor(diffH / 24);
+  return t('card.daysAgo', { n: diffD });
 }
 
 /**
@@ -902,12 +922,30 @@ export const ListingCard = memo(function ListingCard({
           </div>
         ) : <div className={`${sz.attrH} sm:h-[20px] lg:h-[22px]`} />}
 
+        {/* JA metadata row — nagasa + era (ichimokuryouzen: key specs at a glance) */}
+        {locale === 'ja' && (listing.nagasa_cm || listing.era) && (
+          <div className="flex items-center gap-2 text-[10px] text-muted truncate">
+            {listing.nagasa_cm && (
+              <span>{listing.nagasa_cm}cm</span>
+            )}
+            {listing.nagasa_cm && listing.era && <span className="text-border">·</span>}
+            {listing.era && (
+              <span>{listing.era}</span>
+            )}
+          </div>
+        )}
+
         {/* Price row */}
         <div className={`${sz.pPad} sm:pt-2 sm:mt-1 border-t border-border/40 flex items-center justify-between`}>
           <span className={`${sz.price} sm:text-[14px] lg:text-[15px] tabular-nums ${isAskPrice ? 'text-charcoal' : 'text-ink font-medium'}`}>
             {priceDisplay}
           </span>
           <div className="flex items-center gap-1.5">
+            {listing.last_scraped_at && (
+              <span className="text-[9px] text-muted/60 tabular-nums hidden sm:inline">
+                {formatRelativeTime(listing.last_scraped_at, t)}
+              </span>
+            )}
             {newBadge}
           </div>
         </div>
@@ -935,6 +973,8 @@ export const ListingCard = memo(function ListingCard({
     prevProps.listing.status_admin_locked === nextProps.listing.status_admin_locked &&
     prevProps.mobileView === nextProps.mobileView &&
     prevProps.fontSize === nextProps.fontSize &&
-    prevProps.imageAspect === nextProps.imageAspect
+    prevProps.imageAspect === nextProps.imageAspect &&
+    prevProps.listing.era === nextProps.listing.era &&
+    prevProps.listing.nagasa_cm === nextProps.listing.nagasa_cm
   );
 });

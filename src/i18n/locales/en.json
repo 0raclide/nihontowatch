@@ -1095,5 +1095,15 @@
   "artisan.tierJuyoLabel": "Juyo designated",
   "artisan.tierKokuho": "National Treasure",
   "artisan.tierElite": "Elite",
-  "artisan.tierJuyo": "Juyo"
+  "artisan.tierJuyo": "Juyo",
+
+  "card.confirmed": "Confirmed {time}",
+  "card.justNow": "just now",
+  "card.minutesAgo": "{n}m ago",
+  "card.hoursAgo": "{n}h ago",
+  "card.daysAgo": "{n}d ago",
+
+  "share.line": "LINE",
+  "share.twitter": "Post",
+  "share.shareOn": "Share on {platform}"
 }
