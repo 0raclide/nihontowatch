@@ -71,8 +71,8 @@ export interface ListingScoreInput {
   nagasa_cm: number | null;
   sori_cm: number | null;
   motohaba_cm: number | null;
-  height_cm: number | null;
-  width_cm: number | null;
+  tosogu_height_cm: number | null;
+  tosogu_width_cm: number | null;
 }
 
 interface EliteSyncOptions {
@@ -95,7 +95,7 @@ export function computeQuality(listing: ListingScoreInput): number {
   // Completeness sub-score (0–55 pts)
   const imgCount = imageCount(listing);
   const hasAttribution = !!(listing.smith || listing.tosogu_maker);
-  const hasMeasurements = !!(listing.nagasa_cm || listing.height_cm);
+  const hasMeasurements = !!(listing.nagasa_cm || listing.tosogu_height_cm);
   const hasDesc = !!(listing.description && listing.description.length > 100);
   const hasEra = !!listing.era;
   const hasSchool = !!(listing.school || listing.tosogu_school);
@@ -157,7 +157,7 @@ const HEAT_30_DAY_MS = 30 * 24 * 60 * 60 * 1000;
 
 /** Select string for the fields we need from listings */
 const LISTING_SCORE_SELECT =
-  'id, artisan_id, artisan_elite_factor, artisan_elite_count, cert_type, price_value, artisan_confidence, images, first_seen_at, is_initial_import, smith, tosogu_maker, school, tosogu_school, era, province, description, nagasa_cm, sori_cm, motohaba_cm, height_cm, width_cm';
+  'id, artisan_id, artisan_elite_factor, artisan_elite_count, cert_type, price_value, artisan_confidence, images, first_seen_at, is_initial_import, smith, tosogu_maker, school, tosogu_school, era, province, description, nagasa_cm, sori_cm, motohaba_cm, tosogu_height_cm, tosogu_width_cm';
 
 /**
  * Fetch elite_factor and elite_count from Yuhinkai for an artisan code.
