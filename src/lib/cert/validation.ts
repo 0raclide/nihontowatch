@@ -22,22 +22,34 @@ export const CERT_LABELS: Record<string, CertInfo> = {
   Tokuju: { label: 'Tokuju', certKey: 'cert.Tokuju', tier: 'tokuju' },
   tokuju: { label: 'Tokuju', certKey: 'cert.tokuju', tier: 'tokuju' },
   tokubetsu_juyo: { label: 'Tokuju', certKey: 'cert.Tokuju', tier: 'tokuju' },
+  'Tokubetsu Juyo': { label: 'Tokuju', certKey: 'cert.Tokuju', tier: 'tokuju' },
   // Juyo Bijutsuhin - Important Cultural Property (orange/gold)
   'Juyo Bijutsuhin': { label: 'Jubi', certKey: 'cert.Juyo Bijutsuhin', tier: 'jubi' },
   JuyoBijutsuhin: { label: 'Jubi', certKey: 'cert.Juyo Bijutsuhin', tier: 'jubi' },
   juyo_bijutsuhin: { label: 'Jubi', certKey: 'cert.Juyo Bijutsuhin', tier: 'jubi' },
+  JuBi: { label: 'Jubi', certKey: 'cert.Juyo Bijutsuhin', tier: 'jubi' },
+  jubi: { label: 'Jubi', certKey: 'cert.Juyo Bijutsuhin', tier: 'jubi' },
   // Juyo - high tier (blue)
   Juyo: { label: 'Jūyō', certKey: 'cert.Juyo', tier: 'juyo' },
   juyo: { label: 'Jūyō', certKey: 'cert.juyo', tier: 'juyo' },
+  'Juyo Tosogu': { label: 'Jūyō', certKey: 'cert.Juyo', tier: 'juyo' },
   // Tokubetsu Hozon - mid tier (brown)
   TokuHozon: { label: 'Tokuho', certKey: 'cert.TokuHozon', tier: 'tokuho' },
   tokubetsu_hozon: { label: 'Tokuho', certKey: 'cert.tokubetsu_hozon', tier: 'tokuho' },
+  'Tokubetsu Hozon': { label: 'Tokuho', certKey: 'cert.Tokubetsu Hozon', tier: 'tokuho' },
+  'Tokubetsu Hozon Tosogu': { label: 'Tokuho', certKey: 'cert.Tokubetsu Hozon', tier: 'tokuho' },
   TokuKicho: { label: 'Tokubetsu Kichō', certKey: 'cert.TokuKicho', tier: 'tokuho' },
+  'Tokubetsu Kicho': { label: 'Tokubetsu Kichō', certKey: 'cert.TokuKicho', tier: 'tokuho' },
+  tokubetsu_kicho: { label: 'Tokubetsu Kichō', certKey: 'cert.TokuKicho', tier: 'tokuho' },
   // Hozon - standard tier (yellow)
   Hozon: { label: 'Hozon', certKey: 'cert.Hozon', tier: 'hozon' },
   hozon: { label: 'Hozon', certKey: 'cert.hozon', tier: 'hozon' },
+  'Hozon Tosogu': { label: 'Hozon', certKey: 'cert.Hozon', tier: 'hozon' },
   nbthk: { label: 'NBTHK', certKey: 'cert.nbthk', tier: 'hozon' },
   nthk: { label: 'NTHK', certKey: 'cert.nthk', tier: 'hozon' },
+  'NTHK Kanteisho': { label: 'NTHK', certKey: 'cert.nthk', tier: 'hozon' },
+  Kantei: { label: 'Kantei', certKey: 'cert.Kantei', tier: 'hozon' },
+  kantei: { label: 'Kantei', certKey: 'cert.Kantei', tier: 'hozon' },
 };
 
 /**
