@@ -46,7 +46,7 @@ export function _resetRateLimitForTesting() {
   rateLimitMap.clear();
 }
 
-import { containsJapanese } from '@/lib/text/japanese';
+import { isPredominantlyJapanese } from '@/lib/text/japanese';
 
 interface TranslateRequest {
   listingId: number;
@@ -139,7 +139,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Auto-detect direction: JP→EN (existing) or EN→JP (new)
-    const hasJapanese = containsJapanese(sourceField);
+    const hasJapanese = isPredominantlyJapanese(sourceField);
     const direction: 'jp_to_en' | 'en_to_jp' = hasJapanese ? 'jp_to_en' : 'en_to_jp';
 
     // Select the right cached field and target column based on direction

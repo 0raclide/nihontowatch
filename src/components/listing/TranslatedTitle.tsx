@@ -13,7 +13,7 @@ interface TranslatedTitleProps {
   className?: string;
 }
 
-import { containsJapanese } from '@/lib/text/japanese';
+import { isPredominantlyJapanese } from '@/lib/text/japanese';
 
 // =============================================================================
 // COMPONENT
@@ -47,7 +47,7 @@ export function TranslatedTitle({
   const [isTranslating, setIsTranslating] = useState(false);
 
   // Check if title has Japanese text
-  const hasJapanese = listing.title ? containsJapanese(listing.title) : false;
+  const hasJapanese = listing.title ? isPredominantlyJapanese(listing.title) : false;
 
   // Needs translation: EN locale with Japanese source, or JA locale with English source
   const needsTranslation =

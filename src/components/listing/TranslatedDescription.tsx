@@ -14,7 +14,7 @@ interface TranslatedDescriptionProps {
   maxLines?: number;
 }
 
-import { containsJapanese } from '@/lib/text/japanese';
+import { isPredominantlyJapanese } from '@/lib/text/japanese';
 
 // =============================================================================
 // COMPONENT
@@ -28,7 +28,7 @@ export function TranslatedDescription({
   const { t, locale } = useLocale();
 
   // Check if description has Japanese text
-  const hasJapanese = listing.description ? containsJapanese(listing.description) : false;
+  const hasJapanese = listing.description ? isPredominantlyJapanese(listing.description) : false;
 
   // Initialize translation state based on locale and direction
   const getInitialTranslation = useCallback(() => {
