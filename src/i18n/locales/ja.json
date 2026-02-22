@@ -218,6 +218,11 @@
   "listing.width": "\u5e45",
   "listing.material": "\u7d20\u6750",
   "listing.maker": "\u4f5c\u8005",
+  "listing.showOriginal": "原文を表示",
+  "listing.showTranslation": "翻訳を表示",
+  "listing.readMore": "続きを読む",
+  "listing.showLess": "閉じる",
+  "listing.translationUnavailable": "（翻訳なし）",
   "listing.noDescription": "\u8aac\u660e\u306a\u3057",
   "listing.ask": "\u304a\u554f\u3044\u5408\u308f\u305b",
   "listing.untitled": "\u7121\u984c",
@@ -1081,6 +1086,9 @@
   "profile.exportError": "データのエクスポートに失敗しました。もう一度お試しください。",
 
   "listing.sold": "売却済",
+
+  "meiType.mei": "在銘",
+  "meiType.mumei": "無銘",
 
   "artisan.tierKokuhoLabel": "国宝指定",
   "artisan.tierEliteLabel": "名工指定",

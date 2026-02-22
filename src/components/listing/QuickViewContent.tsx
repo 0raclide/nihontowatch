@@ -46,7 +46,7 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
   const { showPaywall, canAccess } = useSubscription();
   const quickView = useQuickViewOptional();
   const activityTracker = useActivityTrackerOptional();
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const [isInquiryModalOpen, setIsInquiryModalOpen] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [navigatingToArtist, setNavigatingToArtist] = useState(false);
@@ -308,7 +308,9 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
                 <div className="flex-1 min-w-0">
                   <div className="text-[10px] uppercase tracking-wider text-gold font-medium leading-tight">{t('quickview.artistProfile')}</div>
                   <div className="text-[16px] font-semibold text-ink group-hover:text-gold transition-colors truncate">
-                    {listing.artisan_display_name || listing.artisan_id}
+                    {locale === 'ja' && listing.artisan_name_kanji
+                      ? String(listing.artisan_name_kanji)
+                      : (listing.artisan_display_name || listing.artisan_id)}
                   </div>
                 </div>
                 {listing.artisan_tier && (

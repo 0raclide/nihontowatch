@@ -218,6 +218,11 @@
   "listing.width": "Width",
   "listing.material": "Material",
   "listing.maker": "Maker",
+  "listing.showOriginal": "Show original",
+  "listing.showTranslation": "Show translation",
+  "listing.readMore": "Read more",
+  "listing.showLess": "Show less",
+  "listing.translationUnavailable": "(Translation unavailable)",
   "listing.noDescription": "No description available",
   "listing.ask": "Ask",
   "listing.untitled": "Untitled",
@@ -1081,6 +1086,9 @@
   "profile.exportError": "Failed to export data. Please try again.",
 
   "listing.sold": "SOLD",
+
+  "meiType.mei": "Signed",
+  "meiType.mumei": "Unsigned",
 
   "artisan.tierKokuhoLabel": "National Treasure designated",
   "artisan.tierEliteLabel": "Elite designated",

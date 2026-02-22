@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { Listing } from '@/types';
+import { useLocale } from '@/i18n/LocaleContext';
 
 // =============================================================================
 // TYPES
@@ -25,9 +26,12 @@ export function TranslatedDescription({
   className = '',
   maxLines = 6,
 }: TranslatedDescriptionProps) {
+  const { t, locale } = useLocale();
   const [translation, setTranslation] = useState<string | null>(listing.description_en || null);
   const [isLoading, setIsLoading] = useState(false);
-  const [showOriginal, setShowOriginal] = useState(false);
+  // JA locale: default to showing original (Japanese) text
+  // EN locale: default to showing translation
+  const [showOriginal, setShowOriginal] = useState(locale === 'ja');
   const [error, setError] = useState<string | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isTruncated, setIsTruncated] = useState(false);
@@ -36,9 +40,9 @@ export function TranslatedDescription({
   // Check if description has Japanese text
   const hasJapanese = listing.description ? JAPANESE_REGEX.test(listing.description) : false;
 
-  // Fetch translation if needed
+  // Only fetch translation in EN locale when needed
   const fetchTranslation = useCallback(async () => {
-    if (!listing.description || translation || !hasJapanese) return;
+    if (!listing.description || translation || !hasJapanese || locale === 'ja') return;
 
     setIsLoading(true);
     setError(null);
@@ -63,22 +67,26 @@ export function TranslatedDescription({
     } finally {
       setIsLoading(false);
     }
-  }, [listing.id, listing.description, translation, hasJapanese]);
+  }, [listing.id, listing.description, translation, hasJapanese, locale]);
 
-  // Trigger translation on mount if needed
+  // Trigger translation on mount if needed (EN locale only)
   useEffect(() => {
-    if (listing.description && hasJapanese && !listing.description_en) {
+    if (locale === 'en' && listing.description && hasJapanese && !listing.description_en) {
       fetchTranslation();
     }
-  }, [listing.description, listing.description_en, hasJapanese, fetchTranslation]);
+  }, [locale, listing.description, listing.description_en, hasJapanese, fetchTranslation]);
 
   // Sync translation state when listing.description_en becomes available
-  // (e.g., after QuickView fetches the full listing data asynchronously)
   useEffect(() => {
     if (listing.description_en && !translation) {
       setTranslation(listing.description_en);
     }
   }, [listing.description_en, translation]);
+
+  // Reset showOriginal when locale changes
+  useEffect(() => {
+    setShowOriginal(locale === 'ja');
+  }, [locale]);
 
   // Reset expanded state when listing changes or when toggling original/translation
   useEffect(() => {
@@ -90,13 +98,11 @@ export function TranslatedDescription({
   useEffect(() => {
     const checkTruncation = () => {
       if (textRef.current && !isExpanded) {
-        // Compare scroll height vs client height to detect overflow
         const { scrollHeight, clientHeight } = textRef.current;
-        setIsTruncated(scrollHeight > clientHeight + 1); // +1 for rounding
+        setIsTruncated(scrollHeight > clientHeight + 1);
       }
     };
 
-    // Check after render and on resize
     checkTruncation();
     window.addEventListener('resize', checkTruncation);
     return () => window.removeEventListener('resize', checkTruncation);
@@ -110,11 +116,16 @@ export function TranslatedDescription({
   // Determine which text to display
   const displayText = showOriginal ? listing.description : (translation || listing.description);
 
+  // Toggle label depends on current state and locale:
+  // When showing original → offer "Show translation" (EN) or "翻訳を表示" (JA)
+  // When showing translation → offer "Show original" (EN) or "原文を表示" (JA)
+  const toggleLabel = showOriginal ? t('listing.showTranslation') : t('listing.showOriginal');
+
   return (
     <div className={`px-4 py-3 lg:px-5 ${className}`}>
       <div className="flex items-center justify-between mb-2">
         <h3 className="text-[10px] uppercase tracking-wider text-muted font-medium">
-          Description
+          {t('listing.description')}
         </h3>
         {/* Show toggle only if we have both original and translation */}
         {hasJapanese && translation && translation !== listing.description && (
@@ -123,7 +134,7 @@ export function TranslatedDescription({
             onClick={() => setShowOriginal(!showOriginal)}
             className="text-[10px] text-gold hover:text-gold-light transition-colors"
           >
-            {showOriginal ? 'Show translation' : 'Show original'}
+            {toggleLabel}
           </button>
         )}
       </div>
@@ -152,14 +163,14 @@ export function TranslatedDescription({
           >
             {listing.description}
           </p>
-          <p className="text-[10px] text-muted mt-1">(Translation unavailable)</p>
+          <p className="text-[10px] text-muted mt-1">{t('listing.translationUnavailable')}</p>
           {(isTruncated || isExpanded) && (
             <button
               type="button"
               onClick={() => setIsExpanded(!isExpanded)}
               className="text-[12px] text-gold hover:text-gold-light transition-colors mt-2 font-medium"
             >
-              {isExpanded ? 'Show less' : 'Read more'}
+              {isExpanded ? t('listing.showLess') : t('listing.readMore')}
             </button>
           )}
         </>
@@ -186,7 +197,7 @@ export function TranslatedDescription({
               onClick={() => setIsExpanded(!isExpanded)}
               className="text-[12px] text-gold hover:text-gold-light transition-colors mt-2 font-medium"
             >
-              {isExpanded ? 'Show less' : 'Read more'}
+              {isExpanded ? t('listing.showLess') : t('listing.readMore')}
             </button>
           )}
         </>

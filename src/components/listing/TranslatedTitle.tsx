@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import type { Listing } from '@/types';
+import { useLocale } from '@/i18n/LocaleContext';
 
 // =============================================================================
 // TYPES
@@ -20,29 +21,35 @@ const JAPANESE_REGEX = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/;
 // =============================================================================
 
 /**
- * TranslatedTitle displays the listing title with automatic Japanese translation.
+ * TranslatedTitle displays the listing title with locale-aware selection.
  *
  * Behavior:
- * - Shows original title immediately
- * - If Japanese detected and no cached translation, fetches translation
- * - Seamlessly swaps to translated text when ready (no loading state)
- * - Uses cached title_en if available
+ * - JA locale: Shows original title (listing.title). No auto-translate.
+ * - EN locale: Shows cached translation (title_en) if available, otherwise
+ *   fetches translation for Japanese titles. Falls back to original title.
  */
 export function TranslatedTitle({
   listing,
   className = '',
 }: TranslatedTitleProps) {
-  // Use cached translation if available, otherwise original title
-  const [displayTitle, setDisplayTitle] = useState<string>(
-    listing.title_en || listing.title || 'Untitled'
-  );
+  const { t, locale } = useLocale();
+
+  // Select initial display title based on locale
+  const getInitialTitle = useCallback(() => {
+    if (locale === 'ja') {
+      return listing.title || t('listing.untitled');
+    }
+    return listing.title_en || listing.title || t('listing.untitled');
+  }, [locale, listing.title, listing.title_en, t]);
+
+  const [displayTitle, setDisplayTitle] = useState<string>(getInitialTitle);
   const [isTranslating, setIsTranslating] = useState(false);
 
   // Check if title has Japanese text that needs translation
   const hasJapanese = listing.title ? JAPANESE_REGEX.test(listing.title) : false;
-  const needsTranslation = hasJapanese && !listing.title_en;
+  const needsTranslation = locale === 'en' && hasJapanese && !listing.title_en;
 
-  // Fetch translation if needed
+  // Fetch translation if needed (EN locale only)
   const fetchTranslation = useCallback(async () => {
     if (!listing.title || !needsTranslation || isTranslating) return;
 
@@ -78,10 +85,10 @@ export function TranslatedTitle({
     }
   }, [needsTranslation, fetchTranslation]);
 
-  // Update display title if listing changes
+  // Update display title if listing or locale changes
   useEffect(() => {
-    setDisplayTitle(listing.title_en || listing.title || 'Untitled');
-  }, [listing.title, listing.title_en]);
+    setDisplayTitle(getInitialTitle());
+  }, [getInitialTitle]);
 
   // No title to show
   if (!listing.title) {

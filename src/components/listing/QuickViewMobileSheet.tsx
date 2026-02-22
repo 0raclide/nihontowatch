@@ -93,7 +93,7 @@ export function QuickViewMobileSheet({
   const [viewportHeight, setViewportHeight] = useState(0);
 
   // i18n
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
 
   // Inquiry modal state
   const quickView = useQuickViewOptional();
@@ -137,7 +137,7 @@ export function QuickViewMobileSheet({
 
   const { currency, exchangeRates } = useCurrency();
   const certInfo = getCertInfo(listing.cert_type);
-  const { artisan, school } = getArtisanInfo(listing);
+  const { artisan, school } = getArtisanInfo(listing, locale);
   const itemTypeLabel = getItemTypeLabel(listing.item_type);
   // Note: Supabase returns 'dealers' (plural) from the join, not 'dealer' (singular)
   const dealerName = listing.dealers?.name || listing.dealer?.name || 'Dealer';

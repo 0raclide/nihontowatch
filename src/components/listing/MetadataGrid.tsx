@@ -157,7 +157,7 @@ function stripSchoolPrefix(artisan: string | null, school: string | null): strin
   return artisan;
 }
 
-export function getArtisanInfo(listing: Listing | ListingWithEnrichment): {
+export function getArtisanInfo(listing: Listing | ListingWithEnrichment, locale: string = 'en'): {
   artisan: string | null;
   school: string | null;
   artisanLabel: string;
@@ -184,7 +184,18 @@ export function getArtisanInfo(listing: Listing | ListingWithEnrichment): {
     const rawMaker = listing.tosogu_maker;
     const school = listing.tosogu_school;
 
-    // If maker is in Japanese, try to extract romanized name from title_en
+    // JA locale: show original Japanese names directly
+    if (locale === 'ja') {
+      return {
+        artisan: stripSchoolPrefix(rawMaker || null, school || null),
+        school: school || null,
+        artisanLabel: 'Maker',
+        era: listing.era || null,
+        isEnriched: false,
+      };
+    }
+
+    // EN locale: If maker is in Japanese, try to extract romanized name from title_en
     let artisan: string | null = null;
     if (rawMaker && containsJapanese(rawMaker)) {
       artisan = extractArtisanFromTitleEn(listing.title_en, school);
@@ -205,7 +216,18 @@ export function getArtisanInfo(listing: Listing | ListingWithEnrichment): {
   const rawSmith = listing.smith;
   const school = listing.school;
 
-  // If smith is in Japanese, try to extract romanized name from title_en
+  // JA locale: show original Japanese names directly
+  if (locale === 'ja') {
+    return {
+      artisan: stripSchoolPrefix(rawSmith || null, school || null),
+      school: school || null,
+      artisanLabel: 'Smith',
+      era: listing.era || null,
+      isEnriched: false,
+    };
+  }
+
+  // EN locale: If smith is in Japanese, try to extract romanized name from title_en
   let artisan: string | null = null;
   if (rawSmith && containsJapanese(rawSmith)) {
     artisan = extractArtisanFromTitleEn(listing.title_en, school);
@@ -276,7 +298,7 @@ export function MetadataGrid({
   hideArtisan = false,
   hideSchool = false,
 }: MetadataGridProps) {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const td = (cat: string, v: string | null | undefined) => {
     if (!v) return v;
     // Strip parenthetical suffixes like "(1185-1333)" for period/era lookups
@@ -285,7 +307,7 @@ export function MetadataGrid({
     const r = t(k);
     return r === k ? v : r;
   };
-  const { artisan, school, artisanLabel, era, isEnriched } = getArtisanInfo(listing);
+  const { artisan, school, artisanLabel, era, isEnriched } = getArtisanInfo(listing, locale);
   const certInfo = getCertInfo(listing.cert_type);
   const itemIsBlade = isBlade(listing.item_type);
   const itemIsTosogu = isTosogu(listing.item_type);
@@ -340,7 +362,7 @@ export function MetadataGrid({
 
               <MetadataItem label={t('metadata.era')} value={td('period', era)} />
               <MetadataItem label={t('metadata.province')} value={td('province', listing.province)} />
-              <MetadataItem label={t('metadata.signature')} value={listing.mei_type} />
+              <MetadataItem label={t('metadata.signature')} value={td('meiType', listing.mei_type)} />
 
               {/* Certification with session */}
               {certInfo && (

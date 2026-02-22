@@ -542,7 +542,10 @@ export const ListingCard = memo(function ListingCard({
     artisan: getArtisanName(listing.smith, listing.school, listing.title_en)
       || getArtisanName(listing.tosogu_maker, listing.tosogu_school, listing.title_en),
     itemType: normalizeItemType(listing.item_type),
-    cleanedTitle: cleanTitle(listing.title, listing.smith, listing.tosogu_maker, t('listing.untitled')),
+    cleanedTitle: cleanTitle(
+      locale === 'en' && listing.title_en ? listing.title_en : listing.title,
+      listing.smith, listing.tosogu_maker, t('listing.untitled')
+    ),
     certInfo: getValidatedCertInfo(listing),
   }), [
     listing.id,
@@ -558,6 +561,7 @@ export const ListingCard = memo(function ListingCard({
     listing.cert_type,
     listing.price_value,
     listing.price_currency,
+    locale,
     t,
   ]);
 
