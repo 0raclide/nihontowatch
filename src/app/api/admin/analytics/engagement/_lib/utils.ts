@@ -242,6 +242,48 @@ export function errorResponse<T = unknown>(
 }
 
 // =============================================================================
+// PAGINATED FETCH
+// =============================================================================
+
+/**
+ * Fetch all rows from a Supabase query, paginating past the PostgREST
+ * max_rows limit (default 1,000). Without this, `.limit(100000)` is
+ * silently capped and returns incomplete data.
+ *
+ * @param queryBuilder - A Supabase query builder (before .range/.limit)
+ * @param pageSize - Rows per page (default 1000, matching PostgREST default)
+ * @returns All matching rows
+ */
+export async function fetchAllRows<T extends Record<string, unknown>>(
+  queryBuilder: {
+    range: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>;
+  },
+  pageSize: number = 1000
+): Promise<{ data: T[]; error: { message: string } | null }> {
+  const allRows: T[] = [];
+  let offset = 0;
+  let hasMore = true;
+
+  while (hasMore) {
+    const { data: page, error } = await queryBuilder.range(offset, offset + pageSize - 1);
+
+    if (error) {
+      return { data: allRows, error };
+    }
+
+    if (page && page.length > 0) {
+      allRows.push(...page);
+      offset += page.length;
+      hasMore = page.length === pageSize;
+    } else {
+      hasMore = false;
+    }
+  }
+
+  return { data: allRows, error: null };
+}
+
+// =============================================================================
 // MATH HELPERS
 // =============================================================================
 

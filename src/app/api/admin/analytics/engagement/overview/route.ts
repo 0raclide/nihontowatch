@@ -26,6 +26,7 @@ import {
   roundTo,
   safeDivide,
   getAdminUserIds,
+  fetchAllRows,
 } from '../_lib/utils';
 
 export const dynamic = 'force-dynamic';
@@ -147,34 +148,37 @@ export async function GET(request: NextRequest): Promise<NextResponse<AnalyticsA
       sessionStatsResult,
     ] = await Promise.all([
       // Sessions in current period
-      supabase
-        .from('user_sessions')
-        .select('id, user_id')
-        .gte('started_at', startDate.toISOString())
-        .lte('started_at', endDate.toISOString())
-        .limit(100000),
+      fetchAllRows<{ id: string; user_id: string | null }>(
+        supabase
+          .from('user_sessions')
+          .select('id, user_id')
+          .gte('started_at', startDate.toISOString())
+          .lte('started_at', endDate.toISOString())
+      ),
 
       // Sessions in previous period
-      supabase
-        .from('user_sessions')
-        .select('id, user_id')
-        .gte('started_at', previousStartDate.toISOString())
-        .lte('started_at', previousEndDate.toISOString())
-        .limit(100000),
+      fetchAllRows<{ id: string; user_id: string | null }>(
+        supabase
+          .from('user_sessions')
+          .select('id, user_id')
+          .gte('started_at', previousStartDate.toISOString())
+          .lte('started_at', previousEndDate.toISOString())
+      ),
 
       // Session stats for current period (duration, page views)
-      supabase
-        .from('user_sessions')
-        .select('total_duration_ms, page_views, user_id')
-        .gte('started_at', startDate.toISOString())
-        .lte('started_at', endDate.toISOString())
-        .limit(100000),
+      fetchAllRows<{ total_duration_ms: number | null; page_views: number | null; user_id: string | null }>(
+        supabase
+          .from('user_sessions')
+          .select('total_duration_ms, page_views, user_id')
+          .gte('started_at', startDate.toISOString())
+          .lte('started_at', endDate.toISOString())
+      ),
     ]);
 
     // Filter admin sessions
-    const sessionsCurrentCount = ((sessionsCurrentResult.data || []) as Array<{ id: string; user_id: string | null }>)
+    const sessionsCurrentCount = sessionsCurrentResult.data
       .filter(s => !isAdminUser(s.user_id)).length;
-    const sessionsPreviousCount = ((sessionsPreviousResult.data || []) as Array<{ id: string; user_id: string | null }>)
+    const sessionsPreviousCount = sessionsPreviousResult.data
       .filter(s => !isAdminUser(s.user_id)).length;
 
     // 5. Query engagement metrics from dedicated tracking tables
@@ -186,47 +190,50 @@ export async function GET(request: NextRequest): Promise<NextResponse<AnalyticsA
       searchesPreviousResult,
     ] = await Promise.all([
       // Views in current period - from listing_views table
-      supabase
-        .from('listing_views')
-        .select('id, user_id')
-        .gte('viewed_at', startDate.toISOString())
-        .lte('viewed_at', endDate.toISOString())
-        .limit(100000),
+      fetchAllRows<{ id: string; user_id: string | null }>(
+        supabase
+          .from('listing_views')
+          .select('id, user_id')
+          .gte('viewed_at', startDate.toISOString())
+          .lte('viewed_at', endDate.toISOString())
+      ),
 
       // Views in previous period
-      supabase
-        .from('listing_views')
-        .select('id, user_id')
-        .gte('viewed_at', previousStartDate.toISOString())
-        .lte('viewed_at', previousEndDate.toISOString())
-        .limit(100000),
+      fetchAllRows<{ id: string; user_id: string | null }>(
+        supabase
+          .from('listing_views')
+          .select('id, user_id')
+          .gte('viewed_at', previousStartDate.toISOString())
+          .lte('viewed_at', previousEndDate.toISOString())
+      ),
 
       // Searches in current period - from user_searches table
-      supabase
-        .from('user_searches')
-        .select('id, user_id')
-        .gte('searched_at', startDate.toISOString())
-        .lte('searched_at', endDate.toISOString())
-        .limit(100000),
+      fetchAllRows<{ id: string; user_id: string | null }>(
+        supabase
+          .from('user_searches')
+          .select('id, user_id')
+          .gte('searched_at', startDate.toISOString())
+          .lte('searched_at', endDate.toISOString())
+      ),
 
       // Searches in previous period
-      supabase
-        .from('user_searches')
-        .select('id, user_id')
-        .gte('searched_at', previousStartDate.toISOString())
-        .lte('searched_at', previousEndDate.toISOString())
-        .limit(100000),
+      fetchAllRows<{ id: string; user_id: string | null }>(
+        supabase
+          .from('user_searches')
+          .select('id, user_id')
+          .gte('searched_at', previousStartDate.toISOString())
+          .lte('searched_at', previousEndDate.toISOString())
+      ),
     ]);
 
     // Filter admin activity from engagement counts
-    type IdRow = { id: string; user_id: string | null };
-    const viewsCurrentCount = ((viewsCurrentResult.data || []) as IdRow[])
+    const viewsCurrentCount = viewsCurrentResult.data
       .filter(v => !isAdminUser(v.user_id)).length;
-    const viewsPreviousCount = ((viewsPreviousResult.data || []) as IdRow[])
+    const viewsPreviousCount = viewsPreviousResult.data
       .filter(v => !isAdminUser(v.user_id)).length;
-    const searchesCurrentCount = ((searchesCurrentResult.data || []) as IdRow[])
+    const searchesCurrentCount = searchesCurrentResult.data
       .filter(s => !isAdminUser(s.user_id)).length;
-    const searchesPreviousCount = ((searchesPreviousResult.data || []) as IdRow[])
+    const searchesPreviousCount = searchesPreviousResult.data
       .filter(s => !isAdminUser(s.user_id)).length;
 
     // 6. Query favorites
@@ -250,7 +257,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<AnalyticsA
     ]);
 
     // 7. Calculate session statistics (filtered to exclude admin sessions)
-    const sessionsData = ((sessionStatsResult.data || []) as Array<{ total_duration_ms: number | null; page_views: number | null; user_id: string | null }>)
+    const sessionsData = sessionStatsResult.data
       .filter(s => !isAdminUser(s.user_id));
     let totalDurationMs = 0;
     let totalPageViews = 0;

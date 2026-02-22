@@ -22,6 +22,7 @@ import {
   errorResponse,
   roundTo,
   getAdminUserIds,
+  fetchAllRows,
 } from '../_lib/utils';
 
 // =============================================================================
@@ -110,32 +111,18 @@ export async function GET(request: NextRequest) {
 
     // Fetch all sessions with duration data, paginating past Supabase's
     // PostgREST max_rows (default 1,000) to get the full dataset
-    const PAGE_SIZE = 1000;
-    const allSessions: { total_duration_ms: number; user_id: string | null }[] = [];
-    let offset = 0;
-    let hasMore = true;
-
-    while (hasMore) {
-      const { data: page, error } = await supabase
+    const { data: allSessions, error } = await fetchAllRows<{ total_duration_ms: number; user_id: string | null }>(
+      supabase
         .from('user_sessions')
         .select('total_duration_ms, user_id')
         .gte('started_at', startDate.toISOString())
         .lte('started_at', endDate.toISOString())
         .not('total_duration_ms', 'is', null)
-        .range(offset, offset + PAGE_SIZE - 1);
+    );
 
-      if (error) {
-        logger.error('Failed to fetch session data', { error: error.message });
-        return errorResponse('Failed to fetch session data', 500);
-      }
-
-      if (page && page.length > 0) {
-        allSessions.push(...page);
-        offset += page.length;
-        hasMore = page.length === PAGE_SIZE;
-      } else {
-        hasMore = false;
-      }
+    if (error) {
+      logger.error('Failed to fetch session data', { error: error.message });
+      return errorResponse('Failed to fetch session data', 500);
     }
 
     // Filter out admin sessions

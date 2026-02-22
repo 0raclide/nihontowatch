@@ -72,6 +72,12 @@ function createMockQueryBuilder(
   builder.order = vi.fn(() => chain());
   builder.single = vi.fn(() => Promise.resolve({ data: { role: 'admin' }, error: null }));
 
+  // range() support for fetchAllRows pagination — returns data for offset 0,
+  // empty for subsequent offsets so fetchAllRows terminates.
+  builder.range = vi.fn((from: number) =>
+    Promise.resolve({ data: from === 0 ? (data || []) : [], error: null })
+  );
+
   // Terminal methods return the data
   builder.then = vi.fn((resolve: (result: { data: unknown[] | null; error: null; count: number | null }) => void) => {
     resolve({ data, error: null, count });

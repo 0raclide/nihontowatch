@@ -37,6 +37,7 @@ import {
   roundTo,
   safeDivide,
   getAdminUserIds,
+  fetchAllRows,
 } from '../_lib/utils';
 
 export const dynamic = 'force-dynamic';
@@ -132,26 +133,31 @@ export async function GET(request: NextRequest): Promise<NextResponse<AnalyticsA
       inquiryResult,
     ] = await Promise.all([
       // Stage 1: Visitors — unique sessions
-      supabase
-        .from('user_sessions')
-        .select('id, user_id')
-        .gte('started_at', start)
-        .lte('started_at', end)
-        .limit(100000),
+      fetchAllRows<{ id: string; user_id: string | null }>(
+        supabase
+          .from('user_sessions')
+          .select('id, user_id')
+          .gte('started_at', start)
+          .lte('started_at', end)
+      ),
 
       // Stage 2: Searched — unique sessions that searched
-      supabase
-        .from('user_searches')
-        .select('session_id, user_id')
-        .gte('searched_at', start)
-        .lte('searched_at', end),
+      fetchAllRows<{ session_id: string; user_id: string | null }>(
+        supabase
+          .from('user_searches')
+          .select('session_id, user_id')
+          .gte('searched_at', start)
+          .lte('searched_at', end)
+      ),
 
       // Stage 3: Viewed listing — unique sessions that viewed a listing
-      supabase
-        .from('listing_views')
-        .select('session_id, user_id')
-        .gte('viewed_at', start)
-        .lte('viewed_at', end),
+      fetchAllRows<{ session_id: string; user_id: string | null }>(
+        supabase
+          .from('listing_views')
+          .select('session_id, user_id')
+          .gte('viewed_at', start)
+          .lte('viewed_at', end)
+      ),
 
       // Stage 4: Signed up — unique users who created accounts
       supabase
@@ -161,32 +167,40 @@ export async function GET(request: NextRequest): Promise<NextResponse<AnalyticsA
         .lte('created_at', end),
 
       // Stage 5: Favorited — from user_favorites table (NOT activity_events)
-      supabase
-        .from('user_favorites')
-        .select('user_id')
-        .gte('created_at', start)
-        .lte('created_at', end),
+      fetchAllRows<{ user_id: string }>(
+        supabase
+          .from('user_favorites')
+          .select('user_id')
+          .gte('created_at', start)
+          .lte('created_at', end)
+      ),
 
       // Stage 6: Saved search — unique users who created saved searches
-      supabase
-        .from('saved_searches')
-        .select('user_id')
-        .gte('created_at', start)
-        .lte('created_at', end),
+      fetchAllRows<{ user_id: string }>(
+        supabase
+          .from('saved_searches')
+          .select('user_id')
+          .gte('created_at', start)
+          .lte('created_at', end)
+      ),
 
       // Stage 7: Dealer click-through — unique visitors who clicked to dealer
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (supabase.from('dealer_clicks') as any)
-        .select('visitor_id, session_id')
-        .gte('created_at', start)
-        .lte('created_at', end) as ReturnType<ReturnType<typeof supabase.from>['select']>,
+      fetchAllRows<{ visitor_id: string | null; session_id: string | null }>(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (supabase.from('dealer_clicks') as any)
+          .select('visitor_id, session_id')
+          .gte('created_at', start)
+          .lte('created_at', end)
+      ),
 
       // Stage 8: Generated draft — unique users who generated inquiry drafts
-      supabase
-        .from('inquiry_history')
-        .select('user_id')
-        .gte('created_at', start)
-        .lte('created_at', end),
+      fetchAllRows<{ user_id: string }>(
+        supabase
+          .from('inquiry_history')
+          .select('user_id')
+          .gte('created_at', start)
+          .lte('created_at', end)
+      ),
     ]);
 
     // Log any query errors
@@ -202,27 +216,19 @@ export async function GET(request: NextRequest): Promise<NextResponse<AnalyticsA
     // 4. Compute unique counts per stage
 
     // Stage 1: Unique sessions (excluding admin)
-    type SessionRow = { id: string; user_id: string | null };
-    const visitorRows = (visitorsResult.data || []) as SessionRow[];
-    const totalVisitors = visitorRows.filter(s => !isAdminUser(s.user_id)).length;
+    const totalVisitors = visitorsResult.data.filter(s => !isAdminUser(s.user_id)).length;
 
     // Stage 2: Unique sessions that searched
-    type SearchRow = { session_id: string; user_id: string | null };
-    const searchRows = (searchResult.data || []) as SearchRow[];
-    const searcherCount = countUnique(searchRows, 'session_id', isAdminUser);
+    const searcherCount = countUnique(searchResult.data, 'session_id', isAdminUser);
 
     // Stage 3: Unique sessions that viewed listings
-    type ViewRow = { session_id: string; user_id: string | null };
-    const viewRows = (viewResult.data || []) as ViewRow[];
-    const viewerCount = countUnique(viewRows, 'session_id', isAdminUser);
+    const viewerCount = countUnique(viewResult.data, 'session_id', isAdminUser);
 
     // Stage 4: Users who signed up
     const signedUpCount = signupResult.count || 0;
 
     // Stage 5: Unique users who favorited (from user_favorites, NOT activity_events)
-    type FavoriteRow = { user_id: string };
-    const favoriteRows = (favoritesResult.data || []) as FavoriteRow[];
-    const favoriteUserIds = new Set(favoriteRows.map(r => r.user_id));
+    const favoriteUserIds = new Set(favoritesResult.data.map(r => r.user_id));
     // Filter out admin users
     for (const id of favoriteUserIds) {
       if (isAdminUser(id)) favoriteUserIds.delete(id);
@@ -230,17 +236,14 @@ export async function GET(request: NextRequest): Promise<NextResponse<AnalyticsA
     const engagerCount = favoriteUserIds.size;
 
     // Stage 6: Unique users who saved a search
-    type SavedSearchRow = { user_id: string };
-    const savedSearchRows = (savedSearchResult.data || []) as SavedSearchRow[];
-    const savedSearchUserIds = new Set(savedSearchRows.map(r => r.user_id));
+    const savedSearchUserIds = new Set(savedSearchResult.data.map(r => r.user_id));
     for (const id of savedSearchUserIds) {
       if (isAdminUser(id)) savedSearchUserIds.delete(id);
     }
     const highIntentCount = savedSearchUserIds.size;
 
     // Stage 7: Unique visitors who clicked through to dealer website
-    type DealerClickRow = { visitor_id: string | null; session_id: string | null };
-    const dealerClickRows = (dealerClickResult.data || []) as DealerClickRow[];
+    const dealerClickRows = dealerClickResult.data;
     // dealer_clicks doesn't have user_id, use visitor_id for uniqueness
     const dealerClickVisitorIds = new Set<string>();
     for (const row of dealerClickRows) {
@@ -250,9 +253,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<AnalyticsA
     const dealerClickCount = dealerClickVisitorIds.size;
 
     // Stage 8: Unique users who generated inquiry drafts
-    type InquiryRow = { user_id: string };
-    const inquiryRows = (inquiryResult.data || []) as InquiryRow[];
-    const inquiryUserIds = new Set(inquiryRows.map(r => r.user_id));
+    const inquiryUserIds = new Set(inquiryResult.data.map(r => r.user_id));
     for (const id of inquiryUserIds) {
       if (isAdminUser(id)) inquiryUserIds.delete(id);
     }

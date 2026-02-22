@@ -24,6 +24,7 @@ import {
   successResponse,
   errorResponse,
   roundTo,
+  fetchAllRows,
 } from '../_lib/utils';
 
 export const dynamic = 'force-dynamic';
@@ -166,12 +167,14 @@ export async function GET(request: NextRequest): Promise<NextResponse<AnalyticsA
     const baseCount = usersBeforePeriod || 0;
 
     // 4. Get all users created in the period
-    const { data: newUsers, error: usersError } = await supabase
-      .from('profiles')
-      .select('id, created_at')
-      .gte('created_at', startDate.toISOString())
-      .lte('created_at', endDate.toISOString())
-      .order('created_at', { ascending: true });
+    const { data: newUsers, error: usersError } = await fetchAllRows<{ id: string; created_at: string }>(
+      supabase
+        .from('profiles')
+        .select('id, created_at')
+        .gte('created_at', startDate.toISOString())
+        .lte('created_at', endDate.toISOString())
+        .order('created_at', { ascending: true })
+    );
 
     if (usersError) {
       logger.error('Growth query error', { error: usersError });
@@ -188,7 +191,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<AnalyticsA
     }
 
     // Count users by date key
-    const usersData = (newUsers || []) as Array<{ id: string; created_at: string }>;
+    const usersData = newUsers;
     for (const user of usersData) {
       const userDate = new Date(user.created_at);
       const key = getDateKey(userDate, granularity);
