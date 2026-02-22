@@ -10,6 +10,7 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 import { findCategoryRedirect } from '@/lib/seo/categories';
 import { LOCALE_COOKIE } from '@/i18n';
+import { GDPR_COOKIE, isGdprCountry } from '@/lib/consent/gdpr';
 
 export async function middleware(request: NextRequest) {
   // Canonical redirect: /?type=katana → /swords/katana (301)
@@ -33,6 +34,12 @@ export async function middleware(request: NextRequest) {
   // If the nw-locale cookie is absent, detect from IP country and set it.
   const localeCookie = request.cookies.get(LOCALE_COOKIE)?.value;
   const needsLocaleCookie = !localeCookie || (localeCookie !== 'en' && localeCookie !== 'ja');
+
+  // ── GDPR region detection ──
+  // If the nw-gdpr cookie is absent, detect from IP country and set it.
+  // Cookie persists from first visit (no flip-flopping on VPN changes).
+  const gdprCookie = request.cookies.get(GDPR_COOKIE)?.value;
+  const needsGdprCookie = gdprCookie === undefined;
 
   let supabaseResponse = NextResponse.next({
     request,
@@ -127,6 +134,16 @@ export async function middleware(request: NextRequest) {
     const country = request.headers.get('x-vercel-ip-country') || '';
     const detectedLocale = country === 'JP' ? 'ja' : 'en';
     supabaseResponse.cookies.set(LOCALE_COOKIE, detectedLocale, {
+      path: '/',
+      maxAge: 31536000, // 1 year
+      sameSite: 'lax',
+    });
+  }
+
+  // ── Set GDPR region cookie if needed ──
+  if (needsGdprCookie) {
+    const country = request.headers.get('x-vercel-ip-country') || '';
+    supabaseResponse.cookies.set(GDPR_COOKIE, isGdprCountry(country) ? '1' : '0', {
       path: '/',
       maxAge: 31536000, // 1 year
       sameSite: 'lax',

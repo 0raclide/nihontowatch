@@ -175,6 +175,8 @@ artisan_id, artisan_confidence, artisan_method, artisan_candidates, artisan_matc
 artisan_verified, artisan_verified_at, artisan_verified_by
 -- Admin lock (single source of truth — scraper NEVER writes this)
 artisan_admin_locked  -- BOOLEAN, TRUE = artisan fields protected from automated overwrite
+-- Smart crop (computed by cron/backfill, auto-nulled by trigger when images change)
+focal_x, focal_y  -- REAL, 0-100% crop center for object-position CSS. NULL = center.
 ```
 
 **price_history**
@@ -527,6 +529,51 @@ The `featured_score` column drives the default sort order in browse. Computed as
 | Tests (65) | `tests/lib/featured/scoring.test.ts` |
 | Session doc | `docs/SESSION_20260222_FEATURED_SCORE_RECOMPUTE.md` |
 
+### Smart Crop Focal Points
+
+Listing card thumbnails use AI-detected focal points to crop images intelligently instead of defaulting to center-center. Uses `smartcrop-sharp` to detect the most visually important area of each image (face detection, edge analysis, saturation mapping) and stores the crop center as `focal_x`/`focal_y` percentages (0-100) in the database.
+
+**How it works:**
+1. **Backfill script** (`scripts/backfill-focal-points.ts`) — One-shot bulk processing with `--dry-run`, `--limit`, `--dealer`, `--recompute` flags
+2. **Cron job** (`/api/cron/compute-focal-points`) — Every 4h at :30, picks up new listings with NULL focal points (cap 500/run)
+3. **Postgres trigger** (`080_focal_point_invalidation.sql`) — BEFORE UPDATE trigger NULLs focal_x/focal_y when `images` or `stored_images` change, so cron recomputes
+4. **CSS rendering** — `object-position: {focal_x}% {focal_y}%` on the `<Image>` component's style prop
+
+**Data flow:**
+```
+Scraper writes listing → images column populated → focal_x/focal_y are NULL
+    ↓
+Cron (every 4h): fetch NULL focal_x listings → download image → sharp resize to 512px
+    → smartcrop.crop() with 3:4 target → store focal_x/focal_y percentages
+    ↓
+Browse API: SELECT focal_x, focal_y → VirtualListingGrid computes focalPosition string
+    → ListingCard receives focalPosition prop → <Image style={{ objectPosition }}>
+```
+
+**Admin toggle:** Admin users see a "Smart Crop" on/off switch in the FilterSidebar panel controls (desktop). Persisted in localStorage (`nihontowatch-smart-crop`). Lets admin compare smart crop vs center-center in real time. Non-admin users always get the env var default (`NEXT_PUBLIC_SMART_CROP`, default ON).
+
+**Feature flag:** `NEXT_PUBLIC_SMART_CROP=false` disables for all users. `isSmartCropActive()` in `src/types/subscription.ts` reads this.
+
+**Performance:** Feature flag evaluates once per grid render in VirtualListingGrid (not per-card). The `focalPosition` string is computed in the parent and passed as a prop to ListingCard.
+
+**Image change invalidation:** When a dealer re-photographs an item and the scraper updates `images` or `stored_images`, the Postgres trigger automatically NULLs the focal points. The cron picks it up within 4 hours.
+
+**Key files:**
+| Component | Location |
+|-----------|----------|
+| Cron job | `src/app/api/cron/compute-focal-points/route.ts` |
+| Backfill script | `scripts/backfill-focal-points.ts` |
+| Feature flag | `src/types/subscription.ts` (`isSmartCropActive()`) |
+| Focal position prop | `src/components/browse/VirtualListingGrid.tsx` (computes per-listing, passes to card) |
+| Image rendering | `src/components/browse/ListingCard.tsx` (`focalPosition` prop → `objectPosition` style) |
+| Admin toggle UI | `src/components/browse/FilterSidebar.tsx` (PanelControls zone, admin-only) |
+| Toggle state | `src/app/HomeClient.tsx` (`smartCropEnabled` localStorage state) |
+| Pass-through | `src/components/browse/ListingGrid.tsx` (`smartCropEnabled` prop) |
+| DB columns | `supabase/migrations/078_focal_point.sql` (`focal_x REAL, focal_y REAL`) |
+| Invalidation trigger | `supabase/migrations/080_focal_point_invalidation.sql` |
+| Cron schedule | `vercel.json` (`30 */4 * * *` — offset from featured-scores at :00) |
+| **Full documentation** | `docs/SMART_CROP_FOCAL_POINTS.md` |
+
 ### Artisan Code Display & Verification (Admin Feature)
 
 Displays Yuhinkai artisan codes (e.g., "MAS590", "OWA009") on listing cards for admin users, with confidence-based color coding and QA verification.
@@ -645,6 +692,7 @@ For detailed implementation docs, see:
 - `docs/CATALOGUE_PUBLICATION_PIPE.md` - **Catalogue publication pipe** — Yuhinkai→NihontoWatch content flow (cross-repo)
 - `docs/SESSION_20260220_ADMIN_PANEL_OVERHAUL.md` - Admin panel security, data accuracy & UI overhaul (19 fixes, 3 SQL migrations)
 - `docs/SESSION_20260222_FEATURED_SCORE_RECOMPUTE.md` - Inline featured score recompute on admin actions + serverless fire-and-forget postmortem
+- `docs/SMART_CROP_FOCAL_POINTS.md` - **Smart crop focal points** — AI image cropping, cron pipeline, admin toggle, invalidation trigger
 
 ---
 

@@ -14,6 +14,7 @@ import { FavoritesProvider } from "@/contexts/FavoritesContext";
 import { ActivityWrapper } from "@/components/activity/ActivityWrapper";
 import { SignupPressureWrapper } from "@/components/signup";
 import { ConsentProvider } from "@/contexts/ConsentContext";
+import { getServerGdprRegion } from "@/lib/consent/server";
 import { NewSinceLastVisitProvider } from "@/contexts/NewSinceLastVisitContext";
 import { CookieBanner, ConsentPreferences } from "@/components/consent";
 import {
@@ -94,9 +95,10 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const [dealerCount, locale] = await Promise.all([
+  const [dealerCount, locale, isGdprRegion] = await Promise.all([
     getActiveDealerCount(),
     getServerLocale(),
+    getServerGdprRegion(),
   ]);
   const organizationJsonLd = generateOrganizationJsonLd(dealerCount);
 
@@ -114,7 +116,7 @@ export default async function RootLayout({
         <LocaleProvider initialLocale={locale}>
           <AuthProvider>
             <NewSinceLastVisitProvider>
-              <ConsentProvider>
+              <ConsentProvider isGdprRegion={isGdprRegion}>
                 <SubscriptionProvider>
                   <PaywallModal />
                   <FavoritesProvider>

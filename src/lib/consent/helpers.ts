@@ -10,6 +10,7 @@ import {
   type ConsentRecord,
   CONSENT_STORAGE_KEY,
 } from './types';
+import { GDPR_COOKIE } from './gdpr';
 
 /**
  * Get stored consent from localStorage
@@ -60,14 +61,32 @@ export function hasConsentFor(
 }
 
 /**
+ * Read the GDPR region flag from the `nw-gdpr` cookie (client-side).
+ * For use outside React components (ActivityTracker, visitorId, etc.).
+ * Returns true if the visitor is in a GDPR jurisdiction.
+ */
+export function isGdprRegionFromCookie(): boolean {
+  if (typeof document === 'undefined') return false;
+
+  try {
+    const match = document.cookie
+      .split('; ')
+      .find((c) => c.startsWith(`${GDPR_COOKIE}=`));
+    return match?.split('=')[1] === '1';
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Check if analytics consent has been granted
  * Convenience function for tracking code
  *
- * IMPORTANT: Defaults to TRUE if user hasn't made a choice yet.
- * Tracking is ON by default, only OFF if user explicitly declines.
+ * - Non-GDPR visitors: defaults to TRUE (no consent needed)
+ * - GDPR visitors: defaults to FALSE until explicit opt-in
  */
 export function hasAnalyticsConsent(): boolean {
-  return hasConsentFor('analytics', true);
+  return hasConsentFor('analytics', !isGdprRegionFromCookie());
 }
 
 /**

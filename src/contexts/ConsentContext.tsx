@@ -102,9 +102,11 @@ const ConsentContext = createContext<ConsentContextValue | undefined>(undefined)
 
 interface ConsentProviderProps {
   children: ReactNode;
+  /** Whether the visitor is in a GDPR jurisdiction (EU/EEA/UK). Set by middleware via nw-gdpr cookie. */
+  isGdprRegion?: boolean;
 }
 
-export function ConsentProvider({ children }: ConsentProviderProps) {
+export function ConsentProvider({ children, isGdprRegion = false }: ConsentProviderProps) {
   const { user } = useAuth();
 
   // State
@@ -119,19 +121,23 @@ export function ConsentProvider({ children }: ConsentProviderProps) {
 
     if (stored) {
       setConsent(stored);
-      setShowBanner(false);
 
-      // Check if policy version changed - if so, show banner again
-      if (stored.version !== CONSENT_VERSION) {
+      // Check if policy version changed - if so, re-ask GDPR users only
+      if (stored.version !== CONSENT_VERSION && isGdprRegion) {
         setShowBanner(true);
+      } else {
+        setShowBanner(false);
       }
-    } else {
-      // No consent stored - show banner
+    } else if (isGdprRegion) {
+      // No consent stored + GDPR region → must ask before tracking
       setShowBanner(true);
+    } else {
+      // No consent stored + non-GDPR region → no banner needed
+      setShowBanner(false);
     }
 
     setIsInitialized(true);
-  }, []);
+  }, [isGdprRegion]);
 
   // Sync consent to server when user is authenticated
   useEffect(() => {

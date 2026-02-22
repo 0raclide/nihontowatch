@@ -30,7 +30,9 @@
 | [YUHINKAI_REGISTRY_VISION.md](./YUHINKAI_REGISTRY_VISION.md) | **Strategic vision** - Yuhinkai as canonical nihonto registry, work tracking, price index |
 | [COLLECTION_MANAGER.md](./COLLECTION_MANAGER.md) | **Collection Manager** — personal cataloging, Yuhinkai lookup, "I Own This" import, image upload, all file paths |
 | [ARTIST_FEATURE.md](./ARTIST_FEATURE.md) | **Comprehensive artist feature docs** — directory, profiles, admin badges, data model, all file paths |
+| [SMART_CROP_FOCAL_POINTS.md](./SMART_CROP_FOCAL_POINTS.md) | **Smart crop focal points** — AI image cropping, cron pipeline, admin toggle, invalidation trigger, all file paths |
 | [ARTISAN_TOOLTIP_VERIFICATION.md](./ARTISAN_TOOLTIP_VERIFICATION.md) | Admin QA tool - click artisan badges for details & verification |
+| [LEGAL_COMPLIANCE.md](./LEGAL_COMPLIANCE.md) | GDPR geo-gated cookie consent — banner only for EU/EEA/UK, middleware cookie, analytics defaults |
 | [SYNC_ELITE_FACTOR_API.md](./SYNC_ELITE_FACTOR_API.md) | Webhook API for syncing elite_factor from Yuhinkai to listings |
 | [CATALOGUE_PUBLICATION_PIPE.md](./CATALOGUE_PUBLICATION_PIPE.md) | **Catalogue publication pipe** — Yuhinkai→NihontoWatch content flow (cross-repo, oshi-v2 + nihontowatch) |
 
@@ -319,6 +321,23 @@
 7. **oshi-v2 side:** `src/app/api/catalogue/publish/route.ts` (API), `src/app/item/.../ItemDetailClient.tsx` (button)
 8. **Known issue (fixed):** Query uses `.or()` on both `gold_smith_id` and `gold_maker_id` — see [SESSION_20260212_CATALOGUE_PUBLICATION_BUG.md](./SESSION_20260212_CATALOGUE_PUBLICATION_BUG.md)
 
+### "I need to work on smart crop / focal points / image thumbnails"
+1. **Start here:** Read [SMART_CROP_FOCAL_POINTS.md](./SMART_CROP_FOCAL_POINTS.md) - Complete feature docs with architecture, data flow, all file paths
+2. Check `src/app/api/cron/compute-focal-points/route.ts` - Cron job (every 4h)
+3. Check `scripts/backfill-focal-points.ts` - One-shot backfill with CLI flags
+4. Check `src/components/browse/VirtualListingGrid.tsx` - Frontend focal position computation
+5. Check `src/components/browse/FilterSidebar.tsx` - Admin toggle (PanelControls zone)
+6. Check `supabase/migrations/080_focal_point_invalidation.sql` - Auto-invalidation trigger
+7. Feature flag: `NEXT_PUBLIC_SMART_CROP=false` to disable globally
+
+### "I need to work on cookie consent / GDPR geo-gating"
+1. Read [LEGAL_COMPLIANCE.md](./LEGAL_COMPLIANCE.md) - Overview, behavior matrix, all file paths
+2. Check `src/lib/consent/gdpr.ts` - GDPR country codes, `isGdprCountry()`, `GDPR_COOKIE`
+3. Check `src/lib/consent/server.ts` - Server-side `getServerGdprRegion()` (reads `nw-gdpr` cookie)
+4. Check `src/middleware.ts` - Sets `nw-gdpr` cookie from `x-vercel-ip-country` header
+5. Check `src/contexts/ConsentContext.tsx` - Banner visibility gated by `isGdprRegion` prop
+6. Check `src/lib/consent/helpers.ts` - `hasAnalyticsConsent()` and `isGdprRegionFromCookie()`
+
 ### "I need to work on SEO"
 1. Read [SEO.md](./SEO.md) - Complete SEO documentation
 2. Check `src/app/robots.ts` - robots.txt generation
@@ -358,4 +377,5 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for:
 | SEO & Structured Data | [SEO.md](./SEO.md) - sitemap, robots.txt, JSON-LD schemas |
 | Artisan tooltip & QA | [ARTISAN_TOOLTIP_VERIFICATION.md](./ARTISAN_TOOLTIP_VERIFICATION.md) - Admin verification tool |
 | Collection manager | [COLLECTION_MANAGER.md](./COLLECTION_MANAGER.md) - Personal cataloging, Yuhinkai lookup, image upload |
+| Cookie consent / GDPR | [LEGAL_COMPLIANCE.md](./LEGAL_COMPLIANCE.md) - Geo-gated banner, middleware cookie, analytics defaults |
 | Deployment | [CLAUDE.md](../CLAUDE.md#deployment) |
