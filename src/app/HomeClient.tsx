@@ -237,15 +237,6 @@ export default function HomeContent() {
     return 'gallery';
   });
 
-  // Smart crop toggle (admin tuning — persisted in localStorage)
-  const [smartCropEnabled, setSmartCropEnabled] = useState<boolean>(() => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('nihontowatch-smart-crop');
-      return stored !== null ? stored === 'true' : true; // default ON
-    }
-    return true;
-  });
-
   const [data, setData] = useState<BrowseResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   // isAdmin now comes from authIsAdmin (useAuth hook) - no need for local state
@@ -321,14 +312,6 @@ export default function HomeContent() {
     setMobileView(view);
     if (typeof window !== 'undefined') {
       localStorage.setItem('nihontowatch-mobile-view', view);
-    }
-  }, []);
-
-  // Persist smart crop preference (admin tuning toggle)
-  const handleSmartCropChange = useCallback((enabled: boolean) => {
-    setSmartCropEnabled(enabled);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('nihontowatch-smart-crop', String(enabled));
     }
   }, []);
 
@@ -704,8 +687,6 @@ export default function HomeContent() {
               availability: activeTab,
               onAvailabilityChange: handleAvailabilityChange,
               isAdmin: authIsAdmin,
-              smartCropEnabled,
-              onSmartCropChange: handleSmartCropChange,
             }}
           />
 
@@ -725,7 +706,6 @@ export default function HomeContent() {
               searchId={currentSearchIdRef.current}
               isAdmin={authIsAdmin || data?.isAdmin || false}
               mobileView={mobileView}
-              smartCropEnabled={smartCropEnabled}
               isUrlSearch={data?.isUrlSearch || false}
               searchQuery={searchQuery}
             />
