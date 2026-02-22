@@ -182,7 +182,18 @@ export function getArtisanInfo(listing: Listing | ListingWithEnrichment, locale:
     const school = listing.tosogu_school;
 
     // JA locale: show original Japanese names directly
+    // For EN-source listings (international dealers), smith/maker may be romaji —
+    // prefer artisan_name_kanji from Yuhinkai enrichment to avoid mixed-script display
     if (locale === 'ja') {
+      if (rawMaker && !containsJapanese(rawMaker) && listing.artisan_name_kanji) {
+        return {
+          artisan: listing.artisan_name_kanji,
+          school: null, // kanji name already includes school
+          artisanLabel: 'Maker',
+          era: listing.era || null,
+          isEnriched: false,
+        };
+      }
       return {
         artisan: stripSchoolPrefix(rawMaker || null, school || null),
         school: school || null,
@@ -214,7 +225,18 @@ export function getArtisanInfo(listing: Listing | ListingWithEnrichment, locale:
   const school = listing.school;
 
   // JA locale: show original Japanese names directly
+  // For EN-source listings (international dealers), smith may be romaji —
+  // prefer artisan_name_kanji from Yuhinkai enrichment to avoid mixed-script display
   if (locale === 'ja') {
+    if (rawSmith && !containsJapanese(rawSmith) && listing.artisan_name_kanji) {
+      return {
+        artisan: listing.artisan_name_kanji,
+        school: null, // kanji name already includes school
+        artisanLabel: 'Smith',
+        era: listing.era || null,
+        isEnriched: false,
+      };
+    }
     return {
       artisan: stripSchoolPrefix(rawSmith || null, school || null),
       school: school || null,

@@ -15,6 +15,7 @@ import { getAllImages, dealerDoesNotPublishImages, getCachedDimensions, getPlace
 import { useValidatedImages } from '@/hooks/useValidatedImages';
 import { useAuth } from '@/lib/auth/AuthContext';
 import type { ListingWithEnrichment } from '@/types';
+import { useLocale } from '@/i18n/LocaleContext';
 
 /**
  * QuickView with vertical scrolling image layout.
@@ -36,6 +37,7 @@ export function QuickView() {
   } = useQuickView();
 
   const activityTracker = useActivityTrackerOptional();
+  const { t } = useLocale();
   const { user, isAdmin } = useAuth();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const mobileScrollContainerRef = useRef<HTMLDivElement>(null);
@@ -451,7 +453,7 @@ export function QuickView() {
                 {/* Counter */}
                 <div className="flex items-center justify-center py-1.5">
                   <span className="text-[11px] text-muted tabular-nums">
-                    Photo {currentImageIndex + 1} of {images.length}
+                    {t('quickview.photoCounter', { current: currentImageIndex + 1, total: images.length })}
                   </span>
                 </div>
               </div>

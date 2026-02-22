@@ -203,8 +203,8 @@ describe('TranslatedDescription', () => {
         description_ja: 'ビゼンの優れた作例。',
       });
       render(<TranslatedDescription listing={listing} />);
-      // showOriginal defaults to true in JA locale → shows original English
-      expect(screen.getByText('A fine example of Bizen workmanship.')).toBeInTheDocument();
+      // JA locale + EN-source → shows JP translation by default (not the English original)
+      expect(screen.getByText('ビゼンの優れた作例。')).toBeInTheDocument();
       expect(mockFetch).not.toHaveBeenCalled();
     });
   });

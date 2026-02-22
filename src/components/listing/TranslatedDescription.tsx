@@ -42,9 +42,11 @@ export function TranslatedDescription({
 
   const [translation, setTranslation] = useState<string | null>(getInitialTranslation);
   const [isLoading, setIsLoading] = useState(false);
-  // JA locale: default to showing original text
-  // EN locale: default to showing translation
-  const [showOriginal, setShowOriginal] = useState(locale === 'ja');
+  // Show original text by default ONLY when locale matches source language:
+  // JA locale + JP-source → show original (Japanese)
+  // JA locale + EN-source → show translation (Japanese), not the English original
+  // EN locale → show translation (English)
+  const [showOriginal, setShowOriginal] = useState(locale === 'ja' && hasJapanese);
   const [error, setError] = useState<string | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isTruncated, setIsTruncated] = useState(false);
@@ -104,8 +106,8 @@ export function TranslatedDescription({
 
   // Reset showOriginal when locale changes
   useEffect(() => {
-    setShowOriginal(locale === 'ja');
-  }, [locale]);
+    setShowOriginal(locale === 'ja' && hasJapanese);
+  }, [locale, hasJapanese]);
 
   // Reset expanded state when listing changes or when toggling original/translation
   useEffect(() => {
