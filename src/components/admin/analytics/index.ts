@@ -26,3 +26,9 @@ export { SessionDistributionChart } from './SessionDistributionChart';
 
 // Visitor Analytics Components
 export { VisitorsChart } from './VisitorsChart';
+
+// Retention & Segmentation Components
+export { RetentionHeatmap } from './RetentionHeatmap';
+export { SegmentBreakdownChart } from './SegmentBreakdownChart';
+export { SegmentDetailTable } from './SegmentDetailTable';
+export { DeviceBreakdownChart } from './DeviceBreakdownChart';
