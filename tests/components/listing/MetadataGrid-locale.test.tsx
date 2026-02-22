@@ -94,10 +94,10 @@ describe('MetadataGrid locale awareness', () => {
 
     it('passes through unknown mei_type values unchanged', () => {
       mockLocale = 'en';
-      const listing = baseListing({ mei_type: 'gimei', smith: 'Test', school: 'Test' });
+      const listing = baseListing({ mei_type: 'orikaeshi', smith: 'Test', school: 'Test' });
       render(<MetadataGrid listing={listing} />);
-      // No meiType.gimei key, so it falls through to raw value
-      expect(screen.getByText('gimei')).toBeInTheDocument();
+      // No meiType.orikaeshi key, so it falls through to raw value
+      expect(screen.getByText('orikaeshi')).toBeInTheDocument();
     });
   });
 

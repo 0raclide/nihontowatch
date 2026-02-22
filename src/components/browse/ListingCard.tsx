@@ -919,7 +919,7 @@ export const ListingCard = memo(function ListingCard({
             )}
             {listing.nagasa_cm && listing.era && <span className="text-border">·</span>}
             {listing.era && (
-              <span>{listing.era}</span>
+              <span>{(() => { const k = `era.${listing.era}`; const r = t(k); return r === k ? listing.era : r; })()}</span>
             )}
           </div>
         )}
