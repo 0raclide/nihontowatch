@@ -27,14 +27,14 @@ import { NavigationProgress } from "@/components/ui/NavigationProgress";
 
 const cormorant = Cormorant_Garamond({
   variable: "--font-serif",
-  subsets: ["latin"],
+  subsets: ["latin", "latin-ext"],
   weight: ["400", "500", "600", "700"],
   display: "swap",
 });
 
 const inter = Inter({
   variable: "--font-sans",
-  subsets: ["latin"],
+  subsets: ["latin", "latin-ext"],
   display: "swap",
 });
 
