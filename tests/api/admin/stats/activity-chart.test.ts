@@ -61,11 +61,22 @@ function createMockQueryBuilder(
 
   builder.select = vi.fn(() => chain());
   builder.eq = vi.fn(() => chain());
+  builder.neq = vi.fn(() => chain());
   builder.gte = vi.fn(() => chain());
   builder.lte = vi.fn(() => chain());
   builder.limit = vi.fn(() => chain());
   builder.order = vi.fn(() => chain());
   builder.single = vi.fn(() => Promise.resolve({ data: data?.[0] ?? null, error }));
+
+  // fetchAllRows calls .range() for pagination — first call returns data, subsequent calls return empty
+  let rangeCallCount = 0;
+  builder.range = vi.fn(() => {
+    rangeCallCount++;
+    if (rangeCallCount === 1) {
+      return Promise.resolve({ data, error });
+    }
+    return Promise.resolve({ data: [], error: null });
+  });
 
   builder.then = vi.fn((resolve: (result: { data: unknown[] | null; error: typeof error; count: number | null }) => void) => {
     resolve({ data, error, count });
@@ -98,6 +109,7 @@ function setupStandardMocks() {
   mockServiceClient.from.mockImplementation((table: string) => {
     if (table === 'listing_views') return createMockQueryBuilder([], 0);
     if (table === 'user_searches') return createMockQueryBuilder([], 0);
+    if (table === 'saved_searches') return createMockQueryBuilder([], 0);
     return createMockQueryBuilder();
   });
 }
@@ -192,6 +204,7 @@ describe('GET /api/admin/stats/activity-chart', () => {
       expect(point).toHaveProperty('views');
       expect(point).toHaveProperty('searches');
       expect(point).toHaveProperty('favorites');
+      expect(point).toHaveProperty('alerts');
     });
 
     it('totals includes all metrics', async () => {
@@ -202,6 +215,7 @@ describe('GET /api/admin/stats/activity-chart', () => {
       expect(json.totals).toHaveProperty('views');
       expect(json.totals).toHaveProperty('searches');
       expect(json.totals).toHaveProperty('favorites');
+      expect(json.totals).toHaveProperty('alerts');
     });
 
     it('includes period in response', async () => {
@@ -261,6 +275,7 @@ describe('GET /api/admin/stats/activity-chart', () => {
 
       mockServiceClient.from.mockImplementation((table: string) => {
         if (table === 'listing_views') return viewsBuilder;
+        if (table === 'saved_searches') return createMockQueryBuilder([], 0);
         return createMockQueryBuilder();
       });
 
@@ -283,7 +298,8 @@ describe('GET /api/admin/stats/activity-chart', () => {
 
       mockServiceClient.from.mockImplementation((table: string) => {
         if (table === 'user_searches') return searchesBuilder;
-        if (table === 'listing_views') return createMockQueryBuilder();
+        if (table === 'listing_views') return createMockQueryBuilder([], 0);
+        if (table === 'saved_searches') return createMockQueryBuilder([], 0);
         return createMockQueryBuilder();
       });
 
@@ -329,10 +345,11 @@ describe('GET /api/admin/stats/activity-chart', () => {
 
       // All data points should exist with zero values
       expect(json.dataPoints).toHaveLength(7);
-      json.dataPoints.forEach((point: { views: number; searches: number; favorites: number }) => {
+      json.dataPoints.forEach((point: { views: number; searches: number; favorites: number; alerts: number }) => {
         expect(point.views).toBe(0);
         expect(point.searches).toBe(0);
         expect(point.favorites).toBe(0);
+        expect(point.alerts).toBe(0);
       });
     });
   });

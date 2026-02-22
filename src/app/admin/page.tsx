@@ -17,6 +17,7 @@ interface ActivityDataPoint {
   views: number;
   searches: number;
   favorites: number;
+  alerts: number;
 }
 
 interface ActivityChartData {
@@ -25,6 +26,7 @@ interface ActivityChartData {
     views: number;
     searches: number;
     favorites: number;
+    alerts: number;
   };
   period: string;
 }
@@ -154,7 +156,7 @@ function ActivityChartTooltip({
 }
 
 function ActivityChart({ data }: { data: ActivityDataPoint[] }) {
-  const hasData = data.some(d => d.views > 0 || d.searches > 0 || d.favorites > 0);
+  const hasData = data.some(d => d.views > 0 || d.searches > 0 || d.favorites > 0 || d.alerts > 0);
 
   if (!hasData) {
     return (
@@ -207,6 +209,15 @@ function ActivityChart({ data }: { data: ActivityDataPoint[] }) {
           fill="#EC4899"
           fillOpacity={0.6}
           name="Favorites"
+        />
+        <Area
+          type="monotone"
+          dataKey="alerts"
+          stackId="1"
+          stroke="#10B981"
+          fill="#10B981"
+          fillOpacity={0.6}
+          name="Alerts"
         />
       </AreaChart>
     </ResponsiveContainer>
@@ -489,6 +500,11 @@ export default function AdminDashboard() {
                 <span className="w-2 h-2 rounded-full bg-[#EC4899]" />
                 <span className="text-muted">Favorites</span>
                 <span className="text-ink font-medium">{activityData.totals.favorites}</span>
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-[#10B981]" />
+                <span className="text-muted">Alerts</span>
+                <span className="text-ink font-medium">{activityData.totals.alerts}</span>
               </span>
             </div>
           )}

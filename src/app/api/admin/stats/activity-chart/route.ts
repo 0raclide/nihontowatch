@@ -2,7 +2,7 @@
  * Activity Chart API Route
  *
  * Returns daily activity breakdown for the admin dashboard chart.
- * Shows views, searches, and favorites over the specified period.
+ * Shows views, searches, favorites, and alerts over the specified period.
  *
  * @route GET /api/admin/stats/activity-chart
  *
@@ -34,6 +34,7 @@ interface ActivityDataPoint {
   views: number;
   searches: number;
   favorites: number;
+  alerts: number;
 }
 
 interface ActivityChartResponse {
@@ -42,6 +43,7 @@ interface ActivityChartResponse {
     views: number;
     searches: number;
     favorites: number;
+    alerts: number;
   };
   period: string;
 }
@@ -102,9 +104,9 @@ export async function GET(request: NextRequest) {
     // Use service client for listing_views and user_searches (bypass RLS for anonymous data)
     const serviceSupabase = createServiceClient();
 
-    // Query all three data sources in parallel
+    // Query all four data sources in parallel
     // Use fetchAllRows to paginate past PostgREST max_rows (default 1000)
-    const [viewsResult, searchesResult, favoritesResult] = await Promise.all([
+    const [viewsResult, searchesResult, favoritesResult, alertsResult] = await Promise.all([
       // Views by day from listing_views (includes quickview_open + listing_detail_view)
       fetchAllRows<{ viewed_at: string }>(
         serviceSupabase
@@ -126,6 +128,15 @@ export async function GET(request: NextRequest) {
         supabase
           .from('user_favorites')
           .select('created_at')
+          .gte('created_at', startDateStr)
+      ),
+
+      // Alerts placed (saved searches with notifications enabled)
+      fetchAllRows<{ created_at: string }>(
+        serviceSupabase
+          .from('saved_searches')
+          .select('created_at')
+          .neq('notification_frequency', 'none')
           .gte('created_at', startDateStr)
       ),
     ]);
@@ -151,20 +162,30 @@ export async function GET(request: NextRequest) {
       favoritesByDate[date] = (favoritesByDate[date] || 0) + 1;
     }
 
+    // Aggregate alerts by date
+    const alertsByDate: Record<string, number> = {};
+    for (const row of alertsResult.data) {
+      const date = row.created_at.split('T')[0];
+      alertsByDate[date] = (alertsByDate[date] || 0) + 1;
+    }
+
     // Build data points for all dates in range (fill missing with zeros)
     const dateRange = generateDateRange(days);
     let totalViews = 0;
     let totalSearches = 0;
     let totalFavorites = 0;
+    let totalAlerts = 0;
 
     const dataPoints: ActivityDataPoint[] = dateRange.map(date => {
       const views = viewsByDate[date] || 0;
       const searches = searchesByDate[date] || 0;
       const favorites = favoritesByDate[date] || 0;
+      const alerts = alertsByDate[date] || 0;
 
       totalViews += views;
       totalSearches += searches;
       totalFavorites += favorites;
+      totalAlerts += alerts;
 
       return {
         date,
@@ -172,6 +193,7 @@ export async function GET(request: NextRequest) {
         views,
         searches,
         favorites,
+        alerts,
       };
     });
 
@@ -181,6 +203,7 @@ export async function GET(request: NextRequest) {
         views: totalViews,
         searches: totalSearches,
         favorites: totalFavorites,
+        alerts: totalAlerts,
       },
       period: `${days}d`,
     };
