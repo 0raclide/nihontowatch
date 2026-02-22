@@ -6,6 +6,7 @@ import { getCountryFlag } from '@/lib/dealers/utils';
 import { Drawer } from '@/components/ui/Drawer';
 import { useMobileUI } from '@/contexts/MobileUIContext';
 import { useLocale } from '@/i18n/LocaleContext';
+import { getDealerDisplayName } from '@/lib/dealers/displayName';
 
 // =============================================================================
 // TYPES
@@ -26,6 +27,7 @@ interface CertBreakdown {
 interface DealerEntry {
   id: number;
   name: string;
+  name_ja?: string | null;
   domain: string;
   country: string;
   slug: string;
@@ -896,7 +898,7 @@ function CheckboxList({
 }
 
 function DealerCard({ dealer }: { dealer: DealerEntry }) {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const flag = getCountryFlag(dealer.country);
   const topTypes = dealer.type_breakdown.slice(0, 3);
   const totalTyped = topTypes.reduce((s, t) => s + t.count, 0);
@@ -923,7 +925,7 @@ function DealerCard({ dealer }: { dealer: DealerEntry }) {
         {/* Name + Flag */}
         <div className="flex items-start justify-between gap-2 mb-1">
           <h3 className="font-serif text-[15px] text-ink group-hover:text-gold transition-colors truncate">
-            {dealer.name}
+            {getDealerDisplayName(dealer, locale)}
           </h3>
           <span className="text-lg flex-shrink-0" title={dealer.country}>{flag}</span>
         </div>

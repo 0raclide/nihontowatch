@@ -8,6 +8,7 @@ export const revalidate = 3600; // 1 hour
 interface DealerRow {
   id: number;
   name: string;
+  name_ja: string | null;
   domain: string;
 }
 
@@ -107,7 +108,7 @@ export async function GET(request: NextRequest) {
   const [dealersResult, listings] = await Promise.all([
     supabase
       .from('dealers')
-      .select('id, name, domain')
+      .select('id, name, name_ja, domain')
       .eq('is_active', true)
       .order('name'),
     fetchAllListings(supabase),
@@ -159,6 +160,7 @@ export async function GET(request: NextRequest) {
     return {
       id: d.id,
       name: d.name,
+      name_ja: d.name_ja,
       domain: d.domain,
       country,
       slug: createDealerSlug(d.name),
@@ -205,12 +207,13 @@ export async function GET(request: NextRequest) {
     })
     .map(([value, dealerCount]) => ({ value, label: CERT_LABELS[value] || value, dealerCount }));
 
-  // Apply search filter
+  // Apply search filter (match English name, Japanese name, or domain)
   if (q) {
     enrichedDealers = enrichedDealers.filter(
       (d) =>
         d.name.toLowerCase().includes(q) ||
-        d.domain.toLowerCase().includes(q)
+        d.domain.toLowerCase().includes(q) ||
+        (d.name_ja && d.name_ja.toLowerCase().includes(q))
     );
   }
 

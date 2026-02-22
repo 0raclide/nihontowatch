@@ -301,7 +301,7 @@ export async function GET(request: NextRequest) {
         featured_score,
         focal_x,
         focal_y,
-        dealers:dealers!inner(id, name, domain, earliest_listing_at),
+        dealers:dealers!inner(id, name, name_ja, domain, earliest_listing_at),
         listing_yuhinkai_enrichment(
           setsumei_en,
           match_confidence,
@@ -821,13 +821,13 @@ export async function GET(request: NextRequest) {
     const facets = facetsError ? {
       itemTypes: [] as { value: string; count: number }[],
       certifications: [] as { value: string; count: number }[],
-      dealers: [] as { id: number; name: string; count: number }[],
+      dealers: [] as { id: number; name: string; name_ja?: string | null; count: number }[],
       historicalPeriods: [] as { value: string; count: number }[],
       signatureStatuses: [] as { value: string; count: number }[],
     } : facetsData as {
       itemTypes: { value: string; count: number }[];
       certifications: { value: string; count: number }[];
-      dealers: { id: number; name: string; count: number }[];
+      dealers: { id: number; name: string; name_ja?: string | null; count: number }[];
       historicalPeriods: { value: string; count: number }[];
       signatureStatuses: { value: string; count: number }[];
     };

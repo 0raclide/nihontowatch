@@ -371,6 +371,7 @@ export function getSetsumeiContent(listing: ListingWithEnrichment): SetsumeiCont
 export interface Dealer {
   id: number;
   name: string;
+  name_ja?: string | null;
   domain: string;
   catalog_url?: string;
   country: string;

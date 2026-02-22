@@ -132,7 +132,7 @@ export async function GET(request: NextRequest) {
         if (dealerIds.length > 0) {
           const { data: rawDealers } = await supabase
             .from('dealers')
-            .select('id, name')
+            .select('id, name, name_ja')
             .in('id', dealerIds);
 
           const dealers = (rawDealers || []) as DealerRow[];

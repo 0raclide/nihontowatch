@@ -108,7 +108,7 @@ export async function GET(request: NextRequest) {
         is_available,
         status,
         dealer_id,
-        dealers!inner(id, name, domain)
+        dealers!inner(id, name, name_ja, domain)
       `)
       .in('id', listingIds)
       .or('is_available.eq.true,status.eq.available');

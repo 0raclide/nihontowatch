@@ -9,13 +9,14 @@ import {
   jsonLdScriptProps,
 } from '@/lib/seo/jsonLd';
 import { createDealerSlug, getCountryFlag, getCountryFromDomain, formatItemType } from '@/lib/dealers/utils';
+import { getDealerDisplayName } from '@/lib/dealers/displayName';
 import { getServerLocale } from '@/i18n/server';
 import { t } from '@/i18n';
 import type { Dealer } from '@/types';
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://nihontowatch.com';
 
-type DealerRow = { id: number; name: string; domain: string; is_active: boolean; created_at: string };
+type DealerRow = { id: number; name: string; name_ja?: string | null; domain: string; is_active: boolean; created_at: string };
 
 async function findDealerBySlug(slug: string) {
   const supabase = createServiceClient();
@@ -136,7 +137,7 @@ export default async function DealerPage({ params }: Props) {
           items={[
             { name: t(locale, 'dealers.breadcrumbHome'), url: '/' },
             { name: t(locale, 'dealers.breadcrumbDealers'), url: '/dealers' },
-            { name: dealer.name },
+            { name: getDealerDisplayName(dealer, locale) },
           ]}
           className="mb-6"
         />
@@ -145,7 +146,7 @@ export default async function DealerPage({ params }: Props) {
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
             <h1 className="font-serif text-3xl md:text-4xl text-ink">
-              {dealer.name}
+              {getDealerDisplayName(dealer, locale)}
             </h1>
             <span className="text-3xl" title={dealer.country}>
               {flag}

@@ -95,6 +95,7 @@ interface ListingWithDealer {
   dealers: {
     id: number;
     name: string;
+    name_ja: string | null;
     domain: string;
     earliest_listing_at: string | null;
   };
@@ -166,6 +167,7 @@ export interface EnrichedListingDetail {
   dealers: {
     id: number;
     name: string;
+    name_ja?: string | null;
     domain: string;
   };
   yuhinkai_enrichment: YuhinkaiEnrichment | null;
@@ -232,6 +234,7 @@ const LISTING_SELECT = `
   dealers (
     id,
     name,
+    name_ja,
     domain,
     earliest_listing_at
   ),
@@ -399,6 +402,7 @@ export async function getListingDetail(
     dealers: {
       id: typedListing.dealers.id,
       name: typedListing.dealers.name,
+      name_ja: typedListing.dealers.name_ja,
       domain: typedListing.dealers.domain,
     },
     yuhinkai_enrichment,

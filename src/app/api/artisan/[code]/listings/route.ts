@@ -21,7 +21,7 @@ const LISTING_FIELDS = `
   first_seen_at, last_scraped_at,
   artisan_id, artisan_confidence, artisan_method, artisan_candidates, artisan_verified,
   nagasa_cm, sori_cm,
-  dealers:dealers(id, name, domain)
+  dealers:dealers(id, name, name_ja, domain)
 `;
 
 /**

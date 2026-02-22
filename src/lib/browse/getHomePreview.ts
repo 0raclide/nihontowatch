@@ -34,7 +34,7 @@ export async function getHomePreview(): Promise<HomePreviewData> {
       supabase
         .from('listings')
         .select(
-          'id, title, item_type, price_value, price_currency, cert_type, smith, tosogu_maker, stored_images, images, dealers!inner(name)',
+          'id, title, item_type, price_value, price_currency, cert_type, smith, tosogu_maker, stored_images, images, dealers!inner(name, name_ja)',
           { count: 'exact' }
         )
         .eq('is_available', true)
@@ -67,6 +67,7 @@ export async function getHomePreview(): Promise<HomePreviewData> {
         stored_images: l.stored_images as string[] | null,
         images: l.images as string[] | null,
         dealer_name: ((l.dealers as Record<string, unknown>)?.name as string) || '',
+        dealer_name_ja: ((l.dealers as Record<string, unknown>)?.name_ja as string | null) || null,
       })),
       totalCount: listingsResult.count || 0,
       dealerCount: dealerCountResult.count || 0,

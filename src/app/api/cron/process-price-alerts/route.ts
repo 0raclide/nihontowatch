@@ -165,7 +165,7 @@ export async function GET(request: NextRequest) {
         cert_type,
         images,
         dealer_id,
-        dealers!inner(id, name, domain)
+        dealers!inner(id, name, name_ja, domain)
       `)
       .in('id', alertListingIds);
 

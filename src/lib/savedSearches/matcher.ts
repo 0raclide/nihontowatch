@@ -62,7 +62,7 @@ export async function findMatchingListings(
       is_available,
       is_sold,
       dealer_id,
-      dealers!inner(id, name, domain)
+      dealers!inner(id, name, name_ja, domain)
     `
     )
     .or(statusFilter)
