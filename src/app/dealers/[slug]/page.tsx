@@ -9,6 +9,8 @@ import {
   jsonLdScriptProps,
 } from '@/lib/seo/jsonLd';
 import { createDealerSlug, getCountryFlag, getCountryFromDomain, formatItemType } from '@/lib/dealers/utils';
+import { getServerLocale } from '@/i18n/server';
+import { t } from '@/i18n';
 import type { Dealer } from '@/types';
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://nihontowatch.com';
@@ -84,6 +86,7 @@ export default async function DealerPage({ params }: Props) {
     notFound();
   }
 
+  const locale = await getServerLocale();
   const supabase = createServiceClient();
 
   // Fetch listing count + type breakdown in parallel
@@ -131,8 +134,8 @@ export default async function DealerPage({ params }: Props) {
       <main className="max-w-3xl mx-auto px-4 py-8 pb-24 md:pb-8">
         <Breadcrumbs
           items={[
-            { name: 'Home', url: '/' },
-            { name: 'Dealers', url: '/dealers' },
+            { name: t(locale, 'dealers.breadcrumbHome'), url: '/' },
+            { name: t(locale, 'dealers.breadcrumbDealers'), url: '/dealers' },
             { name: dealer.name },
           ]}
           className="mb-6"
@@ -164,7 +167,7 @@ export default async function DealerPage({ params }: Props) {
         {/* Inventory Breakdown */}
         <div className="bg-cream rounded-lg border border-border p-5 mb-8">
           <div className="flex items-baseline justify-between mb-4">
-            <h2 className="text-[13px] uppercase tracking-[0.1em] text-ink/50 font-medium">Inventory</h2>
+            <h2 className="text-[13px] uppercase tracking-[0.1em] text-ink/50 font-medium">{t(locale, 'dealers.inventory')}</h2>
             <span className="text-2xl font-serif text-ink tabular-nums">{listingCount.toLocaleString()}</span>
           </div>
 
@@ -212,7 +215,7 @@ export default async function DealerPage({ params }: Props) {
           href={`/?dealer=${dealer.id}`}
           className="flex items-center justify-center gap-2 bg-gold hover:bg-gold/90 text-white px-6 py-3.5 rounded-lg font-medium transition-colors shadow-sm w-full md:w-auto md:inline-flex"
         >
-          Browse All {listingCount.toLocaleString()} Listings
+          {t(locale, 'dealers.browseAllListings', { count: listingCount.toLocaleString() })}
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
           </svg>

@@ -195,6 +195,7 @@ export function ArtistFilterSidebar({
                   options={facets.schools}
                   selected={filters.school}
                   onSelect={(v) => onFilterChange('school', v)}
+                  category="school"
                 />
               </CollapsibleSection>
 
@@ -210,6 +211,7 @@ export function ArtistFilterSidebar({
                   options={facets.provinces}
                   selected={filters.province}
                   onSelect={(v) => onFilterChange('province', v)}
+                  category="province"
                 />
               </CollapsibleSection>
 
@@ -225,6 +227,7 @@ export function ArtistFilterSidebar({
                   options={facets.eras}
                   selected={filters.era}
                   onSelect={(v) => onFilterChange('era', v)}
+                  category="period"
                 />
               </CollapsibleSection>
 
@@ -317,12 +320,20 @@ const RadioList = memo(function RadioList({
   options,
   selected,
   onSelect,
+  category,
 }: {
   options: FacetOption[];
   selected?: string;
   onSelect: (value: string) => void;
+  category?: 'school' | 'province' | 'period';
 }) {
   const { t: tl } = useLocale();
+  const td = (v: string) => {
+    if (!category) return v;
+    const k = `${category}.${v}`;
+    const r = tl(k);
+    return r === k ? v : r;
+  };
   if (options.length === 0) {
     return <p className="text-[11px] text-muted italic py-2">{tl('artists.noneAvailable')}</p>;
   }
@@ -352,7 +363,7 @@ const RadioList = memo(function RadioList({
             <span className={`text-[12px] flex-1 text-left leading-tight transition-colors ${
               isSelected ? 'text-ink font-medium' : 'text-charcoal'
             }`}>
-              {opt.value}
+              {td(opt.value)}
             </span>
             <span className="text-[10px] text-muted/70 tabular-nums flex-shrink-0">
               {opt.count}

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { SearchResultPreview } from './SearchResultPreview';
+import { useLocale } from '@/i18n/LocaleContext';
 import type { SearchSuggestion } from '@/lib/search/types';
 
 interface SearchSuggestionsProps {
@@ -23,6 +24,7 @@ export function SearchSuggestions({
   onClose,
   highlightedIndex,
 }: SearchSuggestionsProps) {
+  const { t } = useLocale();
   const ref = useRef<HTMLDivElement>(null);
 
   // Click outside to close
@@ -81,7 +83,7 @@ export function SearchSuggestions({
                 d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
               />
             </svg>
-            <span className="text-[12px]">Searching...</span>
+            <span className="text-[12px]">{t('search.searching')}</span>
           </div>
         </div>
       )}
@@ -113,7 +115,7 @@ export function SearchSuggestions({
                 }`}
                 data-index={suggestions.length}
               >
-                View all {total.toLocaleString()} results
+                {t('search.viewAllResults', { count: total.toLocaleString() })}
               </button>
             </div>
           )}
@@ -124,7 +126,7 @@ export function SearchSuggestions({
       {!isLoading && !hasResults && (
         <div className="px-4 py-6 text-center">
           <p className="text-[12px] text-muted">
-            No results found
+            {t('search.noResults')}
           </p>
         </div>
       )}

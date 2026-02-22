@@ -8,6 +8,7 @@ import { useAuth } from '@/lib/auth/AuthContext';
 import { LoginModal } from '@/components/auth/LoginModal';
 import { createClient } from '@/lib/supabase/client';
 import { useConsent } from '@/contexts/ConsentContext';
+import { useLocale } from '@/i18n/LocaleContext';
 
 export default function ProfilePage() {
   const { user, profile, isLoading: authLoading, isAdmin, signOut, refreshProfile } = useAuth();
@@ -22,6 +23,7 @@ export default function ProfilePage() {
   const [deleteEmail, setDeleteEmail] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const { t, locale } = useLocale();
 
   const handleEditClick = useCallback(() => {
     setDisplayName(profile?.display_name || '');
@@ -83,7 +85,7 @@ export default function ProfilePage() {
       URL.revokeObjectURL(url);
     } catch (err) {
       console.error('Export error:', err);
-      alert('Failed to export data. Please try again.');
+      alert(t('profile.exportError'));
     } finally {
       setIsExporting(false);
     }
@@ -144,15 +146,15 @@ export default function ProfilePage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
               </div>
-              <h2 className="font-serif text-xl text-ink mb-2">Sign in to view your profile</h2>
+              <h2 className="font-serif text-xl text-ink mb-2">{t('profile.signInToView')}</h2>
               <p className="text-[14px] text-muted text-center max-w-sm mb-6">
-                Create an account or sign in to manage your profile and preferences.
+                {t('profile.signInDescription')}
               </p>
               <button
                 onClick={() => setShowLoginModal(true)}
                 className="px-6 py-3 text-[14px] font-medium text-white bg-gold hover:bg-gold-light rounded-lg transition-colors"
               >
-                Sign In
+                {t('profile.signIn')}
               </button>
             </div>
           </main>
@@ -164,7 +166,7 @@ export default function ProfilePage() {
   }
 
   const memberSince = profile?.created_at
-    ? new Date(profile.created_at).toLocaleDateString('en-US', {
+    ? new Date(profile.created_at).toLocaleDateString(locale === 'ja' ? 'ja-JP' : 'en-US', {
         year: 'numeric',
         month: 'long',
         day: 'numeric',
@@ -179,10 +181,10 @@ export default function ProfilePage() {
         {/* Page Header */}
         <div className="mb-6 lg:mb-8">
           <h1 className="font-serif text-xl lg:text-2xl text-ink tracking-tight">
-            My Profile
+            {t('profile.title')}
           </h1>
           <p className="text-[12px] lg:text-[13px] text-muted mt-1">
-            Manage your account settings
+            {t('profile.subtitle')}
           </p>
         </div>
 
@@ -214,7 +216,7 @@ export default function ProfilePage() {
                       type="text"
                       value={displayName}
                       onChange={(e) => setDisplayName(e.target.value)}
-                      placeholder="Enter display name"
+                      placeholder={t('profile.displayNamePlaceholder')}
                       className="w-full px-3 py-2 text-[15px] border border-border rounded-lg bg-cream dark:bg-ink/10 text-ink focus:outline-none focus:ring-2 focus:ring-gold/50"
                       autoFocus
                     />
@@ -227,32 +229,32 @@ export default function ProfilePage() {
                         disabled={isSaving}
                         className="px-3 py-1.5 text-[13px] font-medium text-white bg-gold hover:bg-gold-light rounded-lg transition-colors disabled:opacity-50"
                       >
-                        {isSaving ? 'Saving...' : 'Save'}
+                        {isSaving ? t('profile.saving') : t('profile.save')}
                       </button>
                       <button
                         onClick={() => setIsEditing(false)}
                         disabled={isSaving}
                         className="px-3 py-1.5 text-[13px] font-medium text-muted hover:text-ink transition-colors"
                       >
-                        Cancel
+                        {t('profile.cancel')}
                       </button>
                     </div>
                   </div>
                 ) : (
                   <>
                     <h2 className="font-serif text-lg lg:text-xl text-ink truncate">
-                      {profile?.display_name || 'No display name'}
+                      {profile?.display_name || t('profile.noDisplayName')}
                     </h2>
                     {isAdmin && (
                       <span className="px-2 py-0.5 text-[11px] font-medium text-gold bg-gold/10 rounded-full">
-                        Admin
+                        {t('profile.admin')}
                       </span>
                     )}
                     <button
                       onClick={handleEditClick}
                       className="text-[12px] text-muted hover:text-gold transition-colors"
                     >
-                      Edit
+                      {t('profile.edit')}
                     </button>
                   </>
                 )}
@@ -264,23 +266,23 @@ export default function ProfilePage() {
           {/* Info Rows */}
           <div className="space-y-4 pt-4 border-t border-border">
             <div className="flex justify-between items-center">
-              <span className="text-[13px] text-muted">Email</span>
+              <span className="text-[13px] text-muted">{t('profile.email')}</span>
               <span className="text-[14px] text-ink">{user?.email || profile?.email}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-[13px] text-muted">Member since</span>
+              <span className="text-[13px] text-muted">{t('profile.memberSince')}</span>
               <span className="text-[14px] text-ink">{memberSince}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-[13px] text-muted">Account type</span>
-              <span className="text-[14px] text-ink capitalize">{profile?.role || 'User'}</span>
+              <span className="text-[13px] text-muted">{t('profile.accountType')}</span>
+              <span className="text-[14px] text-ink capitalize">{profile?.role || t('profile.user')}</span>
             </div>
           </div>
         </div>
 
         {/* Quick Links */}
         <div className="bg-white dark:bg-ink/5 rounded-xl border border-border p-6 lg:p-8 mb-6">
-          <h3 className="font-serif text-[15px] text-ink mb-4">Quick Links</h3>
+          <h3 className="font-serif text-[15px] text-ink mb-4">{t('profile.quickLinks')}</h3>
           <div className="space-y-3">
             <Link
               href="/saved"
@@ -290,7 +292,7 @@ export default function ProfilePage() {
                 <svg className="w-5 h-5 text-muted group-hover:text-gold transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
                 </svg>
-                <span className="text-[14px] text-ink">Saved Searches & Watchlist</span>
+                <span className="text-[14px] text-ink">{t('profile.savedSearches')}</span>
               </div>
               <svg className="w-4 h-4 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -306,7 +308,7 @@ export default function ProfilePage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
-                  <span className="text-[14px] text-ink">Admin Dashboard</span>
+                  <span className="text-[14px] text-ink">{t('profile.adminDashboard')}</span>
                 </div>
                 <svg className="w-4 h-4 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -318,7 +320,7 @@ export default function ProfilePage() {
 
         {/* Privacy & Data */}
         <div className="bg-white dark:bg-ink/5 rounded-xl border border-border p-6 lg:p-8 mb-6">
-          <h3 className="font-serif text-[15px] text-ink mb-4">Privacy & Data</h3>
+          <h3 className="font-serif text-[15px] text-ink mb-4">{t('profile.privacyData')}</h3>
           <div className="space-y-3">
             {/* Cookie Preferences */}
             <button
@@ -330,8 +332,8 @@ export default function ProfilePage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
                 <div>
-                  <span className="text-[14px] text-ink block">Cookie Preferences</span>
-                  <span className="text-[12px] text-muted">Manage your cookie and tracking settings</span>
+                  <span className="text-[14px] text-ink block">{t('profile.cookiePreferences')}</span>
+                  <span className="text-[12px] text-muted">{t('profile.cookiePreferencesDesc')}</span>
                 </div>
               </div>
               <svg className="w-4 h-4 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -351,9 +353,9 @@ export default function ProfilePage() {
                 </svg>
                 <div>
                   <span className="text-[14px] text-ink block">
-                    {isExporting ? 'Exporting...' : 'Export My Data'}
+                    {isExporting ? t('profile.exporting') : t('profile.exportData')}
                   </span>
-                  <span className="text-[12px] text-muted">Download all your data (GDPR)</span>
+                  <span className="text-[12px] text-muted">{t('profile.exportGDPR')}</span>
                 </div>
               </div>
               <svg className="w-4 h-4 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -371,8 +373,8 @@ export default function ProfilePage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
                 <div>
-                  <span className="text-[14px] text-ink block">Privacy Policy</span>
-                  <span className="text-[12px] text-muted">Learn how we handle your data</span>
+                  <span className="text-[14px] text-ink block">{t('profile.privacyPolicy')}</span>
+                  <span className="text-[12px] text-muted">{t('profile.privacyPolicyDesc')}</span>
                 </div>
               </div>
               <svg className="w-4 h-4 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -384,7 +386,7 @@ export default function ProfilePage() {
 
         {/* Account Actions */}
         <div className="bg-white dark:bg-ink/5 rounded-xl border border-border p-6 lg:p-8">
-          <h3 className="font-serif text-[15px] text-ink mb-4">Account Actions</h3>
+          <h3 className="font-serif text-[15px] text-ink mb-4">{t('profile.accountActions')}</h3>
           <div className="space-y-4">
             <button
               onClick={handleSignOut}
@@ -393,7 +395,7 @@ export default function ProfilePage() {
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
               </svg>
-              Sign Out
+              {t('profile.signOut')}
             </button>
 
             <div className="pt-4 border-t border-border">
@@ -405,22 +407,22 @@ export default function ProfilePage() {
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                   </svg>
-                  Delete Account
+                  {t('profile.deleteAccount')}
                 </button>
               ) : (
                 <div className="space-y-3">
                   <p className="text-[13px] text-red-600">
-                    This action is permanent and cannot be undone. All your data will be deleted.
+                    {t('profile.deleteWarning')}
                   </p>
                   <div>
                     <label className="text-[12px] text-muted block mb-1">
-                      Type your email to confirm: <strong>{user?.email}</strong>
+                      {t('profile.typeEmailConfirm', { email: user?.email || '' })}
                     </label>
                     <input
                       type="email"
                       value={deleteEmail}
                       onChange={(e) => setDeleteEmail(e.target.value)}
-                      placeholder="Enter your email"
+                      placeholder={t('profile.emailPlaceholder')}
                       className="w-full px-3 py-2 text-[14px] border border-border rounded-lg bg-cream dark:bg-ink/10 text-ink focus:outline-none focus:ring-2 focus:ring-red-500/50"
                     />
                     {deleteError && (
@@ -433,7 +435,7 @@ export default function ProfilePage() {
                       disabled={isDeleting || deleteEmail.toLowerCase() !== user?.email?.toLowerCase()}
                       className="px-4 py-2 text-[13px] font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {isDeleting ? 'Deleting...' : 'Permanently Delete'}
+                      {isDeleting ? t('profile.deleting') : t('profile.permanentlyDelete')}
                     </button>
                     <button
                       onClick={() => {
@@ -444,7 +446,7 @@ export default function ProfilePage() {
                       disabled={isDeleting}
                       className="px-4 py-2 text-[13px] font-medium text-muted hover:text-ink transition-colors"
                     >
-                      Cancel
+                      {t('profile.cancel')}
                     </button>
                   </div>
                 </div>

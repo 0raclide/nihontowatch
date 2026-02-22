@@ -498,6 +498,10 @@ export interface Listing {
   // Featured sort
   featured_score?: number;
 
+  // Smart crop focal point (0-100%)
+  focal_x?: number | null;
+  focal_y?: number | null;
+
   // Timestamps
   first_seen_at: string;
   last_scraped_at: string;

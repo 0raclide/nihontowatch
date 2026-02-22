@@ -277,6 +277,14 @@ export function MetadataGrid({
   hideSchool = false,
 }: MetadataGridProps) {
   const { t } = useLocale();
+  const td = (cat: string, v: string | null | undefined) => {
+    if (!v) return v;
+    // Strip parenthetical suffixes like "(1185-1333)" for period/era lookups
+    const base = v.replace(/\s*\([^)]*\)\s*$/, '').trim();
+    const k = `${cat}.${base}`;
+    const r = t(k);
+    return r === k ? v : r;
+  };
   const { artisan, school, artisanLabel, era, isEnriched } = getArtisanInfo(listing);
   const certInfo = getCertInfo(listing.cert_type);
   const itemIsBlade = isBlade(listing.item_type);
@@ -323,15 +331,15 @@ export function MetadataGrid({
                     {artisanLabel === 'Smith' ? t('metadata.smith') : t('metadata.maker')}
                   </span>
                   <p className="text-[14px] text-ink font-medium">
-                    {displaySchool && school}
+                    {displaySchool && td('school', school)}
                     {displaySchool && displayArtisan && ' '}
                     {displayArtisan && artisan}
                   </p>
                 </div>
               )}
 
-              <MetadataItem label={t('metadata.era')} value={era} />
-              <MetadataItem label={t('metadata.province')} value={listing.province} />
+              <MetadataItem label={t('metadata.era')} value={td('period', era)} />
+              <MetadataItem label={t('metadata.province')} value={td('province', listing.province)} />
               <MetadataItem label={t('metadata.signature')} value={listing.mei_type} />
 
               {/* Certification with session */}

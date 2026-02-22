@@ -4,7 +4,9 @@ import { useEffect, useRef, useMemo, useState } from 'react';
 import { ListingCard } from './ListingCard';
 import { useAdaptiveVirtualScroll } from '@/hooks/useAdaptiveVirtualScroll';
 import { useQuickViewOptional } from '@/contexts/QuickViewContext';
+import { useLocale } from '@/i18n/LocaleContext';
 import { MOBILE_CARD_HEIGHTS } from '@/lib/rendering/cardHeight';
+import { isSmartCropActive } from '@/types/subscription';
 import type { Listing as QuickViewListing } from '@/types';
 
 
@@ -73,6 +75,9 @@ interface Listing {
   // Artisan matching
   artisan_id?: string | null;
   artisan_confidence?: 'HIGH' | 'MEDIUM' | 'LOW' | 'NONE' | null;
+  // Smart crop focal point
+  focal_x?: number | null;
+  focal_y?: number | null;
 }
 
 interface ExchangeRates {
@@ -99,6 +104,7 @@ interface VirtualListingGridProps {
   searchId?: string; // Correlation ID for CTR tracking
   isAdmin?: boolean; // For admin-only features like artisan code display
   mobileView?: 'grid' | 'gallery'; // Mobile layout mode
+  smartCropEnabled?: boolean; // Override for smart crop toggle (admin tuning)
 }
 
 function Pagination({
@@ -110,6 +116,7 @@ function Pagination({
   totalPages: number;
   onPageChange: (page: number) => void;
 }) {
+  const { t } = useLocale();
   const pages: (number | 'ellipsis')[] = [];
 
   // Build pagination array
@@ -140,7 +147,7 @@ function Pagination({
         disabled={page === 1}
         className="px-3 py-2 min-h-[44px] text-sm text-muted hover:text-ink disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
       >
-        <span className="hidden sm:inline">&larr; Previous</span>
+        <span className="hidden sm:inline">&larr; {t('browse.previous')}</span>
         <span className="sm:hidden">&larr;</span>
       </button>
 
@@ -178,7 +185,7 @@ function Pagination({
         disabled={page === totalPages}
         className="px-3 py-2 min-h-[44px] text-sm text-muted hover:text-ink disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
       >
-        <span className="hidden sm:inline">Next &rarr;</span>
+        <span className="hidden sm:inline">{t('browse.next')} &rarr;</span>
         <span className="sm:hidden">&rarr;</span>
       </button>
     </div>
@@ -222,8 +229,12 @@ export function VirtualListingGrid({
   searchId,
   isAdmin = false,
   mobileView = 'gallery',
+  smartCropEnabled: smartCropEnabledProp,
 }: VirtualListingGridProps) {
   const quickView = useQuickViewOptional();
+  const { t } = useLocale();
+  // Use prop override if provided, otherwise fall back to env var check
+  const smartCropEnabled = smartCropEnabledProp ?? isSmartCropActive();
   const loadMoreTriggerRef = useRef<HTMLDivElement>(null);
   const lastListingCountRef = useRef(listings.length);
   const lastLoadTimeRef = useRef(0);
@@ -375,6 +386,11 @@ export function VirtualListingGrid({
           searchId={searchId}
           isAdmin={isAdmin}
           mobileView={mobileView}
+          focalPosition={
+            smartCropEnabled && listing.focal_x != null && listing.focal_y != null
+              ? `${listing.focal_x}% ${listing.focal_y}%`
+              : undefined
+          }
         />
       ))}
     </div>
@@ -388,8 +404,7 @@ export function VirtualListingGrid({
       {/* Results count - hidden on mobile */}
       <div className="hidden lg:flex items-center justify-between mb-6">
         <p className="text-sm text-muted">
-          Showing <span className="text-ink font-medium">{listings.length}</span> of{' '}
-          <span className="text-ink font-medium">{total.toLocaleString()}</span> items
+          {t('browse.showingCount', { count: String(listings.length), total: total.toLocaleString() })}
           {columns === 1 && <span className="text-muted/60"> (1 column)</span>}
         </p>
       </div>
@@ -418,14 +433,14 @@ export function VirtualListingGrid({
           {isLoadingMore ? (
             <div className="flex items-center gap-3 text-muted">
               <div className="w-5 h-5 border-2 border-gold border-t-transparent rounded-full animate-spin" />
-              <span className="text-sm">Loading more...</span>
+              <span className="text-sm">{t('browse.loadingMore')}</span>
             </div>
           ) : hasMore ? (
             // Trigger element - only rendered when not loading
             // IntersectionObserver watches this element
             <div ref={loadMoreTriggerRef} className="h-4 w-full" aria-hidden="true" />
           ) : listings.length >= 30 ? (
-            <p className="text-sm text-muted">You&apos;ve seen all {total.toLocaleString()} items</p>
+            <p className="text-sm text-muted">{t('browse.seenAllItems', { total: total.toLocaleString() })}</p>
           ) : null}
         </div>
       )}

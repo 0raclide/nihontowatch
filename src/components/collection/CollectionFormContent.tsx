@@ -355,7 +355,7 @@ export function CollectionFormContent({ mode, item, prefillData, onSaved, onCanc
                 <select value={form.price_paid_currency} onChange={e => updateField('price_paid_currency', e.target.value)} className="form-select w-20">
                   {CURRENCIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
                 </select>
-                <input type="number" value={form.price_paid} onChange={e => updateField('price_paid', e.target.value)} placeholder="Amount" className="form-input flex-1" />
+                <input type="number" value={form.price_paid} onChange={e => updateField('price_paid', e.target.value)} placeholder={t('collection.amountPlaceholder')} className="form-input flex-1" />
               </div>
             </FormField>
           </div>

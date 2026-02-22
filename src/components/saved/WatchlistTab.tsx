@@ -7,6 +7,7 @@ import { useFavorites } from '@/hooks/useFavorites';
 import { useAlerts } from '@/hooks/useAlerts';
 import { getImageUrl } from '@/lib/images';
 import type { Listing, Alert } from '@/types';
+import { useLocale } from '@/i18n/LocaleContext';
 
 interface WatchlistItemProps {
   listing: Listing;
@@ -28,6 +29,7 @@ function WatchlistItem({
   onToggleAlert,
   isUpdating,
 }: WatchlistItemProps) {
+  const { t } = useLocale();
   const imageUrl = getImageUrl(listing);
   const isSold = listing.is_sold || listing.status === 'sold' || listing.status === 'presumed_sold';
 
@@ -92,7 +94,7 @@ function WatchlistItem({
                 </h3>
               </a>
               <p className="text-[12px] text-muted mt-0.5">
-                {listing.dealers?.name || listing.dealer?.name || 'Unknown dealer'}
+                {listing.dealers?.name || listing.dealer?.name || t('watchlist.unknownDealer')}
               </p>
             </div>
 
@@ -122,11 +124,11 @@ function WatchlistItem({
                     currency: listing.price_currency || 'JPY',
                     maximumFractionDigits: 0,
                   }).format(listing.price_value)
-                : 'Ask'}
+                : t('listing.ask')}
             </span>
             {isSold && (
               <span className="px-1.5 py-0.5 text-[10px] font-medium bg-red-100 text-red-700 rounded">
-                SOLD
+                {t('listing.sold')}
               </span>
             )}
           </div>
@@ -146,7 +148,7 @@ function WatchlistItem({
                 disabled={isUpdating || isSold}
                 className="w-4 h-4 rounded border-border text-gold focus:ring-gold/20 disabled:opacity-50"
               />
-              <span className="text-[12px] text-muted">Price drop</span>
+              <span className="text-[12px] text-muted">{t('watchlist.priceDrop')}</span>
             </label>
 
             {/* Back in stock alert - only show if sold */}
@@ -162,7 +164,7 @@ function WatchlistItem({
                 disabled={isUpdating || !isSold}
                 className="w-4 h-4 rounded border-border text-gold focus:ring-gold/20 disabled:opacity-50"
               />
-              <span className="text-[12px] text-muted">Back in stock</span>
+              <span className="text-[12px] text-muted">{t('watchlist.backInStock')}</span>
             </label>
           </div>
         </div>
@@ -172,6 +174,7 @@ function WatchlistItem({
 }
 
 function EmptyState() {
+  const { t } = useLocale();
   return (
     <div className="flex flex-col items-center justify-center py-16">
       <div className="w-16 h-16 rounded-full bg-linen flex items-center justify-center mb-4">
@@ -189,22 +192,22 @@ function EmptyState() {
           />
         </svg>
       </div>
-      <h2 className="font-serif text-lg text-ink mb-2">No items in your watchlist</h2>
+      <h2 className="font-serif text-lg text-ink mb-2">{t('watchlist.emptyTitle')}</h2>
       <p className="text-[14px] text-muted text-center max-w-sm mb-6">
-        Browse listings and click the heart icon to add items. You can then set up price
-        drop and back-in-stock alerts.
+        {t('watchlist.emptyDescription')}
       </p>
       <Link
         href="/"
         className="px-6 py-3 text-[14px] font-medium text-white bg-gold hover:bg-gold-light rounded-lg transition-colors"
       >
-        Browse Listings
+        {t('watchlist.browseCTA')}
       </Link>
     </div>
   );
 }
 
 export function WatchlistTab() {
+  const { t } = useLocale();
   const router = useRouter();
   const { favorites, isLoading: favoritesLoading, error: favoritesError, removeFavorite } = useFavorites();
   const { alerts, isLoading: alertsLoading, createAlert, deleteAlert, toggleAlert, isCreating, isUpdating } = useAlerts({ autoFetch: true });
@@ -284,16 +287,14 @@ export function WatchlistTab() {
           />
         </svg>
         <p className="text-[13px] text-muted">
-          <strong className="text-ink">Watch for changes:</strong> Enable &quot;Price drop&quot; to get
-          notified when an item&apos;s price decreases. Enable &quot;Back in stock&quot; on sold items
-          to know when they become available again.
+          <strong className="text-ink">{t('watchlist.watchDescription')}</strong>{' '}
+          {t('watchlist.watchDescriptionText')}
         </p>
       </div>
 
       {/* Count */}
       <p className="text-sm text-muted mb-4">
-        <span className="text-ink font-medium">{favorites.length}</span>{' '}
-        {favorites.length === 1 ? 'item' : 'items'} in your watchlist
+        {t(favorites.length === 1 ? 'watchlist.itemCount' : 'watchlist.itemCountPlural', { count: String(favorites.length) })}
       </p>
 
       {/* Watchlist items */}
@@ -314,10 +315,10 @@ export function WatchlistTab() {
       {/* Tip */}
       <div className="mt-8 p-4 bg-linen rounded-lg border border-border">
         <p className="text-[13px] text-muted">
-          <strong className="text-ink">Tip:</strong> To add items to your watchlist, browse
+          <strong className="text-ink">{t('watchlist.tip')}</strong> To add items to your watchlist, browse
           the{' '}
           <button onClick={() => router.push('/')} className="text-gold hover:underline">
-            collection
+            {t('watchlist.tipLink')}
           </button>{' '}
           and click the heart icon on any item.
         </p>

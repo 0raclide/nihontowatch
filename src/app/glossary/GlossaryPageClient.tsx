@@ -3,11 +3,13 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { getAllTerms, getCategories, CATEGORY_LABELS } from '@/lib/glossary';
 import type { GlossaryEntry, GlossaryCategory } from '@/lib/glossary/types';
+import { useLocale } from '@/i18n/LocaleContext';
 
 // Generate alphabet array A-Z
 const ALPHABET = Array.from({ length: 26 }, (_, i) => String.fromCharCode(65 + i));
 
 export function GlossaryPageClient() {
+  const { t } = useLocale();
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<GlossaryCategory | 'all'>(
     'all'
@@ -97,7 +99,7 @@ export function GlossaryPageClient() {
             type="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search terms, kanji, or definitions..."
+            placeholder={t('glossary.searchPlaceholder')}
             className="w-full pl-10 pr-4 py-3 bg-surface border border-border rounded-lg text-sm text-ink placeholder:text-muted/50 focus:outline-none focus:border-gold/50 focus:ring-2 focus:ring-gold/10 transition-all"
           />
           <svg
@@ -128,7 +130,7 @@ export function GlossaryPageClient() {
                 : 'bg-surface border border-border text-muted hover:text-ink hover:border-gold/30'
             }`}
           >
-            All ({allTerms.length})
+            {t('glossary.all', { count: String(allTerms.length) })}
           </button>
           {(Object.keys(categories) as GlossaryCategory[]).map((cat) => {
             const count = allTerms.filter((t) => t.category === cat).length;
@@ -176,14 +178,14 @@ export function GlossaryPageClient() {
       {/* Results count */}
       <p className="text-sm text-muted mb-4">
         {filteredTerms.length === allTerms.length
-          ? `${filteredTerms.length.toLocaleString()} terms`
-          : `${filteredTerms.length.toLocaleString()} of ${allTerms.length.toLocaleString()} terms`}
+          ? t('glossary.terms', { count: filteredTerms.length.toLocaleString() })
+          : t('glossary.termsFiltered', { filtered: filteredTerms.length.toLocaleString(), total: allTerms.length.toLocaleString() })}
       </p>
 
       {/* Terms list */}
       {filteredTerms.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-muted">No terms found matching your search.</p>
+          <p className="text-muted">{t('glossary.noResults')}</p>
           <button
             onClick={() => {
               setSearch('');
@@ -191,7 +193,7 @@ export function GlossaryPageClient() {
             }}
             className="mt-2 text-sm text-gold hover:text-gold-light transition-colors"
           >
-            Clear filters
+            {t('glossary.clearFilters')}
           </button>
         </div>
       ) : search ? (

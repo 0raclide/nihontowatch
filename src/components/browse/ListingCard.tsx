@@ -97,6 +97,8 @@ interface Listing {
   artisan_verified?: 'correct' | 'incorrect' | null;
   admin_hidden?: boolean;
   status_admin_locked?: boolean;
+  focal_x?: number | null;
+  focal_y?: number | null;
 }
 
 interface ExchangeRates {
@@ -118,6 +120,7 @@ interface ListingCardProps {
   mobileView?: 'grid' | 'gallery'; // Mobile layout mode (only affects < sm breakpoint)
   fontSize?: 'compact' | 'standard' | 'large'; // Font size preference (both views)
   imageAspect?: string; // Override image aspect ratio (default: 'aspect-[3/4]')
+  focalPosition?: string; // Pre-computed object-position (e.g. "45.2% 32.1%") from parent
 }
 
 /**
@@ -421,8 +424,8 @@ function hasSetsumeiTranslation(listing: Listing): boolean {
   return false;
 }
 
-function cleanTitle(title: string | null, smith: string | null, maker: string | null): string {
-  if (!title) return 'Untitled';
+function cleanTitle(title: string | null, smith: string | null, maker: string | null, untitledLabel = 'Untitled'): string {
+  if (!title) return untitledLabel;
 
   let cleaned = title;
   cleaned = cleaned.replace(/^(Katana|Wakizashi|Tanto|Tachi|Tsuba|Kozuka|Menuki|Koshirae|Naginata|Yari):\s*/i, '');
@@ -457,6 +460,7 @@ export const ListingCard = memo(function ListingCard({
   mobileView = 'gallery',
   fontSize = 'large',
   imageAspect,
+  focalPosition,
 }: ListingCardProps) {
   // Mobile view helpers — only affect base (mobile) classes; sm:/lg: overrides restore tablet/desktop
   const isGridMobile = mobileView === 'grid';
@@ -538,7 +542,7 @@ export const ListingCard = memo(function ListingCard({
     artisan: getArtisanName(listing.smith, listing.school, listing.title_en)
       || getArtisanName(listing.tosogu_maker, listing.tosogu_school, listing.title_en),
     itemType: normalizeItemType(listing.item_type),
-    cleanedTitle: cleanTitle(listing.title, listing.smith, listing.tosogu_maker),
+    cleanedTitle: cleanTitle(listing.title, listing.smith, listing.tosogu_maker, t('listing.untitled')),
     certInfo: getValidatedCertInfo(listing),
   }), [
     listing.id,
@@ -554,6 +558,7 @@ export const ListingCard = memo(function ListingCard({
     listing.cert_type,
     listing.price_value,
     listing.price_currency,
+    t,
   ]);
 
   // Derive thumbnail URL, skipping images known to be broken.
@@ -682,6 +687,7 @@ export const ListingCard = memo(function ListingCard({
       className={`object-cover group-hover:scale-105 transition-[opacity,transform] duration-500 ${
         isLoading ? 'opacity-0' : 'opacity-100'
       }`}
+      style={focalPosition ? { objectPosition: focalPosition } : undefined}
       sizes={isGridMobile ? '(max-width: 640px) 50vw, (max-width: 1024px) 50vw, 25vw' : '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw'}
       priority={priority}
       fetchPriority={priority ? 'high' : undefined}
@@ -886,7 +892,7 @@ export const ListingCard = memo(function ListingCard({
           <div className={`${sz.attrH} sm:h-[20px] lg:h-[22px] flex items-baseline`}>
             <ArtisanTooltip listingId={parseInt(listing.id)} startInSearchMode certType={listing.cert_type} adminHidden={listing.admin_hidden} onToggleHidden={handleToggleHidden}>
               <span className="text-[10px] font-medium text-muted hover:text-ink transition-colors cursor-pointer">
-                Set artisan
+                {t('listing.setArtisan')}
               </span>
             </ArtisanTooltip>
           </div>

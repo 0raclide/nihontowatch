@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/lib/auth/AuthContext';
+import { useLocale } from '@/i18n/LocaleContext';
 
 // ============================================================================
 // Component
@@ -9,6 +10,7 @@ import { useAuth } from '@/lib/auth/AuthContext';
 
 export function UserMenu() {
   const { user, profile, isAdmin, signOut } = useAuth();
+  const { t } = useLocale();
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -104,7 +106,7 @@ export function UserMenu() {
               className="flex items-center gap-3 px-4 py-2.5 text-sm text-muted hover:text-ink hover:bg-hover transition-colors"
             >
               <UserIcon />
-              Profile
+              {t('nav.profile')}
             </a>
 
             <a
@@ -112,7 +114,7 @@ export function UserMenu() {
               className="flex items-center gap-3 px-4 py-2.5 text-sm text-muted hover:text-ink hover:bg-hover transition-colors"
             >
               <BookmarkIcon />
-              Saved
+              {t('nav.saved')}
             </a>
 
             {isAdmin && (
@@ -123,7 +125,7 @@ export function UserMenu() {
                   className="flex items-center gap-3 px-4 py-2.5 text-sm text-muted hover:text-ink hover:bg-hover transition-colors"
                 >
                   <ShieldIcon />
-                  Admin
+                  {t('nav.admin')}
                 </a>
               </>
             )}
@@ -136,7 +138,7 @@ export function UserMenu() {
               className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-muted hover:text-red-600 hover:bg-red-50 transition-colors"
             >
               <LogoutIcon />
-              Sign Out
+              {t('auth.signOut')}
             </button>
           </div>
         </div>

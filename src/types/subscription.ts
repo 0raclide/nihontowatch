@@ -100,6 +100,14 @@ export const isTrialModeActive = (): boolean => {
 };
 
 /**
+ * Check if smart crop focal points are active for thumbnails
+ * Default enabled. Set NEXT_PUBLIC_SMART_CROP=false to revert to center center.
+ */
+export const isSmartCropActive = (): boolean => {
+  return process.env.NEXT_PUBLIC_SMART_CROP !== 'false';
+};
+
+/**
  * Check if a tier has access to a feature
  */
 export function canAccessFeature(tier: SubscriptionTier, feature: Feature): boolean {

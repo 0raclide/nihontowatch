@@ -5,6 +5,7 @@ import { useFavorites } from '@/hooks/useFavorites';
 import { ListingCard } from '@/components/browse/ListingCard';
 import { FavoriteButton } from './FavoriteButton';
 import { getImageUrl } from '@/lib/images';
+import { useLocale } from '@/i18n/LocaleContext';
 
 interface ExchangeRates {
   base: string;
@@ -37,6 +38,7 @@ function LoadingSkeleton() {
 }
 
 function EmptyState() {
+  const { t } = useLocale();
   return (
     <div className="text-center py-16">
       <div className="inline-block p-8 bg-paper border border-border max-w-md">
@@ -54,17 +56,16 @@ function EmptyState() {
           />
         </svg>
         <h3 className="font-serif text-xl text-charcoal mb-3">
-          No favorites yet
+          {t('favorites.emptyTitle')}
         </h3>
         <p className="text-sm text-muted mb-6">
-          Browse the collection and click the heart icon on items you&apos;re interested in.
-          They&apos;ll appear here for easy access.
+          {t('favorites.emptyDescription')}
         </p>
         <Link
           href="/"
           className="inline-flex items-center gap-2 px-5 py-2.5 bg-ink text-white text-sm font-medium hover:opacity-90 transition-opacity"
         >
-          Browse Collection
+          {t('favorites.browseCTA')}
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
           </svg>
@@ -75,6 +76,7 @@ function EmptyState() {
 }
 
 export function FavoritesList({ currency, exchangeRates }: FavoritesListProps) {
+  const { t } = useLocale();
   const { favorites, isLoading, error } = useFavorites();
 
   if (isLoading) {
@@ -99,7 +101,7 @@ export function FavoritesList({ currency, exchangeRates }: FavoritesListProps) {
             />
           </svg>
           <h3 className="font-serif text-lg text-charcoal mb-2">
-            Error loading favorites
+            {t('favorites.errorTitle')}
           </h3>
           <p className="text-sm text-muted">
             {error}
@@ -118,8 +120,7 @@ export function FavoritesList({ currency, exchangeRates }: FavoritesListProps) {
       {/* Results count */}
       <div className="flex items-center justify-between mb-6">
         <p className="text-sm text-muted">
-          <span className="text-ink font-medium">{favorites.length}</span>{' '}
-          {favorites.length === 1 ? 'item' : 'items'} saved
+          {t(favorites.length === 1 ? 'favorites.itemCount' : 'favorites.itemCountPlural', { count: String(favorites.length) })}
         </p>
       </div>
 
@@ -152,6 +153,7 @@ export function FavoritesList({ currency, exchangeRates }: FavoritesListProps) {
  * Compact list view for favorites (alternative to grid)
  */
 export function FavoritesListCompact({ currency }: Omit<FavoritesListProps, 'exchangeRates'>) {
+  const { t } = useLocale();
   const { favorites, isLoading, removeFavorite } = useFavorites();
 
   if (isLoading) {
@@ -225,7 +227,7 @@ export function FavoritesListCompact({ currency }: Omit<FavoritesListProps, 'exc
                       currency: currency,
                       maximumFractionDigits: 0,
                     }).format(item.listing.price_value)
-                  : 'Ask'}
+                  : t('listing.ask')}
               </p>
             </a>
           </div>
@@ -234,7 +236,7 @@ export function FavoritesListCompact({ currency }: Omit<FavoritesListProps, 'exc
           <button
             onClick={() => removeFavorite(Number(item.listing.id))}
             className="flex-shrink-0 p-2 text-muted hover:text-burgundy transition-colors"
-            aria-label="Remove from favorites"
+            aria-label={t('favorites.remove')}
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />

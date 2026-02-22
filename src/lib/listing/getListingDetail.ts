@@ -88,6 +88,8 @@ interface ListingWithDealer {
   artisan_method: string | null;
   artisan_candidates: unknown[] | null;
   artisan_verified: string | null;
+  focal_x: number | null;
+  focal_y: number | null;
   dealers: {
     id: number;
     name: string;
@@ -152,6 +154,8 @@ export interface EnrichedListingDetail {
   artisan_method: string | null;
   artisan_candidates: unknown[] | null;
   artisan_verified: string | null;
+  focal_x: number | null;
+  focal_y: number | null;
   artisan_display_name?: string;
   artisan_tier?: 'kokuho' | 'elite' | 'juyo' | null;
   dealer_earliest_seen_at: string | null;
@@ -217,6 +221,8 @@ const LISTING_SELECT = `
   artisan_method,
   artisan_candidates,
   artisan_verified,
+  focal_x,
+  focal_y,
   dealers (
     id,
     name,
@@ -376,6 +382,8 @@ export async function getListingDetail(
     artisan_method: typedListing.artisan_method,
     artisan_candidates: typedListing.artisan_candidates,
     artisan_verified: typedListing.artisan_verified,
+    focal_x: typedListing.focal_x,
+    focal_y: typedListing.focal_y,
     ...(artisanDisplayName && { artisan_display_name: artisanDisplayName }),
     ...(artisanNameKanji && { artisan_name_kanji: artisanNameKanji }),
     ...(artisanTier && { artisan_tier: artisanTier }),

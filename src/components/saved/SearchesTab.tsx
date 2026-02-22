@@ -9,9 +9,11 @@ import {
   criteriaToHumanReadable,
 } from '@/lib/savedSearches/urlToCriteria';
 import type { SavedSearch, NotificationFrequency } from '@/types';
+import { useLocale } from '@/i18n/LocaleContext';
 
 export function SearchesTab() {
   const router = useRouter();
+  const { t } = useLocale();
   const [dealerNames, setDealerNames] = useState<Map<number, string>>(new Map());
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -139,16 +141,15 @@ export function SearchesTab() {
             />
           </svg>
         </div>
-        <h2 className="font-serif text-lg text-ink mb-2">No saved searches yet</h2>
+        <h2 className="font-serif text-lg text-ink mb-2">{t('savedSearches.emptyTitle')}</h2>
         <p className="text-[14px] text-muted text-center max-w-sm mb-6">
-          Browse listings and save your search to get notified when new items match
-          your criteria.
+          {t('savedSearches.emptyDescription')}
         </p>
         <button
           onClick={() => router.push('/')}
           className="px-6 py-3 text-[14px] font-medium text-white bg-gold hover:bg-gold-light rounded-lg transition-colors"
         >
-          Browse Listings
+          {t('savedSearches.browseCTA')}
         </button>
       </div>
     );
@@ -172,9 +173,8 @@ export function SearchesTab() {
           />
         </svg>
         <p className="text-[13px] text-muted">
-          <strong className="text-ink">New listing alerts:</strong> Get notified when items matching
-          your search criteria are added. Set frequency to &quot;Instant&quot; for immediate
-          notifications or &quot;Daily&quot; for a digest.
+          <strong className="text-ink">{t('savedSearches.newListingAlerts')}</strong>{' '}
+          {t('savedSearches.alertsDescription')}
         </p>
       </div>
 
@@ -197,7 +197,7 @@ export function SearchesTab() {
                       type="text"
                       value={editingName}
                       onChange={(e) => setEditingName(e.target.value)}
-                      placeholder="Search name..."
+                      placeholder={t('savedSearches.searchName')}
                       className="flex-1 px-3 py-1.5 text-[14px] border border-border rounded-md bg-paper text-ink focus:outline-none focus:ring-2 focus:ring-gold/20 focus:border-gold"
                       autoFocus
                       onKeyDown={(e) => {
@@ -210,24 +210,24 @@ export function SearchesTab() {
                       disabled={isUpdating}
                       className="px-3 py-1.5 text-[12px] font-medium text-white bg-gold hover:bg-gold-light rounded-md transition-colors disabled:opacity-50"
                     >
-                      Save
+                      {t('savedSearches.save')}
                     </button>
                     <button
                       onClick={handleCancelEdit}
                       className="px-3 py-1.5 text-[12px] font-medium text-muted hover:text-ink rounded-md transition-colors"
                     >
-                      Cancel
+                      {t('savedSearches.cancel')}
                     </button>
                   </div>
                 ) : (
                   <div className="flex items-center gap-2 mb-2">
                     <h3 className="font-medium text-ink truncate">
-                      {search.name || 'Unnamed search'}
+                      {search.name || t('savedSearches.unnamed')}
                     </h3>
                     <button
                       onClick={() => handleStartEdit(search)}
                       className="p-1 text-muted hover:text-ink transition-colors"
-                      title="Edit name"
+                      title={t('savedSearches.editName')}
                     >
                       <svg
                         className="w-3.5 h-3.5"
@@ -255,15 +255,15 @@ export function SearchesTab() {
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-muted">
                   {search.last_notified_at && (
                     <span>
-                      Last notified:{' '}
+                      {t('savedSearches.lastNotified')}:{' '}
                       {new Date(search.last_notified_at).toLocaleDateString()}
                     </span>
                   )}
                   {search.last_match_count > 0 && (
-                    <span>{search.last_match_count} matches last time</span>
+                    <span>{t('savedSearches.matches', { count: String(search.last_match_count) })}</span>
                   )}
                   <span>
-                    Created {new Date(search.created_at).toLocaleDateString()}
+                    {t('savedSearches.created')} {new Date(search.created_at).toLocaleDateString()}
                   </span>
                 </div>
               </div>
@@ -272,7 +272,7 @@ export function SearchesTab() {
               <div className="flex flex-col gap-3 lg:items-end">
                 {/* Notification frequency */}
                 <div className="flex items-center gap-2">
-                  <label className="text-[12px] text-muted">Notify:</label>
+                  <label className="text-[12px] text-muted">{t('savedSearches.notify')}</label>
                   <select
                     value={search.notification_frequency}
                     onChange={(e) =>
@@ -284,9 +284,9 @@ export function SearchesTab() {
                     disabled={isUpdating}
                     className="px-2 py-1 text-[12px] border border-border rounded-md bg-paper text-ink focus:outline-none focus:ring-2 focus:ring-gold/20 focus:border-gold disabled:opacity-50"
                   >
-                    <option value="instant">Instant (15 min)</option>
-                    <option value="daily">Daily digest</option>
-                    <option value="none">No notifications</option>
+                    <option value="instant">{t('savedSearches.instant')}</option>
+                    <option value="daily">{t('savedSearches.dailyDigest')}</option>
+                    <option value="none">{t('savedSearches.noNotifications')}</option>
                   </select>
                 </div>
 
@@ -310,7 +310,7 @@ export function SearchesTab() {
                         d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                       />
                     </svg>
-                    View
+                    {t('savedSearches.view')}
                   </button>
 
                   {/* Toggle active */}
@@ -323,7 +323,7 @@ export function SearchesTab() {
                         : 'text-green-600 hover:text-green-700'
                     }`}
                   >
-                    {search.is_active ? 'Pause' : 'Resume'}
+                    {search.is_active ? t('savedSearches.pause') : t('savedSearches.resume')}
                   </button>
 
                   {/* Delete */}
@@ -349,7 +349,7 @@ export function SearchesTab() {
                         />
                       </svg>
                     )}
-                    Delete
+                    {t('savedSearches.delete')}
                   </button>
                 </div>
               </div>
@@ -361,9 +361,9 @@ export function SearchesTab() {
       {/* Tip */}
       <div className="mt-8 p-4 bg-linen rounded-lg border border-border">
         <p className="text-[13px] text-muted">
-          <strong className="text-ink">Tip:</strong> To save a new search, go to the{' '}
+          <strong className="text-ink">{t('savedSearches.tip')}</strong> To save a new search, go to the{' '}
           <button onClick={() => router.push('/')} className="text-gold hover:underline">
-            browse page
+            {t('savedSearches.tipLink')}
           </button>
           , apply your filters, and click the &quot;Save Search&quot; button.
         </p>

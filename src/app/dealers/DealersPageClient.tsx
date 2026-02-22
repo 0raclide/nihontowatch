@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { getCountryFlag } from '@/lib/dealers/utils';
 import { Drawer } from '@/components/ui/Drawer';
 import { useMobileUI } from '@/contexts/MobileUIContext';
+import { useLocale } from '@/i18n/LocaleContext';
 
 // =============================================================================
 // TYPES
@@ -63,6 +64,7 @@ interface DealersPageClientProps {
 // =============================================================================
 
 export function DealersPageClient({ initialFilters }: DealersPageClientProps) {
+  const { t } = useLocale();
   const [dealers, setDealers] = useState<DealerEntry[]>([]);
   const [totals, setTotals] = useState<Totals>({ dealers: 0, listings: 0, japanDealers: 0, internationalDealers: 0 });
   const [typeFacets, setTypeFacets] = useState<FacetItem[]>([]);
@@ -126,11 +128,11 @@ export function DealersPageClient({ initialFilters }: DealersPageClientProps) {
         if (data.facets?.types) setTypeFacets(data.facets.types);
         if (data.facets?.certs) setCertFacets(data.facets.certs);
       } else {
-        setError('Failed to load dealers. Please try again.');
+        setError(t('dealers.loadFailed'));
       }
     } catch (err: unknown) {
       if (err instanceof DOMException && err.name === 'AbortError') return;
-      setError('Network error. Please check your connection.');
+      setError(t('dealers.networkError'));
     } finally {
       if (!controller.signal.aborted) {
         setIsLoading(false);
@@ -215,16 +217,16 @@ export function DealersPageClient({ initialFilters }: DealersPageClientProps) {
     <div className="max-w-[1600px] mx-auto px-4 py-8 lg:px-6">
       {/* Page Header */}
       <div className="mb-8">
-        <h1 className="font-serif text-2xl text-ink tracking-tight">Dealers</h1>
+        <h1 className="font-serif text-2xl text-ink tracking-tight">{t('dealers.title')}</h1>
         {!isLoading && totals.dealers > 0 && (
           <p className="hidden lg:block text-[13px] text-muted mt-1">
-            {totals.listings.toLocaleString()} listings from {totals.dealers} trusted dealers worldwide
+            {t('dealers.subtitle', { listings: totals.listings.toLocaleString(), dealers: String(totals.dealers) })}
           </p>
         )}
         {/* Mobile subtitle */}
         {!isLoading && totals.dealers > 0 && (
           <p className="lg:hidden mt-2 text-sm text-ink/50">
-            {totals.dealers} dealers &middot; {totals.listings.toLocaleString()} listings
+            {t('dealers.subtitleMobile', { dealers: String(totals.dealers), listings: totals.listings.toLocaleString() })}
           </p>
         )}
       </div>
@@ -241,7 +243,7 @@ export function DealersPageClient({ initialFilters }: DealersPageClientProps) {
               {/* Zone 1: Sort */}
               <div className="flex-shrink-0 px-4 pt-3.5 pb-3 border-b border-border/15">
                 <div className="flex items-center justify-center gap-2 mb-2.5">
-                  <span className="text-[10px] uppercase tracking-[0.08em] text-muted/60 font-medium">Sort</span>
+                  <span className="text-[10px] uppercase tracking-[0.08em] text-muted/60 font-medium">{t('dealers.sort')}</span>
                   <select
                     value={filters.sort}
                     onChange={(e) => handleFilterChange('sort', e.target.value)}
@@ -255,18 +257,18 @@ export function DealersPageClient({ initialFilters }: DealersPageClientProps) {
                       backgroundSize: '11px',
                     }}
                   >
-                    <option value="listing_count">Most Listings</option>
-                    <option value="name">Name A-Z</option>
-                    <option value="country">Region</option>
+                    <option value="listing_count">{t('dealers.mostListings')}</option>
+                    <option value="name">{t('dealers.nameAZ')}</option>
+                    <option value="country">{t('dealers.region')}</option>
                   </select>
                 </div>
 
                 {/* Region Toggle — segmented control */}
                 <div className="flex rounded-lg border border-border/30 overflow-hidden">
                   {([
-                    { value: undefined, label: 'All' },
-                    { value: 'japan', label: 'Japan' },
-                    { value: 'international', label: "Int'l" },
+                    { value: undefined, label: t('dealers.all') },
+                    { value: 'japan', label: t('dealers.japan') },
+                    { value: 'international', label: t('dealers.international') },
                   ] as const).map((opt, i) => (
                     <button
                       key={opt.label}
@@ -290,7 +292,7 @@ export function DealersPageClient({ initialFilters }: DealersPageClientProps) {
               <div className="flex-shrink-0 px-4 py-2 border-b border-border/10">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5">
-                    <h2 className="text-[10px] uppercase tracking-[0.1em] font-medium text-muted/50">Filters</h2>
+                    <h2 className="text-[10px] uppercase tracking-[0.1em] font-medium text-muted/50">{t('dealers.filters')}</h2>
                     {activeFilterCount > 0 && (
                       <span className="inline-flex items-center justify-center min-w-[14px] h-[14px] px-0.5 text-[8px] font-bold bg-gold/80 text-white rounded-full leading-none">
                         {activeFilterCount}
@@ -302,7 +304,7 @@ export function DealersPageClient({ initialFilters }: DealersPageClientProps) {
                       onClick={clearAllFilters}
                       className="text-[10px] text-muted/50 hover:text-gold transition-colors font-medium"
                     >
-                      Reset
+                      {t('dealers.reset')}
                     </button>
                   )}
                 </div>
@@ -318,7 +320,7 @@ export function DealersPageClient({ initialFilters }: DealersPageClientProps) {
                     type="search"
                     value={searchInput}
                     onChange={(e) => handleSearchInput(e.target.value)}
-                    placeholder="Search dealers..."
+                    placeholder={t('dealers.searchPlaceholder')}
                     className="w-full pl-7 pr-7 py-1.5 text-[11px] rounded-md border border-border/30 bg-transparent text-ink placeholder:text-muted/50 focus:outline-none focus:border-gold/50 transition-colors"
                   />
                   {searchInput && (
@@ -338,7 +340,7 @@ export function DealersPageClient({ initialFilters }: DealersPageClientProps) {
               {/* Zone 4: Inventory Type filter */}
               {typeFacets.length > 0 && (
                 <FilterSection
-                  title="Inventory Type"
+                  title={t('dealers.inventoryType')}
                   activeCount={filters.types?.length || 0}
                   onReset={() => applyFilters({ ...filtersRef.current, types: undefined })}
                   defaultOpen={!!filters.types?.length}
@@ -355,7 +357,7 @@ export function DealersPageClient({ initialFilters }: DealersPageClientProps) {
               {/* Zone 5: Designation filter */}
               {certFacets.length > 0 && (
                 <FilterSection
-                  title="Designation"
+                  title={t('dealers.designation')}
                   activeCount={filters.certs?.length || 0}
                   onReset={() => applyFilters({ ...filtersRef.current, certs: undefined })}
                   defaultOpen={!!filters.certs?.length}
@@ -377,7 +379,7 @@ export function DealersPageClient({ initialFilters }: DealersPageClientProps) {
           {/* Desktop count header */}
           {dealers.length > 0 && !isLoading && (
             <p className="hidden lg:block text-[11px] text-ink/45 mb-4">
-              Showing {dealers.length} dealer{dealers.length !== 1 ? 's' : ''}
+              {t(dealers.length !== 1 ? 'dealers.showingPlural' : 'dealers.showing', { count: String(dealers.length) })}
             </p>
           )}
 
@@ -389,7 +391,7 @@ export function DealersPageClient({ initialFilters }: DealersPageClientProps) {
                 onClick={() => fetchDealers(filters)}
                 className="text-[11px] text-red-700 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 underline underline-offset-2 ml-4 shrink-0"
               >
-                Retry
+                {t('dealers.retry')}
               </button>
             </div>
           )}
@@ -402,12 +404,12 @@ export function DealersPageClient({ initialFilters }: DealersPageClientProps) {
             </div>
           ) : !isLoading && dealers.length === 0 ? (
             <div className="py-20 text-center">
-              <p className="text-ink/50 text-sm">No dealers found matching your criteria.</p>
+              <p className="text-ink/50 text-sm">{t('dealers.noDealersFound')}</p>
               <button
                 onClick={clearAllFilters}
                 className="mt-3 text-[12px] text-gold hover:text-gold-light underline"
               >
-                Reset all filters
+                {t('dealers.resetFilters')}
               </button>
             </div>
           ) : (
@@ -445,7 +447,7 @@ export function DealersPageClient({ initialFilters }: DealersPageClientProps) {
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
-            <span className="text-[11px] mt-1 font-medium">Search</span>
+            <span className="text-[11px] mt-1 font-medium">{t('dealers.search')}</span>
           </button>
 
           {/* Filters */}
@@ -466,7 +468,7 @@ export function DealersPageClient({ initialFilters }: DealersPageClientProps) {
                 </span>
               )}
             </div>
-            <span className="text-[11px] mt-1 font-medium">Filters</span>
+            <span className="text-[11px] mt-1 font-medium">{t('dealers.filters')}</span>
           </button>
 
           {/* Menu */}
@@ -477,7 +479,7 @@ export function DealersPageClient({ initialFilters }: DealersPageClientProps) {
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
-            <span className="text-[11px] mt-1 font-medium">Menu</span>
+            <span className="text-[11px] mt-1 font-medium">{t('dealers.menu')}</span>
           </button>
         </div>
       </nav>
@@ -493,7 +495,7 @@ export function DealersPageClient({ initialFilters }: DealersPageClientProps) {
       <Drawer
         isOpen={searchDrawerOpen}
         onClose={() => setSearchDrawerOpen(false)}
-        title="Search Dealers"
+        title={t('dealers.searchDealers')}
       >
         <div className="p-4 space-y-4">
           <form
@@ -510,7 +512,7 @@ export function DealersPageClient({ initialFilters }: DealersPageClientProps) {
                 type="search"
                 value={searchInput}
                 onChange={(e) => handleSearchInput(e.target.value)}
-                placeholder="Search by name or domain..."
+                placeholder={t('dealers.searchByNameDomain')}
                 className="w-full pl-4 pr-10 py-3 bg-cream border border-border text-sm text-ink placeholder:text-ink/30 focus:outline-none focus:border-gold/40 focus:shadow-[0_0_0_3px_rgba(181,142,78,0.1)] transition-all"
                 autoFocus
               />
@@ -541,12 +543,12 @@ export function DealersPageClient({ initialFilters }: DealersPageClientProps) {
 
           {/* Quick region buttons */}
           <div>
-            <p className="text-[11px] uppercase tracking-[0.12em] text-ink/40 mb-2">Region</p>
+            <p className="text-[11px] uppercase tracking-[0.12em] text-ink/40 mb-2">{t('dealers.region')}</p>
             <div className="flex flex-wrap gap-2">
               {([
-                { value: undefined, label: 'All Dealers' },
-                { value: 'japan', label: 'Japan' },
-                { value: 'international', label: 'International' },
+                { value: undefined, label: t('dealers.allDealers') },
+                { value: 'japan', label: t('dealers.japan') },
+                { value: 'international', label: t('dealers.internationalFull') },
               ] as const).map((opt) => (
                 <button
                   key={opt.label}
@@ -572,31 +574,31 @@ export function DealersPageClient({ initialFilters }: DealersPageClientProps) {
       <Drawer
         isOpen={filterDrawerOpen}
         onClose={() => setFilterDrawerOpen(false)}
-        title="Filter Dealers"
+        title={t('dealers.filterDealers')}
       >
         <div className="p-4 space-y-5">
           {/* Sort */}
           <div>
-            <p className="text-[11px] uppercase tracking-[0.12em] text-ink/40 mb-2">Sort by</p>
+            <p className="text-[11px] uppercase tracking-[0.12em] text-ink/40 mb-2">{t('dealers.sortBy')}</p>
             <select
               value={filters.sort}
               onChange={(e) => handleFilterChange('sort', e.target.value)}
               className="w-full px-3 py-2.5 bg-cream border border-border text-[13px] text-ink focus:outline-none focus:border-gold/40 cursor-pointer"
             >
-              <option value="listing_count">Most Listings</option>
-              <option value="name">Name A-Z</option>
-              <option value="country">Region</option>
+              <option value="listing_count">{t('dealers.mostListings')}</option>
+              <option value="name">{t('dealers.nameAZ')}</option>
+              <option value="country">{t('dealers.region')}</option>
             </select>
           </div>
 
           {/* Region */}
           <div>
-            <p className="text-[11px] uppercase tracking-[0.12em] text-ink/40 mb-2">Region</p>
+            <p className="text-[11px] uppercase tracking-[0.12em] text-ink/40 mb-2">{t('dealers.region')}</p>
             <div className="flex border border-border divide-x divide-border">
               {([
-                { value: undefined, label: 'All' },
-                { value: 'japan', label: 'Japan' },
-                { value: 'international', label: "Int'l" },
+                { value: undefined, label: t('dealers.all') },
+                { value: 'japan', label: t('dealers.japan') },
+                { value: 'international', label: t('dealers.international') },
               ] as const).map((opt) => (
                 <button
                   key={opt.label}
@@ -620,13 +622,13 @@ export function DealersPageClient({ initialFilters }: DealersPageClientProps) {
           {typeFacets.length > 0 && (
             <div>
               <div className="flex items-center justify-between mb-2">
-                <p className="text-[11px] uppercase tracking-[0.12em] text-ink/40">Inventory Type</p>
+                <p className="text-[11px] uppercase tracking-[0.12em] text-ink/40">{t('dealers.inventoryType')}</p>
                 {(filters.types?.length || 0) > 0 && (
                   <button
                     onClick={() => applyFilters({ ...filtersRef.current, types: undefined })}
                     className="text-[14px] text-gold hover:text-gold-light transition-colors font-medium"
                   >
-                    Clear
+                    {t('dealers.clear')}
                   </button>
                 )}
               </div>
@@ -670,13 +672,13 @@ export function DealersPageClient({ initialFilters }: DealersPageClientProps) {
           {certFacets.length > 0 && (
             <div>
               <div className="flex items-center justify-between mb-2">
-                <p className="text-[11px] uppercase tracking-[0.12em] text-ink/40">Designation</p>
+                <p className="text-[11px] uppercase tracking-[0.12em] text-ink/40">{t('dealers.designation')}</p>
                 {(filters.certs?.length || 0) > 0 && (
                   <button
                     onClick={() => applyFilters({ ...filtersRef.current, certs: undefined })}
                     className="text-[14px] text-gold hover:text-gold-light transition-colors font-medium"
                   >
-                    Clear
+                    {t('dealers.clear')}
                   </button>
                 )}
               </div>
@@ -724,7 +726,7 @@ export function DealersPageClient({ initialFilters }: DealersPageClientProps) {
             }}
             className="w-full py-2.5 text-[12px] text-gold hover:text-gold-light border border-gold/30 hover:border-gold/50 transition-colors"
           >
-            Clear all filters
+            {t('dealers.clearAll')}
           </button>
         </div>
       </Drawer>
@@ -778,6 +780,7 @@ function FilterSection({
   defaultOpen?: boolean;
   children: React.ReactNode;
 }) {
+  const { t } = useLocale();
   const [open, setOpen] = useState(defaultOpen);
 
   return (
@@ -805,7 +808,7 @@ function FilterSection({
               }}
               className="text-[10px] text-muted/50 hover:text-gold transition-colors cursor-pointer font-medium"
             >
-              Reset
+              {t('dealers.reset')}
             </span>
           )}
           <svg
@@ -841,6 +844,7 @@ function CheckboxList({
   onToggle: (value: string) => void;
   limit?: number;
 }) {
+  const { t } = useLocale();
   const [expanded, setExpanded] = useState(false);
   const visible = expanded ? items : items.slice(0, limit);
   const hasMore = items.length > limit;
@@ -884,7 +888,7 @@ function CheckboxList({
           onClick={() => setExpanded(!expanded)}
           className="text-[10px] text-gold/70 hover:text-gold transition-colors mt-1 ml-0"
         >
-          {expanded ? 'Show less' : `+${items.length - limit} more`}
+          {expanded ? t('dealers.showLess') : t('dealers.nMore', { count: String(items.length - limit) })}
         </button>
       )}
     </div>
@@ -892,6 +896,7 @@ function CheckboxList({
 }
 
 function DealerCard({ dealer }: { dealer: DealerEntry }) {
+  const { t } = useLocale();
   const flag = getCountryFlag(dealer.country);
   const topTypes = dealer.type_breakdown.slice(0, 3);
   const totalTyped = topTypes.reduce((s, t) => s + t.count, 0);
@@ -945,10 +950,10 @@ function DealerCard({ dealer }: { dealer: DealerEntry }) {
         {/* Footer */}
         <div className="flex items-center justify-between pt-2 border-t border-border/30">
           <span className="text-[12px] text-muted tabular-nums">
-            {dealer.listing_count.toLocaleString()} listing{dealer.listing_count !== 1 ? 's' : ''}
+            {t(dealer.listing_count !== 1 ? 'dealers.listingCountPlural' : 'dealers.listingCount', { count: dealer.listing_count.toLocaleString() })}
           </span>
           <span className="text-[11px] text-gold group-hover:underline underline-offset-2">
-            View inventory
+            {t('dealers.viewInventory')}
           </span>
         </div>
       </div>

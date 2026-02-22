@@ -203,7 +203,7 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
                   onCertChanged={(newCert) => quickView?.refreshCurrentListing({ cert_type: newCert } as Partial<Listing>)}
                 >
                   <span className="inline-flex items-center gap-0.5 text-[10px] font-mono font-medium px-2 py-0.5 rounded bg-muted/10 text-muted hover:text-ink transition-colors" data-artisan-tooltip>
-                    Set ID
+                    {t('quickview.setId')}
                     <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                     </svg>
@@ -221,8 +221,8 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
                       ? 'bg-amber-500/20 text-amber-500 hover:bg-amber-500/30'
                       : 'text-muted hover:text-ink hover:bg-border/50'
                   }`}
-                  aria-label={listing.is_sold ? 'Mark as available' : 'Mark as sold'}
-                  title={listing.is_sold ? 'Mark as available' : 'Mark as sold'}
+                  aria-label={listing.is_sold ? t('quickview.markAvailable') : t('quickview.markSold')}
+                  title={listing.is_sold ? t('quickview.markAvailable') : t('quickview.markSold')}
                 >
                   {listing.is_sold ? (
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -244,8 +244,8 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
                       ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30'
                       : 'text-muted hover:text-ink hover:bg-border/50'
                   }`}
-                  aria-label={listing.admin_hidden ? 'Unhide listing' : 'Hide listing'}
-                  title={listing.admin_hidden ? 'Unhide listing' : 'Hide listing'}
+                  aria-label={listing.admin_hidden ? t('quickview.unhide') : t('quickview.hide')}
+                  title={listing.admin_hidden ? t('quickview.unhide') : t('quickview.hide')}
                 >
                   {listing.admin_hidden ? (
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -268,8 +268,8 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
                       ? 'bg-gold text-white shadow-lg'
                       : 'magical-book'
                   }`}
-                  aria-label={isStudyMode ? 'View photos' : 'Study setsumei'}
-                  title={isStudyMode ? 'View photos' : 'Read NBTHK evaluation'}
+                  aria-label={isStudyMode ? t('quickview.viewPhotos') : t('quickview.studySetsumei')}
+                  title={isStudyMode ? t('quickview.viewPhotos') : t('quickview.studySetsumei')}
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
@@ -321,15 +321,15 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
                     viewBox="0 0 24 24"
                     fill="currentColor"
                     aria-label={
-                      listing.artisan_tier === 'kokuho' ? 'National Treasure designated' :
-                      listing.artisan_tier === 'elite' ? 'Elite designated' :
-                      'Juyo designated'
+                      listing.artisan_tier === 'kokuho' ? t('artisan.tierKokuhoLabel') :
+                      listing.artisan_tier === 'elite' ? t('artisan.tierEliteLabel') :
+                      t('artisan.tierJuyoLabel')
                     }
                   >
                     <title>{
-                      listing.artisan_tier === 'kokuho' ? 'National Treasure' :
-                      listing.artisan_tier === 'elite' ? 'Elite' :
-                      'Juyo'
+                      listing.artisan_tier === 'kokuho' ? t('artisan.tierKokuho') :
+                      listing.artisan_tier === 'elite' ? t('artisan.tierElite') :
+                      t('artisan.tierJuyo')
                     }</title>
                     <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
                   </svg>
@@ -456,7 +456,7 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
           <button
             onClick={handleInquire}
             data-testid="inquire-button"
-            title="Inquire"
+            title={t('listing.inquire')}
             className="flex items-center justify-center px-3 py-3 text-[13px] font-medium text-charcoal bg-linen hover:bg-hover border border-border rounded-lg transition-colors"
           >
             <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -468,7 +468,7 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
           {user && process.env.NEXT_PUBLIC_COLLECTION_ENABLED === 'true' && (
             <button
               onClick={handleIOwn}
-              title="I Own This"
+              title={t('listing.iOwnThis')}
               className="flex items-center justify-center px-3 py-3 text-[13px] font-medium text-charcoal bg-linen hover:bg-hover border border-border rounded-lg transition-colors"
             >
               <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">

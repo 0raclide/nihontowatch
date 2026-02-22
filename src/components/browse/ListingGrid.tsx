@@ -79,6 +79,7 @@ interface ListingGridProps {
   searchId?: string; // Correlation ID for CTR tracking
   isAdmin?: boolean; // For admin-only features like artisan code display
   mobileView?: 'grid' | 'gallery'; // Mobile layout mode
+  smartCropEnabled?: boolean; // Admin toggle override for smart crop
   isUrlSearch?: boolean; // Whether the current search was a URL query
   searchQuery?: string; // The raw search query (for report missing URL)
 }
@@ -213,6 +214,7 @@ export function ListingGrid({
   searchId,
   isAdmin = false,
   mobileView = 'gallery',
+  smartCropEnabled,
   isUrlSearch,
   searchQuery,
 }: ListingGridProps) {
@@ -246,6 +248,7 @@ export function ListingGrid({
         searchId={searchId}
         isAdmin={isAdmin}
         mobileView={mobileView}
+        smartCropEnabled={smartCropEnabled}
       />
     </ViewportTrackingProvider>
   );
