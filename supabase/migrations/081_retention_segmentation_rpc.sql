@@ -11,6 +11,8 @@
 --     EXISTS subqueries.
 --   - Segments + device breakdown merged into one RPC to avoid duplicating the
 --     classification logic and scanning activity_events twice.
+--   - Device type resolved via ARRAY_AGG(session_id) in the initial scan, then
+--     a single user_sessions lookup — avoids re-scanning activity_events.
 --   - All functions use LANGUAGE sql (not plpgsql) to avoid procedural overhead.
 -- =============================================================================
 
@@ -191,7 +193,9 @@ LANGUAGE sql SECURITY DEFINER AS $$
       COUNT(DISTINCT ae.session_id)::INTEGER AS session_count,
       BOOL_OR(ae.event_type IN ('dealer_click', 'external_link_click')) AS has_dealer_click,
       BOOL_OR(ae.event_type IN ('favorite_add', 'alert_create')) AS has_engagement,
-      MODE() WITHIN GROUP (ORDER BY ae.event_type) AS most_common_event
+      MODE() WITHIN GROUP (ORDER BY ae.event_type) AS most_common_event,
+      -- Capture latest session_id in the same scan (avoids second activity_events scan)
+      (ARRAY_AGG(ae.session_id ORDER BY ae.created_at DESC) FILTER (WHERE ae.session_id IS NOT NULL))[1] AS latest_session_id
     FROM activity_events ae
     WHERE ae.visitor_id IS NOT NULL
       AND ae.created_at >= p_start
@@ -210,22 +214,7 @@ LANGUAGE sql SECURITY DEFINER AS $$
       END AS segment
     FROM visitor_stats vs
   ),
-  -- Resolve device per visitor from their most recent session
-  visitor_device AS (
-    SELECT DISTINCT ON (c.visitor_id)
-      c.visitor_id,
-      CASE
-        WHEN us.screen_width IS NOT NULL AND us.screen_width < 768 THEN 'mobile'
-        WHEN us.screen_width IS NOT NULL THEN 'desktop'
-        ELSE 'unknown'
-      END AS device_type
-    FROM classified c
-    JOIN activity_events ae ON ae.visitor_id = c.visitor_id
-      AND ae.created_at >= p_start
-      AND ae.created_at < p_end
-    LEFT JOIN user_sessions us ON us.session_id = ae.session_id
-    ORDER BY c.visitor_id, ae.created_at DESC
-  ),
+  -- Resolve device from latest session — single lookup against user_sessions, no second activity_events scan
   enriched AS (
     SELECT
       c.visitor_id,
@@ -233,9 +222,13 @@ LANGUAGE sql SECURITY DEFINER AS $$
       c.event_count,
       c.session_count,
       c.most_common_event,
-      COALESCE(vd.device_type, 'unknown') AS device_type
+      CASE
+        WHEN us.screen_width IS NOT NULL AND us.screen_width < 768 THEN 'mobile'
+        WHEN us.screen_width IS NOT NULL THEN 'desktop'
+        ELSE 'unknown'
+      END AS device_type
     FROM classified c
-    LEFT JOIN visitor_device vd ON vd.visitor_id = c.visitor_id
+    LEFT JOIN user_sessions us ON us.session_id = c.latest_session_id
   )
   SELECT
     e.segment,

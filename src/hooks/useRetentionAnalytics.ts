@@ -85,7 +85,10 @@ async function fetchRetentionData<T>(
   const response = await fetch(url);
 
   if (!response.ok) {
-    throw new Error(`Failed to fetch ${endpoint}: ${response.statusText}`);
+    // HTTP/2 has empty statusText — read the JSON body for the actual error
+    const body = await response.json().catch(() => null);
+    const message = body?.error || response.statusText || `HTTP ${response.status}`;
+    throw new Error(`Failed to fetch ${endpoint}: ${message}`);
   }
 
   const result: AnalyticsAPIResponse<T> = await response.json();
