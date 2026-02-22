@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { useLocale } from '@/i18n/LocaleContext';
 import { useNotifications, type Notification } from '@/hooks/useNotifications';
@@ -22,6 +22,7 @@ function timeAgo(dateStr: string): string {
 export function NotificationBell() {
   const { user } = useAuth();
   const { t } = useLocale();
+  const router = useRouter();
   const { notifications, unreadCount, hasSavedSearches, markAsRead } = useNotifications();
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -104,13 +105,12 @@ export function NotificationBell() {
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-2.5 border-b border-border">
             <h3 className="text-[13px] font-medium text-ink">{t('notifications.title')}</h3>
-            <Link
-              href="/saved"
-              onClick={() => setOpen(false)}
+            <button
+              onClick={() => { setOpen(false); router.push('/saved'); }}
               className="text-[11px] text-gold hover:underline"
             >
               {t('notifications.viewAll')}
-            </Link>
+            </button>
           </div>
 
           {/* Content */}
@@ -128,7 +128,7 @@ export function NotificationBell() {
                   <NotificationItem
                     key={notif.id}
                     notification={notif}
-                    onClose={() => setOpen(false)}
+                    onNavigate={(href) => { setOpen(false); router.push(href); }}
                     t={t}
                   />
                 ))}
@@ -159,20 +159,21 @@ function EmptyState({ message }: { message: string }) {
 
 function NotificationItem({
   notification,
-  onClose,
+  onNavigate,
   t,
 }: {
   notification: Notification;
-  onClose: () => void;
+  onNavigate: (href: string) => void;
   t: (key: string, params?: Record<string, string | number>) => string;
 }) {
   const searchName = notification.searchName || 'Unnamed search';
+  const firstListingId = notification.listings[0]?.id;
+  const href = firstListingId ? `/listing/${firstListingId}` : '/saved';
 
   return (
-    <Link
-      href="/saved"
-      onClick={onClose}
-      className="flex gap-3 px-4 py-3 hover:bg-linen/50 transition-colors"
+    <button
+      onClick={() => onNavigate(href)}
+      className="flex gap-3 px-4 py-3 hover:bg-linen/50 transition-colors w-full text-left"
     >
       {/* Thumbnails */}
       <div className="flex shrink-0 -space-x-2">
@@ -230,6 +231,6 @@ function NotificationItem({
           )}
         </div>
       </div>
-    </Link>
+    </button>
   );
 }
