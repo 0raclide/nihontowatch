@@ -911,8 +911,8 @@ export const ListingCard = memo(function ListingCard({
           </div>
         ) : <div className={`${sz.attrH} sm:h-[20px] lg:h-[22px]`} />}
 
-        {/* Metadata row — nagasa + era */}
-        {(listing.nagasa_cm || listing.era) && (
+        {/* JA metadata row — nagasa + era (ichimokuryouzen: key specs at a glance) */}
+        {locale === 'ja' && (listing.nagasa_cm || listing.era) && (
           <div className="flex items-center gap-2 text-[10px] text-muted truncate">
             {listing.nagasa_cm && (
               <span>{listing.nagasa_cm}cm</span>
@@ -930,7 +930,7 @@ export const ListingCard = memo(function ListingCard({
             {priceDisplay}
           </span>
           <div className="flex items-center gap-1.5">
-            {!isNew && listing.last_scraped_at && (
+            {locale === 'ja' && !isNew && listing.last_scraped_at && (
               <span className="text-[9px] text-muted/60 tabular-nums hidden sm:inline">
                 {t('card.confirmed', { time: formatRelativeTime(listing.last_scraped_at, t) })}
               </span>
