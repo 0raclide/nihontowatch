@@ -8,7 +8,8 @@ ALTER TABLE dealers ADD COLUMN IF NOT EXISTS name_ja TEXT;
 UPDATE dealers SET name_ja = '葵美術' WHERE domain = 'aoijapan.com';
 UPDATE dealers SET name_ja = 'あさひ刀剣' WHERE domain = 'asahitoken.jp';
 UPDATE dealers SET name_ja = 'あやかし堂' WHERE domain = 'ayakashi.co.jp';
-UPDATE dealers SET name_ja = '銀座長州屋' WHERE domain = 'choshuya.co.jp';
+UPDATE dealers SET name_ja = '銀座長州屋' WHERE domain = 'ginza.choshuya.co.jp';
+UPDATE dealers SET name_ja = '銀座長州屋' WHERE domain = 'www.choshuya.co.jp';
 UPDATE dealers SET name_ja = 'イーソード' WHERE domain = 'e-sword.jp';
 UPDATE dealers SET name_ja = '永楽堂' WHERE domain = 'eirakudo.shop';
 UPDATE dealers SET name_ja = 'ギャラリー陽々' WHERE domain = 'galleryyouyou.com';
@@ -41,6 +42,12 @@ UPDATE dealers SET name_ja = '和敬堂' WHERE domain = 'wakeidou.com';
 UPDATE dealers SET name_ja = '銀座誠友堂' WHERE domain = 'world-seiyudo.com';
 UPDATE dealers SET name_ja = '山城屋' WHERE domain = 'yamasiroya.com';
 UPDATE dealers SET name_ja = '勇進堂' WHERE domain = 'yushindou.com';
+
+-- Additional Japanese dealers (added after initial migration)
+UPDATE dealers SET name_ja = '成蹊堂' WHERE domain = 'seikeido.com';
+UPDATE dealers SET name_ja = '土佐刀剣堂' WHERE domain = 'tosatoukendo.com';
+UPDATE dealers SET name_ja = '刀心' WHERE domain = 'shop.nihontou.jp';
+UPDATE dealers SET name_ja = '眞玄堂' WHERE domain = 'instagram.com' AND name = 'Shingendou';
 
 -- International dealers: name_ja stays NULL (English name used in both locales)
 
