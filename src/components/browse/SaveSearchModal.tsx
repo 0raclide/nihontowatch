@@ -31,7 +31,7 @@ export function SaveSearchModal({
   });
 
   const [name, setName] = useState('');
-  const [frequency, setFrequency] = useState<NotificationFrequency>('daily');
+  const [frequency, setFrequency] = useState<NotificationFrequency>('instant');
   const [dealerNames, setDealerNames] = useState<Map<number, string>>(new Map());
   const [success, setSuccess] = useState(false);
 

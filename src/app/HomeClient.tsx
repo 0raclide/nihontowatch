@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -12,6 +12,7 @@ import { ListingGrid } from '@/components/browse/ListingGrid';
 import type { AvailabilityStatus } from '@/components/ui/AvailabilityToggle';
 import { getActiveFilterCount } from '@/components/browse/FilterContent';
 import { SaveSearchButton } from '@/components/browse/SaveSearchButton';
+import { MobileAlertBar } from '@/components/browse/MobileAlertBar';
 import type { SavedSearchCriteria } from '@/types';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { useBrowseURLSync, type BrowseFilters } from '@/hooks/useBrowseURLSync';
@@ -219,12 +220,30 @@ export default function HomeContent() {
   const selectStyle = 'tint' as const;
   const [page, setPage] = useState(1);
 
+  // Shared criteria object for SaveSearchButton + MobileAlertBar
+  const savedSearchCriteria = useMemo<SavedSearchCriteria>(() => ({
+    tab: activeTab, category: filters.category, itemTypes: filters.itemTypes,
+    certifications: filters.certifications, dealers: filters.dealers,
+    schools: filters.schools, askOnly: filters.askOnly,
+    minPrice: filters.priceMin, maxPrice: filters.priceMax,
+    query: searchQuery || undefined, sort,
+  }), [activeTab, filters, searchQuery, sort]);
+
   // Mobile view toggle (grid = 2-col compact, gallery = 1-col breathing)
   const [mobileView, setMobileView] = useState<'grid' | 'gallery'>(() => {
     if (typeof window !== 'undefined') {
       return (localStorage.getItem('nihontowatch-mobile-view') as 'grid' | 'gallery') || 'gallery';
     }
     return 'gallery';
+  });
+
+  // Smart crop toggle (admin tuning — persisted in localStorage)
+  const [smartCropEnabled, setSmartCropEnabled] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('nihontowatch-smart-crop');
+      return stored !== null ? stored === 'true' : true; // default ON
+    }
+    return true;
   });
 
   const [data, setData] = useState<BrowseResponse | null>(null);
@@ -302,6 +321,14 @@ export default function HomeContent() {
     setMobileView(view);
     if (typeof window !== 'undefined') {
       localStorage.setItem('nihontowatch-mobile-view', view);
+    }
+  }, []);
+
+  // Persist smart crop preference (admin tuning toggle)
+  const handleSmartCropChange = useCallback((enabled: boolean) => {
+    setSmartCropEnabled(enabled);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('nihontowatch-smart-crop', String(enabled));
     }
   }, []);
 
@@ -590,13 +617,7 @@ export default function HomeContent() {
             </span>
             <div className="w-px h-3 bg-border/30" />
             <SaveSearchButton
-              criteria={{
-                tab: activeTab, category: filters.category, itemTypes: filters.itemTypes,
-                certifications: filters.certifications, dealers: filters.dealers,
-                schools: filters.schools, askOnly: filters.askOnly,
-                minPrice: filters.priceMin, maxPrice: filters.priceMax,
-                query: searchQuery || undefined, sort,
-              } as SavedSearchCriteria}
+              criteria={savedSearchCriteria}
               currentMatchCount={data?.total}
             />
           </div>
@@ -683,6 +704,8 @@ export default function HomeContent() {
               availability: activeTab,
               onAvailabilityChange: handleAvailabilityChange,
               isAdmin: authIsAdmin,
+              smartCropEnabled,
+              onSmartCropChange: handleSmartCropChange,
             }}
           />
 
@@ -702,6 +725,7 @@ export default function HomeContent() {
               searchId={currentSearchIdRef.current}
               isAdmin={authIsAdmin || data?.isAdmin || false}
               mobileView={mobileView}
+              smartCropEnabled={smartCropEnabled}
               isUrlSearch={data?.isUrlSearch || false}
               searchQuery={searchQuery}
             />
@@ -761,6 +785,9 @@ export default function HomeContent() {
         </div>
       </footer>
       </div>{/* end scrollable content */}
+
+      {/* Mobile alert bar — quick-save for instant alerts */}
+      <MobileAlertBar criteria={savedSearchCriteria} />
 
       {/* Mobile bottom bar — flex child at bottom of contained layout, never jumps */}
       <BottomTabBar activeFilterCount={getActiveFilterCount(filters)} contained />

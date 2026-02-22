@@ -8,6 +8,7 @@ import { useAuth } from '@/lib/auth/AuthContext';
 import { LoginModal } from '@/components/auth/LoginModal';
 import { SearchesTab } from '@/components/saved/SearchesTab';
 import { WatchlistTab } from '@/components/saved/WatchlistTab';
+import { useLocale } from '@/i18n/LocaleContext';
 
 type TabType = 'searches' | 'watchlist';
 
@@ -15,7 +16,13 @@ function SavedPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, isLoading: authLoading } = useAuth();
+  const { t } = useLocale();
   const [showLoginModal, setShowLoginModal] = useState(false);
+
+  // Mark notifications as read when visiting this page
+  useEffect(() => {
+    localStorage.setItem('lastSavedPageVisit', new Date().toISOString());
+  }, []);
 
   // Get active tab from URL or default to 'searches'
   const tabParam = searchParams.get('tab');
@@ -85,17 +92,16 @@ function SavedPageContent() {
                 </svg>
               </div>
               <h2 className="font-serif text-xl text-ink mb-2">
-                Sign in to view your saved items
+                {t('saved.signInToView')}
               </h2>
               <p className="text-[14px] text-muted text-center max-w-sm mb-6">
-                Save searches to get notified of new listings, and watch specific items
-                for price drops and restocking.
+                {t('saved.signInDescription')}
               </p>
               <button
                 onClick={() => setShowLoginModal(true)}
                 className="px-6 py-3 text-[14px] font-medium text-white bg-gold hover:bg-gold-light rounded-lg transition-colors"
               >
-                Sign In
+                {t('saved.signIn')}
               </button>
             </div>
           </main>
@@ -117,10 +123,10 @@ function SavedPageContent() {
         {/* Page Header */}
         <div className="mb-4 lg:mb-6">
           <h1 className="font-serif text-xl lg:text-2xl text-ink tracking-tight">
-            Saved
+            {t('saved.title')}
           </h1>
           <p className="text-[12px] lg:text-[13px] text-muted mt-1">
-            Your saved searches and watched items
+            {t('saved.subtitle')}
           </p>
         </div>
 
@@ -134,7 +140,7 @@ function SavedPageContent() {
                 : 'text-muted hover:text-ink'
             }`}
           >
-            Searches
+            {t('saved.searches')}
             {activeTab === 'searches' && (
               <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-gold" />
             )}
@@ -147,7 +153,7 @@ function SavedPageContent() {
                 : 'text-muted hover:text-ink'
             }`}
           >
-            Watchlist
+            {t('saved.watchlist')}
             {activeTab === 'watchlist' && (
               <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-gold" />
             )}
