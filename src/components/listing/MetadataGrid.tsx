@@ -112,30 +112,30 @@ interface MetadataItemProps {
 // CERTIFICATION CONFIG
 // =============================================================================
 
-export const CERT_CONFIG: Record<string, { label: string; shortLabel: string; tier: 'tokuju' | 'jubi' | 'juyo' | 'tokuho' | 'hozon' }> = {
+export const CERT_CONFIG: Record<string, { label: string; shortLabel: string; certKey: string; tier: 'tokuju' | 'jubi' | 'juyo' | 'tokuho' | 'hozon' }> = {
   // Pre-war government designation (highest prestige — orange)
-  'Juyo Bijutsuhin': { label: 'Juyo Bijutsuhin', shortLabel: 'Jubi', tier: 'jubi' },
-  JuyoBijutsuhin: { label: 'Juyo Bijutsuhin', shortLabel: 'Jubi', tier: 'jubi' },
-  juyo_bijutsuhin: { label: 'Juyo Bijutsuhin', shortLabel: 'Jubi', tier: 'jubi' },
+  'Juyo Bijutsuhin': { label: 'Juyo Bijutsuhin', shortLabel: 'Jubi', certKey: 'cert.Juyo Bijutsuhin', tier: 'jubi' },
+  JuyoBijutsuhin: { label: 'Juyo Bijutsuhin', shortLabel: 'Jubi', certKey: 'cert.Juyo Bijutsuhin', tier: 'jubi' },
+  juyo_bijutsuhin: { label: 'Juyo Bijutsuhin', shortLabel: 'Jubi', certKey: 'cert.Juyo Bijutsuhin', tier: 'jubi' },
   // NBTHK — Tokubetsu Juyo (purple)
-  'Tokubetsu Juyo': { label: 'Tokubetsu Juyo', shortLabel: 'Tokuju', tier: 'tokuju' },
-  tokubetsu_juyo: { label: 'Tokubetsu Juyo', shortLabel: 'Tokuju', tier: 'tokuju' },
-  Tokuju: { label: 'Tokubetsu Juyo', shortLabel: 'Tokuju', tier: 'tokuju' },
-  tokuju: { label: 'Tokubetsu Juyo', shortLabel: 'Tokuju', tier: 'tokuju' },
+  'Tokubetsu Juyo': { label: 'Tokubetsu Juyo', shortLabel: 'Tokuju', certKey: 'cert.Tokubetsu Juyo', tier: 'tokuju' },
+  tokubetsu_juyo: { label: 'Tokubetsu Juyo', shortLabel: 'Tokuju', certKey: 'cert.Tokuju', tier: 'tokuju' },
+  Tokuju: { label: 'Tokubetsu Juyo', shortLabel: 'Tokuju', certKey: 'cert.Tokuju', tier: 'tokuju' },
+  tokuju: { label: 'Tokubetsu Juyo', shortLabel: 'Tokuju', certKey: 'cert.tokuju', tier: 'tokuju' },
   // NBTHK — Juyo (blue)
-  Juyo: { label: 'Juyo', shortLabel: 'Jūyō', tier: 'juyo' },
-  juyo: { label: 'Juyo', shortLabel: 'Jūyō', tier: 'juyo' },
-  'Juyo Tosogu': { label: 'Juyo Tosogu', shortLabel: 'Jūyō', tier: 'juyo' },
+  Juyo: { label: 'Juyo', shortLabel: 'Jūyō', certKey: 'cert.Juyo', tier: 'juyo' },
+  juyo: { label: 'Juyo', shortLabel: 'Jūyō', certKey: 'cert.juyo', tier: 'juyo' },
+  'Juyo Tosogu': { label: 'Juyo Tosogu', shortLabel: 'Jūyō', certKey: 'cert.Juyo', tier: 'juyo' },
   // NBTHK — Tokubetsu Hozon (brown)
-  'Tokubetsu Hozon': { label: 'Tokubetsu Hozon', shortLabel: 'Tokuho', tier: 'tokuho' },
-  tokubetsu_hozon: { label: 'Tokubetsu Hozon', shortLabel: 'Tokuho', tier: 'tokuho' },
-  TokuHozon: { label: 'Tokubetsu Hozon', shortLabel: 'Tokuho', tier: 'tokuho' },
-  'Tokubetsu Hozon Tosogu': { label: 'Toku Hozon Tosogu', shortLabel: 'Tokuho', tier: 'tokuho' },
+  'Tokubetsu Hozon': { label: 'Tokubetsu Hozon', shortLabel: 'Tokuho', certKey: 'cert.Tokubetsu Hozon', tier: 'tokuho' },
+  tokubetsu_hozon: { label: 'Tokubetsu Hozon', shortLabel: 'Tokuho', certKey: 'cert.tokubetsu_hozon', tier: 'tokuho' },
+  TokuHozon: { label: 'Tokubetsu Hozon', shortLabel: 'Tokuho', certKey: 'cert.TokuHozon', tier: 'tokuho' },
+  'Tokubetsu Hozon Tosogu': { label: 'Toku Hozon Tosogu', shortLabel: 'Tokuho', certKey: 'cert.TokuHozon', tier: 'tokuho' },
   // NBTHK — Hozon (olive)
-  Hozon: { label: 'Hozon', shortLabel: 'Hozon', tier: 'hozon' },
-  hozon: { label: 'Hozon', shortLabel: 'Hozon', tier: 'hozon' },
-  'Hozon Tosogu': { label: 'Hozon Tosogu', shortLabel: 'Hozon', tier: 'hozon' },
-  'NTHK Kanteisho': { label: 'NTHK', shortLabel: 'NTHK', tier: 'hozon' },
+  Hozon: { label: 'Hozon', shortLabel: 'Hozon', certKey: 'cert.Hozon', tier: 'hozon' },
+  hozon: { label: 'Hozon', shortLabel: 'Hozon', certKey: 'cert.hozon', tier: 'hozon' },
+  'Hozon Tosogu': { label: 'Hozon Tosogu', shortLabel: 'Hozon', certKey: 'cert.Hozon', tier: 'hozon' },
+  'NTHK Kanteisho': { label: 'NTHK', shortLabel: 'NTHK', certKey: 'cert.NTHK', tier: 'hozon' },
 };
 
 // =============================================================================
@@ -226,6 +226,7 @@ export function getArtisanInfo(listing: Listing | ListingWithEnrichment): {
 export function getCertInfo(certType: string | undefined): {
   label: string;
   shortLabel: string;
+  certKey: string;
   tier: 'tokuju' | 'jubi' | 'juyo' | 'tokuho' | 'hozon';
 } | null {
   if (!certType) return null;
@@ -340,7 +341,7 @@ export function MetadataGrid({
                     {t('metadata.papers')}
                   </span>
                   <p className="text-[13px] text-ink">
-                    {certInfo.label}
+                    {t(certInfo.certKey)}
                     {listing.cert_session && <span className="text-muted"> #{listing.cert_session}</span>}
                     {listing.cert_organization && <span className="text-muted"> ({listing.cert_organization})</span>}
                   </p>

@@ -249,6 +249,7 @@ export async function resolveArtisanCodesFromText(textWords: string[]): Promise<
  */
 export interface ArtisanNameEntry {
   name_romaji: string | null;
+  name_kanji: string | null;
   school: string | null;
   kokuho_count: number;
   jubun_count: number;
@@ -265,7 +266,7 @@ export async function getArtisanNames(
   if (codes.length === 0) return result;
 
   const BATCH_SIZE = 200;
-  const selectFields = 'maker_id, name_romaji, legacy_school_text, kokuho_count, jubun_count, jubi_count, gyobutsu_count, tokuju_count, juyo_count';
+  const selectFields = 'maker_id, name_romaji, name_kanji, legacy_school_text, kokuho_count, jubun_count, jubi_count, gyobutsu_count, tokuju_count, juyo_count';
 
   // Split codes: NS-* go to artisan_schools, others to artisan_makers
   const nsCodes = codes.filter(c => c.startsWith('NS-'));
@@ -281,6 +282,7 @@ export async function getArtisanNames(
     for (const row of data || []) {
       result.set(row.maker_id, {
         name_romaji: row.name_romaji,
+        name_kanji: row.name_kanji || null,
         school: row.legacy_school_text,
         kokuho_count: row.kokuho_count || 0,
         jubun_count: row.jubun_count || 0,
@@ -297,12 +299,13 @@ export async function getArtisanNames(
     const batch = nsCodes.slice(i, i + BATCH_SIZE);
     const { data } = await yuhinkaiClient
       .from('artisan_schools')
-      .select('school_id, name_romaji, kokuho_count, jubun_count, jubi_count, gyobutsu_count, tokuju_count, juyo_count')
+      .select('school_id, name_romaji, name_kanji, kokuho_count, jubun_count, jubi_count, gyobutsu_count, tokuju_count, juyo_count')
       .in('school_id', batch);
     for (const row of data || []) {
       if (!result.has(row.school_id)) {
         result.set(row.school_id, {
           name_romaji: row.name_romaji,
+          name_kanji: row.name_kanji || null,
           school: row.name_romaji,  // school name IS the name for school codes
           kokuho_count: row.kokuho_count || 0,
           jubun_count: row.jubun_count || 0,

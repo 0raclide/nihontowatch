@@ -22,6 +22,7 @@ import { SaveSearchModal } from '@/components/browse/SaveSearchModal';
 import { LoginModal } from '@/components/auth/LoginModal';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
+import { useLocale } from '@/i18n/LocaleContext';
 
 interface ArtistPageClientProps {
   data: ArtisanPageResponse;
@@ -29,26 +30,30 @@ interface ArtistPageClientProps {
 
 // ─── CONSTANTS ──────────────────────────────────────────────────────────────
 
-const COLLECTION_LABELS: Record<string, string> = {
-  'Tokuju': 'Tokubetsu Jūyō',
-  'Juyo': 'Jūyō',
-  'Kokuho': 'Kokuhō',
-  'JuBun': 'Jūyō Bunkazai',
-  'Jubi': 'Jūyō Bijutsuhin',
-};
+function getCollectionLabels(t: (key: string, params?: Record<string, string | number>) => string): Record<string, string> {
+  return {
+    'Tokuju': t('cert.Tokuju'),
+    'Juyo': t('cert.Juyo'),
+    'Kokuho': t('cert.Kokuho'),
+    'JuBun': t('cert.Juyo Bunkazai'),
+    'Jubi': t('cert.Juyo Bijutsuhin'),
+  };
+}
 
-const FUJISHIRO_LABELS: Record<string, string> = {
-  'Saijō-saku':  'Supreme Work',
-  'Sai-jo saku': 'Supreme Work',
-  'Jōjō-saku':  'Superior Work',
-  'Jojo-saku':   'Superior Work',
-  'Jō-saku':    'Fine Work',
-  'Jo-saku':     'Fine Work',
-  'Chūjō-saku': 'Above Average',
-  'Chujo-saku':  'Above Average',
-  'Chū-saku':   'Average Work',
-  'Chu-saku':    'Average Work',
-};
+function getFujishiroLabels(t: (key: string, params?: Record<string, string | number>) => string): Record<string, string> {
+  return {
+    'Saijō-saku':  t('fujishiro.saijoFull'),
+    'Sai-jo saku': t('fujishiro.saijoFull'),
+    'Jōjō-saku':  t('fujishiro.jojoFull'),
+    'Jojo-saku':   t('fujishiro.jojoFull'),
+    'Jō-saku':    t('fujishiro.joFull'),
+    'Jo-saku':     t('fujishiro.joFull'),
+    'Chūjō-saku': t('fujishiro.chujoFull'),
+    'Chujo-saku':  t('fujishiro.chujoFull'),
+    'Chū-saku':   t('fujishiro.chuFull'),
+    'Chu-saku':    t('fujishiro.chuFull'),
+  };
+}
 
 // ─── HELPERS ────────────────────────────────────────────────────────────────
 
@@ -56,29 +61,30 @@ const FUJISHIRO_LABELS: Record<string, string> = {
 
 /** Quick stats bar shown below the name */
 function StatsBar({ data, availableCount }: { data: ArtisanPageResponse; availableCount: number | null }) {
+  const { t } = useLocale();
   const { certifications, entity } = data;
   const items: Array<{ label: string; value: string; highlight?: boolean }> = [];
 
   if (certifications.kokuho_count > 0) {
-    items.push({ label: 'Kokuhō', value: certifications.kokuho_count.toString() });
+    items.push({ label: t('pyramid.kokuho'), value: certifications.kokuho_count.toString() });
   }
   if (certifications.jubun_count > 0) {
-    items.push({ label: 'Jūyō Bunkazai', value: certifications.jubun_count.toString() });
+    items.push({ label: t('pyramid.jubun'), value: certifications.jubun_count.toString() });
   }
   if (certifications.jubi_count > 0) {
-    items.push({ label: 'Jūyō Bijutsuhin', value: certifications.jubi_count.toString() });
+    items.push({ label: t('pyramid.jubi'), value: certifications.jubi_count.toString() });
   }
   if (certifications.gyobutsu_count > 0) {
-    items.push({ label: 'Gyobutsu', value: certifications.gyobutsu_count.toString() });
+    items.push({ label: t('pyramid.gyobutsu'), value: certifications.gyobutsu_count.toString() });
   }
   if (certifications.tokuju_count > 0) {
-    items.push({ label: 'Tokubetsu Jūyō', value: certifications.tokuju_count.toString() });
+    items.push({ label: t('pyramid.tokuju'), value: certifications.tokuju_count.toString() });
   }
   if (certifications.juyo_count > 0) {
-    items.push({ label: 'Jūyō', value: certifications.juyo_count.toString() });
+    items.push({ label: t('pyramid.juyo'), value: certifications.juyo_count.toString() });
   }
   if (availableCount !== null && availableCount > 0) {
-    items.push({ label: 'On the Market', value: availableCount.toString(), highlight: true });
+    items.push({ label: t('artists.onTheMarket'), value: availableCount.toString(), highlight: true });
   }
 
   if (items.length === 0) return null;
@@ -138,6 +144,7 @@ function SectionHeader({ title, subtitle, id, className = '' }: { title: string;
 
 /** Fullscreen image lightbox with click/Escape to close */
 function ImageLightbox({ src, alt, caption, onClose }: { src: string; alt: string; caption: string; onClose: () => void }) {
+  const { t } = useLocale();
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     document.addEventListener('keydown', handleKey);
@@ -161,7 +168,7 @@ function ImageLightbox({ src, alt, caption, onClose }: { src: string; alt: strin
         onClick={onClose}
         className="absolute top-4 right-4 z-10 flex items-center justify-center w-10 h-10 rounded-full
           bg-white/10 hover:bg-white/20 text-white/70 hover:text-white transition-colors"
-        aria-label="Close"
+        aria-label={t('artist.close')}
       >
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -191,8 +198,11 @@ function ImageLightbox({ src, alt, caption, onClose }: { src: string; alt: strin
 
 export function ArtistPageClient({ data }: ArtistPageClientProps) {
   const { entity, certifications, rankings, profile, stats, lineage, related, denraiGrouped: rawDenraiGrouped, heroImage, provenance: dbProvenance } = data;
+  const { t, locale } = useLocale();
   const { user } = useAuth();
   const { requireFeature } = useSubscription();
+  const COLLECTION_LABELS = useMemo(() => getCollectionLabels(t), [t]);
+  const FUJISHIRO_LABELS = useMemo(() => getFujishiroLabels(t), [t]);
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const noisePattern = /^(own(er|ed)\s+(at|by)\s|at\s+time\s+of\s|current\s+owner|listed\s+in\s|formerly\s+(owned|held)\s+by\s|needs\s+research|meibutsu|known\s+as\s|identified\s+with\s|said\s+to\s|reportedly\s|tradition:|thereafter\s|transmitted\s+to\s|later\s+held\s+by\s|presented\s+to\s|bestowed\s+by\s|koshigatani?\s)/i;
@@ -275,20 +285,20 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
 
   const sections = useMemo(() => {
     const s: Array<{ id: string; label: string }> = [];
-    s.push({ id: 'overview', label: 'Overview' });
-    if (data.catalogueEntries?.length) s.push({ id: 'catalogue', label: 'Catalogue' });
-    if (certifications.total_items > 0) s.push({ id: 'certifications', label: 'Designations' });
-    if (denraiGrouped.length > 0) s.push({ id: 'provenance', label: 'Provenance' });
-    if (hasFormStats) s.push({ id: 'blade-forms', label: entity.entity_type === 'smith' ? 'Blade Forms' : 'Work Types' });
-    if (hasMeiStats) s.push({ id: 'signatures', label: 'Signatures' });
-    if (listingsExist) s.push({ id: 'listings', label: 'Available' });
-    if (soldListingsExist) s.push({ id: 'sold', label: 'Previously Sold' });
-    if (lineage.teacher || lineage.students.length > 0) s.push({ id: 'lineage', label: 'Lineage' });
-    if (related.length > 0) s.push({ id: 'related', label: 'School' });
+    s.push({ id: 'overview', label: t('artist.overview') });
+    if (data.catalogueEntries?.length) s.push({ id: 'catalogue', label: t('artist.catalogue') });
+    if (certifications.total_items > 0) s.push({ id: 'certifications', label: t('artist.designations') });
+    if (denraiGrouped.length > 0) s.push({ id: 'provenance', label: t('artist.provenance') });
+    if (hasFormStats) s.push({ id: 'blade-forms', label: entity.entity_type === 'smith' ? t('artist.bladeForms') : t('artist.workTypes') });
+    if (hasMeiStats) s.push({ id: 'signatures', label: t('artist.signatures') });
+    if (listingsExist) s.push({ id: 'listings', label: t('artist.currentlyAvailable') });
+    if (soldListingsExist) s.push({ id: 'sold', label: t('artist.previouslySold') });
+    if (lineage.teacher || lineage.students.length > 0) s.push({ id: 'lineage', label: t('artist.lineage') });
+    if (related.length > 0) s.push({ id: 'related', label: t('artist.school') });
     return s;
-  }, [entity.entity_type, certifications.total_items, data.catalogueEntries, hasFormStats, hasMeiStats, listingsExist, soldListingsExist, lineage, related, denraiGrouped]);
+  }, [entity.entity_type, certifications.total_items, data.catalogueEntries, hasFormStats, hasMeiStats, listingsExist, soldListingsExist, lineage, related, denraiGrouped, t]);
 
-  const fujishiroLabel = entity.fujishiro ? FUJISHIRO_LABELS[entity.fujishiro] : null;
+  const fujishiroLabel = entity.fujishiro ? (FUJISHIRO_LABELS[entity.fujishiro] || null) : null;
 
   return (
     <div className="max-w-[780px] mx-auto px-4 sm:px-8">
@@ -304,8 +314,8 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
           <div className="flex items-center justify-between mb-6 sm:mb-8">
             <Breadcrumbs
               items={[
-                { name: 'Browse', url: '/' },
-                { name: 'Artists', url: '/artists' },
+                { name: t('artist.home'), url: '/' },
+                { name: t('artist.breadcrumbArtists'), url: '/artists' },
                 { name: entity.name_romaji || entity.code },
               ]}
               className="mb-0"
@@ -313,16 +323,16 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
             <button
               onClick={handleShare}
               className="text-[11px] text-ink/40 hover:text-ink/60 transition-colors flex items-center gap-1.5"
-              title="Share this profile"
+              title={t('artist.shareProfile')}
             >
               {copied ? (
-                <span className="text-gold">Copied</span>
+                <span className="text-gold">{t('artist.copied')}</span>
               ) : (
                 <>
                   <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0-12.814a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0 12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z" />
                   </svg>
-                  <span>Share</span>
+                  <span>{t('artist.share')}</span>
                 </>
               )}
             </button>
@@ -334,7 +344,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
             <div className="sm:hidden mb-4">
               <div className="w-8 h-[2px] bg-gold/50 mb-3" />
               <h1 className="text-2xl font-serif font-light text-ink leading-[1.1] tracking-tight">
-                {(() => { const dp = getArtisanDisplayParts(entity.name_romaji, entity.school); const alias = getArtisanAlias(entity.code); const schoolSuffix = entity.code.startsWith('NS-') ? ' School' : ''; if (alias && dp.name && norm(alias).includes(norm(dp.name))) return alias + schoolSuffix; return <>{dp.prefix && <>{dp.prefix} </>}{dp.name || entity.code}{schoolSuffix}{alias && <span className="text-ink/40"> ({alias})</span>}</>; })()}
+                {(() => { const dp = getArtisanDisplayParts(entity.name_romaji, entity.school); const alias = getArtisanAlias(entity.code); const schoolSuffix = entity.code.startsWith('NS-') ? (locale === 'ja' ? '派' : ' School') : ''; if (alias && dp.name && norm(alias).includes(norm(dp.name))) return alias + schoolSuffix; return <>{dp.prefix && <>{dp.prefix} </>}{dp.name || entity.code}{schoolSuffix}{alias && <span className="text-ink/40"> ({alias})</span>}</>; })()}
               </h1>
               {entity.name_kanji && (
                 <p className="text-base text-ink/35 font-serif font-light mt-1 tracking-[0.08em]">
@@ -352,12 +362,12 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
                     onClick={() => setLightboxOpen(true)}
                     className="block w-[140px] sm:w-[220px] border border-border/20 shadow-sm cursor-zoom-in
                       hover:shadow-md hover:border-border/30 transition-all duration-200 bg-black/5"
-                    aria-label="View full-size image"
+                    aria-label={t('artist.viewFullSize')}
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={heroImage.imageUrl}
-                      alt={`${heroImage.imageType === 'oshigata' ? 'Oshigata' : 'Image'} — ${entity.name_romaji || entity.code}, ${COLLECTION_LABELS[heroImage.collection] || heroImage.collection}`}
+                      alt={`${heroImage.imageType === 'oshigata' ? t('artist.oshigata') : t('artist.image')} — ${entity.name_romaji || entity.code}, ${COLLECTION_LABELS[heroImage.collection] || heroImage.collection}`}
                       className="w-full h-auto object-contain max-h-[260px] sm:max-h-[340px]"
                       loading="eager"
                     />
@@ -367,7 +377,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
                       {COLLECTION_LABELS[heroImage.collection] || heroImage.collection}
                     </div>
                     <div className="text-[10px] text-ink/25 tabular-nums">
-                      Vol. {heroImage.volume}, No. {heroImage.itemNumber}
+                      {t('artist.vol')} {heroImage.volume}, {t('artist.no')} {heroImage.itemNumber}
                       {heroImage.formType && <> &middot; {heroImage.formType}</>}
                     </div>
                   </figcaption>
@@ -380,7 +390,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
                 <div className="hidden sm:block">
                   <div className="w-10 h-[2px] bg-gold/50 mb-4" />
                   <h1 className="text-[2.5rem] font-serif font-light text-ink leading-[1.1] tracking-tight">
-                    {(() => { const dp = getArtisanDisplayParts(entity.name_romaji, entity.school); const alias = getArtisanAlias(entity.code); const schoolSuffix = entity.code.startsWith('NS-') ? ' School' : ''; if (alias && dp.name && norm(alias).includes(norm(dp.name))) return alias + schoolSuffix; return <>{dp.prefix && <>{dp.prefix} </>}{dp.name || entity.code}{schoolSuffix}{alias && <span className="text-ink/40"> ({alias})</span>}</>; })()}
+                    {(() => { const dp = getArtisanDisplayParts(entity.name_romaji, entity.school); const alias = getArtisanAlias(entity.code); const schoolSuffix = entity.code.startsWith('NS-') ? (locale === 'ja' ? '派' : ' School') : ''; if (alias && dp.name && norm(alias).includes(norm(dp.name))) return alias + schoolSuffix; return <>{dp.prefix && <>{dp.prefix} </>}{dp.name || entity.code}{schoolSuffix}{alias && <span className="text-ink/40"> ({alias})</span>}</>; })()}
                   </h1>
                   {entity.name_kanji && (
                     <p className="text-lg text-ink/35 font-serif font-light mt-1.5 tracking-[0.08em]">
@@ -392,7 +402,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
                 {/* Context line — museum wall label */}
                 {certifications.total_items > 0 && (
                   <p className="sm:mt-2.5 text-[12px] text-gold tracking-wide italic">
-                    {certifications.total_items} ranked works
+                    {t('artist.rankedWorks', { count: certifications.total_items })}
                   </p>
                 )}
 
@@ -400,37 +410,37 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
                 <div className="mt-2 sm:mt-5 grid grid-cols-[auto_1fr] gap-x-3 sm:gap-x-6 gap-y-1 sm:gap-y-1.5 text-[12px] sm:text-[13px] leading-snug">
                   {entity.province && (
                     <>
-                      <span className="text-ink/50">Province</span>
+                      <span className="text-ink/50">{t('artist.province')}</span>
                       <span className="text-ink">{entity.province}</span>
                     </>
                   )}
                   {entity.era && (
                     <>
-                      <span className="text-ink/50">Era</span>
+                      <span className="text-ink/50">{t('artist.era')}</span>
                       <span className="text-ink">{entity.era}</span>
                     </>
                   )}
                   {entity.period && entity.period !== entity.era && (
                     <>
-                      <span className="text-ink/50">Period</span>
+                      <span className="text-ink/50">{t('artist.period')}</span>
                       <span className="text-ink">{entity.period}</span>
                     </>
                   )}
                   {entity.school && (
                     <>
-                      <span className="text-ink/50">School</span>
+                      <span className="text-ink/50">{t('artist.school')}</span>
                       <span className="text-ink">{entity.school}</span>
                     </>
                   )}
                   {entity.generation && (
                     <>
-                      <span className="text-ink/50">Generation</span>
+                      <span className="text-ink/50">{t('artist.generation')}</span>
                       <span className="text-ink">{entity.generation}</span>
                     </>
                   )}
                   {entity.teacher && (
                     <>
-                      <span className="text-ink/50">Teacher</span>
+                      <span className="text-ink/50">{t('artist.teacher')}</span>
                       {lineage.teacher ? (
                         <Link href={`/artists/${lineage.teacher.slug}`} className="text-ink hover:text-gold transition-colors">
                           {lineage.teacher.name_romaji || entity.teacher}
@@ -442,7 +452,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
                   )}
                   {entity.fujishiro && (
                     <>
-                      <span className="text-ink/50">Fujishiro</span>
+                      <span className="text-ink/50">{t('artist.fujishiro')}</span>
                       <span className="text-ink">
                         {entity.fujishiro}
                         {fujishiroLabel && <span className="hidden sm:inline text-ink/25 ml-1">({fujishiroLabel})</span>}
@@ -451,24 +461,24 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
                   )}
                   {entity.toko_taikan != null && (
                     <>
-                      <span className="text-ink/50">Toko Taikan</span>
+                      <span className="text-ink/50">{t('artist.tokoTaikan')}</span>
                       <span className="text-ink tabular-nums">
                         {entity.toko_taikan.toLocaleString()}
                         {rankings.toko_taikan_percentile != null && (
-                          <span className="text-ink/25 ml-1">(top {Math.max(100 - rankings.toko_taikan_percentile, 1)}%)</span>
+                          <span className="text-ink/25 ml-1">({t('artist.topPercent', { pct: Math.max(100 - rankings.toko_taikan_percentile, 1) })})</span>
                         )}
                       </span>
                     </>
                   )}
                   {entity.specialties && entity.specialties.length > 0 && (
                     <>
-                      <span className="text-ink/50">Specialties</span>
+                      <span className="text-ink/50">{t('artist.specialties')}</span>
                       <span className="text-ink">{entity.specialties.join(', ')}</span>
                     </>
                   )}
-                  <span className="text-ink/50">Type</span>
-                  <span className="text-ink">{entity.entity_type === 'smith' ? 'Swordsmith' : 'Tosogu Maker'}</span>
-                  <span className="text-ink/50">Code</span>
+                  <span className="text-ink/50">{t('artist.type')}</span>
+                  <span className="text-ink">{entity.entity_type === 'smith' ? t('artist.swordsmith') : t('artist.tosoguMaker')}</span>
+                  <span className="text-ink/50">{t('artist.code')}</span>
                   <span className="text-ink font-mono text-xs tracking-wide">{entity.code}</span>
                 </div>
               </div>
@@ -492,7 +502,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
                 href={`/?artisan=${encodeURIComponent(entity.code)}&tab=all`}
                 className="inline-flex items-center gap-1.5 text-xs text-gold hover:text-gold-light transition-colors tracking-wide"
               >
-                Browse all listings
+                {t('artist.browseListings')}
                 <span aria-hidden>&rarr;</span>
               </Link>
             )}
@@ -508,7 +518,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
                 <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
                 </svg>
-                Set alert for new listings
+                {t('artist.setAlert')}
               </button>
             )}
           </div>
@@ -519,7 +529,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
         ═══════════════════════════════════════════════════════════════════ */}
         {profile?.profile_md && (
           <section>
-            <SectionHeader id="overview" title="Overview" className="mb-7" />
+            <SectionHeader id="overview" title={t('artist.overview')} className="mb-7" />
             <Biography markdown={profile.profile_md} />
           </section>
         )}
@@ -529,7 +539,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
         ═══════════════════════════════════════════════════════════════════ */}
         {data.catalogueEntries && data.catalogueEntries.length > 0 && (
           <section>
-            <SectionHeader id="catalogue" title="Published Works" className="mb-7" />
+            <SectionHeader id="catalogue" title={t('artist.publishedWorks')} className="mb-7" />
             <CatalogueShowcase
               entry={data.catalogueEntries[0]}
               totalEntries={data.catalogueEntries.length}
@@ -544,7 +554,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
         {certifications.total_items > 0 && (
           <>
             <section>
-              <SectionHeader id="certifications" title="Designations" className="mb-7" />
+              <SectionHeader id="certifications" title={t('artist.designations')} className="mb-7" />
 
               <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr] gap-6 sm:gap-10">
                 {/* Hierarchy */}
@@ -562,7 +572,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
                 {/* Elite standing */}
                 <div className="flex flex-col justify-between">
                   <div>
-                    <h3 className="text-[12px] uppercase tracking-[0.12em] text-ink/50 font-medium mb-3">Elite Standing</h3>
+                    <h3 className="text-[12px] uppercase tracking-[0.12em] text-ink/50 font-medium mb-3">{t('artist.eliteStanding')}</h3>
                     <EliteFactorDisplay
                       eliteFactor={certifications.elite_factor}
                       percentile={rankings.elite_percentile}
@@ -585,8 +595,8 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
             <section>
               <SectionHeader
                 id="provenance"
-                title="Provenance"
-                subtitle={`${provenanceAnalysis.count} documented provenance${provenanceAnalysis.count !== 1 ? 's' : ''} across certified works by ${entity.name_romaji || entity.code}`}
+                title={t('artist.provenance')}
+                subtitle={`${provenanceAnalysis.count !== 1 ? t('artist.documentedProvenances', { count: provenanceAnalysis.count }) : t('artist.documentedProvenance', { count: provenanceAnalysis.count })} ${t('artist.acrossCertifiedWorks')} ${entity.name_romaji || entity.code}`}
                 className="mb-7"
               />
 
@@ -599,7 +609,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
                 {/* Provenance Standing — the score */}
                 <div className="flex flex-col justify-between">
                   <div>
-                    <h3 className="text-[12px] uppercase tracking-[0.12em] text-ink/50 font-medium mb-3">Provenance Standing</h3>
+                    <h3 className="text-[12px] uppercase tracking-[0.12em] text-ink/50 font-medium mb-3">{t('artist.provenanceStanding')}</h3>
                     <ProvenanceFactorDisplay
                       analysis={provenanceAnalysis}
                       entityType={entity.entity_type}
@@ -621,8 +631,8 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
             <section>
               <SectionHeader
                 id="blade-forms"
-                title={entity.entity_type === 'smith' ? 'Blade Forms' : 'Work Types'}
-                subtitle={`Distribution across ${certifications.total_items} ranked works`}
+                title={entity.entity_type === 'smith' ? t('artist.bladeForms') : t('artist.workTypes')}
+                subtitle={t('artist.distributionAcross', { count: certifications.total_items })}
                 className="mb-6"
               />
               <FormDistributionBar
@@ -641,8 +651,8 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
             <section>
               <SectionHeader
                 id="signatures"
-                title="Signatures"
-                subtitle={`Signature types across ${certifications.total_items} ranked works`}
+                title={t('artist.signatures')}
+                subtitle={t('artist.signatureTypesAcross', { count: certifications.total_items })}
                 className="mb-6"
               />
               <MeiDistributionBar distribution={stats.mei_distribution} />
@@ -655,7 +665,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
         ═══════════════════════════════════════════════════════════════════ */}
         {(listings === null || listingsExist) && (
           <section>
-            <SectionHeader id="listings" title="Currently Available" className="mb-6" />
+            <SectionHeader id="listings" title={t('artist.currentlyAvailable')} className="mb-6" />
             {listings === null ? (
               <div className="space-y-4">
                 {[...Array(3)].map((_, i) => (
@@ -680,7 +690,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
         {soldListingsExist && (
           <>
             <section>
-              <SectionHeader id="sold" title="Previously Sold" className="mb-6" />
+              <SectionHeader id="sold" title={t('artist.previouslySold')} className="mb-6" />
               <ArtisanListings code={entity.code} artisanName={entity.name_romaji} initialListings={soldListings} status="sold" />
             </section>
           </>
@@ -692,7 +702,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
         {(lineage.teacher || lineage.students.length > 0) && (
           <>
             <section>
-              <SectionHeader id="lineage" title="Lineage" className="mb-6" />
+              <SectionHeader id="lineage" title={t('artist.lineage')} className="mb-6" />
               <div className="relative pl-7">
                 {/* Vertical connection line */}
                 <div className="absolute left-[9px] top-0 bottom-0 w-px bg-border/25" />
@@ -701,7 +711,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
                 {lineage.teacher && (
                   <div className="relative pb-5">
                     <div className="absolute left-[-19px] top-1.5 w-[7px] h-[7px] rounded-full bg-border/40 ring-[2.5px] ring-surface" />
-                    <span className="text-[10px] text-ink/35 uppercase tracking-widest block mb-1">Teacher</span>
+                    <span className="text-[10px] text-ink/35 uppercase tracking-widest block mb-1">{t('artist.teacher')}</span>
                     <Link
                       href={`/artists/${lineage.teacher.slug}`}
                       className="text-sm text-ink hover:text-gold transition-colors"
@@ -724,7 +734,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
                   <div className="relative">
                     <div className="absolute left-[-19px] top-1.5 w-[7px] h-[7px] rounded-full bg-border/40 ring-[2.5px] ring-surface" />
                     <span className="text-[10px] text-ink/35 uppercase tracking-widest block mb-2">
-                      {lineage.students.length === 1 ? 'Student' : `Students (${lineage.students.length})`}
+                      {lineage.students.length === 1 ? t('artist.student') : t('artist.students', { count: lineage.students.length })}
                     </span>
                     <div className="space-y-0">
                       {lineage.students.map((student, i) => (
@@ -747,25 +757,25 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
                           </div>
                           <div className="flex-shrink-0 flex flex-wrap items-baseline gap-x-2.5 gap-y-1 text-xs tabular-nums">
                             {student.kokuho_count > 0 && (
-                              <span className="text-ink font-semibold">{student.kokuho_count} kokuhō</span>
+                              <span className="text-ink font-semibold">{student.kokuho_count} {t('pyramid.kokuho')}</span>
                             )}
                             {student.jubun_count > 0 && (
-                              <span className="text-ink font-semibold">{student.jubun_count} jubun</span>
+                              <span className="text-ink font-semibold">{student.jubun_count} {t('pyramid.jubun')}</span>
                             )}
                             {student.jubi_count > 0 && (
-                              <span className="text-ink font-medium">{student.jubi_count} jubi</span>
+                              <span className="text-ink font-medium">{student.jubi_count} {t('pyramid.jubi')}</span>
                             )}
                             {student.gyobutsu_count > 0 && (
-                              <span className="text-ink font-medium">{student.gyobutsu_count} gyobutsu</span>
+                              <span className="text-ink font-medium">{student.gyobutsu_count} {t('pyramid.gyobutsu')}</span>
                             )}
                             {student.tokuju_count > 0 && (
-                              <span className="text-ink/50">{student.tokuju_count} tokujū</span>
+                              <span className="text-ink/50">{student.tokuju_count} {t('pyramid.tokuju')}</span>
                             )}
                             {student.juyo_count > 0 && (
-                              <span className="text-ink/50">{student.juyo_count} jūyō</span>
+                              <span className="text-ink/50">{student.juyo_count} {t('pyramid.juyo')}</span>
                             )}
                             {(student.available_count ?? 0) > 0 && (
-                              <span className="text-emerald-500 dark:text-emerald-400">{student.available_count} for sale</span>
+                              <span className="text-emerald-500 dark:text-emerald-400">{student.available_count} {t('artist.forSale')}</span>
                             )}
                           </div>
                         </Link>
@@ -786,7 +796,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
             <section>
               <SectionHeader
                 id="related"
-                title={entity.school ? `${entity.school} School` : 'Related Artisans'}
+                title={entity.school ? t('artist.schoolOf', { name: entity.school }) : t('artist.relatedArtisans')}
                 className="mb-6"
               />
               <RelatedArtisans artisans={related} schoolName={entity.school} />
@@ -809,8 +819,8 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
       {heroImage && lightboxOpen && (
         <ImageLightbox
           src={heroImage.imageUrl}
-          alt={`${heroImage.imageType === 'oshigata' ? 'Oshigata' : 'Image'} — ${entity.name_romaji || entity.code}`}
-          caption={`${COLLECTION_LABELS[heroImage.collection] || heroImage.collection} — Vol. ${heroImage.volume}, No. ${heroImage.itemNumber}${heroImage.formType ? ` · ${heroImage.formType}` : ''}`}
+          alt={`${heroImage.imageType === 'oshigata' ? t('artist.oshigata') : t('artist.image')} — ${entity.name_romaji || entity.code}`}
+          caption={`${COLLECTION_LABELS[heroImage.collection] || heroImage.collection} — ${t('artist.vol')} ${heroImage.volume}, ${t('artist.no')} ${heroImage.itemNumber}${heroImage.formType ? ` · ${heroImage.formType}` : ''}`}
           onClose={() => setLightboxOpen(false)}
         />
       )}

@@ -82,6 +82,7 @@ interface Listing {
   artisan_id?: string | null;
   artisan_confidence?: 'HIGH' | 'MEDIUM' | 'LOW' | 'NONE' | null;
   artisan_display_name?: string | null;
+  artisan_name_kanji?: string | null;
   artisan_method?: string | null;
   artisan_candidates?: Array<{
     artisan_id: string;
@@ -466,7 +467,7 @@ export const ListingCard = memo(function ListingCard({
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [fallbackIndex, setFallbackIndex] = useState(0);
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const activity = useActivityOptional();
   const quickView = useQuickViewOptional();
   const viewportTracking = useViewportTrackingOptional();
@@ -747,7 +748,11 @@ export const ListingCard = memo(function ListingCard({
 
   // Artisan display name (resolved server-side from Yuhinkai)
   const isUnknownArtisan = listing.artisan_id === 'UNKNOWN';
-  const artisanDisplayName = isUnknownArtisan ? t('listing.unlistedArtist') : (listing.artisan_display_name || listing.artisan_id);
+  const artisanDisplayName = isUnknownArtisan
+    ? t('listing.unlistedArtist')
+    : (locale === 'ja' && listing.artisan_name_kanji)
+      ? listing.artisan_name_kanji
+      : (listing.artisan_display_name || listing.artisan_id);
 
   // Price display
   const priceDisplay = listing.price_value === null
@@ -799,7 +804,7 @@ export const ListingCard = memo(function ListingCard({
           {hasSetsumeiTranslation(listing) && <SetsumeiZufuBadge iconOnly />}
           {certInfo && (
             <span className={`${sz.hText} sm:text-[9px] lg:text-[10px] uppercase tracking-wider font-bold ${certTextColor}`}>
-              {certInfo.label}
+              {t(certInfo.certKey)}
             </span>
           )}
         </div>
@@ -911,6 +916,7 @@ export const ListingCard = memo(function ListingCard({
     prevProps.listing.listing_yuhinkai_enrichment?.length === nextProps.listing.listing_yuhinkai_enrichment?.length &&
     prevProps.listing.artisan_id === nextProps.listing.artisan_id &&
     prevProps.listing.artisan_display_name === nextProps.listing.artisan_display_name &&
+    prevProps.listing.artisan_name_kanji === nextProps.listing.artisan_name_kanji &&
     prevProps.listing.artisan_confidence === nextProps.listing.artisan_confidence &&
     prevProps.listing.cert_type === nextProps.listing.cert_type &&
     prevProps.listing.status === nextProps.listing.status &&

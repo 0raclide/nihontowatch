@@ -1,5 +1,23 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
+
+vi.mock('@/i18n/LocaleContext', async () => {
+  const en = await import('@/i18n/locales/en.json').then(m => m.default);
+  const t = (key: string, params?: Record<string, string | number>) => {
+    let value: string = (en as Record<string, string>)[key] ?? key;
+    if (params) {
+      for (const [k, v] of Object.entries(params)) {
+        value = value.replace(new RegExp(`\\{${k}\\}`, 'g'), String(v));
+      }
+    }
+    return value;
+  };
+  return {
+    useLocale: () => ({ locale: 'en', setLocale: () => {}, t }),
+    LocaleProvider: ({ children }: { children: React.ReactNode }) => children,
+  };
+});
+
 import { ArtistPageClient } from '@/app/artists/[slug]/ArtistPageClient';
 import type { ArtisanPageResponse } from '@/app/api/artisan/[code]/route';
 
@@ -218,16 +236,28 @@ describe('ArtistPageClient — Students Section', () => {
     });
 
     render(<ArtistPageClient data={data} />);
-    expect(screen.getByText(/1 kokuhō/)).toBeTruthy();
-    expect(screen.getByText(/3 jubun/)).toBeTruthy();
-    expect(screen.getByText(/2 jubi/)).toBeTruthy();
-    expect(screen.getByText(/1 gyobutsu/)).toBeTruthy();
-    expect(screen.getByText(/5 tokujū/)).toBeTruthy();
-    expect(screen.getByText(/15 jūyō/)).toBeTruthy();
+    expect(screen.getByText(/1 Kokuhō/)).toBeTruthy();
+    expect(screen.getByText(/3 Jūyō Bunkazai/)).toBeTruthy();
+    expect(screen.getByText(/2 Jūyō Bijutsuhin/)).toBeTruthy();
+    expect(screen.getByText(/1 Gyobutsu/)).toBeTruthy();
+    expect(screen.getByText(/5 Tokubetsu Jūyō/)).toBeTruthy();
+    expect(screen.getByText(/15 Jūyō Tōken/)).toBeTruthy();
   });
 
   it('does not render zero certification counts for students', () => {
     const data = makeTestData({
+      // Zero out entity-level certs so only student certs are tested
+      certifications: {
+        kokuho_count: 0,
+        jubun_count: 0,
+        jubi_count: 0,
+        gyobutsu_count: 0,
+        tokuju_count: 0,
+        juyo_count: 0,
+        total_items: 0,
+        elite_count: 0,
+        elite_factor: 0,
+      },
       lineage: {
         teacher: null,
         students: [
@@ -244,12 +274,12 @@ describe('ArtistPageClient — Students Section', () => {
     });
 
     render(<ArtistPageClient data={data} />);
-    expect(screen.queryByText(/kokuhō/)).toBeNull();
-    expect(screen.queryByText(/jubun/)).toBeNull();
-    expect(screen.queryByText(/jubi/)).toBeNull();
-    expect(screen.queryByText(/gyobutsu/)).toBeNull();
-    expect(screen.queryByText(/tokujū/)).toBeNull();
-    expect(screen.queryByText(/jūyō/)).toBeNull();
+    expect(screen.queryByText(/Kokuhō/)).toBeNull();
+    expect(screen.queryByText(/Bunkazai/)).toBeNull();
+    expect(screen.queryByText(/Bijutsuhin/)).toBeNull();
+    expect(screen.queryByText(/Gyobutsu/)).toBeNull();
+    expect(screen.queryByText(/Tokubetsu Jūyō/)).toBeNull();
+    expect(screen.queryByText(/Jūyō Tōken/)).toBeNull();
   });
 
   it('renders kokuho and jubun with semibold, jubi and gyobutsu with medium weight', () => {
@@ -264,16 +294,16 @@ describe('ArtistPageClient — Students Section', () => {
 
     render(<ArtistPageClient data={data} />);
 
-    const kokuhoEl = screen.getByText(/1 kokuhō/);
+    const kokuhoEl = screen.getByText(/1 Kokuhō/);
     expect(kokuhoEl.className).toContain('font-semibold');
 
-    const jubunEl = screen.getByText(/2 jubun/);
+    const jubunEl = screen.getByText(/2 Jūyō Bunkazai/);
     expect(jubunEl.className).toContain('font-semibold');
 
-    const jubiEl = screen.getByText(/3 jubi/);
+    const jubiEl = screen.getByText(/3 Jūyō Bijutsuhin/);
     expect(jubiEl.className).toContain('font-medium');
 
-    const gyobutsuEl = screen.getByText(/1 gyobutsu/);
+    const gyobutsuEl = screen.getByText(/1 Gyobutsu/);
     expect(gyobutsuEl.className).toContain('font-medium');
   });
 

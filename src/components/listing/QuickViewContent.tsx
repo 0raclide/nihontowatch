@@ -165,7 +165,7 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
                       : 'text-hozon'
                   }`}
                 >
-                  {certInfo.shortLabel}
+                  {t(certInfo.certKey)}
                 </span>
               )}
               {shouldShowNewBadge(listing.first_seen_at, listing.dealer_earliest_seen_at, listing.is_initial_import) && (

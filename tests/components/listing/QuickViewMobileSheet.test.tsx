@@ -155,7 +155,7 @@ describe('QuickViewMobileSheet', () => {
     it('renders certification badge in collapsed state (always visible)', () => {
       render(<QuickViewMobileSheet {...defaultProps} isExpanded={false} />);
       // Cert badge should be visible even when collapsed
-      const certElements = screen.getAllByText('Juyo');
+      const certElements = screen.getAllByText('Jūyō');
       expect(certElements.length).toBeGreaterThanOrEqual(1);
     });
 
@@ -231,7 +231,7 @@ describe('QuickViewMobileSheet', () => {
     it('renders the certification badge', () => {
       render(<QuickViewMobileSheet {...expandedProps} />);
       // Cert info appears in both the badge and MetadataGrid, so use getAllByText
-      const certElements = screen.getAllByText('Juyo');
+      const certElements = screen.getAllByText('Jūyō');
       expect(certElements.length).toBeGreaterThanOrEqual(1);
     });
 
@@ -354,7 +354,9 @@ describe('QuickViewMobileSheet', () => {
           isExpanded={true}
         />
       );
-      expect(screen.getByText('Tokuju')).toBeInTheDocument();
+      // Cert label appears in both badge and MetadataGrid, so use getAllByText
+      const certElements = screen.getAllByText('Tokubetsu Jūyō');
+      expect(certElements.length).toBeGreaterThanOrEqual(1);
     });
 
     it('displays Tokubetsu Hozon certification', () => {
@@ -366,7 +368,9 @@ describe('QuickViewMobileSheet', () => {
           isExpanded={true}
         />
       );
-      expect(screen.getByText('Tokuho')).toBeInTheDocument();
+      // Cert label appears in both badge and MetadataGrid, so use getAllByText
+      const certElements = screen.getAllByText('Tokubetsu Hozon');
+      expect(certElements.length).toBeGreaterThanOrEqual(1);
     });
 
     it('displays Hozon certification', () => {

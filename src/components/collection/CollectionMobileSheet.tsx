@@ -236,7 +236,7 @@ export function CollectionMobileSheet({
           </span>
           {certInfo && (
             <span className={`text-[10px] uppercase tracking-wider font-bold ${getCertTierClass(certInfo.tier)}`}>
-              {certInfo.shortLabel}
+              {t(certInfo.certKey)}
             </span>
           )}
           {item.status !== 'owned' && (

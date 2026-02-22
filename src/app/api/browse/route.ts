@@ -8,7 +8,7 @@ import { parseNumericFilters } from '@/lib/search/numericFilters';
 import { parseSemanticQuery, PROVINCE_VARIANTS } from '@/lib/search/semanticQueryParser';
 import { CACHE, PAGINATION, LISTING_FILTERS } from '@/lib/constants';
 import { getArtisanNames, resolveArtisanCodesFromText } from '@/lib/supabase/yuhinkai';
-import { getArtisanDisplayName, getArtisanAlias } from '@/lib/artisan/displayName';
+import { getArtisanDisplayName, getArtisanDisplayNameKanji, getArtisanAlias } from '@/lib/artisan/displayName';
 import { getArtisanTier } from '@/lib/artisan/tier';
 import { getAttributionName } from '@/lib/listing/attribution';
 import { expandArtisanCodes } from '@/lib/artisan/schoolExpansion';
@@ -733,6 +733,7 @@ export async function GET(request: NextRequest) {
             return {
               ...listing,
               artisan_display_name: getArtisanAlias(listing.artisan_id) || getArtisanDisplayName(entry.name_romaji, entry.school, listing.artisan_id),
+              artisan_name_kanji: getArtisanDisplayNameKanji(entry.name_kanji, listing.artisan_id),
               artisan_tier: getArtisanTier(entry),
             };
           }

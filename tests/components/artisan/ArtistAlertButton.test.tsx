@@ -1,5 +1,23 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+
+vi.mock('@/i18n/LocaleContext', async () => {
+  const en = await import('@/i18n/locales/en.json').then(m => m.default);
+  const t = (key: string, params?: Record<string, string | number>) => {
+    let value: string = (en as Record<string, string>)[key] ?? key;
+    if (params) {
+      for (const [k, v] of Object.entries(params)) {
+        value = value.replace(new RegExp(`\\{${k}\\}`, 'g'), String(v));
+      }
+    }
+    return value;
+  };
+  return {
+    useLocale: () => ({ locale: 'en', setLocale: () => {}, t }),
+    LocaleProvider: ({ children }: { children: React.ReactNode }) => children,
+  };
+});
+
 import { ArtistPageClient } from '@/app/artists/[slug]/ArtistPageClient';
 import type { ArtisanPageResponse } from '@/app/api/artisan/[code]/route';
 

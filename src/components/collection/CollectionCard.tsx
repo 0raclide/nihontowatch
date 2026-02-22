@@ -70,7 +70,7 @@ export const CollectionCard = memo(function CollectionCard({ item, onClick, onEd
         <div className="flex items-center gap-1.5 shrink-0">
           {certInfo && (
             <span className={`text-[9px] uppercase tracking-wider font-bold ${certTextColor}`}>
-              {certInfo.shortLabel}
+              {t(certInfo.certKey)}
             </span>
           )}
           {/* Edit button */}

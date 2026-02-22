@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useLocale } from '@/i18n/LocaleContext';
 import { MeasurementPanel } from './MeasurementPanel';
 
 /**
@@ -24,28 +25,27 @@ interface FormDistributionBarProps {
   measurementsByForm?: Record<string, MeasurementData>;
 }
 
-const FORM_LABELS: Record<string, string> = {
-  // Sword forms
-  tanto: 'Tantō',
-  katana: 'Katana',
-  tachi: 'Tachi',
-  wakizashi: 'Wakizashi',
-  naginata: 'Naginata',
-  yari: 'Yari',
-  ken: 'Ken',
-  kodachi: 'Kodachi',
-  // Tosogu forms
-  tsuba: 'Tsuba',
-  kozuka: 'Kozuka',
-  kogai: 'Kōgai',
-  menuki: 'Menuki',
-  fuchi: 'Fuchi',
-  kashira: 'Kashira',
-  'fuchi-kashira': 'Fuchi-Kashira',
-  mitokoromono: 'Mitokoromono',
-  futatokoromono: 'Futatokoromono',
-  soroimono: 'Soroimono',
-  other: 'Other',
+/** Maps distribution keys to itemType.* translation keys */
+const FORM_TRANSLATION_KEYS: Record<string, string> = {
+  tanto: 'itemType.tanto',
+  katana: 'itemType.katana',
+  tachi: 'itemType.tachi',
+  wakizashi: 'itemType.wakizashi',
+  naginata: 'itemType.naginata',
+  yari: 'itemType.yari',
+  ken: 'itemType.ken',
+  kodachi: 'itemType.kodachi',
+  tsuba: 'itemType.tsuba',
+  kozuka: 'itemType.kozuka',
+  kogai: 'itemType.kogai',
+  menuki: 'itemType.menuki',
+  fuchi: 'itemType.fuchi',
+  kashira: 'itemType.kashira',
+  'fuchi-kashira': 'itemType.fuchi-kashira',
+  mitokoromono: 'itemType.mitokoromono',
+  futatokoromono: 'itemType.futatokoromono',
+  soroimono: 'itemType.soroimono',
+  other: 'itemType.other',
 };
 
 function hasMeasurements(m: MeasurementData | undefined): boolean {
@@ -55,6 +55,7 @@ function hasMeasurements(m: MeasurementData | undefined): boolean {
 
 export function FormDistributionBar({ distribution, measurementsByForm }: FormDistributionBarProps) {
   const [expandedForm, setExpandedForm] = useState<string | null>(null);
+  const { t } = useLocale();
 
   const entries = Object.entries(distribution)
     .filter(([key, count]) => count > 0 && key !== 'total')
@@ -67,7 +68,8 @@ export function FormDistributionBar({ distribution, measurementsByForm }: FormDi
   return (
     <div className="space-y-0">
       {entries.map(([form, count], i) => {
-        const label = FORM_LABELS[form] || form.charAt(0).toUpperCase() + form.slice(1);
+        const translationKey = FORM_TRANSLATION_KEYS[form];
+        const label = translationKey ? t(translationKey) : form.charAt(0).toUpperCase() + form.slice(1);
         const pct = Math.round((count / total) * 100);
         const formMeasurements = measurementsByForm?.[form];
         const isExpandable = hasMeasurements(formMeasurements);

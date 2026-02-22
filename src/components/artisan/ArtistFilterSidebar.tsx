@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useRef, useMemo, memo } from 'react';
+import { useLocale } from '@/i18n/LocaleContext';
 
 // =============================================================================
 // TYPES
@@ -53,6 +54,7 @@ export function ArtistFilterSidebar({
   searchInput,
   isLoading,
 }: ArtistFilterSidebarProps) {
+  const { t } = useLocale();
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Prevent scroll events from propagating to the page when at scroll boundaries
@@ -86,7 +88,7 @@ export function ArtistFilterSidebar({
           <div className="flex-shrink-0 px-4 pt-3.5 pb-3 border-b border-border/15">
             {/* Sort — inline label + borderless select */}
             <div className="flex items-center justify-center gap-2 mb-2.5">
-              <span className="text-[10px] uppercase tracking-[0.08em] text-muted/60 font-medium">Sort</span>
+              <span className="text-[10px] uppercase tracking-[0.08em] text-muted/60 font-medium">{t('artists.sort')}</span>
               <select
                 value={filters.sort}
                 onChange={(e) => onFilterChange('sort', e.target.value)}
@@ -100,30 +102,30 @@ export function ArtistFilterSidebar({
                   backgroundSize: '11px',
                 }}
               >
-                <option value="total_items">Total Works</option>
-                <option value="elite_factor">Elite Standing</option>
-                <option value="provenance_factor">Provenance Standing</option>
-                <option value="for_sale">On the Market</option>
-                <option value="name">Name A-Z</option>
+                <option value="total_items">{t('artists.totalWorks')}</option>
+                <option value="elite_factor">{t('artists.eliteStanding')}</option>
+                <option value="provenance_factor">{t('artists.provenanceStanding')}</option>
+                <option value="for_sale">{t('artists.onTheMarket')}</option>
+                <option value="name">{t('artists.nameAZ')}</option>
               </select>
             </div>
 
             {/* Type Toggle — segmented control */}
             <div className="flex rounded-lg border border-border/30 overflow-hidden">
-              {(['smith', 'tosogu'] as const).map((t, i) => (
+              {(['smith', 'tosogu'] as const).map((tp, i) => (
                 <button
-                  key={t}
-                  onClick={() => onFilterChange('type', t)}
+                  key={tp}
+                  onClick={() => onFilterChange('type', tp)}
                   disabled={isLoading}
                   className={`flex-1 py-[7px] text-[11px] font-semibold tracking-[0.03em] transition-colors ${
                     i > 0 ? 'border-l border-border/20' : ''
                   } ${
-                    filters.type === t
+                    filters.type === tp
                       ? 'bg-gold/12 text-gold'
                       : 'text-muted hover:text-ink hover:bg-hover/30'
                   }`}
                 >
-                  {t === 'smith' ? 'Nihonto' : 'Tosogu'}
+                  {tp === 'smith' ? t('artists.nihonto') : t('artists.tosogu')}
                 </button>
               ))}
             </div>
@@ -133,7 +135,7 @@ export function ArtistFilterSidebar({
           <div className="flex-shrink-0 px-4 py-2 border-b border-border/10">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1.5">
-                <h2 className="text-[10px] uppercase tracking-[0.1em] font-medium text-muted/50">Filters</h2>
+                <h2 className="text-[10px] uppercase tracking-[0.1em] font-medium text-muted/50">{t('artists.filters')}</h2>
                 {activeFilterCount > 0 && (
                   <span className="inline-flex items-center justify-center min-w-[14px] h-[14px] px-0.5 text-[8px] font-bold bg-gold/80 text-white rounded-full leading-none">
                     {activeFilterCount}
@@ -145,7 +147,7 @@ export function ArtistFilterSidebar({
                   onClick={onClearAll}
                   className="text-[10px] text-muted/50 hover:text-gold transition-colors font-medium"
                 >
-                  Reset
+                  {t('artists.reset')}
                 </button>
               )}
             </div>
@@ -167,7 +169,7 @@ export function ArtistFilterSidebar({
                   type="search"
                   value={searchInput}
                   onChange={(e) => onSearchInput(e.target.value)}
-                  placeholder="Name, kanji, or code..."
+                  placeholder={t('artists.searchPlaceholder')}
                   className="w-full pl-7 pr-7 py-1.5 text-[11px] rounded-md border border-border/30 bg-transparent text-ink placeholder:text-muted/50 focus:outline-none focus:border-gold/50 transition-colors"
                 />
                 {searchInput && (
@@ -185,7 +187,7 @@ export function ArtistFilterSidebar({
 
               {/* School */}
               <CollapsibleSection
-                title="School"
+                title={t('artists.school')}
                 defaultOpen
                 activeCount={filters.school ? 1 : 0}
               >
@@ -200,7 +202,7 @@ export function ArtistFilterSidebar({
 
               {/* Province */}
               <CollapsibleSection
-                title="Province"
+                title={t('artists.province')}
                 defaultOpen={false}
                 activeCount={filters.province ? 1 : 0}
               >
@@ -215,7 +217,7 @@ export function ArtistFilterSidebar({
 
               {/* Period */}
               <CollapsibleSection
-                title="Period"
+                title={t('artists.period')}
                 defaultOpen={false}
                 activeCount={filters.era ? 1 : 0}
               >
@@ -232,7 +234,7 @@ export function ArtistFilterSidebar({
               <div className="py-2">
                 <label className="flex items-center justify-between cursor-pointer group min-h-[28px]">
                   <span className="text-[12px] text-charcoal group-hover:text-ink transition-colors">
-                    Notable only
+                    {t('artists.notableOnly')}
                   </span>
                   <div className="relative">
                     <input
@@ -320,8 +322,9 @@ const RadioList = memo(function RadioList({
   selected?: string;
   onSelect: (value: string) => void;
 }) {
+  const { t: tl } = useLocale();
   if (options.length === 0) {
-    return <p className="text-[11px] text-muted italic py-2">None available</p>;
+    return <p className="text-[11px] text-muted italic py-2">{tl('artists.noneAvailable')}</p>;
   }
 
   return (

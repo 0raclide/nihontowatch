@@ -6,6 +6,7 @@ import type { Listing } from '@/types';
 import { useQuickViewOptional } from '@/contexts/QuickViewContext';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { useCurrency } from '@/hooks/useCurrency';
+import { useLocale } from '@/i18n/LocaleContext';
 import { ListingCard } from '@/components/browse/ListingCard';
 
 /**
@@ -29,6 +30,7 @@ export function ArtisanListings({ code, artisanName, initialListings, status = '
   const quickView = useQuickViewOptional();
   const { isAdmin } = useAuth();
   const { currency, exchangeRates } = useCurrency();
+  const { t } = useLocale();
 
   // Sync local state when a listing is refreshed in QuickView (e.g. after artisan fix)
   // If the listing's artisan_id changed away from this artist, remove it from the grid
@@ -129,8 +131,8 @@ export function ArtisanListings({ code, artisanName, initialListings, status = '
           className="text-sm text-gold hover:text-gold-light"
         >
           {status === 'sold'
-            ? `Browse sold archive for ${artisanName || code}`
-            : `Browse all on the market by ${artisanName || code}`} &rarr;
+            ? t('artist.browseSold', { name: artisanName || code })
+            : t('artist.browseAll', { name: artisanName || code })} &rarr;
         </Link>
       </div>
     </div>

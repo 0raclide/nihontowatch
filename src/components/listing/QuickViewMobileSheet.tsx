@@ -18,6 +18,7 @@ import { useQuickViewOptional } from '@/contexts/QuickViewContext';
 import { TranslatedDescription } from './TranslatedDescription';
 import { TranslatedTitle } from './TranslatedTitle';
 import { QuickMeasurement } from './QuickMeasurement';
+import { useLocale } from '@/i18n/LocaleContext';
 
 // =============================================================================
 // TYPES
@@ -90,6 +91,9 @@ export function QuickViewMobileSheet({
   const [sheetHeight, setSheetHeight] = useState(collapsedHeight);
   const [isDragging, setIsDragging] = useState(false);
   const [viewportHeight, setViewportHeight] = useState(0);
+
+  // i18n
+  const { t } = useLocale();
 
   // Inquiry modal state
   const quickView = useQuickViewOptional();
@@ -466,12 +470,12 @@ export function QuickViewMobileSheet({
                   : 'text-hozon'
               }`}
             >
-              {certInfo.shortLabel}
+              {t(certInfo.certKey)}
             </span>
           )}
           {shouldShowNewBadge(listing.first_seen_at, listing.dealer_earliest_seen_at, listing.is_initial_import) && (
             <span className="text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded bg-new-listing-bg text-new-listing">
-              New this week
+              {t('quickview.newThisWeek')}
             </span>
           )}
           {isAdmin && listing.admin_hidden && (

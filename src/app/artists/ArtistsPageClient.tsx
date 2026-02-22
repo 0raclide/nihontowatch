@@ -9,6 +9,7 @@ import { Drawer } from '@/components/ui/Drawer';
 import { useMobileUI } from '@/contexts/MobileUIContext';
 import { ArtistFilterSidebar } from '@/components/artisan/ArtistFilterSidebar';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
+import { useLocale } from '@/i18n/LocaleContext';
 
 // =============================================================================
 // TYPES
@@ -49,6 +50,7 @@ export function ArtistsPageClient({
   initialFilters,
   initialPage,
 }: ArtistsPageClientProps) {
+  const { t } = useLocale();
   const [allArtists, setAllArtists] = useState<ArtistWithSlug[]>([]);
   const [pagination, setPagination] = useState<Pagination>({ page: initialPage, pageSize: 50, totalPages: 0, totalCount: 0 });
   const [filters, setFilters] = useState(initialFilters);
@@ -142,11 +144,11 @@ export function ArtistsPageClient({
         if (data.lastUpdated !== undefined) setLastUpdated(data.lastUpdated);
         if (data.attributedItemCount !== undefined) setAttributedItemCount(data.attributedItemCount);
       } else {
-        setError('Failed to load artists. Please try again.');
+        setError(t('artists.loadFailed'));
       }
     } catch (err: unknown) {
       if (err instanceof DOMException && err.name === 'AbortError') return;
-      setError('Network error. Please check your connection.');
+      setError(t('artists.networkError'));
     } finally {
       if (!controller.signal.aborted) {
         if (append) {
@@ -318,20 +320,20 @@ export function ArtistsPageClient({
     <div className="max-w-[1600px] mx-auto px-4 py-8 lg:px-6">
       {/* Page Header */}
       <div className="mb-8">
-        <h1 className="hidden lg:block font-serif text-2xl text-ink tracking-tight">Artists</h1>
+        <h1 className="hidden lg:block font-serif text-2xl text-ink tracking-tight">{t('artists.title')}</h1>
         {!isLoading && (facets.totals.smiths + facets.totals.tosogu) > 0 && (
           <p className="hidden lg:block text-[13px] text-muted mt-1">
-            {attributedItemCount.toLocaleString()} items by {(facets.totals.smiths + facets.totals.tosogu).toLocaleString()} celebrated artisans across {facets.schools.length.toLocaleString()} schools
+            {t('artists.itemsBy', { count: attributedItemCount.toLocaleString(), artists: (facets.totals.smiths + facets.totals.tosogu).toLocaleString(), schools: facets.schools.length.toLocaleString() })}
           </p>
         )}
         <LiveStatsBanner lastUpdated={lastUpdated} artisanCount={facets.totals.smiths + facets.totals.tosogu} schoolCount={facets.schools.length} />
         {/* Mobile heading */}
         <h1 className="lg:hidden font-serif text-2xl text-ink tracking-tight">
-          Artists
+          {t('artists.title')}
         </h1>
         {!isLoading && (facets.totals.smiths + facets.totals.tosogu) > 0 && (
           <p className="lg:hidden mt-2 text-sm text-ink/50">
-            {attributedItemCount.toLocaleString()} items by {(facets.totals.smiths + facets.totals.tosogu).toLocaleString()} celebrated artisans
+            {t('artists.itemsByMobile', { count: attributedItemCount.toLocaleString(), artists: (facets.totals.smiths + facets.totals.tosogu).toLocaleString() })}
           </p>
         )}
       </div>
@@ -356,7 +358,7 @@ export function ArtistsPageClient({
           {/* Desktop count header */}
           {allArtists.length > 0 && (
             <p className="hidden lg:block text-[11px] text-ink/45 mb-4">
-              Showing {allArtists.length.toLocaleString()} of {pagination.totalCount.toLocaleString()} artist{pagination.totalCount !== 1 ? 's' : ''}
+              {t('artists.showing')} {allArtists.length.toLocaleString()} {t('artists.of')} {pagination.totalCount.toLocaleString()} {t('artists.artists')}
             </p>
           )}
 
@@ -368,7 +370,7 @@ export function ArtistsPageClient({
                 onClick={() => fetchArtists(filters, currentPageRef.current)}
                 className="text-[11px] text-red-700 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 underline underline-offset-2 ml-4 shrink-0"
               >
-                Retry
+                {t('artists.retry')}
               </button>
             </div>
           )}
@@ -381,12 +383,12 @@ export function ArtistsPageClient({
             </div>
           ) : !isLoading && allArtists.length === 0 ? (
             <div className="py-20 text-center">
-              <p className="text-ink/50 text-sm">No artists found matching your criteria.</p>
+              <p className="text-ink/50 text-sm">{t('artists.noResults')}</p>
               <button
                 onClick={clearAllFilters}
                 className="mt-3 text-[12px] text-gold hover:text-gold-light underline"
               >
-                Reset all filters
+                {t('artists.resetFilters')}
               </button>
             </div>
           ) : (
@@ -412,7 +414,7 @@ export function ArtistsPageClient({
               {/* End of results */}
               {!hasMore && allArtists.length > 0 && !isLoading && (
                 <p className="text-center text-[11px] text-ink/30 mt-8">
-                  All {pagination.totalCount.toLocaleString()} artists loaded
+                  {t('artists.allLoaded', { count: pagination.totalCount.toLocaleString() })}
                 </p>
               )}
             </>
@@ -429,7 +431,7 @@ export function ArtistsPageClient({
         className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-cream/95 backdrop-blur-sm border-t border-border"
         style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
         role="navigation"
-        aria-label="Artist navigation"
+        aria-label={t('artists.title')}
       >
         <div className="flex items-center h-16">
           {/* Search */}
@@ -443,7 +445,7 @@ export function ArtistsPageClient({
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
-            <span className="text-[11px] mt-1 font-medium">Search</span>
+            <span className="text-[11px] mt-1 font-medium">{t('artists.search')}</span>
           </button>
 
           {/* Filters */}
@@ -468,7 +470,7 @@ export function ArtistsPageClient({
                 ) : null;
               })()}
             </div>
-            <span className="text-[11px] mt-1 font-medium">Filters</span>
+            <span className="text-[11px] mt-1 font-medium">{t('artists.filters')}</span>
           </button>
 
           {/* Menu */}
@@ -479,7 +481,7 @@ export function ArtistsPageClient({
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
-            <span className="text-[11px] mt-1 font-medium">Menu</span>
+            <span className="text-[11px] mt-1 font-medium">{t('artists.menu')}</span>
           </button>
         </div>
       </nav>
@@ -495,7 +497,7 @@ export function ArtistsPageClient({
       <Drawer
         isOpen={searchDrawerOpen}
         onClose={() => setSearchDrawerOpen(false)}
-        title="Search Artists"
+        title={t('artists.searchArtists')}
       >
         <div className="p-4 space-y-4">
           <form
@@ -513,7 +515,7 @@ export function ArtistsPageClient({
                 type="search"
                 value={searchInput}
                 onChange={(e) => handleSearchInput(e.target.value)}
-                placeholder="Search by name, kanji, or code..."
+                placeholder={t('artists.searchPlaceholder')}
                 className="w-full pl-4 pr-10 py-3 bg-cream border border-border text-sm text-ink placeholder:text-ink/30 focus:outline-none focus:border-gold/40 focus:shadow-[0_0_0_3px_rgba(181,142,78,0.1)] transition-all"
                 autoFocus
               />
@@ -545,7 +547,7 @@ export function ArtistsPageClient({
           {/* Quick school suggestions */}
           {facets.schools.length > 0 && (
             <div>
-              <p className="text-[11px] uppercase tracking-[0.12em] text-ink/40 mb-2">Popular schools</p>
+              <p className="text-[11px] uppercase tracking-[0.12em] text-ink/40 mb-2">{t('artists.popularSchools')}</p>
               <div className="flex flex-wrap gap-2">
                 {facets.schools.slice(0, 6).map((s) => (
                   <button
@@ -570,24 +572,24 @@ export function ArtistsPageClient({
       <Drawer
         isOpen={filterDrawerOpen}
         onClose={() => setFilterDrawerOpen(false)}
-        title="Filter Artists"
+        title={t('artists.filterArtists')}
       >
         <div className="p-4 space-y-5">
           {/* Type Toggle */}
           <div>
-            <p className="text-[11px] uppercase tracking-[0.12em] text-ink/40 mb-2">Type</p>
+            <p className="text-[11px] uppercase tracking-[0.12em] text-ink/40 mb-2">{t('artists.type')}</p>
             <div className="flex border border-border divide-x divide-border">
-              {(['smith', 'tosogu'] as const).map((t) => (
+              {(['smith', 'tosogu'] as const).map((tp) => (
                 <button
-                  key={t}
-                  onClick={() => handleFilterChange('type', t)}
+                  key={tp}
+                  onClick={() => handleFilterChange('type', tp)}
                   className={`flex-1 px-4 py-2.5 min-h-[44px] text-[12px] uppercase tracking-[0.12em] transition-colors ${
-                    filters.type === t
+                    filters.type === tp
                       ? 'bg-gold/10 text-gold font-medium'
                       : 'text-ink/50 hover:text-ink hover:bg-hover'
                   }`}
                 >
-                  {t === 'smith' ? 'Nihonto' : 'Tosogu'}
+                  {tp === 'smith' ? t('artists.nihonto') : t('artists.tosogu')}
                 </button>
               ))}
             </div>
@@ -595,13 +597,13 @@ export function ArtistsPageClient({
 
           {/* School */}
           <div>
-            <p className="text-[11px] uppercase tracking-[0.12em] text-ink/40 mb-2">School</p>
+            <p className="text-[11px] uppercase tracking-[0.12em] text-ink/40 mb-2">{t('artists.school')}</p>
             <select
               value={filters.school || ''}
               onChange={(e) => handleFilterChange('school', e.target.value || '')}
               className="w-full px-3 py-2.5 bg-cream border border-border text-[13px] text-ink focus:outline-none focus:border-gold/40 cursor-pointer"
             >
-              <option value="">All Schools</option>
+              <option value="">{t('artists.allSchools')}</option>
               {facets.schools.map((opt) => (
                 <option key={opt.value} value={opt.value}>
                   {opt.value} ({opt.count})
@@ -612,13 +614,13 @@ export function ArtistsPageClient({
 
           {/* Province */}
           <div>
-            <p className="text-[11px] uppercase tracking-[0.12em] text-ink/40 mb-2">Province</p>
+            <p className="text-[11px] uppercase tracking-[0.12em] text-ink/40 mb-2">{t('artists.province')}</p>
             <select
               value={filters.province || ''}
               onChange={(e) => handleFilterChange('province', e.target.value || '')}
               className="w-full px-3 py-2.5 bg-cream border border-border text-[13px] text-ink focus:outline-none focus:border-gold/40 cursor-pointer"
             >
-              <option value="">All Provinces</option>
+              <option value="">{t('artists.allProvinces')}</option>
               {facets.provinces.map((opt) => (
                 <option key={opt.value} value={opt.value}>
                   {opt.value} ({opt.count})
@@ -629,13 +631,13 @@ export function ArtistsPageClient({
 
           {/* Period */}
           <div>
-            <p className="text-[11px] uppercase tracking-[0.12em] text-ink/40 mb-2">Period</p>
+            <p className="text-[11px] uppercase tracking-[0.12em] text-ink/40 mb-2">{t('artists.period')}</p>
             <select
               value={filters.era || ''}
               onChange={(e) => handleFilterChange('era', e.target.value || '')}
               className="w-full px-3 py-2.5 bg-cream border border-border text-[13px] text-ink focus:outline-none focus:border-gold/40 cursor-pointer"
             >
-              <option value="">All Periods</option>
+              <option value="">{t('artists.allPeriods')}</option>
               {facets.eras.map((opt) => (
                 <option key={opt.value} value={opt.value}>
                   {opt.value} ({opt.count})
@@ -646,17 +648,17 @@ export function ArtistsPageClient({
 
           {/* Sort */}
           <div>
-            <p className="text-[11px] uppercase tracking-[0.12em] text-ink/40 mb-2">Sort by</p>
+            <p className="text-[11px] uppercase tracking-[0.12em] text-ink/40 mb-2">{t('artists.sortBy')}</p>
             <select
               value={filters.sort}
               onChange={(e) => handleFilterChange('sort', e.target.value)}
               className="w-full px-3 py-2.5 bg-cream border border-border text-[13px] text-ink focus:outline-none focus:border-gold/40 cursor-pointer"
             >
-              <option value="total_items">Total Works</option>
-              <option value="elite_factor">Elite Standing</option>
-              <option value="provenance_factor">Provenance Standing</option>
-              <option value="for_sale">On the Market</option>
-              <option value="name">Name A-Z</option>
+              <option value="total_items">{t('artists.totalWorks')}</option>
+              <option value="elite_factor">{t('artists.eliteStanding')}</option>
+              <option value="provenance_factor">{t('artists.provenanceStanding')}</option>
+              <option value="for_sale">{t('artists.onTheMarket')}</option>
+              <option value="name">{t('artists.nameAZ')}</option>
             </select>
           </div>
 
@@ -668,7 +670,7 @@ export function ArtistsPageClient({
               onChange={(e) => handleFilterChange('notable', e.target.checked)}
               className="accent-gold w-4 h-4"
             />
-            <span className="text-[13px] text-ink">Notable only</span>
+            <span className="text-[13px] text-ink">{t('artists.notableOnly')}</span>
           </label>
 
           {/* Clear All */}
@@ -679,7 +681,7 @@ export function ArtistsPageClient({
             }}
             className="w-full py-2.5 text-[12px] text-gold hover:text-gold-light border border-gold/30 hover:border-gold/50 transition-colors"
           >
-            Clear all filters
+            {t('artists.clearFilters')}
           </button>
         </div>
       </Drawer>
@@ -730,6 +732,7 @@ function SkeletonCard() {
 }
 
 function ArtistCard({ artist }: { artist: ArtistWithSlug }) {
+  const { t } = useLocale();
   const percentile = artist.percentile ?? 0;
   const isSchool = artist.is_school_code;
 
@@ -738,19 +741,19 @@ function ArtistCard({ artist }: { artist: ArtistWithSlug }) {
 
   // Designation shortcodes — ordered by prestige, only shown when > 0
   const certBadges: Array<{ label: string; value: number }> = [];
-  if (artist.kokuho_count > 0) certBadges.push({ label: 'Kokuho', value: artist.kokuho_count });
-  if (artist.jubun_count > 0) certBadges.push({ label: 'Jubun', value: artist.jubun_count });
-  if (artist.jubi_count > 0) certBadges.push({ label: 'Jubi', value: artist.jubi_count });
-  if (artist.gyobutsu_count > 0) certBadges.push({ label: 'Gyobutsu', value: artist.gyobutsu_count });
-  if (artist.tokuju_count > 0) certBadges.push({ label: 'Tokuju', value: artist.tokuju_count });
-  if (artist.juyo_count > 0) certBadges.push({ label: 'Juyo', value: artist.juyo_count });
+  if (artist.kokuho_count > 0) certBadges.push({ label: t('pyramid.kokuho'), value: artist.kokuho_count });
+  if (artist.jubun_count > 0) certBadges.push({ label: t('pyramid.jubun'), value: artist.jubun_count });
+  if (artist.jubi_count > 0) certBadges.push({ label: t('pyramid.jubi'), value: artist.jubi_count });
+  if (artist.gyobutsu_count > 0) certBadges.push({ label: t('pyramid.gyobutsu'), value: artist.gyobutsu_count });
+  if (artist.tokuju_count > 0) certBadges.push({ label: t('pyramid.tokuju'), value: artist.tokuju_count });
+  if (artist.juyo_count > 0) certBadges.push({ label: t('pyramid.juyo'), value: artist.juyo_count });
 
   // Build subtitle for school codes vs individual artists
   const subtitleParts: string[] = [];
   if (isSchool) {
-    subtitleParts.push('School attribution');
+    subtitleParts.push(t('artists.schoolAttribution'));
     if (artist.member_count && artist.member_count > 0) {
-      subtitleParts.push(`${artist.member_count} known ${artist.entity_type === 'tosogu' ? 'makers' : 'smiths'}`);
+      subtitleParts.push(`${artist.member_count} ${t('artists.known')}${artist.entity_type === 'tosogu' ? t('artists.makers') : t('artists.smiths')}`);
     }
     if (artist.province) subtitleParts.push(artist.province);
   }
@@ -767,7 +770,7 @@ function ArtistCard({ artist }: { artist: ArtistWithSlug }) {
         <div className="w-20 sm:w-28 shrink-0 bg-white/[0.04] dark:bg-white/[0.04] border-r border-border/50 flex items-center justify-center p-2 sm:p-3 overflow-hidden">
           <img
             src={artist.cover_image}
-            alt={`${artist.name_romaji || artist.code} — ${artist.entity_type === 'smith' ? 'swordsmith' : 'tosogu maker'}${artist.school ? `, ${artist.school} school` : ''}`}
+            alt={`${artist.name_romaji || artist.code} — ${artist.entity_type === 'smith' ? t('artists.swordsmith') : t('artists.tosoguMaker')}${artist.school ? `, ${artist.school}` : ''}`}
             className="max-w-full max-h-full object-contain"
             loading="lazy"
             onError={(e: SyntheticEvent<HTMLImageElement>) => {
@@ -794,7 +797,7 @@ function ArtistCard({ artist }: { artist: ArtistWithSlug }) {
             <span className="block text-lg font-serif text-ink tabular-nums">{artist.total_items}</span>
             <span className={`block text-[8px] uppercase tracking-[0.15em] mt-0.5${
               isSchool ? ' text-gold' : ' text-ink/40'
-            }`}>{isSchool ? 'school' : 'works'}</span>
+            }`}>{isSchool ? t('artists.school') : t('artists.works')}</span>
           </div>
         </div>
 
@@ -802,7 +805,7 @@ function ArtistCard({ artist }: { artist: ArtistWithSlug }) {
         <div className="mt-1.5 text-[11px] text-ink/45 truncate">
           {isSchool
             ? subtitleParts.join(' \u00b7 ')
-            : [artist.school, eraToBroadPeriod(artist.era) || artist.era, artist.province].filter(Boolean).join(' \u00b7 ') || 'Unknown'}
+            : [artist.school, eraToBroadPeriod(artist.era) || artist.era, artist.province].filter(Boolean).join(' \u00b7 ') || t('artists.unknown')}
         </div>
 
         {/* Row 3: Cert counts */}
@@ -820,7 +823,7 @@ function ArtistCard({ artist }: { artist: ArtistWithSlug }) {
         {availableCount > 0 && (
           <div className="mt-1.5 flex justify-end text-[11px] tabular-nums">
             <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
-              {availableCount} on the market
+              {availableCount} {t('artists.onMarket')}
               <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
               </svg>
@@ -876,19 +879,20 @@ function useElapsedSince(isoDate: string | null): string | null {
 }
 
 function LiveStatsBanner({ lastUpdated, artisanCount, schoolCount }: { lastUpdated: string | null; artisanCount: number; schoolCount: number }) {
+  const { t } = useLocale();
   const elapsed = useElapsedSince(lastUpdated);
   if (!elapsed) return null;
 
   return (
     <div className="hidden lg:flex items-center gap-1.5 mt-1.5 text-[11px] text-muted/70 font-mono tabular-nums">
       <div className="w-1.5 h-1.5 rounded-full bg-sage animate-pulse" />
-      <span className="text-sage font-medium tracking-wide">LIVE</span>
+      <span className="text-sage font-medium tracking-wide">{t('artists.live')}</span>
       <span className="text-muted/30 mx-0.5">&middot;</span>
-      <span>Scanned {elapsed} ago</span>
+      <span>{t('artists.scanned')} {elapsed} {t('artists.ago')}</span>
       <span className="text-muted/30 mx-0.5">&middot;</span>
-      <span>{artisanCount.toLocaleString()} artists</span>
+      <span>{artisanCount.toLocaleString()} {t('artists.artists')}</span>
       <span className="text-muted/30 mx-0.5">&middot;</span>
-      <span>{schoolCount.toLocaleString()} schools</span>
+      <span>{schoolCount.toLocaleString()} {t('artists.school')}</span>
     </div>
   );
 }

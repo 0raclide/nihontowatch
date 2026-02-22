@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useLocale } from '@/i18n/LocaleContext';
 import {
   PROVENANCE_TIERS,
   formatKoku,
@@ -23,6 +24,7 @@ interface ProvenancePyramidProps {
 }
 
 export function ProvenancePyramid({ analysis }: ProvenancePyramidProps) {
+  const { t } = useLocale();
   const [expandedTiers, setExpandedTiers] = useState<Set<TierKey>>(new Set());
   const maxCount = Math.max(...Object.values(analysis.tierCounts), 1);
 
@@ -96,14 +98,14 @@ export function ProvenancePyramid({ analysis }: ProvenancePyramidProps) {
                         {c.name}
                       </span>
                       <span className="text-xs tabular-nums ml-4 shrink-0 text-ink/25">
-                        {c.works > 1 ? `${c.works} works` : '1 work'}
+                        {c.works > 1 ? t('artist.works', { count: c.works }) : t('artist.work')}
                       </span>
                     </div>
                     {(c.meta.koku || c.meta.domain || c.meta.type) && (
                       <div className="text-[11px] text-ink/30 mt-0.5 tracking-wide">
                         {[
                           c.meta.domain,
-                          c.meta.koku ? `${formatKoku(c.meta.koku)} koku` : null,
+                          c.meta.koku ? t('artist.koku', { koku: formatKoku(c.meta.koku) }) : null,
                           c.meta.type,
                         ].filter(Boolean).join('  ·  ')}
                       </div>
@@ -145,7 +147,8 @@ function ProvenanceHistogram({
   entityType: 'smith' | 'tosogu';
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const peerLabel = entityType === 'smith' ? 'smiths' : 'tosogu makers';
+  const { t } = useLocale();
+  const peerLabel = entityType === 'smith' ? t('artists.smiths') : t('artists.makers');
 
   // Trim leading and trailing empty buckets for a tight view
   let firstNonZero = 0;
@@ -225,7 +228,7 @@ function ProvenanceHistogram({
   return (
     <div className="mt-3">
       <p className="text-[11px] text-ink/35 mb-2">
-        Distribution across {total.toLocaleString()} {peerLabel} with documented provenance
+        {t('artist.distributionAmong', { total: total.toLocaleString(), peers: peerLabel, context: t('artist.withDocumentedProvenance') })}
       </p>
       <canvas
         ref={canvasRef}
@@ -264,6 +267,7 @@ function estimatePercentile(factor: number): number {
 }
 
 export function ProvenanceFactorDisplay({ analysis, entityType, percentile: dbPercentile, dbFactor }: ProvenanceFactorDisplayProps) {
+  const { t } = useLocale();
   const { factor: mockFactor, count, apex, tiers } = analysis;
   const factor = dbFactor ?? mockFactor;
   const [showInfo, setShowInfo] = useState(false);
@@ -280,7 +284,7 @@ export function ProvenanceFactorDisplay({ analysis, entityType, percentile: dbPe
 
   const percentile = dbPercentile ?? estimatePercentile(factor);
   const topPct = Math.max(100 - percentile, 1);
-  const peerLabel = entityType === 'smith' ? 'smiths' : 'tosogu makers';
+  const peerLabel = entityType === 'smith' ? t('artists.smiths') : t('artists.makers');
 
   // Bar width: factor is 0-10, show as percentage
   const barPct = Math.min((factor / 10) * 100, 100);
@@ -307,9 +311,7 @@ export function ProvenanceFactorDisplay({ analysis, entityType, percentile: dbPe
       {/* Stats line */}
       <div className="text-xs text-ink/50 leading-relaxed space-y-0.5">
         <p>
-          <span className="text-ink/80">{scoredWorks}</span> work{scoredWorks !== 1 ? 's' : ''} held
-          in elite collections across{' '}
-          <span className="text-ink/80">{count}</span> documented provenance{count !== 1 ? 's' : ''}
+          {t('artist.provenanceStatsLine', { works: String(scoredWorks), provenances: String(count) })}
           {/* Info icon */}
           <button
             onClick={() => setShowInfo(!showInfo)}
@@ -317,7 +319,7 @@ export function ProvenanceFactorDisplay({ analysis, entityType, percentile: dbPe
               border border-ink/20 text-ink/35 hover:text-ink/60 hover:border-ink/40
               transition-colors align-middle cursor-pointer
               relative before:absolute before:-inset-3 before:content-['']"
-            aria-label="How is Provenance Standing calculated?"
+            aria-label={t('artist.howProvenanceCalculated')}
             aria-expanded={showInfo}
           >
             <svg className="w-[9px] h-[9px]" viewBox="0 0 16 16" fill="currentColor">
@@ -326,10 +328,10 @@ export function ProvenanceFactorDisplay({ analysis, entityType, percentile: dbPe
           </button>
         </p>
         <p>
-          Top <span className="text-ink/80">{topPct}%</span> among {peerLabel}
+          {t('artist.topAmong', { pct: topPct, peers: peerLabel })}
         </p>
         <p className="text-ink/30">
-          Raw score: <span className="tabular-nums">{factor.toFixed(2)}</span> / 10
+          {t('artist.rawScore', { score: factor.toFixed(2) })}
         </p>
       </div>
 
@@ -337,27 +339,9 @@ export function ProvenanceFactorDisplay({ analysis, entityType, percentile: dbPe
       {showInfo && (
         <div className="border-t border-border/20 pt-3 space-y-3">
           <div className="text-[12px] text-ink/50 leading-[1.8] space-y-2.5">
-            <p>
-              Provenance Standing measures how consistently an artisan&rsquo;s
-              certified works were held in historically prestigious collections&mdash;Imperial
-              and Shogunal households, premier daim&#x79;&#x14d; clans, and the great
-              domain lords of the Edo period.
-            </p>
-            <p>
-              Each documented owner is scored by historical rank: Imperial &amp;
-              Shogunal collections score highest, followed by premier daim&#x79;&#x14d;
-              houses (500,000+ <em>koku</em>) and major daim&#x79;&#x14d;
-              (200,000+ <em>koku</em>). Every provenance observation contributes
-              to the weighted average&mdash;works held only by lesser-known collectors
-              dilute the score, rewarding both concentration and depth.
-            </p>
-            <p>
-              The score is smoothed with a Bayesian prior so that artisans with
-              only one or two documented provenances can&rsquo;t rank
-              artificially high. This artisan places in the{' '}
-              <span className="text-ink/80">top {topPct}%</span> of
-              all {peerLabel} with documented provenance.
-            </p>
+            <p>{t('artist.provenanceExplanation1')}</p>
+            <p>{t('artist.provenanceExplanation2')}</p>
+            <p>{t('artist.provenanceExplanation3', { pct: topPct, peers: peerLabel })}</p>
           </div>
 
           {/* Histogram */}

@@ -1,5 +1,23 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
+
+vi.mock('@/i18n/LocaleContext', async () => {
+  const en = await import('@/i18n/locales/en.json').then(m => m.default);
+  const t = (key: string, params?: Record<string, string | number>) => {
+    let value: string = (en as Record<string, string>)[key] ?? key;
+    if (params) {
+      for (const [k, v] of Object.entries(params)) {
+        value = value.replace(new RegExp(`\\{${k}\\}`, 'g'), String(v));
+      }
+    }
+    return value;
+  };
+  return {
+    useLocale: () => ({ locale: 'en', setLocale: () => {}, t }),
+    LocaleProvider: ({ children }: { children: React.ReactNode }) => children,
+  };
+});
+
 import { RelatedArtisans } from '@/components/artisan/RelatedArtisans';
 
 // Mock next/link
@@ -65,8 +83,8 @@ describe('RelatedArtisans', () => {
       />
     );
 
-    expect(screen.getByText(/3 tokujū/)).toBeTruthy();
-    expect(screen.getByText(/12 jūyō/)).toBeTruthy();
+    expect(screen.getByText(/3 Tokubetsu/)).toBeTruthy();
+    expect(screen.getByText(/12 Jūyō Tōken/)).toBeTruthy();
   });
 
   it('does not render zero certification counts', () => {
@@ -77,10 +95,10 @@ describe('RelatedArtisans', () => {
       />
     );
 
-    expect(screen.queryByText(/kokuhō/)).toBeNull();
-    expect(screen.queryByText(/jubun/)).toBeNull();
-    expect(screen.queryByText(/jūyō/)).toBeNull();
-    expect(screen.queryByText(/tokujū/)).toBeNull();
+    expect(screen.queryByText(/Kokuhō/)).toBeNull();
+    expect(screen.queryByText(/Bunkazai/)).toBeNull();
+    expect(screen.queryByText(/Jūyō Tōken/)).toBeNull();
+    expect(screen.queryByText(/Tokubetsu Jūyō/)).toBeNull();
   });
 
   it('renders "for sale" when available_count > 0', () => {
@@ -162,10 +180,10 @@ describe('RelatedArtisans', () => {
       />
     );
 
-    const kokuhoEl = screen.getByText(/1 kokuhō/);
+    const kokuhoEl = screen.getByText(/1 Kokuhō/);
     expect(kokuhoEl.className).toContain('font-semibold');
 
-    const jubunEl = screen.getByText(/2 jubun/);
+    const jubunEl = screen.getByText(/2 Jūyō Bunkazai/);
     expect(jubunEl.className).toContain('font-semibold');
   });
 });

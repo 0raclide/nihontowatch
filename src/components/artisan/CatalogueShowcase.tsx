@@ -1,17 +1,18 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useLocale } from '@/i18n/LocaleContext';
 import { createPortal } from 'react-dom';
 import type { CatalogueEntry, CatalogueImage } from '@/lib/supabase/yuhinkai';
 
 // ─── CONSTANTS ──────────────────────────────────────────────────────────────
 
-const COLLECTION_LABELS: Record<string, string> = {
-  'Tokuju': 'Tokubetsu Jūyō',
-  'Juyo': 'Jūyō',
-  'Kokuho': 'Kokuhō',
-  'JuBun': 'Jūyō Bunkazai',
-  'Jubi': 'Jūyō Bijutsuhin',
+const COLLECTION_KEYS: Record<string, string> = {
+  'Tokuju': 'cert.Tokuju',
+  'Juyo': 'cert.Juyo',
+  'Kokuho': 'cert.Kokuho',
+  'JuBun': 'cert.Juyo Bunkazai',
+  'Jubi': 'cert.Juyo Bijutsuhin',
 };
 
 // ─── TYPES ──────────────────────────────────────────────────────────────────
@@ -33,6 +34,7 @@ function GalleryLightbox({
   initialIndex: number;
   onClose: () => void;
 }) {
+  const { t } = useLocale();
   const [index, setIndex] = useState(initialIndex);
 
   const goPrev = useCallback(() => {
@@ -66,14 +68,14 @@ function GalleryLightbox({
       onClick={onClose}
       role="dialog"
       aria-modal="true"
-      aria-label="Image gallery"
+      aria-label={t('artist.close')}
     >
       {/* Close button */}
       <button
         onClick={onClose}
         className="absolute top-4 right-4 z-10 flex items-center justify-center w-10 h-10 rounded-full
           bg-white/10 hover:bg-white/20 text-white/70 hover:text-white transition-colors"
-        aria-label="Close"
+        aria-label={t('artist.close')}
       >
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -86,7 +88,7 @@ function GalleryLightbox({
           onClick={(e) => { e.stopPropagation(); goPrev(); }}
           className="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 z-10 flex items-center justify-center
             w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white/70 hover:text-white transition-colors"
-          aria-label="Previous image"
+          aria-label={t('catalogue.previous')}
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -100,7 +102,7 @@ function GalleryLightbox({
           onClick={(e) => { e.stopPropagation(); goNext(); }}
           className="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 z-10 flex items-center justify-center
             w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white/70 hover:text-white transition-colors"
-          aria-label="Next image"
+          aria-label={t('catalogue.next')}
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -112,7 +114,7 @@ function GalleryLightbox({
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={current.url}
-        alt={`Gallery image ${index + 1} of ${images.length}`}
+        alt={t('catalogue.galleryImage', { current: index + 1, total: images.length })}
         className="max-h-[85vh] max-w-[90vw] object-contain select-none"
         onClick={(e) => e.stopPropagation()}
         draggable={false}
@@ -120,7 +122,7 @@ function GalleryLightbox({
 
       {/* Counter */}
       <p className="mt-3 text-[11px] text-white/40 tracking-wider uppercase text-center tabular-nums">
-        {index + 1} / {images.length}
+        {t('catalogue.imageCounter', { current: index + 1, total: images.length })}
       </p>
     </div>,
     document.body
@@ -156,6 +158,7 @@ function TextBlock({ text }: { text: string }) {
 // ─── MAIN COMPONENT ─────────────────────────────────────────────────────────
 
 export function CatalogueShowcase({ entry, totalEntries, artisanName }: CatalogueShowcaseProps) {
+  const { t } = useLocale();
   const [galleryIndex, setGalleryIndex] = useState<number | null>(null);
 
   // Build flat image array for gallery navigation:
@@ -178,7 +181,8 @@ export function CatalogueShowcase({ entry, totalEntries, artisanName }: Catalogu
     setGalleryIndex(idx >= 0 ? idx : 0);
   }, [galleryImages]);
 
-  const collectionLabel = COLLECTION_LABELS[entry.collection] || entry.collection;
+  const collectionKey = COLLECTION_KEYS[entry.collection];
+  const collectionLabel = collectionKey ? t(collectionKey) : entry.collection;
   const publishedDate = new Date(entry.publishedAt).toLocaleDateString('en-US', {
     month: 'short',
     year: 'numeric',
@@ -194,7 +198,7 @@ export function CatalogueShowcase({ entry, totalEntries, artisanName }: Catalogu
             onClick={() => openGallery(coverImage)}
             className="block w-full border border-border/20 shadow-sm cursor-zoom-in
               hover:shadow-md hover:border-border/30 transition-all duration-200 bg-black/5"
-            aria-label="View full-size cover image"
+            aria-label={t('catalogue.viewCover')}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -209,7 +213,7 @@ export function CatalogueShowcase({ entry, totalEntries, artisanName }: Catalogu
               {collectionLabel}
             </span>
             <span className="text-[10px] text-ink/25 ml-1.5">
-              &mdash; Vol. {entry.volume}, No. {entry.itemNumber}
+              &mdash; {t('artist.vol')} {entry.volume}, {t('artist.no')} {entry.itemNumber}
               {entry.formType && <> &middot; {entry.formType.toLowerCase()}</>}
             </span>
           </figcaption>
@@ -219,7 +223,7 @@ export function CatalogueShowcase({ entry, totalEntries, artisanName }: Catalogu
       {/* Caption when no cover image */}
       {!coverImage && (
         <p className="mb-6 text-[10px] uppercase tracking-[0.15em] text-gold/50 font-medium">
-          {collectionLabel} &mdash; Vol. {entry.volume}, No. {entry.itemNumber}
+          {collectionLabel} &mdash; {t('artist.vol')} {entry.volume}, {t('artist.no')} {entry.itemNumber}
           {entry.formType && <> &middot; {entry.formType.toLowerCase()}</>}
         </p>
       )}
@@ -238,12 +242,12 @@ export function CatalogueShowcase({ entry, totalEntries, artisanName }: Catalogu
                 onClick={() => openGallery(img)}
                 className="aspect-[4/3] overflow-hidden border border-border/15 cursor-zoom-in
                   hover:border-border/30 transition-all duration-150 bg-black/5"
-                aria-label={`Photo ${i + 1}`}
+                aria-label={t('catalogue.photo', { n: i + 1 })}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={img.url}
-                  alt={`Photo ${i + 1}`}
+                  alt={t('catalogue.photo', { n: i + 1 })}
                   className="w-full h-full object-cover"
                   loading="lazy"
                 />
@@ -256,9 +260,9 @@ export function CatalogueShowcase({ entry, totalEntries, artisanName }: Catalogu
                 className="aspect-[4/3] overflow-hidden border border-border/15 cursor-zoom-in
                   hover:border-border/30 transition-all duration-150 bg-black/5
                   flex items-center justify-center"
-                aria-label={`View ${overflow} more photos`}
+                aria-label={t('catalogue.moreImages', { count: overflow })}
               >
-                <span className="text-sm text-ink/40 font-light">+{overflow} more</span>
+                <span className="text-sm text-ink/40 font-light">{t('catalogue.moreImages', { count: overflow })}</span>
               </button>
             )}
           </div>
@@ -268,7 +272,7 @@ export function CatalogueShowcase({ entry, totalEntries, artisanName }: Catalogu
       {/* ─── SAYAGAKI ────────────────────────────────────────────────── */}
       {entry.sayagakiEn && (
         <div>
-          <SubHeader title="Sayagaki" />
+          <SubHeader title={t('catalogue.sayagaki')} />
           <TextBlock text={entry.sayagakiEn} />
         </div>
       )}
@@ -276,7 +280,7 @@ export function CatalogueShowcase({ entry, totalEntries, artisanName }: Catalogu
       {/* ─── PROVENANCE ──────────────────────────────────────────────── */}
       {(entry.provenanceEn || provenanceImages.length > 0) && (
         <div>
-          <SubHeader title="Provenance" />
+          <SubHeader title={t('catalogue.provenance')} />
           <div className="grid grid-cols-1 sm:grid-cols-[1fr_280px] gap-6">
             <div>
               {entry.provenanceEn && <TextBlock text={entry.provenanceEn} />}
@@ -290,12 +294,12 @@ export function CatalogueShowcase({ entry, totalEntries, artisanName }: Catalogu
                     onClick={() => openGallery(img)}
                     className="border border-border/15 cursor-zoom-in hover:border-border/30
                       transition-all duration-150 bg-black/5"
-                    aria-label={`Provenance document ${i + 1}`}
+                    aria-label={t('catalogue.provenanceDoc', { n: i + 1 })}
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={img.url}
-                      alt={`Provenance document ${i + 1}`}
+                      alt={t('catalogue.provenanceDoc', { n: i + 1 })}
                       className="w-full h-auto object-contain"
                       loading="lazy"
                     />
@@ -327,7 +331,7 @@ export function CatalogueShowcase({ entry, totalEntries, artisanName }: Catalogu
               </div>
             )}
             <span className="text-[12px] text-ink/60">
-              Documented by <span className="text-ink/80 font-medium">{entry.contributor.displayName}</span>
+              {t('catalogue.documentedBy')} <span className="text-ink/80 font-medium">{entry.contributor.displayName}</span>
             </span>
           </div>
           <span className="text-[11px] text-ink/30 tabular-nums">

@@ -126,7 +126,8 @@ vi.mock('@/components/listing/MetadataGrid', () => ({
   MetadataGrid: () => <div data-testid="metadata-grid">Metadata</div>,
   getCertInfo: (certType: string | undefined) => certType ? {
     shortLabel: certType,
-    tier: certType === 'Juyo' ? 'premier' : 'high',
+    certKey: `cert.${certType}`,
+    tier: certType === 'Juyo' ? 'juyo' : 'high',
   } : null,
 }));
 
@@ -190,7 +191,7 @@ describe('QuickViewContent', () => {
 
     it('renders certification badge', () => {
       render(<QuickViewContent listing={createMockListing()} />);
-      expect(screen.getByTestId('cert-badge')).toHaveTextContent('Juyo');
+      expect(screen.getByTestId('cert-badge')).toHaveTextContent('Jūyō');
     });
 
     it('renders CTA button with dealer name', () => {

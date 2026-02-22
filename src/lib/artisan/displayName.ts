@@ -209,3 +209,22 @@ export function getArtisanDisplayName(
   }
   return base;
 }
+
+/**
+ * Kanji display name for Japanese locale.
+ * Much simpler than romaji — kanji names are already compact and don't need
+ * the school-prefix deduplication logic.
+ *
+ * NS-* school codes: append "派" (school) suffix, e.g. "後藤派"
+ * Individual makers: return name_kanji as-is
+ */
+export function getArtisanDisplayNameKanji(
+  nameKanji: string | null,
+  code?: string | null,
+): string | null {
+  if (!nameKanji) return null;
+  if (code?.startsWith('NS-') && !nameKanji.endsWith('派')) {
+    return `${nameKanji}派`;
+  }
+  return nameKanji;
+}

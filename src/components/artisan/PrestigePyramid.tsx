@@ -1,5 +1,7 @@
 'use client';
 
+import { useLocale } from '@/i18n/LocaleContext';
+
 /**
  * PrestigePyramid — Typographic certification hierarchy with subtle bars.
  *
@@ -17,15 +19,16 @@ interface PrestigePyramidProps {
 }
 
 const TIERS = [
-  { key: 'kokuho', label: 'Kokuhō', fullLabel: 'National Treasure', indent: 0 },
-  { key: 'jubun', label: 'Jūyō Bunkazai', fullLabel: 'Important Cultural Property', indent: 1 },
-  { key: 'jubi', label: 'Jūyō Bijutsuhin', fullLabel: 'Important Art Object', indent: 2 },
-  { key: 'gyobutsu', label: 'Gyobutsu', fullLabel: 'Imperial Collection', indent: 2 },
-  { key: 'tokuju', label: 'Tokubetsu Jūyō', fullLabel: 'Tokubetsu Jūyō Tōken', indent: 3 },
-  { key: 'juyo', label: 'Jūyō Tōken', fullLabel: 'Jūyō Tōken', indent: 3 },
+  { key: 'kokuho', labelKey: 'pyramid.kokuho', fullLabelKey: 'pyramid.kokuhoFull', indent: 0 },
+  { key: 'jubun', labelKey: 'pyramid.jubun', fullLabelKey: 'pyramid.jubunFull', indent: 1 },
+  { key: 'jubi', labelKey: 'pyramid.jubi', fullLabelKey: 'pyramid.jubiFull', indent: 2 },
+  { key: 'gyobutsu', labelKey: 'pyramid.gyobutsu', fullLabelKey: 'pyramid.gyobutsuFull', indent: 2 },
+  { key: 'tokuju', labelKey: 'pyramid.tokuju', fullLabelKey: 'pyramid.tokujuFull', indent: 3 },
+  { key: 'juyo', labelKey: 'pyramid.juyo', fullLabelKey: 'pyramid.juyoFull', indent: 3 },
 ] as const;
 
 export function PrestigePyramid({ kokuho, jubun, jubi, gyobutsu, tokuju, juyo }: PrestigePyramidProps) {
+  const { t } = useLocale();
   const counts: Record<string, number> = { kokuho, jubun, jubi, gyobutsu, tokuju, juyo };
   const hasAnyCerts = Object.values(counts).some(c => c > 0);
   const maxCount = Math.max(...Object.values(counts), 1);
@@ -49,7 +52,7 @@ export function PrestigePyramid({ kokuho, jubun, jubi, gyobutsu, tokuju, juyo }:
           >
             <div className="flex items-baseline justify-between mb-1">
               <span className={`text-sm ${active ? 'text-ink' : 'text-ink/25'}`}>
-                {tier.label}
+                {t(tier.labelKey)}
               </span>
               <span className={`tabular-nums text-sm font-light ${
                 active ? 'text-ink' : 'text-ink/20'

@@ -17,6 +17,8 @@ export interface CertLabelInfo {
   label: string;
   /** Abbreviated label, e.g. "Tokuju" */
   shortLabel: string;
+  /** Translation key for locale-aware display */
+  certKey: string;
   tier: CertTier;
 }
 
@@ -25,18 +27,18 @@ export interface CertLabelInfo {
 // -----------------------------------------------------------------------------
 
 export const CERT_LABELS: Record<string, CertLabelInfo> = {
-  Tokuju: { label: 'Tokubetsu Juyo', shortLabel: 'Tokuju', tier: 'tokuju' },
-  tokuju: { label: 'Tokubetsu Juyo', shortLabel: 'Tokuju', tier: 'tokuju' },
-  'Tokubetsu Juyo': { label: 'Tokubetsu Juyo', shortLabel: 'Tokuju', tier: 'tokuju' },
-  'Juyo Bijutsuhin': { label: 'Juyo Bijutsuhin', shortLabel: 'Jubi', tier: 'jubi' },
-  'Juyo Bunkazai': { label: 'Juyo Bunkazai', shortLabel: 'JuBun', tier: 'jubi' },
-  Juyo: { label: 'Juyo', shortLabel: 'Juyo', tier: 'juyo' },
-  juyo: { label: 'Juyo', shortLabel: 'Juyo', tier: 'juyo' },
-  TokuHozon: { label: 'Tokubetsu Hozon', shortLabel: 'Tokuho', tier: 'tokuho' },
-  'Tokubetsu Hozon': { label: 'Tokubetsu Hozon', shortLabel: 'Tokuho', tier: 'tokuho' },
-  Hozon: { label: 'Hozon', shortLabel: 'Hozon', tier: 'hozon' },
-  hozon: { label: 'Hozon', shortLabel: 'Hozon', tier: 'hozon' },
-  Kokuho: { label: 'Kokuho', shortLabel: 'Kokuho', tier: 'tokuju' },
+  Tokuju: { label: 'Tokubetsu Juyo', shortLabel: 'Tokuju', certKey: 'cert.Tokuju', tier: 'tokuju' },
+  tokuju: { label: 'Tokubetsu Juyo', shortLabel: 'Tokuju', certKey: 'cert.tokuju', tier: 'tokuju' },
+  'Tokubetsu Juyo': { label: 'Tokubetsu Juyo', shortLabel: 'Tokuju', certKey: 'cert.Tokubetsu Juyo', tier: 'tokuju' },
+  'Juyo Bijutsuhin': { label: 'Juyo Bijutsuhin', shortLabel: 'Jubi', certKey: 'cert.Juyo Bijutsuhin', tier: 'jubi' },
+  'Juyo Bunkazai': { label: 'Juyo Bunkazai', shortLabel: 'JuBun', certKey: 'cert.Juyo Bunkazai', tier: 'jubi' },
+  Juyo: { label: 'Juyo', shortLabel: 'Juyo', certKey: 'cert.Juyo', tier: 'juyo' },
+  juyo: { label: 'Juyo', shortLabel: 'Juyo', certKey: 'cert.juyo', tier: 'juyo' },
+  TokuHozon: { label: 'Tokubetsu Hozon', shortLabel: 'Tokuho', certKey: 'cert.TokuHozon', tier: 'tokuho' },
+  'Tokubetsu Hozon': { label: 'Tokubetsu Hozon', shortLabel: 'Tokuho', certKey: 'cert.Tokubetsu Hozon', tier: 'tokuho' },
+  Hozon: { label: 'Hozon', shortLabel: 'Hozon', certKey: 'cert.Hozon', tier: 'hozon' },
+  hozon: { label: 'Hozon', shortLabel: 'Hozon', certKey: 'cert.hozon', tier: 'hozon' },
+  Kokuho: { label: 'Kokuho', shortLabel: 'Kokuho', certKey: 'cert.Kokuho', tier: 'tokuju' },
 };
 
 // -----------------------------------------------------------------------------

@@ -1,5 +1,7 @@
 'use client';
 
+import { useLocale } from '@/i18n/LocaleContext';
+
 /**
  * MeiDistributionBar — Typographic signature type distribution.
  *
@@ -11,24 +13,27 @@ interface MeiDistributionBarProps {
   distribution: Record<string, number>;
 }
 
-const MEI_LABELS: Record<string, string> = {
-  signed: 'Signed (mei)',
-  mumei: 'Mumei (unsigned)',
-  attributed: 'Attributed',
-  den: 'Den (tradition)',
-  gimei: 'Gimei (false)',
-  orikaeshi_mei: 'Orikaeshi Mei',
-  gaku_mei: 'Gaku Mei',
-  suriage: 'Suriage',
-  kinzogan_mei: 'Kinzōgan Mei',
-  shu_mei: 'Shū Mei',
-  kinpun_mei: 'Kinpun Mei',
-  ginzogan_mei: 'Ginzōgan Mei',
-  kiritsuke_mei: 'Kiritsuke Mei',
-  shusho_mei: 'Shūsho Mei',
+/** Maps distribution keys to mei.* translation keys */
+const MEI_TRANSLATION_KEYS: Record<string, string> = {
+  signed: 'mei.signed',
+  mumei: 'mei.mumei',
+  attributed: 'mei.attributed',
+  den: 'mei.den',
+  gimei: 'mei.gimei',
+  orikaeshi_mei: 'mei.orikaeshi',
+  gaku_mei: 'mei.gaku',
+  suriage: 'mei.suriage',
+  kinzogan_mei: 'mei.kinzogan',
+  shu_mei: 'mei.shu',
+  kinpun_mei: 'mei.kinpun',
+  ginzogan_mei: 'mei.ginzogan',
+  kiritsuke_mei: 'mei.kiritsuke',
+  shusho_mei: 'mei.shusho',
 };
 
 export function MeiDistributionBar({ distribution }: MeiDistributionBarProps) {
+  const { t } = useLocale();
+
   const entries = Object.entries(distribution)
     .filter(([key, count]) => count > 0 && key !== 'total')
     .sort(([, a], [, b]) => b - a);
@@ -40,7 +45,8 @@ export function MeiDistributionBar({ distribution }: MeiDistributionBarProps) {
   return (
     <div className="space-y-0">
       {entries.map(([type, count], i) => {
-        const label = MEI_LABELS[type] || type.charAt(0).toUpperCase() + type.slice(1);
+        const translationKey = MEI_TRANSLATION_KEYS[type];
+        const label = translationKey ? t(translationKey) : type.charAt(0).toUpperCase() + type.slice(1);
         const pct = Math.round((count / total) * 100);
 
         return (

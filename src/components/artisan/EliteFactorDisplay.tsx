@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useLocale } from '@/i18n/LocaleContext';
 
 /**
  * EliteFactorDisplay — Factual presentation of elite certification ratio.
@@ -29,7 +30,8 @@ function EliteHistogram({
   entityType: 'smith' | 'tosogu';
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const peerLabel = entityType === 'smith' ? 'smiths' : 'tosogu makers';
+  const { t } = useLocale();
+  const peerLabel = entityType === 'smith' ? t('artists.smiths') : t('artists.makers');
 
   // Find the last non-zero bucket to trim empty tail
   let lastNonZero = buckets.length - 1;
@@ -105,7 +107,7 @@ function EliteHistogram({
   return (
     <div className="mt-3">
       <p className="text-[11px] text-ink/35 mb-2">
-        Distribution across {total.toLocaleString()} {peerLabel} with ranked works
+        {t('artist.distributionAmong', { total: total.toLocaleString(), peers: peerLabel, context: t('artist.withRankedWorks') })}
       </p>
       <canvas
         ref={canvasRef}
@@ -123,6 +125,7 @@ export function EliteFactorDisplay({
   eliteCount,
   entityType,
 }: EliteFactorDisplayProps) {
+  const { t } = useLocale();
   const pct = Math.round(eliteFactor * 100);
   const topPct = Math.max(100 - percentile, 1);
   const [showInfo, setShowInfo] = useState(false);
@@ -137,7 +140,7 @@ export function EliteFactorDisplay({
       .catch(() => {});
   }, [showInfo, distribution, entityType]);
 
-  const peerLabel = entityType === 'smith' ? 'smiths' : 'tosogu makers';
+  const peerLabel = entityType === 'smith' ? t('artists.smiths') : t('artists.makers');
 
   return (
     <div className="space-y-4">
@@ -154,8 +157,7 @@ export function EliteFactorDisplay({
       {/* Stats line */}
       <div className="text-xs text-ink/50 leading-relaxed space-y-0.5">
         <p>
-          <span className="text-ink/80">{eliteCount}</span> of{' '}
-          <span className="text-ink/80">{totalItems}</span> works hold elite designations
+          <span className="text-ink/80">{eliteCount}</span> {t('artist.ofWorksElite', { total: totalItems })}
           {/* Info icon */}
           <button
             onClick={() => setShowInfo(!showInfo)}
@@ -163,7 +165,7 @@ export function EliteFactorDisplay({
               border border-ink/20 text-ink/35 hover:text-ink/60 hover:border-ink/40
               transition-colors align-middle cursor-pointer
               relative before:absolute before:-inset-3 before:content-['']"
-            aria-label="How is Elite Standing calculated?"
+            aria-label={t('artist.howEliteCalculated')}
             aria-expanded={showInfo}
           >
             <svg className="w-[9px] h-[9px]" viewBox="0 0 16 16" fill="currentColor">
@@ -172,7 +174,7 @@ export function EliteFactorDisplay({
           </button>
         </p>
         <p>
-          Top <span className="text-ink/80">{topPct}%</span> among {peerLabel}
+          {t('artist.topAmong', { pct: topPct, peers: peerLabel })}
         </p>
       </div>
 
@@ -180,26 +182,9 @@ export function EliteFactorDisplay({
       {showInfo && (
         <div className="border-t border-border/20 pt-3 space-y-3">
           <div className="text-[12px] text-ink/50 leading-[1.8] space-y-2.5">
-            <p>
-              Every artisan here already has works certified at the J&#x16b;y&#x14d; level
-              or above&mdash;a distinction held by a fraction of all historical {peerLabel}.
-              Elite Standing goes further: it measures what proportion of those
-              certified works reached the <em>very highest</em> tiers&mdash;Kokuh&#x14d;,
-              J&#x16b;y&#x14d; Bunkazai, J&#x16b;y&#x14d; Bijutsuhin, Gyobutsu,
-              or Tokubetsu J&#x16b;y&#x14d;.
-            </p>
-            <p>
-              A high ratio means this artisan&rsquo;s works didn&rsquo;t just occasionally
-              reach the top&mdash;they did so <em>consistently</em>. It separates
-              artisans whose output was routinely judged among the finest from those
-              with one or two exceptional pieces in a larger body of work.
-            </p>
-            <p>
-              The score is smoothed so that artisans with only a few documented works
-              can&rsquo;t rank artificially high. This artisan places
-              in the <span className="text-ink/80">top {topPct}%</span> of
-              all {peerLabel} with ranked works.
-            </p>
+            <p>{t('artist.eliteExplanation1', { peers: peerLabel })}</p>
+            <p>{t('artist.eliteExplanation2')}</p>
+            <p>{t('artist.eliteExplanation3', { pct: topPct, peers: peerLabel })}</p>
           </div>
 
           {/* Histogram */}

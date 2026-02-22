@@ -1,6 +1,6 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { getArtisanNames } from '@/lib/supabase/yuhinkai';
-import { getArtisanDisplayName, getArtisanAlias } from '@/lib/artisan/displayName';
+import { getArtisanDisplayName, getArtisanDisplayNameKanji, getArtisanAlias } from '@/lib/artisan/displayName';
 import { getArtisanTier } from '@/lib/artisan/tier';
 import { getAttributionName } from '@/lib/listing/attribution';
 import type { YuhinkaiEnrichment } from '@/types';
@@ -307,12 +307,14 @@ export async function getListingDetail(
 
   // Resolve artisan display name and tier from Yuhinkai
   let artisanDisplayName: string | undefined;
+  let artisanNameKanji: string | null | undefined;
   let artisanTier: 'kokuho' | 'elite' | 'juyo' | null = null;
   if (typedListing.artisan_id) {
     const artisanNameMap = await getArtisanNames([typedListing.artisan_id]);
     const artisanData = artisanNameMap.get(typedListing.artisan_id);
     if (artisanData) {
       artisanDisplayName = getArtisanAlias(typedListing.artisan_id!) || getArtisanDisplayName(artisanData.name_romaji, artisanData.school, typedListing.artisan_id);
+      artisanNameKanji = getArtisanDisplayNameKanji(artisanData.name_kanji, typedListing.artisan_id);
       artisanTier = getArtisanTier(artisanData);
     } else {
       // Fallback: use smith/tosogu_maker when Yuhinkai lookup misses
@@ -375,6 +377,7 @@ export async function getListingDetail(
     artisan_candidates: typedListing.artisan_candidates,
     artisan_verified: typedListing.artisan_verified,
     ...(artisanDisplayName && { artisan_display_name: artisanDisplayName }),
+    ...(artisanNameKanji && { artisan_name_kanji: artisanNameKanji }),
     ...(artisanTier && { artisan_tier: artisanTier }),
     dealer_earliest_seen_at: dealerEarliestSeenAt,
     dealers: {
