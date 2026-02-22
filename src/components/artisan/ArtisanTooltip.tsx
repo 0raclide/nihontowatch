@@ -7,6 +7,8 @@ import type { ArtisanDetails } from '@/app/api/artisan/[code]/route';
 import type { ArtisanSearchResult } from '@/app/api/artisan/search/route';
 import { CertPillRow } from '@/components/admin/CertPillRow';
 import { ArtisanSearchPanel } from '@/components/admin/ArtisanSearchPanel';
+import { useLocale } from '@/i18n/LocaleContext';
+import { eraToBroadPeriod } from '@/lib/artisan/eraPeriods';
 
 interface ArtisanCandidate {
   artisan_id: string;
@@ -57,6 +59,13 @@ export function ArtisanTooltip({
   onCertChanged,
   children,
 }: ArtisanTooltipProps) {
+  const { t, locale } = useLocale();
+  const td = (category: string, v: string | null | undefined) => {
+    if (!v) return v;
+    const k = `${category}.${v}`;
+    const r = t(k);
+    return r === k ? v : r;
+  };
   const [isOpen, setIsOpen] = useState(false);
   const [tooltipStyle, setTooltipStyle] = useState<React.CSSProperties>({});
   const [mounted, setMounted] = useState(false);
@@ -641,19 +650,19 @@ export function ArtisanTooltip({
                     {artisan.school && (
                       <>
                         <span className="text-muted">School</span>
-                        <span className="text-ink">{artisan.school}</span>
+                        <span className="text-ink">{td('school', artisan.school)}</span>
                       </>
                     )}
                     {artisan.province && (
                       <>
                         <span className="text-muted">Province</span>
-                        <span className="text-ink">{artisan.province}</span>
+                        <span className="text-ink">{td('province', artisan.province)}</span>
                       </>
                     )}
                     {artisan.era && (
                       <>
                         <span className="text-muted">Era</span>
-                        <span className="text-ink">{artisan.era}</span>
+                        <span className="text-ink">{td('period', eraToBroadPeriod(artisan.era) || artisan.era)}</span>
                       </>
                     )}
                   </div>
