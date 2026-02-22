@@ -755,7 +755,8 @@ export const ListingCard = memo(function ListingCard({
   );
 
   // Shared "New" badge
-  const newBadge = shouldShowNewBadge(listing.first_seen_at, listing.dealer_earliest_seen_at, listing.is_initial_import) && (
+  const isNew = shouldShowNewBadge(listing.first_seen_at, listing.dealer_earliest_seen_at, listing.is_initial_import);
+  const newBadge = isNew && (
     <span
       data-testid="new-listing-badge"
       className="text-[9px] lg:text-[10px] uppercase tracking-wider font-semibold px-1.5 lg:px-2 py-0.5 lg:py-1 bg-new-listing-bg text-new-listing"
@@ -929,7 +930,7 @@ export const ListingCard = memo(function ListingCard({
             {priceDisplay}
           </span>
           <div className="flex items-center gap-1.5">
-            {listing.last_scraped_at && (
+            {!isNew && listing.last_scraped_at && (
               <span className="text-[9px] text-muted/60 tabular-nums hidden sm:inline">
                 {t('card.confirmed', { time: formatRelativeTime(listing.last_scraped_at, t) })}
               </span>
