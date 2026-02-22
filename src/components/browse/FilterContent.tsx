@@ -4,6 +4,7 @@ import { useState, useCallback, useMemo, memo } from 'react';
 import { PriceHistogramSlider, type PriceHistogramData } from './PriceHistogramSlider';
 import type { ExchangeRates } from '@/hooks/useCurrency';
 import { useLocale } from '@/i18n/LocaleContext';
+import { getDealerDisplayName } from '@/lib/dealers/displayName';
 
 export type SidebarVariant = 'default' | 'a' | 'b';
 
@@ -15,6 +16,7 @@ interface Facet {
 interface DealerFacet {
   id: number;
   name: string;
+  name_ja?: string | null;
   count: number;
 }
 
@@ -66,6 +68,9 @@ export interface FilterContentProps {
   onCurrencyChange?: (currency: Currency) => void;
   availability?: AvailabilityStatus;
   onAvailabilityChange?: (status: AvailabilityStatus) => void;
+  /** Smart crop toggle (admin-only) */
+  smartCropEnabled?: boolean;
+  onSmartCropChange?: (enabled: boolean) => void;
 }
 
 const FilterSection = memo(function FilterSection({
@@ -339,16 +344,6 @@ const PERIOD_LABELS: Record<string, string> = {
   Reiwa: 'Reiwa',
 };
 
-// Dealer display name overrides
-const DEALER_LABELS: Record<string, string> = {
-  'Nihonto': 'Nihonto.com',
-  'Nihonto Art EU': 'Nihonto Art',
-  'Ginza_Seikodo': 'Ginza Seikodo',
-  'ginza_seikodo': 'Ginza Seikodo',
-  'Katana_Ando': 'Katana Ando',
-  'katana_ando': 'Katana Ando',
-};
-
 // Non-Japanese dealer countries (all others are Japan)
 const DEALER_COUNTRIES: Record<string, string> = {
   'Legacy Swords': 'USA',
@@ -389,6 +384,8 @@ export function FilterContent({
   onCurrencyChange,
   availability,
   onAvailabilityChange,
+  smartCropEnabled,
+  onSmartCropChange,
 }: FilterContentProps) {
   const { t, locale } = useLocale();
 
@@ -480,15 +477,15 @@ export function FilterContent({
   const japaneseDealers = useMemo(() =>
     facets.dealers
       .filter(d => !DEALER_COUNTRIES[d.name])
-      .sort((a, b) => (DEALER_LABELS[a.name] || a.name).localeCompare(DEALER_LABELS[b.name] || b.name)),
-    [facets.dealers]
+      .sort((a, b) => getDealerDisplayName(a, locale).localeCompare(getDealerDisplayName(b, locale))),
+    [facets.dealers, locale]
   );
 
   const internationalDealers = useMemo(() =>
     facets.dealers
       .filter(d => DEALER_COUNTRIES[d.name])
-      .sort((a, b) => (DEALER_LABELS[a.name] || a.name).localeCompare(DEALER_LABELS[b.name] || b.name)),
-    [facets.dealers]
+      .sort((a, b) => getDealerDisplayName(a, locale).localeCompare(getDealerDisplayName(b, locale))),
+    [facets.dealers, locale]
   );
 
   // Dealer search filtering (elevated variants)
@@ -496,17 +493,19 @@ export function FilterContent({
     if (!dealerSearch) return japaneseDealers;
     const q = dealerSearch.toLowerCase();
     return japaneseDealers.filter(d =>
-      (DEALER_LABELS[d.name] || d.name).toLowerCase().includes(q)
+      getDealerDisplayName(d, locale).toLowerCase().includes(q) ||
+      d.name.toLowerCase().includes(q)
     );
-  }, [japaneseDealers, dealerSearch]);
+  }, [japaneseDealers, dealerSearch, locale]);
 
   const filteredInternationalDealers = useMemo(() => {
     if (!dealerSearch) return internationalDealers;
     const q = dealerSearch.toLowerCase();
     return internationalDealers.filter(d =>
-      (DEALER_LABELS[d.name] || d.name).toLowerCase().includes(q)
+      getDealerDisplayName(d, locale).toLowerCase().includes(q) ||
+      d.name.toLowerCase().includes(q)
     );
-  }, [internationalDealers, dealerSearch]);
+  }, [internationalDealers, dealerSearch, locale]);
 
   // Calculate totals for category tabs
   const nihontoTotal = useMemo(() =>
@@ -639,10 +638,10 @@ export function FilterContent({
     }
     filters.dealers.forEach(id => {
       const d = facets.dealers.find(dl => dl.id === id);
-      if (d) pills.push({ key: `dealer-${id}`, label: DEALER_LABELS[d.name] || d.name, onRemove: () => handleDealerChange(id, false) });
+      if (d) pills.push({ key: `dealer-${id}`, label: getDealerDisplayName(d, locale), onRemove: () => handleDealerChange(id, false) });
     });
     return pills;
-  }, [isA, filters, facets.dealers, onFilterChange, handleCertChange, handleItemTypeChange, handlePeriodChange, handleSignatureChange, handleDealerChange]);
+  }, [isA, filters, facets.dealers, onFilterChange, handleCertChange, handleItemTypeChange, handlePeriodChange, handleSignatureChange, handleDealerChange, locale]);
 
   // Which dealer lists to use
   const jpDealers = elevated ? filteredJapaneseDealers : japaneseDealers;
@@ -917,7 +916,7 @@ export function FilterContent({
               <>
                 <p className={`${isB ? 'text-[10px] tracking-[0.08em]' : 'text-[11px] tracking-wider'} uppercase text-muted font-medium pt-1 ${isB ? 'pb-0.5' : elevated ? 'pb-1' : 'pb-2'}`}>{t('filter.japan')}</p>
                 {jpDealers.map((dealer) => (
-                  <Checkbox key={dealer.id} label={DEALER_LABELS[dealer.name] || dealer.name} count={dealer.count} checked={filters.dealers.includes(dealer.id)} onChange={(checked) => handleDealerChange(dealer.id, checked)} variant={variant} />
+                  <Checkbox key={dealer.id} label={getDealerDisplayName(dealer, locale)} count={dealer.count} checked={filters.dealers.includes(dealer.id)} onChange={(checked) => handleDealerChange(dealer.id, checked)} variant={variant} />
                 ))}
               </>
             )}
@@ -926,7 +925,7 @@ export function FilterContent({
               <>
                 <p className={`${isB ? 'text-[10px] tracking-[0.08em]' : 'text-[11px] tracking-wider'} uppercase text-muted font-medium ${isB ? 'pt-1.5 pb-0.5' : elevated ? 'pt-2 pb-1' : 'pt-4 pb-2'}`}>{t('filter.international')}</p>
                 {intlDealers.map((dealer) => (
-                  <Checkbox key={dealer.id} label={`${DEALER_LABELS[dealer.name] || dealer.name} (${DEALER_COUNTRIES[dealer.name]})`} count={dealer.count} checked={filters.dealers.includes(dealer.id)} onChange={(checked) => handleDealerChange(dealer.id, checked)} variant={variant} />
+                  <Checkbox key={dealer.id} label={`${getDealerDisplayName(dealer, locale)} (${DEALER_COUNTRIES[dealer.name]})`} count={dealer.count} checked={filters.dealers.includes(dealer.id)} onChange={(checked) => handleDealerChange(dealer.id, checked)} variant={variant} />
                 ))}
               </>
             )}
@@ -989,6 +988,25 @@ export function FilterContent({
               </div>
             </label>
             {!isB && <p className="text-[11px] text-muted mt-1">Items without Yuhinkai artisan code match</p>}
+          </div>
+        )}
+
+        {/* Admin: Smart Crop */}
+        {isAdmin && onSmartCropChange && (
+          <div className={`${isB ? 'py-2' : elevated ? 'py-3' : 'py-5'} border-t ${isB ? 'border-gold/20' : 'border-gold/30'}`}>
+            <label className={`flex items-center justify-between cursor-pointer group ${isB ? 'min-h-[28px]' : elevated ? 'min-h-[36px]' : 'min-h-[48px]'}`}>
+              <div className="flex items-center gap-1.5">
+                <span className={`${isB ? 'text-[9px] px-1 py-px' : 'text-[10px] px-1.5 py-0.5'} bg-gold/20 text-gold rounded font-semibold`}>ADMIN</span>
+                <span className={`${isB ? 'text-[12px]' : elevated ? 'text-[13px]' : 'text-[15px] lg:text-[14px]'} text-charcoal group-hover:text-ink transition-colors`}>Smart Crop</span>
+              </div>
+              <div className="relative">
+                <input type="checkbox" checked={smartCropEnabled || false} onChange={(e) => onSmartCropChange(e.target.checked)} className="peer sr-only" />
+                <div className={`${isB ? 'w-8 h-[18px]' : elevated ? 'w-10 h-[22px]' : 'w-12 h-7 lg:w-11 lg:h-6'} rounded-full transition-colors ${smartCropEnabled ? 'bg-gold' : 'bg-border-dark'}`}>
+                  <div className={`absolute ${isB ? 'top-[3px] w-3 h-3' : elevated ? 'top-[3px] w-4 h-4' : 'top-1 w-5 h-5 lg:w-4 lg:h-4'} bg-white rounded-full shadow transition-transform ${smartCropEnabled ? (isB ? 'translate-x-[14px]' : elevated ? 'translate-x-[22px]' : 'translate-x-6 lg:translate-x-6') : 'translate-x-[3px]'}`} />
+                </div>
+              </div>
+            </label>
+            {!isB && <p className="text-[11px] text-muted mt-1">AI focal-point crop vs center-center</p>}
           </div>
         )}
       </div>

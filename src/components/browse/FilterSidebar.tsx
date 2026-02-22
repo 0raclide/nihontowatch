@@ -160,24 +160,6 @@ export function FilterSidebar({ facets, filters, onFilterChange, isAdmin, varian
                   ))}
                 </div>
 
-                {/* Smart Crop toggle (admin-only) */}
-                {panelControls!.isAdmin && panelControls!.onSmartCropChange && (
-                  <div className="mt-2.5 pt-2.5 border-t border-border/15">
-                    <button
-                      onClick={() => panelControls!.onSmartCropChange!(!panelControls!.smartCropEnabled)}
-                      className="flex items-center justify-between w-full group"
-                    >
-                      <span className="text-[10px] uppercase tracking-[0.08em] text-muted/50 font-medium">Smart Crop</span>
-                      <div className={`relative w-8 h-[18px] rounded-full transition-colors ${
-                        panelControls!.smartCropEnabled ? 'bg-gold' : 'bg-border'
-                      }`}>
-                        <div className={`absolute top-[2px] w-[14px] h-[14px] rounded-full bg-white shadow-sm transition-transform ${
-                          panelControls!.smartCropEnabled ? 'translate-x-[16px]' : 'translate-x-[2px]'
-                        }`} />
-                      </div>
-                    </button>
-                  </div>
-                )}
               </div>
             )}
 
@@ -221,6 +203,8 @@ export function FilterSidebar({ facets, filters, onFilterChange, isAdmin, varian
                   priceHistogram={priceHistogram}
                   exchangeRates={exchangeRates}
                   currency={panelControls?.currency}
+                  smartCropEnabled={panelControls?.smartCropEnabled}
+                  onSmartCropChange={panelControls?.onSmartCropChange}
                 />
                 {/* Currency — quiet preference */}
                 {hasPanelCurrency && (
@@ -278,6 +262,8 @@ export function FilterSidebar({ facets, filters, onFilterChange, isAdmin, varian
             isAdmin={isAdmin}
             priceHistogram={priceHistogram}
             exchangeRates={exchangeRates}
+            smartCropEnabled={panelControls?.smartCropEnabled}
+            onSmartCropChange={panelControls?.onSmartCropChange}
           />
         </div>
       </div>
