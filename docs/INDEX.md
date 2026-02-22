@@ -38,6 +38,7 @@
 
 | Document | Date | Summary |
 |----------|------|---------|
+| [SESSION_20260222_FEATURED_SCORE_RECOMPUTE.md](./SESSION_20260222_FEATURED_SCORE_RECOMPUTE.md) | 2026-02-22 | **Inline featured score recompute** — admin cert/artisan/hide actions now update browse ranking immediately (not 4h cron lag), shared scoring module, fire-and-forget serverless postmortem, 65 tests |
 | [SESSION_20260212_CATALOGUE_PUBLICATION_BUG.md](./SESSION_20260212_CATALOGUE_PUBLICATION_BUG.md) | 2026-02-12 | **Catalogue publication invisible on artist page** — HIT041 dual-column mismatch (tosogu maker with sword objects), OR query fix, force-dynamic artist pages |
 | [SESSION_20260212_ARTISAN_NAME_SEARCH.md](./SESSION_20260212_ARTISAN_NAME_SEARCH.md) | 2026-02-12 | **Artisan name resolution in search** — "Soshu Norishige" now finds artisan-matched listings (0→5 results), fixes saved search matcher count bug |
 | [SESSION_20260212_PRICE_SANITY_BUG010.md](./SESSION_20260212_PRICE_SANITY_BUG010.md) | 2026-02-12 | **LLM price extraction fix (BUG-010)** — Choshuya catalog numbers extracted as prices ($5 sword), 4-layer defense, 3 DB fixes, 37 new tests |
@@ -53,6 +54,7 @@
 
 | Document | Date | Issue |
 |----------|------|-------|
+| [SESSION_20260222_FEATURED_SCORE_RECOMPUTE.md](./SESSION_20260222_FEATURED_SCORE_RECOMPUTE.md) | 2026-02-22 | **Fire-and-forget in serverless** — unawaited promises in Vercel freeze before completing; admin score recompute never ran. Fixed: `await` with try/catch |
 | [SESSION_20260212_PRICE_SANITY_BUG010.md](./SESSION_20260212_PRICE_SANITY_BUG010.md) | 2026-02-12 | **BUG-010: LLM price extraction** — Choshuya catalog numbers mistaken for prices, 4-layer defense (LLM sanity, normalizer, prompt, frontend filter), 37 tests |
 | [CERT_EXTRACTION_BUGS.md](./CERT_EXTRACTION_BUGS.md) | Living doc | **Certification extraction bug tracker** — all cert false positives/negatives, patterns, exclusions, diagnostic queries |
 | [POSTMORTEM_STALE_REFRESH_SSL.md](./POSTMORTEM_STALE_REFRESH_SSL.md) | 2026-02-11 | **Nipponto SSL + circuit breaker** — 8/10 runs failed for 48h, SSL fix + per-dealer circuit breaker, 13 golden tests |

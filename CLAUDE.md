@@ -498,6 +498,35 @@ Comprehensive analytics infrastructure already built for dealer monetization:
 
 **Gap for B2B launch:** Dealer self-serve portal (dealers can't log in to see their own data yet)
 
+### Featured Score & Browse Sort Order
+
+The `featured_score` column drives the default sort order in browse. Computed as `(quality + heat) × freshness`:
+
+- **quality (0–395)** = artisan stature (elite_factor × 200 + √elite_count × 18, capped 100) + cert points (0–40) + completeness (0–55: images, price, attribution, measurements, description, era, school, HIGH confidence)
+- **heat (0–160)** = 30-day behavioral data: favorites (×15, cap 60) + clicks (×10, cap 40) + quickview opens (×3, cap 24) + views (×1, cap 20) + pinch zooms (×8, cap 16)
+- **freshness** = age multiplier: <3d→1.4, <7d→1.2, <30d→1.0, <90d→0.85, <180d→0.5, ≥180d→0.3. Initial imports = 1.0.
+- Listings without images → score = 0.
+- `UNKNOWN`/`unknown` artisan IDs → artisan stature = 0.
+
+**Recompute triggers:**
+- **Cron** (every 4h): batch recompute for all available listings via RPC
+- **Admin fix-cert**: recomputes inline after cert correction
+- **Admin fix-artisan**: recomputes inline + syncs elite_factor/elite_count from Yuhinkai
+- **Admin hide**: sets score to 0; unhide restores via recompute
+
+**Important:** All admin endpoint recomputes use `await` (not fire-and-forget). Vercel serverless freezes functions after response is sent — unawaited promises never complete.
+
+**Key files:**
+| Component | Location |
+|-----------|----------|
+| Scoring module | `src/lib/featured/scoring.ts` (shared: `computeQuality`, `computeFreshness`, `computeFeaturedScore`, `recomputeScoreForListing`) |
+| Cron batch recompute | `src/app/api/cron/compute-featured-scores/route.ts` |
+| Fix cert (inline recompute) | `src/app/api/listing/[id]/fix-cert/route.ts` |
+| Fix artisan (inline recompute + elite sync) | `src/app/api/listing/[id]/fix-artisan/route.ts` |
+| Hide/unhide (inline recompute) | `src/app/api/listing/[id]/hide/route.ts` |
+| Tests (65) | `tests/lib/featured/scoring.test.ts` |
+| Session doc | `docs/SESSION_20260222_FEATURED_SCORE_RECOMPUTE.md` |
+
 ### Artisan Code Display & Verification (Admin Feature)
 
 Displays Yuhinkai artisan codes (e.g., "MAS590", "OWA009") on listing cards for admin users, with confidence-based color coding and QA verification.
@@ -615,6 +644,7 @@ For detailed implementation docs, see:
 - `docs/SESSION_20260210_ADMIN_LOCK.md` - Admin artisan lock protection (prevents scraper overwrites)
 - `docs/CATALOGUE_PUBLICATION_PIPE.md` - **Catalogue publication pipe** — Yuhinkai→NihontoWatch content flow (cross-repo)
 - `docs/SESSION_20260220_ADMIN_PANEL_OVERHAUL.md` - Admin panel security, data accuracy & UI overhaul (19 fixes, 3 SQL migrations)
+- `docs/SESSION_20260222_FEATURED_SCORE_RECOMPUTE.md` - Inline featured score recompute on admin actions + serverless fire-and-forget postmortem
 
 ---
 
@@ -684,7 +714,8 @@ Use JSON-LD for:
 6. **Test locally first** - Use `npm run dev` before deploying
 7. **ALWAYS run tests before deploying** - Run `npm test` before any deploy. If tests fail, investigate and fix the issues before proceeding. Never deploy with failing tests.
 8. **NEVER modify tests to match broken code** - If a test fails during refactoring, the TEST IS RIGHT and the code is wrong. Tests exist to catch regressions. Changing a test to make it pass defeats its entire purpose. If a test fails: (1) understand WHY it's failing, (2) fix the CODE, not the test, (3) only modify tests when intentionally changing behavior WITH explicit user approval. This rule exists because we shipped a regression (dealer name → domain) when a test was silently "fixed" to match broken code.
-9. **NEVER use `{ passive: false }` on touchmove listeners** - This is the single most common regression in this codebase. A non-passive `touchmove` on ANY scrollable element (or its ancestors) blocks the compositor from fast-pathing scroll. Chrome DevTools mobile emulation translates two-finger trackpad scroll into touch events — a non-passive listener kills it instantly. This has broken the build **4 separate times** (bottom sheet drag, artisan tooltip drag, image scroller top-bounce prevention, edge swipe dismiss). **The rule:** never call `addEventListener('touchmove', fn, { passive: false })` on or above a scrollable container. If you need to conditionally `preventDefault()` a touch gesture, use a CSS property toggle from a passive `scroll` listener instead (see `docs/POSTMORTEM_PASSIVE_TOUCHMOVE.md` for safe patterns).
+9. **NEVER use fire-and-forget promises in API routes** - Vercel serverless freezes functions the instant the HTTP response is sent. Unawaited promises (`someAsyncFn().catch(...)`) will never complete. Always `await` side effects with `try/catch`. If work genuinely needs to run after the response, use Vercel's `waitUntil()` API. This bit us in the featured score recompute — the DB update never ran (see `docs/SESSION_20260222_FEATURED_SCORE_RECOMPUTE.md`).
+10. **NEVER use `{ passive: false }` on touchmove listeners** - This is the single most common regression in this codebase. A non-passive `touchmove` on ANY scrollable element (or its ancestors) blocks the compositor from fast-pathing scroll. Chrome DevTools mobile emulation translates two-finger trackpad scroll into touch events — a non-passive listener kills it instantly. This has broken the build **4 separate times** (bottom sheet drag, artisan tooltip drag, image scroller top-bounce prevention, edge swipe dismiss). **The rule:** never call `addEventListener('touchmove', fn, { passive: false })` on or above a scrollable container. If you need to conditionally `preventDefault()` a touch gesture, use a CSS property toggle from a passive `scroll` listener instead (see `docs/POSTMORTEM_PASSIVE_TOUCHMOVE.md` for safe patterns).
 
 ---
 
