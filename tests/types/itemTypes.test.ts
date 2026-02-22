@@ -156,16 +156,16 @@ describe('Item Type Classification', () => {
     it('returns correct labels for blade types', () => {
       expect(getItemTypeLabel('katana')).toBe('Katana');
       expect(getItemTypeLabel('wakizashi')).toBe('Wakizashi');
-      expect(getItemTypeLabel('tanto')).toBe('Tantō');
+      expect(getItemTypeLabel('tanto')).toBe('Tanto');
       expect(getItemTypeLabel('kodachi')).toBe('Kodachi');
-      expect(getItemTypeLabel('daisho')).toBe('Daishō');
+      expect(getItemTypeLabel('daisho')).toBe('Daisho');
       expect(getItemTypeLabel('naginata naoshi')).toBe('Naginata-Naoshi');
     });
 
     it('returns correct labels for tosogu types', () => {
       expect(getItemTypeLabel('tsuba')).toBe('Tsuba');
-      expect(getItemTypeLabel('kozuka')).toBe('Kōzuka');
-      expect(getItemTypeLabel('kogai')).toBe('Kōgai');
+      expect(getItemTypeLabel('kozuka')).toBe('Kozuka');
+      expect(getItemTypeLabel('kogai')).toBe('Kogai');
       expect(getItemTypeLabel('futatokoro')).toBe('Futatokoro');
       expect(getItemTypeLabel('mitokoromono')).toBe('Mitokoromono');
     });

@@ -258,7 +258,7 @@ const ITEM_TYPE_LABELS: Record<string, string> = {
   // Nihonto
   katana: 'Katana',
   wakizashi: 'Wakizashi',
-  tanto: 'Tantō',
+  tanto: 'Tanto',
   tachi: 'Tachi',
   naginata: 'Naginata',
   'naginata naoshi': 'Naginata Naoshi',
@@ -274,7 +274,7 @@ const ITEM_TYPE_LABELS: Record<string, string> = {
   kashira: 'Kashira',
   kozuka: 'Kozuka',
   kogatana: 'Kogatana',
-  kogai: 'Kōgai',
+  kogai: 'Kogai',
   menuki: 'Menuki',
   koshirae: 'Koshirae',
   tosogu: 'Tosogu',
