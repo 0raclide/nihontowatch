@@ -34,6 +34,7 @@
 | [ARTISAN_TOOLTIP_VERIFICATION.md](./ARTISAN_TOOLTIP_VERIFICATION.md) | Admin QA tool - click artisan badges for details & verification |
 | [LEGAL_COMPLIANCE.md](./LEGAL_COMPLIANCE.md) | GDPR geo-gated cookie consent — banner only for EU/EEA/UK, middleware cookie, analytics defaults |
 | [LISTING_DATA_LOCALIZATION.md](./LISTING_DATA_LOCALIZATION.md) | **Listing data i18n** — locale-aware titles, descriptions, artisan names (JA/EN), translation toggles, 57 tests |
+| [JAPANESE_UX_RECOMMENDATIONS.md](./JAPANESE_UX_RECOMMENDATIONS.md) | **JA UX research** — design philosophy, typography, density, trust signals, navigation, mobile, forms |
 | [SYNC_ELITE_FACTOR_API.md](./SYNC_ELITE_FACTOR_API.md) | Webhook API for syncing elite_factor from Yuhinkai to listings |
 | [CATALOGUE_PUBLICATION_PIPE.md](./CATALOGUE_PUBLICATION_PIPE.md) | **Catalogue publication pipe** — Yuhinkai→NihontoWatch content flow (cross-repo, oshi-v2 + nihontowatch) |
 
@@ -41,6 +42,7 @@
 
 | Document | Date | Summary |
 |----------|------|---------|
+| [SESSION_20260222_JAPANESE_UX.md](./SESSION_20260222_JAPANESE_UX.md) | 2026-02-22 | **Japanese UX improvements** — JA typography (line-height 1.85, italic→bold), filter expand, nagasa+era cards, freshness timestamps, LINE+Twitter/X share, polite empty states, 14 tests |
 | [SESSION_20260222_FEATURED_SCORE_RECOMPUTE.md](./SESSION_20260222_FEATURED_SCORE_RECOMPUTE.md) | 2026-02-22 | **Inline featured score recompute** — admin cert/artisan/hide actions now update browse ranking immediately (not 4h cron lag), shared scoring module, fire-and-forget serverless postmortem, 65 tests |
 | [SESSION_20260212_CATALOGUE_PUBLICATION_BUG.md](./SESSION_20260212_CATALOGUE_PUBLICATION_BUG.md) | 2026-02-12 | **Catalogue publication invisible on artist page** — HIT041 dual-column mismatch (tosogu maker with sword objects), OR query fix, force-dynamic artist pages |
 | [SESSION_20260212_ARTISAN_NAME_SEARCH.md](./SESSION_20260212_ARTISAN_NAME_SEARCH.md) | 2026-02-12 | **Artisan name resolution in search** — "Soshu Norishige" now finds artisan-matched listings (0→5 results), fixes saved search matcher count bug |
@@ -216,15 +218,20 @@
 
 ### "I need to work on localization / i18n"
 1. Read [LISTING_DATA_LOCALIZATION.md](./LISTING_DATA_LOCALIZATION.md) - Listing data locale-aware rendering
-2. Check `src/i18n/LocaleContext.tsx` - `useLocale()` hook (`locale`, `t()`, `setLocale()`)
-3. Check `src/i18n/locales/en.json` / `ja.json` - ~1090 translation keys
-4. Check `src/components/listing/MetadataGrid.tsx` - `getArtisanInfo(listing, locale)` and `td()` helper
-5. Check `src/components/listing/TranslatedTitle.tsx` - Locale-aware title display
-6. Check `src/components/listing/TranslatedDescription.tsx` - Locale-aware description with toggle
-7. Run `npm test -- listing-data-localization` - 16 pure function tests
-8. Run `npm test -- MetadataGrid-locale` - 13 component tests
-9. Run `npm test -- TranslatedTitle.test` - 9 component tests
-10. Run `npm test -- TranslatedDescription.test` - 13 component tests
+2. Read [SESSION_20260222_JAPANESE_UX.md](./SESSION_20260222_JAPANESE_UX.md) - JA UX tuning (typography, density, trust signals, social share)
+3. Check `src/i18n/LocaleContext.tsx` - `useLocale()` hook (`locale`, `t()`, `setLocale()`)
+4. Check `src/i18n/locales/en.json` / `ja.json` - ~1100 translation keys
+5. Check `src/app/globals.css` - JA typography overrides (`html[lang="ja"]` block)
+6. Check `src/components/listing/MetadataGrid.tsx` - `getArtisanInfo(listing, locale)` and `td()` helper
+7. Check `src/components/listing/TranslatedTitle.tsx` - Locale-aware title display
+8. Check `src/components/listing/TranslatedDescription.tsx` - Locale-aware description with toggle
+9. Check `src/lib/time.ts` - `formatRelativeTime()` shared utility (used by cards)
+10. Check `src/components/share/SocialShareButtons.tsx` - LINE + Twitter/X share buttons
+11. Run `npm test -- listing-data-localization` - 16 pure function tests
+12. Run `npm test -- MetadataGrid-locale` - 13 component tests
+13. Run `npm test -- TranslatedTitle.test` - 9 component tests
+14. Run `npm test -- TranslatedDescription.test` - 13 component tests
+15. Run `npm test -- time.test` - 14 formatRelativeTime tests
 
 ### "I need to work on user behavior tracking or recommendations"
 1. Read [USER_BEHAVIOR_TRACKING.md](./USER_BEHAVIOR_TRACKING.md) - Complete tracking docs

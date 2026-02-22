@@ -17,7 +17,8 @@
 - Artisan code display & search (admin-only badges with confidence levels)
 - Artist directory (`/artists`) with filters, pagination, and sitemap integration
 - Personal collection manager (`/collection`) with Yuhinkai catalog lookup and "I Own This" import
-- Full i18n localization (JA/EN) — UI chrome (1090+ keys) + listing data (titles, descriptions, artisan names)
+- Full i18n localization (JA/EN) — UI chrome (1100+ keys) + listing data (titles, descriptions, artisan names)
+- JA UX tuning — locale-conditional typography, information density, social sharing (LINE), polite empty states
 
 **Trial Mode:** All premium features currently free (toggle via `NEXT_PUBLIC_TRIAL_MODE` env var)
 
@@ -615,6 +616,41 @@ UI chrome (labels, buttons, nav) uses the `useLocale()` hook and `t()` function 
 | JA strings | `src/i18n/locales/ja.json` |
 | Tests (57) | `tests/lib/listing-data-localization.test.ts`, `tests/components/listing/TranslatedTitle.test.tsx`, `tests/components/listing/TranslatedDescription.test.tsx`, `tests/components/listing/listing-data-locale.test.tsx`, `tests/components/listing/MetadataGrid-locale.test.tsx` |
 
+### Japanese UX Tuning (Locale-Conditional)
+
+Beyond i18n string translation, the UI applies locale-conditional UX changes for Japanese users based on established JA web design conventions (*ichimokuryouzen*, *omotenashi*):
+
+**Typography (CSS):**
+- Body line-height 1.85 (vs EN 1.65) — kanji fill full em-box, need more vertical air
+- Heading line-height 1.4 (vs EN 1.25)
+- Italic → bold (`font-weight: 600`) — Japanese has no true italic glyphs; oblique rendering looks broken. Scoped with `:not(:lang(en))` for embedded English
+- Prose translation sections use Noto Sans JP, not Cormorant Garamond
+
+**Information Density:**
+- Filter sidebar: 4 sections (Period, Type, Signature, Dealer) expand by default in JA, collapsed in EN
+- Listing cards: JA-only nagasa (cm) + era metadata row between attribution and price
+- Freshness timestamps: "Confirmed 3h ago" / "3時間前に確認" in price row (desktop only)
+
+**Social Sharing:**
+- LINE share button (JA locale only) + Twitter/X (always visible) on listing detail and QuickView
+- Pure URL-scheme links — no SDKs or API keys
+- Uses `NEXT_PUBLIC_BASE_URL` for SSR-safe absolute URLs
+
+**Empty States:**
+- JA filter empty strings use polite instructive guidance (*omotenashi*) instead of terse labels
+
+**Key files:**
+| Component | Location |
+|-----------|----------|
+| JA typography CSS | `src/app/globals.css` (after `html[lang="ja"]` block) |
+| Filter expand logic | `src/components/browse/FilterContent.tsx` (`defaultOpen={locale === 'ja'}`) |
+| Card nagasa+era+freshness | `src/components/browse/ListingCard.tsx` |
+| Relative time util | `src/lib/time.ts` (`formatRelativeTime()`) |
+| Social share buttons | `src/components/share/SocialShareButtons.tsx` |
+| Tests (14) | `tests/lib/time.test.ts` |
+| Research doc | `docs/JAPANESE_UX_RECOMMENDATIONS.md` |
+| Session doc | `docs/SESSION_20260222_JAPANESE_UX.md` |
+
 ### Artisan Code Display & Verification (Admin Feature)
 
 Displays Yuhinkai artisan codes (e.g., "MAS590", "OWA009") on listing cards for admin users, with confidence-based color coding and QA verification.
@@ -734,6 +770,8 @@ For detailed implementation docs, see:
 - `docs/SESSION_20260220_ADMIN_PANEL_OVERHAUL.md` - Admin panel security, data accuracy & UI overhaul (19 fixes, 3 SQL migrations)
 - `docs/SESSION_20260222_FEATURED_SCORE_RECOMPUTE.md` - Inline featured score recompute on admin actions + serverless fire-and-forget postmortem
 - `docs/SMART_CROP_FOCAL_POINTS.md` - **Smart crop focal points** — AI image cropping, cron pipeline, admin toggle, invalidation trigger
+- `docs/SESSION_20260222_JAPANESE_UX.md` - JA UX improvements — typography, filter expand, card metadata, freshness timestamps, LINE+Twitter/X share, polite empty states
+- `docs/JAPANESE_UX_RECOMMENDATIONS.md` - JA UX research — design philosophy, typography, density, trust signals, navigation patterns
 
 ---
 
