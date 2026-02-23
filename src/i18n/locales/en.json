@@ -76,6 +76,8 @@
   "filter.updating": "Updating...",
   "filter.japan": "Japan",
   "filter.international": "International",
+  "filter.usCanada": "US & Canada",
+  "filter.europeOceania": "Europe & Oceania",
   "filter.reset": "Reset",
 
   "availability.forSale": "For Sale",
@@ -1300,5 +1302,43 @@
 
   "share.line": "LINE",
   "share.twitter": "Post",
-  "share.shareOn": "Share on {platform}"
+  "share.shareOn": "Share on {platform}",
+
+  "provenance.imperial": "Imperial",
+  "provenance.shogunal": "Shogunal",
+  "provenance.premierDaimyo": "Premier Daimy\u014d",
+  "provenance.majorDaimyo": "Major Daimy\u014d",
+  "provenance.otherDaimyo": "Other Daimy\u014d",
+  "provenance.zaibatsu": "Zaibatsu",
+  "provenance.institutions": "Institutions",
+  "provenance.namedCollectors": "Named Collectors",
+
+  "daimyoType.shinpan": "Shinpan",
+  "daimyoType.tozama": "Tozama",
+  "daimyoType.fudai": "Fudai",
+  "daimyoType.gosanke": "Gosanke",
+  "daimyoType.gosankyo": "Gosanky\u014d",
+  "daimyoType.imperial": "Imperial",
+  "daimyoType.shogunal": "Shogunal",
+  "daimyoType.institution": "Institution",
+  "daimyoType.shrine": "Shrine",
+  "daimyoType.zaibatsu": "Zaibatsu",
+  "daimyoType.merchant": "Merchant",
+  "daimyoType.court": "Court",
+  "daimyoType.person": "Collector",
+
+  "measurement.nagasa": "Nagasa",
+  "measurement.sori": "Sori",
+  "measurement.motohaba": "Motohaba",
+  "measurement.sakihaba": "Sakihaba",
+
+  "artist.returnToListing": "Return to listing",
+  "artist.dismiss": "Dismiss",
+  "artist.sectionNavLabel": "Section navigation",
+  "artist.previousSection": "Previous section",
+  "artist.jumpToSection": "Jump to section",
+  "artist.nextSection": "Next section",
+  "artist.profileNavLabel": "Artist profile navigation",
+
+  "nav.menu": "Menu"
 }

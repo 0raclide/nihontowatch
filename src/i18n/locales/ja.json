@@ -76,6 +76,8 @@
   "filter.updating": "\u66f4\u65b0\u4e2d...",
   "filter.japan": "\u65e5\u672c",
   "filter.international": "\u6d77\u5916",
+  "filter.usCanada": "\u30a2\u30e1\u30ea\u30ab\u30fb\u30ab\u30ca\u30c0",
+  "filter.europeOceania": "\u6b27\u5dde\u30fb\u30aa\u30bb\u30a2\u30cb\u30a2",
   "filter.reset": "\u30ea\u30bb\u30c3\u30c8",
 
   "availability.forSale": "\u8ca9\u58f2\u4e2d",
@@ -1300,5 +1302,43 @@
 
   "share.line": "LINE",
   "share.twitter": "ポスト",
-  "share.shareOn": "{platform}で共有"
+  "share.shareOn": "{platform}で共有",
+
+  "provenance.imperial": "皇室",
+  "provenance.shogunal": "将軍家",
+  "provenance.premierDaimyo": "有力大名",
+  "provenance.majorDaimyo": "大大名",
+  "provenance.otherDaimyo": "諸大名",
+  "provenance.zaibatsu": "財閥",
+  "provenance.institutions": "文化施設",
+  "provenance.namedCollectors": "著名収集家",
+
+  "daimyoType.shinpan": "親藩",
+  "daimyoType.tozama": "外様",
+  "daimyoType.fudai": "譜代",
+  "daimyoType.gosanke": "御三家",
+  "daimyoType.gosankyo": "御三卿",
+  "daimyoType.imperial": "皇室",
+  "daimyoType.shogunal": "将軍家",
+  "daimyoType.institution": "文化施設",
+  "daimyoType.shrine": "神社",
+  "daimyoType.zaibatsu": "財閥",
+  "daimyoType.merchant": "商家",
+  "daimyoType.court": "公家",
+  "daimyoType.person": "収集家",
+
+  "measurement.nagasa": "刃長",
+  "measurement.sori": "反り",
+  "measurement.motohaba": "元幅",
+  "measurement.sakihaba": "先幅",
+
+  "artist.returnToListing": "商品に戻る",
+  "artist.dismiss": "閉じる",
+  "artist.sectionNavLabel": "セクションナビゲーション",
+  "artist.previousSection": "前のセクション",
+  "artist.jumpToSection": "セクションへ移動",
+  "artist.nextSection": "次のセクション",
+  "artist.profileNavLabel": "刀工プロフィールナビゲーション",
+
+  "nav.menu": "メニュー"
 }

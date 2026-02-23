@@ -208,6 +208,63 @@ const Checkbox = memo(function Checkbox({
   );
 });
 
+const GroupHeader = memo(function GroupHeader({
+  label,
+  dealers,
+  selectedDealerIds,
+  onToggle,
+  variant,
+  first,
+}: {
+  label: string;
+  dealers: DealerFacet[];
+  selectedDealerIds: number[];
+  onToggle: (dealerIds: number[], selectAll: boolean) => void;
+  variant?: SidebarVariant;
+  first?: boolean;
+}) {
+  const groupIds = dealers.map(d => d.id);
+  const selectedCount = groupIds.filter(id => selectedDealerIds.includes(id)).length;
+  const isAll = selectedCount === groupIds.length;
+  const isNone = selectedCount === 0;
+  const isIndeterminate = !isAll && !isNone;
+
+  const isB = variant === 'b';
+  const elevated = variant === 'a' || variant === 'b';
+
+  return (
+    <button
+      type="button"
+      onClick={() => onToggle(groupIds, !isAll)}
+      className={`flex items-center gap-1.5 w-full text-left group ${isB ? (first ? 'pt-0.5 pb-0.5' : 'pt-1.5 pb-0.5') : elevated ? (first ? 'pt-1 pb-1' : 'pt-2 pb-1') : (first ? 'pt-1 pb-2' : 'pt-4 pb-2')}`}
+    >
+      <div className="relative flex-shrink-0">
+        <div className={`${isB ? 'w-[11px] h-[11px] rounded-[1.5px]' : 'w-[13px] h-[13px] rounded-[2px]'} border-[1.5px] transition-all duration-150 ${
+          isAll
+            ? 'border-gold bg-gold'
+            : isIndeterminate
+              ? 'border-gold bg-gold'
+              : isB ? 'border-border/60 group-hover:border-border' : 'border-charcoal/30 group-hover:border-charcoal/50'
+        }`}>
+          {isAll && (
+            <svg className={`${isB ? 'w-[11px] h-[11px]' : 'w-[13px] h-[13px]'} text-white`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+            </svg>
+          )}
+          {isIndeterminate && (
+            <svg className={`${isB ? 'w-[11px] h-[11px]' : 'w-[13px] h-[13px]'} text-white`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 12h14" />
+            </svg>
+          )}
+        </div>
+      </div>
+      <span className={`${isB ? 'text-[10px] tracking-[0.08em]' : 'text-[11px] tracking-wider'} uppercase text-muted font-medium`}>
+        {label}
+      </span>
+    </button>
+  );
+});
+
 // Nihonto (swords/blades)
 const NIHONTO_TYPES = ['katana', 'wakizashi', 'tanto', 'tachi', 'naginata', 'yari', 'kodachi', 'ken', 'naginata naoshi', 'sword'];
 
@@ -344,20 +401,29 @@ const PERIOD_LABELS: Record<string, string> = {
   Reiwa: 'Reiwa',
 };
 
-// Non-Japanese dealer countries (all others are Japan)
-const DEALER_COUNTRIES: Record<string, string> = {
-  'Legacy Swords': 'USA',
-  'Nihon Art': 'USA',
-  'Nihonto': 'USA',
-  'Nihonto Art': 'Canada',
+// International dealer region mapping (all others are Japan)
+const DEALER_REGIONS: Record<string, 'us_canada' | 'europe_oceania'> = {
+  'Legacy Swords': 'us_canada',
+  'Nihon Art': 'us_canada',
+  'Nihonto': 'us_canada',
+  'Nihonto Art': 'us_canada',
+  'Nihontocraft': 'us_canada',
+  'SamuraiSword': 'us_canada',
+  'Swords of Japan': 'us_canada',
+  'Tetsugendo': 'us_canada',
+  'Katana Sword': 'us_canada',
+  'Giuseppe Piva': 'europe_oceania',
+  'Nihonto Art EU': 'europe_oceania',
+  'Nihonto Australia': 'europe_oceania',
+  'Soryu': 'europe_oceania',
+  'Tsuba Info': 'europe_oceania',
+};
+
+// Country labels for Europe & Oceania dealers (shown as suffix)
+const DEALER_COUNTRY_LABELS: Record<string, string> = {
+  'Giuseppe Piva': 'Italy',
   'Nihonto Art EU': 'FRA',
   'Nihonto Australia': 'AU',
-  'Nihontocraft': 'USA',
-  'SamuraiSword': 'USA',
-  'Swords of Japan': 'USA',
-  'Tetsugendo': 'USA',
-  'Giuseppe Piva': 'Italy',
-  'Katana Sword': 'USA',
   'Soryu': 'Poland',
   'Tsuba Info': 'NL',
 };
@@ -476,17 +542,24 @@ export function FilterContent({
       });
   }, [facets.certifications]);
 
-  // Group dealers by geography (Japan vs International), sorted alphabetically
+  // Group dealers by geography (Japan / US & Canada / Europe & Oceania), sorted alphabetically
   const japaneseDealers = useMemo(() =>
     facets.dealers
-      .filter(d => !DEALER_COUNTRIES[d.name])
+      .filter(d => !DEALER_REGIONS[d.name])
       .sort((a, b) => getDealerDisplayName(a, locale).localeCompare(getDealerDisplayName(b, locale), locale)),
     [facets.dealers, locale]
   );
 
-  const internationalDealers = useMemo(() =>
+  const usCanadaDealers = useMemo(() =>
     facets.dealers
-      .filter(d => DEALER_COUNTRIES[d.name])
+      .filter(d => DEALER_REGIONS[d.name] === 'us_canada')
+      .sort((a, b) => getDealerDisplayName(a, locale).localeCompare(getDealerDisplayName(b, locale), locale)),
+    [facets.dealers, locale]
+  );
+
+  const europeOceaniaDealers = useMemo(() =>
+    facets.dealers
+      .filter(d => DEALER_REGIONS[d.name] === 'europe_oceania')
       .sort((a, b) => getDealerDisplayName(a, locale).localeCompare(getDealerDisplayName(b, locale), locale)),
     [facets.dealers, locale]
   );
@@ -501,14 +574,23 @@ export function FilterContent({
     );
   }, [japaneseDealers, dealerSearch, locale]);
 
-  const filteredInternationalDealers = useMemo(() => {
-    if (!dealerSearch) return internationalDealers;
+  const filteredUsCanadaDealers = useMemo(() => {
+    if (!dealerSearch) return usCanadaDealers;
     const q = dealerSearch.toLowerCase();
-    return internationalDealers.filter(d =>
+    return usCanadaDealers.filter(d =>
       getDealerDisplayName(d, locale).toLowerCase().includes(q) ||
       d.name.toLowerCase().includes(q)
     );
-  }, [internationalDealers, dealerSearch, locale]);
+  }, [usCanadaDealers, dealerSearch, locale]);
+
+  const filteredEuropeOceaniaDealers = useMemo(() => {
+    if (!dealerSearch) return europeOceaniaDealers;
+    const q = dealerSearch.toLowerCase();
+    return europeOceaniaDealers.filter(d =>
+      getDealerDisplayName(d, locale).toLowerCase().includes(q) ||
+      d.name.toLowerCase().includes(q)
+    );
+  }, [europeOceaniaDealers, dealerSearch, locale]);
 
   // Calculate totals for category tabs
   const nihontoTotal = useMemo(() =>
@@ -563,6 +645,16 @@ export function FilterContent({
     },
     [filters.dealers, onFilterChange]
   );
+
+  const handleDealerGroupToggle = useCallback((dealerIds: number[], selectAll: boolean) => {
+    const current = filters.dealers;
+    if (selectAll) {
+      const merged = [...new Set([...current, ...dealerIds])];
+      onFilterChange('dealers', merged);
+    } else {
+      onFilterChange('dealers', current.filter(id => !dealerIds.includes(id)));
+    }
+  }, [filters.dealers, onFilterChange]);
 
   const handlePeriodChange = useCallback(
     (period: string, checked: boolean) => {
@@ -648,7 +740,8 @@ export function FilterContent({
 
   // Which dealer lists to use
   const jpDealers = elevated ? filteredJapaneseDealers : japaneseDealers;
-  const intlDealers = elevated ? filteredInternationalDealers : internationalDealers;
+  const usDealers = elevated ? filteredUsCanadaDealers : usCanadaDealers;
+  const euDealers = elevated ? filteredEuropeOceaniaDealers : europeOceaniaDealers;
 
   return (
     <div className={elevated ? 'pb-4' : 'px-4 lg:px-0 pb-6'}>
@@ -917,22 +1010,31 @@ export function FilterContent({
             {/* Japan dealers */}
             {jpDealers.length > 0 && (
               <>
-                <p className={`${isB ? 'text-[10px] tracking-[0.08em]' : 'text-[11px] tracking-wider'} uppercase text-muted font-medium pt-1 ${isB ? 'pb-0.5' : elevated ? 'pb-1' : 'pb-2'}`}>{t('filter.japan')}</p>
+                <GroupHeader label={t('filter.japan')} dealers={jpDealers} selectedDealerIds={filters.dealers} onToggle={handleDealerGroupToggle} variant={variant} first />
                 {jpDealers.map((dealer) => (
                   <Checkbox key={dealer.id} label={getDealerDisplayName(dealer, locale)} count={dealer.count} checked={filters.dealers.includes(dealer.id)} onChange={(checked) => handleDealerChange(dealer.id, checked)} variant={variant} />
                 ))}
               </>
             )}
-            {/* International dealers */}
-            {intlDealers.length > 0 && (
+            {/* US & Canada dealers */}
+            {usDealers.length > 0 && (
               <>
-                <p className={`${isB ? 'text-[10px] tracking-[0.08em]' : 'text-[11px] tracking-wider'} uppercase text-muted font-medium ${isB ? 'pt-1.5 pb-0.5' : elevated ? 'pt-2 pb-1' : 'pt-4 pb-2'}`}>{t('filter.international')}</p>
-                {intlDealers.map((dealer) => (
-                  <Checkbox key={dealer.id} label={`${getDealerDisplayName(dealer, locale)} (${DEALER_COUNTRIES[dealer.name]})`} count={dealer.count} checked={filters.dealers.includes(dealer.id)} onChange={(checked) => handleDealerChange(dealer.id, checked)} variant={variant} />
+                <GroupHeader label={t('filter.usCanada')} dealers={usDealers} selectedDealerIds={filters.dealers} onToggle={handleDealerGroupToggle} variant={variant} />
+                {usDealers.map((dealer) => (
+                  <Checkbox key={dealer.id} label={getDealerDisplayName(dealer, locale)} count={dealer.count} checked={filters.dealers.includes(dealer.id)} onChange={(checked) => handleDealerChange(dealer.id, checked)} variant={variant} />
                 ))}
               </>
             )}
-            {elevated && filteredJapaneseDealers.length === 0 && filteredInternationalDealers.length === 0 && dealerSearch && (
+            {/* Europe & Oceania dealers */}
+            {euDealers.length > 0 && (
+              <>
+                <GroupHeader label={t('filter.europeOceania')} dealers={euDealers} selectedDealerIds={filters.dealers} onToggle={handleDealerGroupToggle} variant={variant} />
+                {euDealers.map((dealer) => (
+                  <Checkbox key={dealer.id} label={`${getDealerDisplayName(dealer, locale)}${DEALER_COUNTRY_LABELS[dealer.name] ? ` (${DEALER_COUNTRY_LABELS[dealer.name]})` : ''}`} count={dealer.count} checked={filters.dealers.includes(dealer.id)} onChange={(checked) => handleDealerChange(dealer.id, checked)} variant={variant} />
+                ))}
+              </>
+            )}
+            {elevated && filteredJapaneseDealers.length === 0 && filteredUsCanadaDealers.length === 0 && filteredEuropeOceaniaDealers.length === 0 && dealerSearch && (
               <p className={`${isB ? 'text-[11px]' : 'text-[12px]'} text-muted italic py-2`}>{t('filter.noDealersMatch', { q: dealerSearch })}</p>
             )}
             {facets.dealers.length === 0 && <p className={`${isB ? 'text-[11px]' : 'text-[14px]'} text-muted italic py-2`}>{t('filter.noDealers')}</p>}
