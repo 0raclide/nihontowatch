@@ -2328,6 +2328,32 @@ export async function getDenraiGrouped(
     }
   }
 
+  // Fetch name_ja for parent_canonical values not already in canonicalMap.
+  // Parent names like "Honda Family" may never appear as direct owner strings,
+  // so they weren't fetched in getDenraiForArtisan's Phase 2 query.
+  const missingParents = [...new Set(parentMap.values())].filter(p => !canonicalMap.has(p));
+  if (missingParents.length > 0) {
+    const BATCH_SIZE = 200;
+    for (let i = 0; i < missingParents.length; i += BATCH_SIZE) {
+      const batch = missingParents.slice(i, i + BATCH_SIZE);
+      const { data: parentRows } = await yuhinkaiClient
+        .from('denrai_canonical_names')
+        .select('canonical_name, parent_canonical, category, name_ja')
+        .in('canonical_name', batch);
+      if (parentRows) {
+        for (const row of parentRows) {
+          if (row.canonical_name) {
+            canonicalMap.set(row.canonical_name, {
+              parent: row.parent_canonical || null,
+              category: row.category || null,
+              name_ja: row.name_ja || null,
+            });
+          }
+        }
+      }
+    }
+  }
+
   // Group by parent_canonical (or self if no parent)
   const groupMap = new Map<string, Array<{ owner: string; count: number }>>();
   for (const d of flat) {
