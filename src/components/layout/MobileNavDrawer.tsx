@@ -15,7 +15,7 @@ export function MobileNavDrawer() {
   const { navDrawerOpen, closeNavDrawer } = useMobileUI();
   const { user, profile, isAdmin, signOut, isLoading: authLoading } = useAuth();
   const { openPreferences } = useConsent();
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const [showLoginModal, setShowLoginModal] = useState(false);
 
   const displayName = profile?.display_name || user?.email?.split('@')[0] || 'User';
@@ -138,13 +138,15 @@ export function MobileNavDrawer() {
           >
             {t('nav.artists')}
           </Link>
-          <Link
-            href="/glossary"
-            onClick={closeNavDrawer}
-            className="flex items-center px-4 py-3 text-[13px] uppercase tracking-[0.15em] text-text-secondary hover:bg-hover rounded-lg transition-colors"
-          >
-            {t('nav.glossary')}
-          </Link>
+          {locale !== 'ja' && (
+            <Link
+              href="/glossary"
+              onClick={closeNavDrawer}
+              className="flex items-center px-4 py-3 text-[13px] uppercase tracking-[0.15em] text-text-secondary hover:bg-hover rounded-lg transition-colors"
+            >
+              {t('nav.glossary')}
+            </Link>
+          )}
 
           <div className="h-px bg-border/50 my-4" />
 

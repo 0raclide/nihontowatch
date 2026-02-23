@@ -4,6 +4,7 @@ import React, { useMemo, memo } from 'react';
 import ReactMarkdown, { Components } from 'react-markdown';
 import { GlossaryTerm } from './GlossaryTerm';
 import { segmentText } from '@/lib/glossary/highlighter';
+import { useLocale } from '@/i18n/LocaleContext';
 
 interface HighlightedMarkdownProps {
   content: string;
@@ -189,6 +190,67 @@ const translationComponents: Components = {
 };
 
 /**
+ * Translation variant without glossary highlighting — used for JA locale.
+ * Same scholarly typography, no term detection overhead.
+ */
+const translationComponentsPlain: Components = {
+  h1: ({ children }) => (
+    <h1 className="text-base font-medium text-ink mt-0 mb-4 pb-2 border-b border-border">
+      {children}
+    </h1>
+  ),
+  h2: ({ children }) => (
+    <h2 className="text-[14px] font-medium text-ink mt-7 mb-3">{children}</h2>
+  ),
+  h3: ({ children }) => (
+    <h3 className="text-[13px] font-medium text-ink mt-5 mb-2">{children}</h3>
+  ),
+  h4: ({ children }) => (
+    <h4 className="text-[13px] font-medium text-ink mt-4 mb-2">{children}</h4>
+  ),
+  p: ({ children }) => (
+    <p className="mb-5 last:mb-0">{children}</p>
+  ),
+  strong: ({ children }) => (
+    <strong className="font-semibold text-ink">{children}</strong>
+  ),
+  em: ({ children }) => <em>{children}</em>,
+  br: () => <span className="block h-3" />,
+  ul: ({ children }) => (
+    <ul className="my-4 pl-5 space-y-2 list-disc list-outside marker:text-muted">
+      {children}
+    </ul>
+  ),
+  ol: ({ children }) => (
+    <ol className="my-4 pl-5 space-y-2 list-decimal list-outside marker:text-muted">
+      {children}
+    </ol>
+  ),
+  blockquote: ({ children }) => (
+    <blockquote className="border-l-2 border-gold pl-4 my-4 text-muted italic">
+      {children}
+    </blockquote>
+  ),
+  hr: () => <hr className="my-6 border-border" />,
+  table: ({ children }) => (
+    <table className="w-full border-collapse text-[13px] my-4">{children}</table>
+  ),
+  th: ({ children }) => (
+    <th className="border border-border px-3 py-2 bg-surface-elevated font-medium text-ink text-left">
+      {children}
+    </th>
+  ),
+  td: ({ children }) => (
+    <td className="border border-border px-3 py-2">{children}</td>
+  ),
+  a: ({ children, href }) => (
+    <a href={href} className="text-gold hover:text-gold-light hover:underline">
+      {children}
+    </a>
+  ),
+};
+
+/**
  * HighlightedMarkdown component
  * Renders markdown with glossary term highlighting
  *
@@ -196,7 +258,13 @@ const translationComponents: Components = {
  * @param variant - 'default' uses minimal styling, 'translation' uses scholarly typography
  */
 export function HighlightedMarkdown({ content, variant = 'default' }: HighlightedMarkdownProps) {
-  const components = variant === 'translation' ? translationComponents : markdownComponents;
+  const { locale } = useLocale();
+
+  // Skip glossary term highlighting in JA locale — Japanese users
+  // already know the terminology; the glossary serves EN readers only.
+  const components = locale === 'ja'
+    ? (variant === 'translation' ? translationComponentsPlain : undefined)
+    : (variant === 'translation' ? translationComponents : markdownComponents);
 
   return (
     <ReactMarkdown components={components}>

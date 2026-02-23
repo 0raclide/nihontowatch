@@ -24,7 +24,7 @@ function HeaderContent() {
   const pathname = usePathname();
   const currentQuery = searchParams.get('q') || '';
   const loginParam = searchParams.get('login');
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const isArtistPage = pathname.startsWith('/artists');
   const searchAction = isArtistPage ? '/artists' : '/';
   const searchPlaceholder = isArtistPage ? t('search.artistPlaceholder') : t('search.placeholder');
@@ -331,12 +331,14 @@ function HeaderContent() {
               >
                 {t('nav.artists')}
               </Link>
-              <Link
-                href="/glossary"
-                className="text-[11px] uppercase tracking-[0.2em] text-muted hover:text-gold transition-colors"
-              >
-                {t('nav.glossary')}
-              </Link>
+              {locale !== 'ja' && (
+                <Link
+                  href="/glossary"
+                  className="text-[11px] uppercase tracking-[0.2em] text-muted hover:text-gold transition-colors"
+                >
+                  {t('nav.glossary')}
+                </Link>
+              )}
               <NotificationBell />
               {user && process.env.NEXT_PUBLIC_COLLECTION_ENABLED === 'true' && (
                 <Link

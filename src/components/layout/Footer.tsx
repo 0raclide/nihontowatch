@@ -9,7 +9,7 @@ const headingClass = 'text-[11px] uppercase tracking-wider text-ink font-medium 
 
 export function Footer() {
   const { openPreferences } = useConsent();
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
 
   return (
     <footer className="border-t border-border bg-surface/30 mt-auto">
@@ -57,7 +57,9 @@ export function Footer() {
             <ul className="space-y-2">
               <li><Link href="/dealers" className={linkClass}>{t('footer.dealerDirectory')}</Link></li>
               <li><Link href="/artists" className={linkClass}>{t('footer.artistDirectory')}</Link></li>
-              <li><Link href="/glossary" className={linkClass}>{t('footer.glossary')}</Link></li>
+              {locale !== 'ja' && (
+                <li><Link href="/glossary" className={linkClass}>{t('footer.glossary')}</Link></li>
+              )}
               <li><Link href="/" className={linkClass}>{t('footer.browseAll')}</Link></li>
             </ul>
           </div>
