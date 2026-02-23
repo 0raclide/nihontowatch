@@ -3,16 +3,17 @@
  *
  * Tests cover:
  * - Hidden when no filters are active
- * - Visible when filters are active
+ * - Visible when filters are active (including category-only)
  * - Quick-save creates search with instant frequency
  * - Shows success toast after saving
+ * - Shows error toast when save fails
  * - Dismiss persists via sessionStorage
  * - Paywall gating for non-subscribers
  * - Login modal for unauthenticated users
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { MobileAlertBar } from '@/components/browse/MobileAlertBar';
 import type { SavedSearchCriteria } from '@/types';
 
@@ -158,6 +159,15 @@ describe('MobileAlertBar', () => {
       expect(screen.getByText('Get alerts for this search')).toBeInTheDocument();
     });
 
+    it('renders when only category is set', () => {
+      render(
+        <MobileAlertBar
+          criteria={{ ...emptyCriteria, category: 'nihonto' }}
+        />
+      );
+      expect(screen.getByText('Get alerts for this search')).toBeInTheDocument();
+    });
+
     it('does not render when dismissed', () => {
       sessionStorage.setItem('mobileAlertBarDismissed', 'true');
 
@@ -214,6 +224,62 @@ describe('MobileAlertBar', () => {
 
       expect(screen.getByTestId('login-modal')).toBeInTheDocument();
       expect(mockCreateSavedSearch).not.toHaveBeenCalled();
+    });
+
+    it('shows error toast when save fails', async () => {
+      mockCreateSavedSearch.mockResolvedValue(null);
+
+      render(<MobileAlertBar criteria={filteredCriteria} />);
+      fireEvent.click(screen.getByText('Save'));
+
+      await waitFor(() => {
+        expect(screen.getByText('Could not save alert. Try again.')).toBeInTheDocument();
+      });
+    });
+
+    it('error toast auto-clears after timeout', async () => {
+      vi.useFakeTimers();
+      mockCreateSavedSearch.mockResolvedValue(null);
+
+      render(<MobileAlertBar criteria={filteredCriteria} />);
+
+      // Click and flush microtasks so the async handler resolves
+      await act(async () => {
+        fireEvent.click(screen.getByText('Save'));
+      });
+
+      expect(screen.getByText('Could not save alert. Try again.')).toBeInTheDocument();
+
+      // Advance past the 3s auto-clear timeout
+      act(() => {
+        vi.advanceTimersByTime(3100);
+      });
+
+      // Bar should return to normal prompt state
+      expect(screen.queryByText('Could not save alert. Try again.')).not.toBeInTheDocument();
+      expect(screen.getByText('Get alerts for this search')).toBeInTheDocument();
+
+      vi.useRealTimers();
+    });
+
+    it('saves successfully with category-only criteria', async () => {
+      const categoryOnly: SavedSearchCriteria = {
+        ...emptyCriteria,
+        category: 'nihonto',
+      };
+      mockCreateSavedSearch.mockResolvedValue({ id: 'ss-cat' });
+
+      render(<MobileAlertBar criteria={categoryOnly} />);
+      fireEvent.click(screen.getByText('Save'));
+
+      expect(mockCreateSavedSearch).toHaveBeenCalledWith({
+        search_criteria: categoryOnly,
+        notification_frequency: 'instant',
+      });
+
+      await waitFor(() => {
+        expect(screen.getByText("Saved! You'll get instant alerts.")).toBeInTheDocument();
+      });
     });
   });
 

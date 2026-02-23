@@ -378,6 +378,7 @@
   "mobileAlert.save": "Save",
   "mobileAlert.saved": "Saved! You'll get instant alerts.",
   "mobileAlert.dismiss": "Dismiss",
+  "mobileAlert.error": "Could not save alert. Try again.",
 
   "notifications.title": "Notifications",
   "notifications.viewAll": "View all",
@@ -1340,5 +1341,32 @@
   "artist.nextSection": "Next section",
   "artist.profileNavLabel": "Artist profile navigation",
 
-  "nav.menu": "Menu"
+  "nav.menu": "Menu",
+  "nav.search": "Search",
+  "nav.mainNavigation": "Main navigation",
+
+  "search.drawerTitle": "Search",
+  "search.popularArtists": "Popular Artists",
+  "search.popularSearches": "Popular Searches",
+  "search.tips": "Search Tips",
+  "search.tipByName": "By name: \"Masamune\" or \"\u6b63\u5b97\"",
+  "search.tipBySchool": "By school: \"Soshu\" or \"Bizen\"",
+  "search.tipByCode": "By code: \"MAS590\" or \"OWA009\"",
+  "search.tipCombine": "Combine: \"bizen juyo katana\"",
+  "search.tipBySize": "By size: \"cm>70\" or \"nagasa<65\"",
+  "search.tipByPrice": "By price: \"usd>5000\" or \"eur<2000\"",
+
+  "listing.notFound": "Listing not found",
+  "listing.backToBrowse": "Back to Browse",
+  "listing.soldPrice": "Sold price",
+  "listing.unknownDealer": "Unknown Dealer",
+  "listing.viewSimilar": "View Similar Items",
+  "listing.setAlert": "Set Alert",
+  "listing.viewOnDealer": "View on {dealer}",
+  "listing.photoAlt": "{title} - Photo {n}",
+
+  "theme.selectorLoading": "Theme selector loading",
+  "theme.selectTheme": "Select theme",
+  "theme.options": "Theme options",
+  "theme.followOS": "Follow OS preference"
 }

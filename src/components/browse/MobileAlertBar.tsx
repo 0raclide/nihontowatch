@@ -27,6 +27,7 @@ export function MobileAlertBar({ criteria }: MobileAlertBarProps) {
     return sessionStorage.getItem('mobileAlertBarDismissed') === 'true';
   });
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState(false);
 
   // Check if there are any active filters worth saving
   const hasFilters =
@@ -47,6 +48,7 @@ export function MobileAlertBar({ criteria }: MobileAlertBarProps) {
       return;
     }
 
+    setSaveError(false);
     const result = await createSavedSearch({
       search_criteria: criteria,
       notification_frequency: 'instant',
@@ -58,6 +60,9 @@ export function MobileAlertBar({ criteria }: MobileAlertBarProps) {
         setDismissed(true);
         sessionStorage.setItem('mobileAlertBarDismissed', 'true');
       }, 2500);
+    } else {
+      setSaveError(true);
+      setTimeout(() => setSaveError(false), 3000);
     }
   }, [requireFeature, user, createSavedSearch, criteria]);
 
@@ -80,6 +85,16 @@ export function MobileAlertBar({ criteria }: MobileAlertBarProps) {
             </svg>
             <span className="text-[12px] font-medium text-green-700 dark:text-green-400">
               {t('mobileAlert.saved')}
+            </span>
+          </div>
+        ) : saveError ? (
+          // Error toast state
+          <div className="flex items-center justify-center gap-2 h-7">
+            <svg className="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span className="text-[12px] font-medium text-red-600 dark:text-red-400">
+              {t('mobileAlert.error')}
             </span>
           </div>
         ) : (
