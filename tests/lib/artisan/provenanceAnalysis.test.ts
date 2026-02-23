@@ -16,8 +16,9 @@ import {
 
 type DenraiGroupInput = Array<{
   parent: string;
+  parent_ja: string | null;
   totalCount: number;
-  children: Array<{ owner: string; count: number }>;
+  children: Array<{ owner: string; owner_ja: string | null; count: number }>;
   isGroup: boolean;
 }>;
 
@@ -25,8 +26,9 @@ type DenraiGroupInput = Array<{
 function flat(entries: Array<[string, number]>): DenraiGroupInput {
   return entries.map(([owner, count]) => ({
     parent: owner,
+    parent_ja: null,
     totalCount: count,
-    children: [{ owner, count }],
+    children: [{ owner, owner_ja: null, count }],
     isGroup: false,
   }));
 }
@@ -36,9 +38,10 @@ function group(
   parent: string,
   children: Array<[string, number]>
 ): DenraiGroupInput[0] {
-  const childEntries = children.map(([name, count]) => ({ owner: name, count }));
+  const childEntries = children.map(([name, count]) => ({ owner: name, owner_ja: null, count }));
   return {
     parent,
+    parent_ja: null,
     totalCount: childEntries.reduce((sum, c) => sum + c.count, 0),
     children: childEntries,
     isGroup: children.length > 1,

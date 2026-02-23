@@ -273,8 +273,9 @@ describe('Frontend PROVENANCE_TIERS matches SQL tier boundaries', () => {
 
     const data = [{
       parent: 'Tokugawa Family',
+      parent_ja: null,
       totalCount: 20,
-      children: [{ owner: 'Tokugawa Family', count: 20 }],
+      children: [{ owner: 'Tokugawa Family', owner_ja: null, count: 20 }],
       isGroup: false,
     }];
 

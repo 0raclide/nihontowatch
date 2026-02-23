@@ -2126,7 +2126,7 @@ export async function getPublishedCatalogueEntries(
 export interface DenraiResult {
   owners: Array<{ owner: string; count: number }>;
   itemCount: number;  // unique items with provenance data
-  canonicalMap: Map<string, { parent: string | null; category: string | null }>;
+  canonicalMap: Map<string, { parent: string | null; category: string | null; name_ja: string | null }>;
 }
 
 /**
@@ -2140,7 +2140,7 @@ export interface DenraiResult {
  */
 export function dedupWithinItem(
   owners: string[],
-  canonicalMap: Map<string, { parent: string | null; category: string | null }>
+  canonicalMap: Map<string, { parent: string | null; category: string | null; name_ja: string | null }>
 ): string[] {
   // Group owners by groupKey = parent || self
   const groups = new Map<string, Array<{ owner: string; category: string | null }>>();
@@ -2227,8 +2227,8 @@ export async function getDenraiForArtisan(
     return { owners: [], itemCount: data.length, canonicalMap: new Map() };
   }
 
-  // Phase 2: Fetch canonical_name, parent_canonical, category from denrai_canonical_names
-  const canonicalMap = new Map<string, { parent: string | null; category: string | null }>();
+  // Phase 2: Fetch canonical_name, parent_canonical, category, name_ja from denrai_canonical_names
+  const canonicalMap = new Map<string, { parent: string | null; category: string | null; name_ja: string | null }>();
   const ownerNameArray = [...allOwnerNames];
   const BATCH_SIZE = 200;
 
@@ -2236,7 +2236,7 @@ export async function getDenraiForArtisan(
     const batch = ownerNameArray.slice(i, i + BATCH_SIZE);
     const { data: mappings } = await yuhinkaiClient
       .from('denrai_canonical_names')
-      .select('canonical_name, parent_canonical, category')
+      .select('canonical_name, parent_canonical, category, name_ja')
       .in('canonical_name', batch);
 
     if (mappings) {
@@ -2245,6 +2245,7 @@ export async function getDenraiForArtisan(
           canonicalMap.set(row.canonical_name, {
             parent: row.parent_canonical || null,
             category: row.category || null,
+            name_ja: row.name_ja || null,
           });
         }
       }
@@ -2296,8 +2297,9 @@ export async function getDenraiForArtisan(
 
 export type DenraiGroup = {
   parent: string;
+  parent_ja: string | null;
   totalCount: number;
-  children: Array<{ owner: string; count: number }>;
+  children: Array<{ owner: string; owner_ja: string | null; count: number }>;
   isGroup: boolean;
 };
 
@@ -2337,13 +2339,18 @@ export async function getDenraiGrouped(
   // Build DenraiGroup array
   const groups: DenraiGroup[] = [];
   for (const [parent, children] of groupMap) {
+    const parentInfo = canonicalMap.get(parent);
     const totalCount = children.reduce((sum, c) => sum + c.count, 0);
     // Sort children by count desc within group
     children.sort((a, b) => b.count - a.count);
     groups.push({
       parent,
+      parent_ja: parentInfo?.name_ja || null,
       totalCount,
-      children,
+      children: children.map(c => ({
+        ...c,
+        owner_ja: canonicalMap.get(c.owner)?.name_ja || null,
+      })),
       isGroup: children.length > 1,
     });
   }

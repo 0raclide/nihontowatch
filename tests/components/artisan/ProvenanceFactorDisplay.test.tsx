@@ -31,16 +31,18 @@ import type { ProvenanceAnalysis } from '@/lib/artisan/provenanceMock';
 
 type DenraiGroupInput = Array<{
   parent: string;
+  parent_ja: string | null;
   totalCount: number;
-  children: Array<{ owner: string; count: number }>;
+  children: Array<{ owner: string; owner_ja: string | null; count: number }>;
   isGroup: boolean;
 }>;
 
 function flat(entries: Array<[string, number]>): DenraiGroupInput {
   return entries.map(([owner, count]) => ({
     parent: owner,
+    parent_ja: null,
     totalCount: count,
-    children: [{ owner, count }],
+    children: [{ owner, owner_ja: null, count }],
     isGroup: false,
   }));
 }

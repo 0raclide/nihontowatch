@@ -94,8 +94,9 @@ export interface ArtisanPageResponse {
   denrai: Array<{ owner: string; count: number }>;
   denraiGrouped: Array<{
     parent: string;
+    parent_ja: string | null;
     totalCount: number;
-    children: Array<{ owner: string; count: number }>;
+    children: Array<{ owner: string; owner_ja: string | null; count: number }>;
     isGroup: boolean;
   }>;
   heroImage: {

@@ -24,7 +24,7 @@ interface ProvenancePyramidProps {
 }
 
 export function ProvenancePyramid({ analysis }: ProvenancePyramidProps) {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const [expandedTiers, setExpandedTiers] = useState<Set<TierKey>>(new Set());
   const maxCount = Math.max(...Object.values(analysis.tierCounts), 1);
 
@@ -72,7 +72,7 @@ export function ProvenancePyramid({ analysis }: ProvenancePyramidProps) {
                       {isExpanded ? '▾' : '▸'}
                     </span>
                   )}
-                  {tier.label}
+                  {t(tier.labelKey)}
                 </span>
                 <span className={`tabular-nums text-sm font-light ${countColor}`}>
                   {active ? count : '—'}
@@ -95,7 +95,7 @@ export function ProvenancePyramid({ analysis }: ProvenancePyramidProps) {
                   <div key={c.name} className="py-1.5">
                     <div className="flex items-baseline justify-between">
                       <span className="text-sm font-light text-ink/60">
-                        {c.name}
+                        {locale === 'ja' ? (c.name_ja ?? c.meta.name_ja ?? c.name) : c.name}
                       </span>
                       <span className="text-xs tabular-nums ml-4 shrink-0 text-ink/25">
                         {c.works > 1 ? t('artist.works', { count: c.works }) : t('artist.work')}
@@ -104,9 +104,9 @@ export function ProvenancePyramid({ analysis }: ProvenancePyramidProps) {
                     {(c.meta.koku || c.meta.domain || c.meta.type) && (
                       <div className="text-[11px] text-ink/30 mt-0.5 tracking-wide">
                         {[
-                          c.meta.domain,
-                          c.meta.koku ? t('artist.koku', { koku: formatKoku(c.meta.koku) }) : null,
-                          c.meta.type,
+                          locale === 'ja' && c.meta.domain_ja ? c.meta.domain_ja : c.meta.domain,
+                          c.meta.koku ? t('artist.koku', { koku: formatKoku(c.meta.koku, locale) }) : null,
+                          c.meta.type ? t(`daimyoType.${c.meta.type}`) : null,
                         ].filter(Boolean).join('  ·  ')}
                       </div>
                     )}
@@ -114,7 +114,9 @@ export function ProvenancePyramid({ analysis }: ProvenancePyramidProps) {
                       <div className="pl-4 mt-1">
                         {c.children.map(child => (
                           <div key={child.name} className="flex items-baseline justify-between py-0.5">
-                            <span className="text-xs text-ink/35 font-light">{child.name}</span>
+                            <span className="text-xs text-ink/35 font-light">
+                              {locale === 'ja' && child.name_ja ? child.name_ja : child.name}
+                            </span>
                             {child.works > 1 && (
                               <span className="text-[10px] text-ink/20 tabular-nums ml-3">
                                 {child.works}
