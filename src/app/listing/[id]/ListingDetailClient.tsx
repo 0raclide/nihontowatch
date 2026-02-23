@@ -199,13 +199,13 @@ export default function ListingDetailPage({ initialData }: ListingDetailPageProp
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
             </div>
-            <h2 className="font-serif text-xl text-ink mb-2">Listing not found</h2>
+            <h2 className="font-serif text-xl text-ink mb-2">{t('listing.notFound')}</h2>
             <p className="text-[14px] text-muted mb-6">{error}</p>
             <button
               onClick={() => router.push('/')}
               className="px-5 py-2.5 text-[14px] font-medium text-white bg-gold hover:bg-gold-light rounded-lg transition-colors"
             >
-              Back to Collection
+              {t('listing.backToBrowse')}
             </button>
           </div>
         </main>
@@ -241,7 +241,7 @@ export default function ListingDetailPage({ initialData }: ListingDetailPageProp
 
       <main className="max-w-[1200px] mx-auto px-4 py-4 lg:px-6 lg:py-8">
         <Breadcrumbs items={[
-          { name: 'Browse', url: '/' },
+          { name: t('nav.browse'), url: '/' },
           ...(itemType ? [{ name: itemType, url: (listing.item_type ? getItemTypeUrl(listing.item_type) : null) || `/?type=${listing.item_type}` }] : []),
           { name: listing.title },
         ]} />
@@ -272,7 +272,7 @@ export default function ListingDetailPage({ initialData }: ListingDetailPageProp
               {isSold && (
                 <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
                   <span className="px-4 py-2 bg-black/70 text-white text-[12px] uppercase tracking-widest font-medium rounded">
-                    Sold
+                    {t('badge.sold')}
                   </span>
                 </div>
               )}
@@ -293,7 +293,7 @@ export default function ListingDetailPage({ initialData }: ListingDetailPageProp
                   >
                     <Image
                       src={img}
-                      alt={`${listing.title} - Photo ${index + 1}`}
+                      alt={t('listing.photoAlt', { title: listing.title, n: String(index + 1) })}
                       fill
                       className="object-cover"
                       sizes="64px"
@@ -318,12 +318,12 @@ export default function ListingDetailPage({ initialData }: ListingDetailPageProp
               )}
               {shouldShowNewBadge(listing.first_seen_at, listing.dealer_earliest_seen_at, listing.is_initial_import) && (
                 <span className="text-[11px] uppercase tracking-wider font-medium px-2.5 py-1 rounded bg-new-listing-bg text-new-listing">
-                  New this week
+                  {t('quickview.newThisWeek')}
                 </span>
               )}
               {isSold && (
                 <span className="text-[11px] uppercase tracking-wider font-medium px-2.5 py-1 rounded bg-muted/10 text-muted">
-                  Sold
+                  {t('badge.sold')}
                 </span>
               )}
             </div>
@@ -348,7 +348,7 @@ export default function ListingDetailPage({ initialData }: ListingDetailPageProp
             <div className="mb-6 pb-6 border-b border-border">
               {isSold && listing.price_value && (
                 <p className="text-[11px] uppercase tracking-wider text-muted mb-1">
-                  Sold price
+                  {t('listing.soldPrice')}
                 </p>
               )}
               {listing.price_value ? (
@@ -360,7 +360,7 @@ export default function ListingDetailPage({ initialData }: ListingDetailPageProp
                   }).format(listing.price_value)}
                 </p>
               ) : (
-                <p className="text-xl text-muted">Price on request</p>
+                <p className="text-xl text-muted">{t('badge.priceOnRequest')}</p>
               )}
             </div>
 
@@ -370,7 +370,7 @@ export default function ListingDetailPage({ initialData }: ListingDetailPageProp
                 {artisan && (
                   <div className="mb-2">
                     <span className="text-[11px] uppercase tracking-wider text-muted">
-                      {listing.smith ? 'Smith' : 'Maker'}
+                      {listing.smith ? t('listing.smith') : t('listing.maker')}
                     </span>
                     <p className="text-[15px] text-ink font-medium">
                       {listing.artisan_id && listing.artisan_display_name ? (
@@ -386,7 +386,7 @@ export default function ListingDetailPage({ initialData }: ListingDetailPageProp
                 )}
                 {school && (
                   <div>
-                    <span className="text-[11px] uppercase tracking-wider text-muted">School</span>
+                    <span className="text-[11px] uppercase tracking-wider text-muted">{t('listing.school')}</span>
                     <p className="text-[15px] text-ink font-medium">
                       <Link href={`/artists?school=${encodeURIComponent(school)}`} className="hover:text-gold transition-colors">
                         {school}
@@ -401,30 +401,30 @@ export default function ListingDetailPage({ initialData }: ListingDetailPageProp
             {(listing.nagasa_cm || listing.sori_cm || listing.motohaba_cm) && (
               <div className="mb-6 pb-6 border-b border-border">
                 <h3 className="text-[11px] uppercase tracking-wider text-muted mb-3">
-                  Specifications
+                  {t('listing.specifications')}
                 </h3>
                 <div className="grid grid-cols-2 gap-3">
                   {listing.nagasa_cm && (
                     <div>
-                      <span className="text-[12px] text-muted">Nagasa</span>
+                      <span className="text-[12px] text-muted">{t('listing.nagasa')}</span>
                       <p className="text-[14px] text-ink">{listing.nagasa_cm} cm</p>
                     </div>
                   )}
                   {listing.sori_cm && (
                     <div>
-                      <span className="text-[12px] text-muted">Sori</span>
+                      <span className="text-[12px] text-muted">{t('listing.sori')}</span>
                       <p className="text-[14px] text-ink">{listing.sori_cm} cm</p>
                     </div>
                   )}
                   {listing.motohaba_cm && (
                     <div>
-                      <span className="text-[12px] text-muted">Motohaba</span>
+                      <span className="text-[12px] text-muted">{t('listing.motohaba')}</span>
                       <p className="text-[14px] text-ink">{listing.motohaba_cm} cm</p>
                     </div>
                   )}
                   {listing.sakihaba_cm && (
                     <div>
-                      <span className="text-[12px] text-muted">Sakihaba</span>
+                      <span className="text-[12px] text-muted">{t('listing.sakihaba')}</span>
                       <p className="text-[14px] text-ink">{listing.sakihaba_cm} cm</p>
                     </div>
                   )}
@@ -452,13 +452,13 @@ export default function ListingDetailPage({ initialData }: ListingDetailPageProp
 
             {/* Dealer */}
             <div className="mb-6 pb-6 border-b border-border">
-              <span className="text-[11px] uppercase tracking-wider text-muted">{locale === 'ja' ? '取扱店' : 'Dealer'}</span>
+              <span className="text-[11px] uppercase tracking-wider text-muted">{t('listing.dealer')}</span>
               <p className="text-[15px] text-ink font-medium">
                 {listing.dealers?.name ? (
                   <Link href={getDealerUrl(listing.dealers.name)} className="hover:text-gold transition-colors">
                     {getDealerDisplayName(listing.dealers as { name: string; name_ja?: string | null }, locale)}
                   </Link>
-                ) : 'Unknown Dealer'}
+                ) : t('listing.unknownDealer')}
               </p>
               <p className="text-[12px] text-muted">{listing.dealers?.domain}</p>
             </div>
@@ -487,7 +487,7 @@ export default function ListingDetailPage({ initialData }: ListingDetailPageProp
                     }
                     className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 text-[14px] font-medium text-white bg-gold hover:bg-gold-light rounded-lg transition-colors"
                   >
-                    View Similar Items
+                    {t('listing.viewSimilar')}
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                     </svg>
@@ -500,7 +500,7 @@ export default function ListingDetailPage({ initialData }: ListingDetailPageProp
                     onClick={handleExternalLinkClick}
                     className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 text-[14px] font-medium text-charcoal bg-paper border border-border hover:border-gold hover:text-gold rounded-lg transition-colors"
                   >
-                    {locale === 'ja' ? `${listing.dealers ? getDealerDisplayName(listing.dealers as { name: string; name_ja?: string | null }, locale) : ''}で見る` : `View on ${listing.dealers ? getDealerDisplayName(listing.dealers as { name: string; name_ja?: string | null }, locale) : ''}`}
+                    {t('listing.viewOnDealer', { dealer: listing.dealers ? getDealerDisplayName(listing.dealers as { name: string; name_ja?: string | null }, locale) : '' })}
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                     </svg>
@@ -516,7 +516,7 @@ export default function ListingDetailPage({ initialData }: ListingDetailPageProp
                     onClick={handleExternalLinkClick}
                     className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 text-[14px] font-medium text-white bg-gold hover:bg-gold-light rounded-lg transition-colors"
                   >
-                    {locale === 'ja' ? `${listing.dealers ? getDealerDisplayName(listing.dealers as { name: string; name_ja?: string | null }, locale) : ''}で見る` : `View on ${listing.dealers ? getDealerDisplayName(listing.dealers as { name: string; name_ja?: string | null }, locale) : ''}`}
+                    {t('listing.viewOnDealer', { dealer: listing.dealers ? getDealerDisplayName(listing.dealers as { name: string; name_ja?: string | null }, locale) : '' })}
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                     </svg>
@@ -531,7 +531,7 @@ export default function ListingDetailPage({ initialData }: ListingDetailPageProp
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                       </svg>
-                      Inquire
+                      {t('listing.inquire')}
                     </button>
                   )}
 
@@ -543,7 +543,7 @@ export default function ListingDetailPage({ initialData }: ListingDetailPageProp
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                     </svg>
-                    Set Alert
+                    {t('listing.setAlert')}
                   </button>
                 </>
               )}

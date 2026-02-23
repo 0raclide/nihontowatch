@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, ReactNode } from 'react';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
+import { useLocale } from '@/i18n/LocaleContext';
 
 interface DrawerProps {
   isOpen: boolean;
@@ -11,6 +12,7 @@ interface DrawerProps {
 }
 
 export function Drawer({ isOpen, onClose, children, title }: DrawerProps) {
+  const { t } = useLocale();
   const drawerRef = useRef<HTMLDivElement>(null);
   const startY = useRef<number>(0);
   const currentY = useRef<number>(0);
@@ -91,7 +93,7 @@ export function Drawer({ isOpen, onClose, children, title }: DrawerProps) {
             <button
               onClick={onClose}
               className="p-2 -mr-2 text-muted hover:text-ink transition-colors"
-              aria-label="Close"
+              aria-label={t('common.close')}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />

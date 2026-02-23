@@ -2,9 +2,11 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useTheme, THEMES, type ThemeName } from '@/contexts/ThemeContext';
+import { useLocale } from '@/i18n/LocaleContext';
 
 export function ThemeSwitcher() {
   const { activeTheme, themeSetting, setTheme, themes } = useTheme();
+  const { t } = useLocale();
   const [isOpen, setIsOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -65,7 +67,7 @@ export function ThemeSwitcher() {
     return (
       <button
         className="w-9 h-9 flex items-center justify-center border border-border bg-paper"
-        aria-label="Theme selector loading"
+        aria-label={t('theme.selectorLoading')}
       >
         <div className="w-4 h-4" />
       </button>
@@ -81,7 +83,7 @@ export function ThemeSwitcher() {
         ref={buttonRef}
         onClick={toggleDropdown}
         className="w-9 h-9 flex items-center justify-center border border-border bg-paper hover:bg-hover transition-colors"
-        aria-label="Select theme"
+        aria-label={t('theme.selectTheme')}
         aria-expanded={isOpen}
         aria-haspopup="listbox"
       >
@@ -108,7 +110,7 @@ export function ThemeSwitcher() {
           ref={dropdownRef}
           className="absolute right-0 top-full mt-2 w-64 bg-paper border border-border shadow-lg shadow-black/10 z-50"
           role="listbox"
-          aria-label="Theme options"
+          aria-label={t('theme.options')}
         >
           {/* System option */}
           <button
@@ -138,10 +140,10 @@ export function ThemeSwitcher() {
             </div>
             <div className="flex-1 min-w-0">
               <div className="text-sm font-medium text-ink">
-                System
+                {t('theme.system')}
               </div>
               <div className="text-xs text-muted truncate">
-                Follow OS preference
+                {t('theme.followOS')}
               </div>
             </div>
             {themeSetting === 'system' && (

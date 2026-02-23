@@ -5,6 +5,7 @@ import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { Drawer } from '@/components/ui/Drawer';
 import { useMobileUI } from '@/contexts/MobileUIContext';
 import { useActivityOptional } from '@/components/activity/ActivityProvider';
+import { useLocale } from '@/i18n/LocaleContext';
 
 const LISTING_QUICK_SEARCHES = [
   'Katana',
@@ -30,9 +31,10 @@ export function MobileSearchSheet() {
   const pathname = usePathname();
   const currentQuery = searchParams.get('q') || '';
   const { searchOpen, closeSearch } = useMobileUI();
+  const { t } = useLocale();
   const isArtistPage = pathname.startsWith('/artists');
   const searchAction = isArtistPage ? '/artists' : '/';
-  const searchPlaceholder = isArtistPage ? 'Search artists by name, kanji, or code...' : 'Search swords, smiths, dealers...';
+  const searchPlaceholder = isArtistPage ? t('search.artistPlaceholder') : t('search.placeholder');
   const quickSearches = isArtistPage ? ARTIST_QUICK_SEARCHES : LISTING_QUICK_SEARCHES;
   const [isSearching, setIsSearching] = useState(false);
   const [inputValue, setInputValue] = useState('');
@@ -104,7 +106,7 @@ export function MobileSearchSheet() {
   };
 
   return (
-    <Drawer isOpen={searchOpen} onClose={closeSearch} title="Search">
+    <Drawer isOpen={searchOpen} onClose={closeSearch} title={t('search.drawerTitle')}>
       <div className="p-4">
         {/* Search Input - action attribute required for iOS keyboard "Search" button */}
         <form action={searchAction} onSubmit={handleSubmit} role="search">
@@ -130,7 +132,7 @@ export function MobileSearchSheet() {
               <button
                 type="button"
                 onClick={handleClearInput}
-                aria-label="Clear search"
+                aria-label={t('search.clearSearch')}
                 className="absolute right-12 top-1/2 -translate-y-1/2 p-2 text-muted/40 hover:text-muted rounded-lg transition-colors"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -160,7 +162,7 @@ export function MobileSearchSheet() {
         {/* Quick Searches */}
         <div className="mt-6">
           <h3 className="text-[11px] uppercase tracking-[0.15em] text-muted mb-3">
-            {isArtistPage ? 'Popular Artists' : 'Popular Searches'}
+            {isArtistPage ? t('search.popularArtists') : t('search.popularSearches')}
           </h3>
           <div className="flex flex-wrap gap-2">
             {quickSearches.map((term) => (
@@ -179,19 +181,19 @@ export function MobileSearchSheet() {
         {/* Search tips */}
         <div className="mt-8 p-4 bg-linen/30 rounded-xl">
           <h4 className="text-[11px] uppercase tracking-[0.15em] text-muted mb-2">
-            Search Tips
+            {t('search.tips')}
           </h4>
           {isArtistPage ? (
             <ul className="space-y-1.5 text-[12px] text-muted/80">
-              <li>By name: &quot;Masamune&quot; or &quot;正宗&quot;</li>
-              <li>By school: &quot;Soshu&quot; or &quot;Bizen&quot;</li>
-              <li>By code: &quot;MAS590&quot; or &quot;OWA009&quot;</li>
+              <li>{t('search.tipByName')}</li>
+              <li>{t('search.tipBySchool')}</li>
+              <li>{t('search.tipByCode')}</li>
             </ul>
           ) : (
             <ul className="space-y-1.5 text-[12px] text-muted/80">
-              <li>Combine: &quot;bizen juyo katana&quot;</li>
-              <li>By size: &quot;cm&gt;70&quot; or &quot;nagasa&lt;65&quot;</li>
-              <li>By price: &quot;usd&gt;5000&quot; or &quot;eur&lt;2000&quot;</li>
+              <li>{t('search.tipCombine')}</li>
+              <li>{t('search.tipBySize')}</li>
+              <li>{t('search.tipByPrice')}</li>
             </ul>
           )}
         </div>

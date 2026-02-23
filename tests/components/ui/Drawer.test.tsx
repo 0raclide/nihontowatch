@@ -7,6 +7,16 @@ vi.mock('@/hooks/useBodyScrollLock', () => ({
   useBodyScrollLock: vi.fn(),
 }));
 
+// Mock useLocale for Drawer's i18n support
+vi.mock('@/i18n/LocaleContext', async () => {
+  const strings = await import('@/i18n/locales/en.json').then(m => m.default);
+  const t = (key: string) => (strings as Record<string, string>)[key] ?? key;
+  return {
+    useLocale: () => ({ locale: 'en', setLocale: () => {}, t }),
+    LocaleProvider: ({ children }: { children: React.ReactNode }) => children,
+  };
+});
+
 describe('Drawer Component', () => {
   const mockOnClose = vi.fn();
 

@@ -50,6 +50,16 @@ vi.mock('@/components/activity/ActivityProvider', () => ({
   useActivityOptional: () => null,
 }));
 
+// Mock useLocale for i18n
+vi.mock('@/i18n/LocaleContext', async () => {
+  const strings = await import('@/i18n/locales/en.json').then(m => m.default);
+  const t = (key: string) => (strings as Record<string, string>)[key] ?? key;
+  return {
+    useLocale: () => ({ locale: 'en', setLocale: () => {}, t }),
+    LocaleProvider: ({ children }: { children: React.ReactNode }) => children,
+  };
+});
+
 // Mock theme context
 vi.mock('@/contexts/ThemeContext', () => ({
   useTheme: () => ({

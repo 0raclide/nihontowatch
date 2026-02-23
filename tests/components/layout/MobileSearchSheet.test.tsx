@@ -56,6 +56,16 @@ vi.mock('@/components/ui/Drawer', () => ({
     isOpen ? <div data-testid="drawer">{children}</div> : null,
 }));
 
+// Mock useLocale for i18n
+vi.mock('@/i18n/LocaleContext', async () => {
+  const strings = await import('@/i18n/locales/en.json').then(m => m.default);
+  const t = (key: string) => (strings as Record<string, string>)[key] ?? key;
+  return {
+    useLocale: () => ({ locale: 'en', setLocale: () => {}, t }),
+    LocaleProvider: ({ children }: { children: React.ReactNode }) => children,
+  };
+});
+
 // Mock MobileUIContext to control drawer state
 const mockCloseSearch = vi.fn();
 vi.mock('@/contexts/MobileUIContext', async () => {
