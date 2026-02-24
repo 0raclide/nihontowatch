@@ -1,7 +1,33 @@
+import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import HomeContent from './HomeClient';
 import { getHomePreview, type HomePreviewData } from '@/lib/browse/getHomePreview';
 import { generateItemListJsonLd, jsonLdScriptProps } from '@/lib/seo/jsonLd';
+
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://nihontowatch.com';
+
+// Canonical strips all query params (?artisan=, ?dealer=, ?type=, etc.)
+// so Google consolidates the 1,000+ faceted filter URLs to a single page.
+export const metadata: Metadata = {
+  title: 'NihontoWatch — Japanese Swords & Fittings from Specialist Galleries',
+  description:
+    'Browse Japanese swords (katana, wakizashi, tanto) and fittings (tsuba, menuki, kozuka) from 50+ specialist galleries worldwide. Updated daily.',
+  alternates: { canonical: baseUrl },
+  openGraph: {
+    title: 'NihontoWatch — Japanese Swords & Fittings',
+    description:
+      'Browse Japanese swords and fittings from 50+ specialist galleries worldwide.',
+    url: baseUrl,
+    siteName: 'NihontoWatch',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'NihontoWatch — Japanese Swords & Fittings',
+    description:
+      'Browse Japanese swords and fittings from 50+ specialist galleries worldwide.',
+  },
+};
 
 // ISR: revalidate every 5 minutes so the SSR fallback stays fresh
 export const revalidate = 300;

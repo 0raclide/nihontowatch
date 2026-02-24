@@ -9,7 +9,9 @@ import { ArtistProfileBar } from '@/components/artisan/ArtistProfileBar';
 import { ListingReturnBar } from '@/components/artisan/ListingReturnBar';
 import { ArtistPageClient } from './ArtistPageClient';
 
-export const dynamic = 'force-dynamic';
+// ISR: revalidate hourly — artisan profiles are stable data from Yuhinkai.
+// force-dynamic was causing 5xx timeouts under Googlebot crawl pressure (13k+ pages).
+export const revalidate = 3600;
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://nihontowatch.com';
 

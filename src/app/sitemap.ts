@@ -68,7 +68,9 @@ async function getAllDealers(): Promise<DealerForSitemap[]> {
 
 async function fetchListingsBatch(
   available: boolean,
-  statusFilter?: string[]
+  statusFilter?: string[],
+  /** When true, only include listings with images (filters out soft-404 candidates) */
+  requireImages?: boolean
 ): Promise<ListingForSitemap[]> {
   const supabase = createServiceClient();
   const allListings: ListingForSitemap[] = [];
@@ -85,6 +87,10 @@ async function fetchListingsBatch(
 
     if (statusFilter) {
       query = query.in('status', statusFilter);
+    }
+
+    if (requireImages) {
+      query = query.not('images', 'is', null);
     }
 
     const { data, error } = await query;
@@ -233,10 +239,11 @@ export default async function sitemap(
       }));
     }
 
-    // ----- 2: Sold listings (archive) -----
+    // ----- 2: Sold listings (archive, content-rich only) -----
     case 2: {
-      const soldListings = await fetchListingsBatch(false, ['sold', 'presumed_sold']);
-      console.log(`[Sitemap:2] Generated ${soldListings.length} sold listing URLs`);
+      // Only include sold listings with images to avoid soft-404s from thin content pages
+      const soldListings = await fetchListingsBatch(false, ['sold', 'presumed_sold'], true);
+      console.log(`[Sitemap:2] Generated ${soldListings.length} sold listing URLs (filtered: images required)`);
 
       return soldListings.map((listing) => ({
         url: `${baseUrl}/listing/${listing.id}`,
