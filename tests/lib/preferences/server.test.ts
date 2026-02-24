@@ -53,18 +53,18 @@ describe('getUserSubscription showAllPrices', () => {
     vi.clearAllMocks();
   });
 
-  it('returns showAllPrices: false for anonymous users', async () => {
+  it('returns showAllPrices: true for anonymous users', async () => {
     mockSupabaseClient.auth.getUser.mockResolvedValue({
       data: { user: null },
       error: null,
     });
 
     const result = await getUserSubscription();
-    expect(result.showAllPrices).toBe(false);
+    expect(result.showAllPrices).toBe(true);
     expect(result.userId).toBeNull();
   });
 
-  it('returns showAllPrices: false when preference is not set', async () => {
+  it('returns showAllPrices: true when preference is not set', async () => {
     mockSupabaseClient.auth.getUser.mockResolvedValue({
       data: { user: { id: 'user-123' } },
       error: null,
@@ -80,7 +80,26 @@ describe('getUserSubscription showAllPrices', () => {
     mockServiceClient.from.mockReturnValue(profileBuilder);
 
     const result = await getUserSubscription();
-    expect(result.showAllPrices).toBe(false);
+    expect(result.showAllPrices).toBe(true);
+  });
+
+  it('returns showAllPrices: true when preference is undefined (not explicitly set)', async () => {
+    mockSupabaseClient.auth.getUser.mockResolvedValue({
+      data: { user: { id: 'user-124' } },
+      error: null,
+    });
+
+    const profileBuilder = createMockQueryBuilder({
+      subscription_tier: 'free',
+      subscription_status: 'inactive',
+      role: 'user',
+      preferences: { someOtherPref: 'value' },
+    });
+
+    mockServiceClient.from.mockReturnValue(profileBuilder);
+
+    const result = await getUserSubscription();
+    expect(result.showAllPrices).toBe(true);
   });
 
   it('returns showAllPrices: true when preference is enabled', async () => {
@@ -141,11 +160,11 @@ describe('getUserSubscription showAllPrices', () => {
     expect(result.showAllPrices).toBe(true);
   });
 
-  it('returns showAllPrices: false on error', async () => {
+  it('returns showAllPrices: true on error', async () => {
     mockSupabaseClient.auth.getUser.mockRejectedValue(new Error('Network error'));
 
     const result = await getUserSubscription();
-    expect(result.showAllPrices).toBe(false);
+    expect(result.showAllPrices).toBe(true);
   });
 });
 

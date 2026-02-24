@@ -39,7 +39,7 @@ export async function getUserSubscription(): Promise<{
         userId: null,
         isDelayed: isTrialModeActive() ? false : true,
         isAdmin: false,
-        showAllPrices: false,
+        showAllPrices: true,
       };
     }
 
@@ -95,8 +95,8 @@ export async function getUserSubscription(): Promise<{
       }
     }
 
-    // Extract showAllPrices from preferences JSONB
-    const showAllPrices = profile?.preferences?.showAllPrices === true;
+    // Extract showAllPrices from preferences JSONB (default true — only explicit false hides cheap items)
+    const showAllPrices = profile?.preferences?.showAllPrices !== false;
 
     // Admins get full access (inner_circle tier)
     const isAdmin = profile?.role === 'admin';
@@ -135,7 +135,7 @@ export async function getUserSubscription(): Promise<{
       userId: null,
       isDelayed: isTrialModeActive() ? false : true,
       isAdmin: false,
-      showAllPrices: false,
+      showAllPrices: true,
     };
   }
 }

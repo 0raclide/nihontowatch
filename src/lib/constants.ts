@@ -10,7 +10,7 @@
 export const LISTING_FILTERS = {
   /**
    * Minimum price threshold in JPY.
-   * Listings below this price are hidden from the app.
+   * Listings below this price are hidden when user opts out via profile toggle.
    * Set to 0 to disable the filter.
    * This helps filter out books, accessories, and very low-quality items.
    */
@@ -396,6 +396,13 @@ export const IMAGE_QUALITY = {
    */
   MIN_ASPECT_RATIO: 0.03, // Very tall images (1:33) - accommodates tall composite blade photos
   MAX_ASPECT_RATIO: 15.0, // Very wide images (15:1) - accommodates wide horizontal blade shots
+
+  /**
+   * Cover image width/height ratio above which a composite thumbnail is generated.
+   * Panoramic blade strips (e.g., Nipponto 900x60) have ratios from 5:1 to 20:1.
+   * At 4:1+, object-cover zooms in too much for the 3:4 card, showing an unrecognizable sliver.
+   */
+  COMPOSITE_THRESHOLD: 4.0,
 } as const;
 
 // =============================================================================

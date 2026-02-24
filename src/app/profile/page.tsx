@@ -19,7 +19,7 @@ export default function ProfilePage() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
-  const [showAllPrices, setShowAllPrices] = useState(false);
+  const [showAllPrices, setShowAllPrices] = useState(true);
   const [isTogglingPrices, setIsTogglingPrices] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteEmail, setDeleteEmail] = useState('');
@@ -97,7 +97,7 @@ export default function ProfilePage() {
   useEffect(() => {
     if (profile?.preferences) {
       const prefs = profile.preferences as Record<string, unknown>;
-      setShowAllPrices(prefs.showAllPrices === true);
+      setShowAllPrices(prefs.showAllPrices !== false);
     }
   }, [profile?.preferences]);
 

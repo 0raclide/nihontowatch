@@ -1196,7 +1196,7 @@
   "profile.permanentlyDelete": "完全に削除",
   "profile.preferences": "設定",
   "profile.showAllPrices": "すべての価格帯を表示",
-  "profile.showAllPricesDesc": "10万円未満の商品も表示します。刀装具コレクターに便利です。",
+  "profile.showAllPricesDesc": "オフにすると、10万円未満の商品がブラウズから非表示になります。",
 
   "saved.title": "保存済み",
   "saved.subtitle": "保存済み検索とウォッチアイテム",
