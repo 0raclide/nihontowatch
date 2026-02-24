@@ -536,6 +536,8 @@ The `featured_score` column drives the default sort order in browse. Computed as
 
 **Important:** All admin endpoint recomputes use `await` (not fire-and-forget). Vercel serverless freezes functions after response is sent — unawaited promises never complete.
 
+**Important:** The `listing_views` table uses `viewed_at` as its timestamp column (not `created_at`). The cron RPC correctly uses `viewed_at`, and all JS-side queries (Score Inspector, inline recompute) must also use `viewed_at`. A `created_at` column does not exist on this table — PostgREST returns 400, silently defaulting to 0 views via `count ?? 0`. This bug caused false "stale" indicators across all items with views (fixed 2026-02-24).
+
 **Key files:**
 | Component | Location |
 |-----------|----------|
@@ -544,6 +546,8 @@ The `featured_score` column drives the default sort order in browse. Computed as
 | Fix cert (inline recompute) | `src/app/api/listing/[id]/fix-cert/route.ts` |
 | Fix artisan (inline recompute + elite sync) | `src/app/api/listing/[id]/fix-artisan/route.ts` |
 | Hide/unhide (inline recompute) | `src/app/api/listing/[id]/hide/route.ts` |
+| Score breakdown (admin diagnostics) | `src/app/api/listing/[id]/score-breakdown/route.ts` |
+| Score Inspector UI | `src/components/listing/AdminScoreInspector.tsx` |
 | Tests (65) | `tests/lib/featured/scoring.test.ts` |
 | Session doc | `docs/SESSION_20260222_FEATURED_SCORE_RECOMPUTE.md` |
 
@@ -897,6 +901,7 @@ Use JSON-LD for:
 7. **ALWAYS run tests before deploying** - Run `npm test` before any deploy. If tests fail, investigate and fix the issues before proceeding. Never deploy with failing tests.
 8. **NEVER modify tests to match broken code** - If a test fails during refactoring, the TEST IS RIGHT and the code is wrong. Tests exist to catch regressions. Changing a test to make it pass defeats its entire purpose. If a test fails: (1) understand WHY it's failing, (2) fix the CODE, not the test, (3) only modify tests when intentionally changing behavior WITH explicit user approval. This rule exists because we shipped a regression (dealer name → domain) when a test was silently "fixed" to match broken code.
 9. **NEVER use fire-and-forget promises in API routes** - Vercel serverless freezes functions the instant the HTTP response is sent. Unawaited promises (`someAsyncFn().catch(...)`) will never complete. Always `await` side effects with `try/catch`. If work genuinely needs to run after the response, use Vercel's `waitUntil()` API. This bit us in the featured score recompute — the DB update never ran (see `docs/SESSION_20260222_FEATURED_SCORE_RECOMPUTE.md`).
+11. **`listing_views` uses `viewed_at`, not `created_at`** - This table's timestamp column is `viewed_at`. All other behavioral tables (`user_favorites`, `dealer_clicks`, `activity_events`) use `created_at`. When querying `listing_views` with a time filter, always use `.gte('viewed_at', ...)`. Using `created_at` silently returns 0 rows (PostgREST 400 swallowed by `count ?? 0`). This caused false "stale" scores across the entire catalog for months.
 10. **NEVER use `{ passive: false }` on touchmove listeners** - This is the single most common regression in this codebase. A non-passive `touchmove` on ANY scrollable element (or its ancestors) blocks the compositor from fast-pathing scroll. Chrome DevTools mobile emulation translates two-finger trackpad scroll into touch events — a non-passive listener kills it instantly. This has broken the build **4 separate times** (bottom sheet drag, artisan tooltip drag, image scroller top-bounce prevention, edge swipe dismiss). **The rule:** never call `addEventListener('touchmove', fn, { passive: false })` on or above a scrollable container. If you need to conditionally `preventDefault()` a touch gesture, use a CSS property toggle from a passive `scroll` listener instead (see `docs/POSTMORTEM_PASSIVE_TOUCHMOVE.md` for safe patterns).
 
 ---
