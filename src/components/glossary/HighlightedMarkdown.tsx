@@ -9,7 +9,7 @@ import { useLocale } from '@/i18n/LocaleContext';
 interface HighlightedMarkdownProps {
   content: string;
   /** Variant for different styling contexts */
-  variant?: 'default' | 'translation';
+  variant?: 'default' | 'translation' | 'biography';
 }
 
 /**
@@ -251,20 +251,78 @@ const translationComponentsPlain: Components = {
 };
 
 /**
+ * Biography variant components — defer ALL typography to .prose-biography CSS.
+ * Only handles glossary highlighting and structural edge cases (last:mb-0).
+ * With glossary term detection for EN locale.
+ */
+const biographyComponents: Components = {
+  p: ({ children }) => (
+    <p className="last:mb-0">{highlightChildren(children)}</p>
+  ),
+  li: ({ children }) => (
+    <li>{highlightChildren(children)}</li>
+  ),
+  strong: ({ children }) => (
+    <strong>{highlightChildren(children)}</strong>
+  ),
+  em: ({ children }) => (
+    <em>{highlightChildren(children)}</em>
+  ),
+  h2: ({ children }) => (
+    <h2>{highlightChildren(children)}</h2>
+  ),
+  h3: ({ children }) => (
+    <h3>{highlightChildren(children)}</h3>
+  ),
+  h4: ({ children }) => (
+    <h4>{highlightChildren(children)}</h4>
+  ),
+  td: ({ children }) => (
+    <td>{highlightChildren(children)}</td>
+  ),
+  th: ({ children }) => (
+    <th>{highlightChildren(children)}</th>
+  ),
+  a: ({ children, href }) => (
+    <a href={href}>{highlightChildren(children)}</a>
+  ),
+};
+
+/**
+ * Biography variant without glossary highlighting — used for JA locale.
+ * Same minimal structure, no term detection overhead.
+ */
+const biographyComponentsPlain: Components = {
+  p: ({ children }) => (
+    <p className="last:mb-0">{children}</p>
+  ),
+  a: ({ children, href }) => (
+    <a href={href}>{children}</a>
+  ),
+};
+
+/**
  * HighlightedMarkdown component
  * Renders markdown with glossary term highlighting
  *
  * @param content - Markdown content to render
- * @param variant - 'default' uses minimal styling, 'translation' uses scholarly typography
+ * @param variant - 'default' uses minimal styling, 'translation' uses scholarly typography, 'biography' defers to CSS
  */
 export function HighlightedMarkdown({ content, variant = 'default' }: HighlightedMarkdownProps) {
   const { locale } = useLocale();
 
   // Skip glossary term highlighting in JA locale — Japanese users
   // already know the terminology; the glossary serves EN readers only.
-  const components = locale === 'ja'
-    ? (variant === 'translation' ? translationComponentsPlain : undefined)
-    : (variant === 'translation' ? translationComponents : markdownComponents);
+  let components: Components | undefined;
+  if (locale === 'ja') {
+    if (variant === 'translation') components = translationComponentsPlain;
+    else if (variant === 'biography') components = biographyComponentsPlain;
+    else components = undefined;
+  } else {
+    if (variant === 'translation') components = translationComponents;
+    else if (variant === 'biography') components = biographyComponents;
+    else components = markdownComponents;
+  }
 
   return (
     <ReactMarkdown components={components}>

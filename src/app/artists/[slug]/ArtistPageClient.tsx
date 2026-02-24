@@ -110,18 +110,9 @@ function StatsBar({ data, availableCount }: { data: ArtisanPageResponse; availab
 /** Biography section — renders markdown with glossary-linked technical terms */
 function Biography({ markdown }: { markdown: string }) {
   return (
-    <div className="text-[13.5px] text-ink/80 leading-[1.9] font-light
-      [&_p]:mb-4 [&_p:last-child]:mb-0
-      [&_h2]:text-xs [&_h2]:font-serif [&_h2]:font-light [&_h2]:tracking-wide [&_h2]:text-gold/70 [&_h2]:mb-3 [&_h2]:mt-8 [&_h2:first-child]:mt-0
-      [&_h3]:text-xs [&_h3]:font-serif [&_h3]:font-light [&_h3]:tracking-wide [&_h3]:text-gold/70 [&_h3]:mb-3 [&_h3]:mt-6
-      [&_strong]:font-medium [&_strong]:text-ink
-      [&_ul]:space-y-1.5 [&_ul]:pl-4 [&_ul]:list-disc [&_ul]:marker:text-gold/50
-      [&_ol]:space-y-1.5 [&_ol]:pl-4 [&_ol]:list-decimal [&_ol]:marker:text-gold/50
-      [&_li]:text-ink/70
-      [&_blockquote]:pl-4 [&_blockquote]:border-l-2 [&_blockquote]:border-gold/30 [&_blockquote]:italic [&_blockquote]:text-ink/60
-    ">
-      <HighlightedMarkdown content={markdown} variant="translation" />
-    </div>
+    <article className="prose-biography">
+      <HighlightedMarkdown content={markdown} variant="biography" />
+    </article>
   );
 }
 
@@ -487,9 +478,9 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
 
           {/* Hook — epigraph */}
           {profile?.hook && (
-            <p className="mt-8 pl-5 border-l-[3px] border-gold/40 text-[14px] text-ink/55 leading-[1.8] italic font-light max-w-xl">
+            <blockquote className="mt-10 pl-5 border-l-[3px] border-gold/30 text-[16px] text-ink/55 leading-[1.8] italic font-normal font-serif max-w-[55ch]">
               {profile.hook}
-            </p>
+            </blockquote>
           )}
 
           {/* Quick stats bar */}

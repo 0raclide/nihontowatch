@@ -1085,6 +1085,144 @@ input[type="search"]::-webkit-search-results-decoration {
 }
 
 /* ==========================================================================
+   Biography Prose Styling
+   Museum-quality typography for artist profile pages
+   Parallel to .prose-translation but optimized for long-form reading
+   ========================================================================== */
+.prose-biography {
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: 17px;
+  font-weight: 400;
+  line-height: 1.85;
+  color: var(--text-secondary);
+  letter-spacing: 0.015em;
+  max-width: 62ch;
+}
+
+/* First paragraph — draws the eye, sets the hook */
+.prose-biography > p:first-of-type {
+  font-size: 18px;
+  color: var(--text-primary);
+}
+
+/* Section headers — clear hierarchy with top rule */
+.prose-biography h2 {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-top: 2.5rem;
+  margin-bottom: 1rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.prose-biography h2:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+/* Subsection headers */
+.prose-biography h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-top: 1.75rem;
+  margin-bottom: 0.75rem;
+}
+
+/* Paragraphs */
+.prose-biography p {
+  margin-bottom: 1.25rem;
+}
+
+.prose-biography p:last-child {
+  margin-bottom: 0;
+}
+
+/* Bold text — primary color for emphasis */
+.prose-biography strong {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* Lists */
+.prose-biography ul {
+  margin: 1rem 0;
+  padding-left: 1.25rem;
+  list-style-type: disc;
+}
+
+.prose-biography ol {
+  margin: 1rem 0;
+  padding-left: 1.25rem;
+  list-style-type: decimal;
+}
+
+.prose-biography li {
+  margin: 0.5rem 0;
+}
+
+.prose-biography li::marker {
+  color: color-mix(in srgb, var(--accent) 50%, transparent);
+}
+
+/* Blockquotes — prominent source quotes with gold accent */
+.prose-biography blockquote {
+  border-left: 3px solid var(--accent);
+  padding-left: 1.25rem;
+  margin: 1.5rem 0;
+  font-size: 18px;
+  font-style: italic;
+  color: var(--text-tertiary);
+}
+
+/* Horizontal rules — decorative section breaks */
+.prose-biography hr {
+  margin: 2.5rem auto;
+  border: none;
+  border-top: 1px solid var(--border-subtle);
+  max-width: 3rem;
+}
+
+/* Links */
+.prose-biography a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.prose-biography a:hover {
+  text-decoration: underline;
+}
+
+/* Tables */
+.prose-biography table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 15px;
+  margin: 1rem 0;
+}
+
+.prose-biography th,
+.prose-biography td {
+  border: 1px solid var(--border);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+}
+
+.prose-biography th {
+  background: var(--surface-elevated);
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+/* JA locale — Noto Sans JP, increased line-height */
+html[lang="ja"] .prose-biography {
+  font-family: var(--font-jp), var(--font-sans), sans-serif;
+  line-height: 2.0;
+}
+
+/* ==========================================================================
    Card Styles
    ========================================================================== */
 .card-hover {
