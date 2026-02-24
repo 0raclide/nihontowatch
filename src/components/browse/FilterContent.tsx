@@ -133,6 +133,54 @@ const FilterSection = memo(function FilterSection({
   );
 });
 
+const AdminToolsSection = memo(function AdminToolsSection({
+  children,
+  defaultOpen = false,
+  variant,
+  activeCount,
+}: {
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+  variant?: SidebarVariant;
+  activeCount?: number;
+}) {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+  const isB = variant === 'b';
+  const isA = variant === 'a';
+  const elevated = isA || isB;
+
+  return (
+    <div className={`${isB ? 'py-1' : elevated ? 'py-2' : 'py-3'} border-t ${isB ? 'border-gold/20' : 'border-gold/30'}`}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className={`flex items-center justify-between w-full text-left group ${isB ? 'py-0.5' : elevated ? 'py-1' : 'py-1.5'}`}
+      >
+        <div className="flex items-center gap-1.5">
+          <span className={`${isB ? 'text-[9px] px-1 py-px' : 'text-[10px] px-1.5 py-0.5'} bg-gold/20 text-gold rounded font-semibold`}>ADMIN</span>
+          {activeCount !== undefined && activeCount > 0 && (
+            <span className={`${isB ? 'text-[8px] min-w-[12px] h-[12px]' : 'text-[9px] min-w-[16px] h-[16px]'} inline-flex items-center justify-center px-0.5 font-bold text-white bg-gold rounded-full leading-none`}>
+              {activeCount}
+            </span>
+          )}
+        </div>
+        <svg
+          className={`${isB ? 'w-2.5 h-2.5' : 'w-3 h-3'} text-muted/60 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      <div className={`transition-all duration-200 overflow-hidden ${isOpen ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}`}>
+        <div className={`${isB ? 'space-y-1 pt-1' : elevated ? 'space-y-1.5 pt-1.5' : 'space-y-2 pt-2'}`}>
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+});
+
 const Checkbox = memo(function Checkbox({
   label,
   count,
@@ -1058,62 +1106,46 @@ export function FilterContent({
           </label>
         </div>
 
-        {/* Admin: Missing Setsumei */}
-        {isAdmin && (
-          <div className={`${isB ? 'py-2' : elevated ? 'py-3' : 'py-5'} border-t ${isB ? 'border-gold/20' : 'border-gold/30'}`}>
-            <label className={`flex items-center justify-between cursor-pointer group ${isB ? 'min-h-[28px]' : elevated ? 'min-h-[36px]' : 'min-h-[48px]'}`}>
-              <div className="flex items-center gap-1.5">
-                <span className={`${isB ? 'text-[9px] px-1 py-px' : 'text-[10px] px-1.5 py-0.5'} bg-gold/20 text-gold rounded font-semibold`}>ADMIN</span>
-                <span className={`${isB ? 'text-[12px]' : elevated ? 'text-[13px]' : 'text-[15px] lg:text-[14px]'} text-charcoal group-hover:text-ink transition-colors`}>Missing Setsumei</span>
-              </div>
-              <div className="relative">
-                <input type="checkbox" checked={filters.missingSetsumei || false} onChange={(e) => onFilterChange('missingSetsumei', e.target.checked)} className="peer sr-only" />
-                <div className={`${isB ? 'w-8 h-[18px]' : elevated ? 'w-10 h-[22px]' : 'w-12 h-7 lg:w-11 lg:h-6'} rounded-full transition-colors ${filters.missingSetsumei ? 'bg-gold' : 'bg-border-dark'}`}>
-                  <div className={`absolute ${isB ? 'top-[3px] w-3 h-3' : elevated ? 'top-[3px] w-4 h-4' : 'top-1 w-5 h-5 lg:w-4 lg:h-4'} bg-white rounded-full shadow transition-transform ${filters.missingSetsumei ? (isB ? 'translate-x-[14px]' : elevated ? 'translate-x-[22px]' : 'translate-x-6 lg:translate-x-6') : 'translate-x-[3px]'}`} />
+        {/* Admin Tools (collapsible) */}
+        {isAdmin && (() => {
+          const adminActiveCount = (filters.missingSetsumei ? 1 : 0) + (filters.missingArtisanCode ? 1 : 0) + (smartCropEnabled ? 1 : 0);
+          return (
+            <AdminToolsSection defaultOpen={false} variant={variant} activeCount={adminActiveCount}>
+              {/* Missing Setsumei */}
+              <label className={`flex items-center justify-between cursor-pointer group ${isB ? 'min-h-[24px]' : elevated ? 'min-h-[30px]' : 'min-h-[36px]'}`}>
+                <span className={`${isB ? 'text-[11px]' : elevated ? 'text-[12px]' : 'text-[13px]'} text-charcoal group-hover:text-ink transition-colors`}>Missing Setsumei</span>
+                <div className="relative">
+                  <input type="checkbox" checked={filters.missingSetsumei || false} onChange={(e) => onFilterChange('missingSetsumei', e.target.checked)} className="peer sr-only" />
+                  <div className={`${isB ? 'w-7 h-[16px]' : elevated ? 'w-8 h-[18px]' : 'w-9 h-5'} rounded-full transition-colors ${filters.missingSetsumei ? 'bg-gold' : 'bg-border-dark'}`}>
+                    <div className={`absolute ${isB ? 'top-[3px] w-2.5 h-2.5' : elevated ? 'top-[3px] w-3 h-3' : 'top-[3px] w-3.5 h-3.5'} bg-white rounded-full shadow transition-transform ${filters.missingSetsumei ? (isB ? 'translate-x-[12px]' : elevated ? 'translate-x-[14px]' : 'translate-x-[16px]') : 'translate-x-[3px]'}`} />
+                  </div>
                 </div>
-              </div>
-            </label>
-            {!isB && <p className="text-[11px] text-muted mt-1">Juyo/Tokuju items without OCR setsumei translation</p>}
-          </div>
-        )}
-
-        {/* Admin: Missing Artisan Code */}
-        {isAdmin && (
-          <div className={`${isB ? 'py-2' : elevated ? 'py-3' : 'py-5'} border-t ${isB ? 'border-gold/20' : 'border-gold/30'}`}>
-            <label className={`flex items-center justify-between cursor-pointer group ${isB ? 'min-h-[28px]' : elevated ? 'min-h-[36px]' : 'min-h-[48px]'}`}>
-              <div className="flex items-center gap-1.5">
-                <span className={`${isB ? 'text-[9px] px-1 py-px' : 'text-[10px] px-1.5 py-0.5'} bg-gold/20 text-gold rounded font-semibold`}>ADMIN</span>
-                <span className={`${isB ? 'text-[12px]' : elevated ? 'text-[13px]' : 'text-[15px] lg:text-[14px]'} text-charcoal group-hover:text-ink transition-colors`}>Missing Artisan Code</span>
-              </div>
-              <div className="relative">
-                <input type="checkbox" checked={filters.missingArtisanCode || false} onChange={(e) => onFilterChange('missingArtisanCode', e.target.checked)} className="peer sr-only" />
-                <div className={`${isB ? 'w-8 h-[18px]' : elevated ? 'w-10 h-[22px]' : 'w-12 h-7 lg:w-11 lg:h-6'} rounded-full transition-colors ${filters.missingArtisanCode ? 'bg-gold' : 'bg-border-dark'}`}>
-                  <div className={`absolute ${isB ? 'top-[3px] w-3 h-3' : elevated ? 'top-[3px] w-4 h-4' : 'top-1 w-5 h-5 lg:w-4 lg:h-4'} bg-white rounded-full shadow transition-transform ${filters.missingArtisanCode ? (isB ? 'translate-x-[14px]' : elevated ? 'translate-x-[22px]' : 'translate-x-6 lg:translate-x-6') : 'translate-x-[3px]'}`} />
+              </label>
+              {/* Missing Artisan Code */}
+              <label className={`flex items-center justify-between cursor-pointer group ${isB ? 'min-h-[24px]' : elevated ? 'min-h-[30px]' : 'min-h-[36px]'}`}>
+                <span className={`${isB ? 'text-[11px]' : elevated ? 'text-[12px]' : 'text-[13px]'} text-charcoal group-hover:text-ink transition-colors`}>Missing Artisan Code</span>
+                <div className="relative">
+                  <input type="checkbox" checked={filters.missingArtisanCode || false} onChange={(e) => onFilterChange('missingArtisanCode', e.target.checked)} className="peer sr-only" />
+                  <div className={`${isB ? 'w-7 h-[16px]' : elevated ? 'w-8 h-[18px]' : 'w-9 h-5'} rounded-full transition-colors ${filters.missingArtisanCode ? 'bg-gold' : 'bg-border-dark'}`}>
+                    <div className={`absolute ${isB ? 'top-[3px] w-2.5 h-2.5' : elevated ? 'top-[3px] w-3 h-3' : 'top-[3px] w-3.5 h-3.5'} bg-white rounded-full shadow transition-transform ${filters.missingArtisanCode ? (isB ? 'translate-x-[12px]' : elevated ? 'translate-x-[14px]' : 'translate-x-[16px]') : 'translate-x-[3px]'}`} />
+                  </div>
                 </div>
-              </div>
-            </label>
-            {!isB && <p className="text-[11px] text-muted mt-1">Items without Yuhinkai artisan code match</p>}
-          </div>
-        )}
-
-        {/* Admin: Smart Crop */}
-        {isAdmin && onSmartCropChange && (
-          <div className={`${isB ? 'py-2' : elevated ? 'py-3' : 'py-5'} border-t ${isB ? 'border-gold/20' : 'border-gold/30'}`}>
-            <label className={`flex items-center justify-between cursor-pointer group ${isB ? 'min-h-[28px]' : elevated ? 'min-h-[36px]' : 'min-h-[48px]'}`}>
-              <div className="flex items-center gap-1.5">
-                <span className={`${isB ? 'text-[9px] px-1 py-px' : 'text-[10px] px-1.5 py-0.5'} bg-gold/20 text-gold rounded font-semibold`}>ADMIN</span>
-                <span className={`${isB ? 'text-[12px]' : elevated ? 'text-[13px]' : 'text-[15px] lg:text-[14px]'} text-charcoal group-hover:text-ink transition-colors`}>Smart Crop</span>
-              </div>
-              <div className="relative">
-                <input type="checkbox" checked={smartCropEnabled || false} onChange={(e) => onSmartCropChange(e.target.checked)} className="peer sr-only" />
-                <div className={`${isB ? 'w-8 h-[18px]' : elevated ? 'w-10 h-[22px]' : 'w-12 h-7 lg:w-11 lg:h-6'} rounded-full transition-colors ${smartCropEnabled ? 'bg-gold' : 'bg-border-dark'}`}>
-                  <div className={`absolute ${isB ? 'top-[3px] w-3 h-3' : elevated ? 'top-[3px] w-4 h-4' : 'top-1 w-5 h-5 lg:w-4 lg:h-4'} bg-white rounded-full shadow transition-transform ${smartCropEnabled ? (isB ? 'translate-x-[14px]' : elevated ? 'translate-x-[22px]' : 'translate-x-6 lg:translate-x-6') : 'translate-x-[3px]'}`} />
-                </div>
-              </div>
-            </label>
-            {!isB && <p className="text-[11px] text-muted mt-1">AI focal-point crop vs center-center</p>}
-          </div>
-        )}
+              </label>
+              {/* Smart Crop */}
+              {onSmartCropChange && (
+                <label className={`flex items-center justify-between cursor-pointer group ${isB ? 'min-h-[24px]' : elevated ? 'min-h-[30px]' : 'min-h-[36px]'}`}>
+                  <span className={`${isB ? 'text-[11px]' : elevated ? 'text-[12px]' : 'text-[13px]'} text-charcoal group-hover:text-ink transition-colors`}>Smart Crop</span>
+                  <div className="relative">
+                    <input type="checkbox" checked={smartCropEnabled || false} onChange={(e) => onSmartCropChange(e.target.checked)} className="peer sr-only" />
+                    <div className={`${isB ? 'w-7 h-[16px]' : elevated ? 'w-8 h-[18px]' : 'w-9 h-5'} rounded-full transition-colors ${smartCropEnabled ? 'bg-gold' : 'bg-border-dark'}`}>
+                      <div className={`absolute ${isB ? 'top-[3px] w-2.5 h-2.5' : elevated ? 'top-[3px] w-3 h-3' : 'top-[3px] w-3.5 h-3.5'} bg-white rounded-full shadow transition-transform ${smartCropEnabled ? (isB ? 'translate-x-[12px]' : elevated ? 'translate-x-[14px]' : 'translate-x-[16px]') : 'translate-x-[3px]'}`} />
+                    </div>
+                  </div>
+                </label>
+              )}
+            </AdminToolsSection>
+          );
+        })()}
       </div>
 
       {/* Live update indicator - subtle, at bottom */}
