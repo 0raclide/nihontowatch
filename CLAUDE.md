@@ -552,6 +552,31 @@ The `featured_score` column drives the default sort order in browse. Computed as
 | Tests (65) | `tests/lib/featured/scoring.test.ts` |
 | Session doc | `docs/SESSION_20260222_FEATURED_SCORE_RECOMPUTE.md` |
 
+### Cheap Elite Artisan Suppression
+
+The artisan matcher (Oshi-scrapper) assigns confidence based purely on match quality (kanji match, LLM consensus) with no price awareness. This causes misattributions — e.g., Horikawa Kunihiro (KUN232, elite_factor 0.21) matched to a ¥6,600 tsuba. Cheap items with elite artisan matches are almost always wrong.
+
+**Fix (two layers):**
+
+1. **Confidence downgrade (DB)** — `artisan_confidence` set to `NONE` for listings where `price_jpy < ¥100K` AND `artisan_elite_factor > 0.05`. NONE confidence hides the artisan badge entirely in the UI (existing display code checks confidence). Migration `088_artisan_confidence_cheap_downgrade.sql` backfilled 148 rows (2026-02-24).
+
+2. **Featured score damping (scoring.ts)** — `price_damping = min(priceJpy / ¥500K, 1)` multiplies artisan stature in the quality score. A ¥30K item gets only 6% of the stature boost. This is a secondary defense that affects sort order even if confidence isn't downgraded.
+
+**Scraper gap (TODO):** Oshi-scrapper's `artisan_matcher/matcher.py:save_result()` does not apply price-based confidence downgrade. New cheap listings with elite matches will continue to get HIGH/MEDIUM confidence until the scraper is patched. Fix location: `save_result()` should check `price_jpy < 100000 AND elite_factor > 0.05` before writing confidence, and downgrade to NONE.
+
+**Thresholds:**
+- Price: `< ¥100,000` (items under ¥100K with elite artisan matches are suspect)
+- Elite factor: `> 0.05` (artisans with meaningful Juyo/Tokuju presence)
+- `artisan_admin_locked` items are never affected (admin overrides take precedence)
+
+**Key files:**
+| Component | Location |
+|-----------|----------|
+| DB migration (backfill) | `supabase/migrations/088_artisan_confidence_cheap_downgrade.sql` |
+| Featured score damping | `src/lib/featured/scoring.ts` (`computeQuality`, `PRICE_DAMPING_CEILING_JPY`) |
+| Scraper match writer | `Oshi-scrapper/artisan_matcher/matcher.py` (`save_result()` — needs price check) |
+| Badge visibility | `src/components/browse/ListingCard.tsx` (hides badge when confidence = NONE) |
+
 ### Smart Crop Focal Points
 
 Listing card thumbnails use AI-detected focal points to crop images intelligently instead of defaulting to center-center. Uses `smartcrop-sharp` to detect the most visually important area of each image (face detection, edge analysis, saturation mapping) and stores the crop center as `focal_x`/`focal_y` percentages (0-100) in the database.
@@ -734,6 +759,7 @@ Displays Yuhinkai artisan codes (e.g., "MAS590", "OWA009") on listing cards for 
 - **Green** = HIGH confidence (exact kanji match or LLM consensus)
 - **Yellow** = MEDIUM confidence (romaji match or school fallback)
 - **Gray** = LOW confidence (LLM disagreement)
+- **Hidden** = NONE confidence (no badge displayed — includes cheap elite suppression, see below)
 - Admin users see tooltip with code, candidates, and verification buttons; non-admin badges link to `/artists/{code}`
 
 **Tooltip (click badge):**
@@ -832,6 +858,7 @@ For detailed implementation docs, see:
 - `docs/SMART_CROP_FOCAL_POINTS.md` - **Smart crop focal points** — AI image cropping, cron pipeline, admin toggle, invalidation trigger
 - `docs/SESSION_20260222_JAPANESE_UX.md` - JA UX improvements — typography, filter expand, card metadata, freshness timestamps, LINE+Twitter/X share, polite empty states
 - `docs/JAPANESE_UX_RECOMMENDATIONS.md` - JA UX research — design philosophy, typography, density, trust signals, navigation patterns
+- `supabase/migrations/088_artisan_confidence_cheap_downgrade.sql` - **Cheap elite suppression** — backfill 148 misattributed cheap items to NONE confidence
 
 ---
 
