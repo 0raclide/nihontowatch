@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   title: 'Terms of Service | NihontoWatch',
   description: 'Terms of Service for NihontoWatch - the Japanese sword and tosogu marketplace aggregator.',
   alternates: {
-    canonical: '/terms',
+    canonical: 'https://nihontowatch.com/terms',
   },
   openGraph: {
     title: 'Terms of Service | NihontoWatch',

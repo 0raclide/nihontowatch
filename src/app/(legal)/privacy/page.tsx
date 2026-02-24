@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   title: 'Privacy Policy | NihontoWatch',
   description: 'Privacy Policy for NihontoWatch - how we collect, use, and protect your personal data under GDPR.',
   alternates: {
-    canonical: '/privacy',
+    canonical: 'https://nihontowatch.com/privacy',
   },
   openGraph: {
     title: 'Privacy Policy | NihontoWatch',
