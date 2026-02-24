@@ -90,7 +90,7 @@ export async function GET(
       (serviceClient.from('listing_views') as any)
         .select('*', { count: 'exact', head: true })
         .eq('listing_id', listingId)
-        .gte('created_at', thirtyDaysAgo),
+        .gte('viewed_at', thirtyDaysAgo),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (serviceClient.from('activity_events') as any)
         .select('*', { count: 'exact', head: true })

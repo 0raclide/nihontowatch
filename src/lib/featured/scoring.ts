@@ -386,12 +386,12 @@ export async function recomputeScoreForListing(
       .select('*', { count: 'exact', head: true })
       .eq('listing_id', listingId)
       .gte('created_at', thirtyDaysAgo),
-    // Views count
+    // Views count (listing_views uses viewed_at, not created_at)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (supabase.from('listing_views') as any)
       .select('*', { count: 'exact', head: true })
       .eq('listing_id', listingId)
-      .gte('created_at', thirtyDaysAgo),
+      .gte('viewed_at', thirtyDaysAgo),
     // QuickView opens count
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (supabase.from('activity_events') as any)
