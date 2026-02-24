@@ -33,6 +33,7 @@ describe('getArtisanAlias()', () => {
     expect(getArtisanAlias('KUN636')).toBe('Saburo Kunimune');
     expect(getArtisanAlias('GOT042')).toBe('Goto Ichijo');
     expect(getArtisanAlias('OWA009')).toBe('Nobuie');
+    expect(getArtisanAlias('WGO055')).toBe('Araki Tomei');
   });
 
   it('returns null for unknown codes', () => {

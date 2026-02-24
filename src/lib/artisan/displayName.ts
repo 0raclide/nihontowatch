@@ -52,6 +52,7 @@ const ARTISAN_ALIASES: Record<string, string> = {
   'KUN636': 'Saburo Kunimune',      // Naomune Kunimune, commonly known as "Saburo Kunimune"
   'GOT042': 'Goto Ichijo',          // Waki-Goto Goto Ichijo, commonly known as just "Goto Ichijo"
   'OWA009': 'Nobuie',               // Owari Nobuie, universally known as just "Nobuie"
+  'WGO055': 'Araki Tomei',          // name_romaji="Tōmei", family name Araki (荒木) not in Yuhinkai fields
 };
 
 /** Return the well-known alias for an artisan, or null if none. */
