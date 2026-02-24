@@ -10,6 +10,9 @@ import { describe, it, expect } from 'vitest';
 import {
   CERT_POINTS,
   IGNORE_ARTISAN_IDS,
+  CURRENCY_TO_JPY,
+  PRICE_DAMPING_CEILING_JPY,
+  estimatePriceJpy,
   computeQuality,
   computeFreshness,
   computeFeaturedScore,
@@ -30,6 +33,7 @@ function baseListing(overrides: Partial<ListingScoreInput> = {}): ListingScoreIn
     artisan_elite_count: null,
     cert_type: null,
     price_value: null,
+    price_currency: null,
     artisan_confidence: null,
     images: [],
     first_seen_at: null,
@@ -117,6 +121,68 @@ describe('IGNORE_ARTISAN_IDS', () => {
 });
 
 // ---------------------------------------------------------------------------
+// estimatePriceJpy
+// ---------------------------------------------------------------------------
+
+describe('estimatePriceJpy', () => {
+  it('returns 0 for null price', () => {
+    expect(estimatePriceJpy(null, 'JPY')).toBe(0);
+  });
+
+  it('returns 0 for zero price', () => {
+    expect(estimatePriceJpy(0, 'JPY')).toBe(0);
+  });
+
+  it('returns 0 for negative price', () => {
+    expect(estimatePriceJpy(-100, 'JPY')).toBe(0);
+  });
+
+  it('returns 0 for unknown currency', () => {
+    expect(estimatePriceJpy(1000, 'XYZ')).toBe(0);
+  });
+
+  it('defaults to JPY for null currency (most listings are JPY)', () => {
+    // Null currency defaults to JPY via nullish coalescing — most Japanese
+    // dealers have price_currency = null because prices are implicitly JPY.
+    expect(estimatePriceJpy(1000, null)).toBe(1000);
+  });
+
+  it('passes through JPY prices', () => {
+    expect(estimatePriceJpy(500000, 'JPY')).toBe(500000);
+  });
+
+  it('converts USD to JPY', () => {
+    expect(estimatePriceJpy(1000, 'USD')).toBe(150000);
+  });
+
+  it('converts EUR to JPY', () => {
+    expect(estimatePriceJpy(1000, 'EUR')).toBe(160000);
+  });
+
+  it('converts GBP to JPY', () => {
+    expect(estimatePriceJpy(1000, 'GBP')).toBe(190000);
+  });
+
+  it('converts AUD to JPY', () => {
+    expect(estimatePriceJpy(1000, 'AUD')).toBe(100000);
+  });
+
+  it('converts PLN to JPY', () => {
+    expect(estimatePriceJpy(1000, 'PLN')).toBe(38000);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// PRICE_DAMPING_CEILING_JPY
+// ---------------------------------------------------------------------------
+
+describe('PRICE_DAMPING_CEILING_JPY', () => {
+  it('is 500,000 JPY', () => {
+    expect(PRICE_DAMPING_CEILING_JPY).toBe(500000);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // imageCount
 // ---------------------------------------------------------------------------
 
@@ -148,15 +214,19 @@ describe('computeQuality', () => {
   });
 
   describe('artisan stature', () => {
-    it('uses elite_factor and elite_count for real artisans', () => {
+    it('uses elite_factor and elite_count for real artisans (full price)', () => {
       const listing = baseListing({
         artisan_id: 'MAS590',
         artisan_elite_factor: 1.0,
         artisan_elite_count: 100,
+        price_value: 5000000,
+        price_currency: 'JPY',
       });
       const quality = computeQuality(listing);
       // stature = (1.0 * 200) + min(sqrt(100) * 18, 100) = 200 + 100 = 300
-      expect(quality).toBe(300);
+      // priceDamping = min(5000000 / 500000, 1) = 1.0
+      // completeness: price = 10
+      expect(quality).toBe(310);
     });
 
     it('ignores UNKNOWN artisan_id', () => {
@@ -193,10 +263,13 @@ describe('computeQuality', () => {
         artisan_id: 'MAS590',
         artisan_elite_factor: null,
         artisan_elite_count: 10,
+        price_value: 5000000,
+        price_currency: 'JPY',
       });
       const quality = computeQuality(listing);
       // stature = (0 * 200) + min(sqrt(10) * 18, 100) = 0 + 56.92 ≈ 56.92
-      expect(quality).toBeCloseTo(56.92, 1);
+      // priceDamping = 1.0, completeness: price = 10
+      expect(quality).toBeCloseTo(66.92, 1);
     });
 
     it('caps elite_count contribution at 100', () => {
@@ -204,10 +277,132 @@ describe('computeQuality', () => {
         artisan_id: 'MAS590',
         artisan_elite_factor: 0,
         artisan_elite_count: 10000,
+        price_value: 5000000,
+        price_currency: 'JPY',
       });
       const quality = computeQuality(listing);
       // stature = 0 + min(sqrt(10000) * 18, 100) = min(1800, 100) = 100
-      expect(quality).toBe(100);
+      // priceDamping = 1.0, completeness: price = 10
+      expect(quality).toBe(110);
+    });
+  });
+
+  describe('price damping on artisan stature', () => {
+    it('dampens artisan stature for cheap items (¥30K)', () => {
+      const listing = baseListing({
+        artisan_id: 'MAS590',
+        artisan_elite_factor: 1.0,
+        artisan_elite_count: 100,
+        price_value: 30000,
+        price_currency: 'JPY',
+      });
+      const quality = computeQuality(listing);
+      // rawStature = 200 + 100 = 300
+      // priceDamping = 30000 / 500000 = 0.06
+      // artisanStature = 300 * 0.06 = 18
+      // completeness: price = 10
+      // total = 18 + 10 = 28
+      expect(quality).toBe(28);
+    });
+
+    it('partially dampens artisan stature for mid-price items (¥250K)', () => {
+      const listing = baseListing({
+        artisan_id: 'MAS590',
+        artisan_elite_factor: 1.0,
+        artisan_elite_count: 100,
+        price_value: 250000,
+        price_currency: 'JPY',
+      });
+      const quality = computeQuality(listing);
+      // rawStature = 300, priceDamping = 250000 / 500000 = 0.5
+      // artisanStature = 300 * 0.5 = 150
+      // completeness: price = 10
+      expect(quality).toBe(160);
+    });
+
+    it('no damping at ¥500K ceiling', () => {
+      const listing = baseListing({
+        artisan_id: 'MAS590',
+        artisan_elite_factor: 1.0,
+        artisan_elite_count: 100,
+        price_value: 500000,
+        price_currency: 'JPY',
+      });
+      const quality = computeQuality(listing);
+      // rawStature = 300, priceDamping = 1.0
+      // completeness: price = 10
+      expect(quality).toBe(310);
+    });
+
+    it('no damping above ceiling', () => {
+      const listing = baseListing({
+        artisan_id: 'MAS590',
+        artisan_elite_factor: 1.0,
+        artisan_elite_count: 100,
+        price_value: 2000000,
+        price_currency: 'JPY',
+      });
+      const quality = computeQuality(listing);
+      // rawStature = 300, priceDamping = clamped to 1.0
+      // completeness: price = 10
+      expect(quality).toBe(310);
+    });
+
+    it('zero stature when no price (null)', () => {
+      const listing = baseListing({
+        artisan_id: 'MAS590',
+        artisan_elite_factor: 1.0,
+        artisan_elite_count: 100,
+        price_value: null,
+        price_currency: null,
+      });
+      const quality = computeQuality(listing);
+      // rawStature = 300, priceDamping = 0 (no price → priceJpy = 0)
+      expect(quality).toBe(0);
+    });
+
+    it('converts USD price for damping', () => {
+      const listing = baseListing({
+        artisan_id: 'MAS590',
+        artisan_elite_factor: 1.0,
+        artisan_elite_count: 100,
+        price_value: 2000,
+        price_currency: 'USD',
+      });
+      const quality = computeQuality(listing);
+      // priceJpy = 2000 * 150 = 300000, priceDamping = 300000 / 500000 = 0.6
+      // rawStature = 300, artisanStature = 300 * 0.6 = 180
+      // completeness: price = 10
+      expect(quality).toBe(190);
+    });
+
+    it('cheap USD item gets heavily dampened', () => {
+      const listing = baseListing({
+        artisan_id: 'MAS590',
+        artisan_elite_factor: 1.0,
+        artisan_elite_count: 100,
+        price_value: 200,
+        price_currency: 'USD',
+      });
+      const quality = computeQuality(listing);
+      // priceJpy = 200 * 150 = 30000, priceDamping = 0.06
+      // artisanStature = 300 * 0.06 = 18
+      // completeness: price = 10
+      expect(quality).toBe(28);
+    });
+
+    it('does not dampen non-artisan components', () => {
+      // Cert points and completeness are unaffected by price damping
+      const listing = baseListing({
+        cert_type: 'Juyo',
+        price_value: 30000,
+        price_currency: 'JPY',
+        images: ['a', 'b', 'c'],
+      });
+      const quality = computeQuality(listing);
+      // No artisan → stature = 0 (damping irrelevant)
+      // cert = 28, completeness = 9 (images) + 10 (price) = 19
+      expect(quality).toBe(47);
     });
   });
 
@@ -315,6 +510,7 @@ describe('computeQuality', () => {
         artisan_elite_count: 25,
         cert_type: 'Juyo',
         price_value: 2000000,
+        price_currency: 'JPY',
         artisan_confidence: 'HIGH',
         images: ['a', 'b', 'c', 'd', 'e'],
         smith: 'Masamune',
@@ -326,6 +522,7 @@ describe('computeQuality', () => {
       const quality = computeQuality(listing);
 
       // artisan_stature = (0.5 * 200) + min(sqrt(25) * 18, 100) = 100 + 90 = 190
+      // priceDamping = min(2000000 / 500000, 1) = 1.0
       // cert = 28
       // completeness:
       //   images: min(5*3, 15) = 15
@@ -348,12 +545,13 @@ describe('computeQuality', () => {
         artisan_elite_count: 50,
         cert_type: null,
         price_value: 165000,
+        price_currency: 'JPY',
         artisan_confidence: 'LOW',
         images: ['a', 'b', 'c', 'd', 'e', 'f'],
       });
       const quality = computeQuality(listing);
 
-      // artisan_stature = 0 (UNKNOWN is ignored)
+      // artisan_stature = 0 (UNKNOWN is ignored, damping irrelevant)
       // cert = 0 (null)
       // completeness = 15 (images) + 10 (price) + 0 (no attribution, measurements, etc.) = 25
       expect(quality).toBe(25);
@@ -448,6 +646,7 @@ describe('computeFeaturedScore', () => {
       images: ['a.jpg'],
       cert_type: 'Juyo',        // +28 cert
       price_value: 1000000,     // +10 completeness
+      price_currency: 'JPY',
       is_initial_import: true,  // freshness = 1.0
     });
     // quality = 28 (cert) + 3 (1 image * 3) + 10 (price) = 41
@@ -461,6 +660,7 @@ describe('computeFeaturedScore', () => {
     const listing = baseListing({
       images: ['a.jpg'],
       price_value: 1000000,     // +10 completeness
+      price_currency: 'JPY',
       first_seen_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
     });
     // quality = 3 (1 image) + 10 (price) = 13
@@ -485,6 +685,7 @@ describe('computeFeaturedScore', () => {
     const listing = baseListing({
       images: ['a.jpg'],
       price_value: 100000,
+      price_currency: 'JPY',
       first_seen_at: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
     });
     // quality = 3 + 10 = 13, freshness = 0.85
@@ -503,6 +704,7 @@ describe('computeFeaturedScore', () => {
         artisan_elite_count: 80,
         cert_type: 'Juyo',
         price_value: 5000000,
+        price_currency: 'JPY',
         artisan_confidence: 'HIGH',
         images: ['a', 'b', 'c', 'd', 'e'],
         smith: 'Masamune',
@@ -529,6 +731,7 @@ describe('computeFeaturedScore', () => {
         artisan_elite_count: null,
         cert_type: null,
         price_value: 165000,
+        price_currency: 'JPY',
         artisan_confidence: 'LOW',
         images: ['a', 'b', 'c', 'd', 'e', 'f'],
         is_initial_import: true,
@@ -547,7 +750,8 @@ describe('computeFeaturedScore', () => {
         artisan_elite_factor: 0.8,
         artisan_elite_count: 60,
         cert_type: 'Hozon' as const,
-        price_value: 300000,
+        price_value: 1000000,
+        price_currency: 'JPY' as const,
         artisan_confidence: 'HIGH' as const,
         images: ['a', 'b', 'c'],
         is_initial_import: true,

@@ -44,6 +44,40 @@ export const CERT_POINTS: Record<string, number> = {
 /** Artisan IDs that are catch-all buckets, not real artisan matches */
 export const IGNORE_ARTISAN_IDS = new Set(['UNKNOWN', 'unknown']);
 
+/**
+ * Rough currency → JPY conversion rates for scoring only.
+ * These don't need to be exact — they're used to dampen artisan stature
+ * for suspiciously cheap items (a real elite artisan's work ≥ ¥500K).
+ */
+export const CURRENCY_TO_JPY: Record<string, number> = {
+  JPY: 1,
+  USD: 150,
+  EUR: 160,
+  GBP: 190,
+  AUD: 100,
+  CAD: 110,
+  CHF: 170,
+  SGD: 110,
+  HKD: 19,
+  PLN: 38,
+};
+
+/** Price (in JPY) at which artisan stature reaches full weight */
+export const PRICE_DAMPING_CEILING_JPY = 500_000;
+
+/**
+ * Estimate the JPY-equivalent price for scoring purposes.
+ * Returns 0 for null price or unknown currency.
+ */
+export function estimatePriceJpy(
+  priceValue: number | null,
+  priceCurrency: string | null
+): number {
+  if (!priceValue || priceValue <= 0) return 0;
+  const rate = CURRENCY_TO_JPY[priceCurrency ?? 'JPY'] ?? 0;
+  return priceValue * rate;
+}
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -56,6 +90,7 @@ export interface ListingScoreInput {
   artisan_elite_count: number | null;
   cert_type: string | null;
   price_value: number | null;
+  price_currency: string | null;
   artisan_confidence: string | null;
   images: unknown;
   first_seen_at: string | null;
@@ -89,7 +124,14 @@ export function computeQuality(listing: ListingScoreInput): number {
   const eliteFactor = hasRealArtisan ? (listing.artisan_elite_factor ?? 0) : 0;
   const eliteCount = hasRealArtisan ? (listing.artisan_elite_count ?? 0) : 0;
 
-  const artisanStature = (eliteFactor * 200) + Math.min(Math.sqrt(eliteCount) * 18, 100);
+  const rawArtisanStature = (eliteFactor * 200) + Math.min(Math.sqrt(eliteCount) * 18, 100);
+
+  // Price-based damping: cheap items with elite artisan matches are almost certainly
+  // wrong attributions. Smooth ramp from 0% at ¥0 to 100% at ¥500K.
+  const priceJpy = estimatePriceJpy(listing.price_value, listing.price_currency);
+  const priceDamping = Math.min(priceJpy / PRICE_DAMPING_CEILING_JPY, 1);
+  const artisanStature = rawArtisanStature * priceDamping;
+
   const certPts = listing.cert_type ? (CERT_POINTS[listing.cert_type] ?? 0) : 0;
 
   // Completeness sub-score (0–55 pts)
@@ -170,6 +212,9 @@ export interface ScoreBreakdown {
     eliteCountPts: number;
     artisanId: string | null;
     isReal: boolean;
+    priceDamping: number;
+    priceJpy: number;
+    rawStature: number;
   };
   certDetail: { certType: string | null; points: number };
   completenessItems: CompletenessItem[];
@@ -193,7 +238,12 @@ export function computeScoreBreakdown(listing: ListingScoreInput): ScoreBreakdow
   const eliteCount = hasRealArtisan ? (listing.artisan_elite_count ?? 0) : 0;
   const eliteFactorPts = eliteFactor * 200;
   const eliteCountPts = Math.min(Math.sqrt(eliteCount) * 18, 100);
-  const artisanStature = eliteFactorPts + eliteCountPts;
+  const rawStature = eliteFactorPts + eliteCountPts;
+
+  // Price-based damping (mirrors computeQuality)
+  const priceJpy = estimatePriceJpy(listing.price_value, listing.price_currency);
+  const priceDamping = Math.min(priceJpy / PRICE_DAMPING_CEILING_JPY, 1);
+  const artisanStature = rawStature * priceDamping;
 
   // Cert points
   const certPts = listing.cert_type ? (CERT_POINTS[listing.cert_type] ?? 0) : 0;
@@ -262,6 +312,9 @@ export function computeScoreBreakdown(listing: ListingScoreInput): ScoreBreakdow
       eliteCountPts: Math.round(eliteCountPts * 100) / 100,
       artisanId: listing.artisan_id,
       isReal: !!hasRealArtisan,
+      priceDamping: Math.round(priceDamping * 1000) / 1000,
+      priceJpy: Math.round(priceJpy),
+      rawStature: Math.round(rawStature * 100) / 100,
     },
     certDetail: { certType: listing.cert_type, points: certPts },
     completenessItems,
@@ -283,7 +336,7 @@ const HEAT_30_DAY_MS = 30 * 24 * 60 * 60 * 1000;
 
 /** Select string for the fields we need from listings */
 export const LISTING_SCORE_SELECT =
-  'id, artisan_id, artisan_elite_factor, artisan_elite_count, cert_type, price_value, artisan_confidence, images, first_seen_at, is_initial_import, smith, tosogu_maker, school, tosogu_school, era, province, description, nagasa_cm, sori_cm, motohaba_cm, tosogu_height_cm, tosogu_width_cm';
+  'id, artisan_id, artisan_elite_factor, artisan_elite_count, cert_type, price_value, price_currency, artisan_confidence, images, first_seen_at, is_initial_import, smith, tosogu_maker, school, tosogu_school, era, province, description, nagasa_cm, sori_cm, motohaba_cm, tosogu_height_cm, tosogu_width_cm';
 
 /**
  * Fetch elite_factor and elite_count from Yuhinkai for an artisan code.

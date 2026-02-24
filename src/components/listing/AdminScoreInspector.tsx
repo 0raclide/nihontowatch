@@ -39,6 +39,9 @@ interface BreakdownData {
       eliteCountPts: number;
       artisanId: string | null;
       isReal: boolean;
+      priceDamping: number;
+      priceJpy: number;
+      rawStature: number;
     };
     certDetail: { certType: string | null; points: number };
     completenessItems: CompletenessItem[];
@@ -249,6 +252,12 @@ export function AdminScoreInspector({ listing, onScoreRecomputed }: AdminScoreIn
                             <span>√elite_count ({data.breakdown.artisanDetail.eliteCount}) × 18</span>
                             <span className="font-mono tabular-nums">{data.breakdown.artisanDetail.eliteCountPts}</span>
                           </div>
+                          {data.breakdown.artisanDetail.priceDamping < 1 && (
+                            <div className="flex justify-between text-amber-500">
+                              <span>price damping (¥{data.breakdown.artisanDetail.priceJpy.toLocaleString()} / ¥500K)</span>
+                              <span className="font-mono tabular-nums">×{data.breakdown.artisanDetail.priceDamping}</span>
+                            </div>
+                          )}
                           <div className="text-[9px] text-muted/60">{data.breakdown.artisanDetail.artisanId}</div>
                         </div>
                       ) : (
