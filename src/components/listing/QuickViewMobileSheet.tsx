@@ -243,8 +243,8 @@ export function QuickViewMobileSheet({
       isDragCommitted.current = true;
     }
 
-    // Now committed — prevent browser scroll and handle drag
-    e.preventDefault();
+    // touch-action:none on the drag handle prevents browser scroll,
+    // so no need for e.preventDefault() (which fails on passive React listeners).
 
     // Calculate velocity for momentum
     const dt = currentTime - lastTime.current;
@@ -352,7 +352,7 @@ export function QuickViewMobileSheet({
       {/* Draggable header area - entire top section responds to drag gestures */}
       <div
         className="cursor-grab active:cursor-grabbing shrink-0"
-        style={{ touchAction: isDragging ? 'none' : 'auto' }}
+        style={{ touchAction: 'none' }}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}

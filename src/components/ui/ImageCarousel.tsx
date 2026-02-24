@@ -161,8 +161,9 @@ export default function ImageCarousel({
       if (!isDragging.current) return;
 
       // Handle pinch zoom
+      // touch-action:none on the track prevents browser zoom/scroll,
+      // so no e.preventDefault() needed (fails on passive React listeners).
       if (enableZoom && e.touches.length === 2) {
-        e.preventDefault();
         const dx = e.touches[0].clientX - e.touches[1].clientX;
         const dy = e.touches[0].clientY - e.touches[1].clientY;
         const distance = Math.sqrt(dx * dx + dy * dy);
@@ -173,7 +174,6 @@ export default function ImageCarousel({
 
       // If zoomed, handle pan instead of swipe
       if (zoomScale > 1) {
-        e.preventDefault();
         const touch = e.touches[0];
         const deltaX = touch.clientX - touchCurrentX.current;
         const deltaY = touch.clientY - touchStartY.current;
@@ -198,10 +198,8 @@ export default function ImageCarousel({
         return;
       }
 
-      // Prevent page scroll for horizontal swipe
-      if (Math.abs(deltaX) > 10) {
-        e.preventDefault();
-      }
+      // touch-action:pan-y on the track prevents horizontal browser gestures,
+      // so no e.preventDefault() needed for horizontal swipes.
 
       translateX.current = deltaX;
 
@@ -416,6 +414,9 @@ export default function ImageCarousel({
         style={{
           transform: `translate3d(${-currentIndex * 100}%, 0, 0)`,
           transition: `transform ${TRANSITION_DURATION}ms cubic-bezier(0.25, 0.46, 0.45, 0.94)`,
+          // pan-y: browser handles vertical scroll, JS handles horizontal swipe.
+          // none: when zoom enabled, JS handles all gestures (pinch, pan, swipe).
+          touchAction: enableZoom ? 'none' : 'pan-y',
         }}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
