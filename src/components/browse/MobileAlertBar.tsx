@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { useLocale } from '@/i18n/LocaleContext';
 import { LoginModal } from '@/components/auth/LoginModal';
 import { useSavedSearches } from '@/hooks/useSavedSearches';
 import type { SavedSearchCriteria } from '@/types';
+import { CATEGORY_DEFAULT } from '@/lib/constants';
 
 interface MobileAlertBarProps {
   criteria: SavedSearchCriteria;
@@ -22,14 +23,30 @@ export function MobileAlertBar({ criteria }: MobileAlertBarProps) {
   const { t } = useLocale();
   const { createSavedSearch, isCreating } = useSavedSearches({ autoFetch: false });
   const [showLoginModal, setShowLoginModal] = useState(false);
+  // Serialize criteria to detect filter changes
+  const criteriaKey = JSON.stringify(criteria);
+  const prevCriteriaKey = useRef(criteriaKey);
+
   const [dismissed, setDismissed] = useState(() => {
     if (typeof window === 'undefined') return false;
-    return sessionStorage.getItem('mobileAlertBarDismissed') === 'true';
+    // Only stay dismissed if the stored criteria matches current
+    const storedKey = sessionStorage.getItem('mobileAlertBarDismissedFor');
+    return storedKey === criteriaKey;
   });
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState(false);
 
-  // Check if there are any active filters worth saving
+  // Reset dismissed state when criteria changes
+  useEffect(() => {
+    if (prevCriteriaKey.current !== criteriaKey) {
+      prevCriteriaKey.current = criteriaKey;
+      setDismissed(false);
+      setSaved(false);
+    }
+  }, [criteriaKey]);
+
+  // Check if there are any user-chosen filters worth saving.
+  // The default category ('nihonto') doesn't count — it's always set on landing.
   const hasFilters =
     (criteria.itemTypes?.length ?? 0) > 0 ||
     (criteria.certifications?.length ?? 0) > 0 ||
@@ -37,7 +54,7 @@ export function MobileAlertBar({ criteria }: MobileAlertBarProps) {
     (criteria.schools?.length ?? 0) > 0 ||
     criteria.askOnly ||
     criteria.query ||
-    !!criteria.category ||
+    (!!criteria.category && criteria.category !== CATEGORY_DEFAULT) ||
     criteria.minPrice !== undefined ||
     criteria.maxPrice !== undefined;
 
@@ -58,18 +75,18 @@ export function MobileAlertBar({ criteria }: MobileAlertBarProps) {
       setSaved(true);
       setTimeout(() => {
         setDismissed(true);
-        sessionStorage.setItem('mobileAlertBarDismissed', 'true');
+        sessionStorage.setItem('mobileAlertBarDismissedFor', criteriaKey);
       }, 2500);
     } else {
       setSaveError(true);
       setTimeout(() => setSaveError(false), 3000);
     }
-  }, [requireFeature, user, createSavedSearch, criteria]);
+  }, [requireFeature, user, createSavedSearch, criteria, criteriaKey]);
 
   const handleDismiss = useCallback(() => {
     setDismissed(true);
-    sessionStorage.setItem('mobileAlertBarDismissed', 'true');
-  }, []);
+    sessionStorage.setItem('mobileAlertBarDismissedFor', criteriaKey);
+  }, [criteriaKey]);
 
   // Don't render on desktop, when dismissed, or when no filters
   if (!hasFilters || dismissed) return null;

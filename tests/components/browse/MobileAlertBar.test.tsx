@@ -159,22 +159,53 @@ describe('MobileAlertBar', () => {
       expect(screen.getByText('Get alerts for this search')).toBeInTheDocument();
     });
 
-    it('renders when only category is set', () => {
-      render(
+    it('does not render when only default category (nihonto) is set', () => {
+      const { container } = render(
         <MobileAlertBar
           criteria={{ ...emptyCriteria, category: 'nihonto' }}
+        />
+      );
+      expect(container.firstChild).toBeNull();
+    });
+
+    it('renders when non-default category (tosogu) is set', () => {
+      render(
+        <MobileAlertBar
+          criteria={{ ...emptyCriteria, category: 'tosogu' }}
         />
       );
       expect(screen.getByText('Get alerts for this search')).toBeInTheDocument();
     });
 
-    it('does not render when dismissed', () => {
-      sessionStorage.setItem('mobileAlertBarDismissed', 'true');
+    it('does not render when dismissed for same criteria', () => {
+      sessionStorage.setItem(
+        'mobileAlertBarDismissedFor',
+        JSON.stringify(filteredCriteria),
+      );
 
       const { container } = render(
         <MobileAlertBar criteria={filteredCriteria} />
       );
       expect(container.innerHTML).toBe('');
+    });
+
+    it('reappears when criteria changes after dismissal', () => {
+      const { rerender } = render(
+        <MobileAlertBar criteria={filteredCriteria} />
+      );
+
+      // Dismiss for current criteria
+      fireEvent.click(screen.getByLabelText('Dismiss'));
+      expect(screen.queryByText('Get alerts for this search')).not.toBeInTheDocument();
+
+      // Change criteria → bar should reappear
+      const newCriteria: SavedSearchCriteria = {
+        ...filteredCriteria,
+        itemTypes: ['wakizashi'],
+      };
+      rerender(<MobileAlertBar criteria={newCriteria} />);
+
+      expect(screen.getByText('Get alerts for this search')).toBeInTheDocument();
     });
   });
 
@@ -262,10 +293,10 @@ describe('MobileAlertBar', () => {
       vi.useRealTimers();
     });
 
-    it('saves successfully with category-only criteria', async () => {
+    it('saves successfully with non-default category-only criteria', async () => {
       const categoryOnly: SavedSearchCriteria = {
         ...emptyCriteria,
-        category: 'nihonto',
+        category: 'tosogu',
       };
       mockCreateSavedSearch.mockResolvedValue({ id: 'ss-cat' });
 
@@ -299,7 +330,9 @@ describe('MobileAlertBar', () => {
 
       // Bar should be gone
       expect(container.querySelector('.lg\\:hidden')).toBeNull();
-      expect(sessionStorage.getItem('mobileAlertBarDismissed')).toBe('true');
+      expect(sessionStorage.getItem('mobileAlertBarDismissedFor')).toBe(
+        JSON.stringify(filteredCriteria),
+      );
     });
   });
 });

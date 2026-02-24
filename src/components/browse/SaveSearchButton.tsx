@@ -7,6 +7,7 @@ import { useLocale } from '@/i18n/LocaleContext';
 import { LoginModal } from '@/components/auth/LoginModal';
 import { SaveSearchModal } from './SaveSearchModal';
 import type { SavedSearchCriteria } from '@/types';
+import { CATEGORY_DEFAULT } from '@/lib/constants';
 
 interface SaveSearchButtonProps {
   criteria: SavedSearchCriteria;
@@ -30,7 +31,8 @@ export function SaveSearchButton({
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showSaveModal, setShowSaveModal] = useState(false);
 
-  // Check if there are any active filters worth saving
+  // Check if there are any user-chosen filters worth saving.
+  // The default category ('nihonto') doesn't count — it's always set on landing.
   const hasFilters =
     (criteria.itemTypes?.length ?? 0) > 0 ||
     (criteria.certifications?.length ?? 0) > 0 ||
@@ -38,7 +40,7 @@ export function SaveSearchButton({
     (criteria.schools?.length ?? 0) > 0 ||
     criteria.askOnly ||
     criteria.query ||
-    !!criteria.category ||
+    (!!criteria.category && criteria.category !== CATEGORY_DEFAULT) ||
     criteria.minPrice !== undefined ||
     criteria.maxPrice !== undefined;
 
