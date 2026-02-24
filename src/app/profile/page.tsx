@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import Link from 'next/link';
 import { Header } from '@/components/layout/Header';
 import { BottomTabBar } from '@/components/navigation/BottomTabBar';
@@ -19,6 +19,8 @@ export default function ProfilePage() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
+  const [showAllPrices, setShowAllPrices] = useState(false);
+  const [isTogglingPrices, setIsTogglingPrices] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteEmail, setDeleteEmail] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
@@ -90,6 +92,38 @@ export default function ProfilePage() {
       setIsExporting(false);
     }
   }, []);
+
+  // Initialize showAllPrices from profile preferences
+  useEffect(() => {
+    if (profile?.preferences) {
+      const prefs = profile.preferences as Record<string, unknown>;
+      setShowAllPrices(prefs.showAllPrices === true);
+    }
+  }, [profile?.preferences]);
+
+  const handleToggleShowAllPrices = useCallback(async () => {
+    const newValue = !showAllPrices;
+    setShowAllPrices(newValue); // Optimistic update
+    setIsTogglingPrices(true);
+
+    try {
+      const response = await fetch('/api/user/preferences', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ showAllPrices: newValue }),
+      });
+
+      if (!response.ok) {
+        setShowAllPrices(!newValue); // Revert on error
+      } else {
+        await refreshProfile();
+      }
+    } catch {
+      setShowAllPrices(!newValue); // Revert on error
+    } finally {
+      setIsTogglingPrices(false);
+    }
+  }, [showAllPrices, refreshProfile]);
 
   const handleDeleteAccount = useCallback(async () => {
     if (!user?.email) return;
@@ -315,6 +349,40 @@ export default function ProfilePage() {
                 </svg>
               </Link>
             )}
+          </div>
+        </div>
+
+        {/* Preferences */}
+        <div className="bg-white dark:bg-ink/5 rounded-xl border border-border p-6 lg:p-8 mb-6">
+          <h3 className="font-serif text-[15px] text-ink mb-4">{t('profile.preferences')}</h3>
+          <div className="space-y-3">
+            <button
+              onClick={handleToggleShowAllPrices}
+              disabled={isTogglingPrices}
+              className="flex items-center justify-between w-full p-3 rounded-lg hover:bg-linen dark:hover:bg-ink/10 transition-colors group text-left disabled:opacity-50"
+            >
+              <div className="flex items-center gap-3">
+                <svg className="w-5 h-5 text-muted group-hover:text-gold transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div>
+                  <span className="text-[14px] text-ink block">{t('profile.showAllPrices')}</span>
+                  <span className="text-[12px] text-muted">{t('profile.showAllPricesDesc')}</span>
+                </div>
+              </div>
+              {/* Toggle switch */}
+              <div
+                className={`relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
+                  showAllPrices ? 'bg-gold' : 'bg-gray-200 dark:bg-gray-600'
+                }`}
+              >
+                <span
+                  className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform ring-0 transition-transform duration-200 ease-in-out ${
+                    showAllPrices ? 'translate-x-5' : 'translate-x-0'
+                  }`}
+                />
+              </div>
+            </button>
           </div>
         </div>
 

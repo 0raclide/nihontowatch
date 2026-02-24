@@ -22,14 +22,15 @@ export async function GET() {
       });
     }
 
-    // Get user profile with last_visit_at
+    // Get user profile with last_visit_at and preferences
     const { data: profile } = await supabase
       .from('profiles')
-      .select('last_visit_at')
+      .select('last_visit_at, preferences')
       .eq('id', user.id)
       .single();
 
-    const lastVisitAt = (profile as { last_visit_at: string | null } | null)?.last_visit_at;
+    const profileRow = profile as { last_visit_at: string | null; preferences: Record<string, unknown> | null } | null;
+    const lastVisitAt = profileRow?.last_visit_at;
 
     if (!lastVisitAt) {
       // First visit - return null count (will show welcome message or nothing)
@@ -57,8 +58,11 @@ export async function GET() {
     }
 
     // Apply minimum price filter (same as browse API)
-    if (LISTING_FILTERS.MIN_PRICE_JPY > 0) {
-      query = query.or(`price_value.is.null,price_jpy.gte.${LISTING_FILTERS.MIN_PRICE_JPY}`);
+    // Users with showAllPrices preference bypass the ¥100K floor
+    const showAllPrices = profileRow?.preferences?.showAllPrices === true;
+    const minPriceJpy = showAllPrices ? 0 : LISTING_FILTERS.MIN_PRICE_JPY;
+    if (minPriceJpy > 0) {
+      query = query.or(`price_value.is.null,price_jpy.gte.${minPriceJpy}`);
     }
 
     // Exclude non-collectibles (same as browse API)

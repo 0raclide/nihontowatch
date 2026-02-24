@@ -48,6 +48,8 @@ export interface UserPreferences {
   notifications: NotificationPreferences;
   defaultSort?: string;
   itemsPerPage?: number;
+  /** When true, bypasses the ¥100K minimum price floor (useful for tosogu collectors) */
+  showAllPrices?: boolean;
 }
 
 // =============================================================================

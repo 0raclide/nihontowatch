@@ -32,7 +32,8 @@ export async function findMatchingListings(
   supabase: SupabaseClient,
   criteria: SavedSearchCriteria,
   sinceTimestamp?: Date,
-  limit: number = 50
+  limit: number = 50,
+  minPriceJpy: number = LISTING_FILTERS.MIN_PRICE_JPY
 ): Promise<Listing[]> {
   // Determine status filter
   const statusFilter =
@@ -71,8 +72,9 @@ export async function findMatchingListings(
     .not('item_type', 'ilike', 'other');
 
   // Minimum price filter (same as browse — excludes books, accessories, low-quality items)
-  if (LISTING_FILTERS.MIN_PRICE_JPY > 0) {
-    query = query.or(`price_value.is.null,price_jpy.gte.${LISTING_FILTERS.MIN_PRICE_JPY}`);
+  // Users with showAllPrices preference pass minPriceJpy=0 to bypass the floor
+  if (minPriceJpy > 0) {
+    query = query.or(`price_value.is.null,price_jpy.gte.${minPriceJpy}`);
   }
 
   // Time filter for new listings
@@ -238,7 +240,8 @@ export async function findMatchingListings(
 export async function countMatchingListings(
   supabase: SupabaseClient,
   criteria: SavedSearchCriteria,
-  sinceTimestamp?: Date
+  sinceTimestamp?: Date,
+  minPriceJpy: number = LISTING_FILTERS.MIN_PRICE_JPY
 ): Promise<number> {
   // Similar query but only get count
   const statusFilter =
@@ -253,8 +256,9 @@ export async function countMatchingListings(
     .not('item_type', 'ilike', 'other');
 
   // Minimum price filter (same as browse — excludes books, accessories, low-quality items)
-  if (LISTING_FILTERS.MIN_PRICE_JPY > 0) {
-    query = query.or(`price_value.is.null,price_jpy.gte.${LISTING_FILTERS.MIN_PRICE_JPY}`);
+  // Users with showAllPrices preference pass minPriceJpy=0 to bypass the floor
+  if (minPriceJpy > 0) {
+    query = query.or(`price_value.is.null,price_jpy.gte.${minPriceJpy}`);
   }
 
   if (sinceTimestamp) {

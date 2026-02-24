@@ -18,6 +18,7 @@ import { verifyCronAuth } from '@/lib/api/cronAuth';
 import type { SavedSearch, SavedSearchCriteria, Listing, NotificationFrequency } from '@/types';
 import type { Database } from '@/types/database';
 import { isLocale, type Locale } from '@/i18n';
+import { LISTING_FILTERS } from '@/lib/constants';
 
 type SavedSearchRow = Database['public']['Tables']['saved_searches']['Row'];
 type ProfileRow = Database['public']['Tables']['profiles']['Row'];
@@ -98,10 +99,15 @@ export async function GET(request: NextRequest) {
     const profiles = profilesData as Pick<ProfileRow, 'id' | 'email' | 'preferences'>[] | null;
     const userEmails = new Map<string, string>();
     const userLocales = new Map<string, Locale>();
+    const userMinPrices = new Map<string, number>();
     profiles?.forEach((p) => {
       if (p.email) userEmails.set(p.id, p.email);
-      const pref = (p.preferences as Record<string, unknown> | null)?.locale;
-      if (isLocale(pref as string)) userLocales.set(p.id, pref as Locale);
+      const prefs = p.preferences as Record<string, unknown> | null;
+      const prefLocale = prefs?.locale;
+      if (isLocale(prefLocale as string)) userLocales.set(p.id, prefLocale as Locale);
+      // Respect user's showAllPrices preference for price floor bypass
+      const showAllPrices = prefs?.showAllPrices === true;
+      userMinPrices.set(p.id, showAllPrices ? 0 : LISTING_FILTERS.MIN_PRICE_JPY);
     });
 
     // Process in batches
@@ -128,11 +134,13 @@ export async function GET(request: NextRequest) {
 
             // Find matching listings
             const criteria = savedSearch.search_criteria as SavedSearchCriteria;
+            const userMinPrice = userMinPrices.get(savedSearch.user_id) ?? LISTING_FILTERS.MIN_PRICE_JPY;
             const matchedListings = await findMatchingListings(
               supabase,
               criteria,
               sinceTimestamp,
-              50 // Limit to 50 listings per notification
+              50, // Limit to 50 listings per notification
+              userMinPrice
             );
 
             processed++;

@@ -23,6 +23,7 @@ export async function getUserSubscription(): Promise<{
   userId: string | null;
   isDelayed: boolean;
   isAdmin: boolean;
+  showAllPrices: boolean;
 }> {
   try {
     const supabase = await createClient();
@@ -38,6 +39,7 @@ export async function getUserSubscription(): Promise<{
         userId: null,
         isDelayed: isTrialModeActive() ? false : true,
         isAdmin: false,
+        showAllPrices: false,
       };
     }
 
@@ -47,18 +49,20 @@ export async function getUserSubscription(): Promise<{
       subscription_tier: SubscriptionTier | null;
       subscription_status: SubscriptionStatus | null;
       role: string | null;
+      preferences: Record<string, unknown> | null;
     } | null = null;
 
     const serviceClient = createServiceClient();
     const { data: serviceProfile, error: serviceError } = await serviceClient
       .from('profiles')
-      .select('subscription_tier, subscription_status, role')
+      .select('subscription_tier, subscription_status, role, preferences')
       .eq('id', user.id)
       .single() as {
         data: {
           subscription_tier: SubscriptionTier | null;
           subscription_status: SubscriptionStatus | null;
           role: string | null;
+          preferences: Record<string, unknown> | null;
         } | null;
         error: { message: string } | null;
       };
@@ -71,13 +75,14 @@ export async function getUserSubscription(): Promise<{
       // Fall back to authenticated client (uses user's session/RLS)
       const { data: authProfile, error: authProfileError } = await supabase
         .from('profiles')
-        .select('subscription_tier, subscription_status, role')
+        .select('subscription_tier, subscription_status, role, preferences')
         .eq('id', user.id)
         .single() as {
           data: {
             subscription_tier: SubscriptionTier | null;
             subscription_status: SubscriptionStatus | null;
             role: string | null;
+            preferences: Record<string, unknown> | null;
           } | null;
           error: { message: string } | null;
         };
@@ -90,6 +95,9 @@ export async function getUserSubscription(): Promise<{
       }
     }
 
+    // Extract showAllPrices from preferences JSONB
+    const showAllPrices = profile?.preferences?.showAllPrices === true;
+
     // Admins get full access (inner_circle tier)
     const isAdmin = profile?.role === 'admin';
     console.log('[Subscription] User:', user.id, 'Role:', profile?.role, 'IsAdmin:', isAdmin);
@@ -101,6 +109,7 @@ export async function getUserSubscription(): Promise<{
         userId: user.id,
         isDelayed: false,
         isAdmin: true,
+        showAllPrices,
       };
     }
 
@@ -116,6 +125,7 @@ export async function getUserSubscription(): Promise<{
       userId: user.id,
       isDelayed: isTrialModeActive() ? false : effectiveTier === 'free',
       isAdmin: false,
+      showAllPrices,
     };
   } catch (error) {
     console.error('Error getting user subscription:', error);
@@ -125,6 +135,7 @@ export async function getUserSubscription(): Promise<{
       userId: null,
       isDelayed: isTrialModeActive() ? false : true,
       isAdmin: false,
+      showAllPrices: false,
     };
   }
 }

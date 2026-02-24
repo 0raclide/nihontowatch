@@ -1194,6 +1194,9 @@
   "profile.emailPlaceholder": "Enter your email",
   "profile.deleting": "Deleting...",
   "profile.permanentlyDelete": "Permanently Delete",
+  "profile.preferences": "Preferences",
+  "profile.showAllPrices": "Show all price ranges",
+  "profile.showAllPricesDesc": "Include items below \u00a5100,000. Useful for tosogu and fittings collectors.",
 
   "saved.title": "Saved",
   "saved.subtitle": "Your saved searches and watched items",

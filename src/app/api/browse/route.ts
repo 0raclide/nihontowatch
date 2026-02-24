@@ -177,11 +177,11 @@ const STATUS_SOLD = 'status.eq.sold,status.eq.presumed_sold,is_sold.eq.true';
 // Uses price_jpy (normalized JPY price) to filter consistently regardless of original currency
 // ASK listings (price_value IS NULL) are allowed through; priced items must meet minimum
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function applyMinPriceFilter<T extends { or: (condition: string) => T }>(query: T): T {
-  if (LISTING_FILTERS.MIN_PRICE_JPY > 0) {
+function applyMinPriceFilter<T extends { or: (condition: string) => T }>(query: T, minPriceJpy: number): T {
+  if (minPriceJpy > 0) {
     // Allow ASK listings (no price_value) OR items with price_jpy >= minimum
     // Using price_value.is.null (not price_jpy) ensures we only allow true ASK listings
-    return query.or(`price_value.is.null,price_jpy.gte.${LISTING_FILTERS.MIN_PRICE_JPY}`);
+    return query.or(`price_value.is.null,price_jpy.gte.${minPriceJpy}`);
   }
   return query;
 }
@@ -224,8 +224,9 @@ export async function GET(request: NextRequest) {
     // When a user pastes a dealer URL, we search the url column directly
     const detectedUrl = params.query ? detectUrlQuery(params.query) : null;
 
-    // Get user subscription to determine data delay
+    // Get user subscription to determine data delay and price floor preference
     const subscription = await getUserSubscription();
+    const minPrice = subscription.showAllPrices ? 0 : LISTING_FILTERS.MIN_PRICE_JPY;
 
     // Ensure page is reasonable
     const safePage = Math.max(1, Math.min(params.page || 1, 1000));
@@ -324,8 +325,9 @@ export async function GET(request: NextRequest) {
 
     // Minimum price filter (excludes books, accessories, low-quality items)
     // Skip for URL searches — specific item lookup shouldn't be filtered by price
+    // Users with showAllPrices preference bypass the ¥100K floor (minPrice = 0)
     if (!detectedUrl) {
-      query = applyMinPriceFilter(query);
+      query = applyMinPriceFilter(query, minPrice);
     }
 
     // Hide admin-hidden listings from non-admin users
@@ -795,7 +797,7 @@ export async function GET(request: NextRequest) {
       p_tab: params.tab === 'all' ? 'all' : params.tab,
       p_admin_hidden: subscription.isAdmin || false,
       p_delay_cutoff: delayCutoff || null,
-      p_min_price_jpy: LISTING_FILTERS.MIN_PRICE_JPY,
+      p_min_price_jpy: minPrice,
       p_item_types: params.itemTypes || null,
       p_category: params.category || 'nihonto',
       p_certifications: params.certifications || null,
