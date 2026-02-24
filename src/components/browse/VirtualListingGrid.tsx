@@ -79,6 +79,8 @@ interface Listing {
   // Smart crop focal point
   focal_x?: number | null;
   focal_y?: number | null;
+  // Composite thumbnail for extreme aspect ratio images
+  thumbnail_url?: string | null;
 }
 
 interface ExchangeRates {
@@ -388,7 +390,7 @@ export function VirtualListingGrid({
           isAdmin={isAdmin}
           mobileView={mobileView}
           focalPosition={
-            smartCropEnabled && listing.focal_x != null && listing.focal_y != null
+            smartCropEnabled && !listing.thumbnail_url && listing.focal_x != null && listing.focal_y != null
               ? `${listing.focal_x}% ${listing.focal_y}%`
               : undefined
           }

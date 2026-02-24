@@ -105,6 +105,7 @@ interface Listing {
   status_admin_locked?: boolean;
   focal_x?: number | null;
   focal_y?: number | null;
+  thumbnail_url?: string | null;
 }
 
 interface ExchangeRates {
@@ -580,12 +581,16 @@ export const ListingCard = memo(function ListingCard({
   ]);
 
   // Derive thumbnail URL, skipping images known to be broken.
-  // Two independent checks:
+  // Prefer composite thumbnail for extreme aspect ratio images (panoramic blade strips).
+  // Two independent checks for fallback images:
   // 1. validationCache: dimension-invalid (tiny icons/buttons) — from useValidatedImages
   // 2. renderFailedSet: Next.js Image render failure — from this component's onError
   // These caches are intentionally separate to prevent cross-contamination.
   // fallbackIndex dependency triggers re-evaluation after each onError.
   const imageUrl = useMemo(() => {
+    // Prefer composite thumbnail for extreme aspect ratio images
+    if (listing.thumbnail_url) return listing.thumbnail_url;
+
     for (const url of allImages) {
       if (getCachedValidation(url) === 'invalid') continue;
       if (isRenderFailed(url)) continue;
@@ -593,7 +598,7 @@ export const ListingCard = memo(function ListingCard({
     }
     return null;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [allImages, fallbackIndex]);
+  }, [listing.thumbnail_url, allImages, fallbackIndex]);
 
   // Check if item is definitively sold (for showing sale data)
   const isSold = listing.is_sold || listing.status === 'sold' || listing.status === 'presumed_sold';
@@ -970,6 +975,7 @@ export const ListingCard = memo(function ListingCard({
     prevProps.fontSize === nextProps.fontSize &&
     prevProps.imageAspect === nextProps.imageAspect &&
     prevProps.listing.era === nextProps.listing.era &&
-    prevProps.listing.nagasa_cm === nextProps.listing.nagasa_cm
+    prevProps.listing.nagasa_cm === nextProps.listing.nagasa_cm &&
+    prevProps.listing.thumbnail_url === nextProps.listing.thumbnail_url
   );
 });

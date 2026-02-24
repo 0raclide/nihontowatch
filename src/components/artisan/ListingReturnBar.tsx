@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useLocale } from '@/i18n/LocaleContext';
 import {
   getListingReturnContext,
   clearListingReturnContext,
@@ -15,6 +16,7 @@ import {
  */
 export function ListingReturnBar() {
   const router = useRouter();
+  const { t } = useLocale();
   const [ctx, setCtx] = useState<ListingReturnContext | null>(null);
   const [visible, setVisible] = useState(false);
 
@@ -66,13 +68,13 @@ export function ListingReturnBar() {
         </svg>
 
         <span className="text-[13px] font-medium text-ink">
-          Return to listing
+          {t('artist.returnToListing')}
         </span>
 
         {/* Dismiss X */}
         <span
           role="button"
-          aria-label="Dismiss"
+          aria-label={t('artist.dismiss')}
           onClick={handleDismiss}
           onTouchEnd={handleDismiss}
           className="flex items-center justify-center w-7 h-7 rounded-full hover:bg-border/50 transition-colors shrink-0 ml-1"

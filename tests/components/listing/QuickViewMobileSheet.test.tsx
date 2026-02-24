@@ -369,7 +369,7 @@ describe('QuickViewMobileSheet', () => {
         />
       );
       // Cert label appears in both badge and MetadataGrid, so use getAllByText
-      const certElements = screen.getAllByText('Tokubetsu Hozon');
+      const certElements = screen.getAllByText('Tokuho');
       expect(certElements.length).toBeGreaterThanOrEqual(1);
     });
 

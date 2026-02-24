@@ -33,8 +33,11 @@
 | [SMART_CROP_FOCAL_POINTS.md](./SMART_CROP_FOCAL_POINTS.md) | **Smart crop focal points** — AI image cropping, cron pipeline, admin toggle, invalidation trigger, all file paths |
 | [ARTISAN_TOOLTIP_VERIFICATION.md](./ARTISAN_TOOLTIP_VERIFICATION.md) | Admin QA tool - click artisan badges for details & verification |
 | [LEGAL_COMPLIANCE.md](./LEGAL_COMPLIANCE.md) | GDPR geo-gated cookie consent — banner only for EU/EEA/UK, middleware cookie, analytics defaults |
-| [LISTING_DATA_LOCALIZATION.md](./LISTING_DATA_LOCALIZATION.md) | **Listing data i18n** — locale-aware titles, descriptions, artisan names (JA/EN), translation toggles, 57 tests |
-| [JAPANESE_UX_RECOMMENDATIONS.md](./JAPANESE_UX_RECOMMENDATIONS.md) | **JA UX research** — design philosophy, typography, density, trust signals, navigation, mobile, forms |
+| [SESSION_20260221_I18N_LOCALIZATION.md](./SESSION_20260221_I18N_LOCALIZATION.md) | **i18n foundation** — translation system, 1,300+ keys, cookie-based locale, IP detection, kanji search, test patterns |
+| [JAPANESE_UX_RECOMMENDATIONS.md](./JAPANESE_UX_RECOMMENDATIONS.md) | **JA UX research** — design philosophy, typography, density, trust signals, navigation, mobile, forms (Phase 1 complete, Phase 2 partial) |
+| [HANDOFF_SCHOOL_KANJI_TRANSLATIONS.md](./HANDOFF_SCHOOL_KANJI_TRANSLATIONS.md) | **School/province kanji** — 155 school + 6 province translation keys for JA locale `/artists` page |
+| [MASCOT_TAKAMARU.md](./MASCOT_TAKAMARU.md) | **Mascot design** — Takamaru (宝丸), Inari fox brand character: visual design, personality, UI integration, illustrator brief |
+| [HANDOFF_TAKAMARU_ASSET_GENERATION.md](./HANDOFF_TAKAMARU_ASSET_GENERATION.md) | **Mascot asset generation** — 11 pose prompts for image models, priority order, acceptance criteria, format specs |
 | [SYNC_ELITE_FACTOR_API.md](./SYNC_ELITE_FACTOR_API.md) | Webhook API for syncing elite_factor from Yuhinkai to listings |
 | [CATALOGUE_PUBLICATION_PIPE.md](./CATALOGUE_PUBLICATION_PIPE.md) | **Catalogue publication pipe** — Yuhinkai→NihontoWatch content flow (cross-repo, oshi-v2 + nihontowatch) |
 
@@ -42,8 +45,8 @@
 
 | Document | Date | Summary |
 |----------|------|---------|
-| [SESSION_20260222_BIDIRECTIONAL_TRANSLATION.md](./SESSION_20260222_BIDIRECTIONAL_TRANSLATION.md) | 2026-02-22 | **Bidirectional translation (EN→JP)** — JA-locale auto-translates English dealer listings to Japanese via Gemini 3 Flash, shared `containsJapanese` utility, `title_ja`/`description_ja` columns, 55 tests |
-| [SESSION_20260222_JAPANESE_UX.md](./SESSION_20260222_JAPANESE_UX.md) | 2026-02-22 | **Japanese UX improvements** — JA typography (line-height 1.85, italic→bold), filter expand, nagasa+era cards, freshness timestamps, LINE+Twitter/X share, polite empty states, 14 tests |
+| [SESSION_20260222_BIDIRECTIONAL_TRANSLATION.md](./SESSION_20260222_BIDIRECTIONAL_TRANSLATION.md) | 2026-02-22 | **Bidirectional translation (EN→JP)** — JA-locale auto-translates English dealer listings to Japanese via Gemini 3 Flash, shared `containsJapanese` utility, `title_ja`/`description_ja` columns, ratio-based detection fix, 55 tests |
+| [SESSION_20260222_JAPANESE_UX.md](./SESSION_20260222_JAPANESE_UX.md) | 2026-02-22 | **Japanese UX improvements** — JA typography, filter expand, card density (nagasa/era/item type/era kanji), freshness timestamps, LINE+Twitter/X share, polite empty states, 155 school kanji, dealer name localization (39 dealers), 12 follow-up fixes |
 | [SESSION_20260222_FEATURED_SCORE_RECOMPUTE.md](./SESSION_20260222_FEATURED_SCORE_RECOMPUTE.md) | 2026-02-22 | **Inline featured score recompute** — admin cert/artisan/hide actions now update browse ranking immediately (not 4h cron lag), shared scoring module, fire-and-forget serverless postmortem, 65 tests |
 | [SESSION_20260212_CATALOGUE_PUBLICATION_BUG.md](./SESSION_20260212_CATALOGUE_PUBLICATION_BUG.md) | 2026-02-12 | **Catalogue publication invisible on artist page** — HIT041 dual-column mismatch (tosogu maker with sword objects), OR query fix, force-dynamic artist pages |
 | [SESSION_20260212_ARTISAN_NAME_SEARCH.md](./SESSION_20260212_ARTISAN_NAME_SEARCH.md) | 2026-02-12 | **Artisan name resolution in search** — "Soshu Norishige" now finds artisan-matched listings (0→5 results), fixes saved search matcher count bug |
@@ -218,21 +221,27 @@
 5. Run `npx playwright test tests/translation-api.spec.ts` - Translation tests
 
 ### "I need to work on localization / i18n"
-1. Read [LISTING_DATA_LOCALIZATION.md](./LISTING_DATA_LOCALIZATION.md) - Listing data locale-aware rendering
-2. Read [SESSION_20260222_JAPANESE_UX.md](./SESSION_20260222_JAPANESE_UX.md) - JA UX tuning (typography, density, trust signals, social share)
-3. Check `src/i18n/LocaleContext.tsx` - `useLocale()` hook (`locale`, `t()`, `setLocale()`)
-4. Check `src/i18n/locales/en.json` / `ja.json` - ~1100 translation keys
-5. Check `src/app/globals.css` - JA typography overrides (`html[lang="ja"]` block)
-6. Check `src/components/listing/MetadataGrid.tsx` - `getArtisanInfo(listing, locale)` and `td()` helper
-7. Check `src/components/listing/TranslatedTitle.tsx` - Locale-aware title display
-8. Check `src/components/listing/TranslatedDescription.tsx` - Locale-aware description with toggle
-9. Check `src/lib/time.ts` - `formatRelativeTime()` shared utility (used by cards)
-10. Check `src/components/share/SocialShareButtons.tsx` - LINE + Twitter/X share buttons
-11. Run `npm test -- listing-data-localization` - 16 pure function tests
-12. Run `npm test -- MetadataGrid-locale` - 13 component tests
-13. Run `npm test -- TranslatedTitle.test` - 9 component tests
-14. Run `npm test -- TranslatedDescription.test` - 14 component tests
-15. Run `npm test -- time.test` - 14 formatRelativeTime tests
+1. Read [SESSION_20260221_I18N_LOCALIZATION.md](./SESSION_20260221_I18N_LOCALIZATION.md) - **Start here** — initial i18n architecture, translation system, key conventions, test mock pattern
+2. Read [SESSION_20260222_JAPANESE_UX.md](./SESSION_20260222_JAPANESE_UX.md) - JA UX tuning (typography, density, trust signals, social share) + 12 follow-up fixes
+3. Read [SESSION_20260222_BIDIRECTIONAL_TRANSLATION.md](./SESSION_20260222_BIDIRECTIONAL_TRANSLATION.md) - EN→JP translation for international dealers, ratio-based detection
+4. Read [JAPANESE_UX_RECOMMENDATIONS.md](./JAPANESE_UX_RECOMMENDATIONS.md) - JA UX research & implementation status (Phase 1 complete, Phase 2 partial)
+5. Read [HANDOFF_SCHOOL_KANJI_TRANSLATIONS.md](./HANDOFF_SCHOOL_KANJI_TRANSLATIONS.md) - 155 school + 6 province kanji keys
+6. Check `src/i18n/LocaleContext.tsx` - `useLocale()` hook (`locale`, `t()`, `setLocale()`)
+7. Check `src/i18n/locales/en.json` / `ja.json` - ~1,300 translation keys
+8. Check `src/app/globals.css` - JA typography overrides (`html[lang="ja"]` block)
+9. Check `src/lib/dealers/displayName.ts` - `getDealerDisplayName(dealer, locale)` for dealer name localization
+10. Check `src/lib/text/japanese.ts` - `containsJapanese()` + `isPredominantlyJapanese()` shared utilities
+11. Check `src/components/listing/MetadataGrid.tsx` - `getArtisanInfo(listing, locale)` and `td()` helper
+12. Check `src/components/listing/TranslatedTitle.tsx` - Locale-aware title display (bidirectional)
+13. Check `src/components/listing/TranslatedDescription.tsx` - Locale-aware description with toggle (bidirectional)
+14. Check `src/lib/time.ts` - `formatRelativeTime()` shared utility (used by cards)
+15. Check `src/components/share/SocialShareButtons.tsx` - LINE + Twitter/X share buttons
+16. Run `npm test -- listing-data-localization` - 16 pure function tests
+17. Run `npm test -- MetadataGrid-locale` - 13 component tests
+18. Run `npm test -- TranslatedTitle.test` - 9 component tests
+19. Run `npm test -- TranslatedDescription.test` - 14 component tests
+20. Run `npm test -- time.test` - 14 formatRelativeTime tests
+21. Run `npm test -- translate.test` - 41 bidirectional translation API tests
 
 ### "I need to work on user behavior tracking or recommendations"
 1. Read [USER_BEHAVIOR_TRACKING.md](./USER_BEHAVIOR_TRACKING.md) - Complete tracking docs
@@ -392,7 +401,7 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for:
 | Signup pressure & conversion | [SIGNUP_PRESSURE.md](./SIGNUP_PRESSURE.md) |
 | Mobile UX & gestures | [MOBILE_UX.md](./MOBILE_UX.md) |
 | QuickView metadata & translation | [QUICKVIEW_METADATA.md](./QUICKVIEW_METADATA.md) |
-| Listing data localization (i18n) | [LISTING_DATA_LOCALIZATION.md](./LISTING_DATA_LOCALIZATION.md) |
+| Localization / i18n | [SESSION_20260221_I18N_LOCALIZATION.md](./SESSION_20260221_I18N_LOCALIZATION.md) + [SESSION_20260222_JAPANESE_UX.md](./SESSION_20260222_JAPANESE_UX.md) |
 | Search features | [SEARCH_FEATURES.md](./SEARCH_FEATURES.md) |
 | Email alerts | [EMAIL_ALERTS.md](./EMAIL_ALERTS.md) - Saved search, price drop, back-in-stock |
 | Testing | [TESTING.md](./TESTING.md) - Unit, concordance, integration tests |

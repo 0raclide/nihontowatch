@@ -28,6 +28,10 @@
     {
       "path": "/api/cron/compute-focal-points",
       "schedule": "30 */4 * * *"
+    },
+    {
+      "path": "/api/cron/compute-composite-thumbnails",
+      "schedule": "45 */4 * * *"
     }
   ]
 }

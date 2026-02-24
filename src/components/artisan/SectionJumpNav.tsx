@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useLocale } from '@/i18n/LocaleContext';
 
 /**
  * SectionJumpNav — Desktop: sticky top bar. Mobile: fixed bottom pill.
@@ -20,6 +21,7 @@ interface SectionJumpNavProps {
 }
 
 export function SectionJumpNav({ sections }: SectionJumpNavProps) {
+  const { t } = useLocale();
   const [activeId, setActiveId] = useState<string>('');
   const scrollRef = useRef<HTMLElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -150,7 +152,7 @@ export function SectionJumpNav({ sections }: SectionJumpNavProps) {
       <nav
         className="hidden lg:block fixed top-1/2 -translate-y-1/2 z-20"
         style={{ left: 'max(16px, calc(50vw - 520px))' }}
-        aria-label="Section navigation"
+        aria-label={t('artist.sectionNavLabel')}
       >
         <div className="relative pl-3">
           {/* Continuous vertical rule */}
@@ -231,7 +233,7 @@ export function SectionJumpNav({ sections }: SectionJumpNavProps) {
               onClick={goToPrev}
               disabled={activeIndex <= 0}
               className="flex items-center justify-center w-11 h-full text-ink/40 disabled:text-ink/15 transition-colors"
-              aria-label="Previous section"
+              aria-label={t('artist.previousSection')}
             >
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
@@ -243,7 +245,7 @@ export function SectionJumpNav({ sections }: SectionJumpNavProps) {
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="flex-1 flex items-center justify-center gap-2 h-full min-w-0"
               aria-expanded={mobileMenuOpen}
-              aria-label="Jump to section"
+              aria-label={t('artist.jumpToSection')}
             >
               <span className="text-[12px] text-ink/70 font-medium tracking-wide truncate">
                 {activeLabel}
@@ -264,7 +266,7 @@ export function SectionJumpNav({ sections }: SectionJumpNavProps) {
               onClick={goToNext}
               disabled={activeIndex >= sections.length - 1}
               className="flex items-center justify-center w-11 h-full text-ink/40 disabled:text-ink/15 transition-colors"
-              aria-label="Next section"
+              aria-label={t('artist.nextSection')}
             >
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />

@@ -93,9 +93,31 @@ Updated imports in: translate API, TranslatedTitle, TranslatedDescription, Metad
 - **TranslatedDescription tests:** 14 tests — updated "English in JA locale" test to verify EN→JP fetch trigger, added cached `description_ja` test
 - **All pre-existing tests pass** — no regressions
 
+## Follow-Up Fix: Ratio-Based Japanese Detection (Commit `0138af9`)
+
+The initial `containsJapanese()` check (any single CJK character → "Japanese source") caused ~160 international dealer listings to be misclassified. English listings with embedded kanji in the title (e.g., "BIZEN KAGEMITSU 備前景光") tested positive for `containsJapanese()`, preventing EN→JP translation.
+
+**Fix:** Added `isPredominantlyJapanese()` function to `src/lib/text/japanese.ts`:
+
+```typescript
+export function isPredominantlyJapanese(str: string): boolean {
+  const jpCount = (str.match(JAPANESE_REGEX_GLOBAL) || []).length;
+  return jpCount / str.length > 0.2; // >20% Japanese characters
+}
+```
+
+**Usage split:**
+- `containsJapanese()` — unchanged, used for display/formatting logic (e.g., "does this title need a Japanese font?")
+- `isPredominantlyJapanese()` — used only for **translation direction detection** in `/api/translate`
+
+This correctly identifies "BIZEN KAGEMITSU 備前景光" as English-source (4 kanji out of 25 chars = 16% < 20%) while still detecting "備前景光の太刀 特別保存刀剣" as Japanese-source (14 CJK out of 17 chars = 82% > 20%).
+
+---
+
 ## Key Design Decisions
 
 1. **No new API parameters** — Direction auto-detected from source text, keeping the client interface unchanged
 2. **Browse grid uses cached values only** — ListingCard reads `title_ja` but never triggers on-demand translation. Cache fills organically when users open QuickView/detail pages.
 3. **JA locale defaults to showing original** — `showOriginal = true` for JA locale means English source text shows initially with translation loading in background, then toggle becomes available
 4. **Backward compatible** — JP→EN flow completely unchanged; EN→JP is additive
+5. **Ratio-based detection for translation** — `isPredominantlyJapanese()` (>20% threshold) prevents false positives from embedded kanji in English titles, while `containsJapanese()` (any match) remains for display logic

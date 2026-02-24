@@ -85,6 +85,14 @@ vi.mock('@/components/activity/ActivityProvider', () => ({
   useActivityOptional: () => null,
 }));
 
+vi.mock('@/components/notifications/NotificationBell', () => ({
+  NotificationBell: () => <div data-testid="notification-bell">Notifications</div>,
+}));
+
+vi.mock('@/components/ui/LocaleSwitcher', () => ({
+  LocaleSwitcher: () => <button data-testid="locale-switcher">EN</button>,
+}));
+
 // Mock useLocale — return English so all existing string assertions pass
 vi.mock('@/i18n/LocaleContext', async () => {
   const en = await import('@/i18n/locales/en.json').then(m => m.default);

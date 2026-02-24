@@ -1,5 +1,7 @@
 'use client';
 
+import { useLocale } from '@/i18n/LocaleContext';
+
 /**
  * MeasurementPanel — Box-plot style range bars for blade measurements.
  *
@@ -25,12 +27,7 @@ interface Stats {
   n: number;
 }
 
-const MEASUREMENT_LABELS: Record<string, { label: string; unit: string }> = {
-  nagasa: { label: 'Nagasa', unit: 'cm' },
-  sori: { label: 'Sori', unit: 'cm' },
-  motohaba: { label: 'Motohaba', unit: 'cm' },
-  sakihaba: { label: 'Sakihaba', unit: 'cm' },
-};
+const MEASUREMENT_KEYS = ['nagasa', 'sori', 'motohaba', 'sakihaba'] as const;
 
 function percentile(sorted: number[], p: number): number {
   if (sorted.length === 1) return sorted[0];
@@ -121,10 +118,11 @@ function RangeBar({ stats }: { stats: Stats }) {
 }
 
 export function MeasurementPanel({ measurements }: MeasurementPanelProps) {
-  const metrics = (['nagasa', 'sori', 'motohaba', 'sakihaba'] as const)
+  const { t } = useLocale();
+  const metrics = MEASUREMENT_KEYS
     .map(key => ({
       key,
-      ...MEASUREMENT_LABELS[key],
+      label: t(`measurement.${key}`),
       stats: computeStats(measurements[key]),
     }))
     .filter(m => m.stats !== null);

@@ -158,7 +158,7 @@ function TextBlock({ text }: { text: string }) {
 // ─── MAIN COMPONENT ─────────────────────────────────────────────────────────
 
 export function CatalogueShowcase({ entry, totalEntries, artisanName }: CatalogueShowcaseProps) {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const [galleryIndex, setGalleryIndex] = useState<number | null>(null);
 
   // Build flat image array for gallery navigation:
@@ -183,10 +183,10 @@ export function CatalogueShowcase({ entry, totalEntries, artisanName }: Catalogu
 
   const collectionKey = COLLECTION_KEYS[entry.collection];
   const collectionLabel = collectionKey ? t(collectionKey) : entry.collection;
-  const publishedDate = new Date(entry.publishedAt).toLocaleDateString('en-US', {
-    month: 'short',
-    year: 'numeric',
-  });
+  const publishedDate = new Date(entry.publishedAt).toLocaleDateString(
+    locale === 'ja' ? 'ja-JP' : 'en-US',
+    { month: 'short', year: 'numeric' },
+  );
 
   return (
     <div>

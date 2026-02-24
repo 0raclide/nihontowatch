@@ -54,6 +54,14 @@ vi.mock('@/lib/auth/AuthContext', () => ({
   AuthProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
 
+// Mock locale context (HighlightedMarkdown in SetsumeiSection calls useLocale)
+vi.mock('@/i18n/LocaleContext', async () => {
+  return {
+    useLocale: () => ({ locale: 'en', setLocale: () => {}, t: (key: string) => key }),
+    LocaleProvider: ({ children }: { children: React.ReactNode }) => children,
+  };
+});
+
 // Mock currency hook
 vi.mock('@/hooks/useCurrency', () => ({
   useCurrency: () => ({

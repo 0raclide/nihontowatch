@@ -46,7 +46,7 @@ export function getSignupModalCopy(dealerCount: number): SignupModalCopyVariants
   return {
     engagement: {
       headline: `${dealerCount} dealers. One watchlist.`,
-      body: 'Save the pieces that caught your eye. Get alerted when new inventory appears across the market. Never miss a price drop.',
+      body: 'Save the pieces that caught your eye. Get alerted when new inventory appears across the market. Never miss an item.',
       cta: 'Create Account',
       dismiss: 'Continue browsing',
       socialProof: 'Every major dealer — Japanese and international',

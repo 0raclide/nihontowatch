@@ -133,7 +133,7 @@ describe('FilterContent Component', () => {
     // Certifications should be displayed with formatted labels
     expect(screen.getByText('Jūyō')).toBeInTheDocument();
     expect(screen.getByText('Hozon')).toBeInTheDocument();
-    expect(screen.getByText('Tokubetsu Hozon')).toBeInTheDocument();
+    expect(screen.getByText('Tokuho')).toBeInTheDocument();
   });
 
   it('calls onFilterChange when certification is toggled', () => {

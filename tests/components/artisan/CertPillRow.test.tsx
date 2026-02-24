@@ -11,6 +11,14 @@ vi.mock('react-dom', async () => {
   };
 });
 
+// Mock locale context (ArtisanTooltip calls useLocale)
+vi.mock('@/i18n/LocaleContext', async () => {
+  return {
+    useLocale: () => ({ locale: 'en', setLocale: () => {}, t: (key: string) => key }),
+    LocaleProvider: ({ children }: { children: React.ReactNode }) => children,
+  };
+});
+
 // Mock fetch globally
 const mockFetch = vi.fn();
 global.fetch = mockFetch;

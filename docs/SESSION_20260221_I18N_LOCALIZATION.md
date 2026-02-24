@@ -1,14 +1,19 @@
 # Japanese Localization — Implementation Handoff
 
-**Date:** 2026-02-21
-**Status:** Complete (5 phases shipped)
-**Final test count:** 4,076 passing, 0 failing (145 test files)
+**Date:** 2026-02-21 (initial), updated 2026-02-22
+**Status:** Complete (5 phases shipped + extensive follow-up fixes)
+**Final test count:** 4,076 passing, 0 failing (145 test files) — at time of initial ship
 
 ---
 
 ## What Was Built
 
-A complete Japanese localization system for NihontoWatch: UI translation (527 keys), cookie-based locale switching, IP-based auto-detection, kanji search, and localized email templates. No external i18n dependencies.
+A complete Japanese localization system for NihontoWatch: UI translation (initially 527 keys, now 1,300+), cookie-based locale switching, IP-based auto-detection, kanji search, and localized email templates. No external i18n dependencies.
+
+> **Note:** This doc covers the initial i18n implementation. Subsequent work expanded the system significantly — see the "Subsequent Localization Work" section at the end and these session docs:
+> - `SESSION_20260222_JAPANESE_UX.md` — JA typography, information density, social share, 12 follow-up fixes
+> - `SESSION_20260222_BIDIRECTIONAL_TRANSLATION.md` — EN→JP translation for international dealer listings
+> - `HANDOFF_SCHOOL_KANJI_TRANSLATIONS.md` — 155 school + 6 province kanji translations
 
 ### Scope
 
@@ -314,7 +319,7 @@ npm test -- tests/i18n/translations.test.ts
 
 ---
 
-## Metrics
+## Metrics (Initial Ship)
 
 | Metric | Value |
 |--------|-------|
@@ -327,3 +332,56 @@ npm test -- tests/i18n/translations.test.ts
 | Files created | 7 |
 | Files modified | ~30 |
 | External dependencies added | 0 |
+
+## Metrics (Current — 2026-02-22)
+
+| Metric | Value |
+|--------|-------|
+| Translation keys | ~1,300 per locale |
+| Components using `useLocale()` | 40+ |
+| Key categories | nav, filter, itemType, cert, era, school (218), province (75), card, share, collection, email, listing, meiType, dealer names |
+| Locale-specific UX | JA typography (line-height, italic→bold), filter expand, card density, setsumei/inquire gating |
+| Bidirectional translation | JP→EN (title_en, description_en) + EN→JP (title_ja, description_ja) |
+| Dealer name localization | 39 Japanese dealers with verified kanji/kana `name_ja` |
+| Translation model | google/gemini-3-flash-preview (via OpenRouter) |
+
+---
+
+## Subsequent Localization Work (2026-02-22)
+
+After the initial 5-phase i18n ship, extensive follow-up work expanded the system:
+
+### Listing Data Localization
+- **Locale-aware titles/descriptions** (`f14c89e`) — JA locale shows original Japanese for JP dealers, auto-translated JP for EN dealers. EN locale shows translations. Toggle buttons for both directions.
+- **Bidirectional translation** (`120d9e8`) — EN→JP auto-translation via Gemini 3 Flash for international dealer listings. `title_ja`/`description_ja` DB columns. 55 tests.
+- **Ratio-based detection** (`0138af9`) — `isPredominantlyJapanese()` (>20% threshold) prevents false positives from embedded kanji in English titles.
+
+### JA UX Tuning
+- **Typography** (`1779d4a`) — JA line-height 1.85, italic→bold override, prose font tuning
+- **Filter expand** — 4 sections open by default in JA locale (*ichimokuryouzen*)
+- **Card density** — JA-only nagasa + era metadata row, freshness timestamps
+- **Social share** — LINE (JA only) + Twitter/X buttons
+- **Polite empty states** — 6 filter strings rewritten per *omotenashi*
+- **Setsumei icon hidden** (`7e01ae3`) — English-only feature hidden for JA users
+- **Item type translation** (`4f93545`) — 刀, 脇差, 鐔 etc. on cards via `td()`
+- **Era translation** (`55443ed`) — 古刀, 新刀, 新々刀 etc. on cards (18 keys)
+
+### School & Province Kanji
+- **155 school translations** (`e050d4d`) — all missing sword (101) and tosogu (54) schools
+- **3 school corrections** (`cfc71ac`) — Kinai, Kai Mihara, Kozori verified against museum sources
+- **6 province keys** — Iwaki, Iwashiro, Kyoto, Osaka, Rikuchu, Tamba
+
+### Dealer Name Localization
+- **39 Japanese dealer names** (`df6302d`) — verified kanji/kana from official websites
+- **Centralized utility** — `getDealerDisplayName(dealer, locale)` in `src/lib/dealers/displayName.ts`
+- **Filter grouping** — dealers grouped into 日本 / International in sidebar
+- **5 domain edge cases** (`481c25c`) — Choshuya, Seikeido, Tosa Touken Do, Toushin, Shingendou
+- **3 misclassified dealers** (`0b20ba5`) — Katana Sword, Soryu, Tsuba Info moved to international
+
+### Font Fixes
+- **Macron removal** (`eadbeba`) — ō/ū rendered as detached bars in Inter at card sizes
+- **Latin-ext subset** (`8623e48`) — Inter and Cormorant Garamond now load latin-ext for macron support in body text
+
+### Artists Page Localization
+- **`/artists` page** (`6285576`) — filters, card names, subtitles all use `td()` for JA locale
+- **ArtisanTooltip** (`243fb3e`) — school, province, era values translated in admin tooltip

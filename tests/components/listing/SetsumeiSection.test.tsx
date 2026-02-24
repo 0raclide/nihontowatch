@@ -3,6 +3,14 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { SetsumeiSection } from '@/components/listing/SetsumeiSection';
 import type { Listing } from '@/types';
 
+// Mock locale context (HighlightedMarkdown calls useLocale)
+vi.mock('@/i18n/LocaleContext', async () => {
+  return {
+    useLocale: () => ({ locale: 'en', setLocale: () => {}, t: (key: string) => key }),
+    LocaleProvider: ({ children }: { children: React.ReactNode }) => children,
+  };
+});
+
 // Sample listing data for testing
 const createMockListing = (overrides: Partial<Listing> = {}): Listing => ({
   id: 123,

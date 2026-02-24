@@ -302,6 +302,7 @@ export async function GET(request: NextRequest) {
         featured_score,
         focal_x,
         focal_y,
+        thumbnail_url,
         dealers:dealers!inner(id, name, name_ja, domain, earliest_listing_at),
         listing_yuhinkai_enrichment(
           setsumei_en,
