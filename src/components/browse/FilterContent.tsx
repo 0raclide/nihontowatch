@@ -158,9 +158,7 @@ const AdminToolsSection = memo(function AdminToolsSection({
         <div className="flex items-center gap-1.5">
           <span className={`${isB ? 'text-[9px] px-1 py-px' : 'text-[10px] px-1.5 py-0.5'} bg-gold/20 text-gold rounded font-semibold`}>ADMIN</span>
           {activeCount !== undefined && activeCount > 0 && (
-            <span className={`${isB ? 'text-[8px] min-w-[12px] h-[12px]' : 'text-[9px] min-w-[16px] h-[16px]'} inline-flex items-center justify-center px-0.5 font-bold text-white bg-gold rounded-full leading-none`}>
-              {activeCount}
-            </span>
+            <span className={`${isB ? 'w-1.5 h-1.5' : 'w-2 h-2'} bg-gold rounded-full`} />
           )}
         </div>
         <svg
