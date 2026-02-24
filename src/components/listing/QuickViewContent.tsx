@@ -318,8 +318,8 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
                 <div className="flex-1 min-w-0">
                   <div className="text-[10px] uppercase tracking-wider text-gold font-medium leading-tight">{t('quickview.artistProfile')}</div>
                   <div className="text-[16px] font-semibold text-ink group-hover:text-gold transition-colors truncate">
-                    {getArtisanInfo(listing, locale).artisan
-                      || listing.artisan_display_name
+                    {listing.artisan_display_name
+                      || getArtisanInfo(listing, locale).artisan
                       || listing.artisan_id}
                   </div>
                 </div>

@@ -546,8 +546,10 @@ export const ListingCard = memo(function ListingCard({
   const { allImages, school, artisan, itemType, cleanedTitle, certInfo } = useMemo(() => ({
     allImages: getAllImages(listing),
     school: getSchoolName(listing.school) || getSchoolName(listing.tosogu_school),
-    artisan: getArtisanName(listing.smith, listing.school, listing.title_en)
-      || getArtisanName(listing.tosogu_maker, listing.tosogu_school, listing.title_en),
+    artisan: (listing.artisan_id && listing.artisan_id !== 'UNKNOWN' && listing.artisan_display_name)
+      ? listing.artisan_display_name
+      : (getArtisanName(listing.smith, listing.school, listing.title_en)
+        || getArtisanName(listing.tosogu_maker, listing.tosogu_school, listing.title_en)),
     itemType: normalizeItemType(listing.item_type),
     cleanedTitle: cleanTitle(
       locale === 'en' && listing.title_en ? listing.title_en
@@ -564,6 +566,8 @@ export const ListingCard = memo(function ListingCard({
     listing.tosogu_school,
     listing.smith,
     listing.tosogu_maker,
+    listing.artisan_id,
+    listing.artisan_display_name,
     listing.title,
     listing.title_en,
     listing.title_ja,

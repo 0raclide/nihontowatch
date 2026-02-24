@@ -176,9 +176,15 @@ export function getArtisanInfo(listing: Listing | ListingWithEnrichment, locale:
     };
   }
 
+  // When a Yuhinkai artisan match exists, prefer artisan_display_name over raw
+  // tosogu_maker/smith. The scraper sometimes puts the motif (e.g., "Figures with Umbrella")
+  // into tosogu_maker instead of the craftsman name. Yuhinkai-resolved names are more reliable.
+  const hasYuhinkaiMatch = listing.artisan_id && listing.artisan_id !== 'UNKNOWN'
+    && listing.artisan_display_name;
+
   // Fall back to raw listing data
   if (isTosogu(listing.item_type)) {
-    const rawMaker = listing.tosogu_maker;
+    const rawMaker = hasYuhinkaiMatch ? listing.artisan_display_name! : listing.tosogu_maker;
     const school = listing.tosogu_school;
 
     // JA locale: show original Japanese names directly
