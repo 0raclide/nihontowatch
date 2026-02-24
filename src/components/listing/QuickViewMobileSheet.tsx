@@ -19,6 +19,7 @@ import { TranslatedDescription } from './TranslatedDescription';
 import { TranslatedTitle } from './TranslatedTitle';
 import { QuickMeasurement } from './QuickMeasurement';
 import { useLocale } from '@/i18n/LocaleContext';
+import { getDealerDisplayName } from '@/lib/dealers/displayName';
 
 // =============================================================================
 // TYPES
@@ -141,7 +142,8 @@ export function QuickViewMobileSheet({
   const rawItemTypeLabel = getItemTypeLabel(listing.item_type);
   const itemTypeLabel = (() => { const k = `itemType.${listing.item_type?.toLowerCase()}`; const r = t(k); return r === k ? rawItemTypeLabel : r; })();
   // Note: Supabase returns 'dealers' (plural) from the join, not 'dealer' (singular)
-  const dealerName = listing.dealers?.name || listing.dealer?.name || 'Dealer';
+  const dealerObj = listing.dealers || listing.dealer;
+  const dealerName = dealerObj ? getDealerDisplayName(dealerObj as { name: string; name_ja?: string | null }, locale) : 'Dealer';
   const priceDisplay = formatPriceWithConversion(
     listing.price_value,
     listing.price_currency,
@@ -516,9 +518,9 @@ export function QuickViewMobileSheet({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
               <div className="flex-1 min-w-0">
-                <div className="text-[9px] uppercase tracking-wider text-gold font-medium leading-tight">Artist Profile</div>
+                <div className="text-[9px] uppercase tracking-wider text-gold font-medium leading-tight">{t('quickview.artistProfile')}</div>
                 <div className="text-[14px] font-semibold text-ink group-hover:text-gold transition-colors truncate">
-                  {listing.artisan_display_name || listing.artisan_id}
+                  {artisan || listing.artisan_display_name || listing.artisan_id}
                 </div>
               </div>
               {listing.artisan_tier && (
@@ -663,7 +665,7 @@ export function QuickViewMobileSheet({
                 }}
                 className="flex-1 flex items-center justify-center gap-2 px-5 py-3 text-[13px] font-medium text-white bg-gold hover:bg-gold-light rounded-lg transition-colors active:scale-[0.98]"
               >
-                View on {dealerName}
+                {t('quickview.viewOn', { dealer: dealerName })}
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                 </svg>
