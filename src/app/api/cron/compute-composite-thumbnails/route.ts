@@ -27,7 +27,6 @@ const COMPOSITE_HEIGHT = 800;
 const STRIP_GAP = 6;
 const PANORAMIC_THRESHOLD = 3; // Individual image w/h ratio to qualify as a strip
 const COMPOSITE_TRIGGER_RATIO = 4; // Cover image w/h ratio to trigger composite
-const MAX_SCALE_UP = 1.5;
 const BG_COLOR = { r: 23, g: 23, b: 23 }; // #171717
 
 interface ListingRow {
@@ -68,20 +67,8 @@ interface StripInfo {
   height: number;
 }
 
-/**
- * Resize a strip buffer, clamping to canvas bounds to prevent sharp composite errors.
- */
-async function resizeStripClamped(strip: StripInfo, targetWidth: number, scaleFactor: number): Promise<StripInfo> {
-  const newWidth = Math.min(Math.round(strip.width * scaleFactor), targetWidth);
-  const newHeight = Math.max(1, Math.round(strip.height * scaleFactor));
-  const buf = await sharp(strip.buffer)
-    .resize(newWidth, newHeight, { fit: 'fill' })
-    .toBuffer();
-  return { buffer: buf, width: newWidth, height: newHeight };
-}
-
 async function generateComposite(strips: StripInfo[]): Promise<Buffer> {
-  // Scale all strips to COMPOSITE_WIDTH
+  // Scale all strips to fill COMPOSITE_WIDTH edge-to-edge
   const scaledStrips: StripInfo[] = [];
   for (const strip of strips) {
     const scale = COMPOSITE_WIDTH / strip.width;
@@ -92,61 +79,22 @@ async function generateComposite(strips: StripInfo[]): Promise<Buffer> {
     scaledStrips.push({ buffer: scaledBuffer, width: COMPOSITE_WIDTH, height: newHeight });
   }
 
-  const totalGaps = (scaledStrips.length - 1) * STRIP_GAP;
-  const totalStripHeight = scaledStrips.reduce((sum, s) => sum + s.height, 0);
-  const totalContentHeight = totalStripHeight + totalGaps;
-
-  let finalStrips = scaledStrips;
-  let finalGap = STRIP_GAP;
-  let yStart = 0;
-
-  if (totalContentHeight > COMPOSITE_HEIGHT) {
-    const scaleFactor = COMPOSITE_HEIGHT / totalContentHeight;
-    const resizedStrips: StripInfo[] = [];
-    for (const strip of scaledStrips) {
-      resizedStrips.push(await resizeStripClamped(strip, COMPOSITE_WIDTH, scaleFactor));
-    }
-    finalStrips = resizedStrips;
-    finalGap = Math.max(1, Math.round(STRIP_GAP * scaleFactor));
-  } else if (totalContentHeight < COMPOSITE_HEIGHT) {
-    const scaleFactor = Math.min(COMPOSITE_HEIGHT / totalContentHeight, MAX_SCALE_UP);
-    if (scaleFactor > 1.05) {
-      const resizedStrips: StripInfo[] = [];
-      for (const strip of scaledStrips) {
-        resizedStrips.push(await resizeStripClamped(strip, COMPOSITE_WIDTH, scaleFactor));
-      }
-      finalStrips = resizedStrips;
-      finalGap = Math.round(STRIP_GAP * scaleFactor);
-    }
-    const finalHeight = finalStrips.reduce((sum, s) => sum + s.height, 0) + (finalStrips.length - 1) * finalGap;
-    yStart = Math.max(0, Math.round((COMPOSITE_HEIGHT - finalHeight) / 2));
-  }
-
-  // Build overlays — clamp each to fit within canvas bounds
+  // Build overlays — stack from top, crop at canvas bottom
   const overlays: { input: Buffer; top: number; left: number }[] = [];
-  let currentY = Math.max(0, yStart);
-  for (const strip of finalStrips) {
-    const left = Math.max(0, Math.round((COMPOSITE_WIDTH - strip.width) / 2));
-    const top = Math.max(0, Math.min(currentY, COMPOSITE_HEIGHT - 1));
-    if (top >= COMPOSITE_HEIGHT) break;
+  let currentY = 0;
+  for (const strip of scaledStrips) {
+    if (currentY >= COMPOSITE_HEIGHT) break;
 
     let overlayBuffer = strip.buffer;
-    let overlayHeight = strip.height;
-    if (top + strip.height > COMPOSITE_HEIGHT) {
-      overlayHeight = COMPOSITE_HEIGHT - top;
+    if (currentY + strip.height > COMPOSITE_HEIGHT) {
+      const overlayHeight = COMPOSITE_HEIGHT - currentY;
       overlayBuffer = await sharp(strip.buffer)
         .extract({ left: 0, top: 0, width: strip.width, height: overlayHeight })
         .toBuffer();
     }
-    if (left + strip.width > COMPOSITE_WIDTH) {
-      const overlayWidth = COMPOSITE_WIDTH - left;
-      overlayBuffer = await sharp(overlayBuffer)
-        .extract({ left: 0, top: 0, width: overlayWidth, height: overlayHeight })
-        .toBuffer();
-    }
 
-    overlays.push({ input: overlayBuffer, top, left });
-    currentY += strip.height + finalGap;
+    overlays.push({ input: overlayBuffer, top: currentY, left: 0 });
+    currentY += strip.height + STRIP_GAP;
   }
 
   return sharp({
