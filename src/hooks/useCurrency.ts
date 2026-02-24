@@ -38,13 +38,19 @@ export function useCurrency() {
   const [exchangeRates, setExchangeRates] = useState<ExchangeRates | null>(cachedRates);
   const [isLoading, setIsLoading] = useState(!cachedRates);
 
-  // Load currency preference from localStorage
+  // Load currency preference from localStorage, falling back to geo-detected cookie
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored && ['USD', 'JPY', 'EUR'].includes(stored)) {
       setCurrencyState(stored as Currency);
+    } else {
+      // No explicit preference — check geo-detected cookie (set by middleware)
+      const match = document.cookie.match(/(?:^|;\s*)nw-currency=(\w+)/);
+      if (match && ['USD', 'JPY', 'EUR'].includes(match[1])) {
+        setCurrencyState(match[1] as Currency);
+      }
     }
   }, []);
 

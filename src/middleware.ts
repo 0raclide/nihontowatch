@@ -12,6 +12,20 @@ import { findCategoryRedirect } from '@/lib/seo/categories';
 import { LOCALE_COOKIE } from '@/i18n';
 import { GDPR_COOKIE, isGdprCountry } from '@/lib/consent/gdpr';
 
+// ── Currency geo-detection ──
+export const CURRENCY_COOKIE = 'nw-currency';
+
+const EUROZONE_COUNTRIES = new Set([
+  'AT', 'BE', 'CY', 'DE', 'EE', 'ES', 'FI', 'FR', 'GR', 'HR',
+  'IE', 'IT', 'LT', 'LU', 'LV', 'MT', 'NL', 'PT', 'SI', 'SK',
+]);
+
+function countryToCurrency(country: string): 'JPY' | 'EUR' | 'USD' {
+  if (country === 'JP') return 'JPY';
+  if (EUROZONE_COUNTRIES.has(country)) return 'EUR';
+  return 'USD';
+}
+
 export async function middleware(request: NextRequest) {
   // Canonical redirect: /?type=katana → /swords/katana (301)
   // Only fires on bare category-param URLs (no tab, sort, dealer, q, etc.)
@@ -144,6 +158,17 @@ export async function middleware(request: NextRequest) {
   if (needsGdprCookie) {
     const country = request.headers.get('x-vercel-ip-country') || '';
     supabaseResponse.cookies.set(GDPR_COOKIE, isGdprCountry(country) ? '1' : '0', {
+      path: '/',
+      maxAge: 31536000, // 1 year
+      sameSite: 'lax',
+    });
+  }
+
+  // ── Set currency cookie if needed ──
+  const currencyCookie = request.cookies.get(CURRENCY_COOKIE)?.value;
+  if (!currencyCookie) {
+    const country = request.headers.get('x-vercel-ip-country') || '';
+    supabaseResponse.cookies.set(CURRENCY_COOKIE, countryToCurrency(country), {
       path: '/',
       maxAge: 31536000, // 1 year
       sameSite: 'lax',

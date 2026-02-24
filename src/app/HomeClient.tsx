@@ -254,10 +254,18 @@ export default function HomeContent() {
   const scrollContainerRef = useRef<HTMLDivElement>(null); // Mobile contained-scroll container
   const lastTrackedSearchRef = useRef<string>(''); // Dedup: only track when query actually changes
 
-  // Currency state - default to JPY
+  // Currency state - default to JPY, with geo-detected cookie fallback
   const [currency, setCurrency] = useState<Currency>(() => {
     if (typeof window !== 'undefined') {
-      return (localStorage.getItem('preferred_currency') as Currency) || 'JPY';
+      const stored = localStorage.getItem('preferred_currency');
+      if (stored && ['USD', 'JPY', 'EUR'].includes(stored)) {
+        return stored as Currency;
+      }
+      // No explicit preference — check geo-detected cookie (set by middleware)
+      const match = document.cookie.match(/(?:^|;\s*)nw-currency=(\w+)/);
+      if (match && ['USD', 'JPY', 'EUR'].includes(match[1])) {
+        return match[1] as Currency;
+      }
     }
     return 'JPY';
   });
