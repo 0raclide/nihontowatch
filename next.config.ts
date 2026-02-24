@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Native modules used by cron jobs (focal points, composites) — skip Turbopack bundling
+  serverExternalPackages: ['sharp', 'smartcrop-sharp'],
   // Prevent /path and /path/ being treated as separate URLs
   trailingSlash: false,
   images: {
