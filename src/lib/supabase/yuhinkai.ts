@@ -597,7 +597,7 @@ export async function getProvenancePercentile(
  */
 export async function getEliteDistribution(
   entityType: 'smith' | 'tosogu'
-): Promise<{ buckets: number[]; total: number; maxValue: number }> {
+): Promise<{ buckets: number[]; total: number }> {
   const domainFilter = getDomainFilter(entityType);
 
   const { data, error } = await yuhinkaiClient
@@ -609,26 +609,17 @@ export async function getEliteDistribution(
 
   if (error || !data) {
     console.error('[Yuhinkai] Error fetching elite distribution:', error);
-    return { buckets: Array(100).fill(0), total: 0, maxValue: 1 };
+    return { buckets: Array(100).fill(0), total: 0 };
   }
-
-  // Find actual max to bucket adaptively — post-Bayesian lower bound, values cluster in 0–17%
-  let maxValue = 0;
-  for (const row of data) {
-    const ef = row.elite_factor ?? 0;
-    if (ef > maxValue) maxValue = ef;
-  }
-  // Floor: avoid division by zero if all values are 0
-  if (maxValue === 0) maxValue = 1;
 
   const buckets = Array(100).fill(0);
   for (const row of data) {
     const ef = row.elite_factor ?? 0;
-    const idx = Math.min(Math.floor((ef / maxValue) * 100), 99);
+    const idx = Math.min(Math.floor(ef * 100), 99);
     buckets[idx]++;
   }
 
-  return { buckets, total: data.length, maxValue };
+  return { buckets, total: data.length };
 }
 
 /**

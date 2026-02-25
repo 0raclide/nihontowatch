@@ -22,26 +22,24 @@ function EliteHistogram({
   buckets,
   total,
   eliteFactor,
-  maxValue,
   entityType,
 }: {
   buckets: number[];
   total: number;
   eliteFactor: number;
-  maxValue: number;
   entityType: 'smith' | 'tosogu';
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { t } = useLocale();
   const peerLabel = entityType === 'smith' ? t('artists.smiths') : t('artists.makers');
 
-  // Trim leading and trailing empty buckets for a tight view (same as provenance)
+  // Trim leading and trailing empty buckets for a tight view (matches ProvenanceHistogram)
   let firstNonZero = 0;
   while (firstNonZero < buckets.length && buckets[firstNonZero] === 0) firstNonZero++;
   let lastNonZero = buckets.length - 1;
   while (lastNonZero > 0 && buckets[lastNonZero] === 0) lastNonZero--;
 
-  const rawActiveBucket = Math.min(Math.floor((eliteFactor / maxValue) * 100), 99);
+  const rawActiveBucket = Math.min(Math.floor(eliteFactor * 100), 99);
   // Pad 1 bucket before first data, extend past last data / active bucket
   const startBucket = Math.max(firstNonZero - 1, 0);
   const endBucket = Math.min(Math.max(lastNonZero + 2, rawActiveBucket + 3), buckets.length);
@@ -100,17 +98,15 @@ function EliteHistogram({
     ctx.closePath();
     ctx.fill();
 
-    // Axis labels — show actual percentage values for the visible range
-    const leftPct = (startBucket / 100) * maxValue * 100;
-    const rightPct = (endBucket / 100) * maxValue * 100;
+    // Axis labels (percentage units, reflecting trimmed range)
     ctx.fillStyle = 'rgba(128, 128, 128, 0.35)';
     ctx.font = '9px system-ui, sans-serif';
     ctx.textBaseline = 'bottom';
     ctx.textAlign = 'start';
-    ctx.fillText(`${leftPct.toFixed(1)}%`, 0, h);
+    ctx.fillText(`${startBucket}%`, 0, h);
     ctx.textAlign = 'end';
-    ctx.fillText(`${rightPct.toFixed(1)}%`, w, h);
-  }, [visible, maxCount, activeBucket, startBucket, endBucket, maxValue]);
+    ctx.fillText(`${endBucket}%`, w, h);
+  }, [visible, maxCount, activeBucket, startBucket, endBucket]);
 
   return (
     <div className="mt-3">
@@ -137,7 +133,7 @@ export function EliteFactorDisplay({
   const pct = Math.round(eliteFactor * 100);
   const topPct = Math.max(100 - percentile, 1);
   const [showInfo, setShowInfo] = useState(false);
-  const [distribution, setDistribution] = useState<{ buckets: number[]; total: number; maxValue: number } | null>(null);
+  const [distribution, setDistribution] = useState<{ buckets: number[]; total: number } | null>(null);
 
   // Lazy-load distribution when info panel opens
   useEffect(() => {
@@ -201,7 +197,6 @@ export function EliteFactorDisplay({
               buckets={distribution.buckets}
               total={distribution.total}
               eliteFactor={eliteFactor}
-              maxValue={distribution.maxValue}
               entityType={entityType}
             />
           ) : (
