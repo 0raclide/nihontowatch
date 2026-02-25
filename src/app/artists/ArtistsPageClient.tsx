@@ -748,6 +748,7 @@ function ArtistCard({ artist }: { artist: ArtistWithSlug }) {
   };
   const percentile = artist.percentile ?? 0;
   const isSchool = artist.is_school_code;
+  const isPeriod = artist.school_type === 'period';
 
   const profileUrl = `/artists/${artist.slug}`;
   const availableCount = artist.available_count ?? 0;
@@ -764,7 +765,7 @@ function ArtistCard({ artist }: { artist: ArtistWithSlug }) {
   // Build subtitle for school codes vs individual artists
   const subtitleParts: string[] = [];
   if (isSchool) {
-    subtitleParts.push(t('artists.schoolAttribution'));
+    subtitleParts.push(isPeriod ? t('artists.periodAttribution') : t('artists.schoolAttribution'));
     if (artist.member_count && artist.member_count > 0) {
       subtitleParts.push(`${artist.member_count} ${t('artists.known')}${artist.entity_type === 'tosogu' ? t('artists.makers') : t('artists.smiths')}`);
     }
@@ -823,7 +824,7 @@ function ArtistCard({ artist }: { artist: ArtistWithSlug }) {
             <span className="block text-lg font-serif text-ink tabular-nums">{artist.total_items}</span>
             <span className={`block text-[8px] uppercase tracking-[0.15em] mt-0.5${
               isSchool ? ' text-gold' : ' text-ink/40'
-            }`}>{isSchool ? t('artists.school') : t('artists.works')}</span>
+            }`}>{isSchool ? (isPeriod ? t('artists.period') : t('artists.school')) : t('artists.works')}</span>
           </div>
         </div>
 
