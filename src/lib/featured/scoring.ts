@@ -6,7 +6,7 @@
  * listing's score inline without waiting for the next 4-hour cron run.
  *
  * Scoring model:
- *   quality (0-395) = artisan_stature + cert_points + completeness
+ *   quality (0-295) = artisan_stature + cert_points + completeness
  *   heat (0-160)    = favorites + dealer_clicks + quickview_opens + views + pinch_zooms
  *   freshness       = multiplier based on listing age (0.3 – 1.4)
  *   featured_score  = (quality + heat) × freshness
@@ -122,9 +122,8 @@ interface EliteSyncOptions {
 export function computeQuality(listing: ListingScoreInput): number {
   const hasRealArtisan = listing.artisan_id && !IGNORE_ARTISAN_IDS.has(listing.artisan_id);
   const eliteFactor = hasRealArtisan ? (listing.artisan_elite_factor ?? 0) : 0;
-  const eliteCount = hasRealArtisan ? (listing.artisan_elite_count ?? 0) : 0;
 
-  const rawArtisanStature = (eliteFactor * 200) + Math.min(Math.sqrt(eliteCount) * 18, 100);
+  const rawArtisanStature = eliteFactor * 200;
 
   // Price-based damping: cheap items with elite artisan matches are almost certainly
   // wrong attributions. Smooth ramp from 0% at ¥0 to 100% at ¥500K.
@@ -209,8 +208,6 @@ export interface ScoreBreakdown {
   artisanDetail: {
     eliteFactor: number;
     eliteFactorPts: number;
-    eliteCount: number;
-    eliteCountPts: number;
     artisanId: string | null;
     isReal: boolean;
     priceDamping: number;
@@ -236,10 +233,8 @@ export function computeScoreBreakdown(listing: ListingScoreInput): ScoreBreakdow
   // Artisan stature
   const hasRealArtisan = listing.artisan_id && !IGNORE_ARTISAN_IDS.has(listing.artisan_id);
   const eliteFactor = hasRealArtisan ? (listing.artisan_elite_factor ?? 0) : 0;
-  const eliteCount = hasRealArtisan ? (listing.artisan_elite_count ?? 0) : 0;
   const eliteFactorPts = eliteFactor * 200;
-  const eliteCountPts = Math.min(Math.sqrt(eliteCount) * 18, 100);
-  const rawStature = eliteFactorPts + eliteCountPts;
+  const rawStature = eliteFactorPts;
 
   // Price-based damping (mirrors computeQuality)
   const priceJpy = estimatePriceJpy(listing.price_value, listing.price_currency);
@@ -309,8 +304,6 @@ export function computeScoreBreakdown(listing: ListingScoreInput): ScoreBreakdow
     artisanDetail: {
       eliteFactor,
       eliteFactorPts: Math.round(eliteFactorPts * 100) / 100,
-      eliteCount,
-      eliteCountPts: Math.round(eliteCountPts * 100) / 100,
       artisanId: listing.artisan_id,
       isReal: !!hasRealArtisan,
       priceDamping: Math.round(priceDamping * 1000) / 1000,

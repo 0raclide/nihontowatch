@@ -214,7 +214,7 @@ describe('computeQuality', () => {
   });
 
   describe('artisan stature', () => {
-    it('uses elite_factor and elite_count for real artisans (full price)', () => {
+    it('uses elite_factor for real artisans (full price)', () => {
       const listing = baseListing({
         artisan_id: 'MAS590',
         artisan_elite_factor: 1.0,
@@ -223,10 +223,10 @@ describe('computeQuality', () => {
         price_currency: 'JPY',
       });
       const quality = computeQuality(listing);
-      // stature = (1.0 * 200) + min(sqrt(100) * 18, 100) = 200 + 100 = 300
+      // stature = 1.0 * 200 = 200
       // priceDamping = min(5000000 / 500000, 1) = 1.0
       // completeness: price = 10
-      expect(quality).toBe(310);
+      expect(quality).toBe(210);
     });
 
     it('ignores UNKNOWN artisan_id', () => {
@@ -267,23 +267,9 @@ describe('computeQuality', () => {
         price_currency: 'JPY',
       });
       const quality = computeQuality(listing);
-      // stature = (0 * 200) + min(sqrt(10) * 18, 100) = 0 + 56.92 ≈ 56.92
+      // stature = 0 * 200 = 0 (null elite_factor defaults to 0)
       // priceDamping = 1.0, completeness: price = 10
-      expect(quality).toBeCloseTo(66.92, 1);
-    });
-
-    it('caps elite_count contribution at 100', () => {
-      const listing = baseListing({
-        artisan_id: 'MAS590',
-        artisan_elite_factor: 0,
-        artisan_elite_count: 10000,
-        price_value: 5000000,
-        price_currency: 'JPY',
-      });
-      const quality = computeQuality(listing);
-      // stature = 0 + min(sqrt(10000) * 18, 100) = min(1800, 100) = 100
-      // priceDamping = 1.0, completeness: price = 10
-      expect(quality).toBe(110);
+      expect(quality).toBe(10);
     });
   });
 
@@ -297,12 +283,12 @@ describe('computeQuality', () => {
         price_currency: 'JPY',
       });
       const quality = computeQuality(listing);
-      // rawStature = 200 + 100 = 300
+      // rawStature = 200
       // priceDamping = 30000 / 500000 = 0.06
-      // artisanStature = 300 * 0.06 = 18
+      // artisanStature = 200 * 0.06 = 12
       // completeness: price = 10
-      // total = 18 + 10 = 28
-      expect(quality).toBe(28);
+      // total = 12 + 10 = 22
+      expect(quality).toBe(22);
     });
 
     it('partially dampens artisan stature for mid-price items (¥250K)', () => {
@@ -314,10 +300,10 @@ describe('computeQuality', () => {
         price_currency: 'JPY',
       });
       const quality = computeQuality(listing);
-      // rawStature = 300, priceDamping = 250000 / 500000 = 0.5
-      // artisanStature = 300 * 0.5 = 150
+      // rawStature = 200, priceDamping = 250000 / 500000 = 0.5
+      // artisanStature = 200 * 0.5 = 100
       // completeness: price = 10
-      expect(quality).toBe(160);
+      expect(quality).toBe(110);
     });
 
     it('no damping at ¥500K ceiling', () => {
@@ -329,9 +315,9 @@ describe('computeQuality', () => {
         price_currency: 'JPY',
       });
       const quality = computeQuality(listing);
-      // rawStature = 300, priceDamping = 1.0
+      // rawStature = 200, priceDamping = 1.0
       // completeness: price = 10
-      expect(quality).toBe(310);
+      expect(quality).toBe(210);
     });
 
     it('no damping above ceiling', () => {
@@ -343,9 +329,9 @@ describe('computeQuality', () => {
         price_currency: 'JPY',
       });
       const quality = computeQuality(listing);
-      // rawStature = 300, priceDamping = clamped to 1.0
+      // rawStature = 200, priceDamping = clamped to 1.0
       // completeness: price = 10
-      expect(quality).toBe(310);
+      expect(quality).toBe(210);
     });
 
     it('full stature when no price (null) — inquiry-based items bypass damping', () => {
@@ -357,9 +343,9 @@ describe('computeQuality', () => {
         price_currency: null,
       });
       const quality = computeQuality(listing);
-      // rawStature = 300, priceDamping = 1.0 (NULL price bypasses damping)
+      // rawStature = 200, priceDamping = 1.0 (NULL price bypasses damping)
       // completeness: no price = 0
-      expect(quality).toBe(300);
+      expect(quality).toBe(200);
     });
 
     it('converts USD price for damping', () => {
@@ -372,9 +358,9 @@ describe('computeQuality', () => {
       });
       const quality = computeQuality(listing);
       // priceJpy = 2000 * 150 = 300000, priceDamping = 300000 / 500000 = 0.6
-      // rawStature = 300, artisanStature = 300 * 0.6 = 180
+      // rawStature = 200, artisanStature = 200 * 0.6 = 120
       // completeness: price = 10
-      expect(quality).toBe(190);
+      expect(quality).toBe(130);
     });
 
     it('cheap USD item gets heavily dampened', () => {
@@ -387,9 +373,9 @@ describe('computeQuality', () => {
       });
       const quality = computeQuality(listing);
       // priceJpy = 200 * 150 = 30000, priceDamping = 0.06
-      // artisanStature = 300 * 0.06 = 18
+      // artisanStature = 200 * 0.06 = 12
       // completeness: price = 10
-      expect(quality).toBe(28);
+      expect(quality).toBe(22);
     });
 
     it('does not dampen non-artisan components', () => {
@@ -522,7 +508,7 @@ describe('computeQuality', () => {
       });
       const quality = computeQuality(listing);
 
-      // artisan_stature = (0.5 * 200) + min(sqrt(25) * 18, 100) = 100 + 90 = 190
+      // artisan_stature = 0.5 * 200 = 100
       // priceDamping = min(2000000 / 500000, 1) = 1.0
       // cert = 28
       // completeness:
@@ -535,8 +521,8 @@ describe('computeQuality', () => {
       //   school: 3
       //   HIGH confidence: 5
       //   total completeness: 55
-      // total = 190 + 28 + 55 = 273
-      expect(quality).toBe(273);
+      // total = 100 + 28 + 55 = 183
+      expect(quality).toBe(183);
     });
 
     it('gimei item (UNKNOWN artisan) has low quality even with images', () => {

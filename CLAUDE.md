@@ -522,7 +522,7 @@ Comprehensive analytics infrastructure already built for dealer monetization:
 
 The `featured_score` column drives the default sort order in browse. Computed as `(quality + heat) × freshness`:
 
-- **quality (0–395)** = artisan stature (elite_factor × 200 + √elite_count × 18, capped 100) × **price damping** + cert points (0–40) + completeness (0–55: images, price, attribution, measurements, description, era, school, HIGH confidence)
+- **quality (0–295)** = artisan stature (elite_factor × 200) × **price damping** + cert points (0–40) + completeness (0–55: images, price, attribution, measurements, description, era, school, HIGH confidence)
 - **price damping** = `min(estimatedPriceJpy / ¥500K, 1)` — dampens artisan stature for cheap items where elite artisan matches are likely wrong attributions. A ¥30K item with an elite artisan match gets only 6% of the stature boost; ¥500K+ gets 100%. **NULL price (inquiry-based / "Ask") bypasses damping entirely (factor=1.0)** — "no listed price" ≠ "cheap". Currency-converted via rough rates (`CURRENCY_TO_JPY` in scoring.ts). Null currency defaults to JPY.
 - **heat (0–160)** = 30-day behavioral data: favorites (×15, cap 60) + clicks (×10, cap 40) + quickview opens (×3, cap 24) + views (×1, cap 20) + pinch zooms (×8, cap 16)
 - **freshness** = age multiplier: <3d→1.4, <7d→1.2, <30d→1.0, <90d→0.85, <180d→0.5, ≥180d→0.3. Initial imports = 1.0.

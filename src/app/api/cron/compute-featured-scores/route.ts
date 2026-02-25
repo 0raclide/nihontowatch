@@ -2,7 +2,7 @@
  * Compute featured scores for all available listings
  *
  * Scoring model:
- *   quality (0-395) = artisan_stature + cert_points + completeness
+ *   quality (0-295) = artisan_stature + cert_points + completeness
  *   heat (0-160)    = favorites + dealer_clicks + quickview_opens + views + pinch_zooms
  *   freshness       = multiplier based on listing age (0.3 – 1.4)
  *   featured_score  = (quality + heat) × freshness

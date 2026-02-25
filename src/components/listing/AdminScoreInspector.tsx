@@ -35,8 +35,6 @@ interface BreakdownData {
     artisanDetail: {
       eliteFactor: number;
       eliteFactorPts: number;
-      eliteCount: number;
-      eliteCountPts: number;
       artisanId: string | null;
       isReal: boolean;
       priceDamping: number;
@@ -224,7 +222,7 @@ export function AdminScoreInspector({ listing, onScoreRecomputed }: AdminScoreIn
                   <div className="flex items-center gap-2">
                     <span className="text-[11px] font-medium text-ink uppercase tracking-wider">Quality</span>
                     <span className="text-[11px] font-mono text-muted tabular-nums">
-                      {data.breakdown.quality.total} / 395
+                      {data.breakdown.quality.total} / 295
                     </span>
                   </div>
                   <svg className={`w-3 h-3 text-muted transition-transform ${showQuality ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -247,10 +245,6 @@ export function AdminScoreInspector({ listing, onScoreRecomputed }: AdminScoreIn
                           <div className="flex justify-between">
                             <span>elite_factor ({data.breakdown.artisanDetail.eliteFactor}) × 200</span>
                             <span className="font-mono tabular-nums">{data.breakdown.artisanDetail.eliteFactorPts}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span>√elite_count ({data.breakdown.artisanDetail.eliteCount}) × 18</span>
-                            <span className="font-mono tabular-nums">{data.breakdown.artisanDetail.eliteCountPts}</span>
                           </div>
                           {data.breakdown.artisanDetail.priceDamping < 1 && (
                             <div className="flex justify-between text-amber-500">
