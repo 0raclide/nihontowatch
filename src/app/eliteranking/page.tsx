@@ -26,6 +26,7 @@ export const metadata: Metadata = {
 };
 
 const TOC = [
+  { href: '#the-dataset', label: 'The Dataset' },
   { href: '#part-i-the-elite-factor', label: 'I. Elite Factor' },
   { href: '#part-ii-the-provenance-factor', label: 'II. Provenance' },
   { href: '#part-iii-current-rankings', label: 'III. Rankings' },

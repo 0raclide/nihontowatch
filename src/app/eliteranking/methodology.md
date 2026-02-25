@@ -4,6 +4,67 @@ Both metrics express ranking as a *lower credible bound* rather than a point est
 
 ---
 
+## The Dataset
+
+The ranking system operates on a corpus of digitized designation records from the official publications of Japan's cultural designation bodies. Understanding what data is available — and how it is structured, normalized, and deduplicated — is essential to interpreting the statistical metrics that follow.
+
+### Source Publications
+
+The dataset draws from seven source publications, each a multi-volume series of illustrated catalogs containing oshigata (blade rubbings), setsumei (expert appraisals), and structured measurements.
+
+| Publication | Japanese | Designating Body | Records | Coverage |
+|---|---|---|---|---|
+| Juyo Token Nado Zufu | 重要刀剣等図譜 | NBTHK | 15,230 | 70 sessions (1958–present) |
+| Tokubetsu Juyo Token Nado Zufu | 特別重要刀剣等図譜 | NBTHK | 1,341 | 27 sessions |
+| Kokuho | 国宝 | Government of Japan | 122 | National Treasures |
+| Juyo Bunkazai | 重要文化財 | Government of Japan | 911 | Important Cultural Properties |
+| Gyobutsu | 御物 | Imperial Household Agency | 330 | Imperial Collection (2 vols.) |
+| Juyo Bijutsuhin | 重要美術品 | Pre-war government | ~396 | Pre-war designations (1933–1944) |
+| Jussi Ekholm Koto Database | — | Private research | 15,095 | Koto-era swords |
+
+These approximately 33,400 catalog records describe **23,849 unique physical objects** after deduplication (see § Deduplication below). The difference arises because a single sword may appear in multiple publications — a blade designated Juyo in 1975 and promoted to Tokubetsu Juyo in 1990 has entries in both the Juyo and Tokuju zufu. The Jussi Ekholm database, a comprehensive private research effort documenting koto-era swords with measurements and provenance, overlaps substantially with the NBTHK records for that period.
+
+### What Each Record Contains
+
+Each setsumei — the expert panel's written appraisal — provides a standardized set of structured fields alongside its narrative assessment:
+
+- **Attribution** — artisan name, school, tradition, province, era
+- **Physical description** — blade form (sugata), grain pattern (jihada), temper line (hamon), point (boshi), tang (nakago)
+- **Measurements** — blade length (nagasa), curvature (sori), base width (motohaba), tip width (sakihaba)
+- **Signature** — signed or unsigned, inscription text, attribution type (confirmed or *den*/伝)
+- **Provenance** — former owners (denrai/伝来), named-sword titles (meito/名刀)
+
+The structured fields were parsed from pre-structured source data produced during the original digitization of these publications. The narrative setsumei text — the panel's discursive assessment of quality, period, and authenticity — is stored separately and used for AI-generated artist descriptions but does not feed the statistical pipeline.
+
+### Provenance Normalization
+
+Provenance records — documenting who owned each object across centuries — arrive in varied formats depending on the source publication. A unified extraction library normalizes all variants into flat lists of owner names.
+
+Raw owner names are inconsistent: the same collector may appear as "Tokugawa," "Tokugawa Family," "The Tokugawa," or "Former Tokugawa Collection." A canonical name table (635 entries) maps raw patterns to standardized forms and groups subsidiary names under parent entities:
+
+> "Tokugawa Mitsukuni" → *Tokugawa Mitsukuni* → parent: *Tokugawa Family*
+> "Owari Tokugawa" → *Owari Tokugawa* → parent: *Tokugawa Family*
+
+This normalization is critical for the provenance factor. Without it, the same collector's holdings would be fragmented across spelling variants, understating the true pattern of distinguished ownership.
+
+Approximately 20% of the 23,849 physical objects have documented provenance. The provenance factor (Part II) scores only those items whose owners fall within the top four prestige tiers.
+
+### Artisan Linking
+
+Each catalog record names its artisan as free text — "Masamune," "Den Masamune," "伝 正宗" — with no canonical identifier. The artisan matching pipeline links these text attributions to a curated directory of approximately 13,500 individual artisans and 198 school-level attributions (used when items are attributed to a tradition rather than a named individual).
+
+The production pipeline uses a three-stage approach: profile matching (comparing the item's attribution text, school, province, era, and kanji against all known artisan profiles), verification of ambiguous matches, and sibling consensus (checking whether multiple records describing the same physical object agree on attribution). The overall match rate is 96.6% — 99.0% for swords, 93.6% for tosogu fittings.
+
+Artisan linking makes the elite factor and provenance factor possible. Without it, items could not be aggregated by maker to compute per-artisan statistics.
+
+### Deduplication
+
+A single physical sword may have catalog entries from multiple publications. A blade by Nagamitsu, for instance, might appear in the Juyo zufu, the Tokuju zufu, and the Jussi Ekholm database — three records for one object. These sibling records are resolved into 23,849 unique physical objects. For each object, the best available data from all siblings is synthesized — preferring the highest-designation source for attribution but drawing measurements from any sibling that provides them.
+
+For ranking purposes, each physical object counts once regardless of how many catalog records describe it. This prevents double-counting that would inflate statistics for frequently published masterworks.
+
+---
+
 ## Part I: The Elite Factor
 
 ### The Problem
