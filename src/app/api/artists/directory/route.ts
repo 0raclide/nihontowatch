@@ -28,6 +28,7 @@ export async function GET(request: NextRequest) {
     const {
       callDirectoryEnrichment,
       getHeroImagesFromTable,
+      getArtisanHeroImage,
       getFilteredArtistsByCodes,
       getBulkElitePercentiles,
       getSchoolMemberCounts,
@@ -110,7 +111,7 @@ export async function GET(request: NextRequest) {
             artists.map(a => ({ code: a.code, school: a.school, entity_type: a.entity_type, is_school_code: a.is_school_code }))
           ),
         ]),
-        getHeroImagesFromTable(artists.map(a => a.code), type),
+        fetchHeroImagesWithFallback(artists, getHeroImagesFromTable, getArtisanHeroImage),
       ]);
 
       facets = forSaleFacets;
@@ -135,7 +136,7 @@ export async function GET(request: NextRequest) {
       const codes = artists.map(a => a.code);
       const [ld, standardHeroImages] = await Promise.all([
         getListingDataForArtists(codes),
-        getHeroImagesFromTable(codes, type),
+        fetchHeroImagesWithFallback(artists, getHeroImagesFromTable, getArtisanHeroImage),
       ]);
       listingData = ld;
       heroImages = standardHeroImages;
@@ -323,5 +324,45 @@ async function getAllAvailableListingCounts(): Promise<Map<string, { count: numb
   }
 
   return result;
+}
+
+/**
+ * Fetch hero images from pre-computed table, grouped by per-artisan entity_type,
+ * with runtime fallback for artisans missing from the table (capped at 10).
+ */
+async function fetchHeroImagesWithFallback(
+  artists: Array<{ code: string; entity_type: string }>,
+  getHeroImagesFromTable: (codes: string[], entityType: 'smith' | 'tosogu') => Promise<Map<string, string>>,
+  getArtisanHeroImage: (code: string, entityType: 'smith' | 'tosogu') => Promise<{ imageUrl: string } | null>,
+): Promise<Map<string, string>> {
+  // Group by entity_type for correct lookup
+  const smithCodes = artists.filter(a => a.entity_type === 'smith').map(a => a.code);
+  const tosoguCodes = artists.filter(a => a.entity_type === 'tosogu').map(a => a.code);
+
+  const [smithImages, tosoguImages] = await Promise.all([
+    smithCodes.length > 0 ? getHeroImagesFromTable(smithCodes, 'smith') : Promise.resolve(new Map<string, string>()),
+    tosoguCodes.length > 0 ? getHeroImagesFromTable(tosoguCodes, 'tosogu') : Promise.resolve(new Map<string, string>()),
+  ]);
+
+  const heroImages = new Map([...smithImages, ...tosoguImages]);
+
+  // Runtime fallback for codes missing from pre-computed table (cap 10 to limit latency)
+  const MAX_FALLBACK = 10;
+  const missingArtists = artists.filter(a => !heroImages.has(a.code));
+  if (missingArtists.length > 0) {
+    const fallbacks = await Promise.all(
+      missingArtists.slice(0, MAX_FALLBACK).map(async a => {
+        try {
+          const img = await getArtisanHeroImage(a.code, a.entity_type as 'smith' | 'tosogu');
+          return img ? { code: a.code, url: img.imageUrl } : null;
+        } catch { return null; }
+      })
+    );
+    for (const fb of fallbacks) {
+      if (fb) heroImages.set(fb.code, fb.url);
+    }
+  }
+
+  return heroImages;
 }
 
