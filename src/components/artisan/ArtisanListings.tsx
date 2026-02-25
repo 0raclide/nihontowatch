@@ -97,13 +97,18 @@ export function ArtisanListings({ code, artisanName, initialListings, status = '
     [listings, isAdmin]
   );
 
-  // Pass listings to QuickView context for prev/next navigation
-  // Skip when in alert carousel mode to prevent overwriting alert listings
+  // Pass listings to QuickView context for prev/next navigation.
+  // Only the "available" instance registers — if both available AND sold
+  // instances call setListings with different arrays, they fight over the
+  // context in an infinite re-render loop (each setListings changes the
+  // context → triggers the other's effect → which calls setListings → …).
+  // Skip when in alert carousel mode to prevent overwriting alert listings.
   useEffect(() => {
-    if (quickView && visibleListings.length > 0 && !quickView.isAlertMode) {
+    if (quickView && visibleListings.length > 0 && !quickView.isAlertMode && status === 'available') {
       quickView.setListings(visibleListings);
     }
-  }, [quickView, visibleListings]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- quickView excluded: setListings changes the context identity, re-triggering this effect. visibleListings is the real trigger.
+  }, [visibleListings, status]);
 
   if (visibleListings.length === 0) return null;
 
