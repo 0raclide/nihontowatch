@@ -60,6 +60,40 @@ interface QuickViewContextType {
 }
 
 // ============================================================================
+// Selective Merge — preserves browse-only fields when overlaying detail data
+// ============================================================================
+
+/**
+ * Merge detail API response into a browse listing, preserving browse-only fields
+ * (sold_data, featured_score, thumbnail_url, status_changed_at, has_setsumei, has_images)
+ * while overlaying detail-specific fields that browse doesn't carry.
+ */
+function mergeDetailIntoListing(browse: Listing, detail: Listing): Listing {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const b = browse as any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const d = detail as any;
+  return {
+    ...browse,
+    // Overlay fields that the detail API provides (and browse will prune):
+    description: detail.description ?? browse.description,
+    description_en: detail.description_en ?? browse.description_en,
+    description_ja: detail.description_ja ?? browse.description_ja,
+    setsumei_text_en: detail.setsumei_text_en ?? browse.setsumei_text_en,
+    setsumei_text_ja: detail.setsumei_text_ja ?? browse.setsumei_text_ja,
+    setsumei_metadata: detail.setsumei_metadata ?? browse.setsumei_metadata,
+    artisan_candidates: detail.artisan_candidates ?? browse.artisan_candidates,
+    artisan_method: detail.artisan_method ?? browse.artisan_method,
+    og_image_url: detail.og_image_url ?? browse.og_image_url,
+    // yuhinkai_enrichment exists at runtime (from browse API enrichment) but not on Listing type
+    yuhinkai_enrichment: d.yuhinkai_enrichment ?? b.yuhinkai_enrichment,
+    // Also overlay fields that both APIs have but detail may be fresher:
+    artisan_display_name: detail.artisan_display_name ?? browse.artisan_display_name,
+    artisan_tier: d.artisan_tier ?? b.artisan_tier,
+  } as Listing;
+}
+
+// ============================================================================
 // Context
 // ============================================================================
 
@@ -184,12 +218,12 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
     if (!options?.skipFetch) {
       fetchFullListing(listing.id).then((fullListing) => {
         if (fullListing && !refreshInFlightRef.current) {
-          setCurrentListing(fullListing);
+          setCurrentListing(prev => prev ? mergeDetailIntoListing(prev, fullListing) : fullListing);
           // Also update in listings array if present
           if (index !== -1) {
             setListingsState((prev) => {
               const newListings = [...prev];
-              newListings[index] = fullListing;
+              newListings[index] = mergeDetailIntoListing(prev[index], fullListing);
               return newListings;
             });
           }
@@ -258,10 +292,10 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
     // Fetch full listing data (with enrichment) asynchronously
     fetchFullListing(nextListing.id).then((fullListing) => {
       if (fullListing && !refreshInFlightRef.current) {
-        setCurrentListing(fullListing);
+        setCurrentListing(prev => prev ? mergeDetailIntoListing(prev, fullListing) : fullListing);
         setListingsState((prev) => {
           const newListings = [...prev];
-          newListings[nextIndex] = fullListing;
+          newListings[nextIndex] = mergeDetailIntoListing(prev[nextIndex], fullListing);
           return newListings;
         });
       }
@@ -283,10 +317,10 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
     // Fetch full listing data (with enrichment) asynchronously
     fetchFullListing(prevListing.id).then((fullListing) => {
       if (fullListing && !refreshInFlightRef.current) {
-        setCurrentListing(fullListing);
+        setCurrentListing(prev => prev ? mergeDetailIntoListing(prev, fullListing) : fullListing);
         setListingsState((prev) => {
           const newListings = [...prev];
-          newListings[prevIndex] = fullListing;
+          newListings[prevIndex] = mergeDetailIntoListing(prev[prevIndex], fullListing);
           return newListings;
         });
       }
@@ -359,8 +393,8 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
         return;
       }
 
-      // Update current listing state
-      setCurrentListing(refreshedListing);
+      // Update current listing state (merge to preserve browse-only fields)
+      setCurrentListing(prev => prev ? mergeDetailIntoListing(prev, refreshedListing) : refreshedListing);
 
       // Also update the listing in the listings array if present
       // Use ref for current index to avoid stale closure, and functional update
@@ -370,7 +404,7 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
         setListingsState(prev => {
           if (idx >= prev.length) return prev;
           const newListings = [...prev];
-          newListings[idx] = refreshedListing;
+          newListings[idx] = mergeDetailIntoListing(prev[idx], refreshedListing);
           return newListings;
         });
       }
