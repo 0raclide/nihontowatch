@@ -102,6 +102,7 @@ Additionally, artisan codes appear as admin-only badges on listing cards through
 | `src/lib/artisan/slugs.ts` | URL slug generation + extraction (e.g., `masamune-MAS590`) |
 | `src/lib/artisan/displayName.ts` | **Display name deduplication** — all artisan name rendering goes through here |
 | `src/lib/artisan/schoolExpansion.ts` | `expandArtisanCodes()` — NS-* school code → member codes expansion |
+| `src/lib/supabase/yuhinkai.ts:getSchoolAncestry()` | Walk `parent_school_id` chain via `get_school_ancestry` RPC — returns root→leaf breadcrumb |
 | `src/lib/listing/attribution.ts` | `getAttributionName()` / `getAttributionSchool()` — dual-path field access |
 | `src/types/artisan.ts` | `ArtisanPageResponse` type — shared between SSR page, API route, client |
 | `src/lib/seo/jsonLd.ts` | JSON-LD generators including `generateArtistDirectoryJsonLd()` |
@@ -380,7 +381,7 @@ Full audit of 13,605 records completed 2026-02-09. See `docs/SESSION_20260209_DI
    - Grade badge (S/A circle, hanko motif) — only for S and A grades
    - Hook quote (pull-quote with gold left border)
    - **Stats bar** with all 6 designation counts: Kokuhō, Jūyō Bunkazai, Jūyō Bijutsuhin, Gyobutsu, Tokubetsu Jūyō, Jūyō + Fujishiro stars + Available Now count
-   - Vitals grid: Province, Era, Period, School, Generation, Teacher (linked), Fujishiro, Tōkō Taikan (with percentile), Specialties, Provenance (denrai owners), Type, Code
+   - Vitals grid: Province, Era, Period, School (with ancestry breadcrumbs), Generation, Teacher (linked), Fujishiro, Tōkō Taikan (with percentile), Specialties, Provenance (denrai owners), Type, Code
 
 2. **Certifications** (if `total_items > 0`)
    - PrestigePyramid: visual hierarchy of all 6 designation types
@@ -474,9 +475,9 @@ Shared between SSR page and API route via `buildArtistPageData()` in `src/lib/ar
 
 ```typescript
 interface ArtisanPageResponse {
-  entity: { code, name_romaji, name_kanji, school, province, era, period,
-            generation, teacher, entity_type, is_school_code, slug,
-            fujishiro, toko_taikan, specialties };
+  entity: { code, name_romaji, name_kanji, school, school_code, school_kanji,
+            school_tradition, province, era, period, generation, teacher,
+            entity_type, is_school_code, slug, fujishiro, toko_taikan, specialties };
   certifications: { kokuho_count, jubun_count, jubi_count, gyobutsu_count,
                     tokuju_count, juyo_count, total_items, elite_count, elite_factor };
   rankings: { elite_percentile, toko_taikan_percentile, provenance_percentile };
@@ -489,6 +490,7 @@ interface ArtisanPageResponse {
                    juyo_count, tokuju_count, elite_factor, available_count? }>;
   denrai: Array<{ owner: string; count: number }>;
   denraiGrouped: Array<{ parent, totalCount, children, isGroup }>;
+  schoolAncestry?: Array<{ code, name_romaji, name_kanji }>;  // root→leaf breadcrumb path
   heroImage: { imageUrl, collection, volume, itemNumber, formType, imageType } | null;
   catalogueEntries?: CatalogueEntry[];
 }
@@ -625,6 +627,26 @@ CRON_SECRET=xxx
 ---
 
 ## Changelog
+
+### 2026-02-25 — School ancestry breadcrumbs
+
+**Feature:** Artist profile pages now display school ancestry as a linked breadcrumb trail when a school has parent schools (62 schools, max depth 3).
+
+**Example:** An artisan in the Ichijo school (a sub-school of Waki-Goto, which is a sub-school of Goto) shows: **Goto > Waki-Goto > Ichijo** — each segment links to that school's page.
+
+**How it works:**
+- `getSchoolAncestry(schoolId)` in `yuhinkai.ts` calls the `get_school_ancestry` RPC (oshi-v2 migration 419) which walks the `artisan_schools.parent_school_id` chain
+- Returns `SchoolAncestryEntry[]` sorted root-first by depth
+- `buildArtistPageData()` fetches ancestry in the `Promise.all` block when `entity.school_code` exists
+- `schoolAncestry` is only included in `ArtisanPageResponse` when >1 entry (i.e., the school actually has parents)
+- Locale-aware: JA shows `name_kanji`, EN shows `name_romaji`
+- Root schools and artisans without schools are unchanged (single link or plain text)
+
+**Files changed:**
+- `src/lib/supabase/yuhinkai.ts` — Added `SchoolAncestryEntry` interface + `getSchoolAncestry()` function
+- `src/types/artisan.ts` — Added `schoolAncestry?` field to `ArtisanPageResponse`
+- `src/lib/artisan/getArtistPageData.ts` — Fetch ancestry in `Promise.all`, map into response
+- `src/app/artists/[slug]/ArtistPageClient.tsx` — Render breadcrumb trail with `>` separators and linked segments
 
 ### 2026-02-19 — Unified tables migration + code refactors
 

@@ -523,14 +523,14 @@ Comprehensive analytics infrastructure already built for dealer monetization:
 The `featured_score` column drives the default sort order in browse. Computed as `(quality + heat) × freshness`:
 
 - **quality (0–395)** = artisan stature (elite_factor × 200 + √elite_count × 18, capped 100) × **price damping** + cert points (0–40) + completeness (0–55: images, price, attribution, measurements, description, era, school, HIGH confidence)
-- **price damping** = `min(estimatedPriceJpy / ¥500K, 1)` — dampens artisan stature for cheap items where elite artisan matches are likely wrong attributions. A ¥30K item with an elite artisan match gets only 6% of the stature boost; ¥500K+ gets 100%. Currency-converted via rough rates (`CURRENCY_TO_JPY` in scoring.ts). Null currency defaults to JPY.
+- **price damping** = `min(estimatedPriceJpy / ¥500K, 1)` — dampens artisan stature for cheap items where elite artisan matches are likely wrong attributions. A ¥30K item with an elite artisan match gets only 6% of the stature boost; ¥500K+ gets 100%. **NULL price (inquiry-based / "Ask") bypasses damping entirely (factor=1.0)** — "no listed price" ≠ "cheap". Currency-converted via rough rates (`CURRENCY_TO_JPY` in scoring.ts). Null currency defaults to JPY.
 - **heat (0–160)** = 30-day behavioral data: favorites (×15, cap 60) + clicks (×10, cap 40) + quickview opens (×3, cap 24) + views (×1, cap 20) + pinch zooms (×8, cap 16)
 - **freshness** = age multiplier: <3d→1.4, <7d→1.2, <30d→1.0, <90d→0.85, <180d→0.5, ≥180d→0.3. Initial imports = 1.0.
 - Listings without images → score = 0.
 - `UNKNOWN`/`unknown` artisan IDs → artisan stature = 0.
 
 **Recompute triggers:**
-- **Cron** (every 4h): batch recompute for all available listings via RPC
+- **Cron** (every 4h): batch recompute for all available listings. Also **auto-syncs elite_factor/elite_count** from Yuhinkai for any listing with `artisan_id` but NULL elite columns (cap 500/run, handles NS-* school codes).
 - **Admin fix-cert**: recomputes inline after cert correction
 - **Admin fix-artisan**: recomputes inline + syncs elite_factor/elite_count from Yuhinkai
 - **Admin hide**: sets score to 0; unhide restores via recompute
@@ -549,8 +549,9 @@ The `featured_score` column drives the default sort order in browse. Computed as
 | Hide/unhide (inline recompute) | `src/app/api/listing/[id]/hide/route.ts` |
 | Score breakdown (admin diagnostics) | `src/app/api/listing/[id]/score-breakdown/route.ts` |
 | Score Inspector UI | `src/components/listing/AdminScoreInspector.tsx` |
-| Tests (65) | `tests/lib/featured/scoring.test.ts` |
+| Tests (85) | `tests/lib/featured/scoring.test.ts` |
 | Session doc | `docs/SESSION_20260222_FEATURED_SCORE_RECOMPUTE.md` |
+| Postmortem | `docs/POSTMORTEM_FEATURED_SCORE_NULL_PRICE_ELITE_SYNC.md` |
 
 ### Cheap Elite Artisan Suppression
 
@@ -801,7 +802,7 @@ Two-tier artisan discovery system for 13,572 artisans (12,453 smiths + 1,119 tos
 
 1. **Directory** (`/artists`) — Filterable index with search, type/school/province/era filters, elite factor ranking. Cards show all 6 designation types (Kokuho, Jubun, Jubi, Gyobutsu, Tokuju, Juyo) and "N for sale" links that open browse with QuickView.
 
-2. **Profile** (`/artists/[slug]`) — Rich individual pages with biography, certification pyramid, elite standing, blade form/signature analysis, teacher-student lineage, provenance (denrai), and live listings.
+2. **Profile** (`/artists/[slug]`) — Rich individual pages with biography, certification pyramid, elite standing, blade form/signature analysis, teacher-student lineage, provenance (denrai), school ancestry breadcrumbs, and live listings.
 
 **Architecture**: Hybrid SSR + client fetch. Initial page load is server-rendered. Filter changes use client-side `fetch()` to `/api/artists/directory` with `window.history.replaceState()` for URL updates (no SSR round-trip).
 
@@ -817,6 +818,7 @@ Two-tier artisan discovery system for 13,572 artisans (12,453 smiths + 1,119 tos
 | **Page response type** | `src/types/artisan.ts` — `ArtisanPageResponse` shared type |
 | **Display name dedup** | `src/lib/artisan/displayName.ts` — **all artisan name rendering goes through here** |
 | **School expansion** | `src/lib/artisan/schoolExpansion.ts` — `expandArtisanCodes()` for NS-* → member codes |
+| **School ancestry** | `src/lib/supabase/yuhinkai.ts` — `getSchoolAncestry()` calls `get_school_ancestry` RPC for breadcrumb path |
 | **Attribution utility** | `src/lib/listing/attribution.ts` — `getAttributionName()` / `getAttributionSchool()` |
 | DB queries | `src/lib/supabase/yuhinkai.ts` — `getArtisan()` is the single lookup function |
 | Slug utils | `src/lib/artisan/slugs.ts` |
@@ -855,6 +857,7 @@ For detailed implementation docs, see:
 - `docs/CATALOGUE_PUBLICATION_PIPE.md` - **Catalogue publication pipe** — Yuhinkai→NihontoWatch content flow (cross-repo)
 - `docs/SESSION_20260220_ADMIN_PANEL_OVERHAUL.md` - Admin panel security, data accuracy & UI overhaul (19 fixes, 3 SQL migrations)
 - `docs/SESSION_20260222_FEATURED_SCORE_RECOMPUTE.md` - Inline featured score recompute on admin actions + serverless fire-and-forget postmortem
+- `docs/POSTMORTEM_FEATURED_SCORE_NULL_PRICE_ELITE_SYNC.md` - **NULL price zeroed artisan stature + cron never synced elite_factor** — two compounding bugs, Juyo Ichimonji scored 98→333
 - `docs/SMART_CROP_FOCAL_POINTS.md` - **Smart crop focal points** — AI image cropping, cron pipeline, admin toggle, invalidation trigger
 - `docs/SESSION_20260222_JAPANESE_UX.md` - JA UX improvements — typography, filter expand, card metadata, freshness timestamps, LINE+Twitter/X share, polite empty states
 - `docs/JAPANESE_UX_RECOMMENDATIONS.md` - JA UX research — design philosophy, typography, density, trust signals, navigation patterns
