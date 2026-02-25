@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getArtisanNames } from '@/lib/supabase/yuhinkai';
-import { getArtisanDisplayName, getArtisanAlias } from '@/lib/artisan/displayName';
+import { getArtisanDisplayName, getArtisanAlias, getArtisanDisplayNameKanji } from '@/lib/artisan/displayName';
 import { getAttributionName } from '@/lib/listing/attribution';
 import { getArtisanTier } from '@/lib/artisan/tier';
 import { expandArtisanCodes } from '@/lib/artisan/schoolExpansion';
@@ -89,6 +89,7 @@ export async function GET(
             return {
               ...listing,
               artisan_display_name: getArtisanAlias(listing.artisan_id) || getArtisanDisplayName(entry.name_romaji, entry.school, listing.artisan_id),
+              artisan_name_kanji: getArtisanDisplayNameKanji(entry.name_kanji, listing.artisan_id),
               artisan_tier: getArtisanTier(entry),
             };
           }
