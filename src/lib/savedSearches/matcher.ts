@@ -181,7 +181,9 @@ export async function findMatchingListings(
     if (textWords.length > 0) {
       const searchFields = [
         'title',
+        'title_en',
         'description',
+        'description_en',
         'smith',
         'tosogu_maker',
         'school',
@@ -349,7 +351,9 @@ export async function countMatchingListings(
     if (textWords.length > 0) {
       const searchFields = [
         'title',
+        'title_en',
         'description',
+        'description_en',
         'smith',
         'tosogu_maker',
         'school',
