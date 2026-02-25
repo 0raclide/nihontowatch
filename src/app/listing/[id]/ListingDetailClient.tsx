@@ -7,9 +7,17 @@ import Link from 'next/link';
 import { Breadcrumbs } from '@/components/ui/Breadcrumbs';
 import { Header } from '@/components/layout/Header';
 import { BottomTabBar } from '@/components/navigation/BottomTabBar';
-import { CreateAlertModal } from '@/components/alerts/CreateAlertModal';
+import dynamic from 'next/dynamic';
 import { LoginModal } from '@/components/auth/LoginModal';
-import { InquiryModal } from '@/components/inquiry/InquiryModal';
+
+const CreateAlertModal = dynamic(
+  () => import('@/components/alerts/CreateAlertModal').then(m => ({ default: m.CreateAlertModal })),
+  { ssr: false }
+);
+const InquiryModal = dynamic(
+  () => import('@/components/inquiry/InquiryModal').then(m => ({ default: m.InquiryModal })),
+  { ssr: false }
+);
 import { useAlerts } from '@/hooks/useAlerts';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { getAllImages } from '@/lib/images';

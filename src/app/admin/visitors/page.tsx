@@ -2,7 +2,12 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { VisitorDetailModal } from '@/components/admin/VisitorDetailModal';
-import { VisitorsChart } from '@/components/admin/analytics';
+import dynamic from 'next/dynamic';
+
+const VisitorsChart = dynamic(
+  () => import('@/components/admin/analytics/VisitorsChart').then(m => ({ default: m.VisitorsChart })),
+  { ssr: false, loading: () => <div className="h-64 bg-linen rounded-lg animate-pulse" /> }
+);
 
 // Country code to flag emoji
 function getFlag(countryCode: string): string {

@@ -2,16 +2,27 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import {
-  MetricCard,
-  ChartSkeleton,
-  ConversionFunnelChart,
-  UserGrowthChart,
-  SearchTermsTable,
-  SessionDistributionChart,
-} from '@/components/admin/analytics';
+import dynamic from 'next/dynamic';
+import { MetricCard, ChartSkeleton } from '@/components/admin/analytics';
 import { useUserEngagement } from '@/hooks/useUserEngagement';
 import type { TopListing } from '@/hooks/useUserEngagement';
+
+const ConversionFunnelChart = dynamic(
+  () => import('@/components/admin/analytics/ConversionFunnelChart').then(m => ({ default: m.ConversionFunnelChart })),
+  { ssr: false, loading: () => <ChartSkeleton /> }
+);
+const UserGrowthChart = dynamic(
+  () => import('@/components/admin/analytics/UserGrowthChart').then(m => ({ default: m.UserGrowthChart })),
+  { ssr: false, loading: () => <ChartSkeleton /> }
+);
+const SearchTermsTable = dynamic(
+  () => import('@/components/admin/analytics/SearchTermsTable').then(m => ({ default: m.SearchTermsTable })),
+  { ssr: false, loading: () => <ChartSkeleton /> }
+);
+const SessionDistributionChart = dynamic(
+  () => import('@/components/admin/analytics/SessionDistributionChart').then(m => ({ default: m.SessionDistributionChart })),
+  { ssr: false, loading: () => <ChartSkeleton /> }
+);
 
 /**
  * Period type for analytics time ranges

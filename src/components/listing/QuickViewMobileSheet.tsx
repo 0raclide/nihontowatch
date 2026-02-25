@@ -8,7 +8,12 @@ import { useCurrency, formatPriceWithConversion } from '@/hooks/useCurrency';
 import { shouldShowNewBadge } from '@/lib/newListing';
 import { FavoriteButton } from '@/components/favorites/FavoriteButton';
 import { ShareButton } from '@/components/share/ShareButton';
-import { InquiryModal } from '@/components/inquiry';
+import dynamic from 'next/dynamic';
+
+const InquiryModal = dynamic(
+  () => import('@/components/inquiry/InquiryModal').then(m => ({ default: m.InquiryModal })),
+  { ssr: false }
+);
 import { LoginModal } from '@/components/auth/LoginModal';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { useActivityTrackerOptional } from '@/lib/tracking/ActivityTracker';

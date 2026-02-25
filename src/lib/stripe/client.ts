@@ -4,7 +4,7 @@
  * Browser-safe Stripe operations using @stripe/stripe-js.
  */
 
-import { loadStripe, type Stripe } from '@stripe/stripe-js';
+import type { Stripe } from '@stripe/stripe-js';
 
 // =============================================================================
 // STRIPE CLIENT
@@ -14,6 +14,7 @@ let stripePromise: Promise<Stripe | null> | null = null;
 
 /**
  * Get the Stripe.js instance (singleton pattern)
+ * Lazy-loads @stripe/stripe-js on first call — avoids 153KB in initial bundle.
  */
 export function getStripe(): Promise<Stripe | null> {
   if (!stripePromise) {
@@ -22,7 +23,7 @@ export function getStripe(): Promise<Stripe | null> {
       console.error('NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY is not set');
       return Promise.resolve(null);
     }
-    stripePromise = loadStripe(publishableKey);
+    stripePromise = import('@stripe/stripe-js').then(m => m.loadStripe(publishableKey));
   }
   return stripePromise;
 }

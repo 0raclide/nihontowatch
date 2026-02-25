@@ -9,14 +9,22 @@ import { QuickViewProvider } from "@/contexts/QuickViewContext";
 import { QuickView } from "@/components/listing/QuickView";
 import { AuthProvider } from "@/lib/auth/AuthContext";
 import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
-import { PaywallModal } from "@/components/subscription/PaywallModal";
+import dynamic from "next/dynamic";
+
+const PaywallModal = dynamic(
+  () => import("@/components/subscription/PaywallModal").then(m => ({ default: m.PaywallModal }))
+);
 import { FavoritesProvider } from "@/contexts/FavoritesContext";
 import { ActivityWrapper } from "@/components/activity/ActivityWrapper";
 import { SignupPressureWrapper } from "@/components/signup";
 import { ConsentProvider } from "@/contexts/ConsentContext";
 import { getServerGdprRegion } from "@/lib/consent/server";
 import { NewSinceLastVisitProvider } from "@/contexts/NewSinceLastVisitContext";
-import { CookieBanner, ConsentPreferences } from "@/components/consent";
+import { CookieBanner } from "@/components/consent";
+
+const ConsentPreferences = dynamic(
+  () => import("@/components/consent/ConsentPreferences").then(m => ({ default: m.ConsentPreferences }))
+);
 import {
   generateOrganizationJsonLd,
   generateWebsiteJsonLd,

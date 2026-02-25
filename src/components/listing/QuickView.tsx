@@ -5,7 +5,12 @@ import { QuickViewModal } from './QuickViewModal';
 import { QuickViewContent } from './QuickViewContent';
 import { QuickViewMobileSheet } from './QuickViewMobileSheet';
 import { StudySetsumeiView } from './StudySetsumeiView';
-import { AdminEditView } from './AdminEditView';
+import dynamic from 'next/dynamic';
+
+const AdminEditView = dynamic(
+  () => import('./AdminEditView'),
+  { ssr: false }
+);
 import { AlertContextBanner } from './AlertContextBanner';
 import { LazyImage } from '@/components/ui/LazyImage';
 import { useQuickView } from '@/contexts/QuickViewContext';

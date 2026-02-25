@@ -812,13 +812,26 @@ export async function GET(request: NextRequest) {
     // Each facet dimension is filtered by all OTHER active filters (standard cross-filter pattern)
     // Histogram is cross-filtered by all dimensions EXCEPT price (shows full price distribution)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const [facetsResult, histogramResult] = await Promise.all([
+    // Build freshness query (needs statusFilter applied before Promise.all)
+    let freshnessQuery = supabase
+      .from('listings')
+      .select('last_scraped_at');
+    if (statusFilter) {
+      freshnessQuery = freshnessQuery.or(statusFilter);
+    }
+
+    // Run all 4 independent queries in parallel
+    const [facetsResult, histogramResult, freshnessResult, dealerCountResult] = await Promise.all([
       (supabase.rpc as any)('get_browse_facets', rpcBaseParams),
       (supabase.rpc as any)('get_price_histogram', rpcBaseParams),
+      freshnessQuery.order('last_scraped_at', { ascending: false }).limit(1).single(),
+      supabase.from('dealers').select('id', { count: 'exact', head: true }).eq('is_active', true),
     ]);
 
     const { data: facetsData, error: facetsError } = facetsResult;
     const { data: histogramData, error: histogramError } = histogramResult;
+    const { data: freshnessData } = freshnessResult;
+    const { count: totalDealerCount } = dealerCountResult;
 
     // Parse facets from RPC response (already in the correct shape for FilterContent)
     const facets = facetsError ? {
@@ -843,25 +856,7 @@ export async function GET(request: NextRequest) {
       logger.error('Histogram RPC error', { error: histogramError });
     }
 
-    // Get the most recent scrape timestamp for freshness indicator
-    let freshnessQuery = supabase
-      .from('listings')
-      .select('last_scraped_at');
-    if (statusFilter) {
-      freshnessQuery = freshnessQuery.or(statusFilter);
-    }
-    const { data: freshnessData } = await freshnessQuery
-      .order('last_scraped_at', { ascending: false })
-      .limit(1)
-      .single();
-
     const lastUpdated = (freshnessData as { last_scraped_at: string } | null)?.last_scraped_at || null;
-
-    // Total active dealer count (independent of status filter, for subtitle text)
-    const { count: totalDealerCount } = await supabase
-      .from('dealers')
-      .select('id', { count: 'exact', head: true })
-      .eq('is_active', true);
 
     // Parse histogram from RPC response
     const priceHistogram = histogramError ? null : (histogramData as {

@@ -12,11 +12,18 @@ import {
 } from '@/lib/seo/jsonLd';
 import { buildSeoTitle, buildSeoDescription } from '@/lib/seo/metaTitle';
 import { getItemTypeUrl } from '@/lib/seo/categories';
+import { cache } from 'react';
 import { getListingDetail } from '@/lib/listing/getListingDetail';
 import { Footer } from '@/components/layout/Footer';
 import { getAttributionName } from '@/lib/listing/attribution';
 import type { EnrichedListingDetail } from '@/lib/listing/getListingDetail';
+
 import type { Listing, Dealer, ItemType, Currency } from '@/types';
+
+const getCachedListing = cache(async (listingId: number) => {
+  const supabase = createServiceClient();
+  return getListingDetail(supabase, listingId);
+});
 
 // ISR: revalidate every 5 minutes — listing data is public, no auth needed
 export const revalidate = 300;
@@ -39,8 +46,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   try {
-    const supabase = createServiceClient();
-    const listing = await getListingDetail(supabase, listingId);
+    const listing = await getCachedListing(listingId);
 
     if (!listing) {
       return {
@@ -133,7 +139,7 @@ export default async function ListingPage({ params }: Props) {
   }
 
   const supabase = createServiceClient();
-  const listing = await getListingDetail(supabase, listingId);
+  const listing = await getCachedListing(listingId);
 
   // Listing doesn't exist - return proper HTTP 404
   if (!listing) {

@@ -3,7 +3,12 @@
 import { useState, useCallback } from 'react';
 import { FavoriteButton } from '@/components/favorites/FavoriteButton';
 import { ShareButton } from '@/components/share/ShareButton';
-import { InquiryModal } from '@/components/inquiry';
+import dynamic from 'next/dynamic';
+
+const InquiryModal = dynamic(
+  () => import('@/components/inquiry/InquiryModal').then(m => ({ default: m.InquiryModal })),
+  { ssr: false }
+);
 import { LoginModal } from '@/components/auth/LoginModal';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth/AuthContext';
@@ -17,7 +22,10 @@ import { shouldShowNewBadge } from '@/lib/newListing';
 import type { Listing, ListingWithEnrichment } from '@/types';
 import { getItemTypeLabel, hasSetsumeiData } from '@/types';
 import { MetadataGrid, getCertInfo, getArtisanInfo } from './MetadataGrid';
-import { AdminScoreInspector } from './AdminScoreInspector';
+const AdminScoreInspector = dynamic(
+  () => import('./AdminScoreInspector').then(m => ({ default: m.AdminScoreInspector })),
+  { ssr: false }
+);
 import { AdminSetsumeiWidget } from './AdminSetsumeiWidget';
 import { AdminArtisanWidget } from '@/components/artisan/AdminArtisanWidget';
 import { ArtisanTooltip } from '@/components/artisan/ArtisanTooltip';

@@ -360,6 +360,18 @@ function convertPrice(
   return valueInUsd * targetRate;
 }
 
+const currencyFormatters = new Map<string, Intl.NumberFormat>();
+function getCurrencyFormatter(currency: string): Intl.NumberFormat {
+  let fmt = currencyFormatters.get(currency);
+  if (!fmt) {
+    fmt = new Intl.NumberFormat('en-US', {
+      style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0,
+    });
+    currencyFormatters.set(currency, fmt);
+  }
+  return fmt;
+}
+
 function formatPrice(
   value: number | null,
   sourceCurrency: string | null,
@@ -371,14 +383,7 @@ function formatPrice(
   const source = sourceCurrency || 'USD';
   const converted = convertPrice(value, source, targetCurrency, rates);
 
-  const formatter = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: targetCurrency,
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  });
-
-  return formatter.format(Math.round(converted));
+  return getCurrencyFormatter(targetCurrency).format(Math.round(converted));
 }
 
 
