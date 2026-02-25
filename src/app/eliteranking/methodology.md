@@ -73,7 +73,7 @@ For ranking purposes, each physical object counts once regardless of how many ca
 
 How do you rank a swordsmith who has one Tokubetsu-Juyo blade against one who has seventeen? On the surface, the first smith has a 100% elite rate; the second, perhaps 20%. But no serious scholar would place the unknown smith above Kotetsu on the strength of a single data point.
 
-This is the small-sample problem, and it appears throughout the NBTHK designation record. Of the roughly 13,000 artisans in our index, many have only one or two designated works. A handful have hundreds. Any ranking system must handle both extremes gracefully, rewarding genuine excellence while refusing to be fooled by statistical flukes.
+This is the small-sample problem, and it appears throughout the NBTHK designation record. Of the approximately 13,500 artisans in our index, many have only one or two designated works. A handful have hundreds. Any ranking system must handle both extremes gracefully, rewarding genuine excellence while refusing to be fooled by statistical flukes.
 
 ### What Counts as "Elite"
 
@@ -190,7 +190,7 @@ One data point tells us almost nothing. The posterior is so wide that its lower 
 
 ### Properties
 
-The ranking is **self-correcting**: as more works are designated, the posterior narrows and converges to the true elite rate. It is **monotonic**: adding an elite work always increases the score; adding a non-elite work always decreases it. It exhibits **scale-appropriate skepticism**: 3 elite out of 3 total scores 0.1265 (heavily penalized), while 30 out of 30 scores 0.6388 (only slightly penalized). And it is **robust to the long tail** — no binning, no thresholds, just the mathematics of posterior width across the full range of sample sizes.
+The ranking is **self-correcting**: as more works are designated, the posterior narrows and converges to the true elite rate. It is **monotonic**: adding an elite work always increases the score; adding a non-elite work always decreases it. It exhibits **scale-appropriate skepticism**: 3 elite out of 3 total scores 0.1048 (heavily penalized), while 30 out of 30 scores 0.6388 (only slightly penalized). And it is **robust to the long tail** — no binning, no thresholds, just the mathematics of posterior width across the full range of sample sizes.
 
 ---
 
@@ -227,11 +227,11 @@ The tiering reflects the historical structure of Japanese sword patronage. The I
 
 Each item contributes **one observation**: the prestige score of its **highest-ranking owner**. A sword that passed through the Maeda lords (8), a regional merchant (2), and the Imperial Collection (10) contributes a single observation of 10 — the Imperial score. This parallels elite factor, which uses one observation per item (highest designation).
 
-Why item-level max, not per-owner? The alternative — creating one observation per documented owner — inflates provenance for artisans whose famous items have long, well-documented chains. Yoshimitsu's 55 items generate 133 per-owner observations (2.4 owners per item on average), while Kunimitsu's 256 items generate only 89 (0.35 owners per item). Under per-owner scoring, chain documentation thoroughness becomes a confound. Under item-level max scoring, a sword reaching the Imperial Collection is equally remarkable whether documented through 2 or 12 hands.
+Why item-level max, not per-owner? The alternative — creating one observation per documented owner — inflates provenance for artisans whose famous items have long, well-documented chains. Yoshimitsu's 40 provenance items generate 133 per-owner observations (3.3 owners per item on average), while Kunimitsu's 59 provenance items generate only 89 (1.5 per item). Under per-owner scoring, chain documentation thoroughness becomes a confound. Under item-level max scoring, a sword reaching the Imperial Collection is equally remarkable whether documented through 2 or 12 hands.
 
 ### Where the Weighted Average Breaks Down
 
-The challenge for provenance scoring parallels the one for elite factor: sample size. An artisan with three items, all from the Imperial Collection, produces an item-level max average of 10.0 — the maximum possible score — on the strength of three observations. Meanwhile, Masamune's 68 provenance items, spanning the full range from Imperial to Named Collector, produce an average of about 5.9. The three-item artisan appears to have more distinguished provenance than Masamune. The data says otherwise: it says we don't have enough information to know.
+The challenge for provenance scoring parallels the one for elite factor: sample size. An artisan with three items, all from the Imperial Collection, produces an item-level max average of 10.0 — the maximum possible score — on the strength of three observations. Meanwhile, Masamune's 68 provenance items, spanning the full range from Imperial to Named Collector, produce a raw average near 7.0. The three-item artisan appears to have more distinguished provenance than Masamune. The data says otherwise: it says we don't have enough information to know.
 
 ### The Bayesian Framework (Normal Model)
 
@@ -239,7 +239,7 @@ Provenance scores are continuous (ranging from 2.0 to 10.0), not binary. This ca
 
 **The prior.** We introduce $C = 20$ pseudoobservations, each valued at the prior mean $m = 2.0$ (the "Named Collector" baseline). This prior is deliberately conservative: it assumes, absent evidence, that an artisan's provenance is unremarkable. Evidence to the contrary must accumulate before the score moves meaningfully above the baseline.
 
-**The posterior.** Given $n$ real observations with prestige scores $s_1, s_2, \ldots, s_n$, we pool them with the $C$ pseudoobservations and compute the posterior mean and variance of the augmented sample:
+**The posterior.** Given $n$ items with item-level max scores $s_1, s_2, \ldots, s_n$ (each $s_i$ = highest-prestige owner of item $i$), we pool them with the $C$ pseudoobservations and compute the posterior mean and variance of the augmented sample:
 
 $$N = C + n$$
 
@@ -257,9 +257,9 @@ $$\text{provenance factor} = \max\!\Big(0,\;\; \bar{x} - 1.645 \cdot \text{SE}\B
 
 ### Worked Examples
 
-**Three observations, all Imperial (score 10.0)**
+**Three items, all with Imperial highest owner (score 10.0)**
 
-An artisan with three items, each held by the Imperial Family:
+An artisan with three items, each having the Imperial Family as its highest-ranking owner:
 
 $$n = 3, \quad \sum s_i = 30, \quad \sum s_i^2 = 300$$
 
@@ -275,7 +275,7 @@ $$\text{provenance factor} = 3.0435 - 1.645 \times 0.5618 = \mathbf{2.12}$$
 
 Despite three perfect-score observations, the 20 pseudoobservations at 2.0 anchor the mean below the midpoint, and the wide variance interval — driven by the conflict between the prior (2.0) and the data (10.0) — pushes the lower bound down to 2.12. Three data points cannot overcome the prior's skepticism.
 
-**One observation, Imperial (score 10.0)**
+**One item, Imperial highest owner (score 10.0)**
 
 $$n = 1, \quad \sum s_i = 10, \quad \sum s_i^2 = 100$$
 
@@ -287,31 +287,31 @@ $$\text{SE} = \sqrt{\frac{2.9022}{21}} = 0.3718$$
 
 $$\text{provenance factor} = 2.3810 - 1.645 \times 0.3718 = \mathbf{1.77}$$
 
-The floor of the system. A single imperial-provenance observation barely lifts the score above baseline. One observation tells us almost nothing about whether an artisan's works *consistently* attracted distinguished collectors.
+The floor of the system. A single item with imperial provenance barely lifts the score above baseline. One observation tells us almost nothing about whether an artisan's works *consistently* attracted distinguished collectors.
 
-**Yoshimitsu: 133 provenance observations, apex 10.0**
+**Masamune: 68 items with provenance, apex 10.0**
 
-Yoshimitsu's works appear consistently in the highest-tier collections — Imperial, Tokugawa, and the premier daimyo. With $n = 133$ real observations pooled with $C = 20$ pseudoobservations, we have $N = 153$. The posterior mean sits near 5.4, and the standard error — proportional to $1/\sqrt{N}$ — is small enough that the lower bound barely departs from the mean:
+Masamune's works appear consistently in the highest-tier collections — Imperial, Tokugawa, and the premier daimyo. With $n = 68$ items (each contributing its highest-prestige owner) pooled with $C = 20$ pseudoobservations, we have $N = 88$. The posterior mean sits near 5.6, and the standard error — proportional to $1/\sqrt{N}$ — is small enough that the lower bound barely departs from the mean:
 
-$$\text{provenance factor} = \mathbf{5.21}$$
+$$\text{provenance factor} = \mathbf{5.29}$$
 
-At 153 total observations, the prior contributes only 13% of the weight. The evidence overwhelms the skepticism.
+At 88 total observations, the prior contributes only 23% of the weight. The evidence overwhelms the skepticism.
 
 ### The Distribution in Practice
 
-Of 687 artisans with provenance data:
+Of 686 artisans with provenance data:
 
 | Range | Count | Cumulative |
 |------:|------:|-----------:|
-| $\geq$ 5.0 | 3 | Top 0.4% |
-| 4.0–4.99 | 9 | Top 1.7% |
-| 3.5–3.99 | 8 | Top 2.9% |
-| 3.0–3.49 | 16 | Top 5.2% |
-| 2.5–2.99 | 48 | Top 12.2% |
-| 2.0–2.49 | 272 | Top 51.8% |
-| 1.5–1.99 | 331 | 100% |
+| $\geq$ 5.0 | 2 | Top 0.3% |
+| 4.0–4.99 | 6 | Top 1.2% |
+| 3.5–3.99 | 8 | Top 2.3% |
+| 3.0–3.49 | 10 | Top 3.8% |
+| 2.5–2.99 | 39 | Top 9.5% |
+| 2.0–2.49 | 256 | Top 46.8% |
+| 1.5–1.99 | 365 | 100% |
 
-The distribution is heavily concentrated near the prior mean of 2.0, with a long right tail. Most artisans' works appear in ordinary or modestly distinguished collections. The handful above 4.0 represent the truly exceptional — those whose works were collected by the Imperial Family, the Tokugawa, and the greatest daimyo houses *across many observations*.
+The distribution is heavily concentrated near the prior mean of 2.0, with a long right tail. Most artisans' works appear in ordinary or modestly distinguished collections. The handful above 4.0 represent the truly exceptional — those whose works were collected by the Imperial Family, the Tokugawa, and the greatest daimyo houses *across many items*.
 
 ---
 
@@ -321,73 +321,75 @@ The distribution is heavily concentrated near the prior mean of 2.0, with a long
 
 | Rank | Artisan | Elite | Total | Elite Factor | Provenance Factor |
 |-----:|---------|------:|------:|------------:|------------------:|
-| 1 | Tomonari | 29 | 30 | 0.6388 | 4.13 |
-| 2 | Yoshimitsu | 41 | 55 | 0.5493 | 5.21 |
-| 3 | Mitsutada | 43 | 61 | 0.5256 | 4.19 |
-| 4 | Masatsune | 19 | 21 | 0.5060 | 2.70 |
-| 5 | Masamune | 59 | 93 | 0.5030 | 5.17 |
-| 6 | Sukezane | 31 | 44 | 0.4836 | 3.72 |
-| 7 | Sa | 45 | 79 | 0.4302 | 4.51 |
-| 8 | Kuniyoshi | 30 | 51 | 0.4038 | 2.47 |
-| 9 | Kanehira | 21 | 32 | 0.3985 | 3.16 |
-| 10 | Nagamitsu | 115 | 250 | 0.3955 | 4.64 |
+| 1 | Tomonari | 29 | 30 | 0.6388 | 3.59 |
+| 2 | Yoshimitsu | 41 | 55 | 0.5493 | 4.53 |
+| 3 | Mitsutada | 43 | 61 | 0.5256 | 3.75 |
+| 4 | Masatsune | 19 | 21 | 0.5060 | 2.36 |
+| 5 | Masamune | 59 | 93 | 0.5030 | 5.29 |
+| 6 | Sukezane | 31 | 44 | 0.4836 | 3.41 |
+| 7 | Sa | 45 | 79 | 0.4302 | 4.41 |
+| 8 | Kuniyoshi | 30 | 51 | 0.4038 | 2.34 |
+| 9 | Kanehira | 21 | 32 | 0.3985 | 3.05 |
+| 10 | Nagamitsu | 115 | 250 | 0.3955 | 4.59 |
 
 The elite factor top 10 reads as a roll call of the Kamakura golden age. Every artisan in the list worked between the late Heian and early Nanbokucho periods. Tomonari's extraordinary 97% elite rate (29 of 30) earns him the top position, while Nagamitsu's massive corpus of 250 works — the most prolific in the elite tier — ranks tenth despite 115 elite designations, because his 46% rate is diluted by his sheer output.
 
-The two metrics diverge in instructive ways: Masamune ranks 5th by elite factor but 2nd by provenance factor, reflecting the historical reality that his works were the most collected swords in Japanese history. Tomonari ranks 1st by elite factor but 10th by provenance — his artistic supremacy in the NBTHK record does not translate into an equally dominant provenance trail.
+The two metrics diverge in instructive ways: Masamune ranks 5th by elite factor but 1st by provenance factor, reflecting the historical reality that his works were the most collected swords in Japanese history. Tomonari ranks 1st by elite factor but 14th by provenance — his artistic supremacy in the NBTHK record does not translate into an equally dominant provenance trail.
 
 ### Swordsmiths: Top 10 by Provenance Factor
 
-| Rank | Artisan | Prov. Factor | Obs. | Apex | Elite Factor |
-|-----:|---------|------------:|-----:|-----:|------------:|
-| 1 | Yoshimitsu | 5.21 | 133 | 10.0 | 0.5493 |
-| 2 | Masamune | 5.17 | 205 | 10.0 | 0.5030 |
-| 3 | Kunimitsu | 5.09 | 89 | 10.0 | 0.2618 |
-| 4 | Sadamune | 4.98 | 98 | 9.0 | 0.3646 |
-| 5 | Nagamitsu | 4.64 | 132 | 10.0 | 0.3955 |
-| 6 | Sa | 4.51 | 86 | 10.0 | 0.4302 |
-| 7 | Kunitoshi | 4.42 | 105 | 10.0 | 0.2793 |
-| 8 | Kanemitsu | 4.39 | 105 | 10.0 | 0.2567 |
-| 9 | Mitsutada | 4.19 | 54 | 10.0 | 0.5256 |
-| 10 | Tomonari | 4.13 | 33 | 10.0 | 0.6388 |
+| Rank | Artisan | Prov. Factor | Items | Apex | Elite Factor |
+|-----:|---------|------------:|------:|-----:|------------:|
+| 1 | Masamune | 5.29 | 68 | 10.0 | 0.5030 |
+| 2 | Kunimitsu | 5.15 | 59 | 10.0 | 0.2618 |
+| 3 | Sadamune | 4.78 | 43 | 9.0 | 0.3646 |
+| 4 | Kanemitsu | 4.63 | 67 | 10.0 | 0.2567 |
+| 5 | Nagamitsu | 4.59 | 83 | 10.0 | 0.3955 |
+| 6 | Yoshimitsu | 4.53 | 40 | 10.0 | 0.5493 |
+| 7 | Sa | 4.41 | 39 | 10.0 | 0.4302 |
+| 8 | Kunitoshi | 4.22 | 71 | 10.0 | 0.2793 |
+| 9 | Kunimitsu (Soshu) | 3.88 | 32 | 10.0 | 0.3257 |
+| 10 | Mitsutada | 3.75 | 34 | 10.0 | 0.5256 |
 
-The provenance ranking surfaces a different dimension of stature. Yoshimitsu leads — his tanto, prized by the highest collectors for centuries, appear across more distinguished provenance chains than any other artisan. Masamune follows closely at 5.17, with the largest observation count (205) in the index. An apex of 10.0 means at least one work reached the Imperial Collection.
+The provenance ranking surfaces a different dimension of stature. Masamune leads at 5.29, with the largest item count (68 items with documented provenance) in the index. An apex of 10.0 means at least one work reached the Imperial Collection.
 
-Kunimitsu at #3 is an instructive case. His elite factor of 0.2618 reflects a modest 81/256 elite rate — outside the elite top 10. But his provenance factor of 5.09 reveals that his works were collected at the highest levels. The elite factor measures NBTHK assessment; provenance captures centuries of aristocratic esteem. The two metrics answer different questions about the same artisan.
+Kunimitsu at #2 is an instructive case. His elite factor of 0.2618 reflects a modest 81/256 elite rate — outside the elite top 10. But his provenance factor of 5.15 reveals that his works were collected at the highest levels. The elite factor measures NBTHK assessment; provenance captures centuries of aristocratic esteem. The two metrics answer different questions about the same artisan.
+
+Yoshimitsu's shift from #1 to #6 is the most significant change from item-level scoring. Under per-owner scoring, his 40 provenance items generated 133 observations (3.3 owners per item) — long, well-documented chains inflated his score. Under item-level max, each item contributes once regardless of chain length, and the same 40 items yield a score of 4.53. His provenance is still exceptional, but no longer artificially inflated by documentation thoroughness.
 
 ### Tosogu Artists: Top 10 by Elite Factor
 
 | Rank | Artisan | Elite | Total | Elite Factor | Provenance Factor |
 |-----:|---------|------:|------:|------------:|------------------:|
 | 1 | Somin | 25 | 51 | 0.3229 | 2.15 |
-| 2 | Kaneie | 20 | 42 | 0.2930 | 2.36 |
+| 2 | Kaneie | 20 | 42 | 0.2930 | 2.38 |
 | 3 | Yasuchika | 28 | 76 | 0.2538 | 2.01 |
-| 4 | Joi | 7 | 12 | 0.1986 | 2.03 |
+| 4 | Joi | 7 | 12 | 0.1986 | 1.99 |
 | 5 | Myoju | 8 | 22 | 0.1525 | 2.00 |
 | 6 | Natsuo | 14 | 75 | 0.1088 | 1.97 |
 | 7 | Toshinaga | 6 | 23 | 0.0968 | 1.84 |
-| 8 | Matashichi | 7 | 52 | 0.0596 | 2.22 |
-| 9 | Goto Yujo | 6 | 41 | 0.0588 | 2.37 |
-| 10 | Goto Ichijo | 9 | 79 | 0.0576 | 2.51 |
+| 8 | Matashichi | 7 | 52 | 0.0596 | 2.24 |
+| 9 | Goto Yujo | 6 | 41 | 0.0588 | 2.39 |
+| 10 | Goto Ichijo | 9 | 79 | 0.0576 | 2.56 |
 
-Tosogu elite factors are substantially lower than swords, reflecting the NBTHK's historically stricter elevation standards for fittings. Somin (Yokoya school founder) leads at 0.3229 — lower than the 30th-ranked swordsmith. This is a domain difference, not a quality judgment, and is why percentiles are computed *within* each domain rather than across them.
+Tosogu elite factors are substantially lower than swords, reflecting the NBTHK's historically stricter elevation standards for fittings. Somin (Yokoya school founder) leads at 0.3229 — a score that would place him only around 22nd among swordsmiths. This is a domain difference, not a quality judgment, and is why percentiles are computed *within* each domain rather than across them.
 
 ### Tosogu Artists: Top 10 by Provenance Factor
 
-| Rank | Artisan | Prov. Factor | Obs. | Apex | Elite Factor |
-|-----:|---------|------------:|-----:|-----:|------------:|
-| 1 | Goto Sojo | 2.65 | 15 | 9.0 | 0.0000 |
-| 2 | Goto Ichijo | 2.51 | 17 | 10.0 | 0.0576 |
+| Rank | Artisan | Prov. Factor | Items | Apex | Elite Factor |
+|-----:|---------|------------:|------:|-----:|------------:|
+| 1 | Goto Sojo | 2.67 | 13 | 9.0 | 0.0000 |
+| 2 | Goto Ichijo | 2.56 | 14 | 10.0 | 0.0576 |
 | 3 | Goto Eijo | 2.48 | 8 | 9.0 | 0.0062 |
-| 4 | Goto Yujo | 2.37 | 12 | 9.0 | 0.0588 |
-| 5 | Kaneie | 2.36 | 14 | 8.0 | 0.2930 |
-| 6 | Goto Joshin | 2.31 | 8 | 8.0 | 0.0408 |
+| 4 | Goto Yujo | 2.39 | 11 | 9.0 | 0.0588 |
+| 5 | Kaneie | 2.38 | 13 | 8.0 | 0.2930 |
+| 6 | Goto Joshin | 2.32 | 7 | 8.0 | 0.0408 |
 | 7 | Goto Kenjo | 2.27 | 8 | 8.0 | 0.0150 |
 | 8 | Goto Kojo | 2.25 | 6 | 8.0 | 0.0000 |
-| 9 | Matashichi | 2.22 | 6 | 8.0 | 0.0596 |
-| 10 | Goto Tokujo | 2.20 | 7 | 6.0 | 0.0000 |
+| 9 | Matashichi | 2.24 | 5 | 8.0 | 0.0596 |
+| 10 | Goto Tokujo | 2.21 | 6 | 6.0 | 0.0000 |
 
-The Goto family dominates tosogu provenance: seven of the top ten positions belong to Goto lineage members. This reflects historical reality — the Goto family served as official metalwork artists to the Ashikaga and Tokugawa shogunates for over three centuries, and their works passed through the most distinguished collections as a matter of course.
+The Goto family dominates tosogu provenance: eight of the top ten positions belong to Goto lineage members. This reflects historical reality — the Goto family served as official metalwork artists to the Ashikaga and Tokugawa shogunates for over three centuries, and their works passed through the most distinguished collections as a matter of course.
 
 Goto Sojo ranks #1 by provenance but has an elite factor of 0.0000 — zero elite designations. His works were prized by shoguns and daimyo, yet the NBTHK has not elevated them to the highest designation tiers. The two metrics reveal genuinely different things.
 
@@ -397,13 +399,13 @@ Goto Sojo ranks #1 by provenance but has an elite factor of 0.0000 — zero elit
 
 The elite factor and provenance factor are **independent measures**. They are not combined into a composite score, and they are not derived from each other. This independence is by design: an artisan can rank highly on one and poorly on the other, and both readings are informative.
 
-**When they agree.** The greatest artisans tend to rank highly on both metrics. Yoshimitsu, Masamune, Mitsutada, and Sa all appear in both sword top-10 lists. This convergence is expected — the finest swordsmiths both received elite designations and attracted the most distinguished collectors.
+**When they agree.** The greatest artisans tend to rank highly on both metrics. Masamune, Yoshimitsu, Nagamitsu, and Sa all appear in both sword top-10 lists. This convergence is expected — the finest swordsmiths both received elite designations and attracted the most distinguished collectors.
 
 **When they disagree.** The disagreements are where the system reveals its most interesting insights:
 
-- **High elite, low provenance.** Masatsune ranks 4th by elite factor (19/21 = 90% elite rate) but has only 12 provenance observations and a factor of 2.70. His works are magnificent by NBTHK standards but have a thinner documented ownership trail.
+- **High elite, low provenance.** Masatsune ranks 4th by elite factor (19/21 = 90% elite rate) but has only modest provenance data and a factor of 2.36. His works are magnificent by NBTHK standards but have a thinner documented ownership trail.
 
-- **Low elite, high provenance.** Kunimitsu ranks outside the elite top 10 (0.2618) but 3rd by provenance (5.09, 89 observations). His works were treasured by the most powerful families for centuries, even though his NBTHK elite rate is moderate. Kamakura-period collectors may have valued different qualities than modern NBTHK panels.
+- **Low elite, high provenance.** Kunimitsu ranks outside the elite top 10 (0.2618) but 2nd by provenance (5.15, 59 items). His works were treasured by the most powerful families for centuries, even though his NBTHK elite rate is moderate. Kamakura-period collectors may have valued different qualities than modern NBTHK panels.
 
 - **Zero elite, high provenance.** Goto Sojo has zero elite designations but the highest provenance factor among tosogu artists. His works were collected by shoguns — but the NBTHK has not elevated them to Tokubetsu-Juyo or higher.
 
@@ -426,7 +428,7 @@ This prevents domain-level structural differences (tosogu elite factors are inhe
 
 Elite factor uses a **Beta-Binomial** model because the underlying data is binary: each work either achieved elite designation or it did not. The Beta distribution is the conjugate prior for binomial data, making the posterior computation exact.
 
-Provenance factor uses a **Normal model** because the underlying data is continuous: each provenance observation carries a prestige score between 2.0 and 10.0. The pseudoobservation approach (augmenting $n$ real observations with $C = 20$ observations at $m = 2.0$) provides Bayesian regularization while allowing variance to be estimated from the data.
+Provenance factor uses a **Normal model** because the underlying data is continuous: each item's highest-prestige owner carries a score between 2.0 and 10.0. The pseudoobservation approach (augmenting $n$ item-level scores with $C = 20$ observations at $m = 2.0$) provides Bayesian regularization while allowing variance to be estimated from the data.
 
 Both models extract the 5th percentile — the lower bound of a one-sided 95% credible interval — using the normal approximation $\max(0,\; \mu - 1.645\,\sigma)$.
 
@@ -456,6 +458,7 @@ The Beta-Binomial model for elite factor has antecedents in Evan Miller's 2009 f
 | **Tables** | artisan_makers, artisan_schools | artisan_makers, artisan_schools |
 | **Legacy sync** | smith_entities, tosogu_makers | smith_entities, tosogu_makers |
 | **Column type** | NUMERIC(5,4) | NUMERIC(4,2) |
-| **Value range** | 0.0000–0.6388 | 1.77–5.21 |
-| **Population** | 12,356 swordsmiths + 1,107 tosogu artists | 687 artists with provenance data |
-| **Migration** | 421 | 424 |
+| **Observation unit** | Per item: highest designation | Per item: highest-prestige owner |
+| **Value range** | 0.0000–0.6388 | 1.77–5.29 |
+| **Population** | 12,356 swordsmiths + 1,107 tosogu artists | 686 artists with provenance data |
+| **Migration** | 421 | 427 |
