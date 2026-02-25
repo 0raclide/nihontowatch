@@ -39,7 +39,7 @@ export async function generateMetadata({ searchParams }: ArtistsPageProps): Prom
     ? `Browse ${school} school artists — nihonto and tosogu makers with certification statistics, elite rankings, and detailed profiles.`
     : 'Comprehensive directory of Japanese nihonto and tosogu artists. Browse by school, province, and era with Juyo and Tokubetsu Juyo certification counts.';
 
-  const ogImageUrl = `${BASE_URL}/api/og`;
+  const ogImageUrl = `${BASE_URL}/api/og?page=artists`;
 
   return {
     title,
@@ -50,7 +50,7 @@ export async function generateMetadata({ searchParams }: ArtistsPageProps): Prom
       description,
       type: 'website',
       url: `${BASE_URL}/artists`,
-      images: [{ url: ogImageUrl, width: 1200, height: 630, alt: 'NihontoWatch — Artist Directory' }],
+      images: [{ url: ogImageUrl, width: 1200, height: 630, alt: 'NihontoWatch Artist Directory — 13,500+ Japanese Sword Artisans' }],
     },
     twitter: {
       card: 'summary_large_image',

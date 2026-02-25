@@ -331,7 +331,7 @@ async function fetchArtistData(code: string): Promise<ArtistData | null> {
 
   // Individual makers: single query to artisan_makers
   const makerResponse = await fetch(
-    `${yuUrl}/rest/v1/artisan_makers?maker_id=eq.${encodeURIComponent(code)}&select=maker_id,name_romaji,legacy_school_text,province,era,domain,juyo_count,tokuju_count,kokuho_count,elite_factor,total_items`,
+    `${yuUrl}/rest/v1/artisan_makers?maker_id=eq.${encodeURIComponent(code)}&select=maker_id,name_romaji,legacy_school_text,artisan_schools(name_romaji),province,era,domain,juyo_count,tokuju_count,kokuho_count,elite_factor,total_items`,
     { headers }
   );
 
@@ -341,7 +341,7 @@ async function fetchArtistData(code: string): Promise<ArtistData | null> {
       const m = makerRows[0];
       return {
         name_romaji: m.name_romaji,
-        school: m.legacy_school_text,
+        school: m.artisan_schools?.name_romaji ?? m.legacy_school_text,
         province: m.province,
         era: m.era,
         entity_type: m.domain === 'tosogu' ? 'tosogu' : 'smith',
@@ -565,6 +565,151 @@ async function generateArtistOG(font: ArrayBuffer, code: string): Promise<ImageR
 }
 
 // =============================================================================
+// Artists Directory OG Image
+// =============================================================================
+
+async function generateArtistsDirectoryOG(font: ArrayBuffer): Promise<ImageResponse> {
+  const certBadges = [
+    { label: 'Kokuho', color: OPUS.certKokuho },
+    { label: 'Tokubetsu Juyo', color: OPUS.certTokuju },
+    { label: 'Juyo', color: OPUS.certJuyo },
+  ];
+
+  return new ImageResponse(
+    (
+      <div
+        style={{
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          backgroundColor: OPUS.bg,
+          fontFamily: 'Inter',
+          padding: 0,
+          position: 'relative',
+        }}
+      >
+        {/* Subtle accent glow at top */}
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 200,
+            display: 'flex',
+            background: 'linear-gradient(180deg, rgba(218,165,90,0.06) 0%, transparent 100%)',
+          }}
+        />
+
+        {/* Main Content Area */}
+        <div
+          style={{
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            padding: '48px 56px',
+          }}
+        >
+          {/* Label */}
+          <div
+            style={{
+              display: 'flex',
+              fontSize: 14,
+              fontWeight: 500,
+              color: OPUS.textMuted,
+              textTransform: 'uppercase',
+              letterSpacing: '0.2em',
+              marginBottom: 16,
+            }}
+          >
+            ARTIST DIRECTORY
+          </div>
+
+          {/* Headline */}
+          <div
+            style={{
+              fontSize: 52,
+              fontWeight: 700,
+              color: OPUS.textPrimary,
+              lineHeight: 1.15,
+              letterSpacing: '-0.02em',
+              marginBottom: 12,
+            }}
+          >
+            13,500+ Japanese Sword Artisans
+          </div>
+
+          {/* Subtitle */}
+          <div
+            style={{
+              display: 'flex',
+              fontSize: 22,
+              color: OPUS.textSecondary,
+              marginBottom: 28,
+              letterSpacing: '0.01em',
+            }}
+          >
+            Smiths  ·  Tosogu Makers  ·  Schools
+          </div>
+
+          {/* Cert badges row */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 12,
+              marginBottom: 28,
+            }}
+          >
+            {certBadges.map((badge) => (
+              <div
+                key={badge.label}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  backgroundColor: `${badge.color}18`,
+                  border: `2px solid ${badge.color}50`,
+                  color: badge.color,
+                  padding: '8px 16px',
+                  borderRadius: 6,
+                  fontSize: 15,
+                  fontWeight: 600,
+                  letterSpacing: '0.03em',
+                }}
+              >
+                {badge.label}
+              </div>
+            ))}
+          </div>
+
+          {/* Features line */}
+          <div
+            style={{
+              display: 'flex',
+              fontSize: 16,
+              color: OPUS.accent,
+              fontWeight: 500,
+            }}
+          >
+            Certification Records  ·  Elite Rankings  ·  Lineage  ·  School Traditions
+          </div>
+        </div>
+
+        {/* Footer - Brand */}
+        <BrandFooter />
+      </div>
+    ),
+    {
+      width: 1200,
+      height: 630,
+      fonts: [{ name: 'Inter', data: font, style: 'normal', weight: 400 }],
+    }
+  );
+}
+
+// =============================================================================
 // GET Handler
 // =============================================================================
 
@@ -597,6 +742,16 @@ export async function GET(request: NextRequest) {
   }
 
   const { searchParams } = new URL(request.url);
+
+  // Check for page-specific OG images
+  const page = searchParams.get('page');
+  if (page === 'artists') {
+    try {
+      return await generateArtistsDirectoryOG(font);
+    } catch {
+      return generateDefaultOG(font);
+    }
+  }
 
   // Check for artist OG image first
   const artistCode = searchParams.get('artist');
