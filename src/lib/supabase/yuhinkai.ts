@@ -597,7 +597,7 @@ export async function getProvenancePercentile(
  */
 export async function getEliteDistribution(
   entityType: 'smith' | 'tosogu'
-): Promise<{ buckets: number[]; total: number }> {
+): Promise<{ buckets: number[]; total: number; maxValue: number }> {
   const domainFilter = getDomainFilter(entityType);
 
   const { data, error } = await yuhinkaiClient
@@ -609,17 +609,26 @@ export async function getEliteDistribution(
 
   if (error || !data) {
     console.error('[Yuhinkai] Error fetching elite distribution:', error);
-    return { buckets: Array(100).fill(0), total: 0 };
+    return { buckets: Array(100).fill(0), total: 0, maxValue: 1 };
   }
+
+  // Find actual max to bucket adaptively — post-Bayesian lower bound, values cluster in 0–17%
+  let maxValue = 0;
+  for (const row of data) {
+    const ef = row.elite_factor ?? 0;
+    if (ef > maxValue) maxValue = ef;
+  }
+  // Floor: avoid division by zero if all values are 0
+  if (maxValue === 0) maxValue = 1;
 
   const buckets = Array(100).fill(0);
   for (const row of data) {
     const ef = row.elite_factor ?? 0;
-    const idx = Math.min(Math.floor(ef * 100), 99);
+    const idx = Math.min(Math.floor((ef / maxValue) * 100), 99);
     buckets[idx]++;
   }
 
-  return { buckets, total: data.length };
+  return { buckets, total: data.length, maxValue };
 }
 
 /**
@@ -705,6 +714,7 @@ export interface ArtistDirectoryEntry {
   elite_factor: number;
   provenance_factor: number | null;
   is_school_code: boolean;
+  school_type?: 'school' | 'period' | null;
   percentile?: number;
   member_count?: number;
   denrai_owners?: Array<{ owner: string; count: number }>;
@@ -809,6 +819,7 @@ export async function callDirectoryEnrichment(
     elite_factor: (row.elite_factor as number) || 0,
     provenance_factor: (row.provenance_factor as number) ?? null,
     is_school_code: (row.is_school_code as boolean) || false,
+    school_type: (row.school_type as 'school' | 'period' | null) ?? null,
     percentile: (row.percentile as number) ?? 0,
     member_count: row.member_count != null ? (row.member_count as number) : undefined,
   }));
@@ -1166,7 +1177,7 @@ export async function getFilteredArtistsByCodes(
     const batch = schoolCodes.slice(i, i + BATCH_SIZE);
     let query = yuhinkaiClient
       .from('artisan_schools')
-      .select('school_id, name_romaji, name_kanji, province, era_start, kokuho_count, jubun_count, jubi_count, gyobutsu_count, tokuju_count, juyo_count, total_items, elite_factor, provenance_factor')
+      .select('school_id, name_romaji, name_kanji, province, era_start, kokuho_count, jubun_count, jubi_count, gyobutsu_count, tokuju_count, juyo_count, total_items, elite_factor, provenance_factor, school_type')
       .in('school_id', batch)
       .in('domain', domainFilter);
 
@@ -1210,6 +1221,7 @@ export async function getFilteredArtistsByCodes(
         elite_factor: (row.elite_factor as number) || 0,
         provenance_factor: (row.provenance_factor as number) ?? null,
         is_school_code: true,
+        school_type: (row.school_type as 'school' | 'period' | null) ?? null,
       });
     }
   }

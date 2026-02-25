@@ -22,26 +22,23 @@ function EliteHistogram({
   buckets,
   total,
   eliteFactor,
+  maxValue,
   entityType,
 }: {
   buckets: number[];
   total: number;
   eliteFactor: number;
+  maxValue: number;
   entityType: 'smith' | 'tosogu';
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { t } = useLocale();
   const peerLabel = entityType === 'smith' ? t('artists.smiths') : t('artists.makers');
 
-  // Find the last non-zero bucket to trim empty tail
-  let lastNonZero = buckets.length - 1;
-  while (lastNonZero > 0 && buckets[lastNonZero] === 0) lastNonZero--;
-  // Show at least up to the artisan's bucket + a little margin, min 10 buckets
-  const activeBucket = Math.min(Math.floor(eliteFactor * 100), 99);
-  const visibleCount = Math.max(lastNonZero + 2, activeBucket + 3, 10);
-  const visible = buckets.slice(0, visibleCount);
+  // Buckets now span [0, maxValue] adaptively — all 100 are meaningful
+  const activeBucket = Math.min(Math.floor((eliteFactor / maxValue) * 100), 99);
 
-  const maxCount = Math.max(...visible);
+  const maxCount = Math.max(...buckets);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -58,14 +55,14 @@ function EliteHistogram({
 
     const w = rect.width;
     const h = rect.height;
-    const barW = w / visible.length;
+    const barW = w / buckets.length;
     const topPad = 12; // room for the marker above
 
     ctx.clearRect(0, 0, w, h);
 
     // Draw bars
-    for (let i = 0; i < visible.length; i++) {
-      const count = visible[i];
+    for (let i = 0; i < buckets.length; i++) {
+      const count = buckets[i];
       if (count === 0) continue;
 
       // Log scale for height
@@ -94,15 +91,16 @@ function EliteHistogram({
     ctx.closePath();
     ctx.fill();
 
-    // Axis labels
+    // Axis labels — right label shows actual max percentage
+    const maxPctLabel = `${Math.round(maxValue * 100)}%`;
     ctx.fillStyle = 'rgba(128, 128, 128, 0.35)';
     ctx.font = '9px system-ui, sans-serif';
     ctx.textBaseline = 'bottom';
     ctx.textAlign = 'start';
     ctx.fillText('0%', 0, h);
     ctx.textAlign = 'end';
-    ctx.fillText(`${visibleCount}%`, w, h);
-  }, [visible, maxCount, activeBucket, visibleCount]);
+    ctx.fillText(maxPctLabel, w, h);
+  }, [buckets, maxCount, activeBucket, maxValue]);
 
   return (
     <div className="mt-3">
@@ -129,7 +127,7 @@ export function EliteFactorDisplay({
   const pct = Math.round(eliteFactor * 100);
   const topPct = Math.max(100 - percentile, 1);
   const [showInfo, setShowInfo] = useState(false);
-  const [distribution, setDistribution] = useState<{ buckets: number[]; total: number } | null>(null);
+  const [distribution, setDistribution] = useState<{ buckets: number[]; total: number; maxValue: number } | null>(null);
 
   // Lazy-load distribution when info panel opens
   useEffect(() => {
@@ -193,6 +191,7 @@ export function EliteFactorDisplay({
               buckets={distribution.buckets}
               total={distribution.total}
               eliteFactor={eliteFactor}
+              maxValue={distribution.maxValue}
               entityType={entityType}
             />
           ) : (
