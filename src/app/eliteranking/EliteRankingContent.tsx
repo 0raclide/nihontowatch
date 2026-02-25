@@ -37,7 +37,7 @@ Both metrics share a common statistical architecture: Bayesian models that expre
 
 ### The Problem
 
-How do you rank a swordsmith who has one Tokubetsu-Juyo blade against one who has seventeen? On the surface, the first smith has a 100% elite rate; the second, perhaps 20%. But no serious scholar would place the unknown smith above Kotetsu on the strength of a single data point.
+How do you rank a swordsmith who has one Tokubetsu-Juyo blade against one who has seventeen? On the surface, the first smith has a 100% elite rate; the second, perhaps 20%. But no serious scholar would place the unknown smith above Masamune on the strength of a single data point.
 
 This is the **small-sample problem**, and it appears throughout the NBTHK designation record. Of the roughly 13,000 artisans in our index, many have only one or two designated works. A handful have hundreds. Any ranking system must handle both extremes gracefully, rewarding genuine excellence while refusing to be fooled by statistical flukes.
 
