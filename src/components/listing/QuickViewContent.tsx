@@ -90,7 +90,9 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
     const prefill = mapListingToCollectionItem(listing as import('@/types').Listing);
     // Store prefill in sessionStorage for the collection page to pick up
     sessionStorage.setItem('collection_prefill', JSON.stringify(prefill));
-    quickView?.closeQuickView?.();
+    // Use dismissForNavigation (not closeQuickView) to avoid
+    // history.back() racing with router.push()
+    quickView?.dismissForNavigation?.();
     router.push('/collection?add=listing');
   }, [user, listing, quickView, router]);
 
@@ -412,7 +414,10 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
                   data-testid="dealer-name"
                   onClick={(e) => {
                     e.preventDefault();
-                    quickView?.closeQuickView?.();
+                    e.stopPropagation();
+                    // Use dismissForNavigation (not closeQuickView) to avoid
+                    // history.back() racing with router.push()
+                    quickView?.dismissForNavigation?.();
                     router.push(`/?dealer=${listing.dealer_id}`);
                   }}
                   className="hover:text-accent hover:underline transition-colors"

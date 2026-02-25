@@ -579,7 +579,9 @@ export function QuickViewMobileSheet({
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    onClose();
+                    // Use dismissForNavigation (not onClose/closeQuickView) to avoid
+                    // history.back() racing with router.push()
+                    quickView?.dismissForNavigation?.();
                     router.push(`/?dealer=${listing.dealer_id}`);
                   }}
                   onTouchStart={(e) => e.stopPropagation()}
