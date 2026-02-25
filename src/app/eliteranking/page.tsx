@@ -12,16 +12,16 @@ const methodologyContent = fs.readFileSync(
 );
 
 export const metadata: Metadata = {
-  title: 'Artist Ranking Methodology | NihontoWatch',
+  title: 'Artist Ranking Methodology (Working Paper) | NihontoWatch',
   description:
-    'How NihontoWatch ranks artisan stature using two Bayesian metrics: the elite factor (NBTHK designation quality) and the provenance factor (historical collector prestige). Beta-binomial model, shrinkage estimator, lower credible bounds, and full rankings.',
+    'Working paper: how Yuhinkai ranks artisan stature using two Bayesian metrics — the elite factor (NBTHK designation quality) and the provenance factor (historical collector prestige). Beta-binomial model, shrinkage estimator, lower credible bounds, and full rankings.',
   alternates: {
     canonical: 'https://nihontowatch.com/eliteranking',
   },
   openGraph: {
-    title: 'Artist Ranking Methodology | NihontoWatch',
+    title: 'Artist Ranking Methodology (Working Paper) | NihontoWatch',
     description:
-      'Two Bayesian metrics for measuring artisan stature in the NBTHK designation record and historical provenance.',
+      'Working paper: two Bayesian metrics for measuring artisan stature in the NBTHK designation record and historical provenance.',
   },
 };
 
@@ -64,7 +64,7 @@ export default function EliteRankingPage() {
       <div className="bg-cream border-b border-border-subtle">
         <div className="max-w-3xl mx-auto px-4 py-12 lg:py-20 text-center">
           <p className="text-xs uppercase tracking-[0.2em] text-muted mb-4">
-            Methodology
+            Working Paper
           </p>
           <h1 className="font-serif text-3xl lg:text-5xl font-semibold text-ink leading-tight mb-3">
             Artist Ranking Methodology
