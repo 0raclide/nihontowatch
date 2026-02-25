@@ -1,6 +1,7 @@
 'use client';
 
 import ReactMarkdown, { Components } from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 /* ─── Custom components: only what CSS can't handle alone ──────────────── */
 
@@ -240,7 +241,9 @@ The prior Beta(1, 9) was selected by calibration against the empirical base rate
 export function EliteRankingContent() {
   return (
     <article className="prose-methodology">
-      <ReactMarkdown components={components}>{CONTENT}</ReactMarkdown>
+      <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
+        {CONTENT}
+      </ReactMarkdown>
     </article>
   );
 }
