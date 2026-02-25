@@ -34,7 +34,9 @@ function ScatterTooltip({
   const p = payload[0].payload;
   return (
     <div className="bg-paper border border-border rounded-lg p-3 shadow-lg text-xs">
-      <p className="font-medium text-ink mb-1.5">{p.n}</p>
+      <p className="font-medium text-ink mb-1.5">
+        {p.n} <span className="text-muted font-normal">({p.id})</span>
+      </p>
       <div className="space-y-0.5 text-charcoal">
         <p>
           <span className="text-muted">Elite Factor:</span>{' '}
@@ -206,7 +208,9 @@ function DivergenceScatter({ data, color }: { data: P[]; color: string }) {
               const p = payload[0].payload as Ranked;
               return (
                 <div className="bg-paper border border-border rounded-lg p-3 shadow-lg text-xs">
-                  <p className="font-medium text-ink mb-1.5">{p.n}</p>
+                  <p className="font-medium text-ink mb-1.5">
+                    {p.n} <span className="text-muted font-normal">({p.id})</span>
+                  </p>
                   <div className="space-y-0.5 text-charcoal">
                     <p>
                       <span className="text-muted">Elite percentile:</span>{' '}
