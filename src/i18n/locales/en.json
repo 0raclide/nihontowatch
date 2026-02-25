@@ -779,7 +779,7 @@
 
   "catalogue.sayagaki": "Sayagaki",
   "catalogue.provenance": "Provenance",
-  "catalogue.documentedBy": "Documented by",
+  "catalogue.documentedBy": "Catalogue enriched by",
   "catalogue.galleryImage": "Gallery image {current} of {total}",
   "catalogue.previous": "Previous image",
   "catalogue.next": "Next image",

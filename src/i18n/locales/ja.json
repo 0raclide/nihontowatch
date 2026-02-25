@@ -779,7 +779,7 @@
 
   "catalogue.sayagaki": "鞘書",
   "catalogue.provenance": "伝来",
-  "catalogue.documentedBy": "記録者",
+  "catalogue.documentedBy": "カタログ提供",
   "catalogue.galleryImage": "ギャラリー画像 {current}/{total}",
   "catalogue.previous": "前の画像",
   "catalogue.next": "次の画像",
