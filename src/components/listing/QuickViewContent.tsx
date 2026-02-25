@@ -302,13 +302,15 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
                 href={`/artists/${listing.artisan_id}`}
                 onClick={(e) => {
                   e.preventDefault();
+                  e.stopPropagation();
                   if (navigatingToArtist) return;
                   setNavigatingToArtist(true);
                   window.dispatchEvent(new Event('nav-progress-start'));
                   saveListingReturnContext(listing);
+                  // Dismiss QuickView BEFORE navigating — releasing body scroll lock
+                  // and cleaning URL state so the modal doesn't interfere with the transition.
+                  quickView?.dismissForNavigation?.();
                   router.push(`/artists/${listing.artisan_id}`);
-                  // Delay dismiss so user sees spinner feedback before modal vanishes
-                  setTimeout(() => quickView?.dismissForNavigation?.(), 300);
                 }}
                 className={`group flex items-center gap-3 flex-1 min-w-0 cursor-pointer ${navigatingToArtist ? 'opacity-70' : ''}`}
               >

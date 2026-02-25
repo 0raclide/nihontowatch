@@ -505,12 +505,17 @@ export function QuickViewMobileSheet({
               href={`/artists/${listing.artisan_id}`}
               onClick={(e) => {
                 e.preventDefault();
+                e.stopPropagation();
                 if (navigatingToArtist) return;
                 setNavigatingToArtist(true);
                 window.dispatchEvent(new Event('nav-progress-start'));
                 saveListingReturnContext(listing);
+                // Dismiss QuickView BEFORE navigating — releasing body scroll lock
+                // and cleaning URL state so iOS Safari doesn't fight the transition.
+                // The old 300ms setTimeout caused a race: the sheet stayed mounted
+                // with drag gestures active while router.push was in flight.
+                quickView?.dismissForNavigation?.();
                 router.push(`/artists/${listing.artisan_id}`);
-                setTimeout(() => quickView?.dismissForNavigation?.(), 300);
               }}
               className={`group flex items-center gap-3 flex-1 min-w-0 cursor-pointer ${navigatingToArtist ? 'opacity-70' : ''}`}
             >

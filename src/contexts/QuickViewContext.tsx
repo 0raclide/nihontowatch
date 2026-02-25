@@ -235,9 +235,13 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
     setCurrentIndex(-1);
     setIsAlertMode(false);
     // Don't pop history — router.push() will push a new entry on top.
-    // The old ?listing= entry stays in the stack so browser-back reopens it.
     pushedHistoryRef.current = false;
-  }, []);
+    // Clean the ?listing= param via replaceState so the stale entry can't
+    // reopen QuickView if navigation hiccups or the user presses back.
+    // Without this, history was [/browse, /browse?listing=X, /artists/...]
+    // and pressing back from the artist page would reopen the QuickView.
+    updateUrl(null);
+  }, [updateUrl]);
 
   // Navigate to next listing
   const goToNext = useCallback(() => {
