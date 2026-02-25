@@ -130,7 +130,7 @@ export function computeQuality(listing: ListingScoreInput): number {
   // NULL price (inquiry-based / "Ask") items bypass damping — they're typically expensive.
   const priceJpy = estimatePriceJpy(listing.price_value, listing.price_currency);
   const priceDamping = listing.price_value ? Math.min(priceJpy / PRICE_DAMPING_CEILING_JPY, 1) : 1;
-  const artisanStature = rawArtisanStature * priceDamping;
+  const artisanStature = Math.round(rawArtisanStature * priceDamping * 100) / 100;
 
   const certPts = listing.cert_type ? (CERT_POINTS[listing.cert_type] ?? 0) : 0;
 
@@ -239,7 +239,7 @@ export function computeScoreBreakdown(listing: ListingScoreInput): ScoreBreakdow
   // Price-based damping (mirrors computeQuality)
   const priceJpy = estimatePriceJpy(listing.price_value, listing.price_currency);
   const priceDamping = listing.price_value ? Math.min(priceJpy / PRICE_DAMPING_CEILING_JPY, 1) : 1;
-  const artisanStature = rawStature * priceDamping;
+  const artisanStature = Math.round(rawStature * priceDamping * 100) / 100;
 
   // Cert points
   const certPts = listing.cert_type ? (CERT_POINTS[listing.cert_type] ?? 0) : 0;
@@ -274,7 +274,7 @@ export function computeScoreBreakdown(listing: ListingScoreInput): ScoreBreakdow
     { label: 'HIGH confidence', active: hasHighConf, points: confPts, max: 5 },
   ];
 
-  const quality = artisanStature + certPts + completeness;
+  const quality = Math.round((artisanStature + certPts + completeness) * 100) / 100;
 
   // Freshness
   let multiplier: number;
