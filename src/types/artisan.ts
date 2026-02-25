@@ -47,6 +47,7 @@ export interface ArtisanPageResponse {
   };
   profile: {
     profile_md: string;
+    profile_md_ja: string | null;
     hook: string | null;
     setsumei_count: number;
     generated_at: string;

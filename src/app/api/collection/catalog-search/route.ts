@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ results: [], error: 'Provide cert or q parameter' }, { status: 400 });
     }
 
-    const { yuhinkaiClient } = await import('@/lib/supabase/yuhinkai');
+    const { yuhinkaiClient, resolveSchoolName } = await import('@/lib/supabase/yuhinkai');
 
     // Step 1: Search gold_values for matching objects
     let goldQuery = yuhinkaiClient
@@ -123,12 +123,12 @@ export async function GET(request: NextRequest) {
     ])] as string[];
 
     const { data: artisanEntities } = allArtisanIds.length > 0
-      ? await yuhinkaiClient.from('artisan_makers').select('maker_id, name_romaji, legacy_school_text, province, era').in('maker_id', allArtisanIds)
+      ? await yuhinkaiClient.from('artisan_makers').select('maker_id, name_romaji, legacy_school_text, artisan_schools(name_romaji), province, era').in('maker_id', allArtisanIds)
       : { data: [] };
 
     const nameMap = new Map<string, { name: string | null; school: string | null; province: string | null; era: string | null }>();
     for (const a of artisanEntities || []) {
-      nameMap.set(a.maker_id, { name: a.name_romaji, school: a.legacy_school_text, province: a.province, era: a.era });
+      nameMap.set(a.maker_id, { name: a.name_romaji, school: resolveSchoolName(a), province: a.province, era: a.era });
     }
 
     // Step 4: Build catalog UUID -> gold_values map

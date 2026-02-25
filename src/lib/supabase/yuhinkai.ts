@@ -201,26 +201,22 @@ export async function getArtisan(code: string): Promise<ArtisanEntity | null> {
   };
 }
 
-export async function getAiDescription(code: string): Promise<string | null> {
+export async function getAiDescription(code: string): Promise<{ en: string | null; ja: string | null }> {
   // School codes (NS-*) live in artisan_schools; individual makers in artisan_makers
-  if (code.startsWith('NS-')) {
-    const { data, error } = await yuhinkaiClient
-      .from('artisan_schools')
-      .select('ai_description')
-      .eq('school_id', code)
-      .single();
-    if (error || !data?.ai_description) return null;
-    return data.ai_description as string;
-  }
+  const table = code.startsWith('NS-') ? 'artisan_schools' : 'artisan_makers';
+  const idCol = code.startsWith('NS-') ? 'school_id' : 'maker_id';
 
   const { data, error } = await yuhinkaiClient
-    .from('artisan_makers')
-    .select('ai_description')
-    .eq('maker_id', code)
+    .from(table)
+    .select('ai_description, ai_description_jp')
+    .eq(idCol, code)
     .single();
 
-  if (error || !data?.ai_description) return null;
-  return data.ai_description as string;
+  if (error || !data) return { en: null, ja: null };
+  return {
+    en: (data.ai_description as string) ?? null,
+    ja: (data.ai_description_jp as string) ?? null,
+  };
 }
 
 

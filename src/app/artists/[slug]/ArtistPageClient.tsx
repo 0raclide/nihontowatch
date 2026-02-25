@@ -544,7 +544,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
         {profile?.profile_md && (
           <section>
             <SectionHeader id="overview" title={t('artist.overview')} className="mb-7" />
-            <Biography markdown={profile.profile_md} />
+            <Biography markdown={locale === 'ja' && profile.profile_md_ja ? profile.profile_md_ja : profile.profile_md} />
           </section>
         )}
 

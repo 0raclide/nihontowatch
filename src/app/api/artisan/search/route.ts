@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const { yuhinkaiClient } = await import('@/lib/supabase/yuhinkai');
+    const { yuhinkaiClient, resolveSchoolName } = await import('@/lib/supabase/yuhinkai');
 
     // Escape special characters for ilike pattern
     const escapedQuery = query.replace(/[%_\\]/g, '\\$&');
@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
     // Query artisan_makers (individual smiths/tosogu makers)
     let makersQuery = yuhinkaiClient
       .from('artisan_makers')
-      .select('maker_id, name_romaji, name_kanji, name_romaji_normalized, display_name, legacy_school_text, province, era, generation, domain, hawley, fujishiro')
+      .select('maker_id, name_romaji, name_kanji, name_romaji_normalized, display_name, legacy_school_text, artisan_schools(name_romaji), province, era, generation, domain, hawley, fujishiro')
       .or(`maker_id.ilike.${pattern},name_romaji.ilike.${pattern},name_romaji_normalized.ilike.${pattern},name_kanji.ilike.${pattern},legacy_school_text.ilike.${pattern},display_name.ilike.${pattern}`);
 
     // Domain filter based on type param
@@ -128,19 +128,21 @@ export async function GET(request: NextRequest) {
     }
 
     // Map makers results
-    const makerResults: ArtisanSearchResult[] = (makersResult.data || []).map((row) => ({
-      code: row.maker_id,
-      type: row.domain === 'tosogu' ? 'tosogu' as const : 'smith' as const,
-      name_romaji: row.name_romaji,
-      name_kanji: row.name_kanji,
-      display_name: row.display_name,
-      school: row.legacy_school_text,
-      province: row.province,
-      era: row.era,
-      generation: row.generation,
-      hawley: row.hawley,
-      fujishiro: row.fujishiro,
-    }));
+    const makerResults: ArtisanSearchResult[] = (makersResult.data || []).map((row) => {
+      return {
+        code: row.maker_id,
+        type: row.domain === 'tosogu' ? 'tosogu' as const : 'smith' as const,
+        name_romaji: row.name_romaji,
+        name_kanji: row.name_kanji,
+        display_name: row.display_name,
+        school: resolveSchoolName(row),
+        province: row.province,
+        era: row.era,
+        generation: row.generation,
+        hawley: row.hawley,
+        fujishiro: row.fujishiro,
+      };
+    });
 
     // Map schools results
     const schoolResults: ArtisanSearchResult[] = (schoolsResult.data || []).map((row) => ({

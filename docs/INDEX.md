@@ -63,6 +63,7 @@
 
 | Document | Date | Issue |
 |----------|------|-------|
+| [POSTMORTEM_FEATURED_SCORE_NULL_PRICE_ELITE_SYNC.md](./POSTMORTEM_FEATURED_SCORE_NULL_PRICE_ELITE_SYNC.md) | 2026-02-25 | **NULL price zeroed artisan stature + cron never synced elite_factor** — inquiry-based items got 0 stature (damping treated NULL as ¥0), NS-* schools never got elite stats. Two compounding bugs. Juyo Ichimonji scored 98→333. |
 | [SESSION_20260222_FEATURED_SCORE_RECOMPUTE.md](./SESSION_20260222_FEATURED_SCORE_RECOMPUTE.md) | 2026-02-22 | **Fire-and-forget in serverless** — unawaited promises in Vercel freeze before completing; admin score recompute never ran. Fixed: `await` with try/catch |
 | [SESSION_20260212_PRICE_SANITY_BUG010.md](./SESSION_20260212_PRICE_SANITY_BUG010.md) | 2026-02-12 | **BUG-010: LLM price extraction** — Choshuya catalog numbers mistaken for prices, 4-layer defense (LLM sanity, normalizer, prompt, frontend filter), 37 tests |
 | [CERT_EXTRACTION_BUGS.md](./CERT_EXTRACTION_BUGS.md) | Living doc | **Certification extraction bug tracker** — all cert false positives/negatives, patterns, exclusions, diagnostic queries |

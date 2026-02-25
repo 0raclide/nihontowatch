@@ -130,8 +130,8 @@ export async function buildArtistPageData(code: string): Promise<ArtisanPageResp
       count: provenanceCount,
       apex: provenanceApex,
     },
-    profile: aiDescription
-      ? { profile_md: aiDescription, hook: null, setsumei_count: 0, generated_at: '' }
+    profile: aiDescription.en || aiDescription.ja
+      ? { profile_md: aiDescription.en ?? '', profile_md_ja: aiDescription.ja, hook: null, setsumei_count: 0, generated_at: '' }
       : null,
     stats,
     lineage: {

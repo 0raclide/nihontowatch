@@ -100,6 +100,12 @@ vi.mock('@/lib/supabase/yuhinkai', () => ({
       throw new Error(`Unexpected table: ${table}`);
     }),
   },
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  resolveSchoolName: (row: any) => {
+    const joined = row?.artisan_schools;
+    if (joined && !Array.isArray(joined) && joined.name_romaji) return joined.name_romaji;
+    return row?.legacy_school_text ?? null;
+  },
 }));
 
 vi.mock('@/lib/supabase/server', () => ({

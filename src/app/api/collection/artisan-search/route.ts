@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ results: [], error: 'Query must be at least 2 characters' }, { status: 400 });
     }
 
-    const { yuhinkaiClient } = await import('@/lib/supabase/yuhinkai');
+    const { yuhinkaiClient, resolveSchoolName } = await import('@/lib/supabase/yuhinkai');
 
     const escapedQuery = query.replace(/[%_\\]/g, '\\$&');
     const pattern = `%${escapedQuery}%`;
@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
     // Single query to artisan_makers
     let dbQuery = yuhinkaiClient
       .from('artisan_makers')
-      .select('maker_id, name_romaji, name_kanji, name_romaji_normalized, display_name, legacy_school_text, province, era, generation, domain, hawley, fujishiro')
+      .select('maker_id, name_romaji, name_kanji, name_romaji_normalized, display_name, legacy_school_text, artisan_schools(name_romaji), province, era, generation, domain, hawley, fujishiro')
       .or(`maker_id.ilike.${pattern},name_romaji.ilike.${pattern},name_romaji_normalized.ilike.${pattern},name_kanji.ilike.${pattern},legacy_school_text.ilike.${pattern},display_name.ilike.${pattern}`);
 
     // Domain filter based on type param
@@ -71,19 +71,21 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ results: [], error: 'Search query failed' }, { status: 500 });
     }
 
-    const results: ArtisanSearchResult[] = (data || []).map((row) => ({
-      code: row.maker_id,
-      type: row.domain === 'tosogu' ? 'tosogu' as const : 'smith' as const,
-      name_romaji: row.name_romaji,
-      name_kanji: row.name_kanji,
-      display_name: row.display_name,
-      school: row.legacy_school_text,
-      province: row.province,
-      era: row.era,
-      generation: row.generation,
-      hawley: row.hawley,
-      fujishiro: row.fujishiro,
-    }));
+    const results: ArtisanSearchResult[] = (data || []).map((row) => {
+      return {
+        code: row.maker_id,
+        type: row.domain === 'tosogu' ? 'tosogu' as const : 'smith' as const,
+        name_romaji: row.name_romaji,
+        name_kanji: row.name_kanji,
+        display_name: row.display_name,
+        school: resolveSchoolName(row),
+        province: row.province,
+        era: row.era,
+        generation: row.generation,
+        hawley: row.hawley,
+        fujishiro: row.fujishiro,
+      };
+    });
 
     return NextResponse.json({
       results,
