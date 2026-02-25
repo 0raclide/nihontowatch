@@ -56,6 +56,7 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
   const { user, isAdmin } = useAuth();
   const { showPaywall, canAccess } = useSubscription();
   const quickView = useQuickViewOptional();
+  const detailLoaded = quickView?.detailLoaded ?? true;
   const activityTracker = useActivityTrackerOptional();
   const { t, locale } = useLocale();
   const [isInquiryModalOpen, setIsInquiryModalOpen] = useState(false);
@@ -452,8 +453,16 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
           <TranslatedTitle listing={listing} className="lg:text-xl" />
         </div>
 
-        {/* Translated Description */}
-        <TranslatedDescription listing={listing} maxLines={6} />
+        {/* Translated Description — skeleton until detail API loads */}
+        {detailLoaded ? (
+          <TranslatedDescription listing={listing} maxLines={6} />
+        ) : (
+          <div className="px-4 py-3 lg:px-5 space-y-2 animate-pulse">
+            <div className="h-4 bg-muted/20 rounded w-full" />
+            <div className="h-4 bg-muted/20 rounded w-5/6" />
+            <div className="h-4 bg-muted/20 rounded w-4/6" />
+          </div>
+        )}
 
         {/* Admin: Score Inspector + Manual Yuhinkai Connection Widget */}
         {isAdmin && (

@@ -103,6 +103,7 @@ export function QuickViewMobileSheet({
 
   // Inquiry modal state
   const quickView = useQuickViewOptional();
+  const detailLoaded = quickView?.detailLoaded ?? true;
   const activityTracker = useActivityTrackerOptional();
   const [isInquiryModalOpen, setIsInquiryModalOpen] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -636,8 +637,16 @@ export function QuickViewMobileSheet({
               <TranslatedTitle listing={listing} />
             </div>
 
-            {/* Description */}
-            <TranslatedDescription listing={listing} maxLines={12} />
+            {/* Description — skeleton until detail API loads */}
+            {detailLoaded ? (
+              <TranslatedDescription listing={listing} maxLines={12} />
+            ) : (
+              <div className="px-4 py-3 space-y-2 animate-pulse">
+                <div className="h-4 bg-muted/20 rounded w-full" />
+                <div className="h-4 bg-muted/20 rounded w-5/6" />
+                <div className="h-4 bg-muted/20 rounded w-4/6" />
+              </div>
+            )}
           </div>
 
           {/* Sticky CTA - extra padding for iOS browser chrome */}

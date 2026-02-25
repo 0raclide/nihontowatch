@@ -57,6 +57,8 @@ interface QuickViewContextType {
   /** Refresh the current listing data from the API (e.g., after admin changes)
    *  Accepts optional partial listing fields for optimistic update (instant UI feedback) */
   refreshCurrentListing: (optimisticFields?: Partial<Listing>) => Promise<void>;
+  /** Whether the detail API has loaded for the current listing (false = showing browse skeleton data) */
+  detailLoaded: boolean;
 }
 
 // ============================================================================
@@ -117,6 +119,7 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
   const [listings, setListingsState] = useState<Listing[]>([]);
   const [currentIndex, setCurrentIndex] = useState(-1);
   const [isAlertMode, setIsAlertMode] = useState(false);
+  const [detailLoaded, setDetailLoaded] = useState(false);
 
   // Cooldown to prevent immediate re-opening after close
   const closeCooldown = useRef(false);
@@ -194,6 +197,7 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
     setCurrentListing(mappedListing);
     setIsOpen(true);
     setCurrentIndex(index);
+    setDetailLoaded(!!options?.skipFetch); // Already loaded if caller pre-fetched
 
     // Push a history entry so browser back closes the modal instead of leaving the page.
     // Only push if no ?listing= currently in URL — avoids double-push on deep links
@@ -227,6 +231,7 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
               return newListings;
             });
           }
+          setDetailLoaded(true);
         }
       });
     }
@@ -286,6 +291,7 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
 
     setCurrentListing(nextListing);
     setCurrentIndex(nextIndex);
+    setDetailLoaded(false);
 
     updateUrl(nextListing.id);
 
@@ -298,6 +304,7 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
           newListings[nextIndex] = mergeDetailIntoListing(prev[nextIndex], fullListing);
           return newListings;
         });
+        setDetailLoaded(true);
       }
     });
   }, [listings, currentIndex, updateUrl, fetchFullListing]);
@@ -311,6 +318,7 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
 
     setCurrentListing(prevListing);
     setCurrentIndex(prevIndex);
+    setDetailLoaded(false);
 
     updateUrl(prevListing.id);
 
@@ -323,6 +331,7 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
           newListings[prevIndex] = mergeDetailIntoListing(prev[prevIndex], fullListing);
           return newListings;
         });
+        setDetailLoaded(true);
       }
     });
   }, [listings, currentIndex, updateUrl, fetchFullListing]);
@@ -557,6 +566,7 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
       isAlertMode,
       setAlertMode,
       refreshCurrentListing,
+      detailLoaded,
     }),
     [
       isOpen,
@@ -574,6 +584,7 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
       isAlertMode,
       setAlertMode,
       refreshCurrentListing,
+      detailLoaded,
     ]
   );
 
