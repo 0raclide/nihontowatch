@@ -64,6 +64,11 @@ export interface ArtisanEntity {
   elite_count: number;
   elite_factor: number;
 
+  // School FK (from artisan_makers.school_id → artisan_schools)
+  school_code: string | null;      // NS-* code for linking (null when no FK or IS a school)
+  school_kanji: string | null;     // e.g., "鵜飼" (null when no FK)
+  school_tradition: string | null; // e.g., "Bizen-den" (null when no FK)
+
   // Provenance
   provenance_factor: number | null;
   provenance_count: number | null;
@@ -78,6 +83,17 @@ export interface ArtisanEntity {
  */
 function domainToEntityType(domain: string): 'smith' | 'tosogu' {
   return domain === 'tosogu' ? 'tosogu' : 'smith';
+}
+
+/**
+ * Extract the canonical school name from a Supabase row with an FK join to artisan_schools.
+ * Falls back to legacy_school_text when school_id is NULL (508 makers without FK).
+ * Single source of truth — avoids repeating the join extraction + fallback pattern.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function resolveSchoolName(row: any): string | null {
+  const joined = row.artisan_schools as unknown as { name_romaji: string } | null;
+  return joined?.name_romaji ?? row.legacy_school_text ?? null;
 }
 
 /**
@@ -96,7 +112,7 @@ export async function getArtisan(code: string): Promise<ArtisanEntity | null> {
     // School codes live in artisan_schools
     const { data, error } = await yuhinkaiClient
       .from('artisan_schools')
-      .select('school_id, name_romaji, name_kanji, domain, province, era_start, kokuho_count, jubun_count, jubi_count, gyobutsu_count, tokuju_count, juyo_count, total_items, elite_count, elite_factor, provenance_factor, provenance_count, provenance_apex')
+      .select('school_id, name_romaji, name_kanji, domain, province, era_start, tradition, kokuho_count, jubun_count, jubi_count, gyobutsu_count, tokuju_count, juyo_count, total_items, elite_count, elite_factor, provenance_factor, provenance_count, provenance_apex')
       .eq('school_id', code)
       .single();
 
@@ -108,6 +124,9 @@ export async function getArtisan(code: string): Promise<ArtisanEntity | null> {
       name_romaji: data.name_romaji,
       province: data.province,
       school: data.name_romaji,   // school name IS the name for school codes
+      school_code: null,           // self-referential — no link to self
+      school_kanji: null,          // redundant with name_kanji for school codes
+      school_tradition: data.tradition ?? null,
       era: data.era_start,
       period: null,
       generation: null,
@@ -138,18 +157,23 @@ export async function getArtisan(code: string): Promise<ArtisanEntity | null> {
   // Individual makers in artisan_makers
   const { data, error } = await yuhinkaiClient
     .from('artisan_makers')
-    .select('maker_id, name_romaji, name_kanji, domain, province, era, period, generation, teacher_text, teacher_id, legacy_school_text, hawley, fujishiro, toko_taikan, specialties, kokuho_count, jubun_count, jubi_count, gyobutsu_count, tokuju_count, juyo_count, total_items, elite_count, elite_factor, provenance_factor, provenance_count, provenance_apex')
+    .select('maker_id, name_romaji, name_kanji, domain, province, era, period, generation, teacher_text, teacher_id, legacy_school_text, school_id, artisan_schools(school_id, name_romaji, name_kanji, tradition), hawley, fujishiro, toko_taikan, specialties, kokuho_count, jubun_count, jubi_count, gyobutsu_count, tokuju_count, juyo_count, total_items, elite_count, elite_factor, provenance_factor, provenance_count, provenance_apex')
     .eq('maker_id', code)
     .single();
 
   if (error || !data) return null;
+
+  const joinedSchool = data.artisan_schools as unknown as { school_id: string; name_romaji: string; name_kanji: string | null; tradition: string | null } | null;
 
   return {
     maker_id: data.maker_id,
     name_kanji: data.name_kanji,
     name_romaji: data.name_romaji,
     province: data.province,
-    school: data.legacy_school_text,
+    school: joinedSchool?.name_romaji ?? data.legacy_school_text,
+    school_code: joinedSchool?.school_id ?? null,
+    school_kanji: joinedSchool?.name_kanji ?? null,
+    school_tradition: joinedSchool?.tradition ?? null,
     era: data.era,
     period: data.period,
     generation: data.generation,
@@ -266,7 +290,7 @@ export async function getArtisanNames(
   if (codes.length === 0) return result;
 
   const BATCH_SIZE = 200;
-  const selectFields = 'maker_id, name_romaji, name_kanji, legacy_school_text, kokuho_count, jubun_count, jubi_count, gyobutsu_count, tokuju_count, juyo_count';
+  const selectFields = 'maker_id, name_romaji, name_kanji, legacy_school_text, artisan_schools(name_romaji), kokuho_count, jubun_count, jubi_count, gyobutsu_count, tokuju_count, juyo_count';
 
   // Split codes: NS-* go to artisan_schools, others to artisan_makers
   const nsCodes = codes.filter(c => c.startsWith('NS-'));
@@ -283,7 +307,7 @@ export async function getArtisanNames(
       result.set(row.maker_id, {
         name_romaji: row.name_romaji,
         name_kanji: row.name_kanji || null,
-        school: row.legacy_school_text,
+        school: resolveSchoolName(row),
         kokuho_count: row.kokuho_count || 0,
         jubun_count: row.jubun_count || 0,
         jubi_count: row.jubi_count || 0,
@@ -339,7 +363,7 @@ export interface ArtisanStub {
  * 3. Fallback: artisan_makers WHERE teacher_text = nameRomaji (for sparse data)
  */
 export async function getStudents(code: string, nameRomaji: string | null): Promise<RelatedArtisan[]> {
-  const selectFields = 'maker_id, name_romaji, name_kanji, legacy_school_text, kokuho_count, jubun_count, jubi_count, gyobutsu_count, juyo_count, tokuju_count, elite_factor';
+  const selectFields = 'maker_id, name_romaji, name_kanji, legacy_school_text, artisan_schools(name_romaji), kokuho_count, jubun_count, jubi_count, gyobutsu_count, juyo_count, tokuju_count, elite_factor';
 
   // 1. Query artisan_teacher_links junction table
   const { data: links } = await yuhinkaiClient
@@ -364,7 +388,7 @@ export async function getStudents(code: string, nameRomaji: string | null): Prom
         code: s.maker_id,
         name_romaji: s.name_romaji,
         name_kanji: s.name_kanji,
-        school: s.legacy_school_text,
+        school: resolveSchoolName(s),
         kokuho_count: s.kokuho_count || 0,
         jubun_count: s.jubun_count || 0,
         jubi_count: s.jubi_count || 0,
@@ -392,7 +416,7 @@ export async function getStudents(code: string, nameRomaji: string | null): Prom
           code: s.maker_id,
           name_romaji: s.name_romaji,
           name_kanji: s.name_kanji,
-          school: s.legacy_school_text,
+          school: resolveSchoolName(s),
           kokuho_count: s.kokuho_count || 0,
           jubun_count: s.jubun_count || 0,
           jubi_count: s.jubi_count || 0,
@@ -419,7 +443,7 @@ export async function getStudents(code: string, nameRomaji: string | null): Prom
             code: s.maker_id,
             name_romaji: s.name_romaji,
             name_kanji: s.name_kanji,
-            school: s.legacy_school_text,
+            school: resolveSchoolName(s),
             kokuho_count: s.kokuho_count || 0,
             jubun_count: s.jubun_count || 0,
             jubi_count: s.jubi_count || 0,
@@ -461,39 +485,51 @@ export interface RelatedArtisan {
 /**
  * Find related artisans in the same school, ordered by elite_factor descending.
  * Excludes the artisan itself. Uses artisan_makers with domain filter.
+ * Prefers school_id FK filter when available, falls back to legacy_school_text.
  */
 export async function getRelatedArtisans(
   code: string,
   school: string | null,
-  entityType: 'smith' | 'tosogu'
+  entityType: 'smith' | 'tosogu',
+  schoolCode?: string | null
 ): Promise<RelatedArtisan[]> {
-  if (!school) return [];
+  if (!school && !schoolCode) return [];
 
   const domainFilter = getDomainFilter(entityType);
 
-  const { data } = await yuhinkaiClient
+  let query = yuhinkaiClient
     .from('artisan_makers')
-    .select('maker_id, name_romaji, name_kanji, legacy_school_text, kokuho_count, jubun_count, jubi_count, gyobutsu_count, juyo_count, tokuju_count, elite_factor')
-    .eq('legacy_school_text', school)
+    .select('maker_id, name_romaji, name_kanji, legacy_school_text, artisan_schools(name_romaji), kokuho_count, jubun_count, jubi_count, gyobutsu_count, juyo_count, tokuju_count, elite_factor');
+
+  // Prefer FK filter for accurate school membership
+  if (schoolCode) {
+    query = query.eq('school_id', schoolCode);
+  } else {
+    query = query.eq('legacy_school_text', school!);
+  }
+
+  const { data } = await query
     .neq('maker_id', code)
     .in('domain', domainFilter)
     .gt('total_items', 0)
     .order('elite_factor', { ascending: false })
     .limit(12);
 
-  return (data || []).map(r => ({
-    code: r.maker_id,
-    name_romaji: r.name_romaji,
-    name_kanji: r.name_kanji,
-    school: r.legacy_school_text,
-    kokuho_count: r.kokuho_count || 0,
-    jubun_count: r.jubun_count || 0,
-    jubi_count: r.jubi_count || 0,
-    gyobutsu_count: r.gyobutsu_count || 0,
-    juyo_count: r.juyo_count || 0,
-    tokuju_count: r.tokuju_count || 0,
-    elite_factor: r.elite_factor || 0,
-  }));
+  return (data || []).map(r => {
+    return {
+      code: r.maker_id,
+      name_romaji: r.name_romaji,
+      name_kanji: r.name_kanji,
+      school: resolveSchoolName(r),
+      kokuho_count: r.kokuho_count || 0,
+      jubun_count: r.jubun_count || 0,
+      jubi_count: r.jubi_count || 0,
+      gyobutsu_count: r.gyobutsu_count || 0,
+      juyo_count: r.juyo_count || 0,
+      tokuju_count: r.tokuju_count || 0,
+      elite_factor: r.elite_factor || 0,
+    };
+  });
 }
 
 // =============================================================================
@@ -980,7 +1016,7 @@ export async function getArtistsForDirectory(
 
   let query = yuhinkaiClient
     .from('artisan_makers')
-    .select('maker_id, name_romaji, name_kanji, legacy_school_text, province, era, kokuho_count, jubun_count, jubi_count, gyobutsu_count, tokuju_count, juyo_count, total_items, elite_factor, provenance_factor', { count: 'exact' })
+    .select('maker_id, name_romaji, name_kanji, legacy_school_text, artisan_schools(name_romaji), province, era, kokuho_count, jubun_count, jubi_count, gyobutsu_count, tokuju_count, juyo_count, total_items, elite_factor, provenance_factor', { count: 'exact' })
     .in('domain', domainFilter);
 
   if (notable) query = query.gt('total_items', 0);
@@ -1012,25 +1048,27 @@ export async function getArtistsForDirectory(
     return { artists: [], total: 0 };
   }
 
-  const artists: ArtistDirectoryEntry[] = (data || []).map((row: Record<string, unknown>) => ({
-    code: row.maker_id as string,
-    name_romaji: row.name_romaji as string | null,
-    name_kanji: row.name_kanji as string | null,
-    school: row.legacy_school_text as string | null,
-    province: row.province as string | null,
-    era: row.era as string | null,
-    entity_type: entityType,
-    kokuho_count: (row.kokuho_count as number) || 0,
-    jubun_count: (row.jubun_count as number) || 0,
-    jubi_count: (row.jubi_count as number) || 0,
-    gyobutsu_count: (row.gyobutsu_count as number) || 0,
-    tokuju_count: (row.tokuju_count as number) || 0,
-    juyo_count: (row.juyo_count as number) || 0,
-    total_items: (row.total_items as number) || 0,
-    elite_factor: (row.elite_factor as number) || 0,
-    provenance_factor: (row.provenance_factor as number) ?? null,
-    is_school_code: false,
-  }));
+  const artists: ArtistDirectoryEntry[] = (data || []).map((row: Record<string, unknown>) => {
+    return {
+      code: row.maker_id as string,
+      name_romaji: row.name_romaji as string | null,
+      name_kanji: row.name_kanji as string | null,
+      school: resolveSchoolName(row),
+      province: row.province as string | null,
+      era: row.era as string | null,
+      entity_type: entityType,
+      kokuho_count: (row.kokuho_count as number) || 0,
+      jubun_count: (row.jubun_count as number) || 0,
+      jubi_count: (row.jubi_count as number) || 0,
+      gyobutsu_count: (row.gyobutsu_count as number) || 0,
+      tokuju_count: (row.tokuju_count as number) || 0,
+      juyo_count: (row.juyo_count as number) || 0,
+      total_items: (row.total_items as number) || 0,
+      elite_factor: (row.elite_factor as number) || 0,
+      provenance_factor: (row.provenance_factor as number) ?? null,
+      is_school_code: false,
+    };
+  });
 
   return { artists, total: count || 0 };
 }
@@ -1076,7 +1114,7 @@ export async function getFilteredArtistsByCodes(
     const batch = makerCodes.slice(i, i + BATCH_SIZE);
     let query = yuhinkaiClient
       .from('artisan_makers')
-      .select('maker_id, name_romaji, name_kanji, legacy_school_text, province, era, kokuho_count, jubun_count, jubi_count, gyobutsu_count, tokuju_count, juyo_count, total_items, elite_factor, provenance_factor')
+      .select('maker_id, name_romaji, name_kanji, legacy_school_text, artisan_schools(name_romaji), province, era, kokuho_count, jubun_count, jubi_count, gyobutsu_count, tokuju_count, juyo_count, total_items, elite_factor, provenance_factor')
       .in('maker_id', batch)
       .in('domain', domainFilter);
 
@@ -1107,7 +1145,7 @@ export async function getFilteredArtistsByCodes(
         code: row.maker_id as string,
         name_romaji: row.name_romaji as string | null,
         name_kanji: row.name_kanji as string | null,
-        school: row.legacy_school_text as string | null,
+        school: resolveSchoolName(row),
         province: row.province as string | null,
         era: row.era as string | null,
         entity_type: entityType,
@@ -2384,4 +2422,35 @@ export async function getDenraiGrouped(
   // Sort groups by totalCount desc
   groups.sort((a, b) => b.totalCount - a.totalCount);
   return groups;
+}
+
+// =============================================================================
+// SCHOOL ANCESTRY (breadcrumb path from root school to leaf)
+// =============================================================================
+
+export interface SchoolAncestryEntry {
+  school_id: string;
+  name_romaji: string;
+  name_kanji: string | null;
+  depth: number;
+}
+
+/**
+ * Walk the artisan_schools parent_school_id chain and return the full breadcrumb
+ * path from root to leaf. Uses the `get_school_ancestry` RPC (migration 419).
+ * Returns empty array on error or unknown school.
+ */
+export async function getSchoolAncestry(schoolId: string): Promise<SchoolAncestryEntry[]> {
+  if (!yuhinkaiConfigured || !schoolId) return [];
+
+  try {
+    const { data, error } = await yuhinkaiClient
+      .rpc('get_school_ancestry', { p_school_id: schoolId });
+
+    if (error || !data) return [];
+
+    return (data as SchoolAncestryEntry[]).sort((a, b) => a.depth - b.depth);
+  } catch {
+    return [];
+  }
 }

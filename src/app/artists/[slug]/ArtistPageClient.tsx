@@ -420,7 +420,30 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
                   {entity.school && (
                     <>
                       <span className="text-ink/50">{t('artist.school')}</span>
-                      <span className="text-ink">{entity.school}</span>
+                      {data.schoolAncestry && data.schoolAncestry.length > 1 ? (
+                        <span className="text-ink">
+                          {data.schoolAncestry.map((s, i) => (
+                            <span key={s.code}>
+                              {i > 0 && <span className="text-ink/30 mx-1">{'>'}</span>}
+                              <Link href={`/artists/${s.code}`} className="hover:text-gold transition-colors">
+                                {locale === 'ja' && s.name_kanji ? s.name_kanji : s.name_romaji}
+                              </Link>
+                            </span>
+                          ))}
+                        </span>
+                      ) : entity.school_code ? (
+                        <Link href={`/artists/${entity.school_code}`} className="text-ink hover:text-gold transition-colors">
+                          {entity.school}
+                        </Link>
+                      ) : (
+                        <span className="text-ink">{entity.school}</span>
+                      )}
+                    </>
+                  )}
+                  {entity.school_tradition && (
+                    <>
+                      <span className="text-ink/50">{t('artist.tradition')}</span>
+                      <span className="text-ink">{entity.school_tradition}</span>
                     </>
                   )}
                   {entity.generation && (

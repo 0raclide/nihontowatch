@@ -21,6 +21,7 @@ export async function buildArtistPageData(code: string): Promise<ArtisanPageResp
     getArtisanDistributions,
     getHeroImageForDetailPage,
     getPublishedCatalogueEntries,
+    getSchoolAncestry,
   } = await import('@/lib/supabase/yuhinkai');
 
   const entity = await getArtisan(code);
@@ -35,11 +36,11 @@ export async function buildArtistPageData(code: string): Promise<ArtisanPageResp
   const slug = generateArtisanSlug(entity.name_romaji, entityCode);
 
   // Fetch all enrichment data in parallel
-  const [aiDescription, students, related, elitePercentile, provenancePercentile, tokoTaikanPercentile, teacherStub, denraiResult, heroImage, catalogueEntries] =
+  const [aiDescription, students, related, elitePercentile, provenancePercentile, tokoTaikanPercentile, teacherStub, denraiResult, heroImage, catalogueEntries, schoolAncestryRaw] =
     await Promise.all([
       getAiDescription(entityCode),
       getStudents(entityCode, entity.name_romaji),
-      getRelatedArtisans(entityCode, entity.school, entityType),
+      getRelatedArtisans(entityCode, entity.school, entityType, entity.school_code),
       getElitePercentile(eliteFactor, entityType),
       provenanceFactor != null
         ? getProvenancePercentile(provenanceFactor, entityType)
@@ -51,6 +52,9 @@ export async function buildArtistPageData(code: string): Promise<ArtisanPageResp
       getDenraiForArtisan(entityCode, entityType),
       getHeroImageForDetailPage(entityCode, entityType),
       getPublishedCatalogueEntries(entityCode, entityType),
+      entity.school_code
+        ? getSchoolAncestry(entity.school_code)
+        : Promise.resolve([]),
     ]);
 
   // Compute grouped denrai from precomputed result (no extra DB queries)
@@ -90,6 +94,9 @@ export async function buildArtistPageData(code: string): Promise<ArtisanPageResp
       name_romaji: entity.name_romaji,
       name_kanji: entity.name_kanji,
       school: entity.school,
+      school_code: entity.school_code,
+      school_kanji: entity.school_kanji,
+      school_tradition: entity.school_tradition,
       province: entity.province,
       era: entity.era,
       period: entity.period,
@@ -166,6 +173,9 @@ export async function buildArtistPageData(code: string): Promise<ArtisanPageResp
       elite_factor: r.elite_factor,
       available_count: listingCountMap.get(r.code) || 0,
     })),
+    schoolAncestry: schoolAncestryRaw.length > 1
+      ? schoolAncestryRaw.map(s => ({ code: s.school_id, name_romaji: s.name_romaji, name_kanji: s.name_kanji }))
+      : undefined,
     denrai: denraiResult.owners,
     denraiGrouped,
     heroImage,

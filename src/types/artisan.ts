@@ -9,6 +9,9 @@ export interface ArtisanPageResponse {
     name_romaji: string | null;
     name_kanji: string | null;
     school: string | null;
+    school_code: string | null;
+    school_kanji: string | null;
+    school_tradition: string | null;
     province: string | null;
     era: string | null;
     period: string | null;
@@ -99,6 +102,7 @@ export interface ArtisanPageResponse {
     children: Array<{ owner: string; owner_ja: string | null; count: number }>;
     isGroup: boolean;
   }>;
+  schoolAncestry?: Array<{ code: string; name_romaji: string; name_kanji: string | null }>;
   heroImage: {
     imageUrl: string;
     collection: string;
