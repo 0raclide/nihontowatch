@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
 import { useLocale } from '@/i18n/LocaleContext';
 import {
   PROVENANCE_TIERS,
@@ -347,6 +348,11 @@ export function ProvenanceFactorDisplay({ analysis, entityType, percentile: dbPe
             <p>{t('artist.provenanceExplanation1')}</p>
             <p>{t('artist.provenanceExplanation2')}</p>
             <p>{t('artist.provenanceExplanation3', { pct: topPct, peers: peerLabel })}</p>
+            <p>
+              <Link href="/eliteranking" className="text-gold/70 hover:text-gold transition-colors">
+                {t('artist.readMethodology')}
+              </Link>
+            </p>
           </div>
 
           {/* Histogram */}
