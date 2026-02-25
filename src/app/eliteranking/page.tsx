@@ -5,6 +5,7 @@ import fs from 'fs';
 import path from 'path';
 import { Footer } from '@/components/layout/Footer';
 import { EliteRankingContent } from './EliteRankingContent';
+import { MethodologyFigures } from './MethodologyFigures';
 
 const methodologyContent = fs.readFileSync(
   path.join(process.cwd(), 'src/app/eliteranking/methodology.md'),
@@ -32,6 +33,7 @@ const TOC = [
   { href: '#part-iii-current-rankings', label: 'III. Rankings' },
   { href: '#part-iv-how-the-two-metrics-relate', label: 'IV. Relationship' },
   { href: '#part-v-statistical-notes', label: 'V. Statistics' },
+  { href: '#figures', label: 'Figures' },
   { href: '#appendix-implementation-reference', label: 'Appendix' },
 ];
 
@@ -96,6 +98,12 @@ export default function EliteRankingPage() {
       {/* Article body */}
       <main className="flex-1 max-w-3xl mx-auto px-4 py-8 lg:py-14 w-full">
         <EliteRankingContent content={methodologyContent} />
+
+        {/* Interactive figures */}
+        <section id="figures" className="prose-methodology mt-16 pt-8 border-t border-border-subtle">
+          <h2>Figures</h2>
+          <MethodologyFigures />
+        </section>
       </main>
 
       <Footer />

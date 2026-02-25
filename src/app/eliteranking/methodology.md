@@ -399,7 +399,7 @@ The elite factor and provenance factor are **independent measures**. They are no
 
 - **Zero elite, high provenance.** Goto Sojo has zero elite designations but the highest provenance factor among tosogu artists. His works were collected by shoguns — but the NBTHK has not elevated them to Tokubetsu-Juyo or higher.
 
-These divergences are features, not bugs. A single combined score would obscure exactly the distinctions that make the ranking system informative.
+These divergences are features, not bugs. A single combined score would obscure exactly the distinctions that make the ranking system informative. Figures 1 and 2 (below) visualize this relationship across all artisans with documented provenance.
 
 ### Percentile Computation
 
