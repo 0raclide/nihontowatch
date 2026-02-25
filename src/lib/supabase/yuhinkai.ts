@@ -608,7 +608,8 @@ export async function getEliteDistribution(
     .from('artisan_makers')
     .select('elite_factor')
     .in('domain', domainFilter)
-    .gt('total_items', 0);
+    .gt('total_items', 0)
+    .range(0, 14999);
 
   if (error || !data) {
     console.error('[Yuhinkai] Error fetching elite distribution:', error);
@@ -639,7 +640,8 @@ export async function getProvenanceDistribution(
     .from('artisan_makers')
     .select('provenance_factor')
     .in('domain', domainFilter)
-    .not('provenance_factor', 'is', null);
+    .not('provenance_factor', 'is', null)
+    .range(0, 14999);
 
   if (error || !data) {
     console.error('[Yuhinkai] Error fetching provenance distribution:', error);

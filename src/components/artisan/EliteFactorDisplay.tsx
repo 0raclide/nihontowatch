@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useLocale } from '@/i18n/LocaleContext';
 
 /**
@@ -37,25 +37,9 @@ function EliteHistogram({
   let lastNonZero = buckets.length - 1;
   while (lastNonZero > 0 && buckets[lastNonZero] === 0) lastNonZero--;
   // Show at least up to the artisan's bucket + a little margin, min 10 buckets
-  const rawActiveBucket = Math.min(Math.floor(eliteFactor * 100), 99);
-  const visibleCount = Math.max(lastNonZero + 2, rawActiveBucket + 3, 10);
-
-  // Re-bin into wider buckets when range is large to avoid sparse gaps
-  const binSize = Math.max(1, Math.ceil(visibleCount / 25));
-  const activeBucket = Math.floor(rawActiveBucket / binSize);
-
-  const visible = useMemo(() => {
-    const rawVisible = buckets.slice(0, visibleCount);
-    const rebinned: number[] = [];
-    for (let i = 0; i < rawVisible.length; i += binSize) {
-      let sum = 0;
-      for (let j = i; j < Math.min(i + binSize, rawVisible.length); j++) {
-        sum += rawVisible[j];
-      }
-      rebinned.push(sum);
-    }
-    return rebinned;
-  }, [buckets, visibleCount, binSize]);
+  const activeBucket = Math.min(Math.floor(eliteFactor * 100), 99);
+  const visibleCount = Math.max(lastNonZero + 2, activeBucket + 3, 10);
+  const visible = buckets.slice(0, visibleCount);
 
   const maxCount = Math.max(...visible);
 
@@ -118,7 +102,7 @@ function EliteHistogram({
     ctx.fillText('0%', 0, h);
     ctx.textAlign = 'end';
     ctx.fillText(`${visibleCount}%`, w, h);
-  }, [visible, maxCount, activeBucket, visibleCount, binSize]);
+  }, [visible, maxCount, activeBucket, visibleCount]);
 
   return (
     <div className="mt-3">
