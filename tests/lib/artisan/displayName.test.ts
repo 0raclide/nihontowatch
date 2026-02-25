@@ -34,6 +34,7 @@ describe('getArtisanAlias()', () => {
     expect(getArtisanAlias('GOT042')).toBe('Goto Ichijo');
     expect(getArtisanAlias('OWA009')).toBe('Nobuie');
     expect(getArtisanAlias('WGO055')).toBe('Araki Tomei');
+    expect(getArtisanAlias('YOS1434')).toBe('Gō Yoshihiro');
   });
 
   it('returns null for unknown codes', () => {

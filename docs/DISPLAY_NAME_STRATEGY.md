@@ -49,6 +49,7 @@ These bypass all dedup rules. Used when the collector-standard name differs from
 | `KUN636` | Saburo Kunimune | Kunimune | Naomune | Known by personal name "Saburo", not school "Naomune" |
 | `GOT042` | Goto Ichijo | Gotō Ichijō | Ichijō / Waki-Gotō | Known as "Goto Ichijo", school prefix is redundant or wrong |
 | `OWA009` | Nobuie | Nobuie | Owari | Universally known as just "Nobuie"; "Owari" is province context, not part of name |
+| `YOS1434` | Gō Yoshihiro | Yoshihiro | Sōshū Gō | "Gō Yoshihiro" is the collector-standard name; "Soshu Gō Yoshihiro" confuses with Soshu Yoshihiro (a different smith) |
 
 ---
 
@@ -60,6 +61,7 @@ These bypass all dedup rules. Used when the collector-standard name differs from
 | 2026-02-20 | Added GOT042 alias | Goto Ichijo | Alias (commit f8670c8) |
 | 2026-02-20 | Added Rule 3c, fixed macron comparison | Goto Ichijo | Rule 3c + norm() export |
 | 2026-02-20 | Added OWA009 alias | Nobuie | Alias — strip "Owari" province prefix |
+| 2026-02-25 | Added YOS1434 alias | Gō Yoshihiro | Alias — "Sōshū Gō Yoshihiro" → "Gō Yoshihiro" (user report: confuses with Soshu Yoshihiro) |
 
 ---
 

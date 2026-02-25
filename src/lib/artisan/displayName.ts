@@ -53,6 +53,7 @@ const ARTISAN_ALIASES: Record<string, string> = {
   'GOT042': 'Goto Ichijo',          // Waki-Goto Goto Ichijo, commonly known as just "Goto Ichijo"
   'OWA009': 'Nobuie',               // Owari Nobuie, universally known as just "Nobuie"
   'WGO055': 'Araki Tomei',          // name_romaji="Tōmei", family name Araki (荒木) not in Yuhinkai fields
+  'YOS1434': 'Gō Yoshihiro',       // Sōshū Gō Yoshihiro — collectors call him "Gō Yoshihiro", NOT "Soshu Gō Yoshihiro" (which confuses with Soshu Yoshihiro, a different smith)
 };
 
 /** Return the well-known alias for an artisan, or null if none. */
