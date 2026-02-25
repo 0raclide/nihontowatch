@@ -128,8 +128,9 @@ export function computeQuality(listing: ListingScoreInput): number {
 
   // Price-based damping: cheap items with elite artisan matches are almost certainly
   // wrong attributions. Smooth ramp from 0% at ¥0 to 100% at ¥500K.
+  // NULL price (inquiry-based / "Ask") items bypass damping — they're typically expensive.
   const priceJpy = estimatePriceJpy(listing.price_value, listing.price_currency);
-  const priceDamping = Math.min(priceJpy / PRICE_DAMPING_CEILING_JPY, 1);
+  const priceDamping = listing.price_value ? Math.min(priceJpy / PRICE_DAMPING_CEILING_JPY, 1) : 1;
   const artisanStature = rawArtisanStature * priceDamping;
 
   const certPts = listing.cert_type ? (CERT_POINTS[listing.cert_type] ?? 0) : 0;
@@ -242,7 +243,7 @@ export function computeScoreBreakdown(listing: ListingScoreInput): ScoreBreakdow
 
   // Price-based damping (mirrors computeQuality)
   const priceJpy = estimatePriceJpy(listing.price_value, listing.price_currency);
-  const priceDamping = Math.min(priceJpy / PRICE_DAMPING_CEILING_JPY, 1);
+  const priceDamping = listing.price_value ? Math.min(priceJpy / PRICE_DAMPING_CEILING_JPY, 1) : 1;
   const artisanStature = rawStature * priceDamping;
 
   // Cert points
@@ -342,7 +343,7 @@ export const LISTING_SCORE_SELECT =
  * Fetch elite_factor and elite_count from Yuhinkai for an artisan code.
  * Checks artisan_makers first, then artisan_schools for NS-* codes.
  */
-async function getArtisanEliteStats(artisanCode: string): Promise<{ elite_factor: number; elite_count: number } | null> {
+export async function getArtisanEliteStats(artisanCode: string): Promise<{ elite_factor: number; elite_count: number } | null> {
   const { data: artisan } = await yuhinkaiClient
     .from('artisan_makers')
     .select('elite_factor, elite_count')

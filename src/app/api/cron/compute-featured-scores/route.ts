@@ -21,6 +21,8 @@ import {
   computeQuality,
   computeFreshness,
   imageCount,
+  getArtisanEliteStats,
+  IGNORE_ARTISAN_IDS,
   type ListingScoreInput,
 } from '@/lib/featured/scoring';
 
@@ -103,7 +105,61 @@ export async function GET(request: NextRequest) {
     });
 
     // ------------------------------------------------------------------
-    // 2. Process available listings in pages
+    // 2. Sync elite_factor for listings with artisan_id but NULL elite columns
+    // ------------------------------------------------------------------
+
+    {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: needSync, error: syncQueryErr } = await (supabase.from('listings') as any)
+        .select('id, artisan_id')
+        .eq('is_available', true)
+        .not('artisan_id', 'is', null)
+        .is('artisan_elite_factor', null)
+        .limit(500) as { data: { id: number; artisan_id: string }[] | null; error: unknown };
+
+      if (syncQueryErr) {
+        logger.error('[featured-scores] Error querying for elite sync', { error: syncQueryErr });
+      } else if (needSync && needSync.length > 0) {
+        // Deduplicate artisan IDs to minimize Yuhinkai queries
+        const uniqueArtisanIds = [...new Set(
+          needSync
+            .map(l => l.artisan_id)
+            .filter(id => !IGNORE_ARTISAN_IDS.has(id))
+        )];
+
+        const eliteCache = new Map<string, { elite_factor: number; elite_count: number }>();
+        await Promise.all(
+          uniqueArtisanIds.map(async (artisanId) => {
+            const stats = await getArtisanEliteStats(artisanId);
+            if (stats) eliteCache.set(artisanId, stats);
+          })
+        );
+
+        // Batch update listings with synced elite stats
+        let synced = 0;
+        for (const listing of needSync) {
+          const stats = eliteCache.get(listing.artisan_id);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          await (supabase.from('listings') as any)
+            .update({
+              artisan_elite_factor: stats?.elite_factor ?? 0,
+              artisan_elite_count: stats?.elite_count ?? 0,
+            })
+            .eq('id', listing.id);
+          synced++;
+        }
+
+        logger.info('[featured-scores] Elite factor sync', {
+          needSync: needSync.length,
+          uniqueArtisans: uniqueArtisanIds.length,
+          resolved: eliteCache.size,
+          synced,
+        });
+      }
+    }
+
+    // ------------------------------------------------------------------
+    // 3. Process available listings in pages
     // ------------------------------------------------------------------
 
     let totalProcessed = 0;
@@ -178,7 +234,7 @@ export async function GET(request: NextRequest) {
     }
 
     // ------------------------------------------------------------------
-    // 3. Zero out scores for non-available listings (sold/withdrawn)
+    // 4. Zero out scores for non-available listings (sold/withdrawn)
     //    Only update those that currently have a non-zero/non-null score
     // ------------------------------------------------------------------
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

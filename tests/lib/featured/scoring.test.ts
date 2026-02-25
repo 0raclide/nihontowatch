@@ -348,7 +348,7 @@ describe('computeQuality', () => {
       expect(quality).toBe(310);
     });
 
-    it('zero stature when no price (null)', () => {
+    it('full stature when no price (null) — inquiry-based items bypass damping', () => {
       const listing = baseListing({
         artisan_id: 'MAS590',
         artisan_elite_factor: 1.0,
@@ -357,8 +357,9 @@ describe('computeQuality', () => {
         price_currency: null,
       });
       const quality = computeQuality(listing);
-      // rawStature = 300, priceDamping = 0 (no price → priceJpy = 0)
-      expect(quality).toBe(0);
+      // rawStature = 300, priceDamping = 1.0 (NULL price bypasses damping)
+      // completeness: no price = 0
+      expect(quality).toBe(300);
     });
 
     it('converts USD price for damping', () => {
