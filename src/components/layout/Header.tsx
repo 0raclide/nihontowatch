@@ -26,6 +26,7 @@ function HeaderContent() {
   const loginParam = searchParams.get('login');
   const { t, locale } = useLocale();
   const isArtistPage = pathname.startsWith('/artists');
+  const isArtistDirectory = pathname === '/artists';
   const searchAction = isArtistPage ? '/artists' : '/';
   const searchPlaceholder = isArtistPage ? t('search.artistPlaceholder') : t('search.placeholder');
   const { user, profile, isLoading: authLoading, isAdmin } = useAuth();
@@ -211,10 +212,13 @@ function HeaderContent() {
       if (activity) {
         activity.trackSearch(trimmedQuery);
       }
-      // On /artists, dispatch to the client component directly (no router.push)
+      // On /artists directory, dispatch to the client component directly (no router.push)
       // so the sidebar's replaceState-managed filter state isn't lost.
-      if (isArtistPage) {
+      // On /artists/[slug] profile pages, navigate to the directory with the query.
+      if (isArtistDirectory) {
         window.dispatchEvent(new CustomEvent('artist-header-search', { detail: { q: trimmedQuery } }));
+      } else if (isArtistPage) {
+        router.push(`/artists?q=${encodeURIComponent(trimmedQuery)}`);
       } else {
         if (trimmedQuery !== currentQuery) {
           setIsSearching(true);
