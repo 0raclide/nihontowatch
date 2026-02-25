@@ -14,15 +14,15 @@ The dataset draws from seven source publications, each a multi-volume series of 
 
 | Publication | Japanese | Designating Body | Records | Coverage |
 |---|---|---|---|---|
-| Juyo Token Nado Zufu | 重要刀剣等図譜 | NBTHK | 15,230 | 70 sessions (1958–present) |
-| Tokubetsu Juyo Token Nado Zufu | 特別重要刀剣等図譜 | NBTHK | 1,341 | 27 sessions |
+| Juyo Token Nado Zufu | 重要刀剣等図譜 | NBTHK | 15,219 | 70 sessions (1958–present) |
+| Tokubetsu Juyo Token Nado Zufu | 特別重要刀剣等図譜 | NBTHK | 1,346 | 27 sessions |
 | Kokuho | 国宝 | Government of Japan | 122 | National Treasures |
 | Juyo Bunkazai | 重要文化財 | Government of Japan | 911 | Important Cultural Properties |
 | Gyobutsu | 御物 | Imperial Household Agency | 330 | Imperial Collection (2 vols.) |
-| Juyo Bijutsuhin | 重要美術品 | Pre-war government | ~396 | Pre-war designations (1933–1944) |
+| Juyo Bijutsuhin | 重要美術品 | Pre-war government | 1,089 | Pre-war designations (1933–1944) |
 | Jussi Ekholm Koto Database | — | Private research | 15,095 | Koto-era swords |
 
-These approximately 33,400 catalog records describe **23,849 unique physical objects** after deduplication (see § Deduplication below). The difference arises because a single sword may appear in multiple publications — a blade designated Juyo in 1975 and promoted to Tokubetsu Juyo in 1990 has entries in both the Juyo and Tokuju zufu. The Jussi Ekholm database, a comprehensive private research effort documenting koto-era swords with measurements and provenance, overlaps substantially with the NBTHK records for that period.
+These approximately 34,100 catalog records describe **25,472 unique physical objects** after deduplication (see § Deduplication below). The difference arises because a single sword may appear in multiple publications — a blade designated Juyo in 1975 and promoted to Tokubetsu Juyo in 1990 has entries in both the Juyo and Tokuju zufu. The Jussi Ekholm database, a comprehensive private research effort documenting koto-era swords with measurements and provenance, overlaps substantially with the NBTHK records for that period.
 
 ### What Each Record Contains
 
@@ -40,18 +40,18 @@ The structured fields were parsed from pre-structured source data produced durin
 
 Provenance records — documenting who owned each object across centuries — arrive in varied formats depending on the source publication. A unified extraction library normalizes all variants into flat lists of owner names.
 
-Raw owner names are inconsistent: the same collector may appear as "Tokugawa," "Tokugawa Family," "The Tokugawa," or "Former Tokugawa Collection." A canonical name table (635 entries) maps raw patterns to standardized forms and groups subsidiary names under parent entities:
+Raw owner names are inconsistent: the same collector may appear as "Tokugawa," "Tokugawa Family," "The Tokugawa," or "Former Tokugawa Collection." A canonical name table (nearly 2,000 mapping rules covering approximately 1,700 distinct collector names) maps raw patterns to standardized forms and groups subsidiary names under parent entities:
 
 > "Tokugawa Mitsukuni" → *Tokugawa Mitsukuni* → parent: *Tokugawa Family*
 > "Owari Tokugawa" → *Owari Tokugawa* → parent: *Tokugawa Family*
 
 This normalization is critical for the provenance factor. Without it, the same collector's holdings would be fragmented across spelling variants, understating the true pattern of distinguished ownership.
 
-Approximately 20% of the 23,849 physical objects have documented provenance. The provenance factor (Part II) scores only those items whose owners fall within the top four prestige tiers.
+Approximately 13% of the 25,472 physical objects have documented provenance. The provenance factor (Part II) scores only those items whose owners fall within the top four prestige tiers.
 
 ### Artisan Linking
 
-Each catalog record names its artisan as free text — "Masamune," "Den Masamune," "伝 正宗" — with no canonical identifier. The artisan matching pipeline links these text attributions to a curated directory of approximately 13,500 individual artisans and 198 school-level attributions (used when items are attributed to a tradition rather than a named individual).
+Each catalog record names its artisan as free text — "Masamune," "Den Masamune," "伝 正宗" — with no canonical identifier. The artisan matching pipeline links these text attributions to a curated directory of approximately 13,500 individual artisans and 206 school-level attributions (used when items are attributed to a tradition rather than a named individual).
 
 The production pipeline uses a three-stage approach: profile matching (comparing the item's attribution text, school, province, era, and kanji against all known artisan profiles), verification of ambiguous matches, and sibling consensus (checking whether multiple records describing the same physical object agree on attribution). The overall match rate is 96.6% — 99.0% for swords, 93.6% for tosogu fittings.
 
@@ -59,7 +59,7 @@ Artisan linking makes the elite factor and provenance factor possible. Without i
 
 ### Deduplication
 
-A single physical sword may have catalog entries from multiple publications. A blade by Nagamitsu, for instance, might appear in the Juyo zufu, the Tokuju zufu, and the Jussi Ekholm database — three records for one object. These sibling records are resolved into 23,849 unique physical objects. For each object, the best available data from all siblings is synthesized — preferring the highest-designation source for attribution but drawing measurements from any sibling that provides them.
+A single physical sword may have catalog entries from multiple publications. A blade by Nagamitsu, for instance, might appear in the Juyo zufu, the Tokuju zufu, and the Jussi Ekholm database — three records for one object. These sibling records are resolved into 25,472 unique physical objects. For each object, the best available data from all siblings is synthesized — preferring the highest-designation source for attribution but drawing measurements from any sibling that provides them.
 
 For ranking purposes, each physical object counts once regardless of how many catalog records describe it. This prevents double-counting that would inflate statistics for frequently published masterworks.
 
