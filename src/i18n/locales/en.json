@@ -731,7 +731,7 @@
   "artist.provenanceExplanation2": "Each documented owner is scored by historical rank: Imperial & Shogunal collections score highest, followed by premier daim\u0079\u014d houses (500,000+ koku) and major daim\u0079\u014d (200,000+ koku). Every provenance observation contributes to the weighted average\u2014works held only by lesser-known collectors dilute the score, rewarding both concentration and depth.",
   "artist.provenanceExplanation3": "The score is smoothed with a Bayesian prior so that artisans with only one or two documented provenances can\u2019t rank artificially high. This artisan places in the top {pct}% of all {peers} with documented provenance.",
   "artist.distributionAmong": "Distribution across {total} {peers} with {context}",
-  "artist.withRankedWorks": "ranked works",
+  "artist.withRankedWorks": "elite designations",
   "artist.withDocumentedProvenance": "documented provenance",
   "artist.koku": "{koku} koku",
   "artist.works": "{count} works",

@@ -731,7 +731,7 @@
   "artist.provenanceExplanation2": "各所有者は歴史的地位によってスコア化されます。皇室・将軍家のコレクションが最高点で、有力大名家（50万石以上）、大大名（20万石以上）と続きます。すべての伝来記録が加重平均に寄与し、無名のコレクターのみの作品はスコアを下げます。",
   "artist.provenanceExplanation3": "スコアはベイズ事前分布で平滑化されており、伝来記録が1〜2件しかない刀工が人為的に高ランクになることはありません。この刀工は伝来記録を持つすべての{peers}の中で上位{pct}%に位置します。",
   "artist.distributionAmong": "{total}名の{peers}における分布（{context}）",
-  "artist.withRankedWorks": "評価作品あり",
+  "artist.withRankedWorks": "重要指定あり",
   "artist.withDocumentedProvenance": "伝来記録あり",
   "artist.koku": "{koku}万石",
   "artist.works": "{count}点",

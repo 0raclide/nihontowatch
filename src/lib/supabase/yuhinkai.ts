@@ -604,7 +604,7 @@ export async function getEliteDistribution(
     .from('artisan_makers')
     .select('elite_factor')
     .in('domain', domainFilter)
-    .gt('total_items', 0)
+    .gt('elite_count', 0)
     .range(0, 14999);
 
   if (error || !data) {
