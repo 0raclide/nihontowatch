@@ -151,7 +151,7 @@ export function SectionJumpNav({ sections }: SectionJumpNavProps) {
       {/* ═══ LG+: Fixed left-margin sidebar — vertically centered ═══ */}
       <nav
         className="hidden lg:block fixed top-1/2 -translate-y-1/2 z-20"
-        style={{ left: 'max(16px, calc(50vw - 520px))' }}
+        style={{ left: 'max(16px, calc(50vw - 520px))', maxWidth: 'min(160px, calc(50vw - 406px))' }}
         aria-label={t('artist.sectionNavLabel')}
       >
         <div className="relative pl-3">
@@ -169,11 +169,12 @@ export function SectionJumpNav({ sections }: SectionJumpNavProps) {
                     e.preventDefault();
                     scrollToSection(section.id);
                   }}
-                  className={`relative block text-[10px] uppercase tracking-[0.16em] py-[5px] transition-colors duration-200 ${
+                  className={`relative block text-[10px] uppercase tracking-[0.16em] py-[5px] transition-colors duration-200 truncate ${
                     isActive
                       ? 'text-gold'
                       : 'text-ink/20 hover:text-ink/40'
                   }`}
+                  title={section.label}
                 >
                   {/* Active dot on the vertical rule */}
                   {isActive && (
