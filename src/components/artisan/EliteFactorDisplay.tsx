@@ -35,10 +35,20 @@ function EliteHistogram({
   const { t } = useLocale();
   const peerLabel = entityType === 'smith' ? t('artists.smiths') : t('artists.makers');
 
-  // Buckets now span [0, maxValue] adaptively — all 100 are meaningful
-  const activeBucket = Math.min(Math.floor((eliteFactor / maxValue) * 100), 99);
+  // Trim leading and trailing empty buckets for a tight view (same as provenance)
+  let firstNonZero = 0;
+  while (firstNonZero < buckets.length && buckets[firstNonZero] === 0) firstNonZero++;
+  let lastNonZero = buckets.length - 1;
+  while (lastNonZero > 0 && buckets[lastNonZero] === 0) lastNonZero--;
 
-  const maxCount = Math.max(...buckets);
+  const rawActiveBucket = Math.min(Math.floor((eliteFactor / maxValue) * 100), 99);
+  // Pad 1 bucket before first data, extend past last data / active bucket
+  const startBucket = Math.max(firstNonZero - 1, 0);
+  const endBucket = Math.min(Math.max(lastNonZero + 2, rawActiveBucket + 3), buckets.length);
+  const visible = buckets.slice(startBucket, endBucket);
+  const activeBucket = rawActiveBucket - startBucket; // index within visible slice
+
+  const maxCount = Math.max(...visible);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -55,14 +65,14 @@ function EliteHistogram({
 
     const w = rect.width;
     const h = rect.height;
-    const barW = w / buckets.length;
+    const barW = w / visible.length;
     const topPad = 12; // room for the marker above
 
     ctx.clearRect(0, 0, w, h);
 
     // Draw bars
-    for (let i = 0; i < buckets.length; i++) {
-      const count = buckets[i];
+    for (let i = 0; i < visible.length; i++) {
+      const count = visible[i];
       if (count === 0) continue;
 
       // Log scale for height
@@ -73,7 +83,6 @@ function EliteHistogram({
 
       const isActive = i === activeBucket;
 
-      // Get computed style colors
       ctx.fillStyle = isActive
         ? 'rgba(196, 164, 105, 0.8)'  // gold
         : 'rgba(128, 128, 128, 0.18)'; // neutral
@@ -91,16 +100,17 @@ function EliteHistogram({
     ctx.closePath();
     ctx.fill();
 
-    // Axis labels — right label shows actual max percentage
-    const maxPctLabel = `${Math.round(maxValue * 100)}%`;
+    // Axis labels — show actual percentage values for the visible range
+    const leftPct = (startBucket / 100) * maxValue * 100;
+    const rightPct = (endBucket / 100) * maxValue * 100;
     ctx.fillStyle = 'rgba(128, 128, 128, 0.35)';
     ctx.font = '9px system-ui, sans-serif';
     ctx.textBaseline = 'bottom';
     ctx.textAlign = 'start';
-    ctx.fillText('0%', 0, h);
+    ctx.fillText(`${leftPct.toFixed(1)}%`, 0, h);
     ctx.textAlign = 'end';
-    ctx.fillText(maxPctLabel, w, h);
-  }, [buckets, maxCount, activeBucket, maxValue]);
+    ctx.fillText(`${rightPct.toFixed(1)}%`, w, h);
+  }, [visible, maxCount, activeBucket, startBucket, endBucket, maxValue]);
 
   return (
     <div className="mt-3">
