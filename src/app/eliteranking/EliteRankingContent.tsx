@@ -54,7 +54,7 @@ The elite factor measures the proportion of an artisan's designated works that a
 | Gyobutsu | Imperial Collection (御物) | Elite\\* |
 | Juyo-Token | Important Sword (重要刀剣) | Standard |
 
-\\*Gyobutsu is excluded from the elite count for artisans active after 1392 (Muromachi period onward), where Imperial Collection status more often reflects political provenance than NBTHK-assessed quality.
+\\*Gyobutsu is excluded from the elite count for artisans active after 1392 (Muromachi period onward). From the Muromachi through Edo periods, swords entered the Imperial Collection primarily as tributary gifts from daimyo and shogunal households — a mark of the giver's political relationship to the throne, not an independent judgment of the blade's quality. Including these items would inflate elite rates for later artisans based on court diplomacy rather than NBTHK-caliber merit.
 
 The raw inputs are simply two integers: **elite count** (*e*) and **total designated works** (*n*).
 
