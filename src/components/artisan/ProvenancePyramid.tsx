@@ -258,13 +258,16 @@ interface ProvenanceFactorDisplayProps {
   dbFactor?: number | null;
 }
 
-/** Fallback percentile estimate when DB value not available */
+/** Fallback percentile estimate when DB value not available.
+ *  Thresholds calibrated to post-migration-424 distribution (max 5.21, floor ~1.77).
+ */
 function estimatePercentile(factor: number): number {
-  if (factor >= 8) return 99;
-  if (factor >= 6) return 95;
-  if (factor >= 4.5) return 85;
-  if (factor >= 3.5) return 70;
-  if (factor >= 2.5) return 50;
+  if (factor >= 4.5) return 99;
+  if (factor >= 3.5) return 97;
+  if (factor >= 3.0) return 95;
+  if (factor >= 2.5) return 88;
+  if (factor >= 2.2) return 75;
+  if (factor >= 2.0) return 50;
   return 30;
 }
 
