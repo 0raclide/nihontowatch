@@ -87,16 +87,33 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Protect /admin routes
-  if (request.nextUrl.pathname.startsWith('/admin')) {
+  // Protect /admin and /api/admin routes (single role query for both)
+  const pathname = request.nextUrl.pathname;
+  const isAdminPage = pathname.startsWith('/admin');
+  const isAdminApi = pathname.startsWith('/api/admin');
+
+  if (isAdminPage || isAdminApi) {
+    // Check API key bypass first (for /api/admin only)
+    if (isAdminApi) {
+      const cronSecret = process.env.CRON_SECRET;
+      const authHeader = request.headers.get('authorization');
+      const cronHeader = request.headers.get('x-cron-secret');
+      if (cronSecret && (authHeader === `Bearer ${cronSecret}` || cronHeader === cronSecret)) {
+        return supabaseResponse;
+      }
+    }
+
     if (!user) {
+      if (isAdminApi) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
       const url = request.nextUrl.clone();
       url.pathname = '/';
       url.searchParams.set('login', 'admin');
       return NextResponse.redirect(url);
     }
 
-    // Check if user is admin (using role column)
+    // Single role query for both /admin and /api/admin
     const { data: profile } = await supabase
       .from('profiles')
       .select('role')
@@ -104,42 +121,12 @@ export async function middleware(request: NextRequest) {
       .single() as { data: { role: string } | null; error: unknown };
 
     if (profile?.role !== 'admin') {
+      if (isAdminApi) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
       const url = request.nextUrl.clone();
       url.pathname = '/';
       return NextResponse.redirect(url);
-    }
-  }
-
-  // Protect /api/admin routes
-  if (request.nextUrl.pathname.startsWith('/api/admin')) {
-    // Allow API-key authenticated requests (webhooks from Yuhinkai)
-    const cronSecret = process.env.CRON_SECRET;
-    const authHeader = request.headers.get('authorization');
-    const cronHeader = request.headers.get('x-cron-secret');
-
-    const hasValidApiKey = cronSecret && (
-      authHeader === `Bearer ${cronSecret}` ||
-      cronHeader === cronSecret
-    );
-
-    if (hasValidApiKey) {
-      // API key auth - let the route handler process it
-      return supabaseResponse;
-    }
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Check if user is admin (using role column)
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single() as { data: { role: string } | null };
-
-    if (profile?.role !== 'admin') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
   }
 

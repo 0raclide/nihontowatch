@@ -266,7 +266,7 @@ export async function GET(request: NextRequest) {
   const japanDealers = dealers.filter((d) => getCountryRegion(getCountryFromDomain(d.domain)) === 'Japan').length;
   const internationalDealers = dealers.length - japanDealers;
 
-  return NextResponse.json({
+  const response = NextResponse.json({
     dealers: enrichedDealers,
     facets: {
       countries: [...countryCounts.entries()].map(([value, count]) => ({ value, count })),
@@ -280,4 +280,11 @@ export async function GET(request: NextRequest) {
       internationalDealers,
     },
   });
+
+  response.headers.set(
+    'Cache-Control',
+    'public, s-maxage=3600, stale-while-revalidate=86400'
+  );
+
+  return response;
 }
