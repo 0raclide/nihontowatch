@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "katex/dist/katex.min.css";
 
 /*
  * Nihontowatch - Theme System
@@ -1315,7 +1316,23 @@ html[lang="ja"] .prose-biography {
   border-radius: 0 6px 6px 0;
 }
 
-/* Equation blocks (pre > code) */
+/* Display math ($$...$$) — KaTeX rendered */
+.prose-methodology .katex-display {
+  margin: 2rem 0;
+  padding: 1.25rem 1.75rem;
+  background: var(--surface-elevated);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 6px 6px 0;
+  overflow-x: auto;
+}
+
+/* Inline math ($...$) — KaTeX rendered */
+.prose-methodology .katex {
+  font-size: 1.05em;
+  color: var(--text-primary);
+}
+
+/* Legacy equation blocks (pre > code) — kept for any remaining code blocks */
 .prose-methodology pre {
   margin: 2rem 0;
   padding: 1.5rem 1.75rem;

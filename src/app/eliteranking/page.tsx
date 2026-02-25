@@ -1,8 +1,15 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import Image from 'next/image';
+import fs from 'fs';
+import path from 'path';
 import { Footer } from '@/components/layout/Footer';
 import { EliteRankingContent } from './EliteRankingContent';
+
+const methodologyContent = fs.readFileSync(
+  path.join(process.cwd(), 'src/app/eliteranking/methodology.md'),
+  'utf-8'
+);
 
 export const metadata: Metadata = {
   title: 'Artist Ranking Methodology | NihontoWatch',
@@ -87,7 +94,7 @@ export default function EliteRankingPage() {
 
       {/* Article body */}
       <main className="flex-1 max-w-3xl mx-auto px-4 py-8 lg:py-14 w-full">
-        <EliteRankingContent />
+        <EliteRankingContent content={methodologyContent} />
       </main>
 
       <Footer />
