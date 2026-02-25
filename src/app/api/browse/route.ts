@@ -15,6 +15,7 @@ import {
   CERT_VARIANTS,
 } from '@/lib/constants';
 import { getArtisanNames, resolveArtisanCodesFromText } from '@/lib/supabase/yuhinkai';
+import { isSetsumeiEligibleCert } from '@/types';
 import { getArtisanDisplayName, getArtisanDisplayNameKanji, getArtisanAlias } from '@/lib/artisan/displayName';
 import { getArtisanTier } from '@/lib/artisan/tier';
 import { getAttributionName } from '@/lib/listing/attribution';
@@ -272,18 +273,11 @@ export async function GET(request: NextRequest) {
         sakihaba_cm,
         kasane_cm,
         weight_g,
-        description,
-        description_en,
-        description_ja,
         title_en,
         title_ja,
         setsumei_text_en,
-        setsumei_text_ja,
-        setsumei_metadata,
-        setsumei_processed_at,
         images,
         stored_images,
-        images_stored_at,
         first_seen_at,
         status_changed_at,
         last_scraped_at,
@@ -296,8 +290,6 @@ export async function GET(request: NextRequest) {
         dealer_id,
         artisan_id,
         artisan_confidence,
-        artisan_method,
-        artisan_candidates,
         artisan_verified,
         featured_score,
         focal_x,
@@ -699,13 +691,30 @@ export async function GET(request: NextRequest) {
 
     if (listings && listings.length > 0) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      enrichedListings = listings.map((listing: any) => ({
-        ...listing,
-        dealer_earliest_seen_at: listing.dealers?.earliest_listing_at || null,
-        sold_data: computeSoldData(listing),
-        // Normalize Supabase relation name to the key expected by hasSetsumeiData/hasVerifiedEnrichment
-        yuhinkai_enrichment: listing.listing_yuhinkai_enrichment?.[0] || null,
-      }));
+      enrichedListings = listings.map((listing: any) => {
+        const enrichment = listing.listing_yuhinkai_enrichment?.[0] || null;
+
+        // Compute has_setsumei boolean (replaces sending full setsumei_text_en + enrichment to client)
+        const has_setsumei = isSetsumeiEligibleCert(listing.cert_type) && (
+          !!listing.setsumei_text_en ||
+          !!(enrichment?.setsumei_en &&
+             enrichment.match_confidence === 'DEFINITIVE' &&
+             enrichment.connection_source === 'manual' &&
+             enrichment.verification_status === 'confirmed')
+        );
+
+        // Strip fields that were kept only for has_setsumei computation
+        const { setsumei_text_en, listing_yuhinkai_enrichment, ...slimListing } = listing;
+
+        return {
+          ...slimListing,
+          has_setsumei,
+          dealer_earliest_seen_at: listing.dealers?.earliest_listing_at || null,
+          sold_data: computeSoldData(listing),
+          // Keep normalized enrichment for QuickView merge (match_confidence, connection_source, verification_status)
+          yuhinkai_enrichment: enrichment,
+        };
+      });
 
       // Enrich listings with artisan display names from Yuhinkai
       // eslint-disable-next-line @typescript-eslint/no-explicit-any

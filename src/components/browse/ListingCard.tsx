@@ -38,7 +38,7 @@ interface SoldData {
   confidence: 'high' | 'medium' | 'low' | 'unknown';
 }
 
-// Yuhinkai enrichment data from browse API (subset for badge display)
+// Yuhinkai enrichment data (subset for badge display, from QuickView context merge)
 interface YuhinkaiEnrichmentBadge {
   setsumei_en: string | null;
   match_confidence: string | null;
@@ -73,9 +73,7 @@ interface Listing {
   is_sold: boolean;
   sold_data?: SoldData | null; // Sold item data with confidence
   setsumei_text_en?: string | null; // OCR-extracted NBTHK evaluation translation
-  // Yuhinkai enrichment from browse API (array from view, we use first if present)
-  listing_yuhinkai_enrichment?: YuhinkaiEnrichmentBadge[];
-  // Or single enrichment object (from QuickView context after optimistic update)
+  // Yuhinkai enrichment (single object from QuickView context merge)
   yuhinkai_enrichment?: YuhinkaiEnrichmentBadge | null;
   dealer_id: number;
   dealers: {
@@ -389,38 +387,17 @@ function formatPrice(
 
 /**
  * Check if a listing has English setsumei translation available.
- * Checks both OCR-extracted setsumei AND Yuhinkai enrichment.
- * Requires Juyo/Tokuju cert — prevents showing orphaned hallucinated setsumei.
+ * Prefers the browse API's precomputed `has_setsumei` boolean when available.
+ * Falls back to full check for detail-page data or QuickView context merges.
  */
 function hasSetsumeiTranslation(listing: Listing): boolean {
-  // Setsumei only exists for Juyo/Tokubetsu Juyo
-  if (!isSetsumeiEligibleCert(listing.cert_type)) {
-    return false;
-  }
+  // Fast path: browse API pre-computes this
+  if ('has_setsumei' in listing) return !!(listing as any).has_setsumei;
 
-  // Check OCR-extracted setsumei
-  if (listing.setsumei_text_en) {
-    return true;
-  }
+  // Legacy path: full listing data (detail page, QuickView after merge)
+  if (!isSetsumeiEligibleCert(listing.cert_type)) return false;
 
-  // Check Yuhinkai enrichment (from browse API - array)
-  const enrichmentArray = listing.listing_yuhinkai_enrichment;
-  if (enrichmentArray && enrichmentArray.length > 0) {
-    const enrichment = enrichmentArray[0];
-    // Must have setsumei_en, DEFINITIVE confidence, and valid verification
-    if (
-      enrichment.setsumei_en &&
-      enrichment.match_confidence === 'DEFINITIVE' &&
-      (enrichment.connection_source === 'manual'
-        ? enrichment.verification_status === 'confirmed'
-        : ['auto', 'confirmed'].includes(enrichment.verification_status || ''))
-    ) {
-      // Only show manual connections (auto-matcher not production-ready)
-      if (enrichment.connection_source === 'manual') {
-        return true;
-      }
-    }
-  }
+  if (listing.setsumei_text_en) return true;
 
   // Check Yuhinkai enrichment (from QuickView context - single object)
   const enrichment = listing.yuhinkai_enrichment;
@@ -965,8 +942,7 @@ export const ListingCard = memo(function ListingCard({
     prevProps.priority === nextProps.priority &&
     prevProps.showFavoriteButton === nextProps.showFavoriteButton &&
     prevProps.exchangeRates?.timestamp === nextProps.exchangeRates?.timestamp &&
-    prevProps.listing.setsumei_text_en === nextProps.listing.setsumei_text_en &&
-    prevProps.listing.listing_yuhinkai_enrichment?.length === nextProps.listing.listing_yuhinkai_enrichment?.length &&
+    (prevProps.listing as any).has_setsumei === (nextProps.listing as any).has_setsumei &&
     prevProps.listing.artisan_id === nextProps.listing.artisan_id &&
     prevProps.listing.artisan_display_name === nextProps.listing.artisan_display_name &&
     prevProps.listing.artisan_name_kanji === nextProps.listing.artisan_name_kanji &&

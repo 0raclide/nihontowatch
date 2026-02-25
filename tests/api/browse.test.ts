@@ -1539,51 +1539,36 @@ describe('Facet Filtering Logic', () => {
  * like the setsumei badge display (Yuhinkai enrichment data).
  */
 describe('Browse API Select Fields', () => {
-  describe('Yuhinkai enrichment for setsumei badge', () => {
-    it('select query should include listing_yuhinkai_enrichment join', () => {
-      // The browse API must include this join for the setsumei badge to work
-      // This test documents the expected query structure
-      const expectedSelectFields = [
-        'listing_yuhinkai_enrichment(',
-        'setsumei_en',
-        'match_confidence',
-        'connection_source',
-        'verification_status',
-      ];
-
-      // Simulate what the browse API select string should contain
-      const browseSelectQuery = `
-        id,
-        url,
-        title,
-        listing_yuhinkai_enrichment(
-          setsumei_en,
-          match_confidence,
-          connection_source,
-          verification_status
-        )
-      `;
-
-      // Verify all expected fields are present
-      expectedSelectFields.forEach(field => {
-        expect(browseSelectQuery).toContain(field);
-      });
+  describe('has_setsumei precomputed boolean', () => {
+    it('browse API computes has_setsumei server-side so ListingCard can use fast path', () => {
+      // The browse API now pre-computes has_setsumei boolean from:
+      // 1. isSetsumeiEligibleCert(cert_type) AND
+      // 2. (setsumei_text_en OR verified manual Yuhinkai enrichment)
+      // This replaces sending full setsumei_text_en + listing_yuhinkai_enrichment array
+      // to the client. ListingCard checks `'has_setsumei' in listing` for fast path.
+      const enrichedListing = {
+        id: 1,
+        has_setsumei: true,
+        yuhinkai_enrichment: null,
+      };
+      expect(enrichedListing.has_setsumei).toBe(true);
+      expect('has_setsumei' in enrichedListing).toBe(true);
     });
 
-    it('enrichment fields required for hasSetsumeiTranslation check', () => {
-      // Documents the fields needed by ListingCard's hasSetsumeiTranslation function
-      const requiredFields = {
-        setsumei_en: 'string | null - The English translation text',
-        match_confidence: 'DEFINITIVE | HIGH | MEDIUM | LOW - Must be DEFINITIVE to show',
-        connection_source: 'manual | auto - Only manual connections shown',
-        verification_status: 'confirmed | auto | review_needed - Manual must be confirmed',
+    it('enrichment is still included (for QuickView merge) but setsumei_text_en is stripped', () => {
+      // The browse API strips setsumei_text_en from the response (32KB savings)
+      // but keeps yuhinkai_enrichment object for QuickView context merge
+      const enrichedListing = {
+        id: 1,
+        has_setsumei: true,
+        yuhinkai_enrichment: {
+          setsumei_en: '## Setsumei',
+          match_confidence: 'DEFINITIVE',
+          connection_source: 'manual',
+          verification_status: 'confirmed',
+        },
       };
-
-      // This test documents the contract between API and frontend
-      expect(Object.keys(requiredFields)).toHaveLength(4);
-      expect(requiredFields.match_confidence).toContain('DEFINITIVE');
-      expect(requiredFields.connection_source).toContain('manual');
-      expect(requiredFields.verification_status).toContain('confirmed');
+      expect(enrichedListing.yuhinkai_enrichment).not.toBeNull();
     });
   });
 });

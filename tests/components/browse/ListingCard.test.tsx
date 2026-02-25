@@ -537,24 +537,31 @@ describe('ListingCard Component', () => {
       expect(screen.queryByTestId('setsumei-zufu-badge')).not.toBeInTheDocument();
     });
 
-    // Yuhinkai enrichment tests (manual connections)
-    describe('with Yuhinkai enrichment', () => {
-      it('shows Zufu badge when listing has verified Yuhinkai enrichment with setsumei (array format from browse API)', () => {
-        const listingWithYuhinkaiEnrichment = {
+    // Browse API precomputed has_setsumei boolean tests
+    describe('with has_setsumei boolean (browse API format)', () => {
+      it('shows Zufu badge when has_setsumei is true', () => {
+        const listingWithSetsumei = {
           ...mockListing,
-          setsumei_text_en: null, // No OCR setsumei
-          listing_yuhinkai_enrichment: [{
-            setsumei_en: '## Juyo-Token Setsumei from Yuhinkai',
-            match_confidence: 'DEFINITIVE',
-            connection_source: 'manual',
-            verification_status: 'confirmed',
-          }],
+          has_setsumei: true,
         };
-        render(<ListingCard {...defaultProps} listing={listingWithYuhinkaiEnrichment} />);
+        render(<ListingCard {...defaultProps} listing={listingWithSetsumei} />);
 
         expect(screen.getByTestId('setsumei-zufu-badge')).toBeInTheDocument();
       });
 
+      it('does NOT show Zufu badge when has_setsumei is false', () => {
+        const listingWithoutSetsumei = {
+          ...mockListing,
+          has_setsumei: false,
+        };
+        render(<ListingCard {...defaultProps} listing={listingWithoutSetsumei} />);
+
+        expect(screen.queryByTestId('setsumei-zufu-badge')).not.toBeInTheDocument();
+      });
+    });
+
+    // Yuhinkai enrichment tests (legacy path — QuickView context merges)
+    describe('with Yuhinkai enrichment (legacy path)', () => {
       it('shows Zufu badge when listing has yuhinkai_enrichment object (from QuickView context)', () => {
         const listingWithEnrichmentObject = {
           ...mockListing,
@@ -570,99 +577,6 @@ describe('ListingCard Component', () => {
 
         expect(screen.getByTestId('setsumei-zufu-badge')).toBeInTheDocument();
       });
-
-      it('does NOT show Zufu badge for Yuhinkai enrichment without setsumei_en', () => {
-        const listingWithoutSetsumei = {
-          ...mockListing,
-          setsumei_text_en: null,
-          listing_yuhinkai_enrichment: [{
-            setsumei_en: null, // No setsumei
-            match_confidence: 'DEFINITIVE',
-            connection_source: 'manual',
-            verification_status: 'confirmed',
-          }],
-        };
-        render(<ListingCard {...defaultProps} listing={listingWithoutSetsumei} />);
-
-        expect(screen.queryByTestId('setsumei-zufu-badge')).not.toBeInTheDocument();
-      });
-
-      it('does NOT show Zufu badge for auto-matched enrichment (only manual connections)', () => {
-        const listingWithAutoMatch = {
-          ...mockListing,
-          setsumei_text_en: null,
-          listing_yuhinkai_enrichment: [{
-            setsumei_en: '## Auto-matched setsumei',
-            match_confidence: 'DEFINITIVE',
-            connection_source: 'auto', // Auto-matched, not manual
-            verification_status: 'auto',
-          }],
-        };
-        render(<ListingCard {...defaultProps} listing={listingWithAutoMatch} />);
-
-        // Auto-matches are hidden (not production-ready)
-        expect(screen.queryByTestId('setsumei-zufu-badge')).not.toBeInTheDocument();
-      });
-
-      it('does NOT show Zufu badge for non-DEFINITIVE confidence', () => {
-        const listingWithLowConfidence = {
-          ...mockListing,
-          setsumei_text_en: null,
-          listing_yuhinkai_enrichment: [{
-            setsumei_en: '## Setsumei',
-            match_confidence: 'HIGH', // Not DEFINITIVE
-            connection_source: 'manual',
-            verification_status: 'confirmed',
-          }],
-        };
-        render(<ListingCard {...defaultProps} listing={listingWithLowConfidence} />);
-
-        expect(screen.queryByTestId('setsumei-zufu-badge')).not.toBeInTheDocument();
-      });
-
-      it('does NOT show Zufu badge for manual connection not yet confirmed', () => {
-        const listingNotConfirmed = {
-          ...mockListing,
-          setsumei_text_en: null,
-          listing_yuhinkai_enrichment: [{
-            setsumei_en: '## Setsumei',
-            match_confidence: 'DEFINITIVE',
-            connection_source: 'manual',
-            verification_status: 'review_needed', // Not confirmed
-          }],
-        };
-        render(<ListingCard {...defaultProps} listing={listingNotConfirmed} />);
-
-        expect(screen.queryByTestId('setsumei-zufu-badge')).not.toBeInTheDocument();
-      });
-
-      it('prefers showing badge when either OCR or Yuhinkai has setsumei', () => {
-        // Both OCR and Yuhinkai have setsumei - badge should show
-        const listingWithBoth = {
-          ...mockListing,
-          setsumei_text_en: '## OCR setsumei',
-          listing_yuhinkai_enrichment: [{
-            setsumei_en: '## Yuhinkai setsumei',
-            match_confidence: 'DEFINITIVE',
-            connection_source: 'manual',
-            verification_status: 'confirmed',
-          }],
-        };
-        render(<ListingCard {...defaultProps} listing={listingWithBoth} />);
-
-        expect(screen.getByTestId('setsumei-zufu-badge')).toBeInTheDocument();
-      });
-
-      it('handles empty listing_yuhinkai_enrichment array', () => {
-        const listingWithEmptyArray = {
-          ...mockListing,
-          setsumei_text_en: null,
-          listing_yuhinkai_enrichment: [], // Empty array
-        };
-        render(<ListingCard {...defaultProps} listing={listingWithEmptyArray} />);
-
-        expect(screen.queryByTestId('setsumei-zufu-badge')).not.toBeInTheDocument();
-      });
     });
   });
 
@@ -673,66 +587,31 @@ describe('ListingCard Component', () => {
      * badge updates if the comparison function is too aggressive.
      */
 
-    it('re-renders when setsumei_text_en changes from null to value', () => {
-      const { rerender } = render(<ListingCard {...defaultProps} />);
-
-      // Initially no badge (mockListing has no setsumei)
-      expect(screen.queryByTestId('setsumei-zufu-badge')).not.toBeInTheDocument();
-
-      // Update with setsumei_text_en
-      const listingWithSetsumei = {
-        ...mockListing,
-        setsumei_text_en: '## New setsumei content',
-      };
-      rerender(<ListingCard {...defaultProps} listing={listingWithSetsumei} />);
-
-      // Badge should now appear
-      expect(screen.getByTestId('setsumei-zufu-badge')).toBeInTheDocument();
-    });
-
-    it('re-renders when listing_yuhinkai_enrichment is added', () => {
-      const { rerender } = render(<ListingCard {...defaultProps} />);
+    it('re-renders when has_setsumei changes from false to true', () => {
+      const listingWithout = { ...mockListing, has_setsumei: false };
+      const { rerender } = render(<ListingCard {...defaultProps} listing={listingWithout} />);
 
       // Initially no badge
       expect(screen.queryByTestId('setsumei-zufu-badge')).not.toBeInTheDocument();
 
-      // Update with Yuhinkai enrichment
-      const listingWithEnrichment = {
-        ...mockListing,
-        listing_yuhinkai_enrichment: [{
-          setsumei_en: '## Yuhinkai setsumei',
-          match_confidence: 'DEFINITIVE',
-          connection_source: 'manual',
-          verification_status: 'confirmed',
-        }],
-      };
-      rerender(<ListingCard {...defaultProps} listing={listingWithEnrichment} />);
+      // Update with has_setsumei = true
+      const listingWith = { ...mockListing, has_setsumei: true };
+      rerender(<ListingCard {...defaultProps} listing={listingWith} />);
 
       // Badge should now appear
       expect(screen.getByTestId('setsumei-zufu-badge')).toBeInTheDocument();
     });
 
-    it('re-renders when listing_yuhinkai_enrichment is removed (disconnect)', () => {
-      const listingWithEnrichment = {
-        ...mockListing,
-        listing_yuhinkai_enrichment: [{
-          setsumei_en: '## Yuhinkai setsumei',
-          match_confidence: 'DEFINITIVE',
-          connection_source: 'manual',
-          verification_status: 'confirmed',
-        }],
-      };
-      const { rerender } = render(<ListingCard {...defaultProps} listing={listingWithEnrichment} />);
+    it('re-renders when has_setsumei changes from true to false (disconnect)', () => {
+      const listingWith = { ...mockListing, has_setsumei: true };
+      const { rerender } = render(<ListingCard {...defaultProps} listing={listingWith} />);
 
       // Initially has badge
       expect(screen.getByTestId('setsumei-zufu-badge')).toBeInTheDocument();
 
-      // Remove enrichment
-      const listingWithoutEnrichment = {
-        ...mockListing,
-        listing_yuhinkai_enrichment: [],
-      };
-      rerender(<ListingCard {...defaultProps} listing={listingWithoutEnrichment} />);
+      // Remove setsumei
+      const listingWithout = { ...mockListing, has_setsumei: false };
+      rerender(<ListingCard {...defaultProps} listing={listingWithout} />);
 
       // Badge should be gone
       expect(screen.queryByTestId('setsumei-zufu-badge')).not.toBeInTheDocument();
