@@ -5,18 +5,27 @@ import { Footer } from '@/components/layout/Footer';
 import { EliteRankingContent } from './EliteRankingContent';
 
 export const metadata: Metadata = {
-  title: 'Elite Factor Methodology — A Bayesian Approach to Artisan Ranking | NihontoWatch',
+  title: 'Artist Ranking Methodology | NihontoWatch',
   description:
-    'How NihontoWatch ranks artisan stature using Bayesian inference on the NBTHK designation record. Beta-binomial model, lower credible bounds, and worked examples.',
+    'How NihontoWatch ranks artisan stature using two Bayesian metrics: the elite factor (NBTHK designation quality) and the provenance factor (historical collector prestige). Beta-binomial model, shrinkage estimator, lower credible bounds, and full rankings.',
   alternates: {
     canonical: 'https://nihontowatch.com/eliteranking',
   },
   openGraph: {
-    title: 'Elite Factor Methodology | NihontoWatch',
+    title: 'Artist Ranking Methodology | NihontoWatch',
     description:
-      'A Bayesian approach to ranking artisan stature in the NBTHK designation record.',
+      'Two Bayesian metrics for measuring artisan stature in the NBTHK designation record and historical provenance.',
   },
 };
+
+const TOC = [
+  { href: '#part-i-the-elite-factor', label: 'I. Elite Factor' },
+  { href: '#part-ii-the-provenance-factor', label: 'II. Provenance' },
+  { href: '#part-iii-current-rankings', label: 'III. Rankings' },
+  { href: '#part-iv-how-the-two-metrics-relate', label: 'IV. Relationship' },
+  { href: '#part-v-statistical-notes', label: 'V. Statistics' },
+  { href: '#appendix-implementation-reference', label: 'Appendix' },
+];
 
 export default function EliteRankingPage() {
   return (
@@ -50,14 +59,31 @@ export default function EliteRankingPage() {
             Methodology
           </p>
           <h1 className="font-serif text-3xl lg:text-5xl font-semibold text-ink leading-tight mb-3">
-            The Elite Factor
+            Artist Ranking Methodology
           </h1>
-          <p className="font-serif text-lg lg:text-xl text-charcoal italic">
-            A Bayesian Approach to Ranking Artisan Stature
+          <p className="font-serif text-lg lg:text-xl text-charcoal italic max-w-xl mx-auto">
+            Two Bayesian Metrics for Measuring Artisan Stature
           </p>
           <div className="mt-8 mx-auto w-12 border-t border-accent" />
         </div>
       </div>
+
+      {/* Table of contents */}
+      <nav className="border-b border-border-subtle bg-surface/50">
+        <div className="max-w-3xl mx-auto px-4 py-4">
+          <div className="flex flex-wrap justify-center gap-x-5 gap-y-2 text-[13px]">
+            {TOC.map((item) => (
+              <a
+                key={item.href}
+                href={item.href}
+                className="text-muted hover:text-accent transition-colors"
+              >
+                {item.label}
+              </a>
+            ))}
+          </div>
+        </div>
+      </nav>
 
       {/* Article body */}
       <main className="flex-1 max-w-3xl mx-auto px-4 py-8 lg:py-14 w-full">
