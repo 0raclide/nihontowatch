@@ -14,6 +14,7 @@ import { useQuickView } from '@/contexts/QuickViewContext';
 import { useCurrency } from '@/hooks/useCurrency';
 import { collectionItemsToDisplayItems } from '@/lib/displayItem';
 import { SORT_OPTIONS } from '@/lib/collection/labels';
+import { Header } from '@/components/layout/Header';
 
 // =============================================================================
 // Constants
@@ -222,6 +223,7 @@ export function CollectionPageClient() {
 
   return (
     <>
+      <Header />
       <div className="max-w-[1600px] mx-auto px-4 py-4 lg:px-6 lg:py-8 pb-24 lg:pb-8">
         {/* Page Header — browse-style on desktop, simple on mobile */}
         <div className="mb-2 lg:mb-6 flex flex-col lg:flex-row lg:items-end lg:justify-between">
