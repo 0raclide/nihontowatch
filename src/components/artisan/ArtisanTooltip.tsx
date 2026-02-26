@@ -5,21 +5,11 @@ import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import type { ArtisanDetails } from '@/app/api/artisan/[code]/route';
 import type { ArtisanSearchResult } from '@/app/api/artisan/search/route';
+import type { ArtisanCandidate } from '@/types/artisan';
 import { CertPillRow } from '@/components/admin/CertPillRow';
 import { ArtisanSearchPanel } from '@/components/admin/ArtisanSearchPanel';
 import { useLocale } from '@/i18n/LocaleContext';
 import { eraToBroadPeriod } from '@/lib/artisan/eraPeriods';
-
-interface ArtisanCandidate {
-  artisan_id: string;
-  name_kanji?: string;
-  name_romaji?: string;
-  school?: string;
-  generation?: string;
-  is_school_code?: boolean;
-  retrieval_method?: string;
-  retrieval_score?: number;
-}
 
 interface ArtisanTooltipProps {
   listingId: number;

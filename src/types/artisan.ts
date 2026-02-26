@@ -1,6 +1,21 @@
 import type { CatalogueEntry } from '@/lib/supabase/yuhinkai';
 
 /**
+ * Alternative artisan candidate from the matching pipeline.
+ * Shared between ArtisanTooltip, ArtisanDetailsPanel, and AdminEditView.
+ */
+export interface ArtisanCandidate {
+  artisan_id: string;
+  name_kanji?: string;
+  name_romaji?: string;
+  school?: string;
+  generation?: string;
+  is_school_code?: boolean;
+  retrieval_method?: string;
+  retrieval_score?: number;
+}
+
+/**
  * Rich artisan page response shape — shared between SSR page and API route.
  */
 export interface ArtisanPageResponse {

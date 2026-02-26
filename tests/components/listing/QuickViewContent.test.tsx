@@ -56,14 +56,23 @@ vi.mock('@/components/listing/SetsumeiSection', () => ({
   ),
 }));
 
-// Mock the useAuth hook
+// Mock the useAuth hook — configurable per-test
+let mockIsAdmin = false;
 vi.mock('@/lib/auth/AuthContext', () => ({
   useAuth: () => ({
-    user: null,
+    user: mockIsAdmin ? { id: 'admin-1' } : null,
     profile: null,
     session: null,
     isLoading: false,
-    isAdmin: false,
+    isAdmin: mockIsAdmin,
+  }),
+}));
+
+// Mock the useSubscription hook
+vi.mock('@/contexts/SubscriptionContext', () => ({
+  useSubscription: () => ({
+    showPaywall: vi.fn(),
+    canAccess: () => true,
   }),
 }));
 
@@ -129,6 +138,32 @@ vi.mock('@/components/listing/MetadataGrid', () => ({
     certKey: `cert.${certType}`,
     tier: certType === 'Juyo' ? 'juyo' : 'high',
   } : null,
+  getArtisanInfo: () => ({ artisan: null, school: null }),
+}));
+
+// Mock returnContext (used when navigating to artist profile)
+vi.mock('@/lib/listing/returnContext', () => ({
+  saveListingReturnContext: vi.fn(),
+}));
+
+// Mock ActivityTracker (optional hook)
+vi.mock('@/lib/tracking/ActivityTracker', () => ({
+  useActivityTrackerOptional: () => null,
+}));
+
+// Mock SocialShareButtons
+vi.mock('@/components/share/SocialShareButtons', () => ({
+  SocialShareButtons: () => <div data-testid="social-share-buttons" />,
+}));
+
+// Mock getDealerDisplayName
+vi.mock('@/lib/dealers/displayName', () => ({
+  getDealerDisplayName: (dealer: { name: string }) => dealer?.name ?? 'Unknown',
+}));
+
+// Mock shouldShowNewBadge
+vi.mock('@/lib/newListing', () => ({
+  shouldShowNewBadge: () => false,
 }));
 
 // Sample listing data
@@ -269,6 +304,91 @@ describe('QuickViewContent', () => {
     it('renders TranslatedDescription', () => {
       render(<QuickViewContent listing={createMockListing()} />);
       expect(screen.getByTestId('translated-description')).toBeInTheDocument();
+    });
+  });
+
+  // =========================================================================
+  // REGRESSION: Admin artisan tools consolidated into AdminEditView
+  // ArtisanTooltip and AdminArtisanWidget were removed from QuickViewContent.
+  // These tests guard against re-introduction.
+  // =========================================================================
+
+  describe('Admin artisan tool consolidation (regression)', () => {
+    const matchedAdminListing = createMockListing({
+      artisan_id: 'MAS590',
+      artisan_confidence: 'HIGH',
+      artisan_display_name: 'Masamune',
+    });
+
+    const unmatchedAdminListing = createMockListing({
+      artisan_id: undefined,
+      artisan_confidence: undefined,
+    });
+
+    beforeEach(() => {
+      mockIsAdmin = true;
+    });
+
+    afterEach(() => {
+      mockIsAdmin = false;
+    });
+
+    it('renders artist identity as a plain link, not a tooltip trigger', () => {
+      render(<QuickViewContent listing={matchedAdminListing} />);
+
+      // The artist name should be rendered as a link to the profile page
+      const link = screen.getByText('Masamune').closest('a');
+      expect(link).toHaveAttribute('href', '/artists/MAS590');
+
+      // No artisan-tooltip portal or popover should exist
+      expect(screen.queryByTestId('artisan-tooltip')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('artisan-tooltip-portal')).not.toBeInTheDocument();
+    });
+
+    it('does not render AdminArtisanWidget for admin users', () => {
+      render(<QuickViewContent listing={matchedAdminListing} />);
+
+      // AdminArtisanWidget was a collapsible "Artisan" panel with search
+      expect(screen.queryByTestId('admin-artisan-widget')).not.toBeInTheDocument();
+    });
+
+    it('does not render "Set ID" tooltip trigger for unmatched listings', () => {
+      render(<QuickViewContent listing={unmatchedAdminListing} />);
+
+      // The old "Set ID" trigger was an ArtisanTooltip for unmatched listings
+      expect(screen.queryByText('Set ID')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('artisan-tooltip')).not.toBeInTheDocument();
+    });
+
+    it('renders admin pen icon for edit mode toggle', () => {
+      const mockToggle = vi.fn();
+
+      render(
+        <QuickViewContent
+          listing={matchedAdminListing}
+          onToggleAdminEditMode={mockToggle}
+        />
+      );
+
+      // The pen icon should exist with "Edit fields" aria-label
+      const penButton = screen.getByLabelText('Edit fields');
+      expect(penButton).toBeInTheDocument();
+    });
+
+    it('renders admin sold toggle button', () => {
+      render(<QuickViewContent listing={matchedAdminListing} />);
+
+      // The sold/available toggle should be visible for admin
+      const soldButton = screen.getByLabelText('Mark as sold');
+      expect(soldButton).toBeInTheDocument();
+    });
+
+    it('renders admin hide toggle button', () => {
+      render(<QuickViewContent listing={matchedAdminListing} />);
+
+      // The hide/unhide toggle should be visible for admin
+      const hideButton = screen.getByLabelText('Hide listing');
+      expect(hideButton).toBeInTheDocument();
     });
   });
 });

@@ -3,8 +3,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { Listing } from '@/types';
 import type { ArtisanSearchResult } from '@/app/api/artisan/search/route';
+import type { ArtisanCandidate } from '@/types/artisan';
 import { CertPillRow } from '@/components/admin/CertPillRow';
 import { ArtisanSearchPanel } from '@/components/admin/ArtisanSearchPanel';
+import { ArtisanDetailsPanel } from '@/components/admin/ArtisanDetailsPanel';
 import { FieldEditSection } from '@/components/admin/FieldEditSection';
 
 // =============================================================================
@@ -30,11 +32,15 @@ export function AdminEditView({ listing, onBackToPhotos, onRefresh }: AdminEditV
   const [verified, setVerified] = useState<'correct' | 'incorrect' | null>(
     (listing.artisan_verified as 'correct' | 'incorrect' | null) ?? null
   );
+  const [method, setMethod] = useState<string | null>(listing.artisan_method ?? null);
+  const [candidates, setCandidates] = useState<ArtisanCandidate[] | null>(
+    (listing.artisan_candidates as ArtisanCandidate[] | null) ?? null
+  );
   const [verifying, setVerifying] = useState(false);
   const hasArtisan = !!artisanId && artisanId !== 'UNKNOWN';
 
   // --- Search state ---
-  const [showSearch, setShowSearch] = useState(false);
+  const [showSearch, setShowSearch] = useState(!listing.artisan_id || listing.artisan_id === 'UNKNOWN');
   const [fixing, setFixing] = useState(false);
   const [fixSuccess, setFixSuccess] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
@@ -53,11 +59,13 @@ export function AdminEditView({ listing, onBackToPhotos, onRefresh }: AdminEditV
   useEffect(() => {
     setArtisanId(listing.artisan_id || '');
     setConfidence((listing.artisan_confidence as 'HIGH' | 'MEDIUM' | 'LOW') || 'LOW');
+    setMethod(listing.artisan_method ?? null);
+    setCandidates((listing.artisan_candidates as ArtisanCandidate[] | null) ?? null);
     setVerified((listing.artisan_verified as 'correct' | 'incorrect' | null) ?? null);
     setLocalHidden(listing.admin_hidden ?? false);
     setLocalSold(listing.is_sold ?? false);
     setLocalStatusLocked(listing.status_admin_locked ?? false);
-    setShowSearch(false);
+    setShowSearch(!listing.artisan_id || listing.artisan_id === 'UNKNOWN');
     setFixSuccess(false);
     setSearchError(null);
     setError(null);
@@ -110,6 +118,8 @@ export function AdminEditView({ listing, onBackToPhotos, onRefresh }: AdminEditV
       if (res.ok) {
         setArtisanId(result.code);
         setConfidence('HIGH');
+        setMethod('ADMIN_CORRECTION');
+        setCandidates(null);
         setVerified('correct');
         setFixSuccess(true);
         setShowSearch(false);
@@ -118,6 +128,7 @@ export function AdminEditView({ listing, onBackToPhotos, onRefresh }: AdminEditV
           artisan_confidence: 'HIGH',
           artisan_method: 'ADMIN_CORRECTION',
           artisan_verified: 'correct',
+          artisan_candidates: null,
           artisan_display_name: result.display_name || result.name_romaji || result.code,
         };
         onRefresh(optimistic as Partial<Listing>);
@@ -148,6 +159,8 @@ export function AdminEditView({ listing, onBackToPhotos, onRefresh }: AdminEditV
       if (res.ok) {
         setArtisanId('UNKNOWN');
         setConfidence('LOW');
+        setMethod('ADMIN_CORRECTION');
+        setCandidates(null);
         setVerified('correct');
         setFixSuccess(true);
         setShowSearch(false);
@@ -156,6 +169,7 @@ export function AdminEditView({ listing, onBackToPhotos, onRefresh }: AdminEditV
           artisan_confidence: 'LOW',
           artisan_method: 'ADMIN_CORRECTION',
           artisan_verified: 'correct',
+          artisan_candidates: null,
           artisan_display_name: 'Unlisted artist',
         };
         onRefresh(optimistic as Partial<Listing>);
@@ -229,13 +243,6 @@ export function AdminEditView({ listing, onBackToPhotos, onRefresh }: AdminEditV
     }
   };
 
-  // Confidence badge color
-  const confidenceColor = hasArtisan ? ({
-    HIGH: 'text-artisan-high',
-    MEDIUM: 'text-artisan-medium',
-    LOW: 'text-artisan-low',
-  } as Record<string, string>)[confidence] || 'text-muted' : 'text-muted';
-
   return (
     <div className="h-full flex flex-col bg-linen" data-testid="admin-edit-view">
       {/* Sticky header — matches StudySetsumeiView pattern */}
@@ -300,21 +307,14 @@ export function AdminEditView({ listing, onBackToPhotos, onRefresh }: AdminEditV
               Artisan
             </div>
 
-            {/* Current artisan info */}
-            {hasArtisan ? (
-              <div className="mb-3 p-3 bg-cream/50 border border-border rounded-lg">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="font-mono text-sm font-semibold text-ink">
-                    {listing.artisan_display_name || artisanId}
-                  </span>
-                  <span className={`text-[10px] font-medium ${confidenceColor}`}>
-                    {confidence}
-                  </span>
-                </div>
-                <div className="text-[10px] font-mono text-muted">
-                  {artisanId}
-                </div>
-              </div>
+            {/* Current artisan details */}
+            {(hasArtisan || artisanId === 'UNKNOWN') ? (
+              <ArtisanDetailsPanel
+                artisanId={artisanId}
+                confidence={confidence}
+                method={method}
+                candidates={candidates}
+              />
             ) : (
               <p className="text-xs text-muted mb-3">No artisan assigned</p>
             )}

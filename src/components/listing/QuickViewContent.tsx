@@ -27,8 +27,6 @@ const AdminScoreInspector = dynamic(
   { ssr: false }
 );
 import { AdminSetsumeiWidget } from './AdminSetsumeiWidget';
-import { AdminArtisanWidget } from '@/components/artisan/AdminArtisanWidget';
-import { ArtisanTooltip } from '@/components/artisan/ArtisanTooltip';
 import { TranslatedDescription } from './TranslatedDescription';
 import { TranslatedTitle } from './TranslatedTitle';
 import { useLocale } from '@/i18n/LocaleContext';
@@ -202,32 +200,6 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode, onTo
                   {t('quickview.hidden')}
                 </span>
               )}
-              {/* Admin: "Set ID" badge for unmatched listings (including UNKNOWN) */}
-              {isAdmin && (!listing.artisan_id || listing.artisan_id === 'UNKNOWN') ? (
-                /* Admin: show "Set ID" badge with pen icon for unmatched listings */
-                <ArtisanTooltip
-                  listingId={listing.id}
-                  startInSearchMode
-                  onArtisanFixed={(newId, displayName) => quickView?.refreshCurrentListing({
-                    artisan_id: newId,
-                    artisan_confidence: newId === 'UNKNOWN' ? 'LOW' : 'HIGH',
-                    artisan_method: 'ADMIN_CORRECTION',
-                    artisan_verified: 'correct' as const,
-                    artisan_display_name: displayName,
-                  })}
-                  adminHidden={listing.admin_hidden}
-                  onToggleHidden={handleToggleHidden}
-                  certType={listing.cert_type}
-                  onCertChanged={(newCert) => quickView?.refreshCurrentListing({ cert_type: newCert } as Partial<Listing>)}
-                >
-                  <span className="inline-flex items-center gap-0.5 text-[10px] font-mono font-medium px-2 py-0.5 rounded bg-muted/10 text-muted hover:text-ink transition-colors" data-artisan-tooltip>
-                    {t('quickview.setId')}
-                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                    </svg>
-                  </span>
-                </ArtisanTooltip>
-              ) : null}
             </div>
             <div className="flex items-center gap-2">
               {/* Admin: Toggle sold/available status */}
@@ -387,33 +359,6 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode, onTo
                   </svg>
                 )}
               </a>
-              {isAdmin && (
-                <ArtisanTooltip
-                  listingId={listing.id}
-                  artisanId={listing.artisan_id}
-                  confidence={listing.artisan_confidence as 'HIGH' | 'MEDIUM' | 'LOW'}
-                  method={listing.artisan_method}
-                  candidates={listing.artisan_candidates}
-                  verified={listing.artisan_verified}
-                  onArtisanFixed={(newId, displayName) => quickView?.refreshCurrentListing({
-                    artisan_id: newId,
-                    artisan_confidence: newId === 'UNKNOWN' ? 'LOW' : 'HIGH',
-                    artisan_method: 'ADMIN_CORRECTION',
-                    artisan_verified: 'correct' as const,
-                    artisan_display_name: displayName,
-                  })}
-                  adminHidden={listing.admin_hidden}
-                  onToggleHidden={handleToggleHidden}
-                  certType={listing.cert_type}
-                  onCertChanged={(newCert) => quickView?.refreshCurrentListing({ cert_type: newCert } as Partial<Listing>)}
-                >
-                  <span className="text-muted hover:text-ink transition-colors p-1 cursor-pointer shrink-0">
-                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                    </svg>
-                  </span>
-                </ArtisanTooltip>
-              )}
             </div>
           )}
 
@@ -491,16 +436,6 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode, onTo
               onConnectionChanged={(enrichment) => quickView?.refreshCurrentListing(
                 enrichment !== undefined ? { yuhinkai_enrichment: enrichment } as unknown as Partial<Listing> : undefined
               )}
-            />
-            <AdminArtisanWidget
-              listing={listing}
-              onArtisanChanged={(newId, displayName) => quickView?.refreshCurrentListing({
-                artisan_id: newId,
-                artisan_confidence: newId === 'UNKNOWN' ? 'LOW' : 'HIGH',
-                artisan_method: 'ADMIN_CORRECTION',
-                artisan_verified: 'correct' as const,
-                artisan_display_name: displayName,
-              })}
             />
           </div>
         )}
