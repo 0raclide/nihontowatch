@@ -1,7 +1,7 @@
 # Collection Manager — Architecture & Vision
 
-**Last updated**: 2026-02-26
-**Status**: V1 live at nihontowatch.com/collection — V2 rebuild planned
+**Last updated**: 2026-02-27
+**Status**: V1 live at nihontowatch.com/collection — filter sidebar rebuilt to match browse variant B
 **Migration**: `057_collection_tables.sql` applied
 **Storage bucket**: `collection-images` (public, 5MB limit, JPEG/PNG/WebP)
 
@@ -76,21 +76,23 @@ function collectionItemToDisplayItem(item: CollectionItem): DisplayItem {
 | `QuickViewContent` | With source branching | Action bar switches based on `source` |
 | `QuickViewModal` | Direct | Same modal container |
 | `QuickViewMobileSheet` | Direct | Same mobile bottom sheet |
-| `FilterSidebar` / `FilterContent` | Adapted | Same structure, different facet data |
+| `CollectionFilterContent` | Rebuilt | Matches browse variant B styling with collection-specific sections |
 | `MetadataGrid` | Direct | Same metadata layout |
 | `ImageGallery` | Direct | Same swipe/zoom/thumbnails |
 
 ### What's Collection-Specific (5%)
 
-| Component | Purpose | Stays? |
+| Component | Purpose | Status |
 |-----------|---------|--------|
-| `CollectionFormContent` | Add/edit form with sections | Yes — genuinely unique |
-| `CatalogSearchBar` | Yuhinkai catalog lookup | Yes — the killer feature |
-| `ImageUploadZone` | Drag-drop image upload + resize | Yes — collection-only capability |
-| `AddItemCard` | "+" card for adding items | Yes — small, grid-specific |
+| `CollectionFormContent` | Add/edit form with sections | Keep — genuinely unique |
+| `CatalogSearchBar` | Yuhinkai catalog lookup | Keep — the killer feature |
+| `ImageUploadZone` | Drag-drop image upload + resize | Keep — collection-only capability |
+| `AddItemCard` | "+" card for adding items | Keep — small, grid-specific |
+| `CollectionFilterContent` | Filter sidebar (variant B styling) | **Rebuilt** 2026-02-27 — matches browse design |
+| `CollectionBottomBar` | Mobile bottom bar (filter/add/sort) | **Rebuilt** 2026-02-27 — matches browse theming |
 | `CollectionQuickViewContext` | QuickView state for collection | Merge into shared QuickView context |
 
-### What Gets Deleted (~1,070 lines)
+### What Gets Deleted (~820 lines remaining)
 
 | Component | Lines | Replaced By |
 |-----------|-------|------------|
@@ -98,8 +100,8 @@ function collectionItemToDisplayItem(item: CollectionItem): DisplayItem {
 | `CollectionGrid` | ~40 | `ListingGrid` |
 | `CollectionMobileSheet` | ~180 | `QuickViewMobileSheet` |
 | `CollectionItemContent` | ~360 | `QuickViewContent` with source branching |
-| `CollectionFilterSidebar` | ~30 | `FilterSidebar` |
-| `CollectionFilterDrawer` | ~30 | Mobile filter drawer |
+| `CollectionFilterSidebar` | ~30 | ~~FilterSidebar~~ **DONE** — `CollectionFilterContent` rebuilt to match browse variant B |
+| `CollectionFilterDrawer` | ~30 | ~~Mobile filter drawer~~ **DONE** — uses `<Drawer>` + `CollectionFilterContent` |
 | `CollectionQuickView` | ~250 | Shared QuickView system |
 
 ---
@@ -265,8 +267,11 @@ List user's collection with filters and facets. Auth required.
 
 | Param | Type | Description |
 |-------|------|-------------|
+| `category` | string | `nihonto` or `tosogu` — filters by item_type groups |
 | `type` | string | Filter by item_type (case-insensitive) |
 | `cert` | string | Filter by cert_type |
+| `era` | string | Filter by era (ilike match) |
+| `meiType` | string | Filter by mei_type (signed/unsigned) |
 | `status` | string | owned/sold/lent/consignment |
 | `condition` | string | mint/excellent/good/fair/project |
 | `folder` | string | Filter by folder_id |
@@ -274,9 +279,11 @@ List user's collection with filters and facets. Auth required.
 | `page` | number | 1-based, default 1 |
 | `limit` | number | Default 100, max 200 |
 
+**Category filtering**: `nihonto` = katana, wakizashi, tanto, tachi, naginata, yari, kodachi, ken, naginata naoshi, sword. `tosogu` = tsuba, fuchi-kashira, kozuka, kogai, menuki, koshirae, etc. Category clears item type filter when changed.
+
 **Response**: `{ data: CollectionItem[], total: number, facets: CollectionFacets }`
 
-Facets are computed from ALL items (ignoring current filters) for accurate sidebar counts.
+Facets are computed from ALL items (ignoring current filters) for accurate sidebar counts. Includes `historicalPeriods` (aggregated from `era`) and `signatureStatuses` (aggregated from `mei_type`).
 
 ### `POST /api/collection/items`
 
@@ -346,7 +353,7 @@ List or create folders. Auth required. Max 50 folders per user.
 
 ## File Map
 
-### Current V1 Files (pre-rebuild)
+### Current Files
 
 #### Pages
 
@@ -366,7 +373,7 @@ List or create folders. Auth required. Max 50 folders per user.
 | `GET /api/collection/artisan-search` | `src/app/api/collection/artisan-search/route.ts` |
 | `GET/POST /api/collection/folders` | `src/app/api/collection/folders/route.ts` |
 
-#### Components (V1 — to be replaced in V2)
+#### Components
 
 | Component | File | V2 Fate |
 |-----------|------|---------|
@@ -375,14 +382,14 @@ List or create folders. Auth required. Max 50 folders per user.
 | `CollectionQuickView` | `src/components/collection/CollectionQuickView.tsx` | **Delete** → shared QuickView system |
 | `CollectionItemContent` | `src/components/collection/CollectionItemContent.tsx` | **Delete** → QuickViewContent with source branching |
 | `CollectionMobileSheet` | `src/components/collection/CollectionMobileSheet.tsx` | **Delete** → QuickViewMobileSheet |
-| `CollectionFilterSidebar` | `src/components/collection/CollectionFilterSidebar.tsx` | **Delete** → FilterSidebar |
-| `CollectionFilterDrawer` | `src/components/collection/CollectionFilterDrawer.tsx` | **Delete** → mobile filter drawer |
+| `CollectionFilterSidebar` | `src/components/collection/CollectionFilterSidebar.tsx` | **Delete** — sidebar now inline in `CollectionPageClient` |
+| `CollectionFilterDrawer` | `src/components/collection/CollectionFilterDrawer.tsx` | **Delete** — uses `<Drawer>` + `CollectionFilterContent` |
 | `CollectionFormContent` | `src/components/collection/CollectionFormContent.tsx` | **Keep** — unique add/edit form |
 | `CatalogSearchBar` | `src/components/collection/CatalogSearchBar.tsx` | **Keep** — Yuhinkai search (the killer feature) |
 | `ImageUploadZone` | `src/components/collection/ImageUploadZone.tsx` | **Keep** — collection-only upload |
 | `AddItemCard` | `src/components/collection/AddItemCard.tsx` | **Keep** — grid "+" card |
-| `CollectionBottomBar` | `src/components/collection/CollectionBottomBar.tsx` | **Delete** → shared mobile bottom bar |
-| `CollectionFilterContent` | `src/components/collection/CollectionFilterContent.tsx` | **Delete** → FilterContent |
+| `CollectionBottomBar` | `src/components/collection/CollectionBottomBar.tsx` | **Keep** — rebuilt with browse-matching `bg-surface/95 backdrop-blur-sm` |
+| `CollectionFilterContent` | `src/components/collection/CollectionFilterContent.tsx` | **Keep** — rebuilt to match browse variant B (category, designation, period, type, signature, status, condition) |
 
 #### Context
 
@@ -402,7 +409,7 @@ List or create folders. Auth required. Max 50 folders per user.
 
 | File | Purpose |
 |------|---------|
-| `src/types/collection.ts` | All type definitions — CollectionItem, Filters, Facets, CatalogSearchResult |
+| `src/types/collection.ts` | All type definitions — CollectionItem, Filters (incl. category/era/meiType), Facets (incl. historicalPeriods/signatureStatuses), CatalogSearchResult |
 
 #### Database
 
@@ -417,6 +424,66 @@ List or create folders. Auth required. Max 50 folders per user.
 | `src/components/listing/QuickViewContent.tsx` | "I Own This" button (auth-gated) |
 | `src/components/layout/Header.tsx` | "Collection" nav link (auth-gated) |
 | `src/components/layout/MobileNavDrawer.tsx` | "Collection" nav link (auth-gated) |
+
+---
+
+## Filter Sidebar (2026-02-27 Rebuild)
+
+The collection filter sidebar was rebuilt to visually match browse's variant B design. This is NOT a reuse of browse's `FilterContent` component — it's a standalone `CollectionFilterContent` that duplicates the variant B styling tokens but has collection-specific filter logic (single-select filters instead of multi-select arrays, collection-only Status/Condition sections).
+
+### Layout
+
+```
+┌─────────────────────────────┐
+│ CATEGORY                    │  ← pinned (Nihonto/Tosogu toggle with counts)
+│ [Nihonto (12)]  [Tosogu (5)]│
+├─────────────────────────────┤
+│ FILTERS [3]       Reset     │  ← pinned
+├─────────────────────────────┤
+│ DESIGNATION           ▲     │  open by default
+│ ☐ Jūyō                (1)  │
+│─────────────────────────────│
+│ PERIOD                ▼     │  collapsed (open for JA locale)
+│─────────────────────────────│
+│ TYPE                  ▼     │  collapsed, filtered by category
+│─────────────────────────────│
+│ SIGNATURE             ▼     │  collapsed (open for JA locale)
+│─────────────────────────────│
+│ STATUS                ▼     │  collection-specific, collapsed
+│─────────────────────────────│
+│ CONDITION             ▼     │  collection-specific, collapsed
+└─────────────────────────────┘
+```
+
+### Styling Tokens (variant B)
+
+- Section header: `text-[11px] uppercase tracking-[0.06em] font-semibold text-muted`
+- Checkbox: `w-[15px] h-[15px] rounded-[2px] border-[1.5px]`, label `text-[12px]`, count `text-[10px]`
+- Checked state: `border-gold bg-gold` + gold glow shadow `0 0 6px rgba(184, 157, 105, 0.2)`
+- Category toggle: `rounded-lg border border-border/30`, active `bg-gold/15 text-gold`
+- Active count badge: `text-[8px] bg-gold rounded-full text-white min-w-[14px] h-[14px]`
+- Card wrapper: `bg-surface-elevated rounded-2xl border border-border/40` with inline shadow
+
+### Key Differences from Browse FilterContent
+
+| Aspect | Browse | Collection |
+|--------|--------|------------|
+| Filter model | Multi-select arrays (`string[]`) | Single-select (`string \| undefined`) |
+| `onFilterChange` | `(key: string, value: unknown)` | `(partial: Partial<CollectionFilters>)` |
+| Category options | Nihonto / Tosogu / Armor | Nihonto / Tosogu (no armor in personal collections) |
+| Extra sections | Price histogram, Dealer, Price on Request, Admin tools | Status, Condition |
+| Cert sorting | Same rank order, same hidden certs (NTHK, TokuKicho) | Same |
+| JA locale | Opens Period/Type/Signature by default | Same |
+
+### Theming Sync
+
+The collection page now uses `bg-surface` on the outermost wrapper (matching browse's `HomeClient.tsx`). Without this, the page inherited `bg-background` from the body, which is a different color in every theme — most noticeably in Opus where `--background` is void blue `#020610` vs `--surface` contemplative blue `#08101c`.
+
+| Element | Before | After |
+|---------|--------|-------|
+| Page background | (none — inherited `bg-background`) | `bg-surface transition-colors` |
+| Bottom bar | `bg-cream` | `bg-surface/95 backdrop-blur-sm` |
+| Error banner | `bg-red-50 border-red-200 text-red-700` | `bg-error/10 border-error/30 text-error` |
 
 ---
 
@@ -466,12 +533,12 @@ When deleting, the API extracts the storage path from the URL using the `/collec
 
 ### Phase 1: Unified Visual System
 
-1. Create `DisplayItem` adapter type and `collectionItemToDisplayItem()` mapper
-2. Make `ListingCard` accept `DisplayItem` (or extend its existing `Listing` interface to support collection fields)
+1. ~~Create `DisplayItem` adapter type and `collectionItemToDisplayItem()` mapper~~ **DONE** (2026-02-26)
+2. ~~Make `ListingCard` accept `DisplayItem`~~ **DONE** — `preMappedItems` prop on `ListingGrid`
 3. Make `QuickViewContent` branch on `source` for action bar (edit/delete vs. favorite/inquire)
 4. Add provenance section to QuickViewContent (shown when `source === 'collection'`)
-5. Wire collection page to use `ListingGrid` + `FilterSidebar` instead of custom components
-6. Delete ~1,070 lines of parallel collection components
+5. ~~Wire collection page to use `ListingGrid` + filter sidebar matching browse~~ **DONE** (2026-02-27)
+6. Delete remaining ~820 lines of parallel collection components
 
 ### Phase 2: Instant "I Own This"
 
