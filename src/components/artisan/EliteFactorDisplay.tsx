@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import Link from 'next/link';
 import { useLocale } from '@/i18n/LocaleContext';
 
 /**
@@ -190,11 +189,6 @@ export function EliteFactorDisplay({
             <p>{t('artist.eliteExplanation1', { peers: peerLabel })}</p>
             <p>{t('artist.eliteExplanation2')}</p>
             <p>{t('artist.eliteExplanation3', { pct: topPct, peers: peerLabel })}</p>
-            <p>
-              <Link href="/eliteranking" className="text-gold/70 hover:text-gold transition-colors">
-                {t('artist.readMethodology')}
-              </Link>
-            </p>
           </div>
 
           {/* Histogram */}

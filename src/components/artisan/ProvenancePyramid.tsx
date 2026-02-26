@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import Link from 'next/link';
 import { useLocale } from '@/i18n/LocaleContext';
 import {
   PROVENANCE_TIERS,
@@ -260,15 +259,15 @@ interface ProvenanceFactorDisplayProps {
 }
 
 /** Fallback percentile estimate when DB value not available.
- *  Thresholds calibrated to post-migration-424 distribution (max 5.21, floor ~1.77).
+ *  Thresholds calibrated to post-migration-427 distribution (item-level max, range ~1.77–5.29).
  */
 function estimatePercentile(factor: number): number {
   if (factor >= 4.5) return 99;
-  if (factor >= 3.5) return 97;
-  if (factor >= 3.0) return 95;
-  if (factor >= 2.5) return 88;
-  if (factor >= 2.2) return 75;
-  if (factor >= 2.0) return 50;
+  if (factor >= 3.5) return 98;
+  if (factor >= 3.0) return 96;
+  if (factor >= 2.5) return 91;
+  if (factor >= 2.2) return 85;
+  if (factor >= 2.0) return 53;
   return 30;
 }
 
@@ -348,11 +347,6 @@ export function ProvenanceFactorDisplay({ analysis, entityType, percentile: dbPe
             <p>{t('artist.provenanceExplanation1')}</p>
             <p>{t('artist.provenanceExplanation2')}</p>
             <p>{t('artist.provenanceExplanation3', { pct: topPct, peers: peerLabel })}</p>
-            <p>
-              <Link href="/eliteranking" className="text-gold/70 hover:text-gold transition-colors">
-                {t('artist.readMethodology')}
-              </Link>
-            </p>
           </div>
 
           {/* Histogram */}
