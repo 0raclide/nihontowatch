@@ -364,8 +364,16 @@ export function QuickView() {
 
         {/* Desktop layout (hide below lg, show on lg+) */}
         <div className="hidden lg:flex flex-row h-full min-h-0 overflow-hidden" data-testid="quickview-desktop-layout">
-          {/* Study mode or Image Section */}
-          {isStudyMode ? (
+          {/* Admin edit, study mode, or Image Section */}
+          {isAdminEditMode ? (
+            <div className="flex-1 min-h-0 w-3/5 overflow-y-auto bg-cream">
+              <AdminEditView
+                listing={currentListing}
+                onBackToPhotos={toggleAdminEditMode}
+                onRefresh={(fields) => refreshCurrentListing(fields)}
+              />
+            </div>
+          ) : isStudyMode ? (
             <div className="flex-1 min-h-0 w-3/5 overflow-hidden">
               <StudySetsumeiView
                 listing={currentListing as ListingWithEnrichment}
@@ -465,22 +473,14 @@ export function QuickView() {
             )}
 
             <div className="flex-1 min-h-0 overflow-y-auto">
-              {isAdminEditMode ? (
-                <AdminEditView
-                  listing={currentListing}
-                  onBackToPhotos={toggleAdminEditMode}
-                  onRefresh={(fields) => refreshCurrentListing(fields)}
-                />
-              ) : (
-                <QuickViewContent
-                  listing={currentListing}
-                  onClose={closeQuickView}
-                  isStudyMode={isStudyMode}
-                  onToggleStudyMode={toggleStudyMode}
-                  isAdminEditMode={isAdminEditMode}
-                  onToggleAdminEditMode={toggleAdminEditMode}
-                />
-              )}
+              <QuickViewContent
+                listing={currentListing}
+                onClose={closeQuickView}
+                isStudyMode={isStudyMode}
+                onToggleStudyMode={toggleStudyMode}
+                isAdminEditMode={isAdminEditMode}
+                onToggleAdminEditMode={toggleAdminEditMode}
+              />
             </div>
           </div>
 
