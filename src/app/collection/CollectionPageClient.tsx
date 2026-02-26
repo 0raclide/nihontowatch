@@ -4,7 +4,8 @@ import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useLocale } from '@/i18n/LocaleContext';
 import type { CollectionItem, CollectionFilters, CollectionFacets, CollectionListResponse } from '@/types/collection';
-import { ListingCard } from '@/components/browse/ListingCard';
+import type { DisplayItem } from '@/types/displayItem';
+import { ListingGrid } from '@/components/browse/ListingGrid';
 import { AddItemCard } from '@/components/collection/AddItemCard';
 import { CollectionFilterContent } from '@/components/collection/CollectionFilterContent';
 import { CollectionBottomBar } from '@/components/collection/CollectionBottomBar';
@@ -112,6 +113,9 @@ export function CollectionPageClient() {
     }
   }, [t]);
 
+  // Track whether deep link has been handled to prevent re-opening on re-renders
+  const deepLinkHandledRef = useRef(false);
+
   // Initial fetch + check for listing import prefill
   useEffect(() => {
     fetchItems(filters);
@@ -134,6 +138,19 @@ export function CollectionPageClient() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Deep link: ?item=UUID → auto-open QuickView after items load
+  useEffect(() => {
+    if (deepLinkHandledRef.current || isLoading || items.length === 0) return;
+    const itemId = searchParams.get('item');
+    if (!itemId) return;
+
+    const match = items.find(i => i.id === itemId);
+    if (match) {
+      deepLinkHandledRef.current = true;
+      quickView.openCollectionQuickView(match, 'view');
+    }
+  }, [items, isLoading, searchParams, quickView]);
 
   // Register refresh callback for QuickView saves
   useEffect(() => {
@@ -173,10 +190,13 @@ export function CollectionPageClient() {
     handleFilterChange({ sort: sort as CollectionFilters['sort'] });
   }, [handleFilterChange]);
 
-  // Card click → open collection QuickView
-  const handleItemClick = useCallback((item: CollectionItem) => {
-    quickView.openCollectionQuickView(item, 'view');
-  }, [quickView]);
+  // Card click → open collection QuickView (receives DisplayItem from ListingGrid, looks up original CollectionItem)
+  const handleCardClick = useCallback((displayItem: DisplayItem) => {
+    const original = items.find(i => i.id === displayItem.id);
+    if (original) {
+      quickView.openCollectionQuickView(original, 'view');
+    }
+  }, [items, quickView]);
 
   // Add button
   const handleAddClick = useCallback(() => {
@@ -222,34 +242,20 @@ export function CollectionPageClient() {
 
           {/* Grid */}
           <div className="flex-1 min-w-0">
-            {isLoading ? (
-              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-5">
-                {Array.from({ length: 8 }).map((_, i) => (
-                  <div key={i} className="bg-cream border border-border rounded overflow-hidden animate-pulse">
-                    <div className="px-3 py-2"><div className="h-3 bg-linen rounded w-20" /></div>
-                    <div className="aspect-[3/4] bg-linen" />
-                    <div className="px-3 py-3 space-y-2">
-                      <div className="h-4 bg-linen rounded w-3/4" />
-                      <div className="h-3 bg-linen rounded w-1/2" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-5">
-                {adaptedItems.map((item, idx) => (
-                  <ListingCard
-                    key={items[idx].id}
-                    listing={item}
-                    currency={currency}
-                    exchangeRates={exchangeRates}
-                    showFavoriteButton={false}
-                    onClick={() => handleItemClick(items[idx])}
-                  />
-                ))}
-                <AddItemCard onClick={handleAddClick} />
-              </div>
-            )}
+            <ListingGrid
+              listings={[]}
+              preMappedItems={adaptedItems}
+              total={total}
+              page={1}
+              totalPages={1}
+              onPageChange={() => {}}
+              isLoading={isLoading}
+              currency={currency}
+              exchangeRates={exchangeRates}
+              mobileView="grid"
+              onCardClick={handleCardClick}
+              appendSlot={<AddItemCard onClick={handleAddClick} />}
+            />
           </div>
         </div>
       </div>

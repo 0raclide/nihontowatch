@@ -91,6 +91,9 @@ interface VirtualListingGridProps {
   isAdmin?: boolean; // For admin-only features like artisan code display
   mobileView?: 'grid' | 'gallery'; // Mobile layout mode
   smartCropEnabled?: boolean; // Override for smart crop toggle (admin tuning)
+  appendSlot?: React.ReactNode; // Optional element rendered after the last card (e.g. AddItemCard)
+  onCardClick?: (listing: DisplayItem) => void; // Override default QuickView open (e.g. collection items)
+  preMappedItems?: DisplayItem[]; // Pre-mapped DisplayItems (skip internal listingToDisplayItem mapping)
 }
 
 function Pagination({
@@ -216,6 +219,9 @@ export function VirtualListingGrid({
   isAdmin = false,
   mobileView = 'gallery',
   smartCropEnabled: smartCropEnabledProp,
+  appendSlot,
+  onCardClick,
+  preMappedItems,
 }: VirtualListingGridProps) {
   const quickView = useQuickViewOptional();
   const { t, locale } = useLocale();
@@ -223,9 +229,10 @@ export function VirtualListingGrid({
   const smartCropEnabled = smartCropEnabledProp ?? isSmartCropActive();
 
   // Map incoming API listings to DisplayItem for ListingCard consumption
+  // When preMappedItems is provided (e.g. collection items), skip the mapping
   const displayItems: DisplayItem[] = useMemo(
-    () => listings.map(listing => listingToDisplayItem(listing as any, locale)),
-    [listings, locale]
+    () => preMappedItems ?? listings.map(listing => listingToDisplayItem(listing as any, locale)),
+    [preMappedItems, listings, locale]
   );
   const loadMoreTriggerRef = useRef<HTMLDivElement>(null);
   const lastListingCountRef = useRef(listings.length);
@@ -273,7 +280,9 @@ export function VirtualListingGrid({
 
   // Pass listings to QuickView context for navigation
   // Skip when in alert carousel mode to prevent overwriting the alert listings
+  // Skip when preMappedItems provided — parent manages its own setListings call
   useEffect(() => {
+    if (preMappedItems) return;
     if (quickView && quickViewListings.length > 0 && !quickView.isAlertMode) {
       if (lastSetListingsRef.current !== quickViewListings) {
         lastSetListingsRef.current = quickViewListings;
@@ -383,8 +392,10 @@ export function VirtualListingGrid({
               ? `${item.focal_x}% ${item.focal_y}%`
               : undefined
           }
+          onClick={onCardClick}
         />
       ))}
+      {appendSlot}
     </div>
   );
 

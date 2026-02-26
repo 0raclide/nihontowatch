@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { VirtualListingGrid } from './VirtualListingGrid';
 import { ViewportTrackingProvider } from '@/lib/viewport';
+import type { DisplayItem } from '@/types/displayItem';
 
 
 interface Listing {
@@ -83,6 +84,9 @@ interface ListingGridProps {
   smartCropEnabled?: boolean; // Admin toggle override for smart crop
   isUrlSearch?: boolean; // Whether the current search was a URL query
   searchQuery?: string; // The raw search query (for report missing URL)
+  appendSlot?: React.ReactNode; // Optional element rendered after the last card (e.g. AddItemCard)
+  onCardClick?: (listing: DisplayItem) => void; // Override default QuickView open (e.g. collection items)
+  preMappedItems?: DisplayItem[]; // Pre-mapped DisplayItems (skip internal listingToDisplayItem mapping)
 }
 
 function LoadingSkeleton() {
@@ -218,14 +222,18 @@ export function ListingGrid({
   smartCropEnabled,
   isUrlSearch,
   searchQuery,
+  appendSlot,
+  onCardClick,
+  preMappedItems,
 }: ListingGridProps) {
   // Loading state
   if (isLoading) {
     return <LoadingSkeleton />;
   }
 
-  // Empty state
-  if (listings.length === 0) {
+  // Empty state — skip when appendSlot is provided (e.g. AddItemCard in collection)
+  const itemCount = preMappedItems ? preMappedItems.length : listings.length;
+  if (itemCount === 0 && !appendSlot) {
     return <EmptyState isAdmin={isAdmin} isUrlSearch={isUrlSearch} searchQuery={searchQuery} />;
   }
 
@@ -244,12 +252,15 @@ export function ListingGrid({
         totalPages={totalPages}
         onPageChange={onPageChange}
         isLoadingMore={isLoadingMore}
-        hasMore={listings.length < total}
+        hasMore={itemCount < total}
         onLoadMore={onLoadMore}
         searchId={searchId}
         isAdmin={isAdmin}
         mobileView={mobileView}
         smartCropEnabled={smartCropEnabled}
+        appendSlot={appendSlot}
+        onCardClick={onCardClick}
+        preMappedItems={preMappedItems}
       />
     </ViewportTrackingProvider>
   );

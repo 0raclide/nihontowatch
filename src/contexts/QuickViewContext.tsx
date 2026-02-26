@@ -21,7 +21,7 @@ import {
   getCachedValidation,
   setCachedValidation,
 } from '@/lib/images';
-import { collectionItemToListing } from '@/lib/collection/adapter';
+import { collectionItemToDisplayItem } from '@/lib/displayItem';
 
 // ============================================================================
 // Types
@@ -395,7 +395,7 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
   const openCollectionQuickView = useCallback((item: CollectionItem, mode: 'view' | 'edit' = 'view') => {
     if (closeCooldown.current) return;
 
-    const adaptedListing = collectionItemToListing(item) as unknown as Listing;
+    const adaptedListing = collectionItemToDisplayItem(item) as unknown as Listing;
     setSource('collection');
     setCollectionItem(item);
     setCollectionModeState(mode);
