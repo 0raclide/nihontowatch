@@ -32,6 +32,7 @@
 | [ARTIST_FEATURE.md](./ARTIST_FEATURE.md) | **Comprehensive artist feature docs** — directory, profiles, admin badges, data model, all file paths |
 | [SMART_CROP_FOCAL_POINTS.md](./SMART_CROP_FOCAL_POINTS.md) | **Smart crop focal points** — AI image cropping, cron pipeline, admin toggle, invalidation trigger, all file paths |
 | [ARTISAN_TOOLTIP_VERIFICATION.md](./ARTISAN_TOOLTIP_VERIFICATION.md) | Admin QA tool - click artisan badges for details & verification |
+| [HANDOFF_ADMIN_FIELD_EDITING.md](./HANDOFF_ADMIN_FIELD_EDITING.md) | **AdminEditView** — unified admin panel (cert, artisan, fields, status, hide), consolidation history, field auto-lock |
 | [LEGAL_COMPLIANCE.md](./LEGAL_COMPLIANCE.md) | GDPR geo-gated cookie consent — banner only for EU/EEA/UK, middleware cookie, analytics defaults |
 | [SESSION_20260221_I18N_LOCALIZATION.md](./SESSION_20260221_I18N_LOCALIZATION.md) | **i18n foundation** — translation system, 1,300+ keys, cookie-based locale, IP detection, kanji search, test patterns |
 | [JAPANESE_UX_RECOMMENDATIONS.md](./JAPANESE_UX_RECOMMENDATIONS.md) | **JA UX research** — design philosophy, typography, density, trust signals, navigation, mobile, forms (Phase 1 complete, Phase 2 partial) |

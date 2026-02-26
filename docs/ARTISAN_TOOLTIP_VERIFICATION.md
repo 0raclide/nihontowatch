@@ -6,9 +6,34 @@
 
 ---
 
+## Admin Tool Consolidation (2026-02-26)
+
+Artisan admin tools were consolidated from 3 overlapping surfaces into a single unified panel:
+
+| Before | After |
+|--------|-------|
+| **ArtisanTooltip** in QuickView (floating portal with search, verify, cert editing) | **Removed from QuickView** — only on browse grid ListingCards |
+| **AdminArtisanWidget** (collapsible search panel in QuickView) | **Deleted** — merged into AdminEditView |
+| **AdminEditView** (mobile-only admin panel) | **Now the single admin surface** for both desktop + mobile |
+
+**What changed:**
+- `AdminArtisanWidget.tsx` deleted (339 lines). Only consumer was QuickViewContent.
+- ArtisanTooltip removed from QuickView (2 instances: "Set ID" for unmatched + pen icon next to artist name). Stays on browse grid ListingCards for quick inline QA.
+- New `ArtisanDetailsPanel` component extracts the artisan details display (elite bar, cert counts, candidates, profile link).
+- AdminEditView enhanced: auto-opens search for unmatched/UNKNOWN, tracks method/candidates in state (prevents stale data after reassignment), metadata fields collapsed by default.
+- Shared `ArtisanCandidate` type extracted to `src/types/artisan.ts`.
+
+**Key files changed:** `AdminEditView.tsx`, `QuickViewContent.tsx`, `ArtisanTooltip.tsx`, `src/types/artisan.ts`
+**New files:** `src/components/admin/ArtisanDetailsPanel.tsx`, `tests/components/admin/AdminEditView.test.tsx`, `tests/components/admin/ArtisanDetailsPanel.test.tsx`
+**Tests:** 31 new tests (17 ArtisanDetailsPanel, 8 AdminEditView integration, 6 QuickViewContent regression)
+
+---
+
 ## Overview
 
-The artisan tooltip feature allows admins to click on artisan ID badges (e.g., "MAS590", "OWA009") on listing cards to view detailed artisan information from the Yuhinkai database. Admins can then verify if the match is correct or incorrect, which is saved to the database for QA tracking.
+The artisan tooltip feature allows admins to click on artisan ID badges (e.g., "MAS590", "OWA009") on **browse grid listing cards** to view detailed artisan information from the Yuhinkai database. Admins can then verify if the match is correct or incorrect, which is saved to the database for QA tracking.
+
+In **QuickView**, artisan management (search, verify, reassign, details) is handled by **AdminEditView** (accessed via the pen icon in the action bar). See `docs/HANDOFF_ADMIN_FIELD_EDITING.md` for AdminEditView documentation.
 
 ---
 
@@ -281,12 +306,16 @@ The code supports both naming conventions for backwards compatibility.
 
 | File | Purpose |
 |------|---------|
-| `src/components/artisan/ArtisanTooltip.tsx` | Tooltip component with verification |
+| `src/components/artisan/ArtisanTooltip.tsx` | Tooltip on browse grid ListingCards (verify, search, cert editing) |
+| `src/components/admin/ArtisanDetailsPanel.tsx` | Artisan details display (elite bar, cert counts, candidates, profile link) |
+| `src/components/listing/AdminEditView.tsx` | Unified admin panel (cert + artisan + fields + status + hide) |
+| `src/components/admin/ArtisanSearchPanel.tsx` | Shared search panel (used by ArtisanTooltip + AdminEditView) |
 | `src/app/api/artisan/[code]/route.ts` | Fetches artisan details from Yuhinkai |
 | `src/app/api/listing/[id]/verify-artisan/route.ts` | Saves verification status |
 | `src/lib/supabase/yuhinkai.ts` | Supabase client for Yuhinkai database |
 | `src/components/browse/ListingCard.tsx` | Badge display and tooltip integration |
 | `src/app/api/browse/route.ts` | Includes artisan fields in listing response |
+| `src/types/artisan.ts` | Shared `ArtisanCandidate` type |
 | `supabase/migrations/049_artisan_verification.sql` | Verification columns |
 | `src/app/globals.css` | CSS variables for confidence colors |
 
@@ -493,7 +522,9 @@ for listing in listings_to_match:
 
 | File | Purpose |
 |------|---------|
-| `src/components/artisan/ArtisanTooltip.tsx` | Tooltip with search UI for correction |
+| `src/components/listing/AdminEditView.tsx` | Primary admin correction surface (QuickView) |
+| `src/components/artisan/ArtisanTooltip.tsx` | Tooltip with search UI for correction (browse grid only) |
+| `src/components/admin/ArtisanSearchPanel.tsx` | Shared search panel (used by both surfaces) |
 | `src/app/api/artisan/search/route.ts` | Search endpoint for Yuhinkai database |
 | `src/app/api/listing/[id]/fix-artisan/route.ts` | Applies correction to listing |
 | `supabase/migrations/051_artisan_corrections.sql` | Corrections table schema |

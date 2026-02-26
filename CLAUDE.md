@@ -63,78 +63,7 @@
 
 ## Architecture Overview
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                         NIHONTOWATCH                            │
-│                    (Next.js Frontend)                           │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐       │
-│  │  Browse  │  │  Search  │  │  Alerts  │  │  Dealers │       │
-│  │  /browse │  │  /search │  │  /alerts │  │ /dealers │       │
-│  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘       │
-│       │             │             │             │               │
-│       └─────────────┴──────┬──────┴─────────────┘               │
-│                            │                                    │
-│                    ┌───────▼───────┐                           │
-│                    │   Supabase    │                           │
-│                    │   (Shared)    │                           │
-│                    └───────┬───────┘                           │
-└────────────────────────────┼────────────────────────────────────┘
-                             │
-┌────────────────────────────┼────────────────────────────────────┐
-│                            │                                    │
-│                    ┌───────▼───────┐                           │
-│                    │   Supabase    │                           │
-│                    │   Database    │                           │
-│                    └───────┬───────┘                           │
-│                            │                                    │
-│  ┌──────────┐  ┌──────────┴──────────┐  ┌──────────┐          │
-│  │ Dealers  │  │      Listings       │  │  Price   │          │
-│  │  Table   │  │       Table         │  │ History  │          │
-│  └──────────┘  └─────────────────────┘  └──────────┘          │
-│                                                                 │
-│                      OSHI-SCRAPPER                             │
-│                   (Python Backend)                              │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐       │
-│  │ Scrapers │  │Discovery │  │   LLM    │  │  Daily   │       │
-│  │  (18+)   │  │ Crawlers │  │ Extract  │  │  Jobs    │       │
-│  └──────────┘  └──────────┘  └──────────┘  └──────────┘       │
-└─────────────────────────────────────────────────────────────────┘
-```
-
----
-
-## Directory Structure
-
-```
-nihontowatch/
-├── src/
-│   ├── app/                    # Next.js App Router pages
-│   │   ├── browse/             # Main listing browse view
-│   │   ├── search/             # Advanced search
-│   │   ├── listing/[id]/       # Individual listing detail
-│   │   ├── dealers/            # Dealer directory
-│   │   ├── alerts/             # Price/new listing alerts
-│   │   └── api/                # API routes
-│   ├── components/
-│   │   ├── listing/            # Listing card, detail components
-│   │   ├── search/             # Search bar, filters, facets
-│   │   ├── dealers/            # Dealer cards, profiles
-│   │   └── ui/                 # Shared UI components
-│   ├── lib/
-│   │   ├── supabase/           # Database client
-│   │   ├── constants.ts        # App-wide constants
-│   │   ├── types.ts            # TypeScript types
-│   │   └── utils.ts            # Utility functions
-│   ├── hooks/                  # Custom React hooks
-│   └── types/                  # TypeScript type definitions
-├── docs/
-│   ├── INDEX.md                # Documentation navigation
-│   ├── ARCHITECTURE.md         # System architecture
-│   └── CROSS_REPO_REFERENCE.md # Links to Oshi-scrapper/Oshi-v2
-├── public/                     # Static assets
-├── CLAUDE.md                   # This file
-└── package.json
-```
+Next.js App Router frontend reads from shared Supabase database. Oshi-scrapper (Python) discovers URLs, scrapes listings, and writes to the same DB. See `docs/ARCHITECTURE.md` for full diagram.
 
 ---
 
@@ -171,7 +100,7 @@ images (JSONB), raw_page_text
 -- Timestamps
 first_seen_at, last_scraped_at, scrape_count
 -- Sorting
-is_initial_import  -- TRUE = bulk import, FALSE = genuine new inventory (for "Newest" sort)
+is_initial_import  -- TRUE = bulk import, FALSE = genuine new inventory (for "Newest" sort). See Critical Rule #12: backfills bypass trigger.
 -- Artisan matching (from Oshi-scrapper)
 artisan_id, artisan_confidence, artisan_method, artisan_candidates, artisan_matched_at
 -- Artisan verification (admin QA)
@@ -224,121 +153,22 @@ id, url (UNIQUE), dealer_id, discovered_at, is_scraped, scrape_priority
 
 ---
 
-## Current Dealers (52 Total)
+## Dealers
 
-### Japanese Dealers (39)
+52 active dealers (39 Japanese, 13 international). Full list with domains and verified `name_ja` values: `supabase/migrations/084_dealer_name_ja.sql`. Query DB for current roster.
 
-All Japanese dealers have verified `name_ja` values for JA locale display. Names sourced from official websites (title tags, headers, footers, 特定商取引法 pages). See `supabase/migrations/084_dealer_name_ja.sql`.
-
-| Dealer | Domain | name_ja | Status |
-|--------|--------|---------|--------|
-| Aoi Art | aoijapan.com | 葵美術 | ✅ Active |
-| Asahi Token | asahitoken.jp | あさひ刀剣 | ✅ Active |
-| Ayakashi | ayakashi.co.jp | あやかし堂 | ✅ Active |
-| Choshuya | ginza.choshuya.co.jp | 銀座長州屋 | ✅ Active |
-| E-sword | e-sword.jp | イーソード | ✅ Active |
-| Eirakudo | eirakudo.shop | 永楽堂 | ✅ Active |
-| Gallery Youyou | galleryyouyou.com | ギャラリー陽々 | ✅ Active |
-| Giheiya | giheiya.com | 儀平屋 | ✅ Active |
-| Ginza Seikodo | ginzaseikodo.com | 銀座盛光堂 | ✅ Active |
-| Goushuya | goushuya-nihontou.com | 江州屋刀剣店 | ✅ Active |
-| Hyozaemon | hyozaemon.jp | 兵左衛門百観音堂 | ✅ Active |
-| Iida Koendo | iidakoendo.com | 飯田高遠堂 | ✅ Active |
-| Kanshoan | kanshoan.com | 干将庵 | ✅ Active |
-| Katana Ando | katana-ando.co.jp | 安東貿易 | ✅ Active |
-| Katanahanbai | katanahanbai.com | 丸英刀剣 | ✅ Active |
-| Kusanagi | kusanaginosya.com | 草薙の舎 | ✅ Active |
-| Nipponto | nipponto.co.jp | 明倫産業 | ✅ Active |
-| Premi | premi.co.jp | 刀剣高吉 | ✅ Active |
-| Samurai Nippon | samurai-nippon.net | コレクション情報 | ✅ Active |
-| Samurai Shokai | samuraishokai.jp | サムライ商会 | ✅ Active |
-| Sanmei | sanmei.com | 刀剣徳川 | ✅ Active |
-| Seikeido | seikeido.com | 成蹊堂 | ✅ Active |
-| Shingendou | instagram.com | 眞玄堂 | ✅ Active |
-| Shoubudou | shoubudou.co.jp | 勝武堂 | ✅ Active |
-| Sugie Art | sugieart.com | 杉江美術店 | ✅ Active |
-| Taiseido | taiseido.biz | タイセイ堂 | ✅ Active |
-| Token-Net | token-net.com | 刀剣杉田 | ✅ Active |
-| Tokka Biz | tokka.biz | 十拳 | ✅ Active |
-| Tosa Touken Do | tosatoukendo.com | 土佐刀剣堂 | ✅ Active |
-| Touken Komachi | toukenkomachi.com | 刀剣小町 | ✅ Active |
-| Touken Matsumoto | touken-matsumoto.jp | 美術刀剣松本 | ✅ Active |
-| Touken Sakata | touken-sakata.com | 刀剣坂田 | ✅ Active |
-| Toukentakarado | toukentakarado.com | 宝刀堂 | ✅ Active |
-| Toushin | shop.nihontou.jp | 刀心 | ✅ Active |
-| Tsuruginoya | tsuruginoya.com | つるぎの屋 | ✅ Active |
-| Wakeidou | wakeidou.com | 和敬堂 | ✅ Active |
-| World Seiyudo | world-seiyudo.com | 銀座誠友堂 | ✅ Active |
-| Yamasiroya | yamasiroya.com | 山城屋 | ✅ Active |
-| Yushindou | yushindou.com | 勇進堂 | ✅ Active |
-
-### International Dealers (13)
-
-International dealers have `name_ja = NULL` — English name used in both locales.
-
-| Dealer | Domain | Country | Status |
-|--------|--------|---------|--------|
-| Giuseppe Piva | giuseppepiva.com | Italy | ✅ Active |
-| Katana Sword | katana-sword.com | USA | ✅ Active |
-| Legacy Swords | legacyswords.com | USA | ✅ Active |
-| Nihon Art | nihonart.com | USA | ✅ Active |
-| Nihonto | nihonto.com | USA | ✅ Active |
-| Nihonto Art | nihontoart.com | Canada | ✅ Active |
-| Nihonto Art EU | nihonto.art | France | ✅ Active |
-| Nihonto Australia | nihonto.com.au | Australia | ✅ Active |
-| Nihontocraft | nihontocraft.com | USA | ✅ Active |
-| SamuraiSword | samuraisword.com | USA | ✅ Active |
-| Soryu | soryu.pl | Poland | ✅ Active |
-| Swords of Japan | swordsofjapan.com | USA | ✅ Active |
-| Tetsugendo | tetsugendo.com | USA | ✅ Active |
-| Tsuba Info | tsuba.info | Netherlands | ✅ Active |
+**Key rules:**
+- All JP `name_ja` values verified from official websites — never AI-guess these (24/36 initial guesses were wrong)
+- International dealers have `name_ja = NULL` — English name used in both locales
+- **Confusable names**: Nihon Art (id=80, nihonart.com, USA) vs Nihonto Art (id=21, nihontoart.com, Canada)
 
 ---
 
-## Key Features (Planned)
+## Development
 
-### MVP Features
-1. **Browse Listings** - Grid/list view with filters
-2. **Search** - Full-text search with facets
-3. **Listing Detail** - Images, specs, price, dealer info
-4. **Dealer Directory** - All dealers with inventory counts
-
-### Completed Features (Phase 1)
-1. **User Accounts** - Magic link + password auth
-2. **Subscription Tiers** - Free / Pro ($25/mo) / Collector ($99/mo) / Inner Circle ($249/mo) / Dealer ($150/mo)
-3. **Saved Searches with Alerts** - Instant (15 min) or daily digest emails
-4. **Price Drop Alerts** - Email when watched items decrease in price
-5. **AI Inquiry Emails** - Japanese business email drafts
-6. **Setsumei Translations** - NBTHK certification descriptions in English
-7. **7-day Data Delay** - Free users see listings 7 days late
-
-### Future Features (Phase 2+)
-1. **Private Listings** - Exclusive dealer items (Inner Circle)
-2. **Artist Stats** - Juyo/Tokuju certification counts by smith
-3. **Market Analytics** - Price trends, inventory levels
-4. **Dealer Tier** - Analytics and listing management for dealers
-
----
-
-## Development Workflow
-
-### Local Development
-```bash
-cd /Users/christopherhill/Desktop/Claude_project/nihontowatch
-npm run dev
-# Open http://localhost:3000
-```
-
-### Database (Shared Supabase)
-The database is shared with Oshi-scrapper. Data flows:
-1. Oshi-scrapper discovers URLs via crawlers
-2. Oshi-scrapper scrapes listings, stores in Supabase
-3. Nihontowatch reads from Supabase, displays to users
-
-### Deployment
-```bash
-git push  # Auto-deploys to Vercel → nihontowatch.com
-```
+- **Local**: `npm run dev` → http://localhost:3000
+- **Deploy**: `git push` → auto-deploys to Vercel
+- **Data flow**: Oshi-scrapper writes to Supabase → NihontoWatch reads
 
 ---
 
@@ -416,42 +246,7 @@ When trial ends, paywall returns instantly - no code changes needed.
 | Inner Circle | `inner_circle` | $249/mo | Everything in Collector + private listings, Discord, LINE |
 | Dealer | `dealer` | $150/mo | Pro features + analytics dashboard, competitive intel |
 
-### Search Alerts Architecture
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    SEARCH ALERTS FLOW                           │
-│                                                                 │
-│  User saves search          Vercel Cron (*/15 min)             │
-│  with notification          or (8am UTC daily)                  │
-│        │                           │                            │
-│        ▼                           ▼                            │
-│  ┌───────────┐              ┌────────────────┐                 │
-│  │ saved_    │◄─────────────│ process-saved- │                 │
-│  │ searches  │              │ searches cron  │                 │
-│  └───────────┘              └───────┬────────┘                 │
-│                                     │                           │
-│                                     ▼                           │
-│                            ┌────────────────┐                  │
-│                            │   matcher.ts   │                  │
-│                            │ findMatching() │                  │
-│                            └───────┬────────┘                  │
-│                                    │                            │
-│                                    ▼                            │
-│                            ┌────────────────┐                  │
-│                            │   SendGrid     │                  │
-│                            │   Email API    │                  │
-│                            └───────┬────────┘                  │
-│                                    │                            │
-│                                    ▼                            │
-│                            ┌────────────────┐                  │
-│                            │ saved_search_  │                  │
-│                            │ notifications  │                  │
-│                            └────────────────┘                  │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-### Key Files
+### Key Files (Subscriptions & Alerts)
 
 | Component | Location |
 |-----------|----------|
@@ -588,24 +383,9 @@ Listing card thumbnails use AI-detected focal points to crop images intelligentl
 3. **Postgres trigger** (`080_focal_point_invalidation.sql`) — BEFORE UPDATE trigger NULLs focal_x/focal_y when `images` or `stored_images` change, so cron recomputes
 4. **CSS rendering** — `object-position: {focal_x}% {focal_y}%` on the `<Image>` component's style prop
 
-**Data flow:**
-```
-Scraper writes listing → images column populated → focal_x/focal_y are NULL
-    ↓
-Cron (every 4h): fetch NULL focal_x listings → download image → sharp resize to 512px
-    → smartcrop.crop() with 3:4 target → store focal_x/focal_y percentages
-    ↓
-Browse API: SELECT focal_x, focal_y → VirtualListingGrid computes focalPosition string
-    → ListingCard receives focalPosition prop → <Image style={{ objectPosition }}>
-```
+**Feature flag:** `NEXT_PUBLIC_SMART_CROP=false` disables for all users. Admin toggle in FilterSidebar for comparison.
 
-**Admin toggle:** Admin users see a "Smart Crop" on/off switch in the FilterSidebar panel controls (desktop). Persisted in localStorage (`nihontowatch-smart-crop`). Lets admin compare smart crop vs center-center in real time. Non-admin users always get the env var default (`NEXT_PUBLIC_SMART_CROP`, default ON).
-
-**Feature flag:** `NEXT_PUBLIC_SMART_CROP=false` disables for all users. `isSmartCropActive()` in `src/types/subscription.ts` reads this.
-
-**Performance:** Feature flag evaluates once per grid render in VirtualListingGrid (not per-card). The `focalPosition` string is computed in the parent and passed as a prop to ListingCard.
-
-**Image change invalidation:** When a dealer re-photographs an item and the scraper updates `images` or `stored_images`, the Postgres trigger automatically NULLs the focal points. The cron picks it up within 4 hours.
+**Invalidation:** Postgres trigger NULLs focal_x/focal_y when `images`/`stored_images` change → cron recomputes within 4h.
 
 **Key files:**
 | Component | Location |
@@ -643,18 +423,6 @@ UI chrome (labels, buttons, nav) uses the `useLocale()` hook and `t()` function 
 3. **MetadataGrid `getArtisanInfo(listing, locale)`** — JA returns kanji smith/maker/school directly; EN romanizes via `title_en` extraction, filters out Japanese-only names. Also localizes `mei_type` via `td('meiType', ...)` → "Signed"/"在銘".
 4. **ListingCard** — `cleanedTitle` uses `title_en` for EN locale, `title_ja` for JA locale (if available), falls back to `title`.
 5. **QuickViewContent** — Shows `artisan_name_kanji` for JA locale, `artisan_display_name` for EN.
-
-**i18n keys for listing data:**
-
-| Key | EN | JA |
-|-----|----|----|
-| `listing.showOriginal` | Show original | 原文を表示 |
-| `listing.showTranslation` | Show translation | 翻訳を表示 |
-| `listing.readMore` | Read more | 続きを読む |
-| `listing.showLess` | Show less | 閉じる |
-| `listing.translationUnavailable` | (Translation unavailable) | （翻訳なし） |
-| `meiType.mei` | Signed | 在銘 |
-| `meiType.mumei` | Unsigned | 無銘 |
 
 **Key files:**
 | Component | Location |
@@ -774,19 +542,27 @@ Displays Yuhinkai artisan codes (e.g., "MAS590", "OWA009") on listing cards for 
 - URL param: `?artisan=MAS590` (substring match)
 - Search box: Type artisan code directly (e.g., "OWA009") - auto-detected by pattern
 
-**Admin "Set Artisan" widget (QuickView):**
-- Collapsible panel in QuickView for manually assigning artisan codes to unmatched listings
-- Search with auto-detected type filtering (smith/tosogu based on item_type)
-- Uses `/api/artisan/search` + `/api/listing/[id]/fix-artisan`
-- Admin also sees edit pen icon next to artisan badges in QuickView for quick corrections via ArtisanTooltip
+**Admin artisan management (unified in AdminEditView):**
+- All artisan admin tools consolidated into AdminEditView (pen icon in QuickView action bar)
+- Works identically on desktop and mobile — one admin surface for both platforms
+- ArtisanDetailsPanel fetches `/api/artisan/{code}` and shows elite bar, cert counts, candidates, profile link
+- Search panel auto-opens for unmatched/UNKNOWN listings; closed for matched (click "Reassign Artisan" to open)
+- Verify buttons (Correct/Incorrect) — "Incorrect" auto-opens search panel for reassignment
+- Uses shared components: `ArtisanSearchPanel`, `CertPillRow`, `ArtisanDetailsPanel`
+- ArtisanTooltip remains on browse grid ListingCards only (different context — quick inline QA without opening QuickView)
+- Metadata field editing (`FieldEditSection`) collapsed by default — 95% of corrections are cert/artisan
 
 **Key files:**
 | Component | Location |
 |-----------|----------|
 | CSS colors | `src/app/globals.css` (--artisan-high, --artisan-medium, --artisan-low) |
 | Badge display | `src/components/browse/ListingCard.tsx` (certification row) |
-| Tooltip component | `src/components/artisan/ArtisanTooltip.tsx` |
-| Admin set artisan | `src/components/artisan/AdminArtisanWidget.tsx` |
+| Tooltip (browse grid only) | `src/components/artisan/ArtisanTooltip.tsx` |
+| Admin panel (all artisan tools) | `src/components/listing/AdminEditView.tsx` |
+| Artisan details display | `src/components/admin/ArtisanDetailsPanel.tsx` |
+| Artisan search (shared) | `src/components/admin/ArtisanSearchPanel.tsx` |
+| Cert pills (shared) | `src/components/admin/CertPillRow.tsx` |
+| Field editing (collapsed) | `src/components/admin/FieldEditSection.tsx` |
 | Artisan details API | `src/app/api/artisan/[code]/route.ts` |
 | Artisan search API | `src/app/api/artisan/search/route.ts` |
 | Fix artisan API | `src/app/api/listing/[id]/fix-artisan/route.ts` |
@@ -794,7 +570,9 @@ Displays Yuhinkai artisan codes (e.g., "MAS590", "OWA009") on listing cards for 
 | Yuhinkai client | `src/lib/supabase/yuhinkai.ts` (`getArtisanNames()` for batch lookup) |
 | Display name logic | `src/lib/artisan/displayName.ts` (`getArtisanDisplayName()`) |
 | API filter | `src/app/api/browse/route.ts` (artisanCode param + display name enrichment) |
+| Shared type | `src/types/artisan.ts` (`ArtisanCandidate` interface) |
 | DB schema | `supabase/migrations/048_artisan_matching.sql`, `049_artisan_verification.sql`, `054_artisan_admin_locked.sql` |
+| Tests | `tests/components/admin/ArtisanDetailsPanel.test.tsx` (17), `tests/components/admin/AdminEditView.test.tsx` (8) |
 
 ### Artist Feature (`/artists` + `/artists/[slug]`)
 
@@ -856,6 +634,7 @@ For detailed implementation docs, see:
 - `docs/SESSION_20260210_ADMIN_LOCK.md` - Admin artisan lock protection (prevents scraper overwrites)
 - `docs/CATALOGUE_PUBLICATION_PIPE.md` - **Catalogue publication pipe** — Yuhinkai→NihontoWatch content flow (cross-repo)
 - `docs/SESSION_20260220_ADMIN_PANEL_OVERHAUL.md` - Admin panel security, data accuracy & UI overhaul (19 fixes, 3 SQL migrations)
+- `docs/HANDOFF_ADMIN_FIELD_EDITING.md` - **AdminEditView** — unified admin panel (cert, artisan, fields, status, hide), consolidation history, field auto-lock
 - `docs/SESSION_20260222_FEATURED_SCORE_RECOMPUTE.md` - Inline featured score recompute on admin actions + serverless fire-and-forget postmortem
 - `docs/POSTMORTEM_FEATURED_SCORE_NULL_PRICE_ELITE_SYNC.md` - **NULL price zeroed artisan stature + cron never synced elite_factor** — two compounding bugs, Juyo Ichimonji scored 98→333
 - `docs/SMART_CROP_FOCAL_POINTS.md` - **Smart crop focal points** — AI image cropping, cron pipeline, admin toggle, invalidation trigger
@@ -933,42 +712,8 @@ Use JSON-LD for:
 8. **NEVER modify tests to match broken code** - If a test fails during refactoring, the TEST IS RIGHT and the code is wrong. Tests exist to catch regressions. Changing a test to make it pass defeats its entire purpose. If a test fails: (1) understand WHY it's failing, (2) fix the CODE, not the test, (3) only modify tests when intentionally changing behavior WITH explicit user approval. This rule exists because we shipped a regression (dealer name → domain) when a test was silently "fixed" to match broken code.
 9. **NEVER use fire-and-forget promises in API routes** - Vercel serverless freezes functions the instant the HTTP response is sent. Unawaited promises (`someAsyncFn().catch(...)`) will never complete. Always `await` side effects with `try/catch`. If work genuinely needs to run after the response, use Vercel's `waitUntil()` API. This bit us in the featured score recompute — the DB update never ran (see `docs/SESSION_20260222_FEATURED_SCORE_RECOMPUTE.md`).
 11. **`listing_views` uses `viewed_at`, not `created_at`** - This table's timestamp column is `viewed_at`. All other behavioral tables (`user_favorites`, `dealer_clicks`, `activity_events`) use `created_at`. When querying `listing_views` with a time filter, always use `.gte('viewed_at', ...)`. Using `created_at` silently returns 0 rows (PostgREST 400 swallowed by `count ?? 0`). This caused false "stale" scores across the entire catalog for months.
+12. **Backfills and manual scripts MUST set `is_initial_import = true`** - The Supabase insert trigger that detects bulk imports (>10 items/dealer/day) only fires on inserts through the normal scraper pipeline. Direct writes via service role key (backfill scripts, `refresh_dealer.py`, manual SQL, migration scripts) bypass this trigger entirely. Any script that creates or repopulates listings for an existing dealer MUST explicitly set `is_initial_import = true` on those rows — otherwise they appear as "new" in browse sort and trigger false new-listing alerts. **INCIDENT HISTORY**: 2026-02-10 Choshuya (2,978 items), 2026-02-26 Tetsugendo (15 items repopulated via backfill after dealer fix).
 10. **NEVER use `{ passive: false }` on touchmove listeners** - This is the single most common regression in this codebase. A non-passive `touchmove` on ANY scrollable element (or its ancestors) blocks the compositor from fast-pathing scroll. Chrome DevTools mobile emulation translates two-finger trackpad scroll into touch events — a non-passive listener kills it instantly. This has broken the build **4 separate times** (bottom sheet drag, artisan tooltip drag, image scroller top-bounce prevention, edge swipe dismiss). **The rule:** never call `addEventListener('touchmove', fn, { passive: false })` on or above a scrollable container. If you need to conditionally `preventDefault()` a touch gesture, use a CSS property toggle from a passive `scroll` listener instead (see `docs/POSTMORTEM_PASSIVE_TOUCHMOVE.md` for safe patterns).
-
----
-
-## Quick Reference
-
-### Run Scraper (Oshi-scrapper)
-```bash
-cd /Users/christopherhill/Desktop/Claude_project/Oshi-scrapper
-python main.py scrape --dealer "Aoi Art" --limit 5
-python main.py discover --all
-```
-
-### Check Database
-```bash
-# Via Supabase dashboard or CLI
-supabase db diff
-```
-
-### Deploy
-```bash
-# ALWAYS run tests first - investigate and fix any failures before deploying
-npm test
-git add -A && git commit -m "feat: description" && git push
-```
-
----
-
-## Documentation Index
-
-| Doc | Purpose |
-|-----|---------|
-| `docs/INDEX.md` | Navigation for all docs |
-| `docs/ARCHITECTURE.md` | System architecture deep-dive |
-| `docs/CROSS_REPO_REFERENCE.md` | What lives where across repos |
-| `CLAUDE.md` | This file - AI context |
 
 ---
 
@@ -978,4 +723,3 @@ git add -A && git commit -m "feat: description" && git push
 |-------------|-----|
 | Production | https://nihontowatch.com |
 | Vercel Preview | https://nihontowatch.vercel.app |
-| Supabase Dashboard | https://supabase.com/dashboard/project/xxx |

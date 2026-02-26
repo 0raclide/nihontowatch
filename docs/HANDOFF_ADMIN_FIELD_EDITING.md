@@ -1,13 +1,76 @@
-# Admin Field Editing with Auto-Lock
+# AdminEditView — Unified Admin Panel
 
 **Date:** 2026-02-26
-**Status:** Complete (frontend + API in nihontoWatch, DB migration + scraper lock in Oshi-scrapper)
+**Status:** Complete
 
-## Problem
+## Overview
+
+AdminEditView is the **single admin surface** for all listing corrections in QuickView. Accessed via the pen icon in the action bar. Works identically on desktop and mobile.
+
+### Panel Layout (top to bottom)
+
+```
+┌─────────────────────────────────────────┐
+│  Admin Edit                View Photos  │  ← Sticky header
+├─────────────────────────────────────────┤
+│  [Hidden banner — if admin_hidden]      │
+├─────────────────────────────────────────┤
+│  Designation                            │
+│  [Tokuju] [Jūyō] [TokuHo] [Hozon] ... │  ← CertPillRow (always visible)
+├─────────────────────────────────────────┤
+│  ▶ Edit Metadata Fields                 │  ← Collapsed by default (<details>)
+│    ┌─────────────────────────────────┐  │
+│    │ FieldEditSection (17 fields)    │  │    Only 5% of corrections need this
+│    └─────────────────────────────────┘  │
+├─────────────────────────────────────────┤
+│  Artisan                                │
+│  ┌─────────────────────────────────┐    │
+│  │ ArtisanDetailsPanel             │    │  ← Fetches from Yuhinkai
+│  │ (name, school, elite bar,       │    │
+│  │  cert counts, candidates,       │    │
+│  │  profile link)                  │    │
+│  └─────────────────────────────────┘    │
+│  [✓ Correct]      [✗ Incorrect]         │  ← Verify buttons
+│  [Reassign Artisan]                     │  ← Opens search panel
+│  ┌─────────────────────────────────┐    │
+│  │ ArtisanSearchPanel              │    │    Auto-opens for unmatched/UNKNOWN
+│  │ (search + results + UNKNOWN)    │    │
+│  └─────────────────────────────────┘    │
+├─────────────────────────────────────────┤
+│  [Mark as Sold / Mark as Available]     │  ← Status override
+│  [Hide Listing / Unhide Listing]        │  ← Admin hide toggle
+└─────────────────────────────────────────┘
+```
+
+### Design Rationale
+
+95% of admin corrections are cert designation or artisan code fixes. Metadata field editing (smith name, measurements, price, era) is rare. The panel prioritizes the common case:
+
+1. **Cert pills** — always visible at top, one tap to change
+2. **Artisan section** — rich details + verify + search, auto-opens for unmatched
+3. **Metadata fields** — collapsed in a `<details>` disclosure, intentional click to expand
+
+### Consolidation History (2026-02-26)
+
+Previously, desktop QuickView had 3 overlapping artisan tools:
+
+| Tool | Where | What it did |
+|------|-------|-------------|
+| **ArtisanTooltip** | Floating portal on artist name | Details, verify, search, cert editing |
+| **AdminArtisanWidget** | Collapsible panel below score inspector | Search & assign only |
+| **AdminEditView** | Full panel (mobile only) | Cert, fields, artisan search, status, hide |
+
+All three used the same APIs but had independent state management. AdminArtisanWidget was deleted (339 lines). ArtisanTooltip was removed from QuickView (stays on browse grid ListingCards). AdminEditView became the single admin surface for both platforms.
+
+---
+
+## Field Editing with Auto-Lock
+
+### Problem
 
 Listing 49696 had `smith = "All Yamashiro Swords In Existence"` — an LLM hallucination from the scraper. Rather than fixing individual scraper bugs, we built admin-editable fields with auto-lock to prevent scraper overwrite.
 
-## Architecture
+### Architecture
 
 ```
 Admin edits field in QuickView → POST /api/listing/[id]/fix-fields
@@ -25,14 +88,24 @@ Scraper runs upsert() → checks admin_locked_fields
 
 | Component | Repo | File |
 |-----------|------|------|
-| DB migration (`admin_locked_fields` JSONB) | Oshi-scrapper | `supabase/migrations/20260226000001_add_admin_locked_fields.sql` |
-| Scraper lock check | Oshi-scrapper | `db/repository.py` (line ~631) |
+| **AdminEditView** (unified panel) | nihontoWatch | `src/components/listing/AdminEditView.tsx` |
+| **ArtisanDetailsPanel** (artisan display) | nihontoWatch | `src/components/admin/ArtisanDetailsPanel.tsx` |
+| **ArtisanSearchPanel** (shared search) | nihontoWatch | `src/components/admin/ArtisanSearchPanel.tsx` |
+| **CertPillRow** (shared cert editor) | nihontoWatch | `src/components/admin/CertPillRow.tsx` |
+| **FieldEditSection** (field editor) | nihontoWatch | `src/components/admin/FieldEditSection.tsx` |
+| **ArtisanCandidate** type | nihontoWatch | `src/types/artisan.ts` |
 | Fix-fields API | nihontoWatch | `src/app/api/listing/[id]/fix-fields/route.ts` |
+| Fix-artisan API | nihontoWatch | `src/app/api/listing/[id]/fix-artisan/route.ts` |
+| Fix-cert API | nihontoWatch | `src/app/api/listing/[id]/fix-cert/route.ts` |
+| Verify-artisan API | nihontoWatch | `src/app/api/listing/[id]/verify-artisan/route.ts` |
 | Unlock-fields API | nihontoWatch | `src/app/api/listing/[id]/unlock-fields/route.ts` |
-| FieldEditSection UI | nihontoWatch | `src/components/admin/FieldEditSection.tsx` |
-| AdminEditView integration | nihontoWatch | `src/components/listing/AdminEditView.tsx` |
+| DB migration (`admin_locked_fields`) | Oshi-scrapper | `supabase/migrations/20260226000001_add_admin_locked_fields.sql` |
+| Scraper lock check | Oshi-scrapper | `db/repository.py` (line ~631) |
 | Listing type | nihontoWatch | `src/types/index.ts` (`admin_locked_fields`) |
 | Data fetching | nihontoWatch | `src/lib/listing/getListingDetail.ts` (SELECT + enrichment) |
+| Tests (ArtisanDetailsPanel) | nihontoWatch | `tests/components/admin/ArtisanDetailsPanel.test.tsx` (17 tests) |
+| Tests (AdminEditView) | nihontoWatch | `tests/components/admin/AdminEditView.test.tsx` (8 tests) |
+| Tests (QuickView regression) | nihontoWatch | `tests/components/listing/QuickViewContent.test.tsx` (6 regression tests) |
 
 ## Editable Fields
 

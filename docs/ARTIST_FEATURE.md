@@ -84,7 +84,8 @@ Additionally, artisan codes appear as admin-only badges on listing cards through
 
 | Component | File | Purpose |
 |-----------|------|---------|
-| ArtisanTooltip | `src/components/artisan/ArtisanTooltip.tsx` | Interactive popup on listing card badges (admin) |
+| ArtisanTooltip | `src/components/artisan/ArtisanTooltip.tsx` | Interactive popup on browse grid listing card badges (admin). QuickView artisan tools are in AdminEditView. |
+| ArtisanDetailsPanel | `src/components/admin/ArtisanDetailsPanel.tsx` | Artisan details display (elite bar, cert counts, candidates) — used in AdminEditView |
 | ArtisanListings | `src/components/artisan/ArtisanListings.tsx` | Grid of available listings on profile page |
 | PrestigePyramid | `src/components/artisan/PrestigePyramid.tsx` | Certification hierarchy visualization |
 | EliteFactorDisplay | `src/components/artisan/EliteFactorDisplay.tsx` | Elite standing with grade + percentile |
@@ -428,11 +429,8 @@ Full audit of 13,605 records completed 2026-02-09. See `docs/SESSION_20260209_DI
   - **YELLOW** (MEDIUM): romaji match or school fallback
   - **GRAY** (LOW): LLM disagreement
 - Only visible to admin users
-- Clicking opens ArtisanTooltip with:
-  - Full artisan details (name, school, era, cert counts)
-  - Match method and alternative candidates
-  - **Verification buttons**: Correct / Incorrect (saved to DB)
-  - **Correction mode**: Search-based artisan reassignment
+- **Browse grid**: Clicking opens ArtisanTooltip with full details, verify buttons, search correction
+- **QuickView**: Artist identity is a plain link to `/artists/{code}`. Admin tools (details, verify, search, reassign) are in AdminEditView (pen icon in action bar). See `docs/HANDOFF_ADMIN_FIELD_EDITING.md`.
 
 ### 4. Browse Integration
 
