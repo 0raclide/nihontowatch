@@ -127,9 +127,9 @@ export async function GET(request: NextRequest) {
       ? Math.min(parseInt(forceLimitParam, 10) || MAX_LISTINGS_PER_RUN, FORCE_LIMIT_CAP)
       : MAX_LISTINGS_PER_RUN;
 
-    // Fetch panoramic listings needing composites — DB-side filter via generated column
+    // Query 1: Panoramic listings with known dimensions — DB-side filter via generated column
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: listings, error } = await (supabase.from('listings') as any)
+    const { data: knownPanoramic, error } = await (supabase.from('listings') as any)
       .select('id, stored_images, images, image_width, image_height, dealer_id, dealers(name)')
       .is('thumbnail_url', null)
       .gt('cover_aspect_ratio', COMPOSITE_TRIGGER_RATIO)
@@ -141,7 +141,28 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Query failed' }, { status: 500 });
     }
 
-    if (!listings || listings.length === 0) {
+    // Query 2: Listings with images but NULL dimensions — need to probe first image
+    const remainingSlots = batchSize - (knownPanoramic?.length ?? 0);
+    let unknownDimension: ListingRow[] = [];
+    if (remainingSlots > 0) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: unknown, error: err2 } = await (supabase.from('listings') as any)
+        .select('id, stored_images, images, image_width, image_height, dealer_id, dealers(name)')
+        .is('thumbnail_url', null)
+        .is('image_width', null)
+        .not('images', 'is', null)
+        .order('id', { ascending: false })
+        .limit(remainingSlots) as { data: ListingRow[] | null; error: unknown };
+      if (err2) {
+        logger.error('[composite-thumbnails] Unknown-dimension query error', { error: err2 });
+      } else {
+        unknownDimension = unknown ?? [];
+      }
+    }
+
+    const listings = [...(knownPanoramic ?? []), ...unknownDimension];
+
+    if (listings.length === 0) {
       return NextResponse.json({ success: true, message: 'No listings need composites', durationMs: Date.now() - startTime });
     }
 
@@ -155,6 +176,29 @@ export async function GET(request: NextRequest) {
       if (imageUrls.length === 0) { totalSkipped++; continue; }
 
       try {
+        // For unknown-dimension listings, probe first image to check if panoramic
+        if (!listing.image_width || !listing.image_height) {
+          try {
+            const probeBuffer = await downloadImage(imageUrls[0]);
+            const probeMeta = await sharp(probeBuffer).metadata();
+            if (probeMeta.width && probeMeta.height) {
+              // Backfill dimensions in DB
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              await (supabase.from('listings') as any)
+                .update({ image_width: probeMeta.width, image_height: probeMeta.height })
+                .eq('id', listing.id);
+              // Skip if not panoramic
+              if (probeMeta.width / probeMeta.height <= COMPOSITE_TRIGGER_RATIO) {
+                totalSkipped++;
+                continue;
+              }
+            }
+          } catch {
+            totalSkipped++;
+            continue;
+          }
+        }
+
         // Download all images and get dimensions
         const imageData: StripInfo[] = [];
         for (const url of imageUrls) {
