@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { type ReactNode } from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { QuickViewMobileSheet } from '@/components/listing/QuickViewMobileSheet';
@@ -120,13 +120,38 @@ const createMockListing = (overrides: Partial<Listing> = {}): Listing => ({
 });
 
 describe('QuickViewMobileSheet', () => {
+  // Slot content that simulates what the parent (QuickView) passes in
+  const mockHeaderActionsSlot: ReactNode = (
+    <button data-testid="favorite-button" data-listing-id="123" data-size="sm" aria-label="Add to watchlist">
+      Favorite
+    </button>
+  );
+  const mockDealerSlot = (listing: Listing): ReactNode => (
+    <span data-testid="dealer-name">{listing.dealer?.name || listing.dealers?.name || 'Dealer'}</span>
+  );
+  const mockCtaSlot = (listing: Listing): ReactNode => (
+    <a
+      href={listing.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      data-testid="cta-button"
+    >
+      View on {listing.dealer?.name || listing.dealers?.name || 'Dealer'}
+    </a>
+  );
+
+  const defaultListing = createMockListing();
+
   const defaultProps = {
-    listing: createMockListing(),
+    listing: defaultListing,
     isExpanded: false,
     onToggle: vi.fn(),
     onClose: vi.fn(),
     imageCount: 3,
     currentImageIndex: 0,
+    headerActionsSlot: mockHeaderActionsSlot,
+    dealerSlot: mockDealerSlot(defaultListing),
+    ctaSlot: mockCtaSlot(defaultListing),
   };
 
   beforeEach(() => {
@@ -250,7 +275,7 @@ describe('QuickViewMobileSheet', () => {
 
     it('renders the CTA button with correct link', () => {
       render(<QuickViewMobileSheet {...expandedProps} />);
-      const ctaLink = screen.getByRole('link', { name: /view on test dealer/i });
+      const ctaLink = screen.getByTestId('cta-button');
       expect(ctaLink).toHaveAttribute('href', 'https://example.com/listing/123');
       expect(ctaLink).toHaveAttribute('target', '_blank');
     });

@@ -183,7 +183,7 @@ describe('ProvenanceFactorDisplay', () => {
       fireEvent.click(infoButton);
 
       // Explanation should now be visible
-      expect(screen.getByText(/Provenance Standing measures/)).toBeTruthy();
+      expect(screen.getByText(/provenance factor measures/)).toBeTruthy();
     });
 
     it('hides explanation on second click', () => {
@@ -194,13 +194,13 @@ describe('ProvenanceFactorDisplay', () => {
 
       const infoButton = screen.getByRole('button', { name: /How is Provenance Standing calculated/ });
       fireEvent.click(infoButton);
-      expect(screen.getByText(/Provenance Standing measures/)).toBeTruthy();
+      expect(screen.getByText(/provenance factor measures/)).toBeTruthy();
 
       fireEvent.click(infoButton);
-      expect(screen.queryByText(/Provenance Standing measures/)).toBeNull();
+      expect(screen.queryByText(/provenance factor measures/)).toBeNull();
     });
 
-    it('explanation mentions "every provenance observation" (V4 language)', () => {
+    it('explanation mentions Bayesian model and credible interval (V5 language)', () => {
       const analysis = makeAnalysis();
       render(
         <ProvenanceFactorDisplay analysis={analysis} entityType="smith" />
@@ -209,10 +209,9 @@ describe('ProvenanceFactorDisplay', () => {
       const infoButton = screen.getByRole('button', { name: /How is Provenance Standing calculated/ });
       fireEvent.click(infoButton);
 
-      // V4 explanation should NOT say "Only these top three tiers"
-      expect(screen.queryByText(/Only these top three tiers/)).toBeNull();
-      // V4 explanation SHOULD mention "every provenance observation"
-      expect(screen.getByText(/Every provenance observation/)).toBeTruthy();
+      // V5 explanation should mention Bayesian model and credible interval
+      expect(screen.getByText(/Bayesian Normal model/)).toBeTruthy();
+      expect(screen.getByText(/lower bound of a 95% credible interval/)).toBeTruthy();
     });
   });
 

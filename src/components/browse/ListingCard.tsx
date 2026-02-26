@@ -16,7 +16,8 @@ import { useImagePreloader } from '@/hooks/useImagePreloader';
 import { getValidatedCertInfo } from '@/lib/cert/validation';
 import { useLocale } from '@/i18n/LocaleContext';
 import { formatRelativeTime } from '@/lib/time';
-import { getDealerDisplayName } from '@/lib/dealers/displayName';
+import type { DisplayItem } from '@/types/displayItem';
+// getDealerDisplayName no longer needed — pre-resolved in DisplayItem.dealer_display_name
 
 // 7 days in milliseconds - matches the data delay for free tier
 const EARLY_ACCESS_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
@@ -31,81 +32,6 @@ function isEarlyAccessListing(firstSeenAt: string): boolean {
   return listingDate > cutoff;
 }
 
-interface SoldData {
-  sale_date: string | null;
-  days_on_market: number | null;
-  days_on_market_display: string | null;
-  confidence: 'high' | 'medium' | 'low' | 'unknown';
-}
-
-// Yuhinkai enrichment data (subset for badge display, from QuickView context merge)
-interface YuhinkaiEnrichmentBadge {
-  setsumei_en: string | null;
-  match_confidence: string | null;
-  connection_source: string | null;
-  verification_status: string | null;
-}
-
-interface Listing {
-  id: string;
-  url: string;
-  title: string | null;
-  title_en?: string | null; // English translation of title
-  title_ja?: string | null; // Japanese translation of title (for EN-source listings)
-  item_type: string | null;
-  price_value: number | null;
-  price_currency: string | null;
-  smith: string | null;
-  tosogu_maker: string | null;
-  school: string | null;
-  tosogu_school: string | null;
-  cert_type: string | null;
-  nagasa_cm: number | null;
-  era?: string | null;
-  last_scraped_at?: string | null;
-  images: string[] | null;
-  stored_images?: string[] | null;
-  first_seen_at: string;
-  is_initial_import?: boolean | null; // DB column: TRUE = bulk import, FALSE = genuine new
-  dealer_earliest_seen_at?: string | null; // Earliest listing from this dealer (for baseline check)
-  status: string;
-  is_available: boolean;
-  is_sold: boolean;
-  sold_data?: SoldData | null; // Sold item data with confidence
-  setsumei_text_en?: string | null; // OCR-extracted NBTHK evaluation translation
-  // Yuhinkai enrichment (single object from QuickView context merge)
-  yuhinkai_enrichment?: YuhinkaiEnrichmentBadge | null;
-  dealer_id: number;
-  dealers: {
-    id: number;
-    name: string;
-    name_ja?: string | null;
-    domain: string;
-  };
-  // Artisan matching (admin-only display)
-  artisan_id?: string | null;
-  artisan_confidence?: 'HIGH' | 'MEDIUM' | 'LOW' | 'NONE' | null;
-  artisan_display_name?: string | null;
-  artisan_name_kanji?: string | null;
-  artisan_method?: string | null;
-  artisan_candidates?: Array<{
-    artisan_id: string;
-    name_kanji?: string;
-    name_romaji?: string;
-    school?: string;
-    generation?: string;
-    is_school_code?: boolean;
-    retrieval_method?: string;
-    retrieval_score?: number;
-  }> | null;
-  artisan_verified?: 'correct' | 'incorrect' | null;
-  admin_hidden?: boolean;
-  status_admin_locked?: boolean;
-  focal_x?: number | null;
-  focal_y?: number | null;
-  thumbnail_url?: string | null;
-}
-
 interface ExchangeRates {
   base: string;
   rates: Record<string, number>;
@@ -115,7 +41,7 @@ interface ExchangeRates {
 type Currency = 'USD' | 'JPY' | 'EUR';
 
 interface ListingCardProps {
-  listing: Listing;
+  listing: DisplayItem;
   currency: Currency;
   exchangeRates: ExchangeRates | null;
   priority?: boolean; // For above-the-fold images
@@ -126,6 +52,7 @@ interface ListingCardProps {
   fontSize?: 'compact' | 'standard' | 'large'; // Font size preference (both views)
   imageAspect?: string; // Override image aspect ratio (default: 'aspect-[3/4]')
   focalPosition?: string; // Pre-computed object-position (e.g. "45.2% 32.1%") from parent
+  onClick?: (listing: DisplayItem) => void; // Override default QuickView open behavior (used by collection)
 }
 
 /**
@@ -390,9 +317,9 @@ function formatPrice(
  * Prefers the browse API's precomputed `has_setsumei` boolean when available.
  * Falls back to full check for detail-page data or QuickView context merges.
  */
-function hasSetsumeiTranslation(listing: Listing): boolean {
+function hasSetsumeiTranslation(listing: DisplayItem): boolean {
   // Fast path: browse API pre-computes this
-  if ('has_setsumei' in listing) return !!(listing as any).has_setsumei;
+  if (listing.has_setsumei != null) return !!listing.has_setsumei;
 
   // Legacy path: full listing data (detail page, QuickView after merge)
   if (!isSetsumeiEligibleCert(listing.cert_type)) return false;
@@ -451,6 +378,7 @@ export const ListingCard = memo(function ListingCard({
   fontSize = 'large',
   imageAspect,
   focalPosition,
+  onClick,
 }: ListingCardProps) {
   // Mobile view helpers — only affect base (mobile) classes; sm:/lg: overrides restore tablet/desktop
   const isGridMobile = mobileView === 'grid';
@@ -471,7 +399,7 @@ export const ListingCard = memo(function ListingCard({
 
   // Admin: toggle hide/unhide listing
   const handleToggleHidden = useCallback(async () => {
-    const newHidden = !listing.admin_hidden;
+    const newHidden = !listing.browse?.admin_hidden;
     try {
       const res = await fetch(`/api/listing/${listing.id}/hide`, {
         method: 'POST',
@@ -486,7 +414,7 @@ export const ListingCard = memo(function ListingCard({
     } catch {
       // silently fail
     }
-  }, [listing.id, listing.admin_hidden]);
+  }, [listing.id, listing.browse?.admin_hidden]);
 
   // Admin: toggle sold/available status
   const handleToggleSold = useCallback(async () => {
@@ -607,6 +535,12 @@ export const ListingCard = memo(function ListingCard({
       return;
     }
 
+    // Custom onClick handler (used by collection page)
+    if (onClick) {
+      onClick(listing);
+      return;
+    }
+
     // Track search click-through for CTR analytics (if this came from a search)
     if (searchId && activity) {
       activity.trackSearchClickThrough(searchId, Number(listing.id));
@@ -616,7 +550,7 @@ export const ListingCard = memo(function ListingCard({
     if (activity) {
       activity.trackQuickViewOpen(
         Number(listing.id),
-        listing.dealers?.name,
+        listing.dealer_display_name,
         'listing_card'
       );
     }
@@ -625,9 +559,9 @@ export const ListingCard = memo(function ListingCard({
     if (quickView) {
       // Convert local Listing type to the imported Listing type for context
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      quickView.openQuickView(listing as any);
+      quickView.openQuickView(listing as any); // DisplayItem cast — QuickView internally re-maps
     }
-  }, [activity, quickView, listing, searchId]);
+  }, [activity, quickView, listing, searchId, onClick]);
 
   // Preload QuickView images on hover (after 150ms delay)
   const handleMouseEnter = useCallback(() => {
@@ -668,7 +602,7 @@ export const ListingCard = memo(function ListingCard({
   // Shared image element
   const placeholderKanji = getPlaceholderKanji(listing.item_type);
 
-  const imageElement = dealerDoesNotPublishImages(listing.dealers?.domain) ? (
+  const imageElement = dealerDoesNotPublishImages(listing.dealer_domain) ? (
     <div className="absolute inset-0 flex flex-col items-center justify-center bg-linen text-center">
       <span className="font-serif text-[72px] sm:text-[80px] leading-none text-muted/10 select-none" aria-hidden="true">
         {placeholderKanji}
@@ -723,18 +657,18 @@ export const ListingCard = memo(function ListingCard({
       <span className="text-[10px] uppercase tracking-widest text-white/90 font-medium">
         {isSold ? t('badge.sold') : t('listing.unavailable')}
       </span>
-      {isSold && listing.sold_data?.sale_date && (
+      {isSold && listing.browse?.sold_data?.sale_date && (
         <span className="text-[9px] text-white/80 mt-0.5">
-          {listing.sold_data.sale_date}
+          {listing.browse?.sold_data.sale_date}
         </span>
       )}
-      {isSold && listing.sold_data?.days_on_market_display && (
+      {isSold && listing.browse?.sold_data?.days_on_market_display && (
         <span className={`text-[8px] mt-0.5 font-medium ${
-          listing.sold_data.confidence === 'high' ? 'text-green-400' :
-          listing.sold_data.confidence === 'medium' ? 'text-yellow-400' :
+          listing.browse?.sold_data.confidence === 'high' ? 'text-green-400' :
+          listing.browse?.sold_data.confidence === 'medium' ? 'text-yellow-400' :
           'text-white/60'
         }`}>
-          {t('listing.listed')} {listing.sold_data.days_on_market_display}
+          {t('listing.listed')} {listing.browse?.sold_data.days_on_market_display}
         </span>
       )}
     </div>
@@ -810,7 +744,7 @@ export const ListingCard = memo(function ListingCard({
       {/* Header: dealer (left) + book icon + cert (right) */}
       <div className={`${sz.hPad} sm:px-3 sm:py-2 lg:px-4 lg:py-2.5 flex items-center justify-between`}>
         <span className={`${sz.hText} sm:text-[9px] lg:text-[10px] font-medium tracking-[0.14em] text-muted ${locale !== 'ja' ? 'capitalize' : ''}`}>
-          {listing.dealers ? getDealerDisplayName(listing.dealers as { name: string; name_ja?: string | null }, locale) : ''}
+          {listing.dealer_display_name || ''}
         </span>
         <div className={`flex items-center ${isGridMobile ? 'gap-1' : 'gap-2'}`}>
           {locale !== 'ja' && hasSetsumeiTranslation(listing) && <SetsumeiZufuBadge iconOnly />}
@@ -828,15 +762,15 @@ export const ListingCard = memo(function ListingCard({
         {imageElement}
         {unavailableOverlay}
         {favoriteBtn}
-        {isAdmin && listing.admin_hidden && (
+        {isAdmin && listing.browse?.admin_hidden && (
           <div className="absolute top-2 left-2 w-6 h-6 flex items-center justify-center rounded-full bg-red-500/80 text-white" title="Hidden from public">
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
             </svg>
           </div>
         )}
-        {isAdmin && listing.status_admin_locked && (
-          <div className={`absolute top-2 ${listing.admin_hidden ? 'left-10' : 'left-2'} w-6 h-6 flex items-center justify-center rounded-full bg-amber-500/80 text-white`} title="Status manually overridden">
+        {isAdmin && listing.browse?.status_admin_locked && (
+          <div className={`absolute top-2 ${listing.browse?.admin_hidden ? 'left-10' : 'left-2'} w-6 h-6 flex items-center justify-center rounded-full bg-amber-500/80 text-white`} title="Status manually overridden">
             <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
             </svg>
@@ -866,14 +800,14 @@ export const ListingCard = memo(function ListingCard({
               </a>
             ) : hasArtisanTag && isAdmin ? (
               <ArtisanTooltip
-                listingId={parseInt(listing.id)}
+                listingId={parseInt(String(listing.id))}
                 artisanId={listing.artisan_id!}
                 confidence={listing.artisan_confidence as 'HIGH' | 'MEDIUM' | 'LOW'}
                 method={listing.artisan_method}
                 candidates={listing.artisan_candidates}
                 verified={listing.artisan_verified}
                 certType={listing.cert_type}
-                adminHidden={listing.admin_hidden}
+                adminHidden={listing.browse?.admin_hidden}
                 onToggleHidden={handleToggleHidden}
               >
                 <span className={`${sz.attr} sm:text-[11px] lg:text-[12px] ${isUnknownArtisan ? 'italic text-muted' : 'font-medium text-ink border-b border-gold/40 pb-px'} truncate`}>
@@ -896,7 +830,7 @@ export const ListingCard = memo(function ListingCard({
           </div>
         ) : isAdmin && !listing.artisan_id ? (
           <div className={`${sz.attrH} sm:h-[20px] lg:h-[22px] flex items-baseline`}>
-            <ArtisanTooltip listingId={parseInt(listing.id)} startInSearchMode certType={listing.cert_type} adminHidden={listing.admin_hidden} onToggleHidden={handleToggleHidden}>
+            <ArtisanTooltip listingId={parseInt(String(listing.id))} startInSearchMode certType={listing.cert_type} adminHidden={listing.browse?.admin_hidden} onToggleHidden={handleToggleHidden}>
               <span className="text-[10px] font-medium text-muted hover:text-ink transition-colors cursor-pointer">
                 {t('listing.setArtisan')}
               </span>
@@ -942,7 +876,7 @@ export const ListingCard = memo(function ListingCard({
     prevProps.priority === nextProps.priority &&
     prevProps.showFavoriteButton === nextProps.showFavoriteButton &&
     prevProps.exchangeRates?.timestamp === nextProps.exchangeRates?.timestamp &&
-    (prevProps.listing as any).has_setsumei === (nextProps.listing as any).has_setsumei &&
+    prevProps.listing.has_setsumei === nextProps.listing.has_setsumei &&
     prevProps.listing.artisan_id === nextProps.listing.artisan_id &&
     prevProps.listing.artisan_display_name === nextProps.listing.artisan_display_name &&
     prevProps.listing.artisan_name_kanji === nextProps.listing.artisan_name_kanji &&
@@ -951,7 +885,7 @@ export const ListingCard = memo(function ListingCard({
     prevProps.listing.status === nextProps.listing.status &&
     prevProps.listing.is_sold === nextProps.listing.is_sold &&
     prevProps.listing.is_available === nextProps.listing.is_available &&
-    prevProps.listing.status_admin_locked === nextProps.listing.status_admin_locked &&
+    prevProps.listing.browse?.status_admin_locked === nextProps.listing.browse?.status_admin_locked &&
     prevProps.mobileView === nextProps.mobileView &&
     prevProps.fontSize === nextProps.fontSize &&
     prevProps.imageAspect === nextProps.imageAspect &&

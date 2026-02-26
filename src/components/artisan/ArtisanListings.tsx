@@ -8,6 +8,7 @@ import { useAuth } from '@/lib/auth/AuthContext';
 import { useCurrency } from '@/hooks/useCurrency';
 import { useLocale } from '@/i18n/LocaleContext';
 import { ListingCard } from '@/components/browse/ListingCard';
+import { listingToDisplayItem } from '@/lib/displayItem';
 
 /**
  * ArtisanListings — Displays currently available listings matched to this artisan.
@@ -30,7 +31,7 @@ export function ArtisanListings({ code, artisanName, initialListings, status = '
   const quickView = useQuickViewOptional();
   const { isAdmin } = useAuth();
   const { currency, exchangeRates } = useCurrency();
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
 
   // Sync local state when a listing is refreshed in QuickView (e.g. after artisan fix)
   // If the listing's artisan_id changed away from this artist, remove it from the grid
@@ -97,6 +98,12 @@ export function ArtisanListings({ code, artisanName, initialListings, status = '
     [listings, isAdmin]
   );
 
+  // Map to DisplayItem for ListingCard consumption
+  const displayItems = useMemo(
+    () => visibleListings.map(l => listingToDisplayItem(l as any, locale)),
+    [visibleListings, locale]
+  );
+
   // Pass listings to QuickView context for prev/next navigation.
   // Only the "available" instance registers — if both available AND sold
   // instances call setListings with different arrays, they fight over the
@@ -115,10 +122,10 @@ export function ArtisanListings({ code, artisanName, initialListings, status = '
   return (
     <div>
       <div className="grid grid-cols-2 gap-2.5 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {visibleListings.map((listing) => (
+        {displayItems.map((item) => (
           <ListingCard
-            key={listing.id}
-            listing={listing as any}
+            key={item.id}
+            listing={item}
             currency={currency}
             exchangeRates={exchangeRates}
             mobileView="grid"

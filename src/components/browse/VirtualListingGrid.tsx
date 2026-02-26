@@ -8,6 +8,8 @@ import { useLocale } from '@/i18n/LocaleContext';
 import { MOBILE_CARD_HEIGHTS } from '@/lib/rendering/cardHeight';
 import { isSmartCropActive } from '@/types/subscription';
 import type { Listing as QuickViewListing } from '@/types';
+import type { DisplayItem } from '@/types/displayItem';
+import { listingToDisplayItem } from '@/lib/displayItem';
 
 
 // Detect mobile devices - disable JS virtualization on mobile due to scroll issues
@@ -26,61 +28,42 @@ function useIsMobileDevice() {
 // Number of cards to prioritize for immediate loading (above the fold)
 const PRIORITY_COUNT = 10;
 
+// Minimal interface for incoming listings from browse API
+// (before mapping to DisplayItem)
 interface Listing {
-  id: string;
-  url: string;
+  id: string | number;
+  url?: string;
   title: string;
   item_type: string | null;
   price_value: number | null;
   price_currency: string | null;
-  price_jpy?: number | null;
   smith: string | null;
   tosogu_maker: string | null;
   school: string | null;
   tosogu_school: string | null;
   cert_type: string | null;
-  cert_session?: number | null;
-  cert_organization?: string | null;
-  era?: string | null;
-  province?: string | null;
-  mei_type?: string | null;
   nagasa_cm: number | null;
-  sori_cm?: number | null;
-  motohaba_cm?: number | null;
-  sakihaba_cm?: number | null;
-  kasane_cm?: number | null;
-  weight_g?: number | null;
-  description?: string | null;
-  description_en?: string | null;
-  title_en?: string | null;
-  setsumei_text_en?: string | null;
-  setsumei_text_ja?: string | null;
-  setsumei_metadata?: Record<string, unknown> | null;
-  setsumei_processed_at?: string | null;
   images: string[] | null;
-  stored_images?: string[] | null;  // Supabase Storage URLs (preferred)
-  images_stored_at?: string | null;
+  stored_images?: string[] | null;
   first_seen_at: string;
   last_scraped_at?: string;
   status: string;
   is_available: boolean;
   is_sold: boolean;
-  dealer_id: number;
-  dealers: {
+  dealer_id?: number;
+  dealers?: {
     id: number;
     name: string;
     name_ja?: string | null;
     domain: string;
   };
   dealer_earliest_seen_at?: string | null;
-  // Artisan matching
   artisan_id?: string | null;
   artisan_confidence?: 'HIGH' | 'MEDIUM' | 'LOW' | 'NONE' | null;
-  // Smart crop focal point
   focal_x?: number | null;
   focal_y?: number | null;
-  // Composite thumbnail for extreme aspect ratio images
   thumbnail_url?: string | null;
+  [key: string]: any; // Allow additional fields to pass through
 }
 
 interface ExchangeRates {
@@ -235,9 +218,15 @@ export function VirtualListingGrid({
   smartCropEnabled: smartCropEnabledProp,
 }: VirtualListingGridProps) {
   const quickView = useQuickViewOptional();
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   // Use prop override if provided, otherwise fall back to env var check
   const smartCropEnabled = smartCropEnabledProp ?? isSmartCropActive();
+
+  // Map incoming API listings to DisplayItem for ListingCard consumption
+  const displayItems: DisplayItem[] = useMemo(
+    () => listings.map(listing => listingToDisplayItem(listing as any, locale)),
+    [listings, locale]
+  );
   const loadMoreTriggerRef = useRef<HTMLDivElement>(null);
   const lastListingCountRef = useRef(listings.length);
   const lastLoadTimeRef = useRef(0);
@@ -256,13 +245,13 @@ export function VirtualListingGrid({
     columns,
     isVirtualized,
   } = useAdaptiveVirtualScroll({
-    items: listings,
+    items: displayItems,
     totalCount: undefined, // Dynamic height - grows as items load (no massive empty space)
     overscan: 3, // Extra buffer rows to prevent edge flickering
     // Disable JS virtualization on mobile devices due to scroll glitches
     // With infinite scroll loading ~100 items at a time, no virtualization needed
     // Note: QuickView scroll lock handles preventing recalculation during modal
-    enabled: infiniteScroll && listings.length > 15 && !isMobileDevice,
+    enabled: infiniteScroll && displayItems.length > 15 && !isMobileDevice,
   });
 
   // Memoize the converted listings for QuickView
@@ -379,10 +368,10 @@ export function VirtualListingGrid({
         '--card-intrinsic-height': `${MOBILE_CARD_HEIGHTS[mobileView]}px`,
       } as React.CSSProperties : undefined}
     >
-      {visibleItems.map((listing, idx) => (
+      {visibleItems.map((item, idx) => (
         <ListingCard
-          key={listing.id}
-          listing={listing}
+          key={item.id}
+          listing={item}
           currency={currency}
           exchangeRates={exchangeRates}
           priority={startIndex + idx < PRIORITY_COUNT}
@@ -390,8 +379,8 @@ export function VirtualListingGrid({
           isAdmin={isAdmin}
           mobileView={mobileView}
           focalPosition={
-            smartCropEnabled && !listing.thumbnail_url && listing.focal_x != null && listing.focal_y != null
-              ? `${listing.focal_x}% ${listing.focal_y}%`
+            smartCropEnabled && !item.thumbnail_url && item.focal_x != null && item.focal_y != null
+              ? `${item.focal_x}% ${item.focal_y}%`
               : undefined
           }
         />
@@ -407,7 +396,7 @@ export function VirtualListingGrid({
       {/* Results count - hidden on mobile */}
       <div className="hidden lg:flex items-center justify-between mb-6">
         <p className="text-sm text-muted">
-          {t('browse.showingCount', { count: String(listings.length), total: total.toLocaleString() })}
+          {t('browse.showingCount', { count: String(displayItems.length), total: total.toLocaleString() })}
           {columns === 1 && <span className="text-muted/60"> (1 column)</span>}
         </p>
       </div>

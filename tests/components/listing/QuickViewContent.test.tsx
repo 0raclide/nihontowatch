@@ -21,24 +21,6 @@ vi.mock('@/i18n/LocaleContext', async () => {
   };
 });
 
-// Mock the FavoriteButton component
-vi.mock('@/components/favorites/FavoriteButton', () => ({
-  FavoriteButton: ({ listingId }: { listingId: number }) => (
-    <button data-testid="favorite-button" data-listing-id={listingId}>
-      Favorite
-    </button>
-  ),
-}));
-
-// Mock the ShareButton component
-vi.mock('@/components/share/ShareButton', () => ({
-  ShareButton: ({ listingId }: { listingId: number }) => (
-    <button data-testid="share-button" data-listing-id={listingId}>
-      Share
-    </button>
-  ),
-}));
-
 // Mock the useCurrency hook
 vi.mock('@/hooks/useCurrency', () => ({
   useCurrency: () => ({
@@ -47,13 +29,6 @@ vi.mock('@/hooks/useCurrency', () => ({
   }),
   formatPriceWithConversion: (value: number | null) =>
     value ? `¥${value.toLocaleString()}` : 'Ask',
-}));
-
-// Mock the SetsumeiSection component
-vi.mock('@/components/listing/SetsumeiSection', () => ({
-  SetsumeiSection: () => (
-    <div data-testid="setsumei-section">Setsumei Content</div>
-  ),
 }));
 
 // Mock the useAuth hook — configurable per-test
@@ -66,24 +41,6 @@ vi.mock('@/lib/auth/AuthContext', () => ({
     isLoading: false,
     isAdmin: mockIsAdmin,
   }),
-}));
-
-// Mock the useSubscription hook
-vi.mock('@/contexts/SubscriptionContext', () => ({
-  useSubscription: () => ({
-    showPaywall: vi.fn(),
-    canAccess: () => true,
-  }),
-}));
-
-// Mock the InquiryModal component
-vi.mock('@/components/inquiry', () => ({
-  InquiryModal: () => null,
-}));
-
-// Mock the LoginModal component
-vi.mock('@/components/auth/LoginModal', () => ({
-  LoginModal: () => null,
 }));
 
 // Mock next/navigation
@@ -104,29 +61,10 @@ vi.mock('@/contexts/QuickViewContext', () => ({
   }),
 }));
 
-// Mock the listingImport utility
-vi.mock('@/lib/collection/listingImport', () => ({
-  mapListingToCollectionItem: vi.fn(() => ({})),
-}));
-
-// Mock the AdminSetsumeiWidget component
-vi.mock('@/components/listing/AdminSetsumeiWidget', () => ({
-  AdminSetsumeiWidget: () => (
-    <div data-testid="admin-setsumei-widget">Admin Widget</div>
-  ),
-}));
-
 // Mock the TranslatedTitle component
 vi.mock('@/components/listing/TranslatedTitle', () => ({
   TranslatedTitle: ({ listing }: { listing: Listing }) => (
     <h1 data-testid="translated-title">{listing.title}</h1>
-  ),
-}));
-
-// Mock the TranslatedDescription component
-vi.mock('@/components/listing/TranslatedDescription', () => ({
-  TranslatedDescription: () => (
-    <div data-testid="translated-description">Description</div>
   ),
 }));
 
@@ -144,21 +82,6 @@ vi.mock('@/components/listing/MetadataGrid', () => ({
 // Mock returnContext (used when navigating to artist profile)
 vi.mock('@/lib/listing/returnContext', () => ({
   saveListingReturnContext: vi.fn(),
-}));
-
-// Mock ActivityTracker (optional hook)
-vi.mock('@/lib/tracking/ActivityTracker', () => ({
-  useActivityTrackerOptional: () => null,
-}));
-
-// Mock SocialShareButtons
-vi.mock('@/components/share/SocialShareButtons', () => ({
-  SocialShareButtons: () => <div data-testid="social-share-buttons" />,
-}));
-
-// Mock getDealerDisplayName
-vi.mock('@/lib/dealers/displayName', () => ({
-  getDealerDisplayName: (dealer: { name: string }) => dealer?.name ?? 'Unknown',
 }));
 
 // Mock shouldShowNewBadge
@@ -186,8 +109,6 @@ const createMockListing = (overrides: Partial<Listing> = {}): Listing => ({
   is_available: true,
   is_sold: false,
   dealer_id: 1,
-  // Note: Supabase returns 'dealers' (plural) from the join, not 'dealer' (singular)
-  // This test must use 'dealers' to match real production data
   dealers: {
     id: 1,
     name: 'Test Dealer',
@@ -219,26 +140,109 @@ describe('QuickViewContent', () => {
       expect(screen.getByTestId('price-display')).toHaveTextContent('¥500,000');
     });
 
-    it('renders the dealer name', () => {
-      render(<QuickViewContent listing={createMockListing()} />);
-      expect(screen.getByTestId('dealer-name')).toHaveTextContent('Test Dealer');
-    });
-
     it('renders certification badge', () => {
       render(<QuickViewContent listing={createMockListing()} />);
       expect(screen.getByTestId('cert-badge')).toHaveTextContent('Jūyō');
     });
 
-    it('renders CTA button with dealer name', () => {
+    it('renders MetadataGrid', () => {
       render(<QuickViewContent listing={createMockListing()} />);
-      expect(screen.getByTestId('cta-button')).toHaveTextContent('View on Test Dealer');
+      expect(screen.getByTestId('metadata-grid')).toBeInTheDocument();
+    });
+  });
+
+  describe('Composition slots', () => {
+    it('renders action bar slot', () => {
+      render(
+        <QuickViewContent
+          listing={createMockListing()}
+          actionBarSlot={<div data-testid="mock-action-bar">Action Bar</div>}
+        />
+      );
+      expect(screen.getByTestId('mock-action-bar')).toBeInTheDocument();
+    });
+
+    it('renders dealer slot', () => {
+      render(
+        <QuickViewContent
+          listing={createMockListing()}
+          dealerSlot={<span data-testid="mock-dealer-row">Test Dealer</span>}
+        />
+      );
+      expect(screen.getByTestId('mock-dealer-row')).toHaveTextContent('Test Dealer');
+    });
+
+    it('renders description slot', () => {
+      render(
+        <QuickViewContent
+          listing={createMockListing()}
+          descriptionSlot={<div data-testid="mock-description">Description content</div>}
+        />
+      );
+      expect(screen.getByTestId('mock-description')).toBeInTheDocument();
+    });
+
+    it('renders provenance slot', () => {
+      render(
+        <QuickViewContent
+          listing={createMockListing()}
+          provenanceSlot={<div data-testid="mock-provenance">Provenance</div>}
+        />
+      );
+      expect(screen.getByTestId('mock-provenance')).toBeInTheDocument();
+    });
+
+    it('renders admin tools slot', () => {
+      render(
+        <QuickViewContent
+          listing={createMockListing()}
+          adminToolsSlot={<div data-testid="mock-admin-tools">Admin Tools</div>}
+        />
+      );
+      expect(screen.getByTestId('mock-admin-tools')).toBeInTheDocument();
+    });
+
+    it('renders CTA slot', () => {
+      render(
+        <QuickViewContent
+          listing={createMockListing()}
+          ctaSlot={<div data-testid="mock-cta">CTA Button</div>}
+        />
+      );
+      expect(screen.getByTestId('mock-cta')).toBeInTheDocument();
+    });
+
+    it('renders all slots simultaneously', () => {
+      render(
+        <QuickViewContent
+          listing={createMockListing()}
+          actionBarSlot={<div data-testid="slot-action-bar" />}
+          dealerSlot={<div data-testid="slot-dealer" />}
+          descriptionSlot={<div data-testid="slot-description" />}
+          provenanceSlot={<div data-testid="slot-provenance" />}
+          adminToolsSlot={<div data-testid="slot-admin" />}
+          ctaSlot={<div data-testid="slot-cta" />}
+        />
+      );
+      expect(screen.getByTestId('slot-action-bar')).toBeInTheDocument();
+      expect(screen.getByTestId('slot-dealer')).toBeInTheDocument();
+      expect(screen.getByTestId('slot-description')).toBeInTheDocument();
+      expect(screen.getByTestId('slot-provenance')).toBeInTheDocument();
+      expect(screen.getByTestId('slot-admin')).toBeInTheDocument();
+      expect(screen.getByTestId('slot-cta')).toBeInTheDocument();
+    });
+
+    it('omits optional slots gracefully', () => {
+      render(<QuickViewContent listing={createMockListing()} />);
+      // No slots passed — component should render without errors
+      expect(screen.getByTestId('price-display')).toBeInTheDocument();
+      expect(screen.getByTestId('translated-title')).toBeInTheDocument();
     });
   });
 
   describe('Setsumei sections removed (now in Study mode)', () => {
     it('does NOT show inline setsumei sections', () => {
       render(<QuickViewContent listing={createMockListing()} />);
-      // Setsumei content is now accessed via Study mode (book icon button)
       expect(screen.queryByTestId('setsumei-section')).not.toBeInTheDocument();
       expect(screen.queryByTestId('yuhinkai-enrichment-section')).not.toBeInTheDocument();
     });
@@ -285,32 +289,11 @@ describe('QuickViewContent', () => {
     });
   });
 
-  describe('UI components', () => {
-    it('renders FavoriteButton', () => {
-      render(<QuickViewContent listing={createMockListing()} />);
-      expect(screen.getByTestId('favorite-button')).toBeInTheDocument();
-    });
-
-    it('renders ShareButton', () => {
-      render(<QuickViewContent listing={createMockListing()} />);
-      expect(screen.getByTestId('share-button')).toBeInTheDocument();
-    });
-
-    it('renders MetadataGrid', () => {
-      render(<QuickViewContent listing={createMockListing()} />);
-      expect(screen.getByTestId('metadata-grid')).toBeInTheDocument();
-    });
-
-    it('renders TranslatedDescription', () => {
-      render(<QuickViewContent listing={createMockListing()} />);
-      expect(screen.getByTestId('translated-description')).toBeInTheDocument();
-    });
-  });
-
   // =========================================================================
   // REGRESSION: Admin artisan tools consolidated into AdminEditView
   // ArtisanTooltip and AdminArtisanWidget were removed from QuickViewContent.
-  // These tests guard against re-introduction.
+  // Admin action buttons are now passed via slots (BrowseActionBar).
+  // These tests guard against re-introduction of inline admin tools.
   // =========================================================================
 
   describe('Admin artisan tool consolidation (regression)', () => {
@@ -360,35 +343,32 @@ describe('QuickViewContent', () => {
       expect(screen.queryByTestId('artisan-tooltip')).not.toBeInTheDocument();
     });
 
-    it('renders admin pen icon for edit mode toggle', () => {
-      const mockToggle = vi.fn();
+    it('does not render admin buttons inline — they come from actionBarSlot', () => {
+      // Without an actionBarSlot, no admin buttons should appear
+      render(<QuickViewContent listing={matchedAdminListing} />);
 
+      expect(screen.queryByLabelText('Edit fields')).not.toBeInTheDocument();
+      expect(screen.queryByLabelText('Mark as sold')).not.toBeInTheDocument();
+      expect(screen.queryByLabelText('Hide listing')).not.toBeInTheDocument();
+    });
+
+    it('renders admin buttons when passed via actionBarSlot', () => {
       render(
         <QuickViewContent
           listing={matchedAdminListing}
-          onToggleAdminEditMode={mockToggle}
+          actionBarSlot={
+            <>
+              <button aria-label="Edit fields">Edit</button>
+              <button aria-label="Mark as sold">Sold</button>
+              <button aria-label="Hide listing">Hide</button>
+            </>
+          }
         />
       );
 
-      // The pen icon should exist with "Edit fields" aria-label
-      const penButton = screen.getByLabelText('Edit fields');
-      expect(penButton).toBeInTheDocument();
-    });
-
-    it('renders admin sold toggle button', () => {
-      render(<QuickViewContent listing={matchedAdminListing} />);
-
-      // The sold/available toggle should be visible for admin
-      const soldButton = screen.getByLabelText('Mark as sold');
-      expect(soldButton).toBeInTheDocument();
-    });
-
-    it('renders admin hide toggle button', () => {
-      render(<QuickViewContent listing={matchedAdminListing} />);
-
-      // The hide/unhide toggle should be visible for admin
-      const hideButton = screen.getByLabelText('Hide listing');
-      expect(hideButton).toBeInTheDocument();
+      expect(screen.getByLabelText('Edit fields')).toBeInTheDocument();
+      expect(screen.getByLabelText('Mark as sold')).toBeInTheDocument();
+      expect(screen.getByLabelText('Hide listing')).toBeInTheDocument();
     });
   });
 });

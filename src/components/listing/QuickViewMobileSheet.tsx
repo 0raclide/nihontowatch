@@ -1,30 +1,18 @@
 'use client';
 
-import { useRef, useCallback, useEffect, useState, useMemo } from 'react';
+import { useRef, useCallback, useEffect, useState, useMemo, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import type { Listing, ListingWithEnrichment } from '@/types';
-import { isTosogu, getItemTypeLabel, hasSetsumeiData } from '@/types';
+import type { Listing } from '@/types';
+import { getItemTypeLabel } from '@/types';
 import { useCurrency, formatPriceWithConversion } from '@/hooks/useCurrency';
 import { shouldShowNewBadge } from '@/lib/newListing';
-import { FavoriteButton } from '@/components/favorites/FavoriteButton';
-import { ShareButton } from '@/components/share/ShareButton';
-import dynamic from 'next/dynamic';
-
-const InquiryModal = dynamic(
-  () => import('@/components/inquiry/InquiryModal').then(m => ({ default: m.InquiryModal })),
-  { ssr: false }
-);
-import { LoginModal } from '@/components/auth/LoginModal';
-import { useAuth } from '@/lib/auth/AuthContext';
-import { useActivityTrackerOptional } from '@/lib/tracking/ActivityTracker';
 import { saveListingReturnContext } from '@/lib/listing/returnContext';
 import { MetadataGrid, getCertInfo, getArtisanInfo } from './MetadataGrid';
 import { useQuickViewOptional } from '@/contexts/QuickViewContext';
-import { TranslatedDescription } from './TranslatedDescription';
 import { TranslatedTitle } from './TranslatedTitle';
 import { QuickMeasurement } from './QuickMeasurement';
 import { useLocale } from '@/i18n/LocaleContext';
-import { getDealerDisplayName } from '@/lib/dealers/displayName';
+import { useAuth } from '@/lib/auth/AuthContext';
 
 // =============================================================================
 // TYPES
@@ -35,12 +23,11 @@ interface QuickViewMobileSheetProps {
   isExpanded: boolean;
   onToggle: () => void;
   onClose: () => void;
-  imageCount: number;
-  currentImageIndex: number;
-  isStudyMode?: boolean;
-  onToggleStudyMode?: () => void;
-  isAdminEditMode?: boolean;
-  onToggleAdminEditMode?: () => void;
+  // Composition slots
+  headerActionsSlot?: ReactNode;
+  dealerSlot?: ReactNode;
+  descriptionSlot?: ReactNode;
+  ctaSlot?: ReactNode;
 }
 
 // =============================================================================
@@ -48,16 +35,15 @@ interface QuickViewMobileSheetProps {
 // =============================================================================
 
 // Sheet heights
-const COLLAPSED_HEIGHT_BASE = 116; // Compact bar height - price, badges, and dealer
-const COLLAPSED_HEIGHT_ARTIST = 160; // Extra height when artist identity block is shown
-const HANDLE_HEIGHT = 16; // Swipe handle area
+const COLLAPSED_HEIGHT_BASE = 116;
+const COLLAPSED_HEIGHT_ARTIST = 160;
 
 // Gesture thresholds
-const SWIPE_THRESHOLD = 40; // Minimum distance to trigger state change
-const VELOCITY_THRESHOLD = 0.4; // Minimum velocity for quick swipe (px/ms)
+const SWIPE_THRESHOLD = 40;
+const VELOCITY_THRESHOLD = 0.4;
 
 // Snap points as percentage of viewport height
-const EXPANDED_RATIO = 0.60; // 60% of screen when expanded
+const EXPANDED_RATIO = 0.60;
 
 // =============================================================================
 // COMPONENT
@@ -68,21 +54,16 @@ export function QuickViewMobileSheet({
   isExpanded,
   onToggle,
   onClose,
-  imageCount,
-  currentImageIndex,
-  isStudyMode,
-  onToggleStudyMode,
-  isAdminEditMode,
-  onToggleAdminEditMode,
+  headerActionsSlot,
+  dealerSlot,
+  descriptionSlot,
+  ctaSlot,
 }: QuickViewMobileSheetProps) {
   const sheetRef = useRef<HTMLDivElement>(null);
   const scrollContentRef = useRef<HTMLDivElement>(null);
 
-  // Navigation
   const router = useRouter();
-
-  // Auth — needed early for collapsed height calculation
-  const { user, isAdmin } = useAuth();
+  const { isAdmin } = useAuth();
 
   // Dynamic collapsed height — taller when artist identity block is shown
   const hasArtistBlock = !!(
@@ -93,40 +74,14 @@ export function QuickViewMobileSheet({
   );
   const collapsedHeight = hasArtistBlock ? COLLAPSED_HEIGHT_ARTIST : COLLAPSED_HEIGHT_BASE;
 
-  // Track current sheet height for smooth gestures
   const [sheetHeight, setSheetHeight] = useState(collapsedHeight);
   const [isDragging, setIsDragging] = useState(false);
   const [viewportHeight, setViewportHeight] = useState(0);
-
-  // i18n
-  const { t, locale } = useLocale();
-
-  // Inquiry modal state
-  const quickView = useQuickViewOptional();
-  const detailLoaded = quickView?.detailLoaded ?? true;
-  const activityTracker = useActivityTrackerOptional();
-  const [isInquiryModalOpen, setIsInquiryModalOpen] = useState(false);
-  const [showLoginModal, setShowLoginModal] = useState(false);
   const [navigatingToArtist, setNavigatingToArtist] = useState(false);
 
-  const handleToggleHidden = useCallback(async () => {
-    const newHidden = !listing.admin_hidden;
-    const action = newHidden ? 'hide' : 'unhide';
-    if (!window.confirm(`Are you sure you want to ${action} this listing?`)) return;
-
-    try {
-      const res = await fetch(`/api/listing/${listing.id}/hide`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ hidden: newHidden }),
-      });
-      if (res.ok) {
-        quickView?.refreshCurrentListing({ admin_hidden: newHidden } as Partial<Listing>);
-      }
-    } catch {
-      // silently fail
-    }
-  }, [listing.id, listing.admin_hidden, quickView]);
+  const { t, locale } = useLocale();
+  const quickView = useQuickViewOptional();
+  const detailLoaded = quickView?.detailLoaded ?? true;
 
   // Gesture tracking refs
   const dragStartY = useRef(0);
@@ -136,7 +91,6 @@ export function QuickViewMobileSheet({
   const lastTime = useRef(0);
   const velocity = useRef(0);
 
-  // Computed values
   const expandedHeight = useMemo(() =>
     viewportHeight * EXPANDED_RATIO,
     [viewportHeight]
@@ -144,12 +98,9 @@ export function QuickViewMobileSheet({
 
   const { currency, exchangeRates } = useCurrency();
   const certInfo = getCertInfo(listing.cert_type);
-  const { artisan, school } = getArtisanInfo(listing, locale);
+  const { artisan } = getArtisanInfo(listing, locale);
   const rawItemTypeLabel = getItemTypeLabel(listing.item_type);
   const itemTypeLabel = (() => { const k = `itemType.${listing.item_type?.toLowerCase()}`; const r = t(k); return r === k ? rawItemTypeLabel : r; })();
-  // Note: Supabase returns 'dealers' (plural) from the join, not 'dealer' (singular)
-  const dealerObj = listing.dealers || listing.dealer;
-  const dealerName = dealerObj ? getDealerDisplayName(dealerObj as { name: string; name_ja?: string | null }, locale) : 'Dealer';
   const priceDisplay = formatPriceWithConversion(
     listing.price_value,
     listing.price_currency,
@@ -157,49 +108,22 @@ export function QuickViewMobileSheet({
     exchangeRates
   );
 
-  // Handle Inquire button click
-  const handleInquire = useCallback((e: React.TouchEvent | React.MouseEvent) => {
-    e.stopPropagation();
-    if (!user) {
-      setShowLoginModal(true);
-      return;
-    }
-    setIsInquiryModalOpen(true);
-  }, [user]);
-
-  // Track when user clicks through to dealer's website
-  const handleDealerLinkClick = useCallback(() => {
-    if (activityTracker && listing) {
-      activityTracker.trackDealerClick(
-        Number(listing.id),
-        listing.dealer_id ?? 0,
-        listing.dealers?.name || listing.dealer?.name || 'Unknown',
-        listing.url,
-        'quickview',
-        { priceAtClick: listing.price_value ?? undefined, currencyAtClick: listing.price_currency ?? undefined }
-      );
-    }
-  }, [activityTracker, listing]);
-
   // Initialize viewport height
   useEffect(() => {
     const updateViewportHeight = () => {
-      // Use visualViewport for accurate height on iOS
       const vh = window.visualViewport?.height || window.innerHeight;
       setViewportHeight(vh);
     };
-
     updateViewportHeight();
     window.addEventListener('resize', updateViewportHeight);
     window.visualViewport?.addEventListener('resize', updateViewportHeight);
-
     return () => {
       window.removeEventListener('resize', updateViewportHeight);
       window.visualViewport?.removeEventListener('resize', updateViewportHeight);
     };
   }, []);
 
-  // Sync sheet height with isExpanded prop (for external control)
+  // Sync sheet height with isExpanded prop
   useEffect(() => {
     if (!isDragging && viewportHeight > 0) {
       setSheetHeight(isExpanded ? expandedHeight : collapsedHeight);
@@ -213,15 +137,11 @@ export function QuickViewMobileSheet({
     } else {
       document.body.style.overflow = '';
     }
-    return () => {
-      document.body.style.overflow = '';
-    };
+    return () => { document.body.style.overflow = ''; };
   }, [isExpanded]);
 
-  // Track whether the touch has committed to a drag (past threshold)
   const isDragCommitted = useRef(false);
 
-  // Handle touch start on the drag handle area — record start position but don't commit to drag yet
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     const touch = e.touches[0];
     dragStartY.current = touch.clientY;
@@ -234,47 +154,36 @@ export function QuickViewMobileSheet({
     setIsDragging(true);
   }, [sheetHeight]);
 
-  // Handle touch move - only commit to drag after 8px vertical movement
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
     if (!isDragging) return;
-
     const touch = e.touches[0];
     const currentY = touch.clientY;
     const currentTime = Date.now();
 
-    // Don't commit to drag until finger moves enough — lets page scroll through in DevTools
     if (!isDragCommitted.current) {
       const distance = Math.abs(currentY - dragStartY.current);
-      if (distance < 8) return; // Below threshold — let browser handle (scroll)
+      if (distance < 8) return;
       isDragCommitted.current = true;
     }
 
-    // touch-action:none on the drag handle prevents browser scroll,
-    // so no need for e.preventDefault() (which fails on passive React listeners).
-
-    // Calculate velocity for momentum
     const dt = currentTime - lastTime.current;
     if (dt > 0) {
-      velocity.current = (lastY.current - currentY) / dt; // Positive = dragging up
+      velocity.current = (lastY.current - currentY) / dt;
     }
     lastY.current = currentY;
     lastTime.current = currentTime;
 
-    // Calculate new height: dragging up (negative deltaY) increases height
     const deltaY = dragStartY.current - currentY;
     const newHeight = dragStartHeight.current + deltaY;
 
-    // Clamp height with rubber-band effect at boundaries
     const minH = collapsedHeight;
     const maxH = expandedHeight;
 
     let clampedHeight: number;
     if (newHeight < minH) {
-      // Rubber-band effect below minimum
       const overflow = minH - newHeight;
       clampedHeight = minH - overflow * 0.3;
     } else if (newHeight > maxH) {
-      // Rubber-band effect above maximum
       const overflow = newHeight - maxH;
       clampedHeight = maxH + overflow * 0.3;
     } else {
@@ -284,7 +193,6 @@ export function QuickViewMobileSheet({
     setSheetHeight(clampedHeight);
   }, [isDragging, expandedHeight]);
 
-  // Handle touch end - snap to nearest state
   const handleTouchEnd = useCallback(() => {
     if (!isDragging) return;
     isDragCommitted.current = false;
@@ -293,42 +201,31 @@ export function QuickViewMobileSheet({
     const midpoint = (collapsedHeight + expandedHeight) / 2;
     const currentVelocity = velocity.current;
 
-    // Determine target based on velocity or position
     let shouldExpand: boolean;
-
     if (Math.abs(currentVelocity) > VELOCITY_THRESHOLD) {
-      // High velocity: use velocity direction
       shouldExpand = currentVelocity > 0;
     } else {
-      // Low velocity: use position relative to midpoint
       shouldExpand = sheetHeight > midpoint;
     }
 
-    // Also check if we crossed the threshold from current state
     const dragDistance = Math.abs(sheetHeight - dragStartHeight.current);
     if (dragDistance > SWIPE_THRESHOLD) {
-      // Significant drag: toggle based on direction
       shouldExpand = sheetHeight > dragStartHeight.current;
     }
 
-    // Update state if changed
     if (shouldExpand !== isExpanded) {
       onToggle();
     } else {
-      // Snap back to current state
       setSheetHeight(isExpanded ? expandedHeight : collapsedHeight);
     }
   }, [isDragging, sheetHeight, expandedHeight, isExpanded, onToggle]);
 
-  // Handle tap on collapsed bar to expand
   const handleBarTap = useCallback((e: React.MouseEvent) => {
-    // Only trigger if not dragging and currently collapsed
     if (!isDragging && !isExpanded) {
       onToggle();
     }
   }, [isDragging, isExpanded, onToggle]);
 
-  // Calculate progress from collapsed to expanded (0-1)
   const progress = useMemo(() => {
     if (expandedHeight <= collapsedHeight) return 0;
     return Math.max(0, Math.min(1,
@@ -336,12 +233,7 @@ export function QuickViewMobileSheet({
     ));
   }, [sheetHeight, expandedHeight, collapsedHeight]);
 
-  // Determine if we're in "expanded mode" (for content visibility)
   const showExpandedContent = progress > 0.1;
-
-  // Check if we have a real dealer name (not just the fallback)
-  const hasRealDealerName = (listing.dealers?.name || listing.dealer?.name) &&
-    (listing.dealers?.name || listing.dealer?.name) !== 'Dealer';
 
   return (
     <div
@@ -355,7 +247,7 @@ export function QuickViewMobileSheet({
         willChange: 'height',
       }}
     >
-      {/* Draggable header area - entire top section responds to drag gestures */}
+      {/* Draggable header area */}
       <div
         className="cursor-grab active:cursor-grabbing shrink-0"
         style={{ touchAction: 'none' }}
@@ -369,82 +261,15 @@ export function QuickViewMobileSheet({
           <div className="w-10 h-1 rounded-full bg-border" />
         </div>
 
-        {/* Header row: Price + Favorite + Close */}
+        {/* Header row: Price + Actions + Close */}
         <div className="pl-4 pr-5 pb-2">
           <div className="flex items-center justify-between">
-            {/* Left side: Price */}
             <span className={`text-lg font-semibold tabular-nums ${listing.price_value ? 'text-ink' : 'text-muted'}`}>
               {priceDisplay}
             </span>
 
-            {/* Right side: Study + Share + Favorite + Close button */}
             <div className="flex items-center gap-2">
-              {/* Study Setsumei button - hidden for JA locale */}
-              {locale !== 'ja' && hasSetsumeiData(listing as ListingWithEnrichment) && onToggleStudyMode && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onToggleStudyMode();
-                  }}
-                  onTouchStart={(e) => e.stopPropagation()}
-                  onTouchEnd={(e) => e.stopPropagation()}
-                  className={`w-8 h-8 flex items-center justify-center rounded-full transition-all duration-200 ${
-                    isStudyMode
-                      ? 'bg-gold text-white shadow-lg'
-                      : 'magical-book'
-                  }`}
-                  aria-label={isStudyMode ? 'View photos' : 'Study setsumei'}
-                  title={isStudyMode ? 'View photos' : 'Read NBTHK evaluation'}
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                      d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                  </svg>
-                </button>
-              )}
-              {/* Admin Edit button - only show for admin users */}
-              {isAdmin && onToggleAdminEditMode && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onToggleAdminEditMode();
-                  }}
-                  onTouchStart={(e) => e.stopPropagation()}
-                  onTouchEnd={(e) => e.stopPropagation()}
-                  className={`w-8 h-8 flex items-center justify-center rounded-full transition-all duration-200 ${
-                    isAdminEditMode
-                      ? 'bg-gold text-white shadow-lg'
-                      : 'text-muted hover:text-ink hover:bg-border/50'
-                  }`}
-                  aria-label={isAdminEditMode ? 'View photos' : 'Admin edit'}
-                  title={isAdminEditMode ? 'View photos' : 'Edit listing (admin)'}
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                      d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" />
-                  </svg>
-                </button>
-              )}
-              <div
-                onClick={(e) => e.stopPropagation()}
-                onTouchStart={(e) => e.stopPropagation()}
-              >
-                <ShareButton
-                  listingId={listing.id}
-                  title={listing.title}
-                  size="sm"
-                  ogImageUrl={listing.og_image_url}
-                />
-              </div>
-              <div
-                onClick={(e) => e.stopPropagation()}
-                onTouchStart={(e) => e.stopPropagation()}
-              >
-                <FavoriteButton
-                  listingId={listing.id}
-                  size="sm"
-                />
-              </div>
+              {headerActionsSlot}
               <button
                 data-testid="mobile-sheet-close"
                 onClick={(e) => {
@@ -464,7 +289,7 @@ export function QuickViewMobileSheet({
           </div>
         </div>
 
-        {/* Badges row: Always visible - Item type + Certification + Measurement */}
+        {/* Badges row */}
         <div className="px-4 pb-2 flex items-center gap-2 flex-wrap">
           <span className="text-[11px] text-muted uppercase tracking-wide font-medium px-2 py-0.5 bg-linen rounded">
             {itemTypeLabel}
@@ -495,7 +320,7 @@ export function QuickViewMobileSheet({
           <QuickMeasurement listing={listing} />
         </div>
 
-        {/* Artist identity block — always visible in collapsed state */}
+        {/* Artist identity block */}
         {listing.artisan_id &&
          listing.artisan_id !== 'UNKNOWN' &&
          listing.artisan_confidence && listing.artisan_confidence !== 'NONE' &&
@@ -516,10 +341,6 @@ export function QuickViewMobileSheet({
                 setNavigatingToArtist(true);
                 window.dispatchEvent(new Event('nav-progress-start'));
                 saveListingReturnContext(listing);
-                // Dismiss QuickView BEFORE navigating — releasing body scroll lock
-                // and cleaning URL state so iOS Safari doesn't fight the transition.
-                // The old 300ms setTimeout caused a race: the sheet stayed mounted
-                // with drag gestures active while router.push was in flight.
                 quickView?.dismissForNavigation?.();
                 router.push(`/artists/${listing.artisan_id}`);
               }}
@@ -571,43 +392,18 @@ export function QuickViewMobileSheet({
           </div>
         )}
 
-        {/* Dealer row - Always visible if we have a real dealer name */}
-        {hasRealDealerName && (
+        {/* Dealer slot */}
+        {dealerSlot && (
           <div className="px-4 pb-2">
             <div className="flex items-center text-[12px] text-muted">
-              <svg className="w-3 h-3 mr-1 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-              </svg>
-              {listing.dealer_id ? (
-                <a
-                  href={`/?dealer=${listing.dealer_id}`}
-                  data-testid="dealer-name"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    // Use dismissForNavigation (not onClose/closeQuickView) to avoid
-                    // history.back() racing with router.push()
-                    quickView?.dismissForNavigation?.();
-                    router.push(`/?dealer=${listing.dealer_id}`);
-                  }}
-                  onTouchStart={(e) => e.stopPropagation()}
-                  onTouchEnd={(e) => e.stopPropagation()}
-                  className="truncate hover:text-accent hover:underline transition-colors"
-                >
-                  {dealerName}
-                </a>
-              ) : (
-                <span className="truncate">{dealerName}</span>
-              )}
+              {dealerSlot}
             </div>
           </div>
         )}
       </div>
 
-      {/* Unified content structure - flex-1 to fill remaining space after header */}
+      {/* Unified content structure */}
       <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
-
-        {/* Expandable content - visible as sheet grows */}
         <div
           className="flex flex-col flex-1 min-h-0 overflow-hidden transition-opacity"
           style={{
@@ -632,70 +428,27 @@ export function QuickViewMobileSheet({
               showMeasurements={true}
             />
 
-            {/* Title (auto-translated if Japanese) */}
+            {/* Title */}
             <div className="px-4 py-3 border-b border-border">
               <TranslatedTitle listing={listing} />
             </div>
 
-            {/* Description — skeleton until detail API loads */}
-            {detailLoaded ? (
-              <TranslatedDescription listing={listing} maxLines={12} />
-            ) : (
-              <div className="px-4 py-3 space-y-2 animate-pulse">
-                <div className="h-4 bg-muted/20 rounded w-full" />
-                <div className="h-4 bg-muted/20 rounded w-5/6" />
-                <div className="h-4 bg-muted/20 rounded w-4/6" />
-              </div>
-            )}
+            {/* Description slot */}
+            {descriptionSlot}
           </div>
 
-          {/* Sticky CTA - extra padding for iOS browser chrome */}
+          {/* Sticky CTA */}
           <div
             className="px-4 pt-3 bg-cream border-t border-border shrink-0"
             style={{
               paddingBottom: 'max(20px, calc(env(safe-area-inset-bottom, 0px) + 20px))'
             }}
           >
-            <div className="flex gap-2">
-              {/* Inquire Button — hidden for JA locale */}
-              {locale !== 'ja' && (
-                <button
-                  onClick={handleInquire}
-                  onTouchStart={(e) => e.stopPropagation()}
-                  onTouchEnd={(e) => e.stopPropagation()}
-                  data-testid="inquire-button-mobile"
-                  className="flex items-center justify-center gap-2 px-4 py-3 text-[13px] font-medium text-charcoal bg-linen hover:bg-hover border border-border rounded-lg transition-colors active:scale-[0.98]"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                  </svg>
-                  Inquire
-                </button>
-              )}
-
-              {/* View on Dealer Button */}
-              <a
-                href={listing.url}
-                target="_blank"
-                rel="noopener noreferrer nofollow"
-                onTouchStart={(e) => e.stopPropagation()}
-                onTouchEnd={(e) => e.stopPropagation()}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDealerLinkClick();
-                }}
-                className="flex-1 flex items-center justify-center gap-2 px-5 py-3 text-[13px] font-medium text-white bg-gold hover:bg-gold-light rounded-lg transition-colors active:scale-[0.98]"
-              >
-                {t('quickview.viewOn', { dealer: dealerName })}
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                </svg>
-              </a>
-            </div>
+            {ctaSlot}
           </div>
         </div>
 
-        {/* Collapsed state hint - visible when mostly collapsed */}
+        {/* Collapsed state hint */}
         {!showExpandedContent && (
           <div
             className="absolute bottom-0 left-0 right-0 flex items-center justify-center pb-2 pointer-events-none"
@@ -707,19 +460,6 @@ export function QuickViewMobileSheet({
           </div>
         )}
       </div>
-
-      {/* Inquiry Modal */}
-      <InquiryModal
-        isOpen={isInquiryModalOpen}
-        onClose={() => setIsInquiryModalOpen(false)}
-        listing={listing}
-      />
-
-      {/* Login Modal */}
-      <LoginModal
-        isOpen={showLoginModal}
-        onClose={() => setShowLoginModal(false)}
-      />
     </div>
   );
 }

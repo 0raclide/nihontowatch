@@ -2,8 +2,7 @@
 // Shared collection labels, formatters, and constants
 //
 // Single source of truth for display labels used across:
-//   CollectionCard, CollectionItemContent, CollectionMobileSheet,
-//   CollectionFilterContent, CollectionBottomBar
+//   CollectionFilterContent, CollectionBottomBar, QuickViewContent (collection mode)
 // =============================================================================
 
 // -----------------------------------------------------------------------------

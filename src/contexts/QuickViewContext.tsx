@@ -12,6 +12,7 @@ import {
 } from 'react';
 import { usePathname } from 'next/navigation';
 import type { Listing } from '@/types';
+import type { CollectionItem } from '@/types/collection';
 import { useSignupPressureOptional } from './SignupPressureContext';
 import { useAuth } from '@/lib/auth/AuthContext';
 import {
@@ -20,6 +21,7 @@ import {
   getCachedValidation,
   setCachedValidation,
 } from '@/lib/images';
+import { collectionItemToListing } from '@/lib/collection/adapter';
 
 // ============================================================================
 // Types
@@ -59,6 +61,22 @@ interface QuickViewContextType {
   refreshCurrentListing: (optimisticFields?: Partial<Listing>) => Promise<void>;
   /** Whether the detail API has loaded for the current listing (false = showing browse skeleton data) */
   detailLoaded: boolean;
+  /** Data source: 'browse' for dealer listings, 'collection' for personal items */
+  source: 'browse' | 'collection';
+  /** The original CollectionItem when source='collection' */
+  collectionItem: CollectionItem | null;
+  /** Current collection mode: 'view', 'add', 'edit', or null */
+  collectionMode: 'view' | 'add' | 'edit' | null;
+  /** Open QuickView for a collection item */
+  openCollectionQuickView: (item: CollectionItem, mode?: 'view' | 'edit') => void;
+  /** Open QuickView with the add form for a new collection item */
+  openCollectionAddForm: (prefill?: Partial<CollectionItem>) => void;
+  /** Change the collection mode (e.g., view → edit) */
+  setCollectionMode: (mode: 'view' | 'edit' | null) => void;
+  /** Callback invoked after a collection item is saved (add/edit/delete) */
+  onCollectionSaved: (() => void) | null;
+  /** Register a callback to be called after collection saves */
+  setOnCollectionSaved: (cb: (() => void) | null) => void;
 }
 
 // ============================================================================
@@ -121,6 +139,12 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
   const [isAlertMode, setIsAlertMode] = useState(false);
   const [detailLoaded, setDetailLoaded] = useState(false);
 
+  // Collection-specific state
+  const [source, setSource] = useState<'browse' | 'collection'>('browse');
+  const [collectionItem, setCollectionItem] = useState<CollectionItem | null>(null);
+  const [collectionMode, setCollectionModeState] = useState<'view' | 'add' | 'edit' | null>(null);
+  const onCollectionSavedRef = useRef<(() => void) | null>(null);
+
   // Cooldown to prevent immediate re-opening after close
   const closeCooldown = useRef(false);
 
@@ -136,15 +160,22 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
   const historyBackInProgressRef = useRef(false); // guards popstate from our own history.back()
 
   // Update URL synchronously using history API (no React re-renders)
-  const updateUrl = useCallback((listingId: number | null) => {
+  const updateUrl = useCallback((id: string | number | null, itemSource?: 'browse' | 'collection') => {
     if (typeof window === 'undefined') return;
 
     const url = new URL(window.location.href);
 
-    if (listingId !== null) {
-      url.searchParams.set('listing', String(listingId));
+    if (id !== null) {
+      if (itemSource === 'collection') {
+        url.searchParams.set('item', String(id));
+        url.searchParams.delete('listing');
+      } else {
+        url.searchParams.set('listing', String(id));
+        url.searchParams.delete('item');
+      }
     } else {
       url.searchParams.delete('listing');
+      url.searchParams.delete('item');
       // Also clean up multi-listing params (from alert email deep links)
       url.searchParams.delete('listings');
       url.searchParams.delete('alert_search');
@@ -204,7 +235,7 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
     // or when navigating between listings (which use replaceState via updateUrl).
     if (typeof window !== 'undefined') {
       const currentUrl = new URL(window.location.href);
-      if (!currentUrl.searchParams.has('listing')) {
+      if (!currentUrl.searchParams.has('listing') && !currentUrl.searchParams.has('item')) {
         // Snapshot the clean URL (without ?listing=) as a history entry first
         window.history.pushState({ quickview: true }, '', window.location.href);
         pushedHistoryRef.current = true;
@@ -212,7 +243,7 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
     }
 
     // Update the current history entry's URL with the listing param (replaceState)
-    updateUrl(listing.id);
+    updateUrl(listing.id, 'browse');
 
     // Track for signup pressure system
     signupPressure?.trackQuickView();
@@ -246,6 +277,9 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
     setCurrentListing(null);
     setCurrentIndex(-1);
     setIsAlertMode(false);
+    setSource('browse');
+    setCollectionItem(null);
+    setCollectionModeState(null);
 
     if (pushedHistoryRef.current) {
       // We pushed a history entry on open — pop it so the URL reverts cleanly.
@@ -273,6 +307,9 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
     setCurrentListing(null);
     setCurrentIndex(-1);
     setIsAlertMode(false);
+    setSource('browse');
+    setCollectionItem(null);
+    setCollectionModeState(null);
     // Don't pop history — router.push() will push a new entry on top.
     pushedHistoryRef.current = false;
     // Clean the ?listing= param via replaceState so the stale entry can't
@@ -291,11 +328,12 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
 
     setCurrentListing(nextListing);
     setCurrentIndex(nextIndex);
-    setDetailLoaded(false);
+    setDetailLoaded(source === 'collection'); // Collection items don't need detail fetch
 
-    updateUrl(nextListing.id);
+    updateUrl(nextListing.id, source);
 
-    // Fetch full listing data (with enrichment) asynchronously
+    // Fetch full listing data (with enrichment) asynchronously — skip for collection
+    if (source === 'collection') return;
     fetchFullListing(nextListing.id).then((fullListing) => {
       if (fullListing && !refreshInFlightRef.current) {
         setCurrentListing(prev => prev ? mergeDetailIntoListing(prev, fullListing) : fullListing);
@@ -307,7 +345,7 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
         setDetailLoaded(true);
       }
     });
-  }, [listings, currentIndex, updateUrl, fetchFullListing]);
+  }, [listings, currentIndex, updateUrl, fetchFullListing, source]);
 
   // Navigate to previous listing
   const goToPrevious = useCallback(() => {
@@ -318,11 +356,12 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
 
     setCurrentListing(prevListing);
     setCurrentIndex(prevIndex);
-    setDetailLoaded(false);
+    setDetailLoaded(source === 'collection'); // Collection items don't need detail fetch
 
-    updateUrl(prevListing.id);
+    updateUrl(prevListing.id, source);
 
-    // Fetch full listing data (with enrichment) asynchronously
+    // Fetch full listing data (with enrichment) asynchronously — skip for collection
+    if (source === 'collection') return;
     fetchFullListing(prevListing.id).then((fullListing) => {
       if (fullListing && !refreshInFlightRef.current) {
         setCurrentListing(prev => prev ? mergeDetailIntoListing(prev, fullListing) : fullListing);
@@ -334,7 +373,7 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
         setDetailLoaded(true);
       }
     });
-  }, [listings, currentIndex, updateUrl, fetchFullListing]);
+  }, [listings, currentIndex, updateUrl, fetchFullListing, source]);
 
   // Set listings array for navigation
   const setListings = useCallback((newListings: Listing[]) => {
@@ -350,6 +389,53 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
   // Enter/exit alert carousel mode (prevents browse grid from overwriting listings)
   const setAlertMode = useCallback((mode: boolean) => {
     setIsAlertMode(mode);
+  }, []);
+
+  // Collection: open QuickView for a collection item
+  const openCollectionQuickView = useCallback((item: CollectionItem, mode: 'view' | 'edit' = 'view') => {
+    if (closeCooldown.current) return;
+
+    const adaptedListing = collectionItemToListing(item) as unknown as Listing;
+    setSource('collection');
+    setCollectionItem(item);
+    setCollectionModeState(mode);
+
+    // Use skipFetch: true — collection items don't have a detail API
+    openQuickView(adaptedListing, { skipFetch: true });
+
+    // Fix URL: use ?item=UUID instead of ?listing=ID (openQuickView set ?listing=)
+    updateUrl(item.id, 'collection');
+  }, [openQuickView, updateUrl]);
+
+  // Collection: open add form in QuickView
+  const openCollectionAddForm = useCallback((prefill?: Partial<CollectionItem>) => {
+    if (closeCooldown.current) return;
+
+    setSource('collection');
+    setCollectionItem(prefill as CollectionItem | null);
+    setCollectionModeState('add');
+    setIsOpen(true);
+    setDetailLoaded(true);
+
+    // Push history for back button behavior
+    if (typeof window !== 'undefined') {
+      const currentUrl = new URL(window.location.href);
+      if (!currentUrl.searchParams.has('item')) {
+        window.history.pushState({ quickview: true }, '', window.location.href);
+        pushedHistoryRef.current = true;
+      }
+    }
+  }, []);
+
+  // Collection: change mode (view → edit, etc.)
+  const setCollectionMode = useCallback((mode: 'view' | 'edit' | null) => {
+    setCollectionModeState(mode);
+  }, []);
+
+  // Collection: register/get save callback
+  const onCollectionSaved = onCollectionSavedRef.current;
+  const setOnCollectionSaved = useCallback((cb: (() => void) | null) => {
+    onCollectionSavedRef.current = cb;
   }, []);
 
   // Refresh the current listing from the API
@@ -451,8 +537,9 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
 
       const url = new URL(window.location.href);
       const listingIdParam = url.searchParams.get('listing');
+      const itemIdParam = url.searchParams.get('item');
 
-      if (!listingIdParam && isOpen) {
+      if (!listingIdParam && !itemIdParam && isOpen) {
         // User pressed back — close the modal without further navigation
         pushedHistoryRef.current = false;
         setIsOpen(false);
@@ -567,6 +654,14 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
       setAlertMode,
       refreshCurrentListing,
       detailLoaded,
+      source,
+      collectionItem,
+      collectionMode,
+      openCollectionQuickView,
+      openCollectionAddForm,
+      setCollectionMode,
+      onCollectionSaved,
+      setOnCollectionSaved,
     }),
     [
       isOpen,
@@ -585,6 +680,14 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
       setAlertMode,
       refreshCurrentListing,
       detailLoaded,
+      source,
+      collectionItem,
+      collectionMode,
+      openCollectionQuickView,
+      openCollectionAddForm,
+      setCollectionMode,
+      onCollectionSaved,
+      setOnCollectionSaved,
     ]
   );
 

@@ -174,12 +174,12 @@ describe('InquiryModal feature gating', () => {
   });
 
   it('CRITICAL: free users cannot access inquiry without seeing paywall', async () => {
-    // This test verifies the gating logic exists in QuickViewContent
+    // This test verifies the gating logic exists in BrowseCTA (inquiry handling moved from QuickViewContent to slot component)
     const fs = await import('fs');
     const path = await import('path');
 
-    const quickViewPath = path.resolve(process.cwd(), 'src/components/listing/QuickViewContent.tsx');
-    const content = fs.readFileSync(quickViewPath, 'utf-8');
+    const browseCTAPath = path.resolve(process.cwd(), 'src/components/listing/quickview-slots/BrowseCTA.tsx');
+    const content = fs.readFileSync(browseCTAPath, 'utf-8');
 
     // Must check canAccess before showing inquiry modal
     expect(content).toContain("canAccess('inquiry_emails')");
@@ -277,11 +277,12 @@ describe('REGRESSION GUARD: Feature gating code presence', () => {
     expect(content).toContain('Unlock Full Translation');
   });
 
-  it('QuickViewContent gates inquiry emails', async () => {
+  it('BrowseCTA gates inquiry emails', async () => {
+    // Inquiry handling moved from QuickViewContent to BrowseCTA slot component
     const fs = await import('fs');
     const path = await import('path');
 
-    const filePath = path.resolve(process.cwd(), 'src/components/listing/QuickViewContent.tsx');
+    const filePath = path.resolve(process.cwd(), 'src/components/listing/quickview-slots/BrowseCTA.tsx');
     const content = fs.readFileSync(filePath, 'utf-8');
 
     expect(content).toContain('useSubscription');

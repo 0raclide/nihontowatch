@@ -604,20 +604,23 @@ Two-tier artisan discovery system for 13,572 artisans (12,453 smiths + 1,119 tos
 
 ### Collection Manager (`/collection`)
 
-Personal item cataloging for authenticated users. Four entry paths: manual, artisan-linked, Yuhinkai catalog lookup, and "I Own This" from browse. Client-side image resize + Supabase Storage upload.
+Personal item cataloging for authenticated users. **V2 vision: reuse 95% of browse visual architecture** — same ListingCard, same QuickView, same grid, same filters. No collection-specific chrome. The only unique parts are: Yuhinkai catalog search (searchable NBTHK records for Juyo/TJ items), image upload, and the add/edit form. This architecture also forms the basis for the future dealer feature (one visual system, three data sources).
+
+**V2 rebuild status**: Planned. V1 has ~13 parallel components (~2,670 lines) that duplicate browse. V2 deletes ~1,070 lines by replacing `CollectionCard` → `ListingCard`, `CollectionGrid` → `ListingGrid`, `CollectionItemContent` → `QuickViewContent` with source branching, etc. A `DisplayItem` adapter normalizes `CollectionItem` into the shape browse components expect.
 
 **Key files:**
 | Component | Location |
 |-----------|----------|
 | Collection page | `src/app/collection/page.tsx` + `CollectionPageClient.tsx` |
-| Components (9) | `src/components/collection/` (Card, Grid, QuickView, Form, ImageUpload, etc.) |
+| V1 components (13) | `src/components/collection/` — most to be replaced by browse equivalents in V2 |
+| V1 components to keep | `CollectionFormContent.tsx`, `CatalogSearchBar.tsx`, `ImageUploadZone.tsx`, `AddItemCard.tsx` |
 | API routes (6) | `src/app/api/collection/` (items, images, catalog-search, artisan-search, folders) |
-| Context | `src/contexts/CollectionQuickViewContext.tsx` |
-| Utilities | `src/lib/collection/catalogMapping.ts`, `listingImport.ts` |
+| Context | `src/contexts/CollectionQuickViewContext.tsx` (merge into shared QuickView context in V2) |
+| Utilities | `src/lib/collection/catalogMapping.ts`, `listingImport.ts`, `labels.ts` |
 | Types | `src/types/collection.ts` |
 | DB migration | `supabase/migrations/057_collection_tables.sql` |
 | Storage bucket | `collection-images` (Supabase Storage, public) |
-| "I Own This" button | `src/components/listing/QuickViewContent.tsx` (line ~375) |
+| "I Own This" button | `src/components/listing/QuickViewContent.tsx` |
 | Nav links | `src/components/layout/Header.tsx`, `MobileNavDrawer.tsx` (auth-gated) |
 | **Full documentation** | `docs/COLLECTION_MANAGER.md` |
 

@@ -84,6 +84,7 @@ interface ListingWithDealer {
   is_initial_import: boolean | null;
   admin_hidden: boolean;
   status_admin_locked: boolean;
+  admin_locked_fields: Record<string, boolean> | null;
   dealer_id: number;
   artisan_id: string | null;
   artisan_confidence: string | null;
@@ -153,6 +154,7 @@ export interface EnrichedListingDetail {
   is_initial_import: boolean | null;
   admin_hidden: boolean;
   status_admin_locked: boolean;
+  admin_locked_fields: Record<string, boolean> | null;
   dealer_id: number;
   artisan_id: string | null;
   artisan_confidence: string | null;
@@ -223,6 +225,7 @@ const LISTING_SELECT = `
   is_initial_import,
   admin_hidden,
   status_admin_locked,
+  admin_locked_fields,
   dealer_id,
   artisan_id,
   artisan_confidence,
@@ -387,6 +390,7 @@ export async function getListingDetail(
     is_initial_import: typedListing.is_initial_import,
     admin_hidden: typedListing.admin_hidden,
     status_admin_locked: typedListing.status_admin_locked,
+    admin_locked_fields: typedListing.admin_locked_fields,
     dealer_id: typedListing.dealer_id,
     artisan_id: typedListing.artisan_id,
     artisan_confidence: typedListing.artisan_confidence,

@@ -1,11 +1,13 @@
 'use client';
 
+import { useMemo } from 'react';
 import Link from 'next/link';
 import { useFavorites } from '@/hooks/useFavorites';
 import { ListingCard } from '@/components/browse/ListingCard';
 import { FavoriteButton } from './FavoriteButton';
 import { getImageUrl } from '@/lib/images';
 import { useLocale } from '@/i18n/LocaleContext';
+import { listingToDisplayItem } from '@/lib/displayItem';
 
 interface ExchangeRates {
   base: string;
@@ -76,8 +78,14 @@ function EmptyState() {
 }
 
 export function FavoritesList({ currency, exchangeRates }: FavoritesListProps) {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const { favorites, isLoading, error } = useFavorites();
+
+  // Map favorites' listings to DisplayItem for ListingCard
+  const displayItems = useMemo(
+    () => favorites.map(item => listingToDisplayItem(item.listing as any, locale)),
+    [favorites, locale]
+  );
 
   if (isLoading) {
     return <LoadingSkeleton />;
@@ -129,7 +137,7 @@ export function FavoritesList({ currency, exchangeRates }: FavoritesListProps) {
         {favorites.map((item, index) => (
           <div key={item.favoriteId} className="relative group">
             <ListingCard
-              listing={item.listing}
+              listing={displayItems[index]}
               currency={currency}
               exchangeRates={exchangeRates}
               priority={index < 10}

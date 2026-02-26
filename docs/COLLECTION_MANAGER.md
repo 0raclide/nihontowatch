@@ -1,97 +1,185 @@
-# Collection Manager — Comprehensive Documentation
+# Collection Manager — Architecture & Vision
 
-**Last updated**: 2026-02-11
-**Status**: Live at nihontowatch.com/collection
+**Last updated**: 2026-02-26
+**Status**: V1 live at nihontowatch.com/collection — V2 rebuild planned
 **Migration**: `057_collection_tables.sql` applied
 **Storage bucket**: `collection-images` (public, 5MB limit, JPEG/PNG/WebP)
 
 ---
 
-## Overview
+## Vision
 
-The Collection Manager is a personal cataloging system for authenticated users to inventory their nihonto (Japanese swords) and tosogu (sword fittings). It reuses 70-80% of the browse infrastructure (card layout, QuickView pattern, filter sidebar, grid) to create a "personal museum" that feels instantly familiar.
+The collection is a **private gallery**, not a database. It should feel like walking into your own curated showroom — the same visual quality as browse, because it IS browse, just with your data.
 
-**Key differentiator**: Yuhinkai catalog lookup — certified Juyo/Tokuju items auto-populate from authoritative data. No other collector tool has this.
+**Core principle**: No collection-specific chrome. Cards look identical to browse cards. QuickView looks identical to browse QuickView. The only differences are: where the data comes from, and what actions are available.
+
+**Why this matters**:
+- Every browse improvement (smart crop, cert colors, JA metadata, artisan badges, typography) automatically applies to collection
+- The collector's items feel like first-class citizens, not second-class copies
+- The same architecture becomes the dealer feature — one visual system, three data sources
+
+**Key differentiator**: Yuhinkai catalog search — certified Juyo/Tokuju items can be looked up and linked from authoritative NBTHK data. No other collector tool has this.
 
 **Access**: Free unlimited for all authenticated users. No tier gating.
 
 ---
 
-## Architecture
+## V2 Architecture: Collection = Browse With Your Data
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    COLLECTION MANAGER                            │
-│                                                                  │
-│  ┌──────────────┐       ┌──────────────┐       ┌────────────┐  │
-│  │  /collection │──────▶│  QuickView   │──────▶│  /browse    │  │
-│  │    Grid      │       │ Add/Edit/View│       │"I Own This" │  │
-│  └──────┬───────┘       └──────┬───────┘       └──────┬─────┘  │
-│         │                      │                      │         │
-│         │ Client fetch         │ CRUD + Upload        │ Import  │
-│         ▼                      ▼                      ▼         │
-│  ┌────────────────────────────────────────────────────────────┐ │
-│  │                    API Layer                                │ │
-│  │  /api/collection/items     (GET, POST)                     │ │
-│  │  /api/collection/items/[id](GET, PATCH, DELETE)            │ │
-│  │  /api/collection/images    (POST, DELETE)                  │ │
-│  │  /api/collection/catalog-search  (GET → Yuhinkai)          │ │
-│  │  /api/collection/artisan-search  (GET → Yuhinkai)          │ │
-│  │  /api/collection/folders   (GET, POST)                     │ │
-│  └────────────────┬──────────────────────┬────────────────────┘ │
-│                   │                      │                      │
-│                   ▼                      ▼                      │
-│  ┌────────────────────────┐  ┌──────────────────────────────┐  │
-│  │  NihontoWatch DB       │  │  Yuhinkai DB (Supabase)      │  │
-│  │  user_collection_items │  │  artisan_makers, gold_values  │  │
-│  │  user_collection_folders│  │  artisan_schools, catalog_records│
-│  └────────────────────────┘  └──────────────────────────────┘  │
-│                   │                                              │
-│                   ▼                                              │
-│  ┌────────────────────────┐                                     │
-│  │  Supabase Storage      │                                     │
-│  │  collection-images     │                                     │
-│  │  {user}/{item}/{uuid}  │                                     │
-│  └────────────────────────┘                                     │
-└─────────────────────────────────────────────────────────────────┘
+### The Unified Visual System
+
+Browse, collection, artist listings, and (future) dealer pages are the **same visual system** with different data sources and different action sets:
+
+| Page | Data Source | Card | QuickView | Actions |
+|------|-----------|------|-----------|---------|
+| **Browse** | All dealers | ListingCard | QuickViewContent | Favorite, Inquire, Track |
+| **Collection** | Your items | ListingCard | QuickViewContent | Edit, Share, Delete |
+| **Artist** | One maker | ListingCard | QuickViewContent | Browse filtered |
+| **Dealer** (future) | One dealer | ListingCard | QuickViewContent | Analytics |
+
+### The DisplayItem Adapter
+
+A `CollectionItem` gets normalized into the same shape that `ListingCard` and `QuickViewContent` already render. No collection-specific card component.
+
+```typescript
+// Mapper: CollectionItem → Listing-compatible shape
+function collectionItemToDisplayItem(item: CollectionItem): DisplayItem {
+  return {
+    id: item.id,
+    source: 'collection',
+    title: item.title,
+    images: item.images,
+    item_type: item.item_type,
+    cert_type: item.cert_type,
+    smith: item.smith,
+    school: item.school,
+    artisan_id: item.artisan_id,
+    artisan_display_name: item.artisan_display_name,
+    nagasa_cm: item.nagasa_cm,
+    era: item.era,
+    // ... all visual fields map 1:1
+
+    // Source-specific rendering hints
+    headerLabel: item.acquired_from || null,  // replaces dealer name
+    priceValue: item.current_value || item.price_paid,
+    priceCurrency: item.current_value_currency || item.price_paid_currency,
+  };
+}
 ```
 
-**Pattern**: Hybrid SSR + client fetch (same as `/artists` and `/browse`):
-- Server component gates auth, redirects unauthenticated → `/browse?login=collection`
-- Client component manages filter state, fetches data, syncs URL via `replaceState()`
-- `AbortController` cancels in-flight requests on rapid filter changes
+### What Gets Reused (95%)
+
+| Browse Component | Collection Reuse | Notes |
+|-----------------|-----------------|-------|
+| `ListingCard` | Direct | Same card, no visual differences |
+| `ListingGrid` / `VirtualListingGrid` | Direct | Same grid layout |
+| `QuickViewContent` | With source branching | Action bar switches based on `source` |
+| `QuickViewModal` | Direct | Same modal container |
+| `QuickViewMobileSheet` | Direct | Same mobile bottom sheet |
+| `FilterSidebar` / `FilterContent` | Adapted | Same structure, different facet data |
+| `MetadataGrid` | Direct | Same metadata layout |
+| `ImageGallery` | Direct | Same swipe/zoom/thumbnails |
+
+### What's Collection-Specific (5%)
+
+| Component | Purpose | Stays? |
+|-----------|---------|--------|
+| `CollectionFormContent` | Add/edit form with sections | Yes — genuinely unique |
+| `CatalogSearchBar` | Yuhinkai catalog lookup | Yes — the killer feature |
+| `ImageUploadZone` | Drag-drop image upload + resize | Yes — collection-only capability |
+| `AddItemCard` | "+" card for adding items | Yes — small, grid-specific |
+| `CollectionQuickViewContext` | QuickView state for collection | Merge into shared QuickView context |
+
+### What Gets Deleted (~1,070 lines)
+
+| Component | Lines | Replaced By |
+|-----------|-------|------------|
+| `CollectionCard` | ~180 | `ListingCard` via DisplayItem adapter |
+| `CollectionGrid` | ~40 | `ListingGrid` |
+| `CollectionMobileSheet` | ~180 | `QuickViewMobileSheet` |
+| `CollectionItemContent` | ~360 | `QuickViewContent` with source branching |
+| `CollectionFilterSidebar` | ~30 | `FilterSidebar` |
+| `CollectionFilterDrawer` | ~30 | Mobile filter drawer |
+| `CollectionQuickView` | ~250 | Shared QuickView system |
 
 ---
 
-## Four Entry Paths (One Form)
+## Yuhinkai Catalog Search (The Killer Feature)
 
-The add form has a smart search bar at the top. All paths use the same form — the difference is how much gets pre-filled:
+The ability to search NBTHK certification records and auto-populate collection items from authoritative data. This is what differentiates NihontoWatch from any spreadsheet or generic cataloging tool.
 
-### Path 0 — "I Own This" (from browse QuickView)
+### Current State
 
-User clicks "I Own This" on a browse listing → collection QuickView opens in add mode with ALL fields pre-populated from the listing.
+The catalog search exists (`CatalogSearchBar` + `/api/collection/catalog-search`) but is embedded inside the add/edit form. It works but is not prominent enough — most users won't discover it.
 
-**Flow**: `QuickViewContent.tsx` → `mapListingToCollectionItem()` → `sessionStorage('collection_prefill')` → redirect to `/collection?add=listing` → `CollectionPageClient` reads sessionStorage → `openAddForm(prefill)`
+### Vision: Searchable Catalog System
 
-**What copies**: item_type, smith, school, certification, measurements, images (dealer URLs), artisan_id, province, era, mei_type, acquired_from (dealer name), price
+The Yuhinkai catalog search should be a first-class feature, not buried in a form. When adding a Juyo or Tokuju item:
 
-**What user adds**: condition, notes, acquired_date (price may need adjustment)
+1. User indicates cert type (Juyo/Tokuju) → search interface opens
+2. Search by: smith name, session number, nagasa, form type
+3. Results show rich previews: smith name, form, measurements, mei status, collection/volume/item
+4. Click result → all fields auto-populate (item type, smith, school, measurements, certification, artisan link)
+5. The linked `object_uuid` from Yuhinkai enables future features: setsumei lookup, provenance chain, form analysis
 
-### Path 1 — Yuhinkai Catalog Lookup
+### Search Pipeline
 
-User types "Juyo 63 Masamune" or uses refinement fields (cert type + session + nagasa).
+```
+User query: "Juyo 63 Masamune"
+    │
+    ▼
+CatalogSearchBar (300ms debounce)
+    │
+    ├──▶ GET /api/collection/catalog-search?cert=Juyo&session=63&q=Masamune
+    │      │
+    │      ▼
+    │    Yuhinkai DB: gold_values → catalog_records → artisan_makers
+    │      │
+    │      ▼
+    │    Results: [{smith_name, form_type, nagasa, collection, volume, item_number, ...}]
+    │
+    └──▶ GET /api/collection/artisan-search?q=Masamune
+           │
+           ▼
+         Yuhinkai DB: artisan_makers (domain-filtered)
+           │
+           ▼
+         Results: [{code, name_kanji, name_romaji, school, province, juyo_count, ...}]
+```
 
-**Flow**: `CatalogSearchBar` → `/api/collection/catalog-search` → Yuhinkai gold_values + catalog_records → `mapCatalogToCollectionItem()` → 15+ fields auto-populate
+User selects a result → `mapCatalogToCollectionItem()` converts Yuhinkai fields (mm→cm, collection name→cert_type, form_type→item_type) → form auto-populates.
 
-### Path 2 — Artisan-Linked
+---
 
-User types artisan name → search results appear from Yuhinkai.
+## Collection ↔ Browse Bridge
 
-**Flow**: `CatalogSearchBar` → `/api/collection/artisan-search` → select artisan → artisan_id, smith, school, province, era populate
+### Owned Items Visible in Browse
 
-### Path 3 — Fully Manual
+When browsing, items linked to your collection (via `source_listing_id`) show a subtle owned indicator on the card. Your collection is a living overlay on the market.
 
-Skip the search bar → blank form. For unpapered, unsigned, or non-Japanese items.
+### "I Own This" Flow
+
+**Current (V1)**: Click button → sessionStorage → navigate to /collection → form opens → fill out → save. Five steps, leaves browse.
+
+**Target (V2)**: Click "I Own This" → instant creation with prefilled data → toast confirmation → owned indicator appears on browse card. Never leave browse. Go to /collection later to add condition, notes, price paid.
+
+### Cross-References
+
+- **Collection QuickView → Browse**: "View original listing" link (if source listing exists). "Find similar on market" → opens browse filtered to same smith/school/type.
+- **Browse QuickView → Collection**: "You own N items by this maker" when the artisan matches items in your collection.
+- **Artist Profiles → Collection**: "In your collection" badge showing how many items you own by that artisan.
+
+---
+
+## Public Collection Pages (Future → Dealer Feature)
+
+`/collector/username` — your collection rendered as a public gallery. Same cards, same QuickView. Visitors can't edit. Only `is_public` items appear.
+
+The same architecture directly becomes the dealer feature:
+- `/collector/username` → collector's public gallery
+- `/dealer/aoi-art` → dealer's inventory page with analytics overlay
+
+One component tree, three skins. The `source` discriminator on `DisplayItem` controls which actions, headers, and metadata sections are rendered.
 
 ---
 
@@ -208,7 +296,7 @@ Update item. Owner only. Partial updates — only provided fields change.
 
 ### `DELETE /api/collection/items/[id]`
 
-Delete item and cleanup storage images. Owner only. Extracts storage paths from full URLs, removes from bucket, then deletes the DB row.
+Delete item and cleanup storage images. Owner only.
 
 ### `POST /api/collection/images`
 
@@ -218,15 +306,11 @@ Upload image to collection item. Auth required.
 
 **Response**: `{ path, publicUrl }` (201)
 
-Resizing happens client-side before upload. Server validates type, size, ownership, and image count.
-
 ### `DELETE /api/collection/images`
 
 Remove image from item and storage. Auth required.
 
 **Body**: `{ imageUrl: string, itemId: string }`
-
-Extracts storage path from URL, verifies user owns the path prefix, removes from bucket and item's images array.
 
 ### `GET /api/collection/catalog-search`
 
@@ -242,8 +326,6 @@ Search Yuhinkai catalog records. Auth required.
 
 **Response**: `{ results: CatalogSearchResult[], total: number }`
 
-Two-step search: `gold_values` → join `catalog_records` for collection/volume/item_number, then join `artisan_makers` for names.
-
 ### `GET /api/collection/artisan-search`
 
 Search Yuhinkai artisans. Auth required.
@@ -256,8 +338,6 @@ Search Yuhinkai artisans. Auth required.
 
 **Response**: `{ results: ArtisanSearchResult[], query, total }`
 
-Searches `artisan_makers` with domain filtering (`sword`/`tosogu`/`both`), sorted by Juyo+Tokuju count.
-
 ### `GET/POST /api/collection/folders`
 
 List or create folders. Auth required. Max 50 folders per user.
@@ -266,14 +346,16 @@ List or create folders. Auth required. Max 50 folders per user.
 
 ## File Map
 
-### Pages
+### Current V1 Files (pre-rebuild)
+
+#### Pages
 
 | File | Purpose |
 |------|---------|
 | `src/app/collection/page.tsx` | Server component — auth gate, redirect if unauthenticated |
 | `src/app/collection/CollectionPageClient.tsx` | Client component — filter state, data fetch, grid, URL sync |
 
-### API Routes
+#### API Routes
 
 | Endpoint | File |
 |----------|------|
@@ -284,94 +366,57 @@ List or create folders. Auth required. Max 50 folders per user.
 | `GET /api/collection/artisan-search` | `src/app/api/collection/artisan-search/route.ts` |
 | `GET/POST /api/collection/folders` | `src/app/api/collection/folders/route.ts` |
 
-### Components
+#### Components (V1 — to be replaced in V2)
 
-| Component | File | Purpose |
+| Component | File | V2 Fate |
 |-----------|------|---------|
-| `CollectionQuickView` | `src/components/collection/CollectionQuickView.tsx` | Modal shell — navigation, mode switching, top bar |
-| `CollectionViewContent` | `src/components/collection/CollectionViewContent.tsx` | Read-only view — gallery, metadata grid, edit/delete buttons |
-| `CollectionFormContent` | `src/components/collection/CollectionFormContent.tsx` | Add/edit form — search bar, all field sections, save/cancel |
-| `CatalogSearchBar` | `src/components/collection/CatalogSearchBar.tsx` | Dual catalog + artisan search with 300ms debounce |
-| `ImageUploadZone` | `src/components/collection/ImageUploadZone.tsx` | Drag-drop upload, resize, two-phase upload, thumbnail strip |
-| `CollectionCard` | `src/components/collection/CollectionCard.tsx` | Item card — cert badges, status, condition, artisan, price |
-| `AddItemCard` | `src/components/collection/AddItemCard.tsx` | "+" skeleton card for adding new items |
-| `CollectionGrid` | `src/components/collection/CollectionGrid.tsx` | Responsive CSS grid of cards |
-| `CollectionFilterSidebar` | `src/components/collection/CollectionFilterSidebar.tsx` | Sort + filter sidebar with facet counts |
+| `CollectionCard` | `src/components/collection/CollectionCard.tsx` | **Delete** → ListingCard via adapter |
+| `CollectionGrid` | `src/components/collection/CollectionGrid.tsx` | **Delete** → ListingGrid |
+| `CollectionQuickView` | `src/components/collection/CollectionQuickView.tsx` | **Delete** → shared QuickView system |
+| `CollectionItemContent` | `src/components/collection/CollectionItemContent.tsx` | **Delete** → QuickViewContent with source branching |
+| `CollectionMobileSheet` | `src/components/collection/CollectionMobileSheet.tsx` | **Delete** → QuickViewMobileSheet |
+| `CollectionFilterSidebar` | `src/components/collection/CollectionFilterSidebar.tsx` | **Delete** → FilterSidebar |
+| `CollectionFilterDrawer` | `src/components/collection/CollectionFilterDrawer.tsx` | **Delete** → mobile filter drawer |
+| `CollectionFormContent` | `src/components/collection/CollectionFormContent.tsx` | **Keep** — unique add/edit form |
+| `CatalogSearchBar` | `src/components/collection/CatalogSearchBar.tsx` | **Keep** — Yuhinkai search (the killer feature) |
+| `ImageUploadZone` | `src/components/collection/ImageUploadZone.tsx` | **Keep** — collection-only upload |
+| `AddItemCard` | `src/components/collection/AddItemCard.tsx` | **Keep** — grid "+" card |
+| `CollectionBottomBar` | `src/components/collection/CollectionBottomBar.tsx` | **Delete** → shared mobile bottom bar |
+| `CollectionFilterContent` | `src/components/collection/CollectionFilterContent.tsx` | **Delete** → FilterContent |
 
-### Context
+#### Context
 
-| File | Purpose |
-|------|---------|
-| `src/contexts/CollectionQuickViewContext.tsx` | QuickView state — open/close, mode, navigation, refresh callback |
+| File | Purpose | V2 Fate |
+|------|---------|---------|
+| `src/contexts/CollectionQuickViewContext.tsx` | QuickView state for collection | Merge into shared QuickView context |
 
-### Utilities
+#### Utilities
 
 | File | Purpose |
 |------|---------|
 | `src/lib/collection/catalogMapping.ts` | Maps Yuhinkai `gold_values` → `CollectionItem` (mm→cm conversion) |
 | `src/lib/collection/listingImport.ts` | Maps browse `Listing` → `CollectionItem` for "I Own This" |
+| `src/lib/collection/labels.ts` | Cert labels, status labels, condition labels, formatting |
 
-### Types
-
-| File | Purpose |
-|------|---------|
-| `src/types/collection.ts` | All type definitions — CollectionItem, Filters, Facets, CatalogSearchResult, etc. |
-
-### Database
+#### Types
 
 | File | Purpose |
 |------|---------|
-| `supabase/migrations/057_collection_tables.sql` | Tables, indexes, RLS, triggers, storage bucket note |
+| `src/types/collection.ts` | All type definitions — CollectionItem, Filters, Facets, CatalogSearchResult |
 
-### Modified Files (existing)
+#### Database
+
+| File | Purpose |
+|------|---------|
+| `supabase/migrations/057_collection_tables.sql` | Tables, indexes, RLS, triggers, storage bucket |
+
+#### Modified Files (existing)
 
 | File | Change |
 |------|--------|
-| `src/components/listing/QuickViewContent.tsx` | Added "I Own This" button (auth-gated) in CTA area |
-| `src/components/layout/Header.tsx` | Added "Collection" nav link (auth-gated) |
-| `src/components/layout/MobileNavDrawer.tsx` | Added "Collection" nav link (auth-gated) |
-| `src/types/database.ts` | Added `user_collection_items` and `user_collection_folders` table type defs |
-| `tests/components/listing/QuickViewContent.test.tsx` | Added mocks for `useRouter`, `mapListingToCollectionItem` |
-
----
-
-## Component Hierarchy
-
-```
-CollectionPageClient
-  └─ CollectionQuickViewProvider (context)
-      └─ CollectionPageInner
-          ├─ CollectionFilterSidebar
-          │   ├─ Sort dropdown (newest, value, type)
-          │   └─ FilterSection × 4 (type, cert, status, condition)
-          │
-          ├─ CollectionGrid
-          │   ├─ CollectionCard × N (memoized)
-          │   └─ AddItemCard
-          │
-          └─ CollectionQuickView (modal)
-              ├─ [mode=view] CollectionViewContent
-              │   ├─ Image gallery + thumbnails
-              │   ├─ Metadata grid
-              │   ├─ Edit / Delete buttons
-              │   └─ Source listing link
-              │
-              └─ [mode=add|edit] CollectionFormContent
-                  ├─ CatalogSearchBar (add mode, no prefill)
-                  │   ├─ Catalog results
-                  │   └─ Artisan results
-                  ├─ ImageUploadZone
-                  │   ├─ Drop zone
-                  │   └─ Thumbnail strip with remove
-                  ├─ Classification section
-                  ├─ Attribution section
-                  ├─ Measurements section
-                  ├─ Provenance section
-                  ├─ Valuation section
-                  ├─ Status & Condition section
-                  ├─ Notes section
-                  └─ Sticky footer (Save / Cancel)
-```
+| `src/components/listing/QuickViewContent.tsx` | "I Own This" button (auth-gated) |
+| `src/components/layout/Header.tsx` | "Collection" nav link (auth-gated) |
+| `src/components/layout/MobileNavDrawer.tsx` | "Collection" nav link (auth-gated) |
 
 ---
 
@@ -396,65 +441,6 @@ Images in the `images` JSONB array are stored as **full public URLs** (e.g., `ht
 
 When deleting, the API extracts the storage path from the URL using the `/collection-images/` marker.
 
-### Catalog Search Pipeline
-
-```
-User query: "Juyo 63 Masamune"
-    │
-    ▼
-CatalogSearchBar (300ms debounce)
-    │
-    ├─▶ GET /api/collection/catalog-search?cert=Juyo&session=63&q=Masamune
-    │     │
-    │     ▼
-    │   Yuhinkai DB: gold_values → catalog_records → artisan_makers
-    │     │
-    │     ▼
-    │   Results: [{smith_name, form_type, nagasa, collection, volume, item_number, ...}]
-    │
-    └─▶ GET /api/collection/artisan-search?q=Masamune
-          │
-          ▼
-        Yuhinkai DB: artisan_makers (domain-filtered)
-          │
-          ▼
-        Results: [{code, name_kanji, name_romaji, school, province, juyo_count, ...}]
-```
-
-User selects a result → `mapCatalogToCollectionItem()` converts Yuhinkai fields (mm→cm, collection name→cert_type, form_type→item_type) → form auto-populates.
-
-### "I Own This" Flow
-
-```
-Browse QuickView           Collection Page
-┌──────────────┐          ┌──────────────┐
-│ "I Own This" │──────────│  ?add=listing │
-│   button     │ redirect │              │
-│              │          │ reads session │
-│ mapListing() │          │ Storage      │
-│ → session    │          │              │
-│   Storage    │          │ openAddForm  │
-└──────────────┘          │ (prefill)    │
-                          └──────────────┘
-```
-
-1. `QuickViewContent.tsx`: `handleIOwn` calls `mapListingToCollectionItem(listing)`, stores in `sessionStorage('collection_prefill')`, closes QuickView, navigates to `/collection?add=listing`
-2. `CollectionPageClient.tsx`: On mount, checks for `?add=listing` param, reads and clears sessionStorage, calls `openAddForm(prefill)`, cleans up URL
-
-### QuickView Keyboard Navigation
-
-| Key | Action | Condition |
-|-----|--------|-----------|
-| `Escape` | Close | Always |
-| `→` or `j` | Next item | View mode, not at end |
-| `←` or `k` | Previous item | View mode, not at start |
-
-Navigation is bounded (no wrap-around). Counter shows "X of Y" in the top bar.
-
-### Memoization
-
-`CollectionCard` uses `React.memo` with custom comparison on `item.id`, `item.updated_at`, and first image URL. This prevents re-renders when the parent grid re-renders with the same data.
-
 ---
 
 ## Limits & Constraints
@@ -476,46 +462,37 @@ Navigation is bounded (no wrap-around). Counter shows "X of Y" in the top bar.
 
 ---
 
-## What's Deferred (Phase 2+)
+## V2 Rebuild Roadmap
 
-| Feature | Status | Notes |
-|---------|--------|-------|
-| **Folders UI** | Schema ready, API ready, UI deferred | `folder_id` column exists, `/api/collection/folders` works |
-| **Stats bar** | Not started | Total value, item count by type, value trends |
-| **Image reorder** | Not started | Drag-to-reorder in thumbnail strip |
-| **Public collection profile** | Schema ready (`is_public` field) | Share your collection with a public URL |
-| **Mobile filter drawer** | Not started | Desktop sidebar only currently |
-| **Bulk operations** | Not started | Multi-select delete, folder assignment |
-| **Export** | Not started | CSV/PDF export of collection |
-| **Collection sharing** | Not started | Share link, QR code |
+### Phase 1: Unified Visual System
 
----
+1. Create `DisplayItem` adapter type and `collectionItemToDisplayItem()` mapper
+2. Make `ListingCard` accept `DisplayItem` (or extend its existing `Listing` interface to support collection fields)
+3. Make `QuickViewContent` branch on `source` for action bar (edit/delete vs. favorite/inquire)
+4. Add provenance section to QuickViewContent (shown when `source === 'collection'`)
+5. Wire collection page to use `ListingGrid` + `FilterSidebar` instead of custom components
+6. Delete ~1,070 lines of parallel collection components
 
-## Testing
+### Phase 2: Instant "I Own This"
 
-### Automated
+1. Click "I Own This" → instant POST with prefilled data → toast confirmation
+2. Owned indicator on browse cards (check `source_listing_id` match)
+3. Stay in browse — no navigation away
+4. Edit details later from /collection
 
-- `tests/components/listing/QuickViewContent.test.tsx` — Updated with mocks for "I Own This" button (`useRouter`, `mapListingToCollectionItem`)
-- Build verification: `npm run build` passes
-- All 3,782 existing tests pass
+### Phase 3: Collection Intelligence
 
-### Manual Smoke Test Checklist
+1. Collection header: item count, cert breakdown, schools represented
+2. "Find similar on market" from collection QuickView
+3. "You own N items by this maker" in browse QuickView
+4. "In your collection" badge on artist profiles
+5. Market alerts: "N new listings by smiths you collect" (Pro tier hook)
 
-- [ ] `/collection` redirects to browse if not logged in
-- [ ] Empty state shows "+" card
-- [ ] Add item manually (Path 3)
-- [ ] Add item via Yuhinkai catalog lookup (Path 1)
-- [ ] Add item via artisan search (Path 2)
-- [ ] "I Own This" from browse QuickView (Path 0)
-- [ ] Edit item — all fields persist
-- [ ] Delete item — confirmation, grid refreshes
-- [ ] Image upload in add mode — blob preview, uploads on save
-- [ ] Image upload in edit mode — immediate upload
-- [ ] Image delete — removes from storage
-- [ ] Filters work (type, cert, status, condition)
-- [ ] Sort works (newest, value high/low, type)
-- [ ] QuickView navigation (arrows, keyboard)
-- [ ] Mobile: 2-col grid, full-width QuickView
+### Phase 4: Public Collections & Dealer Feature
+
+1. `/collector/username` — public gallery (same grid, same cards, read-only)
+2. `is_public` toggle per item
+3. Extend same pattern to `/dealer/slug` with analytics overlay
 
 ---
 
@@ -529,13 +506,10 @@ https://itbhfhyptogxcjbjfzwx.supabase.co/storage/v1/object/public/collection-ima
 Not: `user123/item456/uuid.jpg`
 
 ### "I Own This" button not visible
-The button is auth-gated (`{user && (...)}`) in `QuickViewContent.tsx`. User must be logged in. Hard refresh (Cmd+Shift+R) if deployment is recent.
+The button is auth-gated (`{user && (...)}`) in `QuickViewContent.tsx`. User must be logged in.
 
 ### Catalog search returns empty
 Verify Yuhinkai Supabase is configured (`YUHINKAI_SUPABASE_URL` and `YUHINKAI_SUPABASE_KEY` in env). API returns 503 if not configured.
 
 ### Upload fails in add mode
 This is by design — add mode queues files locally. The actual upload happens after the item is created (POST → uploadPendingFiles → PATCH). Check browser console for errors in the save flow.
-
-### Delete doesn't remove storage files
-Storage cleanup is best-effort. If the image URL doesn't contain `/collection-images/`, the storage path can't be extracted and the file stays in the bucket. External URLs (from "I Own This" imports) are never deleted from dealer servers.

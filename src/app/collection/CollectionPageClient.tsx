@@ -1,15 +1,17 @@
 'use client';
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useLocale } from '@/i18n/LocaleContext';
 import type { CollectionItem, CollectionFilters, CollectionFacets, CollectionListResponse } from '@/types/collection';
-import { CollectionGrid } from '@/components/collection/CollectionGrid';
-import { CollectionFilterSidebar } from '@/components/collection/CollectionFilterSidebar';
-import { CollectionFilterDrawer } from '@/components/collection/CollectionFilterDrawer';
+import { ListingCard } from '@/components/browse/ListingCard';
+import { AddItemCard } from '@/components/collection/AddItemCard';
+import { CollectionFilterContent } from '@/components/collection/CollectionFilterContent';
 import { CollectionBottomBar } from '@/components/collection/CollectionBottomBar';
-import { CollectionQuickViewProvider, useCollectionQuickView } from '@/contexts/CollectionQuickViewContext';
-import { CollectionQuickView } from '@/components/collection/CollectionQuickView';
+import { Drawer } from '@/components/ui/Drawer';
+import { useQuickView } from '@/contexts/QuickViewContext';
+import { useCurrency } from '@/hooks/useCurrency';
+import { collectionItemsToDisplayItems } from '@/lib/displayItem';
 
 // =============================================================================
 // Constants
@@ -24,13 +26,14 @@ const EMPTY_FACETS: CollectionFacets = {
 };
 
 // =============================================================================
-// Inner component (needs QuickView context)
+// Component
 // =============================================================================
 
-function CollectionPageInner() {
+export function CollectionPageClient() {
   const { t } = useLocale();
   const searchParams = useSearchParams();
-  const { openQuickView, openAddForm, openEditForm, setItems, setOnSavedCallback } = useCollectionQuickView();
+  const { currency, exchangeRates } = useCurrency();
+  const quickView = useQuickView();
 
   const [items, setItemsState] = useState<CollectionItem[]>([]);
   const [total, setTotal] = useState(0);
@@ -56,6 +59,20 @@ function CollectionPageInner() {
   // Active filter count for bottom bar badge
   const activeFilterCount = (filters.itemType ? 1 : 0) + (filters.certType ? 1 : 0) +
     (filters.status ? 1 : 0) + (filters.condition ? 1 : 0);
+
+  // Adapt collection items to DisplayItem shape for ListingCard
+  const adaptedItems = useMemo(
+    () => collectionItemsToDisplayItems(items),
+    [items]
+  );
+
+  // Set adapted listings in QuickView context for J/K navigation
+  useEffect(() => {
+    if (adaptedItems.length > 0) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      quickView.setListings(adaptedItems as any[]);
+    }
+  }, [adaptedItems, quickView.setListings]);
 
   // Fetch collection items
   const fetchItems = useCallback(async (currentFilters: CollectionFilters) => {
@@ -87,14 +104,13 @@ function CollectionPageInner() {
       setItemsState(data.data);
       setTotal(data.total);
       setFacets(data.facets);
-      setItems(data.data);
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') return;
       setError(t('collection.loadFailed'));
     } finally {
       setIsLoading(false);
     }
-  }, [setItems]);
+  }, [t]);
 
   // Initial fetch + check for listing import prefill
   useEffect(() => {
@@ -108,7 +124,7 @@ function CollectionPageInner() {
         if (stored) {
           const prefill = JSON.parse(stored);
           sessionStorage.removeItem('collection_prefill');
-          openAddForm(prefill);
+          quickView.openCollectionAddForm(prefill);
           // Clean up URL
           window.history.replaceState(null, '', '/collection');
         }
@@ -121,8 +137,9 @@ function CollectionPageInner() {
 
   // Register refresh callback for QuickView saves
   useEffect(() => {
-    setOnSavedCallback(() => fetchItems(filters));
-  }, [filters, fetchItems, setOnSavedCallback]);
+    quickView.setOnCollectionSaved(() => fetchItems(filters));
+    return () => quickView.setOnCollectionSaved(null);
+  }, [filters, fetchItems, quickView]);
 
   // URL sync — update filter params without clobbering non-filter params (e.g. ?item=)
   const syncURL = useCallback((newFilters: CollectionFilters) => {
@@ -156,18 +173,15 @@ function CollectionPageInner() {
     handleFilterChange({ sort: sort as CollectionFilters['sort'] });
   }, [handleFilterChange]);
 
-  // Handlers
+  // Card click → open collection QuickView
   const handleItemClick = useCallback((item: CollectionItem) => {
-    openQuickView(item, 'view');
-  }, [openQuickView]);
+    quickView.openCollectionQuickView(item, 'view');
+  }, [quickView]);
 
-  const handleItemEdit = useCallback((item: CollectionItem) => {
-    openEditForm(item);
-  }, [openEditForm]);
-
+  // Add button
   const handleAddClick = useCallback(() => {
-    openAddForm();
-  }, [openAddForm]);
+    quickView.openCollectionAddForm();
+  }, [quickView]);
 
   return (
     <>
@@ -195,12 +209,16 @@ function CollectionPageInner() {
         {/* Main Layout */}
         <div className="flex gap-6 lg:gap-8">
           {/* Filter Sidebar (desktop) */}
-          <CollectionFilterSidebar
-            facets={facets}
-            filters={filters}
-            onFilterChange={handleFilterChange}
-            totalItems={total}
-          />
+          <div className="hidden lg:block w-56 shrink-0 sticky top-24 self-start">
+            <div className="bg-cream border border-border rounded-lg overflow-hidden">
+              <CollectionFilterContent
+                facets={facets}
+                filters={filters}
+                onFilterChange={handleFilterChange}
+                totalItems={total}
+              />
+            </div>
+          </div>
 
           {/* Grid */}
           <div className="flex-1 min-w-0">
@@ -218,26 +236,40 @@ function CollectionPageInner() {
                 ))}
               </div>
             ) : (
-              <CollectionGrid
-                items={items}
-                onItemClick={handleItemClick}
-                onItemEdit={handleItemEdit}
-                onAddClick={handleAddClick}
-              />
+              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-5">
+                {adaptedItems.map((item, idx) => (
+                  <ListingCard
+                    key={items[idx].id}
+                    listing={item}
+                    currency={currency}
+                    exchangeRates={exchangeRates}
+                    showFavoriteButton={false}
+                    onClick={() => handleItemClick(items[idx])}
+                  />
+                ))}
+                <AddItemCard onClick={handleAddClick} />
+              </div>
             )}
           </div>
         </div>
       </div>
 
       {/* Mobile Filter Drawer */}
-      <CollectionFilterDrawer
+      <Drawer
         isOpen={filterDrawerOpen}
         onClose={() => setFilterDrawerOpen(false)}
-        facets={facets}
-        filters={filters}
-        onFilterChange={handleFilterChange}
-        totalItems={total}
-      />
+        title={t('collection.filters')}
+      >
+        <CollectionFilterContent
+          facets={facets}
+          filters={filters}
+          onFilterChange={(partial) => {
+            handleFilterChange(partial);
+            setFilterDrawerOpen(false);
+          }}
+          totalItems={total}
+        />
+      </Drawer>
 
       {/* Mobile Bottom Bar */}
       <CollectionBottomBar
@@ -247,21 +279,6 @@ function CollectionPageInner() {
         sort={filters.sort || 'newest'}
         onSortChange={handleSortChange}
       />
-
-      {/* QuickView Modal */}
-      <CollectionQuickView />
     </>
-  );
-}
-
-// =============================================================================
-// Exported wrapper (provides context)
-// =============================================================================
-
-export function CollectionPageClient() {
-  return (
-    <CollectionQuickViewProvider>
-      <CollectionPageInner />
-    </CollectionQuickViewProvider>
   );
 }

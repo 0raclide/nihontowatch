@@ -552,6 +552,7 @@
   "collection.cover": "表紙",
   "collection.maker": "作者",
   "collection.smith": "刀工",
+  "collection.confirmDelete": "このアイテムをコレクションから削除しますか？",
 
   "email.priceDropTitle": "価格が{percent}%下がりました",
   "email.priceDropSubtitle": "お気に入りのアイテムが値下げされました",
@@ -608,6 +609,8 @@
   "common.showMore": "もっと見る",
   "common.showLess": "閉じる",
   "common.cancel": "キャンセル",
+  "common.edit": "編集",
+  "common.delete": "削除",
 
   "artists.title": "刀工一覧",
   "artists.itemsBy": "{artists}名の名工による{count}点（{schools}流派）",
@@ -728,7 +731,7 @@
   "artist.howProvenanceCalculated": "伝来ランクの算出方法",
   "artist.rawScore": "素点：{score} / 10",
   "artist.provenanceExplanation1": "伝来ランクは、刀工の作品がどれほど一貫して歴史的に名高いコレクションに所蔵されていたかを測定します。対象は皇室・将軍家、有力大名家、大藩主です。",
-  "artist.provenanceExplanation2": "各所有者は歴史的地位によってスコア化されます。皇室（10点）から一般コレクター（2点）まで。ベイズ正規モデルで保守的な事前分布（基準値で20個の疑似観測）を用い、伝来記録が少ない刀工が人為的に高ランクになることを防ぎます。",
+  "artist.provenanceExplanation2": "各作品について最高位の所有者がスコア化されます。皇室（10点）から一般コレクター（2点）まで。ベイズ正規モデルで保守的な事前分布（基準値で20個の疑似観測）を用い、伝来記録が少ない刀工が人為的に高ランクになることを防ぎます。",
   "artist.provenanceExplanation3": "名工ランクと同様、スコアは95%信用区間の下限値です。不確実性が少数サンプルへのペナルティとなります。この刀工は伝来記録を持つすべての{peers}の中で上位{pct}%に位置します。",
   "artist.readMethodology": "評価手法の詳細 \u2192",
   "artist.distributionAmong": "{total}名の{peers}における分布（{context}）",

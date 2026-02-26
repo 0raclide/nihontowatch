@@ -69,7 +69,7 @@ vi.mock('@/lib/images', () => ({
 
 const mockListing = {
   id: '1',
-  url: 'https://example.com/listing/1',
+  source: 'browse' as const,
   title: 'Beautiful Katana by Nobuyoshi',
   item_type: 'katana',
   price_value: 1500000,
@@ -87,7 +87,9 @@ const mockListing = {
   is_available: true,
   is_sold: false,
   dealer_id: 1,
-  dealers: { id: 1, name: 'Aoi Art', domain: 'aoijapan.com' },
+  dealer_display_name: 'Aoi Art',
+  dealer_domain: 'aoijapan.com',
+  browse: { url: 'https://example.com/listing/1' },
 };
 
 describe('ListingCard Component', () => {

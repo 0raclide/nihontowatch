@@ -552,6 +552,7 @@
   "collection.cover": "Cover",
   "collection.maker": "Maker",
   "collection.smith": "Smith",
+  "collection.confirmDelete": "Are you sure you want to delete this item from your collection?",
 
   "email.priceDropTitle": "Price dropped {percent}%",
   "email.priceDropSubtitle": "An item you're watching just got cheaper",
@@ -608,6 +609,8 @@
   "common.showMore": "Show more",
   "common.showLess": "Show less",
   "common.cancel": "Cancel",
+  "common.edit": "Edit",
+  "common.delete": "Delete",
 
   "artists.title": "Artists",
   "artists.itemsBy": "{count} items by {artists} celebrated artisans across {schools} schools",
@@ -728,7 +731,7 @@
   "artist.howProvenanceCalculated": "How is Provenance Standing calculated?",
   "artist.rawScore": "Raw score: {score} / 10",
   "artist.provenanceExplanation1": "The provenance factor measures how consistently an artisan\u2019s works were held in historically prestigious collections\u2014Imperial and Shogunal households, premier daimy\u014d clans, and the great domain lords.",
-  "artist.provenanceExplanation2": "Each documented owner is scored by historical rank, from Imperial (10) down to Named Collector (2). The score uses a Bayesian Normal model with a conservative prior: 20 pseudoobservations at the baseline, so artisans with thin provenance records can\u2019t rank artificially high.",
+  "artist.provenanceExplanation2": "Each item contributes its highest-ranking owner, scored from Imperial (10) down to Named Collector (2). The score uses a Bayesian Normal model with a conservative prior: 20 pseudoobservations at the baseline, so artisans with thin provenance records can\u2019t rank artificially high.",
   "artist.provenanceExplanation3": "Like the elite factor, the score is the lower bound of a 95% credible interval\u2014uncertainty penalizes small samples. This artisan places in the top {pct}% of all {peers} with documented provenance.",
   "artist.readMethodology": "Read full methodology \u2192",
   "artist.distributionAmong": "Distribution across {total} {peers} with {context}",
