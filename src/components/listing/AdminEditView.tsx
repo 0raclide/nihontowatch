@@ -298,8 +298,18 @@ export function AdminEditView({ listing, onBackToPhotos, onRefresh }: AdminEditV
             />
           </div>
 
-          {/* ─── Field Editing ─── */}
-          <FieldEditSection listing={listing} onRefresh={onRefresh} />
+          {/* ─── Field Editing (collapsed by default — 95% of corrections are cert/artisan) ─── */}
+          <details className="group">
+            <summary className="flex items-center justify-between cursor-pointer py-2 text-[10px] uppercase tracking-wider text-muted hover:text-ink transition-colors select-none list-none [&::-webkit-details-marker]:hidden">
+              <span>Edit Metadata Fields</span>
+              <svg className="w-3.5 h-3.5 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </summary>
+            <div className="pt-1">
+              <FieldEditSection listing={listing} onRefresh={onRefresh} />
+            </div>
+          </details>
 
           {/* ─── Artisan Section ─── */}
           <div className="pb-4 border-b border-border">
