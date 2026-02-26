@@ -344,14 +344,6 @@ function HeaderContent() {
                 </Link>
               )}
               <NotificationBell />
-              {user && process.env.NEXT_PUBLIC_COLLECTION_ENABLED === 'true' && (
-                <Link
-                  href="/collection"
-                  className="text-[11px] uppercase tracking-[0.2em] text-muted hover:text-gold transition-colors"
-                >
-                  {t('nav.collection')}
-                </Link>
-              )}
               <div className="h-3 w-px bg-border" />
               <ThemeSwitcher />
               <LocaleSwitcher />
