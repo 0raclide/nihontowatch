@@ -21,7 +21,8 @@ import sharp from 'sharp';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300; // 5 minutes
 
-const MAX_LISTINGS_PER_RUN = 50; // Lower cap than focal points — each listing downloads many images
+const MAX_LISTINGS_PER_RUN = 100; // Stored images are fast Supabase-to-Supabase downloads
+const FORCE_LIMIT_CAP = 500; // Max allowed via ?force_limit query param
 const COMPOSITE_WIDTH = 600;
 const COMPOSITE_HEIGHT = 800;
 const STRIP_GAP = 6;
@@ -120,30 +121,29 @@ export async function GET(request: NextRequest) {
   try {
     const supabase = createServiceClient();
 
-    // Fetch listings with extreme aspect ratios that need composites
-    // PostgREST can't do column arithmetic, so we fetch candidates and filter in JS
+    // Allow manual backfill via ?force_limit=N (capped at FORCE_LIMIT_CAP)
+    const forceLimitParam = request.nextUrl.searchParams.get('force_limit');
+    const batchSize = forceLimitParam
+      ? Math.min(parseInt(forceLimitParam, 10) || MAX_LISTINGS_PER_RUN, FORCE_LIMIT_CAP)
+      : MAX_LISTINGS_PER_RUN;
+
+    // Fetch panoramic listings needing composites — DB-side filter via generated column
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: candidates, error } = await (supabase.from('listings') as any)
+    const { data: listings, error } = await (supabase.from('listings') as any)
       .select('id, stored_images, images, image_width, image_height, dealer_id, dealers(name)')
-      .not('image_width', 'is', null)
-      .not('image_height', 'is', null)
-      .not('images', 'is', null)
       .is('thumbnail_url', null)
-      .limit(MAX_LISTINGS_PER_RUN * 3) as { data: ListingRow[] | null; error: unknown };
+      .gt('cover_aspect_ratio', COMPOSITE_TRIGGER_RATIO)
+      .order('id', { ascending: false })
+      .limit(batchSize) as { data: ListingRow[] | null; error: unknown };
 
     if (error) {
       logger.error('[composite-thumbnails] Query error', { error });
       return NextResponse.json({ error: 'Query failed' }, { status: 500 });
     }
 
-    if (!candidates || candidates.length === 0) {
+    if (!listings || listings.length === 0) {
       return NextResponse.json({ success: true, message: 'No listings need composites', durationMs: Date.now() - startTime });
     }
-
-    // Filter for extreme aspect ratios
-    const listings = candidates
-      .filter(l => l.image_width / l.image_height > COMPOSITE_TRIGGER_RATIO)
-      .slice(0, MAX_LISTINGS_PER_RUN);
 
     let totalProcessed = 0;
     let totalComposited = 0;
