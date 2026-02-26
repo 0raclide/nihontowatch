@@ -5,6 +5,7 @@ import type { Listing } from '@/types';
 import type { ArtisanSearchResult } from '@/app/api/artisan/search/route';
 import { CertPillRow } from '@/components/admin/CertPillRow';
 import { ArtisanSearchPanel } from '@/components/admin/ArtisanSearchPanel';
+import { FieldEditSection } from '@/components/admin/FieldEditSection';
 
 // =============================================================================
 // TYPES
@@ -289,6 +290,9 @@ export function AdminEditView({ listing, onBackToPhotos, onRefresh }: AdminEditV
               }}
             />
           </div>
+
+          {/* ─── Field Editing ─── */}
+          <FieldEditSection listing={listing} onRefresh={onRefresh} />
 
           {/* ─── Artisan Section ─── */}
           <div className="pb-4 border-b border-border">
