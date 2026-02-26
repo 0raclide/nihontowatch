@@ -13,6 +13,7 @@ import { Drawer } from '@/components/ui/Drawer';
 import { useQuickView } from '@/contexts/QuickViewContext';
 import { useCurrency } from '@/hooks/useCurrency';
 import { collectionItemsToDisplayItems } from '@/lib/displayItem';
+import { SORT_OPTIONS } from '@/lib/collection/labels';
 
 // =============================================================================
 // Constants
@@ -45,6 +46,14 @@ export function CollectionPageClient() {
 
   // Mobile filter drawer state
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
+
+  // Mobile view toggle (shared localStorage key with browse)
+  const [mobileView, setMobileView] = useState<'grid' | 'gallery'>(() => {
+    if (typeof window !== 'undefined') {
+      return (localStorage.getItem('nihontowatch-mobile-view') as 'grid' | 'gallery') || 'gallery';
+    }
+    return 'gallery';
+  });
 
   // Filters from URL or defaults
   const [filters, setFilters] = useState<CollectionFilters>(() => ({
@@ -190,6 +199,14 @@ export function CollectionPageClient() {
     handleFilterChange({ sort: sort as CollectionFilters['sort'] });
   }, [handleFilterChange]);
 
+  // Mobile view toggle
+  const handleMobileViewChange = useCallback((view: 'grid' | 'gallery') => {
+    setMobileView(view);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('nihontowatch-mobile-view', view);
+    }
+  }, []);
+
   // Card click → open collection QuickView (receives DisplayItem from ListingGrid, looks up original CollectionItem)
   const handleCardClick = useCallback((displayItem: DisplayItem) => {
     const original = items.find(i => i.id === displayItem.id);
@@ -205,15 +222,78 @@ export function CollectionPageClient() {
 
   return (
     <>
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8 pb-24 lg:pb-8">
-        {/* Page Header */}
-        <div className="mb-6 lg:mb-8">
-          <h1 className="text-[22px] lg:text-[28px] font-serif text-ink">
-            {t('collection.myCollection')}
-          </h1>
-          <p className="text-[13px] text-muted mt-1">
-            {total > 0 ? (total === 1 ? t('collection.itemCount', { count: total }) : t('collection.itemCountPlural', { count: total })) : t('collection.startBuilding')}
-          </p>
+      <div className="max-w-[1600px] mx-auto px-4 py-4 lg:px-6 lg:py-8 pb-24 lg:pb-8">
+        {/* Page Header — browse-style on desktop, simple on mobile */}
+        <div className="mb-2 lg:mb-6 flex flex-col lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <h1 className="text-[22px] lg:text-2xl font-serif text-ink tracking-tight">
+              {t('collection.myCollection')}
+            </h1>
+            <p className="text-[13px] text-muted mt-1">
+              {total > 0 ? (total === 1 ? t('collection.itemCount', { count: total }) : t('collection.itemCountPlural', { count: total })) : t('collection.startBuilding')}
+            </p>
+          </div>
+
+          {/* Desktop: Sort + item count — inline with header */}
+          <div className="hidden lg:flex items-center gap-3 shrink-0">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] uppercase tracking-[0.08em] text-muted/60 font-medium">{t('home.sort')}</span>
+              <select
+                value={filters.sort || 'newest'}
+                onChange={(e) => handleFilterChange({ sort: e.target.value as CollectionFilters['sort'] })}
+                className="bg-transparent text-[12px] text-ink font-medium focus:outline-none cursor-pointer pr-4 appearance-none"
+                style={{
+                  border: 'none',
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239ca3af'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                  backgroundRepeat: 'no-repeat',
+                  backgroundPosition: 'right 0 center',
+                  backgroundSize: '11px',
+                }}
+              >
+                {SORT_OPTIONS.map(opt => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
+            <div className="w-px h-3 bg-border/30" />
+            <span className="text-[11px] text-muted tabular-nums">
+              {isLoading ? t('common.loading') : t('home.itemCount', { count: total.toLocaleString() })}
+            </span>
+          </div>
+        </div>
+
+        {/* Subtle divider */}
+        <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent mb-4 lg:mb-8" />
+
+        {/* Mobile item count + view toggle */}
+        <div className="lg:hidden flex items-center justify-between mb-4">
+          <span className="text-[13px] text-muted">
+            {isLoading ? t('common.loading') : t('home.itemCount', { count: total.toLocaleString() })}
+          </span>
+          {/* View toggle — only on phone-sized screens */}
+          <div className="flex items-center gap-0.5 sm:hidden">
+            <button
+              onClick={() => handleMobileViewChange('gallery')}
+              className={`p-1.5 rounded transition-colors ${mobileView === 'gallery' ? 'text-gold' : 'text-muted/50'}`}
+              aria-label="Gallery view"
+            >
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <rect x="3" y="4" width="12" height="10" rx="1" stroke="currentColor" strokeWidth="1.5" />
+              </svg>
+            </button>
+            <button
+              onClick={() => handleMobileViewChange('grid')}
+              className={`p-1.5 rounded transition-colors ${mobileView === 'grid' ? 'text-gold' : 'text-muted/50'}`}
+              aria-label="Grid view"
+            >
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <rect x="2.5" y="2.5" width="5.5" height="5.5" rx="0.75" stroke="currentColor" strokeWidth="1.5" />
+                <rect x="10" y="2.5" width="5.5" height="5.5" rx="0.75" stroke="currentColor" strokeWidth="1.5" />
+                <rect x="2.5" y="10" width="5.5" height="5.5" rx="0.75" stroke="currentColor" strokeWidth="1.5" />
+                <rect x="10" y="10" width="5.5" height="5.5" rx="0.75" stroke="currentColor" strokeWidth="1.5" />
+              </svg>
+            </button>
+          </div>
         </div>
 
         {/* Error */}
@@ -227,9 +307,9 @@ export function CollectionPageClient() {
         )}
 
         {/* Main Layout */}
-        <div className="flex gap-6 lg:gap-8">
+        <div className="flex flex-col lg:flex-row lg:gap-10">
           {/* Filter Sidebar (desktop) */}
-          <div className="hidden lg:block w-56 shrink-0 sticky top-24 self-start">
+          <div className="hidden lg:block w-60 flex-shrink-0 sticky top-24 self-start">
             <div className="bg-cream border border-border rounded-lg overflow-hidden">
               <CollectionFilterContent
                 facets={facets}
@@ -252,7 +332,7 @@ export function CollectionPageClient() {
               isLoading={isLoading}
               currency={currency}
               exchangeRates={exchangeRates}
-              mobileView="grid"
+              mobileView={mobileView}
               onCardClick={handleCardClick}
               appendSlot={<AddItemCard onClick={handleAddClick} />}
             />
