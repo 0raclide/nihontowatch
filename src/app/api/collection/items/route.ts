@@ -5,10 +5,23 @@ import type { CreateCollectionItemInput, CollectionFilters } from '@/types/colle
 
 export const dynamic = 'force-dynamic';
 
+// Nihonto (swords/blades)
+const NIHONTO_TYPES = ['katana', 'wakizashi', 'tanto', 'tachi', 'naginata', 'yari', 'kodachi', 'ken', 'naginata naoshi', 'sword'];
+
+// Tosogu (fittings)
+const TOSOGU_TYPES = [
+  'tsuba', 'fuchi-kashira', 'fuchi_kashira', 'fuchi', 'kashira',
+  'kozuka', 'kogatana', 'kogai', 'menuki', 'koshirae', 'tosogu',
+  'mitokoromono', 'gotokoromono',
+];
+
 function parseFilters(searchParams: URLSearchParams): CollectionFilters {
   return {
+    category: (searchParams.get('category') as CollectionFilters['category']) || undefined,
     itemType: searchParams.get('type') || undefined,
     certType: searchParams.get('cert') || undefined,
+    era: searchParams.get('era') || undefined,
+    meiType: searchParams.get('meiType') || undefined,
     status: (searchParams.get('status') as CollectionFilters['status']) || undefined,
     condition: (searchParams.get('condition') as CollectionFilters['condition']) || undefined,
     folderId: searchParams.get('folder') || undefined,
@@ -37,11 +50,21 @@ export async function GET(request: NextRequest) {
       .eq('user_id', user.id);
 
     // Apply filters
+    if (filters.category) {
+      const categoryTypes = filters.category === 'nihonto' ? NIHONTO_TYPES : TOSOGU_TYPES;
+      query = query.in('item_type', categoryTypes);
+    }
     if (filters.itemType) {
       query = query.ilike('item_type', filters.itemType);
     }
     if (filters.certType) {
       query = query.eq('cert_type', filters.certType);
+    }
+    if (filters.era) {
+      query = query.ilike('era', `%${filters.era}%`);
+    }
+    if (filters.meiType) {
+      query = query.eq('mei_type', filters.meiType);
     }
     if (filters.status) {
       query = query.eq('status', filters.status);
@@ -81,7 +104,7 @@ export async function GET(request: NextRequest) {
     // Compute facets (all items for this user, ignoring current filters)
     const { data: allItems } = await (supabase
       .from('user_collection_items') as any)  // eslint-disable-line @typescript-eslint/no-explicit-any
-      .select('item_type, cert_type, status, condition, folder_id')
+      .select('item_type, cert_type, era, mei_type, status, condition, folder_id')
       .eq('user_id', user.id) as { data: Record<string, unknown>[] | null };
 
     const facets = computeFacets(allItems || []);
@@ -192,6 +215,8 @@ export async function POST(request: NextRequest) {
 function computeFacets(items: Array<Record<string, unknown>>) {
   const itemTypes = new Map<string, number>();
   const certifications = new Map<string, number>();
+  const historicalPeriods = new Map<string, number>();
+  const signatureStatuses = new Map<string, number>();
   const statuses = new Map<string, number>();
   const conditions = new Map<string, number>();
   const folders = new Map<string, number>();
@@ -204,6 +229,14 @@ function computeFacets(items: Array<Record<string, unknown>>) {
     if (item.cert_type) {
       const c = item.cert_type as string;
       certifications.set(c, (certifications.get(c) || 0) + 1);
+    }
+    if (item.era) {
+      const e = item.era as string;
+      historicalPeriods.set(e, (historicalPeriods.get(e) || 0) + 1);
+    }
+    if (item.mei_type) {
+      const m = item.mei_type as string;
+      signatureStatuses.set(m, (signatureStatuses.get(m) || 0) + 1);
     }
     if (item.status) {
       const s = item.status as string;
@@ -227,6 +260,8 @@ function computeFacets(items: Array<Record<string, unknown>>) {
   return {
     itemTypes: toArray(itemTypes),
     certifications: toArray(certifications),
+    historicalPeriods: toArray(historicalPeriods),
+    signatureStatuses: toArray(signatureStatuses),
     statuses: toArray(statuses),
     conditions: toArray(conditions),
     folders: Array.from(folders.entries())

@@ -23,6 +23,8 @@ import { Header } from '@/components/layout/Header';
 const EMPTY_FACETS: CollectionFacets = {
   itemTypes: [],
   certifications: [],
+  historicalPeriods: [],
+  signatureStatuses: [],
   statuses: [],
   conditions: [],
   folders: [],
@@ -58,8 +60,11 @@ export function CollectionPageClient() {
 
   // Filters from URL or defaults
   const [filters, setFilters] = useState<CollectionFilters>(() => ({
+    category: (searchParams.get('category') as CollectionFilters['category']) || undefined,
     itemType: searchParams.get('type') || undefined,
     certType: searchParams.get('cert') || undefined,
+    era: searchParams.get('era') || undefined,
+    meiType: searchParams.get('meiType') || undefined,
     status: (searchParams.get('status') as CollectionFilters['status']) || undefined,
     condition: (searchParams.get('condition') as CollectionFilters['condition']) || undefined,
     sort: (searchParams.get('sort') as CollectionFilters['sort']) || 'newest',
@@ -67,8 +72,9 @@ export function CollectionPageClient() {
     limit: 100,
   }));
 
-  // Active filter count for bottom bar badge
+  // Active filter count for bottom bar badge (category is a mode, not a filter)
   const activeFilterCount = (filters.itemType ? 1 : 0) + (filters.certType ? 1 : 0) +
+    (filters.era ? 1 : 0) + (filters.meiType ? 1 : 0) +
     (filters.status ? 1 : 0) + (filters.condition ? 1 : 0);
 
   // Adapt collection items to DisplayItem shape for ListingCard
@@ -96,8 +102,11 @@ export function CollectionPageClient() {
 
     try {
       const params = new URLSearchParams();
+      if (currentFilters.category) params.set('category', currentFilters.category);
       if (currentFilters.itemType) params.set('type', currentFilters.itemType);
       if (currentFilters.certType) params.set('cert', currentFilters.certType);
+      if (currentFilters.era) params.set('era', currentFilters.era);
+      if (currentFilters.meiType) params.set('meiType', currentFilters.meiType);
       if (currentFilters.status) params.set('status', currentFilters.status);
       if (currentFilters.condition) params.set('condition', currentFilters.condition);
       if (currentFilters.sort && currentFilters.sort !== 'newest') params.set('sort', currentFilters.sort);
@@ -173,11 +182,14 @@ export function CollectionPageClient() {
     const url = new URL(window.location.href);
 
     // Clear all filter-specific params, then re-set active ones
-    const filterKeys = ['type', 'cert', 'status', 'condition', 'sort'];
+    const filterKeys = ['category', 'type', 'cert', 'era', 'meiType', 'status', 'condition', 'sort'];
     filterKeys.forEach(k => url.searchParams.delete(k));
 
+    if (newFilters.category) url.searchParams.set('category', newFilters.category);
     if (newFilters.itemType) url.searchParams.set('type', newFilters.itemType);
     if (newFilters.certType) url.searchParams.set('cert', newFilters.certType);
+    if (newFilters.era) url.searchParams.set('era', newFilters.era);
+    if (newFilters.meiType) url.searchParams.set('meiType', newFilters.meiType);
     if (newFilters.status) url.searchParams.set('status', newFilters.status);
     if (newFilters.condition) url.searchParams.set('condition', newFilters.condition);
     if (newFilters.sort && newFilters.sort !== 'newest') url.searchParams.set('sort', newFilters.sort);
@@ -310,15 +322,22 @@ export function CollectionPageClient() {
 
         {/* Main Layout */}
         <div className="flex flex-col lg:flex-row lg:gap-10">
-          {/* Filter Sidebar (desktop) */}
-          <div className="hidden lg:block w-60 flex-shrink-0 sticky top-24 self-start">
-            <div className="bg-cream border border-border rounded-lg overflow-hidden">
-              <CollectionFilterContent
-                facets={facets}
-                filters={filters}
-                onFilterChange={handleFilterChange}
-                totalItems={total}
-              />
+          {/* Filter Sidebar (desktop) — variant B card styling */}
+          <div className="hidden lg:block w-[264px] flex-shrink-0">
+            <div className="sticky top-24">
+              <div
+                className="bg-surface-elevated rounded-2xl border border-border/40 flex flex-col max-h-[calc(100vh-7rem)] overflow-y-auto overflow-x-hidden scrollbar-hide"
+                style={{ boxShadow: '0 1px 2px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.06)' }}
+              >
+                <CollectionFilterContent
+                  facets={facets}
+                  filters={filters}
+                  onFilterChange={handleFilterChange}
+                  totalItems={total}
+                />
+                {/* Bottom fade */}
+                <div className="pointer-events-none h-6 bg-gradient-to-t from-surface-elevated to-transparent -mt-6 relative z-10 rounded-b-2xl" />
+              </div>
             </div>
           </div>
 
@@ -351,11 +370,9 @@ export function CollectionPageClient() {
         <CollectionFilterContent
           facets={facets}
           filters={filters}
-          onFilterChange={(partial) => {
-            handleFilterChange(partial);
-            setFilterDrawerOpen(false);
-          }}
+          onFilterChange={handleFilterChange}
           totalItems={total}
+          onClose={() => setFilterDrawerOpen(false)}
         />
       </Drawer>
 
