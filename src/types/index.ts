@@ -514,6 +514,7 @@ export interface Listing {
   // Admin moderation
   admin_hidden?: boolean; // TRUE = hidden from public views by admin
   status_admin_locked?: boolean; // TRUE = status manually overridden by admin, protected from scraper
+  admin_locked_fields?: Record<string, boolean> | null; // Field-level locks: {"smith": true, "school": true}
 
   // Sorting / "New" badge
   is_initial_import?: boolean | null; // DB column: TRUE = bulk import, FALSE = genuine new
