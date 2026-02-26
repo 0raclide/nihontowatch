@@ -465,12 +465,22 @@ export function QuickView() {
             )}
 
             <div className="flex-1 min-h-0 overflow-y-auto">
-              <QuickViewContent
-                listing={currentListing}
-                onClose={closeQuickView}
-                isStudyMode={isStudyMode}
-                onToggleStudyMode={toggleStudyMode}
-              />
+              {isAdminEditMode ? (
+                <AdminEditView
+                  listing={currentListing}
+                  onBackToPhotos={toggleAdminEditMode}
+                  onRefresh={(fields) => refreshCurrentListing(fields)}
+                />
+              ) : (
+                <QuickViewContent
+                  listing={currentListing}
+                  onClose={closeQuickView}
+                  isStudyMode={isStudyMode}
+                  onToggleStudyMode={toggleStudyMode}
+                  isAdminEditMode={isAdminEditMode}
+                  onToggleAdminEditMode={toggleAdminEditMode}
+                />
+              )}
             </div>
           </div>
 

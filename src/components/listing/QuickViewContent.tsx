@@ -44,13 +44,15 @@ interface QuickViewContentProps {
   onClose?: () => void;
   isStudyMode?: boolean;
   onToggleStudyMode?: () => void;
+  isAdminEditMode?: boolean;
+  onToggleAdminEditMode?: () => void;
 }
 
 // =============================================================================
 // COMPONENT
 // =============================================================================
 
-export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: QuickViewContentProps) {
+export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode, onToggleAdminEditMode }: QuickViewContentProps) {
   const router = useRouter();
   const { currency, exchangeRates } = useCurrency();
   const { user, isAdmin } = useAuth();
@@ -273,6 +275,19 @@ export function QuickViewContent({ listing, isStudyMode, onToggleStudyMode }: Qu
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                     </svg>
                   )}
+                </button>
+              )}
+              {/* Admin: Edit fields (pen icon) */}
+              {isAdmin && onToggleAdminEditMode && (
+                <button
+                  onClick={onToggleAdminEditMode}
+                  className="w-8 h-8 flex items-center justify-center rounded-full text-muted hover:text-ink hover:bg-border/50 transition-all duration-200"
+                  aria-label="Edit fields"
+                  title="Edit fields"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+                  </svg>
                 </button>
               )}
               {/* Study Setsumei button - only show when setsumei data available. Hidden for JA locale (they can read setsumei natively). */}
