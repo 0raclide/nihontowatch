@@ -20,7 +20,7 @@ export function CollectionBottomBar({
 }: CollectionBottomBarProps) {
   const { t } = useLocale();
   return (
-    <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-cream border-t border-border safe-area-bottom">
+    <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-surface/95 backdrop-blur-sm border-t border-border safe-area-bottom">
       <div className="flex items-center justify-around px-2 py-2">
         {/* Filters button */}
         <button

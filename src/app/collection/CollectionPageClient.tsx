@@ -234,7 +234,7 @@ export function CollectionPageClient() {
   }, [quickView]);
 
   return (
-    <>
+    <div className="min-h-screen bg-surface transition-colors">
       <Header />
       <div className="max-w-[1600px] mx-auto px-4 py-4 lg:px-6 lg:py-8 pb-24 lg:pb-8">
         {/* Page Header — browse-style on desktop, simple on mobile */}
@@ -312,7 +312,7 @@ export function CollectionPageClient() {
 
         {/* Error */}
         {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-[13px] text-red-700">
+          <div className="mb-4 p-3 bg-error/10 border border-error/30 rounded-lg text-[13px] text-error">
             {error}
             <button onClick={() => fetchItems(filters)} className="ml-2 underline hover:no-underline">
               {t('common.retry')}
@@ -384,6 +384,6 @@ export function CollectionPageClient() {
         sort={filters.sort || 'newest'}
         onSortChange={handleSortChange}
       />
-    </>
+    </div>
   );
 }
