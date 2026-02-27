@@ -19,6 +19,7 @@
 - Personal collection manager (`/collection`) with Yuhinkai catalog lookup and "I Own This" import
 - Full i18n localization (JA/EN) — UI chrome (1100+ keys) + listing data (titles, descriptions, artisan names)
 - JA UX tuning — locale-conditional typography, information density, social sharing (LINE), polite empty states
+- User feedback & reporting — flag listings/artists, general feedback, admin triage panel (`/admin/feedback`)
 
 **Trial Mode:** All premium features currently free (toggle via `NEXT_PUBLIC_TRIAL_MODE` env var)
 
@@ -624,6 +625,39 @@ Personal item cataloging for authenticated users. **V2 vision: reuse 95% of brow
 | Nav links | `src/components/layout/Header.tsx`, `MobileNavDrawer.tsx` (auth-gated) |
 | **Full documentation** | `docs/COLLECTION_MANAGER.md` |
 
+### User Feedback & Reporting
+
+Two-channel feedback system: users flag inaccurate data on listings/artist pages, and submit general feedback (bugs, features) from the nav. All stored in `user_feedback` table, triaged via admin panel at `/admin/feedback`.
+
+**Design:** Auth required (no spam), free text only for data reports (no category dropdowns), simple 3-pill type toggle for general feedback. No email notifications — admin panel is the dashboard.
+
+**Entry points:**
+- **Nav**: Chat bubble icon (desktop header + mobile drawer) → `FeedbackModal` (Bug/Feature/Other pills + textarea)
+- **Listing QuickView**: Flag icon in action bar (desktop + mobile) → `ReportModal` (textarea only, `data_report` type)
+- **Artist page**: Flag icon + "Report an issue" label → `ReportModal` with `target_type: 'artist'`
+- **Admin**: `/admin/feedback` — metric cards, status tabs, type filters, expandable rows with notes/status editing
+
+**DRY pattern:** `useFeedbackSubmit` hook (state, escape-to-close, auto-dismiss, fetch) + `FeedbackModalShell` (portal modal with children slot). Both concrete modals are thin wrappers (~45-65 lines).
+
+**Rate limiting:** 10 submissions/hour/user (DB count check). RLS: users insert/read own rows, service role for admin.
+
+**Key files:**
+| Component | Location |
+|-----------|----------|
+| Submit API | `src/app/api/feedback/route.ts` |
+| Admin list API | `src/app/api/admin/feedback/route.ts` |
+| Admin update API | `src/app/api/admin/feedback/[id]/route.ts` |
+| Shared hook | `src/components/feedback/useFeedbackSubmit.ts` |
+| Shared modal shell | `src/components/feedback/FeedbackModalShell.tsx` |
+| General feedback modal | `src/components/feedback/FeedbackModal.tsx` |
+| Data report modal | `src/components/feedback/ReportModal.tsx` |
+| Nav icon | `src/components/feedback/FeedbackButton.tsx` |
+| Admin panel | `src/app/admin/feedback/page.tsx` |
+| Types | `src/types/feedback.ts` |
+| DB migration | `supabase/migrations/093_user_feedback.sql` |
+| Tests (71) | `tests/api/feedback.test.ts`, `tests/api/admin-feedback.test.ts`, `tests/components/feedback/FeedbackModals.test.tsx` |
+| **Full documentation** | `docs/USER_FEEDBACK.md` |
+
 ### Documentation
 
 For detailed implementation docs, see:
@@ -644,6 +678,7 @@ For detailed implementation docs, see:
 - `docs/SESSION_20260222_JAPANESE_UX.md` - JA UX improvements — typography, filter expand, card metadata, freshness timestamps, LINE+Twitter/X share, polite empty states
 - `docs/JAPANESE_UX_RECOMMENDATIONS.md` - JA UX research — design philosophy, typography, density, trust signals, navigation patterns
 - `supabase/migrations/088_artisan_confidence_cheap_downgrade.sql` - **Cheap elite suppression** — backfill 148 misattributed cheap items to NONE confidence
+- `docs/USER_FEEDBACK.md` - **User feedback & reporting** — two-channel feedback system, admin triage panel, shared modal architecture
 
 ---
 
