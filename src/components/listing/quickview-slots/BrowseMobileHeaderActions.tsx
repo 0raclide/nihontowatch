@@ -1,7 +1,9 @@
 'use client';
 
+import { useState } from 'react';
 import { FavoriteButton } from '@/components/favorites/FavoriteButton';
 import { ShareButton } from '@/components/share/ShareButton';
+import { ReportModal } from '@/components/feedback/ReportModal';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { useLocale } from '@/i18n/LocaleContext';
 import type { Listing, ListingWithEnrichment } from '@/types';
@@ -22,8 +24,9 @@ export function BrowseMobileHeaderActions({
   isAdminEditMode,
   onToggleAdminEditMode,
 }: BrowseMobileHeaderActionsProps) {
-  const { isAdmin } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { locale } = useLocale();
+  const [showReportModal, setShowReportModal] = useState(false);
 
   return (
     <>
@@ -93,6 +96,33 @@ export function BrowseMobileHeaderActions({
           size="sm"
         />
       </div>
+      {/* Report flag button - auth gated */}
+      {user && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowReportModal(true);
+          }}
+          onTouchStart={(e) => e.stopPropagation()}
+          onTouchEnd={(e) => e.stopPropagation()}
+          className="w-8 h-8 flex items-center justify-center rounded-full text-muted hover:text-red-500 hover:bg-red-50/50 transition-all duration-200"
+          aria-label="Report an issue"
+          title="Report an issue"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
+          </svg>
+        </button>
+      )}
+      {showReportModal && (
+        <ReportModal
+          isOpen
+          onClose={() => setShowReportModal(false)}
+          targetType="listing"
+          targetId={String(listing.id)}
+          targetLabel={listing.title || `Listing ${listing.id}`}
+        />
+      )}
     </>
   );
 }

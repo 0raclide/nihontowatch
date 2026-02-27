@@ -20,6 +20,7 @@ import { CatalogueShowcase } from '@/components/artisan/CatalogueShowcase';
 import { HighlightedMarkdown } from '@/components/glossary/HighlightedMarkdown';
 import { SaveSearchModal } from '@/components/browse/SaveSearchModal';
 import { LoginModal } from '@/components/auth/LoginModal';
+import { ReportModal } from '@/components/feedback/ReportModal';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { useLocale } from '@/i18n/LocaleContext';
@@ -222,6 +223,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
   const [soldListings, setSoldListings] = useState<Listing[] | null>(null);
   const [copied, setCopied] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -311,22 +313,36 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
               ]}
               className="mb-0"
             />
-            <button
-              onClick={handleShare}
-              className="text-[11px] text-ink/40 hover:text-ink/60 transition-colors flex items-center gap-1.5"
-              title={t('artist.shareProfile')}
-            >
-              {copied ? (
-                <span className="text-gold">{t('artist.copied')}</span>
-              ) : (
-                <>
-                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0-12.814a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0 12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z" />
+            <div className="flex items-center gap-3">
+              {user && (
+                <button
+                  onClick={() => setShowReportModal(true)}
+                  className="text-[11px] text-ink/40 hover:text-red-500 transition-colors flex items-center gap-1.5"
+                  title={t('feedback.reportIssue')}
+                >
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
                   </svg>
-                  <span>{t('artist.share')}</span>
-                </>
+                  <span>{t('feedback.reportIssue')}</span>
+                </button>
               )}
-            </button>
+              <button
+                onClick={handleShare}
+                className="text-[11px] text-ink/40 hover:text-ink/60 transition-colors flex items-center gap-1.5"
+                title={t('artist.shareProfile')}
+              >
+                {copied ? (
+                  <span className="text-gold">{t('artist.copied')}</span>
+                ) : (
+                  <>
+                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0-12.814a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0 12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z" />
+                    </svg>
+                    <span>{t('artist.share')}</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
 
           {/* Hero — Image + Identity as one cohesive unit */}
@@ -853,6 +869,17 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
         <LoginModal
           isOpen
           onClose={() => setShowLoginModal(false)}
+        />
+      )}
+
+      {/* Report Modal */}
+      {showReportModal && (
+        <ReportModal
+          isOpen
+          onClose={() => setShowReportModal(false)}
+          targetType="artist"
+          targetId={entity.code}
+          targetLabel={entity.name_romaji || entity.code}
         />
       )}
     </div>

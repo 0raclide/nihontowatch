@@ -1,9 +1,10 @@
 'use client';
 
-import { useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { FavoriteButton } from '@/components/favorites/FavoriteButton';
 import { ShareButton } from '@/components/share/ShareButton';
 import { SocialShareButtons } from '@/components/share/SocialShareButtons';
+import { ReportModal } from '@/components/feedback/ReportModal';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { useQuickViewOptional } from '@/contexts/QuickViewContext';
 import { useLocale } from '@/i18n/LocaleContext';
@@ -18,9 +19,10 @@ interface BrowseActionBarProps {
 }
 
 export function BrowseActionBar({ listing, isStudyMode, onToggleStudyMode, onToggleAdminEditMode }: BrowseActionBarProps) {
-  const { isAdmin } = useAuth();
+  const { user, isAdmin } = useAuth();
   const quickView = useQuickViewOptional();
   const { t, locale } = useLocale();
+  const [showReportModal, setShowReportModal] = useState(false);
 
   const handleToggleSold = useCallback(async () => {
     const markAsSold = listing.is_available;
@@ -146,6 +148,28 @@ export function BrowseActionBar({ listing, isStudyMode, onToggleStudyMode, onTog
       />
       <ShareButton listingId={listing.id} title={listing.title} size="sm" ogImageUrl={listing.og_image_url} />
       <FavoriteButton listingId={listing.id} size="sm" />
+      {/* Report data issue */}
+      {user && (
+        <button
+          onClick={() => setShowReportModal(true)}
+          className="w-8 h-8 flex items-center justify-center rounded-full text-muted hover:text-red-500 hover:bg-red-50/50 transition-all duration-200"
+          aria-label={t('feedback.reportIssue')}
+          title={t('feedback.reportIssue')}
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
+          </svg>
+        </button>
+      )}
+      {showReportModal && (
+        <ReportModal
+          isOpen={showReportModal}
+          onClose={() => setShowReportModal(false)}
+          targetType="listing"
+          targetId={String(listing.id)}
+          targetLabel={listing.title || `Listing #${listing.id}`}
+        />
+      )}
     </>
   );
 }

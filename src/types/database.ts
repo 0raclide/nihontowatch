@@ -556,6 +556,49 @@ export interface Database {
         };
         Update: Partial<Omit<Database['public']['Tables']['user_collection_folders']['Row'], 'id' | 'user_id' | 'created_at'>>;
       };
+      user_feedback: {
+        Row: {
+          id: number;
+          user_id: string;
+          feedback_type: string;
+          target_type: string | null;
+          target_id: string | null;
+          target_label: string | null;
+          message: string;
+          page_url: string | null;
+          status: string;
+          admin_notes: string | null;
+          resolved_by: string | null;
+          resolved_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          user_id: string;
+          feedback_type: string;
+          target_type?: string | null;
+          target_id?: string | null;
+          target_label?: string | null;
+          message: string;
+          page_url?: string | null;
+          status?: string;
+          admin_notes?: string | null;
+          resolved_by?: string | null;
+          resolved_at?: string | null;
+        };
+        Update: {
+          user_id?: string;
+          feedback_type?: string;
+          target_type?: string | null;
+          target_id?: string | null;
+          target_label?: string | null;
+          message?: string;
+          page_url?: string | null;
+          status?: string;
+          admin_notes?: string | null;
+          resolved_by?: string | null;
+          resolved_at?: string | null;
+        };
+      };
     };
     Views: {
       // Materialized view for market statistics by item type
