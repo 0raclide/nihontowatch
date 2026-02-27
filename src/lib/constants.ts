@@ -487,3 +487,20 @@ export const PRICE_HISTOGRAM = {
   /** Debounce delay for API calls after drag ends (ms) */
   DEBOUNCE_MS: 300,
 } as const;
+
+// =============================================================================
+// NAGASA (BLADE LENGTH) HISTOGRAM
+// =============================================================================
+
+export const NAGASA_HISTOGRAM = {
+  /** cm-based bucket boundaries (23 bins covering tanto→katana→nodachi) */
+  BOUNDARIES: [
+    15, 20, 25, 28, 30, 33, 36, 40, 45, 50, 55, 60, 63, 66, 69, 72, 75, 78, 82, 87, 95, 105, 120,
+  ],
+  /** Maximum bar height in pixels */
+  MAX_BAR_HEIGHT: 48,
+  /** Minimum bar height in pixels (so buckets with 1 item are still visible) */
+  MIN_BAR_HEIGHT: 2,
+  /** Debounce delay for API calls after drag ends (ms) */
+  DEBOUNCE_MS: 300,
+} as const;

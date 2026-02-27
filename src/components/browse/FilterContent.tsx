@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useMemo, memo } from 'react';
 import { PriceHistogramSlider, type PriceHistogramData } from './PriceHistogramSlider';
+import { NagasaHistogramSlider, type NagasaHistogramData } from './NagasaHistogramSlider';
 import type { ExchangeRates } from '@/hooks/useCurrency';
 import { useLocale } from '@/i18n/LocaleContext';
 import { getDealerDisplayName } from '@/lib/dealers/displayName';
@@ -45,6 +46,8 @@ export interface FilterContentProps {
     signatureStatuses: string[];
     priceMin?: number;
     priceMax?: number;
+    nagasaMin?: number;
+    nagasaMax?: number;
     askOnly?: boolean;
     missingSetsumei?: boolean;
     missingArtisanCode?: boolean;
@@ -59,6 +62,8 @@ export interface FilterContentProps {
   selectStyle?: SelectStyle;
   /** Price histogram data for visual range slider */
   priceHistogram?: PriceHistogramData | null;
+  /** Nagasa histogram data for blade length range slider */
+  nagasaHistogram?: NagasaHistogramData | null;
   /** Exchange rates for currency conversion in histogram */
   exchangeRates?: ExchangeRates | null;
   // Sort, currency, and availability for mobile drawer
@@ -492,6 +497,7 @@ export function FilterContent({
   cornerStyle = 'soft',
   selectStyle = 'bold',
   priceHistogram,
+  nagasaHistogram,
   exchangeRates,
   sort,
   onSortChange,
@@ -734,6 +740,8 @@ export function FilterContent({
     onFilterChange('signatureStatuses', []);
     onFilterChange('priceMin', undefined);
     onFilterChange('priceMax', undefined);
+    onFilterChange('nagasaMin', undefined);
+    onFilterChange('nagasaMax', undefined);
     onFilterChange('askOnly', false);
     onFilterChange('missingSetsumei', false);
     onFilterChange('missingArtisanCode', false);
@@ -748,6 +756,8 @@ export function FilterContent({
     filters.signatureStatuses.length > 0 ||
     filters.priceMin !== undefined ||
     filters.priceMax !== undefined ||
+    filters.nagasaMin !== undefined ||
+    filters.nagasaMax !== undefined ||
     filters.askOnly ||
     filters.missingSetsumei ||
     filters.missingArtisanCode;
@@ -759,6 +769,7 @@ export function FilterContent({
     filters.historicalPeriods.length +
     filters.signatureStatuses.length +
     (filters.priceMin || filters.priceMax ? 1 : 0) +
+    (filters.nagasaMin || filters.nagasaMax ? 1 : 0) +
     (filters.askOnly ? 1 : 0) +
     (filters.missingSetsumei ? 1 : 0) +
     (filters.missingArtisanCode ? 1 : 0);
@@ -776,6 +787,10 @@ export function FilterContent({
       const fmt = (v: number) => v >= 1000000 ? `¥${(v / 1000000).toFixed(v % 1000000 === 0 ? 0 : 1)}M` : `¥${(v / 1000).toFixed(0)}K`;
       const label = filters.priceMin && filters.priceMax ? `${fmt(filters.priceMin)}–${fmt(filters.priceMax)}` : filters.priceMin ? `${fmt(filters.priceMin)}+` : `Up to ${fmt(filters.priceMax!)}`;
       pills.push({ key: 'price', label, onRemove: () => { onFilterChange('priceMin', undefined); onFilterChange('priceMax', undefined); } });
+    }
+    if (filters.nagasaMin || filters.nagasaMax) {
+      const label = filters.nagasaMin && filters.nagasaMax ? `${filters.nagasaMin}cm–${filters.nagasaMax}cm` : filters.nagasaMin ? `${filters.nagasaMin}cm+` : `≤${filters.nagasaMax}cm`;
+      pills.push({ key: 'nagasa', label, onRemove: () => { onFilterChange('nagasaMin', undefined); onFilterChange('nagasaMax', undefined); } });
     }
     filters.dealers.forEach(id => {
       const d = facets.dealers.find(dl => dl.id === id);
@@ -978,6 +993,34 @@ export function FilterContent({
           />
         </div>
 
+        {/* Nagasa (blade length) histogram — nihonto only */}
+        {filters.category === 'nihonto' && (
+          <>
+            {elevated && <div className={`border-t ${isB ? 'border-border/15' : 'border-border/30'}`} />}
+            <div className={isB ? 'py-2' : elevated ? 'py-3' : 'py-5'}>
+              <span className={
+                isB
+                  ? 'text-[11px] uppercase tracking-[0.06em] font-semibold text-muted block mb-1.5'
+                  : elevated
+                    ? 'text-[14px] font-semibold text-ink block mb-2'
+                    : 'text-[13px] uppercase tracking-[0.15em] font-semibold text-ink block mb-3'
+              }>
+                {t('filter.bladeLength')} (cm)
+              </span>
+              <NagasaHistogramSlider
+                histogram={nagasaHistogram ?? null}
+                nagasaMin={filters.nagasaMin}
+                nagasaMax={filters.nagasaMax}
+                onNagasaChange={(min, max) => {
+                  onFilterChange('nagasaMin', min);
+                  onFilterChange('nagasaMax', max);
+                }}
+                variant={variant}
+              />
+            </div>
+          </>
+        )}
+
         {elevated && <div className={`border-t ${isB ? 'border-border/15' : 'border-border/30'}`} />}
 
         {/* 2. Designation (checkboxes, open) */}
@@ -1168,6 +1211,7 @@ export function getActiveFilterCount(filters: FilterContentProps['filters']): nu
     filters.historicalPeriods.length +
     filters.signatureStatuses.length +
     (filters.priceMin || filters.priceMax ? 1 : 0) +
+    (filters.nagasaMin || filters.nagasaMax ? 1 : 0) +
     (filters.askOnly ? 1 : 0) +
     (filters.missingSetsumei ? 1 : 0) +
     (filters.missingArtisanCode ? 1 : 0)

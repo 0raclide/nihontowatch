@@ -48,6 +48,10 @@ interface BrowseParams {
   missingSetsumei?: boolean;
   /** Admin filter: show items missing artisan code match */
   missingArtisanCode?: boolean;
+  /** Nagasa range filter (cm) — min threshold */
+  nagasaMin?: number;
+  /** Nagasa range filter (cm) — max threshold */
+  nagasaMax?: number;
   /** Artisan code filter (substring match) */
   artisanCode?: string;
   query?: string;
@@ -147,6 +151,10 @@ function parseParams(searchParams: URLSearchParams): BrowseParams {
   const priceMinRaw = searchParams.get('priceMin');
   const priceMaxRaw = searchParams.get('priceMax');
 
+  // Parse nagasa range
+  const nagasaMinRaw = searchParams.get('nagasaMin');
+  const nagasaMaxRaw = searchParams.get('nagasaMax');
+
   return {
     tab: (searchParams.get('tab') as 'available' | 'sold') || 'available',
     category: categoryRaw || 'nihonto',
@@ -159,6 +167,8 @@ function parseParams(searchParams: URLSearchParams): BrowseParams {
     askOnly: searchParams.get('ask') === 'true',
     priceMin: priceMinRaw ? Number(priceMinRaw) : undefined,
     priceMax: priceMaxRaw ? Number(priceMaxRaw) : undefined,
+    nagasaMin: nagasaMinRaw ? Number(nagasaMinRaw) : undefined,
+    nagasaMax: nagasaMaxRaw ? Number(nagasaMaxRaw) : undefined,
     missingSetsumei: searchParams.get('missing_setsumei') === 'true',
     missingArtisanCode: searchParams.get('missing_artisan') === 'true',
     artisanCode: searchParams.get('artisan') || undefined,
@@ -378,6 +388,14 @@ export async function GET(request: NextRequest) {
     }
     if (params.priceMax) {
       query = query.lte('price_jpy', params.priceMax);
+    }
+
+    // Nagasa (blade length) range filter
+    if (params.nagasaMin) {
+      query = query.gte('nagasa_cm', params.nagasaMin);
+    }
+    if (params.nagasaMax) {
+      query = query.lte('nagasa_cm', params.nagasaMax);
     }
 
     // Certification filter (handles variants until data is normalized)
@@ -829,16 +847,20 @@ export async function GET(request: NextRequest) {
       freshnessQuery = freshnessQuery.or(statusFilter);
     }
 
-    // Run all 4 independent queries in parallel
-    const [facetsResult, histogramResult, freshnessResult, dealerCountResult] = await Promise.all([
+    // Run all queries in parallel (nagasa histogram only for nihonto category)
+    const [facetsResult, histogramResult, nagasaHistogramResult, freshnessResult, dealerCountResult] = await Promise.all([
       (supabase.rpc as any)('get_browse_facets', rpcBaseParams),
       (supabase.rpc as any)('get_price_histogram', rpcBaseParams),
+      params.category === 'nihonto'
+        ? (supabase.rpc as any)('get_nagasa_histogram', rpcBaseParams)
+        : Promise.resolve({ data: null, error: null }),
       freshnessQuery.order('last_scraped_at', { ascending: false }).limit(1).single(),
       supabase.from('dealers').select('id', { count: 'exact', head: true }).eq('is_active', true),
     ]);
 
     const { data: facetsData, error: facetsError } = facetsResult;
     const { data: histogramData, error: histogramError } = histogramResult;
+    const { data: nagasaHistogramData, error: nagasaHistogramError } = nagasaHistogramResult;
     const { data: freshnessData } = freshnessResult;
     const { count: totalDealerCount } = dealerCountResult;
 
@@ -865,6 +887,10 @@ export async function GET(request: NextRequest) {
       logger.error('Histogram RPC error', { error: histogramError });
     }
 
+    if (nagasaHistogramError) {
+      logger.error('Nagasa histogram RPC error', { error: nagasaHistogramError });
+    }
+
     const lastUpdated = (freshnessData as { last_scraped_at: string } | null)?.last_scraped_at || null;
 
     // Parse histogram from RPC response
@@ -875,6 +901,14 @@ export async function GET(request: NextRequest) {
       maxPrice: number;
     } | null);
 
+    // Parse nagasa histogram from RPC response
+    const nagasaHistogram = nagasaHistogramError ? null : (nagasaHistogramData as {
+      buckets: { idx: number; count: number }[];
+      boundaries: number[];
+      totalWithNagasa: number;
+      maxNagasa: number;
+    } | null);
+
     // Create response with cache headers
     const response = NextResponse.json({
       listings: enrichedListings,
@@ -883,6 +917,7 @@ export async function GET(request: NextRequest) {
       totalPages: Math.ceil((count || 0) / params.limit!),
       facets,
       priceHistogram,
+      nagasaHistogram,
       totalDealerCount: totalDealerCount || 0,
       lastUpdated,
       // Data freshness indicator for subscription tier

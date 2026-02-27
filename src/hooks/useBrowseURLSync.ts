@@ -19,6 +19,8 @@ export interface BrowseFilters {
   signatureStatuses: string[];
   priceMin?: number;
   priceMax?: number;
+  nagasaMin?: number;
+  nagasaMax?: number;
   askOnly?: boolean;
   enriched?: boolean;
   missingSetsumei?: boolean;
@@ -85,6 +87,8 @@ function resolveSort(urlValue: string | null): string {
 export function parseURLState(sp: URLSearchParams): BrowseURLState {
   const priceMinRaw = sp.get('priceMin');
   const priceMaxRaw = sp.get('priceMax');
+  const nagasaMinRaw = sp.get('nagasaMin');
+  const nagasaMaxRaw = sp.get('nagasaMax');
   return {
     activeTab: (sp.get('tab') as AvailabilityStatus) || 'available',
     filters: {
@@ -97,6 +101,8 @@ export function parseURLState(sp: URLSearchParams): BrowseURLState {
       signatureStatuses: parseCSV(sp.get('sig')),
       priceMin: priceMinRaw ? Number(priceMinRaw) : undefined,
       priceMax: priceMaxRaw ? Number(priceMaxRaw) : undefined,
+      nagasaMin: nagasaMinRaw ? Number(nagasaMinRaw) : undefined,
+      nagasaMax: nagasaMaxRaw ? Number(nagasaMaxRaw) : undefined,
       askOnly: parseBool(sp.get('ask')),
       enriched: parseBool(sp.get('enriched')),
       missingSetsumei: parseBool(sp.get('missing_setsumei')),
@@ -128,6 +134,8 @@ export function buildParamsFromState(
   if (filters.signatureStatuses.length) params.set('sig', filters.signatureStatuses.join(','));
   if (filters.priceMin) params.set('priceMin', String(filters.priceMin));
   if (filters.priceMax) params.set('priceMax', String(filters.priceMax));
+  if (filters.nagasaMin) params.set('nagasaMin', String(filters.nagasaMin));
+  if (filters.nagasaMax) params.set('nagasaMax', String(filters.nagasaMax));
   if (filters.askOnly) params.set('ask', 'true');
   if (filters.enriched) params.set('enriched', 'true');
   if (filters.missingSetsumei) params.set('missing_setsumei', 'true');

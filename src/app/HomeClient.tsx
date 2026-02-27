@@ -27,6 +27,7 @@ import { useNewSinceLastVisit } from '@/contexts/NewSinceLastVisitContext';
 import { useLocale } from '@/i18n/LocaleContext';
 import { NEW_SINCE_LAST_VISIT } from '@/lib/constants';
 import type { PriceHistogramData } from '@/components/browse/PriceHistogramSlider';
+import type { NagasaHistogramData } from '@/components/browse/NagasaHistogramSlider';
 
 
 interface Listing {
@@ -110,6 +111,7 @@ interface BrowseResponse {
     signatureStatuses: Facet[];
   };
   priceHistogram?: PriceHistogramData | null;
+  nagasaHistogram?: NagasaHistogramData | null;
   totalDealerCount?: number;
   lastUpdated: string | null;
   isUrlSearch?: boolean;
@@ -706,6 +708,7 @@ export default function HomeContent() {
             cornerStyle={cornerStyle}
             selectStyle={selectStyle}
             priceHistogram={data?.priceHistogram}
+            nagasaHistogram={data?.nagasaHistogram}
             exchangeRates={exchangeRates}
             panelControls={{
               currency,
@@ -749,6 +752,7 @@ export default function HomeContent() {
           isUpdating={isLoading}
           isAdmin={authIsAdmin}
           priceHistogram={data?.priceHistogram}
+          nagasaHistogram={data?.nagasaHistogram}
           exchangeRates={exchangeRates}
           sort={sort}
           onSortChange={(newSort) => {

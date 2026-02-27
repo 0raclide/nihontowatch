@@ -29,10 +29,11 @@ interface FilterSidebarProps {
   cornerStyle?: CornerStyle;
   selectStyle?: SelectStyle;
   priceHistogram?: FilterContentProps['priceHistogram'];
+  nagasaHistogram?: FilterContentProps['nagasaHistogram'];
   exchangeRates?: FilterContentProps['exchangeRates'];
 }
 
-export function FilterSidebar({ facets, filters, onFilterChange, isAdmin, variant = 'default', panelControls, cornerStyle = 'soft', selectStyle = 'bold', priceHistogram, exchangeRates }: FilterSidebarProps) {
+export function FilterSidebar({ facets, filters, onFilterChange, isAdmin, variant = 'default', panelControls, cornerStyle = 'soft', selectStyle = 'bold', priceHistogram, nagasaHistogram, exchangeRates }: FilterSidebarProps) {
   const { t } = useLocale();
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -61,6 +62,7 @@ export function FilterSidebar({ facets, filters, onFilterChange, isAdmin, varian
       (filters.historicalPeriods?.length || 0) +
       (filters.signatureStatuses?.length || 0) +
       ((filters as Record<string, unknown>).priceMin || (filters as Record<string, unknown>).priceMax ? 1 : 0) +
+      ((filters as Record<string, unknown>).nagasaMin || (filters as Record<string, unknown>).nagasaMax ? 1 : 0) +
       (filters.askOnly ? 1 : 0) +
       (filters.missingSetsumei ? 1 : 0) +
       (filters.missingArtisanCode ? 1 : 0)
@@ -77,6 +79,8 @@ export function FilterSidebar({ facets, filters, onFilterChange, isAdmin, varian
     onFilterChange('signatureStatuses', []);
     onFilterChange('priceMin', undefined);
     onFilterChange('priceMax', undefined);
+    onFilterChange('nagasaMin', undefined);
+    onFilterChange('nagasaMax', undefined);
     onFilterChange('askOnly', false);
     onFilterChange('missingSetsumei', false);
     onFilterChange('missingArtisanCode', false);
@@ -201,6 +205,7 @@ export function FilterSidebar({ facets, filters, onFilterChange, isAdmin, varian
                   cornerStyle={cornerStyle}
                   selectStyle={selectStyle}
                   priceHistogram={priceHistogram}
+                  nagasaHistogram={nagasaHistogram}
                   exchangeRates={exchangeRates}
                   currency={panelControls?.currency}
                   smartCropEnabled={panelControls?.smartCropEnabled}
@@ -261,6 +266,7 @@ export function FilterSidebar({ facets, filters, onFilterChange, isAdmin, varian
             onFilterChange={onFilterChange}
             isAdmin={isAdmin}
             priceHistogram={priceHistogram}
+            nagasaHistogram={nagasaHistogram}
             exchangeRates={exchangeRates}
             smartCropEnabled={panelControls?.smartCropEnabled}
             onSmartCropChange={panelControls?.onSmartCropChange}
