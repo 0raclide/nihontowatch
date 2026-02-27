@@ -1,12 +1,11 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import { FavoriteButton } from '@/components/favorites/FavoriteButton';
 import { ShareButton } from '@/components/share/ShareButton';
 import { SocialShareButtons } from '@/components/share/SocialShareButtons';
 import { ReportModal } from '@/components/feedback/ReportModal';
 import { useAuth } from '@/lib/auth/AuthContext';
-import { useQuickViewOptional } from '@/contexts/QuickViewContext';
 import { useLocale } from '@/i18n/LocaleContext';
 import type { Listing, ListingWithEnrichment } from '@/types';
 import { hasSetsumeiData } from '@/types';
@@ -20,97 +19,12 @@ interface BrowseActionBarProps {
 
 export function BrowseActionBar({ listing, isStudyMode, onToggleStudyMode, onToggleAdminEditMode }: BrowseActionBarProps) {
   const { user, isAdmin } = useAuth();
-  const quickView = useQuickViewOptional();
   const { t, locale } = useLocale();
   const [showReportModal, setShowReportModal] = useState(false);
 
-  const handleToggleSold = useCallback(async () => {
-    const markAsSold = listing.is_available;
-    try {
-      const res = await fetch(`/api/listing/${listing.id}/set-status`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sold: markAsSold }),
-      });
-      if (res.ok) {
-        quickView?.refreshCurrentListing({
-          status: markAsSold ? 'sold' : 'available',
-          is_available: !markAsSold,
-          is_sold: markAsSold,
-          status_admin_locked: true,
-        } as Partial<Listing>);
-      }
-    } catch {
-      // silently fail
-    }
-  }, [listing.id, listing.is_available, quickView]);
-
-  const handleToggleHidden = useCallback(async () => {
-    const newHidden = !listing.admin_hidden;
-    try {
-      const res = await fetch(`/api/listing/${listing.id}/hide`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ hidden: newHidden }),
-      });
-      if (res.ok) {
-        quickView?.refreshCurrentListing({ admin_hidden: newHidden } as Partial<Listing>);
-      }
-    } catch {
-      // silently fail
-    }
-  }, [listing.id, listing.admin_hidden, quickView]);
-
   return (
     <>
-      {/* Admin: Toggle sold/available status */}
-      {isAdmin && (
-        <button
-          onClick={handleToggleSold}
-          className={`w-8 h-8 flex items-center justify-center rounded-full transition-all duration-200 ${
-            listing.is_sold
-              ? 'bg-amber-500/20 text-amber-500 hover:bg-amber-500/30'
-              : 'text-muted hover:text-ink hover:bg-border/50'
-          }`}
-          aria-label={listing.is_sold ? t('quickview.markAvailable') : t('quickview.markSold')}
-          title={listing.is_sold ? t('quickview.markAvailable') : t('quickview.markSold')}
-        >
-          {listing.is_sold ? (
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          ) : (
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-            </svg>
-          )}
-        </button>
-      )}
-      {/* Admin: Hide/unhide listing button */}
-      {isAdmin && (
-        <button
-          onClick={handleToggleHidden}
-          className={`w-8 h-8 flex items-center justify-center rounded-full transition-all duration-200 ${
-            listing.admin_hidden
-              ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30'
-              : 'text-muted hover:text-ink hover:bg-border/50'
-          }`}
-          aria-label={listing.admin_hidden ? t('quickview.unhide') : t('quickview.hide')}
-          title={listing.admin_hidden ? t('quickview.unhide') : t('quickview.hide')}
-        >
-          {listing.admin_hidden ? (
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
-            </svg>
-          ) : (
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-            </svg>
-          )}
-        </button>
-      )}
-      {/* Admin: Edit fields (pen icon) */}
+      {/* Admin: Edit fields (pen icon) — sold/hide controls inside AdminEditView */}
       {isAdmin && onToggleAdminEditMode && (
         <button
           onClick={onToggleAdminEditMode}
