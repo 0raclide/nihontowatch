@@ -3,6 +3,27 @@
 import { useState, useRef, useEffect } from 'react';
 import type { ArtisanSearchResult } from '@/app/api/artisan/search/route';
 
+/** 5 tiny dots visualizing elite_factor magnitude. Hidden when 0. */
+function EliteDots({ factor }: { factor: number }) {
+  if (!factor) return null;
+  const filled =
+    factor > 0.20 ? 5 :
+    factor > 0.10 ? 4 :
+    factor > 0.05 ? 3 :
+    factor > 0.02 ? 2 : 1;
+  const pct = (factor * 100).toFixed(1);
+  return (
+    <span className="inline-flex gap-px items-center ml-1.5" title={`Elite factor: ${pct}%`}>
+      {Array.from({ length: 5 }, (_, i) => (
+        <span
+          key={i}
+          className={`w-1 h-1 rounded-full ${i < filled ? 'bg-gold' : 'bg-border'}`}
+        />
+      ))}
+    </span>
+  );
+}
+
 interface ArtisanSearchPanelProps {
   onSelect: (result: ArtisanSearchResult) => void;
   onSetUnknown: () => void;
@@ -107,7 +128,7 @@ export function ArtisanSearchPanel({
       )}
 
       {searchResults.length > 0 && (
-        <div className="max-h-48 overflow-y-auto space-y-1 scrollbar-thin">
+        <div className="max-h-64 overflow-y-auto space-y-1 scrollbar-thin">
           {searchResults.map((result) => (
             <button
               key={result.code}
@@ -118,8 +139,11 @@ export function ArtisanSearchPanel({
               }`}
             >
               <div className="flex items-center justify-between mb-0.5">
-                <span className="font-mono text-xs font-medium text-gold">
-                  {result.code}
+                <span className="flex items-center">
+                  <span className="font-mono text-xs font-medium text-gold">
+                    {result.code}
+                  </span>
+                  <EliteDots factor={result.elite_factor} />
                 </span>
                 <span className="text-[9px] text-muted uppercase">
                   {result.type === 'school' ? 'School' : result.type === 'smith' ? 'Smith' : 'Tosogu'}
@@ -138,7 +162,26 @@ export function ArtisanSearchPanel({
               </div>
               {(result.school || result.province || result.era) && (
                 <div className="text-[10px] text-muted mt-0.5">
-                  {[result.school, result.province, result.era].filter(Boolean).join(' · ')}
+                  {[result.school, result.province].filter(Boolean).join(' · ')}
+                  {(result.school || result.province) && result.era ? ' · ' : ''}
+                  {result.era}
+                  {result.period && <span className="text-muted/60"> ({result.period})</span>}
+                </div>
+              )}
+              {(result.tokuju_count > 0 || result.juyo_count > 0 || result.total_items > 0 || result.teacher_text) && (
+                <div className="flex flex-wrap items-center gap-1.5 text-[10px] mt-0.5">
+                  {result.tokuju_count > 0 && (
+                    <span className="text-tokuju font-medium">TJ {result.tokuju_count}</span>
+                  )}
+                  {result.juyo_count > 0 && (
+                    <span className="text-juyo font-medium">Juyo {result.juyo_count}</span>
+                  )}
+                  {result.total_items > 0 && (
+                    <span className="text-muted">{result.total_items} works</span>
+                  )}
+                  {result.teacher_text && (
+                    <span className="text-muted">teacher: {result.teacher_text}</span>
+                  )}
                 </div>
               )}
               {(result.hawley || result.fujishiro) && (

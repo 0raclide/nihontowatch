@@ -27,6 +27,12 @@ const MOCK_MAKER = {
   domain: 'sword',
   hawley: 300,
   fujishiro: 'Sai-jo saku',
+  elite_factor: 0.35,
+  juyo_count: 47,
+  tokuju_count: 3,
+  total_items: 156,
+  teacher_text: 'Masamune',
+  period: '1334-1369',
 };
 
 const MOCK_TOSOGU_MAKER = {
@@ -42,6 +48,12 @@ const MOCK_TOSOGU_MAKER = {
   domain: 'tosogu',
   hawley: 350,
   fujishiro: null,
+  elite_factor: 0.12,
+  juyo_count: 8,
+  tokuju_count: 0,
+  total_items: 42,
+  teacher_text: null,
+  period: '1440-1512',
 };
 
 const MOCK_SCHOOL = {
@@ -54,6 +66,10 @@ const MOCK_SCHOOL = {
   era_start: 'Muromachi',
   era_end: 'Shinto',
   characteristics: 'Late Sa school works',
+  elite_factor: 0.04,
+  juyo_count: 12,
+  tokuju_count: 0,
+  total_items: 89,
 };
 
 // ---------- Mutable mock state (read by mock factories at call time) ----------
@@ -203,6 +219,12 @@ describe('Artisan Search API', () => {
     expect(school.generation).toBeNull();
     expect(school.hawley).toBeNull();
     expect(school.fujishiro).toBeNull();
+    expect(school.elite_factor).toBe(0.04);
+    expect(school.juyo_count).toBe(12);
+    expect(school.tokuju_count).toBe(0);
+    expect(school.total_items).toBe(89);
+    expect(school.teacher_text).toBeNull();
+    expect(school.period).toBeNull();
   });
 
   it('maps maker fields correctly (unchanged behavior)', async () => {
@@ -222,6 +244,12 @@ describe('Artisan Search API', () => {
     expect(maker.generation).toBe('1st');
     expect(maker.hawley).toBe(300);
     expect(maker.fujishiro).toBe('Sai-jo saku');
+    expect(maker.elite_factor).toBe(0.35);
+    expect(maker.juyo_count).toBe(47);
+    expect(maker.tokuju_count).toBe(3);
+    expect(maker.total_items).toBe(156);
+    expect(maker.teacher_text).toBe('Masamune');
+    expect(maker.period).toBe('1334-1369');
   });
 
   it('maps tosogu maker with correct type', async () => {

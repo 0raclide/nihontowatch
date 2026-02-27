@@ -20,6 +20,12 @@ interface ArtisanResult {
   era: string | null;
   hawley: number | null;
   fujishiro: string | null;
+  elite_factor: number;
+  juyo_count: number;
+  tokuju_count: number;
+  total_items: number;
+  teacher_text: string | null;
+  period: string | null;
 }
 
 export function CatalogSearchBar({ onSelect }: CatalogSearchBarProps) {
@@ -209,9 +215,15 @@ export function CatalogSearchBar({ onSelect }: CatalogSearchBarProps) {
                     {a.school && `${a.school}`}
                     {a.province && `, ${a.province}`}
                     {a.era && `, ${a.era}`}
-                    {a.hawley != null && ` — Hawley ${a.hawley}`}
-                    {a.fujishiro && ` · ${a.fujishiro}`}
+                    {a.period && ` (${a.period})`}
                   </div>
+                  {(a.tokuju_count > 0 || a.juyo_count > 0 || a.teacher_text) && (
+                    <div className="text-[10px] text-muted">
+                      {a.tokuju_count > 0 && <span className="text-tokuju font-medium mr-1.5">TJ {a.tokuju_count}</span>}
+                      {a.juyo_count > 0 && <span className="text-juyo font-medium mr-1.5">Juyo {a.juyo_count}</span>}
+                      {a.teacher_text && <span>teacher: {a.teacher_text}</span>}
+                    </div>
+                  )}
                 </button>
               ))}
             </div>

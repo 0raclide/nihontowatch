@@ -36,6 +36,12 @@ export interface ArtisanSearchResult {
   generation: string | null;
   hawley: number | null;
   fujishiro: string | null;
+  elite_factor: number;
+  juyo_count: number;
+  tokuju_count: number;
+  total_items: number;
+  teacher_text: string | null;
+  period: string | null;
 }
 
 export async function GET(request: NextRequest) {
@@ -80,7 +86,7 @@ export async function GET(request: NextRequest) {
     // Query artisan_makers (individual smiths/tosogu makers)
     let makersQuery = yuhinkaiClient
       .from('artisan_makers')
-      .select('maker_id, name_romaji, name_kanji, name_romaji_normalized, display_name, legacy_school_text, artisan_schools(name_romaji), province, era, generation, domain, hawley, fujishiro')
+      .select('maker_id, name_romaji, name_kanji, name_romaji_normalized, display_name, legacy_school_text, artisan_schools(name_romaji), province, era, generation, domain, hawley, fujishiro, elite_factor, juyo_count, tokuju_count, total_items, teacher_text, period')
       .or(`maker_id.ilike.${pattern},name_romaji.ilike.${pattern},name_romaji_normalized.ilike.${pattern},name_kanji.ilike.${pattern},legacy_school_text.ilike.${pattern},display_name.ilike.${pattern}`);
 
     // Domain filter based on type param
@@ -93,7 +99,7 @@ export async function GET(request: NextRequest) {
     // Query artisan_schools (school-level entities like NS-Sue-Sa)
     let schoolsQuery = yuhinkaiClient
       .from('artisan_schools')
-      .select('school_id, name_romaji, name_kanji, domain, tradition, province, era_start, era_end, characteristics')
+      .select('school_id, name_romaji, name_kanji, domain, tradition, province, era_start, era_end, characteristics, elite_factor, juyo_count, tokuju_count, total_items')
       .or(`school_id.ilike.${pattern},name_romaji.ilike.${pattern},name_kanji.ilike.${pattern},tradition.ilike.${pattern}`);
 
     if (type === 'smith') {
@@ -105,7 +111,7 @@ export async function GET(request: NextRequest) {
     // Run both queries in parallel
     const [makersResult, schoolsResult] = await Promise.all([
       makersQuery
-        .order('hawley', { ascending: false, nullsFirst: false })
+        .order('elite_factor', { ascending: false, nullsFirst: false })
         .limit(limit),
       schoolsQuery
         .order('name_romaji')
@@ -141,6 +147,12 @@ export async function GET(request: NextRequest) {
         generation: row.generation,
         hawley: row.hawley,
         fujishiro: row.fujishiro,
+        elite_factor: row.elite_factor || 0,
+        juyo_count: row.juyo_count || 0,
+        tokuju_count: row.tokuju_count || 0,
+        total_items: row.total_items || 0,
+        teacher_text: row.teacher_text ?? null,
+        period: row.period ?? null,
       };
     });
 
@@ -157,6 +169,12 @@ export async function GET(request: NextRequest) {
       generation: null,
       hawley: null,
       fujishiro: null,
+      elite_factor: row.elite_factor || 0,
+      juyo_count: row.juyo_count || 0,
+      tokuju_count: row.tokuju_count || 0,
+      total_items: row.total_items || 0,
+      teacher_text: null,
+      period: null,
     }));
 
     // Schools first (exact code matches are most relevant), then makers
