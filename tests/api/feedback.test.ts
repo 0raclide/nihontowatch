@@ -37,7 +37,6 @@ let mockInsertResult: { data: Record<string, unknown> | null; error: unknown } =
   data: { id: 1, status: 'open' },
   error: null,
 };
-let mockProfileData: { display_name: string | null } | null = { display_name: 'Test User' };
 
 // Build chainable Supabase mock
 function createMockQueryBuilder(tableName: string) {
@@ -66,10 +65,6 @@ function createMockQueryBuilder(tableName: string) {
   });
 
   builder.single = vi.fn(() => {
-    // Check if this is a profiles query or a feedback insert
-    if (tracker.fromCalls[tracker.fromCalls.length - 1] === 'profiles') {
-      return Promise.resolve({ data: mockProfileData, error: null });
-    }
     return Promise.resolve(mockInsertResult);
   });
 
@@ -84,19 +79,8 @@ const mockAnonClient = {
   from: vi.fn((table: string) => createMockQueryBuilder(table)),
 };
 
-const mockServiceClient = {
-  from: vi.fn((table: string) => createMockQueryBuilder(table)),
-};
-
 vi.mock('@/lib/supabase/server', () => ({
   createClient: vi.fn(() => Promise.resolve(mockAnonClient)),
-  createServiceClient: vi.fn(() => mockServiceClient),
-}));
-
-// Mock sendgrid
-const mockSendNotification = vi.fn(() => Promise.resolve({ success: true }));
-vi.mock('@/lib/email/sendgrid', () => ({
-  sendFeedbackAdminNotification: (...args: unknown[]) => mockSendNotification(...args),
 }));
 
 // Helper to create mock request
@@ -123,11 +107,9 @@ beforeEach(() => {
   mockUser = { id: 'user-123', email: 'test@example.com' };
   mockRateLimitCount = 0;
   mockInsertResult = { data: { id: 1, status: 'open' }, error: null };
-  mockProfileData = { display_name: 'Test User' };
 
   // Reset from mocks
   mockAnonClient.from.mockImplementation((table: string) => createMockQueryBuilder(table));
-  mockServiceClient.from.mockImplementation((table: string) => createMockQueryBuilder(table));
 });
 
 // =============================================================================
@@ -217,7 +199,6 @@ describe('Feedback API - Input Validation', () => {
       vi.clearAllMocks();
       tracker = { fromCalls: [], selectCalls: [], insertCalls: [], eqCalls: [], gteCalls: [] };
       mockAnonClient.from.mockImplementation((t: string) => createMockQueryBuilder(t));
-      mockServiceClient.from.mockImplementation((t: string) => createMockQueryBuilder(t));
 
       const request = createRequest({ feedback_type: type, message: 'Test' });
       const response = await POST(request as never);
@@ -231,7 +212,6 @@ describe('Feedback API - Input Validation', () => {
       vi.clearAllMocks();
       tracker = { fromCalls: [], selectCalls: [], insertCalls: [], eqCalls: [], gteCalls: [] };
       mockAnonClient.from.mockImplementation((t: string) => createMockQueryBuilder(t));
-      mockServiceClient.from.mockImplementation((t: string) => createMockQueryBuilder(t));
 
       const request = createRequest({
         feedback_type: 'data_report',
@@ -356,86 +336,6 @@ describe('Feedback API - Successful Submission', () => {
     expect(inserted.target_id).toBeNull();
     expect(inserted.target_label).toBeNull();
     expect(inserted.page_url).toBeNull();
-  });
-});
-
-// =============================================================================
-// ADMIN EMAIL NOTIFICATION TESTS
-// =============================================================================
-
-describe('Feedback API - Admin Email Notification', () => {
-  it('sends admin email after successful submission', async () => {
-    const request = createRequest({
-      feedback_type: 'bug',
-      message: 'Found a bug',
-    });
-    await POST(request as never);
-
-    expect(mockSendNotification).toHaveBeenCalledTimes(1);
-    expect(mockSendNotification).toHaveBeenCalledWith(
-      expect.objectContaining({
-        feedback_type: 'bug',
-        message: 'Found a bug',
-        user_display_name: 'Test User',
-      })
-    );
-  });
-
-  it('uses email as display name when profile has no display_name', async () => {
-    mockProfileData = { display_name: null };
-
-    const request = createRequest({ feedback_type: 'bug', message: 'Test' });
-    await POST(request as never);
-
-    expect(mockSendNotification).toHaveBeenCalledWith(
-      expect.objectContaining({
-        user_display_name: 'test@example.com',
-      })
-    );
-  });
-
-  it('still returns success if admin email fails', async () => {
-    mockSendNotification.mockRejectedValueOnce(new Error('Email failed'));
-
-    const request = createRequest({ feedback_type: 'bug', message: 'Test' });
-    const response = await POST(request as never);
-
-    // Should still succeed — email is best-effort
-    expect(response.status).toBe(200);
-    const json = await response.json();
-    expect(json.id).toBe(1);
-  });
-
-  it('does not send email when insert fails', async () => {
-    mockInsertResult = { data: null, error: { message: 'DB error' } };
-
-    const request = createRequest({ feedback_type: 'bug', message: 'Test' });
-    const response = await POST(request as never);
-
-    expect(response.status).toBe(500);
-    expect(mockSendNotification).not.toHaveBeenCalled();
-  });
-
-  it('passes target info to email notification', async () => {
-    const request = createRequest({
-      feedback_type: 'data_report',
-      message: 'Wrong cert',
-      target_type: 'listing',
-      target_id: '99',
-      target_label: 'Katana #99',
-      page_url: 'https://nihontowatch.com/listing/99',
-    });
-    await POST(request as never);
-
-    expect(mockSendNotification).toHaveBeenCalledWith(
-      expect.objectContaining({
-        feedback_type: 'data_report',
-        target_type: 'listing',
-        target_id: '99',
-        target_label: 'Katana #99',
-        page_url: 'https://nihontowatch.com/listing/99',
-      })
-    );
   });
 });
 

@@ -13,18 +13,12 @@ import {
   generateBackInStockNotificationHtml,
   generateBackInStockNotificationText,
 } from './templates/back-in-stock';
-import {
-  generateFeedbackAdminHtml,
-  generateFeedbackAdminText,
-} from './templates/feedback-admin';
-
 // Initialize SendGrid with API key
 if (process.env.SENDGRID_API_KEY) {
   sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 }
 
 const FROM_EMAIL = process.env.SENDGRID_FROM_EMAIL || 'notifications@nihontowatch.com';
-const ADMIN_EMAIL = process.env.SENDGRID_ADMIN_EMAIL || 'admin@nihontowatch.com';
 const FROM_NAME = 'NihontoWatch';
 
 interface SendEmailResult {
@@ -206,53 +200,4 @@ export async function sendBackInStockNotification(
   }
 }
 
-/**
- * Send admin notification when new user feedback is submitted
- */
-export async function sendFeedbackAdminNotification(
-  feedback: {
-    feedback_type: import('@/types/feedback').FeedbackType;
-    target_type?: import('@/types/feedback').FeedbackTargetType | null;
-    target_id?: string | null;
-    target_label?: string | null;
-    message: string;
-    page_url?: string | null;
-    user_display_name: string;
-  }
-): Promise<SendEmailResult> {
-  if (!process.env.SENDGRID_API_KEY) {
-    console.warn('SENDGRID_API_KEY not configured, skipping admin feedback email');
-    return { success: false, error: 'SendGrid not configured' };
-  }
 
-  const TYPE_LABELS: Record<string, string> = {
-    data_report: 'Data Report',
-    bug: 'Bug Report',
-    feature_request: 'Feature Request',
-    other: 'Feedback',
-  };
-  const typeLabel = TYPE_LABELS[feedback.feedback_type] || 'Feedback';
-  const subject = `[NihontoWatch] New ${typeLabel} from ${feedback.user_display_name}`;
-
-  try {
-    const [response] = await sgMail.send({
-      to: ADMIN_EMAIL,
-      from: {
-        email: FROM_EMAIL,
-        name: FROM_NAME,
-      },
-      subject,
-      text: generateFeedbackAdminText(feedback),
-      html: generateFeedbackAdminHtml(feedback),
-    });
-
-    return {
-      success: true,
-      messageId: response.headers['x-message-id'] as string,
-    };
-  } catch (error) {
-    console.error('SendGrid admin feedback notification error:', error);
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    return { success: false, error: message };
-  }
-}

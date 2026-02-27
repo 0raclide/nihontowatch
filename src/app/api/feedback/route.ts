@@ -1,7 +1,6 @@
 import { NextRequest } from 'next/server';
-import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 import { apiSuccess, apiBadRequest, apiUnauthorized, apiRateLimited, apiServerError } from '@/lib/api/responses';
-import { sendFeedbackAdminNotification } from '@/lib/email/sendgrid';
 import type { FeedbackType, FeedbackTargetType } from '@/types/feedback';
 
 const VALID_FEEDBACK_TYPES: FeedbackType[] = ['data_report', 'bug', 'feature_request', 'other'];
@@ -68,29 +67,6 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       return apiServerError('Failed to submit feedback', error);
-    }
-
-    // Send admin email notification (best-effort, don't fail the request)
-    try {
-      const service = createServiceClient();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: profile } = await (service.from('profiles') as any)
-        .select('display_name')
-        .eq('id', user.id)
-        .single();
-      const displayName = profile?.display_name || user.email || 'Unknown';
-
-      await sendFeedbackAdminNotification({
-        feedback_type,
-        target_type: target_type || null,
-        target_id: target_id ? String(target_id) : null,
-        target_label: target_label || null,
-        message: message.trim(),
-        page_url: page_url || null,
-        user_display_name: displayName,
-      });
-    } catch (emailErr) {
-      console.error('Failed to send admin feedback notification:', emailErr);
     }
 
     return apiSuccess({ id: data.id, status: data.status });
