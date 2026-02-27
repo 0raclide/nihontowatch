@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import type { ArtisanSearchResult } from '@/app/api/artisan/search/route';
+import { formatArtisanStats } from '@/types/artisan';
 
 /** 5 tiny dots visualizing elite_factor magnitude. Hidden when 0. */
 function EliteDots({ factor }: { factor: number }) {
@@ -32,6 +33,8 @@ interface ArtisanSearchPanelProps {
   successMessage?: string | null;
   errorMessage?: string | null;
   autoFocus?: boolean;
+  /** Filter search by domain — 'smith' or 'tosogu'. Omit for all. */
+  domain?: 'smith' | 'tosogu';
 }
 
 export function ArtisanSearchPanel({
@@ -42,6 +45,7 @@ export function ArtisanSearchPanel({
   successMessage,
   errorMessage,
   autoFocus = false,
+  domain,
 }: ArtisanSearchPanelProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<ArtisanSearchResult[]>([]);
@@ -79,7 +83,8 @@ export function ArtisanSearchPanel({
       setSearchLoading(true);
       setSearchError(null);
       try {
-        const res = await fetch(`/api/artisan/search?q=${encodeURIComponent(searchQuery)}&limit=10`);
+        const typeParam = domain ? `&type=${domain}` : '';
+        const res = await fetch(`/api/artisan/search?q=${encodeURIComponent(searchQuery)}&limit=10${typeParam}`);
         if (res.ok) {
           const data = await res.json();
           setSearchResults(data.results || []);
@@ -168,16 +173,10 @@ export function ArtisanSearchPanel({
                   {result.period && !result.era?.includes(result.period) && <span className="text-muted/60"> ({result.period})</span>}
                 </div>
               )}
-              {(result.tokuju_count > 0 || result.juyo_count > 0 || result.total_items > 0 || result.teacher_text) && (
+              {(result.kokuho_count > 0 || result.tokuju_count > 0 || result.juyo_count > 0 || result.total_items > 0 || result.teacher_text) && (
                 <div className="flex flex-wrap items-center gap-1.5 text-[10px] mt-0.5">
-                  {result.tokuju_count > 0 && (
-                    <span className="text-tokuju font-medium">TJ {result.tokuju_count}</span>
-                  )}
-                  {result.juyo_count > 0 && (
-                    <span className="text-juyo font-medium">Juyo {result.juyo_count}</span>
-                  )}
-                  {result.total_items > 0 && (
-                    <span className="text-muted">{result.total_items} works</span>
+                  {formatArtisanStats(result) && (
+                    <span className="text-muted">{formatArtisanStats(result)}</span>
                   )}
                   {result.teacher_text && (
                     <span className="text-muted">teacher: {result.teacher_text}</span>

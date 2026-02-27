@@ -1,6 +1,25 @@
 import type { CatalogueEntry } from '@/lib/supabase/yuhinkai';
 
 /**
+ * Compact one-line stats summary for artisan search results.
+ * "Kokuho 2 · TokuJu 3 · Juyo 47 · 50 items"
+ * Kokuho shown first (rarest designation). Only non-zero counts included.
+ */
+export function formatArtisanStats(stats: {
+  kokuho_count?: number;
+  tokuju_count?: number;
+  juyo_count?: number;
+  total_items?: number;
+}): string {
+  const parts: string[] = [];
+  if (stats.kokuho_count && stats.kokuho_count > 0) parts.push(`Kokuho ${stats.kokuho_count}`);
+  if (stats.tokuju_count && stats.tokuju_count > 0) parts.push(`TokuJu ${stats.tokuju_count}`);
+  if (stats.juyo_count && stats.juyo_count > 0) parts.push(`Juyo ${stats.juyo_count}`);
+  if (stats.total_items && stats.total_items > 0) parts.push(`${stats.total_items} items`);
+  return parts.join(' · ');
+}
+
+/**
  * Alternative artisan candidate from the matching pipeline.
  * Shared between ArtisanTooltip, ArtisanDetailsPanel, and AdminEditView.
  */

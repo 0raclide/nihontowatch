@@ -4,6 +4,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import type { CreateCollectionItemInput, CatalogSearchResult } from '@/types/collection';
 import { useLocale } from '@/i18n/LocaleContext';
 import { mapCatalogToCollectionItem } from '@/lib/collection/catalogMapping';
+import { formatArtisanStats } from '@/types/artisan';
 
 interface CatalogSearchBarProps {
   onSelect: (data: Partial<CreateCollectionItemInput>) => void;
@@ -219,8 +220,9 @@ export function CatalogSearchBar({ onSelect }: CatalogSearchBarProps) {
                   </div>
                   {(a.tokuju_count > 0 || a.juyo_count > 0 || a.teacher_text) && (
                     <div className="text-[10px] text-muted">
-                      {a.tokuju_count > 0 && <span className="text-tokuju font-medium mr-1.5">TJ {a.tokuju_count}</span>}
-                      {a.juyo_count > 0 && <span className="text-juyo font-medium mr-1.5">Juyo {a.juyo_count}</span>}
+                      {formatArtisanStats(a) && (
+                        <span className="mr-1.5">{formatArtisanStats(a)}</span>
+                      )}
                       {a.teacher_text && <span>teacher: {a.teacher_text}</span>}
                     </div>
                   )}

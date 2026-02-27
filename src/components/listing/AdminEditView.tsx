@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import type { Listing } from '@/types';
+import { isTosogu, type Listing } from '@/types';
 import type { ArtisanSearchResult } from '@/app/api/artisan/search/route';
 import type { ArtisanCandidate } from '@/types/artisan';
 import { CertPillRow } from '@/components/admin/CertPillRow';
@@ -54,6 +54,11 @@ export function AdminEditView({ listing, onBackToPhotos, onRefresh }: AdminEditV
 
   // --- Error ---
   const [error, setError] = useState<string | null>(null);
+
+  // Derive artisan search domain from item type
+  const searchDomain = listing.item_type
+    ? isTosogu(listing.item_type) ? 'tosogu' as const : 'smith' as const
+    : undefined;
 
   // Sync state when listing changes
   useEffect(() => {
@@ -400,6 +405,7 @@ export function AdminEditView({ listing, onBackToPhotos, onRefresh }: AdminEditV
                   successMessage={fixSuccess ? 'Artisan updated' : null}
                   errorMessage={searchError}
                   autoFocus
+                  domain={searchDomain}
                 />
               </div>
             )}
