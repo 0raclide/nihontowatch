@@ -165,7 +165,7 @@ export function ArtisanSearchPanel({
                   {[result.school, result.province].filter(Boolean).join(' · ')}
                   {(result.school || result.province) && result.era ? ' · ' : ''}
                   {result.era}
-                  {result.period && <span className="text-muted/60"> ({result.period})</span>}
+                  {result.period && !result.era?.includes(result.period) && <span className="text-muted/60"> ({result.period})</span>}
                 </div>
               )}
               {(result.tokuju_count > 0 || result.juyo_count > 0 || result.total_items > 0 || result.teacher_text) && (
