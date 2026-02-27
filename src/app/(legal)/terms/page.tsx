@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   },
 };
 
-const lastUpdated = 'January 25, 2026';
+const lastUpdated = 'February 27, 2026';
 
 export default function TermsPage() {
   return (
@@ -59,6 +59,45 @@ export default function TermsPage() {
           All transactions occur directly between you and the individual dealers. We are not a party to
           any transaction and bear no responsibility for the quality, safety, legality, or delivery of
           any items purchased from dealers listed on our platform.
+        </p>
+      </section>
+
+      <section>
+        <h2>2.5 Data Sources and Third-Party Content</h2>
+
+        <h3>Scholarly Data Sources</h3>
+        <p>
+          Certain premium features of the Service&mdash;including catalog translations, artist
+          statistics, enrichment data, and scholarly annotations&mdash;are powered by a proprietary
+          curated dataset maintained by Hestia Holdings GmbH through the Y&#363;hinkai platform
+          (yuhinkai.com). This data is used under license from Hestia Holdings GmbH.
+        </p>
+        <p>
+          Community curators contribute to the quality and completeness of this dataset. Their
+          contributions are used in accordance with the Y&#363;hinkai Curation &amp; Access Agreement.
+        </p>
+
+        <h3>Third-Party Intellectual Property</h3>
+        <p>
+          Enrichment data displayed on the Service is derived from multiple sources, including
+          publications by the Society for the Preservation of Japanese Art Swords (NBTHK), auction
+          catalogs, and other scholarly works. <strong>All such source materials remain the
+          intellectual property of their respective rights holders.</strong>
+        </p>
+        <p>
+          Where the Service displays images or excerpts derived from third-party publications, such
+          use is limited and restrained&mdash;for example, thumbnails for identification purposes or
+          brief excerpts for scholarly context&mdash;and is not intended to serve as a substitute for
+          the original publications. We encourage users to acquire original publications to support
+          the organizations that produce these materials.
+        </p>
+
+        <h3>Dealer Listings</h3>
+        <p>
+          Listing content (descriptions, images, specifications, prices) is provided by dealers and
+          remains their intellectual property. We display this content for aggregation and comparison
+          purposes. Any use of dealer content beyond personal, non-commercial viewing requires
+          permission from the respective dealer.
         </p>
       </section>
 
@@ -155,17 +194,18 @@ export default function TermsPage() {
 
         <h3>6.1 Nihontowatch Content</h3>
         <p>
-          The Service, including its design, features, and content created by us, is protected by
-          copyright, trademark, and other intellectual property laws. You may not copy, modify,
-          distribute, or create derivative works from our content without our express written permission.
+          The Service, including its design, features, and original content created by us, is
+          protected by copyright, trademark, and other intellectual property laws. You may not copy,
+          modify, distribute, or create derivative works from our content without our express written
+          permission.
         </p>
 
-        <h3>6.2 Dealer Listings</h3>
+        <h3>6.2 Third-Party and Licensed Content</h3>
         <p>
-          Listing content (descriptions, images, specifications) is provided by dealers and remains
-          their intellectual property. We display this content under implied license for aggregation
-          purposes. Any use of dealer content beyond personal, non-commercial viewing requires
-          permission from the respective dealer.
+          The Service displays content from multiple sources, including dealer listings, scholarly
+          enrichment data licensed from Hestia Holdings GmbH, and materials derived from third-party
+          publications. All such content remains the intellectual property of its respective owners.
+          See Section 2.5 for details on data sources and permitted uses.
         </p>
 
         <h3>6.3 User Content</h3>
