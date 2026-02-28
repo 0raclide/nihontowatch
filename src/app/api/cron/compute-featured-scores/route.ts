@@ -114,7 +114,7 @@ export async function GET(request: NextRequest) {
         .select('id, artisan_id')
         .eq('is_available', true)
         .not('artisan_id', 'is', null)
-        .is('artisan_elite_factor', null)
+        .or('artisan_elite_factor.is.null,artisan_designation_factor.is.null')
         .limit(500) as { data: { id: number; artisan_id: string }[] | null; error: unknown };
 
       if (syncQueryErr) {
@@ -127,7 +127,7 @@ export async function GET(request: NextRequest) {
             .filter(id => !IGNORE_ARTISAN_IDS.has(id))
         )];
 
-        const eliteCache = new Map<string, { elite_factor: number; elite_count: number }>();
+        const eliteCache = new Map<string, { elite_factor: number; elite_count: number; designation_factor: number }>();
         await Promise.all(
           uniqueArtisanIds.map(async (artisanId) => {
             const stats = await getArtisanEliteStats(artisanId);
@@ -144,6 +144,7 @@ export async function GET(request: NextRequest) {
             .update({
               artisan_elite_factor: stats?.elite_factor ?? 0,
               artisan_elite_count: stats?.elite_count ?? 0,
+              artisan_designation_factor: stats?.designation_factor ?? 0,
             })
             .eq('id', listing.id);
           synced++;
@@ -170,7 +171,7 @@ export async function GET(request: NextRequest) {
     while (true) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: listings, error } = await (supabase.from('listings') as any)
-        .select('id, artisan_id, artisan_elite_factor, artisan_elite_count, cert_type, price_value, price_currency, artisan_confidence, images, first_seen_at, is_initial_import, dealer_id, smith, tosogu_maker, school, tosogu_school, era, province, description, nagasa_cm, sori_cm, motohaba_cm, tosogu_height_cm, tosogu_width_cm')
+        .select('id, artisan_id, artisan_elite_factor, artisan_elite_count, artisan_designation_factor, cert_type, price_value, price_currency, artisan_confidence, images, first_seen_at, is_initial_import, dealer_id, smith, tosogu_maker, school, tosogu_school, era, province, description, nagasa_cm, sori_cm, motohaba_cm, tosogu_height_cm, tosogu_width_cm')
         .eq('is_available', true)
         .range(offset, offset + PAGE_SIZE - 1) as { data: ListingRow[] | null; error: unknown };
 

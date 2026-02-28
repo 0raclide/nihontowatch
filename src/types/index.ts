@@ -498,6 +498,7 @@ export interface Listing {
   // Artisan metrics (denormalized from Yuhinkai)
   artisan_elite_factor?: number;
   artisan_elite_count?: number;
+  artisan_designation_factor?: number;
 
   // Featured sort
   featured_score?: number;

@@ -65,6 +65,13 @@ export const CURRENCY_TO_JPY: Record<string, number> = {
 /** Price (in JPY) at which artisan stature reaches full weight */
 export const PRICE_DAMPING_CEILING_JPY = 500_000;
 
+/** Multiplier to convert designation_factor → artisan stature points.
+ *  Maps Tomonari (df≈1.68) → stature 200 (the cap). */
+export const DESIGNATION_STATURE_MULTIPLIER = 119;
+
+/** Maximum artisan stature points */
+export const ARTISAN_STATURE_CAP = 200;
+
 /**
  * Estimate the JPY-equivalent price for scoring purposes.
  * Returns 0 for null price or unknown currency.
@@ -88,6 +95,7 @@ export interface ListingScoreInput {
   artisan_id: string | null;
   artisan_elite_factor: number | null;
   artisan_elite_count: number | null;
+  artisan_designation_factor: number | null;
   cert_type: string | null;
   price_value: number | null;
   price_currency: string | null;
@@ -121,9 +129,9 @@ interface EliteSyncOptions {
 
 export function computeQuality(listing: ListingScoreInput): number {
   const hasRealArtisan = listing.artisan_id && !IGNORE_ARTISAN_IDS.has(listing.artisan_id);
-  const eliteFactor = hasRealArtisan ? (listing.artisan_elite_factor ?? 0) : 0;
+  const designationFactor = hasRealArtisan ? (listing.artisan_designation_factor ?? 0) : 0;
 
-  const rawArtisanStature = eliteFactor * 200;
+  const rawArtisanStature = Math.min(designationFactor * DESIGNATION_STATURE_MULTIPLIER, ARTISAN_STATURE_CAP);
 
   // Price-based damping: cheap items with elite artisan matches are almost certainly
   // wrong attributions. Smooth ramp from 0% at ¥0 to 100% at ¥500K.
@@ -206,8 +214,9 @@ export interface CompletenessItem {
 export interface ScoreBreakdown {
   quality: { total: number; artisanStature: number; certPoints: number; completeness: number };
   artisanDetail: {
+    designationFactor: number;
+    designationFactorPts: number;
     eliteFactor: number;
-    eliteFactorPts: number;
     artisanId: string | null;
     isReal: boolean;
     priceDamping: number;
@@ -230,11 +239,13 @@ export interface ScoreBreakdown {
  * Pure function — no DB access.
  */
 export function computeScoreBreakdown(listing: ListingScoreInput): ScoreBreakdown {
-  // Artisan stature
+  // Artisan stature — driven by designation_factor
   const hasRealArtisan = listing.artisan_id && !IGNORE_ARTISAN_IDS.has(listing.artisan_id);
+  const designationFactor = hasRealArtisan ? (listing.artisan_designation_factor ?? 0) : 0;
+  const designationFactorPts = Math.min(designationFactor * DESIGNATION_STATURE_MULTIPLIER, ARTISAN_STATURE_CAP);
+  const rawStature = designationFactorPts;
+  // Keep elite_factor as reference
   const eliteFactor = hasRealArtisan ? (listing.artisan_elite_factor ?? 0) : 0;
-  const eliteFactorPts = eliteFactor * 200;
-  const rawStature = eliteFactorPts;
 
   // Price-based damping (mirrors computeQuality)
   const priceJpy = estimatePriceJpy(listing.price_value, listing.price_currency);
@@ -302,8 +313,9 @@ export function computeScoreBreakdown(listing: ListingScoreInput): ScoreBreakdow
   return {
     quality: { total: quality, artisanStature, certPoints: certPts, completeness },
     artisanDetail: {
+      designationFactor,
+      designationFactorPts: Math.round(designationFactorPts * 100) / 100,
       eliteFactor,
-      eliteFactorPts: Math.round(eliteFactorPts * 100) / 100,
       artisanId: listing.artisan_id,
       isReal: !!hasRealArtisan,
       priceDamping: Math.round(priceDamping * 1000) / 1000,
@@ -330,32 +342,32 @@ const HEAT_30_DAY_MS = 30 * 24 * 60 * 60 * 1000;
 
 /** Select string for the fields we need from listings */
 export const LISTING_SCORE_SELECT =
-  'id, artisan_id, artisan_elite_factor, artisan_elite_count, cert_type, price_value, price_currency, artisan_confidence, images, first_seen_at, is_initial_import, smith, tosogu_maker, school, tosogu_school, era, province, description, nagasa_cm, sori_cm, motohaba_cm, tosogu_height_cm, tosogu_width_cm';
+  'id, artisan_id, artisan_elite_factor, artisan_elite_count, artisan_designation_factor, cert_type, price_value, price_currency, artisan_confidence, images, first_seen_at, is_initial_import, smith, tosogu_maker, school, tosogu_school, era, province, description, nagasa_cm, sori_cm, motohaba_cm, tosogu_height_cm, tosogu_width_cm';
 
 /**
- * Fetch elite_factor and elite_count from Yuhinkai for an artisan code.
+ * Fetch elite_factor, elite_count, and designation_factor from Yuhinkai for an artisan code.
  * Checks artisan_makers first, then artisan_schools for NS-* codes.
  */
-export async function getArtisanEliteStats(artisanCode: string): Promise<{ elite_factor: number; elite_count: number } | null> {
+export async function getArtisanEliteStats(artisanCode: string): Promise<{ elite_factor: number; elite_count: number; designation_factor: number } | null> {
   const { data: artisan } = await yuhinkaiClient
     .from('artisan_makers')
-    .select('elite_factor, elite_count')
+    .select('elite_factor, elite_count, designation_factor')
     .eq('maker_id', artisanCode)
     .single();
 
   if (artisan?.elite_factor !== undefined) {
-    return { elite_factor: artisan.elite_factor, elite_count: artisan.elite_count ?? 0 };
+    return { elite_factor: artisan.elite_factor, elite_count: artisan.elite_count ?? 0, designation_factor: artisan.designation_factor ?? 0 };
   }
 
   if (artisanCode.startsWith('NS-')) {
     const { data: school } = await yuhinkaiClient
       .from('artisan_schools')
-      .select('elite_factor, elite_count')
+      .select('elite_factor, elite_count, designation_factor')
       .eq('school_id', artisanCode)
       .single();
 
     if (school?.elite_factor !== undefined) {
-      return { elite_factor: school.elite_factor, elite_count: school.elite_count ?? 0 };
+      return { elite_factor: school.elite_factor, elite_count: school.elite_count ?? 0, designation_factor: school.designation_factor ?? 0 };
     }
   }
 
@@ -389,6 +401,7 @@ export async function recomputeScoreForListing(
         .update({
           artisan_elite_factor: eliteStats.elite_factor,
           artisan_elite_count: eliteStats.elite_count,
+          artisan_designation_factor: eliteStats.designation_factor,
         })
         .eq('id', listingId);
 
@@ -396,10 +409,10 @@ export async function recomputeScoreForListing(
         logger.error('[scoring] Failed to sync elite factor', { listingId, error: eliteErr });
       }
     } else {
-      // Artisan not found in Yuhinkai — zero out elite columns
+      // Artisan not found in Yuhinkai — zero out elite/designation columns
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await (supabase.from('listings') as any)
-        .update({ artisan_elite_factor: 0, artisan_elite_count: 0 })
+        .update({ artisan_elite_factor: 0, artisan_elite_count: 0, artisan_designation_factor: 0 })
         .eq('id', listingId);
     }
   }

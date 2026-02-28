@@ -12,6 +12,8 @@ import {
   IGNORE_ARTISAN_IDS,
   CURRENCY_TO_JPY,
   PRICE_DAMPING_CEILING_JPY,
+  DESIGNATION_STATURE_MULTIPLIER,
+  ARTISAN_STATURE_CAP,
   estimatePriceJpy,
   computeQuality,
   computeFreshness,
@@ -31,6 +33,7 @@ function baseListing(overrides: Partial<ListingScoreInput> = {}): ListingScoreIn
     artisan_id: null,
     artisan_elite_factor: null,
     artisan_elite_count: null,
+    artisan_designation_factor: null,
     cert_type: null,
     price_value: null,
     price_currency: null,
@@ -213,38 +216,62 @@ describe('computeQuality', () => {
     expect(computeQuality(baseListing())).toBe(0);
   });
 
-  describe('artisan stature', () => {
-    it('uses elite_factor for real artisans (full price)', () => {
+  describe('artisan stature (designation_factor)', () => {
+    it('uses designation_factor for real artisans (capped at 200)', () => {
       const listing = baseListing({
         artisan_id: 'MAS590',
-        artisan_elite_factor: 1.0,
-        artisan_elite_count: 100,
+        artisan_designation_factor: 1.68,
         price_value: 5000000,
         price_currency: 'JPY',
       });
       const quality = computeQuality(listing);
-      // stature = 1.0 * 200 = 200
+      // stature = min(1.68 * 119, 200) = min(199.92, 200) = 199.92
       // priceDamping = min(5000000 / 500000, 1) = 1.0
+      // artisanStature = round(199.92 * 1.0 * 100) / 100 = 199.92
+      // completeness: price = 10
+      expect(quality).toBeCloseTo(209.92, 1);
+    });
+
+    it('caps stature at 200 for very high designation_factor', () => {
+      const listing = baseListing({
+        artisan_id: 'TOM134',
+        artisan_designation_factor: 1.90,
+        price_value: 5000000,
+        price_currency: 'JPY',
+      });
+      const quality = computeQuality(listing);
+      // stature = min(1.90 * 119, 200) = min(226.1, 200) = 200
       // completeness: price = 10
       expect(quality).toBe(210);
+    });
+
+    it('gives meaningful stature for Juyo-only tosogu (designation_factor > 0)', () => {
+      const listing = baseListing({
+        artisan_id: 'YAS001',
+        artisan_designation_factor: 0.81,
+        price_value: 1000000,
+        price_currency: 'JPY',
+      });
+      const quality = computeQuality(listing);
+      // stature = min(0.81 * 119, 200) = 96.39
+      // priceDamping = 1.0
+      // completeness: price = 10
+      expect(quality).toBeCloseTo(106.39, 1);
     });
 
     it('ignores UNKNOWN artisan_id', () => {
       const listing = baseListing({
         artisan_id: 'UNKNOWN',
-        artisan_elite_factor: 1.0,
-        artisan_elite_count: 100,
+        artisan_designation_factor: 1.0,
       });
       const quality = computeQuality(listing);
-      // artisan stature should be 0 because UNKNOWN is in IGNORE_ARTISAN_IDS
       expect(quality).toBe(0);
     });
 
     it('ignores lowercase unknown artisan_id', () => {
       const listing = baseListing({
         artisan_id: 'unknown',
-        artisan_elite_factor: 0.5,
-        artisan_elite_count: 50,
+        artisan_designation_factor: 0.5,
       });
       expect(computeQuality(listing)).toBe(0);
     });
@@ -252,23 +279,36 @@ describe('computeQuality', () => {
     it('treats null artisan_id as no artisan', () => {
       const listing = baseListing({
         artisan_id: null,
-        artisan_elite_factor: 1.0,
-        artisan_elite_count: 100,
+        artisan_designation_factor: 1.0,
       });
       expect(computeQuality(listing)).toBe(0);
     });
 
-    it('handles null elite_factor gracefully', () => {
+    it('handles null designation_factor gracefully', () => {
       const listing = baseListing({
         artisan_id: 'MAS590',
-        artisan_elite_factor: null,
-        artisan_elite_count: 10,
+        artisan_designation_factor: null,
         price_value: 5000000,
         price_currency: 'JPY',
       });
       const quality = computeQuality(listing);
-      // stature = 0 * 200 = 0 (null elite_factor defaults to 0)
-      // priceDamping = 1.0, completeness: price = 10
+      // stature = 0 (null designation_factor defaults to 0)
+      // completeness: price = 10
+      expect(quality).toBe(10);
+    });
+
+    it('elite_factor alone does NOT drive stature', () => {
+      const listing = baseListing({
+        artisan_id: 'MAS590',
+        artisan_elite_factor: 1.0,
+        artisan_elite_count: 100,
+        artisan_designation_factor: null,
+        price_value: 5000000,
+        price_currency: 'JPY',
+      });
+      const quality = computeQuality(listing);
+      // designation_factor is null → stature = 0
+      // completeness: price = 10
       expect(quality).toBe(10);
     });
   });
@@ -277,13 +317,12 @@ describe('computeQuality', () => {
     it('dampens artisan stature for cheap items (¥30K)', () => {
       const listing = baseListing({
         artisan_id: 'MAS590',
-        artisan_elite_factor: 1.0,
-        artisan_elite_count: 100,
+        artisan_designation_factor: 1.90,
         price_value: 30000,
         price_currency: 'JPY',
       });
       const quality = computeQuality(listing);
-      // rawStature = 200
+      // rawStature = min(1.90 * 119, 200) = 200
       // priceDamping = 30000 / 500000 = 0.06
       // artisanStature = 200 * 0.06 = 12
       // completeness: price = 10
@@ -294,8 +333,7 @@ describe('computeQuality', () => {
     it('partially dampens artisan stature for mid-price items (¥250K)', () => {
       const listing = baseListing({
         artisan_id: 'MAS590',
-        artisan_elite_factor: 1.0,
-        artisan_elite_count: 100,
+        artisan_designation_factor: 1.90,
         price_value: 250000,
         price_currency: 'JPY',
       });
@@ -309,8 +347,7 @@ describe('computeQuality', () => {
     it('no damping at ¥500K ceiling', () => {
       const listing = baseListing({
         artisan_id: 'MAS590',
-        artisan_elite_factor: 1.0,
-        artisan_elite_count: 100,
+        artisan_designation_factor: 1.90,
         price_value: 500000,
         price_currency: 'JPY',
       });
@@ -323,8 +360,7 @@ describe('computeQuality', () => {
     it('no damping above ceiling', () => {
       const listing = baseListing({
         artisan_id: 'MAS590',
-        artisan_elite_factor: 1.0,
-        artisan_elite_count: 100,
+        artisan_designation_factor: 1.90,
         price_value: 2000000,
         price_currency: 'JPY',
       });
@@ -337,8 +373,7 @@ describe('computeQuality', () => {
     it('full stature when no price (null) — inquiry-based items bypass damping', () => {
       const listing = baseListing({
         artisan_id: 'MAS590',
-        artisan_elite_factor: 1.0,
-        artisan_elite_count: 100,
+        artisan_designation_factor: 1.90,
         price_value: null,
         price_currency: null,
       });
@@ -351,8 +386,7 @@ describe('computeQuality', () => {
     it('converts USD price for damping', () => {
       const listing = baseListing({
         artisan_id: 'MAS590',
-        artisan_elite_factor: 1.0,
-        artisan_elite_count: 100,
+        artisan_designation_factor: 1.90,
         price_value: 2000,
         price_currency: 'USD',
       });
@@ -366,8 +400,7 @@ describe('computeQuality', () => {
     it('cheap USD item gets heavily dampened', () => {
       const listing = baseListing({
         artisan_id: 'MAS590',
-        artisan_elite_factor: 1.0,
-        artisan_elite_count: 100,
+        artisan_designation_factor: 1.90,
         price_value: 200,
         price_currency: 'USD',
       });
@@ -493,8 +526,7 @@ describe('computeQuality', () => {
     it('sums all components for a fully-filled listing', () => {
       const listing = baseListing({
         artisan_id: 'MAS590',
-        artisan_elite_factor: 0.5,
-        artisan_elite_count: 25,
+        artisan_designation_factor: 0.84,
         cert_type: 'Juyo',
         price_value: 2000000,
         price_currency: 'JPY',
@@ -508,28 +540,19 @@ describe('computeQuality', () => {
       });
       const quality = computeQuality(listing);
 
-      // artisan_stature = 0.5 * 200 = 100
+      // artisan_stature = min(0.84 * 119, 200) = 99.96
       // priceDamping = min(2000000 / 500000, 1) = 1.0
+      // artisanStature = round(99.96 * 1.0 * 100) / 100 = 99.96
       // cert = 28
-      // completeness:
-      //   images: min(5*3, 15) = 15
-      //   price: 10
-      //   attribution (smith): 8
-      //   measurements: 5
-      //   description (>100): 5
-      //   era: 4
-      //   school: 3
-      //   HIGH confidence: 5
-      //   total completeness: 55
-      // total = 100 + 28 + 55 = 183
-      expect(quality).toBe(183);
+      // completeness = 55 (all fields filled)
+      // total ≈ 99.96 + 28 + 55 = 182.96
+      expect(quality).toBeCloseTo(182.96, 1);
     });
 
     it('gimei item (UNKNOWN artisan) has low quality even with images', () => {
       const listing = baseListing({
         artisan_id: 'UNKNOWN',
-        artisan_elite_factor: 0.8,
-        artisan_elite_count: 50,
+        artisan_designation_factor: 0.8,
         cert_type: null,
         price_value: 165000,
         price_currency: 'JPY',
@@ -687,8 +710,7 @@ describe('computeFeaturedScore', () => {
     it('top-tier sword: Juyo by elite smith with strong engagement', () => {
       const listing = baseListing({
         artisan_id: 'MAS590',
-        artisan_elite_factor: 1.0,
-        artisan_elite_count: 80,
+        artisan_designation_factor: 1.90,
         cert_type: 'Juyo',
         price_value: 5000000,
         price_currency: 'JPY',
@@ -734,8 +756,7 @@ describe('computeFeaturedScore', () => {
 
     it('changing artisan from real to UNKNOWN drops score significantly', () => {
       const baseFields = {
-        artisan_elite_factor: 0.8,
-        artisan_elite_count: 60,
+        artisan_designation_factor: 0.8,
         cert_type: 'Hozon' as const,
         price_value: 1000000,
         price_currency: 'JPY' as const,
@@ -772,6 +793,35 @@ describe('computeFeaturedScore', () => {
 
       expect(scoreWithJuyo - scoreWithNoCert).toBe(28); // Juyo = 28 pts
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// designation_factor constants
+// ---------------------------------------------------------------------------
+
+describe('designation_factor constants', () => {
+  it('DESIGNATION_STATURE_MULTIPLIER is 119', () => {
+    expect(DESIGNATION_STATURE_MULTIPLIER).toBe(119);
+  });
+
+  it('ARTISAN_STATURE_CAP is 200', () => {
+    expect(ARTISAN_STATURE_CAP).toBe(200);
+  });
+
+  it('Tomonari-level df (1.68) maps to stature ~200', () => {
+    const stature = Math.min(1.68 * DESIGNATION_STATURE_MULTIPLIER, ARTISAN_STATURE_CAP);
+    expect(stature).toBeCloseTo(199.92, 1);
+  });
+
+  it('Yasuchika-level df (0.81) maps to stature ~96', () => {
+    const stature = Math.min(0.81 * DESIGNATION_STATURE_MULTIPLIER, ARTISAN_STATURE_CAP);
+    expect(stature).toBeCloseTo(96.39, 1);
+  });
+
+  it('df=0 maps to stature 0', () => {
+    const stature = Math.min(0 * DESIGNATION_STATURE_MULTIPLIER, ARTISAN_STATURE_CAP);
+    expect(stature).toBe(0);
   });
 });
 

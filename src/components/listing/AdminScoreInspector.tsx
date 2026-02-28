@@ -33,8 +33,9 @@ interface BreakdownData {
   breakdown: {
     quality: { total: number; artisanStature: number; certPoints: number; completeness: number };
     artisanDetail: {
+      designationFactor: number;
+      designationFactorPts: number;
       eliteFactor: number;
-      eliteFactorPts: number;
       artisanId: string | null;
       isReal: boolean;
       priceDamping: number;
@@ -243,8 +244,12 @@ export function AdminScoreInspector({ listing, onScoreRecomputed }: AdminScoreIn
                       {data.breakdown.artisanDetail.isReal ? (
                         <div className="mt-1 space-y-0.5 text-[10px] text-muted">
                           <div className="flex justify-between">
-                            <span>elite_factor ({data.breakdown.artisanDetail.eliteFactor}) × 200</span>
-                            <span className="font-mono tabular-nums">{data.breakdown.artisanDetail.eliteFactorPts}</span>
+                            <span>designation_factor ({data.breakdown.artisanDetail.designationFactor}) × 119 (cap 200)</span>
+                            <span className="font-mono tabular-nums">{data.breakdown.artisanDetail.designationFactorPts}</span>
+                          </div>
+                          <div className="flex justify-between text-muted/40">
+                            <span>elite_factor (ref)</span>
+                            <span className="font-mono tabular-nums">{data.breakdown.artisanDetail.eliteFactor}</span>
                           </div>
                           {data.breakdown.artisanDetail.priceDamping < 1 && (
                             <div className="flex justify-between text-amber-500">

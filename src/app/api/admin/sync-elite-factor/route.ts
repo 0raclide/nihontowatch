@@ -41,6 +41,7 @@ interface SyncResult {
 interface ArtisanStats {
   elite_factor: number;
   elite_count: number;
+  designation_factor: number;
 }
 
 /**
@@ -50,24 +51,24 @@ async function getArtisanStats(artisanCode: string): Promise<ArtisanStats | null
   // Check artisan_makers (unified table)
   const { data: artisan } = await yuhinkaiClient
     .from('artisan_makers')
-    .select('elite_factor, elite_count')
+    .select('elite_factor, elite_count, designation_factor')
     .eq('maker_id', artisanCode)
     .single();
 
   if (artisan?.elite_factor !== undefined) {
-    return { elite_factor: artisan.elite_factor, elite_count: artisan.elite_count ?? 0 };
+    return { elite_factor: artisan.elite_factor, elite_count: artisan.elite_count ?? 0, designation_factor: artisan.designation_factor ?? 0 };
   }
 
   // Fallback: check artisan_schools for NS-* codes
   if (artisanCode.startsWith('NS-')) {
     const { data: school } = await yuhinkaiClient
       .from('artisan_schools')
-      .select('elite_factor, elite_count')
+      .select('elite_factor, elite_count, designation_factor')
       .eq('school_id', artisanCode)
       .single();
 
     if (school?.elite_factor !== undefined) {
-      return { elite_factor: school.elite_factor, elite_count: school.elite_count ?? 0 };
+      return { elite_factor: school.elite_factor, elite_count: school.elite_count ?? 0, designation_factor: school.designation_factor ?? 0 };
     }
   }
 
@@ -125,6 +126,7 @@ async function syncSpecificArtisans(
       .update({
         artisan_elite_factor: stats.elite_factor,
         artisan_elite_count: stats.elite_count,
+        artisan_designation_factor: stats.designation_factor,
       })
       .eq('artisan_id', code);
 
@@ -212,6 +214,7 @@ async function syncAllArtisans(
       .update({
         artisan_elite_factor: stats.elite_factor,
         artisan_elite_count: stats.elite_count,
+        artisan_designation_factor: stats.designation_factor,
       })
       .eq('artisan_id', code);
 
