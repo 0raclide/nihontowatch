@@ -1,6 +1,7 @@
 'use client';
 
 import { Suspense, useRef, useEffect, useState, useCallback, useMemo } from 'react';
+import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import { QuickViewModal } from './QuickViewModal';
 import { QuickViewContent } from './QuickViewContent';
 import { QuickViewMobileSheet } from './QuickViewMobileSheet';
@@ -356,6 +357,7 @@ export function QuickView() {
   );
 
   return (
+    <ErrorBoundary>
     <Suspense fallback={null}>
       <QuickViewModal
         isOpen={isOpen}
@@ -573,6 +575,7 @@ export function QuickView() {
         </div>
       </QuickViewModal>
     </Suspense>
+    </ErrorBoundary>
   );
 }
 

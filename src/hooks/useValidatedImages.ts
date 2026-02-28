@@ -61,8 +61,10 @@ export function useValidatedImages(imageUrls: string[]) {
       return;
     }
 
-    // Validate all images in PARALLEL (not sequentially)
-    // Uses cache to avoid re-fetching already-validated images
+    // Validate images in throttled batches to limit memory pressure.
+    // Mobile Safari can crash (OOM) when decoding many large images simultaneously.
+    // Cached images resolve instantly, so only uncached ones consume memory.
+    const CONCURRENCY = 3;
     let mounted = true;
 
     // Batch state updates: collect all results, then apply once
@@ -163,9 +165,16 @@ export function useValidatedImages(imageUrls: string[]) {
       recordResult(index, result === 'valid');
     };
 
-    // Validate all images in parallel, apply final results once all complete
-    Promise.all(imageUrls.map((url, index) => validateImage(url, index)))
-      .then(applyResults);
+    // Validate in throttled batches, apply final results once all complete
+    const runThrottled = async () => {
+      for (let i = 0; i < imageUrls.length; i += CONCURRENCY) {
+        if (!mounted) return;
+        const batch = imageUrls.slice(i, i + CONCURRENCY);
+        await Promise.all(batch.map((url, j) => validateImage(url, i + j)));
+      }
+      applyResults();
+    };
+    runThrottled();
 
     return () => {
       mounted = false;

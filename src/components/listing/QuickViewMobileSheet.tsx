@@ -128,17 +128,12 @@ export function QuickViewMobileSheet({
     if (!isDragging && viewportHeight > 0) {
       setSheetHeight(isExpanded ? expandedHeight : collapsedHeight);
     }
-  }, [isExpanded, expandedHeight, isDragging, viewportHeight]);
+  }, [isExpanded, expandedHeight, collapsedHeight, isDragging, viewportHeight]);
 
-  // Prevent body scroll when sheet is expanded
-  useEffect(() => {
-    if (isExpanded) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    return () => { document.body.style.overflow = ''; };
-  }, [isExpanded]);
+  // NOTE: Body scroll locking is handled by useBodyScrollLock in QuickViewModal.
+  // Do NOT manipulate body.style.overflow here — it conflicts with the scroll lock
+  // (the else branch clears overflow:hidden on mount, breaking the lock on iOS Safari).
+  // See: Safari crash investigation 2026-02-28.
 
   const isDragCommitted = useRef(false);
 
@@ -191,7 +186,7 @@ export function QuickViewMobileSheet({
     }
 
     setSheetHeight(clampedHeight);
-  }, [isDragging, expandedHeight]);
+  }, [isDragging, collapsedHeight, expandedHeight]);
 
   const handleTouchEnd = useCallback(() => {
     if (!isDragging) return;
@@ -218,7 +213,7 @@ export function QuickViewMobileSheet({
     } else {
       setSheetHeight(isExpanded ? expandedHeight : collapsedHeight);
     }
-  }, [isDragging, sheetHeight, expandedHeight, isExpanded, onToggle]);
+  }, [isDragging, sheetHeight, collapsedHeight, expandedHeight, isExpanded, onToggle]);
 
   const handleBarTap = useCallback((e: React.MouseEvent) => {
     if (!isDragging && !isExpanded) {
