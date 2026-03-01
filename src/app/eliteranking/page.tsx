@@ -13,26 +13,26 @@ const methodologyContent = fs.readFileSync(
 );
 
 export const metadata: Metadata = {
-  title: 'Artist Ranking Methodology (Working Paper) | NihontoWatch',
+  title: 'Elite Factor Methodology (Working Paper) | NihontoWatch',
   description:
-    'Working paper: how Yuhinkai ranks artisan stature using two Bayesian metrics — the elite factor (IDF-weighted designation record across all six tiers) and the provenance factor (historical collector prestige). Shrinkage estimator, lower credible bounds, and full rankings.',
+    'Working paper: how Yuhinkai ranks artisan stature using the elite factor — an IDF-weighted Bayesian shrinkage estimator across all six designation tiers. Methodology, worked examples, rankings, and correlation with Toko Taikan ratings.',
   alternates: {
     canonical: 'https://nihontowatch.com/eliteranking',
   },
   openGraph: {
-    title: 'Artist Ranking Methodology (Working Paper) | NihontoWatch',
+    title: 'Elite Factor Methodology (Working Paper) | NihontoWatch',
     description:
-      'Working paper: two Bayesian metrics for measuring artisan stature — IDF-weighted designation scoring across all six tiers and historical provenance.',
+      'Working paper: measuring artisan stature through IDF-weighted designation scoring across all six tiers of Japan\'s cultural designation system.',
   },
 };
 
 const TOC = [
   { href: '#the-dataset', label: 'The Dataset' },
-  { href: '#part-i-the-elite-factor', label: 'I. Elite Factor' },
-  { href: '#part-ii-the-provenance-factor', label: 'II. Provenance' },
-  { href: '#part-iii-current-rankings', label: 'III. Rankings' },
-  { href: '#part-iv-how-the-two-metrics-relate', label: 'IV. Relationship' },
-  { href: '#part-v-statistical-notes', label: 'V. Statistics' },
+  { href: '#the-problem', label: 'The Problem' },
+  { href: '#designation-tiers-and-weights', label: 'Tiers & Weights' },
+  { href: '#the-bayesian-framework', label: 'Bayesian Framework' },
+  { href: '#current-rankings', label: 'Rankings' },
+  { href: '#correlation-with-traditional-ratings', label: 'Toko Taikan' },
   { href: '#figures', label: 'Figures' },
   { href: '#appendix-implementation-reference', label: 'Appendix' },
 ];
@@ -69,10 +69,10 @@ export default function EliteRankingPage() {
             Working Paper
           </p>
           <h1 className="font-serif text-3xl lg:text-5xl font-semibold text-ink leading-tight mb-3">
-            Artist Ranking Methodology
+            Elite Factor Methodology
           </h1>
           <p className="font-serif text-lg lg:text-xl text-charcoal italic max-w-xl mx-auto">
-            Two Bayesian Metrics for Measuring Artisan Stature
+            Measuring Artisan Stature Through the Designation Record
           </p>
           <div className="mt-8 mx-auto w-12 border-t border-accent" />
         </div>
