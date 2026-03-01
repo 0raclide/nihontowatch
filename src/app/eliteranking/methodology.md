@@ -190,9 +190,9 @@ One data point tells us almost nothing. The prior overwhelms the single observat
 
 **Tomonari and Masamune**
 
-Tomonari's extraordinary record — 30 designated works, nearly all at the highest tiers including Kokuho and Tokubetsu-Juyo — produces an elite factor of **1.88**, the highest of any swordsmith. His concentrated portfolio of masterworks, each carrying high IDF weight, pushes the mean far above zero, and with 30 observations the posterior is tight enough that the lower bound remains close to the mean.
+Tomonari's extraordinary record — 36 designated works, nearly all at the highest tiers including Kokuho and Tokubetsu-Juyo — produces an elite factor of **1.88**, the highest of any swordsmith. His concentrated portfolio of masterworks, each carrying high IDF weight, pushes the mean far above zero, and with 36 observations the posterior is tight enough that the lower bound remains close to the mean.
 
-Masamune's 93 designated works — including 59 at elite tiers — produce an elite factor of approximately **1.67**. His prolific output includes many Juyo-level works (weight 0.24) alongside his elite designations, diluting his weighted average relative to Tomonari's more concentrated portfolio. But the sheer volume of evidence makes the estimate highly reliable.
+Masamune's 95 designated works — including 61 at elite tiers — produce an elite factor of approximately **1.67**. His prolific output includes many Juyo-level works (weight 0.24) alongside his elite designations, diluting his weighted average relative to Tomonari's more concentrated portfolio. But the sheer volume of evidence makes the estimate highly reliable.
 
 ### Properties
 
@@ -241,7 +241,7 @@ The challenge for provenance scoring parallels the one for elite factor: sample 
 
 ### The Bayesian Framework (Normal Model)
 
-Provenance scores are continuous (ranging from 2.0 to 10.0), not binary. This calls for a **Normal model** rather than the Beta-Binomial used for elite factor. The architecture is the same — prior belief, posterior given data, lower credible bound — but the distributional machinery differs.
+Provenance scores are continuous (ranging from 2.0 to 10.0), not binary. The provenance factor applies the same **shrinkage estimator** used for the elite factor — a Normal model with pseudoobservations, posterior mean and variance, lower credible bound — but with a different prior reflecting the nature of the data.
 
 **The prior.** We introduce $C = 20$ pseudoobservations, each valued at the prior mean $m = 2.0$ (the "Named Collector" baseline). This prior is deliberately conservative: it assumes, absent evidence, that an artisan's provenance is unremarkable. Evidence to the contrary must accumulate before the score moves meaningfully above the baseline.
 
@@ -329,20 +329,20 @@ The distribution is heavily concentrated near the prior mean of 2.0, with a long
 
 | Rank | Artisan | Elite | Total | Elite Factor | Provenance Factor |
 |-----:|---------|------:|------:|------------:|------------------:|
-| 1 | Tomonari | 29 | 30 | 1.88 | 3.59 |
-| 2 | Yoshimitsu | 41 | 55 | — | 4.53 |
-| 3 | Mitsutada | 43 | 61 | — | 3.75 |
-| 4 | Masatsune | 19 | 21 | — | 2.36 |
-| 5 | Masamune | 59 | 93 | 1.67 | 5.29 |
-| 6 | Sukezane | 31 | 44 | — | 3.41 |
-| 7 | Sa | 45 | 79 | — | 4.41 |
-| 8 | Kuniyoshi | 30 | 51 | — | 2.34 |
-| 9 | Kanehira | 21 | 32 | — | 3.05 |
-| 10 | Nagamitsu | 115 | 250 | — | 4.59 |
+| 1 | Tomonari | 31 | 36 | 1.88 | 3.59 |
+| 2 | Yoshimitsu | 42 | 56 | 1.78 | 4.53 |
+| 3 | Masamune | 61 | 95 | 1.67 | 5.29 |
+| 4 | Mitsutada | 43 | 61 | 1.61 | 3.75 |
+| 5 | Masatsune | 18 | 20 | 1.46 | 2.36 |
+| 6 | Sukezane | 31 | 43 | 1.43 | 3.41 |
+| 7 | Sa | 43 | 75 | 1.33 | 4.41 |
+| 8 | Nagamitsu | 114 | 249 | 1.31 | 4.59 |
+| 9 | Yoshifusa | 28 | 50 | 1.26 | 3.37 |
+| 10 | Kanehira | 22 | 33 | 1.21 | 3.05 |
 
-The elite factor top 10 reads as a roll call of the Kamakura golden age. Every artisan in the list worked between the late Heian and early Nanbokucho periods. Tomonari's concentrated portfolio of masterworks — including Kokuho and Tokubetsu-Juyo, each carrying high IDF weight — earns him the top position at 1.88. Nagamitsu's massive corpus of 250 works ranks lower despite 115 elite designations, because his many Juyo-level works (weight 0.24 each) dilute his weighted average.
+The elite factor top 10 reads as a roll call of the Kamakura golden age. Every artisan in the list worked between the late Heian and early Nanbokucho periods. Tomonari's concentrated portfolio of masterworks — including Kokuho and Tokubetsu-Juyo, each carrying high IDF weight — earns him the top position at 1.88. Nagamitsu's massive corpus of 249 works ranks 8th despite 114 elite designations, because his many Juyo-level works (weight 0.24 each) dilute his weighted average.
 
-The two metrics diverge in instructive ways: Masamune ranks 5th by elite factor but 1st by provenance factor, reflecting the historical reality that his works were the most collected swords in Japanese history. Tomonari ranks 1st by elite factor but 14th by provenance — his artistic supremacy in the NBTHK record does not translate into an equally dominant provenance trail.
+The two metrics diverge in instructive ways: Masamune ranks 3rd by elite factor but 1st by provenance factor, reflecting the historical reality that his works were the most collected swords in Japanese history. Tomonari ranks 1st by elite factor but outside the provenance top 10 — his artistic supremacy in the NBTHK record does not translate into an equally dominant provenance trail.
 
 ### Swordsmiths: Top 10 by Provenance Factor
 
@@ -369,18 +369,18 @@ Yoshimitsu's shift from #1 to #6 is the most significant change from item-level 
 
 | Rank | Artisan | Elite | Total | Elite Factor | Provenance Factor |
 |-----:|---------|------:|------:|------------:|------------------:|
-| 1 | Somin | 25 | 51 | ~0.97 | 2.15 |
-| 2 | Kaneie | 20 | 42 | — | 2.38 |
-| 3 | Yasuchika | 28 | 76 | ~0.70 | 2.01 |
-| 4 | Joi | 7 | 12 | — | 1.99 |
-| 5 | Myoju | 8 | 22 | — | 2.00 |
-| 6 | Natsuo | 14 | 75 | — | 1.97 |
-| 7 | Toshinaga | 6 | 23 | — | 1.84 |
-| 8 | Matashichi | 7 | 52 | — | 2.24 |
-| 9 | Goto Yujo | 6 | 41 | — | 2.39 |
-| 10 | Goto Ichijo | 9 | 79 | — | 2.56 |
+| 1 | Somin | 25 | 51 | 0.97 | 2.15 |
+| 2 | Kaneie | 21 | 43 | 0.89 | 2.38 |
+| 3 | Yasuchika | 23 | 71 | 0.70 | 2.01 |
+| 4 | Joi | 7 | 12 | 0.49 | 1.99 |
+| 5 | Myoju | 8 | 22 | 0.45 | 2.00 |
+| 6 | Natsuo | 14 | 75 | 0.44 | 1.97 |
+| 7 | Goto Ichijo | 11 | 81 | 0.37 | 2.56 |
+| 8 | Toshinaga | 6 | 23 | 0.33 | 1.84 |
+| 9 | Goto Joshin | 6 | 64 | 0.27 | 2.32 |
+| 10 | Masayoshi | 5 | 32 | 0.26 | 1.83 |
 
-With the weighted designation model, tosogu artists receive substantially higher elite factors than under the previous binary model — reflecting credit for their Juyo designations in addition to any elite-tier work. Somin (Yokoya school founder) leads at approximately 0.97, benefiting from both his 25 elite designations and 26 Juyo works. The gap between sword and tosogu scores remains — reflecting the NBTHK's historically lower volume of tosogu designations — but tosogu makers with substantial bodies of recognized work now receive scores proportional to their standing. Percentiles are still computed *within* each domain rather than across them.
+With the weighted designation model, tosogu artists receive substantially higher elite factors than under a binary model — reflecting credit for their Juyo designations in addition to any elite-tier work. Somin (Yokoya school founder) leads at 0.97, benefiting from both his 25 elite designations and 26 Juyo works. The gap between sword and tosogu scores remains — reflecting the NBTHK's historically lower volume of tosogu designations — but tosogu makers with substantial bodies of recognized work now receive scores proportional to their standing. Percentiles are still computed *within* each domain rather than across them.
 
 ### Tosogu Artists: Top 10 by Provenance Factor
 
@@ -467,5 +467,5 @@ The shrinkage estimator used for both metrics follows the empirical Bayes tradit
 | **Column type** | NUMERIC(4,2) | NUMERIC(4,2) |
 | **Observation unit** | Per item: IDF weight of highest designation | Per item: highest-prestige owner |
 | **Value range** | 0.00–1.88 | 1.77–5.29 |
-| **Population** | 12,356 swordsmiths + 1,107 tosogu artists | 686 artists with provenance data |
+| **Population** | 12,453 swordsmiths + 1,119 tosogu artists | 684 artists with provenance data |
 | **Migration** | 435 (computation), 436 (elite_factor alias) | 424, 427 |

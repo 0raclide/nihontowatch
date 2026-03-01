@@ -308,7 +308,7 @@ export function MethodologyFigures() {
             <RawScatter
               data={sword}
               color={SWORD_COLOR}
-              efMax={0.7}
+              efMax={2.0}
               pfMax={5.5}
             />
           </div>
@@ -348,7 +348,7 @@ export function MethodologyFigures() {
             <RawScatter
               data={tosogu}
               color={TOSOGU_COLOR}
-              efMax={0.38}
+              efMax={1.0}
               pfMax={3.0}
             />
           </div>
