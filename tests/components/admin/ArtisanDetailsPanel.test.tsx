@@ -98,7 +98,7 @@ describe('ArtisanDetailsPanel', () => {
     });
   });
 
-  it('renders elite standing bar with correct percentage', async () => {
+  it('renders elite standing bar with correct score', async () => {
     mockFetchSuccess();
 
     render(
@@ -106,7 +106,7 @@ describe('ArtisanDetailsPanel', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByTestId('elite-percentage')).toHaveTextContent('42.0%');
+      expect(screen.getByTestId('elite-percentage')).toHaveTextContent('0.42');
     });
   });
 
@@ -279,7 +279,7 @@ describe('ArtisanDetailsPanel', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByTestId('elite-percentage')).toHaveTextContent('0.0%');
+      expect(screen.getByTestId('elite-percentage')).toHaveTextContent('0.00');
       expect(screen.getByTestId('elite-bar')).toBeInTheDocument();
     });
   });

@@ -1,4 +1,4 @@
-Two Bayesian metrics underpin the Yuhinkai artisan ranking system. The **elite factor** measures how consistently an artisan's designated works were elevated to the highest tiers — Tokubetsu Juyo, Kokuho, Juyo Bunkazai, and equivalent designations — modeling each artisan's elite rate as a Beta-Binomial posterior and extracting a conservative lower credible bound that penalizes thin evidence. The **provenance factor** measures the prestige of an artisan's documented ownership history, applying a shrinkage estimator that anchors small samples toward baseline while allowing distinguished provenance trails to emerge with sufficient evidence.
+Two Bayesian metrics underpin the Yuhinkai artisan ranking system. The **elite factor** measures the depth and breadth of an artisan's designation record across all six tiers — from Kokuho and Tokubetsu Juyo down to Juyo — weighting each designation by its rarity and extracting a conservative lower credible bound that penalizes thin evidence. The **provenance factor** measures the prestige of an artisan's documented ownership history, applying a shrinkage estimator that anchors small samples toward baseline while allowing distinguished provenance trails to emerge with sufficient evidence.
 
 The two metrics are computed over approximately 34,100 catalog records from seven source publications — spanning the NBTHK's Juyo and Tokubetsu Juyo zufu, government cultural property designations, the Imperial Collection, and the Jussi Ekholm koto research database — representing 25,472 unique physical objects. They are independent by design. An artisan may rank highly on one measure and modestly on the other, and the divergences are often the most revealing readings in the system.
 
@@ -71,26 +71,32 @@ For ranking purposes, each physical object counts once regardless of how many ca
 
 ### The Problem
 
-How do you rank a swordsmith who has one Tokubetsu-Juyo blade against one who has seventeen? On the surface, the first smith has a 100% elite rate; the second, perhaps 20%. But no serious scholar would place the unknown smith above Kotetsu on the strength of a single data point.
+How do you rank a swordsmith who has one Tokubetsu-Juyo blade against one who has fifty Juyo? Raw designation counts favor prolific artisans regardless of quality. Simple ratios of elite to total designations overweight small samples — a smith with 1 Tokuju out of 1 total scores a perfect 100%, higher than Masamune, higher than Tomonari. And a binary split between "elite" and "standard" ignores the graded hierarchy of the designation system entirely: a Kokuho represents something far rarer than a Tokubetsu-Juyo, yet both would count equally under a simple binary model. Meanwhile, tosogu makers with dozens of Juyo designations — representing decades of NBTHK panel recognition — would score zero simply because their works were not elevated to Tokubetsu-Juyo.
 
-This is the small-sample problem, and it appears throughout the NBTHK designation record. Of the approximately 13,500 artisans in our index, many have only one or two designated works. A handful have hundreds. Any ranking system must handle both extremes gracefully, rewarding genuine excellence while refusing to be fooled by statistical flukes.
+This is the small-sample problem compounded by the information-loss problem, and both appear throughout the NBTHK designation record. Of the approximately 13,500 artisans in our index, many have only one or two designated works. A handful have hundreds. Any ranking system must handle both extremes gracefully, rewarding genuine excellence while refusing to be fooled by statistical flukes — and it must distinguish between different grades of excellence when the data supports that distinction.
 
-### What Counts as "Elite"
+### Designation Tiers and Weights
 
-The elite factor measures the proportion of an artisan's designated works that achieved the highest tiers of recognition:
+The elite factor scores every designation tier, weighted by its rarity in the corpus. The weight of each tier is its **self-information** — the natural logarithm of the inverse frequency:
 
-| Designation | Japanese | Status |
-|---|---|---|
-| Kokuho | National Treasure (国宝) | Elite |
-| Tokubetsu-Juyo | Special Important (特別重要刀剣) | Elite |
-| Juyo-Bunkazai | Important Cultural Property (重要文化財) | Elite |
-| Juyo-Bijutsuhin | Important Art Object (重要美術品) | Elite |
-| Gyobutsu | Imperial Collection (御物) | Elite* |
-| Juyo-Token | Important Sword (重要刀剣) | Standard |
+$$w_i = \ln\!\Big(\frac{N}{n_i}\Big)$$
 
-**The Gyobutsu discount.** Gyobutsu is excluded from the elite count for artisans active after 1392 (Muromachi period onward). For pre-Nanbokucho smiths like Tomonari or Nagamitsu, whose works entered the Imperial Collection before the modern designation system existed, Gyobutsu status is a genuine mark of historical esteem. For later artisans, it more often reflects Edo-period political collecting — gifts to the shogunate or imperial household — rather than an independent quality judgment. The discount prevents this confound from inflating elite rates for post-1392 artisans.
+where $N$ is the total number of uniquely designated objects and $n_i$ is the number of objects whose highest designation is tier $i$. Rarer designations carry more information — achieving Kokuho tells you far more about an artisan than achieving Juyo, and the weights reflect this.
 
-The raw inputs are two integers: **elite count** $e$ and **total designated works** $n$.
+| Designation | Japanese | Objects | Weight |
+|---|---|---:|---:|
+| Kokuho | National Treasure (国宝) | ~107 | 5.08 |
+| Gyobutsu | Imperial Collection (御物) | ~325 | 3.97 |
+| Juyo-Bunkazai | Important Cultural Property (重要文化財) | ~788 | 3.08 |
+| Juyo-Bijutsuhin | Important Art Object (重要美術品) | ~1,070 | 2.78 |
+| Tokubetsu-Juyo | Special Important (特別重要刀剣) | ~1,325 | 2.57 |
+| Juyo-Token | Important Sword (重要刀剣) | ~13,600 | 0.24 |
+
+*Weights are computed dynamically from the current corpus and may shift as records are added.*
+
+Each of an artisan's $n$ designated works contributes **one observation**: the weight of its highest designation tier. A blade that achieved both Juyo and Tokubetsu-Juyo contributes the Tokuju weight (2.57), not both. This parallels the provenance factor (Part II), where each item contributes its highest-prestige owner.
+
+**The Gyobutsu discount.** Gyobutsu is excluded for artisans active after 1392 (Muromachi period onward). For pre-Nanbokucho smiths like Tomonari or Nagamitsu, whose works entered the Imperial Collection before the modern designation system existed, Gyobutsu status is a genuine mark of historical esteem. For later artisans, it more often reflects Edo-period political collecting — gifts to the shogunate or imperial household — rather than an independent quality judgment. The discount prevents this confound from inflating scores for post-1392 artisans.
 
 ### Prior Art: Brockbank's Pass Factor
 
@@ -100,97 +106,97 @@ $$\text{pass factor} = \frac{\text{elite designations}}{\text{juyo designations}
 
 Earlier rating systems — Fujishiro's ordinal rankings in *Nihon Toko Jiten*, the *Toko Taikan* editions of Dr. Tokuno, Hawley's numerical grades — assessed artisan stature through expert judgment, encoding scholarly consensus into fixed ratings. Brockbank's pass factor took a fundamentally different approach: rather than asking experts to *assign* a quality rating, it asked what the designation record itself *reveals*. The NBTHK's repeated decisions to elevate (or not elevate) an artisan's works constitute a form of revealed preference — an empirical signal that accumulates over decades of independent panel judgments.
 
-The elite factor builds directly on Brockbank's foundation. It preserves his core insight — that the *rate* of elite designation is more informative than the *count* — while addressing the limitation that emerges when the idea is applied at scale across the full artisan index.
+The elite factor builds directly on Brockbank's foundation. It preserves his core insight — that the *pattern* of designation is more informative than the *count* — while addressing two limitations that emerge when the idea is applied at scale: the small-sample problem (which Brockbank acknowledged but could not fully resolve with point estimates) and the information-loss problem (the binary elite/standard split discards the graded structure of the designation hierarchy).
 
-### Where the Raw Ratio Breaks Down
+### Where Simple Metrics Break Down
 
-A smith with 1 Tokuju out of 1 total scores a perfect 1.000 — higher than Masamune, higher than Tomonari. Smoothing variants like the Laplace estimator $(e+1)/(n+2)$ dampen the extremes but still overweight small samples: a 1/1 artisan scores 0.667, still above most of the greatest smiths in history.
+A smith with 1 Tokuju out of 1 total scores a perfect 1.000 on a raw ratio — higher than Masamune, higher than Tomonari. Smoothing variants like the Laplace estimator $(e+1)/(n+2)$ dampen the extremes but still overweight small samples: a 1/1 artisan scores 0.667, still above most of the greatest smiths in history.
 
-The fundamental issue is that all point estimates collapse uncertainty into a single number without accounting for how *confident* we should be in that estimate. What we need is a way to preserve Brockbank's ratio for artisans with substantial records while honestly expressing our ignorance about artisans with thin ones.
+Beyond the small-sample problem, a binary elite/standard split loses information. A tosogu maker with 48 Juyo designations and no Tokubetsu-Juyo receives the same score as an unknown artisan with zero designations: both score 0. Yet 48 Juyo designations represent a substantial body of recognized work — the NBTHK panel has affirmed this maker's quality dozens of times. A binary metric is blind to this signal.
+
+What we need is a scoring system that (1) uses the full graded hierarchy of designations, weighting rare achievements appropriately, and (2) honestly expresses our uncertainty about artisans with thin records.
 
 ### The Bayesian Framework
 
-Bayesian inference offers an elegant solution. Rather than estimating a single "elite rate," we model our *entire state of belief* about an artisan's true quality as a probability distribution. We then extract a conservative summary of that distribution — one that explicitly penalizes uncertainty.
+The elite factor uses a **shrinkage estimator** — the same Bayesian framework used for the provenance factor (Part II) — adapted with a skeptical prior that anchors unknown artisans at zero.
 
-**The Beta-Binomial model.** We model each artisan's true elite rate $\theta$ as a draw from a Beta distribution. Given the observed data, Bayes' theorem yields the posterior:
+**The observation unit.** Each of an artisan's $n$ designated works contributes a score $s_i$ — the IDF weight of its highest designation tier. A Kokuho blade contributes 5.08; a Juyo blade contributes 0.24.
 
-$$\theta \sim \text{Beta}(\alpha_0,\; \beta_0)$$
+**The prior.** We introduce $C = 10$ pseudoobservations, each valued at the prior mean $m = 0$. This prior is deliberately skeptical: absent evidence, we assume an artisan's designation record contributes nothing. Evidence to the contrary must accumulate before the score moves meaningfully above zero.
 
-$$e \mid \theta \sim \text{Binomial}(n,\; \theta)$$
+**The posterior.** Given $n$ items with scores $s_1, s_2, \ldots, s_n$, we pool them with the $C$ pseudoobservations. Since $m = 0$, the pseudoobservations simplify the computation:
 
-$$\theta \mid e, n \sim \text{Beta}(\alpha_0 + e,\; \beta_0 + n - e)$$
+$$N = C + n = 10 + n$$
 
-The Beta distribution is the *conjugate prior* for binomial data, meaning the posterior has the same functional form as the prior.
+$$\bar{x} = \frac{\displaystyle\sum_{i=1}^{n} s_i}{N}$$
 
-**Choosing the prior: Beta(1, 9).** The prior encodes our belief about an artisan's elite rate *before* seeing any data:
+$$V = \frac{\displaystyle\sum_{i=1}^{n} s_i^2}{N} \;-\; \bar{x}^{\,2}$$
 
-- Prior mean of $\frac{1}{10} = 0.10$, reflecting the base rate across all artisans (roughly 10% of designated works achieve elite status)
-- Mildly skeptical — it takes real evidence to push an artisan's score above the baseline
-- Total weight of 10 pseudocounts, equivalent to having already observed 1 elite work out of 10 — enough to regularize small samples without overwhelming large ones
+The pseudoobservations anchor the mean toward zero (diluting the observed data with 10 zero-valued phantom items) and contribute to the variance — creating disagreement when the observed scores are high, which widens the uncertainty interval.
 
-After observing $e$ elite works out of $n$ total, the posterior becomes:
+**The lower credible bound.** As with the provenance factor, we extract the 5th percentile:
 
-$$\theta \mid e, n \sim \text{Beta}(1 + e,\; 9 + n - e)$$
+$$\text{SE} = \sqrt{\frac{V}{N}}$$
 
-For Masamune (59 elite, 93 total), the posterior is $\text{Beta}(60, 43)$ — a tight peak near 0.58. For an unknown smith with 1/1, it is $\text{Beta}(2, 9)$ — a wide, uncertain smear.
+$$\text{elite factor} = \max\!\Big(0,\;\; \bar{x} - 1.645 \cdot \text{SE}\Big)$$
 
-**The lower credible bound.** Rather than report the posterior mean, we extract the **5th percentile** — the lower bound of a one-sided 95% credible interval. This answers the question: *what elite rate can we be 95% confident this artisan exceeds?*
-
-For a $\text{Beta}(a, b)$ posterior, we use the normal approximation:
-
-$$\mu = \frac{a}{a + b}$$
-
-$$\sigma = \sqrt{\frac{ab}{(a + b)^2(a + b + 1)}}$$
-
-$$\text{elite factor} = \max\!\Big(0,\;\; \mu - 1.645\,\sigma\Big)$$
-
-The coefficient 1.645 is the 5th-percentile $z$-score of the standard normal distribution. The approximation is accurate when both $a \geq 1$ and $b \geq 1$, which is guaranteed by our prior (the smallest possible values are $a = 1$ and $b = 9$, for a zero-item artisan).
+The coefficient 1.645 is the 5th-percentile $z$-score of the standard normal distribution.
 
 ### Worked Examples
 
-**Tomonari: 29 elite out of 30 total**
+**Five Tokubetsu-Juyo blades ($n = 5$)**
 
-$$a = 1 + 29 = 30, \quad b = 9 + 30 - 29 = 10$$
+A smith with 5 Tokuju designations, each contributing $s_i = 2.57$:
 
-$$\mu = \frac{30}{40} = 0.7500, \quad \sigma = \sqrt{\frac{30 \times 10}{40^2 \times 41}} = 0.0676$$
+$$\sum s_i = 12.85, \quad \sum s_i^2 = 33.02$$
 
-$$\text{elite factor} = 0.7500 - 1.645 \times 0.0676 = \mathbf{0.6388}$$
+$$N = 10 + 5 = 15$$
 
-Tomonari's extraordinary record — virtually every designated work achieving elite status — survives scrutiny. With 30 observations, the posterior is tight, and the lower bound remains high.
+$$\bar{x} = \frac{12.85}{15} = 0.8567, \quad V = \frac{33.02}{15} - 0.8567^2 = 2.201 - 0.734 = 1.467$$
 
-**Masamune: 59 elite out of 93 total**
+$$\text{SE} = \sqrt{\frac{1.467}{15}} = 0.3128$$
 
-$$a = 60, \quad b = 43$$
+$$\text{elite factor} = 0.8567 - 1.645 \times 0.3128 = \mathbf{0.34}$$
 
-$$\mu = \frac{60}{103} = 0.5825, \quad \sigma = \sqrt{\frac{60 \times 43}{103^2 \times 104}} = 0.0484$$
+Five Tokuju blades earn a score of 0.34 — meaningful but modest. The 10 pseudoobservations at zero still exert substantial pull, and the variance from mixing real scores (2.57) with phantom zeros widens the confidence interval.
 
-$$\text{elite factor} = 0.5825 - 1.645 \times 0.0484 = \mathbf{0.5030}$$
+**Twenty-five Juyo designations only ($n = 25$)**
 
-Masamune ranks fifth among swordsmiths — reflecting his dominant but not singular position in the record, where his prolific output dilutes his rate relative to smaller but more concentrated portfolios like Tomonari's.
+A tosogu maker with 25 Juyo designations and no elite designations. Under a binary elite/standard model, this artisan would score exactly 0. Under the weighted model:
 
-**Kotetsu: 17 elite out of 75 total**
+$$\sum s_i = 25 \times 0.24 = 6.00, \quad \sum s_i^2 = 25 \times 0.058 = 1.44$$
 
-$$a = 18, \quad b = 67$$
+$$N = 35, \quad \bar{x} = \frac{6.00}{35} = 0.1714$$
 
-$$\mu = \frac{18}{85} = 0.2118, \quad \sigma = \sqrt{\frac{18 \times 67}{85^2 \times 86}} = 0.0441$$
+$$V = \frac{1.44}{35} - 0.1714^2 = 0.0411 - 0.0294 = 0.0118$$
 
-$$\text{elite factor} = 0.2118 - 1.645 \times 0.0441 = \mathbf{0.1393}$$
+$$\text{SE} = \sqrt{\frac{0.0118}{35}} = 0.0183$$
 
-A large body of Juyo work anchors Kotetsu's score. His 17 elite pieces out of 75 give a reliable estimate.
+$$\text{elite factor} = 0.1714 - 1.645 \times 0.0183 = \mathbf{0.14}$$
 
-**An unknown smith: 1 elite out of 1 total**
+A score of 0.14 — no longer invisible. Twenty-five Juyo designations represent a substantial body of recognized work, and the model credits it. The low per-item weight (0.24) keeps the score appropriately modest, but the volume of evidence overwhelms the prior's skepticism.
 
-$$a = 2, \quad b = 9$$
+**A single Juyo designation ($n = 1$)**
 
-$$\mu = \frac{2}{11} = 0.1818, \quad \sigma = \sqrt{\frac{2 \times 9}{11^2 \times 12}} = 0.1113$$
+$$\sum s_i = 0.24, \quad \sum s_i^2 = 0.058$$
 
-$$\text{elite factor} = \max\!\big(0,\;\; 0.1818 - 1.645 \times 0.1113\big) = \max(0,\; {-0.0013}) = \mathbf{0.0000}$$
+$$N = 11, \quad \bar{x} = 0.0218, \quad V = 0.0048$$
 
-One data point tells us almost nothing. The posterior is so wide that its lower bound dips below zero, and the floor clamp applies.
+$$\text{SE} = \sqrt{\frac{0.0048}{11}} = 0.0209$$
+
+$$\text{elite factor} = \max\!\big(0,\;\; 0.0218 - 1.645 \times 0.0209\big) = \max(0,\; {-0.013}) = \mathbf{0.00}$$
+
+One data point tells us almost nothing. The prior overwhelms the single observation, the variance is wide, and the lower bound falls below zero. The floor clamp applies.
+
+**Tomonari and Masamune**
+
+Tomonari's extraordinary record — 30 designated works, nearly all at the highest tiers including Kokuho and Tokubetsu-Juyo — produces an elite factor of **1.88**, the highest of any swordsmith. His concentrated portfolio of masterworks, each carrying high IDF weight, pushes the mean far above zero, and with 30 observations the posterior is tight enough that the lower bound remains close to the mean.
+
+Masamune's 93 designated works — including 59 at elite tiers — produce an elite factor of approximately **1.67**. His prolific output includes many Juyo-level works (weight 0.24) alongside his elite designations, diluting his weighted average relative to Tomonari's more concentrated portfolio. But the sheer volume of evidence makes the estimate highly reliable.
 
 ### Properties
 
-The ranking is **self-correcting**: as more works are designated, the posterior narrows and converges to the true elite rate. It is **monotonic**: adding an elite work always increases the score; adding a non-elite work always decreases it. It exhibits **scale-appropriate skepticism**: 3 elite out of 3 total scores 0.1048 (heavily penalized), while 30 out of 30 scores 0.6388 (only slightly penalized). And it is **robust to the long tail** — no binning, no thresholds, just the mathematics of posterior width across the full range of sample sizes.
+The ranking is **self-correcting**: as more works are designated, the posterior narrows and converges to the artisan's true weighted designation rate. It is **tier-sensitive**: a Kokuho designation contributes 21× more than a Juyo, matching the intuition that a National Treasure represents something categorically different. It exhibits **scale-appropriate skepticism**: a single designation of any tier scores 0.00, while large bodies of work converge to their true weighted rate. It is **domain-fair**: tosogu makers with substantial Juyo records now receive non-zero scores, reflecting their genuine standing in the designation record rather than being penalized for the structural rarity of tosogu elite designations. And it uses the **same Bayesian machinery** as the provenance factor — shrinkage toward a conservative prior, lower credible bound — making the two metrics directly comparable in their statistical properties.
 
 ---
 
@@ -317,43 +323,45 @@ The distribution is heavily concentrated near the prior mean of 2.0, with a long
 
 ## Part III: Current Rankings
 
+*The elite factor values shown below reflect the current weighted designation model. The "Elite" and "Total" columns show the count of elite-tier designations (Tokuju+) and total designated works — these are factual inputs, not the score itself, since the score now incorporates all six tiers weighted by rarity. Rankings and values are computed from the live corpus and may shift as records are added. Current values are available in the [artist directory](/artists).*
+
 ### Swordsmiths: Top 10 by Elite Factor
 
 | Rank | Artisan | Elite | Total | Elite Factor | Provenance Factor |
 |-----:|---------|------:|------:|------------:|------------------:|
-| 1 | Tomonari | 29 | 30 | 0.6388 | 3.59 |
-| 2 | Yoshimitsu | 41 | 55 | 0.5493 | 4.53 |
-| 3 | Mitsutada | 43 | 61 | 0.5256 | 3.75 |
-| 4 | Masatsune | 19 | 21 | 0.5060 | 2.36 |
-| 5 | Masamune | 59 | 93 | 0.5030 | 5.29 |
-| 6 | Sukezane | 31 | 44 | 0.4836 | 3.41 |
-| 7 | Sa | 45 | 79 | 0.4302 | 4.41 |
-| 8 | Kuniyoshi | 30 | 51 | 0.4038 | 2.34 |
-| 9 | Kanehira | 21 | 32 | 0.3985 | 3.05 |
-| 10 | Nagamitsu | 115 | 250 | 0.3955 | 4.59 |
+| 1 | Tomonari | 29 | 30 | 1.88 | 3.59 |
+| 2 | Yoshimitsu | 41 | 55 | — | 4.53 |
+| 3 | Mitsutada | 43 | 61 | — | 3.75 |
+| 4 | Masatsune | 19 | 21 | — | 2.36 |
+| 5 | Masamune | 59 | 93 | 1.67 | 5.29 |
+| 6 | Sukezane | 31 | 44 | — | 3.41 |
+| 7 | Sa | 45 | 79 | — | 4.41 |
+| 8 | Kuniyoshi | 30 | 51 | — | 2.34 |
+| 9 | Kanehira | 21 | 32 | — | 3.05 |
+| 10 | Nagamitsu | 115 | 250 | — | 4.59 |
 
-The elite factor top 10 reads as a roll call of the Kamakura golden age. Every artisan in the list worked between the late Heian and early Nanbokucho periods. Tomonari's extraordinary 97% elite rate (29 of 30) earns him the top position, while Nagamitsu's massive corpus of 250 works — the most prolific in the elite tier — ranks tenth despite 115 elite designations, because his 46% rate is diluted by his sheer output.
+The elite factor top 10 reads as a roll call of the Kamakura golden age. Every artisan in the list worked between the late Heian and early Nanbokucho periods. Tomonari's concentrated portfolio of masterworks — including Kokuho and Tokubetsu-Juyo, each carrying high IDF weight — earns him the top position at 1.88. Nagamitsu's massive corpus of 250 works ranks lower despite 115 elite designations, because his many Juyo-level works (weight 0.24 each) dilute his weighted average.
 
 The two metrics diverge in instructive ways: Masamune ranks 5th by elite factor but 1st by provenance factor, reflecting the historical reality that his works were the most collected swords in Japanese history. Tomonari ranks 1st by elite factor but 14th by provenance — his artistic supremacy in the NBTHK record does not translate into an equally dominant provenance trail.
 
 ### Swordsmiths: Top 10 by Provenance Factor
 
-| Rank | Artisan | Prov. Factor | Items | Apex | Elite Factor |
-|-----:|---------|------------:|------:|-----:|------------:|
-| 1 | Masamune | 5.29 | 68 | 10.0 | 0.5030 |
-| 2 | Kunimitsu | 5.15 | 59 | 10.0 | 0.2618 |
-| 3 | Sadamune | 4.78 | 43 | 9.0 | 0.3646 |
-| 4 | Kanemitsu | 4.63 | 67 | 10.0 | 0.2567 |
-| 5 | Nagamitsu | 4.59 | 83 | 10.0 | 0.3955 |
-| 6 | Yoshimitsu | 4.53 | 40 | 10.0 | 0.5493 |
-| 7 | Sa | 4.41 | 39 | 10.0 | 0.4302 |
-| 8 | Kunitoshi | 4.22 | 71 | 10.0 | 0.2793 |
-| 9 | Kunimitsu (Soshu) | 3.88 | 32 | 10.0 | 0.3257 |
-| 10 | Mitsutada | 3.75 | 34 | 10.0 | 0.5256 |
+| Rank | Artisan | Prov. Factor | Items | Apex |
+|-----:|---------|------------:|------:|-----:|
+| 1 | Masamune | 5.29 | 68 | 10.0 |
+| 2 | Kunimitsu | 5.15 | 59 | 10.0 |
+| 3 | Sadamune | 4.78 | 43 | 9.0 |
+| 4 | Kanemitsu | 4.63 | 67 | 10.0 |
+| 5 | Nagamitsu | 4.59 | 83 | 10.0 |
+| 6 | Yoshimitsu | 4.53 | 40 | 10.0 |
+| 7 | Sa | 4.41 | 39 | 10.0 |
+| 8 | Kunitoshi | 4.22 | 71 | 10.0 |
+| 9 | Kunimitsu (Soshu) | 3.88 | 32 | 10.0 |
+| 10 | Mitsutada | 3.75 | 34 | 10.0 |
 
 The provenance ranking surfaces a different dimension of stature. Masamune leads at 5.29, with the largest item count (68 items with documented provenance) in the index. An apex of 10.0 means at least one work reached the Imperial Collection.
 
-Kunimitsu at #2 is an instructive case. His elite factor of 0.2618 reflects a modest 81/256 elite rate — outside the elite top 10. But his provenance factor of 5.15 reveals that his works were collected at the highest levels. The elite factor measures NBTHK assessment; provenance captures centuries of aristocratic esteem. The two metrics answer different questions about the same artisan.
+Kunimitsu at #2 is an instructive case. His elite factor places him outside the elite top 10, reflecting a modest rate of elite-tier elevation. But his provenance factor of 5.15 reveals that his works were collected at the highest levels. The elite factor measures the breadth and depth of designation; provenance captures centuries of aristocratic esteem. The two metrics answer different questions about the same artisan.
 
 Yoshimitsu's shift from #1 to #6 is the most significant change from item-level scoring. Under per-owner scoring, his 40 provenance items generated 133 observations (3.3 owners per item) — long, well-documented chains inflated his score. Under item-level max, each item contributes once regardless of chain length, and the same 40 items yield a score of 4.53. His provenance is still exceptional, but no longer artificially inflated by documentation thoroughness.
 
@@ -361,37 +369,37 @@ Yoshimitsu's shift from #1 to #6 is the most significant change from item-level 
 
 | Rank | Artisan | Elite | Total | Elite Factor | Provenance Factor |
 |-----:|---------|------:|------:|------------:|------------------:|
-| 1 | Somin | 25 | 51 | 0.3229 | 2.15 |
-| 2 | Kaneie | 20 | 42 | 0.2930 | 2.38 |
-| 3 | Yasuchika | 28 | 76 | 0.2538 | 2.01 |
-| 4 | Joi | 7 | 12 | 0.1986 | 1.99 |
-| 5 | Myoju | 8 | 22 | 0.1525 | 2.00 |
-| 6 | Natsuo | 14 | 75 | 0.1088 | 1.97 |
-| 7 | Toshinaga | 6 | 23 | 0.0968 | 1.84 |
-| 8 | Matashichi | 7 | 52 | 0.0596 | 2.24 |
-| 9 | Goto Yujo | 6 | 41 | 0.0588 | 2.39 |
-| 10 | Goto Ichijo | 9 | 79 | 0.0576 | 2.56 |
+| 1 | Somin | 25 | 51 | ~0.97 | 2.15 |
+| 2 | Kaneie | 20 | 42 | — | 2.38 |
+| 3 | Yasuchika | 28 | 76 | ~0.70 | 2.01 |
+| 4 | Joi | 7 | 12 | — | 1.99 |
+| 5 | Myoju | 8 | 22 | — | 2.00 |
+| 6 | Natsuo | 14 | 75 | — | 1.97 |
+| 7 | Toshinaga | 6 | 23 | — | 1.84 |
+| 8 | Matashichi | 7 | 52 | — | 2.24 |
+| 9 | Goto Yujo | 6 | 41 | — | 2.39 |
+| 10 | Goto Ichijo | 9 | 79 | — | 2.56 |
 
-Tosogu elite factors are substantially lower than swords, reflecting the NBTHK's historically stricter elevation standards for fittings. Somin (Yokoya school founder) leads at 0.3229 — a score that would place him only around 22nd among swordsmiths. This is a domain difference, not a quality judgment, and is why percentiles are computed *within* each domain rather than across them.
+With the weighted designation model, tosogu artists receive substantially higher elite factors than under the previous binary model — reflecting credit for their Juyo designations in addition to any elite-tier work. Somin (Yokoya school founder) leads at approximately 0.97, benefiting from both his 25 elite designations and 26 Juyo works. The gap between sword and tosogu scores remains — reflecting the NBTHK's historically lower volume of tosogu designations — but tosogu makers with substantial bodies of recognized work now receive scores proportional to their standing. Percentiles are still computed *within* each domain rather than across them.
 
 ### Tosogu Artists: Top 10 by Provenance Factor
 
-| Rank | Artisan | Prov. Factor | Items | Apex | Elite Factor |
-|-----:|---------|------------:|------:|-----:|------------:|
-| 1 | Goto Sojo | 2.67 | 13 | 9.0 | 0.0000 |
-| 2 | Goto Ichijo | 2.56 | 14 | 10.0 | 0.0576 |
-| 3 | Goto Eijo | 2.48 | 8 | 9.0 | 0.0062 |
-| 4 | Goto Yujo | 2.39 | 11 | 9.0 | 0.0588 |
-| 5 | Kaneie | 2.38 | 13 | 8.0 | 0.2930 |
-| 6 | Goto Joshin | 2.32 | 7 | 8.0 | 0.0408 |
-| 7 | Goto Kenjo | 2.27 | 8 | 8.0 | 0.0150 |
-| 8 | Goto Kojo | 2.25 | 6 | 8.0 | 0.0000 |
-| 9 | Matashichi | 2.24 | 5 | 8.0 | 0.0596 |
-| 10 | Goto Tokujo | 2.21 | 6 | 6.0 | 0.0000 |
+| Rank | Artisan | Prov. Factor | Items | Apex |
+|-----:|---------|------------:|------:|-----:|
+| 1 | Goto Sojo | 2.67 | 13 | 9.0 |
+| 2 | Goto Ichijo | 2.56 | 14 | 10.0 |
+| 3 | Goto Eijo | 2.48 | 8 | 9.0 |
+| 4 | Goto Yujo | 2.39 | 11 | 9.0 |
+| 5 | Kaneie | 2.38 | 13 | 8.0 |
+| 6 | Goto Joshin | 2.32 | 7 | 8.0 |
+| 7 | Goto Kenjo | 2.27 | 8 | 8.0 |
+| 8 | Goto Kojo | 2.25 | 6 | 8.0 |
+| 9 | Matashichi | 2.24 | 5 | 8.0 |
+| 10 | Goto Tokujo | 2.21 | 6 | 6.0 |
 
 The Goto family dominates tosogu provenance: eight of the top ten positions belong to Goto lineage members. This reflects historical reality — the Goto family served as official metalwork artists to the Ashikaga and Tokugawa shogunates for over three centuries, and their works passed through the most distinguished collections as a matter of course.
 
-Goto Sojo ranks #1 by provenance but has an elite factor of 0.0000 — zero elite designations. His works were prized by shoguns and daimyo, yet the NBTHK has not elevated them to the highest designation tiers. The two metrics reveal genuinely different things.
+Goto Sojo ranks #1 by provenance despite having no elite-tier designations. His works were prized by shoguns and daimyo, yet the NBTHK has not elevated them to Tokubetsu-Juyo or higher. Under the weighted model, his Juyo designations earn him a non-zero elite factor, but his provenance remains the more distinctive metric. The two measures reveal genuinely different things.
 
 ---
 
@@ -403,11 +411,11 @@ The elite factor and provenance factor are **independent measures**. They are no
 
 **When they disagree.** The disagreements are where the system reveals its most interesting insights:
 
-- **High elite, low provenance.** Masatsune ranks 4th by elite factor (19/21 = 90% elite rate) but has only modest provenance data and a factor of 2.36. His works are magnificent by NBTHK standards but have a thinner documented ownership trail.
+- **High elite, low provenance.** Masatsune ranks 4th by elite factor (19 of 21 works at elite tier) but has only modest provenance data and a factor of 2.36. His works are magnificent by NBTHK standards but have a thinner documented ownership trail.
 
-- **Low elite, high provenance.** Kunimitsu ranks outside the elite top 10 (0.2618) but 2nd by provenance (5.15, 59 items). His works were treasured by the most powerful families for centuries, even though his NBTHK elite rate is moderate. Kamakura-period collectors may have valued different qualities than modern NBTHK panels.
+- **Low elite, high provenance.** Kunimitsu ranks outside the elite top 10 but 2nd by provenance (5.15, 59 items). His works were treasured by the most powerful families for centuries, even though his designation profile is more modest. Kamakura-period collectors may have valued different qualities than modern NBTHK panels.
 
-- **Zero elite, high provenance.** Goto Sojo has zero elite designations but the highest provenance factor among tosogu artists. His works were collected by shoguns — but the NBTHK has not elevated them to Tokubetsu-Juyo or higher.
+- **Low elite, high provenance (tosogu).** Goto Sojo has zero elite-tier designations but the highest provenance factor among tosogu artists. His works were collected by shoguns — but the NBTHK has not elevated them to Tokubetsu-Juyo or higher.
 
 These divergences are features, not bugs. A single combined score would obscure exactly the distinctions that make the ranking system informative. Figures 1–4 (below) visualize this relationship separately for swordsmiths and tosogu artists.
 
@@ -424,25 +432,23 @@ This prevents domain-level structural differences (tosogu elite factors are inhe
 
 ## Part V: Statistical Notes
 
-### Why Two Different Models
+### A Unified Bayesian Framework
 
-Elite factor uses a **Beta-Binomial** model because the underlying data is binary: each work either achieved elite designation or it did not. The Beta distribution is the conjugate prior for binomial data, making the posterior computation exact.
-
-Provenance factor uses a **Normal model** because the underlying data is continuous: each item's highest-prestige owner carries a score between 2.0 and 10.0. The pseudoobservation approach (augmenting $n$ item-level scores with $C = 20$ observations at $m = 2.0$) provides Bayesian regularization while allowing variance to be estimated from the data.
+Both the elite factor and provenance factor now use the **same shrinkage estimator** — a Normal model with pseudoobservations. The elite factor uses $C = 10$ pseudoobservations at $m = 0$ (skeptical prior: unknown artisans assumed to have zero designation value). The provenance factor uses $C = 20$ at $m = 2.0$ (anchored at the "Named Collector" baseline).
 
 Both models extract the 5th percentile — the lower bound of a one-sided 95% credible interval — using the normal approximation $\max(0,\; \mu - 1.645\,\sigma)$.
 
 ### Why Include Pseudoobservations in Variance
 
-For the provenance factor, the $C = 20$ pseudoobservations contribute to the variance calculation as well as the mean. This is more than a mathematical convenience — it provides a specific form of regularization. An artisan whose real scores are near the prior mean of 2.0 will have their variance *reduced* (the pseudoobservations agree with the data). An artisan with extreme scores (all 10.0) will have their variance *increased* (the pseudoobservations disagree). This causes the lower bound to drop more aggressively for artisans whose extreme scores conflict with the prior — exactly the behavior we want for small samples with suspiciously high averages.
+For both metrics, the pseudoobservations contribute to the variance calculation as well as the mean. This is more than a mathematical convenience — it provides a specific form of regularization. An artisan whose real scores are near the prior mean will have their variance *reduced* (the pseudoobservations agree with the data). An artisan with extreme scores will have their variance *increased* (the pseudoobservations disagree). This causes the lower bound to drop more aggressively for artisans whose extreme scores conflict with the prior — exactly the behavior we want for small samples with suspiciously high averages. For the elite factor, a single Kokuho blade (score 5.08) clashes dramatically with the 10 phantom observations at 0, inflating variance and pushing the lower bound down.
 
 ### Convergence
 
-Both metrics converge to their underlying true values as sample size increases. For elite factor, the lower credible bound approaches the raw elite rate as $n \to \infty$. For provenance factor, it approaches the unweighted average prestige score. With enough data, the prior becomes irrelevant — the evidence speaks for itself. The Bayesian machinery matters most at the margins, where data is thin and uncertainty is high.
+Both metrics converge to their underlying true values as sample size increases. For elite factor, the lower credible bound approaches the artisan's true weighted designation average as $n \to \infty$. For provenance factor, it approaches the unweighted average prestige score. With enough data, the prior becomes irrelevant — the evidence speaks for itself. The Bayesian machinery matters most at the margins, where data is thin and uncertainty is high.
 
 ### Statistical Lineage
 
-The Beta-Binomial model for elite factor has antecedents in Evan Miller's 2009 formulation for ranking product reviews and the Wilson score interval for binomial proportions. The shrinkage estimator for provenance factor follows the empirical Bayes tradition of James and Stein (1961), with the pseudoobservation approach providing a concrete prior structure. The specific application to artisan ranking in the Japanese sword designation record builds on Darcy Brockbank's pioneering work quantifying NBTHK designation patterns, extending it with Bayesian uncertainty quantification.
+The shrinkage estimator used for both metrics follows the empirical Bayes tradition of James and Stein (1961), with the pseudoobservation approach providing a concrete prior structure. The IDF weighting for elite factor draws on the information-theoretic concept of self-information (Shannon, 1948) — rarer events carry more information, formalized as $\ln(N/n_i)$. The specific application to artisan ranking in the Japanese sword designation record builds on Darcy Brockbank's pioneering work quantifying NBTHK designation patterns, extending it with Bayesian uncertainty quantification and tier-sensitive weighting.
 
 ---
 
@@ -450,15 +456,16 @@ The Beta-Binomial model for elite factor has antecedents in Evan Miller's 2009 f
 
 | Component | Elite Factor | Provenance Factor |
 |-----------|-------------|-------------------|
-| **Model** | Beta-Binomial | Normal with pseudoobservations |
-| **Prior** | $\text{Beta}(1, 9)$ | $C = 20$ at $m = 2.0$ |
-| **Helper function** | `beta_lower_95(a, b)` | `shrinkage_lower_95(n, Σs, Σs², C, m)` |
-| **Batch function** | `compute_maker_statistics()` | `compute_provenance_factor()` |
+| **Model** | Normal with pseudoobservations (IDF-weighted) | Normal with pseudoobservations |
+| **Prior** | $C = 10$ at $m = 0$ | $C = 20$ at $m = 2.0$ |
+| **Tier weights** | $w_i = \ln(N / n_i)$ (self-information) | Fixed prestige hierarchy (2–10) |
+| **Helper function** | `shrinkage_lower_95(n, Σs, Σs², C, m)` | `shrinkage_lower_95(n, Σs, Σs², C, m)` |
+| **Batch function** | `compute_designation_factors()` | `compute_provenance_factor()` |
 | **Per-code function** | `recompute_artisan_stats(codes)` | `recompute_provenance_factor(codes)` |
 | **Tables** | artisan_makers, artisan_schools | artisan_makers, artisan_schools |
-| **Legacy sync** | smith_entities, tosogu_makers | smith_entities, tosogu_makers |
-| **Column type** | NUMERIC(5,4) | NUMERIC(4,2) |
-| **Observation unit** | Per item: highest designation | Per item: highest-prestige owner |
-| **Value range** | 0.0000–0.6388 | 1.77–5.29 |
+| **Column** | `designation_factor` (aliased to `elite_factor`) | `provenance_factor` |
+| **Column type** | NUMERIC(4,2) | NUMERIC(4,2) |
+| **Observation unit** | Per item: IDF weight of highest designation | Per item: highest-prestige owner |
+| **Value range** | 0.00–1.88 | 1.77–5.29 |
 | **Population** | 12,356 swordsmiths + 1,107 tosogu artists | 686 artists with provenance data |
-| **Migration** | 421 | 427 |
+| **Migration** | 435 (computation), 436 (elite_factor alias) | 424, 427 |

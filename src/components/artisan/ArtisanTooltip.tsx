@@ -664,13 +664,13 @@ export function ArtisanTooltip({
                     <div className="flex items-center justify-between mb-1.5">
                       <span className="text-[10px] uppercase tracking-wider text-muted">Elite Standing</span>
                       <span className="text-sm font-semibold text-gold">
-                        {(artisan.elite_factor * 100).toFixed(1)}%
+                        {artisan.elite_factor.toFixed(2)}
                       </span>
                     </div>
                     <div className="h-2 bg-surface rounded-full overflow-hidden">
                       <div
                         className="h-full bg-gradient-to-r from-gold/60 to-gold rounded-full transition-all duration-300"
-                        style={{ width: `${Math.min(artisan.elite_factor * 100 * 2, 100)}%` }}
+                        style={{ width: `${Math.min(artisan.elite_factor / 2.0 * 100, 100)}%` }}
                       />
                     </div>
                     <div className="text-[9px] text-muted mt-1">

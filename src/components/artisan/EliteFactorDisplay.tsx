@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useLocale } from '@/i18n/LocaleContext';
 
 /**
- * EliteFactorDisplay — Factual presentation of elite certification ratio.
+ * EliteFactorDisplay — Factual presentation of designation-weighted elite standing.
  *
  * Shows a thin ratio bar, stat line, and an info icon that reveals
  * a plain-language explanation + high-resolution histogram.
@@ -39,7 +39,7 @@ function EliteHistogram({
   let lastNonZero = buckets.length - 1;
   while (lastNonZero > 0 && buckets[lastNonZero] === 0) lastNonZero--;
 
-  const rawActiveBucket = Math.min(Math.floor(eliteFactor * 100), 99);
+  const rawActiveBucket = Math.min(Math.floor(eliteFactor * 100), buckets.length - 1);
   // Pad 1 bucket before first data, extend past last data / active bucket
   const startBucket = Math.max(firstNonZero - 1, 0);
   const endBucket = Math.min(Math.max(lastNonZero + 2, rawActiveBucket + 3), buckets.length);
@@ -98,14 +98,14 @@ function EliteHistogram({
     ctx.closePath();
     ctx.fill();
 
-    // Axis labels (percentage units, reflecting trimmed range)
+    // Axis labels (decimal values, reflecting trimmed range)
     ctx.fillStyle = 'rgba(128, 128, 128, 0.35)';
     ctx.font = '9px system-ui, sans-serif';
     ctx.textBaseline = 'bottom';
     ctx.textAlign = 'start';
-    ctx.fillText(`${startBucket}%`, 0, h);
+    ctx.fillText((startBucket / 100).toFixed(2), 0, h);
     ctx.textAlign = 'end';
-    ctx.fillText(`${endBucket}%`, w, h);
+    ctx.fillText((endBucket / 100).toFixed(2), w, h);
   }, [visible, maxCount, activeBucket, startBucket, endBucket]);
 
   return (
@@ -130,7 +130,8 @@ export function EliteFactorDisplay({
   entityType,
 }: EliteFactorDisplayProps) {
   const { t } = useLocale();
-  const pct = Math.round(eliteFactor * 100);
+  // Bar fill: scale to 2.0 max (Tomonari ≈ 1.88 = ~94% fill)
+  const barPct = Math.min(Math.round(eliteFactor / 2.0 * 100), 100);
   const topPct = Math.max(100 - percentile, 1);
   const [showInfo, setShowInfo] = useState(false);
   const [distribution, setDistribution] = useState<{ buckets: number[]; total: number } | null>(null);
@@ -153,7 +154,7 @@ export function EliteFactorDisplay({
         <div className="h-1.5 bg-border/30 rounded-full overflow-hidden">
           <div
             className="h-full bg-gold/60 rounded-full transition-all duration-700"
-            style={{ width: `${Math.min(pct, 100)}%` }}
+            style={{ width: `${barPct}%` }}
           />
         </div>
       </div>

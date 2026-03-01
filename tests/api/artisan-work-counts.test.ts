@@ -63,23 +63,20 @@ function assertEliteInvariant(certs: ArtisanCertifications, label: string) {
 }
 
 /**
- * Validates elite_factor bounds.
- * Since migration 421, elite_factor uses beta_lower_95(1+elite, 9+total-elite)
- * (5th percentile of Beta distribution) instead of the old posterior mean.
- * We validate bounds rather than exact formula since the Beta quantile
- * isn't trivially computable in JS.
+ * Validates elite_factor (designation_factor) bounds.
+ * Since migration 435/436, elite_factor contains designation_factor values —
+ * IDF-weighted Bayesian shrinkage scores across all 6 designation tiers.
+ * Values range from 0 to ~2.0 (Tomonari ≈ 1.88 is the observed max).
+ * We validate basic bounds since the exact IDF-weighted formula requires
+ * global tier counts that aren't available in JS tests.
  */
 function assertEliteFactorFormula(certs: ArtisanCertifications, label: string) {
   if (certs.total_items === 0) {
     expect(certs.elite_factor, `${label}: elite_factor should be 0 when no items`).toBe(0);
   } else {
-    // Lower bound must be between 0 and 1
+    // Designation factor: lower bound >= 0, upper bound < ~6 (theoretical max for all-Kokuho)
     expect(certs.elite_factor, `${label}: elite_factor should be >= 0`).toBeGreaterThanOrEqual(0);
-    expect(certs.elite_factor, `${label}: elite_factor should be <= 1`).toBeLessThanOrEqual(1);
-
-    // Lower bound must be <= posterior mean (by definition)
-    const posteriorMean = (certs.elite_count + 1) / (certs.total_items + 10);
-    expect(certs.elite_factor, `${label}: elite_factor (lower bound) should be <= posterior mean`).toBeLessThanOrEqual(posteriorMean + 0.001);
+    expect(certs.elite_factor, `${label}: elite_factor should be < 6`).toBeLessThan(6);
   }
 }
 

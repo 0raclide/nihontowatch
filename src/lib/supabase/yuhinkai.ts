@@ -592,8 +592,8 @@ export async function getProvenancePercentile(
 
 /**
  * Get elite factor distribution as histogram buckets.
- * Returns 100 buckets at 1% resolution (0–1%, 1–2%, …, 99–100%).
- * Only includes artisan_makers with total_items > 0.
+ * Returns 200 buckets at 0.01 resolution covering 0–2.0 (designation_factor range).
+ * Only includes artisan_makers with elite_factor > 0 (any designated works).
  */
 export async function getEliteDistribution(
   entityType: 'smith' | 'tosogu'
@@ -604,18 +604,19 @@ export async function getEliteDistribution(
     .from('artisan_makers')
     .select('elite_factor')
     .in('domain', domainFilter)
-    .gt('elite_count', 0)
+    .gt('elite_factor', 0)
     .range(0, 14999);
 
   if (error || !data) {
     console.error('[Yuhinkai] Error fetching elite distribution:', error);
-    return { buckets: Array(100).fill(0), total: 0 };
+    return { buckets: Array(200).fill(0), total: 0 };
   }
 
-  const buckets = Array(100).fill(0);
+  // 200 buckets at 0.01 resolution, covering 0–2.0
+  const buckets = Array(200).fill(0);
   for (const row of data) {
     const ef = row.elite_factor ?? 0;
-    const idx = Math.min(Math.floor(ef * 100), 99);
+    const idx = Math.min(Math.floor(ef * 100), 199);
     buckets[idx]++;
   }
 

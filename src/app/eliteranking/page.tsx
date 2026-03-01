@@ -15,14 +15,14 @@ const methodologyContent = fs.readFileSync(
 export const metadata: Metadata = {
   title: 'Artist Ranking Methodology (Working Paper) | NihontoWatch',
   description:
-    'Working paper: how Yuhinkai ranks artisan stature using two Bayesian metrics — the elite factor (NBTHK designation quality) and the provenance factor (historical collector prestige). Beta-binomial model, shrinkage estimator, lower credible bounds, and full rankings.',
+    'Working paper: how Yuhinkai ranks artisan stature using two Bayesian metrics — the elite factor (IDF-weighted designation record across all six tiers) and the provenance factor (historical collector prestige). Shrinkage estimator, lower credible bounds, and full rankings.',
   alternates: {
     canonical: 'https://nihontowatch.com/eliteranking',
   },
   openGraph: {
     title: 'Artist Ranking Methodology (Working Paper) | NihontoWatch',
     description:
-      'Working paper: two Bayesian metrics for measuring artisan stature in the NBTHK designation record and historical provenance.',
+      'Working paper: two Bayesian metrics for measuring artisan stature — IDF-weighted designation scoring across all six tiers and historical provenance.',
   },
 };
 

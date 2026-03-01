@@ -4,17 +4,16 @@ import { useState, useRef, useEffect } from 'react';
 import type { ArtisanSearchResult } from '@/app/api/artisan/search/route';
 import { formatArtisanStats } from '@/types/artisan';
 
-/** 5 tiny dots visualizing elite_factor magnitude. Hidden when 0. */
+/** 5 tiny dots visualizing designation_factor magnitude. Hidden when 0. */
 function EliteDots({ factor }: { factor: number }) {
   if (!factor) return null;
   const filled =
-    factor > 0.20 ? 5 :
-    factor > 0.10 ? 4 :
-    factor > 0.05 ? 3 :
-    factor > 0.02 ? 2 : 1;
-  const pct = (factor * 100).toFixed(1);
+    factor > 1.00 ? 5 :
+    factor > 0.50 ? 4 :
+    factor > 0.20 ? 3 :
+    factor > 0.05 ? 2 : 1;
   return (
-    <span className="inline-flex gap-px items-center ml-1.5" title={`Elite factor: ${pct}%`}>
+    <span className="inline-flex gap-px items-center ml-1.5" title={`Designation factor: ${factor.toFixed(2)}`}>
       {Array.from({ length: 5 }, (_, i) => (
         <span
           key={i}
