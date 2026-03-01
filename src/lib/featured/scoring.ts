@@ -452,18 +452,18 @@ export async function recomputeScoreForListing(
       .select('*', { count: 'exact', head: true })
       .eq('listing_id', listingId)
       .gte('viewed_at', thirtyDaysAgo),
-    // QuickView opens count
+    // QuickView opens count (activity_events has no listing_id column — extract from JSONB)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (supabase.from('activity_events') as any)
       .select('*', { count: 'exact', head: true })
-      .eq('listing_id', listingId)
+      .eq('event_data->>listingId' as any, String(listingId))
       .eq('event_type', 'quickview_open')
       .gte('created_at', thirtyDaysAgo),
-    // Pinch zooms count
+    // Pinch zooms count (activity_events has no listing_id column — extract from JSONB)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (supabase.from('activity_events') as any)
       .select('*', { count: 'exact', head: true })
-      .eq('listing_id', listingId)
+      .eq('event_data->>listingId' as any, String(listingId))
       .eq('event_type', 'image_pinch_zoom')
       .gte('created_at', thirtyDaysAgo),
   ]);

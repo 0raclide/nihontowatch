@@ -94,13 +94,13 @@ export async function GET(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (serviceClient.from('activity_events') as any)
         .select('*', { count: 'exact', head: true })
-        .eq('listing_id', listingId)
+        .eq('event_data->>listingId' as any, String(listingId))
         .eq('event_type', 'quickview_open')
         .gte('created_at', thirtyDaysAgo),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (serviceClient.from('activity_events') as any)
         .select('*', { count: 'exact', head: true })
-        .eq('listing_id', listingId)
+        .eq('event_data->>listingId' as any, String(listingId))
         .eq('event_type', 'image_pinch_zoom')
         .gte('created_at', thirtyDaysAgo),
     ]);
