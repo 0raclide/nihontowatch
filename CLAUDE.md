@@ -318,7 +318,7 @@ Comprehensive analytics infrastructure already built for dealer monetization:
 
 The `featured_score` column drives the default sort order in browse. Computed as `(quality + heat) × freshness`:
 
-- **quality (0–295)** = artisan stature (elite_factor × 200) × **price damping** + cert points (0–40) + completeness (0–55: images, price, attribution, measurements, description, era, school, HIGH confidence)
+- **quality (0–295)** = artisan stature (designation_factor × 119, cap 200) × **price damping** + cert points (0–40) + completeness (0–55: images, price, attribution, measurements, description, era, school, HIGH confidence). Note: `designation_factor` is read from the `elite_factor` DB column (migration 436 aliased the value).
 - **price damping** = `min(estimatedPriceJpy / ¥500K, 1)` — dampens artisan stature for cheap items where elite artisan matches are likely wrong attributions. A ¥30K item with an elite artisan match gets only 6% of the stature boost; ¥500K+ gets 100%. **NULL price (inquiry-based / "Ask") bypasses damping entirely (factor=1.0)** — "no listed price" ≠ "cheap". Currency-converted via rough rates (`CURRENCY_TO_JPY` in scoring.ts). Null currency defaults to JPY.
 - **heat (0–160)** = 30-day behavioral data: favorites (×15, cap 60) + clicks (×10, cap 40) + quickview opens (×3, cap 24) + views (×1, cap 20) + pinch zooms (×8, cap 16)
 - **freshness** = age multiplier: <3d→1.4, <7d→1.2, <30d→1.0, <90d→0.85, <180d→0.5, ≥180d→0.3. Initial imports = 1.0.
@@ -326,7 +326,7 @@ The `featured_score` column drives the default sort order in browse. Computed as
 - `UNKNOWN`/`unknown` artisan IDs → artisan stature = 0.
 
 **Recompute triggers:**
-- **Cron** (every 4h): batch recompute for all available listings. Also **auto-syncs elite_factor/elite_count** from Yuhinkai for any listing with `artisan_id` but NULL elite columns (cap 500/run, handles NS-* school codes).
+- **Cron** (every 4h): batch recompute for all available listings. Also **auto-syncs elite_factor/elite_count/designation_factor** from Yuhinkai for any listing with `artisan_id` but NULL elite columns (cap 500/run, handles NS-* school codes).
 - **Admin fix-cert**: recomputes inline after cert correction
 - **Admin fix-artisan**: recomputes inline + syncs elite_factor/elite_count from Yuhinkai
 - **Admin hide**: sets score to 0; unhide restores via recompute
@@ -334,6 +334,8 @@ The `featured_score` column drives the default sort order in browse. Computed as
 **Important:** All admin endpoint recomputes use `await` (not fire-and-forget). Vercel serverless freezes functions after response is sent — unawaited promises never complete.
 
 **Important:** The `listing_views` table uses `viewed_at` as its timestamp column (not `created_at`). The cron RPC correctly uses `viewed_at`, and all JS-side queries (Score Inspector, inline recompute) must also use `viewed_at`. A `created_at` column does not exist on this table — PostgREST returns 400, silently defaulting to 0 views via `count ?? 0`. This bug caused false "stale" indicators across all items with views (fixed 2026-02-24).
+
+**Important:** The `activity_events` table has NO `listing_id` column. Listing IDs are stored in the JSONB `event_data` column as `event_data->>'listingId'`. When querying quickview_open or image_pinch_zoom counts, use `.eq('event_data->>listingId' as any, String(listingId))` (PostgREST JSONB arrow syntax), NOT `.eq('listing_id', listingId)`. The cron's RPC (`get_listing_engagement_counts`, migration 071) correctly uses SQL `event_data->>'listingId'`. This pattern (nonexistent column + `count ?? 0` fallback = silent zero) has caused two separate bugs (listing_views and activity_events).
 
 **Key files:**
 | Component | Location |
@@ -751,6 +753,7 @@ Use JSON-LD for:
 9. **NEVER use fire-and-forget promises in API routes** - Vercel serverless freezes functions the instant the HTTP response is sent. Unawaited promises (`someAsyncFn().catch(...)`) will never complete. Always `await` side effects with `try/catch`. If work genuinely needs to run after the response, use Vercel's `waitUntil()` API. This bit us in the featured score recompute — the DB update never ran (see `docs/SESSION_20260222_FEATURED_SCORE_RECOMPUTE.md`).
 11. **`listing_views` uses `viewed_at`, not `created_at`** - This table's timestamp column is `viewed_at`. All other behavioral tables (`user_favorites`, `dealer_clicks`, `activity_events`) use `created_at`. When querying `listing_views` with a time filter, always use `.gte('viewed_at', ...)`. Using `created_at` silently returns 0 rows (PostgREST 400 swallowed by `count ?? 0`). This caused false "stale" scores across the entire catalog for months.
 12. **Backfills and manual scripts MUST set `is_initial_import = true`** - The Supabase insert trigger that detects bulk imports (>10 items/dealer/day) only fires on inserts through the normal scraper pipeline. Direct writes via service role key (backfill scripts, `refresh_dealer.py`, manual SQL, migration scripts) bypass this trigger entirely. Any script that creates or repopulates listings for an existing dealer MUST explicitly set `is_initial_import = true` on those rows — otherwise they appear as "new" in browse sort and trigger false new-listing alerts. **INCIDENT HISTORY**: 2026-02-10 Choshuya (2,978 items), 2026-02-26 Tetsugendo (15 items repopulated via backfill after dealer fix).
+13. **`activity_events` has NO `listing_id` column** — Listing IDs are in `event_data->>'listingId'` (JSONB). Use `.eq('event_data->>listingId' as any, String(listingId))` for PostgREST queries. The cron RPC (migration 071) uses the correct SQL syntax. Querying a nonexistent column silently returns 0 via `count ?? 0` — same silent-failure pattern as rule #11.
 10. **NEVER use `{ passive: false }` on touchmove listeners** - This is the single most common regression in this codebase. A non-passive `touchmove` on ANY scrollable element (or its ancestors) blocks the compositor from fast-pathing scroll. Chrome DevTools mobile emulation translates two-finger trackpad scroll into touch events — a non-passive listener kills it instantly. This has broken the build **4 separate times** (bottom sheet drag, artisan tooltip drag, image scroller top-bounce prevention, edge swipe dismiss). **The rule:** never call `addEventListener('touchmove', fn, { passive: false })` on or above a scrollable container. If you need to conditionally `preventDefault()` a touch gesture, use a CSS property toggle from a passive `scroll` listener instead (see `docs/POSTMORTEM_PASSIVE_TOUCHMOVE.md` for safe patterns).
 
 ---
