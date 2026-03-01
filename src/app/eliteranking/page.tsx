@@ -15,7 +15,7 @@ const methodologyContent = fs.readFileSync(
 export const metadata: Metadata = {
   title: 'Elite Factor Methodology (Working Paper) | NihontoWatch',
   description:
-    'Working paper: how Yuhinkai ranks artisan stature using the elite factor — an IDF-weighted Bayesian shrinkage estimator across all six designation tiers. Methodology, worked examples, rankings, and correlation with Toko Taikan ratings.',
+    'Working paper: how Yuhinkai ranks artisan stature using the elite factor — an IDF-weighted Bayesian shrinkage estimator across all six designation tiers. Methodology, worked examples, rankings, and correlation with Toko Taikan and Fujishiro ratings.',
   alternates: {
     canonical: 'https://nihontowatch.com/eliteranking',
   },
@@ -33,6 +33,7 @@ const TOC = [
   { href: '#the-bayesian-framework', label: 'Bayesian Framework' },
   { href: '#current-rankings', label: 'Rankings' },
   { href: '#correlation-with-traditional-ratings', label: 'Toko Taikan' },
+  { href: '#correlation-with-fujishiro-grades', label: 'Fujishiro' },
   { href: '#figures', label: 'Figures' },
   { href: '#appendix-implementation-reference', label: 'Appendix' },
 ];

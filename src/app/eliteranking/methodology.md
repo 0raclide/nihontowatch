@@ -253,6 +253,38 @@ These cases illustrate the complementary value of empirical and expert-judgment 
 
 ---
 
+## Correlation with Fujishiro Grades
+
+Fujishiro's *Nihon Toko Jiten* (日本刀工辞典) assigns every major swordsmith an ordinal quality grade — from *Chu saku* (中作, average) through *Chu-jo saku* (中上作), *Jo saku* (上作), *Jo-jo saku* (上々作), to the highest rank, *Sai-jo saku* (最上作, supreme). Published originally in 1935–1937 and revised through the 1970s, the Fujishiro rankings represent one of the most widely cited traditional rating systems in Japanese sword studies. Unlike the Toko Taikan's continuous numerical scale, Fujishiro's five-grade system is an explicit ordinal judgment — each smith is placed in a rank by scholarly consensus.
+
+Because the Fujishiro system predates the NBTHK designation program by two decades, and because the designation process is fundamentally different from a fixed expert rating, comparing the two reveals whether the accumulated weight of NBTHK panel decisions over 70 years aligns with the pre-war scholarly consensus.
+
+Figures 2–5 (below) plot the designation factor against Fujishiro grade for 211 swordsmiths across four historical periods. Breaking the analysis by era is essential: the relationship between expert rating and designation factor is not uniform across periods. The NBTHK designation corpus is heavily weighted toward Kamakura-era works, and the survival and submission patterns differ markedly between periods.
+
+### Heian Period (16 smiths)
+
+The Heian sample is small but striking: 13 of 16 smiths hold the highest Fujishiro grade (*Sai-jo saku*), with the remaining 3 at *Jo-jo saku*. These are the founding figures of the Japanese sword tradition — Tomonari, Masatsune, Kanehira, Sanjo Munechika. The elite factor separates them more finely than Fujishiro's broad grade: Tomonari (1.88) and Masatsune (1.46) both hold *Sai-jo saku*, but the designation record reveals Tomonari's portfolio as substantially more concentrated at the highest tiers. Fujishiro places them in the same grade; the designation factor quantifies the difference.
+
+### Kamakura Period (98 smiths)
+
+The Kamakura period provides the richest dataset: 98 smiths spanning all five Fujishiro grades. The positive correlation is visible — *Sai-jo saku* smiths cluster at high elite factor values, and lower grades tend toward lower factors. But the overlap is substantial. Several *Jo-jo saku* smiths (the second-highest grade) achieve elite factors comparable to or exceeding some *Sai-jo saku* smiths. This partly reflects the reality that the NBTHK has designated far more Kamakura works than any other period, giving the designation factor a larger evidence base from which to discriminate.
+
+### Nanbokucho Period (56 smiths)
+
+The Nanbokucho era sits at the historical boundary between the classical and medieval traditions. The elite factor distribution is more compressed than the Kamakura period, with fewer extreme values. *Sai-jo saku* smiths from this era achieve lower elite factors than their Kamakura counterparts — a structural effect, since the Nanbokucho corpus is smaller and fewer works have been elevated to the highest designation tiers. The Fujishiro grades remain broadly predictive, but the signal is noisier.
+
+### Muromachi Period (41 smiths)
+
+The Muromachi dataset shows the weakest correlation. The distribution is compressed into a narrower elite factor range, and the overlap between grades is greater. Several *Jo saku* smiths achieve elite factors comparable to *Sai-jo saku* smiths of the same era. This reflects the Muromachi reality: a vast production period with fewer works surviving at the highest quality levels, and fewer submissions to the NBTHK's upper-tier designations. The Gyobutsu discount (excluding post-1392 Imperial Collection items) also depresses scores for late Muromachi smiths whose works entered the Imperial Collection for political rather than artistic reasons.
+
+### What the Fujishiro Comparison Reveals
+
+The Fujishiro correlation tells a different story from the Toko Taikan comparison. Where the Toko Taikan provides a continuous numerical scale that correlates smoothly with the elite factor, Fujishiro's ordinal grades create discrete bands within which the designation factor provides additional discrimination. A *Sai-jo saku* rating tells you that an artisan belongs to the highest traditional rank; the elite factor tells you *where* within that rank the designation record places them.
+
+The era-specific analysis reveals that the relationship between traditional reputation and modern designation is historically contingent. For the Kamakura golden age, where the NBTHK has designated thousands of works, the two systems show strong agreement. For later periods with thinner designation records, the correlation weakens — not because the traditional ratings are wrong, but because the designation factor has less evidence to work with. The Bayesian prior's skepticism becomes more visible precisely where the data is thinnest.
+
+---
+
 ## Statistical Notes
 
 ### Why Include Pseudoobservations in Variance
