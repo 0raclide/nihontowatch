@@ -162,7 +162,7 @@ export function EliteFactorDisplay({
       {/* Stats line */}
       <div className="text-xs text-ink/50 leading-relaxed space-y-0.5">
         <p>
-          <span className="text-ink/80">{eliteCount}</span> {t('artist.ofWorksElite', { total: totalItems })}
+          <span className="text-ink/80">{eliteFactor.toFixed(2)}</span> {t('artist.ofWorksElite', { total: totalItems })}
           {/* Info icon */}
           <button
             onClick={() => setShowInfo(!showInfo)}

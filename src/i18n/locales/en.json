@@ -738,7 +738,7 @@
   "artist.documentedProvenances": "{count} documented provenances",
   "artist.provenanceStatsLine": "{works} works held in elite collections across {provenances} documented provenances",
   "artist.acrossCertifiedWorks": "across certified works by",
-  "artist.ofWorksElite": "of {total} works hold elite designations",
+  "artist.ofWorksElite": "across {total} designated works",
   "artist.howEliteCalculated": "How is Elite Standing calculated?",
   "artist.topAmong": "Top {pct}% among {peers}",
   "artist.eliteExplanation1": "Elite standing measures an artisan\u2019s record across all designation tiers\u2014from Kokuh\u014d and Tokubetsu J\u016by\u014d down to J\u016by\u014d\u2014with each tier weighted by its rarity. Designations that fewer artisans achieve carry far more weight, so a Kokuh\u014d contributes many times more than a J\u016by\u014d. The score uses a Bayesian shrinkage model that accounts for sample size.",

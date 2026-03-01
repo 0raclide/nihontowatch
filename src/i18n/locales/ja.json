@@ -738,7 +738,7 @@
   "artist.documentedProvenances": "伝来記録{count}件",
   "artist.provenanceStatsLine": "名家所蔵{works}点、伝来記録{provenances}件",
   "artist.acrossCertifiedWorks": "の鑑定作品における",
-  "artist.ofWorksElite": "作品{total}点中の最高位指定の割合",
+  "artist.ofWorksElite": "（指定作品{total}点）",
   "artist.howEliteCalculated": "名工ランクの算出方法",
   "artist.topAmong": "{peers}の上位{pct}%",
   "artist.eliteExplanation1": "名工ランクは、国宝から重要刀剣まですべての指定段階にわたる実績を測定します。各段階は希少性で重み付けされ、達成した刀工が少ない指定ほど高い重みを持ちます。スコアは標本サイズを考慮するベイズ縮小推定モデルで算出されます。",
