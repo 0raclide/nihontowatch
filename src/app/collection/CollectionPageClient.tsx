@@ -53,9 +53,9 @@ export function CollectionPageClient() {
   // Mobile view toggle (shared localStorage key with browse)
   const [mobileView, setMobileView] = useState<'grid' | 'gallery'>(() => {
     if (typeof window !== 'undefined') {
-      return (localStorage.getItem('nihontowatch-mobile-view') as 'grid' | 'gallery') || 'gallery';
+      return (localStorage.getItem('nihontowatch-mobile-view') as 'grid' | 'gallery') || 'grid';
     }
-    return 'gallery';
+    return 'grid';
   });
 
   // Filters from URL or defaults
