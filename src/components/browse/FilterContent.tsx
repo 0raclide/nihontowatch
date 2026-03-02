@@ -426,11 +426,10 @@ const CERT_LABELS: Record<string, string> = {
   TokuKicho: 'Tokubetsu Kichō',
   nbthk: 'NBTHK',
   nthk: 'NTHK',
-  // No papers
   none: 'No Papers',
 };
 
-// Sort order for certifications (highest to lowest, "none" last)
+// Sort order for certifications (highest to lowest)
 const CERT_ORDER = ['Juyo Bijutsuhin', 'Tokuju', 'tokuju', 'Juyo', 'juyo', 'TokuHozon', 'tokubetsu_hozon', 'Hozon', 'hozon', 'TokuKicho', 'nbthk', 'nthk', 'none'];
 
 // Signature status labels
@@ -581,7 +580,7 @@ export function FilterContent({
 
   // Sort certifications by rank
   // Certifications hidden from filter (not serious for nihonto/tosogu collectors)
-  const HIDDEN_CERTS = new Set(['nthk', 'TokuKicho']);
+  const HIDDEN_CERTS = new Set(['nthk', 'TokuKicho', 'none']);
 
   const sortedCertifications = useMemo(() => {
     return [...facets.certifications]
