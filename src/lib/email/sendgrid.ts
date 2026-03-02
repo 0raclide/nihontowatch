@@ -13,6 +13,8 @@ import {
   generateBackInStockNotificationHtml,
   generateBackInStockNotificationText,
 } from './templates/back-in-stock';
+import { canSendEmail } from './budget';
+
 // Initialize SendGrid with API key
 if (process.env.SENDGRID_API_KEY) {
   sgMail.setApiKey(process.env.SENDGRID_API_KEY);
@@ -41,6 +43,13 @@ export async function sendSavedSearchNotification(
   if (!process.env.SENDGRID_API_KEY) {
     console.warn('SENDGRID_API_KEY not configured, skipping email');
     return { success: false, error: 'SendGrid not configured' };
+  }
+
+  // Check email budget before sending
+  const { allowed, budget } = await canSendEmail();
+  if (!allowed) {
+    console.error(`SendGrid daily limit reached (${budget.sent}/${budget.limit}), skipping email to ${to}`);
+    return { success: false, error: `Daily email limit reached (${budget.sent}/${budget.limit})` };
   }
 
   const searchName = savedSearch.name || t(locale, 'email.yourSavedSearch');
@@ -133,6 +142,13 @@ export async function sendPriceDropNotification(
     return { success: false, error: 'SendGrid not configured' };
   }
 
+  // Check email budget before sending
+  const { allowed, budget } = await canSendEmail();
+  if (!allowed) {
+    console.error(`SendGrid daily limit reached (${budget.sent}/${budget.limit}), skipping price drop email to ${to}`);
+    return { success: false, error: `Daily email limit reached (${budget.sent}/${budget.limit})` };
+  }
+
   const percentChange = ((newPrice - oldPrice) / oldPrice) * 100;
   const title = listing.title || t(locale, 'email.untitled');
   const formattedPercent = Math.abs(percentChange).toFixed(0);
@@ -172,6 +188,13 @@ export async function sendBackInStockNotification(
   if (!process.env.SENDGRID_API_KEY) {
     console.warn('SENDGRID_API_KEY not configured, skipping email');
     return { success: false, error: 'SendGrid not configured' };
+  }
+
+  // Check email budget before sending
+  const { allowed, budget } = await canSendEmail();
+  if (!allowed) {
+    console.error(`SendGrid daily limit reached (${budget.sent}/${budget.limit}), skipping back-in-stock email to ${to}`);
+    return { success: false, error: `Daily email limit reached (${budget.sent}/${budget.limit})` };
   }
 
   const title = listing.title || t(locale, 'email.untitled');

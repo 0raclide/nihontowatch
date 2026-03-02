@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { getEmailBudget, type EmailBudget } from '@/lib/email/budget';
 
 interface HealthCheck {
   status: 'healthy' | 'degraded' | 'unhealthy';
@@ -8,11 +9,12 @@ interface HealthCheck {
   checks: {
     database: ComponentHealth;
     environment: ComponentHealth;
+    email_budget: ComponentHealth & { detail?: EmailBudget };
   };
 }
 
 interface ComponentHealth {
-  status: 'pass' | 'fail';
+  status: 'pass' | 'warn' | 'fail';
   latency_ms?: number;
   message?: string;
 }
@@ -22,6 +24,7 @@ export async function GET() {
   const checks: HealthCheck['checks'] = {
     database: { status: 'fail' },
     environment: { status: 'fail' },
+    email_budget: { status: 'fail' },
   };
 
   // Check environment variables
@@ -74,17 +77,48 @@ export async function GET() {
     };
   }
 
+  // Check email budget (SendGrid daily limit)
+  try {
+    const budget = await getEmailBudget();
+    if (budget.status === 'exhausted') {
+      checks.email_budget = {
+        status: 'fail',
+        message: `Daily limit reached: ${budget.sent}/${budget.limit} emails sent`,
+        detail: budget,
+      };
+    } else if (budget.status === 'warning') {
+      checks.email_budget = {
+        status: 'warn',
+        message: `${budget.percentUsed.toFixed(0)}% used: ${budget.sent}/${budget.limit} emails sent`,
+        detail: budget,
+      };
+    } else {
+      checks.email_budget = {
+        status: 'pass',
+        message: `${budget.sent}/${budget.limit} emails sent today`,
+        detail: budget,
+      };
+    }
+  } catch (err) {
+    checks.email_budget = {
+      status: 'pass',
+      message: 'Could not check email budget',
+    };
+  }
+
   // Determine overall status
-  const allPassing = Object.values(checks).every((c) => c.status === 'pass');
-  const allFailing = Object.values(checks).every((c) => c.status === 'fail');
+  const statuses = Object.values(checks).map((c) => c.status);
+  const hasFail = statuses.includes('fail');
+  const hasWarn = statuses.includes('warn');
+  const allFailing = statuses.every((s) => s === 'fail');
 
   let overallStatus: HealthCheck['status'];
-  if (allPassing) {
-    overallStatus = 'healthy';
-  } else if (allFailing) {
+  if (allFailing) {
     overallStatus = 'unhealthy';
-  } else {
+  } else if (hasFail || hasWarn) {
     overallStatus = 'degraded';
+  } else {
+    overallStatus = 'healthy';
   }
 
   const response: HealthCheck = {
