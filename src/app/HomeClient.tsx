@@ -114,70 +114,65 @@ interface BrowseResponse {
   nagasaHistogram?: NagasaHistogramData | null;
   totalDealerCount?: number;
   lastUpdated: string | null;
+  scanIntervalHours?: number;
   isUrlSearch?: boolean;
   isAdmin?: boolean;
 }
 
 // Format relative time for freshness display (locale-aware)
-function formatFreshness(
-  isoDate: string | null,
-  t: (key: string, params?: Record<string, string>) => string,
-  locale: string,
-): string {
-  if (!isoDate) return t('freshness.unknown');
-
-  const date = new Date(isoDate);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMins / 60);
-  const diffDays = Math.floor(diffHours / 24);
-
-  if (diffMins < 60) return t('freshness.minutesAgo', { n: String(diffMins) });
-  if (diffHours < 24) return t('freshness.hoursAgo', { n: String(diffHours) });
-  if (diffDays === 1) return t('freshness.yesterday');
-  if (diffDays < 7) return t('freshness.daysAgo', { n: String(diffDays) });
-  return date.toLocaleDateString(locale === 'ja' ? 'ja-JP' : 'en-US', { month: 'short', day: 'numeric' });
-}
-
-// Live-ticking elapsed time since last scan (locale-aware)
-function useElapsedSince(isoDate: string | null, locale: string = 'en'): string | null {
-  const [elapsed, setElapsed] = useState<string | null>(null);
+// Live countdown to next scheduled scan (epoch-aligned to cron schedule)
+function useNextScan(
+  lastDiscoveryAt: string | null,
+  scanIntervalHours: number = 2,
+  locale: string = 'en',
+): { label: string; isScanning: boolean } | null {
+  const [state, setState] = useState<{ label: string; isScanning: boolean } | null>(null);
 
   useEffect(() => {
-    if (!isoDate) return;
+    if (!lastDiscoveryAt) return;
     const ja = locale === 'ja';
+    const intervalMs = scanIntervalHours * 3600000;
 
     function compute() {
-      const diffMs = Date.now() - new Date(isoDate!).getTime();
-      if (diffMs < 0) return ja ? '0秒' : '0s';
-      const totalSec = Math.floor(diffMs / 1000);
-      const d = Math.floor(totalSec / 86400);
-      const h = Math.floor((totalSec % 86400) / 3600);
-      const m = Math.floor((totalSec % 3600) / 60);
-      const s = totalSec % 60;
-      if (ja) {
-        if (d > 0) return `${d}日${h}時間${m}分`;
-        if (h > 0) return `${h}時間${m}分${s}秒`;
-        return `${m}分${s}秒`;
+      const now = Date.now();
+      const lastDiscovery = new Date(lastDiscoveryAt!).getTime();
+
+      // Next scheduled run: epoch-aligned to interval boundaries (even hours UTC for 2h)
+      const currentInterval = Math.floor(now / intervalMs);
+      const nextRunMs = (currentInterval + 1) * intervalMs;
+      const lastBoundaryMs = currentInterval * intervalMs;
+
+      // If we're within 10 min after a boundary and the scan hasn't completed yet → "Scanning..."
+      const timeSinceBoundary = now - lastBoundaryMs;
+      if (timeSinceBoundary < 10 * 60 * 1000 && lastDiscovery < lastBoundaryMs) {
+        return { label: ja ? 'スキャン中...' : 'Scanning...', isScanning: true };
       }
-      if (d > 0) return `${d}d ${h}h ${m}m`;
-      if (h > 0) return `${h}h ${m}m ${s}s`;
-      return `${m}m ${s}s`;
+
+      const diffMs = nextRunMs - now;
+      const totalSec = Math.max(0, Math.floor(diffMs / 1000));
+      const h = Math.floor(totalSec / 3600);
+      const m = Math.floor((totalSec % 3600) / 60);
+
+      if (ja) {
+        const label = h > 0 ? `${h}時間${m}分` : `${m}分`;
+        return { label, isScanning: false };
+      }
+      const label = h > 0 ? `${h}h ${m}m` : `${m}m`;
+      return { label, isScanning: false };
     }
 
-    setElapsed(compute());
-    const id = setInterval(() => setElapsed(compute()), 1000);
+    setState(compute());
+    const id = setInterval(() => setState(compute()), 60000); // tick every minute
     return () => clearInterval(id);
-  }, [isoDate, locale]);
+  }, [lastDiscoveryAt, scanIntervalHours, locale]);
 
-  return elapsed;
+  return state;
 }
 
 function LiveStatsBanner({ data }: { data: BrowseResponse | null }) {
   const { locale, t } = useLocale();
-  const elapsed = useElapsedSince(data?.lastUpdated ?? null, locale);
-  if (!data || !elapsed) return null;
+  const nextScan = useNextScan(data?.lastUpdated ?? null, data?.scanIntervalHours ?? 2, locale);
+  if (!data || !nextScan) return null;
 
   const galleryCount = data.totalDealerCount || data.facets.dealers.length;
   const itemCount = data.total.toLocaleString();
@@ -187,11 +182,26 @@ function LiveStatsBanner({ data }: { data: BrowseResponse | null }) {
       <div className="w-1.5 h-1.5 rounded-full bg-sage animate-pulse" />
       <span className="text-sage font-medium tracking-wide">{t('home.live')}</span>
       <span className="text-muted/30 mx-0.5">&middot;</span>
-      <span>{t('home.scannedAgo', { elapsed })}</span>
+      <span>{nextScan.isScanning ? nextScan.label : t('home.nextScan', { countdown: nextScan.label })}</span>
       <span className="text-muted/30 mx-0.5">&middot;</span>
       <span>{t('home.galleries', { count: String(galleryCount) })}</span>
       <span className="text-muted/30 mx-0.5">&middot;</span>
       <span>{t('home.items', { count: itemCount })}</span>
+    </div>
+  );
+}
+
+function FooterFreshness({ lastUpdated, scanIntervalHours }: { lastUpdated: string; scanIntervalHours: number }) {
+  const { locale, t } = useLocale();
+  const nextScan = useNextScan(lastUpdated, scanIntervalHours, locale);
+  if (!nextScan) return null;
+
+  return (
+    <div className="flex items-center gap-2 text-[10px] text-muted/70">
+      <div className="w-1.5 h-1.5 rounded-full bg-sage animate-pulse" />
+      <span>{nextScan.isScanning ? nextScan.label : t('home.nextScan', { countdown: nextScan.label })}</span>
+      <span className="text-muted/40 hidden lg:inline">&middot;</span>
+      <span className="hidden lg:inline">{t('home.scanFrequency', { hours: String(scanIntervalHours) })}</span>
     </div>
   );
 }
@@ -783,12 +793,7 @@ export default function HomeContent() {
             <div className="flex flex-col items-center gap-2 lg:flex-row lg:gap-4">
               {/* Freshness indicator */}
               {data?.lastUpdated && (
-                <div className="flex items-center gap-2 text-[10px] text-muted/70">
-                  <div className="w-1.5 h-1.5 rounded-full bg-sage animate-pulse" />
-                  <span>{t('home.updated', { time: formatFreshness(data.lastUpdated, t, locale) })}</span>
-                  <span className="text-muted/40 hidden lg:inline">·</span>
-                  <span className="hidden lg:inline">{t('home.dailyRefresh')}</span>
-                </div>
+                <FooterFreshness lastUpdated={data.lastUpdated} scanIntervalHours={data.scanIntervalHours ?? 2} />
               )}
               <span className="text-[10px] text-muted/60">
                 © {new Date().getFullYear()}

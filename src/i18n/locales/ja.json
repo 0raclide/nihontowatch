@@ -201,7 +201,8 @@
   "home.descriptionFallback": "\u4e16\u754c\u4e2d\u306e\u5c02\u9580\u5e97\u304b\u3089\u65e5\u672c\u5200\u30fb\u5200\u88c5\u5177\u3092\u63a2\u305b\u307e\u3059",
   "home.loading": "\u30b3\u30ec\u30af\u30b7\u30e7\u30f3\u3092\u8aad\u307f\u8fbc\u307f\u4e2d...",
   "home.live": "\u30e9\u30a4\u30d6",
-  "home.scannedAgo": "\u6700\u7d42\u30b9\u30ad\u30e3\u30f3 {elapsed}\u524d",
+  "home.nextScan": "次のスキャンまで{countdown}",
+  "home.scanFrequency": "{hours}時間ごと",
   "home.galleries": "{count}\u793e",
   "home.items": "{count}\u70b9",
   "home.sort": "\u4e26\u3073\u66ff\u3048",
@@ -209,7 +210,6 @@
   "home.itemCountFor": "\u300c{query}\u300d\u306b{count}\u4ef6",
   "home.footerTagline": "\u4e16\u754c\u4e2d\u306e\u5200\u5263\u5546\u304b\u3089\u53b3\u9078\u3055\u308c\u305f\u65e5\u672c\u5200",
   "home.updated": "\u66f4\u65b0 {time}",
-  "home.dailyRefresh": "\u6bce\u65e5\u66f4\u65b0",
 
   "freshness.unknown": "\u4e0d\u660e",
   "freshness.minutesAgo": "{n}\u5206\u524d",

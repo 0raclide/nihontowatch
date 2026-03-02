@@ -201,7 +201,8 @@
   "home.descriptionFallback": "Japanese swords and fittings from specialist galleries worldwide",
   "home.loading": "Loading full collection...",
   "home.live": "LIVE",
-  "home.scannedAgo": "Scanned {elapsed} ago",
+  "home.nextScan": "Next scan in {countdown}",
+  "home.scanFrequency": "Every {hours}h",
   "home.galleries": "{count} galleries",
   "home.items": "{count} items",
   "home.sort": "Sort",
@@ -209,7 +210,6 @@
   "home.itemCountFor": "{count} items for \"{query}\"",
   "home.footerTagline": "Curated Japanese arms from dealers worldwide",
   "home.updated": "Updated {time}",
-  "home.dailyRefresh": "Daily refresh",
 
   "freshness.unknown": "Unknown",
   "freshness.minutesAgo": "{n}m ago",

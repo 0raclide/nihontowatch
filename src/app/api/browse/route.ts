@@ -839,13 +839,11 @@ export async function GET(request: NextRequest) {
     // Each facet dimension is filtered by all OTHER active filters (standard cross-filter pattern)
     // Histogram is cross-filtered by all dimensions EXCEPT price (shows full price distribution)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Build freshness query (needs statusFilter applied before Promise.all)
-    let freshnessQuery = supabase
-      .from('listings')
-      .select('last_scraped_at');
-    if (statusFilter) {
-      freshnessQuery = freshnessQuery.or(statusFilter);
-    }
+    // Build freshness query — uses discovered_urls (when we last checked dealers for new items)
+    // This is more meaningful to users than listings.last_scraped_at (stale refresh of existing items)
+    const freshnessQuery = supabase
+      .from('discovered_urls')
+      .select('discovered_at');
 
     // Run all queries in parallel (nagasa histogram only for nihonto category)
     const [facetsResult, histogramResult, nagasaHistogramResult, freshnessResult, dealerCountResult] = await Promise.all([
@@ -854,7 +852,7 @@ export async function GET(request: NextRequest) {
       params.category === 'nihonto'
         ? (supabase.rpc as any)('get_nagasa_histogram', rpcBaseParams)
         : Promise.resolve({ data: null, error: null }),
-      freshnessQuery.order('last_scraped_at', { ascending: false }).limit(1).single(),
+      freshnessQuery.order('discovered_at', { ascending: false }).limit(1).single(),
       supabase.from('dealers').select('id', { count: 'exact', head: true }).eq('is_active', true),
     ]);
 
@@ -891,7 +889,8 @@ export async function GET(request: NextRequest) {
       logger.error('Nagasa histogram RPC error', { error: nagasaHistogramError });
     }
 
-    const lastUpdated = (freshnessData as { last_scraped_at: string } | null)?.last_scraped_at || null;
+    const lastUpdated = (freshnessData as { discovered_at: string } | null)?.discovered_at || null;
+    const scanIntervalHours = 2; // Matches Oshi-scrapper cron: 0 */2 * * * UTC
 
     // Parse histogram from RPC response
     const priceHistogram = histogramError ? null : (histogramData as {
@@ -920,6 +919,7 @@ export async function GET(request: NextRequest) {
       nagasaHistogram,
       totalDealerCount: totalDealerCount || 0,
       lastUpdated,
+      scanIntervalHours,
       // Data freshness indicator for subscription tier
       isDelayed: subscription.isDelayed,
       subscriptionTier: subscription.tier,
