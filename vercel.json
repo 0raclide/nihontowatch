@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "regions": ["iad1"],
+  "regions": ["sfo1"],
   "crons": [
     {
       "path": "/api/cron/process-saved-searches?frequency=instant",
