@@ -328,8 +328,8 @@ export function buildSeoDescription(fields: SeoFields): string {
     subject = fields.title_en || fields.title;
   }
 
-  // Price
-  const price = formatDescPrice(fields.price_value, fields.price_currency);
+  // Price — hide for sold items (dealer arbitrage protection)
+  const price = isSold ? null : formatDescPrice(fields.price_value, fields.price_currency);
 
   // Specs (nagasa for swords)
   const specs = fields.nagasa_cm ? `Nagasa ${fields.nagasa_cm}cm` : null;

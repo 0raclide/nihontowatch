@@ -762,54 +762,14 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Enrich sold items with sale price from price_history
-    // When items sell, price_value becomes NULL - retrieve from history
-    if (params.tab === 'sold' && enrichedListings.length > 0) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const soldIdsWithoutPrice = enrichedListings
-        .filter((l: any) => l.is_sold && !l.price_value)
-        .map((l: any) => l.id as number);
-
-      if (soldIdsWithoutPrice.length > 0) {
-        const { data: priceHistoryData } = await supabase
-          .from('price_history')
-          .select('listing_id, old_price, old_currency')
-          .in('listing_id', soldIdsWithoutPrice)
-          .in('change_type', ['sold', 'presumed_sold']) as {
-            data: Array<{ listing_id: number; old_price: number | null; old_currency: string | null }> | null
-          };
-
-        if (priceHistoryData && priceHistoryData.length > 0) {
-          // Build lookup map: listing_id -> sale price data
-          const salePriceMap = new Map<number, { sale_price: number; sale_currency: string }>();
-          for (const ph of priceHistoryData) {
-            if (ph.old_price && ph.listing_id) {
-              salePriceMap.set(ph.listing_id, {
-                sale_price: ph.old_price,
-                sale_currency: ph.old_currency || 'JPY'
-              });
-            }
-          }
-
-          // Enrich listings with sale price from history
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          enrichedListings = enrichedListings.map((listing: any) => {
-            if (listing.is_sold && !listing.price_value) {
-              const saleData = salePriceMap.get(listing.id);
-              if (saleData) {
-                return {
-                  ...listing,
-                  price_value: saleData.sale_price,
-                  price_currency: saleData.sale_currency,
-                  price_from_history: true
-                };
-              }
-            }
-            return listing;
-          });
-        }
+    // Strip prices from sold items — sold prices are hidden from the UI
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    enrichedListings = enrichedListings.map((listing: any) => {
+      if (listing.is_sold) {
+        return { ...listing, price_value: null, price_currency: null, price_jpy: null };
       }
-    }
+      return listing;
+    });
 
     // Dealer diversity: rerank featured sort to prevent long runs from one dealer
     // Skip when exactly 1 dealer is selected — user explicitly chose that dealer

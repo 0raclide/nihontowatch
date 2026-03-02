@@ -354,13 +354,10 @@ export default function ListingDetailPage({ initialData }: ListingDetailPageProp
 
             {/* Price */}
             <div className="mb-6 pb-6 border-b border-border">
-              {isSold && listing.price_value && (
-                <p className="text-[11px] uppercase tracking-wider text-muted mb-1">
-                  {t('listing.soldPrice')}
-                </p>
-              )}
-              {listing.price_value ? (
-                <p className={`text-2xl lg:text-3xl font-semibold tabular-nums ${isSold ? 'text-muted' : 'text-ink'}`}>
+              {isSold ? (
+                <p className="text-xl text-muted">{t('listing.sold')}</p>
+              ) : listing.price_value ? (
+                <p className="text-2xl lg:text-3xl font-semibold tabular-nums text-ink">
                   {new Intl.NumberFormat('en-US', {
                     style: 'currency',
                     currency: listing.price_currency || 'JPY',

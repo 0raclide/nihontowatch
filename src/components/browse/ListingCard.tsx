@@ -700,10 +700,12 @@ export const ListingCard = memo(function ListingCard({
       ? listing.artisan_name_kanji
       : (listing.artisan_display_name || listing.artisan_id);
 
-  // Price display
-  const priceDisplay = listing.price_value === null
-    ? t('listing.ask')
-    : formatPrice(listing.price_value, listing.price_currency, currency, exchangeRates);
+  // Price display — sold items show "Sold" instead of price
+  const priceDisplay = isSold
+    ? t('listing.sold')
+    : listing.price_value === null
+      ? t('listing.ask')
+      : formatPrice(listing.price_value, listing.price_currency, currency, exchangeRates);
 
   // Cert text color (no bg badge — just colored text in header)
   const certTextColor = certInfo
@@ -853,7 +855,7 @@ export const ListingCard = memo(function ListingCard({
 
         {/* Price row */}
         <div className={`${sz.pPad} sm:pt-2 sm:mt-1 border-t border-border/40 flex items-center justify-between`}>
-          <span className={`${sz.price} sm:text-[14px] lg:text-[15px] tabular-nums ${isAskPrice ? 'text-charcoal' : 'text-ink font-medium'}`}>
+          <span className={`${sz.price} sm:text-[14px] lg:text-[15px] tabular-nums ${(isAskPrice || isSold) ? 'text-charcoal' : 'text-ink font-medium'}`}>
             {priceDisplay}
           </span>
           <div className="flex items-center gap-1.5">

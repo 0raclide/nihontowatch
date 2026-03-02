@@ -101,12 +101,15 @@ export function QuickViewMobileSheet({
   const { artisan } = getArtisanInfo(listing, locale);
   const rawItemTypeLabel = getItemTypeLabel(listing.item_type);
   const itemTypeLabel = (() => { const k = `itemType.${listing.item_type?.toLowerCase()}`; const r = t(k); return r === k ? rawItemTypeLabel : r; })();
-  const priceDisplay = formatPriceWithConversion(
-    listing.price_value,
-    listing.price_currency,
-    currency,
-    exchangeRates
-  );
+  const isSold = listing.is_sold || listing.status === 'sold' || listing.status === 'presumed_sold';
+  const priceDisplay = isSold
+    ? t('listing.sold')
+    : formatPriceWithConversion(
+        listing.price_value,
+        listing.price_currency,
+        currency,
+        exchangeRates
+      );
 
   // Initialize viewport height
   useEffect(() => {

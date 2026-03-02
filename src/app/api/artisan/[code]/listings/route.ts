@@ -107,7 +107,16 @@ export async function GET(
       }
     }
 
-    const response = NextResponse.json({ listings: enriched });
+    // Strip prices from sold items — sold prices are hidden from the UI
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const finalListings = enriched.map((listing: any) => {
+      if (listing.is_sold) {
+        return { ...listing, price_value: null, price_currency: null };
+      }
+      return listing;
+    });
+
+    const response = NextResponse.json({ listings: finalListings });
     response.headers.set(
       'Cache-Control',
       'private, no-store, must-revalidate'

@@ -52,12 +52,15 @@ export function QuickViewContent({
   const certInfo = getCertInfo(listing.cert_type);
   const rawItemTypeLabel = getItemTypeLabel(listing.item_type);
   const itemTypeLabel = (() => { const k = `itemType.${listing.item_type?.toLowerCase()}`; const r = t(k); return r === k ? rawItemTypeLabel : r; })();
-  const priceDisplay = formatPriceWithConversion(
-    listing.price_value,
-    listing.price_currency,
-    currency,
-    exchangeRates
-  );
+  const isSold = listing.is_sold || listing.status === 'sold' || listing.status === 'presumed_sold';
+  const priceDisplay = isSold
+    ? t('listing.sold')
+    : formatPriceWithConversion(
+        listing.price_value,
+        listing.price_currency,
+        currency,
+        exchangeRates
+      );
 
   return (
     <div className="flex flex-col h-full min-h-0">

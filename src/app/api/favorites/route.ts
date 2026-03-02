@@ -106,10 +106,13 @@ export async function GET() {
     }
 
     // Transform the data to extract listings with favorite metadata
+    // Strip prices from sold items — sold prices are hidden from the UI
     const favoritesWithListings = favorites?.map(fav => ({
       favoriteId: fav.id,
       favoritedAt: fav.created_at,
-      listing: fav.listings,
+      listing: fav.listings?.is_sold
+        ? { ...fav.listings, price_value: null, price_currency: null }
+        : fav.listings,
     })) || [];
 
     // Also return just the listing IDs for quick lookup

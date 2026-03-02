@@ -301,27 +301,9 @@ export async function getListingDetail(
   // Extract Yuhinkai enrichment (view returns array, we want first item or null)
   const yuhinkai_enrichment = (typedListing.listing_yuhinkai_enrichment?.[0] || null) as YuhinkaiEnrichment | null;
 
-  // For sold items with no price, fetch sale price from price_history
-  let priceValue = typedListing.price_value;
-  let priceCurrency = typedListing.price_currency;
-  let priceFromHistory = false;
-
-  if (typedListing.is_sold && !typedListing.price_value) {
-    const { data: priceHistory } = await supabase
-      .from('price_history')
-      .select('old_price, old_currency')
-      .eq('listing_id', listingId)
-      .in('change_type', ['sold', 'presumed_sold'])
-      .order('detected_at', { ascending: false })
-      .limit(1)
-      .single() as { data: { old_price: number | null; old_currency: string | null } | null };
-
-    if (priceHistory && priceHistory.old_price) {
-      priceValue = priceHistory.old_price;
-      priceCurrency = priceHistory.old_currency || 'JPY';
-      priceFromHistory = true;
-    }
-  }
+  // Strip prices from sold items — sold prices are hidden from the UI
+  const priceValue = typedListing.is_sold ? null : typedListing.price_value;
+  const priceCurrency = typedListing.is_sold ? null : typedListing.price_currency;
 
   // Resolve artisan display name and tier from Yuhinkai
   let artisanDisplayName: string | undefined;
@@ -350,8 +332,7 @@ export async function getListingDetail(
     item_category: typedListing.item_category,
     price_value: priceValue,
     price_currency: priceCurrency,
-    price_jpy: typedListing.price_jpy,
-    ...(priceFromHistory && { price_from_history: true }),
+    price_jpy: typedListing.is_sold ? null : typedListing.price_jpy,
     smith: typedListing.smith,
     tosogu_maker: typedListing.tosogu_maker,
     school: typedListing.school,

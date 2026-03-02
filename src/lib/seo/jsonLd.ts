@@ -182,7 +182,7 @@ export function generateProductJsonLd(listing: Listing, dealer?: Dealer): Produc
       '@type': 'Offer',
       url: `${BASE_URL}/listing/${listing.id}`,
       priceCurrency: listing.price_currency || 'JPY',
-      price: formatSchemaPrice(listing.price_value),
+      price: listing.is_sold ? 0 : formatSchemaPrice(listing.price_value),
       availability: getAvailability(listing.is_sold),
       itemCondition: 'https://schema.org/UsedCondition',
     },
