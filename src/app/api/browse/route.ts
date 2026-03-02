@@ -400,8 +400,20 @@ export async function GET(request: NextRequest) {
 
     // Certification filter (handles variants until data is normalized)
     if (params.certifications?.length) {
-      const allVariants = params.certifications.flatMap(c => CERT_VARIANTS[c] || [c]);
-      query = query.in('cert_type', allVariants);
+      const hasNone = params.certifications.includes('none');
+      const certFilters = params.certifications.filter(c => c !== 'none');
+      const allVariants = certFilters.flatMap(c => CERT_VARIANTS[c] || [c]);
+
+      if (hasNone && allVariants.length > 0) {
+        // Both: specific certs OR no cert
+        query = query.or(`cert_type.in.(${allVariants.join(',')}),cert_type.is.null`);
+      } else if (hasNone) {
+        // Only "no papers"
+        query = query.is('cert_type', null);
+      } else {
+        // Only specific certs (existing behavior)
+        query = query.in('cert_type', allVariants);
+      }
     }
 
     // School filter
