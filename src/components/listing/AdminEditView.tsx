@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { isTosogu, type Listing } from '@/types';
+import { isBlade, isTosogu, type Listing } from '@/types';
 import type { ArtisanSearchResult } from '@/app/api/artisan/search/route';
 import type { ArtisanCandidate } from '@/types/artisan';
 import { CertPillRow } from '@/components/admin/CertPillRow';
@@ -56,8 +56,12 @@ export function AdminEditView({ listing, onBackToPhotos, onRefresh }: AdminEditV
   const [error, setError] = useState<string | null>(null);
 
   // Derive artisan search domain from item type
+  // Only filter when item_type is unambiguously blade or tosogu;
+  // unknown/armor/koshirae/etc. should show all artisans
   const searchDomain = listing.item_type
-    ? isTosogu(listing.item_type) ? 'tosogu' as const : 'smith' as const
+    ? isTosogu(listing.item_type) ? 'tosogu' as const
+      : isBlade(listing.item_type) ? 'smith' as const
+      : undefined
     : undefined;
 
   // Sync state when listing changes
