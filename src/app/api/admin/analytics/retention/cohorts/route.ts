@@ -1,6 +1,8 @@
 import { NextRequest } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { verifyAdmin } from '@/lib/admin/auth';
+
+export const maxDuration = 60;
 import {
   parsePeriodParam,
   calculatePeriodDates,

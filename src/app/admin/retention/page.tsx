@@ -11,7 +11,7 @@ import { useRetentionAnalytics, type CohortMode } from '@/hooks/useRetentionAnal
 type TimeRange = '7d' | '30d' | '90d';
 
 export default function RetentionPage() {
-  const [timeRange, setTimeRange] = useState<TimeRange>('90d');
+  const [timeRange, setTimeRange] = useState<TimeRange>('30d');
   const [cohortMode, setCohortMode] = useState<CohortMode>('visitors');
 
   const { cohorts, segments, loading, errors } = useRetentionAnalytics({
