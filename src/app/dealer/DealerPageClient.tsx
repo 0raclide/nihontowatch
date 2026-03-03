@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ListingGrid } from '@/components/browse/ListingGrid';
 import { DealerBottomBar } from '@/components/dealer/DealerBottomBar';
+import { BottomTabBar } from '@/components/navigation/BottomTabBar';
 import { dealerListingToDisplayItem } from '@/lib/displayItem';
 import { useQuickViewOptional } from '@/contexts/QuickViewContext';
 import { useCurrency } from '@/hooks/useCurrency';
@@ -79,9 +80,9 @@ export function DealerPageClient() {
   }, [router]);
 
   return (
-    <div className="min-h-screen bg-cream pb-16 lg:pb-0">
-      {/* Header */}
-      <div className="sticky top-0 z-30 bg-cream/95 backdrop-blur-sm border-b border-border/30">
+    <div className="min-h-screen bg-cream">
+      {/* Sub-header: shop name + tabs + add (desktop), shop name only (mobile) */}
+      <div className="sticky top-0 lg:top-[var(--header-visible-h,80px)] z-30 bg-cream/95 backdrop-blur-sm border-b border-border/30 transition-[top] duration-0">
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
           <div>
             <h1 className="text-[16px] font-medium">
@@ -118,7 +119,7 @@ export function DealerPageClient() {
       </div>
 
       {/* Content */}
-      <div className="max-w-5xl mx-auto">
+      <div className="max-w-5xl mx-auto pb-36 lg:pb-0">
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
             <div className="w-6 h-6 border-2 border-gold border-t-transparent rounded-full animate-spin" />
@@ -161,12 +162,15 @@ export function DealerPageClient() {
         )}
       </div>
 
-      {/* Mobile bottom bar */}
-      <DealerBottomBar
-        activeTab={tab}
-        onTabChange={setTab}
-        onAddClick={handleAddClick}
-      />
+      {/* Mobile: dealer toolbar (tabs + add) stacked above global nav */}
+      <div className="lg:hidden fixed bottom-0 inset-x-0 z-40">
+        <DealerBottomBar
+          activeTab={tab}
+          onTabChange={setTab}
+          onAddClick={handleAddClick}
+        />
+        <BottomTabBar contained />
+      </div>
     </div>
   );
 }
