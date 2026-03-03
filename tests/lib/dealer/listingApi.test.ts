@@ -80,7 +80,7 @@ describe('PATCH allowlist enforcement', () => {
     'price_value', 'price_currency',
     'cert_type', 'item_type', 'item_category',
     'smith', 'tosogu_maker', 'school', 'tosogu_school',
-    'artisan_id', 'artisan_display_name', 'artisan_name_kanji',
+    'artisan_id',
     'era', 'province', 'mei_type', 'nagasa_cm',
   ]);
 

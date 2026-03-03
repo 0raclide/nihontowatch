@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let query = (supabase.from('listings') as any)
-    .select('id, url, title, title_en, title_ja, item_type, item_category, price_value, price_currency, cert_type, images, status, is_available, is_sold, first_seen_at, smith, tosogu_maker, school, tosogu_school, artisan_id, artisan_display_name, artisan_name_kanji, artisan_confidence, description, era, province, mei_type, nagasa_cm, dealers:dealers(id, name, name_ja, domain)', { count: 'exact' })
+    .select('id, url, title, title_en, title_ja, item_type, item_category, price_value, price_currency, cert_type, images, status, is_available, is_sold, first_seen_at, smith, tosogu_maker, school, tosogu_school, artisan_id, artisan_confidence, description, era, province, mei_type, nagasa_cm, dealers:dealers(id, name, name_ja, domain)', { count: 'exact' })
     .eq('dealer_id', auth.dealerId)
     .eq('source', 'dealer');
 
@@ -93,8 +93,6 @@ export async function POST(request: NextRequest) {
     price_currency,
     description,
     artisan_id,
-    artisan_display_name,
-    artisan_name_kanji,
     smith,
     tosogu_maker,
     school,
@@ -151,8 +149,6 @@ export async function POST(request: NextRequest) {
   // Dealer-set artisans are protected by source='dealer' guards in Oshi-scrapper instead.
   if (artisan_id) {
     listingData.artisan_id = artisan_id;
-    listingData.artisan_display_name = artisan_display_name || null;
-    listingData.artisan_name_kanji = artisan_name_kanji || null;
     listingData.artisan_confidence = 'HIGH';
     listingData.artisan_method = 'dealer_manual';
   }
