@@ -92,12 +92,24 @@ export async function POST(
     // Update the verification status
     // When admin verifies (correct or incorrect), lock the artisan fields
     // When admin clears verification (null), unlock so scraper can re-match
+    // When verified='correct', also upgrade confidence to HIGH — fixes the bug where
+    // NONE confidence (e.g. price_implausible) keeps the artisan name gray/unlinked
+    // on the listing card even after admin confirms the match is correct.
     const updateData = verified === null
       ? {
           artisan_verified: null,
           artisan_verified_at: null,
           artisan_verified_by: null,
           artisan_admin_locked: false,
+        }
+      : verified === 'correct'
+      ? {
+          artisan_verified: verified,
+          artisan_verified_at: new Date().toISOString(),
+          artisan_verified_by: user.id,
+          artisan_admin_locked: true,
+          artisan_confidence: 'HIGH',
+          artisan_method: 'ADMIN_VERIFIED',
         }
       : {
           artisan_verified: verified,

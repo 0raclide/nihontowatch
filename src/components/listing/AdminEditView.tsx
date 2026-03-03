@@ -105,6 +105,13 @@ export function AdminEditView({ listing, onBackToPhotos, onRefresh }: AdminEditV
         } else {
           setShowSearch(false);
         }
+        // When verified as 'correct', the API upgrades confidence to HIGH.
+        // Push this to the browse grid so the card shows gold text + link.
+        if (status === 'correct') {
+          setConfidence('HIGH');
+          setMethod('ADMIN_VERIFIED');
+          dispatchRefresh({ artisan_confidence: 'HIGH', artisan_method: 'ADMIN_VERIFIED' });
+        }
       }
     } catch {
       // silent
