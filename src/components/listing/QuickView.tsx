@@ -253,6 +253,17 @@ export function QuickView() {
     [validImages, failedImageIndices]
   );
 
+  // Dealer status change → optimistic update via refreshCurrentListing
+  // MUST be before the early return — hooks cannot be conditional
+  const handleDealerStatusChange = useCallback((newStatus: string) => {
+    const optimistic = {
+      status: newStatus as ListingWithEnrichment['status'],
+      is_available: newStatus === 'AVAILABLE',
+      is_sold: newStatus === 'SOLD',
+    };
+    refreshCurrentListing(optimistic);
+  }, [refreshCurrentListing]);
+
   if (!currentListing) return null;
 
   const showNavigation = listings.length > 1 && currentIndex !== -1;
@@ -271,16 +282,6 @@ export function QuickView() {
   // Assemble slots based on source
   // =========================================================================
   const handleEditCollection = () => setCollectionMode('edit');
-
-  // Dealer status change → optimistic update via refreshCurrentListing
-  const handleDealerStatusChange = useCallback((newStatus: string) => {
-    const optimistic = {
-      status: newStatus as ListingWithEnrichment['status'],
-      is_available: newStatus === 'AVAILABLE',
-      is_sold: newStatus === 'SOLD',
-    };
-    refreshCurrentListing(optimistic);
-  }, [refreshCurrentListing]);
 
   // Desktop QuickViewContent slots (3-way: dealer > collection > browse)
   const desktopActionBarSlot = isDealer
