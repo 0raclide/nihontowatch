@@ -40,6 +40,7 @@ interface DealerListingFormProps {
     sakihaba_cm?: number | null;
     sori_cm?: number | null;
     images?: string[];
+    status?: string | null;
   };
 }
 
@@ -99,6 +100,11 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
   const [showSuccess, setShowSuccess] = useState(false);
   const [imageUploadFailed, setImageUploadFailed] = useState(false);
   const [createdListingId, setCreatedListingId] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const canDelete = mode === 'edit' && initialData?.id &&
+    (initialData?.status === 'INVENTORY' || initialData?.status === 'WITHDRAWN');
 
   // Persist sticky values
   useEffect(() => {
@@ -252,6 +258,25 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
     setCreatedListingId(null);
     setError(null);
   }, []);
+
+  const handleDelete = useCallback(async () => {
+    if (!initialData?.id) return;
+    setIsDeleting(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/dealer/listings/${initialData.id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Failed to delete');
+      }
+      router.push('/dealer');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Something went wrong');
+      setConfirmDelete(false);
+    } finally {
+      setIsDeleting(false);
+    }
+  }, [initialData?.id, router]);
 
   // Image upload retry screen
   if (imageUploadFailed) {
@@ -601,6 +626,37 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
         {error && (
           <div className="px-3 py-2 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800/50 rounded-lg text-[12px] text-red-600 dark:text-red-400">
             {error}
+          </div>
+        )}
+
+        {/* Delete — inventory items only */}
+        {canDelete && (
+          <div className="pt-4 border-t border-border/30">
+            {confirmDelete ? (
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleDelete}
+                  disabled={isDeleting}
+                  className="flex-1 py-2 rounded-lg bg-red-600 text-white text-[13px] font-medium disabled:opacity-50 transition-colors hover:bg-red-700"
+                >
+                  {isDeleting ? t('common.loading') : t('common.delete')}
+                </button>
+                <button
+                  onClick={() => setConfirmDelete(false)}
+                  disabled={isDeleting}
+                  className="flex-1 py-2 rounded-lg bg-surface text-muted text-[13px] font-medium hover:bg-hover transition-colors"
+                >
+                  {t('common.cancel')}
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setConfirmDelete(true)}
+                className="text-[12px] text-red-500 hover:text-red-600 transition-colors"
+              >
+                {t('common.delete')}
+              </button>
+            )}
           </div>
         )}
       </div>
