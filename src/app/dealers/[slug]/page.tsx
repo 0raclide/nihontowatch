@@ -49,11 +49,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   const supabase = createServiceClient();
-  const { count } = await supabase
+  let metaQuery = supabase
     .from('listings')
     .select('*', { count: 'exact', head: true })
     .eq('dealer_id', dealer.id)
     .eq('is_available', true);
+  if (process.env.NEXT_PUBLIC_DEALER_LISTINGS_LIVE !== 'true') {
+    metaQuery = metaQuery.neq('source', 'dealer');
+  }
+  const { count } = await metaQuery;
 
   const listingCount = count || 0;
   const flag = getCountryFlag(dealer.country);
@@ -91,17 +95,25 @@ export default async function DealerPage({ params }: Props) {
   const supabase = createServiceClient();
 
   // Fetch listing count + type breakdown in parallel
+  // Exclude dealer portal listings when feature flag is off
+  const excludeDealer = process.env.NEXT_PUBLIC_DEALER_LISTINGS_LIVE !== 'true';
+  let countQuery = supabase
+    .from('listings')
+    .select('*', { count: 'exact', head: true })
+    .eq('dealer_id', dealer.id)
+    .eq('is_available', true);
+  let typeQuery = supabase
+    .from('listings')
+    .select('item_type')
+    .eq('dealer_id', dealer.id)
+    .eq('is_available', true);
+  if (excludeDealer) {
+    countQuery = countQuery.neq('source', 'dealer');
+    typeQuery = typeQuery.neq('source', 'dealer');
+  }
   const [{ count: totalCount }, { data: typeBreakdown }] = await Promise.all([
-    supabase
-      .from('listings')
-      .select('*', { count: 'exact', head: true })
-      .eq('dealer_id', dealer.id)
-      .eq('is_available', true),
-    supabase
-      .from('listings')
-      .select('item_type')
-      .eq('dealer_id', dealer.id)
-      .eq('is_available', true),
+    countQuery,
+    typeQuery,
   ]);
 
   // Count by type

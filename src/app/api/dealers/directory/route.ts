@@ -26,12 +26,16 @@ async function fetchAllListings(supabase: ReturnType<typeof createServiceClient>
   let hasMore = true;
 
   while (hasMore) {
-    const { data, error } = await supabase
+    let query = supabase
       .from('listings')
       .select('dealer_id, item_type, cert_type')
       .eq('is_available', true)
-      .or(`price_value.is.null,price_jpy.gte.${LISTING_FILTERS.MIN_PRICE_JPY}`)
-      .range(offset, offset + BATCH_SIZE - 1);
+      .or(`price_value.is.null,price_jpy.gte.${LISTING_FILTERS.MIN_PRICE_JPY}`);
+    // Exclude dealer portal listings when feature flag is off
+    if (process.env.NEXT_PUBLIC_DEALER_LISTINGS_LIVE !== 'true') {
+      query = query.neq('source', 'dealer');
+    }
+    const { data, error } = await query.range(offset, offset + BATCH_SIZE - 1);
 
     if (error) {
       console.error('[Dealers API] Error fetching listings batch:', error);

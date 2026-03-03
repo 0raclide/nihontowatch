@@ -96,6 +96,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         smith,
         tosogu_maker,
         og_image_url,
+        source,
         dealers (
           name,
           domain
@@ -104,9 +105,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       .eq('id', listingId)
       .single();
 
-    const listing = listingData as ListingForShare | null;
+    const listing = listingData as (ListingForShare & { source?: string }) | null;
 
-    if (!listing || error) {
+    // Block dealer portal listings when feature flag is off
+    if (!listing || error || (process.env.NEXT_PUBLIC_DEALER_LISTINGS_LIVE !== 'true' && listing.source === 'dealer')) {
       return {
         title: 'Listing Not Found | NihontoWatch',
         description: 'The requested listing could not be found.',

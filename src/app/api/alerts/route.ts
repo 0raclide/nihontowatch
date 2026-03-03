@@ -146,12 +146,15 @@ export async function POST(request: NextRequest) {
         return apiBadRequest('listing_id is required for price_drop and back_in_stock alerts');
       }
 
-      // Check if listing exists
-      const { data: listing, error: listingError } = await supabase
+      // Check if listing exists (exclude dealer portal listings when flag is off)
+      let alertCheckQuery = supabase
         .from('listings')
         .select('id')
-        .eq('id', body.listing_id)
-        .single();
+        .eq('id', body.listing_id);
+      if (process.env.NEXT_PUBLIC_DEALER_LISTINGS_LIVE !== 'true') {
+        alertCheckQuery = alertCheckQuery.neq('source', 'dealer');
+      }
+      const { data: listing, error: listingError } = await alertCheckQuery.single();
 
       if (listingError || !listing) {
         return apiNotFound('Listing');

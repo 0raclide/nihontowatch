@@ -120,7 +120,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // ---------------------------------------------------------------------
     // 3. Fetch listing with dealer information
     // ---------------------------------------------------------------------
-    const { data: listing, error: listingError } = await supabase
+    let inquiryQuery = supabase
       .from('listings')
       .select(`
         id, title, url, price_value, price_currency, item_type, cert_type,
@@ -131,7 +131,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           requires_deposit, deposit_percentage, english_support
         )
       `)
-      .eq('id', input.listingId)
+      .eq('id', input.listingId);
+    // Exclude dealer portal listings when feature flag is off
+    if (process.env.NEXT_PUBLIC_DEALER_LISTINGS_LIVE !== 'true') {
+      inquiryQuery = inquiryQuery.neq('source', 'dealer');
+    }
+    const { data: listing, error: listingError } = await inquiryQuery
       .single();
 
     if (listingError || !listing) {

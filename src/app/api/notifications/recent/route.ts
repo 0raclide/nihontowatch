@@ -117,10 +117,15 @@ export async function GET(request: NextRequest) {
     }>();
 
     if (listingIds.length > 0) {
-      const { data: rawListings } = await supabase
+      let notifListingsQuery = supabase
         .from('listings')
         .select('id, title, item_type, price_value, price_currency, images, dealer_id')
         .in('id', listingIds);
+      // Exclude dealer portal listings when feature flag is off
+      if (process.env.NEXT_PUBLIC_DEALER_LISTINGS_LIVE !== 'true') {
+        notifListingsQuery = notifListingsQuery.neq('source', 'dealer');
+      }
+      const { data: rawListings } = await notifListingsQuery;
 
       const listings = (rawListings || []) as ListingRow[];
 

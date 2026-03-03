@@ -74,11 +74,16 @@ export async function buildArtistPageData(code: string): Promise<ArtisanPageResp
     try {
       const { createServiceClient } = await import('@/lib/supabase/server');
       const supabase = createServiceClient();
-      const { data: listingRows } = await supabase
+      let relQ = supabase
         .from('listings')
         .select('id, artisan_id')
         .in('artisan_id' as string, allRelatedCodes)
-        .eq('is_available', true) as { data: Array<{ id: number; artisan_id: string }> | null; error: unknown };
+        .eq('is_available', true);
+      // Exclude dealer portal listings when feature flag is off
+      if (process.env.NEXT_PUBLIC_DEALER_LISTINGS_LIVE !== 'true') {
+        relQ = relQ.neq('source', 'dealer');
+      }
+      const { data: listingRows } = await relQ as { data: Array<{ id: number; artisan_id: string }> | null; error: unknown };
 
       for (const row of listingRows || []) {
         listingCountMap.set(row.artisan_id, (listingCountMap.get(row.artisan_id) || 0) + 1);

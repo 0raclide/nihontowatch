@@ -182,18 +182,25 @@ export async function GET(request: NextRequest) {
       if (skipMeta) return { lastUpdated: null, attributedItemCount: 0 };
       try {
         const supabase = createServiceClient();
+        // Exclude dealer portal listings when feature flag is off
+        const exclDealer = process.env.NEXT_PUBLIC_DEALER_LISTINGS_LIVE !== 'true';
+        let freshnessQ = supabase
+          .from('listings')
+          .select('last_scraped_at')
+          .order('last_scraped_at' as string, { ascending: false })
+          .limit(1);
+        let countQ = supabase
+          .from('listings')
+          .select('id', { count: 'exact', head: true })
+          .not('artisan_id' as string, 'is', null)
+          .eq('is_available', true);
+        if (exclDealer) {
+          freshnessQ = freshnessQ.neq('source', 'dealer');
+          countQ = countQ.neq('source', 'dealer');
+        }
         const [freshnessRes, countRes] = await Promise.all([
-          supabase
-            .from('listings')
-            .select('last_scraped_at')
-            .order('last_scraped_at' as string, { ascending: false })
-            .limit(1)
-            .single(),
-          supabase
-            .from('listings')
-            .select('id', { count: 'exact', head: true })
-            .not('artisan_id' as string, 'is', null)
-            .eq('is_available', true),
+          freshnessQ.single(),
+          countQ,
         ]);
         return {
           lastUpdated: (freshnessRes.data as { last_scraped_at: string } | null)?.last_scraped_at || null,
@@ -263,12 +270,17 @@ async function getListingDataForArtists(codes: string[]): Promise<Map<string, { 
   try {
     const supabase = createServiceClient();
     // artisan_id is not in the generated DB types, so cast the result
-    const { data, error } = await supabase
+    let listQ = supabase
       .from('listings')
       .select('id, artisan_id')
       .in('artisan_id' as string, codes)
       .eq('is_available', true)
-      .eq('admin_hidden', false) as { data: Array<{ id: number; artisan_id: string }> | null; error: unknown };
+      .eq('admin_hidden', false);
+    // Exclude dealer portal listings when feature flag is off
+    if (process.env.NEXT_PUBLIC_DEALER_LISTINGS_LIVE !== 'true') {
+      listQ = listQ.neq('source', 'dealer');
+    }
+    const { data, error } = await listQ as { data: Array<{ id: number; artisan_id: string }> | null; error: unknown };
 
     if (error) {
       logger.logError('Listing data query error', error);
@@ -299,12 +311,17 @@ async function getAllAvailableListingCounts(): Promise<Map<string, { count: numb
 
   try {
     const supabase = createServiceClient();
-    const { data, error } = await supabase
+    let allQ = supabase
       .from('listings')
       .select('id, artisan_id')
       .eq('is_available', true)
       .eq('admin_hidden', false)
-      .not('artisan_id' as string, 'is', null) as { data: Array<{ id: number; artisan_id: string }> | null; error: unknown };
+      .not('artisan_id' as string, 'is', null);
+    // Exclude dealer portal listings when feature flag is off
+    if (process.env.NEXT_PUBLIC_DEALER_LISTINGS_LIVE !== 'true') {
+      allQ = allQ.neq('source', 'dealer');
+    }
+    const { data, error } = await allQ as { data: Array<{ id: number; artisan_id: string }> | null; error: unknown };
 
     if (error) {
       logger.logError('All listing counts query error', error);

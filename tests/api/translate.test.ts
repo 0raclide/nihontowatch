@@ -62,6 +62,8 @@ function createMockQueryBuilder() {
     return builder;
   });
 
+  builder.neq = vi.fn(() => builder);
+
   builder.single = vi.fn(() => {
     return Promise.resolve({
       data: mockListingData,

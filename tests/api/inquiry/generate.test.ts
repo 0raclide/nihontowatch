@@ -62,6 +62,8 @@ function createMockQueryBuilder(tableName: string) {
     return builder;
   });
 
+  builder.neq = vi.fn(() => builder);
+
   builder.single = vi.fn(() => {
     if (tableName === 'listings') {
       return Promise.resolve({

@@ -60,6 +60,7 @@ function createQueryBuilder(
 
   builder.select = vi.fn(() => chain());
   builder.eq = vi.fn(() => chain());
+  builder.neq = vi.fn(() => chain());
   builder.in = vi.fn(() => chain());
   builder.order = vi.fn(() => chain());
   builder.limit = vi.fn(() => chain());

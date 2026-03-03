@@ -212,15 +212,20 @@ export default async function ListingPage({ params }: Props) {
 
   const relatedQueries = [];
 
+  // Exclude dealer portal listings when feature flag is off
+  const excludeDealerSource = process.env.NEXT_PUBLIC_DEALER_LISTINGS_LIVE !== 'true';
+
   // Related by artisan
   if (artisanId) {
+    let artisanQuery = supabase
+      .from('listings')
+      .select('id, title, price_value, price_currency, images, stored_images')
+      .eq('is_available', true)
+      .eq('artisan_id', artisanId)
+      .neq('id', listingId);
+    if (excludeDealerSource) artisanQuery = artisanQuery.neq('source', 'dealer');
     relatedQueries.push(
-      supabase
-        .from('listings')
-        .select('id, title, price_value, price_currency, images, stored_images')
-        .eq('is_available', true)
-        .eq('artisan_id', artisanId)
-        .neq('id', listingId)
+      artisanQuery
         .order('first_seen_at', { ascending: false })
         .limit(4)
         .then(({ data }) => ({ type: 'artisan' as const, items: (data || []) as RelatedItem[] }))
@@ -234,6 +239,7 @@ export default async function ListingPage({ params }: Props) {
     .eq('is_available', true)
     .eq('dealer_id', dealerId)
     .neq('id', listingId);
+  if (excludeDealerSource) dealerQuery = dealerQuery.neq('source', 'dealer');
 
   if (listing.item_type) {
     dealerQuery = dealerQuery.eq('item_type', listing.item_type);

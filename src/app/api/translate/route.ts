@@ -111,11 +111,15 @@ export async function POST(request: NextRequest) {
     const supabase = createServiceClient();
 
     // Fetch the listing with both original and translated fields
-    const { data, error: fetchError } = await supabase
+    let translateQuery = supabase
       .from('listings')
-      .select('id, title, title_en, title_ja, description, description_en, description_ja, item_type')
-      .eq('id', listingId)
-      .single();
+      .select('id, title, title_en, title_ja, description, description_en, description_ja, item_type, source')
+      .eq('id', listingId);
+    // Exclude dealer portal listings when feature flag is off
+    if (process.env.NEXT_PUBLIC_DEALER_LISTINGS_LIVE !== 'true') {
+      translateQuery = translateQuery.neq('source', 'dealer');
+    }
+    const { data, error: fetchError } = await translateQuery.single();
 
     const listing = data as ListingForTranslation | null;
 
