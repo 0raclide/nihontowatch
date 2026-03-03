@@ -19,6 +19,7 @@ const navigation = [
   { name: 'Retention', href: '/admin/retention', icon: RetentionIcon },
   { name: 'Alerts', href: '/admin/alerts', icon: AlertsIcon },
   { name: 'Scrapers', href: '/admin/scrapers', icon: ScrapersIcon },
+  { name: 'Feedback', href: '/admin/feedback', icon: FeedbackIcon },
 ];
 
 function DashboardIcon({ className }: { className?: string }) {
@@ -90,6 +91,14 @@ function MarketIntelIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+    </svg>
+  );
+}
+
+function FeedbackIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
     </svg>
   );
 }

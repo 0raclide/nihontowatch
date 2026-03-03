@@ -13,6 +13,10 @@
   "nav.users": "\u30e6\u30fc\u30b6\u30fc",
   "nav.analytics": "\u5206\u6790",
   "nav.alerts": "\u30a2\u30e9\u30fc\u30c8",
+  "nav.marketIntel": "\u30de\u30fc\u30b1\u30c3\u30c8\u60c5\u5831",
+  "nav.visitors": "\u8a2a\u554f\u8005",
+  "nav.retention": "\u30ea\u30c6\u30f3\u30b7\u30e7\u30f3",
+  "nav.scrapers": "\u30b9\u30af\u30ec\u30a4\u30d1\u30fc",
   "nav.feedback": "\u30d5\u30a3\u30fc\u30c9\u30d0\u30c3\u30af",
 
   "feedback.reportIssue": "\u554f\u984c\u3092\u5831\u544a",
