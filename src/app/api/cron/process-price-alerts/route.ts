@@ -153,7 +153,7 @@ export async function GET(request: NextRequest) {
 
     // Step 4: Get listing details
     const alertListingIds = [...new Set(eligibleAlerts.map((a) => a.listing_id).filter(Boolean))];
-    const { data: listingsData } = await supabase
+    let listingsQuery = supabase
       .from('listings')
       .select(`
         id,
@@ -168,6 +168,13 @@ export async function GET(request: NextRequest) {
         dealers!inner(id, name, name_ja, domain)
       `)
       .in('id', alertListingIds);
+
+    // Exclude dealer portal listings when feature flag is off
+    if (process.env.NEXT_PUBLIC_DEALER_LISTINGS_LIVE !== 'true') {
+      listingsQuery = listingsQuery.neq('source', 'dealer');
+    }
+
+    const { data: listingsData } = await listingsQuery;
 
     const listingsMap = new Map<number, Listing>();
     (listingsData as unknown as Listing[])?.forEach((l) => {

@@ -140,7 +140,7 @@ describe('Process Stock Alerts Cron', () => {
           return {
             select: vi.fn().mockReturnThis(),
             in: vi.fn().mockReturnThis(),
-            or: vi.fn().mockResolvedValue({ data: mockListings, error: null }),
+            or: vi.fn().mockReturnValue({ neq: vi.fn().mockResolvedValue({ data: mockListings, error: null }) }),
           };
         }
         if (table === 'alerts') {
@@ -195,7 +195,7 @@ describe('Process Stock Alerts Cron', () => {
           return {
             select: vi.fn().mockReturnThis(),
             in: vi.fn().mockReturnThis(),
-            or: vi.fn().mockResolvedValue({ data: mockListings, error: null }),
+            or: vi.fn().mockReturnValue({ neq: vi.fn().mockResolvedValue({ data: mockListings, error: null }) }),
           };
         }
         if (table === 'alerts') {
@@ -265,7 +265,7 @@ describe('Process Stock Alerts Cron', () => {
           return { select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), gte: vi.fn().mockResolvedValue({ data: mockStatusChanges, error: null }) };
         }
         if (table === 'listings') {
-          return { select: vi.fn().mockReturnThis(), in: vi.fn().mockReturnThis(), or: vi.fn().mockResolvedValue({ data: mockListings, error: null }) };
+          return { select: vi.fn().mockReturnThis(), in: vi.fn().mockReturnThis(), or: vi.fn().mockReturnValue({ neq: vi.fn().mockResolvedValue({ data: mockListings, error: null }) }) };
         }
         if (table === 'alerts') {
           return { select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), in: vi.fn().mockResolvedValue({ data: mockAlerts, error: null }) };
@@ -305,7 +305,7 @@ describe('Process Stock Alerts Cron', () => {
           return { select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), gte: vi.fn().mockResolvedValue({ data: mockStatusChanges, error: null }) };
         }
         if (table === 'listings') {
-          return { select: vi.fn().mockReturnThis(), in: vi.fn().mockReturnThis(), or: vi.fn().mockResolvedValue({ data: mockListings, error: null }) };
+          return { select: vi.fn().mockReturnThis(), in: vi.fn().mockReturnThis(), or: vi.fn().mockReturnValue({ neq: vi.fn().mockResolvedValue({ data: mockListings, error: null }) }) };
         }
         if (table === 'alerts') {
           return { select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), in: vi.fn().mockResolvedValue({ data: mockAlerts, error: null }), update: vi.fn().mockReturnThis() };
@@ -348,7 +348,7 @@ describe('Process Stock Alerts Cron', () => {
           return { select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), gte: vi.fn().mockResolvedValue({ data: mockStatusChanges, error: null }) };
         }
         if (table === 'listings') {
-          return { select: vi.fn().mockReturnThis(), in: vi.fn().mockReturnThis(), or: vi.fn().mockResolvedValue({ data: mockListings, error: null }) };
+          return { select: vi.fn().mockReturnThis(), in: vi.fn().mockReturnThis(), or: vi.fn().mockReturnValue({ neq: vi.fn().mockResolvedValue({ data: mockListings, error: null }) }) };
         }
         if (table === 'alerts') {
           return { select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), in: vi.fn().mockResolvedValue({ data: mockAlerts, error: null }), update: vi.fn().mockReturnThis() };
@@ -409,7 +409,7 @@ describe('Process Stock Alerts Cron', () => {
           return { select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), gte: vi.fn().mockResolvedValue({ data: mockStatusChanges, error: null }) };
         }
         if (table === 'listings') {
-          return { select: vi.fn().mockReturnThis(), in: vi.fn().mockReturnThis(), or: vi.fn().mockResolvedValue({ data: mockListings, error: null }) };
+          return { select: vi.fn().mockReturnThis(), in: vi.fn().mockReturnThis(), or: vi.fn().mockReturnValue({ neq: vi.fn().mockResolvedValue({ data: mockListings, error: null }) }) };
         }
         if (table === 'alerts') {
           return { select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), in: vi.fn().mockResolvedValue({ data: mockAlerts, error: null }), update: vi.fn().mockReturnThis() };

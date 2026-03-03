@@ -66,6 +66,9 @@ export async function GET(request: NextRequest) {
 
     let dbQuery;
 
+    // Helper: exclude dealer portal listings when feature flag is off
+    const excludeDealerSource = process.env.NEXT_PUBLIC_DEALER_LISTINGS_LIVE !== 'true';
+
     if (detectedUrl) {
       // URL search: ILIKE on url column, no status/price filter (find any matching listing)
       dbQuery = supabase
@@ -169,6 +172,11 @@ export async function GET(request: NextRequest) {
           .not('price_jpy', 'is', null)
           .gte('price_jpy', LISTING_FILTERS.MIN_PRICE_JPY);
       }
+    }
+
+    // Exclude dealer portal listings when feature flag is off
+    if (excludeDealerSource) {
+      dbQuery = dbQuery.neq('source', 'dealer');
     }
 
     const { data, count, error } = await dbQuery

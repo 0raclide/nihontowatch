@@ -93,6 +93,11 @@ async function fetchListingsBatch(
       query = query.not('images', 'is', null);
     }
 
+    // Exclude dealer portal listings when feature flag is off
+    if (process.env.NEXT_PUBLIC_DEALER_LISTINGS_LIVE !== 'true') {
+      query = query.neq('source', 'dealer');
+    }
+
     const { data, error } = await query;
 
     if (error) {

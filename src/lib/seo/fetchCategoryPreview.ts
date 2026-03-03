@@ -28,6 +28,11 @@ export async function fetchCategoryPreview(
     .eq('is_available', true)
     .eq('admin_hidden', false);
 
+  // Exclude dealer portal listings when feature flag is off
+  if (process.env.NEXT_PUBLIC_DEALER_LISTINGS_LIVE !== 'true') {
+    query = query.neq('source', 'dealer');
+  }
+
   // Apply all filters via the PARAM_TO_COLUMN mapping
   for (const [param, values] of Object.entries(category.filters)) {
     const column = PARAM_TO_COLUMN[param];

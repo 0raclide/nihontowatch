@@ -260,7 +260,7 @@ describe('Process Price Alerts Cron', () => {
         if (table === 'listings') {
           return {
             select: vi.fn().mockReturnThis(),
-            in: vi.fn().mockResolvedValue({ data: mockListings, error: null }),
+            in: vi.fn().mockReturnValue({ neq: vi.fn().mockResolvedValue({ data: mockListings, error: null }) }),
           };
         }
         if (table === 'alert_history') {
@@ -315,7 +315,7 @@ describe('Process Price Alerts Cron', () => {
           return { select: vi.fn().mockReturnThis(), in: vi.fn().mockResolvedValue({ data: mockProfiles, error: null }) };
         }
         if (table === 'listings') {
-          return { select: vi.fn().mockReturnThis(), in: vi.fn().mockResolvedValue({ data: mockListings, error: null }) };
+          return { select: vi.fn().mockReturnThis(), in: vi.fn().mockReturnValue({ neq: vi.fn().mockResolvedValue({ data: mockListings, error: null }) }) };
         }
         return { insert: vi.fn().mockResolvedValue({ error: null }), update: vi.fn().mockReturnThis(), eq: vi.fn().mockResolvedValue({ error: null }) };
       });
@@ -360,7 +360,7 @@ describe('Process Price Alerts Cron', () => {
           return { select: vi.fn().mockReturnThis(), in: vi.fn().mockResolvedValue({ data: mockProfiles, error: null }) };
         }
         if (table === 'listings') {
-          return { select: vi.fn().mockReturnThis(), in: vi.fn().mockResolvedValue({ data: mockListings, error: null }) };
+          return { select: vi.fn().mockReturnThis(), in: vi.fn().mockReturnValue({ neq: vi.fn().mockResolvedValue({ data: mockListings, error: null }) }) };
         }
         return { insert: vi.fn().mockResolvedValue({ error: null }), update: vi.fn().mockReturnThis(), eq: vi.fn().mockResolvedValue({ error: null }) };
       });

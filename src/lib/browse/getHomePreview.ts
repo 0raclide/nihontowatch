@@ -30,17 +30,26 @@ export async function getHomePreview(): Promise<HomePreviewData> {
   try {
     const supabase = createServiceClient();
 
+    // Build listings query (exclude dealer portal listings when feature flag is off)
+    let listingsQuery = supabase
+      .from('listings')
+      .select(
+        'id, title, item_type, price_value, price_currency, cert_type, smith, tosogu_maker, stored_images, images, dealers!inner(name, name_ja)',
+        { count: 'exact' }
+      )
+      .eq('is_available', true)
+      .eq('admin_hidden', false);
+
+    if (process.env.NEXT_PUBLIC_DEALER_LISTINGS_LIVE !== 'true') {
+      listingsQuery = listingsQuery.neq('source', 'dealer');
+    }
+
+    listingsQuery = listingsQuery
+      .order('featured_score', { ascending: false, nullsFirst: false })
+      .limit(24);
+
     const [listingsResult, dealerCountResult] = await Promise.all([
-      supabase
-        .from('listings')
-        .select(
-          'id, title, item_type, price_value, price_currency, cert_type, smith, tosogu_maker, stored_images, images, dealers!inner(name, name_ja)',
-          { count: 'exact' }
-        )
-        .eq('is_available', true)
-        .eq('admin_hidden', false)
-        .order('featured_score', { ascending: false, nullsFirst: false })
-        .limit(24),
+      listingsQuery,
       supabase
         .from('dealers')
         .select('id', { count: 'exact', head: true })

@@ -94,7 +94,7 @@ export async function GET(request: NextRequest) {
     const listingIds = [...new Set(statusChangesTyped.map((sc) => sc.listing_id))];
 
     // Step 2: Filter to only listings that are NOW available
-    const { data: availableListings, error: listingsError } = await supabase
+    let listingsQuery = supabase
       .from('listings')
       .select(`
         id,
@@ -112,6 +112,13 @@ export async function GET(request: NextRequest) {
       `)
       .in('id', listingIds)
       .or('is_available.eq.true,status.eq.available');
+
+    // Exclude dealer portal listings when feature flag is off
+    if (process.env.NEXT_PUBLIC_DEALER_LISTINGS_LIVE !== 'true') {
+      listingsQuery = listingsQuery.neq('source', 'dealer');
+    }
+
+    const { data: availableListings, error: listingsError } = await listingsQuery;
 
     if (listingsError) {
       logger.error('Error fetching listings', { error: listingsError });

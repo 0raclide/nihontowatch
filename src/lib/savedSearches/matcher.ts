@@ -71,6 +71,11 @@ export async function findMatchingListings(
     .not('item_type', 'ilike', 'book')
     .not('item_type', 'ilike', 'other');
 
+  // Exclude dealer portal listings when feature flag is off
+  if (process.env.NEXT_PUBLIC_DEALER_LISTINGS_LIVE !== 'true') {
+    query = query.neq('source', 'dealer');
+  }
+
   // Minimum price filter (same as browse — excludes books, accessories, low-quality items)
   // Users with showAllPrices preference pass minPriceJpy=0 to bypass the floor
   if (minPriceJpy > 0) {
@@ -256,6 +261,11 @@ export async function countMatchingListings(
     .not('item_type', 'ilike', 'stand')
     .not('item_type', 'ilike', 'book')
     .not('item_type', 'ilike', 'other');
+
+  // Exclude dealer portal listings when feature flag is off
+  if (process.env.NEXT_PUBLIC_DEALER_LISTINGS_LIVE !== 'true') {
+    query = query.neq('source', 'dealer');
+  }
 
   // Minimum price filter (same as browse — excludes books, accessories, low-quality items)
   // Users with showAllPrices preference pass minPriceJpy=0 to bypass the floor

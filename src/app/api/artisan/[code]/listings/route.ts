@@ -53,6 +53,11 @@ export async function GET(
       .from('listings')
       .select(LISTING_FIELDS);
 
+    // Exclude dealer portal listings when feature flag is off
+    if (process.env.NEXT_PUBLIC_DEALER_LISTINGS_LIVE !== 'true') {
+      query = query.neq('source', 'dealer');
+    }
+
     if (artisanCodes.length === 1) {
       query = query.eq('artisan_id', code);
     } else {

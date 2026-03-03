@@ -51,6 +51,11 @@ export async function GET() {
       .or('status.eq.available,is_available.eq.true')
       .gte('first_seen_at', lastVisitAt);
 
+    // Exclude dealer portal listings when feature flag is off
+    if (process.env.NEXT_PUBLIC_DEALER_LISTINGS_LIVE !== 'true') {
+      query = query.neq('source', 'dealer');
+    }
+
     // Apply data delay for free tier (same logic as browse API)
     if (subscription.isDelayed) {
       const delayCutoff = getDataDelayCutoff();
