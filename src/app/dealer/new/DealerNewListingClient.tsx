@@ -21,7 +21,7 @@ export function DealerNewListingClient() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" />
             </svg>
           </Link>
-          <h1 className="text-[16px] font-medium">{t('dealer.addListing')}</h1>
+          <h1 className="text-[16px] font-medium">{t('dealer.newListing')}</h1>
         </div>
       </div>
 

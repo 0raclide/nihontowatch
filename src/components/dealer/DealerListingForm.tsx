@@ -36,9 +36,27 @@ interface DealerListingFormProps {
     province?: string | null;
     mei_type?: string | null;
     nagasa_cm?: number | null;
+    motohaba_cm?: number | null;
+    sakihaba_cm?: number | null;
+    sori_cm?: number | null;
     images?: string[];
   };
 }
+
+const MEI_TYPES = [
+  { value: 'zaimei', labelKey: 'meiType.zaimei' },
+  { value: 'mumei', labelKey: 'meiType.mumei' },
+  { value: 'kinzogan-mei', labelKey: 'meiType.kinzogan-mei' },
+  { value: 'shumei', labelKey: 'meiType.shumei' },
+  { value: 'kinpunmei', labelKey: 'meiType.kinpunmei' },
+  { value: 'gakumei', labelKey: 'meiType.gakumei' },
+  { value: 'orikaeshi-mei', labelKey: 'meiType.orikaeshi-mei' },
+];
+
+const NAKAGO_TYPES = [
+  { value: 'ubu', labelKey: 'meiType.ubu' },
+  { value: 'suriage', labelKey: 'meiType.suriage' },
+];
 
 function getStickyValue(key: string, fallback: string): string {
   if (typeof window === 'undefined') return fallback;
@@ -67,6 +85,13 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
   const [priceCurrency, setPriceCurrency] = useState<string>(initialData?.price_currency || 'JPY');
   const [isAsk, setIsAsk] = useState(initialData?.price_value == null && mode === 'edit');
   const [description, setDescription] = useState(initialData?.description || '');
+  const [nagasaCm, setNagasaCm] = useState(initialData?.nagasa_cm != null ? String(initialData.nagasa_cm) : '');
+  const [motohabaCm, setMotohabaCm] = useState(initialData?.motohaba_cm != null ? String(initialData.motohaba_cm) : '');
+  const [sakihabaCm, setSakihabaCm] = useState(initialData?.sakihaba_cm != null ? String(initialData.sakihaba_cm) : '');
+  const [soriCm, setSoriCm] = useState(initialData?.sori_cm != null ? String(initialData.sori_cm) : '');
+  const [meiType, setMeiType] = useState<string | null>(initialData?.mei_type || null);
+  const [era, setEra] = useState(initialData?.era || '');
+  const [province, setProvince] = useState(initialData?.province || '');
   const [images, setImages] = useState<string[]>(initialData?.images || []);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -121,8 +146,15 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
         artisan_name_kanji: artisanKanji,
         smith: category === 'nihonto' ? (artisanKanji || artisanName || null) : null,
         tosogu_maker: category === 'tosogu' ? (artisanKanji || artisanName || null) : null,
-        school: category === 'nihonto' ? null : null, // Set from artisan panel if available
+        school: category === 'nihonto' ? null : null,
         tosogu_school: category === 'tosogu' ? null : null,
+        nagasa_cm: nagasaCm ? Number(nagasaCm) : null,
+        motohaba_cm: motohabaCm ? Number(motohabaCm) : null,
+        sakihaba_cm: sakihabaCm ? Number(sakihabaCm) : null,
+        sori_cm: soriCm ? Number(soriCm) : null,
+        mei_type: meiType,
+        era: era || null,
+        province: province || null,
       };
 
       if (mode === 'add') {
@@ -175,6 +207,7 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
   }, [
     mode, initialData, category, itemType, certType, artisanId, artisanName,
     artisanKanji, priceValue, priceCurrency, isAsk, description,
+    nagasaCm, motohabaCm, sakihabaCm, soriCm, meiType, era, province,
     pendingFiles, generatedTitle, router,
   ]);
 
@@ -202,6 +235,13 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
     setPriceValue('');
     setIsAsk(false);
     setDescription('');
+    setNagasaCm('');
+    setMotohabaCm('');
+    setSakihabaCm('');
+    setSoriCm('');
+    setMeiType(null);
+    setEra('');
+    setProvince('');
     setImages([]);
     setPendingFiles([]);
     setShowSuccess(false);
@@ -417,6 +457,141 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
             className="w-full mt-2 px-3 py-2 bg-surface border border-border/50 rounded-lg text-[13px] resize-none"
             placeholder={t('dealer.notesPlaceholder')}
           />
+        </details>
+
+        {/* 9. More Details (collapsed) */}
+        <details>
+          <summary className="text-[11px] uppercase tracking-wider text-muted cursor-pointer">
+            {t('dealer.moreDetails')}
+          </summary>
+          <div className="mt-3 space-y-5">
+            {/* 9a. Measurements — nihonto only */}
+            {category === 'nihonto' && (
+              <div>
+                <label className="block text-[11px] uppercase tracking-wider text-muted mb-2">
+                  {t('dealer.measurements')}
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-[10px] text-muted mb-1">{t('dealer.nagasa')}</label>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={nagasaCm}
+                      onChange={e => setNagasaCm(e.target.value.replace(/[^0-9.]/g, ''))}
+                      placeholder="—"
+                      className="w-full px-3 py-2 bg-surface border border-border/50 rounded-lg text-[13px]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-muted mb-1">{t('dealer.motohaba')}</label>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={motohabaCm}
+                      onChange={e => setMotohabaCm(e.target.value.replace(/[^0-9.]/g, ''))}
+                      placeholder="—"
+                      className="w-full px-3 py-2 bg-surface border border-border/50 rounded-lg text-[13px]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-muted mb-1">{t('dealer.sakihaba')}</label>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={sakihabaCm}
+                      onChange={e => setSakihabaCm(e.target.value.replace(/[^0-9.]/g, ''))}
+                      placeholder="—"
+                      className="w-full px-3 py-2 bg-surface border border-border/50 rounded-lg text-[13px]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-muted mb-1">{t('dealer.sori')}</label>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={soriCm}
+                      onChange={e => setSoriCm(e.target.value.replace(/[^0-9.]/g, ''))}
+                      placeholder="—"
+                      className="w-full px-3 py-2 bg-surface border border-border/50 rounded-lg text-[13px]"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 9b. Signature (mei_type) — nihonto only */}
+            {category === 'nihonto' && (
+              <div>
+                <label className="block text-[11px] uppercase tracking-wider text-muted mb-2">
+                  {t('dealer.signature')}
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {MEI_TYPES.map(({ value: v, labelKey }) => (
+                    <button
+                      key={v}
+                      type="button"
+                      onClick={() => setMeiType(meiType === v ? null : v)}
+                      className={`px-3 py-1.5 rounded-full text-[12px] font-medium transition-all ${
+                        meiType === v
+                          ? 'bg-gold/10 text-gold border border-gold/30'
+                          : 'bg-surface text-muted border border-border/50 hover:border-gold/30'
+                      }`}
+                    >
+                      {t(labelKey)}
+                    </button>
+                  ))}
+                </div>
+                <label className="block text-[11px] uppercase tracking-wider text-muted mt-3 mb-2">
+                  {t('dealer.nakago')}
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {NAKAGO_TYPES.map(({ value: v, labelKey }) => (
+                    <button
+                      key={v}
+                      type="button"
+                      onClick={() => setMeiType(meiType === v ? null : v)}
+                      className={`px-3 py-1.5 rounded-full text-[12px] font-medium transition-all ${
+                        meiType === v
+                          ? 'bg-gold/10 text-gold border border-gold/30'
+                          : 'bg-surface text-muted border border-border/50 hover:border-gold/30'
+                      }`}
+                    >
+                      {t(labelKey)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 9c. Era */}
+            <div>
+              <label className="block text-[11px] uppercase tracking-wider text-muted mb-2">
+                {t('dealer.era')}
+              </label>
+              <input
+                type="text"
+                value={era}
+                onChange={e => setEra(e.target.value)}
+                placeholder="—"
+                className="w-full px-3 py-2 bg-surface border border-border/50 rounded-lg text-[13px]"
+              />
+            </div>
+
+            {/* 9d. Province */}
+            <div>
+              <label className="block text-[11px] uppercase tracking-wider text-muted mb-2">
+                {t('dealer.province')}
+              </label>
+              <input
+                type="text"
+                value={province}
+                onChange={e => setProvince(e.target.value)}
+                placeholder="—"
+                className="w-full px-3 py-2 bg-surface border border-border/50 rounded-lg text-[13px]"
+              />
+            </div>
+          </div>
         </details>
 
         {/* Error */}

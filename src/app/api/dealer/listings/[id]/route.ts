@@ -28,7 +28,7 @@ export async function GET(
   }
 
   const { data: listing, error } = await (supabase.from('listings') as any)
-    .select('id, title, title_en, title_ja, item_type, item_category, cert_type, price_value, price_currency, description, artisan_id, smith, tosogu_maker, school, tosogu_school, era, province, mei_type, nagasa_cm, images, status, is_available, is_sold, source, dealer_id')
+    .select('id, title, title_en, title_ja, item_type, item_category, cert_type, price_value, price_currency, description, artisan_id, smith, tosogu_maker, school, tosogu_school, era, province, mei_type, nagasa_cm, motohaba_cm, sakihaba_cm, sori_cm, images, status, is_available, is_sold, source, dealer_id')
     .eq('id', listingId)
     .eq('dealer_id', auth.dealerId)
     .eq('source', 'dealer')
@@ -48,7 +48,7 @@ const ALLOWED_FIELDS = new Set([
   'cert_type', 'item_type', 'item_category',
   'smith', 'tosogu_maker', 'school', 'tosogu_school',
   'artisan_id',
-  'era', 'province', 'mei_type', 'nagasa_cm',
+  'era', 'province', 'mei_type', 'nagasa_cm', 'motohaba_cm', 'sakihaba_cm', 'sori_cm',
   // Note: 'images' intentionally excluded — managed exclusively via /api/dealer/images
 ]);
 

@@ -1,7 +1,10 @@
-import { createClient } from '@/lib/supabase/server';
-import { createServiceClient } from '@/lib/supabase/server';
+import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { verifyDealer } from '@/lib/dealer/auth';
 import { NextRequest, NextResponse } from 'next/server';
+import { getArtisanNames } from '@/lib/supabase/yuhinkai';
+import { getArtisanDisplayName, getArtisanDisplayNameKanji, getArtisanAlias } from '@/lib/artisan/displayName';
+import { getArtisanTier } from '@/lib/artisan/tier';
+import { getAttributionName } from '@/lib/listing/attribution';
 
 export const dynamic = 'force-dynamic';
 
@@ -54,11 +57,46 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to fetch listings' }, { status: 500 });
   }
 
+  // Fetch dealer name for header display
+  const { data: dealer } = await (supabase.from('dealers') as any)
+    .select('name, name_ja')
+    .eq('id', auth.dealerId)
+    .single();
+
+  // Enrich listings with artisan display names from Yuhinkai
+  let enrichedListings = listings || [];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const artisanCodes = [...new Set(enrichedListings.map((l: any) => l.artisan_id).filter(Boolean))] as string[];
+  if (artisanCodes.length > 0) {
+    const artisanNameMap = await getArtisanNames(artisanCodes);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    enrichedListings = enrichedListings.map((listing: any) => {
+      if (listing.artisan_id && artisanNameMap.has(listing.artisan_id)) {
+        const entry = artisanNameMap.get(listing.artisan_id)!;
+        return {
+          ...listing,
+          artisan_display_name: getArtisanAlias(listing.artisan_id) || getArtisanDisplayName(entry.name_romaji, entry.school, listing.artisan_id),
+          artisan_name_kanji: getArtisanDisplayNameKanji(entry.name_kanji, listing.artisan_id),
+          artisan_tier: getArtisanTier(entry),
+        };
+      }
+      if (listing.artisan_id && !listing.artisan_display_name) {
+        return {
+          ...listing,
+          artisan_display_name: getAttributionName(listing),
+        };
+      }
+      return listing;
+    });
+  }
+
   return NextResponse.json({
-    listings: listings || [],
+    listings: enrichedListings,
     total: count || 0,
     page,
     limit,
+    dealer_name: dealer?.name || null,
+    dealer_name_ja: dealer?.name_ja || null,
   });
 }
 
@@ -101,6 +139,9 @@ export async function POST(request: NextRequest) {
     province,
     mei_type,
     nagasa_cm,
+    motohaba_cm,
+    sakihaba_cm,
+    sori_cm,
   } = body;
 
   // Synthetic URL for UNIQUE NOT NULL constraint
@@ -126,6 +167,9 @@ export async function POST(request: NextRequest) {
     province: province ?? null,
     mei_type: mei_type ?? null,
     nagasa_cm: nagasa_cm ?? null,
+    motohaba_cm: motohaba_cm ?? null,
+    sakihaba_cm: sakihaba_cm ?? null,
+    sori_cm: sori_cm ?? null,
     status: 'AVAILABLE',
     is_available: true,
     is_sold: false,

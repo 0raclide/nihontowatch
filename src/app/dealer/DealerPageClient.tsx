@@ -2,7 +2,9 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { ListingGrid } from '@/components/browse/ListingGrid';
+import { DealerBottomBar } from '@/components/dealer/DealerBottomBar';
 import { dealerListingToDisplayItem } from '@/lib/displayItem';
 import { useQuickViewOptional } from '@/contexts/QuickViewContext';
 import { useCurrency } from '@/hooks/useCurrency';
@@ -21,6 +23,7 @@ const TABS: { value: Tab; labelKey: string }[] = [
 
 export function DealerPageClient() {
   const { t, locale } = useLocale();
+  const router = useRouter();
   const quickView = useQuickViewOptional();
   const { currency, exchangeRates } = useCurrency();
   const [tab, setTab] = useState<Tab>('available');
@@ -28,6 +31,10 @@ export function DealerPageClient() {
   const [total, setTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [dealerName, setDealerName] = useState<string | null>(null);
+  const [dealerNameJa, setDealerNameJa] = useState<string | null>(null);
+
+  const displayName = locale === 'ja' && dealerNameJa ? dealerNameJa : dealerName;
 
   const fetchListings = useCallback(async (selectedTab: Tab) => {
     setIsLoading(true);
@@ -38,6 +45,8 @@ export function DealerPageClient() {
         const data = await res.json();
         setListings(data.listings);
         setTotal(data.total);
+        if (data.dealer_name) setDealerName(data.dealer_name);
+        if (data.dealer_name_ja !== undefined) setDealerNameJa(data.dealer_name_ja);
       } else if (res.status === 401) {
         setFetchError(t('dealer.sessionExpired'));
       } else {
@@ -65,27 +74,33 @@ export function DealerPageClient() {
     }
   }, [quickView]);
 
+  const handleAddClick = useCallback(() => {
+    router.push('/dealer/new');
+  }, [router]);
+
   return (
-    <div className="min-h-screen bg-cream">
+    <div className="min-h-screen bg-cream pb-16 lg:pb-0">
       {/* Header */}
       <div className="sticky top-0 z-30 bg-cream/95 backdrop-blur-sm border-b border-border/30">
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
           <div>
-            <h1 className="text-[16px] font-medium">{t('dealer.myListings')}</h1>
+            <h1 className="text-[16px] font-medium">
+              {displayName || t('dealer.myListings')}
+            </h1>
             <p className="text-[12px] text-muted">
               {total} {t('dealer.items')}
             </p>
           </div>
           <Link
             href="/dealer/new"
-            className="px-4 py-2 rounded-lg bg-gold text-white text-[13px] font-medium hover:bg-gold/90 transition-colors"
+            className="hidden lg:inline-flex px-4 py-2 rounded-lg bg-gold text-white text-[13px] font-medium hover:bg-gold/90 transition-colors"
           >
             + {t('dealer.addListing')}
           </Link>
         </div>
 
-        {/* Tabs */}
-        <div className="max-w-5xl mx-auto px-4 flex gap-1 pb-2">
+        {/* Desktop tabs */}
+        <div className="hidden lg:flex max-w-5xl mx-auto px-4 gap-1 pb-2">
           {TABS.map(({ value, labelKey }) => (
             <button
               key={value}
@@ -146,14 +161,12 @@ export function DealerPageClient() {
         )}
       </div>
 
-      {/* Mobile FAB */}
-      <Link
-        href="/dealer/new"
-        className="fixed bottom-20 right-4 w-14 h-14 rounded-full bg-gold text-white shadow-lg flex items-center justify-center text-2xl lg:hidden hover:bg-gold/90 transition-colors z-40"
-        aria-label={t('dealer.addListing')}
-      >
-        +
-      </Link>
+      {/* Mobile bottom bar */}
+      <DealerBottomBar
+        activeTab={tab}
+        onTabChange={setTab}
+        onAddClick={handleAddClick}
+      />
     </div>
   );
 }
