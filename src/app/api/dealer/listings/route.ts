@@ -28,8 +28,12 @@ export async function GET(request: NextRequest) {
   const limit = 50;
   const offset = (page - 1) * limit;
 
+  // Use service client to bypass RLS — migration 098 blocks source='dealer' from
+  // anon/authenticated reads. Auth is already verified above via verifyDealer().
+  const serviceClient = createServiceClient();
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let query = (supabase.from('listings') as any)
+  let query = (serviceClient.from('listings') as any)
     .select('id, url, title, title_en, title_ja, item_type, item_category, price_value, price_currency, cert_type, images, status, is_available, is_sold, first_seen_at, smith, tosogu_maker, school, tosogu_school, artisan_id, artisan_confidence, description, era, province, mei_type, nagasa_cm, dealers:dealers(id, name, name_ja, domain)', { count: 'exact' })
     .eq('dealer_id', auth.dealerId)
     .eq('source', 'dealer');

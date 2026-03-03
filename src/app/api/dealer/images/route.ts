@@ -35,7 +35,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify listing belongs to this dealer
-    const { data: listing } = await (supabase.from('listings') as any)
+    // Use service client — RLS blocks source='dealer' reads (migration 098)
+    const serviceClient = createServiceClient();
+    const { data: listing } = await (serviceClient.from('listings') as any)
       .select('id, dealer_id, source, images')
       .eq('id', parseInt(itemId, 10))
       .single() as { data: { id: number; dealer_id: number; source: string; images: string[] | null } | null };
@@ -53,8 +55,6 @@ export async function POST(request: NextRequest) {
     const ext = file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg';
     const uuid = crypto.randomUUID();
     const path = `${auth.dealerId}/${itemId}/${uuid}.${ext}`;
-
-    const serviceClient = createServiceClient();
     const arrayBuffer = await file.arrayBuffer();
     const { error: uploadError } = await serviceClient.storage
       .from(BUCKET)
@@ -111,7 +111,9 @@ export async function DELETE(request: NextRequest) {
     const listingId = parseInt(itemId, 10);
 
     // Verify listing belongs to this dealer
-    const { data: listing } = await (supabase.from('listings') as any)
+    // Use service client — RLS blocks source='dealer' reads (migration 098)
+    const serviceClient = createServiceClient();
+    const { data: listing } = await (serviceClient.from('listings') as any)
       .select('id, dealer_id, source, images')
       .eq('id', listingId)
       .single() as { data: { id: number; dealer_id: number; source: string; images: string[] | null } | null };
@@ -131,8 +133,6 @@ export async function DELETE(request: NextRequest) {
     if (!storagePath || storagePath.includes('..') || !storagePath.startsWith(`${auth.dealerId}/`)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
-
-    const serviceClient = createServiceClient();
 
     // Remove from storage
     if (storagePath) {

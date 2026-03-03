@@ -27,7 +27,11 @@ export async function GET(
     );
   }
 
-  const { data: listing, error } = await (supabase.from('listings') as any)
+  // Use service client to bypass RLS — migration 098 blocks source='dealer' from
+  // anon/authenticated reads. Auth is already verified above via verifyDealer().
+  const serviceClient = createServiceClient();
+
+  const { data: listing, error } = await (serviceClient.from('listings') as any)
     .select('id, title, title_en, title_ja, item_type, item_category, cert_type, price_value, price_currency, description, artisan_id, smith, tosogu_maker, school, tosogu_school, era, province, mei_type, nagasa_cm, motohaba_cm, sakihaba_cm, sori_cm, images, status, is_available, is_sold, source, dealer_id')
     .eq('id', listingId)
     .eq('dealer_id', auth.dealerId)
@@ -76,7 +80,9 @@ export async function PATCH(
   }
 
   // Verify listing belongs to this dealer and is dealer-sourced
-  const { data: listing } = await (supabase.from('listings') as any)
+  // Use service client — RLS blocks source='dealer' reads (migration 098)
+  const serviceClient = createServiceClient();
+  const { data: listing } = await (serviceClient.from('listings') as any)
     .select('id, dealer_id, source, status')
     .eq('id', listingId)
     .single();
@@ -119,7 +125,6 @@ export async function PATCH(
     return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 });
   }
 
-  const serviceClient = createServiceClient();
   const { data, error } = await (serviceClient.from('listings') as any)
     .update(updates)
     .eq('id', listingId)
@@ -158,7 +163,9 @@ export async function DELETE(
   }
 
   // Verify listing belongs to this dealer
-  const { data: listing } = await (supabase.from('listings') as any)
+  // Use service client — RLS blocks source='dealer' reads (migration 098)
+  const serviceClient = createServiceClient();
+  const { data: listing } = await (serviceClient.from('listings') as any)
     .select('id, dealer_id, source, status')
     .eq('id', listingId)
     .single();
@@ -174,8 +181,6 @@ export async function DELETE(
       { status: 400 }
     );
   }
-
-  const serviceClient = createServiceClient();
   const { error } = await (serviceClient.from('listings') as any)
     .delete()
     .eq('id', listingId);
