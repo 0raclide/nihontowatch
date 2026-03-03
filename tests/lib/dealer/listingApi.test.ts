@@ -147,8 +147,8 @@ describe('status change side effects', () => {
       updates.status = 'SOLD';
       updates.is_available = false;
       updates.is_sold = true;
-    } else if (status === 'WITHDRAWN') {
-      updates.status = 'WITHDRAWN';
+    } else if (status === 'INVENTORY') {
+      updates.status = 'INVENTORY';
       updates.is_available = false;
       updates.is_sold = false;
     } else if (status === 'AVAILABLE') {
@@ -167,9 +167,9 @@ describe('status change side effects', () => {
     });
   });
 
-  it('WITHDRAWN sets is_available=false, is_sold=false', () => {
-    expect(applyStatusSideEffects('WITHDRAWN')).toEqual({
-      status: 'WITHDRAWN',
+  it('INVENTORY sets is_available=false, is_sold=false', () => {
+    expect(applyStatusSideEffects('INVENTORY')).toEqual({
+      status: 'INVENTORY',
       is_available: false,
       is_sold: false,
     });
@@ -273,10 +273,14 @@ describe('synthetic URL format', () => {
 
 describe('DELETE status guard', () => {
   function canDelete(status: string): boolean {
-    return status === 'WITHDRAWN';
+    return status === 'INVENTORY' || status === 'WITHDRAWN';
   }
 
-  it('allows deletion of WITHDRAWN listings', () => {
+  it('allows deletion of INVENTORY items', () => {
+    expect(canDelete('INVENTORY')).toBe(true);
+  });
+
+  it('allows deletion of WITHDRAWN items (legacy compat)', () => {
     expect(canDelete('WITHDRAWN')).toBe(true);
   });
 

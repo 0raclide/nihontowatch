@@ -13,13 +13,12 @@ import { useLocale } from '@/i18n/LocaleContext';
 import type { Listing } from '@/types';
 import type { DisplayItem } from '@/types/displayItem';
 
-type Tab = 'available' | 'sold' | 'withdrawn' | 'all';
+type Tab = 'inventory' | 'available' | 'sold';
 
 const TABS: { value: Tab; labelKey: string }[] = [
-  { value: 'available', labelKey: 'dealer.tabAvailable' },
+  { value: 'inventory', labelKey: 'dealer.tabInventory' },
+  { value: 'available', labelKey: 'dealer.tabForSale' },
   { value: 'sold', labelKey: 'dealer.tabSold' },
-  { value: 'withdrawn', labelKey: 'dealer.tabWithdrawn' },
-  { value: 'all', labelKey: 'dealer.tabAll' },
 ];
 
 export function DealerPageClient() {
@@ -27,7 +26,7 @@ export function DealerPageClient() {
   const router = useRouter();
   const quickView = useQuickViewOptional();
   const { currency, exchangeRates } = useCurrency();
-  const [tab, setTab] = useState<Tab>('available');
+  const [tab, setTab] = useState<Tab>('inventory');
   const [listings, setListings] = useState<Listing[]>([]);
   const [total, setTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(true);

@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
   }
 
   const { searchParams } = new URL(request.url);
-  const tab = searchParams.get('tab') || 'available';
+  const tab = searchParams.get('tab') || 'inventory';
   const page = parseInt(searchParams.get('page') || '1', 10);
   const limit = 50;
   const offset = (page - 1) * limit;
@@ -38,18 +38,17 @@ export async function GET(request: NextRequest) {
     .eq('dealer_id', auth.dealerId)
     .eq('source', 'dealer');
 
-  // Tab filters
+  // Tab filters — 3-state lifecycle: Inventory → For Sale → Sold
   switch (tab) {
+    case 'inventory':
+      query = query.eq('is_available', false).eq('is_sold', false);
+      break;
     case 'available':
       query = query.eq('is_available', true).eq('is_sold', false);
       break;
     case 'sold':
       query = query.eq('is_sold', true);
       break;
-    case 'withdrawn':
-      query = query.eq('is_available', false).eq('is_sold', false);
-      break;
-    // 'all' — no filter
   }
 
   query = query.order('first_seen_at', { ascending: false });
@@ -146,6 +145,7 @@ export async function POST(request: NextRequest) {
     motohaba_cm,
     sakihaba_cm,
     sori_cm,
+    status: requestedStatus, // 'AVAILABLE' or 'INVENTORY' (default)
   } = body;
 
   // Synthetic URL for UNIQUE NOT NULL constraint
@@ -174,8 +174,8 @@ export async function POST(request: NextRequest) {
     motohaba_cm: motohaba_cm ?? null,
     sakihaba_cm: sakihaba_cm ?? null,
     sori_cm: sori_cm ?? null,
-    status: 'AVAILABLE',
-    is_available: true,
+    status: requestedStatus === 'AVAILABLE' ? 'AVAILABLE' : 'INVENTORY',
+    is_available: requestedStatus === 'AVAILABLE',
     is_sold: false,
     page_exists: true,
     is_initial_import: false,

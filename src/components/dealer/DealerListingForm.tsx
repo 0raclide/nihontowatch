@@ -97,6 +97,7 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [savedToInventory, setSavedToInventory] = useState(false);
   const [imageUploadFailed, setImageUploadFailed] = useState(false);
   const [createdListingId, setCreatedListingId] = useState<string | null>(null);
 
@@ -126,7 +127,7 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
     setArtisanKanji(null);
   }, []);
 
-  const handleSubmit = useCallback(async () => {
+  const handleSubmit = useCallback(async (targetStatus?: 'INVENTORY' | 'AVAILABLE') => {
     setIsSubmitting(true);
     setError(null);
 
@@ -158,6 +159,9 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
       };
 
       if (mode === 'add') {
+        // Add status to payload for new listings
+        payload.status = targetStatus || 'INVENTORY';
+
         // Create listing
         const res = await fetch('/api/dealer/listings', {
           method: 'POST',
@@ -184,6 +188,7 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
           }
         }
 
+        setSavedToInventory(targetStatus !== 'AVAILABLE');
         setShowSuccess(true);
       } else if (mode === 'edit' && initialData?.id) {
         const res = await fetch(`/api/dealer/listings/${initialData.id}`, {
@@ -245,6 +250,7 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
     setImages([]);
     setPendingFiles([]);
     setShowSuccess(false);
+    setSavedToInventory(false);
     setImageUploadFailed(false);
     setCreatedListingId(null);
     setError(null);
@@ -298,8 +304,12 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
         </div>
-        <h2 className="text-lg font-medium mb-2">{t('dealer.publishSuccess')}</h2>
-        <p className="text-[13px] text-muted mb-6">{t('dealer.publishSuccessDesc')}</p>
+        <h2 className="text-lg font-medium mb-2">
+          {t(savedToInventory ? 'dealer.savedToInventory' : 'dealer.publishSuccess')}
+        </h2>
+        <p className="text-[13px] text-muted mb-6">
+          {t(savedToInventory ? 'dealer.savedToInventoryDesc' : 'dealer.publishSuccessDesc')}
+        </p>
         <div className="flex gap-3">
           <button
             onClick={handleReset}
@@ -319,7 +329,7 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
   }
 
   return (
-    <div className="pb-24">
+    <div className="pb-24 lg:pb-0">
       <div className="space-y-6 px-4 py-4">
         {/* 1. Images */}
         <section>
@@ -602,22 +612,55 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
         )}
       </div>
 
-      {/* 9. Sticky publish button */}
-      <div className="fixed bottom-0 inset-x-0 p-4 bg-cream/95 backdrop-blur-sm border-t border-border/30 z-40">
-        <button
-          onClick={handleSubmit}
-          disabled={isSubmitting || !itemType}
-          className="w-full py-3 rounded-xl bg-gold text-white text-[14px] font-medium disabled:opacity-50 transition-all hover:bg-gold/90 active:scale-[0.98]"
-        >
-          {isSubmitting ? (
-            <span className="flex items-center justify-center gap-2">
-              <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              {t('dealer.publishing')}
-            </span>
-          ) : (
-            t(mode === 'add' ? 'dealer.publish' : 'dealer.save')
-          )}
-        </button>
+      {/* Submit buttons — sticky on mobile, inline on desktop */}
+      <div className="fixed bottom-0 inset-x-0 p-4 bg-cream/95 backdrop-blur-sm border-t border-border/30 z-40 lg:static lg:p-0 lg:px-4 lg:mt-6 lg:bg-transparent lg:border-0 lg:backdrop-blur-none">
+        {mode === 'add' ? (
+          <div className="flex gap-3">
+            <button
+              onClick={() => handleSubmit('INVENTORY')}
+              disabled={isSubmitting || !itemType}
+              className="flex-1 py-3 rounded-xl bg-surface text-foreground border border-border/50 text-[14px] font-medium disabled:opacity-50 transition-all hover:bg-hover active:scale-[0.98]"
+            >
+              {isSubmitting ? (
+                <span className="flex items-center justify-center gap-2">
+                  <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                  {t('dealer.saving')}
+                </span>
+              ) : (
+                t('dealer.saveToInventory')
+              )}
+            </button>
+            <button
+              onClick={() => handleSubmit('AVAILABLE')}
+              disabled={isSubmitting || !itemType}
+              className="flex-1 py-3 rounded-xl bg-gold text-white text-[14px] font-medium disabled:opacity-50 transition-all hover:bg-gold/90 active:scale-[0.98]"
+            >
+              {isSubmitting ? (
+                <span className="flex items-center justify-center gap-2">
+                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  {t('dealer.publishing')}
+                </span>
+              ) : (
+                t('dealer.saveAndList')
+              )}
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={() => handleSubmit()}
+            disabled={isSubmitting || !itemType}
+            className="w-full py-3 rounded-xl bg-gold text-white text-[14px] font-medium disabled:opacity-50 transition-all hover:bg-gold/90 active:scale-[0.98]"
+          >
+            {isSubmitting ? (
+              <span className="flex items-center justify-center gap-2">
+                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                {t('dealer.saving')}
+              </span>
+            ) : (
+              t('dealer.save')
+            )}
+          </button>
+        )}
       </div>
     </div>
   );

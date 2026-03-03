@@ -111,8 +111,8 @@ export async function PATCH(
     updates.status = 'SOLD';
     updates.is_available = false;
     updates.is_sold = true;
-  } else if (body.status === 'WITHDRAWN') {
-    updates.status = 'WITHDRAWN';
+  } else if (body.status === 'INVENTORY') {
+    updates.status = 'INVENTORY';
     updates.is_available = false;
     updates.is_sold = false;
   } else if (body.status === 'AVAILABLE') {
@@ -141,7 +141,7 @@ export async function PATCH(
 
 /**
  * DELETE /api/dealer/listings/[id]
- * Delete a dealer listing (only draft/withdrawn).
+ * Delete a dealer listing (only inventory/withdrawn items).
  */
 export async function DELETE(
   request: NextRequest,
@@ -174,10 +174,10 @@ export async function DELETE(
     return NextResponse.json({ error: 'Listing not found' }, { status: 404 });
   }
 
-  // Only allow deletion of withdrawn listings
-  if (listing.status !== 'WITHDRAWN') {
+  // Only allow deletion of inventory (unlisted) items
+  if (listing.status !== 'INVENTORY' && listing.status !== 'WITHDRAWN') {
     return NextResponse.json(
-      { error: 'Only withdrawn listings can be deleted. Withdraw first.' },
+      { error: 'Only inventory items can be deleted. Move to inventory first.' },
       { status: 400 }
     );
   }

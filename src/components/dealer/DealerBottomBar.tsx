@@ -2,13 +2,12 @@
 
 import { useLocale } from '@/i18n/LocaleContext';
 
-type Tab = 'available' | 'sold' | 'withdrawn' | 'all';
+type Tab = 'inventory' | 'available' | 'sold';
 
 const TABS: { value: Tab; labelKey: string }[] = [
-  { value: 'available', labelKey: 'dealer.tabAvailable' },
+  { value: 'inventory', labelKey: 'dealer.tabInventory' },
+  { value: 'available', labelKey: 'dealer.tabForSale' },
   { value: 'sold', labelKey: 'dealer.tabSold' },
-  { value: 'withdrawn', labelKey: 'dealer.tabWithdrawn' },
-  { value: 'all', labelKey: 'dealer.tabAll' },
 ];
 
 interface DealerBottomBarProps {
