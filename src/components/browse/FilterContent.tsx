@@ -580,7 +580,7 @@ export function FilterContent({
 
   // Sort certifications by rank
   // Certifications hidden from filter (not serious for nihonto/tosogu collectors)
-  const HIDDEN_CERTS = new Set(['nthk', 'TokuKicho', 'none']);
+  const HIDDEN_CERTS = new Set(['nthk', 'TokuKicho']);
 
   const sortedCertifications = useMemo(() => {
     return [...facets.certifications]
