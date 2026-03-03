@@ -170,9 +170,16 @@ export async function GET(request: NextRequest) {
 
     while (true) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: listings, error } = await (supabase.from('listings') as any)
+      let query = (supabase.from('listings') as any)
         .select('id, artisan_id, artisan_elite_factor, artisan_elite_count, artisan_designation_factor, cert_type, price_value, price_currency, artisan_confidence, images, first_seen_at, is_initial_import, dealer_id, smith, tosogu_maker, school, tosogu_school, era, province, description, nagasa_cm, sori_cm, motohaba_cm, tosogu_height_cm, tosogu_width_cm')
-        .eq('is_available', true)
+        .eq('is_available', true);
+
+      // Exclude dealer-uploaded listings from scoring when feature flag is off
+      if (process.env.NEXT_PUBLIC_DEALER_LISTINGS_LIVE !== 'true') {
+        query = query.neq('source', 'dealer');
+      }
+
+      const { data: listings, error } = await query
         .range(offset, offset + PAGE_SIZE - 1) as { data: ListingRow[] | null; error: unknown };
 
       if (error) {

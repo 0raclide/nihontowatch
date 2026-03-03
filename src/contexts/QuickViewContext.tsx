@@ -33,7 +33,7 @@ interface QuickViewContextType {
   /** The currently displayed listing */
   currentListing: Listing | null;
   /** Open quick view for a specific listing */
-  openQuickView: (listing: Listing, options?: { skipFetch?: boolean }) => void;
+  openQuickView: (listing: Listing, options?: { skipFetch?: boolean; source?: 'browse' | 'dealer' }) => void;
   /** Close the quick view modal */
   closeQuickView: () => void;
   /** Dismiss QuickView UI without history.back() — for use before router.push() navigation */
@@ -61,8 +61,8 @@ interface QuickViewContextType {
   refreshCurrentListing: (optimisticFields?: Partial<Listing>) => Promise<void>;
   /** Whether the detail API has loaded for the current listing (false = showing browse skeleton data) */
   detailLoaded: boolean;
-  /** Data source: 'browse' for dealer listings, 'collection' for personal items */
-  source: 'browse' | 'collection';
+  /** Data source: 'browse' for crawled listings, 'collection' for personal items, 'dealer' for dealer's own listings */
+  source: 'browse' | 'collection' | 'dealer';
   /** The original CollectionItem when source='collection' */
   collectionItem: CollectionItem | null;
   /** Current collection mode: 'view', 'add', 'edit', or null */
@@ -140,7 +140,7 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
   const [detailLoaded, setDetailLoaded] = useState(false);
 
   // Collection-specific state
-  const [source, setSource] = useState<'browse' | 'collection'>('browse');
+  const [source, setSource] = useState<'browse' | 'collection' | 'dealer'>('browse');
   const [collectionItem, setCollectionItem] = useState<CollectionItem | null>(null);
   const [collectionMode, setCollectionModeState] = useState<'view' | 'add' | 'edit' | null>(null);
   const onCollectionSavedRef = useRef<(() => void) | null>(null);
@@ -160,7 +160,7 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
   const historyBackInProgressRef = useRef(false); // guards popstate from our own history.back()
 
   // Update URL synchronously using history API (no React re-renders)
-  const updateUrl = useCallback((id: string | number | null, itemSource?: 'browse' | 'collection') => {
+  const updateUrl = useCallback((id: string | number | null, itemSource?: 'browse' | 'collection' | 'dealer') => {
     if (typeof window === 'undefined') return;
 
     const url = new URL(window.location.href);
@@ -206,7 +206,7 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
   }, [isAdmin]);
 
   // Open quick view
-  const openQuickView = useCallback((listing: Listing, options?: { skipFetch?: boolean }) => {
+  const openQuickView = useCallback((listing: Listing, options?: { skipFetch?: boolean; source?: 'browse' | 'dealer' }) => {
     // Prevent re-opening during cooldown (after close)
     if (closeCooldown.current) {
       return;
@@ -229,6 +229,10 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
     setIsOpen(true);
     setCurrentIndex(index);
     setDetailLoaded(!!options?.skipFetch); // Already loaded if caller pre-fetched
+    // Auto-detect dealer source from listing data (for Phase 3 browse integration)
+    const detectedSource = options?.source
+      || ((mappedListing as any).source === 'dealer' || mappedListing.url?.startsWith('nw://') ? 'dealer' : 'browse');
+    setSource(detectedSource as 'browse' | 'collection' | 'dealer');
 
     // Push a history entry so browser back closes the modal instead of leaving the page.
     // Only push if no ?listing= currently in URL — avoids double-push on deep links

@@ -87,10 +87,43 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Protect /admin and /api/admin routes (single role query for both)
+  // Protect /admin, /api/admin, /dealer, and /api/dealer routes
   const pathname = request.nextUrl.pathname;
   const isAdminPage = pathname.startsWith('/admin');
   const isAdminApi = pathname.startsWith('/api/admin');
+  const isDealerPage = pathname.startsWith('/dealer');
+  const isDealerApi = pathname.startsWith('/api/dealer');
+
+  if (isDealerPage || isDealerApi) {
+    if (!user) {
+      if (isDealerApi) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+      const url = request.nextUrl.clone();
+      url.pathname = '/';
+      url.searchParams.set('login', 'dealer');
+      return NextResponse.redirect(url);
+    }
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role, subscription_tier, dealer_id')
+      .eq('id', user.id)
+      .single() as { data: { role: string; subscription_tier: string; dealer_id: number | null } | null; error: unknown };
+
+    // Admins can access dealer routes (for testing/support)
+    const isAdmin = profile?.role === 'admin';
+    const isDealerTier = profile?.subscription_tier === 'dealer' && !!profile?.dealer_id;
+
+    if (!isAdmin && !isDealerTier) {
+      if (isDealerApi) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
+      const url = request.nextUrl.clone();
+      url.pathname = '/';
+      return NextResponse.redirect(url);
+    }
+  }
 
   if (isAdminPage || isAdminApi) {
     // Check API key bypass first (for /api/admin only)

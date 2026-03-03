@@ -75,6 +75,8 @@ interface ListingInput {
   // Supabase join returns 'dealers' (plural) — both singular and plural accepted
   dealer?: { id?: number; name: string; name_ja?: string | null; domain?: string } | null;
   dealers?: { id?: number; name: string; name_ja?: string | null; domain?: string } | null;
+  // Source (crawled vs dealer-uploaded)
+  source?: string | null;
   // Browse-only
   admin_hidden?: boolean;
   status_admin_locked?: boolean;
@@ -103,7 +105,7 @@ export function listingToDisplayItem(listing: ListingInput, locale: string): Dis
   return {
     // Identity
     id: listing.id,
-    source: 'browse',
+    source: listing.source === 'dealer' ? 'dealer' : 'browse',
 
     // Content
     title: listing.title,
@@ -192,5 +194,6 @@ export function listingToDisplayItem(listing: ListingInput, locale: string): Dis
       sold_data: listing.sold_data ?? null,
     },
     collection: null,
+    dealer: listing.source === 'dealer' ? { isOwnListing: false } : null,
   };
 }

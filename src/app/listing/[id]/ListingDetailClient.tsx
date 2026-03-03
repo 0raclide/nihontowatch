@@ -102,8 +102,12 @@ export default function ListingDetailPage({ initialData }: ListingDetailPageProp
     };
   }, [listing, listingId, activity]);
 
-  // Track external link click (dealer click-through)
+  // Whether this is a dealer-uploaded listing (nw:// synthetic URL)
+  const isDealerListing = listing?.url?.startsWith('nw://');
+
+  // Track external link click (dealer click-through) — skip for dealer listings
   const handleExternalLinkClick = useCallback(() => {
+    if (isDealerListing) return;
     if (activity && listing) {
       activity.trackDealerClick(
         Number(listingId),
@@ -114,7 +118,7 @@ export default function ListingDetailPage({ initialData }: ListingDetailPageProp
         { priceAtClick: listing.price_value ?? undefined, currencyAtClick: listing.price_currency ?? undefined }
       );
     }
-  }, [activity, listing, listingId]);
+  }, [activity, listing, listingId, isDealerListing]);
 
   // Validate images - hook must be called unconditionally before any early returns
   const rawImages = listing ? getAllImages(listing) : [];
@@ -497,35 +501,47 @@ export default function ListingDetailPage({ initialData }: ListingDetailPageProp
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                     </svg>
                   </Link>
-                  {/* Secondary: View on dealer site (may still exist) */}
-                  <a
-                    href={listing.url}
-                    target="_blank"
-                    rel="noopener noreferrer nofollow"
-                    onClick={handleExternalLinkClick}
-                    className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 text-[14px] font-medium text-charcoal bg-paper border border-border hover:border-gold hover:text-gold rounded-lg transition-colors"
-                  >
-                    {t('listing.viewOnDealer', { dealer: listing.dealers ? getDealerDisplayName(listing.dealers as { name: string; name_ja?: string | null }, locale) : '' })}
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                    </svg>
-                  </a>
+                  {/* Secondary: View on dealer site (may still exist) — skip for nw:// URLs */}
+                  {isDealerListing ? (
+                    <span className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 text-[14px] font-medium text-muted bg-surface border border-border/50 rounded-lg cursor-default opacity-60">
+                      {t('dealer.inquireComingSoon')}
+                    </span>
+                  ) : (
+                    <a
+                      href={listing.url}
+                      target="_blank"
+                      rel="noopener noreferrer nofollow"
+                      onClick={handleExternalLinkClick}
+                      className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 text-[14px] font-medium text-charcoal bg-paper border border-border hover:border-gold hover:text-gold rounded-lg transition-colors"
+                    >
+                      {t('listing.viewOnDealer', { dealer: listing.dealers ? getDealerDisplayName(listing.dealers as { name: string; name_ja?: string | null }, locale) : '' })}
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                      </svg>
+                    </a>
+                  )}
                 </>
               ) : (
                 <>
-                  {/* View on Dealer Site */}
-                  <a
-                    href={listing.url}
-                    target="_blank"
-                    rel="noopener noreferrer nofollow"
-                    onClick={handleExternalLinkClick}
-                    className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 text-[14px] font-medium text-white bg-gold hover:bg-gold-light rounded-lg transition-colors"
-                  >
-                    {t('listing.viewOnDealer', { dealer: listing.dealers ? getDealerDisplayName(listing.dealers as { name: string; name_ja?: string | null }, locale) : '' })}
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                    </svg>
-                  </a>
+                  {/* View on Dealer Site — or placeholder for nw:// URLs */}
+                  {isDealerListing ? (
+                    <span className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 text-[14px] font-medium text-muted bg-surface border border-border/50 rounded-lg cursor-default opacity-60">
+                      {t('dealer.inquireComingSoon')}
+                    </span>
+                  ) : (
+                    <a
+                      href={listing.url}
+                      target="_blank"
+                      rel="noopener noreferrer nofollow"
+                      onClick={handleExternalLinkClick}
+                      className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 text-[14px] font-medium text-white bg-gold hover:bg-gold-light rounded-lg transition-colors"
+                    >
+                      {t('listing.viewOnDealer', { dealer: listing.dealers ? getDealerDisplayName(listing.dealers as { name: string; name_ja?: string | null }, locale) : '' })}
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                      </svg>
+                    </a>
+                  )}
 
                   {/* Inquire Button — hidden for JA locale */}
                   {locale !== 'ja' && (

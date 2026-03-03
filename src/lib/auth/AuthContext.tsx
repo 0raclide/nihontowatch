@@ -26,6 +26,8 @@ interface AuthState {
   session: Session | null;
   isLoading: boolean;
   isAdmin: boolean;
+  isDealer: boolean;
+  dealerId: number | null;
 }
 
 interface AuthContextValue extends AuthState {
@@ -85,6 +87,8 @@ function setAuthCache(state: AuthState) {
     localStorage.setItem(AUTH_CACHE_KEY, JSON.stringify({
       state: {
         isAdmin: state.isAdmin,
+        isDealer: state.isDealer,
+        dealerId: state.dealerId,
         profile: state.profile,
         // Don't cache sensitive session data
       },
@@ -153,6 +157,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     session: null,
     isLoading: true,
     isAdmin: false,
+    isDealer: false,
+    dealerId: null,
   });
 
   // Use ref to store supabase client to avoid recreating on each render
@@ -178,6 +184,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       ...prev,
       profile,
       isAdmin: profile?.role === 'admin',
+      isDealer: profile?.subscription_tier === 'dealer' && !!(profile as any)?.dealer_id,
+      dealerId: (profile as any)?.dealer_id ?? null,
     }));
   }, [state.user, supabase]);
 
@@ -216,6 +224,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
               session,
               isLoading: false,
               isAdmin: profile?.role === 'admin',
+              isDealer: profile?.subscription_tier === 'dealer' && !!(profile as any)?.dealer_id,
+              dealerId: (profile as any)?.dealer_id ?? null,
             };
             setState(newState);
             setAuthCache(newState);
@@ -231,6 +241,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
               session: null,
               isLoading: false,
               isAdmin: false,
+              isDealer: false,
+              dealerId: null,
             });
             clearAuthCache();
           }
@@ -265,6 +277,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
             session,
             isLoading: false,
             isAdmin: profile?.role === 'admin',
+            isDealer: profile?.subscription_tier === 'dealer' && !!(profile as any)?.dealer_id,
+            dealerId: (profile as any)?.dealer_id ?? null,
           };
           setState(newState);
           setAuthCache(newState);
@@ -293,6 +307,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
             session: null,
             isLoading: false,
             isAdmin: false,
+            isDealer: false,
+            dealerId: null,
           });
           clearAuthCache();
         }
@@ -386,6 +402,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       session: null,
       isLoading: false,
       isAdmin: false,
+      isDealer: false,
+      dealerId: null,
     });
     clearAuthCache();
   }, [supabase]);

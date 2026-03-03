@@ -295,6 +295,14 @@ export async function getListingDetail(
 
   const typedListing = listing as unknown as ListingWithDealer;
 
+  // Hide dealer-uploaded listings from non-admin users when feature flag is off
+  if (
+    (typedListing as any).source === 'dealer' &&
+    process.env.NEXT_PUBLIC_DEALER_LISTINGS_LIVE !== 'true'
+  ) {
+    return null;
+  }
+
   // Dealer baseline for "New this week" badge
   const dealerEarliestSeenAt: string | null = typedListing.dealers?.earliest_listing_at || null;
 

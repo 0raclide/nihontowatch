@@ -1,5 +1,6 @@
 export { BrowseActionBar } from './BrowseActionBar';
 export { CollectionActionBar } from './CollectionActionBar';
+export { DealerActionBar } from './DealerActionBar';
 export { BrowseDealerRow } from './BrowseDealerRow';
 export { CollectionDealerRow } from './CollectionDealerRow';
 export { BrowseDescription } from './BrowseDescription';
@@ -8,7 +9,10 @@ export { CollectionProvenance } from './CollectionProvenance';
 export { BrowseAdminTools } from './BrowseAdminTools';
 export { BrowseCTA } from './BrowseCTA';
 export { CollectionCTA } from './CollectionCTA';
+export { DealerCTA } from './DealerCTA';
 export { BrowseMobileHeaderActions } from './BrowseMobileHeaderActions';
 export { CollectionMobileHeaderActions } from './CollectionMobileHeaderActions';
+export { DealerMobileHeaderActions } from './DealerMobileHeaderActions';
 export { BrowseMobileCTA } from './BrowseMobileCTA';
 export { CollectionMobileCTA } from './CollectionMobileCTA';
+export { DealerMobileCTA } from './DealerMobileCTA';

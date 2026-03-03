@@ -31,6 +31,7 @@ import { useLocale } from '@/i18n/LocaleContext';
 import {
   BrowseActionBar,
   CollectionActionBar,
+  DealerActionBar,
   BrowseDealerRow,
   CollectionDealerRow,
   BrowseDescription,
@@ -39,10 +40,13 @@ import {
   BrowseAdminTools,
   BrowseCTA,
   CollectionCTA,
+  DealerCTA,
   BrowseMobileHeaderActions,
   CollectionMobileHeaderActions,
+  DealerMobileHeaderActions,
   BrowseMobileCTA,
   CollectionMobileCTA,
+  DealerMobileCTA,
 } from './quickview-slots';
 
 /**
@@ -85,6 +89,7 @@ export function QuickView() {
   // Collection edit/add mode (form replaces images in left panel)
   const isCollectionEditMode = source === 'collection' && (collectionMode === 'edit' || collectionMode === 'add');
   const isCollection = source === 'collection';
+  const isDealer = source === 'dealer';
 
   // Track when the sheet state last changed for dwell time calculation
   const sheetStateChangeTimeRef = useRef<number>(Date.now());
@@ -267,10 +272,22 @@ export function QuickView() {
   // =========================================================================
   const handleEditCollection = () => setCollectionMode('edit');
 
-  // Desktop QuickViewContent slots
-  const desktopActionBarSlot = isCollection
-    ? <CollectionActionBar listing={currentListing} collectionItem={collectionItem} onEditCollection={handleEditCollection} />
-    : <BrowseActionBar listing={currentListing} isStudyMode={isStudyMode} onToggleStudyMode={toggleStudyMode} onToggleAdminEditMode={toggleAdminEditMode} />;
+  // Dealer status change → optimistic update via refreshCurrentListing
+  const handleDealerStatusChange = useCallback((newStatus: string) => {
+    const optimistic = {
+      status: newStatus as ListingWithEnrichment['status'],
+      is_available: newStatus === 'AVAILABLE',
+      is_sold: newStatus === 'SOLD',
+    };
+    refreshCurrentListing(optimistic);
+  }, [refreshCurrentListing]);
+
+  // Desktop QuickViewContent slots (3-way: dealer > collection > browse)
+  const desktopActionBarSlot = isDealer
+    ? <DealerActionBar listing={currentListing} onStatusChange={handleDealerStatusChange} />
+    : isCollection
+      ? <CollectionActionBar listing={currentListing} collectionItem={collectionItem} onEditCollection={handleEditCollection} />
+      : <BrowseActionBar listing={currentListing} isStudyMode={isStudyMode} onToggleStudyMode={toggleStudyMode} onToggleAdminEditMode={toggleAdminEditMode} />;
 
   const desktopDealerSlot = isCollection
     ? <CollectionDealerRow collectionItem={collectionItem} />
@@ -284,18 +301,22 @@ export function QuickView() {
     ? <CollectionProvenance collectionItem={collectionItem} />
     : null;
 
-  const desktopAdminToolsSlot = !isCollection && isAdmin
+  const desktopAdminToolsSlot = !isCollection && !isDealer && isAdmin
     ? <BrowseAdminTools listing={currentListing} />
     : null;
 
-  const desktopCtaSlot = isCollection
-    ? <CollectionCTA collectionItem={collectionItem} onEditCollection={handleEditCollection} />
-    : <BrowseCTA listing={currentListing} />;
+  const desktopCtaSlot = isDealer
+    ? <DealerCTA listing={currentListing} />
+    : isCollection
+      ? <CollectionCTA collectionItem={collectionItem} onEditCollection={handleEditCollection} />
+      : <BrowseCTA listing={currentListing} />;
 
-  // Mobile QuickViewMobileSheet slots
-  const mobileHeaderActionsSlot = isCollection
-    ? <CollectionMobileHeaderActions listing={currentListing} onEditCollection={handleEditCollection} />
-    : <BrowseMobileHeaderActions listing={currentListing} isStudyMode={isStudyMode} onToggleStudyMode={toggleStudyMode} isAdminEditMode={isAdminEditMode} onToggleAdminEditMode={toggleAdminEditMode} />;
+  // Mobile QuickViewMobileSheet slots (3-way: dealer > collection > browse)
+  const mobileHeaderActionsSlot = isDealer
+    ? <DealerMobileHeaderActions listing={currentListing} onStatusChange={handleDealerStatusChange} />
+    : isCollection
+      ? <CollectionMobileHeaderActions listing={currentListing} onEditCollection={handleEditCollection} />
+      : <BrowseMobileHeaderActions listing={currentListing} isStudyMode={isStudyMode} onToggleStudyMode={toggleStudyMode} isAdminEditMode={isAdminEditMode} onToggleAdminEditMode={toggleAdminEditMode} />;
 
   const mobileDealerSlot = isCollection
     ? (collectionItem?.acquired_from ? <CollectionDealerRow collectionItem={collectionItem} /> : null)
@@ -305,9 +326,11 @@ export function QuickView() {
     ? <CollectionNotes collectionItem={collectionItem} />
     : <BrowseDescription listing={currentListing} maxLines={12} />;
 
-  const mobileCtaSlot = isCollection
-    ? <CollectionMobileCTA onEditCollection={handleEditCollection} />
-    : <BrowseMobileCTA listing={currentListing} />;
+  const mobileCtaSlot = isDealer
+    ? <DealerMobileCTA listing={currentListing} />
+    : isCollection
+      ? <CollectionMobileCTA onEditCollection={handleEditCollection} />
+      : <BrowseMobileCTA listing={currentListing} />;
 
   // =========================================================================
   // Image rendering helper

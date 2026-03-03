@@ -30,7 +30,7 @@ function HeaderContent() {
   const isArtistDirectory = pathname === '/artists';
   const searchAction = isArtistPage ? '/artists' : '/';
   const searchPlaceholder = isArtistPage ? t('search.artistPlaceholder') : t('search.placeholder');
-  const { user, profile, isLoading: authLoading, isAdmin } = useAuth();
+  const { user, profile, isLoading: authLoading, isAdmin, isDealer } = useAuth();
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
 
@@ -349,6 +349,18 @@ function HeaderContent() {
               <div className="h-3 w-px bg-border" />
               <ThemeSwitcher />
               <LocaleSwitcher />
+              {/* Dealer Portal Link */}
+              {isDealer && (
+                <>
+                  <div className="h-3 w-px bg-border" />
+                  <a
+                    href="/dealer"
+                    className="text-[11px] uppercase tracking-[0.2em] text-gold hover:text-gold/80 transition-colors"
+                  >
+                    {t('nav.myListings')}
+                  </a>
+                </>
+              )}
               {/* Admin Quick Menu */}
               {isAdmin && (
                 <>

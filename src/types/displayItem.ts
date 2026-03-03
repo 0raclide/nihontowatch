@@ -31,6 +31,10 @@ export interface BrowseExtension {
   } | null;
 }
 
+export interface DealerExtension {
+  isOwnListing: boolean;
+}
+
 export interface CollectionExtension {
   notes: string | null;
   condition: string;
@@ -143,4 +147,5 @@ export interface DisplayItem {
   // Source-specific extensions
   browse?: BrowseExtension | null;
   collection?: CollectionExtension | null;
+  dealer?: DealerExtension | null;
 }

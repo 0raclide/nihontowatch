@@ -11,9 +11,13 @@ interface ImageUploadZoneProps {
   onChange: (images: string[]) => void;
   /** In add mode, queue pending files so the parent can upload them after item creation */
   onPendingFilesChange?: (files: File[]) => void;
+  /** Override the upload/delete API endpoint. Default: '/api/collection/images' */
+  apiEndpoint?: string;
 }
 
-export function ImageUploadZone({ images, itemId, onChange, onPendingFilesChange }: ImageUploadZoneProps) {
+const DEFAULT_API_ENDPOINT = '/api/collection/images';
+
+export function ImageUploadZone({ images, itemId, onChange, onPendingFilesChange, apiEndpoint = DEFAULT_API_ENDPOINT }: ImageUploadZoneProps) {
   const { t } = useLocale();
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -72,7 +76,7 @@ export function ImageUploadZone({ images, itemId, onChange, onPendingFilesChange
         formData.append('itemId', itemId);
 
         try {
-          const res = await fetch('/api/collection/images', {
+          const res = await fetch(apiEndpoint, {
             method: 'POST',
             body: formData,
           });
@@ -93,7 +97,7 @@ export function ImageUploadZone({ images, itemId, onChange, onPendingFilesChange
       onChange(newImages);
       setIsUploading(false);
     }
-  }, [images, pendingFiles, itemId, isAddMode, onChange, onPendingFilesChange, t]);
+  }, [images, pendingFiles, itemId, isAddMode, onChange, onPendingFilesChange, t, apiEndpoint]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -128,7 +132,7 @@ export function ImageUploadZone({ images, itemId, onChange, onPendingFilesChange
     } else if (itemId) {
       // Edit mode: delete from storage
       try {
-        await fetch('/api/collection/images', {
+        await fetch(apiEndpoint, {
           method: 'DELETE',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ imageUrl: path, itemId }),
@@ -137,7 +141,7 @@ export function ImageUploadZone({ images, itemId, onChange, onPendingFilesChange
         // Best effort — image removed from list regardless
       }
     }
-  }, [images, pendingFiles, itemId, isAddMode, onChange, onPendingFilesChange]);
+  }, [images, pendingFiles, itemId, isAddMode, onChange, onPendingFilesChange, apiEndpoint]);
 
   return (
     <div>
@@ -252,7 +256,8 @@ async function resizeImage(file: File, maxDim: number, quality: number): Promise
  */
 export async function uploadPendingFiles(
   files: File[],
-  itemId: string
+  itemId: string,
+  apiEndpoint: string = DEFAULT_API_ENDPOINT
 ): Promise<string[]> {
   const paths: string[] = [];
   for (const file of files) {
@@ -260,7 +265,7 @@ export async function uploadPendingFiles(
     formData.append('file', file, file.name);
     formData.append('itemId', itemId);
     try {
-      const res = await fetch('/api/collection/images', {
+      const res = await fetch(apiEndpoint, {
         method: 'POST',
         body: formData,
       });

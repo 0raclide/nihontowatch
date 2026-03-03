@@ -305,6 +305,7 @@ export async function GET(request: NextRequest) {
         focal_x,
         focal_y,
         thumbnail_url,
+        source,
         dealers:dealers!inner(id, name, name_ja, domain, earliest_listing_at),
         listing_yuhinkai_enrichment(
           setsumei_en,
@@ -336,6 +337,11 @@ export async function GET(request: NextRequest) {
     // Hide admin-hidden listings from non-admin users
     if (!subscription.isAdmin) {
       query = query.eq('admin_hidden', false);
+    }
+
+    // Hide dealer-uploaded listings until feature flag is enabled
+    if (process.env.NEXT_PUBLIC_DEALER_LISTINGS_LIVE !== 'true') {
+      query = query.neq('source', 'dealer');
     }
 
     // Exclude non-collectibles (stands, books, other accessories)

@@ -433,6 +433,168 @@
 
 ---
 
+## Dealer Portal (`tests/lib/dealer/`)
+
+**Total: 121 tests across 7 files**
+
+Golden tests covering the full dealer portal feature: auth, title generation, DisplayItem mapping, source auto-detection, API logic, image security, testing gate, and status change hook.
+
+### Dealer Auth (`tests/lib/dealer/auth.test.ts`)
+
+**Total: 11 tests**
+
+- [x] Returns unauthorized when no user session
+- [x] Returns success for dealer tier with dealer_id
+- [x] Returns forbidden for dealer tier without dealer_id
+- [x] Returns forbidden for free/enthusiast/collector/inner_circle tiers (4 tests)
+- [x] Allows admin with dealer_id to act as dealer
+- [x] Returns forbidden for admin without dealer_id
+- [x] Returns forbidden when profile query returns null
+- [x] Type narrows to access dealerId after isDealer check
+
+### Title Generator (`tests/lib/dealer/titleGenerator.test.ts`)
+
+**Total: 21 tests**
+
+- [x] Full EN title: cert + type + artisan
+- [x] Full JA title: cert + type + artisan kanji
+- [x] Maps all 4 cert types in both EN and JA (4 tests)
+- [x] Maps all 6 nihonto types in JA
+- [x] Maps all 5 tosogu types in JA
+- [x] Maps fuchi_kashira to Fuchi-Kashira in EN
+- [x] Partial titles with missing fields (5 tests)
+- [x] JA falls back to romaji when kanji is null
+- [x] JA prefers kanji over romaji
+- [x] Returns "Untitled" / "無題" when all fields null
+- [x] Unknown cert type is omitted (no map entry)
+- [x] Unknown item type passes through raw
+- [x] Case insensitive type lookup (2 tests)
+
+### DisplayItem Mapping & Source Auto-Detection (`tests/lib/dealer/displayItem.test.ts`)
+
+**Total: 12 tests**
+
+#### Source Auto-Detection (fromListing.ts)
+- [x] **GOLDEN**: Auto-detects source="dealer" from listing.source field
+- [x] **GOLDEN**: Auto-detects source="dealer" even without nw:// URL
+- [x] Sets source="browse" for scraper listings (default)
+- [x] Sets source="browse" when source is explicitly "scraper"
+- [x] Sets source="browse" when source is null/undefined/absent
+
+#### Dealer Mapper (fromDealerListing.ts)
+- [x] Overrides source to "dealer"
+- [x] Sets dealer extension with isOwnListing=true/false
+- [x] Preserves all base fields from listingToDisplayItem
+- [x] Preserves browse extension from base mapper
+- [x] Respects locale for dealer display name
+
+### Listing API Logic (`tests/lib/dealer/listingApi.test.ts`)
+
+**Total: 28 tests**
+
+#### POST Field Routing
+- [x] Routes smith/school to sword fields for nihonto
+- [x] Routes smith to tosogu_maker for tosogu
+- [x] Prefers smith over tosogu_maker for tosogu (form sends smith)
+- [x] Falls back to tosogu_maker when smith is null
+- [x] Defaults to nihonto routing when category is null
+
+#### PATCH Allowlist
+- [x] Allows valid fields through
+- [x] **GOLDEN**: Blocks "images" field (prevents upload bypass)
+- [x] Blocks arbitrary/injection fields
+- [x] Blocks status field (handled via side effects)
+- [x] Blocks security-sensitive fields (source, dealer_id, url, etc.)
+
+#### Status Change Side Effects
+- [x] SOLD → is_available=false, is_sold=true
+- [x] WITHDRAWN → is_available=false, is_sold=false
+- [x] AVAILABLE → is_available=true, is_sold=false
+- [x] Unknown status → no side effects
+
+#### Nullish Coalescing
+- [x] **GOLDEN**: ?? null preserves zero price (inquiry-based items)
+- [x] ?? null preserves zero nagasa, empty string
+- [x] ?? null converts undefined to null
+
+#### CERT_NONE Sentinel
+- [x] **GOLDEN**: Converts CERT_NONE to null before DB write
+- [x] Preserves valid cert types and null
+- [x] Does NOT convert old bad sentinel 'NONE_SELECTED'
+
+#### Synthetic URL / DELETE Guard
+- [x] Generates nw:// URL with dealer prefix
+- [x] URL satisfies UNIQUE constraint (different UUIDs)
+- [x] Allows deletion of WITHDRAWN, blocks AVAILABLE/SOLD
+
+### Image Security (`tests/lib/dealer/imagesSecurity.test.ts`)
+
+**Total: 23 tests**
+
+#### Path Traversal Prevention
+- [x] **GOLDEN**: Rejects ../ traversal attack (cross-dealer file access)
+- [x] **GOLDEN**: Rejects nested traversal ../../
+- [x] Rejects ../ in filename
+- [x] Rejects Windows-style ..\\
+
+#### Ownership Verification
+- [x] **GOLDEN**: Rejects path belonging to different dealer
+- [x] Rejects prefix-match attack (dealerId=4 vs path 42/)
+- [x] Allows path genuinely belonging to dealer
+- [x] Extracts storage path from valid public URL
+
+#### URL Format Edge Cases
+- [x] Rejects URL without bucket marker
+- [x] Rejects empty imageUrl
+- [x] Rejects URL with wrong bucket name
+- [x] Handles URL with query parameters
+
+#### Upload Constraints
+- [x] File size limits (5MB)
+- [x] Allowed types (JPEG, PNG, WebP)
+- [x] Rejected types (GIF, SVG, PDF, JS, etc.)
+- [x] Max 20 images per listing
+- [x] File extension mapping (4 tests)
+
+### Testing Gate (`tests/lib/dealer/testingGate.test.ts`)
+
+**Total: 14 tests**
+
+#### getListingDetail Gate
+- [x] **GOLDEN**: Hides dealer listing when flag is off
+- [x] **GOLDEN**: Shows dealer listing when flag is "true"
+- [x] Shows scraper listing regardless of flag
+- [x] Flag check is case-sensitive
+
+#### Browse API Gate
+- [x] **GOLDEN**: Adds .neq("source","dealer") filter when flag is off
+- [x] No filter when flag is "true"
+
+#### Featured Scores Cron Gate
+- [x] Excludes dealer listings from scoring when flag is off
+- [x] Includes dealer listings when flag is on
+
+#### Phase 3 Go-Live Simulation
+- [x] **GOLDEN**: All three gates open simultaneously when flag is "true"
+- [x] **GOLDEN**: All three gates closed when flag is undefined
+
+### Status Change Hook (`tests/lib/dealer/statusChangeHook.test.ts`)
+
+**Total: 12 tests**
+
+- [x] Starts with isUpdating=false and error=null
+- [x] Calls PATCH with correct URL and body for SOLD/WITHDRAWN/AVAILABLE (3 tests)
+- [x] Sets isUpdating during request
+- [x] **GOLDEN**: Sets error on 4xx response (prevents silent failure)
+- [x] **GOLDEN**: Sets fallback error when response.json() fails
+- [x] **GOLDEN**: Sets "Network error" on fetch exception
+- [x] **GOLDEN**: Auto-clears error after 3 seconds
+- [x] Error stays visible before 3 seconds
+- [x] Works without onStatusChange callback
+- [x] Resets isUpdating to false after error
+
+---
+
 ## Coverage Gaps
 
 ### Not Yet Covered
