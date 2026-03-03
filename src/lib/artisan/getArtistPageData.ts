@@ -48,7 +48,7 @@ export async function buildArtistPageData(code: string): Promise<ArtisanPageResp
       entity.toko_taikan
         ? getTokoTaikanPercentile(entity.toko_taikan)
         : Promise.resolve(null),
-      entity.teacher ? resolveTeacher(entity.teacher) : Promise.resolve(null),
+      (entity.teacher_id || entity.teacher) ? resolveTeacher(entity.teacher_id || entity.teacher!) : Promise.resolve(null),
       getDenraiForArtisan(entityCode, entityType),
       getHeroImageForDetailPage(entityCode, entityType),
       getPublishedCatalogueEntries(entityCode, entityType),

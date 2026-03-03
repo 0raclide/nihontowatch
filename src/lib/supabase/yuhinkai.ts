@@ -793,28 +793,38 @@ export async function callDirectoryEnrichment(
 
   const entityType = type === 'tosogu' ? 'tosogu' : 'smith';
 
-  const artists: ArtistDirectoryEntry[] = (result.artists || []).map(row => ({
-    code: row.code as string,
-    name_romaji: row.name_romaji as string | null,
-    name_kanji: row.name_kanji as string | null,
-    school: row.school as string | null,
-    province: row.province as string | null,
-    era: row.era as string | null,
-    entity_type: entityType,
-    kokuho_count: (row.kokuho_count as number) || 0,
-    jubun_count: (row.jubun_count as number) || 0,
-    jubi_count: (row.jubi_count as number) || 0,
-    gyobutsu_count: (row.gyobutsu_count as number) || 0,
-    tokuju_count: (row.tokuju_count as number) || 0,
-    juyo_count: (row.juyo_count as number) || 0,
-    total_items: (row.total_items as number) || 0,
-    elite_factor: (row.elite_factor as number) || 0,
-    provenance_factor: (row.provenance_factor as number) ?? null,
-    is_school_code: (row.is_school_code as boolean) || false,
-    school_type: (row.school_type as 'school' | 'period' | null) ?? null,
-    percentile: (row.percentile as number) ?? 0,
-    member_count: row.member_count != null ? (row.member_count as number) : undefined,
-  }));
+  // Deduplicate by code: the RPC's UNION ALL of artisan_makers + artisan_schools
+  // can produce duplicates if a code exists in both tables. The LEFT JOIN in the
+  // RPC amplifies this (N×M cross-product). Keep first occurrence per code.
+  const seen = new Set<string>();
+  const artists: ArtistDirectoryEntry[] = [];
+  for (const row of result.artists || []) {
+    const code = row.code as string;
+    if (seen.has(code)) continue;
+    seen.add(code);
+    artists.push({
+      code,
+      name_romaji: row.name_romaji as string | null,
+      name_kanji: row.name_kanji as string | null,
+      school: row.school as string | null,
+      province: row.province as string | null,
+      era: row.era as string | null,
+      entity_type: entityType,
+      kokuho_count: (row.kokuho_count as number) || 0,
+      jubun_count: (row.jubun_count as number) || 0,
+      jubi_count: (row.jubi_count as number) || 0,
+      gyobutsu_count: (row.gyobutsu_count as number) || 0,
+      tokuju_count: (row.tokuju_count as number) || 0,
+      juyo_count: (row.juyo_count as number) || 0,
+      total_items: (row.total_items as number) || 0,
+      elite_factor: (row.elite_factor as number) || 0,
+      provenance_factor: (row.provenance_factor as number) ?? null,
+      is_school_code: (row.is_school_code as boolean) || false,
+      school_type: (row.school_type as 'school' | 'period' | null) ?? null,
+      percentile: (row.percentile as number) ?? 0,
+      member_count: row.member_count != null ? (row.member_count as number) : undefined,
+    });
+  }
 
   // Re-sort client-side: the RPC's jsonb_agg() doesn't preserve the ORDER BY
   // from the paginated CTE, so the correct rows are returned but in arbitrary order.
