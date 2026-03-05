@@ -745,9 +745,17 @@ export const ListingCard = memo(function ListingCard({
     >
       {/* Header: dealer (left) + book icon + cert (right) */}
       <div className={`${sz.hPad} sm:px-3 sm:py-2 lg:px-4 lg:py-2.5 flex items-center justify-between`}>
-        <span className={`${sz.hText} sm:text-[9px] lg:text-[10px] font-medium tracking-[0.14em] text-muted ${locale !== 'ja' ? 'capitalize' : ''}`}>
-          {listing.dealer_display_name || ''}
-        </span>
+        {listing.source === 'dealer' ? (
+          <span className={`${sz.hText} sm:text-[9px] lg:text-[10px] font-semibold tracking-[0.14em] ${
+            listing.is_sold ? 'text-muted' : listing.is_available ? 'text-green-600 dark:text-green-400' : 'text-amber-600 dark:text-amber-400'
+          }`}>
+            {listing.is_sold ? t('dealer.statusSold') : listing.is_available ? t('dealer.tabForSale') : t('dealer.tabInventory')}
+          </span>
+        ) : (
+          <span className={`${sz.hText} sm:text-[9px] lg:text-[10px] font-medium tracking-[0.14em] text-muted ${locale !== 'ja' ? 'capitalize' : ''}`}>
+            {listing.dealer_display_name || ''}
+          </span>
+        )}
         <div className={`flex items-center ${isGridMobile ? 'gap-1' : 'gap-2'}`}>
           {locale !== 'ja' && hasSetsumeiTranslation(listing) && <SetsumeiZufuBadge iconOnly />}
           {certInfo && (

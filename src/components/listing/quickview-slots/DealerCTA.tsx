@@ -17,7 +17,7 @@ export function DealerCTA({ listing }: DealerCTAProps) {
   return (
     <div className="text-center py-3">
       <span className="text-[11px] text-muted">
-        {listing.is_sold ? t('dealer.statusSold') : listing.is_available ? t('dealer.statusAvailable') : t('dealer.statusWithdrawn')}
+        {listing.is_sold ? t('dealer.statusSold') : listing.is_available ? t('dealer.statusAvailable') : t('dealer.statusInventory')}
       </span>
     </div>
   );
