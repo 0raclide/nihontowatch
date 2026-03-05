@@ -63,6 +63,7 @@
   "dealer.statusWithdrawn": "取下げ",
   "dealer.editListing": "出品を編集",
   "dealer.fetchError": "出品の読み込みに失敗しました",
+  "dealer.confirmCategorySwitch": "カテゴリを変更すると入力済みの寸法が消去されます。続けますか？",
   "dealer.sessionExpired": "セッションが切れました。再度ログインしてください。",
   "dealer.retry": "再試行",
   "dealer.listingNotFound": "出品が見つかりません",

@@ -229,14 +229,15 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
     initialData?.title || draft?.titleOverride || null
   );
 
-  // Clear cross-category fields when switching nihonto ↔ tosogu (skip initial render)
-  const categoryInitialized = useRef(false);
-  useEffect(() => {
-    if (!categoryInitialized.current) {
-      categoryInitialized.current = true;
-      return;
-    }
-    if (category === 'nihonto') {
+  // Guarded category switch — confirms before clearing filled cross-category fields
+  const handleCategoryChange = useCallback((newCategory: 'nihonto' | 'tosogu') => {
+    if (newCategory === category) return;
+    const wouldLoseData = newCategory === 'nihonto'
+      ? !!(heightCm || widthCm || material)
+      : !!(nagasaCm || motohabaCm || sakihabaCm || soriCm || meiType || nakagoType.length);
+    if (wouldLoseData && !window.confirm(t('dealer.confirmCategorySwitch'))) return;
+    setCategory(newCategory);
+    if (newCategory === 'nihonto') {
       setHeightCm('');
       setWidthCm('');
       setMaterial(null);
@@ -248,7 +249,7 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
       setMeiType(null);
       setNakagoType([]);
     }
-  }, [category]);
+  }, [category, heightCm, widthCm, material, nagasaCm, motohabaCm, sakihabaCm, soriCm, meiType, nakagoType, t]);
 
   const canDelete = mode === 'edit' && initialData?.id &&
     (initialData?.status === 'INVENTORY' || initialData?.status === 'WITHDRAWN');
@@ -567,7 +568,7 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
           <label className="block text-[11px] uppercase tracking-wider text-muted mb-2">
             {t('dealer.category')}
           </label>
-          <CategorySelector value={category} onChange={setCategory} />
+          <CategorySelector value={category} onChange={handleCategoryChange} />
         </section>
 
         {/* 3. Type */}

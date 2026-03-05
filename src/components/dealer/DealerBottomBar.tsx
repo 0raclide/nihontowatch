@@ -20,7 +20,7 @@ export function DealerBottomBar({ activeTab, onTabChange, onAddClick }: DealerBo
   const { t } = useLocale();
 
   return (
-    <div className="bg-cream/95 backdrop-blur-sm border-t border-border/30">
+    <div className="bg-surface/95 backdrop-blur-sm border-t border-border/30">
       <div className="flex items-center justify-between px-3 py-2">
         <div className="flex items-center gap-1">
           {TABS.map(({ value, labelKey }) => (

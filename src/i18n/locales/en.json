@@ -63,6 +63,7 @@
   "dealer.statusWithdrawn": "Withdrawn",
   "dealer.editListing": "Edit Listing",
   "dealer.fetchError": "Failed to load listings",
+  "dealer.confirmCategorySwitch": "Switching category will clear measurements you've entered. Continue?",
   "dealer.sessionExpired": "Session expired. Please sign in again.",
   "dealer.retry": "Retry",
   "dealer.listingNotFound": "Listing not found",
