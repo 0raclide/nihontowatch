@@ -1,6 +1,3 @@
--- Add nakago_type column for tang condition (separate from mei_type signature)
-ALTER TABLE listings ADD COLUMN IF NOT EXISTS nakago_type TEXT;
-
 -- Add tosogu measurement columns (referenced in schema docs but never migrated)
 ALTER TABLE listings ADD COLUMN IF NOT EXISTS height_cm REAL;
 ALTER TABLE listings ADD COLUMN IF NOT EXISTS width_cm REAL;

@@ -57,6 +57,7 @@ export async function GET(request: NextRequest) {
     .range(offset, offset + limit - 1);
 
   if (error) {
+    console.error('[dealer/listings] GET error:', error);
     return NextResponse.json({ error: 'Failed to fetch listings' }, { status: 500 });
   }
 
