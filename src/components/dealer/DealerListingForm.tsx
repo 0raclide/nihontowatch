@@ -39,8 +39,19 @@ interface DealerDraft {
   widthCm: string;
   material: string | null;
   artisanSchool: string | null;
+  titleOverride: string | null;
   images: string[]; // only server URLs, no blob:
   savedAt: number;
+}
+
+function isDraftSubstantive(d: DealerDraft): boolean {
+  return !!(
+    d.itemType || d.certType || d.artisanId || d.artisanName ||
+    d.priceValue || d.description || d.titleOverride || d.images?.length ||
+    d.nagasaCm || d.motohabaCm || d.sakihabaCm || d.soriCm ||
+    d.heightCm || d.widthCm || d.material ||
+    d.meiType || d.era || d.province || d.artisanSchool
+  );
 }
 
 function readDraft(): DealerDraft | null {
@@ -48,7 +59,10 @@ function readDraft(): DealerDraft | null {
   try {
     const raw = localStorage.getItem(DRAFT_STORAGE_KEY);
     if (!raw) return null;
-    return JSON.parse(raw) as DealerDraft;
+    const draft = JSON.parse(raw) as DealerDraft;
+    // Don't treat an empty form (all defaults) as a restorable draft
+    if (!isDraftSubstantive(draft)) return null;
+    return draft;
   } catch {
     return null;
   }
@@ -211,6 +225,9 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDraftBanner, setShowDraftBanner] = useState(!!draft);
+  const [titleOverride, setTitleOverride] = useState<string | null>(
+    initialData?.title || draft?.titleOverride || null
+  );
 
   // Clear cross-category fields when switching nihonto ↔ tosogu (skip initial render)
   const categoryInitialized = useRef(false);
@@ -246,11 +263,14 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
         priceValue, priceCurrency, isAsk, description,
         nagasaCm, motohabaCm, sakihabaCm, soriCm,
         meiType, nakagoType, era, province,
-        heightCm, widthCm, material, artisanSchool,
+        heightCm, widthCm, material, artisanSchool, titleOverride,
         images: images.filter(url => !url.startsWith('blob:')),
         savedAt: Date.now(),
       };
-      localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draftData));
+      // Only persist if the form has substantive content
+      if (isDraftSubstantive(draftData)) {
+        localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draftData));
+      }
     }, DRAFT_DEBOUNCE_MS);
 
     return () => clearTimeout(timer);
@@ -258,7 +278,7 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
     mode, category, itemType, certType, artisanId, artisanName, artisanKanji,
     priceValue, priceCurrency, isAsk, description,
     nagasaCm, motohabaCm, sakihabaCm, soriCm, meiType, nakagoType, era, province,
-    heightCm, widthCm, material, artisanSchool, images,
+    heightCm, widthCm, material, artisanSchool, titleOverride, images,
   ]);
 
   // Auto-generated title
@@ -286,10 +306,11 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
     setError(null);
 
     try {
+      const effectiveTitle = titleOverride?.trim() || generatedTitle.en;
       const payload: Record<string, unknown> = {
-        title: generatedTitle.en,
-        title_en: generatedTitle.en,
-        title_ja: generatedTitle.ja,
+        title: effectiveTitle,
+        title_en: titleOverride?.trim() ? effectiveTitle : generatedTitle.en,
+        title_ja: titleOverride?.trim() ? null : generatedTitle.ja,
         item_type: itemType,
         item_category: category,
         cert_type: certType === CERT_NONE ? null : certType,
@@ -369,7 +390,7 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
     mode, initialData, category, itemType, certType, artisanId, artisanName,
     artisanKanji, artisanSchool, priceValue, priceCurrency, isAsk, description,
     nagasaCm, motohabaCm, sakihabaCm, soriCm, meiType, nakagoType, era, province,
-    heightCm, widthCm, material, pendingFiles, generatedTitle, router,
+    heightCm, widthCm, material, pendingFiles, generatedTitle, titleOverride, router,
   ]);
 
   const handleRetryUpload = useCallback(async () => {
@@ -408,6 +429,7 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
     setWidthCm('');
     setMaterial(null);
     setArtisanSchool(null);
+    setTitleOverride(null);
     setImages([]);
     setPendingFiles([]);
     setShowSuccess(false);
@@ -604,15 +626,28 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
           )}
         </section>
 
-        {/* 6. Auto-generated title */}
+        {/* 6. Title (auto-generated, editable) */}
         <section>
           <label className="block text-[11px] uppercase tracking-wider text-muted mb-2">
             {t('dealer.title')}
           </label>
-          <div className="px-3 py-2 bg-surface rounded-lg border border-border/50 text-[13px]">
-            {generatedTitle.en}
-          </div>
-          {generatedTitle.ja !== generatedTitle.en && (
+          <input
+            type="text"
+            value={titleOverride ?? generatedTitle.en}
+            onChange={e => setTitleOverride(e.target.value)}
+            placeholder={generatedTitle.en}
+            className="w-full px-3 py-2 bg-surface rounded-lg border border-border/50 text-[13px] focus:outline-none focus:ring-1 focus:ring-accent"
+          />
+          {titleOverride !== null && titleOverride.trim() !== generatedTitle.en && (
+            <button
+              type="button"
+              onClick={() => setTitleOverride(null)}
+              className="mt-1 text-[11px] text-blue-500 hover:text-blue-400"
+            >
+              {t('dealer.resetTitle')}
+            </button>
+          )}
+          {!titleOverride && generatedTitle.ja !== generatedTitle.en && (
             <div className="px-3 py-1 text-[12px] text-muted">
               {generatedTitle.ja}
             </div>
