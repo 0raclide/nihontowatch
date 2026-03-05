@@ -307,7 +307,7 @@ export function QuickView() {
     : null;
 
   const desktopCtaSlot = isDealer
-    ? <DealerCTA listing={currentListing} />
+    ? <DealerCTA listing={currentListing} onStatusChange={handleDealerStatusChange} />
     : isCollection
       ? <CollectionCTA collectionItem={collectionItem} onEditCollection={handleEditCollection} />
       : <BrowseCTA listing={currentListing} />;
@@ -328,7 +328,7 @@ export function QuickView() {
     : <BrowseDescription listing={currentListing} maxLines={12} />;
 
   const mobileCtaSlot = isDealer
-    ? <DealerMobileCTA listing={currentListing} />
+    ? <DealerMobileCTA listing={currentListing} onStatusChange={handleDealerStatusChange} />
     : isCollection
       ? <CollectionMobileCTA onEditCollection={handleEditCollection} />
       : <BrowseMobileCTA listing={currentListing} />;
