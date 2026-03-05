@@ -200,13 +200,15 @@ export function generateProductJsonLd(listing: Listing, dealer?: Dealer): Produc
     product.image = images.slice(0, 5); // Limit to 5 images
   }
 
-  // Brand (artisan)
-  if (artisan) {
-    product.brand = {
-      '@type': 'Brand',
-      name: artisan,
-    };
-  }
+  // Brand (artisan → school → item category fallback)
+  // Google Merchant Center requires brand/gtin/mpn; always provide one
+  const brandName = artisan
+    || getAttributionSchool(listing)
+    || getCategoryFromItemType(listing.item_type);
+  product.brand = {
+    '@type': 'Brand',
+    name: brandName,
+  };
 
   // Seller (dealer)
   if (dealer || listing.dealer) {
