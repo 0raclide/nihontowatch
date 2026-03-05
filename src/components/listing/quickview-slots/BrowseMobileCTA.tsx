@@ -27,6 +27,7 @@ export function BrowseMobileCTA({ listing }: BrowseMobileCTAProps) {
 
   const dealerObj = listing.dealers || listing.dealer;
   const dealerName = dealerObj ? getDealerDisplayName(dealerObj as { name: string; name_ja?: string | null }, locale) : 'Dealer';
+  const isDealerOwned = listing.url?.startsWith('nw://');
 
   const handleInquire = useCallback((e: React.TouchEvent | React.MouseEvent) => {
     e.stopPropagation();
@@ -69,24 +70,26 @@ export function BrowseMobileCTA({ listing }: BrowseMobileCTAProps) {
           </button>
         )}
 
-        {/* View on Dealer Button */}
-        <a
-          href={listing.url}
-          target="_blank"
-          rel="noopener noreferrer nofollow"
-          onTouchStart={(e) => e.stopPropagation()}
-          onTouchEnd={(e) => e.stopPropagation()}
-          onClick={(e) => {
-            e.stopPropagation();
-            handleDealerLinkClick();
-          }}
-          className="flex-1 flex items-center justify-center gap-2 px-5 py-3 text-[13px] font-medium text-white bg-gold hover:bg-gold-light rounded-lg transition-colors active:scale-[0.98]"
-        >
-          {t('quickview.viewOn', { dealer: dealerName })}
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-          </svg>
-        </a>
+        {/* View on Dealer Button — hidden for nw:// dealer-owned listings */}
+        {!isDealerOwned && (
+          <a
+            href={listing.url}
+            target="_blank"
+            rel="noopener noreferrer nofollow"
+            onTouchStart={(e) => e.stopPropagation()}
+            onTouchEnd={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDealerLinkClick();
+            }}
+            className="flex-1 flex items-center justify-center gap-2 px-5 py-3 text-[13px] font-medium text-white bg-gold hover:bg-gold-light rounded-lg transition-colors active:scale-[0.98]"
+          >
+            {t('quickview.viewOn', { dealer: dealerName })}
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+            </svg>
+          </a>
+        )}
       </div>
 
       {/* Inquiry Modal */}

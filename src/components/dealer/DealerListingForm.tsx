@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { ImageUploadZone, uploadPendingFiles } from '@/components/collection/ImageUploadZone';
 import { CategorySelector } from './CategorySelector';
@@ -13,6 +13,49 @@ import { useLocale } from '@/i18n/LocaleContext';
 
 const STORAGE_KEY_CATEGORY = 'nw-dealer-category';
 const STORAGE_KEY_TYPE = 'nw-dealer-type';
+const DRAFT_STORAGE_KEY = 'nw-dealer-draft';
+const DRAFT_DEBOUNCE_MS = 1000;
+
+interface DealerDraft {
+  category: 'nihonto' | 'tosogu';
+  itemType: string | null;
+  certType: string | null;
+  artisanId: string | null;
+  artisanName: string | null;
+  artisanKanji: string | null;
+  priceValue: string;
+  priceCurrency: string;
+  isAsk: boolean;
+  description: string;
+  nagasaCm: string;
+  motohabaCm: string;
+  sakihabaCm: string;
+  soriCm: string;
+  meiType: string | null;
+  era: string;
+  province: string;
+  images: string[]; // only server URLs, no blob:
+  savedAt: number;
+}
+
+function readDraft(): DealerDraft | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem(DRAFT_STORAGE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as DealerDraft;
+  } catch {
+    return null;
+  }
+}
+
+function clearDraft() {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem(DRAFT_STORAGE_KEY);
+  // Clean up legacy keys
+  localStorage.removeItem(STORAGE_KEY_CATEGORY);
+  localStorage.removeItem(STORAGE_KEY_TYPE);
+}
 
 interface DealerListingFormProps {
   mode: 'add' | 'edit';
@@ -68,32 +111,45 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
   const router = useRouter();
   const { t } = useLocale();
 
-  // Form state
+  // Restore draft for add mode (no initialData)
+  const restoredDraft = useRef<DealerDraft | null>(null);
+  if (mode === 'add' && !initialData) {
+    // Only compute once during initial render (ref persists across renders)
+    if (restoredDraft.current === undefined || restoredDraft.current === null) {
+      restoredDraft.current = readDraft();
+    }
+  }
+  const draft = mode === 'add' && !initialData ? restoredDraft.current : null;
+
+  // Form state — hydrate from draft if available, then initialData, then defaults
   const [category, setCategory] = useState<'nihonto' | 'tosogu'>(
     (initialData?.item_category as 'nihonto' | 'tosogu') ||
+    draft?.category ||
     (getStickyValue(STORAGE_KEY_CATEGORY, 'nihonto') as 'nihonto' | 'tosogu')
   );
   const [itemType, setItemType] = useState<string | null>(
-    initialData?.item_type || getStickyValue(STORAGE_KEY_TYPE, '') || null
+    initialData?.item_type || draft?.itemType || getStickyValue(STORAGE_KEY_TYPE, '') || null
   );
-  const [certType, setCertType] = useState<string | null>(initialData?.cert_type || null);
-  const [artisanId, setArtisanId] = useState<string | null>(initialData?.artisan_id || null);
-  const [artisanName, setArtisanName] = useState<string | null>(initialData?.artisan_display_name || null);
-  const [artisanKanji, setArtisanKanji] = useState<string | null>(initialData?.artisan_name_kanji || null);
+  const [certType, setCertType] = useState<string | null>(initialData?.cert_type || draft?.certType || null);
+  const [artisanId, setArtisanId] = useState<string | null>(initialData?.artisan_id || draft?.artisanId || null);
+  const [artisanName, setArtisanName] = useState<string | null>(initialData?.artisan_display_name || draft?.artisanName || null);
+  const [artisanKanji, setArtisanKanji] = useState<string | null>(initialData?.artisan_name_kanji || draft?.artisanKanji || null);
   const [priceValue, setPriceValue] = useState<string>(
-    initialData?.price_value != null ? String(initialData.price_value) : ''
+    initialData?.price_value != null ? String(initialData.price_value) : (draft?.priceValue ?? '')
   );
-  const [priceCurrency, setPriceCurrency] = useState<string>(initialData?.price_currency || 'JPY');
-  const [isAsk, setIsAsk] = useState(initialData?.price_value == null && mode === 'edit');
-  const [description, setDescription] = useState(initialData?.description || '');
-  const [nagasaCm, setNagasaCm] = useState(initialData?.nagasa_cm != null ? String(initialData.nagasa_cm) : '');
-  const [motohabaCm, setMotohabaCm] = useState(initialData?.motohaba_cm != null ? String(initialData.motohaba_cm) : '');
-  const [sakihabaCm, setSakihabaCm] = useState(initialData?.sakihaba_cm != null ? String(initialData.sakihaba_cm) : '');
-  const [soriCm, setSoriCm] = useState(initialData?.sori_cm != null ? String(initialData.sori_cm) : '');
-  const [meiType, setMeiType] = useState<string | null>(initialData?.mei_type || null);
-  const [era, setEra] = useState(initialData?.era || '');
-  const [province, setProvince] = useState(initialData?.province || '');
-  const [images, setImages] = useState<string[]>(initialData?.images || []);
+  const [priceCurrency, setPriceCurrency] = useState<string>(initialData?.price_currency || draft?.priceCurrency || 'JPY');
+  const [isAsk, setIsAsk] = useState(
+    initialData?.price_value == null && mode === 'edit' ? true : (draft?.isAsk ?? false)
+  );
+  const [description, setDescription] = useState(initialData?.description || draft?.description || '');
+  const [nagasaCm, setNagasaCm] = useState(initialData?.nagasa_cm != null ? String(initialData.nagasa_cm) : (draft?.nagasaCm ?? ''));
+  const [motohabaCm, setMotohabaCm] = useState(initialData?.motohaba_cm != null ? String(initialData.motohaba_cm) : (draft?.motohabaCm ?? ''));
+  const [sakihabaCm, setSakihabaCm] = useState(initialData?.sakihaba_cm != null ? String(initialData.sakihaba_cm) : (draft?.sakihabaCm ?? ''));
+  const [soriCm, setSoriCm] = useState(initialData?.sori_cm != null ? String(initialData.sori_cm) : (draft?.soriCm ?? ''));
+  const [meiType, setMeiType] = useState<string | null>(initialData?.mei_type || draft?.meiType || null);
+  const [era, setEra] = useState(initialData?.era || draft?.era || '');
+  const [province, setProvince] = useState(initialData?.province || draft?.province || '');
+  const [images, setImages] = useState<string[]>(initialData?.images || draft?.images || []);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -102,17 +158,33 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
   const [createdListingId, setCreatedListingId] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showDraftBanner, setShowDraftBanner] = useState(!!draft);
 
   const canDelete = mode === 'edit' && initialData?.id &&
     (initialData?.status === 'INVENTORY' || initialData?.status === 'WITHDRAWN');
 
-  // Persist sticky values
+  // Debounced draft save (add mode only)
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY_CATEGORY, category);
-  }, [category]);
-  useEffect(() => {
-    if (itemType) localStorage.setItem(STORAGE_KEY_TYPE, itemType);
-  }, [itemType]);
+    if (mode !== 'add') return;
+
+    const timer = setTimeout(() => {
+      const draftData: DealerDraft = {
+        category, itemType, certType, artisanId, artisanName, artisanKanji,
+        priceValue, priceCurrency, isAsk, description,
+        nagasaCm, motohabaCm, sakihabaCm, soriCm,
+        meiType, era, province,
+        images: images.filter(url => !url.startsWith('blob:')),
+        savedAt: Date.now(),
+      };
+      localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draftData));
+    }, DRAFT_DEBOUNCE_MS);
+
+    return () => clearTimeout(timer);
+  }, [
+    mode, category, itemType, certType, artisanId, artisanName, artisanKanji,
+    priceValue, priceCurrency, isAsk, description,
+    nagasaCm, motohabaCm, sakihabaCm, soriCm, meiType, era, province, images,
+  ]);
 
   // Auto-generated title
   const generatedTitle = useMemo(
@@ -193,6 +265,7 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
           }
         }
 
+        clearDraft();
         setShowSuccess(true);
       } else if (mode === 'edit' && initialData?.id) {
         const res = await fetch(`/api/dealer/listings/${initialData.id}`, {
@@ -257,6 +330,8 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
     setImageUploadFailed(false);
     setCreatedListingId(null);
     setError(null);
+    setShowDraftBanner(false);
+    clearDraft();
   }, []);
 
   const handleDelete = useCallback(async () => {
@@ -349,6 +424,24 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
   return (
     <div className="pb-24 lg:pb-0">
       <div className="space-y-6 px-4 py-4">
+        {/* Draft restored banner */}
+        {showDraftBanner && (
+          <div className="flex items-center justify-between px-3 py-2 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/50 rounded-lg text-[12px] text-blue-700 dark:text-blue-300">
+            <span>{t('dealer.draftRestored')}</span>
+            <button
+              type="button"
+              onClick={() => {
+                setShowDraftBanner(false);
+                clearDraft();
+                handleReset();
+              }}
+              className="font-medium underline hover:no-underline"
+            >
+              {t('dealer.discardDraft')}
+            </button>
+          </div>
+        )}
+
         {/* 1. Images */}
         <section>
           <label className="block text-[11px] uppercase tracking-wider text-muted mb-2">
