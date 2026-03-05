@@ -34,12 +34,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unsupported file type. Use JPEG, PNG, or WebP.' }, { status: 400 });
     }
 
+    const parsedItemId = parseInt(itemId, 10);
+    if (isNaN(parsedItemId)) {
+      return NextResponse.json({ error: 'Invalid itemId' }, { status: 400 });
+    }
+
     // Verify listing belongs to this dealer
     // Use service client — RLS blocks source='dealer' reads (migration 098)
     const serviceClient = createServiceClient();
     const { data: listing } = await (serviceClient.from('listings') as any)
       .select('id, dealer_id, source, images')
-      .eq('id', parseInt(itemId, 10))
+      .eq('id', parsedItemId)
       .single() as { data: { id: number; dealer_id: number; source: string; images: string[] | null } | null };
 
     if (!listing || listing.dealer_id !== auth.dealerId || listing.source !== 'dealer') {
@@ -109,6 +114,9 @@ export async function DELETE(request: NextRequest) {
     }
 
     const listingId = parseInt(itemId, 10);
+    if (isNaN(listingId)) {
+      return NextResponse.json({ error: 'Invalid itemId' }, { status: 400 });
+    }
 
     // Verify listing belongs to this dealer
     // Use service client — RLS blocks source='dealer' reads (migration 098)

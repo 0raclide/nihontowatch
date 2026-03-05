@@ -57,34 +57,36 @@ function clearDraft() {
   localStorage.removeItem(STORAGE_KEY_TYPE);
 }
 
+export interface DealerListingInitialData {
+  id: number;
+  title?: string | null;
+  item_type?: string | null;
+  item_category?: string | null;
+  cert_type?: string | null;
+  price_value?: number | null;
+  price_currency?: string | null;
+  description?: string | null;
+  artisan_id?: string | null;
+  artisan_display_name?: string | null;
+  artisan_name_kanji?: string | null;
+  smith?: string | null;
+  tosogu_maker?: string | null;
+  school?: string | null;
+  tosogu_school?: string | null;
+  era?: string | null;
+  province?: string | null;
+  mei_type?: string | null;
+  nagasa_cm?: number | null;
+  motohaba_cm?: number | null;
+  sakihaba_cm?: number | null;
+  sori_cm?: number | null;
+  images?: string[];
+  status?: string | null;
+}
+
 interface DealerListingFormProps {
   mode: 'add' | 'edit';
-  initialData?: {
-    id: number;
-    title?: string | null;
-    item_type?: string | null;
-    item_category?: string | null;
-    cert_type?: string | null;
-    price_value?: number | null;
-    price_currency?: string | null;
-    description?: string | null;
-    artisan_id?: string | null;
-    artisan_display_name?: string | null;
-    artisan_name_kanji?: string | null;
-    smith?: string | null;
-    tosogu_maker?: string | null;
-    school?: string | null;
-    tosogu_school?: string | null;
-    era?: string | null;
-    province?: string | null;
-    mei_type?: string | null;
-    nagasa_cm?: number | null;
-    motohaba_cm?: number | null;
-    sakihaba_cm?: number | null;
-    sori_cm?: number | null;
-    images?: string[];
-    status?: string | null;
-  };
+  initialData?: DealerListingInitialData;
 }
 
 const MEI_TYPES = [
@@ -220,12 +222,10 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
         price_currency: priceCurrency,
         description: description || null,
         artisan_id: artisanId,
-        artisan_display_name: artisanName,
-        artisan_name_kanji: artisanKanji,
         smith: category === 'nihonto' ? (artisanKanji || artisanName || null) : null,
         tosogu_maker: category === 'tosogu' ? (artisanKanji || artisanName || null) : null,
-        school: category === 'nihonto' ? null : null,
-        tosogu_school: category === 'tosogu' ? null : null,
+        school: null,
+        tosogu_school: null,
         nagasa_cm: nagasaCm ? Number(nagasaCm) : null,
         motohaba_cm: motohabaCm ? Number(motohabaCm) : null,
         sakihaba_cm: sakihabaCm ? Number(sakihabaCm) : null,

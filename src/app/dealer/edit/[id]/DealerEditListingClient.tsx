@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { DealerListingForm } from '@/components/dealer/DealerListingForm';
+import { DealerListingForm, type DealerListingInitialData } from '@/components/dealer/DealerListingForm';
 import { useLocale } from '@/i18n/LocaleContext';
 
 interface DealerEditListingClientProps {
@@ -11,7 +11,7 @@ interface DealerEditListingClientProps {
 
 export function DealerEditListingClient({ id }: DealerEditListingClientProps) {
   const { t } = useLocale();
-  const [listing, setListing] = useState<any>(null);
+  const [listing, setListing] = useState<DealerListingInitialData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -21,18 +21,19 @@ export function DealerEditListingClient({ id }: DealerEditListingClientProps) {
         const res = await fetch(`/api/dealer/listings/${id}`);
         if (!res.ok) {
           const data = await res.json().catch(() => ({}));
-          throw new Error(data.error || t('dealer.listingNotFound'));
+          throw new Error(data.error || 'Listing not found');
         }
         const data = await res.json();
         setListing(data);
       } catch (err) {
-        setError(err instanceof Error ? err.message : t('dealer.fetchError'));
+        setError(err instanceof Error ? err.message : 'Failed to load listing');
       } finally {
         setLoading(false);
       }
     }
     fetchListing();
-  }, [id, t]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
   return (
     <div className="min-h-screen bg-cream">
