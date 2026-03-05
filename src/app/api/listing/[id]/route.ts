@@ -1,8 +1,9 @@
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { CACHE } from '@/lib/constants';
 import { logger } from '@/lib/logger';
 import { getListingDetail } from '@/lib/listing/getListingDetail';
+import { verifyDealer } from '@/lib/dealer/auth';
 
 // Disable ISR caching - use HTTP Cache-Control instead
 // This allows ?nocache=1 to properly bypass all caching layers for debugging
@@ -35,7 +36,22 @@ export async function GET(
 
   try {
     const supabase = await createClient();
-    const enrichedListing = await getListingDetail(supabase, listingId);
+    let enrichedListing = await getListingDetail(supabase, listingId);
+
+    // RLS (migration 098) blocks source='dealer' rows from anon/authenticated client.
+    // If listing not found, check if requesting user is the owning dealer and retry
+    // with service client to bypass RLS.
+    if (!enrichedListing) {
+      const auth = await verifyDealer(supabase);
+      if (auth.isDealer) {
+        const serviceClient = createServiceClient();
+        enrichedListing = await getListingDetail(serviceClient, listingId);
+        // Verify ownership: dealer can only see their own listings
+        if (enrichedListing && enrichedListing.dealer_id !== auth.dealerId) {
+          enrichedListing = null;
+        }
+      }
+    }
 
     if (!enrichedListing) {
       logger.error('Listing fetch error', { listingId });
