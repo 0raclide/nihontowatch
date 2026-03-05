@@ -94,9 +94,9 @@ export function DealerPageClient() {
   }, [router]);
 
   return (
-    <div className="min-h-screen bg-cream">
+    <div className="min-h-screen bg-surface">
       {/* Sub-header: shop name + tabs + add (desktop), shop name centered (mobile) */}
-      <div className="sticky top-0 lg:top-[var(--header-visible-h,80px)] z-30 bg-cream/95 backdrop-blur-sm border-b border-border/30 transition-[top] duration-0">
+      <div className="sticky top-0 lg:top-[var(--header-visible-h,80px)] z-30 bg-surface/95 backdrop-blur-sm border-b border-border/30 transition-[top] duration-0">
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
           {/* Mobile: centered name + item count + view toggle */}
           <div className="flex-1 text-center lg:text-left">
@@ -160,7 +160,7 @@ export function DealerPageClient() {
       </div>
 
       {/* Content */}
-      <div className="max-w-5xl mx-auto pb-36 lg:pb-0">
+      <div className="max-w-5xl mx-auto px-4 pb-36 lg:pb-0">
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
             <div className="w-6 h-6 border-2 border-gold border-t-transparent rounded-full animate-spin" />
