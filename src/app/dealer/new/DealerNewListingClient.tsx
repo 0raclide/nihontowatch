@@ -8,9 +8,9 @@ export function DealerNewListingClient() {
   const { t } = useLocale();
 
   return (
-    <div className="min-h-screen bg-cream">
+    <div className="min-h-screen bg-surface">
       {/* Header */}
-      <div className="sticky top-0 z-30 bg-cream/95 backdrop-blur-sm border-b border-border/30">
+      <div className="sticky top-0 z-30 bg-surface/95 backdrop-blur-sm border-b border-border/30">
         <div className="max-w-lg mx-auto px-4 py-3 flex items-center gap-3">
           <Link
             href="/dealer"

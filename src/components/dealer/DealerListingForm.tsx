@@ -32,8 +32,13 @@ interface DealerDraft {
   sakihabaCm: string;
   soriCm: string;
   meiType: string | null;
+  nakagoType: string[];
   era: string;
   province: string;
+  heightCm: string;
+  widthCm: string;
+  material: string | null;
+  artisanSchool: string | null;
   images: string[]; // only server URLs, no blob:
   savedAt: number;
 }
@@ -76,10 +81,14 @@ export interface DealerListingInitialData {
   era?: string | null;
   province?: string | null;
   mei_type?: string | null;
+  nakago_type?: string | null;
   nagasa_cm?: number | null;
   motohaba_cm?: number | null;
   sakihaba_cm?: number | null;
   sori_cm?: number | null;
+  height_cm?: number | null;
+  width_cm?: number | null;
+  material?: string | null;
   images?: string[];
   status?: string | null;
 }
@@ -103,6 +112,38 @@ const NAKAGO_TYPES = [
   { value: 'ubu', labelKey: 'meiType.ubu' },
   { value: 'suriage', labelKey: 'meiType.suriage' },
 ];
+
+const ERA_OPTIONS = [
+  { value: 'Heian', labelKey: 'period.Heian' },
+  { value: 'Kamakura', labelKey: 'period.Kamakura' },
+  { value: 'Nanbokucho', labelKey: 'period.Nanbokucho' },
+  { value: 'Muromachi', labelKey: 'period.Muromachi' },
+  { value: 'Momoyama', labelKey: 'period.Momoyama' },
+  { value: 'Edo', labelKey: 'period.Edo' },
+  { value: 'Meiji', labelKey: 'period.Meiji' },
+  { value: 'Taisho', labelKey: 'period.Taisho' },
+  { value: 'Showa', labelKey: 'period.Showa' },
+  { value: 'Heisei', labelKey: 'period.Heisei' },
+  { value: 'Reiwa', labelKey: 'period.Reiwa' },
+];
+
+const MATERIAL_OPTIONS = [
+  { value: 'iron', labelKey: 'dealer.materialIron' },
+  { value: 'shakudo', labelKey: 'dealer.materialShakudo' },
+  { value: 'shibuichi', labelKey: 'dealer.materialShibuichi' },
+  { value: 'copper', labelKey: 'dealer.materialCopper' },
+  { value: 'gold', labelKey: 'dealer.materialGold' },
+  { value: 'silver', labelKey: 'dealer.materialSilver' },
+  { value: 'sentoku', labelKey: 'dealer.materialSentoku' },
+  { value: 'mixed', labelKey: 'dealer.materialMixed' },
+];
+
+function sanitizeDecimal(value: string): string {
+  const stripped = value.replace(/[^0-9.]/g, '');
+  const parts = stripped.split('.');
+  if (parts.length <= 2) return stripped;
+  return parts[0] + '.' + parts.slice(1).join('');
+}
 
 function getStickyValue(key: string, fallback: string): string {
   if (typeof window === 'undefined') return fallback;
@@ -149,8 +190,17 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
   const [sakihabaCm, setSakihabaCm] = useState(initialData?.sakihaba_cm != null ? String(initialData.sakihaba_cm) : (draft?.sakihabaCm ?? ''));
   const [soriCm, setSoriCm] = useState(initialData?.sori_cm != null ? String(initialData.sori_cm) : (draft?.soriCm ?? ''));
   const [meiType, setMeiType] = useState<string | null>(initialData?.mei_type || draft?.meiType || null);
+  const [nakagoType, setNakagoType] = useState<string[]>(
+    initialData?.nakago_type ? initialData.nakago_type.split(',') : (draft?.nakagoType ?? [])
+  );
   const [era, setEra] = useState(initialData?.era || draft?.era || '');
   const [province, setProvince] = useState(initialData?.province || draft?.province || '');
+  const [heightCm, setHeightCm] = useState(initialData?.height_cm != null ? String(initialData.height_cm) : (draft?.heightCm ?? ''));
+  const [widthCm, setWidthCm] = useState(initialData?.width_cm != null ? String(initialData.width_cm) : (draft?.widthCm ?? ''));
+  const [material, setMaterial] = useState<string | null>(initialData?.material || draft?.material || null);
+  const [artisanSchool, setArtisanSchool] = useState<string | null>(
+    (initialData?.item_category === 'tosogu' ? initialData?.tosogu_school : initialData?.school) || draft?.artisanSchool || null
+  );
   const [images, setImages] = useState<string[]>(initialData?.images || draft?.images || []);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -161,6 +211,27 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDraftBanner, setShowDraftBanner] = useState(!!draft);
+
+  // Clear cross-category fields when switching nihonto ↔ tosogu (skip initial render)
+  const categoryInitialized = useRef(false);
+  useEffect(() => {
+    if (!categoryInitialized.current) {
+      categoryInitialized.current = true;
+      return;
+    }
+    if (category === 'nihonto') {
+      setHeightCm('');
+      setWidthCm('');
+      setMaterial(null);
+    } else {
+      setNagasaCm('');
+      setMotohabaCm('');
+      setSakihabaCm('');
+      setSoriCm('');
+      setMeiType(null);
+      setNakagoType([]);
+    }
+  }, [category]);
 
   const canDelete = mode === 'edit' && initialData?.id &&
     (initialData?.status === 'INVENTORY' || initialData?.status === 'WITHDRAWN');
@@ -174,7 +245,8 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
         category, itemType, certType, artisanId, artisanName, artisanKanji,
         priceValue, priceCurrency, isAsk, description,
         nagasaCm, motohabaCm, sakihabaCm, soriCm,
-        meiType, era, province,
+        meiType, nakagoType, era, province,
+        heightCm, widthCm, material, artisanSchool,
         images: images.filter(url => !url.startsWith('blob:')),
         savedAt: Date.now(),
       };
@@ -185,7 +257,8 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
   }, [
     mode, category, itemType, certType, artisanId, artisanName, artisanKanji,
     priceValue, priceCurrency, isAsk, description,
-    nagasaCm, motohabaCm, sakihabaCm, soriCm, meiType, era, province, images,
+    nagasaCm, motohabaCm, sakihabaCm, soriCm, meiType, nakagoType, era, province,
+    heightCm, widthCm, material, artisanSchool, images,
   ]);
 
   // Auto-generated title
@@ -198,12 +271,14 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
     setArtisanId(result.code);
     setArtisanName(result.name_romaji || result.display_name || null);
     setArtisanKanji(result.name_kanji || null);
+    setArtisanSchool(result.school || null);
   }, []);
 
   const handleArtisanClear = useCallback(() => {
     setArtisanId(null);
     setArtisanName(null);
     setArtisanKanji(null);
+    setArtisanSchool(null);
   }, []);
 
   const handleSubmit = useCallback(async (targetStatus?: 'INVENTORY' | 'AVAILABLE') => {
@@ -224,13 +299,17 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
         artisan_id: artisanId,
         smith: category === 'nihonto' ? (artisanKanji || artisanName || null) : null,
         tosogu_maker: category === 'tosogu' ? (artisanKanji || artisanName || null) : null,
-        school: null,
-        tosogu_school: null,
+        school: category === 'nihonto' ? (artisanSchool || null) : null,
+        tosogu_school: category === 'tosogu' ? (artisanSchool || null) : null,
         nagasa_cm: nagasaCm ? Number(nagasaCm) : null,
         motohaba_cm: motohabaCm ? Number(motohabaCm) : null,
         sakihaba_cm: sakihabaCm ? Number(sakihabaCm) : null,
         sori_cm: soriCm ? Number(soriCm) : null,
         mei_type: meiType,
+        nakago_type: nakagoType.length ? nakagoType.join(',') : null,
+        height_cm: category === 'tosogu' && heightCm ? Number(heightCm) : null,
+        width_cm: category === 'tosogu' && widthCm ? Number(widthCm) : null,
+        material: category === 'tosogu' ? material : null,
         era: era || null,
         province: province || null,
       };
@@ -288,9 +367,9 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
     }
   }, [
     mode, initialData, category, itemType, certType, artisanId, artisanName,
-    artisanKanji, priceValue, priceCurrency, isAsk, description,
-    nagasaCm, motohabaCm, sakihabaCm, soriCm, meiType, era, province,
-    pendingFiles, generatedTitle, router,
+    artisanKanji, artisanSchool, priceValue, priceCurrency, isAsk, description,
+    nagasaCm, motohabaCm, sakihabaCm, soriCm, meiType, nakagoType, era, province,
+    heightCm, widthCm, material, pendingFiles, generatedTitle, router,
   ]);
 
   const handleRetryUpload = useCallback(async () => {
@@ -322,8 +401,13 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
     setSakihabaCm('');
     setSoriCm('');
     setMeiType(null);
+    setNakagoType([]);
     setEra('');
     setProvince('');
+    setHeightCm('');
+    setWidthCm('');
+    setMaterial(null);
+    setArtisanSchool(null);
     setImages([]);
     setPendingFiles([]);
     setShowSuccess(false);
@@ -486,20 +570,29 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
             {t('dealer.artisan')}
           </label>
           {artisanId ? (
-            <div className="flex items-center gap-2 px-3 py-2 bg-surface rounded-lg border border-border/50">
-              <div className="flex-1">
-                <div className="text-[13px] font-medium">{artisanName || artisanId}</div>
-                {artisanKanji && artisanKanji !== artisanName && (
-                  <div className="text-[12px] text-muted">{artisanKanji}</div>
-                )}
+            <div className="px-3 py-2 bg-surface rounded-lg border border-border/50">
+              <div className="flex items-center gap-2">
+                <div className="flex-1">
+                  <div className="text-[13px] font-medium">{artisanName || artisanId}</div>
+                  {artisanKanji && artisanKanji !== artisanName && (
+                    <div className="text-[12px] text-muted">{artisanKanji}</div>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={handleArtisanClear}
+                  className="text-[11px] text-muted hover:text-red-500 transition-colors"
+                >
+                  {t('dealer.changeArtisan')}
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={handleArtisanClear}
-                className="text-[11px] text-muted hover:text-red-500 transition-colors"
-              >
-                {t('dealer.changeArtisan')}
-              </button>
+              {artisanSchool && (
+                <div className="mt-1.5">
+                  <span className="inline-block px-2 py-0.5 bg-gold/10 text-gold text-[11px] rounded-full border border-gold/20">
+                    {artisanSchool}
+                  </span>
+                </div>
+              )}
             </div>
           ) : (
             <ArtisanSearchPanel
@@ -599,7 +692,7 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
                       type="text"
                       inputMode="decimal"
                       value={nagasaCm}
-                      onChange={e => setNagasaCm(e.target.value.replace(/[^0-9.]/g, ''))}
+                      onChange={e => setNagasaCm(sanitizeDecimal(e.target.value))}
                       placeholder="—"
                       className="w-full px-3 py-2 bg-surface border border-border/50 rounded-lg text-[13px]"
                     />
@@ -610,7 +703,7 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
                       type="text"
                       inputMode="decimal"
                       value={motohabaCm}
-                      onChange={e => setMotohabaCm(e.target.value.replace(/[^0-9.]/g, ''))}
+                      onChange={e => setMotohabaCm(sanitizeDecimal(e.target.value))}
                       placeholder="—"
                       className="w-full px-3 py-2 bg-surface border border-border/50 rounded-lg text-[13px]"
                     />
@@ -621,7 +714,7 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
                       type="text"
                       inputMode="decimal"
                       value={sakihabaCm}
-                      onChange={e => setSakihabaCm(e.target.value.replace(/[^0-9.]/g, ''))}
+                      onChange={e => setSakihabaCm(sanitizeDecimal(e.target.value))}
                       placeholder="—"
                       className="w-full px-3 py-2 bg-surface border border-border/50 rounded-lg text-[13px]"
                     />
@@ -632,11 +725,63 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
                       type="text"
                       inputMode="decimal"
                       value={soriCm}
-                      onChange={e => setSoriCm(e.target.value.replace(/[^0-9.]/g, ''))}
+                      onChange={e => setSoriCm(sanitizeDecimal(e.target.value))}
                       placeholder="—"
                       className="w-full px-3 py-2 bg-surface border border-border/50 rounded-lg text-[13px]"
                     />
                   </div>
+                </div>
+              </div>
+            )}
+
+            {/* 9a2. Measurements — tosogu only */}
+            {category === 'tosogu' && (
+              <div>
+                <label className="block text-[11px] uppercase tracking-wider text-muted mb-2">
+                  {t('dealer.measurements')}
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-[10px] text-muted mb-1">{t('dealer.height')}</label>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={heightCm}
+                      onChange={e => setHeightCm(sanitizeDecimal(e.target.value))}
+                      placeholder="—"
+                      className="w-full px-3 py-2 bg-surface border border-border/50 rounded-lg text-[13px]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-muted mb-1">{t('dealer.width')}</label>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={widthCm}
+                      onChange={e => setWidthCm(sanitizeDecimal(e.target.value))}
+                      placeholder="—"
+                      className="w-full px-3 py-2 bg-surface border border-border/50 rounded-lg text-[13px]"
+                    />
+                  </div>
+                </div>
+                <label className="block text-[11px] uppercase tracking-wider text-muted mt-3 mb-2">
+                  {t('dealer.material')}
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {MATERIAL_OPTIONS.map(({ value: v, labelKey }) => (
+                    <button
+                      key={v}
+                      type="button"
+                      onClick={() => setMaterial(material === v ? null : v)}
+                      className={`px-3 py-1.5 rounded-full text-[12px] font-medium transition-all ${
+                        material === v
+                          ? 'bg-gold/10 text-gold border border-gold/30'
+                          : 'bg-surface text-muted border border-border/50 hover:border-gold/30'
+                      }`}
+                    >
+                      {t(labelKey)}
+                    </button>
+                  ))}
                 </div>
               </div>
             )}
@@ -671,9 +816,11 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
                     <button
                       key={v}
                       type="button"
-                      onClick={() => setMeiType(meiType === v ? null : v)}
+                      onClick={() => setNakagoType(prev =>
+                        prev.includes(v) ? prev.filter(x => x !== v) : [...prev, v]
+                      )}
                       className={`px-3 py-1.5 rounded-full text-[12px] font-medium transition-all ${
-                        meiType === v
+                        nakagoType.includes(v)
                           ? 'bg-gold/10 text-gold border border-gold/30'
                           : 'bg-surface text-muted border border-border/50 hover:border-gold/30'
                       }`}
@@ -690,13 +837,22 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
               <label className="block text-[11px] uppercase tracking-wider text-muted mb-2">
                 {t('dealer.era')}
               </label>
-              <input
-                type="text"
-                value={era}
-                onChange={e => setEra(e.target.value)}
-                placeholder="—"
-                className="w-full px-3 py-2 bg-surface border border-border/50 rounded-lg text-[13px]"
-              />
+              <div className="flex flex-wrap gap-2">
+                {ERA_OPTIONS.map(({ value: v, labelKey }) => (
+                  <button
+                    key={v}
+                    type="button"
+                    onClick={() => setEra(era === v ? '' : v)}
+                    className={`px-3 py-1.5 rounded-full text-[12px] font-medium transition-all ${
+                      era === v
+                        ? 'bg-gold/10 text-gold border border-gold/30'
+                        : 'bg-surface text-muted border border-border/50 hover:border-gold/30'
+                    }`}
+                  >
+                    {t(labelKey)}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* 9d. Province */}
@@ -755,7 +911,7 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
       </div>
 
       {/* Submit button — sticky on mobile, inline on desktop */}
-      <div className="fixed bottom-0 inset-x-0 p-4 bg-cream/95 backdrop-blur-sm border-t border-border/30 z-40 lg:static lg:p-0 lg:px-4 lg:mt-6 lg:bg-transparent lg:border-0 lg:backdrop-blur-none">
+      <div className="fixed bottom-0 inset-x-0 p-4 bg-surface/95 backdrop-blur-sm border-t border-border/30 z-40 lg:static lg:p-0 lg:px-4 lg:mt-6 lg:bg-transparent lg:border-0 lg:backdrop-blur-none">
         <button
           onClick={() => handleSubmit('INVENTORY')}
           disabled={isSubmitting || !itemType}
