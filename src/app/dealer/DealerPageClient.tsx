@@ -34,6 +34,21 @@ export function DealerPageClient() {
   const [dealerName, setDealerName] = useState<string | null>(null);
   const [dealerNameJa, setDealerNameJa] = useState<string | null>(null);
 
+  // Mobile view toggle (shared localStorage key with browse)
+  const [mobileView, setMobileView] = useState<'grid' | 'gallery'>(() => {
+    if (typeof window !== 'undefined') {
+      return (localStorage.getItem('nihontowatch-mobile-view') as 'grid' | 'gallery') || 'grid';
+    }
+    return 'grid';
+  });
+
+  const handleMobileViewChange = useCallback((view: 'grid' | 'gallery') => {
+    setMobileView(view);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('nihontowatch-mobile-view', view);
+    }
+  }, []);
+
   const displayName = locale === 'ja' && dealerNameJa ? dealerNameJa : dealerName;
 
   const fetchListings = useCallback(async (selectedTab: Tab) => {
@@ -80,16 +95,43 @@ export function DealerPageClient() {
 
   return (
     <div className="min-h-screen bg-cream">
-      {/* Sub-header: shop name + tabs + add (desktop), shop name only (mobile) */}
+      {/* Sub-header: shop name + tabs + add (desktop), shop name centered (mobile) */}
       <div className="sticky top-0 lg:top-[var(--header-visible-h,80px)] z-30 bg-cream/95 backdrop-blur-sm border-b border-border/30 transition-[top] duration-0">
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div>
+          {/* Mobile: centered name + item count + view toggle */}
+          <div className="flex-1 text-center lg:text-left">
             <h1 className="text-[16px] font-medium">
               {displayName || t('dealer.myListings')}
             </h1>
-            <p className="text-[12px] text-muted">
-              {total} {t('dealer.items')}
-            </p>
+            <div className="flex items-center justify-center lg:justify-start gap-2">
+              <span className="text-[12px] text-muted">
+                {total} {t('dealer.items')}
+              </span>
+              {/* View toggle — phone only */}
+              <div className="flex items-center gap-0.5 sm:hidden">
+                <button
+                  onClick={() => handleMobileViewChange('gallery')}
+                  className={`p-1.5 rounded transition-colors ${mobileView === 'gallery' ? 'text-gold' : 'text-muted/50'}`}
+                  aria-label="Gallery view"
+                >
+                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                    <rect x="3" y="4" width="12" height="10" rx="1" stroke="currentColor" strokeWidth="1.5" />
+                  </svg>
+                </button>
+                <button
+                  onClick={() => handleMobileViewChange('grid')}
+                  className={`p-1.5 rounded transition-colors ${mobileView === 'grid' ? 'text-gold' : 'text-muted/50'}`}
+                  aria-label="Grid view"
+                >
+                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                    <rect x="2.5" y="2.5" width="5.5" height="5.5" rx="0.75" stroke="currentColor" strokeWidth="1.5" />
+                    <rect x="10" y="2.5" width="5.5" height="5.5" rx="0.75" stroke="currentColor" strokeWidth="1.5" />
+                    <rect x="2.5" y="10" width="5.5" height="5.5" rx="0.75" stroke="currentColor" strokeWidth="1.5" />
+                    <rect x="10" y="10" width="5.5" height="5.5" rx="0.75" stroke="currentColor" strokeWidth="1.5" />
+                  </svg>
+                </button>
+              </div>
+            </div>
           </div>
           <Link
             href="/dealer/new"
@@ -157,6 +199,7 @@ export function DealerPageClient() {
             currency={currency}
             exchangeRates={exchangeRates}
             onCardClick={handleCardClick}
+            mobileView={mobileView}
           />
         )}
       </div>
