@@ -35,9 +35,10 @@ export function DealerProfileView({ dealer, stats, featuredListings }: DealerPro
   const secondaryBio = locale === 'ja' ? dealer.bio_en : dealer.bio_ja;
 
   const hasCredentials = dealer.is_nbthk_member || dealer.is_zentosho_member || dealer.has_kobutsusho_license;
-  const hasContact = dealer.contact_email || dealer.phone || dealer.line_id || dealer.instagram_url || dealer.domain;
+  const hasContact = dealer.contact_email || dealer.phone || dealer.line_id || dealer.instagram_url;
   const hasAddress = dealer.address_visible && dealer.city;
-  const hasPolicies = dealer.ships_international !== null || dealer.english_support !== null ||
+  const hasPolicies = (dealer.ships_international !== null && dealer.ships_international !== undefined) ||
+    (dealer.english_support !== null && dealer.english_support !== undefined) ||
     dealer.accepts_wire_transfer || dealer.accepts_paypal || dealer.accepts_credit_card || dealer.return_policy?.trim();
   const hasSpecs = dealer.specializations && dealer.specializations.length > 0;
 
@@ -48,7 +49,7 @@ export function DealerProfileView({ dealer, stats, featuredListings }: DealerPro
       {/* Hero: Banner + Logo + Name */}
       <div className="relative">
         {/* Banner */}
-        <div className="w-full aspect-[16/9] max-h-[280px] bg-gradient-to-br from-surface-elevated to-border/30 overflow-hidden">
+        <div className="relative w-full aspect-[16/9] max-h-[280px] bg-gradient-to-br from-surface-elevated to-border/30 overflow-hidden">
           {dealer.banner_url && (
             <Image
               src={dealer.banner_url}
@@ -64,7 +65,7 @@ export function DealerProfileView({ dealer, stats, featuredListings }: DealerPro
         <div className="max-w-3xl mx-auto px-4">
           <div className="flex items-end gap-4 -mt-10 relative z-10">
             {dealer.logo_url ? (
-              <div className="w-20 h-20 rounded-xl overflow-hidden border-4 border-surface shadow-lg bg-surface flex-shrink-0">
+              <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-surface shadow-lg bg-surface flex-shrink-0">
                 <Image
                   src={dealer.logo_url}
                   alt={displayName}
@@ -74,7 +75,7 @@ export function DealerProfileView({ dealer, stats, featuredListings }: DealerPro
                 />
               </div>
             ) : (
-              <div className="w-20 h-20 rounded-xl border-4 border-surface shadow-lg bg-surface-elevated flex-shrink-0 flex items-center justify-center">
+              <div className="w-20 h-20 rounded-full border-4 border-surface shadow-lg bg-surface-elevated flex-shrink-0 flex items-center justify-center">
                 <span className="text-2xl font-serif text-muted">{displayName.charAt(0)}</span>
               </div>
             )}
@@ -163,8 +164,7 @@ export function DealerProfileView({ dealer, stats, featuredListings }: DealerPro
           <section>
             <SectionHeader label={t('dealer.inventorySection')} />
             <div className="bg-cream rounded-lg border border-border p-5">
-              <div className="flex items-baseline justify-between mb-4">
-                <span className="text-[13px] text-muted">{t('dealer.inventorySection')}</span>
+              <div className="flex items-baseline justify-end mb-4">
                 <span className="text-2xl font-serif text-ink tabular-nums">{stats.totalListings.toLocaleString()}</span>
               </div>
 
