@@ -11,6 +11,7 @@ import type { Listing } from '@/types';
 import { getItemTypeLabel } from '@/types';
 import { MetadataGrid, getCertInfo, getArtisanInfo } from './MetadataGrid';
 import { TranslatedTitle } from './TranslatedTitle';
+import { SayagakiDisplay } from './SayagakiDisplay';
 import { useLocale } from '@/i18n/LocaleContext';
 
 // =============================================================================
@@ -26,6 +27,7 @@ interface QuickViewContentProps {
   descriptionSlot?: ReactNode;
   provenanceSlot?: ReactNode;
   adminToolsSlot?: ReactNode;
+  intelligenceSlot?: ReactNode;
   ctaSlot?: ReactNode;
 }
 
@@ -40,6 +42,7 @@ export function QuickViewContent({
   descriptionSlot,
   provenanceSlot,
   adminToolsSlot,
+  intelligenceSlot,
   ctaSlot,
 }: QuickViewContentProps) {
   const router = useRouter();
@@ -208,8 +211,16 @@ export function QuickViewContent({
           <TranslatedTitle listing={listing} className="lg:text-xl" />
         </div>
 
+        {/* Sayagaki */}
+        {listing.sayagaki && listing.sayagaki.length > 0 && (
+          <SayagakiDisplay sayagaki={listing.sayagaki} />
+        )}
+
         {/* Description slot */}
         {descriptionSlot}
+
+        {/* Intelligence slot (dealer-only) */}
+        {intelligenceSlot}
 
         {/* Provenance slot (collection-only) */}
         {provenanceSlot}

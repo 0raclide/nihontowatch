@@ -239,15 +239,16 @@ export async function GET(request: NextRequest) {
           continue;
         }
 
-        // Get public URL
+        // Get public URL with cache-buster to bypass CDN immutable cache (1yr max-age)
         const { data: urlData } = supabase.storage
           .from('listing-images')
           .getPublicUrl(storagePath);
+        const thumbnailUrl = `${urlData.publicUrl}?v=${Date.now()}`;
 
         // Write thumbnail_url to DB
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { error: updateError } = await (supabase.from('listings') as any)
-          .update({ thumbnail_url: urlData.publicUrl })
+          .update({ thumbnail_url: thumbnailUrl })
           .eq('id', listing.id);
 
         if (updateError) {

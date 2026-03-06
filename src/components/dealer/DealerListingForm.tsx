@@ -9,6 +9,8 @@ import { CertPills, CERT_NONE } from './CertPills';
 import { ArtisanSearchPanel } from '@/components/admin/ArtisanSearchPanel';
 import type { ArtisanSearchResult } from '@/app/api/artisan/search/route';
 import { generateListingTitle } from '@/lib/dealer/titleGenerator';
+import { SayagakiSection } from './SayagakiSection';
+import type { SayagakiEntry } from '@/types';
 import { useLocale } from '@/i18n/LocaleContext';
 
 const STORAGE_KEY_CATEGORY = 'nw-dealer-category';
@@ -41,6 +43,7 @@ interface DealerDraft {
   artisanSchool: string | null;
   titleOverride: string | null;
   images: string[]; // only server URLs, no blob:
+  sayagaki: SayagakiEntry[];
   savedAt: number;
 }
 
@@ -50,7 +53,8 @@ function isDraftSubstantive(d: DealerDraft): boolean {
     d.priceValue || d.description || d.titleOverride || d.images?.length ||
     d.nagasaCm || d.motohabaCm || d.sakihabaCm || d.soriCm ||
     d.heightCm || d.widthCm || d.material ||
-    d.meiType || d.era || d.province || d.artisanSchool
+    d.meiType || d.era || d.province || d.artisanSchool ||
+    d.sayagaki?.length
   );
 }
 
@@ -104,6 +108,7 @@ export interface DealerListingInitialData {
   width_cm?: number | null;
   material?: string | null;
   images?: string[];
+  sayagaki?: SayagakiEntry[] | null;
   status?: string | null;
 }
 
@@ -217,6 +222,12 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
   );
   const [images, setImages] = useState<string[]>(initialData?.images || draft?.images || []);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const [sayagaki, setSayagaki] = useState<SayagakiEntry[]>(
+    initialData?.sayagaki || draft?.sayagaki || []
+  );
+  const [pendingSayagakiFiles, setPendingSayagakiFiles] = useState<
+    Map<string, File[]>
+  >(new Map());
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -266,6 +277,10 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
         meiType, nakagoType, era, province,
         heightCm, widthCm, material, artisanSchool, titleOverride,
         images: images.filter(url => !url.startsWith('blob:')),
+        sayagaki: sayagaki.map(e => ({
+          ...e,
+          images: (e.images || []).filter(url => !url.startsWith('blob:')),
+        })),
         savedAt: Date.now(),
       };
       // Only persist if the form has substantive content
@@ -279,7 +294,7 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
     mode, category, itemType, certType, artisanId, artisanName, artisanKanji,
     priceValue, priceCurrency, isAsk, description,
     nagasaCm, motohabaCm, sakihabaCm, soriCm, meiType, nakagoType, era, province,
-    heightCm, widthCm, material, artisanSchool, titleOverride, images,
+    heightCm, widthCm, material, artisanSchool, titleOverride, images, sayagaki,
   ]);
 
   // Auto-generated title
@@ -334,6 +349,12 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
         material: category === 'tosogu' ? material : null,
         era: era || null,
         province: province || null,
+        sayagaki: sayagaki.length > 0
+          ? sayagaki.map(e => ({
+              ...e,
+              images: (e.images || []).filter(url => !url.startsWith('blob:')),
+            }))
+          : null,
       };
 
       if (mode === 'add') {
@@ -366,6 +387,26 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
           }
         }
 
+        // Upload pending sayagaki images
+        if (pendingSayagakiFiles.size > 0) {
+          for (const [sayagakiId, files] of pendingSayagakiFiles) {
+            for (const file of files) {
+              const formData = new FormData();
+              formData.append('file', file, file.name);
+              formData.append('itemId', String(listing.id));
+              formData.append('sayagakiId', sayagakiId);
+              try {
+                await fetch('/api/dealer/sayagaki-images', {
+                  method: 'POST',
+                  body: formData,
+                });
+              } catch {
+                // Best effort — don't block success
+              }
+            }
+          }
+        }
+
         clearDraft();
         setShowSuccess(true);
       } else if (mode === 'edit' && initialData?.id) {
@@ -391,7 +432,8 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
     mode, initialData, category, itemType, certType, artisanId, artisanName,
     artisanKanji, artisanSchool, priceValue, priceCurrency, isAsk, description,
     nagasaCm, motohabaCm, sakihabaCm, soriCm, meiType, nakagoType, era, province,
-    heightCm, widthCm, material, pendingFiles, generatedTitle, titleOverride, router,
+    heightCm, widthCm, material, pendingFiles, pendingSayagakiFiles, sayagaki,
+    generatedTitle, titleOverride, router,
   ]);
 
   const handleRetryUpload = useCallback(async () => {
@@ -433,6 +475,8 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
     setTitleOverride(null);
     setImages([]);
     setPendingFiles([]);
+    setSayagaki([]);
+    setPendingSayagakiFiles(new Map());
     setShowSuccess(false);
     setImageUploadFailed(false);
     setCreatedListingId(null);
@@ -586,6 +630,24 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
           </label>
           <CertPills value={certType} onChange={setCertType} />
         </section>
+
+        {/* 4b. Sayagaki */}
+        <SayagakiSection
+          entries={sayagaki}
+          itemId={mode === 'edit' && initialData?.id ? String(initialData.id) : undefined}
+          onChange={setSayagaki}
+          onPendingFilesChange={(sayagakiId, files) => {
+            setPendingSayagakiFiles(prev => {
+              const next = new Map(prev);
+              if (files.length === 0) {
+                next.delete(sayagakiId);
+              } else {
+                next.set(sayagakiId, files);
+              }
+              return next;
+            });
+          }}
+        />
 
         {/* 5. Artisan */}
         <section>

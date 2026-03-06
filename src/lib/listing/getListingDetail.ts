@@ -3,7 +3,7 @@ import { getArtisanNames } from '@/lib/supabase/yuhinkai';
 import { getArtisanDisplayName, getArtisanDisplayNameKanji, getArtisanAlias } from '@/lib/artisan/displayName';
 import { getArtisanTier } from '@/lib/artisan/tier';
 import { getAttributionName } from '@/lib/listing/attribution';
-import type { YuhinkaiEnrichment } from '@/types';
+import type { YuhinkaiEnrichment, SayagakiEntry } from '@/types';
 
 // Yuhinkai enrichment as returned by the Supabase view (array wrapper)
 interface YuhinkaiEnrichmentRow {
@@ -93,6 +93,7 @@ interface ListingWithDealer {
   artisan_verified: string | null;
   focal_x: number | null;
   focal_y: number | null;
+  sayagaki: SayagakiEntry[] | null;
   dealers: {
     id: number;
     name: string;
@@ -163,6 +164,7 @@ export interface EnrichedListingDetail {
   artisan_verified: string | null;
   focal_x: number | null;
   focal_y: number | null;
+  sayagaki: SayagakiEntry[] | null;
   artisan_display_name?: string;
   artisan_tier?: 'kokuho' | 'elite' | 'juyo' | null;
   dealer_earliest_seen_at: string | null;
@@ -234,6 +236,7 @@ const LISTING_SELECT = `
   artisan_verified,
   focal_x,
   focal_y,
+  sayagaki,
   dealers (
     id,
     name,
@@ -388,6 +391,7 @@ export async function getListingDetail(
     artisan_verified: typedListing.artisan_verified,
     focal_x: typedListing.focal_x,
     focal_y: typedListing.focal_y,
+    sayagaki: typedListing.sayagaki,
     ...(artisanDisplayName && { artisan_display_name: artisanDisplayName }),
     ...(artisanNameKanji && { artisan_name_kanji: artisanNameKanji }),
     ...(artisanTier && { artisan_tier: artisanTier }),

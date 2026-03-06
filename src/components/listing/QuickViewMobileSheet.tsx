@@ -10,6 +10,7 @@ import { saveListingReturnContext } from '@/lib/listing/returnContext';
 import { MetadataGrid, getCertInfo, getArtisanInfo } from './MetadataGrid';
 import { useQuickViewOptional } from '@/contexts/QuickViewContext';
 import { TranslatedTitle } from './TranslatedTitle';
+import { SayagakiDisplay } from './SayagakiDisplay';
 import { QuickMeasurement } from './QuickMeasurement';
 import { useLocale } from '@/i18n/LocaleContext';
 import { useAuth } from '@/lib/auth/AuthContext';
@@ -27,6 +28,7 @@ interface QuickViewMobileSheetProps {
   headerActionsSlot?: ReactNode;
   dealerSlot?: ReactNode;
   descriptionSlot?: ReactNode;
+  intelligenceSlot?: ReactNode;
   ctaSlot?: ReactNode;
 }
 
@@ -57,6 +59,7 @@ export function QuickViewMobileSheet({
   headerActionsSlot,
   dealerSlot,
   descriptionSlot,
+  intelligenceSlot,
   ctaSlot,
 }: QuickViewMobileSheetProps) {
   const sheetRef = useRef<HTMLDivElement>(null);
@@ -431,8 +434,16 @@ export function QuickViewMobileSheet({
               <TranslatedTitle listing={listing} />
             </div>
 
+            {/* Sayagaki */}
+            {listing.sayagaki && listing.sayagaki.length > 0 && (
+              <SayagakiDisplay sayagaki={listing.sayagaki} />
+            )}
+
             {/* Description slot */}
             {descriptionSlot}
+
+            {/* Intelligence slot (dealer-only) */}
+            {intelligenceSlot}
           </div>
 
           {/* Sticky CTA */}

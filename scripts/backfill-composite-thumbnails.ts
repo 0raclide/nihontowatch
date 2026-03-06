@@ -345,7 +345,8 @@ async function main() {
           .from('listing-images')
           .getPublicUrl(storagePath);
 
-        const publicUrl = urlData.publicUrl;
+        // Cache-buster bypasses CDN immutable cache (1yr max-age)
+        const publicUrl = `${urlData.publicUrl}?v=${Date.now()}`;
 
         // Write thumbnail_url to DB
         const { error: updateError } = await supabase

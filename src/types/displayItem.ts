@@ -33,6 +33,11 @@ export interface BrowseExtension {
 
 export interface DealerExtension {
   isOwnListing: boolean;
+  intelligence?: {
+    completeness: { score: number; total: number };
+    heatTrend?: 'hot' | 'warm' | 'cool';
+    interestedCollectors?: number;
+  };
 }
 
 export interface CollectionExtension {

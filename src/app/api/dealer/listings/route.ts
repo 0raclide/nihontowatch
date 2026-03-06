@@ -154,6 +154,7 @@ export async function POST(request: NextRequest) {
     width_cm,
     material,
     status: requestedStatus, // 'AVAILABLE' or 'INVENTORY' (default)
+    sayagaki,
   } = body;
 
   // Synthetic URL for UNIQUE NOT NULL constraint
@@ -190,6 +191,15 @@ export async function POST(request: NextRequest) {
     is_initial_import: false,
     images: [],
     scrape_count: 0,
+    sayagaki: Array.isArray(sayagaki) && sayagaki.length > 0
+      ? sayagaki.map((entry: Record<string, unknown>) => ({
+          id: entry.id,
+          author: entry.author,
+          author_custom: entry.author_custom ?? null,
+          content: entry.content ?? null,
+          images: [], // Images uploaded separately after creation
+        }))
+      : null,
   };
 
   // Route artisan fields based on category

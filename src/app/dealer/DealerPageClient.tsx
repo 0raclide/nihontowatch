@@ -10,6 +10,7 @@ import { dealerListingToDisplayItem } from '@/lib/displayItem';
 import { useQuickViewOptional } from '@/contexts/QuickViewContext';
 import { useCurrency } from '@/hooks/useCurrency';
 import { useLocale } from '@/i18n/LocaleContext';
+import { computeListingCompleteness, type DealerIntelligenceAPIResponse } from '@/lib/dealer/intelligence';
 import type { Listing } from '@/types';
 import type { DisplayItem } from '@/types/displayItem';
 
@@ -104,6 +105,24 @@ export function DealerPageClient() {
     fetchListings(tab);
   }, [tab, fetchListings]);
 
+  // Intelligence data from API (heat + interested collectors — loaded async)
+  const [intelligenceData, setIntelligenceData] = useState<DealerIntelligenceAPIResponse['listings'] | null>(null);
+
+  // Fetch intelligence data after listings load (progressive enhancement)
+  useEffect(() => {
+    if (listings.length === 0) {
+      setIntelligenceData(null);
+      return;
+    }
+    const ids = listings.map(l => l.id).join(',');
+    fetch(`/api/dealer/listings/intelligence?listingIds=${ids}`)
+      .then(r => r.ok ? r.json() : null)
+      .then((data: DealerIntelligenceAPIResponse | null) => {
+        if (data) setIntelligenceData(data.listings);
+      })
+      .catch(() => {}); // Fail silently — indicators just won't show heat/interested
+  }, [listings]);
+
   // Listen for dealer status changes (from QuickView) and update counts optimistically
   useEffect(() => {
     const handler = (e: Event) => {
@@ -129,8 +148,24 @@ export function DealerPageClient() {
   }, [tab]);
 
   const displayItems: DisplayItem[] = useMemo(
-    () => listings.map((l) => dealerListingToDisplayItem(l, locale, true)),
-    [listings, locale]
+    () => listings.map((l) => {
+      const item = dealerListingToDisplayItem(l, locale, true);
+      // Client-side completeness (instant, no API wait)
+      const completeness = computeListingCompleteness(l);
+      const apiData = intelligenceData?.[l.id as number];
+      return {
+        ...item,
+        dealer: {
+          ...item.dealer!,
+          intelligence: {
+            completeness: { score: completeness.score, total: completeness.total },
+            heatTrend: apiData?.engagement?.heatTrend,
+            interestedCollectors: apiData?.interestedCollectors,
+          },
+        },
+      };
+    }),
+    [listings, locale, intelligenceData]
   );
 
   const handleCardClick = useCallback((item: DisplayItem) => {

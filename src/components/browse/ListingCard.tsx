@@ -17,6 +17,7 @@ import { getValidatedCertInfo } from '@/lib/cert/validation';
 import { useLocale } from '@/i18n/LocaleContext';
 import { formatRelativeTime } from '@/lib/time';
 import type { DisplayItem } from '@/types/displayItem';
+import { DealerCardIndicators } from '@/components/dealer/DealerCardIndicators';
 // getDealerDisplayName no longer needed — pre-resolved in DisplayItem.dealer_display_name
 
 // 7 days in milliseconds - matches the data delay for free tier
@@ -861,6 +862,15 @@ export const ListingCard = memo(function ListingCard({
           </div>
         )}
 
+        {/* Dealer intelligence indicators — completeness, heat, interested collectors */}
+        {listing.source === 'dealer' && listing.dealer?.intelligence && (
+          <DealerCardIndicators
+            completeness={listing.dealer.intelligence.completeness}
+            heatTrend={listing.dealer.intelligence.heatTrend}
+            interestedCollectors={listing.dealer.intelligence.interestedCollectors}
+          />
+        )}
+
         {/* Price row */}
         <div className={`${sz.pPad} sm:pt-2 sm:mt-1 border-t border-border/40 flex items-center justify-between`}>
           <span className={`${sz.price} sm:text-[14px] lg:text-[15px] tabular-nums ${(isAskPrice || isSold) ? 'text-charcoal' : 'text-ink font-medium'}`}>
@@ -896,6 +906,9 @@ export const ListingCard = memo(function ListingCard({
     prevProps.listing.is_sold === nextProps.listing.is_sold &&
     prevProps.listing.is_available === nextProps.listing.is_available &&
     prevProps.listing.browse?.status_admin_locked === nextProps.listing.browse?.status_admin_locked &&
+    prevProps.listing.dealer?.intelligence?.completeness?.score === nextProps.listing.dealer?.intelligence?.completeness?.score &&
+    prevProps.listing.dealer?.intelligence?.heatTrend === nextProps.listing.dealer?.intelligence?.heatTrend &&
+    prevProps.listing.dealer?.intelligence?.interestedCollectors === nextProps.listing.dealer?.intelligence?.interestedCollectors &&
     prevProps.mobileView === nextProps.mobileView &&
     prevProps.fontSize === nextProps.fontSize &&
     prevProps.imageAspect === nextProps.imageAspect &&

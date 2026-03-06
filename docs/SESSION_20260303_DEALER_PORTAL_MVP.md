@@ -1,7 +1,7 @@
 # Session: Dealer Portal MVP (2026-03-03)
 
-**Date:** 2026-03-03
-**Status:** Phase 1 complete (behind feature flag). Phase 2 (inquiries) and Phase 3 (go-live) pending.
+**Date:** 2026-03-03 (updated 2026-03-05)
+**Status:** Phase 1 + Phase 2 UX complete (behind feature flag). Phase 2 (inquiries) and Phase 3 (go-live) pending.
 **Build spec:** `docs/DEALER_MVP_BUILD.md`
 
 ---
@@ -55,12 +55,12 @@ Three insertion points hide dealer listings from public browse while `NEXT_PUBLI
 ### Dealer Listing APIs
 
 **`/api/dealer/listings` (GET + POST)**
-- GET: Scoped to `dealer_id` + `source = 'dealer'`. Tab filter: available/sold/withdrawn/all. Ordered by `first_seen_at DESC`.
-- POST: Generates synthetic URL `nw://dealer/{dealerId}/{uuid}` (satisfies UNIQUE NOT NULL). Sets `source = 'dealer'`, `is_initial_import = false`. Routes artisan fields based on `item_category` (nihonto → smith/school, tosogu → tosogu_maker/tosogu_school). Dealer-set artisans get `artisan_admin_locked = true`.
+- GET: Scoped to `dealer_id` + `source = 'dealer'`. Tab filter: inventory/available/sold (3-state lifecycle). Default tab: `inventory`. Ordered by `first_seen_at DESC`.
+- POST: Generates synthetic URL `nw://dealer/{dealerId}/{uuid}` (satisfies UNIQUE NOT NULL). Sets `source = 'dealer'`, `is_initial_import = false`. Accepts `status` from body (default `'INVENTORY'`). Routes artisan fields based on `item_category` (nihonto → smith/school, tosogu → tosogu_maker/tosogu_school).
 
 **`/api/dealer/listings/[id]` (PATCH + DELETE)**
-- PATCH: Allowlisted fields only. Status changes trigger side effects (SOLD → is_available=false/is_sold=true, etc.).
-- DELETE: Only for WITHDRAWN listings.
+- PATCH: Allowlisted fields only. Status changes trigger side effects (SOLD → is_available=false/is_sold=true, INVENTORY → is_available=false/is_sold=false, AVAILABLE → is_available=true/is_sold=false).
+- DELETE: Only for INVENTORY or WITHDRAWN listings.
 
 **`/api/dealer/images` (POST + DELETE)**
 - Bucket: `dealer-images`. Path: `{dealerId}/{listingId}/{uuid}.{ext}`.
@@ -99,7 +99,7 @@ Three insertion points hide dealer listings from public browse while `NEXT_PUBLI
 
 ### Dealer Pages
 
-**`/dealer`** — Grid of dealer's listings with status tabs (Available/Sold/Withdrawn/All). Uses `ListingGrid` with `preMappedItems` (same pattern as collection page). Mobile FAB for quick add. Card click opens QuickView with `source: 'dealer'`.
+**`/dealer`** — Grid of dealer's listings with 3-state tabs (Inventory/For Sale/Sold). Default: Inventory. Uses `ListingGrid` with `preMappedItems` (same pattern as collection page). Mobile FAB for quick add. Card click opens QuickView with `source: 'dealer'`. Listing cards show colored status badge in header row (amber=Inventory, green=For Sale, muted=Sold).
 
 **`/dealer/new`** — Back button + `DealerListingForm` in add mode.
 
@@ -109,8 +109,8 @@ Three insertion points hide dealer listings from public browse while `NEXT_PUBLI
 
 | Slot | Desktop | Mobile |
 |------|---------|--------|
-| Action bar | `DealerActionBar` — Mark Sold, Withdraw/Relist | `DealerMobileHeaderActions` — same buttons |
-| CTA | `DealerCTA` — status display | `DealerMobileCTA` — status display |
+| Action bar | `DealerActionBar` — Edit, Mark Sold, Move to Inventory | `DealerMobileHeaderActions` — same buttons |
+| CTA | `DealerCTA` — "List for Sale" button (inventory) or status text | `DealerMobileCTA` — same |
 
 **QuickView.tsx** slot assembly changed from binary (`isCollection ? ... : ...`) to 3-way (`isDealer ? ... : isCollection ? ... : ...`). Admin tools slot excluded for dealer source.
 
@@ -406,3 +406,275 @@ tests/lib/dealer/statusChangeHook.test.ts  # 12 tests — useDealerStatusChange 
 ```
 
 **Total: 121 golden tests.** All pass. Full inventory in `tests/COVERAGE.md` → "Dealer Portal" section.
+
+---
+
+## Deployment & QA Fixes (2026-03-03, third session)
+
+### Deployment Steps
+
+1. **Migration 097 applied to prod** via `supabase db push --include-all`. Adds `listings.source`, `profiles.dealer_id`, `inquiries` table, `dealers.line_notify_token`.
+2. **Code committed and pushed** — commit `d27fb32` (51 files, 6,065 lines).
+3. **Test dealer account created** — `christoph.hill0@gmail.com` set to `subscription_tier='dealer'`, `dealer_id=1` (Aoi Art).
+
+### QA Bug #1 — Phantom DB columns (commit `50cd659`)
+
+**Symptom:** GET `/api/dealer/listings` → 500. POST (publish) → 500.
+
+**Root cause:** `artisan_display_name` and `artisan_name_kanji` are runtime enrichment fields added by the browse API, NOT actual DB columns. The dealer API SELECT and INSERT statements referenced them, causing Supabase `42703` errors ("column does not exist").
+
+**Fix (3 files):**
+- `src/app/api/dealer/listings/route.ts` — Removed `artisan_display_name`, `artisan_name_kanji` from GET SELECT. Removed from POST insert data and destructured body variables.
+- `src/app/api/dealer/listings/[id]/route.ts` — Removed from GET SELECT and PATCH allowlist.
+- `tests/lib/dealer/listingApi.test.ts` — Updated PATCH allowlist test to match.
+
+**Lesson:** Fields that appear on the `Listing` TypeScript type may be runtime enrichments (added by API code after the DB query), not actual DB columns. Always verify against the DB schema before using in raw Supabase queries.
+
+### QA Bug #2 — React error #310 (commit `e3c937f`)
+
+**Symptom:** Clicking a dealer listing card in QuickView → crash: "Rendered more hooks than during the previous render."
+
+**Root cause:** `handleDealerStatusChange` was declared as `useCallback` at line 276 of `QuickView.tsx` — AFTER the early return `if (!currentListing) return null` at line 256. When QuickView is closed (no listing), the component returns before this hook. When opened, React sees N+1 hooks vs N hooks → error #310.
+
+**Fix (1 file):**
+- `src/components/listing/QuickView.tsx` — Moved `handleDealerStatusChange` useCallback above the early return, alongside all other hooks.
+
+**Lesson:** Every hook in a component must execute on every render. Never place `useCallback`/`useMemo`/`useState`/`useEffect` after an early return.
+
+### QA Fix #3 — dealer-images storage bucket
+
+**Symptom:** Image upload during listing creation failed silently. Listing created with `images: []`. Thumbnail visible in form (client-side preview) but not after save.
+
+**Root cause:** The `dealer-images` Supabase Storage bucket didn't exist. Supabase migrations can't create storage buckets (SQL only).
+
+**Fix:** Created bucket via Supabase Storage API:
+```bash
+curl -X POST "$SUPABASE_URL/storage/v1/bucket" \
+  -H "Authorization: Bearer $SERVICE_KEY" \
+  -d '{"id": "dealer-images", "name": "dealer-images", "public": true}'
+```
+
+### Commit History
+
+| Commit | Description |
+|--------|-------------|
+| `d27fb32` | feat: Dealer Portal MVP — Phase 1 complete (behind feature flag) |
+| `50cd659` | fix: Remove phantom columns from dealer API queries |
+| `e3c937f` | fix: Move useCallback above early return to prevent React #310 |
+| `fa040ba` | feat: Dealer portal inventory model + desktop form fix |
+| `ac4c8f1` | fix: Always save new listings to inventory — remove Save & List button |
+| `df40e29` | feat: Add delete button for inventory items on edit page |
+| `990a7b7` | fix: Status badges on dealer cards + fix "Withdrawn" → "Inventory" text |
+| `9a2ae27` | fix: Replace confusing "List for Sale" icon with prominent CTA button |
+
+---
+
+## Inventory Model + UX Overhaul (2026-03-05)
+
+### Motivation
+
+Phase 2 deploy revealed two problems: (1) the desktop form submit button spanned the full viewport via `fixed bottom-0 inset-x-0` while form content was `max-w-lg`, and (2) the 4-tab model (Available/Sold/Withdrawn/All) was conceptually wrong — dealers think in terms of inventory, not withdrawal.
+
+### Inventory Lifecycle
+
+Replaced the 4-tab model with a 3-state lifecycle:
+
+```
+INVENTORY ──→ AVAILABLE (For Sale) ──→ SOLD
+    ↑                   │
+    └───────────────────┘  (Move to Inventory)
+```
+
+| State | `status` column | `is_available` | `is_sold` | Visible on NW browse? |
+|-------|----------------|----------------|-----------|----------------------|
+| Inventory | `INVENTORY` | false | false | No |
+| For Sale | `AVAILABLE` | true | false | Yes |
+| Sold | `SOLD` | false | true | No |
+
+**Key design decision:** New listings ALWAYS go to Inventory first. No "Save & List" shortcut. Dealers are skittish — they want to review before going live. From Inventory, they list via the QuickView CTA button.
+
+### Changes (10 files)
+
+**API (2 files):**
+- `api/dealer/listings/route.ts` — GET default tab → `inventory`. POST accepts `status` from body (default `INVENTORY`). Removed `withdrawn`/`all` tabs.
+- `api/dealer/listings/[id]/route.ts` — PATCH handles `INVENTORY` status (replaces `WITHDRAWN`). DELETE allows `INVENTORY` or `WITHDRAWN`.
+
+**Tabs (2 files):**
+- `DealerPageClient.tsx` — 3 tabs: Inventory / For Sale / Sold. Default: Inventory.
+- `DealerBottomBar.tsx` — Same 3-tab layout for mobile.
+
+**Form (1 file):**
+- `DealerListingForm.tsx` — Desktop fix: `lg:static lg:p-0 lg:mt-6 lg:bg-transparent lg:border-0` on button wrapper, `pb-24 lg:pb-0` on form container. Single "Save" button (always → INVENTORY). Success screen shows "Saved to Inventory" message. Delete button for inventory items (red text → confirm/cancel on tap).
+
+**Status badges on cards (1 file):**
+- `ListingCard.tsx` — Dealer-source cards show colored status in header row instead of dealer name: "Inventory" (amber), "For Sale" (green), "Sold" (muted).
+
+**QuickView slots (4 files):**
+- `DealerCTA.tsx` + `DealerMobileCTA.tsx` — Inventory items show a full-width gold "List for Sale" button (calls `useDealerStatusChange`). Available/Sold items show status text. Replaced old "Withdrawn" fallback → "Inventory".
+- `DealerActionBar.tsx` + `DealerMobileHeaderActions.tsx` — Removed confusing "List for Sale" refresh icon. Available items: Edit + Mark Sold + Move to Inventory (box icon). Inventory items: Edit only (CTA handles listing).
+
+**i18n (2 files):**
+- Added keys: `dealer.tabInventory`, `dealer.tabForSale`, `dealer.saveToInventory`, `dealer.saveAndList`, `dealer.moveToInventory`, `dealer.listForSale`, `dealer.statusInventory`, `dealer.saving`, `dealer.savedToInventory`, `dealer.savedToInventoryDesc` (both EN + JA).
+
+**Tests (1 file):**
+- `listingApi.test.ts` — Updated status side effects (`WITHDRAWN` → `INVENTORY`), DELETE guard allows both `INVENTORY` and `WITHDRAWN`.
+
+### UX Flow Summary
+
+| Action | Where | How |
+|--------|-------|-----|
+| Create listing | `/dealer/new` | Fill form → "Save" → lands in Inventory tab |
+| List for sale | QuickView on inventory item | Gold "List for Sale" CTA button |
+| Mark sold | QuickView on listed item | Checkmark icon in action bar |
+| Move back to inventory | QuickView on listed item | Box icon in action bar |
+| Edit listing | QuickView → pencil icon | Opens `/dealer/edit/[id]` |
+| Delete listing | Edit page (inventory items only) | Red "Delete" link → confirm/cancel |
+
+### Remaining Gaps
+
+1. **No smart crop on dealer images** — focal point cron only processes scraper listings
+2. **No engagement metrics visible to dealers** — views, favorites, clicks data exists but isn't shown
+3. ~~**No draft auto-save** — page refresh on add form = total data loss~~ (fixed in prior session)
+4. **Dead i18n keys** — `dealer.tabWithdrawn`, `dealer.tabAll`, `dealer.publish`, `dealer.withdraw`, `dealer.relist` orphaned after inventory model change
+
+---
+
+## Metadata & UX Improvements (2026-03-05)
+
+Audit-driven pass addressing data quality and UX gaps in the dealer listing form.
+
+### Problems Found
+
+1. **Signature/nakago conflation** — `mei_type` state controlled both the signature pills (zaimei, mumei…) and the nakago pills (ubu, suriage). Dealer could only select one from either group, and selecting a nakago type cleared the signature type.
+2. **No tosogu fields** — Tosogu listings (tsuba, fuchi-kashira…) had no measurement inputs (height, width) and no material selector. Schema docs listed `height_cm`, `width_cm`, `material` but the columns were never migrated.
+3. **Free-text era** — Era was a plain text input, producing inconsistent values ("Edo", "edo period", "江戸"). Browse filters use capitalized enum values.
+4. **No school auto-fill** — Selecting an artisan from the search panel didn't populate the `school`/`tosogu_school` fields. Both were hardcoded to `null` in the payload.
+5. **Leftover `bg-cream`** — New/edit listing pages and the submit bar still used `bg-cream` instead of `bg-surface`, causing visual mismatch with the main dealer page.
+
+### Fixes
+
+#### Phase 1: bg-cream → bg-surface (3 files)
+
+| File | Change |
+|------|--------|
+| `DealerNewListingClient.tsx` | `bg-cream` → `bg-surface`, `bg-cream/95` → `bg-surface/95` |
+| `DealerEditListingClient.tsx` | Same |
+| `DealerListingForm.tsx` L758 | Submit bar `bg-cream/95` → `bg-surface/95` |
+
+#### Phase 2: DB Migrations (099 + 100)
+
+**`099_nakago_type.sql`** — `ALTER TABLE listings ADD COLUMN IF NOT EXISTS nakago_type TEXT`
+
+**`100_tosogu_columns.sql`** — Adds `height_cm REAL`, `width_cm REAL`, `material TEXT` to listings. These were documented in the schema but never migrated. The GET SELECT referencing them caused **500 on every dealer listings fetch** until this migration was applied.
+
+#### Phase 3: API Route Updates (2 files)
+
+**`/api/dealer/listings` (route.ts):**
+- GET SELECT: Added `nakago_type, motohaba_cm, sakihaba_cm, sori_cm, height_cm, width_cm, material` (note: `motohaba_cm, sakihaba_cm, sori_cm` were also missing — pre-existing bug that prevented edit mode from hydrating measurements)
+- POST: Added `nakago_type`, `height_cm`, `width_cm`, `material` to destructure + listingData. Tosogu fields routed inside `if (item_category === 'tosogu')` branch.
+- Added `console.error` for GET failures (was silently returning generic 500)
+
+**`/api/dealer/listings/[id]` (route.ts):**
+- GET SELECT: Same new columns added
+- ALLOWED_FIELDS: Added `nakago_type`, `height_cm`, `width_cm`, `material`
+
+#### Phase 4: DealerListingForm (all in one file)
+
+**Types:**
+- `DealerDraft`: Added `nakagoType: string[]`, `heightCm`, `widthCm`, `material`, `artisanSchool`
+- `DealerListingInitialData`: Added `nakago_type`, `height_cm`, `width_cm`, `material`
+
+**Constants:**
+- `ERA_OPTIONS` — 11 period pills (Heian→Reiwa), values match browse filter conventions
+- `MATERIAL_OPTIONS` — 8 tosogu materials (iron, shakudo, shibuichi, copper, gold, silver, sentoku, mixed)
+
+**State (5 new variables):**
+- `nakagoType: string[]` — multi-select array, hydrated by splitting comma-separated DB value
+- `heightCm`, `widthCm` — string, decimal inputs for tosogu measurements
+- `material: string | null` — single-select pill
+- `artisanSchool: string | null` — auto-filled from artisan search result, category-aware hydration
+
+**Nakago multi-select:**
+- `nakagoType` is `string[]` (NOT `string | null`). Dealer can select both "ubu" AND "suriage" independently.
+- Pills toggle in/out of array: `setNakagoType(prev => prev.includes(v) ? prev.filter(x => x !== v) : [...prev, v])`
+- Payload joins to comma-separated: `nakago_type: nakagoType.length ? nakagoType.join(',') : null`
+- DB column is `TEXT` — stores `"ubu"`, `"suriage"`, or `"ubu,suriage"`
+
+**School auto-fill:**
+- `handleArtisanSelect`: reads `result.school` from `ArtisanSearchResult` (already includes school field)
+- Shows gold tag below artisan pill when school is non-null
+- Payload: `school: category === 'nihonto' ? artisanSchool : null`, `tosogu_school: category === 'tosogu' ? artisanSchool : null`
+
+**Era pills:**
+- Free-text `<input>` replaced with 11 pill buttons using existing `period.*` i18n keys
+- Click to select, click again to deselect. Same gold pill styling as TypePills/CertPills.
+
+**Tosogu measurements:**
+- Height/width inputs (2-col grid, decimal) shown when `category === 'tosogu'`
+- Material pill selector (8 options) below measurements
+
+**Category switch cleanup:**
+- `useEffect` on `category` clears cross-category fields (skips initial render via ref)
+- Switching to nihonto clears `heightCm`, `widthCm`, `material`
+- Switching to tosogu clears `nagasaCm`, `motohabaCm`, `sakihabaCm`, `soriCm`, `meiType`, `nakagoType`
+
+**Decimal validation:**
+- `sanitizeDecimal()` helper prevents multiple decimal points (`1.2.3` → `1.23`)
+- Applied to all 6 measurement inputs (4 nihonto + 2 tosogu)
+
+**Category-aware school hydration:**
+- Was: `initialData?.school || initialData?.tosogu_school` (arbitrary precedence if both populated)
+- Now: `initialData?.item_category === 'tosogu' ? initialData?.tosogu_school : initialData?.school`
+
+#### Phase 5: i18n (12 new keys per locale)
+
+| Key | EN | JA |
+|-----|----|----|
+| `dealer.height` | Height (cm) | 高さ (cm) |
+| `dealer.width` | Width (cm) | 幅 (cm) |
+| `dealer.material` | Material | 素材 |
+| `dealer.school` | School | 流派 |
+| `dealer.materialIron` | Iron | 鉄 |
+| `dealer.materialShakudo` | Shakudō | 赤銅 |
+| `dealer.materialShibuichi` | Shibuichi | 四分一 |
+| `dealer.materialCopper` | Copper | 銅 |
+| `dealer.materialGold` | Gold | 金 |
+| `dealer.materialSilver` | Silver | 銀 |
+| `dealer.materialSentoku` | Sentoku | 宣徳 |
+| `dealer.materialMixed` | Mixed | 合金 |
+
+### Production Incident: Missing DB Columns
+
+**Symptom:** After deploy, all dealer listings pages showed "Failed to load listings" — both existing test listings and newly created ones.
+
+**Root cause:** The GET SELECT referenced `height_cm`, `width_cm`, `material` which were documented in the CLAUDE.md schema but **never actually created as DB columns**. No migration had ever added them. The plan assumed they existed ("The tosogu columns already exist in the listings table — no migration needed"). PostgREST returned a `42703` column-not-found error, caught by the generic error handler.
+
+**Timeline:**
+1. Commit `86b8c06` pushed with SELECT referencing nonexistent columns
+2. Migration 099 (nakago_type only) applied — didn't include the missing columns
+3. All dealer listing fetches fail with 500
+4. Migration 100 created and applied — adds `height_cm REAL`, `width_cm REAL`, `material TEXT`
+5. Commit `f7a0a78` pushed with migration 100
+
+**Lesson:** Never trust schema documentation. Verify columns exist by checking migration files (`grep ADD COLUMN`), not CLAUDE.md.
+
+### Commit History
+
+| Commit | Description |
+|--------|-------------|
+| `86b8c06` | feat: dealer form metadata & UX improvements |
+| `f7a0a78` | fix: add missing tosogu columns (height_cm, width_cm, material) |
+
+### Modified Files (8)
+
+```
+supabase/migrations/099_nakago_type.sql              # NEW — nakago_type + tosogu columns
+supabase/migrations/100_tosogu_columns.sql           # NEW — hotfix for missing columns
+src/components/dealer/DealerListingForm.tsx           # Types, state, constants, UI, payload, draft
+src/app/api/dealer/listings/route.ts                 # GET SELECT + POST fields
+src/app/api/dealer/listings/[id]/route.ts            # GET SELECT + ALLOWED_FIELDS
+src/app/dealer/new/DealerNewListingClient.tsx        # bg-cream → bg-surface
+src/app/dealer/edit/[id]/DealerEditListingClient.tsx # bg-cream → bg-surface
+src/i18n/locales/en.json                             # 12 new dealer.* keys
+src/i18n/locales/ja.json                             # 12 new dealer.* keys
+```

@@ -64,6 +64,26 @@ export type CertificationType =
 export type Currency = 'JPY' | 'USD' | 'EUR' | 'GBP';
 
 // =============================================================================
+// SAYAGAKI (expert calligraphic inscriptions on shirasaya)
+// =============================================================================
+
+export type SayagakiAuthor =
+  | 'honami_koson'
+  | 'honami_nishu'
+  | 'tanobe_michihiro'
+  | 'kanzan_sato'
+  | 'honma_junji'
+  | 'other';
+
+export interface SayagakiEntry {
+  id: string;
+  author: SayagakiAuthor;
+  author_custom: string | null;
+  content: string | null;
+  images: string[];
+}
+
+// =============================================================================
 // SETSUMEI METADATA (from Oshi-scrapper setsumei pipeline)
 // =============================================================================
 
@@ -396,6 +416,34 @@ export interface Dealer {
   // Language support
   english_support?: boolean | null;
 
+  // Profile — Visual identity
+  logo_url?: string | null;
+  banner_url?: string | null;
+  accent_color?: string | null;
+
+  // Profile — Story
+  bio_en?: string | null;
+  bio_ja?: string | null;
+  founded_year?: number | null;
+  shop_photo_url?: string | null;
+  specializations?: string[] | null;
+
+  // Profile — Contact
+  phone?: string | null;
+  line_id?: string | null;
+  instagram_url?: string | null;
+  facebook_url?: string | null;
+
+  // Profile — Location
+  address?: string | null;
+  city?: string | null;
+  postal_code?: string | null;
+  address_visible?: boolean | null;
+
+  // Profile — Credentials & policies
+  memberships?: string[] | null;
+  return_policy?: string | null;
+
   // Computed fields
   listing_count?: number;
   slug?: string;
@@ -502,6 +550,9 @@ export interface Listing {
 
   // Featured sort
   featured_score?: number;
+
+  // Sayagaki (expert calligraphic inscriptions on shirasaya)
+  sayagaki?: SayagakiEntry[] | null;
 
   // Smart crop focal point (0-100%)
   focal_x?: number | null;
