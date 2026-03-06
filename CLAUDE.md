@@ -20,6 +20,7 @@
 - Full i18n localization (JA/EN) — UI chrome (1100+ keys) + listing data (titles, descriptions, artisan names)
 - JA UX tuning — locale-conditional typography, information density, social sharing (LINE), polite empty states
 - User feedback & reporting — flag listings/artists, general feedback, admin triage panel (`/admin/feedback`)
+- Dealer profile preview (`/dealer/preview`) — rich preview of dealer page as collectors see it
 
 **Trial Mode:** All premium features currently free (toggle via `NEXT_PUBLIC_TRIAL_MODE` env var)
 
@@ -286,6 +287,7 @@ Features and minimum tier:
 Comprehensive analytics infrastructure already built for dealer monetization:
 
 **Tracking in place:**
+- **Listing impressions** (when listings appear in viewport — position-aware)
 - Click-through tracking to dealer websites
 - Unique visitor counts per dealer
 - Dwell time (how long users view listings)
@@ -309,6 +311,12 @@ Comprehensive analytics infrastructure already built for dealer monetization:
 | Individual report | `src/app/admin/dealers/[id]/page.tsx` |
 | Activity tracker | `src/lib/tracking/ActivityTracker.tsx` |
 | Dwell tracking | `src/lib/viewport/DwellTracker.ts` |
+| Impression tracking (hook) | `src/lib/viewport/useViewportTracking.ts` (`onImpression` callback) |
+| Impression fan-out | `src/app/api/activity/route.ts` (`fanOutListingImpressions()`) |
+| Impression DB table | `listing_impressions` (migration 028 + 107 dedup index) |
+| Impression tests (19) | `tests/viewport/impressions.test.ts`, `tests/api/activity/impressions.test.ts` |
+
+**Listing Impression Tracking (2026-03-06):** Fires once per listing on first viewport visibility (≥50% intersection), batched through ActivityTracker. Dedup: client-side `impressedRef` Set (one per session) + DB unique constraint `(listing_id, session_id, impression_date)`. Position metadata flows from `VirtualListingGrid` → `ListingCard` → `useViewportTracking` → DB. Enables position-adjusted CTR (`views / impressions`). See `docs/SESSION_20260306_LISTING_IMPRESSION_TRACKING.md`.
 
 **Data accuracy (2026-02-20):** Dealer analytics uses SQL RPC functions for aggregation (`get_dealer_click_stats`, `get_dealer_dwell_stats`, `get_dealer_favorite_stats`, etc.) instead of JS-side counting, which was silently truncating at Supabase's row limits.
 
@@ -651,6 +659,23 @@ Settings page where dealers customize their shop identity: logo, banner, accent 
 | Tests (31) | `tests/lib/dealer/profileCompleteness.test.ts`, `tests/api/dealer/profile.test.ts` |
 | **Full documentation** | `docs/SESSION_20260306_DEALER_PROFILE_SETTINGS.md` |
 
+### Dealer Profile Preview (`/dealer/preview`)
+
+Preview page where dealers see their profile as collectors will see it. Uses `DealerProfileView`, a reusable presentational component that takes data as props (no auth/fetching). The eventual public `/dealers/[slug]` page will reuse the same component.
+
+**Sections** (hidden when no data): Hero (banner + circular logo + name/flag/domain/year), specializations pills, about (bio with translation toggle), credentials (checkmarks), inventory (proportional bar + type badges from `/dealers/[slug]` pattern), featured listings (top 8 by `featured_score` via `ListingCard`), contact (email/phone/LINE/Instagram/Facebook/address), policies (shipping/payment/returns), shop photo.
+
+**Preview-only elements:** Amber preview banner with "Edit Profile" link, profile completeness bar at bottom, empty state with "Edit Profile" prompt when no data exists.
+
+**Key files:**
+| Component | Location |
+|-----------|----------|
+| Preview API | `src/app/api/dealer/preview/route.ts` |
+| Preview page | `src/app/dealer/preview/DealerPreviewClient.tsx` |
+| Profile view (reusable) | `src/components/dealer/DealerProfileView.tsx` |
+| Preview link in editor | `src/app/dealer/profile/DealerProfileClient.tsx` (eye icon in header) |
+| **Full documentation** | `docs/SESSION_20260306_DEALER_PREVIEW.md` |
+
 ### User Feedback & Reporting
 
 Two-channel feedback system: users flag inaccurate data on listings/artist pages, and submit general feedback (bugs, features) from the nav. All stored in `user_feedback` table, triaged via admin panel at `/admin/feedback`.
@@ -707,6 +732,8 @@ For detailed implementation docs, see:
 - `docs/USER_FEEDBACK.md` - **User feedback & reporting** — two-channel feedback system, admin triage panel, shared modal architecture
 - `docs/SESSION_20260306_DEALER_PROFILE_SETTINGS.md` - **Dealer profile settings** — `/dealer/profile` page, image upload, auto-save, completeness scoring, 17 new DB columns
 - `docs/DEALER_PROFILE_DESIGN.md` - **Dealer profile design doc** — 4-phase plan (Phase 1 implemented), research, IA, mobile design
+- `docs/SESSION_20260306_DEALER_PREVIEW.md` - **Dealer profile preview** — `/dealer/preview` page, reusable `DealerProfileView` component, inventory bar, featured listings grid
+- `docs/SESSION_20260306_LISTING_IMPRESSION_TRACKING.md` - **Listing impression tracking** — viewport-based impression events, position metadata, dedup strategy, fan-out pipeline, 19 tests
 
 ---
 
