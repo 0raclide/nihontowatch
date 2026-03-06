@@ -17,10 +17,11 @@ describe('computeListingCompleteness', () => {
     smith: null,
     tosogu_maker: null,
     nagasa_cm: null,
-    tosogu_height_cm: null,
-    tosogu_width_cm: null,
+    height_cm: null,
+    width_cm: null,
     description: null,
     cert_type: null,
+    source: null,
   };
 
   it('returns 0/6 for empty listing', () => {
@@ -38,9 +39,9 @@ describe('computeListingCompleteness', () => {
       smith: 'Masamune',
       tosogu_maker: null,
       nagasa_cm: 70.5,
-      tosogu_height_cm: null,
-      tosogu_width_cm: null,
-      description: 'A magnificent katana by the legendary smith. This blade exhibits exceptional workmanship.',
+      height_cm: null,
+      width_cm: null,
+      description: 'A magnificent katana by the legendary smith.',
       cert_type: 'Juyo',
     });
     expect(result.score).toBe(6);
@@ -57,23 +58,31 @@ describe('computeListingCompleteness', () => {
     expect(computeListingCompleteness({ ...baseListing, price_value: 100 }).items[1].filled).toBe(true);
   });
 
+  it('counts Ask/inquiry price as complete for dealer listings', () => {
+    // Dealer listing with null price = intentional "Ask"
+    expect(computeListingCompleteness({ ...baseListing, price_value: null, source: 'dealer' }).items[1].filled).toBe(true);
+    // Non-dealer listing with null price = incomplete
+    expect(computeListingCompleteness({ ...baseListing, price_value: null, source: null }).items[1].filled).toBe(false);
+    expect(computeListingCompleteness({ ...baseListing, price_value: null, source: 'scraper' }).items[1].filled).toBe(false);
+  });
+
   it('counts attribution via smith OR tosogu_maker', () => {
     expect(computeListingCompleteness({ ...baseListing, smith: 'Kunimitsu' }).items[2].filled).toBe(true);
     expect(computeListingCompleteness({ ...baseListing, tosogu_maker: 'Goto' }).items[2].filled).toBe(true);
     expect(computeListingCompleteness({ ...baseListing }).items[2].filled).toBe(false);
   });
 
-  it('counts measurements via nagasa_cm OR tosogu dimensions', () => {
+  it('counts measurements via nagasa_cm OR height/width', () => {
     expect(computeListingCompleteness({ ...baseListing, nagasa_cm: 70 }).items[3].filled).toBe(true);
-    expect(computeListingCompleteness({ ...baseListing, tosogu_height_cm: 8.5 }).items[3].filled).toBe(true);
-    expect(computeListingCompleteness({ ...baseListing, tosogu_width_cm: 7.2 }).items[3].filled).toBe(true);
+    expect(computeListingCompleteness({ ...baseListing, height_cm: 8.5 }).items[3].filled).toBe(true);
+    expect(computeListingCompleteness({ ...baseListing, width_cm: 7.2 }).items[3].filled).toBe(true);
     expect(computeListingCompleteness({ ...baseListing }).items[3].filled).toBe(false);
   });
 
-  it('counts description only when > 50 chars', () => {
+  it('counts description when > 10 chars', () => {
     expect(computeListingCompleteness({ ...baseListing, description: 'Short' }).items[4].filled).toBe(false);
-    expect(computeListingCompleteness({ ...baseListing, description: 'A'.repeat(50) }).items[4].filled).toBe(false);
-    expect(computeListingCompleteness({ ...baseListing, description: 'A'.repeat(51) }).items[4].filled).toBe(true);
+    expect(computeListingCompleteness({ ...baseListing, description: 'A'.repeat(10) }).items[4].filled).toBe(false);
+    expect(computeListingCompleteness({ ...baseListing, description: 'A'.repeat(11) }).items[4].filled).toBe(true);
   });
 
   it('counts certification when cert_type is non-null', () => {

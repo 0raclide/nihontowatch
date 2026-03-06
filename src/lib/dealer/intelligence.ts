@@ -66,21 +66,25 @@ export interface DealerIntelligenceAPIResponse {
 interface CompletenessInput {
   images?: unknown[] | null;
   price_value?: number | null;
+  price_raw?: string | null;
   smith?: string | null;
   tosogu_maker?: string | null;
   nagasa_cm?: number | null;
-  tosogu_height_cm?: number | null;
-  tosogu_width_cm?: number | null;
+  height_cm?: number | null;
+  width_cm?: number | null;
   description?: string | null;
   cert_type?: string | null;
+  source?: string | null;
 }
 
 export function computeListingCompleteness(listing: CompletenessInput): DealerCompleteness {
   const hasImages = Array.isArray(listing.images) && listing.images.length > 0;
-  const hasPrice = listing.price_value != null && listing.price_value > 0;
+  // "Ask" / inquiry items: dealer-created listings with null price_value are intentional
+  const isAskPrice = listing.price_value == null && listing.source === 'dealer';
+  const hasPrice = (listing.price_value != null && listing.price_value > 0) || isAskPrice;
   const hasAttribution = !!getAttributionName(listing);
-  const hasMeasurements = !!(listing.nagasa_cm || listing.tosogu_height_cm || listing.tosogu_width_cm);
-  const hasDescription = !!(listing.description && listing.description.length > 50);
+  const hasMeasurements = !!(listing.nagasa_cm || listing.height_cm || listing.width_cm);
+  const hasDescription = !!(listing.description && listing.description.length > 10);
   const hasCert = !!listing.cert_type;
 
   const items: DealerCompletenessItem[] = [

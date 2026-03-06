@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let query = (serviceClient.from('listings') as any)
-    .select('id, url, title, title_en, title_ja, item_type, item_category, price_value, price_currency, cert_type, images, status, is_available, is_sold, first_seen_at, smith, tosogu_maker, school, tosogu_school, artisan_id, artisan_confidence, description, era, province, mei_type, nakago_type, nagasa_cm, motohaba_cm, sakihaba_cm, sori_cm, height_cm, width_cm, material, dealers:dealers(id, name, name_ja, domain)', { count: 'exact' })
+    .select('id, url, title, title_en, title_ja, item_type, item_category, price_value, price_currency, cert_type, images, status, is_available, is_sold, first_seen_at, smith, tosogu_maker, school, tosogu_school, artisan_id, artisan_confidence, description, era, province, mei_type, nakago_type, nagasa_cm, motohaba_cm, sakihaba_cm, sori_cm, height_cm, width_cm, material, source, dealers:dealers(id, name, name_ja, domain)', { count: 'exact' })
     .eq('dealer_id', auth.dealerId)
     .eq('source', 'dealer');
 
@@ -208,6 +208,11 @@ export async function POST(request: NextRequest) {
           cert_in_blade_paper: !!(koshirae as Record<string, unknown>).cert_in_blade_paper,
           description: (koshirae as Record<string, unknown>).description ?? null,
           images: [], // Images uploaded separately after creation
+          // Single maker (issaku)
+          artisan_id: (koshirae as Record<string, unknown>).artisan_id ?? null,
+          artisan_name: (koshirae as Record<string, unknown>).artisan_name ?? null,
+          artisan_kanji: (koshirae as Record<string, unknown>).artisan_kanji ?? null,
+          // Multi maker (per-component)
           components: Array.isArray((koshirae as Record<string, unknown>).components)
             ? ((koshirae as Record<string, unknown>).components as Record<string, unknown>[]).map((c) => ({
                 id: c.id,

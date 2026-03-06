@@ -16,7 +16,7 @@ import {
 export const dynamic = 'force-dynamic';
 
 const LISTING_SELECT =
-  'id, item_type, price_value, price_currency, cert_type, images, status, is_available, is_sold, first_seen_at, is_initial_import, smith, tosogu_maker, school, tosogu_school, era, province, description, nagasa_cm, sori_cm, motohaba_cm, tosogu_height_cm, tosogu_width_cm, artisan_id, artisan_elite_factor, artisan_elite_count, artisan_designation_factor, artisan_confidence, dealer_id, source';
+  'id, item_type, price_value, price_currency, cert_type, images, status, is_available, is_sold, first_seen_at, is_initial_import, smith, tosogu_maker, school, tosogu_school, era, province, description, nagasa_cm, sori_cm, motohaba_cm, height_cm, width_cm, artisan_id, artisan_elite_factor, artisan_elite_count, artisan_designation_factor, artisan_confidence, dealer_id, source';
 
 const MAX_IDS = 100;
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
