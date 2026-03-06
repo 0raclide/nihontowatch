@@ -52,6 +52,7 @@ const KNOWN_SAFE_FILES = new Set([
   // Dealer portal APIs (intentionally access dealer listings)
   'src/app/api/dealer/listings/route.ts',
   'src/app/api/dealer/listings/[id]/route.ts',
+  'src/app/api/dealer/listings/counts/route.ts',
   'src/app/api/dealer/images/route.ts',
 
   // Cron compute jobs (don't return data to users, waste compute at worst)
