@@ -37,6 +37,7 @@ import { generateArtisanSlug } from '@/lib/artisan/slugs';
 import { useLocale } from '@/i18n/LocaleContext';
 import { SocialShareButtons } from '@/components/share/SocialShareButtons';
 import { SayagakiDisplay } from '@/components/listing/SayagakiDisplay';
+import { KoshiraeDisplay } from '@/components/listing/KoshiraeDisplay';
 import { getDealerDisplayName } from '@/lib/dealers/displayName';
 
 // Use EnrichedListingDetail as the canonical listing type for this page
@@ -477,6 +478,13 @@ export default function ListingDetailPage({ initialData }: ListingDetailPageProp
             {listing.sayagaki && listing.sayagaki.length > 0 && (
               <div className="mb-6">
                 <SayagakiDisplay sayagaki={listing.sayagaki} />
+              </div>
+            )}
+
+            {/* Koshirae */}
+            {listing.koshirae && (
+              <div className="mb-6">
+                <KoshiraeDisplay koshirae={listing.koshirae} />
               </div>
             )}
 

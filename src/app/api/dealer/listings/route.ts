@@ -155,6 +155,7 @@ export async function POST(request: NextRequest) {
     material,
     status: requestedStatus, // 'AVAILABLE' or 'INVENTORY' (default)
     sayagaki,
+    koshirae,
   } = body;
 
   // Synthetic URL for UNIQUE NOT NULL constraint
@@ -199,6 +200,24 @@ export async function POST(request: NextRequest) {
           content: entry.content ?? null,
           images: [], // Images uploaded separately after creation
         }))
+      : null,
+    koshirae: koshirae && typeof koshirae === 'object'
+      ? {
+          cert_type: (koshirae as Record<string, unknown>).cert_type ?? null,
+          cert_in_blade_paper: !!(koshirae as Record<string, unknown>).cert_in_blade_paper,
+          description: (koshirae as Record<string, unknown>).description ?? null,
+          images: [], // Images uploaded separately after creation
+          components: Array.isArray((koshirae as Record<string, unknown>).components)
+            ? ((koshirae as Record<string, unknown>).components as Record<string, unknown>[]).map((c) => ({
+                id: c.id,
+                component_type: c.component_type,
+                artisan_id: c.artisan_id ?? null,
+                artisan_name: c.artisan_name ?? null,
+                artisan_kanji: c.artisan_kanji ?? null,
+                description: c.description ?? null,
+              }))
+            : [],
+        }
       : null,
   };
 

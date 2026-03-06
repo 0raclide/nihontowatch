@@ -10,7 +10,8 @@ import { ArtisanSearchPanel } from '@/components/admin/ArtisanSearchPanel';
 import type { ArtisanSearchResult } from '@/app/api/artisan/search/route';
 import { generateListingTitle } from '@/lib/dealer/titleGenerator';
 import { SayagakiSection } from './SayagakiSection';
-import type { SayagakiEntry } from '@/types';
+import { KoshiraeSection } from './KoshiraeSection';
+import type { SayagakiEntry, KoshiraeData } from '@/types';
 import { useLocale } from '@/i18n/LocaleContext';
 
 const STORAGE_KEY_CATEGORY = 'nw-dealer-category';
@@ -44,6 +45,7 @@ interface DealerDraft {
   titleOverride: string | null;
   images: string[]; // only server URLs, no blob:
   sayagaki: SayagakiEntry[];
+  koshirae: KoshiraeData | null;
   savedAt: number;
 }
 
@@ -54,7 +56,7 @@ function isDraftSubstantive(d: DealerDraft): boolean {
     d.nagasaCm || d.motohabaCm || d.sakihabaCm || d.soriCm ||
     d.heightCm || d.widthCm || d.material ||
     d.meiType || d.era || d.province || d.artisanSchool ||
-    d.sayagaki?.length
+    d.sayagaki?.length || d.koshirae
   );
 }
 
@@ -109,6 +111,7 @@ export interface DealerListingInitialData {
   material?: string | null;
   images?: string[];
   sayagaki?: SayagakiEntry[] | null;
+  koshirae?: KoshiraeData | null;
   status?: string | null;
 }
 
@@ -228,6 +231,10 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
   const [pendingSayagakiFiles, setPendingSayagakiFiles] = useState<
     Map<string, File[]>
   >(new Map());
+  const [koshirae, setKoshirae] = useState<KoshiraeData | null>(
+    initialData?.koshirae || draft?.koshirae || null
+  );
+  const [pendingKoshiraeFiles, setPendingKoshiraeFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -281,6 +288,10 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
           ...e,
           images: (e.images || []).filter(url => !url.startsWith('blob:')),
         })),
+        koshirae: koshirae ? {
+          ...koshirae,
+          images: (koshirae.images || []).filter(url => !url.startsWith('blob:')),
+        } : null,
         savedAt: Date.now(),
       };
       // Only persist if the form has substantive content
@@ -294,7 +305,7 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
     mode, category, itemType, certType, artisanId, artisanName, artisanKanji,
     priceValue, priceCurrency, isAsk, description,
     nagasaCm, motohabaCm, sakihabaCm, soriCm, meiType, nakagoType, era, province,
-    heightCm, widthCm, material, artisanSchool, titleOverride, images, sayagaki,
+    heightCm, widthCm, material, artisanSchool, titleOverride, images, sayagaki, koshirae,
   ]);
 
   // Auto-generated title
@@ -355,6 +366,10 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
               images: (e.images || []).filter(url => !url.startsWith('blob:')),
             }))
           : null,
+        koshirae: koshirae ? {
+          ...koshirae,
+          images: (koshirae.images || []).filter(url => !url.startsWith('blob:')),
+        } : null,
       };
 
       if (mode === 'add') {
@@ -407,6 +422,23 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
           }
         }
 
+        // Upload pending koshirae images
+        if (pendingKoshiraeFiles.length > 0) {
+          for (const file of pendingKoshiraeFiles) {
+            const formData = new FormData();
+            formData.append('file', file, file.name);
+            formData.append('itemId', String(listing.id));
+            try {
+              await fetch('/api/dealer/koshirae-images', {
+                method: 'POST',
+                body: formData,
+              });
+            } catch {
+              // Best effort — don't block success
+            }
+          }
+        }
+
         clearDraft();
         setShowSuccess(true);
       } else if (mode === 'edit' && initialData?.id) {
@@ -433,6 +465,7 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
     artisanKanji, artisanSchool, priceValue, priceCurrency, isAsk, description,
     nagasaCm, motohabaCm, sakihabaCm, soriCm, meiType, nakagoType, era, province,
     heightCm, widthCm, material, pendingFiles, pendingSayagakiFiles, sayagaki,
+    koshirae, pendingKoshiraeFiles,
     generatedTitle, titleOverride, router,
   ]);
 
@@ -477,6 +510,8 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
     setPendingFiles([]);
     setSayagaki([]);
     setPendingSayagakiFiles(new Map());
+    setKoshirae(null);
+    setPendingKoshiraeFiles([]);
     setShowSuccess(false);
     setImageUploadFailed(false);
     setCreatedListingId(null);
@@ -647,6 +682,14 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
               return next;
             });
           }}
+        />
+
+        {/* 4c. Koshirae */}
+        <KoshiraeSection
+          koshirae={koshirae}
+          itemId={mode === 'edit' && initialData?.id ? String(initialData.id) : undefined}
+          onChange={setKoshirae}
+          onPendingFilesChange={setPendingKoshiraeFiles}
         />
 
         {/* 5. Artisan */}

@@ -84,6 +84,31 @@ export interface SayagakiEntry {
 }
 
 // =============================================================================
+// KOSHIRAE (拵 — sword mountings with component attributions)
+// =============================================================================
+
+export type KoshiraeComponentType =
+  | 'tsuba' | 'menuki' | 'fuchi_kashira'
+  | 'kozuka' | 'kogai' | 'other';
+
+export interface KoshiraeComponentEntry {
+  id: string;
+  component_type: KoshiraeComponentType;
+  artisan_id: string | null;
+  artisan_name: string | null;
+  artisan_kanji: string | null;
+  description: string | null;
+}
+
+export interface KoshiraeData {
+  cert_type: string | null;
+  cert_in_blade_paper: boolean;
+  description: string | null;
+  images: string[];
+  components: KoshiraeComponentEntry[];
+}
+
+// =============================================================================
 // SETSUMEI METADATA (from Oshi-scrapper setsumei pipeline)
 // =============================================================================
 
@@ -442,6 +467,9 @@ export interface Dealer {
 
   // Profile — Credentials & policies
   memberships?: string[] | null;
+  is_nbthk_member?: boolean | null;
+  is_zentosho_member?: boolean | null;
+  has_kobutsusho_license?: boolean | null;
   return_policy?: string | null;
 
   // Computed fields
@@ -553,6 +581,9 @@ export interface Listing {
 
   // Sayagaki (expert calligraphic inscriptions on shirasaya)
   sayagaki?: SayagakiEntry[] | null;
+
+  // Koshirae (拵 — sword mountings with component attributions)
+  koshirae?: KoshiraeData | null;
 
   // Smart crop focal point (0-100%)
   focal_x?: number | null;

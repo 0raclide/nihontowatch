@@ -11,6 +11,7 @@ import { MetadataGrid, getCertInfo, getArtisanInfo } from './MetadataGrid';
 import { useQuickViewOptional } from '@/contexts/QuickViewContext';
 import { TranslatedTitle } from './TranslatedTitle';
 import { SayagakiDisplay } from './SayagakiDisplay';
+import { KoshiraeDisplay } from './KoshiraeDisplay';
 import { QuickMeasurement } from './QuickMeasurement';
 import { useLocale } from '@/i18n/LocaleContext';
 import { useAuth } from '@/lib/auth/AuthContext';
@@ -437,6 +438,11 @@ export function QuickViewMobileSheet({
             {/* Sayagaki */}
             {listing.sayagaki && listing.sayagaki.length > 0 && (
               <SayagakiDisplay sayagaki={listing.sayagaki} />
+            )}
+
+            {/* Koshirae */}
+            {listing.koshirae && (
+              <KoshiraeDisplay koshirae={listing.koshirae} />
             )}
 
             {/* Description slot */}
