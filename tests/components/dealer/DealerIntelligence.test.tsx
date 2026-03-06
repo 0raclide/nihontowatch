@@ -47,7 +47,7 @@ vi.mock('@/i18n/LocaleContext', () => ({
         'dealer.intel.tipMeasurements': 'Add measurements',
         'dealer.intel.tipDescription': 'Add a description',
         'dealer.intel.tipCert': 'Add certification',
-        'dealer.intel.interested': `Matches ${params?.count ?? 0} collector alerts`,
+        'dealer.intel.interested': `${params?.count ?? 0} collectors watching`,
       };
       return map[key] || key;
     },
@@ -118,7 +118,7 @@ describe('DealerIntelligence', () => {
 
     // Section 1: Alert callout (hero)
     expect(screen.getByTestId('alert-callout')).toBeTruthy();
-    expect(screen.getByText('Matches 5 collector alerts')).toBeTruthy();
+    expect(screen.getByText('5 collectors watching')).toBeTruthy();
 
     // Section 2: Feed Position
     expect(screen.getByText('Feed Position')).toBeTruthy();
@@ -179,7 +179,7 @@ describe('DealerIntelligence', () => {
     expect(screen.getByText('Performance Summary')).toBeTruthy();
     // Alert callout hidden for sold
     expect(screen.queryByTestId('alert-callout')).toBeNull();
-    expect(screen.queryByText('Matches 5 collector alerts')).toBeNull();
+    expect(screen.queryByText('5 collectors watching')).toBeNull();
   });
 
   it('renders nothing when API fails', async () => {

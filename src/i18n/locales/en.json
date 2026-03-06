@@ -194,7 +194,7 @@
   "dealer.intel.feedPreview": "Feed Preview",
   "dealer.intel.engagement": "Engagement",
   "dealer.intel.engagement30d": "Engagement (30 days)",
-  "dealer.intel.interested": "Matches {count} collector alerts",
+  "dealer.intel.interested": "{count} collectors watching",
   "dealer.intel.views": "Views",
   "dealer.intel.favorites": "Favorites",
   "dealer.intel.clicks": "Clicks",
