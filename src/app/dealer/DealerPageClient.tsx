@@ -78,6 +78,17 @@ export function DealerPageClient() {
     fetchListings(tab);
   }, [tab, fetchListings]);
 
+  // Listen for dealer status changes (from QuickView) and remove the listing from the current tab
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const { listingId } = (e as CustomEvent).detail;
+      setListings(prev => prev.filter(l => l.id !== listingId));
+      setTotal(prev => Math.max(0, prev - 1));
+    };
+    window.addEventListener('dealer-listing-status-changed', handler);
+    return () => window.removeEventListener('dealer-listing-status-changed', handler);
+  }, []);
+
   const displayItems: DisplayItem[] = useMemo(
     () => listings.map((l) => dealerListingToDisplayItem(l, locale, true)),
     [listings, locale]

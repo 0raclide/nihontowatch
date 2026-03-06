@@ -262,7 +262,14 @@ export function QuickView() {
       is_sold: newStatus === 'SOLD',
     };
     refreshCurrentListing(optimistic);
-  }, [refreshCurrentListing]);
+
+    // Notify DealerPageClient to remove the listing from the current tab grid
+    if (currentListing) {
+      window.dispatchEvent(new CustomEvent('dealer-listing-status-changed', {
+        detail: { listingId: currentListing.id, newStatus },
+      }));
+    }
+  }, [refreshCurrentListing, currentListing]);
 
   if (!currentListing) return null;
 
