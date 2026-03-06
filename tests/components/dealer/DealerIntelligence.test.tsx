@@ -47,7 +47,8 @@ vi.mock('@/i18n/LocaleContext', () => ({
         'dealer.intel.tipMeasurements': 'Add measurements',
         'dealer.intel.tipDescription': 'Add a description',
         'dealer.intel.tipCert': 'Add certification',
-        'dealer.intel.interested': `${params?.count ?? 0} collectors watching`,
+        'dealer.intel.interestedInventory': `Will alert ${params?.count ?? 0} collectors once listed for sale`,
+        'dealer.intel.interestedListed': `Matched ${params?.count ?? 0} collector alerts`,
       };
       return map[key] || key;
     },
@@ -118,7 +119,7 @@ describe('DealerIntelligence', () => {
 
     // Section 1: Alert callout (hero)
     expect(screen.getByTestId('alert-callout')).toBeTruthy();
-    expect(screen.getByText('5 collectors watching')).toBeTruthy();
+    expect(screen.getByText('Matched 5 collector alerts')).toBeTruthy();
 
     // Section 2: Feed Position
     expect(screen.getByText('Feed Position')).toBeTruthy();
@@ -162,6 +163,8 @@ describe('DealerIntelligence', () => {
 
     expect(screen.getByText('Tracked when listed')).toBeTruthy();
     expect(screen.getByText('Estimated Position When Listed')).toBeTruthy();
+    // Inventory copy is forward-looking
+    expect(screen.getByText('Will alert 2 collectors once listed for sale')).toBeTruthy();
   });
 
   it('shows "Performance Summary" for sold tab and hides alert callout', async () => {
@@ -179,7 +182,7 @@ describe('DealerIntelligence', () => {
     expect(screen.getByText('Performance Summary')).toBeTruthy();
     // Alert callout hidden for sold
     expect(screen.queryByTestId('alert-callout')).toBeNull();
-    expect(screen.queryByText('5 collectors watching')).toBeNull();
+    expect(screen.queryByText('Matched 5 collector alerts')).toBeNull();
   });
 
   it('renders nothing when API fails', async () => {
