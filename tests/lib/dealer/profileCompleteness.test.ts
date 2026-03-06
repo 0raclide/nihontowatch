@@ -23,10 +23,10 @@ describe('computeProfileCompleteness', () => {
       phone: '+81-3-1234-5678',
       founded_year: 1985,
       city: 'Tokyo',
-      specializations: ['koto', 'bizen'],
+      specializations: ['nihonto', 'tosogu'],
       return_policy: '7-day returns accepted.',
       accepts_wire_transfer: true,
-      memberships: ['NBTHK'],
+      is_nbthk_member: true,
     }));
     expect(result.score).toBe(100);
     expect(result.missing).toEqual([]);
@@ -94,7 +94,7 @@ describe('computeProfileCompleteness', () => {
 
   it('awards 5 points for specializations', () => {
     const without = computeProfileCompleteness(makeDealer());
-    const withSpecs = computeProfileCompleteness(makeDealer({ specializations: ['koto'] }));
+    const withSpecs = computeProfileCompleteness(makeDealer({ specializations: ['nihonto'] }));
     expect(withSpecs.score - without.score).toBe(5);
   });
 
@@ -129,15 +129,33 @@ describe('computeProfileCompleteness', () => {
     expect(result.missing).toContain('dealer.addBioPrompt');
   });
 
+  it('awards 5 points for any credential boolean', () => {
+    const without = computeProfileCompleteness(makeDealer());
+    const withNbthk = computeProfileCompleteness(makeDealer({ is_nbthk_member: true }));
+    expect(withNbthk.score - without.score).toBe(5);
+
+    const withZentosho = computeProfileCompleteness(makeDealer({ is_zentosho_member: true }));
+    expect(withZentosho.score - without.score).toBe(5);
+
+    const withKobutsusho = computeProfileCompleteness(makeDealer({ has_kobutsusho_license: true }));
+    expect(withKobutsusho.score - without.score).toBe(5);
+  });
+
+  it('does not double-count multiple credential booleans', () => {
+    const one = computeProfileCompleteness(makeDealer({ is_nbthk_member: true }));
+    const all = computeProfileCompleteness(makeDealer({ is_nbthk_member: true, is_zentosho_member: true, has_kobutsusho_license: true }));
+    expect(all.score).toBe(one.score);
+  });
+
   it('caps score at 100', () => {
     const result = computeProfileCompleteness(makeDealer({
       logo_url: 'logo', banner_url: 'banner',
       bio_en: 'en', bio_ja: 'ja',
       contact_email: 'e@e.com', phone: '123', line_id: '@l',
       founded_year: 2000, city: 'NYC',
-      specializations: ['koto'], return_policy: 'ok',
+      specializations: ['nihonto'], return_policy: 'ok',
       accepts_wire_transfer: true, accepts_paypal: true, accepts_credit_card: true,
-      memberships: ['NBTHK'],
+      is_nbthk_member: true,
     }));
     expect(result.score).toBe(100);
   });

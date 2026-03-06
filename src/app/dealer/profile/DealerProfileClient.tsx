@@ -4,7 +4,6 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useLocale } from '@/i18n/LocaleContext';
 import { ProfileImageUpload } from '@/components/dealer/ProfileImageUpload';
-import { AccentColorPicker } from '@/components/dealer/AccentColorPicker';
 import { SpecializationPills } from '@/components/dealer/SpecializationPills';
 import { ProfileCompleteness } from '@/components/dealer/ProfileCompleteness';
 import type { Dealer } from '@/types';
@@ -165,10 +164,6 @@ export function DealerProfileClient() {
               onRemoved={() => updateField('logo_url', null)}
               maxSizeMb={2}
               aspectHint="1:1"
-            />
-            <AccentColorPicker
-              value={dealer.accent_color || '#c4a35a'}
-              onChange={(hex) => updateField('accent_color', hex)}
             />
           </div>
         </details>
@@ -342,11 +337,15 @@ export function DealerProfileClient() {
             </svg>
           </summary>
           <div className="pt-3 space-y-4">
-            <MembershipTags
-              values={dealer.memberships || []}
-              onChange={(values) => updateField('memberships', values)}
-              helpText={t('dealer.membershipsHelp')}
-            />
+            <div>
+              <label className="text-[12px] font-medium text-text-secondary mb-1.5 block">{t('dealer.credentials')}</label>
+              <p className="text-[10px] text-muted mb-2">{t('dealer.credentialsHelp')}</p>
+              <div className="space-y-1.5">
+                <CheckboxField label={t('dealer.nbthkMember')} checked={dealer.is_nbthk_member ?? false} onChange={(v) => updateField('is_nbthk_member', v)} />
+                <CheckboxField label={t('dealer.zentoshoMember')} checked={dealer.is_zentosho_member ?? false} onChange={(v) => updateField('is_zentosho_member', v)} />
+                <CheckboxField label={t('dealer.kobutsushoLicense')} checked={dealer.has_kobutsusho_license ?? false} onChange={(v) => updateField('has_kobutsusho_license', v)} />
+              </div>
+            </div>
             <ProfileImageUpload
               type="shop"
               currentUrl={dealer.shop_photo_url ?? null}
@@ -464,57 +463,3 @@ function TriStatePills({
   );
 }
 
-function MembershipTags({
-  values,
-  onChange,
-  helpText,
-}: {
-  values: string[];
-  onChange: (vals: string[]) => void;
-  helpText: string;
-}) {
-  const [input, setInput] = useState('');
-
-  const add = () => {
-    const trimmed = input.trim();
-    if (trimmed && !values.includes(trimmed)) {
-      onChange([...values, trimmed]);
-    }
-    setInput('');
-  };
-
-  const remove = (val: string) => {
-    onChange(values.filter((v) => v !== val));
-  };
-
-  return (
-    <div>
-      <label className="text-[12px] font-medium text-text-secondary mb-1.5 block">Memberships</label>
-      <div className="flex flex-wrap gap-1.5 mb-2">
-        {values.map((v) => (
-          <span key={v} className="flex items-center gap-1 px-2 py-0.5 bg-gold/10 text-gold text-[11px] rounded-full">
-            {v}
-            <button onClick={() => remove(v)} className="text-gold/60 hover:text-gold">&times;</button>
-          </span>
-        ))}
-      </div>
-      <div className="flex gap-2">
-        <input
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); add(); } }}
-          placeholder="NBTHK, NTHK, etc."
-          className="flex-1 px-3 py-1.5 text-[12px] bg-hover border border-border/50 rounded-lg focus:border-gold/50 focus:outline-none"
-        />
-        <button
-          onClick={add}
-          className="px-3 py-1.5 text-[11px] font-medium text-gold border border-gold/30 rounded-lg hover:bg-gold/10 transition-colors"
-        >
-          Add
-        </button>
-      </div>
-      <p className="text-[10px] text-muted mt-1">{helpText}</p>
-    </div>
-  );
-}

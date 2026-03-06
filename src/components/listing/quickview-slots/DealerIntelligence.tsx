@@ -15,18 +15,18 @@ const HEAT_COLORS: Record<HeatTrend, string> = {
   cool: 'bg-muted/40',
 };
 
-const RANK_I18N: Record<RankBucket, string> = {
-  top10: 'dealer.intel.top10',
-  top25: 'dealer.intel.top25',
-  top50: 'dealer.intel.top50',
-  below: 'dealer.intel.below',
-};
-
 const RANK_COLORS: Record<RankBucket, string> = {
   top10: 'bg-gold/15 text-gold',
   top25: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
   top50: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
   below: 'bg-muted/10 text-muted',
+};
+
+const RANK_I18N: Record<RankBucket, string> = {
+  top10: 'dealer.intel.top10',
+  top25: 'dealer.intel.top25',
+  top50: 'dealer.intel.top50',
+  below: 'dealer.intel.below',
 };
 
 export function DealerIntelligence({ listingId, tab }: DealerIntelligenceProps) {
@@ -71,7 +71,37 @@ export function DealerIntelligence({ listingId, tab }: DealerIntelligenceProps) 
 
   return (
     <div className="px-4 py-4 lg:px-5 border-b border-border space-y-4" data-testid="dealer-intelligence">
-      {/* Section 1: Completeness */}
+      {/* Section 1: Alert Count — hero callout (hidden if 0 or sold tab) */}
+      {!isSoldTab && data.interestedCollectors > 0 && (
+        <div className="flex items-center gap-3 rounded-lg bg-gold/10 px-3 py-2.5" data-testid="alert-callout">
+          <svg className="w-5 h-5 text-gold shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+          </svg>
+          <span className="text-[13px] font-medium text-ink">
+            {t('dealer.intel.interested', { count: data.interestedCollectors })}
+          </span>
+        </div>
+      )}
+
+      {/* Section 2: Feed Position */}
+      <div>
+        <h4 className="text-[11px] font-medium text-muted uppercase tracking-wider mb-2">
+          {isInventory ? t('dealer.intel.estimatedPosition') : t('dealer.intel.feedPosition')}
+        </h4>
+        <div className="flex items-center gap-2">
+          <span className={`px-2 py-1 rounded text-[13px] font-semibold tabular-nums ${RANK_COLORS[data.scorePreview.rankBucket]}`}>
+            ~#{data.scorePreview.estimatedPosition.toLocaleString()}
+          </span>
+          <span className="text-[12px] text-muted">
+            {t('dealer.intel.ofListings', { total: data.scorePreview.totalListings.toLocaleString() })}
+          </span>
+          <span className={`ml-auto px-1.5 py-0.5 rounded text-[10px] font-medium ${RANK_COLORS[data.scorePreview.rankBucket]}`}>
+            {t(RANK_I18N[data.scorePreview.rankBucket])}
+          </span>
+        </div>
+      </div>
+
+      {/* Section 3: Completeness */}
       <div>
         <h4 className="text-[11px] font-medium text-muted uppercase tracking-wider mb-2">
           {t('dealer.intel.completeness')}
@@ -109,32 +139,7 @@ export function DealerIntelligence({ listingId, tab }: DealerIntelligenceProps) 
         </div>
       </div>
 
-      {/* Section 2: Feed Preview */}
-      <div>
-        <h4 className="text-[11px] font-medium text-muted uppercase tracking-wider mb-2">
-          {t('dealer.intel.feedPreview')}
-        </h4>
-        {isInventory ? (
-          <p className="text-[12px] text-muted italic">{t('dealer.intel.estimatedScore')}</p>
-        ) : null}
-        <div className="flex items-center gap-3 text-[12px]">
-          <div>
-            <span className="text-muted">{t('dealer.intel.quality')}: </span>
-            <span className="font-medium tabular-nums">{Math.round(data.scorePreview.quality)}</span>
-          </div>
-          <span className="text-border">·</span>
-          <div>
-            <span className="text-muted">{t('dealer.intel.freshness')}: </span>
-            <span className="font-medium tabular-nums">×{data.scorePreview.freshness.toFixed(1)}</span>
-          </div>
-          <span className="text-border">·</span>
-          <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${RANK_COLORS[data.scorePreview.rankBucket]}`}>
-            {t(RANK_I18N[data.scorePreview.rankBucket])}
-          </span>
-        </div>
-      </div>
-
-      {/* Section 3: Engagement */}
+      {/* Section 4: Engagement */}
       <div>
         <h4 className="text-[11px] font-medium text-muted uppercase tracking-wider mb-2">
           {isSoldTab ? t('dealer.intel.performance') : t('dealer.intel.engagement30d')}
@@ -165,18 +170,6 @@ export function DealerIntelligence({ listingId, tab }: DealerIntelligenceProps) 
           <p className="text-[12px] text-muted italic">{t('dealer.intel.trackedWhenListed')}</p>
         )}
       </div>
-
-      {/* Section 4: Interested Collectors */}
-      {!isSoldTab && data.interestedCollectors > 0 && (
-        <div className="flex items-center gap-2 text-[12px]">
-          <svg className="w-4 h-4 text-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-          </svg>
-          <span className="text-ink">
-            {t('dealer.intel.interested', { count: data.interestedCollectors })}
-          </span>
-        </div>
-      )}
     </div>
   );
 }

@@ -3,6 +3,7 @@ import {
   computeListingCompleteness,
   heatToTrend,
   scoreToRankBucket,
+  estimatePosition,
 } from '@/lib/dealer/intelligence';
 
 // =============================================================================
@@ -148,5 +149,37 @@ describe('scoreToRankBucket', () => {
     expect(scoreToRankBucket(0, p10, p25, p50)).toBe('below');
     expect(scoreToRankBucket(25, p10, p25, p50)).toBe('below');
     expect(scoreToRankBucket(49, p10, p25, p50)).toBe('below');
+  });
+});
+
+describe('estimatePosition', () => {
+  const sortedDesc = [500, 400, 300, 200, 100, 50, 25, 10];
+
+  it('returns position 1 for score above all', () => {
+    expect(estimatePosition(600, sortedDesc)).toBe(1);
+  });
+
+  it('returns correct position for exact match', () => {
+    // Score 300 has two items >= 300 before it (500, 400) + the 300 itself
+    expect(estimatePosition(300, sortedDesc)).toBe(4);
+  });
+
+  it('returns correct position between values', () => {
+    // Score 350: items >= 350 are [500, 400], so position = 3
+    expect(estimatePosition(350, sortedDesc)).toBe(3);
+  });
+
+  it('returns last position for score below all', () => {
+    expect(estimatePosition(1, sortedDesc)).toBe(9);
+  });
+
+  it('returns 1 for empty array', () => {
+    expect(estimatePosition(100, [])).toBe(1);
+  });
+
+  it('handles ties (places at end of tied group)', () => {
+    const withTies = [500, 200, 200, 200, 100, 50];
+    // Score 200: items >= 200 are [500, 200, 200, 200] = 4 items, position = 5
+    expect(estimatePosition(200, withTies)).toBe(5);
   });
 });

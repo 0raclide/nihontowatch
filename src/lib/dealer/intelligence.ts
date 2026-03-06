@@ -39,10 +39,10 @@ export interface DealerIntelligenceAPIResponse {
   listings: Record<number, {
     completeness: DealerCompleteness;
     scorePreview: {
-      quality: number;
-      freshness: number;
       estimatedScore: number;
       rankBucket: RankBucket;
+      estimatedPosition: number;
+      totalListings: number;
     };
     engagement: {
       views: number;
@@ -55,6 +55,7 @@ export interface DealerIntelligenceAPIResponse {
     interestedCollectors: number;
   }>;
   percentiles: { p10: number; p25: number; p50: number };
+  totalListings: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -130,4 +131,35 @@ export function scoreToRankBucket(
   if (score >= p25) return 'top25';
   if (score >= p50) return 'top50';
   return 'below';
+}
+
+// ---------------------------------------------------------------------------
+// Estimated feed position (binary search, O(log n))
+// ---------------------------------------------------------------------------
+
+/**
+ * Estimate where a listing would appear in the feed given a descending-sorted
+ * array of all current featured scores. Returns a 1-based position.
+ *
+ * Binary-searches for the first score < `score`. Ties land at the end of
+ * the tied group (conservative estimate).
+ */
+export function estimatePosition(score: number, sortedScoresDesc: number[]): number {
+  if (sortedScoresDesc.length === 0) return 1;
+
+  let lo = 0;
+  let hi = sortedScoresDesc.length;
+  // Find the first index where sortedScoresDesc[idx] < score
+  while (lo < hi) {
+    const mid = (lo + hi) >>> 1;
+    if (sortedScoresDesc[mid] >= score) {
+      lo = mid + 1;
+    } else {
+      hi = mid;
+    }
+  }
+  // lo is the count of items with score >= this score
+  // Position is 1-based, so position = lo + 1 if this item isn't already
+  // in the array — but ties put us at the END of the tied group, so lo is correct
+  return lo + 1;
 }

@@ -5,11 +5,10 @@ import {
   computeListingCompleteness,
   heatToTrend,
   scoreToRankBucket,
+  estimatePosition,
   type DealerIntelligenceAPIResponse,
 } from '@/lib/dealer/intelligence';
 import {
-  computeQuality,
-  computeFreshness,
   computeFeaturedScore,
   type ListingScoreInput,
 } from '@/lib/featured/scoring';
@@ -22,8 +21,13 @@ const LISTING_SELECT =
 const MAX_IDS = 100;
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 
-// Cache percentiles in memory (refresh every hour)
-let percentileCache: { p10: number; p25: number; p50: number; cachedAt: number } | null = null;
+// Cache percentiles + sorted scores in memory (refresh every hour)
+let percentileCache: {
+  p10: number; p25: number; p50: number;
+  sortedScores: number[];
+  totalCount: number;
+  cachedAt: number;
+} | null = null;
 const PERCENTILE_TTL_MS = 60 * 60 * 1000; // 1 hour
 
 /**
@@ -52,6 +56,7 @@ export async function GET(request: NextRequest) {
     const emptyResponse: DealerIntelligenceAPIResponse = {
       listings: {},
       percentiles: { p10: 0, p25: 0, p50: 0 },
+      totalListings: 0,
     };
     return NextResponse.json(emptyResponse);
   }
@@ -74,22 +79,19 @@ export async function GET(request: NextRequest) {
   const ownedListings = listings.filter(l => l.dealer_id === auth.dealerId);
   const ownedIds = ownedListings.map(l => l.id);
 
-  // 2. Compute completeness + quality + freshness (pure functions, no DB)
+  // 2. Compute completeness (pure functions, no DB)
   const completenessMap = new Map<number, ReturnType<typeof computeListingCompleteness>>();
-  const qualityMap = new Map<number, number>();
-  const freshnessMap = new Map<number, number>();
 
   for (const listing of ownedListings) {
     completenessMap.set(listing.id, computeListingCompleteness({
       ...listing,
       images: Array.isArray(listing.images) ? listing.images : null,
     }));
-    qualityMap.set(listing.id, computeQuality(listing));
-    freshnessMap.set(listing.id, computeFreshness(listing));
   }
 
-  // 3. Fetch score percentiles (cached hourly)
-  const percentiles = await getScorePercentiles(serviceClient);
+  // 3. Fetch score percentiles + sorted scores (cached hourly)
+  const scoreData = await getScoreData(serviceClient);
+  const percentiles = { p10: scoreData.p10, p25: scoreData.p25, p50: scoreData.p50 };
 
   // 4. Batch-fetch engagement (only for listed items — available or sold)
   const listedIds = ownedListings
@@ -138,6 +140,7 @@ export async function GET(request: NextRequest) {
   const result: DealerIntelligenceAPIResponse = {
     listings: {},
     percentiles,
+    totalListings: scoreData.totalCount,
   };
 
   for (const listing of ownedListings) {
@@ -150,17 +153,15 @@ export async function GET(request: NextRequest) {
         Math.min(eng.pinch_zooms * 8, 16)
       : 0;
 
-    const quality = qualityMap.get(listing.id) ?? 0;
-    const freshness = freshnessMap.get(listing.id) ?? 1;
     const estimatedScore = computeFeaturedScore(listing, heatScore);
 
     result.listings[listing.id] = {
       completeness: completenessMap.get(listing.id)!,
       scorePreview: {
-        quality,
-        freshness,
         estimatedScore,
         rankBucket: scoreToRankBucket(estimatedScore, percentiles.p10, percentiles.p25, percentiles.p50),
+        estimatedPosition: estimatePosition(estimatedScore, scoreData.sortedScores),
+        totalListings: scoreData.totalCount,
       },
       engagement: eng ? {
         views: eng.views,
@@ -178,15 +179,21 @@ export async function GET(request: NextRequest) {
 }
 
 /**
- * Get featured score percentiles for rank bucket computation.
+ * Get featured score percentiles + sorted score array for position estimation.
  * Cached in module-level memory, refreshed hourly.
  */
-async function getScorePercentiles(
+async function getScoreData(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   serviceClient: any
-): Promise<{ p10: number; p25: number; p50: number }> {
+): Promise<{ p10: number; p25: number; p50: number; sortedScores: number[]; totalCount: number }> {
   if (percentileCache && Date.now() - percentileCache.cachedAt < PERCENTILE_TTL_MS) {
-    return { p10: percentileCache.p10, p25: percentileCache.p25, p50: percentileCache.p50 };
+    return {
+      p10: percentileCache.p10,
+      p25: percentileCache.p25,
+      p50: percentileCache.p50,
+      sortedScores: percentileCache.sortedScores,
+      totalCount: percentileCache.totalCount,
+    };
   }
 
   // Fetch all available listing scores, sorted descending
@@ -199,14 +206,14 @@ async function getScorePercentiles(
     .order('featured_score', { ascending: false });
 
   if (error || !data || data.length === 0) {
-    return { p10: 100, p25: 50, p50: 20 }; // Reasonable fallbacks
+    return { p10: 100, p25: 50, p50: 20, sortedScores: [], totalCount: 0 };
   }
 
-  const scores = data.map((r: { featured_score: number }) => r.featured_score);
+  const scores: number[] = data.map((r: { featured_score: number }) => r.featured_score);
   const p10 = scores[Math.floor(scores.length * 0.1)] ?? 100;
   const p25 = scores[Math.floor(scores.length * 0.25)] ?? 50;
   const p50 = scores[Math.floor(scores.length * 0.5)] ?? 20;
 
-  percentileCache = { p10, p25, p50, cachedAt: Date.now() };
-  return { p10, p25, p50 };
+  percentileCache = { p10, p25, p50, sortedScores: scores, totalCount: scores.length, cachedAt: Date.now() };
+  return { p10, p25, p50, sortedScores: scores, totalCount: scores.length };
 }

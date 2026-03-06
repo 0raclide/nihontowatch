@@ -76,8 +76,8 @@ export function computeProfileCompleteness(dealer: Partial<Dealer>): Completenes
     score += 5;
   }
 
-  // Memberships — 5 points
-  if (dealer.memberships && dealer.memberships.length > 0) {
+  // Credentials — 5 points
+  if (dealer.is_nbthk_member || dealer.is_zentosho_member || dealer.has_kobutsusho_license) {
     score += 5;
   }
 

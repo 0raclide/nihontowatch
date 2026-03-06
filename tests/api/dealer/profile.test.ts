@@ -124,17 +124,11 @@ describe('/api/dealer/profile', () => {
       expect(json.error).toContain('No valid fields');
     });
 
-    it('validates accent_color as hex', async () => {
-      const res = await PATCH(makeRequest({ accent_color: 'not-a-hex' }));
+    it('rejects accent_color (no longer allowed)', async () => {
+      const res = await PATCH(makeRequest({ accent_color: '#ff5500' }));
       expect(res.status).toBe(400);
       const json = await res.json();
-      expect(json.error).toContain('hex color');
-    });
-
-    it('accepts valid accent_color', async () => {
-      mockServiceUpdate.mockResolvedValue({ data: { ...SAMPLE_DEALER, accent_color: '#ff5500' }, error: null });
-      const res = await PATCH(makeRequest({ accent_color: '#ff5500' }));
-      expect(res.status).toBe(200);
+      expect(json.error).toContain('No valid fields');
     });
 
     it('validates founded_year range', async () => {
@@ -150,8 +144,14 @@ describe('/api/dealer/profile', () => {
     });
 
     it('accepts valid specializations', async () => {
-      mockServiceUpdate.mockResolvedValue({ data: { ...SAMPLE_DEALER, specializations: ['koto', 'bizen'] }, error: null });
-      const res = await PATCH(makeRequest({ specializations: ['koto', 'bizen'] }));
+      mockServiceUpdate.mockResolvedValue({ data: { ...SAMPLE_DEALER, specializations: ['nihonto', 'tosogu'] }, error: null });
+      const res = await PATCH(makeRequest({ specializations: ['nihonto', 'tosogu'] }));
+      expect(res.status).toBe(200);
+    });
+
+    it('accepts credential boolean fields', async () => {
+      mockServiceUpdate.mockResolvedValue({ data: { ...SAMPLE_DEALER, is_nbthk_member: true }, error: null });
+      const res = await PATCH(makeRequest({ is_nbthk_member: true }));
       expect(res.status).toBe(200);
     });
 

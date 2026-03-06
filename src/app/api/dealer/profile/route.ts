@@ -12,15 +12,14 @@ const ALLOWED_FIELDS = new Set([
   'contact_email', 'contact_page_url', 'sales_policy_url',
   'ships_international', 'accepts_wire_transfer', 'accepts_paypal', 'accepts_credit_card',
   'requires_deposit', 'deposit_percentage', 'english_support',
-  // New profile fields
-  'logo_url', 'banner_url', 'accent_color',
+  // Profile fields
+  'logo_url', 'banner_url',
   'bio_en', 'bio_ja', 'founded_year', 'shop_photo_url', 'specializations',
   'phone', 'line_id', 'instagram_url', 'facebook_url',
   'address', 'city', 'postal_code', 'address_visible',
-  'memberships', 'return_policy',
+  'is_nbthk_member', 'is_zentosho_member', 'has_kobutsusho_license',
+  'return_policy',
 ]);
-
-const HEX_COLOR_REGEX = /^#[0-9a-fA-F]{6}$/;
 
 /**
  * GET /api/dealer/profile
@@ -87,12 +86,6 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Validate specific fields
-    if ('accent_color' in updates && updates.accent_color !== null) {
-      if (typeof updates.accent_color !== 'string' || !HEX_COLOR_REGEX.test(updates.accent_color)) {
-        return NextResponse.json({ error: 'accent_color must be a valid hex color (e.g. #c4a35a)' }, { status: 400 });
-      }
-    }
-
     if ('founded_year' in updates && updates.founded_year !== null) {
       const year = Number(updates.founded_year);
       if (!Number.isInteger(year) || year < 1600 || year > 2026) {

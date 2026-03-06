@@ -627,6 +627,30 @@ Personal item cataloging for authenticated users. **V2 vision: reuse 95% of brow
 | Nav links | `src/components/layout/Header.tsx`, `MobileNavDrawer.tsx` (auth-gated) |
 | **Full documentation** | `docs/COLLECTION_MANAGER.md` |
 
+### Dealer Profile Settings (`/dealer/profile`)
+
+Settings page where dealers customize their shop identity: logo, banner, accent color, bilingual bios, specialization pills, contact info, location, policies, and memberships. Data saved to `dealers` table (17 new columns from migration 101). Profile images stored in `dealer-images` Supabase Storage bucket under `{dealerId}/profile/{type}/`.
+
+**Auto-save:** 800ms debounced PATCH — only changed fields sent. No save button.
+
+**Profile completeness:** Weighted 100-point score (logo 15, banner 15, bio 15 +5 bilingual, email 10, phone/LINE 10, founded 5, city 5, specs 5, policy 5, payment 5, memberships 5). Progress bar with missing-item prompts guides progressive completion.
+
+**Key files:**
+| Component | Location |
+|-----------|----------|
+| Profile API (GET + PATCH) | `src/app/api/dealer/profile/route.ts` |
+| Image API (POST + DELETE) | `src/app/api/dealer/profile/images/route.ts` |
+| Profile page | `src/app/dealer/profile/DealerProfileClient.tsx` |
+| Completeness utility | `src/lib/dealer/profileCompleteness.ts` |
+| Specialization constants | `src/lib/dealer/specializations.ts` |
+| Image upload component | `src/components/dealer/ProfileImageUpload.tsx` |
+| Color picker | `src/components/dealer/AccentColorPicker.tsx` |
+| Specialization pills | `src/components/dealer/SpecializationPills.tsx` |
+| Completeness bar | `src/components/dealer/ProfileCompleteness.tsx` |
+| DB migration | `supabase/migrations/101_dealer_profile.sql` |
+| Tests (31) | `tests/lib/dealer/profileCompleteness.test.ts`, `tests/api/dealer/profile.test.ts` |
+| **Full documentation** | `docs/SESSION_20260306_DEALER_PROFILE_SETTINGS.md` |
+
 ### User Feedback & Reporting
 
 Two-channel feedback system: users flag inaccurate data on listings/artist pages, and submit general feedback (bugs, features) from the nav. All stored in `user_feedback` table, triaged via admin panel at `/admin/feedback`.
@@ -681,6 +705,8 @@ For detailed implementation docs, see:
 - `docs/JAPANESE_UX_RECOMMENDATIONS.md` - JA UX research — design philosophy, typography, density, trust signals, navigation patterns
 - `supabase/migrations/088_artisan_confidence_cheap_downgrade.sql` - **Cheap elite suppression** — backfill 148 misattributed cheap items to NONE confidence
 - `docs/USER_FEEDBACK.md` - **User feedback & reporting** — two-channel feedback system, admin triage panel, shared modal architecture
+- `docs/SESSION_20260306_DEALER_PROFILE_SETTINGS.md` - **Dealer profile settings** — `/dealer/profile` page, image upload, auto-save, completeness scoring, 17 new DB columns
+- `docs/DEALER_PROFILE_DESIGN.md` - **Dealer profile design doc** — 4-phase plan (Phase 1 implemented), research, IA, mobile design
 
 ---
 

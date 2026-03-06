@@ -3,9 +3,9 @@
  *
  * Tests the full intelligence panel in QuickView:
  * - Loading state shows skeleton
- * - All 4 sections render with data
- * - Inventory tab shows "Tracked when listed"
- * - Sold tab shows "Performance Summary"
+ * - All sections render with data (alert callout, feed position, completeness, engagement)
+ * - Inventory tab shows "Estimated Position When Listed"
+ * - Sold tab shows "Performance Summary" and hides alert callout
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -19,16 +19,15 @@ vi.mock('@/i18n/LocaleContext', () => ({
     t: (key: string, params?: Record<string, string | number>) => {
       const map: Record<string, string> = {
         'dealer.intel.completeness': 'Completeness',
-        'dealer.intel.feedPreview': 'Feed Preview',
+        'dealer.intel.feedPosition': 'Feed Position',
+        'dealer.intel.estimatedPosition': 'Estimated Position When Listed',
+        'dealer.intel.ofListings': `of ${params?.total ?? 0} listings`,
         'dealer.intel.engagement30d': 'Engagement (30 days)',
         'dealer.intel.performance': 'Performance Summary',
         'dealer.intel.trackedWhenListed': 'Tracked when listed',
-        'dealer.intel.estimatedScore': 'Estimated score when listed',
         'dealer.intel.views': 'Views',
         'dealer.intel.favorites': 'Favorites',
         'dealer.intel.clicks': 'Clicks',
-        'dealer.intel.quality': 'Quality',
-        'dealer.intel.freshness': 'Freshness',
         'dealer.intel.hot': 'Hot',
         'dealer.intel.warm': 'Active',
         'dealer.intel.cool': 'Quiet',
@@ -48,7 +47,7 @@ vi.mock('@/i18n/LocaleContext', () => ({
         'dealer.intel.tipMeasurements': 'Add measurements',
         'dealer.intel.tipDescription': 'Add a description',
         'dealer.intel.tipCert': 'Add certification',
-        'dealer.intel.interested': `${params?.count ?? 0} collectors interested`,
+        'dealer.intel.interested': `Matches ${params?.count ?? 0} collector alerts`,
       };
       return map[key] || key;
     },
@@ -74,10 +73,10 @@ const mockIntelligenceResponse = {
         ],
       },
       scorePreview: {
-        quality: 85,
-        freshness: 1.2,
         estimatedScore: 102,
         rankBucket: 'top25',
+        estimatedPosition: 42,
+        totalListings: 3200,
       },
       engagement: {
         views: 42,
@@ -91,6 +90,7 @@ const mockIntelligenceResponse = {
     },
   },
   percentiles: { p10: 200, p25: 100, p50: 50 },
+  totalListings: 3200,
 };
 
 beforeEach(() => {
@@ -104,7 +104,7 @@ describe('DealerIntelligence', () => {
     expect(screen.getByTestId('dealer-intelligence-skeleton')).toBeTruthy();
   });
 
-  it('renders all 4 sections with data for available tab', async () => {
+  it('renders all sections with data for available tab', async () => {
     mockFetch.mockResolvedValue({
       ok: true,
       json: () => Promise.resolve(mockIntelligenceResponse),
@@ -116,26 +116,29 @@ describe('DealerIntelligence', () => {
       expect(screen.getByTestId('dealer-intelligence')).toBeTruthy();
     });
 
-    // Section 1: Completeness
+    // Section 1: Alert callout (hero)
+    expect(screen.getByTestId('alert-callout')).toBeTruthy();
+    expect(screen.getByText('Matches 5 collector alerts')).toBeTruthy();
+
+    // Section 2: Feed Position
+    expect(screen.getByText('Feed Position')).toBeTruthy();
+    expect(screen.getByText('~#42')).toBeTruthy();
+    expect(screen.getByText('of 3,200 listings')).toBeTruthy();
+    expect(screen.getByText('Top 25%')).toBeTruthy();
+
+    // Section 3: Completeness
     expect(screen.getByText('Completeness')).toBeTruthy();
     expect(screen.getByText('Photos')).toBeTruthy();
     expect(screen.getByText('Add measurements')).toBeTruthy(); // tip for unfilled
 
-    // Section 2: Feed Preview
-    expect(screen.getByText('Feed Preview')).toBeTruthy();
-    expect(screen.getByText('Top 25%')).toBeTruthy();
-
-    // Section 3: Engagement
+    // Section 4: Engagement
     expect(screen.getByText('Engagement (30 days)')).toBeTruthy();
     expect(screen.getByText('42')).toBeTruthy(); // views
     expect(screen.getByText('3')).toBeTruthy();  // favorites
     expect(screen.getByText('7')).toBeTruthy();  // clicks
-
-    // Section 4: Interested collectors
-    expect(screen.getByText('5 collectors interested')).toBeTruthy();
   });
 
-  it('shows "Tracked when listed" for inventory tab', async () => {
+  it('shows "Tracked when listed" for inventory tab with estimated position header', async () => {
     mockFetch.mockResolvedValue({
       ok: true,
       json: () => Promise.resolve({
@@ -147,6 +150,7 @@ describe('DealerIntelligence', () => {
           },
         },
         percentiles: { p10: 200, p25: 100, p50: 50 },
+        totalListings: 3200,
       }),
     });
 
@@ -157,10 +161,10 @@ describe('DealerIntelligence', () => {
     });
 
     expect(screen.getByText('Tracked when listed')).toBeTruthy();
-    expect(screen.getByText('Estimated score when listed')).toBeTruthy();
+    expect(screen.getByText('Estimated Position When Listed')).toBeTruthy();
   });
 
-  it('shows "Performance Summary" for sold tab', async () => {
+  it('shows "Performance Summary" for sold tab and hides alert callout', async () => {
     mockFetch.mockResolvedValue({
       ok: true,
       json: () => Promise.resolve(mockIntelligenceResponse),
@@ -173,8 +177,9 @@ describe('DealerIntelligence', () => {
     });
 
     expect(screen.getByText('Performance Summary')).toBeTruthy();
-    // Interested collectors hidden for sold
-    expect(screen.queryByText('5 collectors interested')).toBeNull();
+    // Alert callout hidden for sold
+    expect(screen.queryByTestId('alert-callout')).toBeNull();
+    expect(screen.queryByText('Matches 5 collector alerts')).toBeNull();
   });
 
   it('renders nothing when API fails', async () => {
@@ -192,7 +197,7 @@ describe('DealerIntelligence', () => {
   it('calls API with correct listing ID', async () => {
     mockFetch.mockResolvedValue({
       ok: true,
-      json: () => Promise.resolve({ listings: {}, percentiles: { p10: 0, p25: 0, p50: 0 } }),
+      json: () => Promise.resolve({ listings: {}, percentiles: { p10: 0, p25: 0, p50: 0 }, totalListings: 0 }),
     });
 
     render(<DealerIntelligence listingId={789} tab="available" />);
@@ -200,5 +205,29 @@ describe('DealerIntelligence', () => {
     await waitFor(() => {
       expect(mockFetch).toHaveBeenCalledWith('/api/dealer/listings/intelligence?listingIds=789');
     });
+  });
+
+  it('hides alert callout when interestedCollectors is 0', async () => {
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({
+        listings: {
+          123: {
+            ...mockIntelligenceResponse.listings[123],
+            interestedCollectors: 0,
+          },
+        },
+        percentiles: { p10: 200, p25: 100, p50: 50 },
+        totalListings: 3200,
+      }),
+    });
+
+    render(<DealerIntelligence listingId={123} tab="available" />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('dealer-intelligence')).toBeTruthy();
+    });
+
+    expect(screen.queryByTestId('alert-callout')).toBeNull();
   });
 });
