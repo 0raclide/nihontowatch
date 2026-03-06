@@ -25,12 +25,17 @@ export function DealerMobileBar({ activeTab, onTabChange, onAddClick, tabCounts 
   const { t } = useLocale();
   const [sheetOpen, setSheetOpen] = useState(false);
   const sheetRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
-  // Close sheet on outside click
+  // Close sheet on outside click (exclude trigger button to avoid toggle race)
   useEffect(() => {
     if (!sheetOpen) return;
     function handleClick(e: MouseEvent) {
-      if (sheetRef.current && !sheetRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      if (
+        sheetRef.current && !sheetRef.current.contains(target) &&
+        triggerRef.current && !triggerRef.current.contains(target)
+      ) {
         setSheetOpen(false);
       }
     }
@@ -93,6 +98,7 @@ export function DealerMobileBar({ activeTab, onTabChange, onAddClick, tabCounts 
 
         {/* Status selector */}
         <button
+          ref={triggerRef}
           onClick={() => setSheetOpen(prev => !prev)}
           className="flex flex-col items-center justify-center flex-1 h-full text-charcoal active:text-gold transition-colors"
         >
