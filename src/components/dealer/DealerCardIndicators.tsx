@@ -6,6 +6,9 @@ interface DealerCardIndicatorsProps {
   completeness?: { score: number; total: number };
   heatTrend?: 'hot' | 'warm' | 'cool';
   interestedCollectors?: number;
+  estimatedPosition?: number;
+  totalListings?: number;
+  rankBucket?: 'top10' | 'top25' | 'top50' | 'below';
 }
 
 const HEAT_COLORS: Record<string, string> = {
@@ -20,10 +23,20 @@ const HEAT_LABEL_KEYS: Record<string, string> = {
   cool: 'dealer.intel.cool',
 };
 
+const RANK_COLORS: Record<string, string> = {
+  top10: 'text-gold',
+  top25: 'text-emerald-500 dark:text-emerald-400',
+  top50: 'text-blue-500 dark:text-blue-400',
+  below: 'text-muted',
+};
+
 export function DealerCardIndicators({
   completeness,
   heatTrend,
   interestedCollectors,
+  estimatedPosition,
+  totalListings,
+  rankBucket,
 }: DealerCardIndicatorsProps) {
   const { t } = useLocale();
 
@@ -47,6 +60,16 @@ export function DealerCardIndicators({
         </div>
         <span className="tabular-nums">{completeness.score}/{completeness.total}</span>
       </div>
+
+      {/* Feed position — compact "#42" */}
+      {estimatedPosition != null && totalListings != null && totalListings > 0 && (
+        <div className="flex items-center gap-0.5" data-testid="position-indicator">
+          <span className={`tabular-nums font-medium ${RANK_COLORS[rankBucket ?? 'below']}`}>
+            #{estimatedPosition.toLocaleString()}
+          </span>
+          <span className="text-muted/60">/{totalListings.toLocaleString()}</span>
+        </div>
+      )}
 
       {/* Heat dot — hidden if no engagement data yet */}
       {heatTrend && (

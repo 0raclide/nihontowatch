@@ -37,6 +37,9 @@ export interface DealerExtension {
     completeness: { score: number; total: number };
     heatTrend?: 'hot' | 'warm' | 'cool';
     interestedCollectors?: number;
+    estimatedPosition?: number;
+    totalListings?: number;
+    rankBucket?: 'top10' | 'top25' | 'top50' | 'below';
   };
 }
 

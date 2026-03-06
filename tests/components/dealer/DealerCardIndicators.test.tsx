@@ -127,4 +127,29 @@ describe('DealerCardIndicators', () => {
     // No bell icon
     expect(container.querySelector('svg')).toBeNull();
   });
+
+  it('shows position indicator with rank-colored number', () => {
+    const { container } = render(
+      <DealerCardIndicators
+        completeness={{ score: 5, total: 6 }}
+        estimatedPosition={42}
+        totalListings={3200}
+        rankBucket="top25"
+      />
+    );
+    expect(screen.getByTestId('position-indicator')).toBeTruthy();
+    expect(container.textContent).toContain('#42');
+    expect(container.textContent).toContain('3,200');
+  });
+
+  it('hides position indicator when totalListings is 0', () => {
+    render(
+      <DealerCardIndicators
+        completeness={{ score: 5, total: 6 }}
+        estimatedPosition={1}
+        totalListings={0}
+      />
+    );
+    expect(screen.queryByTestId('position-indicator')).toBeNull();
+  });
 });

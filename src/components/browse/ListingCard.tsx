@@ -868,6 +868,9 @@ export const ListingCard = memo(function ListingCard({
             completeness={listing.dealer.intelligence.completeness}
             heatTrend={listing.dealer.intelligence.heatTrend}
             interestedCollectors={listing.dealer.intelligence.interestedCollectors}
+            estimatedPosition={listing.dealer.intelligence.estimatedPosition}
+            totalListings={listing.dealer.intelligence.totalListings}
+            rankBucket={listing.dealer.intelligence.rankBucket}
           />
         )}
 
@@ -909,6 +912,7 @@ export const ListingCard = memo(function ListingCard({
     prevProps.listing.dealer?.intelligence?.completeness?.score === nextProps.listing.dealer?.intelligence?.completeness?.score &&
     prevProps.listing.dealer?.intelligence?.heatTrend === nextProps.listing.dealer?.intelligence?.heatTrend &&
     prevProps.listing.dealer?.intelligence?.interestedCollectors === nextProps.listing.dealer?.intelligence?.interestedCollectors &&
+    prevProps.listing.dealer?.intelligence?.estimatedPosition === nextProps.listing.dealer?.intelligence?.estimatedPosition &&
     prevProps.mobileView === nextProps.mobileView &&
     prevProps.fontSize === nextProps.fontSize &&
     prevProps.imageAspect === nextProps.imageAspect &&

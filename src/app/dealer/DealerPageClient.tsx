@@ -160,6 +160,9 @@ export function DealerPageClient() {
             completeness: { score: completeness.score, total: completeness.total },
             heatTrend: apiData?.engagement?.heatTrend,
             interestedCollectors: apiData?.interestedCollectors,
+            estimatedPosition: apiData?.scorePreview?.estimatedPosition,
+            totalListings: apiData?.scorePreview?.totalListings,
+            rankBucket: apiData?.scorePreview?.rankBucket,
           },
         },
       };
