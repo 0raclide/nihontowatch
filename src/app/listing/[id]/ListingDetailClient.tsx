@@ -36,6 +36,7 @@ import { getItemTypeUrl, getCertUrl, getDealerUrl } from '@/lib/seo/categories';
 import { generateArtisanSlug } from '@/lib/artisan/slugs';
 import { useLocale } from '@/i18n/LocaleContext';
 import { SocialShareButtons } from '@/components/share/SocialShareButtons';
+import { SayagakiDisplay } from '@/components/listing/SayagakiDisplay';
 import { getDealerDisplayName } from '@/lib/dealers/displayName';
 
 // Use EnrichedListingDetail as the canonical listing type for this page
@@ -471,6 +472,13 @@ export default function ListingDetailPage({ initialData }: ListingDetailPageProp
               </p>
               <p className="text-[12px] text-muted">{listing.dealers?.domain}</p>
             </div>
+
+            {/* Sayagaki */}
+            {listing.sayagaki && listing.sayagaki.length > 0 && (
+              <div className="mb-6">
+                <SayagakiDisplay sayagaki={listing.sayagaki} />
+              </div>
+            )}
 
             {/* Social Share */}
             <div className="flex items-center gap-2 mb-6">
