@@ -61,11 +61,11 @@ export async function GET(request: NextRequest) {
       const paths = buildStoragePaths(col, vol, itemNum);
       const imageUrls = paths.map(p => `${IMAGE_STORAGE_BASE}/storage/v1/object/public/images/${p.path}`);
 
-      // Convert measurements from mm (×10 in gold_values) to cm
-      const toC = (v: unknown): number | null => {
+      // gold_values stores measurements already in cm — no conversion needed
+      const toNum = (v: unknown): number | null => {
         if (v == null) return null;
         const n = Number(v);
-        return isNaN(n) ? null : Math.round((n / 10) * 100) / 100;
+        return isNaN(n) ? null : n;
       };
 
       return {
@@ -75,10 +75,10 @@ export async function GET(request: NextRequest) {
         item_number: itemNum,
         image_urls: imageUrls,
         form_type: (row.gold_form_type as string | null) || null,
-        nagasa_cm: toC(row.gold_nagasa),
-        sori_cm: toC(row.gold_sori),
-        motohaba_cm: toC(row.gold_motohaba),
-        sakihaba_cm: toC(row.gold_sakihaba),
+        nagasa_cm: toNum(row.gold_nagasa),
+        sori_cm: toNum(row.gold_sori),
+        motohaba_cm: toNum(row.gold_motohaba),
+        sakihaba_cm: toNum(row.gold_sakihaba),
         mei_status: (row.gold_mei_status as string | null) || null,
         period: (row.gold_period as string | null) || null,
         artisan_kanji: (row.gold_artisan_kanji as string | null) || null,

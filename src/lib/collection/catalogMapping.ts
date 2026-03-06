@@ -1,7 +1,7 @@
 /**
- * Maps Yuhinkai catalog search results → CollectionItem fields.
+ * Maps Yuhinkai catalog search results → CollectionItem / dealer listing fields.
  *
- * gold_values stores measurements in mm (×10), so we divide by 10 for cm.
+ * gold_values stores measurements already in cm (no conversion needed).
  * Collection names map to cert_type display labels.
  */
 

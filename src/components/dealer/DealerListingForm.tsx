@@ -354,30 +354,24 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
   const showCatalogPanel = !!artisanId && !!certType && CATALOG_CERT_TYPES.has(certType);
 
   const handleCatalogPrefill = useCallback((fields: CatalogPrefillFields) => {
-    // Only fill empty/default fields — non-destructive
-    if (fields.itemType && !itemType) setItemType(fields.itemType);
-    if (fields.nagasaCm && !nagasaCm) setNagasaCm(fields.nagasaCm);
-    if (fields.soriCm && !soriCm) setSoriCm(fields.soriCm);
-    if (fields.motohabaCm && !motohabaCm) setMotohabaCm(fields.motohabaCm);
-    if (fields.sakihabaCm && !sakihabaCm) setSakihabaCm(fields.sakihabaCm);
-    if (fields.meiType && !meiType) setMeiType(fields.meiType);
-    if (fields.era && !era) setEra(fields.era);
+    // Catalog selection is an explicit user action — always overwrite with catalog data.
+    // Only skip fields the catalog doesn't have (undefined).
+    if (fields.itemType !== undefined) setItemType(fields.itemType);
+    if (fields.nagasaCm !== undefined) setNagasaCm(fields.nagasaCm);
+    if (fields.soriCm !== undefined) setSoriCm(fields.soriCm);
+    if (fields.motohabaCm !== undefined) setMotohabaCm(fields.motohabaCm);
+    if (fields.sakihabaCm !== undefined) setSakihabaCm(fields.sakihabaCm);
+    if (fields.meiType !== undefined) setMeiType(fields.meiType);
+    if (fields.era !== undefined) setEra(fields.era);
     if (fields.certSession != null) setCertSession(fields.certSession);
     if (fields.catalogObjectUuid) setCatalogObjectUuid(fields.catalogObjectUuid);
 
     // Auto-expand "More Details" if measurements were written
-    const wroteMeasurements = !!(
-      (fields.nagasaCm && !nagasaCm) ||
-      (fields.soriCm && !soriCm) ||
-      (fields.motohabaCm && !motohabaCm) ||
-      (fields.sakihabaCm && !sakihabaCm) ||
-      (fields.meiType && !meiType) ||
-      (fields.era && !era)
-    );
+    const wroteMeasurements = !!(fields.nagasaCm || fields.soriCm || fields.motohabaCm || fields.sakihabaCm || fields.meiType || fields.era);
     if (wroteMeasurements && moreDetailsRef.current && !moreDetailsRef.current.open) {
       moreDetailsRef.current.open = true;
     }
-  }, [itemType, nagasaCm, soriCm, motohabaCm, sakihabaCm, meiType, era]);
+  }, []);
 
   const handleSubmit = useCallback(async (targetStatus?: 'INVENTORY' | 'AVAILABLE') => {
     setIsSubmitting(true);
