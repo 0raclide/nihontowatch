@@ -747,9 +747,9 @@ export const ListingCard = memo(function ListingCard({
       <div className={`${sz.hPad} sm:px-3 sm:py-2 lg:px-4 lg:py-2.5 flex items-center justify-between`}>
         {listing.source === 'dealer' ? (
           <span className={`${sz.hText} sm:text-[9px] lg:text-[10px] font-semibold tracking-[0.14em] ${
-            listing.is_sold ? 'text-muted' : listing.is_available ? 'text-green-600 dark:text-green-400' : 'text-amber-600 dark:text-amber-400'
+            listing.is_sold ? 'text-muted' : listing.is_available ? 'text-green-600 dark:text-green-400' : listing.status?.toUpperCase() === 'HOLD' ? 'text-blue-600 dark:text-blue-400' : 'text-amber-600 dark:text-amber-400'
           }`}>
-            {listing.is_sold ? t('dealer.statusSold') : listing.is_available ? t('dealer.tabForSale') : t('dealer.tabInventory')}
+            {listing.is_sold ? t('dealer.statusSold') : listing.is_available ? t('dealer.tabForSale') : listing.status?.toUpperCase() === 'HOLD' ? t('dealer.tabOnHold') : t('dealer.tabInventory')}
           </span>
         ) : (
           <span className={`${sz.hText} sm:text-[9px] lg:text-[10px] font-medium tracking-[0.14em] text-muted ${locale !== 'ja' ? 'capitalize' : ''}`}>

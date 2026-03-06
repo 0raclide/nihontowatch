@@ -117,6 +117,10 @@ export async function PATCH(
     updates.status = 'INVENTORY';
     updates.is_available = false;
     updates.is_sold = false;
+  } else if (body.status === 'HOLD') {
+    updates.status = 'HOLD';
+    updates.is_available = false;
+    updates.is_sold = false;
   } else if (body.status === 'AVAILABLE') {
     updates.status = 'AVAILABLE';
     updates.is_available = true;

@@ -13,11 +13,12 @@ import { useLocale } from '@/i18n/LocaleContext';
 import type { Listing } from '@/types';
 import type { DisplayItem } from '@/types/displayItem';
 
-type Tab = 'inventory' | 'available' | 'sold';
+type Tab = 'inventory' | 'available' | 'hold' | 'sold';
 
 const TABS: { value: Tab; labelKey: string }[] = [
   { value: 'inventory', labelKey: 'dealer.tabInventory' },
   { value: 'available', labelKey: 'dealer.tabForSale' },
+  { value: 'hold', labelKey: 'dealer.tabOnHold' },
   { value: 'sold', labelKey: 'dealer.tabSold' },
 ];
 

@@ -26,8 +26,10 @@ export function DealerActionBar({ listing, onStatusChange }: DealerActionBarProp
     router.push(`/dealer/edit/${listing.id}`);
   }, [listing.id, router, dismissForNavigation]);
 
+  const status = listing.status?.toUpperCase();
+  const isAvailable = status === 'AVAILABLE';
+  const isHold = status === 'HOLD';
   const isSold = listing.is_sold;
-  const isAvailable = listing.is_available;
 
   return (
     <>
@@ -48,8 +50,23 @@ export function DealerActionBar({ listing, onStatusChange }: DealerActionBarProp
         </svg>
       </button>
 
-      {/* Mark Sold */}
-      {isAvailable && !isSold && (
+      {/* Put on Hold (For Sale only) */}
+      {isAvailable && (
+        <button
+          onClick={() => handleStatusChange('HOLD')}
+          disabled={isUpdating}
+          className="w-8 h-8 flex items-center justify-center rounded-full text-muted hover:text-blue-600 hover:bg-blue-50/50 dark:hover:bg-blue-950/30 transition-all duration-200"
+          aria-label={t('dealer.putOnHold')}
+          title={t('dealer.putOnHold')}
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </button>
+      )}
+
+      {/* Mark Sold (For Sale + Hold) */}
+      {(isAvailable || isHold) && (
         <button
           onClick={() => handleStatusChange('SOLD')}
           disabled={isUpdating}
@@ -63,8 +80,23 @@ export function DealerActionBar({ listing, onStatusChange }: DealerActionBarProp
         </button>
       )}
 
-      {/* Move to Inventory (available items only — "List for Sale" handled by CTA slot) */}
-      {isAvailable && (
+      {/* Relist (Hold → For Sale) */}
+      {isHold && (
+        <button
+          onClick={() => handleStatusChange('AVAILABLE')}
+          disabled={isUpdating}
+          className="w-8 h-8 flex items-center justify-center rounded-full text-muted hover:text-green-600 hover:bg-green-50/50 dark:hover:bg-green-950/30 transition-all duration-200"
+          aria-label={t('dealer.relist')}
+          title={t('dealer.relist')}
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+        </button>
+      )}
+
+      {/* Withdraw to Inventory (For Sale + Hold) */}
+      {(isAvailable || isHold) && (
         <button
           onClick={() => handleStatusChange('INVENTORY')}
           disabled={isUpdating}

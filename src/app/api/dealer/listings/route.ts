@@ -38,13 +38,16 @@ export async function GET(request: NextRequest) {
     .eq('dealer_id', auth.dealerId)
     .eq('source', 'dealer');
 
-  // Tab filters — 3-state lifecycle: Inventory → For Sale → Sold
+  // Tab filters — 4-state lifecycle: Inventory → For Sale → Hold → Sold
   switch (tab) {
     case 'inventory':
-      query = query.eq('is_available', false).eq('is_sold', false);
+      query = query.eq('is_available', false).eq('is_sold', false).neq('status', 'HOLD');
       break;
     case 'available':
       query = query.eq('is_available', true).eq('is_sold', false);
+      break;
+    case 'hold':
+      query = query.eq('status', 'HOLD');
       break;
     case 'sold':
       query = query.eq('is_sold', true);

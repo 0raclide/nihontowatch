@@ -21,7 +21,9 @@ export function DealerCTA({ listing, onStatusChange }: DealerCTAProps) {
     onStatusChange,
   });
 
-  const isInventory = !listing.is_available && !listing.is_sold;
+  const status = listing.status?.toUpperCase();
+  const isInventory = status === 'INVENTORY' || status === 'WITHDRAWN';
+  const isHold = status === 'HOLD';
 
   if (isInventory) {
     return (
@@ -47,7 +49,7 @@ export function DealerCTA({ listing, onStatusChange }: DealerCTAProps) {
   return (
     <div className="text-center py-3">
       <span className="text-[11px] text-muted">
-        {listing.is_sold ? t('dealer.statusSold') : t('dealer.statusAvailable')}
+        {listing.is_sold ? t('dealer.statusSold') : isHold ? t('dealer.statusHold') : t('dealer.statusAvailable')}
       </span>
     </div>
   );
