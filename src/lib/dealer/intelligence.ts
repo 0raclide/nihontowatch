@@ -69,6 +69,7 @@ interface CompletenessInput {
   price_raw?: string | null;
   smith?: string | null;
   tosogu_maker?: string | null;
+  artisan_id?: string | null;
   nagasa_cm?: number | null;
   height_cm?: number | null;
   width_cm?: number | null;
@@ -82,7 +83,7 @@ export function computeListingCompleteness(listing: CompletenessInput): DealerCo
   // "Ask" / inquiry items: dealer-created listings with null price_value are intentional
   const isAskPrice = listing.price_value == null && listing.source === 'dealer';
   const hasPrice = (listing.price_value != null && listing.price_value > 0) || isAskPrice;
-  const hasAttribution = !!getAttributionName(listing);
+  const hasAttribution = !!getAttributionName(listing) || !!listing.artisan_id;
   const hasMeasurements = !!(listing.nagasa_cm || listing.height_cm || listing.width_cm);
   const hasDescription = !!(listing.description && listing.description.length > 10);
   const hasCert = !!listing.cert_type;

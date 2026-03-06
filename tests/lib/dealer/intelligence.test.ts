@@ -66,9 +66,10 @@ describe('computeListingCompleteness', () => {
     expect(computeListingCompleteness({ ...baseListing, price_value: null, source: 'scraper' }).items[1].filled).toBe(false);
   });
 
-  it('counts attribution via smith OR tosogu_maker', () => {
+  it('counts attribution via smith OR tosogu_maker OR artisan_id', () => {
     expect(computeListingCompleteness({ ...baseListing, smith: 'Kunimitsu' }).items[2].filled).toBe(true);
     expect(computeListingCompleteness({ ...baseListing, tosogu_maker: 'Goto' }).items[2].filled).toBe(true);
+    expect(computeListingCompleteness({ ...baseListing, artisan_id: 'NOR123' }).items[2].filled).toBe(true);
     expect(computeListingCompleteness({ ...baseListing }).items[2].filled).toBe(false);
   });
 
