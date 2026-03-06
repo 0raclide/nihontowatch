@@ -15,6 +15,8 @@ interface DealerStats {
   clickThroughs: number;
   uniqueVisitors: number;
   listingViews: number;
+  impressions: number;
+  ctr: number; // clicks / impressions
 
   // Engagement metrics
   favorites: number;
@@ -117,6 +119,7 @@ export async function GET(request: NextRequest) {
       dailyClicksResult,
       listingViewsResult,
       listingStatsResult,
+      impressionStatsResult,
     ] = await Promise.all([
       supabase
         .from('dealers')
@@ -159,6 +162,11 @@ export async function GET(request: NextRequest) {
         .select('dealer_id, price_jpy')
         .eq('is_available', true)
         .limit(100000),
+
+      rpc('get_dealer_impression_stats', {
+        p_start: periodStartISO,
+        p_end: periodEndISO,
+      }),
     ]);
 
     // Check for errors — dealers query is critical, others are non-critical
@@ -179,6 +187,7 @@ export async function GET(request: NextRequest) {
       { name: 'daily_clicks', error: dailyClicksResult.error },
       { name: 'listing_views', error: listingViewsResult.error },
       { name: 'listing_stats', error: listingStatsResult.error },
+      { name: 'impression_stats', error: impressionStatsResult.error },
     ];
     const rpcErrors = rpcResults.filter(r => r.error);
     if (rpcErrors.length > 0) {
@@ -195,6 +204,7 @@ export async function GET(request: NextRequest) {
     type FavRow = { dealer_id: number; favorites: number };
     type ListingViewRow = { dealer_id: number; view_count: number; unique_viewers: number };
     type DailyClickRow = { click_date: string; dealer_name: string; clicks: number };
+    type ImpressionRow = { dealer_id: number; total_impressions: number; unique_sessions: number };
 
     const clickStats = (clickStatsResult.data || []) as ClickRow[];
     const prevClickStats = (prevClickStatsResult.data || []) as PrevClickRow[];
@@ -203,6 +213,7 @@ export async function GET(request: NextRequest) {
     const dailyClicks = (dailyClicksResult.data || []) as DailyClickRow[];
     const listingViewStats = (listingViewsResult.data || []) as ListingViewRow[];
     const listingStats = (listingStatsResult.data || []) as { dealer_id: number; price_jpy: number | null }[];
+    const impressionStats = (impressionStatsResult.data || []) as ImpressionRow[];
 
     // Build lookup maps by dealer name → dealer id (for click stats that use dealerName)
     const dealerByName = new Map<string, { id: number; name: string; domain: string }>();
@@ -217,6 +228,7 @@ export async function GET(request: NextRequest) {
       dwellMs: number;
       dwellCount: number;
       listingViews: number;
+      impressions: number;
       favorites: number;
       activeListings: number;
       totalValue: number;
@@ -230,6 +242,7 @@ export async function GET(request: NextRequest) {
         dwellMs: 0,
         dwellCount: 0,
         listingViews: 0,
+        impressions: 0,
         favorites: 0,
         activeListings: 0,
         totalValue: 0,
@@ -279,6 +292,14 @@ export async function GET(request: NextRequest) {
       const stats = dealerMap.get(row.dealer_id);
       if (stats) {
         stats.favorites = Number(row.favorites);
+      }
+    }
+
+    // Process impression stats from RPC
+    for (const row of impressionStats) {
+      const stats = dealerMap.get(row.dealer_id);
+      if (stats) {
+        stats.impressions = Number(row.total_impressions);
       }
     }
 
@@ -332,6 +353,8 @@ export async function GET(request: NextRequest) {
         clickThroughs: stats.clicks,
         uniqueVisitors: stats.uniqueVisitors,
         listingViews: stats.listingViews,
+        impressions: stats.impressions,
+        ctr: stats.impressions > 0 ? Math.round((stats.clicks / stats.impressions) * 10000) / 10000 : 0,
         favorites: stats.favorites,
         totalDwellMs: stats.dwellMs,
         avgDwellMs: stats.dwellCount > 0 ? Math.round(stats.dwellMs / stats.dwellCount) : 0,

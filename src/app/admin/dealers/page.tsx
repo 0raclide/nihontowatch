@@ -10,6 +10,8 @@ interface DealerStats {
   clickThroughs: number;
   uniqueVisitors: number;
   listingViews: number;
+  impressions: number;
+  ctr: number;
   favorites: number;
   avgDwellMs: number;
   activeListings: number;
@@ -44,7 +46,7 @@ export default function DealerAnalyticsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [timeRange, setTimeRange] = useState<TimeRange>('30d');
-  const [sortBy, setSortBy] = useState<'clicks' | 'views' | 'listings' | 'value'>('clicks');
+  const [sortBy, setSortBy] = useState<'clicks' | 'views' | 'impressions' | 'listings' | 'value'>('clicks');
   const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
@@ -93,6 +95,8 @@ export default function DealerAnalyticsPage() {
             return b.clickThroughs - a.clickThroughs;
           case 'views':
             return b.listingViews - a.listingViews;
+          case 'impressions':
+            return b.impressions - a.impressions;
           case 'listings':
             return b.activeListings - a.activeListings;
           case 'value':
@@ -209,7 +213,7 @@ export default function DealerAnalyticsPage() {
             <h2 className="font-semibold text-ink">Dealer Performance</h2>
             <div className="flex items-center gap-2 text-sm">
               <span className="text-muted">Sort by:</span>
-              {(['clicks', 'views', 'listings', 'value'] as const).map((sort) => (
+              {(['clicks', 'views', 'impressions', 'listings', 'value'] as const).map((sort) => (
                 <button
                   key={sort}
                   onClick={() => setSortBy(sort)}
@@ -231,6 +235,8 @@ export default function DealerAnalyticsPage() {
                   <th className="text-right px-4 py-2 font-medium text-charcoal">Clicks</th>
                   <th className="text-right px-4 py-2 font-medium text-charcoal">Trend</th>
                   <th className="text-right px-4 py-2 font-medium text-charcoal">Views</th>
+                  <th className="text-right px-4 py-2 font-medium text-charcoal">Impressions</th>
+                  <th className="text-right px-4 py-2 font-medium text-charcoal">CTR</th>
                   <th className="text-right px-4 py-2 font-medium text-charcoal">Favorites</th>
                   <th className="text-right px-4 py-2 font-medium text-charcoal">Listings</th>
                   <th className="text-right px-4 py-2 font-medium text-charcoal">Clicks/Listing</th>
@@ -262,6 +268,12 @@ export default function DealerAnalyticsPage() {
                     </td>
                     <td className="text-right px-4 py-3 text-charcoal">
                       {formatNumber(dealer.listingViews)}
+                    </td>
+                    <td className="text-right px-4 py-3 text-charcoal">
+                      {formatNumber(dealer.impressions)}
+                    </td>
+                    <td className="text-right px-4 py-3 text-charcoal">
+                      {dealer.ctr > 0 ? `${(dealer.ctr * 100).toFixed(1)}%` : '-'}
                     </td>
                     <td className="text-right px-4 py-3 text-charcoal">
                       {formatNumber(dealer.favorites)}
@@ -329,9 +341,9 @@ export default function DealerAnalyticsPage() {
               onClick={() => {
                 // TODO: Implement CSV export
                 const csv = [
-                  ['Dealer', 'Clicks', 'Views', 'Favorites', 'Listings', 'Clicks/Listing'].join(','),
+                  ['Dealer', 'Clicks', 'Views', 'Impressions', 'CTR', 'Favorites', 'Listings', 'Clicks/Listing'].join(','),
                   ...sortedDealers.map(d =>
-                    [d.dealerName, d.clickThroughs, d.listingViews, d.favorites, d.activeListings, d.clicksPerListing].join(',')
+                    [d.dealerName, d.clickThroughs, d.listingViews, d.impressions, `${(d.ctr * 100).toFixed(1)}%`, d.favorites, d.activeListings, d.clicksPerListing].join(',')
                   )
                 ].join('\n');
                 const blob = new Blob([csv], { type: 'text/csv' });

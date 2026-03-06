@@ -10,6 +10,8 @@ interface DealerStats {
   clickThroughs: number;
   uniqueVisitors: number;
   listingViews: number;
+  impressions: number;
+  ctr: number;
   favorites: number;
   avgDwellMs: number;
   activeListings: number;
