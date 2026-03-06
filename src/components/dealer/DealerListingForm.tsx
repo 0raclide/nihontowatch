@@ -12,6 +12,9 @@ import { generateListingTitle } from '@/lib/dealer/titleGenerator';
 import { SayagakiSection } from './SayagakiSection';
 import { KoshiraeSection, createEmptyKoshirae } from './KoshiraeSection';
 import { KoshiraeMakerSection } from './KoshiraeMakerSection';
+import { CatalogMatchPanel } from './CatalogMatchPanel';
+import type { CatalogPrefillFields } from './CatalogMatchPanel';
+import { CATALOG_CERT_TYPES } from '@/lib/collection/catalogMapping';
 import type { SayagakiEntry, KoshiraeData } from '@/types';
 import { useLocale } from '@/i18n/LocaleContext';
 
@@ -47,6 +50,8 @@ interface DealerDraft {
   images: string[]; // only server URLs, no blob:
   sayagaki: SayagakiEntry[];
   koshirae: KoshiraeData | null;
+  certSession: number | null;
+  catalogObjectUuid: string | null;
   savedAt: number;
 }
 
@@ -113,6 +118,7 @@ export interface DealerListingInitialData {
   images?: string[];
   sayagaki?: SayagakiEntry[] | null;
   koshirae?: KoshiraeData | null;
+  cert_session?: number | null;
   status?: string | null;
 }
 
@@ -247,6 +253,13 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
   const [titleOverride, setTitleOverride] = useState<string | null>(
     initialData?.title || draft?.titleOverride || null
   );
+  const [certSession, setCertSession] = useState<number | null>(
+    initialData?.cert_session ?? draft?.certSession ?? null
+  );
+  const [catalogObjectUuid, setCatalogObjectUuid] = useState<string | null>(
+    draft?.catalogObjectUuid ?? null
+  );
+  const moreDetailsRef = useRef<HTMLDetailsElement>(null);
 
   // Guarded category switch — confirms before clearing filled cross-category fields
   const handleCategoryChange = useCallback((newCategory: 'nihonto' | 'tosogu') => {
@@ -291,6 +304,7 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
         nagasaCm, motohabaCm, sakihabaCm, soriCm,
         meiType, nakagoType, era, province,
         heightCm, widthCm, material, artisanSchool, titleOverride,
+        certSession, catalogObjectUuid,
         images: images.filter(url => !url.startsWith('blob:')),
         sayagaki: sayagaki.map(e => ({
           ...e,
@@ -313,7 +327,8 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
     mode, category, itemType, certType, artisanId, artisanName, artisanKanji,
     priceValue, priceCurrency, isAsk, description,
     nagasaCm, motohabaCm, sakihabaCm, soriCm, meiType, nakagoType, era, province,
-    heightCm, widthCm, material, artisanSchool, titleOverride, images, sayagaki, koshirae,
+    heightCm, widthCm, material, artisanSchool, titleOverride,
+    certSession, catalogObjectUuid, images, sayagaki, koshirae,
   ]);
 
   // Auto-generated title
@@ -335,6 +350,34 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
     setArtisanKanji(null);
     setArtisanSchool(null);
   }, []);
+
+  const showCatalogPanel = !!artisanId && !!certType && CATALOG_CERT_TYPES.has(certType);
+
+  const handleCatalogPrefill = useCallback((fields: CatalogPrefillFields) => {
+    // Only fill empty/default fields — non-destructive
+    if (fields.itemType && !itemType) setItemType(fields.itemType);
+    if (fields.nagasaCm && !nagasaCm) setNagasaCm(fields.nagasaCm);
+    if (fields.soriCm && !soriCm) setSoriCm(fields.soriCm);
+    if (fields.motohabaCm && !motohabaCm) setMotohabaCm(fields.motohabaCm);
+    if (fields.sakihabaCm && !sakihabaCm) setSakihabaCm(fields.sakihabaCm);
+    if (fields.meiType && !meiType) setMeiType(fields.meiType);
+    if (fields.era && !era) setEra(fields.era);
+    if (fields.certSession != null) setCertSession(fields.certSession);
+    if (fields.catalogObjectUuid) setCatalogObjectUuid(fields.catalogObjectUuid);
+
+    // Auto-expand "More Details" if measurements were written
+    const wroteMeasurements = !!(
+      (fields.nagasaCm && !nagasaCm) ||
+      (fields.soriCm && !soriCm) ||
+      (fields.motohabaCm && !motohabaCm) ||
+      (fields.sakihabaCm && !sakihabaCm) ||
+      (fields.meiType && !meiType) ||
+      (fields.era && !era)
+    );
+    if (wroteMeasurements && moreDetailsRef.current && !moreDetailsRef.current.open) {
+      moreDetailsRef.current.open = true;
+    }
+  }, [itemType, nagasaCm, soriCm, motohabaCm, sakihabaCm, meiType, era]);
 
   const handleSubmit = useCallback(async (targetStatus?: 'INVENTORY' | 'AVAILABLE') => {
     setIsSubmitting(true);
@@ -368,6 +411,7 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
         material: category === 'tosogu' ? material : null,
         era: era || null,
         province: province || null,
+        cert_session: certSession,
         sayagaki: sayagaki.length > 0
           ? sayagaki.map(e => ({
               ...e,
@@ -473,7 +517,7 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
     artisanKanji, artisanSchool, priceValue, priceCurrency, isAsk, description,
     nagasaCm, motohabaCm, sakihabaCm, soriCm, meiType, nakagoType, era, province,
     heightCm, widthCm, material, pendingFiles, pendingSayagakiFiles, sayagaki,
-    koshirae, pendingKoshiraeFiles,
+    koshirae, pendingKoshiraeFiles, certSession,
     generatedTitle, titleOverride, router,
   ]);
 
@@ -514,6 +558,8 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
     setMaterial(null);
     setArtisanSchool(null);
     setTitleOverride(null);
+    setCertSession(null);
+    setCatalogObjectUuid(null);
     setImages([]);
     setPendingFiles([]);
     setSayagaki([]);
@@ -768,6 +814,16 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
           )}
         </section>
 
+        {/* 5b. Catalog Match — auto-appears when cert + artisan are set */}
+        {showCatalogPanel && (
+          <CatalogMatchPanel
+            certType={certType!}
+            artisanId={artisanId!}
+            artisanName={artisanName}
+            onPrefill={handleCatalogPrefill}
+          />
+        )}
+
         {/* 6. Title (auto-generated, editable) */}
         <section>
           <label className="block text-[11px] uppercase tracking-wider text-muted mb-2">
@@ -851,7 +907,7 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
         </details>
 
         {/* 9. More Details (collapsed) */}
-        <details>
+        <details ref={moreDetailsRef}>
           <summary className="text-[11px] uppercase tracking-wider text-muted cursor-pointer">
             {t('dealer.moreDetails')}
           </summary>

@@ -155,6 +155,7 @@ export async function POST(request: NextRequest) {
     width_cm,
     material,
     status: requestedStatus, // 'AVAILABLE' or 'INVENTORY' (default)
+    cert_session,
     sayagaki,
     koshirae,
   } = body;
@@ -175,6 +176,7 @@ export async function POST(request: NextRequest) {
     item_type: item_type ?? null,
     item_category: item_category ?? null,
     cert_type: cert_type ?? null,
+    cert_session: cert_session ?? null,
     price_value: price_value ?? null,
     price_currency: price_currency ?? 'JPY',
     description: description ?? null,

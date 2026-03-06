@@ -16,8 +16,28 @@ const COLLECTION_TO_CERT: Record<string, string> = {
   'Jubi': 'Juyo Bijutsuhin',
 };
 
+/** Map cert_type display label → Yuhinkai collection name (inverse of COLLECTION_TO_CERT) */
+export const CERT_TO_COLLECTION: Record<string, string> = {
+  'Juyo': 'Juyo',
+  'Tokubetsu Juyo': 'Tokuju',
+  'Juyo Bijutsuhin': 'Jubi',
+};
+
+/** Cert types that have catalog records in Yuhinkai */
+export const CATALOG_CERT_TYPES = new Set(Object.keys(CERT_TO_COLLECTION));
+
+/** Map gold_mei_status → form mei_type values */
+export const MEI_STATUS_MAP: Record<string, string> = {
+  'signed': 'zaimei',
+  'gaku-mei': 'zaimei',
+  'orikaeshi-mei': 'zaimei',
+  'unsigned': 'mumei',
+  'kinzogan-mei': 'kinzogan-mei',
+  'shu-mei': 'kinzogan-mei',
+};
+
 /** Map gold_form_type → normalized item_type */
-const FORM_TO_ITEM_TYPE: Record<string, string> = {
+export const FORM_TO_ITEM_TYPE: Record<string, string> = {
   'katana': 'katana',
   'wakizashi': 'wakizashi',
   'tanto': 'tanto',

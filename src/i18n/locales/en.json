@@ -245,6 +245,13 @@
   "dealer.showTranslation": "Show translation",
   "dealer.showOriginal": "Show original",
   "dealer.shopPhotoSection": "Our Shop",
+  "dealer.catalogMatch": "NBTHK Catalog Match",
+  "dealer.catalogMatchEmpty": "No catalog records found for {artisan} in {collection}",
+  "dealer.catalogMatchLoading": "Searching NBTHK catalog...",
+  "dealer.catalogMatchSelected": "Catalog record selected — fields auto-filled",
+  "dealer.catalogMatchChange": "Change",
+  "dealer.catalogSession": "Session {volume}",
+  "dealer.catalogSessionAll": "All sessions",
 
   "feedback.reportIssue": "Report an issue",
   "feedback.whatLooksWrong": "What looks wrong?",

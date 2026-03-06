@@ -245,6 +245,13 @@
   "dealer.showTranslation": "翻訳を表示",
   "dealer.showOriginal": "原文を表示",
   "dealer.shopPhotoSection": "店舗紹介",
+  "dealer.catalogMatch": "NBTHK図録照合",
+  "dealer.catalogMatchEmpty": "{collection}に{artisan}の記録が見つかりません",
+  "dealer.catalogMatchLoading": "NBTHK図録を検索中...",
+  "dealer.catalogMatchSelected": "図録記録を選択しました",
+  "dealer.catalogMatchChange": "変更",
+  "dealer.catalogSession": "第{volume}回",
+  "dealer.catalogSessionAll": "全回",
 
   "feedback.reportIssue": "\u554f\u984c\u3092\u5831\u544a",
   "feedback.whatLooksWrong": "\u3069\u3053\u304c\u9593\u9055\u3063\u3066\u3044\u307e\u3059\u304b\uff1f",

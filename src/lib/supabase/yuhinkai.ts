@@ -1664,7 +1664,7 @@ const EXCLUDED_VOLUMES: Array<{ collection: string; volume: number }> = [
 ];
 
 /** Image storage is on a separate Supabase project from the database */
-const IMAGE_STORAGE_BASE = process.env.NEXT_PUBLIC_IMAGE_STORAGE_URL
+export const IMAGE_STORAGE_BASE = process.env.NEXT_PUBLIC_IMAGE_STORAGE_URL
   || 'https://itbhfhyptogxcjbjfzwx.supabase.co';
 
 export interface ArtisanHeroImage {
@@ -1687,7 +1687,7 @@ export interface ArtisanHeroImage {
  *   JuBun  (flat):   JuBun/{item}_combined.jpg
  *   Volume-based:    {Collection}/{volume}_{item}_{type}.jpg
  */
-function buildStoragePaths(collection: string, volume: number, itemNumber: number): Array<{ path: string; imageType: string }> {
+export function buildStoragePaths(collection: string, volume: number, itemNumber: number): Array<{ path: string; imageType: string }> {
   if (FLAT_COLLECTIONS.has(collection)) {
     const suffix = COMBINED_COLLECTIONS.has(collection) ? 'combined' : 'oshigata';
     return [{ path: `${collection}/${itemNumber}_${suffix}.jpg`, imageType: suffix }];
