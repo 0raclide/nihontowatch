@@ -105,6 +105,11 @@ export interface KoshiraeData {
   cert_in_blade_paper: boolean;
   description: string | null;
   images: string[];
+  // Single maker (issaku) — the common case
+  artisan_id: string | null;
+  artisan_name: string | null;
+  artisan_kanji: string | null;
+  // Multi maker — individual component attributions
   components: KoshiraeComponentEntry[];
 }
 

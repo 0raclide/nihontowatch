@@ -5,7 +5,11 @@ import Image from 'next/image';
 import type { KoshiraeData, KoshiraeComponentEntry } from '@/types';
 import { KoshiraeComponentCard } from './KoshiraeComponentCard';
 import { CertPills } from './CertPills';
+import { ArtisanSearchPanel } from '@/components/admin/ArtisanSearchPanel';
+import type { ArtisanSearchResult } from '@/app/api/artisan/search/route';
 import { useLocale } from '@/i18n/LocaleContext';
+
+type MakerMode = 'single' | 'multi';
 
 const MAX_IMAGES = 10;
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
@@ -17,8 +21,15 @@ function createEmptyKoshirae(): KoshiraeData {
     cert_in_blade_paper: false,
     description: null,
     images: [],
+    artisan_id: null,
+    artisan_name: null,
+    artisan_kanji: null,
     components: [],
   };
+}
+
+function inferMode(koshirae: KoshiraeData): MakerMode {
+  return koshirae.components.length > 0 ? 'multi' : 'single';
 }
 
 function createEmptyComponent(): KoshiraeComponentEntry {
@@ -45,11 +56,15 @@ export function KoshiraeSection({ koshirae, itemId, onChange, onPendingFilesChan
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [makerMode, setMakerMode] = useState<MakerMode>(() =>
+    koshirae ? inferMode(koshirae) : 'single'
+  );
 
   const isEditMode = !!itemId;
 
   const handleAdd = useCallback(() => {
     onChange(createEmptyKoshirae());
+    setMakerMode('single');
   }, [onChange]);
 
   const handleRemove = useCallback(() => {
@@ -64,6 +79,36 @@ export function KoshiraeSection({ koshirae, itemId, onChange, onPendingFilesChan
   const handleCertInBladeChange = useCallback((checked: boolean) => {
     if (!koshirae) return;
     onChange({ ...koshirae, cert_in_blade_paper: checked });
+  }, [koshirae, onChange]);
+
+  const handleModeSwitch = useCallback((newMode: MakerMode) => {
+    if (!koshirae || newMode === makerMode) return;
+    if (newMode === 'multi') {
+      // Single → Multi: clear top-level artisan
+      onChange({ ...koshirae, artisan_id: null, artisan_name: null, artisan_kanji: null });
+    } else {
+      // Multi → Single: confirm if components exist
+      if (koshirae.components.length > 0 && !window.confirm(t('dealer.confirmClearComponents'))) {
+        return;
+      }
+      onChange({ ...koshirae, components: [] });
+    }
+    setMakerMode(newMode);
+  }, [koshirae, makerMode, onChange, t]);
+
+  const handleSingleArtisanSelect = useCallback((result: ArtisanSearchResult) => {
+    if (!koshirae) return;
+    onChange({
+      ...koshirae,
+      artisan_id: result.code,
+      artisan_name: result.name_romaji || result.display_name || null,
+      artisan_kanji: result.name_kanji || null,
+    });
+  }, [koshirae, onChange]);
+
+  const handleSingleArtisanClear = useCallback(() => {
+    if (!koshirae) return;
+    onChange({ ...koshirae, artisan_id: null, artisan_name: null, artisan_kanji: null });
   }, [koshirae, onChange]);
 
   const handleDescriptionChange = useCallback((value: string) => {
@@ -258,34 +303,98 @@ export function KoshiraeSection({ koshirae, itemId, onChange, onPendingFilesChan
           <CertPills value={koshirae.cert_type} onChange={handleCertChange} />
         </div>
 
-        {/* Components */}
+        {/* Maker */}
         <div>
           <label className="block text-[10px] uppercase tracking-wider text-muted mb-1.5">
-            {t('dealer.koshiraeComponents')}
+            {t('dealer.koshiraeMaker')}
           </label>
-          {koshirae.components.length > 0 && (
-            <div className="space-y-3 mb-3">
-              {koshirae.components.map((comp, i) => (
-                <KoshiraeComponentCard
-                  key={comp.id}
-                  entry={comp}
-                  index={i}
-                  onChange={(updated) => handleComponentChange(i, updated)}
-                  onRemove={() => handleComponentRemove(i)}
+
+          {/* Mode toggle pills */}
+          <div className="flex gap-1 mb-3">
+            <button
+              type="button"
+              onClick={() => handleModeSwitch('single')}
+              className={`px-3 py-1 rounded-full text-[12px] font-medium transition-colors ${
+                makerMode === 'single'
+                  ? 'bg-gold/20 text-gold border border-gold/30'
+                  : 'bg-surface border border-border/50 text-muted hover:border-gold/20'
+              }`}
+            >
+              {t('dealer.singleMaker')}
+            </button>
+            <button
+              type="button"
+              onClick={() => handleModeSwitch('multi')}
+              className={`px-3 py-1 rounded-full text-[12px] font-medium transition-colors ${
+                makerMode === 'multi'
+                  ? 'bg-gold/20 text-gold border border-gold/30'
+                  : 'bg-surface border border-border/50 text-muted hover:border-gold/20'
+              }`}
+            >
+              {t('dealer.multipleMakers')}
+            </button>
+          </div>
+
+          {/* Single maker mode */}
+          {makerMode === 'single' && (
+            <div>
+              {koshirae.artisan_id ? (
+                <div className="px-3 py-2 bg-surface rounded-lg border border-border/50">
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1">
+                      <div className="text-[13px] font-medium">{koshirae.artisan_name || koshirae.artisan_id}</div>
+                      {koshirae.artisan_kanji && koshirae.artisan_kanji !== koshirae.artisan_name && (
+                        <div className="text-[12px] text-muted">{koshirae.artisan_kanji}</div>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleSingleArtisanClear}
+                      className="text-[11px] text-muted hover:text-red-500 transition-colors"
+                    >
+                      {t('dealer.changeArtisan')}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <ArtisanSearchPanel
+                  domain="tosogu"
+                  onSelect={handleSingleArtisanSelect}
+                  onSetUnknown={handleSingleArtisanClear}
+                  onCancel={handleSingleArtisanClear}
                 />
-              ))}
+              )}
             </div>
           )}
-          <button
-            type="button"
-            onClick={handleAddComponent}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium bg-gold/10 text-gold border border-gold/20 hover:bg-gold/20 transition-colors"
-          >
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            {t('dealer.addComponent')}
-          </button>
+
+          {/* Multi maker mode */}
+          {makerMode === 'multi' && (
+            <div>
+              {koshirae.components.length > 0 && (
+                <div className="space-y-3 mb-3">
+                  {koshirae.components.map((comp, i) => (
+                    <KoshiraeComponentCard
+                      key={comp.id}
+                      entry={comp}
+                      index={i}
+                      onChange={(updated) => handleComponentChange(i, updated)}
+                      onRemove={() => handleComponentRemove(i)}
+                    />
+                  ))}
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={handleAddComponent}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium bg-gold/10 text-gold border border-gold/20 hover:bg-gold/20 transition-colors"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                {t('dealer.addComponent')}
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Description */}

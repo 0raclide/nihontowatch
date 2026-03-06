@@ -46,7 +46,25 @@ export function KoshiraeDisplay({ koshirae }: KoshiraeDisplayProps) {
           </div>
         )}
 
-        {/* Components */}
+        {/* Single maker (issaku) */}
+        {koshirae.artisan_id && (
+          <div className="mb-2 flex items-baseline gap-2">
+            <span className="text-[11px] uppercase tracking-wider text-muted shrink-0">
+              {t('dealer.koshiraeMaker')}
+            </span>
+            <Link
+              href={`/artists/${koshirae.artisan_name?.toLowerCase().replace(/\s+/g, '-')}-${koshirae.artisan_id}`}
+              className="text-[13px] text-gold hover:underline"
+            >
+              {koshirae.artisan_name}
+              {koshirae.artisan_kanji && koshirae.artisan_kanji !== koshirae.artisan_name && (
+                <span className="text-muted ml-1">({koshirae.artisan_kanji})</span>
+              )}
+            </Link>
+          </div>
+        )}
+
+        {/* Components (multi-maker) */}
         {koshirae.components.length > 0 && (
           <div className="space-y-1.5 mb-2">
             {koshirae.components.map((comp) => (
