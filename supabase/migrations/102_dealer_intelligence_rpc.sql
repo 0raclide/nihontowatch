@@ -152,8 +152,8 @@ AS $$
     GROUP BY ld.id
   )
   SELECT
-    unnest(p_listing_ids) AS listing_id,
+    u.lid AS listing_id,
     COALESCE(m.cnt, 0) AS match_count
-  FROM unnest(p_listing_ids) AS lid
-  LEFT JOIN matches m ON m.lid = lid;
+  FROM unnest(p_listing_ids) AS u(lid)
+  LEFT JOIN matches m ON m.lid = u.lid;
 $$;
