@@ -374,6 +374,26 @@ describe('CatalogMatchPanel', () => {
     expect(global.fetch).not.toHaveBeenCalled();
   });
 
+  it('includes catalogImages in prefill fields', async () => {
+    global.fetch = mockFetchSuccess();
+    const onPrefill = vi.fn();
+
+    render(<CatalogMatchPanel {...defaultProps} onPrefill={onPrefill} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Vol. 45 #12')).toBeTruthy();
+    });
+
+    const card = screen.getByText('Vol. 45 #12').closest('button')!;
+    fireEvent.click(card);
+
+    const fields = onPrefill.mock.calls[0][0];
+    expect(fields.catalogImages).toEqual([
+      'https://example.com/Juyo/45_12_oshigata.jpg',
+      'https://example.com/Juyo/45_12_setsumei.jpg',
+    ]);
+  });
+
   it('skips null measurements in prefill', async () => {
     global.fetch = mockFetchSuccess();
     const onPrefill = vi.fn();

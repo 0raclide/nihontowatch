@@ -366,6 +366,18 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
     if (fields.certSession != null) setCertSession(fields.certSession);
     if (fields.catalogObjectUuid) setCatalogObjectUuid(fields.catalogObjectUuid);
 
+    // Prepend catalog images (oshigata + setsumei) to the photo gallery.
+    // Replace any previously-added catalog images (from a prior card selection),
+    // preserving user-uploaded photos. Catalog images are identifiable by the
+    // Yuhinkai storage domain.
+    if (fields.catalogImages?.length) {
+      const isCatalogImage = (url: string) => url.includes('itbhfhyptogxcjbjfzwx.supabase.co');
+      setImages(prev => {
+        const userImages = prev.filter(url => !isCatalogImage(url));
+        return [...fields.catalogImages!, ...userImages];
+      });
+    }
+
     // Auto-expand "More Details" if measurements were written
     const wroteMeasurements = !!(fields.nagasaCm || fields.soriCm || fields.motohabaCm || fields.sakihabaCm || fields.meiType || fields.era);
     if (wroteMeasurements && moreDetailsRef.current && !moreDetailsRef.current.open) {
@@ -416,6 +428,7 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
           ...koshirae,
           images: (koshirae.images || []).filter(url => !url.startsWith('blob:')),
         } : null,
+        images: images.filter(url => !url.startsWith('blob:')),
       };
 
       if (mode === 'add') {

@@ -158,6 +158,7 @@ export async function POST(request: NextRequest) {
     cert_session,
     sayagaki,
     koshirae,
+    images: initialImages,
   } = body;
 
   // Synthetic URL for UNIQUE NOT NULL constraint
@@ -193,7 +194,7 @@ export async function POST(request: NextRequest) {
     is_sold: false,
     page_exists: true,
     is_initial_import: false,
-    images: [],
+    images: Array.isArray(initialImages) && initialImages.length > 0 ? initialImages : [],
     scrape_count: 0,
     sayagaki: Array.isArray(sayagaki) && sayagaki.length > 0
       ? sayagaki.map((entry: Record<string, unknown>) => ({

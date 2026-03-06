@@ -15,6 +15,7 @@ export interface CatalogPrefillFields {
   era?: string;
   certSession?: number;
   catalogObjectUuid?: string;
+  catalogImages?: string[];
 }
 
 interface CatalogMatchPanelProps {
@@ -141,6 +142,9 @@ export function CatalogMatchPanel({ certType, artisanId, artisanName, onPrefill 
 
     // Period → era
     if (item.period) fields.era = item.period;
+
+    // Catalog images (oshigata + setsumei) to prepend to photo gallery
+    if (item.image_urls?.length) fields.catalogImages = item.image_urls;
 
     onPrefill(fields);
   }, [onPrefill]);
