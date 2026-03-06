@@ -35,7 +35,7 @@ export function DealerProfileView({ dealer, stats, featuredListings }: DealerPro
   const secondaryBio = locale === 'ja' ? dealer.bio_en : dealer.bio_ja;
 
   const hasCredentials = dealer.is_nbthk_member || dealer.is_zentosho_member || dealer.has_kobutsusho_license;
-  const hasContact = dealer.contact_email || dealer.phone || dealer.line_id || dealer.instagram_url;
+  const hasContact = dealer.contact_email || dealer.phone || dealer.line_id || dealer.instagram_url || dealer.facebook_url;
   const hasAddress = dealer.address_visible && dealer.city;
   const hasPolicies = (dealer.ships_international !== null && dealer.ships_international !== undefined) ||
     (dealer.english_support !== null && dealer.english_support !== undefined) ||
@@ -43,6 +43,9 @@ export function DealerProfileView({ dealer, stats, featuredListings }: DealerPro
   const hasSpecs = dealer.specializations && dealer.specializations.length > 0;
 
   const displayItems = featuredListings.map(l => listingToDisplayItem(l as any, locale));
+
+  const hasAnyContent = primaryBio || hasCredentials || hasContact || hasAddress ||
+    hasPolicies || hasSpecs || stats.totalListings > 0 || dealer.shop_photo_url;
 
   return (
     <div className="space-y-0">
@@ -106,6 +109,22 @@ export function DealerProfileView({ dealer, stats, featuredListings }: DealerPro
       </div>
 
       <div className="max-w-3xl mx-auto px-4 pt-6 pb-12 space-y-8">
+        {/* Empty state */}
+        {!hasAnyContent && (
+          <div className="text-center py-12">
+            <svg className="w-12 h-12 mx-auto text-muted/40 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+            </svg>
+            <p className="text-muted text-[14px]">{t('dealer.previewBanner')}</p>
+            <Link
+              href="/dealer/profile"
+              className="inline-flex items-center gap-1.5 mt-3 text-[13px] text-gold hover:text-gold-light transition-colors"
+            >
+              {t('dealer.previewEditProfile')} &rarr;
+            </Link>
+          </div>
+        )}
+
         {/* Specializations */}
         {hasSpecs && (
           <div className="flex flex-wrap gap-2">
@@ -274,10 +293,18 @@ export function DealerProfileView({ dealer, stats, featuredListings }: DealerPro
                   external
                 />
               )}
+              {dealer.facebook_url && (
+                <ContactRow
+                  icon={<FacebookIcon />}
+                  label="Facebook"
+                  href={dealer.facebook_url}
+                  external
+                />
+              )}
               {hasAddress && (
                 <ContactRow
                   icon={<LocationIcon />}
-                  label={[dealer.city, country].filter(Boolean).join(', ')}
+                  label={[dealer.address, dealer.city, country].filter(Boolean).join(', ')}
                 />
               )}
             </div>
@@ -326,6 +353,7 @@ export function DealerProfileView({ dealer, stats, featuredListings }: DealerPro
         {/* Shop Photo */}
         {dealer.shop_photo_url && (
           <section>
+            <SectionHeader label={t('dealer.shopPhotoSection')} />
             <div className="rounded-lg overflow-hidden border border-border">
               <div className="relative aspect-[4/3]">
                 <Image
@@ -441,6 +469,14 @@ function InstagramIcon() {
       <rect x="2" y="2" width="20" height="20" rx="5" strokeWidth={1.5} />
       <circle cx="12" cy="12" r="5" strokeWidth={1.5} />
       <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+function FacebookIcon() {
+  return (
+    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
     </svg>
   );
 }
