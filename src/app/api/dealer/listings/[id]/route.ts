@@ -1,5 +1,6 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { verifyDealer } from '@/lib/dealer/auth';
+import { getArtisanEliteStats } from '@/lib/featured/scoring';
 import { NextRequest, NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -131,6 +132,22 @@ export async function PATCH(
 
   if (Object.keys(updates).length === 0) {
     return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 });
+  }
+
+  // Sync elite stats from Yuhinkai when artisan_id changes
+  if (updates.artisan_id && typeof updates.artisan_id === 'string') {
+    updates.artisan_confidence = 'HIGH';
+    updates.artisan_method = 'dealer_manual';
+    const eliteStats = await getArtisanEliteStats(updates.artisan_id);
+    if (eliteStats) {
+      updates.artisan_elite_factor = eliteStats.elite_factor;
+      updates.artisan_elite_count = eliteStats.elite_count;
+      updates.artisan_designation_factor = eliteStats.designation_factor;
+    } else {
+      updates.artisan_elite_factor = 0;
+      updates.artisan_elite_count = 0;
+      updates.artisan_designation_factor = 0;
+    }
   }
 
   const { data, error } = await (serviceClient.from('listings') as any)

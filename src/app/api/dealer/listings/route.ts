@@ -1,5 +1,6 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { verifyDealer } from '@/lib/dealer/auth';
+import { getArtisanEliteStats } from '@/lib/featured/scoring';
 import { NextRequest, NextResponse } from 'next/server';
 import { getArtisanNames } from '@/lib/supabase/yuhinkai';
 import { getArtisanDisplayName, getArtisanDisplayNameKanji, getArtisanAlias } from '@/lib/artisan/displayName';
@@ -240,6 +241,14 @@ export async function POST(request: NextRequest) {
     listingData.artisan_id = artisan_id;
     listingData.artisan_confidence = 'HIGH';
     listingData.artisan_method = 'dealer_manual';
+
+    // Sync elite stats from Yuhinkai so featured score reflects artisan stature
+    const eliteStats = await getArtisanEliteStats(artisan_id);
+    if (eliteStats) {
+      listingData.artisan_elite_factor = eliteStats.elite_factor;
+      listingData.artisan_elite_count = eliteStats.elite_count;
+      listingData.artisan_designation_factor = eliteStats.designation_factor;
+    }
   }
 
   const { data, error } = await (serviceClient.from('listings') as any)

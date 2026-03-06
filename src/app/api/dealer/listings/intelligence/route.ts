@@ -196,20 +196,39 @@ async function getScoreData(
     };
   }
 
-  // Fetch all available listing scores, sorted descending
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (serviceClient.from('listings') as any)
-    .select('featured_score')
-    .eq('is_available', true)
-    .not('featured_score', 'is', null)
-    .gt('featured_score', 0)
-    .order('featured_score', { ascending: false });
+  // Fetch all available listing scores, sorted descending.
+  // Supabase default limit is 1000 — must paginate to get all scores.
+  const allScores: number[] = [];
+  const PAGE_SIZE = 1000;
+  let offset = 0;
+  let hasMore = true;
 
-  if (error || !data || data.length === 0) {
+  while (hasMore) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: page, error: pageErr } = await (serviceClient.from('listings') as any)
+      .select('featured_score')
+      .eq('is_available', true)
+      .not('featured_score', 'is', null)
+      .gt('featured_score', 0)
+      .order('featured_score', { ascending: false })
+      .range(offset, offset + PAGE_SIZE - 1);
+
+    if (pageErr || !page || page.length === 0) {
+      hasMore = false;
+    } else {
+      for (const r of page) {
+        allScores.push(r.featured_score);
+      }
+      offset += PAGE_SIZE;
+      if (page.length < PAGE_SIZE) hasMore = false;
+    }
+  }
+
+  if (allScores.length === 0) {
     return { p10: 100, p25: 50, p50: 20, sortedScores: [], totalCount: 0 };
   }
 
-  const scores: number[] = data.map((r: { featured_score: number }) => r.featured_score);
+  const scores = allScores;
   const p10 = scores[Math.floor(scores.length * 0.1)] ?? 100;
   const p25 = scores[Math.floor(scores.length * 0.25)] ?? 50;
   const p50 = scores[Math.floor(scores.length * 0.5)] ?? 20;
