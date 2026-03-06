@@ -25,9 +25,24 @@ import { useCallback, useEffect, useRef } from 'react';
 import { DwellTracker, type DwellEvent } from './DwellTracker';
 import { MIN_INTERSECTION_RATIO, FLUSH_INTERVAL_MS } from './constants';
 
+/** Metadata attached to a tracked element for impression reporting */
+export interface TrackingMeta {
+  position?: number;
+  dealerId?: number;
+}
+
+/** Fired once per listing on first visibility */
+export interface ImpressionEvent {
+  listingId: number;
+  position?: number;
+  dealerId?: number;
+}
+
 export interface ViewportTrackingOptions {
   /** Callback when a dwell event is ready to report */
   onDwell?: (event: DwellEvent) => void;
+  /** Callback when a listing becomes visible for the first time */
+  onImpression?: (event: ImpressionEvent) => void;
   /** Whether tracking is enabled (respects privacy opt-out) */
   enabled?: boolean;
   /** Minimum intersection ratio to count as visible */
@@ -37,8 +52,8 @@ export interface ViewportTrackingOptions {
 }
 
 export interface ViewportTrackingResult {
-  /** Register an element for tracking */
-  trackElement: (element: HTMLElement, listingId: number) => void;
+  /** Register an element for tracking (with optional metadata for impressions) */
+  trackElement: (element: HTMLElement, listingId: number, meta?: TrackingMeta) => void;
   /** Unregister an element */
   untrackElement: (element: HTMLElement) => void;
   /** Get current dwell time for a listing */
@@ -58,18 +73,25 @@ export interface ViewportTrackingResult {
 export function useViewportTracking(
   options: ViewportTrackingOptions = {}
 ): ViewportTrackingResult {
-  const { onDwell, enabled = true, threshold = MIN_INTERSECTION_RATIO, flushInterval = FLUSH_INTERVAL_MS } = options;
+  const { onDwell, onImpression, enabled = true, threshold = MIN_INTERSECTION_RATIO, flushInterval = FLUSH_INTERVAL_MS } = options;
 
   // Refs for stable references across renders
   const trackerRef = useRef<DwellTracker | null>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
   const elementMapRef = useRef<Map<HTMLElement, number>>(new Map());
+  const elementMetaRef = useRef<Map<HTMLElement, TrackingMeta>>(new Map());
+  const impressedRef = useRef<Set<number>>(new Set());
   const callbackRef = useRef(onDwell);
+  const impressionCallbackRef = useRef(onImpression);
 
-  // Keep callback ref updated
+  // Keep callback refs updated
   useEffect(() => {
     callbackRef.current = onDwell;
   }, [onDwell]);
+
+  useEffect(() => {
+    impressionCallbackRef.current = onImpression;
+  }, [onImpression]);
 
   // Initialize tracker
   useEffect(() => {
@@ -96,10 +118,24 @@ export function useViewportTracking(
         if (!tracker) return;
 
         for (const entry of entries) {
-          const listingId = elementMapRef.current.get(
-            entry.target as HTMLElement
-          );
+          const el = entry.target as HTMLElement;
+          const listingId = elementMapRef.current.get(el);
           if (listingId === undefined) continue;
+
+          // Fire impression on first visibility (before dwell threshold)
+          if (
+            entry.isIntersecting &&
+            entry.intersectionRatio >= threshold &&
+            !impressedRef.current.has(listingId)
+          ) {
+            impressedRef.current.add(listingId);
+            const meta = elementMetaRef.current.get(el);
+            impressionCallbackRef.current?.({
+              listingId,
+              position: meta?.position,
+              dealerId: meta?.dealerId,
+            });
+          }
 
           tracker.handleIntersection(
             listingId,
@@ -163,11 +199,14 @@ export function useViewportTracking(
   }, [enabled]);
 
   const trackElement = useCallback(
-    (element: HTMLElement, listingId: number) => {
+    (element: HTMLElement, listingId: number, meta?: TrackingMeta) => {
       if (!enabled || !observerRef.current) return;
 
       // Store mapping
       elementMapRef.current.set(element, listingId);
+      if (meta) {
+        elementMetaRef.current.set(element, meta);
+      }
       // Start observing
       observerRef.current.observe(element);
     },
@@ -177,8 +216,9 @@ export function useViewportTracking(
   const untrackElement = useCallback((element: HTMLElement) => {
     // Remove from observer
     observerRef.current?.unobserve(element);
-    // Clean up mapping
+    // Clean up mappings
     elementMapRef.current.delete(element);
+    elementMetaRef.current.delete(element);
   }, []);
 
   const getDwellTime = useCallback((listingId: number) => {

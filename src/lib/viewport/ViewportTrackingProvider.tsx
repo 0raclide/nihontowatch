@@ -21,7 +21,7 @@ import {
   useMemo,
   type ReactNode,
 } from 'react';
-import { useViewportTracking, type ViewportTrackingResult } from './useViewportTracking';
+import { useViewportTracking, type TrackingMeta, type ImpressionEvent } from './useViewportTracking';
 import { useActivityTrackerOptional } from '@/lib/tracking/ActivityTracker';
 import type { DwellEvent } from './DwellTracker';
 
@@ -30,8 +30,8 @@ import type { DwellEvent } from './DwellTracker';
 // =============================================================================
 
 export interface ViewportTrackingContextValue {
-  /** Register an element for viewport tracking */
-  trackElement: (element: HTMLElement, listingId: number) => void;
+  /** Register an element for viewport tracking (with optional metadata for impressions) */
+  trackElement: (element: HTMLElement, listingId: number, meta?: TrackingMeta) => void;
   /** Unregister an element */
   untrackElement: (element: HTMLElement) => void;
   /** Get dwell time for a listing */
@@ -81,10 +81,22 @@ export function ViewportTrackingProvider({
     [activityTracker]
   );
 
+  // Handle impression events by forwarding to activity tracker
+  const handleImpression = useCallback(
+    (event: ImpressionEvent) => {
+      activityTracker?.trackListingImpression(event.listingId, {
+        position: event.position,
+        dealerId: event.dealerId,
+      });
+    },
+    [activityTracker]
+  );
+
   // Use the core viewport tracking hook
   const tracking = useViewportTracking({
     enabled: isEnabled,
     onDwell: handleDwell,
+    onImpression: handleImpression,
   });
 
   // Wrap flush to be synchronous

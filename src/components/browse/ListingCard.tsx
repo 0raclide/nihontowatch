@@ -53,6 +53,7 @@ interface ListingCardProps {
   fontSize?: 'compact' | 'standard' | 'large'; // Font size preference (both views)
   imageAspect?: string; // Override image aspect ratio (default: 'aspect-[3/4]')
   focalPosition?: string; // Pre-computed object-position (e.g. "45.2% 32.1%") from parent
+  gridPosition?: number; // Absolute position in browse results (for impression tracking)
   onClick?: (listing: DisplayItem) => void; // Override default QuickView open behavior (used by collection)
 }
 
@@ -379,6 +380,7 @@ export const ListingCard = memo(function ListingCard({
   fontSize = 'large',
   imageAspect,
   focalPosition,
+  gridPosition,
   onClick,
 }: ListingCardProps) {
   // Mobile view helpers — only affect base (mobile) classes; sm:/lg: overrides restore tablet/desktop
@@ -447,11 +449,14 @@ export const ListingCard = memo(function ListingCard({
     const element = cardRef.current;
     if (!element || !viewportTracking) return;
 
-    viewportTracking.trackElement(element, Number(listing.id));
+    viewportTracking.trackElement(element, Number(listing.id), {
+      position: gridPosition,
+      dealerId: listing.dealer_id ?? undefined,
+    });
     return () => {
       viewportTracking.untrackElement(element);
     };
-  }, [listing.id, viewportTracking]);
+  }, [listing.id, listing.dealer_id, gridPosition, viewportTracking]);
 
   // Memoize expensive computations that derive from listing data
   // These run on every render otherwise, and with 100 cards that's significant

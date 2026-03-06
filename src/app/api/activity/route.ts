@@ -177,6 +177,7 @@ export async function POST(request: NextRequest) {
     await Promise.allSettled([
       fanOutDealerClicks(serviceClient, validEvents, sessionId, userId, visitorId),
       fanOutListingViews(serviceClient, validEvents, sessionId, userId),
+      fanOutListingImpressions(serviceClient, validEvents, sessionId, visitorId),
       fanOutSearches(serviceClient, validEvents, sessionId, userId)
         .then(() => fanOutSearchClicks(serviceClient, validEvents)),
     ]);
@@ -342,6 +343,44 @@ async function fanOutSearchClicks(
 
     if (error && error.code !== '42P01') {
       logger.error('Fan-out search_click update failed', { error, correlationId });
+    }
+  }
+}
+
+// =============================================================================
+// Fan-out: listing_impression → listing_impressions table
+// =============================================================================
+
+async function fanOutListingImpressions(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any,
+  events: ActivityEvent[],
+  sessionId: string,
+  visitorId?: string,
+): Promise<void> {
+  const impressions = events.filter(e => e.type === 'listing_impression');
+  if (impressions.length === 0) return;
+
+  for (const event of impressions) {
+    const data = extractEventData(event);
+    const now = new Date(event.timestamp);
+    const impressionDate = now.toISOString().split('T')[0]; // YYYY-MM-DD
+
+    const { error } = await supabase
+      .from('listing_impressions')
+      .insert({
+        listing_id: data.listingId,
+        dealer_id: data.dealerId || 0,
+        session_id: sessionId,
+        visitor_id: visitorId || null,
+        position: data.position ?? null,
+        impression_date: impressionDate,
+        created_at: event.timestamp,
+      });
+
+    // Ignore unique constraint violations (dedup: one per listing/session/day)
+    if (error && error.code !== '23505' && error.code !== '42P01') {
+      logger.error('Fan-out listing_impressions failed', { error });
     }
   }
 }

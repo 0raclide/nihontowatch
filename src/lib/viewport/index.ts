@@ -34,6 +34,8 @@ export { useViewportTracking } from './useViewportTracking';
 export type {
   ViewportTrackingOptions,
   ViewportTrackingResult,
+  TrackingMeta,
+  ImpressionEvent,
 } from './useViewportTracking';
 
 // Context provider

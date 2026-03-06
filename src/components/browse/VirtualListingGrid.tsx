@@ -384,6 +384,7 @@ export function VirtualListingGrid({
           currency={currency}
           exchangeRates={exchangeRates}
           priority={startIndex + idx < PRIORITY_COUNT}
+          gridPosition={startIndex + idx}
           searchId={searchId}
           isAdmin={isAdmin}
           mobileView={mobileView}

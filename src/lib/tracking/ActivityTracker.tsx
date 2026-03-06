@@ -43,6 +43,7 @@ import type {
   PageViewEvent,
   ListingViewEvent,
   ListingDetailViewEvent,
+  ListingImpressionEvent,
   SearchEvent,
   SearchClickEvent,
   FilterChangeEvent,
@@ -172,6 +173,10 @@ export interface ActivityTracker {
     listingId: number,
     dwellMs: number,
     extra?: { intersectionRatio?: number; isRevisit?: boolean }
+  ) => void;
+  trackListingImpression: (
+    listingId: number,
+    extra?: { position?: number; dealerId?: number }
   ) => void;
   trackQuickViewPanelToggle: (
     listingId: number,
@@ -584,6 +589,26 @@ export function ActivityTrackerProvider({
     [createBaseEvent, queueEvent, isSuppressed]
   );
 
+  const trackListingImpression = useCallback(
+    (
+      listingId: number,
+      extra?: { position?: number; dealerId?: number }
+    ) => {
+      if (isSuppressed) return;
+
+      const event: ListingImpressionEvent = {
+        ...createBaseEvent(),
+        type: 'listing_impression',
+        listingId,
+        dealerId: extra?.dealerId ?? 0,
+        position: extra?.position ?? 0,
+      };
+
+      queueEvent(event);
+    },
+    [createBaseEvent, queueEvent, isSuppressed]
+  );
+
   const trackQuickViewPanelToggle = useCallback(
     (
       listingId: number,
@@ -769,6 +794,7 @@ export function ActivityTrackerProvider({
       trackExternalLinkClick,
       trackDealerClick,
       trackViewportDwell,
+      trackListingImpression,
       trackQuickViewPanelToggle,
       trackQuickViewOpen,
       trackImagePinchZoom,
@@ -791,6 +817,7 @@ export function ActivityTrackerProvider({
       trackExternalLinkClick,
       trackDealerClick,
       trackViewportDwell,
+      trackListingImpression,
       trackQuickViewPanelToggle,
       trackQuickViewOpen,
       trackImagePinchZoom,
