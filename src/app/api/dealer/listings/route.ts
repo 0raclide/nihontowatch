@@ -248,7 +248,7 @@ export async function POST(request: NextRequest) {
     listingData.artisan_method = 'dealer_manual';
 
     // Sync elite stats from Yuhinkai so featured score reflects artisan stature
-    const eliteStats = await getArtisanEliteStats(artisan_id);
+    const eliteStats = await getArtisanEliteStats(artisan_id as string);
     if (eliteStats) {
       listingData.artisan_elite_factor = eliteStats.elite_factor;
       listingData.artisan_elite_count = eliteStats.elite_count;
