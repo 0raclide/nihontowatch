@@ -148,12 +148,13 @@ export function NewSinceLastVisitProvider({ children }: { children: ReactNode })
 
     try {
       await fetch('/api/user/update-last-visit', { method: 'POST' });
-      // Refresh the count after recording visit
-      await fetchCount();
+      // Don't re-fetch count here — that would reset count to 0 and hide
+      // the banner before the user can act on it. The banner stays visible
+      // until the user clicks "View new items" or dismisses it.
     } catch (error) {
       console.error('Failed to record visit:', error);
     }
-  }, [user, fetchCount]);
+  }, [user]);
 
   // Memoize context value
   const value: NewSinceLastVisitContextValue = useMemo(
