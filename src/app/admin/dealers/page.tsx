@@ -45,16 +45,17 @@ export default function DealerAnalyticsPage() {
   const [error, setError] = useState<string | null>(null);
   const [timeRange, setTimeRange] = useState<TimeRange>('30d');
   const [sortBy, setSortBy] = useState<'clicks' | 'views' | 'listings' | 'value'>('clicks');
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
     async function fetchAnalytics() {
       setLoading(true);
       try {
         const response = await fetch(`/api/admin/dealers/analytics?range=${timeRange}`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch analytics');
-        }
         const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data?.error || `HTTP ${response.status}: Failed to fetch analytics`);
+        }
         setAnalytics(data);
         setError(null);
       } catch (err) {
@@ -64,7 +65,7 @@ export default function DealerAnalyticsPage() {
       }
     }
     fetchAnalytics();
-  }, [timeRange]);
+  }, [timeRange, retryCount]);
 
   const formatNumber = (n: number) => {
     return new Intl.NumberFormat('en-US').format(n);
@@ -126,7 +127,13 @@ export default function DealerAnalyticsPage() {
         <div className="max-w-7xl mx-auto">
           <div className="bg-red-50 border border-red-200 rounded-lg p-4">
             <h2 className="text-red-800 font-semibold">Error loading analytics</h2>
-            <p className="text-red-600">{error}</p>
+            <p className="text-red-600 text-sm mt-1">{error}</p>
+            <button
+              onClick={() => setRetryCount(c => c + 1)}
+              className="mt-3 px-3 py-1.5 text-sm bg-red-100 text-red-800 rounded hover:bg-red-200"
+            >
+              Retry
+            </button>
           </div>
         </div>
       </div>

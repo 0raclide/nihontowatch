@@ -161,9 +161,17 @@ export async function GET(request: NextRequest) {
         .limit(100000),
     ]);
 
-    // Check for errors in any query
-    const rpcErrors = [
-      { name: 'dealers', error: dealersResult.error },
+    // Check for errors — dealers query is critical, others are non-critical
+    if (dealersResult.error) {
+      logger.error('Dealer analytics: dealers query failed', { error: dealersResult.error });
+      return NextResponse.json(
+        { error: `Database error: dealers query failed — ${dealersResult.error.message}` },
+        { status: 500 }
+      );
+    }
+
+    // Log non-critical RPC errors but continue with partial data
+    const rpcResults = [
       { name: 'click_stats', error: clickStatsResult.error },
       { name: 'prev_click_stats', error: prevClickStatsResult.error },
       { name: 'dwell_stats', error: dwellStatsResult.error },
@@ -171,13 +179,12 @@ export async function GET(request: NextRequest) {
       { name: 'daily_clicks', error: dailyClicksResult.error },
       { name: 'listing_views', error: listingViewsResult.error },
       { name: 'listing_stats', error: listingStatsResult.error },
-    ].filter(r => r.error);
-
+    ];
+    const rpcErrors = rpcResults.filter(r => r.error);
     if (rpcErrors.length > 0) {
-      logger.error('Dealer analytics query errors', {
-        errors: rpcErrors.map(r => ({ name: r.name, error: r.error })),
+      logger.error('Dealer analytics: some RPC queries failed (continuing with partial data)', {
+        errors: rpcErrors.map(r => ({ name: r.name, message: r.error?.message, code: r.error?.code })),
       });
-      return NextResponse.json({ error: 'Database error' }, { status: 500 });
     }
 
     const dealers = dealersResult.data as { id: number; name: string; domain: string; is_active: boolean }[] | null;
@@ -398,7 +405,8 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(analytics);
   } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
     logger.logError('Dealer analytics error', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ error: `Internal server error: ${message}` }, { status: 500 });
   }
 }

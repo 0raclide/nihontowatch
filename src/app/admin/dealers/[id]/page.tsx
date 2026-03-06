@@ -50,10 +50,10 @@ export default function DealerReportPage({ params }: { params: Promise<{ id: str
       setLoading(true);
       try {
         const response = await fetch(`/api/admin/dealers/analytics?range=${timeRange}&dealerId=${id}`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch analytics');
-        }
         const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data?.error || `HTTP ${response.status}: Failed to fetch analytics`);
+        }
         setAnalytics(data);
         setError(null);
       } catch (err) {
