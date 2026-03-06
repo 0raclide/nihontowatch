@@ -484,7 +484,7 @@ export default function ListingDetailPage({ initialData }: ListingDetailPageProp
             {/* Koshirae */}
             {listing.koshirae && (
               <div className="mb-6">
-                <KoshiraeDisplay koshirae={listing.koshirae} />
+                <KoshiraeDisplay koshirae={listing.koshirae} hideHeading={listing.item_type?.toLowerCase() === 'koshirae'} />
               </div>
             )}
 

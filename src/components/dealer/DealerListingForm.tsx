@@ -10,7 +10,8 @@ import { ArtisanSearchPanel } from '@/components/admin/ArtisanSearchPanel';
 import type { ArtisanSearchResult } from '@/app/api/artisan/search/route';
 import { generateListingTitle } from '@/lib/dealer/titleGenerator';
 import { SayagakiSection } from './SayagakiSection';
-import { KoshiraeSection } from './KoshiraeSection';
+import { KoshiraeSection, createEmptyKoshirae } from './KoshiraeSection';
+import { KoshiraeMakerSection } from './KoshiraeMakerSection';
 import type { SayagakiEntry, KoshiraeData } from '@/types';
 import { useLocale } from '@/i18n/LocaleContext';
 
@@ -271,6 +272,13 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
 
   const canDelete = mode === 'edit' && initialData?.id &&
     (initialData?.status === 'INVENTORY' || initialData?.status === 'WITHDRAWN');
+
+  // Auto-init koshirae state when itemType becomes 'koshirae'
+  useEffect(() => {
+    if (itemType === 'koshirae' && !koshirae) {
+      setKoshirae(createEmptyKoshirae());
+    }
+  }, [itemType, koshirae]);
 
   // Debounced draft save (add mode only)
   useEffect(() => {
@@ -684,20 +692,48 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
           }}
         />
 
-        {/* 4c. Koshirae */}
-        <KoshiraeSection
-          koshirae={koshirae}
-          itemId={mode === 'edit' && initialData?.id ? String(initialData.id) : undefined}
-          onChange={setKoshirae}
-          onPendingFilesChange={setPendingKoshiraeFiles}
-        />
+        {/* 4c. Koshirae (companion — hidden when item IS a koshirae) */}
+        {itemType !== 'koshirae' && (
+          <KoshiraeSection
+            koshirae={koshirae}
+            itemId={mode === 'edit' && initialData?.id ? String(initialData.id) : undefined}
+            onChange={setKoshirae}
+            onPendingFilesChange={setPendingKoshiraeFiles}
+          />
+        )}
 
         {/* 5. Artisan */}
         <section>
           <label className="block text-[11px] uppercase tracking-wider text-muted mb-2">
             {t('dealer.artisan')}
           </label>
-          {artisanId ? (
+          {itemType === 'koshirae' ? (
+            <KoshiraeMakerSection
+              artisanId={artisanId}
+              artisanName={artisanName}
+              artisanKanji={artisanKanji}
+              components={koshirae?.components ?? []}
+              onArtisanChange={(id, name, kanji) => {
+                setArtisanId(id);
+                setArtisanName(name);
+                setArtisanKanji(kanji);
+                setKoshirae(prev => {
+                  const base = prev ?? createEmptyKoshirae();
+                  return { ...base, artisan_id: id, artisan_name: name, artisan_kanji: kanji };
+                });
+              }}
+              onComponentsChange={(components) => {
+                // Multi mode: clear single artisan, store components
+                setArtisanId(null);
+                setArtisanName(null);
+                setArtisanKanji(null);
+                setKoshirae(prev => {
+                  const base = prev ?? createEmptyKoshirae();
+                  return { ...base, components, artisan_id: null, artisan_name: null, artisan_kanji: null };
+                });
+              }}
+            />
+          ) : artisanId ? (
             <div className="px-3 py-2 bg-surface rounded-lg border border-border/50">
               <div className="flex items-center gap-2">
                 <div className="flex-1">

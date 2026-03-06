@@ -219,7 +219,7 @@ export function QuickViewContent({
 
         {/* Koshirae */}
         {listing.koshirae && (
-          <KoshiraeDisplay koshirae={listing.koshirae} />
+          <KoshiraeDisplay koshirae={listing.koshirae} hideHeading={listing.item_type?.toLowerCase() === 'koshirae'} />
         )}
 
         {/* Description slot */}

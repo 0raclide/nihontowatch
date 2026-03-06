@@ -17,18 +17,21 @@ const COMPONENT_TYPE_LABELS: Record<KoshiraeComponentType, string> = {
 
 interface KoshiraeDisplayProps {
   koshirae: KoshiraeData;
+  hideHeading?: boolean;
 }
 
-export function KoshiraeDisplay({ koshirae }: KoshiraeDisplayProps) {
+export function KoshiraeDisplay({ koshirae, hideHeading }: KoshiraeDisplayProps) {
   const { t } = useLocale();
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 
   return (
     <>
       <div className="px-4 py-3 lg:px-5 border-b border-border">
-        <div className="text-[10px] uppercase tracking-wider text-muted font-medium mb-2">
-          {t('dealer.koshirae')}
-        </div>
+        {!hideHeading && (
+          <div className="text-[10px] uppercase tracking-wider text-muted font-medium mb-2">
+            {t('dealer.koshirae')}
+          </div>
+        )}
 
         {/* Certification info */}
         {(koshirae.cert_type || koshirae.cert_in_blade_paper) && (
