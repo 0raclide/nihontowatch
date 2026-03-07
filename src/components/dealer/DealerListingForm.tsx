@@ -10,6 +10,7 @@ import { ArtisanSearchPanel } from '@/components/admin/ArtisanSearchPanel';
 import type { ArtisanSearchResult } from '@/app/api/artisan/search/route';
 import { generateListingTitle } from '@/lib/dealer/titleGenerator';
 import { SayagakiSection } from './SayagakiSection';
+import { HakogakiSection } from './HakogakiSection';
 import { KoshiraeSection, createEmptyKoshirae } from './KoshiraeSection';
 import { KoshiraeMakerSection } from './KoshiraeMakerSection';
 import { ProvenanceSection } from './ProvenanceSection';
@@ -17,7 +18,7 @@ import { KiwameSection } from './KiwameSection';
 import { CatalogMatchPanel } from './CatalogMatchPanel';
 import type { CatalogPrefillFields } from './CatalogMatchPanel';
 import { CATALOG_CERT_TYPES } from '@/lib/collection/catalogMapping';
-import type { SayagakiEntry, KoshiraeData, ProvenanceEntry, KiwameEntry } from '@/types';
+import type { SayagakiEntry, HakogakiEntry, KoshiraeData, ProvenanceEntry, KiwameEntry } from '@/types';
 import { useLocale } from '@/i18n/LocaleContext';
 
 const STORAGE_KEY_CATEGORY = 'nw-dealer-category';
@@ -51,6 +52,7 @@ interface DealerDraft {
   titleOverride: string | null;
   images: string[]; // only server URLs, no blob:
   sayagaki: SayagakiEntry[];
+  hakogaki: HakogakiEntry[];
   koshirae: KoshiraeData | null;
   provenance: ProvenanceEntry[];
   kiwame: KiwameEntry[];
@@ -66,7 +68,7 @@ function isDraftSubstantive(d: DealerDraft): boolean {
     d.nagasaCm || d.motohabaCm || d.sakihabaCm || d.soriCm ||
     d.heightCm || d.widthCm || d.material ||
     d.meiType || d.era || d.province || d.artisanSchool ||
-    d.sayagaki?.length || d.koshirae ||
+    d.sayagaki?.length || d.hakogaki?.length || d.koshirae ||
     d.provenance?.length || d.kiwame?.length
   );
 }
@@ -122,6 +124,7 @@ export interface DealerListingInitialData {
   material?: string | null;
   images?: string[];
   sayagaki?: SayagakiEntry[] | null;
+  hakogaki?: HakogakiEntry[] | null;
   koshirae?: KoshiraeData | null;
   provenance?: ProvenanceEntry[] | null;
   kiwame?: KiwameEntry[] | null;
@@ -245,6 +248,12 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
   const [pendingSayagakiFiles, setPendingSayagakiFiles] = useState<
     Map<string, File[]>
   >(new Map());
+  const [hakogaki, setHakogaki] = useState<HakogakiEntry[]>(
+    initialData?.hakogaki || draft?.hakogaki || []
+  );
+  const [pendingHakogakiFiles, setPendingHakogakiFiles] = useState<
+    Map<string, File[]>
+  >(new Map());
   const [koshirae, setKoshirae] = useState<KoshiraeData | null>(
     initialData?.koshirae || draft?.koshirae || null
   );
@@ -281,14 +290,15 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
   const handleCategoryChange = useCallback((newCategory: 'nihonto' | 'tosogu') => {
     if (newCategory === category) return;
     const wouldLoseData = newCategory === 'nihonto'
-      ? !!(heightCm || widthCm || material)
-      : !!(nagasaCm || motohabaCm || sakihabaCm || soriCm || meiType || nakagoType.length);
+      ? !!(heightCm || widthCm || material || hakogaki.length)
+      : !!(nagasaCm || motohabaCm || sakihabaCm || soriCm || meiType || nakagoType.length || sayagaki.length);
     if (wouldLoseData && !window.confirm(t('dealer.confirmCategorySwitch'))) return;
     setCategory(newCategory);
     if (newCategory === 'nihonto') {
       setHeightCm('');
       setWidthCm('');
       setMaterial(null);
+      setHakogaki([]);
     } else {
       setNagasaCm('');
       setMotohabaCm('');
@@ -296,8 +306,9 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
       setSoriCm('');
       setMeiType(null);
       setNakagoType([]);
+      setSayagaki([]);
     }
-  }, [category, heightCm, widthCm, material, nagasaCm, motohabaCm, sakihabaCm, soriCm, meiType, nakagoType, t]);
+  }, [category, heightCm, widthCm, material, hakogaki, nagasaCm, motohabaCm, sakihabaCm, soriCm, meiType, nakagoType, sayagaki, t]);
 
   const canDelete = mode === 'edit' && initialData?.id &&
     (initialData?.status === 'INVENTORY' || initialData?.status === 'WITHDRAWN');
@@ -326,6 +337,10 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
           ...e,
           images: (e.images || []).filter(url => !url.startsWith('blob:')),
         })),
+        hakogaki: hakogaki.map(e => ({
+          ...e,
+          images: (e.images || []).filter(url => !url.startsWith('blob:')),
+        })),
         koshirae: koshirae ? {
           ...koshirae,
           images: (koshirae.images || []).filter(url => !url.startsWith('blob:')),
@@ -349,7 +364,7 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
     priceValue, priceCurrency, isAsk, description,
     nagasaCm, motohabaCm, sakihabaCm, soriCm, meiType, nakagoType, era, province,
     heightCm, widthCm, material, artisanSchool, titleOverride,
-    certSession, catalogObjectUuid, images, sayagaki, koshirae,
+    certSession, catalogObjectUuid, images, sayagaki, hakogaki, koshirae,
     provenance, kiwame,
   ]);
 
@@ -440,8 +455,14 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
         era: era || null,
         province: province || null,
         cert_session: certSession,
-        sayagaki: sayagaki.length > 0
+        sayagaki: category === 'nihonto' && sayagaki.length > 0
           ? sayagaki.map(e => ({
+              ...e,
+              images: (e.images || []).filter(url => !url.startsWith('blob:')),
+            }))
+          : null,
+        hakogaki: category === 'tosogu' && hakogaki.length > 0
+          ? hakogaki.map(e => ({
               ...e,
               images: (e.images || []).filter(url => !url.startsWith('blob:')),
             }))
@@ -500,6 +521,26 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
               formData.append('sayagakiId', sayagakiId);
               try {
                 await fetch('/api/dealer/sayagaki-images', {
+                  method: 'POST',
+                  body: formData,
+                });
+              } catch {
+                // Best effort — don't block success
+              }
+            }
+          }
+        }
+
+        // Upload pending hakogaki images
+        if (pendingHakogakiFiles.size > 0) {
+          for (const [hakogakiId, files] of pendingHakogakiFiles) {
+            for (const file of files) {
+              const formData = new FormData();
+              formData.append('file', file, file.name);
+              formData.append('itemId', String(listing.id));
+              formData.append('hakogakiId', hakogakiId);
+              try {
+                await fetch('/api/dealer/hakogaki-images', {
                   method: 'POST',
                   body: formData,
                 });
@@ -573,7 +614,8 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
     artisanKanji, artisanSchool, priceValue, priceCurrency, isAsk, description,
     nagasaCm, motohabaCm, sakihabaCm, soriCm, meiType, nakagoType, era, province,
     heightCm, widthCm, material, pendingFiles, pendingSayagakiFiles, sayagaki,
-    koshirae, pendingKoshiraeFiles, provenance, pendingProvenanceFiles, kiwame,
+    pendingHakogakiFiles, hakogaki, koshirae, pendingKoshiraeFiles, provenance,
+    pendingProvenanceFiles, kiwame,
     certSession, generatedTitle, titleOverride, router,
   ]);
 
@@ -779,23 +821,42 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
           <CertPills value={certType} onChange={setCertType} />
         </section>
 
-        {/* 4b. Sayagaki */}
-        <SayagakiSection
-          entries={sayagaki}
-          itemId={mode === 'edit' && initialData?.id ? String(initialData.id) : undefined}
-          onChange={setSayagaki}
-          onPendingFilesChange={(sayagakiId, files) => {
-            setPendingSayagakiFiles(prev => {
-              const next = new Map(prev);
-              if (files.length === 0) {
-                next.delete(sayagakiId);
-              } else {
-                next.set(sayagakiId, files);
-              }
-              return next;
-            });
-          }}
-        />
+        {/* 4b. Sayagaki (nihonto) / Hakogaki (tosogu) */}
+        {category === 'nihonto' ? (
+          <SayagakiSection
+            entries={sayagaki}
+            itemId={mode === 'edit' && initialData?.id ? String(initialData.id) : undefined}
+            onChange={setSayagaki}
+            onPendingFilesChange={(sayagakiId, files) => {
+              setPendingSayagakiFiles(prev => {
+                const next = new Map(prev);
+                if (files.length === 0) {
+                  next.delete(sayagakiId);
+                } else {
+                  next.set(sayagakiId, files);
+                }
+                return next;
+              });
+            }}
+          />
+        ) : (
+          <HakogakiSection
+            entries={hakogaki}
+            itemId={mode === 'edit' && initialData?.id ? String(initialData.id) : undefined}
+            onChange={setHakogaki}
+            onPendingFilesChange={(hakogakiId, files) => {
+              setPendingHakogakiFiles(prev => {
+                const next = new Map(prev);
+                if (files.length === 0) {
+                  next.delete(hakogakiId);
+                } else {
+                  next.set(hakogakiId, files);
+                }
+                return next;
+              });
+            }}
+          />
+        )}
 
         {/* 4c. Koshirae (companion — hidden when item IS a koshirae) */}
         {itemType !== 'koshirae' && (

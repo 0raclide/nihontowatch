@@ -3,7 +3,7 @@ import { getArtisanNames } from '@/lib/supabase/yuhinkai';
 import { getArtisanDisplayName, getArtisanDisplayNameKanji, getArtisanAlias } from '@/lib/artisan/displayName';
 import { getArtisanTier } from '@/lib/artisan/tier';
 import { getAttributionName } from '@/lib/listing/attribution';
-import type { YuhinkaiEnrichment, SayagakiEntry, KoshiraeData, ProvenanceEntry, KiwameEntry } from '@/types';
+import type { YuhinkaiEnrichment, SayagakiEntry, HakogakiEntry, KoshiraeData, ProvenanceEntry, KiwameEntry } from '@/types';
 
 // Yuhinkai enrichment as returned by the Supabase view (array wrapper)
 interface YuhinkaiEnrichmentRow {
@@ -94,6 +94,7 @@ interface ListingWithDealer {
   focal_x: number | null;
   focal_y: number | null;
   sayagaki: SayagakiEntry[] | null;
+  hakogaki: HakogakiEntry[] | null;
   koshirae: KoshiraeData | null;
   provenance: ProvenanceEntry[] | null;
   kiwame: KiwameEntry[] | null;
@@ -168,6 +169,7 @@ export interface EnrichedListingDetail {
   focal_x: number | null;
   focal_y: number | null;
   sayagaki: SayagakiEntry[] | null;
+  hakogaki: HakogakiEntry[] | null;
   koshirae: KoshiraeData | null;
   provenance: ProvenanceEntry[] | null;
   kiwame: KiwameEntry[] | null;
@@ -243,6 +245,7 @@ const LISTING_SELECT = `
   focal_x,
   focal_y,
   sayagaki,
+  hakogaki,
   koshirae,
   provenance,
   kiwame,
@@ -401,6 +404,7 @@ export async function getListingDetail(
     focal_x: typedListing.focal_x,
     focal_y: typedListing.focal_y,
     sayagaki: typedListing.sayagaki,
+    hakogaki: typedListing.hakogaki,
     koshirae: typedListing.koshirae,
     provenance: typedListing.provenance,
     kiwame: typedListing.kiwame,

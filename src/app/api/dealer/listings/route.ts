@@ -157,6 +157,7 @@ export async function POST(request: NextRequest) {
     status: requestedStatus, // 'AVAILABLE' or 'INVENTORY' (default)
     cert_session,
     sayagaki,
+    hakogaki,
     koshirae,
     provenance,
     kiwame,
@@ -203,6 +204,14 @@ export async function POST(request: NextRequest) {
           id: entry.id,
           author: entry.author,
           author_custom: entry.author_custom ?? null,
+          content: entry.content ?? null,
+          images: [], // Images uploaded separately after creation
+        }))
+      : null,
+    hakogaki: Array.isArray(hakogaki) && hakogaki.length > 0
+      ? hakogaki.map((entry: Record<string, unknown>) => ({
+          id: entry.id,
+          author: entry.author ?? null,
           content: entry.content ?? null,
           images: [], // Images uploaded separately after creation
         }))

@@ -84,6 +84,17 @@ export interface SayagakiEntry {
 }
 
 // =============================================================================
+// HAKOGAKI (箱書 — box inscriptions for tosogu)
+// =============================================================================
+
+export interface HakogakiEntry {
+  id: string;
+  author: string | null;
+  content: string | null;
+  images: string[];
+}
+
+// =============================================================================
 // KOSHIRAE (拵 — sword mountings with component attributions)
 // =============================================================================
 
@@ -612,6 +623,9 @@ export interface Listing {
 
   // Sayagaki (expert calligraphic inscriptions on shirasaya)
   sayagaki?: SayagakiEntry[] | null;
+
+  // Hakogaki (箱書 — box inscriptions for tosogu)
+  hakogaki?: HakogakiEntry[] | null;
 
   // Koshirae (拵 — sword mountings with component attributions)
   koshirae?: KoshiraeData | null;

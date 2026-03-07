@@ -12,6 +12,7 @@ import { getItemTypeLabel } from '@/types';
 import { MetadataGrid, getCertInfo, getArtisanInfo } from './MetadataGrid';
 import { TranslatedTitle } from './TranslatedTitle';
 import { SayagakiDisplay } from './SayagakiDisplay';
+import { HakogakiDisplay } from './HakogakiDisplay';
 import { KoshiraeDisplay } from './KoshiraeDisplay';
 import { ProvenanceDisplay } from './ProvenanceDisplay';
 import { KiwameDisplay } from './KiwameDisplay';
@@ -217,6 +218,11 @@ export function QuickViewContent({
         {/* Sayagaki */}
         {listing.sayagaki && listing.sayagaki.length > 0 && (
           <SayagakiDisplay sayagaki={listing.sayagaki} />
+        )}
+
+        {/* Hakogaki */}
+        {listing.hakogaki && listing.hakogaki.length > 0 && (
+          <HakogakiDisplay hakogaki={listing.hakogaki} />
         )}
 
         {/* Koshirae */}

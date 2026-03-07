@@ -37,6 +37,7 @@ import { generateArtisanSlug } from '@/lib/artisan/slugs';
 import { useLocale } from '@/i18n/LocaleContext';
 import { SocialShareButtons } from '@/components/share/SocialShareButtons';
 import { SayagakiDisplay } from '@/components/listing/SayagakiDisplay';
+import { HakogakiDisplay } from '@/components/listing/HakogakiDisplay';
 import { KoshiraeDisplay } from '@/components/listing/KoshiraeDisplay';
 import { ProvenanceDisplay } from '@/components/listing/ProvenanceDisplay';
 import { KiwameDisplay } from '@/components/listing/KiwameDisplay';
@@ -480,6 +481,13 @@ export default function ListingDetailPage({ initialData }: ListingDetailPageProp
             {listing.sayagaki && listing.sayagaki.length > 0 && (
               <div className="mb-6">
                 <SayagakiDisplay sayagaki={listing.sayagaki} />
+              </div>
+            )}
+
+            {/* Hakogaki */}
+            {listing.hakogaki && listing.hakogaki.length > 0 && (
+              <div className="mb-6">
+                <HakogakiDisplay hakogaki={listing.hakogaki} />
               </div>
             )}
 
