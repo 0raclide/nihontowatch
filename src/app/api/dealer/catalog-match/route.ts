@@ -83,6 +83,8 @@ export async function GET(request: NextRequest) {
         period: (row.gold_period as string | null) || null,
         artisan_kanji: (row.gold_artisan_kanji as string | null) || null,
         item_type: (row.gold_item_type as string | null) || null,
+        setsumei_en: (row.translation_md as string | null) || null,
+        setsumei_ja: (row.japanese_txt as string | null) || null,
       };
     });
 

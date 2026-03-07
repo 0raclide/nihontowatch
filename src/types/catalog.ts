@@ -15,6 +15,8 @@ export interface CatalogMatchItem {
   period: string | null;
   artisan_kanji: string | null;
   item_type: string | null;
+  setsumei_en?: string | null;
+  setsumei_ja?: string | null;
 }
 
 export interface CatalogMatchResponse {

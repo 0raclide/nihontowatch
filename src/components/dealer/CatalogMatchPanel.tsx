@@ -16,6 +16,8 @@ export interface CatalogPrefillFields {
   certSession?: number;
   catalogObjectUuid?: string;
   catalogImages?: string[];
+  setsumeiTextEn?: string | null;
+  setsumeiTextJa?: string | null;
 }
 
 interface CatalogMatchPanelProps {
@@ -142,6 +144,10 @@ export function CatalogMatchPanel({ certType, artisanId, artisanName, onPrefill 
 
     // Period → era
     if (item.period) fields.era = item.period;
+
+    // Setsumei (NBTHK Zufu commentary) — auto-fill if available
+    if (item.setsumei_en) fields.setsumeiTextEn = item.setsumei_en;
+    if (item.setsumei_ja) fields.setsumeiTextJa = item.setsumei_ja;
 
     // Catalog images (oshigata + setsumei) to prepend to photo gallery
     if (item.image_urls?.length) fields.catalogImages = item.image_urls;

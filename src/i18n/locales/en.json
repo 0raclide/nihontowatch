@@ -282,6 +282,10 @@
   "dealer.catalogMatchChange": "Change",
   "dealer.catalogSession": "Session {volume}",
   "dealer.catalogSessionAll": "All sessions",
+  "dealer.setsumeiCommentary": "NBTHK Zufu Commentary",
+  "dealer.setsumeiAutoFilled": "Auto-filled from catalog",
+  "dealer.setsumeiShowEnglish": "Show translation",
+  "dealer.setsumeiShowOriginal": "Show original",
 
   "feedback.reportIssue": "Report an issue",
   "feedback.whatLooksWrong": "What looks wrong?",

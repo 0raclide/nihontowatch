@@ -161,6 +161,8 @@ export async function POST(request: NextRequest) {
     koshirae,
     provenance,
     kiwame,
+    setsumei_text_en,
+    setsumei_text_ja,
     images: initialImages,
   } = body;
 
@@ -248,6 +250,8 @@ export async function POST(request: NextRequest) {
           images: [], // Images uploaded separately after creation
         }))
       : null,
+    setsumei_text_en: setsumei_text_en ?? null,
+    setsumei_text_ja: setsumei_text_ja ?? null,
     kiwame: Array.isArray(kiwame) && kiwame.length > 0
       ? kiwame.map((entry: Record<string, unknown>) => ({
           id: entry.id,

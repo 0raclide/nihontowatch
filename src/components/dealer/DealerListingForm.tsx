@@ -58,6 +58,8 @@ interface DealerDraft {
   kiwame: KiwameEntry[];
   certSession: number | null;
   catalogObjectUuid: string | null;
+  setsumeiTextEn: string | null;
+  setsumeiTextJa: string | null;
   savedAt: number;
 }
 
@@ -129,6 +131,8 @@ export interface DealerListingInitialData {
   provenance?: ProvenanceEntry[] | null;
   kiwame?: KiwameEntry[] | null;
   cert_session?: number | null;
+  setsumei_text_en?: string | null;
+  setsumei_text_ja?: string | null;
   status?: string | null;
 }
 
@@ -182,6 +186,40 @@ function sanitizeDecimal(value: string): string {
   const parts = stripped.split('.');
   if (parts.length <= 2) return stripped;
   return parts[0] + '.' + parts.slice(1).join('');
+}
+
+/** Read-only preview of NBTHK Zufu commentary auto-filled from catalog. */
+function SetsumeiPreview({ textEn, textJa, t }: { textEn: string; textJa: string | null; t: (key: string) => string }) {
+  const [showJa, setShowJa] = useState(false);
+  return (
+    <section>
+      <label className="block text-[11px] uppercase tracking-wider text-muted mb-2">
+        {t('dealer.setsumeiCommentary')}
+      </label>
+      <div className="rounded-lg border border-gold/20 bg-gold/5 dark:bg-gold/5">
+        <div className="flex items-center justify-between px-3 py-2 border-b border-gold/10">
+          <span className="inline-flex items-center gap-1.5 text-[11px] text-green-600 dark:text-green-400 font-medium">
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+            {t('dealer.setsumeiAutoFilled')}
+          </span>
+          {textJa && (
+            <button
+              type="button"
+              onClick={() => setShowJa(!showJa)}
+              className="text-[11px] text-gold hover:text-gold/80 font-medium transition-colors"
+            >
+              {showJa ? t('dealer.setsumeiShowEnglish') : t('dealer.setsumeiShowOriginal')}
+            </button>
+          )}
+        </div>
+        <div className="px-3 py-2 max-h-[200px] overflow-y-auto text-[12px] text-primary/80 whitespace-pre-line leading-relaxed">
+          {showJa && textJa ? textJa : textEn}
+        </div>
+      </div>
+    </section>
+  );
 }
 
 function getStickyValue(key: string, fallback: string): string {
@@ -284,6 +322,12 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
   const [catalogObjectUuid, setCatalogObjectUuid] = useState<string | null>(
     draft?.catalogObjectUuid ?? null
   );
+  const [setsumeiTextEn, setSetsumeiTextEn] = useState<string | null>(
+    initialData?.setsumei_text_en ?? draft?.setsumeiTextEn ?? null
+  );
+  const [setsumeiTextJa, setSetsumeiTextJa] = useState<string | null>(
+    initialData?.setsumei_text_ja ?? draft?.setsumeiTextJa ?? null
+  );
   const moreDetailsRef = useRef<HTMLDetailsElement>(null);
 
   // Guarded category switch — confirms before clearing filled cross-category fields
@@ -332,6 +376,7 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
         meiType, nakagoType, era, province,
         heightCm, widthCm, material, artisanSchool, titleOverride,
         certSession, catalogObjectUuid,
+        setsumeiTextEn, setsumeiTextJa,
         images: images.filter(url => !url.startsWith('blob:')),
         sayagaki: sayagaki.map(e => ({
           ...e,
@@ -364,8 +409,8 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
     priceValue, priceCurrency, isAsk, description,
     nagasaCm, motohabaCm, sakihabaCm, soriCm, meiType, nakagoType, era, province,
     heightCm, widthCm, material, artisanSchool, titleOverride,
-    certSession, catalogObjectUuid, images, sayagaki, hakogaki, koshirae,
-    provenance, kiwame,
+    certSession, catalogObjectUuid, setsumeiTextEn, setsumeiTextJa,
+    images, sayagaki, hakogaki, koshirae, provenance, kiwame,
   ]);
 
   // Auto-generated title
@@ -402,6 +447,8 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
     if (fields.era !== undefined) setEra(fields.era);
     if (fields.certSession != null) setCertSession(fields.certSession);
     if (fields.catalogObjectUuid) setCatalogObjectUuid(fields.catalogObjectUuid);
+    if (fields.setsumeiTextEn !== undefined) setSetsumeiTextEn(fields.setsumeiTextEn ?? null);
+    if (fields.setsumeiTextJa !== undefined) setSetsumeiTextJa(fields.setsumeiTextJa ?? null);
 
     // Prepend catalog images (oshigata + setsumei) to the photo gallery.
     // Replace any previously-added catalog images (from a prior card selection),
@@ -478,6 +525,8 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
             }))
           : null,
         kiwame: kiwame.length > 0 ? kiwame : null,
+        setsumei_text_en: setsumeiTextEn || null,
+        setsumei_text_ja: setsumeiTextJa || null,
         images: images.filter(url => !url.startsWith('blob:')),
       };
 
@@ -616,7 +665,8 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
     heightCm, widthCm, material, pendingFiles, pendingSayagakiFiles, sayagaki,
     pendingHakogakiFiles, hakogaki, koshirae, pendingKoshiraeFiles, provenance,
     pendingProvenanceFiles, kiwame,
-    certSession, generatedTitle, titleOverride, router,
+    certSession, setsumeiTextEn, setsumeiTextJa, generatedTitle, titleOverride,
+    router,
   ]);
 
   const handleRetryUpload = useCallback(async () => {
@@ -658,6 +708,8 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
     setTitleOverride(null);
     setCertSession(null);
     setCatalogObjectUuid(null);
+    setSetsumeiTextEn(null);
+    setSetsumeiTextJa(null);
     setImages([]);
     setPendingFiles([]);
     setSayagaki([]);
@@ -966,6 +1018,11 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
             artisanName={artisanName}
             onPrefill={handleCatalogPrefill}
           />
+        )}
+
+        {/* 5c. Setsumei preview — auto-filled from catalog */}
+        {setsumeiTextEn && (
+          <SetsumeiPreview textEn={setsumeiTextEn} textJa={setsumeiTextJa} t={t} />
         )}
 
         {/* 6. Title (auto-generated, editable) */}
