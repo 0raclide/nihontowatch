@@ -676,6 +676,37 @@ Preview page where dealers see their profile as collectors will see it. Uses `De
 | Preview link in editor | `src/app/dealer/profile/DealerProfileClient.tsx` (eye icon in header) |
 | **Full documentation** | `docs/SESSION_20260306_DEALER_PREVIEW.md` |
 
+### Catalog Prefill (Yuhinkai → Dealer Listing Form)
+
+When a dealer selects a Yuhinkai catalog card in the CatalogMatchPanel, the following fields auto-fill from NBTHK data:
+
+| Form field | Yuhinkai source | Mapping |
+|------------|----------------|---------|
+| Item type | `gold_form_type` | `FORM_TO_ITEM_TYPE` (katana, tanto, tsuba, etc.) |
+| Nagasa/sori/motohaba/sakihaba | `gold_nagasa/sori/motohaba/sakihaba` | Direct (already cm) |
+| Mei type | `gold_mei_status` | `MEI_STATUS_MAP` (signed→zaimei, gaku-mei→gakumei, etc.) |
+| Nakago type | `gold_nakago_condition` | `NAKAGO_CONDITION_MAP` (Ubu→ubu, O-Suriage→suriage) |
+| Era | `gold_period` | Direct |
+| Province | `gold_province` | Direct |
+| School | `gold_school` | Direct → artisanSchool |
+| Cert session | `volume` | Direct |
+| Photos | `image_urls` | Prepended to images[] (oshigata + setsumei) |
+| Setsumei EN/JA | `translation_md` / `japanese_txt` | Direct |
+
+**Catalog images** are identifiable by the Yuhinkai storage domain (`itbhfhyptogxcjbjfzwx.supabase.co`). Changing cards replaces old catalog images while preserving user-uploaded photos. Images are sent in the POST payload at creation time.
+
+**Key files:**
+| Component | Location |
+|-----------|----------|
+| Prefill interface + card select | `src/components/dealer/CatalogMatchPanel.tsx` |
+| Field mappings | `src/lib/collection/catalogMapping.ts` |
+| Catalog API (RPC transform) | `src/app/api/dealer/catalog-match/route.ts` |
+| Catalog type | `src/types/catalog.ts` (`CatalogMatchItem`) |
+| Form prefill handler | `src/components/dealer/DealerListingForm.tsx` (`handleCatalogPrefill`) |
+| RPC (Yuhinkai) | `oshi-v2/supabase/migrations/466_search_catalog_add_province_nakago.sql` |
+| Tests (23) | `tests/components/dealer/CatalogMatchPanel.test.tsx` |
+| **Full documentation** | `docs/SESSION_20260307_CATALOG_PREFILL_EXPANSION.md` |
+
 ### User Feedback & Reporting
 
 Two-channel feedback system: users flag inaccurate data on listings/artist pages, and submit general feedback (bugs, features) from the nav. All stored in `user_feedback` table, triaged via admin panel at `/admin/feedback`.
@@ -736,6 +767,7 @@ For detailed implementation docs, see:
 - `docs/SESSION_20260306_LISTING_IMPRESSION_TRACKING.md` - **Listing impression tracking** — viewport-based impression events, position metadata, dedup strategy, fan-out pipeline, 19 tests
 - `docs/SESSION_20260306_KOSHIRAE_MAKER_TOGGLE.md` - **Koshirae maker toggle** — standalone koshirae single/multi maker, `KoshiraeMakerSection` shared component, `hideHeading` prop
 - `docs/SESSION_20260307_PROVENANCE_KIWAME.md` - **Provenance & kiwame** — dealer form sections for ownership history (伝来) and expert appraisals (極め), Yuhinkai autocomplete, provenance images, display in QuickView/detail
+- `docs/SESSION_20260307_CATALOG_PREFILL_EXPANSION.md` - **Catalog prefill expansion** — auto-add oshigata/setsumei images, school, province, nakago on card select. MEI_STATUS_MAP fix. RPC migration 466.
 
 ---
 
