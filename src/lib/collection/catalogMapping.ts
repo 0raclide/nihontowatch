@@ -29,11 +29,21 @@ export const CATALOG_CERT_TYPES = new Set(Object.keys(CERT_TO_COLLECTION));
 /** Map gold_mei_status → form mei_type values */
 export const MEI_STATUS_MAP: Record<string, string> = {
   'signed': 'zaimei',
-  'gaku-mei': 'zaimei',
-  'orikaeshi-mei': 'zaimei',
+  'gaku-mei': 'gakumei',
+  'orikaeshi-mei': 'orikaeshi-mei',
   'unsigned': 'mumei',
   'kinzogan-mei': 'kinzogan-mei',
-  'shu-mei': 'kinzogan-mei',
+  'shu-mei': 'shumei',
+  'kinpun-mei': 'kinpunmei',
+};
+
+/** Map gold_nakago_condition → form nakagoType values */
+export const NAKAGO_CONDITION_MAP: Record<string, string> = {
+  'ubu': 'ubu',
+  'suriage': 'suriage',
+  'o-suriage': 'suriage',
+  'ōsuriage': 'suriage',
+  'osuriage': 'suriage',
 };
 
 /** Map gold_form_type → normalized item_type */

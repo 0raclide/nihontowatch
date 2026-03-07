@@ -453,6 +453,9 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
     if (fields.catalogObjectUuid) setCatalogObjectUuid(fields.catalogObjectUuid);
     if (fields.setsumeiTextEn !== undefined) setSetsumeiTextEn(fields.setsumeiTextEn ?? null);
     if (fields.setsumeiTextJa !== undefined) setSetsumeiTextJa(fields.setsumeiTextJa ?? null);
+    if (fields.province !== undefined) setProvince(fields.province);
+    if (fields.nakagoType !== undefined) setNakagoType(fields.nakagoType);
+    if (fields.school !== undefined) setArtisanSchool(fields.school);
 
     // Prepend catalog images (oshigata + setsumei) to the photo gallery.
     // Replace any previously-added catalog images (from a prior card selection),
@@ -466,9 +469,9 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
       });
     }
 
-    // Auto-expand "More Details" if measurements were written
-    const wroteMeasurements = !!(fields.nagasaCm || fields.soriCm || fields.motohabaCm || fields.sakihabaCm || fields.meiType || fields.era);
-    if (wroteMeasurements && moreDetailsRef.current && !moreDetailsRef.current.open) {
+    // Auto-expand "More Details" if any detail fields were written
+    const wroteDetails = !!(fields.nagasaCm || fields.soriCm || fields.motohabaCm || fields.sakihabaCm || fields.meiType || fields.era || fields.nakagoType?.length || fields.province);
+    if (wroteDetails && moreDetailsRef.current && !moreDetailsRef.current.open) {
       moreDetailsRef.current.open = true;
     }
   }, []);

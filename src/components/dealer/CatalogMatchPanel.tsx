@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useLocale } from '@/i18n/LocaleContext';
-import { CERT_TO_COLLECTION, FORM_TO_ITEM_TYPE, MEI_STATUS_MAP } from '@/lib/collection/catalogMapping';
+import { CERT_TO_COLLECTION, FORM_TO_ITEM_TYPE, MEI_STATUS_MAP, NAKAGO_CONDITION_MAP } from '@/lib/collection/catalogMapping';
 import type { CatalogMatchItem, CatalogMatchResponse } from '@/types/catalog';
 
 export interface CatalogPrefillFields {
@@ -15,6 +15,9 @@ export interface CatalogPrefillFields {
   era?: string;
   certSession?: number;
   catalogObjectUuid?: string;
+  province?: string;
+  nakagoType?: string[];
+  school?: string;
   catalogImages?: string[];
   setsumeiTextEn?: string | null;
   setsumeiTextJa?: string | null;
@@ -142,8 +145,20 @@ export function CatalogMatchPanel({ certType, artisanId, artisanName, onPrefill 
       if (mapped) fields.meiType = mapped;
     }
 
+    // Nakago condition → nakagoType pills
+    if (item.nakago_condition) {
+      const mapped = NAKAGO_CONDITION_MAP[item.nakago_condition.toLowerCase().trim()];
+      if (mapped) fields.nakagoType = [mapped];
+    }
+
     // Period → era
     if (item.period) fields.era = item.period;
+
+    // Province
+    if (item.province) fields.province = item.province;
+
+    // School (tradition fallback)
+    if (item.school) fields.school = item.school;
 
     // Setsumei (NBTHK Zufu commentary) — auto-fill if available
     if (item.setsumei_en) fields.setsumeiTextEn = item.setsumei_en;

@@ -54,6 +54,9 @@ const mockItems = [
     period: 'Kamakura',
     artisan_kanji: '正宗',
     item_type: 'token',
+    school: 'Soshu',
+    province: 'Sagami',
+    nakago_condition: 'Ubu',
   },
   {
     object_uuid: 'uuid-2',
@@ -70,6 +73,9 @@ const mockItems = [
     period: 'Kamakura',
     artisan_kanji: '正宗',
     item_type: 'token',
+    school: null,
+    province: null,
+    nakago_condition: 'O-Suriage',
   },
 ];
 
@@ -291,6 +297,9 @@ describe('CatalogMatchPanel', () => {
     expect(fields.era).toBe('Kamakura');
     expect(fields.certSession).toBe(45);
     expect(fields.catalogObjectUuid).toBe('uuid-1');
+    expect(fields.school).toBe('Soshu');
+    expect(fields.province).toBe('Sagami');
+    expect(fields.nakagoType).toEqual(['ubu']);
   });
 
   it('maps unsigned mei_status to mumei', async () => {
@@ -307,6 +316,41 @@ describe('CatalogMatchPanel', () => {
     fireEvent.click(card);
 
     expect(onPrefill.mock.calls[0][0].meiType).toBe('mumei');
+  });
+
+  it('maps O-Suriage nakago condition to suriage', async () => {
+    global.fetch = mockFetchSuccess();
+    const onPrefill = vi.fn();
+
+    render(<CatalogMatchPanel {...defaultProps} onPrefill={onPrefill} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Vol. 50 #5')).toBeTruthy();
+    });
+
+    const card = screen.getByText('Vol. 50 #5').closest('button')!;
+    fireEvent.click(card);
+
+    expect(onPrefill.mock.calls[0][0].nakagoType).toEqual(['suriage']);
+  });
+
+  it('skips null school/province in prefill', async () => {
+    global.fetch = mockFetchSuccess();
+    const onPrefill = vi.fn();
+
+    render(<CatalogMatchPanel {...defaultProps} onPrefill={onPrefill} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Vol. 50 #5')).toBeTruthy();
+    });
+
+    // Second item has null school and province
+    const card = screen.getByText('Vol. 50 #5').closest('button')!;
+    fireEvent.click(card);
+
+    const fields = onPrefill.mock.calls[0][0];
+    expect(fields.school).toBeUndefined();
+    expect(fields.province).toBeUndefined();
   });
 
   it('shows selected state after card click', async () => {
