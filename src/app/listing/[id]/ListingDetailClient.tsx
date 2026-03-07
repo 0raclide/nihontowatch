@@ -38,6 +38,8 @@ import { useLocale } from '@/i18n/LocaleContext';
 import { SocialShareButtons } from '@/components/share/SocialShareButtons';
 import { SayagakiDisplay } from '@/components/listing/SayagakiDisplay';
 import { KoshiraeDisplay } from '@/components/listing/KoshiraeDisplay';
+import { ProvenanceDisplay } from '@/components/listing/ProvenanceDisplay';
+import { KiwameDisplay } from '@/components/listing/KiwameDisplay';
 import { getDealerDisplayName } from '@/lib/dealers/displayName';
 
 // Use EnrichedListingDetail as the canonical listing type for this page
@@ -485,6 +487,20 @@ export default function ListingDetailPage({ initialData }: ListingDetailPageProp
             {listing.koshirae && (
               <div className="mb-6">
                 <KoshiraeDisplay koshirae={listing.koshirae} hideHeading={listing.item_type?.toLowerCase() === 'koshirae'} />
+              </div>
+            )}
+
+            {/* Provenance */}
+            {listing.provenance && listing.provenance.length > 0 && (
+              <div className="mb-6">
+                <ProvenanceDisplay provenance={listing.provenance} />
+              </div>
+            )}
+
+            {/* Kiwame */}
+            {listing.kiwame && listing.kiwame.length > 0 && (
+              <div className="mb-6">
+                <KiwameDisplay kiwame={listing.kiwame} />
               </div>
             )}
 

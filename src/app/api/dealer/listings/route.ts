@@ -158,6 +158,8 @@ export async function POST(request: NextRequest) {
     cert_session,
     sayagaki,
     koshirae,
+    provenance,
+    kiwame,
     images: initialImages,
   } = body;
 
@@ -227,6 +229,24 @@ export async function POST(request: NextRequest) {
               }))
             : [],
         }
+      : null,
+    provenance: Array.isArray(provenance) && provenance.length > 0
+      ? provenance.map((entry: Record<string, unknown>) => ({
+          id: entry.id,
+          owner_name: entry.owner_name ?? '',
+          owner_name_ja: entry.owner_name_ja ?? null,
+          notes: entry.notes ?? null,
+          images: [], // Images uploaded separately after creation
+        }))
+      : null,
+    kiwame: Array.isArray(kiwame) && kiwame.length > 0
+      ? kiwame.map((entry: Record<string, unknown>) => ({
+          id: entry.id,
+          judge_name: entry.judge_name ?? '',
+          judge_name_ja: entry.judge_name_ja ?? null,
+          kiwame_type: entry.kiwame_type ?? 'origami',
+          notes: entry.notes ?? null,
+        }))
       : null,
   };
 

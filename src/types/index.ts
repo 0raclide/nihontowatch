@@ -114,6 +114,32 @@ export interface KoshiraeData {
 }
 
 // =============================================================================
+// PROVENANCE (ownership history / 伝来)
+// =============================================================================
+
+export interface ProvenanceEntry {
+  id: string;              // crypto.randomUUID()
+  owner_name: string;      // Autocomplete from denrai_canonical_names
+  owner_name_ja: string | null;  // Auto-populated from suggestions
+  notes: string | null;
+  images: string[];        // Document/origami photos
+}
+
+// =============================================================================
+// KIWAME (expert appraisals / 極め)
+// =============================================================================
+
+export type KiwameType = 'origami' | 'kinzogan' | 'saya_mei' | 'other';
+
+export interface KiwameEntry {
+  id: string;
+  judge_name: string;            // Autocomplete from gold_kiwame_appraisers
+  judge_name_ja: string | null;  // Auto-populated from suggestions
+  kiwame_type: KiwameType;
+  notes: string | null;
+}
+
+// =============================================================================
 // SETSUMEI METADATA (from Oshi-scrapper setsumei pipeline)
 // =============================================================================
 
@@ -589,6 +615,12 @@ export interface Listing {
 
   // Koshirae (拵 — sword mountings with component attributions)
   koshirae?: KoshiraeData | null;
+
+  // Provenance (伝来 — ownership history)
+  provenance?: ProvenanceEntry[] | null;
+
+  // Kiwame (極め — expert appraisals)
+  kiwame?: KiwameEntry[] | null;
 
   // Smart crop focal point (0-100%)
   focal_x?: number | null;

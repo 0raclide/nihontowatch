@@ -734,6 +734,8 @@ For detailed implementation docs, see:
 - `docs/DEALER_PROFILE_DESIGN.md` - **Dealer profile design doc** — 4-phase plan (Phase 1 implemented), research, IA, mobile design
 - `docs/SESSION_20260306_DEALER_PREVIEW.md` - **Dealer profile preview** — `/dealer/preview` page, reusable `DealerProfileView` component, inventory bar, featured listings grid
 - `docs/SESSION_20260306_LISTING_IMPRESSION_TRACKING.md` - **Listing impression tracking** — viewport-based impression events, position metadata, dedup strategy, fan-out pipeline, 19 tests
+- `docs/SESSION_20260306_KOSHIRAE_MAKER_TOGGLE.md` - **Koshirae maker toggle** — standalone koshirae single/multi maker, `KoshiraeMakerSection` shared component, `hideHeading` prop
+- `docs/SESSION_20260307_PROVENANCE_KIWAME.md` - **Provenance & kiwame** — dealer form sections for ownership history (伝来) and expert appraisals (極め), Yuhinkai autocomplete, provenance images, display in QuickView/detail
 
 ---
 

@@ -12,10 +12,12 @@ import { generateListingTitle } from '@/lib/dealer/titleGenerator';
 import { SayagakiSection } from './SayagakiSection';
 import { KoshiraeSection, createEmptyKoshirae } from './KoshiraeSection';
 import { KoshiraeMakerSection } from './KoshiraeMakerSection';
+import { ProvenanceSection } from './ProvenanceSection';
+import { KiwameSection } from './KiwameSection';
 import { CatalogMatchPanel } from './CatalogMatchPanel';
 import type { CatalogPrefillFields } from './CatalogMatchPanel';
 import { CATALOG_CERT_TYPES } from '@/lib/collection/catalogMapping';
-import type { SayagakiEntry, KoshiraeData } from '@/types';
+import type { SayagakiEntry, KoshiraeData, ProvenanceEntry, KiwameEntry } from '@/types';
 import { useLocale } from '@/i18n/LocaleContext';
 
 const STORAGE_KEY_CATEGORY = 'nw-dealer-category';
@@ -50,6 +52,8 @@ interface DealerDraft {
   images: string[]; // only server URLs, no blob:
   sayagaki: SayagakiEntry[];
   koshirae: KoshiraeData | null;
+  provenance: ProvenanceEntry[];
+  kiwame: KiwameEntry[];
   certSession: number | null;
   catalogObjectUuid: string | null;
   savedAt: number;
@@ -62,7 +66,8 @@ function isDraftSubstantive(d: DealerDraft): boolean {
     d.nagasaCm || d.motohabaCm || d.sakihabaCm || d.soriCm ||
     d.heightCm || d.widthCm || d.material ||
     d.meiType || d.era || d.province || d.artisanSchool ||
-    d.sayagaki?.length || d.koshirae
+    d.sayagaki?.length || d.koshirae ||
+    d.provenance?.length || d.kiwame?.length
   );
 }
 
@@ -118,6 +123,8 @@ export interface DealerListingInitialData {
   images?: string[];
   sayagaki?: SayagakiEntry[] | null;
   koshirae?: KoshiraeData | null;
+  provenance?: ProvenanceEntry[] | null;
+  kiwame?: KiwameEntry[] | null;
   cert_session?: number | null;
   status?: string | null;
 }
@@ -242,6 +249,15 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
     initialData?.koshirae || draft?.koshirae || null
   );
   const [pendingKoshiraeFiles, setPendingKoshiraeFiles] = useState<File[]>([]);
+  const [provenance, setProvenance] = useState<ProvenanceEntry[]>(
+    initialData?.provenance || draft?.provenance || []
+  );
+  const [pendingProvenanceFiles, setPendingProvenanceFiles] = useState<
+    Map<string, File[]>
+  >(new Map());
+  const [kiwame, setKiwame] = useState<KiwameEntry[]>(
+    initialData?.kiwame || draft?.kiwame || []
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -314,6 +330,11 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
           ...koshirae,
           images: (koshirae.images || []).filter(url => !url.startsWith('blob:')),
         } : null,
+        provenance: provenance.map(e => ({
+          ...e,
+          images: (e.images || []).filter(url => !url.startsWith('blob:')),
+        })),
+        kiwame,
         savedAt: Date.now(),
       };
       // Only persist if the form has substantive content
@@ -329,6 +350,7 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
     nagasaCm, motohabaCm, sakihabaCm, soriCm, meiType, nakagoType, era, province,
     heightCm, widthCm, material, artisanSchool, titleOverride,
     certSession, catalogObjectUuid, images, sayagaki, koshirae,
+    provenance, kiwame,
   ]);
 
   // Auto-generated title
@@ -428,6 +450,13 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
           ...koshirae,
           images: (koshirae.images || []).filter(url => !url.startsWith('blob:')),
         } : null,
+        provenance: provenance.length > 0
+          ? provenance.map(e => ({
+              ...e,
+              images: (e.images || []).filter(url => !url.startsWith('blob:')),
+            }))
+          : null,
+        kiwame: kiwame.length > 0 ? kiwame : null,
         images: images.filter(url => !url.startsWith('blob:')),
       };
 
@@ -498,6 +527,26 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
           }
         }
 
+        // Upload pending provenance images
+        if (pendingProvenanceFiles.size > 0) {
+          for (const [provenanceId, files] of pendingProvenanceFiles) {
+            for (const file of files) {
+              const formData = new FormData();
+              formData.append('file', file, file.name);
+              formData.append('itemId', String(listing.id));
+              formData.append('provenanceId', provenanceId);
+              try {
+                await fetch('/api/dealer/provenance-images', {
+                  method: 'POST',
+                  body: formData,
+                });
+              } catch {
+                // Best effort — don't block success
+              }
+            }
+          }
+        }
+
         clearDraft();
         setShowSuccess(true);
       } else if (mode === 'edit' && initialData?.id) {
@@ -524,8 +573,8 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
     artisanKanji, artisanSchool, priceValue, priceCurrency, isAsk, description,
     nagasaCm, motohabaCm, sakihabaCm, soriCm, meiType, nakagoType, era, province,
     heightCm, widthCm, material, pendingFiles, pendingSayagakiFiles, sayagaki,
-    koshirae, pendingKoshiraeFiles, certSession,
-    generatedTitle, titleOverride, router,
+    koshirae, pendingKoshiraeFiles, provenance, pendingProvenanceFiles, kiwame,
+    certSession, generatedTitle, titleOverride, router,
   ]);
 
   const handleRetryUpload = useCallback(async () => {
@@ -573,6 +622,9 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
     setPendingSayagakiFiles(new Map());
     setKoshirae(null);
     setPendingKoshiraeFiles([]);
+    setProvenance([]);
+    setPendingProvenanceFiles(new Map());
+    setKiwame([]);
     setShowSuccess(false);
     setImageUploadFailed(false);
     setCreatedListingId(null);
@@ -754,6 +806,30 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
             onPendingFilesChange={setPendingKoshiraeFiles}
           />
         )}
+
+        {/* 4d. Provenance */}
+        <ProvenanceSection
+          entries={provenance}
+          itemId={mode === 'edit' && initialData?.id ? String(initialData.id) : undefined}
+          onChange={setProvenance}
+          onPendingFilesChange={(provenanceId, files) => {
+            setPendingProvenanceFiles(prev => {
+              const next = new Map(prev);
+              if (files.length === 0) {
+                next.delete(provenanceId);
+              } else {
+                next.set(provenanceId, files);
+              }
+              return next;
+            });
+          }}
+        />
+
+        {/* 4e. Kiwame */}
+        <KiwameSection
+          entries={kiwame}
+          onChange={setKiwame}
+        />
 
         {/* 5. Artisan */}
         <section>

@@ -12,6 +12,8 @@ import { useQuickViewOptional } from '@/contexts/QuickViewContext';
 import { TranslatedTitle } from './TranslatedTitle';
 import { SayagakiDisplay } from './SayagakiDisplay';
 import { KoshiraeDisplay } from './KoshiraeDisplay';
+import { ProvenanceDisplay } from './ProvenanceDisplay';
+import { KiwameDisplay } from './KiwameDisplay';
 import { QuickMeasurement } from './QuickMeasurement';
 import { useLocale } from '@/i18n/LocaleContext';
 import { useAuth } from '@/lib/auth/AuthContext';
@@ -443,6 +445,16 @@ export function QuickViewMobileSheet({
             {/* Koshirae */}
             {listing.koshirae && (
               <KoshiraeDisplay koshirae={listing.koshirae} hideHeading={listing.item_type?.toLowerCase() === 'koshirae'} />
+            )}
+
+            {/* Provenance */}
+            {listing.provenance && listing.provenance.length > 0 && (
+              <ProvenanceDisplay provenance={listing.provenance} />
+            )}
+
+            {/* Kiwame */}
+            {listing.kiwame && listing.kiwame.length > 0 && (
+              <KiwameDisplay kiwame={listing.kiwame} />
             )}
 
             {/* Description slot */}
