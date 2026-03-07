@@ -189,8 +189,12 @@ function sanitizeDecimal(value: string): string {
 }
 
 /** Read-only preview of NBTHK Zufu commentary auto-filled from catalog. */
-function SetsumeiPreview({ textEn, textJa, t }: { textEn: string; textJa: string | null; t: (key: string) => string }) {
-  const [showJa, setShowJa] = useState(false);
+function SetsumeiPreview({ textEn, textJa, t, locale }: { textEn: string; textJa: string | null; locale: string; t: (key: string) => string }) {
+  // Default to the user's locale: JA users see Japanese first, EN users see English first
+  const [showAlternate, setShowAlternate] = useState(false);
+  const isJaLocale = locale === 'ja';
+  const showingJa = textJa ? (isJaLocale ? !showAlternate : showAlternate) : false;
+  const hasToggle = !!(textEn && textJa);
   return (
     <section>
       <label className="block text-[11px] uppercase tracking-wider text-muted mb-2">
@@ -204,18 +208,18 @@ function SetsumeiPreview({ textEn, textJa, t }: { textEn: string; textJa: string
             </svg>
             {t('dealer.setsumeiAutoFilled')}
           </span>
-          {textJa && (
+          {hasToggle && (
             <button
               type="button"
-              onClick={() => setShowJa(!showJa)}
+              onClick={() => setShowAlternate(!showAlternate)}
               className="text-[11px] text-gold hover:text-gold/80 font-medium transition-colors"
             >
-              {showJa ? t('dealer.setsumeiShowEnglish') : t('dealer.setsumeiShowOriginal')}
+              {showingJa ? t('dealer.setsumeiShowEnglish') : t('dealer.setsumeiShowOriginal')}
             </button>
           )}
         </div>
         <div className="px-3 py-2 max-h-[200px] overflow-y-auto text-[12px] text-primary/80 whitespace-pre-line leading-relaxed">
-          {showJa && textJa ? textJa : textEn}
+          {showingJa ? textJa : textEn}
         </div>
       </div>
     </section>
@@ -229,7 +233,7 @@ function getStickyValue(key: string, fallback: string): string {
 
 export function DealerListingForm({ mode, initialData }: DealerListingFormProps) {
   const router = useRouter();
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
 
   // Restore draft for add mode (no initialData)
   const restoredDraft = useRef<DealerDraft | null>(null);
@@ -1022,7 +1026,7 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
 
         {/* 5c. Setsumei preview — auto-filled from catalog */}
         {setsumeiTextEn && (
-          <SetsumeiPreview textEn={setsumeiTextEn} textJa={setsumeiTextJa} t={t} />
+          <SetsumeiPreview textEn={setsumeiTextEn} textJa={setsumeiTextJa} locale={locale} t={t} />
         )}
 
         {/* 6. Title (auto-generated, editable) */}
