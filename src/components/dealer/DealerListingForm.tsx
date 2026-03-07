@@ -20,6 +20,7 @@ import type { CatalogPrefillFields } from './CatalogMatchPanel';
 import { CATALOG_CERT_TYPES } from '@/lib/collection/catalogMapping';
 import type { SayagakiEntry, HakogakiEntry, KoshiraeData, ProvenanceEntry, KiwameEntry } from '@/types';
 import { useLocale } from '@/i18n/LocaleContext';
+import ReactMarkdown from 'react-markdown';
 
 const STORAGE_KEY_CATEGORY = 'nw-dealer-category';
 const STORAGE_KEY_TYPE = 'nw-dealer-type';
@@ -218,8 +219,16 @@ function SetsumeiPreview({ textEn, textJa, t, locale }: { textEn: string; textJa
             </button>
           )}
         </div>
-        <div className="px-3 py-2 max-h-[200px] overflow-y-auto text-[12px] text-primary/80 whitespace-pre-line leading-relaxed">
-          {showingJa ? textJa : textEn}
+        <div className="px-3 py-2 max-h-[300px] overflow-y-auto">
+          {showingJa ? (
+            <p className="text-[13px] text-ink/80 leading-[1.85] whitespace-pre-line font-jp">
+              {textJa}
+            </p>
+          ) : (
+            <article className="prose-translation">
+              <ReactMarkdown>{textEn}</ReactMarkdown>
+            </article>
+          )}
         </div>
       </div>
     </section>
