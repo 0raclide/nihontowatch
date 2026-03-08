@@ -11,6 +11,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { findCategoryRedirect } from '@/lib/seo/categories';
 import { LOCALE_COOKIE } from '@/i18n';
 import { GDPR_COOKIE, isGdprCountry } from '@/lib/consent/gdpr';
+import { checkRateLimit } from '@/lib/rateLimit';
 
 // ── Currency geo-detection ──
 export const CURRENCY_COOKIE = 'nw-currency';
@@ -36,6 +37,35 @@ export async function middleware(request: NextRequest) {
       url.pathname = redirectRoute;
       url.search = '';
       return NextResponse.redirect(url, 301);
+    }
+  }
+
+  // ── Rate limiting for API routes (before auth — saves Supabase round-trip for abusive clients) ──
+  const pathname = request.nextUrl.pathname;
+  if (pathname.startsWith('/api/')) {
+    const BYPASS_PREFIXES = ['/api/og', '/api/health', '/api/cron/', '/api/admin/', '/api/dealer/', '/api/webhook'];
+    const shouldBypass = BYPASS_PREFIXES.some(p => pathname.startsWith(p));
+
+    if (!shouldBypass) {
+      const forwarded = request.headers.get('x-forwarded-for');
+      const ip = forwarded?.split(',')[0]?.trim() || request.headers.get('x-real-ip') || 'unknown';
+      const result = checkRateLimit(ip, pathname);
+
+      if (!result.allowed) {
+        const retryAfter = Math.max(1, result.resetAt - Math.floor(Date.now() / 1000));
+        return NextResponse.json(
+          { error: 'Too many requests. Please try again later.' },
+          {
+            status: 429,
+            headers: {
+              'Retry-After': String(retryAfter),
+              'X-RateLimit-Limit': String(result.limit),
+              'X-RateLimit-Remaining': '0',
+              'X-RateLimit-Reset': String(result.resetAt),
+            },
+          }
+        );
+      }
     }
   }
 
@@ -88,7 +118,6 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   // Protect /admin, /api/admin, /dealer, and /api/dealer routes
-  const pathname = request.nextUrl.pathname;
   const isAdminPage = pathname.startsWith('/admin');
   const isAdminApi = pathname.startsWith('/api/admin');
   const isDealerPage = pathname.startsWith('/dealer');
