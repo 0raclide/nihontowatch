@@ -215,8 +215,8 @@ export function shouldSkipGeneration(context: CuratorNoteContext): boolean {
 /**
  * Classify how rich the available data is. Drives prompt length instructions.
  *
- * - full: setsumei + (sayagaki OR provenance) + artisan
- * - moderate: setsumei + artisan, but no sayagaki/provenance
+ * - full: setsumei + (sayagaki OR provenance OR koshirae) + artisan
+ * - moderate: setsumei + artisan, but no sayagaki/provenance/koshirae
  * - sparse: artisan OR setsumei, but not both
  * - minimal: neither artisan nor setsumei
  */
@@ -227,10 +227,11 @@ export function getDataRichness(context: CuratorNoteContext): DataRichness {
   const hasProvenance = !!context.provenance;
   const hasHakogaki = !!context.hakogaki;
   const hasKiwame = !!context.kiwame;
+  const hasKoshirae = !!context.koshirae;
 
   if (!hasSetsumei && !hasArtisan) return 'minimal';
 
-  if (hasSetsumei && hasArtisan && (hasSayagaki || hasProvenance || hasHakogaki || hasKiwame)) {
+  if (hasSetsumei && hasArtisan && (hasSayagaki || hasProvenance || hasHakogaki || hasKiwame || hasKoshirae)) {
     return 'full';
   }
 
