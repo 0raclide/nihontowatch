@@ -38,7 +38,7 @@ export function CategoryLandingPage({
   browseUrl,
 }: CategoryLandingPageProps) {
   return (
-    <div className="min-h-screen bg-linen dark:bg-ink">
+    <div className="min-h-screen bg-linen">
       <Header />
 
       <main className="max-w-6xl mx-auto px-4 py-8 pb-24 md:pb-8">
@@ -46,21 +46,21 @@ export function CategoryLandingPage({
 
         {/* Hero */}
         <div className="mb-10">
-          <h1 className="font-serif text-3xl md:text-4xl text-ink dark:text-cream mb-3">
+          <h1 className="font-serif text-3xl md:text-4xl text-ink mb-3">
             {category.h1}
           </h1>
-          <p className="text-muted dark:text-muted-dark text-base leading-relaxed max-w-3xl">
+          <p className="text-muted text-base leading-relaxed max-w-3xl">
             {category.intro}
           </p>
-          <p className="text-muted dark:text-muted-dark text-sm mt-3">
-            <span className="font-medium text-ink dark:text-cream">{totalCount.toLocaleString()}</span> items currently available from trusted dealers worldwide.
+          <p className="text-muted text-sm mt-3">
+            <span className="font-medium text-ink">{totalCount.toLocaleString()}</span> items currently available from trusted dealers worldwide.
           </p>
         </div>
 
         {/* Preview Grid */}
         {listings.length > 0 && (
           <div className="mb-10">
-            <h2 className="text-[13px] uppercase tracking-wider text-muted dark:text-muted-dark font-medium mb-4">
+            <h2 className="text-[13px] uppercase tracking-wider text-muted font-medium mb-4">
               Recently Listed
             </h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -70,9 +70,9 @@ export function CategoryLandingPage({
                   <Link
                     key={listing.id}
                     href={`/listing/${listing.id}`}
-                    className="group bg-paper dark:bg-charcoal border border-border dark:border-border-dark hover:border-gold/40 rounded-lg overflow-hidden transition-colors"
+                    className="group bg-paper border border-border hover:border-gold/40 rounded-lg overflow-hidden transition-colors"
                   >
-                    <div className="relative aspect-[4/3] bg-linen dark:bg-ink">
+                    <div className="relative aspect-[4/3] bg-linen">
                       {imgUrl ? (
                         <Image
                           src={imgUrl}
@@ -90,11 +90,11 @@ export function CategoryLandingPage({
                       )}
                     </div>
                     <div className="p-3">
-                      <p className="text-[13px] text-ink dark:text-cream font-medium truncate group-hover:text-gold transition-colors">
+                      <p className="text-[13px] text-ink font-medium truncate group-hover:text-gold transition-colors">
                         {listing.title}
                       </p>
                       {listing.price_value ? (
-                        <p className="text-[12px] text-muted dark:text-muted-dark mt-1 tabular-nums">
+                        <p className="text-[12px] text-muted mt-1 tabular-nums">
                           {new Intl.NumberFormat('en-US', {
                             style: 'currency',
                             currency: listing.price_currency || 'JPY',
@@ -102,7 +102,7 @@ export function CategoryLandingPage({
                           }).format(listing.price_value)}
                         </p>
                       ) : (
-                        <p className="text-[12px] text-muted dark:text-muted-dark mt-1">Price on request</p>
+                        <p className="text-[12px] text-muted mt-1">Price on request</p>
                       )}
                     </div>
                   </Link>
@@ -127,8 +127,8 @@ export function CategoryLandingPage({
 
         {/* Related Categories */}
         {category.relatedLinks && category.relatedLinks.length > 0 && (
-          <div className="border-t border-border dark:border-border-dark pt-8 pb-4">
-            <h2 className="text-[13px] uppercase tracking-wider text-muted dark:text-muted-dark font-medium mb-4">
+          <div className="border-t border-border pt-8 pb-4">
+            <h2 className="text-[13px] uppercase tracking-wider text-muted font-medium mb-4">
               Related Categories
             </h2>
             <div className="flex flex-wrap gap-2">
@@ -136,7 +136,7 @@ export function CategoryLandingPage({
                 <Link
                   key={link.url}
                   href={link.url}
-                  className="text-[13px] text-charcoal dark:text-cream/80 bg-paper dark:bg-charcoal border border-border dark:border-border-dark hover:border-gold/40 hover:text-gold px-3 py-1.5 rounded-full transition-colors"
+                  className="text-[13px] text-charcoal bg-paper border border-border hover:border-gold/40 hover:text-gold px-3 py-1.5 rounded-full transition-colors"
                 >
                   {link.label}
                 </Link>
