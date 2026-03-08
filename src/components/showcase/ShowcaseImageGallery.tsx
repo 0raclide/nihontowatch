@@ -51,22 +51,22 @@ export function ShowcaseImageGallery({ images, usedImages, onImageClick, videos,
         </div>
       )}
 
-      {/* Image masonry grid */}
+      {/* Single-column images */}
       {galleryImages.length > 0 && (
-        <div className="columns-1 md:columns-2 gap-3 md:gap-4">
+        <div className="flex flex-col gap-3 md:gap-4">
           {galleryImages.map((url, i) => (
             <button
               key={url}
               onClick={() => onImageClick(url, i)}
-              className="block w-full mb-3 md:mb-4 rounded overflow-hidden group relative break-inside-avoid cursor-zoom-in"
+              className="block w-full rounded overflow-hidden group relative cursor-zoom-in"
             >
               <Image
                 src={url}
                 alt={`Gallery image ${i + 1}`}
-                width={600}
-                height={400}
+                width={960}
+                height={640}
                 className="w-full h-auto object-contain group-hover:brightness-105 transition-all duration-300"
-                sizes="(max-width: 768px) 100vw, 50vw"
+                sizes="(max-width: 960px) 100vw, 960px"
               />
             </button>
           ))}
