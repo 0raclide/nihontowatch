@@ -756,6 +756,26 @@ BUNNY_STREAM_CDN_HOSTNAME=vz-abb611a8-a81.b-cdn.net  # Optional CDN hostname
 | Tests (56) | `tests/lib/media.test.ts`, `tests/lib/video-implementation.test.ts`, `tests/api/dealer/videos.test.ts`, `tests/components/video/VideoGalleryItem.test.tsx`, `tests/lib/video/videoProvider.test.ts` |
 | **Full documentation** | `docs/SESSION_20260308_VIDEO_SUPPORT.md` |
 
+### Kanto Hibisho (関東日々抄) Scholarly Reference
+
+Dealers can record Kanto Hibisho entries on nihonto listings — a prestigious multi-volume scholarly publication by Honma Junji. Single entry per sword (not an array): volume, entry number, free-form text (any language), and up to 10 scanned page images.
+
+**Data model:** Single JSONB column `listings.kanto_hibisho` → `KantoHibishoData { volume, entry_number, text, images[] }`. Migration 113.
+
+**Form:** Opt-in reveal button → bordered card with volume/entry inputs (side-by-side), 6-row textarea, image upload. Only visible for `category === 'nihonto'`. Cleared on nihonto→tosogu switch.
+
+**Display:** After KiwameDisplay in QuickView, MobileSheet, ListingDetail. Header "KANTŌ HIBISHŌ (関東日々抄)", reference line "Vol. X, No. Y", text body, image thumbnails with lightbox.
+
+**Key files:**
+| Component | Location |
+|-----------|----------|
+| Type | `src/types/index.ts` (`KantoHibishoData`) |
+| Display | `src/components/listing/KantoHibishoDisplay.tsx` |
+| Form section | `src/components/dealer/KantoHibishoSection.tsx` |
+| Image API | `src/app/api/dealer/kanto-hibisho-images/route.ts` |
+| DB migration | `supabase/migrations/113_kanto_hibisho.sql` |
+| **Full documentation** | `docs/SESSION_20260308_KANTO_HIBISHO.md` |
+
 ### User Feedback & Reporting
 
 Two-channel feedback system: users flag inaccurate data on listings/artist pages, and submit general feedback (bugs, features) from the nav. All stored in `user_feedback` table, triaged via admin panel at `/admin/feedback`.
@@ -818,6 +838,7 @@ For detailed implementation docs, see:
 - `docs/SESSION_20260307_PROVENANCE_KIWAME.md` - **Provenance & kiwame** — dealer form sections for ownership history (伝来) and expert appraisals (極め), Yuhinkai autocomplete, provenance images, display in QuickView/detail
 - `docs/SESSION_20260307_CATALOG_PREFILL_EXPANSION.md` - **Catalog prefill expansion** — auto-add oshigata/setsumei images, school, province, nakago on card select. MEI_STATUS_MAP fix. RPC migration 466.
 - `docs/SESSION_20260308_VIDEO_SUPPORT.md` - **Dealer video upload & playback** — Bunny.net Stream TUS uploads, HLS playback, video_count denormalization, unified MediaItem gallery, Bunny cleanup on delete, typed helpers. 56 tests.
+- `docs/SESSION_20260308_KANTO_HIBISHO.md` - **Kanto Hibisho (関東日々抄)** — scholarly reference by Honma Junji. Single entry per nihonto listing: volume, entry number, text, page scans (max 10). Opt-in reveal form, lightbox display.
 
 ---
 
