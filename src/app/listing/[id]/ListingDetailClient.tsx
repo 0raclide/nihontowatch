@@ -27,7 +27,6 @@ const InquiryModal = dynamic(
 import { useAlerts } from '@/hooks/useAlerts';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { getAllImages } from '@/lib/images';
-import { getHeroImageIndex } from '@/lib/images/classification';
 import { getMediaItemsFromImages } from '@/lib/media';
 import { VideoGalleryItem } from '@/components/video/VideoGalleryItem';
 import type { MediaItem } from '@/types/media';
@@ -88,9 +87,7 @@ export default function ListingDetailPage({ initialData }: ListingDetailPageProp
   const [listing, setListing] = useState<ListingDetail | null>(initialData ?? null);
   const [isLoading, setIsLoading] = useState(!initialData);
   const [error, setError] = useState<string | null>(null);
-  const [selectedImageIndex, setSelectedImageIndex] = useState(
-    () => initialData ? getHeroImageIndex(initialData) : 0
-  );
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
   const [isInquiryModalOpen, setIsInquiryModalOpen] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
