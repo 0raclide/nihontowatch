@@ -156,6 +156,17 @@ export interface KiwameEntry {
 }
 
 // =============================================================================
+// KANTO HIBISHO (関東日々抄 — multi-volume scholarly publication by Honma Junji)
+// =============================================================================
+
+export interface KantoHibishoData {
+  volume: string;          // "2" or "上"
+  entry_number: string;    // "1110"
+  text: string | null;     // Copy-pasted content (any language)
+  images: string[];        // Scanned PDF pages
+}
+
+// =============================================================================
 // SETSUMEI METADATA (from Oshi-scrapper setsumei pipeline)
 // =============================================================================
 
@@ -640,6 +651,9 @@ export interface Listing {
 
   // Kiwame (極め — expert appraisals)
   kiwame?: KiwameEntry[] | null;
+
+  // Kanto Hibisho (関東日々抄 — Honma Junji scholarly reference)
+  kanto_hibisho?: KantoHibishoData | null;
 
   // Smart crop focal point (0-100%)
   focal_x?: number | null;

@@ -161,6 +161,7 @@ export async function POST(request: NextRequest) {
     koshirae,
     provenance,
     kiwame,
+    kanto_hibisho,
     setsumei_text_en,
     setsumei_text_ja,
     images: initialImages,
@@ -270,6 +271,18 @@ export async function POST(request: NextRequest) {
           kiwame_type: entry.kiwame_type ?? 'origami',
           notes: entry.notes ?? null,
         }))
+      : null,
+    kanto_hibisho: kanto_hibisho && typeof kanto_hibisho === 'object'
+      ? {
+          volume: (kanto_hibisho as Record<string, unknown>).volume ?? '',
+          entry_number: (kanto_hibisho as Record<string, unknown>).entry_number ?? '',
+          text: (kanto_hibisho as Record<string, unknown>).text ?? null,
+          images: Array.isArray((kanto_hibisho as Record<string, unknown>).images)
+            ? ((kanto_hibisho as Record<string, unknown>).images as string[]).filter(
+                (url: string) => typeof url === 'string' && !url.startsWith('blob:')
+              )
+            : [],
+        }
       : null,
   };
 

@@ -15,13 +15,14 @@ import { KoshiraeSection, createEmptyKoshirae } from './KoshiraeSection';
 import { KoshiraeMakerSection } from './KoshiraeMakerSection';
 import { ProvenanceSection } from './ProvenanceSection';
 import { KiwameSection } from './KiwameSection';
+import { KantoHibishoSection } from './KantoHibishoSection';
 import { CatalogMatchPanel } from './CatalogMatchPanel';
 import type { CatalogPrefillFields } from './CatalogMatchPanel';
 import { SetsumeiPreview } from './SetsumeiPreview';
 import { VideoUploadSection } from './VideoUploadSection';
 import type { ListingVideo } from '@/types/media';
 import { CATALOG_CERT_TYPES } from '@/lib/collection/catalogMapping';
-import type { SayagakiEntry, HakogakiEntry, KoshiraeData, ProvenanceEntry, KiwameEntry } from '@/types';
+import type { SayagakiEntry, HakogakiEntry, KoshiraeData, ProvenanceEntry, KiwameEntry, KantoHibishoData } from '@/types';
 import { useLocale } from '@/i18n/LocaleContext';
 import ReactMarkdown from 'react-markdown';
 
@@ -60,6 +61,7 @@ interface DealerDraft {
   koshirae: KoshiraeData | null;
   provenance: ProvenanceEntry[];
   kiwame: KiwameEntry[];
+  kantoHibisho: KantoHibishoData | null;
   certSession: number | null;
   catalogObjectUuid: string | null;
   setsumeiTextEn: string | null;
@@ -75,7 +77,7 @@ function isDraftSubstantive(d: DealerDraft): boolean {
     d.heightCm || d.widthCm || d.material ||
     d.meiType || d.era || d.province || d.artisanSchool ||
     d.sayagaki?.length || d.hakogaki?.length || d.koshirae ||
-    d.provenance?.length || d.kiwame?.length
+    d.provenance?.length || d.kiwame?.length || d.kantoHibisho
   );
 }
 
@@ -134,6 +136,7 @@ export interface DealerListingInitialData {
   koshirae?: KoshiraeData | null;
   provenance?: ProvenanceEntry[] | null;
   kiwame?: KiwameEntry[] | null;
+  kanto_hibisho?: KantoHibishoData | null;
   cert_session?: number | null;
   setsumei_text_en?: string | null;
   setsumei_text_ja?: string | null;
@@ -284,6 +287,10 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
   const [kiwame, setKiwame] = useState<KiwameEntry[]>(
     initialData?.kiwame || draft?.kiwame || []
   );
+  const [kantoHibisho, setKantoHibisho] = useState<KantoHibishoData | null>(
+    initialData?.kanto_hibisho || draft?.kantoHibisho || null
+  );
+  const [pendingKantoHibishoFiles, setPendingKantoHibishoFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -314,7 +321,7 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
     if (newCategory === category) return;
     const wouldLoseData = newCategory === 'nihonto'
       ? !!(heightCm || widthCm || materials.length || hakogaki.length)
-      : !!(nagasaCm || motohabaCm || sakihabaCm || soriCm || meiType || nakagoType.length || sayagaki.length);
+      : !!(nagasaCm || motohabaCm || sakihabaCm || soriCm || meiType || nakagoType.length || sayagaki.length || kantoHibisho);
     if (wouldLoseData && !window.confirm(t('dealer.confirmCategorySwitch'))) return;
     setCategory(newCategory);
     if (newCategory === 'nihonto') {
@@ -330,8 +337,9 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
       setMeiType(null);
       setNakagoType([]);
       setSayagaki([]);
+      setKantoHibisho(null);
     }
-  }, [category, heightCm, widthCm, materials, hakogaki, nagasaCm, motohabaCm, sakihabaCm, soriCm, meiType, nakagoType, sayagaki, t]);
+  }, [category, heightCm, widthCm, materials, hakogaki, nagasaCm, motohabaCm, sakihabaCm, soriCm, meiType, nakagoType, sayagaki, kantoHibisho, t]);
 
   const canDelete = mode === 'edit' && initialData?.id &&
     (initialData?.status === 'INVENTORY' || initialData?.status === 'WITHDRAWN');
@@ -374,6 +382,10 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
           images: (e.images || []).filter(url => !url.startsWith('blob:')),
         })),
         kiwame,
+        kantoHibisho: kantoHibisho ? {
+          ...kantoHibisho,
+          images: (kantoHibisho.images || []).filter(url => !url.startsWith('blob:')),
+        } : null,
         savedAt: Date.now(),
       };
       // Only persist if the form has substantive content
@@ -389,7 +401,7 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
     nagasaCm, motohabaCm, sakihabaCm, soriCm, meiType, nakagoType, era, province,
     heightCm, widthCm, materials, artisanSchool, titleOverride,
     certSession, catalogObjectUuid, setsumeiTextEn, setsumeiTextJa,
-    images, sayagaki, hakogaki, koshirae, provenance, kiwame,
+    images, sayagaki, hakogaki, koshirae, provenance, kiwame, kantoHibisho,
   ]);
 
   // Auto-generated title
@@ -507,6 +519,10 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
             }))
           : null,
         kiwame: kiwame.length > 0 ? kiwame : null,
+        kanto_hibisho: category === 'nihonto' && kantoHibisho ? {
+          ...kantoHibisho,
+          images: (kantoHibisho.images || []).filter(url => !url.startsWith('blob:')),
+        } : null,
         setsumei_text_en: setsumeiTextEn || null,
         setsumei_text_ja: setsumeiTextJa || null,
         images: images.filter(url => !url.startsWith('blob:')),
@@ -619,6 +635,23 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
           }
         }
 
+        // Upload pending kanto-hibisho images
+        if (pendingKantoHibishoFiles.length > 0) {
+          for (const file of pendingKantoHibishoFiles) {
+            const formData = new FormData();
+            formData.append('file', file, file.name);
+            formData.append('itemId', String(listing.id));
+            try {
+              await fetch('/api/dealer/kanto-hibisho-images', {
+                method: 'POST',
+                body: formData,
+              });
+            } catch {
+              // Best effort — don't block success
+            }
+          }
+        }
+
         clearDraft();
         setShowSuccess(true);
       } else if (mode === 'edit' && initialData?.id) {
@@ -646,7 +679,7 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
     nagasaCm, motohabaCm, sakihabaCm, soriCm, meiType, nakagoType, era, province,
     heightCm, widthCm, materials, pendingFiles, pendingSayagakiFiles, sayagaki,
     pendingHakogakiFiles, hakogaki, koshirae, pendingKoshiraeFiles, provenance,
-    pendingProvenanceFiles, kiwame,
+    pendingProvenanceFiles, kiwame, kantoHibisho, pendingKantoHibishoFiles,
     certSession, setsumeiTextEn, setsumeiTextJa, generatedTitle, titleOverride,
     router,
   ]);
@@ -901,6 +934,16 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
                 return next;
               });
             }}
+          />
+        )}
+
+        {/* 4b2. Kanto Hibisho (nihonto only) */}
+        {category === 'nihonto' && (
+          <KantoHibishoSection
+            data={kantoHibisho}
+            itemId={mode === 'edit' && initialData?.id ? String(initialData.id) : undefined}
+            onChange={setKantoHibisho}
+            onPendingFilesChange={setPendingKantoHibishoFiles}
           />
         )}
 

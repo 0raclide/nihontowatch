@@ -44,6 +44,7 @@ import { HakogakiDisplay } from '@/components/listing/HakogakiDisplay';
 import { KoshiraeDisplay } from '@/components/listing/KoshiraeDisplay';
 import { ProvenanceDisplay } from '@/components/listing/ProvenanceDisplay';
 import { KiwameDisplay } from '@/components/listing/KiwameDisplay';
+import { KantoHibishoDisplay } from '@/components/listing/KantoHibishoDisplay';
 import { getDealerDisplayName } from '@/lib/dealers/displayName';
 
 // Use EnrichedListingDetail as the canonical listing type for this page
@@ -539,6 +540,13 @@ export default function ListingDetailPage({ initialData }: ListingDetailPageProp
             {listing.kiwame && listing.kiwame.length > 0 && (
               <div className="mb-6">
                 <KiwameDisplay kiwame={listing.kiwame} />
+              </div>
+            )}
+
+            {/* Kanto Hibisho */}
+            {listing.kanto_hibisho && (
+              <div className="mb-6">
+                <KantoHibishoDisplay kantoHibisho={listing.kanto_hibisho} />
               </div>
             )}
 

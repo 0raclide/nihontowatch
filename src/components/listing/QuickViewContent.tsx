@@ -16,6 +16,7 @@ import { HakogakiDisplay } from './HakogakiDisplay';
 import { KoshiraeDisplay } from './KoshiraeDisplay';
 import { ProvenanceDisplay } from './ProvenanceDisplay';
 import { KiwameDisplay } from './KiwameDisplay';
+import { KantoHibishoDisplay } from './KantoHibishoDisplay';
 import { useLocale } from '@/i18n/LocaleContext';
 
 // =============================================================================
@@ -238,6 +239,11 @@ export function QuickViewContent({
         {/* Kiwame */}
         {listing.kiwame && listing.kiwame.length > 0 && (
           <KiwameDisplay kiwame={listing.kiwame} />
+        )}
+
+        {/* Kanto Hibisho */}
+        {listing.kanto_hibisho && (
+          <KantoHibishoDisplay kantoHibisho={listing.kanto_hibisho} />
         )}
 
         {/* Description slot */}
