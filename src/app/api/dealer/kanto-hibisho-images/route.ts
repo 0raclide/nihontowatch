@@ -52,9 +52,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Listing not found' }, { status: 404 });
     }
 
-    const kantoHibisho = listing.kanto_hibisho;
+    // If kanto_hibisho is null (e.g., section just added in form but not yet saved),
+    // initialize an empty entry so image upload can proceed
+    let kantoHibisho = listing.kanto_hibisho;
     if (!kantoHibisho) {
-      return NextResponse.json({ error: 'Kanto Hibisho entry not found' }, { status: 404 });
+      kantoHibisho = { volume: '', entry_number: '', text: null, images: [] };
     }
 
     if ((kantoHibisho.images || []).length >= MAX_KANTO_HIBISHO_IMAGES) {
