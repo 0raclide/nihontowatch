@@ -150,14 +150,13 @@ export function ShowcaseKoshirae({ koshirae, onImageClick }: ShowcaseKoshiraePro
             <button
               key={i}
               onClick={() => onImageClick(url)}
-              className="relative w-full rounded overflow-hidden group cursor-zoom-in shadow-sm hover:shadow-md transition-shadow"
+              className="relative w-full aspect-[4/3] rounded overflow-hidden group cursor-zoom-in shadow-sm hover:shadow-md transition-shadow"
             >
               <Image
                 src={url}
                 alt={`Koshirae image ${i + 1}`}
-                width={960}
-                height={720}
-                className="w-full h-auto object-contain group-hover:scale-[1.02] transition-transform duration-300"
+                fill
+                className="object-contain group-hover:scale-[1.02] transition-transform duration-300"
                 sizes="(max-width: 768px) 100vw, 960px"
               />
             </button>
