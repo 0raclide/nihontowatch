@@ -62,7 +62,11 @@
  * Run in CI:   Automatic on push to main (after 90s Vercel deploy wait)
  */
 
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, vi } from 'vitest';
+
+// Live API tests need extra time for 429 retry backoff
+vi.setConfig({ testTimeout: 15_000 });
+import { fetchWithRetry } from '../helpers/fetchWithRetry';
 
 // Types for API response
 interface Facet {
@@ -101,7 +105,7 @@ async function fetchBrowse(params: Record<string, string> = {}): Promise<BrowseR
     _t: Date.now().toString(),
   });
 
-  const response = await fetch(`${API_BASE_URL}/api/browse?${searchParams}`);
+  const response = await fetchWithRetry(`${API_BASE_URL}/api/browse?${searchParams}`);
   if (!response.ok) {
     throw new Error(`API request failed: ${response.status} ${response.statusText}`);
   }

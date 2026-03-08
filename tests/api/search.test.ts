@@ -9,11 +9,18 @@
  *   npm test tests/api/search.test.ts
  */
 
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, vi } from 'vitest';
+
+// Live API tests need extra time for 429 retry backoff
+vi.setConfig({ testTimeout: 15_000 });
+import { fetchWithRetry } from '../helpers/fetchWithRetry';
 
 // Use environment variable for API base URL, defaulting to production
 // For local testing with dev server, run: TEST_API_URL=http://localhost:3020 npm test tests/api/search.test.ts
 const API_BASE = process.env.TEST_API_URL || 'https://nihontowatch.com';
+
+// Drop-in replacement for fetch with 429 retry
+const apiFetch = fetchWithRetry;
 
 describe('Search Suggestions API', () => {
   // Give the server a moment to be ready
@@ -23,7 +30,7 @@ describe('Search Suggestions API', () => {
 
   describe('Query validation', () => {
     it('returns empty for short query (single character)', async () => {
-      const res = await fetch(`${API_BASE}/api/search/suggestions?q=a`);
+      const res = await apiFetch(`${API_BASE}/api/search/suggestions?q=a`);
       expect(res.ok).toBe(true);
 
       const data = await res.json();
@@ -32,7 +39,7 @@ describe('Search Suggestions API', () => {
     });
 
     it('returns empty for empty query', async () => {
-      const res = await fetch(`${API_BASE}/api/search/suggestions?q=`);
+      const res = await apiFetch(`${API_BASE}/api/search/suggestions?q=`);
       expect(res.ok).toBe(true);
 
       const data = await res.json();
@@ -41,7 +48,7 @@ describe('Search Suggestions API', () => {
     });
 
     it('returns empty for missing query parameter', async () => {
-      const res = await fetch(`${API_BASE}/api/search/suggestions`);
+      const res = await apiFetch(`${API_BASE}/api/search/suggestions`);
       expect(res.ok).toBe(true);
 
       const data = await res.json();
@@ -50,7 +57,7 @@ describe('Search Suggestions API', () => {
     });
 
     it('returns empty for whitespace-only query', async () => {
-      const res = await fetch(`${API_BASE}/api/search/suggestions?q=${encodeURIComponent('   ')}`);
+      const res = await apiFetch(`${API_BASE}/api/search/suggestions?q=${encodeURIComponent('   ')}`);
       expect(res.ok).toBe(true);
 
       const data = await res.json();
@@ -61,7 +68,7 @@ describe('Search Suggestions API', () => {
 
   describe('Valid queries', () => {
     it('returns suggestions for valid query', async () => {
-      const res = await fetch(`${API_BASE}/api/search/suggestions?q=katana`);
+      const res = await apiFetch(`${API_BASE}/api/search/suggestions?q=katana`);
       expect(res.ok).toBe(true);
 
       const data = await res.json();
@@ -72,7 +79,7 @@ describe('Search Suggestions API', () => {
     });
 
     it('returns suggestions for two-character query', async () => {
-      const res = await fetch(`${API_BASE}/api/search/suggestions?q=ka`);
+      const res = await apiFetch(`${API_BASE}/api/search/suggestions?q=ka`);
       expect(res.ok).toBe(true);
 
       const data = await res.json();
@@ -82,13 +89,13 @@ describe('Search Suggestions API', () => {
 
     it('echoes back the original query', async () => {
       const query = 'katana';
-      const res = await fetch(`${API_BASE}/api/search/suggestions?q=${query}`);
+      const res = await apiFetch(`${API_BASE}/api/search/suggestions?q=${query}`);
       const data = await res.json();
       expect(data.query).toBe(query);
     });
 
     it('returns proper suggestion structure', async () => {
-      const res = await fetch(`${API_BASE}/api/search/suggestions?q=katana`);
+      const res = await apiFetch(`${API_BASE}/api/search/suggestions?q=katana`);
       const data = await res.json();
 
       if (data.suggestions.length > 0) {
@@ -106,25 +113,25 @@ describe('Search Suggestions API', () => {
 
   describe('Limit parameter', () => {
     it('limits results to specified limit', async () => {
-      const res = await fetch(`${API_BASE}/api/search/suggestions?q=katana&limit=3`);
+      const res = await apiFetch(`${API_BASE}/api/search/suggestions?q=katana&limit=3`);
       const data = await res.json();
       expect(data.suggestions.length).toBeLessThanOrEqual(3);
     });
 
     it('respects default limit of 5', async () => {
-      const res = await fetch(`${API_BASE}/api/search/suggestions?q=katana`);
+      const res = await apiFetch(`${API_BASE}/api/search/suggestions?q=katana`);
       const data = await res.json();
       expect(data.suggestions.length).toBeLessThanOrEqual(5);
     });
 
     it('clamps limit to maximum of 10', async () => {
-      const res = await fetch(`${API_BASE}/api/search/suggestions?q=katana&limit=100`);
+      const res = await apiFetch(`${API_BASE}/api/search/suggestions?q=katana&limit=100`);
       const data = await res.json();
       expect(data.suggestions.length).toBeLessThanOrEqual(10);
     });
 
     it('clamps limit to minimum of 1', async () => {
-      const res = await fetch(`${API_BASE}/api/search/suggestions?q=katana&limit=0`);
+      const res = await apiFetch(`${API_BASE}/api/search/suggestions?q=katana&limit=0`);
       const data = await res.json();
       // Should return at least up to limit of 1 (or 0 if no results)
       expect(data.suggestions.length).toBeLessThanOrEqual(5); // Falls back to default
@@ -134,19 +141,19 @@ describe('Search Suggestions API', () => {
   describe('Security', () => {
     it('handles special characters safely (SQL injection attempt)', async () => {
       const maliciousQuery = "test'; DROP TABLE listings; --";
-      const res = await fetch(`${API_BASE}/api/search/suggestions?q=${encodeURIComponent(maliciousQuery)}`);
+      const res = await apiFetch(`${API_BASE}/api/search/suggestions?q=${encodeURIComponent(maliciousQuery)}`);
       expect(res.ok).toBe(true);
       // Should not cause a server error
     });
 
     it('handles Unicode characters safely', async () => {
-      const res = await fetch(`${API_BASE}/api/search/suggestions?q=${encodeURIComponent('correct')}`);
+      const res = await apiFetch(`${API_BASE}/api/search/suggestions?q=${encodeURIComponent('correct')}`);
       expect(res.ok).toBe(true);
     });
 
     it('handles very long queries', async () => {
       const longQuery = 'a'.repeat(1000);
-      const res = await fetch(`${API_BASE}/api/search/suggestions?q=${encodeURIComponent(longQuery)}`);
+      const res = await apiFetch(`${API_BASE}/api/search/suggestions?q=${encodeURIComponent(longQuery)}`);
       expect(res.ok).toBe(true);
     });
   });
@@ -159,7 +166,7 @@ describe('Browse API with Search', () => {
 
   describe('Text search parameter (q)', () => {
     it('searches across title, smith, tosogu_maker', async () => {
-      const res = await fetch(`${API_BASE}/api/browse?q=test&tab=available`);
+      const res = await apiFetch(`${API_BASE}/api/browse?q=test&tab=available`);
       expect(res.ok).toBe(true);
 
       const data = await res.json();
@@ -168,7 +175,7 @@ describe('Browse API with Search', () => {
     });
 
     it('returns results for common sword term', async () => {
-      const res = await fetch(`${API_BASE}/api/browse?q=katana&tab=available`);
+      const res = await apiFetch(`${API_BASE}/api/browse?q=katana&tab=available`);
       expect(res.ok).toBe(true);
 
       const data = await res.json();
@@ -177,8 +184,8 @@ describe('Browse API with Search', () => {
 
     it('is case-insensitive', async () => {
       const [upperRes, lowerRes] = await Promise.all([
-        fetch(`${API_BASE}/api/browse?q=KATANA&tab=available`),
-        fetch(`${API_BASE}/api/browse?q=katana&tab=available`),
+        apiFetch(`${API_BASE}/api/browse?q=KATANA&tab=available`),
+        apiFetch(`${API_BASE}/api/browse?q=katana&tab=available`),
       ]);
 
       expect(upperRes.ok).toBe(true);
@@ -192,7 +199,7 @@ describe('Browse API with Search', () => {
     });
 
     it('returns empty results for nonsense query', async () => {
-      const res = await fetch(`${API_BASE}/api/browse?q=xyznonexistentquery123&tab=available`);
+      const res = await apiFetch(`${API_BASE}/api/browse?q=xyznonexistentquery123&tab=available`);
       expect(res.ok).toBe(true);
 
       const data = await res.json();
@@ -203,7 +210,7 @@ describe('Browse API with Search', () => {
 
   describe('Search combined with filters', () => {
     it('combines search with item type filter', async () => {
-      const res = await fetch(`${API_BASE}/api/browse?q=katana&type=katana&tab=available`);
+      const res = await apiFetch(`${API_BASE}/api/browse?q=katana&type=katana&tab=available`);
       expect(res.ok).toBe(true);
 
       const data = await res.json();
@@ -214,7 +221,7 @@ describe('Browse API with Search', () => {
     });
 
     it('combines search with certification filter', async () => {
-      const res = await fetch(`${API_BASE}/api/browse?q=katana&cert=Juyo&tab=available`);
+      const res = await apiFetch(`${API_BASE}/api/browse?q=katana&cert=Juyo&tab=available`);
       expect(res.ok).toBe(true);
 
       const data = await res.json();
@@ -229,7 +236,7 @@ describe('Browse API with Search', () => {
       // Price filter is parsed from query text, not a separate parameter
       // Use encodeURIComponent for proper URL encoding
       const query = encodeURIComponent(`katana price>=${minPrice}`);
-      const res = await fetch(`${API_BASE}/api/browse?q=${query}&tab=available`);
+      const res = await apiFetch(`${API_BASE}/api/browse?q=${query}&tab=available`);
       expect(res.ok).toBe(true);
 
       const data = await res.json();
@@ -242,7 +249,7 @@ describe('Browse API with Search', () => {
 
     it('combines search with dealer filter', async () => {
       const dealerId = 1;
-      const res = await fetch(`${API_BASE}/api/browse?q=katana&dealer=${dealerId}&tab=available`);
+      const res = await apiFetch(`${API_BASE}/api/browse?q=katana&dealer=${dealerId}&tab=available`);
       expect(res.ok).toBe(true);
 
       const data = await res.json();
@@ -255,7 +262,7 @@ describe('Browse API with Search', () => {
       const minPrice = 1000000;
       // Price filter is parsed from query text
       const query = encodeURIComponent(`katana price>=${minPrice}`);
-      const res = await fetch(`${API_BASE}/api/browse?q=${query}&type=katana&cert=Juyo&tab=available`);
+      const res = await apiFetch(`${API_BASE}/api/browse?q=${query}&type=katana&cert=Juyo&tab=available`);
       expect(res.ok).toBe(true);
 
       const data = await res.json();
@@ -271,7 +278,7 @@ describe('Browse API with Search', () => {
 
   describe('Search with pagination', () => {
     it('returns paginated search results', async () => {
-      const res = await fetch(`${API_BASE}/api/browse?q=katana&page=1&limit=5&tab=available`);
+      const res = await apiFetch(`${API_BASE}/api/browse?q=katana&page=1&limit=5&tab=available`);
       expect(res.ok).toBe(true);
 
       const data = await res.json();
@@ -282,8 +289,8 @@ describe('Browse API with Search', () => {
 
     it('returns consistent total across pages', async () => {
       const [page1Res, page2Res] = await Promise.all([
-        fetch(`${API_BASE}/api/browse?q=katana&page=1&limit=5&tab=available`),
-        fetch(`${API_BASE}/api/browse?q=katana&page=2&limit=5&tab=available`),
+        apiFetch(`${API_BASE}/api/browse?q=katana&page=1&limit=5&tab=available`),
+        apiFetch(`${API_BASE}/api/browse?q=katana&page=2&limit=5&tab=available`),
       ]);
 
       const page1Data = await page1Res.json();
@@ -296,7 +303,7 @@ describe('Browse API with Search', () => {
 
   describe('Search with sorting', () => {
     it('sorts search results by price ascending', async () => {
-      const res = await fetch(`${API_BASE}/api/browse?q=katana&sort=price_asc&tab=available`);
+      const res = await apiFetch(`${API_BASE}/api/browse?q=katana&sort=price_asc&tab=available`);
       expect(res.ok).toBe(true);
 
       const data = await res.json();
@@ -318,7 +325,7 @@ describe('Browse API with Search', () => {
     });
 
     it('sorts search results by price descending', async () => {
-      const res = await fetch(`${API_BASE}/api/browse?q=katana&sort=price_desc&tab=available`);
+      const res = await apiFetch(`${API_BASE}/api/browse?q=katana&sort=price_desc&tab=available`);
       expect(res.ok).toBe(true);
 
       const data = await res.json();
@@ -342,7 +349,7 @@ describe('Browse API with Search', () => {
 
   describe('Search edge cases', () => {
     it('handles empty search with filters', async () => {
-      const res = await fetch(`${API_BASE}/api/browse?q=&type=katana&tab=available`);
+      const res = await apiFetch(`${API_BASE}/api/browse?q=&type=katana&tab=available`);
       expect(res.ok).toBe(true);
 
       const data = await res.json();
@@ -351,12 +358,12 @@ describe('Browse API with Search', () => {
     });
 
     it('handles special characters in search', async () => {
-      const res = await fetch(`${API_BASE}/api/browse?q=${encodeURIComponent('test & special')}&tab=available`);
+      const res = await apiFetch(`${API_BASE}/api/browse?q=${encodeURIComponent('test & special')}&tab=available`);
       expect(res.ok).toBe(true);
     });
 
     it('handles Japanese characters in search', async () => {
-      const res = await fetch(`${API_BASE}/api/browse?q=${encodeURIComponent('correct')}&tab=available`);
+      const res = await apiFetch(`${API_BASE}/api/browse?q=${encodeURIComponent('correct')}&tab=available`);
       expect(res.ok).toBe(true);
     });
   });
