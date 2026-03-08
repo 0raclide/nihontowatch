@@ -19,6 +19,7 @@ interface ShowcaseLayoutProps {
 
 /**
  * Immersive museum-grade Showcase layout.
+ * Uses the standard NihontoWatch theme (light/dark mode).
  * Orchestrates all showcase sections, manages lightbox state,
  * and computes which images are "used" to avoid duplicates in the gallery.
  */
@@ -32,7 +33,6 @@ export function ShowcaseLayout({ listing }: ShowcaseLayoutProps) {
   const [lightboxIndex, setLightboxIndex] = useState(0);
 
   const openLightbox = useCallback((url: string) => {
-    // Open with all validated images, starting at the clicked one
     const idx = validatedImages.indexOf(url);
     setLightboxImages(validatedImages);
     setLightboxIndex(idx >= 0 ? idx : 0);
@@ -40,7 +40,6 @@ export function ShowcaseLayout({ listing }: ShowcaseLayoutProps) {
   }, [validatedImages]);
 
   const openGalleryLightbox = useCallback((url: string, _index: number) => {
-    // For gallery, open with all validated images starting at the clicked one
     const idx = validatedImages.indexOf(url);
     setLightboxImages(validatedImages);
     setLightboxIndex(idx >= 0 ? idx : 0);
@@ -50,31 +49,18 @@ export function ShowcaseLayout({ listing }: ShowcaseLayoutProps) {
   // Collect images used in documentation/provenance sections
   const usedImages = useMemo(() => {
     const used = new Set<string>();
-
-    // Setsumei image
     if (listing.setsumei_image_url) used.add(listing.setsumei_image_url);
-
-    // Sayagaki images
     listing.sayagaki?.forEach(entry => {
       entry.images?.forEach(url => used.add(url));
     });
-
-    // Hakogaki images
     listing.hakogaki?.forEach(entry => {
       entry.images?.forEach(url => used.add(url));
     });
-
-    // Provenance images
     listing.provenance?.forEach(entry => {
       entry.images?.forEach(url => used.add(url));
     });
-
-    // Koshirae images
     listing.koshirae?.images?.forEach(url => used.add(url));
-
-    // Kanto Hibisho images
     listing.kanto_hibisho?.images?.forEach(url => used.add(url));
-
     return used;
   }, [listing]);
 
@@ -104,7 +90,7 @@ export function ShowcaseLayout({ listing }: ShowcaseLayoutProps) {
   }, [hasDocumentation, hasProvenance, hasKiwame, hasKoshirae]);
 
   return (
-    <div className="showcase min-h-screen bg-[var(--sc-bg-primary)] text-[var(--sc-text-primary)]">
+    <div className="min-h-screen bg-background text-ink">
       {/* Sticky nav bar (desktop only) */}
       <ShowcaseStickyBar listing={listing} sections={navSections} />
 
@@ -115,14 +101,12 @@ export function ShowcaseLayout({ listing }: ShowcaseLayoutProps) {
 
       {/* Sections */}
       <div className="space-y-16 md:space-y-20 pb-20 md:pb-24">
-        {/* Documentation */}
         {hasDocumentation && (
           <ShowcaseSection id="documentation" title="Documentation" titleJa="文書">
             <ShowcaseDocumentation listing={listing} onImageClick={openLightbox} />
           </ShowcaseSection>
         )}
 
-        {/* Provenance + Kiwame */}
         {(hasProvenance || hasKiwame) && (
           <ShowcaseSection id="provenance" title="Provenance" titleJa="伝来">
             <ShowcaseTimeline
@@ -133,14 +117,12 @@ export function ShowcaseLayout({ listing }: ShowcaseLayoutProps) {
           </ShowcaseSection>
         )}
 
-        {/* Koshirae */}
         {hasKoshirae && (
           <ShowcaseSection id="koshirae" title="Mountings" titleJa="拵">
             <ShowcaseKoshirae koshirae={listing.koshirae!} onImageClick={openLightbox} />
           </ShowcaseSection>
         )}
 
-        {/* Image Gallery */}
         <ShowcaseSection id="gallery" title="Gallery" titleJa="写真">
           <ShowcaseImageGallery
             images={validatedImages}

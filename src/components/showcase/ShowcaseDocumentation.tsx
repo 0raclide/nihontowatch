@@ -48,7 +48,7 @@ function DocumentCard({ title, subtitle, text, textAlt, imageUrl, images, onImag
                 src={url}
                 alt={`${title} document ${i + 1}`}
                 fill
-                className="object-contain bg-[var(--sc-bg-card)] group-hover:scale-[1.01] transition-transform duration-300"
+                className="object-contain bg-surface-elevated group-hover:scale-[1.01] transition-transform duration-300"
                 sizes="(max-width: 768px) 100vw, 60vw"
               />
             </button>
@@ -56,29 +56,29 @@ function DocumentCard({ title, subtitle, text, textAlt, imageUrl, images, onImag
         </div>
       )}
 
-      {/* Text card — dark bg, markdown rendered */}
+      {/* Text card — markdown rendered */}
       {displayText && (
         <div className={`${allImages.length > 0 ? 'md:col-span-2' : 'md:col-span-5 max-w-2xl mx-auto'}`}>
-          <div className="bg-[var(--sc-bg-card)] rounded p-6 md:p-8 border border-[var(--sc-border)]">
+          <div className="bg-surface-elevated rounded p-6 md:p-8 border border-border">
             <div className="flex items-baseline justify-between mb-4">
               <div>
-                <h3 className="text-[11px] uppercase tracking-[0.15em] font-medium text-[var(--sc-text-muted)]">
+                <h3 className="text-[11px] uppercase tracking-[0.15em] font-medium text-muted">
                   {title}
                 </h3>
                 {subtitle && (
-                  <p className="text-[12px] text-[var(--sc-text-muted)] mt-1">{subtitle}</p>
+                  <p className="text-[12px] text-muted mt-1">{subtitle}</p>
                 )}
               </div>
               {hasToggle && (
                 <button
                   onClick={() => setShowAlt(!showAlt)}
-                  className="text-[11px] text-[var(--sc-text-muted)] hover:text-[var(--sc-text-secondary)] transition-colors tracking-wide"
+                  className="text-[11px] text-muted hover:text-charcoal transition-colors tracking-wide"
                 >
                   {showAlt ? 'Original' : 'Translation'}
                 </button>
               )}
             </div>
-            <div className="prose-translation text-[13px] leading-[1.8] text-[var(--sc-text-primary)] font-light">
+            <div className="prose-translation text-[13px] leading-[1.8] font-light">
               <HighlightedMarkdown content={displayText} variant="translation" />
             </div>
           </div>
@@ -95,7 +95,7 @@ interface ShowcaseDocumentationProps {
 
 /**
  * Documentation section — setsumei, sayagaki, hakogaki, oshigata.
- * Each document type shows as side-by-side (image + dark card with markdown).
+ * Each document type shows as side-by-side (image + card with markdown).
  */
 export function ShowcaseDocumentation({ listing, onImageClick }: ShowcaseDocumentationProps) {
   const sections: React.ReactNode[] = [];

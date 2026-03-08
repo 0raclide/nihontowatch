@@ -19,7 +19,6 @@ interface ShowcaseStickyBarProps {
  * Sticky navigation bar that appears after scrolling past the hero.
  * Shows attribution summary + section nav links.
  * Desktop only — hidden on mobile.
- * Typography refined to match artist page SectionJumpNav patterns.
  */
 export function ShowcaseStickyBar({ listing, sections }: ShowcaseStickyBarProps) {
   const [visible, setVisible] = useState(false);
@@ -75,17 +74,17 @@ export function ShowcaseStickyBar({ listing, sections }: ShowcaseStickyBarProps)
         visible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-full pointer-events-none'
       }`}
     >
-      <div className="bg-[var(--sc-bg-primary)]/95 backdrop-blur-md border-b border-[var(--sc-border)]/50">
+      <div className="bg-background/95 backdrop-blur-md border-b border-border/50">
         <div className="max-w-6xl mx-auto px-6 flex items-center justify-between h-12">
           {/* Attribution summary */}
           <div className="flex items-center gap-3 min-w-0">
             {artisanName && (
-              <span className="text-[13px] font-serif font-light text-[var(--sc-text-primary)] truncate">
+              <span className="text-[13px] font-serif font-light text-ink truncate">
                 {artisanName}
               </span>
             )}
             {certInfo && (
-              <span className="text-[10px] uppercase tracking-[0.15em] text-[var(--sc-accent-gold-muted)] flex-shrink-0">
+              <span className="text-[10px] uppercase tracking-[0.15em] text-gold/50 flex-shrink-0">
                 {certInfo.label}
               </span>
             )}
@@ -99,8 +98,8 @@ export function ShowcaseStickyBar({ listing, sections }: ShowcaseStickyBarProps)
                 onClick={() => scrollToSection(s.id)}
                 className={`text-[11px] uppercase tracking-wider px-3 py-1.5 rounded transition-colors ${
                   activeSection === s.id
-                    ? 'text-[var(--sc-accent-gold)] bg-[var(--sc-accent-gold)]/8'
-                    : 'text-[var(--sc-text-muted)] hover:text-[var(--sc-text-secondary)]'
+                    ? 'text-gold bg-gold/8'
+                    : 'text-muted hover:text-charcoal'
                 }`}
               >
                 {s.label}

@@ -18,11 +18,11 @@ const COMPONENT_LABELS: Record<string, string> = {
 
 function getCertColorClass(certType: string): string {
   const lower = certType.toLowerCase();
-  if (lower.includes('tokubetsu juyo') || lower === 'tokuju') return 'text-[var(--sc-tokuju)] bg-[var(--sc-tokuju)]/12';
-  if (lower.includes('juyo')) return 'text-[var(--sc-juyo)] bg-[var(--sc-juyo)]/12';
-  if (lower.includes('tokubetsu hozon')) return 'text-[var(--sc-tokuho)] bg-[var(--sc-tokuho)]/12';
-  if (lower.includes('hozon')) return 'text-[var(--sc-hozon)] bg-[var(--sc-hozon)]/12';
-  return 'text-[var(--sc-text-secondary)] bg-white/5';
+  if (lower.includes('tokubetsu juyo') || lower === 'tokuju') return 'text-tokuju bg-tokuju-bg';
+  if (lower.includes('juyo')) return 'text-juyo bg-juyo-bg';
+  if (lower.includes('tokubetsu hozon')) return 'text-toku-hozon bg-toku-hozon-bg';
+  if (lower.includes('hozon')) return 'text-hozon bg-hozon-bg';
+  return 'text-muted bg-surface-elevated';
 }
 
 interface ShowcaseKoshiraeProps {
@@ -33,7 +33,6 @@ interface ShowcaseKoshiraeProps {
 /**
  * Koshirae (mountings) section.
  * Shows koshirae images, cert if separate, and maker attributions.
- * Styling refined to match artist page patterns.
  */
 export function ShowcaseKoshirae({ koshirae, onImageClick }: ShowcaseKoshiraeProps) {
   const isSingleMaker = !!koshirae.artisan_id;
@@ -55,7 +54,7 @@ export function ShowcaseKoshirae({ koshirae, onImageClick }: ShowcaseKoshiraePro
                 src={url}
                 alt={`Koshirae image ${i + 1}`}
                 fill
-                className="object-contain bg-[var(--sc-bg-card)] group-hover:scale-[1.02] transition-transform duration-300"
+                className="object-contain bg-surface-elevated group-hover:scale-[1.02] transition-transform duration-300"
                 sizes="(max-width: 768px) 256px, 320px"
               />
             </button>
@@ -75,15 +74,22 @@ export function ShowcaseKoshirae({ koshirae, onImageClick }: ShowcaseKoshiraePro
         </div>
       )}
 
+      {/* Era / Province / School */}
+      {(koshirae.era || koshirae.province || koshirae.school) && (
+        <p className="text-center text-[12px] tracking-wide text-muted mb-8">
+          {[koshirae.era, koshirae.province, koshirae.school].filter(Boolean).join(' \u00B7 ')}
+        </p>
+      )}
+
       {/* Single maker (issaku) */}
       {isSingleMaker && koshirae.artisan_name && (
         <div className="text-center mb-8">
-          <p className="text-[12px] text-[var(--sc-text-muted)] mb-1 tracking-wide">All fittings by</p>
-          <p className="text-lg font-serif font-light text-[var(--sc-text-heading)] leading-[1.1]">
+          <p className="text-[12px] text-muted mb-1 tracking-wide">All fittings by</p>
+          <p className="text-lg font-serif font-light text-ink leading-[1.1]">
             {koshirae.artisan_id ? (
               <Link
                 href={`/artists/${generateArtisanSlug(koshirae.artisan_name, koshirae.artisan_id)}`}
-                className="hover:text-[var(--sc-accent-gold)] transition-colors"
+                className="hover:text-gold transition-colors"
               >
                 {koshirae.artisan_name}
               </Link>
@@ -92,7 +98,7 @@ export function ShowcaseKoshirae({ koshirae, onImageClick }: ShowcaseKoshiraePro
             )}
           </p>
           {koshirae.artisan_kanji && (
-            <p className="text-[13px] text-[var(--sc-text-muted)] mt-1 font-serif font-light tracking-[0.08em]">
+            <p className="text-[13px] text-muted mt-1 font-serif font-light tracking-[0.08em]">
               {koshirae.artisan_kanji}
             </p>
           )}
@@ -105,17 +111,17 @@ export function ShowcaseKoshirae({ koshirae, onImageClick }: ShowcaseKoshiraePro
           {koshirae.components.map((comp: KoshiraeComponentEntry) => (
             <div
               key={comp.id}
-              className="py-4 border-b md:border-b-0 md:border-r border-[var(--sc-divider)] last:border-0 md:px-5 md:first:pl-0 md:last:pr-0"
+              className="py-4 border-b md:border-b-0 md:border-r border-border-subtle last:border-0 md:px-5 md:first:pl-0 md:last:pr-0"
             >
-              <p className="text-[10px] uppercase tracking-[0.15em] text-[var(--sc-accent-gold-muted)] mb-1.5">
+              <p className="text-[10px] uppercase tracking-[0.15em] text-gold/50 mb-1.5">
                 {COMPONENT_LABELS[comp.component_type] || comp.component_type}
               </p>
               {comp.artisan_name && (
-                <p className="text-[14px] font-medium text-[var(--sc-text-primary)] leading-snug">
+                <p className="text-[14px] font-medium text-ink leading-snug">
                   {comp.artisan_id ? (
                     <Link
                       href={`/artists/${generateArtisanSlug(comp.artisan_name, comp.artisan_id)}`}
-                      className="hover:text-[var(--sc-accent-gold)] transition-colors"
+                      className="hover:text-gold transition-colors"
                     >
                       {comp.artisan_name}
                     </Link>
@@ -125,12 +131,17 @@ export function ShowcaseKoshirae({ koshirae, onImageClick }: ShowcaseKoshiraePro
                 </p>
               )}
               {comp.artisan_kanji && (
-                <p className="text-[11px] text-[var(--sc-text-muted)] mt-0.5">
+                <p className="text-[11px] text-muted mt-0.5">
                   {comp.artisan_kanji}
                 </p>
               )}
+              {comp.signed && comp.mei_text && (
+                <p className="text-[11px] text-charcoal mt-0.5 italic">
+                  {comp.mei_text}
+                </p>
+              )}
               {comp.description && (
-                <p className="text-[11px] text-[var(--sc-text-muted)] mt-2 leading-relaxed">
+                <p className="text-[11px] text-muted mt-2 leading-relaxed">
                   {comp.description}
                 </p>
               )}
@@ -141,7 +152,7 @@ export function ShowcaseKoshirae({ koshirae, onImageClick }: ShowcaseKoshiraePro
 
       {/* Koshirae description */}
       {koshirae.description && (
-        <p className="text-[13px] text-[var(--sc-text-secondary)] mt-8 leading-[1.8] max-w-2xl mx-auto text-center font-light">
+        <p className="text-[13px] text-charcoal mt-8 leading-[1.8] max-w-2xl mx-auto text-center font-light">
           {koshirae.description}
         </p>
       )}
@@ -149,11 +160,11 @@ export function ShowcaseKoshirae({ koshirae, onImageClick }: ShowcaseKoshiraePro
       {/* Koshirae setsumei (if exists) */}
       {(koshirae.setsumei_text_en || koshirae.setsumei_text_ja) && (
         <div className="mt-10 max-w-2xl mx-auto">
-          <div className="bg-[var(--sc-bg-card)] rounded p-6 border border-[var(--sc-border)]">
-            <h4 className="text-[11px] uppercase tracking-[0.15em] font-medium text-[var(--sc-text-muted)] mb-3">
+          <div className="bg-surface-elevated rounded p-6 border border-border">
+            <h4 className="text-[11px] uppercase tracking-[0.15em] font-medium text-muted mb-3">
               Koshirae Setsumei
             </h4>
-            <div className="prose-translation text-[13px] leading-[1.8] text-[var(--sc-text-primary)] font-light">
+            <div className="prose-translation text-[13px] leading-[1.8] font-light">
               <HighlightedMarkdown content={koshirae.setsumei_text_en || koshirae.setsumei_text_ja!} variant="translation" />
             </div>
           </div>

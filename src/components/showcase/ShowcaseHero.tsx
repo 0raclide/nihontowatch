@@ -29,12 +29,12 @@ const MEI_TYPE_LABELS: Record<string, string> = {
 
 function getCertColorClass(tier: string): string {
   switch (tier) {
-    case 'tokuju': return 'text-[var(--sc-tokuju)] bg-[var(--sc-tokuju)]/12';
-    case 'jubi': return 'text-[var(--sc-jubi)] bg-[var(--sc-jubi)]/12';
-    case 'juyo': return 'text-[var(--sc-juyo)] bg-[var(--sc-juyo)]/12';
-    case 'tokuho': return 'text-[var(--sc-tokuho)] bg-[var(--sc-tokuho)]/12';
-    case 'hozon': return 'text-[var(--sc-hozon)] bg-[var(--sc-hozon)]/12';
-    default: return 'text-[var(--sc-text-secondary)] bg-white/5';
+    case 'tokuju': return 'text-tokuju bg-tokuju-bg';
+    case 'jubi': return 'text-jubi bg-jubi-bg';
+    case 'juyo': return 'text-juyo bg-juyo-bg';
+    case 'tokuho': return 'text-toku-hozon bg-toku-hozon-bg';
+    case 'hozon': return 'text-hozon bg-hozon-bg';
+    default: return 'text-muted bg-surface-elevated';
   }
 }
 
@@ -74,16 +74,16 @@ export function ShowcaseHero({ listing, onImageClick }: ShowcaseHeroProps) {
       {/* Mobile title above image */}
       <div className="md:hidden mb-6">
         {itemType && (
-          <p className="text-[11px] uppercase tracking-[0.18em] text-[var(--sc-accent-gold-muted)] mb-3">
+          <p className="text-[11px] uppercase tracking-[0.18em] text-gold/50 mb-3">
             {itemType}
           </p>
         )}
         {artisanName && (
-          <h1 className="text-2xl font-serif font-light text-[var(--sc-text-heading)] leading-[1.1] tracking-tight">
+          <h1 className="text-2xl font-serif font-light text-ink leading-[1.1] tracking-tight">
             {listing.artisan_id && listing.artisan_display_name ? (
               <Link
                 href={`/artists/${generateArtisanSlug(listing.artisan_display_name, listing.artisan_id)}`}
-                className="hover:text-[var(--sc-accent-gold)] transition-colors"
+                className="hover:text-gold transition-colors"
               >
                 {artisanName}
               </Link>
@@ -93,7 +93,7 @@ export function ShowcaseHero({ listing, onImageClick }: ShowcaseHeroProps) {
           </h1>
         )}
         {listing.artisan_name_kanji && (
-          <p className="text-[14px] text-[var(--sc-text-muted)] mt-1.5 font-serif font-light tracking-[0.08em]">
+          <p className="text-[14px] text-muted mt-1.5 font-serif font-light tracking-[0.08em]">
             {listing.artisan_name_kanji}
           </p>
         )}
@@ -105,19 +105,19 @@ export function ShowcaseHero({ listing, onImageClick }: ShowcaseHeroProps) {
           {heroImage ? (
             <button
               onClick={() => onImageClick?.(heroImage)}
-              className="relative w-full aspect-[3/4] rounded overflow-hidden cursor-zoom-in group border border-[var(--sc-border)]"
+              className="relative w-full aspect-[3/4] rounded overflow-hidden cursor-zoom-in group border border-border"
             >
               <Image
                 src={heroImage}
                 alt={listing.title}
                 fill
-                className="object-contain bg-[var(--sc-bg-card)] group-hover:scale-[1.01] transition-transform duration-300"
+                className="object-contain bg-surface-elevated group-hover:scale-[1.01] transition-transform duration-300"
                 sizes="(max-width: 768px) 100vw, 500px"
                 priority
               />
             </button>
           ) : (
-            <div className="w-full aspect-[3/4] rounded bg-[var(--sc-bg-card)] border border-[var(--sc-border)]" />
+            <div className="w-full aspect-[3/4] rounded bg-surface-elevated border border-border" />
           )}
         </div>
 
@@ -126,16 +126,16 @@ export function ShowcaseHero({ listing, onImageClick }: ShowcaseHeroProps) {
           {/* Desktop title */}
           <div className="hidden md:block mb-8">
             {itemType && (
-              <p className="text-[11px] uppercase tracking-[0.18em] text-[var(--sc-accent-gold-muted)] mb-3">
+              <p className="text-[11px] uppercase tracking-[0.18em] text-gold/50 mb-3">
                 {itemType}
               </p>
             )}
             {artisanName && (
-              <h1 className="text-2xl md:text-3xl lg:text-4xl font-serif font-light text-[var(--sc-text-heading)] leading-[1.1] tracking-tight">
+              <h1 className="text-2xl md:text-3xl lg:text-4xl font-serif font-light text-ink leading-[1.1] tracking-tight">
                 {listing.artisan_id && listing.artisan_display_name ? (
                   <Link
                     href={`/artists/${generateArtisanSlug(listing.artisan_display_name, listing.artisan_id)}`}
-                    className="hover:text-[var(--sc-accent-gold)] transition-colors"
+                    className="hover:text-gold transition-colors"
                   >
                     {artisanName}
                   </Link>
@@ -145,7 +145,7 @@ export function ShowcaseHero({ listing, onImageClick }: ShowcaseHeroProps) {
               </h1>
             )}
             {listing.artisan_name_kanji && (
-              <p className="text-[14px] text-[var(--sc-text-muted)] mt-2 font-serif font-light tracking-[0.08em]">
+              <p className="text-[14px] text-muted mt-2 font-serif font-light tracking-[0.08em]">
                 {listing.artisan_name_kanji}
               </p>
             )}
@@ -155,37 +155,37 @@ export function ShowcaseHero({ listing, onImageClick }: ShowcaseHeroProps) {
           <div className="grid grid-cols-[auto_1fr] gap-x-3 sm:gap-x-6 gap-y-1 sm:gap-y-1.5 mb-6">
             {school && (
               <>
-                <span className="text-[11px] uppercase tracking-wider text-[var(--sc-text-muted)]">School</span>
-                <span className="text-[13px] text-[var(--sc-text-primary)] font-light">{school}</span>
+                <span className="text-[11px] uppercase tracking-wider text-ink/50">School</span>
+                <span className="text-[13px] text-ink font-light">{school}</span>
               </>
             )}
             {era && (
               <>
-                <span className="text-[11px] uppercase tracking-wider text-[var(--sc-text-muted)]">Period</span>
-                <span className="text-[13px] text-[var(--sc-text-primary)] font-light">{era}</span>
+                <span className="text-[11px] uppercase tracking-wider text-ink/50">Period</span>
+                <span className="text-[13px] text-ink font-light">{era}</span>
               </>
             )}
             {listing.province && (
               <>
-                <span className="text-[11px] uppercase tracking-wider text-[var(--sc-text-muted)]">Province</span>
-                <span className="text-[13px] text-[var(--sc-text-primary)] font-light">{listing.province}</span>
+                <span className="text-[11px] uppercase tracking-wider text-ink/50">Province</span>
+                <span className="text-[13px] text-ink font-light">{listing.province}</span>
               </>
             )}
             {meiLabel && (
               <>
-                <span className="text-[11px] uppercase tracking-wider text-[var(--sc-text-muted)]">Signature</span>
-                <span className="text-[13px] text-[var(--sc-text-primary)] font-light">
+                <span className="text-[11px] uppercase tracking-wider text-ink/50">Signature</span>
+                <span className="text-[13px] text-ink font-light">
                   {meiLabel}
                   {listing.mei_text && (
-                    <span className="ml-2 text-[var(--sc-text-secondary)]">{listing.mei_text}</span>
+                    <span className="ml-2 text-charcoal">{listing.mei_text}</span>
                   )}
                 </span>
               </>
             )}
             {measurements.map(m => (
               <React.Fragment key={m.label}>
-                <span className="text-[11px] uppercase tracking-wider text-[var(--sc-text-muted)]">{m.label}</span>
-                <span className="text-[13px] text-[var(--sc-text-primary)] tabular-nums font-light">{m.value}</span>
+                <span className="text-[11px] uppercase tracking-wider text-ink/50">{m.label}</span>
+                <span className="text-[13px] text-ink tabular-nums font-light">{m.value}</span>
               </React.Fragment>
             ))}
           </div>
@@ -206,22 +206,22 @@ export function ShowcaseHero({ listing, onImageClick }: ShowcaseHeroProps) {
 
           {/* Elite factor bar */}
           {eliteFactor !== undefined && eliteFactor > 0 && totalItems !== undefined && totalItems > 0 && (
-            <div className="border-t border-[var(--sc-divider)] pt-5 mb-6">
+            <div className="border-t border-border-subtle pt-5 mb-6">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-[11px] uppercase tracking-wider text-[var(--sc-text-muted)]">
+                <span className="text-[11px] uppercase tracking-wider text-ink/50">
                   Designation Factor
                 </span>
-                <span className="text-[13px] text-[var(--sc-text-primary)] tabular-nums font-light">
+                <span className="text-[13px] text-ink tabular-nums font-light">
                   {eliteFactor.toFixed(2)}
                 </span>
               </div>
-              <div className="w-full h-1.5 bg-[var(--sc-bg-card)] rounded-full overflow-hidden">
+              <div className="w-full h-1.5 bg-surface-elevated rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-[var(--sc-accent-gold)] rounded-full transition-all duration-500"
+                  className="h-full bg-gold rounded-full transition-all duration-500"
                   style={{ width: `${Math.min((eliteFactor / 2.0) * 100, 100)}%` }}
                 />
               </div>
-              <p className="text-[11px] text-[var(--sc-text-muted)] mt-1.5">
+              <p className="text-[11px] text-muted mt-1.5">
                 {eliteFactor.toFixed(2)} across {totalItems} designated work{totalItems !== 1 ? 's' : ''}
                 {elitePercentile !== undefined && (
                   <span className="ml-1">
@@ -234,8 +234,8 @@ export function ShowcaseHero({ listing, onImageClick }: ShowcaseHeroProps) {
 
           {/* Description */}
           {listing.description && (
-            <div className="border-t border-[var(--sc-divider)] pt-5">
-              <p className="text-[13px] leading-[1.8] text-[var(--sc-text-secondary)] font-light">
+            <div className="border-t border-border-subtle pt-5">
+              <p className="text-[13px] leading-[1.8] text-charcoal font-light">
                 {listing.description_en || listing.description}
               </p>
             </div>

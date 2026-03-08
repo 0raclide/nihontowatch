@@ -64,7 +64,7 @@ export function ShowcaseImageGallery({ images, usedImages, onImageClick, videos 
                 alt={`Gallery image ${i + 1}`}
                 width={600}
                 height={400}
-                className="w-full h-auto object-contain bg-[var(--sc-bg-card)] group-hover:brightness-105 transition-all duration-300"
+                className="w-full h-auto object-contain bg-surface-elevated group-hover:brightness-105 transition-all duration-300"
                 sizes="(max-width: 768px) 50vw, 33vw"
               />
             </button>

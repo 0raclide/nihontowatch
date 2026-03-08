@@ -18,7 +18,7 @@ interface ShowcaseSectionProps {
  * Once visible, stays visible (never re-hides).
  *
  * Section header matches artist page SectionHeader:
- * thin horizontal rule + small-caps title (adapted for dark bg).
+ * thin horizontal rule + small-caps title.
  */
 export function ShowcaseSection({
   id,
@@ -60,12 +60,12 @@ export function ShowcaseSection({
       {title && (
         <div className="max-w-5xl mx-auto px-6 md:px-0 mb-10 md:mb-14">
           {!hideDivider && (
-            <div className="h-px bg-[var(--sc-divider)] mb-5" />
+            <div className="h-px bg-border/30 mb-5" />
           )}
-          <h2 className="text-[13px] uppercase tracking-[0.18em] font-medium text-[var(--sc-text-secondary)]">
+          <h2 className="text-[13px] uppercase tracking-[0.18em] font-medium text-charcoal">
             {title}
             {titleJa && (
-              <span className="ml-3 text-[var(--sc-text-muted)]">{titleJa}</span>
+              <span className="ml-3 text-muted">{titleJa}</span>
             )}
           </h2>
         </div>
