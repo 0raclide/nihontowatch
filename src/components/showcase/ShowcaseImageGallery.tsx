@@ -19,8 +19,7 @@ interface ShowcaseImageGalleryProps {
 
 /**
  * Masonry image gallery — shows all images NOT already displayed
- * in other sections (setsumei, sayagaki, provenance, etc.)
- * Videos appear above the image grid.
+ * in other sections. Uses media width (960px).
  */
 export function ShowcaseImageGallery({ images, usedImages, onImageClick, videos, heroVideoId }: ShowcaseImageGalleryProps) {
   // Filter out images already shown in other sections + oshigata/catalog images
@@ -35,7 +34,7 @@ export function ShowcaseImageGallery({ images, usedImages, onImageClick, videos,
   if (!hasContent) return null;
 
   return (
-    <div className="max-w-[780px] mx-auto px-4 sm:px-8">
+    <div className="max-w-[960px] mx-auto px-4 sm:px-8">
       {/* Videos */}
       {readyVideos.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">

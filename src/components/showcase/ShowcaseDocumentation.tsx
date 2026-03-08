@@ -26,6 +26,11 @@ interface DocumentCardProps {
   onImageClick?: (url: string) => void;
 }
 
+/**
+ * DocumentCard uses a two-tier width system:
+ * - Images span the full media width (inherited from parent container)
+ * - Text is constrained to 65ch prose width for readability
+ */
 function DocumentCard({ title, subtitle, text, textAlt, imageUrl, images, onImageClick }: DocumentCardProps) {
   const [showAlt, setShowAlt] = useState(false);
   const allImages = images || (imageUrl ? [imageUrl] : []);
@@ -34,7 +39,7 @@ function DocumentCard({ title, subtitle, text, textAlt, imageUrl, images, onImag
 
   return (
     <div className="space-y-8">
-      {/* Document image(s) — full width, natural height */}
+      {/* Document image(s) — spans full media width */}
       {allImages.length > 0 && (
         <div className="space-y-3">
           {allImages.map((url, i) => (
@@ -46,19 +51,19 @@ function DocumentCard({ title, subtitle, text, textAlt, imageUrl, images, onImag
               <Image
                 src={url}
                 alt={`${title} document ${i + 1}`}
-                width={800}
-                height={600}
+                width={960}
+                height={720}
                 className="w-full h-auto object-contain group-hover:scale-[1.01] transition-transform duration-300"
-                sizes="(max-width: 768px) 100vw, 780px"
+                sizes="(max-width: 768px) 100vw, 960px"
               />
             </button>
           ))}
         </div>
       )}
 
-      {/* Text — clean flowing prose, no box */}
+      {/* Text — constrained to prose width for readability */}
       {displayText && (
-        <div>
+        <div className="max-w-[65ch] mx-auto">
           <div className="flex items-baseline justify-between mb-5">
             <div>
               <h3 className="text-[13px] uppercase tracking-[0.15em] font-medium text-muted">
@@ -77,7 +82,7 @@ function DocumentCard({ title, subtitle, text, textAlt, imageUrl, images, onImag
               </button>
             )}
           </div>
-          <div className="prose-translation text-[15px] md:text-[17px] leading-[1.85] font-light max-w-[62ch]">
+          <div className="prose-translation text-[15px] md:text-[17px] leading-[1.85] font-light">
             <HighlightedMarkdown content={displayText} variant="translation" />
           </div>
         </div>
@@ -94,7 +99,7 @@ interface ShowcaseDocumentationProps {
 /**
  * Documentation section — oshigata, setsumei, sayagaki, hakogaki.
  * Single-column layout: image on top, text below.
- * Order: oshigata images -> setsumei images -> setsumei text -> sayagaki -> hakogaki.
+ * Outer container is media width (960px). Text constrains itself to prose width (65ch).
  */
 export function ShowcaseDocumentation({ listing, onImageClick }: ShowcaseDocumentationProps) {
   const sections: React.ReactNode[] = [];
@@ -127,7 +132,6 @@ export function ShowcaseDocumentation({ listing, onImageClick }: ShowcaseDocumen
     }
 
     // Setsumei page scans — standalone card only when no setsumei text exists
-    // (when text exists, these images are included in the Setsumei card below)
     if (catalogSetsumeiImages.length > 0 && !listing.setsumei_text_en && !listing.setsumei_text_ja) {
       sections.push(
         <DocumentCard
@@ -200,7 +204,7 @@ export function ShowcaseDocumentation({ listing, onImageClick }: ShowcaseDocumen
   if (sections.length === 0) return null;
 
   return (
-    <div className="space-y-14 md:space-y-20 max-w-[780px] mx-auto px-4 sm:px-8">
+    <div className="space-y-14 md:space-y-20 max-w-[960px] mx-auto px-4 sm:px-8">
       {sections}
     </div>
   );

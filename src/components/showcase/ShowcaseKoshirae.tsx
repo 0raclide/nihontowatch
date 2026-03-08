@@ -32,8 +32,7 @@ interface ShowcaseKoshiraeProps {
 
 /**
  * Koshirae (mountings) section.
- * Vertical stacked images, cert if separate, maker attributions, setsumei text.
- * Container matches artist page width (780px).
+ * Two-tier: images span media width (960px), text constrained to prose width (65ch).
  */
 export function ShowcaseKoshirae({ koshirae, onImageClick }: ShowcaseKoshiraeProps) {
   const isSingleMaker = !!koshirae.artisan_id;
@@ -41,7 +40,7 @@ export function ShowcaseKoshirae({ koshirae, onImageClick }: ShowcaseKoshiraePro
   const hasCert = koshirae.cert_type && !koshirae.cert_in_blade_paper;
 
   return (
-    <div className="max-w-[780px] mx-auto px-4 sm:px-8">
+    <div className="max-w-[960px] mx-auto px-4 sm:px-8">
       {/* Cert badge for separate koshirae cert */}
       {hasCert && (
         <div className="text-center mb-8">
@@ -85,64 +84,66 @@ export function ShowcaseKoshirae({ koshirae, onImageClick }: ShowcaseKoshiraePro
         </div>
       )}
 
-      {/* Multi-maker component cards */}
+      {/* Multi-maker component cards — prose width */}
       {hasComponents && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
-          {koshirae.components.map((comp: KoshiraeComponentEntry) => (
-            <div
-              key={comp.id}
-              className="py-4 border-b md:border-b-0 md:border-r border-border-subtle last:border-0 md:px-5 md:first:pl-0 md:last:pr-0"
-            >
-              <p className="text-[11px] uppercase tracking-[0.15em] text-gold/50 mb-1.5">
-                {COMPONENT_LABELS[comp.component_type] || comp.component_type}
-              </p>
-              {comp.artisan_name && (
-                <p className="text-[15px] font-medium text-ink leading-snug">
-                  {comp.artisan_id ? (
-                    <Link
-                      href={`/artists/${generateArtisanSlug(comp.artisan_name, comp.artisan_id)}`}
-                      className="hover:text-gold transition-colors"
-                    >
-                      {comp.artisan_name}
-                    </Link>
-                  ) : (
-                    comp.artisan_name
-                  )}
+        <div className="max-w-[65ch] mx-auto mb-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {koshirae.components.map((comp: KoshiraeComponentEntry) => (
+              <div
+                key={comp.id}
+                className="py-4 border-b md:border-b-0 md:border-r border-border-subtle last:border-0 md:px-5 md:first:pl-0 md:last:pr-0"
+              >
+                <p className="text-[11px] uppercase tracking-[0.15em] text-gold/50 mb-1.5">
+                  {COMPONENT_LABELS[comp.component_type] || comp.component_type}
                 </p>
-              )}
-              {comp.artisan_kanji && (
-                <p className="text-[12px] text-muted mt-0.5">
-                  {comp.artisan_kanji}
-                </p>
-              )}
-              {comp.signed && comp.mei_text && (
-                <p className="text-[12px] text-charcoal mt-0.5 italic">
-                  {comp.mei_text}
-                </p>
-              )}
-              {comp.description && (
-                <p className="text-[13px] text-muted mt-2 leading-relaxed">
-                  {comp.description}
-                </p>
-              )}
-            </div>
-          ))}
+                {comp.artisan_name && (
+                  <p className="text-[15px] font-medium text-ink leading-snug">
+                    {comp.artisan_id ? (
+                      <Link
+                        href={`/artists/${generateArtisanSlug(comp.artisan_name, comp.artisan_id)}`}
+                        className="hover:text-gold transition-colors"
+                      >
+                        {comp.artisan_name}
+                      </Link>
+                    ) : (
+                      comp.artisan_name
+                    )}
+                  </p>
+                )}
+                {comp.artisan_kanji && (
+                  <p className="text-[12px] text-muted mt-0.5">
+                    {comp.artisan_kanji}
+                  </p>
+                )}
+                {comp.signed && comp.mei_text && (
+                  <p className="text-[12px] text-charcoal mt-0.5 italic">
+                    {comp.mei_text}
+                  </p>
+                )}
+                {comp.description && (
+                  <p className="text-[13px] text-muted mt-2 leading-relaxed">
+                    {comp.description}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
-      {/* Koshirae setsumei (if exists) — clean prose, no box */}
+      {/* Koshirae setsumei — prose width */}
       {(koshirae.setsumei_text_en || koshirae.setsumei_text_ja) && (
-        <div className="mb-10">
+        <div className="max-w-[65ch] mx-auto mb-10">
           <h4 className="text-[13px] uppercase tracking-[0.15em] font-medium text-muted mb-5">
             Koshirae Setsumei
           </h4>
-          <div className="prose-translation text-[15px] md:text-[17px] leading-[1.85] font-light max-w-[62ch]">
+          <div className="prose-translation text-[15px] md:text-[17px] leading-[1.85] font-light">
             <HighlightedMarkdown content={koshirae.setsumei_text_en || koshirae.setsumei_text_ja!} variant="translation" />
           </div>
         </div>
       )}
 
-      {/* Koshirae images — vertical stack, natural height */}
+      {/* Koshirae images — full media width, vertical stack */}
       {koshirae.images && koshirae.images.length > 0 && (
         <div className="space-y-4">
           {koshirae.images.map((url, i) => (
@@ -154,21 +155,23 @@ export function ShowcaseKoshirae({ koshirae, onImageClick }: ShowcaseKoshiraePro
               <Image
                 src={url}
                 alt={`Koshirae image ${i + 1}`}
-                width={800}
-                height={600}
+                width={960}
+                height={720}
                 className="w-full h-auto object-contain group-hover:scale-[1.02] transition-transform duration-300"
-                sizes="(max-width: 768px) 100vw, 780px"
+                sizes="(max-width: 768px) 100vw, 960px"
               />
             </button>
           ))}
         </div>
       )}
 
-      {/* Koshirae description */}
+      {/* Koshirae description — prose width */}
       {koshirae.description && (
-        <p className="text-[15px] text-charcoal mt-8 leading-[1.8] max-w-[62ch] font-light">
-          {koshirae.description}
-        </p>
+        <div className="max-w-[65ch] mx-auto">
+          <p className="text-[15px] text-charcoal mt-8 leading-[1.8] font-light">
+            {koshirae.description}
+          </p>
+        </div>
       )}
     </div>
   );
