@@ -318,6 +318,16 @@ export function VideoUploadProvider({ children }: { children: ReactNode }) {
     return uploads.some(u => u.status === 'preparing' || u.status === 'uploading');
   }, [uploads]);
 
+  // Warn before closing tab when uploads are in progress
+  useEffect(() => {
+    if (!hasActiveUploads) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [hasActiveUploads]);
+
   const value = useMemo<VideoUploadContextValue>(
     () => ({
       uploads,

@@ -19,6 +19,7 @@ import { useLocale } from '@/i18n/LocaleContext';
 import { formatRelativeTime } from '@/lib/time';
 import type { DisplayItem } from '@/types/displayItem';
 import { DealerCardIndicators } from '@/components/dealer/DealerCardIndicators';
+import { CardUploadOverlay } from '@/components/dealer/CardUploadOverlay';
 // getDealerDisplayName no longer needed — pre-resolved in DisplayItem.dealer_display_name
 
 // 7 days in milliseconds - matches the data delay for free tier
@@ -802,6 +803,10 @@ export const ListingCard = memo(function ListingCard({
               <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
             </svg>
           </div>
+        )}
+        {/* Upload progress overlay (dealer cards only) — sits above video badge */}
+        {listing.source === 'dealer' && (
+          <CardUploadOverlay listingId={Number(listing.id)} />
         )}
         {/* Video badge */}
         {(listing.video_count ?? 0) > 0 && (
