@@ -427,9 +427,9 @@
   "itemType.book": "Book",
   "itemType.unknown": "Unknown",
 
-  "cert.Tokuju": "Tokubetsu J\u016by\u014d",
-  "cert.tokuju": "Tokubetsu J\u016by\u014d",
-  "cert.Tokubetsu Juyo": "Tokubetsu J\u016by\u014d",
+  "cert.Tokuju": "Tokuj\u016b",
+  "cert.tokuju": "Tokuj\u016b",
+  "cert.Tokubetsu Juyo": "Tokuj\u016b",
   "cert.Juyo Bijutsuhin": "J\u016by\u014d Bijutsuhin",
   "cert.Juyo": "J\u016by\u014d",
   "cert.juyo": "J\u016by\u014d",

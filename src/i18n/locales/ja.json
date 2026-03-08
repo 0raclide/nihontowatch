@@ -427,9 +427,9 @@
   "itemType.book": "\u66f8\u7c4d",
   "itemType.unknown": "\u4e0d\u660e",
 
-  "cert.Tokuju": "\u7279\u5225\u91cd\u8981",
-  "cert.tokuju": "\u7279\u5225\u91cd\u8981",
-  "cert.Tokubetsu Juyo": "\u7279\u5225\u91cd\u8981",
+  "cert.Tokuju": "\u7279\u91cd",
+  "cert.tokuju": "\u7279\u91cd",
+  "cert.Tokubetsu Juyo": "\u7279\u91cd",
   "cert.Juyo Bijutsuhin": "\u91cd\u8981\u7f8e\u8853\u54c1",
   "cert.Juyo": "\u91cd\u8981",
   "cert.juyo": "\u91cd\u8981",
