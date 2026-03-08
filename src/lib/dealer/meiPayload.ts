@@ -5,7 +5,7 @@
  * exercise the real code paths instead of copy-pasted reimplementations.
  */
 
-/** Mei types that indicate the blade is signed (has a physical inscription). */
+/** Mei types that indicate the item is signed (has a physical inscription). */
 export const SIGNED_MEI_TYPES = new Set([
   'zaimei',
   'kinzogan-mei',
@@ -17,14 +17,12 @@ export const SIGNED_MEI_TYPES = new Set([
 
 /**
  * Compute the mei_text value for the listing payload.
- * Returns null for unsigned, tosogu, or empty text.
+ * Returns null for unsigned or empty text.
  */
 export function computeMeiText(
-  category: string,
   meiType: string | null,
   meiText: string | null,
 ): string | null {
-  if (category !== 'nihonto') return null;
   if (!meiType || !SIGNED_MEI_TYPES.has(meiType)) return null;
   return meiText || null;
 }
@@ -32,19 +30,17 @@ export function computeMeiText(
 /**
  * Compute the mei_guaranteed value for the listing payload.
  * Auto-defaults: true when cert exists + signed, false when no cert + signed.
- * Returns null for unsigned or tosogu.
+ * Returns null for unsigned.
  *
  * @param certNone - The sentinel value for "no certification" (e.g. 'none').
  *   Passed as param to avoid importing UI constants.
  */
 export function computeMeiGuaranteed(
-  category: string,
   meiType: string | null,
   meiGuaranteed: boolean | null,
   certType: string | null,
   certNone: string,
 ): boolean | null {
-  if (category !== 'nihonto') return null;
   if (!meiType || !SIGNED_MEI_TYPES.has(meiType)) return null;
   return meiGuaranteed ?? (certType && certType !== certNone ? true : false);
 }

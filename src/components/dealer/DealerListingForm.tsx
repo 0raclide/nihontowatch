@@ -330,7 +330,7 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
     if (newCategory === category) return;
     const wouldLoseData = newCategory === 'nihonto'
       ? !!(heightCm || widthCm || materials.length || hakogaki.length)
-      : !!(nagasaCm || motohabaCm || sakihabaCm || soriCm || meiType || meiText || nakagoType.length || sayagaki.length || kantoHibisho);
+      : !!(nagasaCm || motohabaCm || sakihabaCm || soriCm || nakagoType.length || sayagaki.length || kantoHibisho);
     if (wouldLoseData && !window.confirm(t('dealer.confirmCategorySwitch'))) return;
     setCategory(newCategory);
     if (newCategory === 'nihonto') {
@@ -343,14 +343,11 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
       setMotohabaCm('');
       setSakihabaCm('');
       setSoriCm('');
-      setMeiType(null);
-      setMeiText(null);
-      setMeiGuaranteed(null);
       setNakagoType([]);
       setSayagaki([]);
       setKantoHibisho(null);
     }
-  }, [category, heightCm, widthCm, materials, hakogaki, nagasaCm, motohabaCm, sakihabaCm, soriCm, meiType, meiText, nakagoType, sayagaki, kantoHibisho, t]);
+  }, [category, heightCm, widthCm, materials, hakogaki, nagasaCm, motohabaCm, sakihabaCm, soriCm, nakagoType, sayagaki, kantoHibisho, t]);
 
   const canDelete = mode === 'edit' && initialData?.id &&
     (initialData?.status === 'INVENTORY' || initialData?.status === 'WITHDRAWN');
@@ -501,8 +498,8 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
         sakihaba_cm: sakihabaCm ? Number(sakihabaCm) : null,
         sori_cm: soriCm ? Number(soriCm) : null,
         mei_type: meiType,
-        mei_text: computeMeiText(category, meiType, meiText),
-        mei_guaranteed: computeMeiGuaranteed(category, meiType, meiGuaranteed, certType, CERT_NONE),
+        mei_text: computeMeiText(meiType, meiText),
+        mei_guaranteed: computeMeiGuaranteed(meiType, meiGuaranteed, certType, CERT_NONE),
         nakago_type: nakagoType.length ? nakagoType.join(',') : null,
         height_cm: category === 'tosogu' && heightCm ? Number(heightCm) : null,
         width_cm: category === 'tosogu' && widthCm ? Number(widthCm) : null,
@@ -1277,8 +1274,8 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
               </div>
             )}
 
-            {/* 9b. Signature (mei_type) — nihonto only */}
-            {category === 'nihonto' && (
+            {/* 9b. Signature (mei_type) — nihonto + tosogu */}
+            {(category === 'nihonto' || category === 'tosogu') && (
               <div>
                 <label className="block text-[11px] uppercase tracking-wider text-muted mb-2">
                   {t('dealer.signature')}
@@ -1332,27 +1329,32 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
                   </label>
                 )}
 
-                <label className="block text-[11px] uppercase tracking-wider text-muted mt-3 mb-2">
-                  {t('dealer.nakago')}
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {NAKAGO_TYPES.map(({ value: v, labelKey }) => (
-                    <button
-                      key={v}
-                      type="button"
-                      onClick={() => setNakagoType(prev =>
-                        prev.includes(v) ? prev.filter(x => x !== v) : [...prev, v]
-                      )}
-                      className={`px-3 py-1.5 rounded-full text-[12px] font-medium transition-all ${
-                        nakagoType.includes(v)
-                          ? 'bg-gold/10 text-gold border border-gold/30'
-                          : 'bg-surface text-muted border border-border/50 hover:border-gold/30'
-                      }`}
-                    >
-                      {t(labelKey)}
-                    </button>
-                  ))}
-                </div>
+                {/* Nakago — nihonto only */}
+                {category === 'nihonto' && (
+                  <>
+                    <label className="block text-[11px] uppercase tracking-wider text-muted mt-3 mb-2">
+                      {t('dealer.nakago')}
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      {NAKAGO_TYPES.map(({ value: v, labelKey }) => (
+                        <button
+                          key={v}
+                          type="button"
+                          onClick={() => setNakagoType(prev =>
+                            prev.includes(v) ? prev.filter(x => x !== v) : [...prev, v]
+                          )}
+                          className={`px-3 py-1.5 rounded-full text-[12px] font-medium transition-all ${
+                            nakagoType.includes(v)
+                              ? 'bg-gold/10 text-gold border border-gold/30'
+                              : 'bg-surface text-muted border border-border/50 hover:border-gold/30'
+                          }`}
+                        >
+                          {t(labelKey)}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
               </div>
             )}
 

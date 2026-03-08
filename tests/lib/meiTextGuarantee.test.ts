@@ -16,8 +16,8 @@ import {
  * Core business rules:
  * 1. mei_guaranteed auto-defaults to true when cert exists + signed
  * 2. mei_guaranteed auto-defaults to false when no cert + signed
- * 3. mei_guaranteed is null when mumei
- * 4. mei_text is cleared when switching to mumei or tosogu
+ * 3. mei_guaranteed is null when mumei (unsigned)
+ * 4. mei_text is cleared when unsigned
  * 5. Catalog prefill flows gold_mei_kanji through to meiText (unsigned-gated)
  */
 
@@ -33,40 +33,36 @@ describe('SIGNED_MEI_TYPES membership', () => {
 
 describe('computeMeiGuaranteed', () => {
   it('returns true when cert exists + signed (zaimei)', () => {
-    expect(computeMeiGuaranteed('nihonto', 'zaimei', null, 'juyo', CERT_NONE)).toBe(true);
+    expect(computeMeiGuaranteed('zaimei', null, 'juyo', CERT_NONE)).toBe(true);
   });
 
   it('returns true for tokubetsu_hozon + kinzogan-mei', () => {
-    expect(computeMeiGuaranteed('nihonto', 'kinzogan-mei', null, 'tokubetsu_hozon', CERT_NONE)).toBe(true);
+    expect(computeMeiGuaranteed('kinzogan-mei', null, 'tokubetsu_hozon', CERT_NONE)).toBe(true);
   });
 
   it('returns false when no cert + signed', () => {
-    expect(computeMeiGuaranteed('nihonto', 'zaimei', null, null, CERT_NONE)).toBe(false);
+    expect(computeMeiGuaranteed('zaimei', null, null, CERT_NONE)).toBe(false);
   });
 
   it('returns false when cert is CERT_NONE sentinel + signed', () => {
-    expect(computeMeiGuaranteed('nihonto', 'zaimei', null, 'none', CERT_NONE)).toBe(false);
+    expect(computeMeiGuaranteed('zaimei', null, 'none', CERT_NONE)).toBe(false);
   });
 
   it('returns null when mumei (unsigned)', () => {
-    expect(computeMeiGuaranteed('nihonto', 'mumei', null, 'juyo', CERT_NONE)).toBeNull();
+    expect(computeMeiGuaranteed('mumei', null, 'juyo', CERT_NONE)).toBeNull();
   });
 
   it('returns null when no mei_type selected', () => {
-    expect(computeMeiGuaranteed('nihonto', null, null, 'juyo', CERT_NONE)).toBeNull();
-  });
-
-  it('returns null for tosogu category', () => {
-    expect(computeMeiGuaranteed('tosogu', 'zaimei', null, 'juyo', CERT_NONE)).toBeNull();
+    expect(computeMeiGuaranteed(null, null, 'juyo', CERT_NONE)).toBeNull();
   });
 
   it('preserves explicit user override (false with cert)', () => {
-    expect(computeMeiGuaranteed('nihonto', 'zaimei', false, 'juyo', CERT_NONE)).toBe(false);
+    expect(computeMeiGuaranteed('zaimei', false, 'juyo', CERT_NONE)).toBe(false);
   });
 
   it('respects all signed mei types', () => {
     for (const meiType of SIGNED_MEI_TYPES) {
-      const result = computeMeiGuaranteed('nihonto', meiType, null, 'hozon', CERT_NONE);
+      const result = computeMeiGuaranteed(meiType, null, 'hozon', CERT_NONE);
       expect(result).toBe(true);
     }
   });
@@ -74,23 +70,19 @@ describe('computeMeiGuaranteed', () => {
 
 describe('computeMeiText', () => {
   it('returns null when switching to mumei', () => {
-    expect(computeMeiText('nihonto', 'mumei', '備前国長船住景光')).toBeNull();
+    expect(computeMeiText('mumei', '備前国長船住景光')).toBeNull();
   });
 
-  it('returns null when switching to tosogu', () => {
-    expect(computeMeiText('tosogu', 'zaimei', '備前国長船住景光')).toBeNull();
-  });
-
-  it('preserves mei_text for signed nihonto', () => {
-    expect(computeMeiText('nihonto', 'zaimei', '備前国長船住景光')).toBe('備前国長船住景光');
+  it('preserves mei_text for signed item', () => {
+    expect(computeMeiText('zaimei', '備前国長船住景光')).toBe('備前国長船住景光');
   });
 
   it('returns null for empty mei_text', () => {
-    expect(computeMeiText('nihonto', 'zaimei', '')).toBeNull();
+    expect(computeMeiText('zaimei', '')).toBeNull();
   });
 
   it('returns null when no mei_type', () => {
-    expect(computeMeiText('nihonto', null, '備前国長船住景光')).toBeNull();
+    expect(computeMeiText(null, '備前国長船住景光')).toBeNull();
   });
 });
 
