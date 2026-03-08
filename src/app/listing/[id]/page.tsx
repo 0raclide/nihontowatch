@@ -12,6 +12,7 @@ import {
 } from '@/lib/seo/jsonLd';
 import { buildSeoTitle, buildSeoDescription } from '@/lib/seo/metaTitle';
 import { getItemTypeUrl } from '@/lib/seo/categories';
+import { isShowcaseEligible } from '@/lib/listing/showcase';
 import { cache } from 'react';
 import { getListingDetail } from '@/lib/listing/getListingDetail';
 import { Footer } from '@/components/layout/Footer';
@@ -265,16 +266,18 @@ export default async function ListingPage({ params }: Props) {
 
       <ListingDetailClient initialData={listing} />
 
-      {/* Server-rendered related listings — links visible to Googlebot in initial HTML */}
-      <RelatedListingsServer
-        artisanItems={artisanItems}
-        artisanName={artisanName}
-        artisanDisplayName={listing.artisan_display_name || null}
-        artisanId={artisanId}
-        dealerItems={dealerItems}
-        dealerName={dealerName}
-        dealerId={dealerId}
-      />
+      {/* Server-rendered related listings — hidden on showcase pages to keep museum focus */}
+      {!isShowcaseEligible(listing) && (
+        <RelatedListingsServer
+          artisanItems={artisanItems}
+          artisanName={artisanName}
+          artisanDisplayName={listing.artisan_display_name || null}
+          artisanId={artisanId}
+          dealerItems={dealerItems}
+          dealerName={dealerName}
+          dealerId={dealerId}
+        />
+      )}
 
       <Footer />
     </>
