@@ -104,6 +104,8 @@ interface ListingWithDealer {
   kiwame: KiwameEntry[] | null;
   kanto_hibisho: KantoHibishoData | null;
   showcase_override: boolean | null;
+  ai_curator_note_en: string | null;
+  ai_curator_note_ja: string | null;
   dealers: {
     id: number;
     name: string;
@@ -197,6 +199,8 @@ export interface EnrichedListingDetail {
   kiwame: KiwameEntry[] | null;
   kanto_hibisho: KantoHibishoData | null;
   showcase_override?: boolean | null;
+  ai_curator_note_en: string | null;
+  ai_curator_note_ja: string | null;
   artisan_display_name?: string;
   artisan_name_kanji?: string;
   artisan_tier?: 'kokuho' | 'elite' | 'juyo' | null;
@@ -284,6 +288,8 @@ const LISTING_SELECT = `
   kiwame,
   kanto_hibisho,
   showcase_override,
+  ai_curator_note_en,
+  ai_curator_note_ja,
   dealers (
     id,
     name,
@@ -478,6 +484,8 @@ export async function getListingDetail(
     kiwame: typedListing.kiwame,
     kanto_hibisho: typedListing.kanto_hibisho,
     showcase_override: typedListing.showcase_override ?? null,
+    ai_curator_note_en: typedListing.ai_curator_note_en ?? null,
+    ai_curator_note_ja: typedListing.ai_curator_note_ja ?? null,
     ...(artisanDisplayName && { artisan_display_name: artisanDisplayName }),
     ...(artisanNameKanji && { artisan_name_kanji: artisanNameKanji }),
     ...(artisanTier && { artisan_tier: artisanTier }),
