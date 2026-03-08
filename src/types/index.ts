@@ -109,6 +109,8 @@ export interface KoshiraeComponentEntry {
   artisan_name: string | null;
   artisan_kanji: string | null;
   description: string | null;
+  signed?: boolean;
+  mei_text?: string | null;
 }
 
 export interface KoshiraeData {
@@ -127,6 +129,10 @@ export interface KoshiraeData {
   setsumei_text_en: string | null;
   setsumei_text_ja: string | null;
   catalog_object_uuid: string | null;
+  // Koshirae-level attribution context (independent of blade)
+  era?: string | null;
+  province?: string | null;
+  school?: string | null;
 }
 
 // =============================================================================

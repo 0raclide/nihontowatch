@@ -1,6 +1,7 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { verifyDealer } from '@/lib/dealer/auth';
 import { getArtisanEliteStats } from '@/lib/featured/scoring';
+import { sanitizeKoshirae } from '@/lib/dealer/sanitizeKoshirae';
 import { selectListingVideos } from '@/lib/supabase/listingVideos';
 import { videoProvider, isVideoProviderConfigured } from '@/lib/video/videoProvider';
 import { NextRequest, NextResponse } from 'next/server';
@@ -117,6 +118,11 @@ export async function PATCH(
     if (ALLOWED_FIELDS.has(key)) {
       updates[key] = value;
     }
+  }
+
+  // Sanitize JSONB fields — whitelist every nested field, enforce length limits
+  if ('koshirae' in updates) {
+    updates.koshirae = sanitizeKoshirae(updates.koshirae);
   }
 
   // Handle status change side effects

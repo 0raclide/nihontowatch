@@ -21,6 +21,8 @@ function createEmptyComponent(): KoshiraeComponentEntry {
     artisan_name: null,
     artisan_kanji: null,
     description: null,
+    signed: false,
+    mei_text: null,
   };
 }
 

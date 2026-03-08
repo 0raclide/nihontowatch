@@ -91,6 +91,13 @@ export function KoshiraeDisplay({ koshirae, hideHeading }: KoshiraeDisplayProps)
           </div>
         )}
 
+        {/* Era / Province / School metadata */}
+        {(koshirae.era || koshirae.province || koshirae.school) && (
+          <p className="text-[12px] text-muted mb-2">
+            {[koshirae.era, koshirae.province, koshirae.school].filter(Boolean).join(' · ')}
+          </p>
+        )}
+
         {/* Single maker (issaku) */}
         {koshirae.artisan_id && (
           <div className="mb-2 flex items-baseline gap-2">
@@ -135,6 +142,9 @@ export function KoshiraeDisplay({ koshirae, hideHeading }: KoshiraeDisplayProps)
                     )}
                   </span>
                 ) : null}
+                {comp.signed && comp.mei_text && (
+                  <span className="text-[12px] text-ink italic">({comp.mei_text})</span>
+                )}
                 {comp.description && (
                   <span className="text-[12px] text-charcoal">— {comp.description}</span>
                 )}

@@ -1,6 +1,7 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { verifyDealer } from '@/lib/dealer/auth';
 import { getArtisanEliteStats } from '@/lib/featured/scoring';
+import { sanitizeKoshirae } from '@/lib/dealer/sanitizeKoshirae';
 import { NextRequest, NextResponse } from 'next/server';
 import { getArtisanNames } from '@/lib/supabase/yuhinkai';
 import { getArtisanDisplayName, getArtisanDisplayNameKanji, getArtisanAlias } from '@/lib/artisan/displayName';
@@ -223,39 +224,7 @@ export async function POST(request: NextRequest) {
           images: [], // Images uploaded separately after creation
         }))
       : null,
-    koshirae: koshirae && typeof koshirae === 'object'
-      ? {
-          cert_type: (koshirae as Record<string, unknown>).cert_type ?? null,
-          cert_in_blade_paper: !!(koshirae as Record<string, unknown>).cert_in_blade_paper,
-          cert_session: (koshirae as Record<string, unknown>).cert_session ?? null,
-          description: (koshirae as Record<string, unknown>).description ?? null,
-          // Pass through non-blob URLs (catalog images are URLs, not file uploads)
-          images: Array.isArray((koshirae as Record<string, unknown>).images)
-            ? ((koshirae as Record<string, unknown>).images as string[]).filter(
-                url => typeof url === 'string' && !url.startsWith('blob:')
-              )
-            : [],
-          // Single maker (issaku)
-          artisan_id: (koshirae as Record<string, unknown>).artisan_id ?? null,
-          artisan_name: (koshirae as Record<string, unknown>).artisan_name ?? null,
-          artisan_kanji: (koshirae as Record<string, unknown>).artisan_kanji ?? null,
-          // Multi maker (per-component)
-          components: Array.isArray((koshirae as Record<string, unknown>).components)
-            ? ((koshirae as Record<string, unknown>).components as Record<string, unknown>[]).map((c) => ({
-                id: c.id,
-                component_type: c.component_type,
-                artisan_id: c.artisan_id ?? null,
-                artisan_name: c.artisan_name ?? null,
-                artisan_kanji: c.artisan_kanji ?? null,
-                description: c.description ?? null,
-              }))
-            : [],
-          // Yuhinkai catalog link
-          setsumei_text_en: (koshirae as Record<string, unknown>).setsumei_text_en ?? null,
-          setsumei_text_ja: (koshirae as Record<string, unknown>).setsumei_text_ja ?? null,
-          catalog_object_uuid: (koshirae as Record<string, unknown>).catalog_object_uuid ?? null,
-        }
-      : null,
+    koshirae: sanitizeKoshirae(koshirae),
     provenance: Array.isArray(provenance) && provenance.length > 0
       ? provenance.map((entry: Record<string, unknown>) => ({
           id: entry.id,

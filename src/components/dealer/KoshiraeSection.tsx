@@ -30,6 +30,9 @@ export function createEmptyKoshirae(): KoshiraeData {
     setsumei_text_en: null,
     setsumei_text_ja: null,
     catalog_object_uuid: null,
+    era: null,
+    province: null,
+    school: null,
   };
 }
 
@@ -93,6 +96,9 @@ export function KoshiraeSection({ koshirae, itemId, onChange, onPendingFilesChan
     if (fields.catalogObjectUuid) updated.catalog_object_uuid = fields.catalogObjectUuid;
     if (fields.setsumeiTextEn !== undefined) updated.setsumei_text_en = fields.setsumeiTextEn ?? null;
     if (fields.setsumeiTextJa !== undefined) updated.setsumei_text_ja = fields.setsumeiTextJa ?? null;
+    if (fields.era) updated.era = fields.era;
+    if (fields.province) updated.province = fields.province;
+    if (fields.school) updated.school = fields.school;
 
     // Prepend catalog images, replacing any prior catalog images but keeping user uploads
     if (fields.catalogImages?.length) {
@@ -285,6 +291,39 @@ export function KoshiraeSection({ koshirae, itemId, onChange, onPendingFilesChan
             onArtisanChange={handleArtisanChange}
             onComponentsChange={handleComponentsChange}
           />
+        </div>
+
+        {/* Era / Province / School */}
+        <div>
+          <label className="block text-[10px] uppercase tracking-wider text-muted mb-1.5">
+            {t('dealer.koshiraeAttribution')}
+          </label>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <input
+              type="text"
+              value={koshirae.era || ''}
+              onChange={e => onChange({ ...koshirae, era: e.target.value || null })}
+              placeholder={t('dealer.koshiraeEra')}
+              maxLength={100}
+              className="flex-1 px-3 py-2 bg-surface border border-border/50 rounded-lg text-[13px] focus:outline-none focus:ring-1 focus:ring-accent"
+            />
+            <input
+              type="text"
+              value={koshirae.province || ''}
+              onChange={e => onChange({ ...koshirae, province: e.target.value || null })}
+              placeholder={t('dealer.koshiraeProvince')}
+              maxLength={100}
+              className="flex-1 px-3 py-2 bg-surface border border-border/50 rounded-lg text-[13px] focus:outline-none focus:ring-1 focus:ring-accent"
+            />
+            <input
+              type="text"
+              value={koshirae.school || ''}
+              onChange={e => onChange({ ...koshirae, school: e.target.value || null })}
+              placeholder={t('dealer.koshiraeSchool')}
+              maxLength={100}
+              className="flex-1 px-3 py-2 bg-surface border border-border/50 rounded-lg text-[13px] focus:outline-none focus:ring-1 focus:ring-accent"
+            />
+          </div>
         </div>
 
         {/* Yuhinkai catalog lookup (koshirae's own Zufu entry) */}

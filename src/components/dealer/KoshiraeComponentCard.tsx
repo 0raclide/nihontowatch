@@ -108,6 +108,33 @@ export function KoshiraeComponentCard({ entry, index, onChange, onRemove }: Kosh
         )}
       </div>
 
+      {/* Signed */}
+      <div className="mb-3">
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={!!entry.signed}
+            onChange={e => onChange({
+              ...entry,
+              signed: e.target.checked,
+              mei_text: e.target.checked ? entry.mei_text : null,
+            })}
+            className="rounded border-border"
+          />
+          <span className="text-[12px] text-muted">{t('dealer.componentSigned')}</span>
+        </label>
+        {entry.signed && (
+          <input
+            type="text"
+            value={entry.mei_text || ''}
+            onChange={e => onChange({ ...entry, mei_text: e.target.value || null })}
+            placeholder={t('dealer.componentMeiText')}
+            maxLength={200}
+            className="mt-1.5 w-full px-3 py-2 bg-surface border border-border/50 rounded-lg text-[13px] focus:outline-none focus:ring-1 focus:ring-accent"
+          />
+        )}
+      </div>
+
       {/* Notes */}
       <div>
         <label className="block text-[10px] uppercase tracking-wider text-muted mb-1">
