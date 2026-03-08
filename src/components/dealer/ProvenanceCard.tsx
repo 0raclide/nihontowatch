@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef } from 'react';
 import Image from 'next/image';
 import type { ProvenanceEntry } from '@/types';
+import { resizeImage } from '@/lib/images/resizeImage';
 import { AutocompleteInput } from './AutocompleteInput';
 import { useLocale } from '@/i18n/LocaleContext';
 
@@ -43,15 +44,17 @@ export function ProvenanceCard({ entry, index, itemId, onChange, onRemove, onPen
     const validFiles: File[] = [];
 
     for (const file of Array.from(files)) {
-      if (file.size > MAX_FILE_SIZE) {
-        setUploadError(t('collection.fileTooLarge', { name: file.name }));
-        continue;
-      }
       if (!ALLOWED_TYPES.includes(file.type)) {
         setUploadError(t('collection.unsupportedFormat', { name: file.name }));
         continue;
       }
-      validFiles.push(file);
+      const resized = await resizeImage(file);
+      const resizedFile = new File([resized], file.name, { type: 'image/jpeg' });
+      if (resizedFile.size > MAX_FILE_SIZE) {
+        setUploadError(t('collection.fileTooLarge', { name: file.name }));
+        continue;
+      }
+      validFiles.push(resizedFile);
     }
 
     if (validFiles.length === 0) return;

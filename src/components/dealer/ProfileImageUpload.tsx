@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react';
 import Image from 'next/image';
 import { useLocale } from '@/i18n/LocaleContext';
+import { resizeImage } from '@/lib/images/resizeImage';
 
 interface ProfileImageUploadProps {
   type: 'logo' | 'banner' | 'shop';
@@ -32,18 +33,19 @@ export function ProfileImageUpload({
   const handleFile = async (file: File) => {
     setError(null);
 
-    if (file.size > maxSizeMb * 1024 * 1024) {
-      setError(`File too large (max ${maxSizeMb}MB)`);
-      return;
-    }
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
       setError('Use JPEG, PNG, or WebP');
       return;
     }
 
+    const resized = await resizeImage(file, type === 'logo' ? 512 : 2048, 0.85);
+    if (resized.size > maxSizeMb * 1024 * 1024) {
+      setError(`File too large (max ${maxSizeMb}MB)`);
+      return;
+    }
+
     setIsUploading(true);
     try {
-      const resized = await resizeImage(file, type === 'logo' ? 512 : 2048, 0.85);
       const formData = new FormData();
       formData.append('file', resized, file.name);
       formData.append('type', type);
@@ -166,35 +168,3 @@ export function ProfileImageUpload({
   );
 }
 
-async function resizeImage(file: File, maxDim: number, quality: number): Promise<Blob> {
-  return new Promise((resolve) => {
-    const img = document.createElement('img');
-    const objectUrl = URL.createObjectURL(file);
-    img.onload = () => {
-      URL.revokeObjectURL(objectUrl);
-      let { width, height } = img;
-      if (width <= maxDim && height <= maxDim) {
-        resolve(file);
-        return;
-      }
-      if (width > height) {
-        height = Math.round((height / width) * maxDim);
-        width = maxDim;
-      } else {
-        width = Math.round((width / height) * maxDim);
-        height = maxDim;
-      }
-      const canvas = document.createElement('canvas');
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext('2d')!;
-      ctx.drawImage(img, 0, 0, width, height);
-      canvas.toBlob(
-        (blob) => resolve(blob || file),
-        'image/jpeg',
-        quality
-      );
-    };
-    img.src = objectUrl;
-  });
-}

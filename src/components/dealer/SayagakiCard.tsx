@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef } from 'react';
 import Image from 'next/image';
 import type { SayagakiEntry, SayagakiAuthor } from '@/types';
+import { resizeImage } from '@/lib/images/resizeImage';
 import { useLocale } from '@/i18n/LocaleContext';
 
 const SAYAGAKI_AUTHORS: { value: SayagakiAuthor; labelKey: string }[] = [
@@ -55,15 +56,17 @@ export function SayagakiCard({ entry, index, itemId, onChange, onRemove, onPendi
     const validFiles: File[] = [];
 
     for (const file of Array.from(files)) {
-      if (file.size > MAX_FILE_SIZE) {
-        setUploadError(t('collection.fileTooLarge', { name: file.name }));
-        continue;
-      }
       if (!ALLOWED_TYPES.includes(file.type)) {
         setUploadError(t('collection.unsupportedFormat', { name: file.name }));
         continue;
       }
-      validFiles.push(file);
+      const resized = await resizeImage(file);
+      const resizedFile = new File([resized], file.name, { type: 'image/jpeg' });
+      if (resizedFile.size > MAX_FILE_SIZE) {
+        setUploadError(t('collection.fileTooLarge', { name: file.name }));
+        continue;
+      }
+      validFiles.push(resizedFile);
     }
 
     if (validFiles.length === 0) return;

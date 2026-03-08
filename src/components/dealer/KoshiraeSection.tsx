@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef } from 'react';
 import Image from 'next/image';
 import type { KoshiraeData } from '@/types';
+import { resizeImage } from '@/lib/images/resizeImage';
 import { CertPills } from './CertPills';
 import { KoshiraeMakerSection } from './KoshiraeMakerSection';
 import { CatalogMatchPanel } from './CatalogMatchPanel';
@@ -118,15 +119,17 @@ export function KoshiraeSection({ koshirae, itemId, onChange, onPendingFilesChan
     const validFiles: File[] = [];
 
     for (const file of Array.from(files)) {
-      if (file.size > MAX_FILE_SIZE) {
-        setUploadError(`File too large: ${file.name}`);
-        continue;
-      }
       if (!ALLOWED_TYPES.includes(file.type)) {
         setUploadError(`Unsupported format: ${file.name}`);
         continue;
       }
-      validFiles.push(file);
+      const resized = await resizeImage(file);
+      const resizedFile = new File([resized], file.name, { type: 'image/jpeg' });
+      if (resizedFile.size > MAX_FILE_SIZE) {
+        setUploadError(`File too large: ${file.name}`);
+        continue;
+      }
+      validFiles.push(resizedFile);
     }
 
     if (validFiles.length === 0) return;

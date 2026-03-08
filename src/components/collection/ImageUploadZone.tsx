@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef } from 'react';
 import Image from 'next/image';
 import { useLocale } from '@/i18n/LocaleContext';
+import { resizeImage } from '@/lib/images/resizeImage';
 
 interface ImageUploadZoneProps {
   images: string[];
@@ -214,40 +215,6 @@ export function ImageUploadZone({ images, itemId, onChange, onPendingFilesChange
       )}
     </div>
   );
-}
-
-/** Resize image to max dimension, return as Blob */
-async function resizeImage(file: File, maxDim: number, quality: number): Promise<Blob> {
-  return new Promise((resolve) => {
-    const img = document.createElement('img');
-    const objectUrl = URL.createObjectURL(file);
-    img.onload = () => {
-      URL.revokeObjectURL(objectUrl); // Fix: free memory
-      let { width, height } = img;
-      if (width <= maxDim && height <= maxDim) {
-        resolve(file);
-        return;
-      }
-      if (width > height) {
-        height = Math.round((height / width) * maxDim);
-        width = maxDim;
-      } else {
-        width = Math.round((width / height) * maxDim);
-        height = maxDim;
-      }
-      const canvas = document.createElement('canvas');
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext('2d')!;
-      ctx.drawImage(img, 0, 0, width, height);
-      canvas.toBlob(
-        blob => resolve(blob || file),
-        'image/jpeg',
-        quality
-      );
-    };
-    img.src = objectUrl;
-  });
 }
 
 /**
