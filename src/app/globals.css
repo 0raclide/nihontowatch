@@ -432,12 +432,10 @@ html.theme-classic {
   --sc-bg-secondary: #161514;
   --sc-bg-card: #1a1917;
   --sc-bg-card-hover: #22201d;
-  --sc-bg-document: #f5f0e8;
   --sc-text-primary: #e8e4dc;
   --sc-text-secondary: #9a9590;
   --sc-text-muted: #6a6560;
   --sc-text-heading: #f2efe8;
-  --sc-text-document: #2a2520;
   --sc-accent-gold: #c4a35a;
   --sc-accent-gold-muted: rgba(196, 163, 90, 0.5);
   --sc-accent-gold-light: #d4b36a;
@@ -450,6 +448,45 @@ html.theme-classic {
   --sc-juyo: #6aace8;
   --sc-tokuho: #d4a060;
   --sc-hozon: #d4c850;
+}
+
+/* Showcase prose-translation overrides — remap light-mode CSS vars to dark palette */
+.showcase .prose-translation {
+  color: var(--sc-text-primary);
+}
+.showcase .prose-translation h1,
+.showcase .prose-translation h2,
+.showcase .prose-translation h3,
+.showcase .prose-translation h4,
+.showcase .prose-translation strong {
+  color: var(--sc-text-heading);
+}
+.showcase .prose-translation h1 {
+  border-bottom-color: var(--sc-divider);
+}
+.showcase .prose-translation li::marker {
+  color: var(--sc-text-muted);
+}
+.showcase .prose-translation blockquote {
+  border-left-color: var(--sc-accent-gold);
+  color: var(--sc-text-secondary);
+}
+.showcase .prose-translation hr {
+  border-top-color: var(--sc-divider);
+}
+.showcase .prose-translation th {
+  background: var(--sc-bg-card-hover);
+  color: var(--sc-text-heading);
+  border-color: var(--sc-border);
+}
+.showcase .prose-translation td {
+  border-color: var(--sc-border);
+}
+.showcase .prose-translation a {
+  color: var(--sc-accent-gold);
+}
+.showcase .prose-translation a:hover {
+  color: var(--sc-accent-gold-light);
 }
 
 /* ==========================================================================

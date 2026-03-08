@@ -29,7 +29,7 @@ export function ShowcaseStickyBar({ listing, sections }: ShowcaseStickyBarProps)
   // Show/hide based on scroll past hero
   useEffect(() => {
     const handleScroll = () => {
-      setVisible(window.scrollY > window.innerHeight * 0.7);
+      setVisible(window.scrollY > 300);
     };
     window.addEventListener('scroll', handleScroll, { passive: true });
     handleScroll();

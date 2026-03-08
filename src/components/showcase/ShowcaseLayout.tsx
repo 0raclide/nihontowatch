@@ -3,8 +3,6 @@
 import { useState, useCallback, useMemo } from 'react';
 import { ShowcaseHero } from './ShowcaseHero';
 import { ShowcaseSection } from './ShowcaseSection';
-import { ShowcaseIdentityCard } from './ShowcaseIdentityCard';
-// ShowcaseCuratorNotePlaceholder removed — Phase 2 will add real AI-generated content
 import { ShowcaseDocumentation } from './ShowcaseDocumentation';
 import { ShowcaseTimeline } from './ShowcaseTimeline';
 import { ShowcaseKoshirae } from './ShowcaseKoshirae';
@@ -95,7 +93,7 @@ export function ShowcaseLayout({ listing }: ShowcaseLayoutProps) {
     listing.koshirae.images?.length > 0
   ));
 
-  // Build section nav items
+  // Build section nav items — hero IS the overview (id="identity")
   const navSections = useMemo(() => {
     const s = [{ id: 'identity', label: 'Overview' }];
     if (hasDocumentation) s.push({ id: 'documentation', label: 'Documentation' });
@@ -110,16 +108,13 @@ export function ShowcaseLayout({ listing }: ShowcaseLayoutProps) {
       {/* Sticky nav bar (desktop only) */}
       <ShowcaseStickyBar listing={listing} sections={navSections} />
 
-      {/* Hero */}
-      <ShowcaseHero listing={listing} />
+      {/* Hero — two-column with image + metadata */}
+      <div id="identity">
+        <ShowcaseHero listing={listing} onImageClick={openLightbox} />
+      </div>
 
       {/* Sections */}
-      <div className="space-y-16 md:space-y-20 pt-12 pb-20 md:pt-16 md:pb-24">
-        {/* Identity Card */}
-        <ShowcaseSection id="identity" hideDivider>
-          <ShowcaseIdentityCard listing={listing} />
-        </ShowcaseSection>
-
+      <div className="space-y-16 md:space-y-20 pb-20 md:pb-24">
         {/* Documentation */}
         {hasDocumentation && (
           <ShowcaseSection id="documentation" title="Documentation" titleJa="文書">
@@ -151,6 +146,7 @@ export function ShowcaseLayout({ listing }: ShowcaseLayoutProps) {
             images={validatedImages}
             usedImages={usedImages}
             onImageClick={openGalleryLightbox}
+            videos={listing.videos}
           />
         </ShowcaseSection>
       </div>

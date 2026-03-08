@@ -2,6 +2,8 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import { HighlightedMarkdown } from '@/components/glossary/HighlightedMarkdown';
+import { getOrdinalSuffix } from '@/lib/text/ordinal';
 import { generateArtisanSlug } from '@/lib/artisan/slugs';
 import type { KoshiraeData, KoshiraeComponentEntry } from '@/types';
 
@@ -67,7 +69,7 @@ export function ShowcaseKoshirae({ koshirae, onImageClick }: ShowcaseKoshiraePro
           <span className={`inline-block text-[11px] uppercase tracking-[0.15em] font-medium px-3.5 py-1.5 rounded ${getCertColorClass(koshirae.cert_type!)}`}>
             {koshirae.cert_type}
             {koshirae.cert_session && (
-              <span className="ml-2 opacity-60">{koshirae.cert_session}th Session</span>
+              <span className="ml-2 opacity-60">{getOrdinalSuffix(koshirae.cert_session)} Session</span>
             )}
           </span>
         </div>
@@ -147,12 +149,12 @@ export function ShowcaseKoshirae({ koshirae, onImageClick }: ShowcaseKoshiraePro
       {/* Koshirae setsumei (if exists) */}
       {(koshirae.setsumei_text_en || koshirae.setsumei_text_ja) && (
         <div className="mt-10 max-w-2xl mx-auto">
-          <div className="bg-[var(--sc-bg-document)] rounded p-6 shadow-sm">
-            <h4 className="text-[11px] uppercase tracking-[0.15em] font-medium text-[var(--sc-text-document)]/50 mb-3">
+          <div className="bg-[var(--sc-bg-card)] rounded p-6 border border-[var(--sc-border)]">
+            <h4 className="text-[11px] uppercase tracking-[0.15em] font-medium text-[var(--sc-text-muted)] mb-3">
               Koshirae Setsumei
             </h4>
-            <div className="text-[13px] leading-[1.8] text-[var(--sc-text-document)] whitespace-pre-wrap font-light">
-              {koshirae.setsumei_text_en || koshirae.setsumei_text_ja}
+            <div className="prose-translation text-[13px] leading-[1.8] text-[var(--sc-text-primary)] font-light">
+              <HighlightedMarkdown content={koshirae.setsumei_text_en || koshirae.setsumei_text_ja!} variant="translation" />
             </div>
           </div>
         </div>

@@ -1,5 +1,5 @@
 import { SupabaseClient } from '@supabase/supabase-js';
-import { getArtisanNames } from '@/lib/supabase/yuhinkai';
+import { getArtisanNames, getArtisan, getElitePercentile } from '@/lib/supabase/yuhinkai';
 import { getArtisanDisplayName, getArtisanDisplayNameKanji, getArtisanAlias } from '@/lib/artisan/displayName';
 import { getArtisanTier } from '@/lib/artisan/tier';
 import { getAttributionName } from '@/lib/listing/attribution';
@@ -200,6 +200,11 @@ export interface EnrichedListingDetail {
   artisan_display_name?: string;
   artisan_name_kanji?: string;
   artisan_tier?: 'kokuho' | 'elite' | 'juyo' | null;
+  artisan_elite_factor?: number;
+  artisan_elite_count?: number;
+  artisan_total_items?: number;
+  artisan_elite_percentile?: number;
+  artisan_entity_type?: 'smith' | 'tosogu';
   dealer_earliest_seen_at: string | null;
   dealers: {
     id: number;
@@ -376,6 +381,11 @@ export async function getListingDetail(
   let artisanDisplayName: string | undefined;
   let artisanNameKanji: string | null | undefined;
   let artisanTier: 'kokuho' | 'elite' | 'juyo' | null = null;
+  let artisanEliteFactor: number | undefined;
+  let artisanEliteCount: number | undefined;
+  let artisanTotalItems: number | undefined;
+  let artisanElitePercentile: number | undefined;
+  let artisanEntityType: 'smith' | 'tosogu' | undefined;
   if (typedListing.artisan_id) {
     const artisanNameMap = await getArtisanNames([typedListing.artisan_id]);
     const artisanData = artisanNameMap.get(typedListing.artisan_id);
@@ -386,6 +396,18 @@ export async function getListingDetail(
     } else {
       // Fallback: use smith/tosogu_maker when Yuhinkai lookup misses
       artisanDisplayName = getAttributionName(typedListing) ?? undefined;
+    }
+
+    // Fetch elite factor data for showcase display
+    const artisanEntity = await getArtisan(typedListing.artisan_id);
+    if (artisanEntity) {
+      artisanEliteFactor = artisanEntity.elite_factor;
+      artisanEliteCount = artisanEntity.elite_count;
+      artisanTotalItems = artisanEntity.total_items;
+      artisanEntityType = artisanEntity.entity_type;
+      if (artisanEntity.elite_factor > 0) {
+        artisanElitePercentile = await getElitePercentile(artisanEntity.elite_factor, artisanEntity.entity_type);
+      }
     }
   }
 
@@ -459,6 +481,11 @@ export async function getListingDetail(
     ...(artisanDisplayName && { artisan_display_name: artisanDisplayName }),
     ...(artisanNameKanji && { artisan_name_kanji: artisanNameKanji }),
     ...(artisanTier && { artisan_tier: artisanTier }),
+    ...(artisanEliteFactor !== undefined && { artisan_elite_factor: artisanEliteFactor }),
+    ...(artisanEliteCount !== undefined && { artisan_elite_count: artisanEliteCount }),
+    ...(artisanTotalItems !== undefined && { artisan_total_items: artisanTotalItems }),
+    ...(artisanElitePercentile !== undefined && { artisan_elite_percentile: artisanElitePercentile }),
+    ...(artisanEntityType && { artisan_entity_type: artisanEntityType }),
     dealer_earliest_seen_at: dealerEarliestSeenAt,
     dealers: {
       id: typedListing.dealers.id,
