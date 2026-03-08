@@ -708,7 +708,7 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
     pendingHakogakiFiles, hakogaki, koshirae, pendingKoshiraeFiles, provenance,
     pendingProvenanceFiles, kiwame, kantoHibisho, pendingKantoHibishoFiles,
     certSession, setsumeiTextEn, setsumeiTextJa, generatedTitle, titleOverride,
-    router,
+    heroImageIndex, images, router,
   ]);
 
   const handleRetryUpload = useCallback(async () => {
