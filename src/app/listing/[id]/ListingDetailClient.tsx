@@ -9,6 +9,12 @@ import { Header } from '@/components/layout/Header';
 import { BottomTabBar } from '@/components/navigation/BottomTabBar';
 import dynamic from 'next/dynamic';
 import { LoginModal } from '@/components/auth/LoginModal';
+import { isShowcaseEligible } from '@/lib/listing/showcase';
+
+const ShowcaseLayout = dynamic(
+  () => import('@/components/showcase/ShowcaseLayout').then(m => ({ default: m.ShowcaseLayout })),
+  { ssr: false }
+);
 
 const CreateAlertModal = dynamic(
   () => import('@/components/alerts/CreateAlertModal').then(m => ({ default: m.CreateAlertModal })),
@@ -240,6 +246,11 @@ export default function ListingDetailPage({ initialData }: ListingDetailPageProp
         <BottomTabBar activeFilterCount={0} />
       </div>
     );
+  }
+
+  // Showcase layout — immersive museum-grade presentation for rich listings
+  if (isShowcaseEligible(listing)) {
+    return <ShowcaseLayout listing={listing} />;
   }
 
   const isSold = listing.is_sold || listing.status === 'sold' || listing.status === 'presumed_sold';

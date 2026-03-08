@@ -424,6 +424,32 @@ html.theme-classic {
 }
 
 /* ==========================================================================
+   Showcase Layout — Immersive museum-grade dark presentation
+   Scoped to .showcase container. Uses its own palette independent of theme.
+   ========================================================================== */
+.showcase {
+  --sc-bg-primary: #0f0f0f;
+  --sc-bg-card: #1a1917;
+  --sc-bg-card-hover: #22201d;
+  --sc-bg-document: #f5f0e8;
+  --sc-text-primary: #e8e4dc;
+  --sc-text-secondary: #9a9590;
+  --sc-text-heading: #f2efe8;
+  --sc-text-document: #2a2520;
+  --sc-accent-gold: #c4a35a;
+  --sc-accent-gold-light: #d4b36a;
+  --sc-border: #2a2825;
+  --sc-divider: #3a3632;
+
+  /* Cert colors within showcase (bright for dark bg) */
+  --sc-tokuju: #b088d0;
+  --sc-jubi: #F0A830;
+  --sc-juyo: #6aace8;
+  --sc-tokuho: #d4a060;
+  --sc-hozon: #d4c850;
+}
+
+/* ==========================================================================
    Classic Theme — SOTA Elderly-Accessible Readability Overrides
    WCAG 2.2 AAA · GOV.UK typography standards · W3C WAI-AGE
    All rules scoped to html.theme-classic — zero impact on other themes.
