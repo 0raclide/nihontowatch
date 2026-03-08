@@ -10,6 +10,7 @@
 import { createHash } from 'crypto';
 import type { EnrichedListingDetail } from './getListingDetail';
 import type { ArtisanEntity } from '@/lib/supabase/yuhinkai';
+import type { SayagakiEntry, HakogakiEntry, KoshiraeData, ProvenanceEntry, KiwameEntry } from '@/types';
 
 // =============================================================================
 // TYPES
@@ -238,4 +239,132 @@ export function getDataRichness(context: CuratorNoteContext): DataRichness {
   if (hasSetsumei && hasArtisan) return 'moderate';
 
   return 'sparse';
+}
+
+// =============================================================================
+// FORM DATA → CONTEXT ADAPTER (for dealer generate-description endpoint)
+// =============================================================================
+
+export interface GenerateDescriptionFormData {
+  item_type: string | null;
+  nagasa_cm: number | null;
+  sori_cm: number | null;
+  motohaba_cm: number | null;
+  sakihaba_cm: number | null;
+  kasane_cm: number | null;
+  mei_type: string | null;
+  mei_text: string | null;
+  era: string | null;
+  province: string | null;
+  school: string | null;
+  cert_type: string | null;
+  cert_session: number | null;
+  setsumei_text_en: string | null;
+  setsumei_text_ja: string | null;
+  sayagaki: SayagakiEntry[] | null;
+  hakogaki: HakogakiEntry[] | null;
+  provenance: ProvenanceEntry[] | null;
+  kiwame: KiwameEntry[] | null;
+  koshirae: KoshiraeData | null;
+}
+
+/**
+ * Assemble CuratorNoteContext from dealer form data (pre-save).
+ * Mirrors assembleCuratorContext but takes form fields instead of a DB listing.
+ */
+export function assembleCuratorContextFromFormData(
+  formData: GenerateDescriptionFormData,
+  artisanEntity: ArtisanEntity | null,
+  aiDescription: { en: string | null; ja: string | null } | null
+): CuratorNoteContext {
+  const sword: CuratorNoteContext['sword'] = {
+    item_type: formData.item_type,
+    nagasa_cm: formData.nagasa_cm,
+    sori_cm: formData.sori_cm,
+    motohaba_cm: formData.motohaba_cm,
+    sakihaba_cm: formData.sakihaba_cm,
+    kasane_cm: formData.kasane_cm,
+    mei_type: formData.mei_type,
+    mei_text: formData.mei_text,
+    era: formData.era,
+    province: formData.province,
+    school: formData.school,
+    cert_type: formData.cert_type,
+    cert_session: formData.cert_session != null ? String(formData.cert_session) : null,
+    cert_organization: null,
+  };
+
+  const artisan: CuratorNoteContext['artisan'] = artisanEntity
+    ? {
+        code: artisanEntity.maker_id,
+        name_romaji: artisanEntity.name_romaji,
+        name_kanji: artisanEntity.name_kanji,
+        school: artisanEntity.school,
+        province: artisanEntity.province,
+        era: artisanEntity.era,
+        teacher: artisanEntity.teacher,
+        teacher_id: artisanEntity.teacher_id,
+        designation_factor: artisanEntity.elite_factor,
+        kokuho_count: artisanEntity.kokuho_count,
+        jubun_count: artisanEntity.jubun_count,
+        jubi_count: artisanEntity.jubi_count,
+        gyobutsu_count: artisanEntity.gyobutsu_count,
+        tokuju_count: artisanEntity.tokuju_count,
+        juyo_count: artisanEntity.juyo_count,
+        total_items: artisanEntity.total_items,
+        ai_biography_en: aiDescription?.en ?? null,
+      }
+    : null;
+
+  const hasSetsumei = !!(formData.setsumei_text_en || formData.setsumei_text_ja);
+  const setsumei: CuratorNoteContext['setsumei'] = hasSetsumei
+    ? { text_en: formData.setsumei_text_en, text_ja: formData.setsumei_text_ja }
+    : null;
+
+  const sayagakiEntries = formData.sayagaki?.filter(s => s.content) ?? [];
+  const sayagaki: CuratorNoteContext['sayagaki'] = sayagakiEntries.length > 0
+    ? sayagakiEntries.map(s => ({
+        author: s.author_custom ?? s.author ?? null,
+        content: s.content,
+      }))
+    : null;
+
+  const hakogakiEntries = formData.hakogaki?.filter(h => h.content) ?? [];
+  const hakogaki: CuratorNoteContext['hakogaki'] = hakogakiEntries.length > 0
+    ? hakogakiEntries.map(h => ({
+        author: h.author ?? null,
+        content: h.content,
+      }))
+    : null;
+
+  const provenanceEntries = formData.provenance?.filter(p => p.owner_name) ?? [];
+  const provenance: CuratorNoteContext['provenance'] = provenanceEntries.length > 0
+    ? provenanceEntries.map(p => ({
+        owner_name: p.owner_name,
+        owner_name_ja: p.owner_name_ja,
+        notes: p.notes,
+      }))
+    : null;
+
+  const kiwameEntries = formData.kiwame?.filter(k => k.judge_name) ?? [];
+  const kiwame: CuratorNoteContext['kiwame'] = kiwameEntries.length > 0
+    ? kiwameEntries.map(k => ({
+        judge_name: k.judge_name,
+        kiwame_type: k.kiwame_type,
+        notes: k.notes,
+      }))
+    : null;
+
+  const k = formData.koshirae;
+  const hasKoshirae = !!(k && (k.cert_type || k.artisan_id || k.artisan_name || k.description));
+  const koshirae: CuratorNoteContext['koshirae'] = hasKoshirae && k
+    ? {
+        cert_type: k.cert_type,
+        cert_session: k.cert_session,
+        artisan_name: k.artisan_name,
+        description: k.description,
+      }
+    : null;
+
+  return { sword, artisan, setsumei, sayagaki, hakogaki, provenance, kiwame, koshirae };
 }

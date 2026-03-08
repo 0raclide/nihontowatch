@@ -303,6 +303,8 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
     initialData?.kanto_hibisho || draft?.kantoHibisho || null
   );
   const [pendingKantoHibishoFiles, setPendingKantoHibishoFiles] = useState<File[]>([]);
+  const [isGeneratingNote, setIsGeneratingNote] = useState(false);
+  const [generateNoteError, setGenerateNoteError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -788,6 +790,63 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
     }
   }, [initialData?.id, router]);
 
+  const canGenerateNote = certType === 'Juyo' || certType === 'Tokubetsu Juyo';
+  const hasNoteData = !!(artisanId || setsumeiTextEn || setsumeiTextJa);
+
+  const handleGenerateNote = useCallback(async () => {
+    if (description && !window.confirm(t('dealer.generateNoteReplace'))) return;
+
+    setIsGeneratingNote(true);
+    setGenerateNoteError(null);
+
+    try {
+      const res = await fetch('/api/dealer/generate-description', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          cert_type: certType,
+          item_type: itemType,
+          nagasa_cm: nagasaCm ? Number(nagasaCm) : null,
+          sori_cm: soriCm ? Number(soriCm) : null,
+          motohaba_cm: motohabaCm ? Number(motohabaCm) : null,
+          sakihaba_cm: sakihabaCm ? Number(sakihabaCm) : null,
+          mei_type: meiType,
+          mei_text: meiText,
+          era: era || null,
+          province: province || null,
+          school: artisanSchool || null,
+          cert_session: certSession,
+          artisan_id: artisanId,
+          setsumei_text_en: setsumeiTextEn,
+          setsumei_text_ja: setsumeiTextJa,
+          sayagaki: sayagaki.length > 0 ? sayagaki : null,
+          hakogaki: hakogaki.length > 0 ? hakogaki : null,
+          provenance: provenance.length > 0 ? provenance : null,
+          kiwame: kiwame.length > 0 ? kiwame : null,
+          koshirae,
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Generation failed');
+      }
+
+      const data = await res.json();
+      setDescription(data.description);
+    } catch (err) {
+      setGenerateNoteError(err instanceof Error ? err.message : 'Generation failed');
+    } finally {
+      setIsGeneratingNote(false);
+    }
+  }, [
+    certType, itemType, nagasaCm, soriCm, motohabaCm, sakihabaCm,
+    meiType, meiText, era, province, artisanSchool, certSession,
+    artisanId, setsumeiTextEn, setsumeiTextJa,
+    sayagaki, hakogaki, provenance, kiwame, koshirae,
+    description, t,
+  ]);
+
   // Image upload retry screen
   if (imageUploadFailed) {
     return (
@@ -1161,11 +1220,44 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
         </section>
         )}
 
-        {/* 8. Notes (collapsed) */}
-        <details>
+        {/* 8. Notes */}
+        <details open>
           <summary className="text-[11px] uppercase tracking-wider text-muted cursor-pointer">
             {t('dealer.notes')}
           </summary>
+
+          {/* Generate Scholar's Note — Juyo / Tokubetsu Juyo only */}
+          {canGenerateNote && (
+            <div className="mt-2 mb-1">
+              <button
+                type="button"
+                onClick={handleGenerateNote}
+                disabled={isGeneratingNote || !hasNoteData}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-all disabled:opacity-40 bg-surface border border-border/50 text-muted hover:border-gold/30 hover:text-gold"
+              >
+                {isGeneratingNote ? (
+                  <>
+                    <span className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                    {t('dealer.generatingNote')}
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                    </svg>
+                    {t(description ? 'dealer.regenerateNote' : 'dealer.generateNote')}
+                  </>
+                )}
+              </button>
+              {!hasNoteData && (
+                <p className="text-[10px] text-muted mt-1">{t('dealer.generateNoteNeedData')}</p>
+              )}
+              {generateNoteError && (
+                <p className="text-[10px] text-red-500 mt-1">{generateNoteError}</p>
+              )}
+            </div>
+          )}
+
           <textarea
             value={description}
             onChange={e => setDescription(e.target.value)}
@@ -1175,8 +1267,8 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
           />
         </details>
 
-        {/* 9. More Details (collapsed) */}
-        <details ref={moreDetailsRef}>
+        {/* 9. More Details */}
+        <details ref={moreDetailsRef} open>
           <summary className="text-[11px] uppercase tracking-wider text-muted cursor-pointer">
             {t('dealer.moreDetails')}
           </summary>
