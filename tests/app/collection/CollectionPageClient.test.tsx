@@ -142,6 +142,10 @@ vi.mock('@/components/ui/Drawer', () => ({
     isOpen ? <div data-testid="drawer">{children}</div> : null,
 }));
 
+vi.mock('@/components/layout/Header', () => ({
+  Header: () => <header data-testid="header" />,
+}));
+
 // ---------------------------------------------------------------------------
 // Mock fetch
 // ---------------------------------------------------------------------------
@@ -227,6 +231,20 @@ beforeEach(() => {
   vi.clearAllMocks();
   capturedGridProps = null;
   mockSearchParams = new URLSearchParams();
+
+  // Mock localStorage (jsdom doesn't always provide it as a function)
+  Object.defineProperty(window, 'localStorage', {
+    value: {
+      getItem: vi.fn(() => null),
+      setItem: vi.fn(),
+      removeItem: vi.fn(),
+      clear: vi.fn(),
+      length: 0,
+      key: vi.fn(),
+    },
+    writable: true,
+    configurable: true,
+  });
 
   // Default: API returns mock items
   global.fetch = vi.fn().mockResolvedValue({

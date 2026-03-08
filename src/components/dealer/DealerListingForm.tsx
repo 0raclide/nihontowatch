@@ -18,6 +18,8 @@ import { KiwameSection } from './KiwameSection';
 import { CatalogMatchPanel } from './CatalogMatchPanel';
 import type { CatalogPrefillFields } from './CatalogMatchPanel';
 import { SetsumeiPreview } from './SetsumeiPreview';
+import { VideoUploadSection } from './VideoUploadSection';
+import type { ListingVideo } from '@/types/media';
 import { CATALOG_CERT_TYPES } from '@/lib/collection/catalogMapping';
 import type { SayagakiEntry, HakogakiEntry, KoshiraeData, ProvenanceEntry, KiwameEntry } from '@/types';
 import { useLocale } from '@/i18n/LocaleContext';
@@ -136,6 +138,7 @@ export interface DealerListingInitialData {
   setsumei_text_en?: string | null;
   setsumei_text_ja?: string | null;
   status?: string | null;
+  videos?: ListingVideo[];
 }
 
 interface DealerListingFormProps {
@@ -255,6 +258,7 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
   );
   const [images, setImages] = useState<string[]>(initialData?.images || draft?.images || []);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const [videos, setVideos] = useState<ListingVideo[]>(initialData?.videos || []);
   const [sayagaki, setSayagaki] = useState<SayagakiEntry[]>(
     initialData?.sayagaki || draft?.sayagaki || []
   );
@@ -825,6 +829,18 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
             onPendingFilesChange={setPendingFiles}
             apiEndpoint="/api/dealer/images"
           />
+
+          {/* Video upload */}
+          <div className="mt-4">
+            <label className="block text-[11px] uppercase tracking-wider text-muted mb-2">
+              {t('dealer.video.upload')}
+            </label>
+            <VideoUploadSection
+              listingId={mode === 'edit' && initialData?.id ? initialData.id : undefined}
+              videos={videos}
+              onVideosChange={setVideos}
+            />
+          </div>
         </section>
 
         {/* 2. Category */}

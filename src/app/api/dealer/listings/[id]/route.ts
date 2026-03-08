@@ -1,6 +1,8 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { verifyDealer } from '@/lib/dealer/auth';
 import { getArtisanEliteStats } from '@/lib/featured/scoring';
+import { selectListingVideos } from '@/lib/supabase/listingVideos';
+import { videoProvider, isVideoProviderConfigured } from '@/lib/video/videoProvider';
 import { NextRequest, NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -211,6 +213,23 @@ export async function DELETE(
       { status: 400 }
     );
   }
+
+  // Clean up Bunny videos before CASCADE delete removes listing_videos rows
+  if (isVideoProviderConfigured()) {
+    const { data: videos } = await selectListingVideos(
+      serviceClient, 'listing_id', listingId, 'provider_id'
+    );
+    if (videos && videos.length > 0) {
+      await Promise.all(
+        videos.map(v =>
+          videoProvider.deleteVideo(v.provider_id).catch(err =>
+            console.error(`Failed to delete Bunny video ${v.provider_id}:`, err)
+          )
+        )
+      );
+    }
+  }
+
   const { error } = await (serviceClient.from('listings') as any)
     .delete()
     .eq('id', listingId);

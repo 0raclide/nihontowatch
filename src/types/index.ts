@@ -659,6 +659,10 @@ export interface Listing {
   is_initial_import?: boolean | null; // DB column: TRUE = bulk import, FALSE = genuine new
   dealer_earliest_seen_at?: string | null; // Enriched by API
 
+  // Video
+  videos?: import('@/types/media').ListingVideo[];
+  video_count?: number;
+
   // Relations (when joined)
   dealer?: Dealer;
   // Supabase returns 'dealers' (plural) from single-row joins

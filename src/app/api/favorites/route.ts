@@ -89,6 +89,7 @@ export async function GET() {
           is_available,
           is_sold,
           dealer_id,
+          video_count,
           dealers (
             id,
             name,

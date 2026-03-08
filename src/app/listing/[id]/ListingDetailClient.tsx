@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -21,6 +21,9 @@ const InquiryModal = dynamic(
 import { useAlerts } from '@/hooks/useAlerts';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { getAllImages } from '@/lib/images';
+import { getMediaItemsFromImages } from '@/lib/media';
+import { VideoGalleryItem } from '@/components/video/VideoGalleryItem';
+import type { MediaItem } from '@/types/media';
 import { useValidatedImages } from '@/hooks/useValidatedImages';
 import { shouldShowNewBadge } from '@/lib/newListing';
 import { getAttributionName, getAttributionSchool } from '@/lib/listing/attribution';
@@ -129,12 +132,19 @@ export default function ListingDetailPage({ initialData }: ListingDetailPageProp
   const rawImages = listing ? getAllImages(listing) : [];
   const { validatedImages } = useValidatedImages(rawImages);
 
-  // Reset selectedImageIndex if it's out of bounds after images are filtered
+  // Unified media gallery: validated images + ready videos in one array
+  const mediaItems: MediaItem[] = useMemo(
+    () => getMediaItemsFromImages(validatedImages, listing?.videos),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [validatedImages.length, listing?.id, listing?.videos?.length]
+  );
+
+  // Reset selectedImageIndex if it's out of bounds after images/videos change
   useEffect(() => {
-    if (validatedImages.length > 0 && selectedImageIndex >= validatedImages.length) {
+    if (mediaItems.length > 0 && selectedImageIndex >= mediaItems.length) {
       setSelectedImageIndex(0);
     }
-  }, [validatedImages.length, selectedImageIndex]);
+  }, [mediaItems.length, selectedImageIndex]);
 
   // Fetch listing data via API route — skip when server-rendered initialData is available
   useEffect(() => {
@@ -235,7 +245,7 @@ export default function ListingDetailPage({ initialData }: ListingDetailPageProp
   const rawItemType = listing.item_type ? (ITEM_TYPE_LABELS[listing.item_type.toLowerCase()] || listing.item_type) : null;
   const itemType = rawItemType && listing.item_type ? (() => { const k = `itemType.${listing.item_type.toLowerCase()}`; const r = t(k); return r === k ? rawItemType : r; })() : rawItemType;
   const certInfo = getValidatedCertInfo(listing);
-  const images = validatedImages; // Use validated images (filtered for minimum dimensions)
+  const currentMedia = mediaItems[selectedImageIndex];
 
   // Pre-compute entity URLs for internal linking (avoids IIFEs in JSX)
   const certUrl = listing.cert_type ? getCertUrl(listing.cert_type) : null;
@@ -266,16 +276,24 @@ export default function ListingDetailPage({ initialData }: ListingDetailPageProp
         <div className="grid lg:grid-cols-2 gap-8 lg:gap-12">
           {/* Image Gallery */}
           <div>
-            {/* Main Image */}
+            {/* Main Image / Video */}
             <div className="relative aspect-[4/3] bg-linen rounded-lg overflow-hidden mb-4">
-              {images.length > 0 ? (
+              {currentMedia?.type === 'image' ? (
                 <Image
-                  src={images[selectedImageIndex]}
+                  src={currentMedia.url}
                   alt={listing.title}
                   fill
                   className="object-contain"
                   sizes="(max-width: 1024px) 100vw, 50vw"
                   priority
+                />
+              ) : currentMedia?.type === 'video' ? (
+                <VideoGalleryItem
+                  streamUrl={currentMedia.url}
+                  thumbnailUrl={currentMedia.thumbnailUrl}
+                  duration={currentMedia.duration}
+                  status={currentMedia.status}
+                  className="w-full h-full"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
@@ -285,8 +303,8 @@ export default function ListingDetailPage({ initialData }: ListingDetailPageProp
                 </div>
               )}
 
-              {/* Sold Overlay */}
-              {isSold && (
+              {/* Sold Overlay — only on image items */}
+              {isSold && currentMedia?.type === 'image' && (
                 <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
                   <span className="px-4 py-2 bg-black/70 text-white text-[12px] uppercase tracking-widest font-medium rounded">
                     {t('badge.sold')}
@@ -295,12 +313,12 @@ export default function ListingDetailPage({ initialData }: ListingDetailPageProp
               )}
             </div>
 
-            {/* Thumbnail Gallery */}
-            {images.length > 1 && (
+            {/* Thumbnail Gallery (unified media items) */}
+            {mediaItems.length > 1 && (
               <div className="flex gap-2 overflow-x-auto pb-2">
-                {images.map((img, index) => (
+                {mediaItems.map((media, index) => (
                   <button
-                    key={index}
+                    key={media.type === 'video' ? `vid-${media.videoId}` : `img-${index}`}
                     onClick={() => setSelectedImageIndex(index)}
                     className={`relative w-16 h-16 flex-shrink-0 rounded-md overflow-hidden ${
                       index === selectedImageIndex
@@ -308,13 +326,25 @@ export default function ListingDetailPage({ initialData }: ListingDetailPageProp
                         : 'ring-1 ring-border hover:ring-gold/50'
                     }`}
                   >
-                    <Image
-                      src={img}
-                      alt={t('listing.photoAlt', { title: listing.title, n: String(index + 1) })}
-                      fill
-                      className="object-cover"
-                      sizes="64px"
-                    />
+                    {media.thumbnailUrl ? (
+                      <Image
+                        src={media.thumbnailUrl}
+                        alt={media.type === 'video' ? 'Video' : t('listing.photoAlt', { title: listing.title, n: String(index + 1) })}
+                        fill
+                        className="object-cover"
+                        sizes="64px"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-[var(--bg-secondary)]" />
+                    )}
+                    {/* Play icon overlay for video thumbnails */}
+                    {media.type === 'video' && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                        <svg className="w-5 h-5 text-white ml-0.5" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M8 5v14l11-7z" />
+                        </svg>
+                      </div>
+                    )}
                   </button>
                 ))}
               </div>

@@ -55,6 +55,8 @@ const KNOWN_SAFE_FILES = new Set([
   'src/app/api/dealer/listings/counts/route.ts',
   'src/app/api/dealer/listings/intelligence/route.ts',
   'src/app/api/dealer/images/route.ts',
+  'src/app/api/dealer/videos/route.ts',
+  'src/app/api/dealer/videos/[id]/route.ts',
 
   // Cron compute jobs (don't return data to users, waste compute at worst)
   'src/app/api/cron/compute-focal-points/route.ts',

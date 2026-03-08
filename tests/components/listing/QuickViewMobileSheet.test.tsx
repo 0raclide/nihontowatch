@@ -379,8 +379,8 @@ describe('QuickViewMobileSheet', () => {
           isExpanded={true}
         />
       );
-      // Cert label appears in both badge and MetadataGrid, so use getAllByText
-      const certElements = screen.getAllByText('Tokubetsu Jūyō');
+      // Cert label was shortened to Tokujū on cards (commit 5f9db77)
+      const certElements = screen.getAllByText('Tokujū');
       expect(certElements.length).toBeGreaterThanOrEqual(1);
     });
 

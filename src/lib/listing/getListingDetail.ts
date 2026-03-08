@@ -3,7 +3,9 @@ import { getArtisanNames } from '@/lib/supabase/yuhinkai';
 import { getArtisanDisplayName, getArtisanDisplayNameKanji, getArtisanAlias } from '@/lib/artisan/displayName';
 import { getArtisanTier } from '@/lib/artisan/tier';
 import { getAttributionName } from '@/lib/listing/attribution';
+import { isVideoProviderConfigured, videoProvider } from '@/lib/video/videoProvider';
 import type { YuhinkaiEnrichment, SayagakiEntry, HakogakiEntry, KoshiraeData, ProvenanceEntry, KiwameEntry } from '@/types';
+import type { ListingVideo } from '@/types/media';
 
 // Yuhinkai enrichment as returned by the Supabase view (array wrapper)
 interface YuhinkaiEnrichmentRow {
@@ -106,6 +108,20 @@ interface ListingWithDealer {
     earliest_listing_at: string | null;
   };
   listing_yuhinkai_enrichment?: YuhinkaiEnrichmentRow[];
+  listing_videos?: Array<{
+    id: string;
+    provider: string;
+    provider_id: string;
+    duration_seconds: number | null;
+    width: number | null;
+    height: number | null;
+    thumbnail_url: string | null;
+    status: string;
+    sort_order: number;
+    original_filename: string | null;
+    size_bytes: number | null;
+    created_at: string;
+  }>;
 }
 
 /** Enriched listing detail — the canonical shape returned to callers. */
@@ -183,6 +199,7 @@ export interface EnrichedListingDetail {
     domain: string;
   };
   yuhinkai_enrichment: YuhinkaiEnrichment | null;
+  videos?: ListingVideo[];
 }
 
 // Select clause for the Supabase query
@@ -282,6 +299,20 @@ const LISTING_SELECT = `
     connection_source,
     enriched_at,
     updated_at
+  ),
+  listing_videos (
+    id,
+    provider,
+    provider_id,
+    duration_seconds,
+    width,
+    height,
+    thumbnail_url,
+    status,
+    sort_order,
+    original_filename,
+    size_bytes,
+    created_at
   )
 `;
 
@@ -419,5 +450,27 @@ export async function getListingDetail(
       domain: typedListing.dealers.domain,
     },
     yuhinkai_enrichment,
+    // Enrich videos with stream URLs
+    videos: (typedListing.listing_videos || [])
+      .filter(v => v.status === 'ready')
+      .sort((a, b) => a.sort_order - b.sort_order)
+      .map(v => ({
+        id: v.id,
+        listing_id: typedListing.id,
+        provider: v.provider,
+        provider_id: v.provider_id,
+        duration_seconds: v.duration_seconds ?? undefined,
+        width: v.width ?? undefined,
+        height: v.height ?? undefined,
+        thumbnail_url: v.thumbnail_url ?? undefined,
+        status: v.status as 'ready',
+        sort_order: v.sort_order,
+        original_filename: v.original_filename ?? undefined,
+        size_bytes: v.size_bytes ?? undefined,
+        created_at: v.created_at,
+        stream_url: isVideoProviderConfigured()
+          ? videoProvider.getStreamUrl(v.provider_id)
+          : undefined,
+      })),
   };
 }

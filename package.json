@@ -28,6 +28,7 @@
     "@stripe/stripe-js": "^8.6.4",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.90.1",
+    "hls.js": "^1.6.15",
     "next": "^16.1.6",
     "react": "19.2.3",
     "react-dom": "19.2.3",
@@ -38,7 +39,8 @@
     "remark-math": "^6.0.0",
     "sharp": "^0.34.5",
     "smartcrop-sharp": "^2.0.8",
-    "stripe": "^20.2.0"
+    "stripe": "^20.2.0",
+    "tus-js-client": "^4.3.1"
   },
   "devDependencies": {
     "@playwright/test": "^1.57.0",

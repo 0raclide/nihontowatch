@@ -108,6 +108,10 @@ export interface DisplayItem {
   focal_y?: number | null;
   thumbnail_url?: string | null;
 
+  // Video
+  video_count?: number;
+  videos?: import('@/types/media').ListingVideo[];
+
   // Artisan
   artisan_id?: string | null;
   artisan_display_name?: string | null;

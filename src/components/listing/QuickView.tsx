@@ -22,6 +22,8 @@ import { useQuickView } from '@/contexts/QuickViewContext';
 import { useActivityTrackerOptional } from '@/lib/tracking/ActivityTracker';
 import { usePinchZoomTracking } from '@/lib/viewport';
 import { getAllImages, dealerDoesNotPublishImages, getCachedDimensions, getPlaceholderKanji } from '@/lib/images';
+import { getMediaItems } from '@/lib/media';
+import { VideoGalleryItem } from '@/components/video/VideoGalleryItem';
 import { useValidatedImages } from '@/hooks/useValidatedImages';
 import { useAuth } from '@/lib/auth/AuthContext';
 import type { ListingWithEnrichment, Currency } from '@/types';
@@ -254,6 +256,13 @@ export function QuickView() {
     [validImages, failedImageIndices]
   );
 
+  // Video media items (ready videos only)
+  const videoItems = useMemo(
+    () => currentListing ? getMediaItems(currentListing).filter(m => m.type === 'video') : [],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [currentListing?.id, currentListing?.videos?.length]
+  );
+
   // Dealer status change → optimistic update via refreshCurrentListing
   // MUST be before the early return — hooks cannot be conditional
   const handleDealerStatusChange = useCallback((newStatus: string, patchedFields?: { price_value?: number | null; price_currency?: string }) => {
@@ -393,6 +402,18 @@ export function QuickView() {
           />
         ))
       )}
+
+      {/* Videos after images */}
+      {videoItems.map((media) => (
+        <VideoGalleryItem
+          key={`${keyPrefix}-video-${media.videoId}`}
+          streamUrl={media.url}
+          thumbnailUrl={media.thumbnailUrl}
+          duration={media.duration}
+          status={media.status}
+          className="aspect-video"
+        />
+      ))}
     </>
   );
 
