@@ -4,7 +4,9 @@ import Image from 'next/image';
 import { VideoGalleryItem } from '@/components/video/VideoGalleryItem';
 import type { ListingVideo } from '@/types/media';
 
-const YUHINKAI_DOMAIN = 'itbhfhyptogxcjbjfzwx.supabase.co';
+/** Matches Yuhinkai catalog images (oshigata, setsumei scans) in the `images` bucket.
+ *  Does NOT match dealer-uploaded photos in `dealer-images` or `listing-images` buckets. */
+const YUHINKAI_CATALOG_PATH = 'itbhfhyptogxcjbjfzwx.supabase.co/storage/v1/object/public/images/';
 
 interface ShowcaseImageGalleryProps {
   /** All listing images (validated) */
@@ -26,7 +28,7 @@ interface ShowcaseImageGalleryProps {
 export function ShowcaseImageGallery({ images, usedImages, onImageClick, videos, heroVideoId }: ShowcaseImageGalleryProps) {
   // Filter out images already shown in other sections + oshigata/catalog images
   const galleryImages = images.filter(url =>
-    !usedImages.has(url) && !url.includes(YUHINKAI_DOMAIN)
+    !usedImages.has(url) && !url.includes(YUHINKAI_CATALOG_PATH)
   );
 
   // Skip video already promoted to hero

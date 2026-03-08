@@ -7,7 +7,9 @@ import { getOrdinalSuffix } from '@/lib/text/ordinal';
 import type { EnrichedListingDetail } from '@/lib/listing/getListingDetail';
 import type { SayagakiEntry, HakogakiEntry } from '@/types';
 
-const YUHINKAI_DOMAIN = 'itbhfhyptogxcjbjfzwx.supabase.co';
+/** Matches Yuhinkai catalog images (oshigata, setsumei scans) in the `images` bucket.
+ *  Does NOT match dealer-uploaded photos in `dealer-images` or `listing-images` buckets. */
+const YUHINKAI_CATALOG_PATH = 'itbhfhyptogxcjbjfzwx.supabase.co/storage/v1/object/public/images/';
 
 const SAYAGAKI_AUTHOR_LABELS: Record<string, string> = {
   tanobe_michihiro: 'Tanobe Michihiro (\u7530\u91CE\u908A\u9053\u5B8F)',
@@ -153,7 +155,7 @@ export function ShowcaseDocumentation({ listing, onImageClick }: ShowcaseDocumen
 
   // Oshigata — catalog images (identified by Yuhinkai storage domain)
   const allImages = [...(listing.images || []), ...(listing.stored_images || [])].filter(Boolean);
-  const oshigataImages = allImages.filter(url => url.includes(YUHINKAI_DOMAIN));
+  const oshigataImages = allImages.filter(url => url.includes(YUHINKAI_CATALOG_PATH));
   if (oshigataImages.length > 0) {
     sections.push(
       <DocumentCard
