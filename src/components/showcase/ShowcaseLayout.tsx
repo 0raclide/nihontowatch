@@ -9,7 +9,7 @@ import { ShowcaseKoshirae } from './ShowcaseKoshirae';
 import { ShowcaseImageGallery } from './ShowcaseImageGallery';
 import { ShowcaseStickyBar } from './ShowcaseStickyBar';
 import { ShowcaseLightbox } from './ShowcaseLightbox';
-import { ShowcaseCuratorNotePlaceholder } from './ShowcaseCuratorNotePlaceholder';
+import { ShowcaseScholarNote } from './ShowcaseCuratorNotePlaceholder';
 import { getAllImages } from '@/lib/images';
 import { useValidatedImages } from '@/hooks/useValidatedImages';
 import type { EnrichedListingDetail } from '@/lib/listing/getListingDetail';
@@ -87,17 +87,18 @@ export function ShowcaseLayout({ listing }: ShowcaseLayoutProps) {
     listing.koshirae.cert_type ||
     listing.koshirae.images?.length > 0
   ));
+  const hasCuratorNote = !!(listing.ai_curator_note_en || listing.ai_curator_note_ja);
 
   // Build section nav items — hero IS the overview (id="identity")
   const navSections = useMemo(() => {
     const s = [{ id: 'identity', label: 'Overview' }];
-    s.push({ id: 'scholars-note', label: "Scholar's Note" });
+    if (hasCuratorNote) s.push({ id: 'scholars-note', label: "Scholar's Note" });
     if (hasDocumentation) s.push({ id: 'documentation', label: 'Documentation' });
     if (hasProvenance || hasKiwame) s.push({ id: 'provenance', label: 'Provenance' });
     if (hasKoshirae) s.push({ id: 'koshirae', label: 'Mountings' });
     s.push({ id: 'gallery', label: 'Gallery' });
     return s;
-  }, [hasDocumentation, hasProvenance, hasKiwame, hasKoshirae]);
+  }, [hasCuratorNote, hasDocumentation, hasProvenance, hasKiwame, hasKoshirae]);
 
   return (
     <div className="min-h-screen bg-background text-ink">
@@ -111,9 +112,11 @@ export function ShowcaseLayout({ listing }: ShowcaseLayoutProps) {
 
       {/* Sections */}
       <div className="space-y-16 md:space-y-20 pb-20 md:pb-24">
-        <ShowcaseSection id="scholars-note" title="Scholar's Note" titleJa="解説">
-          <ShowcaseCuratorNotePlaceholder />
-        </ShowcaseSection>
+        {hasCuratorNote && (
+          <ShowcaseSection id="scholars-note" title="Scholar's Note" titleJa="解説">
+            <ShowcaseScholarNote noteEn={listing.ai_curator_note_en} noteJa={listing.ai_curator_note_ja} />
+          </ShowcaseSection>
+        )}
 
         {hasDocumentation && (
           <ShowcaseSection id="documentation" title="Documentation" titleJa="文書">
