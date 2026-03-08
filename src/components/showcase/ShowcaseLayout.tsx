@@ -4,7 +4,7 @@ import { useState, useCallback, useMemo } from 'react';
 import { ShowcaseHero } from './ShowcaseHero';
 import { ShowcaseSection } from './ShowcaseSection';
 import { ShowcaseIdentityCard } from './ShowcaseIdentityCard';
-import { ShowcaseCuratorNotePlaceholder } from './ShowcaseCuratorNotePlaceholder';
+// ShowcaseCuratorNotePlaceholder removed — Phase 2 will add real AI-generated content
 import { ShowcaseDocumentation } from './ShowcaseDocumentation';
 import { ShowcaseTimeline } from './ShowcaseTimeline';
 import { ShowcaseKoshirae } from './ShowcaseKoshirae';
@@ -98,7 +98,6 @@ export function ShowcaseLayout({ listing }: ShowcaseLayoutProps) {
   // Build section nav items
   const navSections = useMemo(() => {
     const s = [{ id: 'identity', label: 'Overview' }];
-    s.push({ id: 'scholars-note', label: "Scholar's Note" });
     if (hasDocumentation) s.push({ id: 'documentation', label: 'Documentation' });
     if (hasProvenance || hasKiwame) s.push({ id: 'provenance', label: 'Provenance' });
     if (hasKoshirae) s.push({ id: 'koshirae', label: 'Mountings' });
@@ -115,15 +114,10 @@ export function ShowcaseLayout({ listing }: ShowcaseLayoutProps) {
       <ShowcaseHero listing={listing} />
 
       {/* Sections */}
-      <div className="space-y-16 md:space-y-24 py-16 md:py-24">
+      <div className="space-y-16 md:space-y-20 pt-12 pb-20 md:pt-16 md:pb-24">
         {/* Identity Card */}
         <ShowcaseSection id="identity" hideDivider>
           <ShowcaseIdentityCard listing={listing} />
-        </ShowcaseSection>
-
-        {/* Scholar's Note (placeholder) */}
-        <ShowcaseSection id="scholars-note" title="Scholar's Note" titleJa="学術解説">
-          <ShowcaseCuratorNotePlaceholder />
         </ShowcaseSection>
 
         {/* Documentation */}

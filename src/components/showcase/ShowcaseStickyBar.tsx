@@ -19,6 +19,7 @@ interface ShowcaseStickyBarProps {
  * Sticky navigation bar that appears after scrolling past the hero.
  * Shows attribution summary + section nav links.
  * Desktop only — hidden on mobile.
+ * Typography refined to match artist page SectionJumpNav patterns.
  */
 export function ShowcaseStickyBar({ listing, sections }: ShowcaseStickyBarProps) {
   const [visible, setVisible] = useState(false);
@@ -79,27 +80,27 @@ export function ShowcaseStickyBar({ listing, sections }: ShowcaseStickyBarProps)
           {/* Attribution summary */}
           <div className="flex items-center gap-3 min-w-0">
             {artisanName && (
-              <span className="text-[13px] font-medium text-[var(--sc-text-primary)] truncate">
+              <span className="text-[13px] font-serif font-light text-[var(--sc-text-primary)] truncate">
                 {artisanName}
               </span>
             )}
             {certInfo && (
-              <span className="text-[11px] uppercase tracking-wider text-[var(--sc-accent-gold)] flex-shrink-0">
+              <span className="text-[10px] uppercase tracking-[0.15em] text-[var(--sc-accent-gold-muted)] flex-shrink-0">
                 {certInfo.label}
               </span>
             )}
           </div>
 
           {/* Section nav links */}
-          <nav className="flex items-center gap-1">
+          <nav className="flex items-center gap-0.5">
             {sections.map(s => (
               <button
                 key={s.id}
                 onClick={() => scrollToSection(s.id)}
                 className={`text-[11px] uppercase tracking-wider px-3 py-1.5 rounded transition-colors ${
                   activeSection === s.id
-                    ? 'text-[var(--sc-accent-gold)] bg-[var(--sc-accent-gold)]/10'
-                    : 'text-[var(--sc-text-secondary)] hover:text-[var(--sc-text-primary)]'
+                    ? 'text-[var(--sc-accent-gold)] bg-[var(--sc-accent-gold)]/8'
+                    : 'text-[var(--sc-text-muted)] hover:text-[var(--sc-text-secondary)]'
                 }`}
               >
                 {s.label}

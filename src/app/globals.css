@@ -429,17 +429,20 @@ html.theme-classic {
    ========================================================================== */
 .showcase {
   --sc-bg-primary: #0f0f0f;
+  --sc-bg-secondary: #161514;
   --sc-bg-card: #1a1917;
   --sc-bg-card-hover: #22201d;
   --sc-bg-document: #f5f0e8;
   --sc-text-primary: #e8e4dc;
   --sc-text-secondary: #9a9590;
+  --sc-text-muted: #6a6560;
   --sc-text-heading: #f2efe8;
   --sc-text-document: #2a2520;
   --sc-accent-gold: #c4a35a;
+  --sc-accent-gold-muted: rgba(196, 163, 90, 0.5);
   --sc-accent-gold-light: #d4b36a;
   --sc-border: #2a2825;
-  --sc-divider: #3a3632;
+  --sc-divider: #302c28;
 
   /* Cert colors within showcase (bright for dark bg) */
   --sc-tokuju: #b088d0;

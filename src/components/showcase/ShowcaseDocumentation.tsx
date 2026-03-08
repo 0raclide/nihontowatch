@@ -8,11 +8,11 @@ import type { SayagakiEntry, HakogakiEntry } from '@/types';
 const YUHINKAI_DOMAIN = 'itbhfhyptogxcjbjfzwx.supabase.co';
 
 const SAYAGAKI_AUTHOR_LABELS: Record<string, string> = {
-  tanobe_michihiro: 'Tanobe Michihiro (田野邊道宏)',
-  honami_koson: "Hon'ami Kōson (本阿弥光遜)",
-  honami_nishu: "Hon'ami Nisshū (本阿弥日洲)",
-  kanzan_sato: 'Satō Kanzan (佐藤寒山)',
-  honma_junji: 'Honma Junji (本間順治)',
+  tanobe_michihiro: 'Tanobe Michihiro (\u7530\u91CE\u908A\u9053\u5B8F)',
+  honami_koson: "Hon'ami K\u014Dson (\u672C\u963F\u5F25\u5149\u905C)",
+  honami_nishu: "Hon'ami Nissh\u016B (\u672C\u963F\u5F25\u65E5\u6D32)",
+  kanzan_sato: 'Sat\u014D Kanzan (\u4F50\u85E4\u5BD2\u5C71)',
+  honma_junji: 'Honma Junji (\u672C\u9593\u9806\u6CBB)',
 };
 
 interface DocumentCardProps {
@@ -32,7 +32,7 @@ function DocumentCard({ title, subtitle, text, textAlt, imageUrl, images, onImag
   const hasToggle = text && textAlt;
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-5 gap-6 md:gap-8">
+    <div className="grid grid-cols-1 md:grid-cols-5 gap-6 md:gap-10">
       {/* Document image(s) — 60% on desktop */}
       {allImages.length > 0 && (
         <div className="md:col-span-3 space-y-3">
@@ -40,17 +40,15 @@ function DocumentCard({ title, subtitle, text, textAlt, imageUrl, images, onImag
             <button
               key={i}
               onClick={() => onImageClick?.(url)}
-              className="relative w-full aspect-[4/3] rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow cursor-pointer group"
+              className="relative w-full aspect-[4/3] rounded overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-zoom-in group"
             >
               <Image
                 src={url}
                 alt={`${title} document ${i + 1}`}
                 fill
-                className="object-contain bg-[#f5f0e8] group-hover:scale-[1.02] transition-transform duration-300"
+                className="object-contain bg-[var(--sc-bg-document)] group-hover:scale-[1.01] transition-transform duration-300"
                 sizes="(max-width: 768px) 100vw, 60vw"
               />
-              {/* Paper-edge shadow */}
-              <div className="absolute inset-0 rounded-lg shadow-[inset_0_0_20px_rgba(0,0,0,0.1)] pointer-events-none" />
             </button>
           ))}
         </div>
@@ -59,26 +57,26 @@ function DocumentCard({ title, subtitle, text, textAlt, imageUrl, images, onImag
       {/* Parchment text card — 40% on desktop */}
       {displayText && (
         <div className={`${allImages.length > 0 ? 'md:col-span-2' : 'md:col-span-5 max-w-2xl mx-auto'}`}>
-          <div className="bg-[var(--sc-bg-document)] rounded-lg p-6 md:p-8 shadow-md">
+          <div className="bg-[var(--sc-bg-document)] rounded p-6 md:p-8 shadow-sm">
             <div className="flex items-baseline justify-between mb-4">
               <div>
-                <h3 className="text-[11px] uppercase tracking-[0.15em] font-medium text-[var(--sc-text-document)]/60">
+                <h3 className="text-[11px] uppercase tracking-[0.15em] font-medium text-[var(--sc-text-document)]/50">
                   {title}
                 </h3>
                 {subtitle && (
-                  <p className="text-[13px] text-[var(--sc-text-document)]/80 mt-1">{subtitle}</p>
+                  <p className="text-[12px] text-[var(--sc-text-document)]/60 mt-1">{subtitle}</p>
                 )}
               </div>
               {hasToggle && (
                 <button
                   onClick={() => setShowAlt(!showAlt)}
-                  className="text-[11px] text-[var(--sc-text-document)]/50 hover:text-[var(--sc-text-document)]/80 transition-colors"
+                  className="text-[11px] text-[var(--sc-text-document)]/40 hover:text-[var(--sc-text-document)]/70 transition-colors tracking-wide"
                 >
                   {showAlt ? 'Original' : 'Translation'}
                 </button>
               )}
             </div>
-            <div className="text-[14px] leading-relaxed text-[var(--sc-text-document)] whitespace-pre-wrap">
+            <div className="text-[13px] leading-[1.8] text-[var(--sc-text-document)] whitespace-pre-wrap font-light">
               {displayText}
             </div>
           </div>
@@ -167,7 +165,7 @@ export function ShowcaseDocumentation({ listing, onImageClick }: ShowcaseDocumen
   if (sections.length === 0) return null;
 
   return (
-    <div className="space-y-12 md:space-y-16 max-w-5xl mx-auto px-6 md:px-0">
+    <div className="space-y-14 md:space-y-20 max-w-5xl mx-auto px-6 md:px-0">
       {sections}
     </div>
   );

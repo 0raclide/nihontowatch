@@ -15,6 +15,7 @@ interface ShowcaseHeroProps {
 /**
  * Full-bleed hero section.
  * Shows muted autoplay video if available, otherwise the first image.
+ * Typography matches artist page: font-light serif, tight leading, refined kanji subtitle.
  */
 export function ShowcaseHero({ listing }: ShowcaseHeroProps) {
   const [scrolled, setScrolled] = useState(false);
@@ -67,19 +68,22 @@ export function ShowcaseHero({ listing }: ShowcaseHeroProps) {
       <div className="absolute inset-x-0 bottom-0 h-48 pointer-events-none bg-gradient-to-t from-[var(--sc-bg-primary)] via-[var(--sc-bg-primary)]/60 to-transparent" />
 
       {/* Attribution text at bottom */}
-      <div className="absolute inset-x-0 bottom-0 px-6 pb-8 md:pb-12 text-center">
+      <div className="absolute inset-x-0 bottom-0 px-6 pb-10 md:pb-14 text-center">
         {artisanName && (
-          <h1 className="text-2xl md:text-4xl lg:text-5xl font-serif text-[var(--sc-text-heading)] mb-2 leading-tight">
-            {artisanName}
-          </h1>
+          <>
+            <div className="w-8 h-[2px] bg-[var(--sc-accent-gold-muted)] mx-auto mb-4 md:w-10" />
+            <h1 className="text-2xl md:text-4xl lg:text-5xl font-serif font-light text-[var(--sc-text-heading)] mb-2 leading-[1.1] tracking-tight">
+              {artisanName}
+            </h1>
+          </>
         )}
         {listing.artisan_name_kanji && (
-          <p className="text-lg md:text-xl text-[var(--sc-text-secondary)] mb-3">
+          <p className="text-base md:text-lg text-[var(--sc-text-secondary)] mb-3 font-serif font-light tracking-[0.08em]">
             {listing.artisan_name_kanji}
           </p>
         )}
         {certInfo && (
-          <p className="text-[11px] md:text-[12px] uppercase tracking-[0.2em] text-[var(--sc-accent-gold)]">
+          <p className="text-[11px] md:text-[12px] uppercase tracking-[0.18em] text-[var(--sc-accent-gold-muted)]">
             {certInfo.label}
             {listing.cert_session && ` \u00B7 ${listing.cert_session}`}
           </p>
@@ -89,7 +93,7 @@ export function ShowcaseHero({ listing }: ShowcaseHeroProps) {
       {/* Scroll indicator — fades on scroll */}
       <div
         className={`absolute bottom-3 left-1/2 -translate-x-1/2 transition-opacity duration-500 ${
-          scrolled ? 'opacity-0' : 'opacity-50'
+          scrolled ? 'opacity-0' : 'opacity-30'
         }`}
       >
         <svg className="w-5 h-5 text-[var(--sc-text-secondary)] animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">

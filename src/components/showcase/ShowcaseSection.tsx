@@ -8,7 +8,7 @@ interface ShowcaseSectionProps {
   titleJa?: string;
   children: ReactNode;
   className?: string;
-  /** Hide the gold rule divider above the title */
+  /** Hide the divider above the title */
   hideDivider?: boolean;
 }
 
@@ -16,6 +16,9 @@ interface ShowcaseSectionProps {
  * Animated wrapper for Showcase sections.
  * Uses IntersectionObserver for fade-in on scroll.
  * Once visible, stays visible (never re-hides).
+ *
+ * Section header matches artist page SectionHeader:
+ * thin horizontal rule + small-caps title (adapted for dark bg).
  */
 export function ShowcaseSection({
   id,
@@ -50,19 +53,19 @@ export function ShowcaseSection({
     <section
       ref={ref}
       id={id}
-      className={`transition-all duration-700 ease-out ${
-        isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
+      className={`scroll-mt-24 transition-all duration-700 ease-out ${
+        isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
       } ${className}`}
     >
       {title && (
-        <div className="text-center mb-8 md:mb-12">
+        <div className="max-w-5xl mx-auto px-6 md:px-0 mb-10 md:mb-14">
           {!hideDivider && (
-            <div className="w-10 h-[2px] bg-[var(--sc-accent-gold)] mx-auto mb-6" />
+            <div className="h-px bg-[var(--sc-divider)] mb-5" />
           )}
-          <h2 className="text-[11px] md:text-[12px] uppercase tracking-[0.2em] font-medium text-[var(--sc-text-secondary)]">
+          <h2 className="text-[13px] uppercase tracking-[0.18em] font-medium text-[var(--sc-text-secondary)]">
             {title}
             {titleJa && (
-              <span className="ml-3 text-[var(--sc-text-secondary)]/60">{titleJa}</span>
+              <span className="ml-3 text-[var(--sc-text-muted)]">{titleJa}</span>
             )}
           </h2>
         </div>
