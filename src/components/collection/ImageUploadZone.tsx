@@ -35,18 +35,19 @@ export function ImageUploadZone({ images, itemId, onChange, onPendingFilesChange
     }
 
     setUploadError(null);
-    const validFiles: File[] = [];
+    const validFiles: { resized: Blob; name: string }[] = [];
 
     for (const file of Array.from(files)) {
-      if (file.size > 5 * 1024 * 1024) {
-        setUploadError(t('collection.fileTooLarge', { name: file.name }));
-        continue;
-      }
       if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
         setUploadError(t('collection.unsupportedFormat', { name: file.name }));
         continue;
       }
-      validFiles.push(file);
+      const resized = await resizeImage(file, 2048, 0.85);
+      if (resized.size > 5 * 1024 * 1024) {
+        setUploadError(t('collection.fileTooLarge', { name: file.name }));
+        continue;
+      }
+      validFiles.push({ resized, name: file.name });
     }
 
     if (validFiles.length === 0) return;
@@ -55,9 +56,8 @@ export function ImageUploadZone({ images, itemId, onChange, onPendingFilesChange
       // Add mode: queue files locally with object URL previews
       const resizedFiles: File[] = [];
       const previewUrls: string[] = [];
-      for (const file of validFiles) {
-        const resized = await resizeImage(file, 2048, 0.85);
-        const resizedFile = new File([resized], file.name, { type: 'image/jpeg' });
+      for (const { resized, name } of validFiles) {
+        const resizedFile = new File([resized], name, { type: 'image/jpeg' });
         resizedFiles.push(resizedFile);
         previewUrls.push(URL.createObjectURL(resized));
       }
@@ -70,10 +70,9 @@ export function ImageUploadZone({ images, itemId, onChange, onPendingFilesChange
       setIsUploading(true);
       const newImages = [...images];
 
-      for (const file of validFiles) {
-        const resized = await resizeImage(file, 2048, 0.85);
+      for (const { resized, name } of validFiles) {
         const formData = new FormData();
-        formData.append('file', resized, file.name);
+        formData.append('file', resized, name);
         formData.append('itemId', itemId);
 
         try {
