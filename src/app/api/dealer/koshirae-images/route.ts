@@ -52,10 +52,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Listing not found' }, { status: 404 });
     }
 
-    const koshirae = listing.koshirae;
-    if (!koshirae) {
-      return NextResponse.json({ error: 'Koshirae data not found on listing' }, { status: 404 });
-    }
+    // If koshirae doesn't exist in DB yet (newly added in client, not yet saved),
+    // initialize an empty one so the image upload can proceed
+    const koshirae: KoshiraeData = listing.koshirae ?? {
+      cert_type: null,
+      cert_in_blade_paper: false,
+      cert_session: null,
+      description: null,
+      images: [],
+      artisan_id: null,
+      artisan_name: null,
+      artisan_kanji: null,
+      components: [],
+      setsumei_text_en: null,
+      setsumei_text_ja: null,
+      catalog_object_uuid: null,
+      era: null,
+      province: null,
+      school: null,
+    };
 
     if ((koshirae.images || []).length >= MAX_KOSHIRAE_IMAGES) {
       return NextResponse.json({ error: `Maximum of ${MAX_KOSHIRAE_IMAGES} images` }, { status: 400 });
