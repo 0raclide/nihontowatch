@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useLocale } from '@/i18n/LocaleContext';
+import { DealerIntelligence } from '@/components/listing/quickview-slots/DealerIntelligence';
 
 interface ListForSaleModalProps {
   isOpen: boolean;
@@ -90,10 +91,14 @@ export function ListForSaleModal({
       className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 animate-fadeIn"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="bg-cream border border-border rounded-lg shadow-lg w-full max-w-sm mx-4 overflow-hidden">
+      <div className="bg-cream border border-border rounded-lg shadow-lg w-full max-w-md mx-4 overflow-hidden max-h-[80vh] overflow-y-auto">
         <div className="px-6 pt-5 pb-3">
           <h3 className="text-sm font-medium text-ink">{t('dealer.setPriceTitle')}</h3>
           <p className="text-xs text-muted mt-1">{t('dealer.setPriceDesc')}</p>
+        </div>
+
+        <div className="px-6">
+          <DealerIntelligence listingId={listingId} tab="inventory" />
         </div>
 
         <div className="px-6 pb-5 space-y-3">

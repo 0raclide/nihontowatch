@@ -48,7 +48,7 @@ import {
   CollectionMobileCTA,
   DealerMobileCTA,
 } from './quickview-slots';
-import { DealerIntelligence } from './quickview-slots/DealerIntelligence';
+
 
 /**
  * QuickView with vertical scrolling image layout.
@@ -322,19 +322,6 @@ export function QuickView() {
     ? <BrowseAdminTools listing={currentListing} />
     : null;
 
-  // Derive dealer tab from listing status for intelligence panel
-  // Note: 'HOLD' is a dealer-only status not in the ListingStatus union type
-  const dealerTab = isDealer
-    ? currentListing.is_sold ? 'sold' as const
-      : currentListing.is_available ? 'available' as const
-      : (currentListing.status as string) === 'HOLD' ? 'hold' as const
-      : 'inventory' as const
-    : 'inventory' as const;
-
-  const intelligenceSlot = isDealer
-    ? <DealerIntelligence listingId={typeof currentListing.id === 'number' ? currentListing.id : parseInt(String(currentListing.id))} tab={dealerTab} />
-    : null;
-
   const desktopCtaSlot = isDealer
     ? <DealerCTA listing={currentListing} onStatusChange={handleDealerStatusChange} />
     : isCollection
@@ -487,7 +474,6 @@ export function QuickView() {
             headerActionsSlot={mobileHeaderActionsSlot}
             dealerSlot={mobileDealerSlot}
             descriptionSlot={mobileDescriptionSlot}
-            intelligenceSlot={intelligenceSlot}
             ctaSlot={mobileCtaSlot}
           />
         </div>
@@ -578,7 +564,6 @@ export function QuickView() {
                 descriptionSlot={desktopDescriptionSlot}
                 provenanceSlot={desktopProvenanceSlot}
                 adminToolsSlot={desktopAdminToolsSlot}
-                intelligenceSlot={intelligenceSlot}
                 ctaSlot={desktopCtaSlot}
               />
             </div>
