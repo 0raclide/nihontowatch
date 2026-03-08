@@ -244,7 +244,12 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
   const [province, setProvince] = useState(initialData?.province || draft?.province || '');
   const [heightCm, setHeightCm] = useState(initialData?.height_cm != null ? String(initialData.height_cm) : (draft?.heightCm ?? ''));
   const [widthCm, setWidthCm] = useState(initialData?.width_cm != null ? String(initialData.width_cm) : (draft?.widthCm ?? ''));
-  const [material, setMaterial] = useState<string | null>(initialData?.material || draft?.material || null);
+  const [materials, setMaterials] = useState<string[]>(
+    () => {
+      const raw = initialData?.material || draft?.material || null;
+      return raw ? raw.split(',').map(s => s.trim()).filter(Boolean) : [];
+    }
+  );
   const [artisanSchool, setArtisanSchool] = useState<string | null>(
     (initialData?.item_category === 'tosogu' ? initialData?.tosogu_school : initialData?.school) || draft?.artisanSchool || null
   );
@@ -304,14 +309,14 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
   const handleCategoryChange = useCallback((newCategory: 'nihonto' | 'tosogu') => {
     if (newCategory === category) return;
     const wouldLoseData = newCategory === 'nihonto'
-      ? !!(heightCm || widthCm || material || hakogaki.length)
+      ? !!(heightCm || widthCm || materials.length || hakogaki.length)
       : !!(nagasaCm || motohabaCm || sakihabaCm || soriCm || meiType || nakagoType.length || sayagaki.length);
     if (wouldLoseData && !window.confirm(t('dealer.confirmCategorySwitch'))) return;
     setCategory(newCategory);
     if (newCategory === 'nihonto') {
       setHeightCm('');
       setWidthCm('');
-      setMaterial(null);
+      setMaterials([]);
       setHakogaki([]);
     } else {
       setNagasaCm('');
@@ -322,7 +327,7 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
       setNakagoType([]);
       setSayagaki([]);
     }
-  }, [category, heightCm, widthCm, material, hakogaki, nagasaCm, motohabaCm, sakihabaCm, soriCm, meiType, nakagoType, sayagaki, t]);
+  }, [category, heightCm, widthCm, materials, hakogaki, nagasaCm, motohabaCm, sakihabaCm, soriCm, meiType, nakagoType, sayagaki, t]);
 
   const canDelete = mode === 'edit' && initialData?.id &&
     (initialData?.status === 'INVENTORY' || initialData?.status === 'WITHDRAWN');
@@ -344,7 +349,7 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
         priceValue, priceCurrency, isAsk, description,
         nagasaCm, motohabaCm, sakihabaCm, soriCm,
         meiType, nakagoType, era, province,
-        heightCm, widthCm, material, artisanSchool, titleOverride,
+        heightCm, widthCm, material: materials.length ? materials.join(',') : null, artisanSchool, titleOverride,
         certSession, catalogObjectUuid,
         setsumeiTextEn, setsumeiTextJa,
         images: images.filter(url => !url.startsWith('blob:')),
@@ -378,7 +383,7 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
     mode, category, itemType, certType, artisanId, artisanName, artisanKanji,
     priceValue, priceCurrency, isAsk, description,
     nagasaCm, motohabaCm, sakihabaCm, soriCm, meiType, nakagoType, era, province,
-    heightCm, widthCm, material, artisanSchool, titleOverride,
+    heightCm, widthCm, materials, artisanSchool, titleOverride,
     certSession, catalogObjectUuid, setsumeiTextEn, setsumeiTextJa,
     images, sayagaki, hakogaki, koshirae, provenance, kiwame,
   ]);
@@ -471,7 +476,7 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
         nakago_type: nakagoType.length ? nakagoType.join(',') : null,
         height_cm: category === 'tosogu' && heightCm ? Number(heightCm) : null,
         width_cm: category === 'tosogu' && widthCm ? Number(widthCm) : null,
-        material: category === 'tosogu' ? material : null,
+        material: category === 'tosogu' && materials.length ? materials.join(',') : null,
         era: era || null,
         province: province || null,
         cert_session: certSession,
@@ -635,7 +640,7 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
     mode, initialData, category, itemType, certType, artisanId, artisanName,
     artisanKanji, artisanSchool, priceValue, priceCurrency, isAsk, description,
     nagasaCm, motohabaCm, sakihabaCm, soriCm, meiType, nakagoType, era, province,
-    heightCm, widthCm, material, pendingFiles, pendingSayagakiFiles, sayagaki,
+    heightCm, widthCm, materials, pendingFiles, pendingSayagakiFiles, sayagaki,
     pendingHakogakiFiles, hakogaki, koshirae, pendingKoshiraeFiles, provenance,
     pendingProvenanceFiles, kiwame,
     certSession, setsumeiTextEn, setsumeiTextJa, generatedTitle, titleOverride,
@@ -676,7 +681,7 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
     setProvince('');
     setHeightCm('');
     setWidthCm('');
-    setMaterial(null);
+    setMaterials([]);
     setArtisanSchool(null);
     setTitleOverride(null);
     setCertSession(null);
@@ -883,8 +888,8 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
           />
         )}
 
-        {/* 4c. Koshirae (companion — hidden when item IS a koshirae) */}
-        {itemType !== 'koshirae' && (
+        {/* 4c. Koshirae (companion — hidden for koshirae item type and tosogu category) */}
+        {itemType !== 'koshirae' && category === 'nihonto' && (
           <KoshiraeSection
             koshirae={koshirae}
             itemId={mode === 'edit' && initialData?.id ? String(initialData.id) : undefined}
@@ -1181,9 +1186,11 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
                     <button
                       key={v}
                       type="button"
-                      onClick={() => setMaterial(material === v ? null : v)}
+                      onClick={() => setMaterials(prev =>
+                        prev.includes(v) ? prev.filter(m => m !== v) : [...prev, v]
+                      )}
                       className={`px-3 py-1.5 rounded-full text-[12px] font-medium transition-all ${
-                        material === v
+                        materials.includes(v)
                           ? 'bg-gold/10 text-gold border border-gold/30'
                           : 'bg-surface text-muted border border-border/50 hover:border-gold/30'
                       }`}
