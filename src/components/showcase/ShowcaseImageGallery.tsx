@@ -54,7 +54,7 @@ export function ShowcaseImageGallery({ images, usedImages, onImageClick, videos,
 
       {/* Image masonry grid */}
       {galleryImages.length > 0 && (
-        <div className="columns-2 md:columns-3 gap-3 md:gap-4">
+        <div className="columns-1 md:columns-2 gap-3 md:gap-4">
           {galleryImages.map((url, i) => (
             <button
               key={url}
@@ -66,8 +66,8 @@ export function ShowcaseImageGallery({ images, usedImages, onImageClick, videos,
                 alt={`Gallery image ${i + 1}`}
                 width={600}
                 height={400}
-                className="w-full h-auto object-contain bg-surface-elevated group-hover:brightness-105 transition-all duration-300"
-                sizes="(max-width: 768px) 50vw, 33vw"
+                className="w-full h-auto object-contain group-hover:brightness-105 transition-all duration-300"
+                sizes="(max-width: 768px) 100vw, 50vw"
               />
             </button>
           ))}

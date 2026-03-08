@@ -54,7 +54,7 @@ export function ShowcaseKoshirae({ koshirae, onImageClick }: ShowcaseKoshiraePro
                 src={url}
                 alt={`Koshirae image ${i + 1}`}
                 fill
-                className="object-contain bg-surface-elevated group-hover:scale-[1.02] transition-transform duration-300"
+                className="object-contain group-hover:scale-[1.02] transition-transform duration-300"
                 sizes="(max-width: 768px) 256px, 320px"
               />
             </button>
@@ -107,7 +107,7 @@ export function ShowcaseKoshirae({ koshirae, onImageClick }: ShowcaseKoshiraePro
 
       {/* Multi-maker component cards */}
       {hasComponents && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {koshirae.components.map((comp: KoshiraeComponentEntry) => (
             <div
               key={comp.id}

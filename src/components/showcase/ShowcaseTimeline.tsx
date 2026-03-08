@@ -26,113 +26,55 @@ export function ShowcaseTimeline({ provenance, kiwame, onImageClick }: ShowcaseT
     <div className="max-w-5xl mx-auto px-6 md:px-0">
       {/* Provenance — Desktop horizontal */}
       {provenance.length > 0 && (
-        <>
-          <div className="hidden md:block">
-            <div className="relative">
-              {/* Horizontal line */}
-              <div className="absolute top-[5px] left-0 right-0 h-px bg-border-subtle" />
+        <div className="relative pl-6">
+          {/* Vertical line */}
+          <div className="absolute left-[4px] top-0 bottom-0 w-px bg-border-subtle" />
 
-              <div className="flex justify-between">
-                {provenance.map((entry) => {
-                  const hasImages = entry.images && entry.images.length > 0;
-                  return (
-                    <div key={entry.id} className="relative flex flex-col items-center" style={{ flex: 1 }}>
-                      {/* Dot */}
-                      <div className={`w-[9px] h-[9px] rounded-full z-10 mb-4 ring-[2.5px] ring-background ${
-                        hasImages ? 'bg-gold/50' : 'bg-border-subtle'
-                      }`} />
+          <div className="space-y-6">
+            {provenance.map((entry) => {
+              const hasImages = entry.images && entry.images.length > 0;
+              return (
+                <div key={entry.id} className="relative">
+                  {/* Dot */}
+                  <div className={`absolute -left-6 top-1.5 w-[9px] h-[9px] rounded-full ring-[2.5px] ring-background ${
+                    hasImages ? 'bg-gold/50' : 'bg-border-subtle'
+                  }`} />
 
-                      {/* Content */}
-                      <div className="text-center px-2 max-w-[200px]">
-                        <p className="text-[13px] font-medium text-ink mb-0.5 leading-snug">
-                          {entry.owner_name}
-                        </p>
-                        {entry.owner_name_ja && (
-                          <p className="text-[12px] text-muted mb-0.5">
-                            {entry.owner_name_ja}
-                          </p>
-                        )}
-                        {entry.notes && (
-                          <p className="text-[11px] text-muted leading-relaxed mt-1">
-                            {entry.notes}
-                          </p>
-                        )}
+                  <div>
+                    <p className="text-[13px] font-medium text-ink leading-snug">
+                      {entry.owner_name}
+                    </p>
+                    {entry.owner_name_ja && (
+                      <p className="text-[12px] text-muted">
+                        {entry.owner_name_ja}
+                      </p>
+                    )}
+                    {entry.notes && (
+                      <p className="text-[11px] text-muted mt-1 leading-relaxed">
+                        {entry.notes}
+                      </p>
+                    )}
 
-                        {/* Thumbnails */}
-                        {hasImages && (
-                          <div className="flex gap-1 mt-2 justify-center">
-                            {entry.images.slice(0, 3).map((img, j) => (
-                              <button
-                                key={j}
-                                onClick={() => onImageClick(img)}
-                                className="relative w-10 h-10 rounded overflow-hidden ring-1 ring-border hover:ring-gold/50 transition-all cursor-zoom-in"
-                              >
-                                <Image src={img} alt={`${entry.owner_name} document`} fill className="object-cover" sizes="40px" />
-                              </button>
-                            ))}
-                          </div>
-                        )}
+                    {/* Thumbnails */}
+                    {hasImages && (
+                      <div className="flex gap-1.5 mt-2">
+                        {entry.images.slice(0, 3).map((img, j) => (
+                          <button
+                            key={j}
+                            onClick={() => onImageClick(img)}
+                            className="relative w-12 h-12 rounded overflow-hidden ring-1 ring-border hover:ring-gold/50 transition-all cursor-zoom-in"
+                          >
+                            <Image src={img} alt={`${entry.owner_name} document`} fill className="object-cover" sizes="48px" />
+                          </button>
+                        ))}
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
-
-          {/* Provenance — Mobile vertical */}
-          <div className="md:hidden">
-            <div className="relative pl-6">
-              {/* Vertical line */}
-              <div className="absolute left-[4px] top-0 bottom-0 w-px bg-border-subtle" />
-
-              <div className="space-y-6">
-                {provenance.map((entry) => {
-                  const hasImages = entry.images && entry.images.length > 0;
-                  return (
-                    <div key={entry.id} className="relative">
-                      {/* Dot */}
-                      <div className={`absolute -left-6 top-1.5 w-[9px] h-[9px] rounded-full ring-[2.5px] ring-background ${
-                        hasImages ? 'bg-gold/50' : 'bg-border-subtle'
-                      }`} />
-
-                      <div>
-                        <p className="text-[13px] font-medium text-ink leading-snug">
-                          {entry.owner_name}
-                        </p>
-                        {entry.owner_name_ja && (
-                          <p className="text-[12px] text-muted">
-                            {entry.owner_name_ja}
-                          </p>
-                        )}
-                        {entry.notes && (
-                          <p className="text-[11px] text-muted mt-1 leading-relaxed">
-                            {entry.notes}
-                          </p>
-                        )}
-
-                        {/* Thumbnails */}
-                        {hasImages && (
-                          <div className="flex gap-1.5 mt-2">
-                            {entry.images.slice(0, 3).map((img, j) => (
-                              <button
-                                key={j}
-                                onClick={() => onImageClick(img)}
-                                className="relative w-12 h-12 rounded overflow-hidden ring-1 ring-border hover:ring-gold/50 transition-all cursor-zoom-in"
-                              >
-                                <Image src={img} alt={`${entry.owner_name} document`} fill className="object-cover" sizes="48px" />
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        </>
+        </div>
       )}
 
       {/* Kiwame appraisals */}

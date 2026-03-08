@@ -124,7 +124,7 @@ export function ShowcaseHero({ listing, onImageClick }: ShowcaseHeroProps) {
                   src={heroImage}
                   alt={listing.title}
                   fill
-                  className="object-contain bg-surface-elevated group-hover:scale-[1.01] transition-transform duration-300"
+                  className="object-contain group-hover:scale-[1.01] transition-transform duration-300"
                   sizes="(max-width: 768px) 100vw, 500px"
                   priority
                 />

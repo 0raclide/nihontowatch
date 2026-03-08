@@ -33,22 +33,23 @@ function DocumentCard({ title, subtitle, text, textAlt, imageUrl, images, onImag
   const hasToggle = text && textAlt;
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-5 gap-6 md:gap-10">
-      {/* Document image(s) — 60% on desktop */}
+    <div className="max-w-2xl mx-auto space-y-6">
+      {/* Document image(s) — full width, natural height */}
       {allImages.length > 0 && (
-        <div className="md:col-span-3 space-y-3">
+        <div className="space-y-3">
           {allImages.map((url, i) => (
             <button
               key={i}
               onClick={() => onImageClick?.(url)}
-              className="relative w-full aspect-[4/3] rounded overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-zoom-in group"
+              className="relative w-full rounded overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-zoom-in group"
             >
               <Image
                 src={url}
                 alt={`${title} document ${i + 1}`}
-                fill
-                className="object-contain bg-surface-elevated group-hover:scale-[1.01] transition-transform duration-300"
-                sizes="(max-width: 768px) 100vw, 60vw"
+                width={800}
+                height={600}
+                className="w-full h-auto object-contain group-hover:scale-[1.01] transition-transform duration-300"
+                sizes="(max-width: 768px) 100vw, 672px"
               />
             </button>
           ))}
@@ -57,29 +58,27 @@ function DocumentCard({ title, subtitle, text, textAlt, imageUrl, images, onImag
 
       {/* Text card — markdown rendered */}
       {displayText && (
-        <div className={`${allImages.length > 0 ? 'md:col-span-2' : 'md:col-span-5 max-w-2xl mx-auto'}`}>
-          <div className="bg-surface-elevated rounded p-6 md:p-8 border border-border">
-            <div className="flex items-baseline justify-between mb-4">
-              <div>
-                <h3 className="text-[11px] uppercase tracking-[0.15em] font-medium text-muted">
-                  {title}
-                </h3>
-                {subtitle && (
-                  <p className="text-[12px] text-muted mt-1">{subtitle}</p>
-                )}
-              </div>
-              {hasToggle && (
-                <button
-                  onClick={() => setShowAlt(!showAlt)}
-                  className="text-[11px] text-muted hover:text-charcoal transition-colors tracking-wide"
-                >
-                  {showAlt ? 'Original' : 'Translation'}
-                </button>
+        <div className="bg-surface-elevated rounded p-6 md:p-8 border border-border">
+          <div className="flex items-baseline justify-between mb-4">
+            <div>
+              <h3 className="text-[11px] uppercase tracking-[0.15em] font-medium text-muted">
+                {title}
+              </h3>
+              {subtitle && (
+                <p className="text-[12px] text-muted mt-1">{subtitle}</p>
               )}
             </div>
-            <div className="prose-translation text-[13px] leading-[1.8] font-light">
-              <HighlightedMarkdown content={displayText} variant="translation" />
-            </div>
+            {hasToggle && (
+              <button
+                onClick={() => setShowAlt(!showAlt)}
+                className="text-[11px] text-muted hover:text-charcoal transition-colors tracking-wide"
+              >
+                {showAlt ? 'Original' : 'Translation'}
+              </button>
+            )}
+          </div>
+          <div className="prose-translation text-[13px] leading-[1.8] font-light">
+            <HighlightedMarkdown content={displayText} variant="translation" />
           </div>
         </div>
       )}
@@ -93,8 +92,9 @@ interface ShowcaseDocumentationProps {
 }
 
 /**
- * Documentation section — setsumei, sayagaki, hakogaki, oshigata.
- * Each document type shows as side-by-side (image + card with markdown).
+ * Documentation section — oshigata, setsumei, sayagaki, hakogaki.
+ * Single-column layout: image on top, text below.
+ * Order: oshigata images -> setsumei images -> setsumei text -> sayagaki -> hakogaki.
  */
 export function ShowcaseDocumentation({ listing, onImageClick }: ShowcaseDocumentationProps) {
   const sections: React.ReactNode[] = [];
@@ -106,7 +106,43 @@ export function ShowcaseDocumentation({ listing, onImageClick }: ShowcaseDocumen
     classifyCatalogImage(url) === 'setsumei'
   );
 
-  // Setsumei — include classified setsumei page scans alongside text
+  // 1. Oshigata — catalog images classified as oshigata or combined (visual first)
+  if (allCatalogImages.length > 0) {
+    const oshigataImages = allCatalogImages.filter(url => {
+      const type = classifyCatalogImage(url);
+      return type === 'oshigata' || type === 'combined';
+    });
+
+    if (oshigataImages.length > 0) {
+      sections.push(
+        <DocumentCard
+          key="oshigata"
+          title="Oshigata"
+          subtitle="From Yuhinkai catalog"
+          text={null}
+          images={oshigataImages}
+          onImageClick={onImageClick}
+        />
+      );
+    }
+
+    // Setsumei page scans — standalone card only when no setsumei text exists
+    // (when text exists, these images are included in the Setsumei card below)
+    if (catalogSetsumeiImages.length > 0 && !listing.setsumei_text_en && !listing.setsumei_text_ja) {
+      sections.push(
+        <DocumentCard
+          key="setsumei-images"
+          title="Setsumei"
+          subtitle="From Yuhinkai catalog"
+          text={null}
+          images={catalogSetsumeiImages}
+          onImageClick={onImageClick}
+        />
+      );
+    }
+  }
+
+  // 2. Setsumei — include classified setsumei page scans alongside text
   if (listing.setsumei_text_en || listing.setsumei_text_ja) {
     const sessionLabel = listing.cert_session
       ? `${getOrdinalSuffix(parseInt(listing.cert_session, 10))} Session`
@@ -128,7 +164,7 @@ export function ShowcaseDocumentation({ listing, onImageClick }: ShowcaseDocumen
     );
   }
 
-  // Sayagaki
+  // 3. Sayagaki
   if (listing.sayagaki && listing.sayagaki.length > 0) {
     listing.sayagaki.forEach((entry: SayagakiEntry, i: number) => {
       const authorLabel = SAYAGAKI_AUTHOR_LABELS[entry.author] || entry.author_custom || entry.author;
@@ -145,7 +181,7 @@ export function ShowcaseDocumentation({ listing, onImageClick }: ShowcaseDocumen
     });
   }
 
-  // Hakogaki
+  // 4. Hakogaki
   if (listing.hakogaki && listing.hakogaki.length > 0) {
     listing.hakogaki.forEach((entry: HakogakiEntry, i: number) => {
       sections.push(
@@ -159,42 +195,6 @@ export function ShowcaseDocumentation({ listing, onImageClick }: ShowcaseDocumen
         />
       );
     });
-  }
-
-  // Oshigata — catalog images classified as oshigata or combined
-  if (allCatalogImages.length > 0) {
-    const oshigataImages = allCatalogImages.filter(url => {
-      const type = classifyCatalogImage(url);
-      return type === 'oshigata' || type === 'combined';
-    });
-
-    if (oshigataImages.length > 0) {
-      sections.push(
-        <DocumentCard
-          key="oshigata"
-          title="Oshigata"
-          subtitle="From Yuhinkai catalog"
-          text={null}
-          images={oshigataImages}
-          onImageClick={onImageClick}
-        />
-      );
-    }
-
-    // Setsumei page scans — standalone card only when no setsumei text exists
-    // (when text exists, these images are already included in the Setsumei card above)
-    if (catalogSetsumeiImages.length > 0 && !listing.setsumei_text_en && !listing.setsumei_text_ja) {
-      sections.push(
-        <DocumentCard
-          key="setsumei-images"
-          title="Setsumei"
-          subtitle="From Yuhinkai catalog"
-          text={null}
-          images={catalogSetsumeiImages}
-          onImageClick={onImageClick}
-        />
-      );
-    }
   }
 
   if (sections.length === 0) return null;
