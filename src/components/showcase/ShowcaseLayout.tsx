@@ -9,6 +9,7 @@ import { ShowcaseKoshirae } from './ShowcaseKoshirae';
 import { ShowcaseImageGallery } from './ShowcaseImageGallery';
 import { ShowcaseStickyBar } from './ShowcaseStickyBar';
 import { ShowcaseLightbox } from './ShowcaseLightbox';
+import { ShowcaseCuratorNotePlaceholder } from './ShowcaseCuratorNotePlaceholder';
 import { getAllImages } from '@/lib/images';
 import { useValidatedImages } from '@/hooks/useValidatedImages';
 import type { EnrichedListingDetail } from '@/lib/listing/getListingDetail';
@@ -64,6 +65,14 @@ export function ShowcaseLayout({ listing }: ShowcaseLayoutProps) {
     return used;
   }, [listing]);
 
+  // First ready video by sort_order — promoted to hero
+  const heroVideo = useMemo(() => {
+    if (!listing.videos?.length) return undefined;
+    return listing.videos
+      .filter(v => v.status === 'ready' && v.stream_url)
+      .sort((a, b) => a.sort_order - b.sort_order)[0];
+  }, [listing.videos]);
+
   // Determine which sections exist
   const hasDocumentation = !!(
     listing.setsumei_text_en || listing.setsumei_text_ja ||
@@ -82,6 +91,7 @@ export function ShowcaseLayout({ listing }: ShowcaseLayoutProps) {
   // Build section nav items — hero IS the overview (id="identity")
   const navSections = useMemo(() => {
     const s = [{ id: 'identity', label: 'Overview' }];
+    s.push({ id: 'scholars-note', label: "Scholar's Note" });
     if (hasDocumentation) s.push({ id: 'documentation', label: 'Documentation' });
     if (hasProvenance || hasKiwame) s.push({ id: 'provenance', label: 'Provenance' });
     if (hasKoshirae) s.push({ id: 'koshirae', label: 'Mountings' });
@@ -96,11 +106,15 @@ export function ShowcaseLayout({ listing }: ShowcaseLayoutProps) {
 
       {/* Hero — two-column with image + metadata */}
       <div id="identity">
-        <ShowcaseHero listing={listing} onImageClick={openLightbox} />
+        <ShowcaseHero listing={listing} onImageClick={openLightbox} heroVideo={heroVideo} />
       </div>
 
       {/* Sections */}
       <div className="space-y-16 md:space-y-20 pb-20 md:pb-24">
+        <ShowcaseSection id="scholars-note" title="Scholar's Note" titleJa="解説">
+          <ShowcaseCuratorNotePlaceholder />
+        </ShowcaseSection>
+
         {hasDocumentation && (
           <ShowcaseSection id="documentation" title="Documentation" titleJa="文書">
             <ShowcaseDocumentation listing={listing} onImageClick={openLightbox} />
@@ -129,6 +143,7 @@ export function ShowcaseLayout({ listing }: ShowcaseLayoutProps) {
             usedImages={usedImages}
             onImageClick={openGalleryLightbox}
             videos={listing.videos}
+            heroVideoId={heroVideo?.id}
           />
         </ShowcaseSection>
       </div>

@@ -14,6 +14,8 @@ interface ShowcaseImageGalleryProps {
   onImageClick: (url: string, index: number) => void;
   /** Videos to display above the image grid */
   videos?: ListingVideo[];
+  /** Video ID already promoted to the hero — excluded from gallery */
+  heroVideoId?: string;
 }
 
 /**
@@ -21,13 +23,14 @@ interface ShowcaseImageGalleryProps {
  * in other sections (setsumei, sayagaki, provenance, etc.)
  * Videos appear above the image grid.
  */
-export function ShowcaseImageGallery({ images, usedImages, onImageClick, videos }: ShowcaseImageGalleryProps) {
+export function ShowcaseImageGallery({ images, usedImages, onImageClick, videos, heroVideoId }: ShowcaseImageGalleryProps) {
   // Filter out images already shown in other sections + oshigata/catalog images
   const galleryImages = images.filter(url =>
     !usedImages.has(url) && !url.includes(YUHINKAI_DOMAIN)
   );
 
-  const readyVideos = videos?.filter(v => v.stream_url) || [];
+  // Skip video already promoted to hero
+  const readyVideos = videos?.filter(v => v.stream_url && v.id !== heroVideoId) || [];
   const hasContent = galleryImages.length > 0 || readyVideos.length > 0;
 
   if (!hasContent) return null;

@@ -8,7 +8,9 @@ import { getValidatedCertInfo } from '@/lib/cert/validation';
 import { getOrdinalSuffix } from '@/lib/text/ordinal';
 import { generateArtisanSlug } from '@/lib/artisan/slugs';
 import { getAllImages } from '@/lib/images';
+import { VideoGalleryItem } from '@/components/video/VideoGalleryItem';
 import type { EnrichedListingDetail } from '@/lib/listing/getListingDetail';
+import type { ListingVideo } from '@/types/media';
 
 const ITEM_TYPE_LABELS: Record<string, string> = {
   katana: 'Katana', wakizashi: 'Wakizashi', tanto: 'Tant\u014D', tachi: 'Tachi',
@@ -41,13 +43,15 @@ function getCertColorClass(tier: string): string {
 interface ShowcaseHeroProps {
   listing: EnrichedListingDetail;
   onImageClick?: (url: string) => void;
+  /** First ready video — promoted above hero image */
+  heroVideo?: ListingVideo;
 }
 
 /**
  * Two-column hero: image left, metadata right.
  * Matches artist page's museum-catalog pattern.
  */
-export function ShowcaseHero({ listing, onImageClick }: ShowcaseHeroProps) {
+export function ShowcaseHero({ listing, onImageClick, heroVideo }: ShowcaseHeroProps) {
   const heroImage = getAllImages(listing)[0];
   const certInfo = getValidatedCertInfo(listing);
   const artisanName = listing.artisan_display_name || getAttributionName(listing);
@@ -100,8 +104,19 @@ export function ShowcaseHero({ listing, onImageClick }: ShowcaseHeroProps) {
       </div>
 
       <div className="flex flex-col md:flex-row items-start gap-8 lg:gap-12">
-        {/* Image — left column */}
-        <div className="w-full md:w-[400px] lg:w-[500px] flex-shrink-0">
+        {/* Media — left column (optional video + hero image) */}
+        <div className="w-full md:w-[400px] lg:w-[500px] flex-shrink-0 space-y-4">
+          {heroVideo && heroVideo.stream_url && (
+            <div className="rounded overflow-hidden border border-border aspect-video">
+              <VideoGalleryItem
+                streamUrl={heroVideo.stream_url}
+                thumbnailUrl={heroVideo.thumbnail_url}
+                duration={heroVideo.duration_seconds}
+                status={heroVideo.status}
+                className="w-full h-full"
+              />
+            </div>
+          )}
           {heroImage ? (
             <button
               onClick={() => onImageClick?.(heroImage)}
