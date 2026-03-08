@@ -1,8 +1,6 @@
 'use client';
 
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { getAttributionName } from '@/lib/listing/attribution';
-import { getValidatedCertInfo } from '@/lib/cert/validation';
 import type { EnrichedListingDetail } from '@/lib/listing/getListingDetail';
 
 interface SectionDef {
@@ -16,13 +14,13 @@ interface ShowcaseStickyBarProps {
 }
 
 /**
- * Sticky navigation bar that appears after scrolling past the hero.
- * Shows attribution summary + section nav links.
- * Desktop only — hidden on mobile.
+ * Fixed vertical sidebar index for showcase pages.
+ * Left-aligned with a thin border line, gold active state.
+ * Appears after scrolling past the hero. Desktop only.
  */
-export function ShowcaseStickyBar({ listing, sections }: ShowcaseStickyBarProps) {
+export function ShowcaseStickyBar({ listing: _listing, sections }: ShowcaseStickyBarProps) {
   const [visible, setVisible] = useState(false);
-  const [activeSection, setActiveSection] = useState<string>('');
+  const [activeSection, setActiveSection] = useState<string>(sections[0]?.id || '');
   const observerRef = useRef<IntersectionObserver | null>(null);
 
   // Show/hide based on scroll past hero
@@ -65,49 +63,31 @@ export function ShowcaseStickyBar({ listing, sections }: ShowcaseStickyBarProps)
     }
   }, []);
 
-  const certInfo = getValidatedCertInfo(listing);
-  const artisanName = listing.artisan_display_name || getAttributionName(listing);
-
   return (
-    <div
-      className={`hidden md:block fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        visible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-full pointer-events-none'
+    <nav
+      className={`hidden lg:flex fixed left-8 top-1/2 -translate-y-1/2 z-40 transition-opacity duration-500 ${
+        visible ? 'opacity-100' : 'opacity-0 pointer-events-none'
       }`}
     >
-      <div className="bg-background/95 backdrop-blur-md border-b border-border/50">
-        <div className="max-w-6xl mx-auto px-6 flex items-center justify-between h-12">
-          {/* Attribution summary */}
-          <div className="flex items-center gap-3 min-w-0">
-            {artisanName && (
-              <span className="text-[13px] font-serif font-light text-ink truncate">
-                {artisanName}
-              </span>
-            )}
-            {certInfo && (
-              <span className="text-[10px] uppercase tracking-[0.15em] text-gold/50 flex-shrink-0">
-                {certInfo.label}
-              </span>
-            )}
-          </div>
+      {/* Vertical border line */}
+      <div className="w-px bg-border/40 flex-shrink-0" />
 
-          {/* Section nav links */}
-          <nav className="flex items-center gap-0.5">
-            {sections.map(s => (
-              <button
-                key={s.id}
-                onClick={() => scrollToSection(s.id)}
-                className={`text-[11px] uppercase tracking-wider px-3 py-1.5 rounded transition-colors ${
-                  activeSection === s.id
-                    ? 'text-gold bg-gold/8'
-                    : 'text-muted hover:text-charcoal'
-                }`}
-              >
-                {s.label}
-              </button>
-            ))}
-          </nav>
-        </div>
+      {/* Section links */}
+      <div className="flex flex-col gap-1 pl-5">
+        {sections.map(s => (
+          <button
+            key={s.id}
+            onClick={() => scrollToSection(s.id)}
+            className={`text-left text-[12px] uppercase tracking-[0.16em] py-1.5 transition-colors duration-200 ${
+              activeSection === s.id
+                ? 'text-gold'
+                : 'text-muted/50 hover:text-muted'
+            }`}
+          >
+            {s.label}
+          </button>
+        ))}
       </div>
-    </div>
+    </nav>
   );
 }
