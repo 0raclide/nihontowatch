@@ -20,6 +20,8 @@ import { SignupPressureWrapper } from "@/components/signup";
 import { ConsentProvider } from "@/contexts/ConsentContext";
 import { getServerGdprRegion } from "@/lib/consent/server";
 import { NewSinceLastVisitProvider } from "@/contexts/NewSinceLastVisitContext";
+import { VideoUploadProvider } from "@/contexts/VideoUploadContext";
+import { VideoUploadIndicator } from "@/components/video/VideoUploadIndicator";
 import { CookieBanner } from "@/components/consent";
 
 const ConsentPreferences = dynamic(
@@ -123,6 +125,7 @@ export default async function RootLayout({
         <NavigationProgress />
         <LocaleProvider initialLocale={locale}>
           <AuthProvider>
+            <VideoUploadProvider>
             <NewSinceLastVisitProvider>
               <ConsentProvider isGdprRegion={isGdprRegion}>
                 <SubscriptionProvider>
@@ -146,6 +149,8 @@ export default async function RootLayout({
                 <ConsentPreferences />
               </ConsentProvider>
             </NewSinceLastVisitProvider>
+            <VideoUploadIndicator />
+            </VideoUploadProvider>
           </AuthProvider>
         </LocaleProvider>
       </body>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useLocale } from '@/i18n/LocaleContext';
+import { useVideoUpload } from '@/contexts/VideoUploadContext';
 import { VideoUploadProgress } from '@/components/video/VideoUploadProgress';
 import { VideoThumbnail } from '@/components/video/VideoThumbnail';
 import type { ListingVideo } from '@/types/media';
@@ -18,6 +19,7 @@ interface VideoUploadSectionProps {
  * - Add mode (no listingId): disabled with "save first" message
  * - Edit mode (has listingId): full upload + video management
  * - Polls for processing status every 5s while any video is processing
+ * - Subscribes to global upload context for completion events
  */
 export function VideoUploadSection({
   listingId,
@@ -25,6 +27,7 @@ export function VideoUploadSection({
   onVideosChange,
 }: VideoUploadSectionProps) {
   const { t } = useLocale();
+  const { subscribeToListing } = useVideoUpload();
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const pollRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -56,32 +59,21 @@ export function VideoUploadSection({
     };
   }, [hasProcessing, listingId, onVideosChange]);
 
-  const handleUploadStart = useCallback(async (file: File) => {
-    const res = await fetch('/api/dealer/videos', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ listingId, filename: file.name }),
-    });
-
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.error || 'Failed to create upload');
-    }
-
-    return res.json();
-  }, [listingId]);
-
-  const handleUploadComplete = useCallback(async () => {
-    // Refresh video list
+  // Subscribe to global upload completion events for this listing
+  useEffect(() => {
     if (!listingId) return;
-    try {
-      const res = await fetch(`/api/dealer/videos?listingId=${listingId}`);
-      if (res.ok) {
-        const data = await res.json();
-        onVideosChange(data.videos);
-      }
-    } catch {}
-  }, [listingId, onVideosChange]);
+
+    return subscribeToListing(listingId, async () => {
+      // Upload finished (now processing on Bunny) — refresh video list
+      try {
+        const res = await fetch(`/api/dealer/videos?listingId=${listingId}`);
+        if (res.ok) {
+          const data = await res.json();
+          onVideosChange(data.videos);
+        }
+      } catch {}
+    });
+  }, [listingId, subscribeToListing, onVideosChange]);
 
   const handleDelete = useCallback(async (videoId: string) => {
     setIsDeleting(videoId);
@@ -141,8 +133,7 @@ export function VideoUploadSection({
 
       {/* Upload zone */}
       <VideoUploadProgress
-        onUploadStart={handleUploadStart}
-        onUploadComplete={handleUploadComplete}
+        listingId={listingId}
         onUploadError={(err) => console.error('Video upload error:', err)}
       />
     </div>
