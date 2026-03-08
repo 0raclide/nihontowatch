@@ -101,39 +101,58 @@ describe('mei_text clearing logic', () => {
   });
 });
 
-describe('catalog prefill: gold_mei_kanji → meiText', () => {
-  it('flows through catalog match item mei_kanji', () => {
-    // Simulates the CatalogMatchPanel.handleCardSelect flow
-    const catalogItem = {
-      mei_kanji: '正宗' as string | null,
-    };
+// Replicate the gated prefill logic from CatalogMatchPanel.handleCardSelect
+function catalogPrefillMeiText(
+  meiKanji: string | null,
+  meiStatus: string | null,
+): string | undefined {
+  if (meiKanji && meiStatus) {
+    const normalized = meiStatus.toLowerCase().trim();
+    if (normalized !== 'unsigned') {
+      return meiKanji;
+    }
+  }
+  return undefined;
+}
 
-    const fields: Record<string, unknown> = {};
-    if (catalogItem.mei_kanji) fields.meiText = catalogItem.mei_kanji;
+describe('catalog prefill: gold_mei_kanji → meiText (unsigned-gated)', () => {
+  it('prefills for signed items', () => {
+    expect(catalogPrefillMeiText('備前国長船住景光', 'Signed')).toBe('備前国長船住景光');
+  });
 
-    expect(fields.meiText).toBe('正宗');
+  it('prefills for kinzogan-mei items', () => {
+    expect(catalogPrefillMeiText('本阿弥光悦', 'Kinzogan-Mei')).toBe('本阿弥光悦');
+  });
+
+  it('prefills for shu-mei items', () => {
+    expect(catalogPrefillMeiText('兼元', 'Shu-Mei')).toBe('兼元');
+  });
+
+  it('prefills for gaku-mei items', () => {
+    expect(catalogPrefillMeiText('相模国住秋広', 'Gaku-Mei')).toBe('相模国住秋広');
+  });
+
+  it('does NOT prefill for unsigned items — mei_kanji is attributed maker, not inscription', () => {
+    // 85.3% of unsigned items have mei_kanji = smith_name_kanji (e.g., "正宗")
+    // This is the attributed maker, not a physical inscription on the tang
+    expect(catalogPrefillMeiText('正宗', 'Unsigned')).toBeUndefined();
+  });
+
+  it('does NOT prefill for unsigned items with long kanji', () => {
+    expect(catalogPrefillMeiText('古備前正恒', 'unsigned')).toBeUndefined();
   });
 
   it('does not set meiText when mei_kanji is null', () => {
-    const catalogItem = {
-      mei_kanji: null as string | null,
-    };
-
-    const fields: Record<string, unknown> = {};
-    if (catalogItem.mei_kanji) fields.meiText = catalogItem.mei_kanji;
-
-    expect(fields.meiText).toBeUndefined();
+    expect(catalogPrefillMeiText(null, 'Signed')).toBeUndefined();
   });
 
-  it('handles long inscription with date', () => {
-    const catalogItem = {
-      mei_kanji: '備前国長船住景光 元亨三年二月日' as string | null,
-    };
+  it('does not set meiText when mei_status is null', () => {
+    expect(catalogPrefillMeiText('正宗', null)).toBeUndefined();
+  });
 
-    const fields: Record<string, unknown> = {};
-    if (catalogItem.mei_kanji) fields.meiText = catalogItem.mei_kanji;
-
-    expect(fields.meiText).toBe('備前国長船住景光 元亨三年二月日');
+  it('handles long inscription with date for signed items', () => {
+    expect(catalogPrefillMeiText('備前国長船住景光 元亨三年二月日', 'Signed'))
+      .toBe('備前国長船住景光 元亨三年二月日');
   });
 });
 

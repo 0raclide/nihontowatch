@@ -146,8 +146,15 @@ export function CatalogMatchPanel({ certType, artisanId, artisanName, onPrefill 
       if (mapped) fields.meiType = mapped;
     }
 
-    // Mei kanji (inscription text)
-    if (item.mei_kanji) fields.meiText = item.mei_kanji;
+    // Mei kanji (inscription text) — only for signed items.
+    // For unsigned items, gold_mei_kanji contains the attributed maker's name,
+    // not a physical inscription on the tang. Prefilling it would mislead dealers.
+    if (item.mei_kanji && item.mei_status) {
+      const normalized = item.mei_status.toLowerCase().trim();
+      if (normalized !== 'unsigned') {
+        fields.meiText = item.mei_kanji;
+      }
+    }
 
     // Nakago condition → nakagoType pills
     if (item.nakago_condition) {
