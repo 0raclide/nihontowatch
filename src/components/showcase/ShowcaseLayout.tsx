@@ -10,6 +10,7 @@ import { ShowcaseImageGallery } from './ShowcaseImageGallery';
 import { ShowcaseStickyBar } from './ShowcaseStickyBar';
 import { ShowcaseLightbox } from './ShowcaseLightbox';
 import { ShowcaseScholarNote } from './ShowcaseCuratorNotePlaceholder';
+import { VideoGalleryItem } from '@/components/video/VideoGalleryItem';
 import { getAllImages } from '@/lib/images';
 import { useValidatedImages } from '@/hooks/useValidatedImages';
 import type { EnrichedListingDetail } from '@/lib/listing/getListingDetail';
@@ -107,7 +108,7 @@ export function ShowcaseLayout({ listing }: ShowcaseLayoutProps) {
 
       {/* Hero — two-column with image + metadata */}
       <div id="identity">
-        <ShowcaseHero listing={listing} onImageClick={openLightbox} heroVideo={heroVideo} />
+        <ShowcaseHero listing={listing} onImageClick={openLightbox} />
       </div>
 
       {/* Sections */}
@@ -116,6 +117,20 @@ export function ShowcaseLayout({ listing }: ShowcaseLayoutProps) {
           <ShowcaseSection id="scholars-note" title="Scholar's Note" titleJa="解説">
             <ShowcaseScholarNote noteEn={listing.ai_curator_note_en} noteJa={listing.ai_curator_note_ja} />
           </ShowcaseSection>
+        )}
+
+        {heroVideo && heroVideo.stream_url && (
+          <div className="max-w-3xl mx-auto px-6 md:px-0">
+            <div className="rounded overflow-hidden border border-border aspect-video">
+              <VideoGalleryItem
+                streamUrl={heroVideo.stream_url}
+                thumbnailUrl={heroVideo.thumbnail_url}
+                duration={heroVideo.duration_seconds}
+                status={heroVideo.status}
+                className="w-full h-full"
+              />
+            </div>
+          </div>
         )}
 
         {hasDocumentation && (

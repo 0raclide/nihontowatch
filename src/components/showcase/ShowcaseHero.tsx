@@ -7,10 +7,8 @@ import { getAttributionName, getAttributionSchool } from '@/lib/listing/attribut
 import { getValidatedCertInfo } from '@/lib/cert/validation';
 import { getOrdinalSuffix } from '@/lib/text/ordinal';
 import { generateArtisanSlug } from '@/lib/artisan/slugs';
-import { getAllImages } from '@/lib/images';
-import { VideoGalleryItem } from '@/components/video/VideoGalleryItem';
+import { getHeroImage } from '@/lib/images/classification';
 import type { EnrichedListingDetail } from '@/lib/listing/getListingDetail';
-import type { ListingVideo } from '@/types/media';
 
 const ITEM_TYPE_LABELS: Record<string, string> = {
   katana: 'Katana', wakizashi: 'Wakizashi', tanto: 'Tant\u014D', tachi: 'Tachi',
@@ -29,30 +27,29 @@ const MEI_TYPE_LABELS: Record<string, string> = {
   kinzogan_mei: 'Gold Inlay Signature (\u91D1\u8C61\u5D4C\u9298)',
 };
 
-function getCertColorClass(tier: string): string {
+function getCertTextClass(tier: string): string {
   switch (tier) {
-    case 'tokuju': return 'text-tokuju bg-tokuju-bg';
-    case 'jubi': return 'text-jubi bg-jubi-bg';
-    case 'juyo': return 'text-juyo bg-juyo-bg';
-    case 'tokuho': return 'text-toku-hozon bg-toku-hozon-bg';
-    case 'hozon': return 'text-hozon bg-hozon-bg';
-    default: return 'text-muted bg-surface-elevated';
+    case 'tokuju': return 'text-tokuju';
+    case 'jubi': return 'text-jubi';
+    case 'juyo': return 'text-juyo';
+    case 'tokuho': return 'text-toku-hozon';
+    case 'hozon': return 'text-hozon';
+    default: return 'text-muted';
   }
 }
 
 interface ShowcaseHeroProps {
   listing: EnrichedListingDetail;
   onImageClick?: (url: string) => void;
-  /** First ready video — promoted above hero image */
-  heroVideo?: ListingVideo;
 }
 
 /**
  * Two-column hero: image left, metadata right.
- * Matches artist page's museum-catalog pattern.
+ * Matches artist page's museum-catalog pattern — gold accent bar,
+ * elegant cert text under image, sentence-case metadata labels.
  */
-export function ShowcaseHero({ listing, onImageClick, heroVideo }: ShowcaseHeroProps) {
-  const heroImage = getAllImages(listing)[0];
+export function ShowcaseHero({ listing, onImageClick }: ShowcaseHeroProps) {
+  const heroImage = getHeroImage(listing);
   const certInfo = getValidatedCertInfo(listing);
   const artisanName = listing.artisan_display_name || getAttributionName(listing);
   const school = getAttributionSchool(listing);
@@ -69,14 +66,25 @@ export function ShowcaseHero({ listing, onImageClick, heroVideo }: ShowcaseHeroP
   if (listing.kasane_cm) measurements.push({ label: 'Kasane', value: `${listing.kasane_cm} cm` });
   if (listing.weight_g) measurements.push({ label: 'Weight', value: `${listing.weight_g} g` });
 
-  const eliteFactor = listing.artisan_elite_factor;
-  const totalItems = listing.artisan_total_items;
-  const elitePercentile = listing.artisan_elite_percentile;
+  // Cert caption under image (artist-page figcaption style)
+  const certCaption = certInfo ? (
+    <figcaption className="mt-2.5 text-center">
+      <div className={`text-[10px] uppercase tracking-[0.15em] font-medium ${getCertTextClass(certInfo.tier)}`}>
+        {certInfo.label}
+      </div>
+      {listing.cert_session && (
+        <div className="text-[10px] text-ink/25 tabular-nums mt-0.5">
+          {getOrdinalSuffix(parseInt(listing.cert_session, 10))} Session
+        </div>
+      )}
+    </figcaption>
+  ) : null;
 
   return (
     <div className="max-w-6xl mx-auto px-6 pt-10 pb-12 md:pt-16 md:pb-16">
       {/* Mobile title above image */}
       <div className="md:hidden mb-6">
+        <div className="w-8 h-[2px] bg-gold/50 mb-3" />
         {itemType && (
           <p className="text-[11px] uppercase tracking-[0.18em] text-gold/50 mb-3">
             {itemType}
@@ -97,56 +105,49 @@ export function ShowcaseHero({ listing, onImageClick, heroVideo }: ShowcaseHeroP
           </h1>
         )}
         {listing.artisan_name_kanji && (
-          <p className="text-[14px] text-muted mt-1.5 font-serif font-light tracking-[0.08em]">
+          <p className="text-base text-ink/35 font-serif font-light mt-1 tracking-[0.08em]">
             {listing.artisan_name_kanji}
           </p>
         )}
       </div>
 
       <div className="flex flex-col md:flex-row items-start gap-8 lg:gap-12">
-        {/* Media — left column (optional video + hero image) */}
-        <div className="w-full md:w-[400px] lg:w-[500px] flex-shrink-0 space-y-4">
-          {heroVideo && heroVideo.stream_url && (
-            <div className="rounded overflow-hidden border border-border aspect-video">
-              <VideoGalleryItem
-                streamUrl={heroVideo.stream_url}
-                thumbnailUrl={heroVideo.thumbnail_url}
-                duration={heroVideo.duration_seconds}
-                status={heroVideo.status}
-                className="w-full h-full"
-              />
-            </div>
-          )}
-          {heroImage ? (
-            <button
-              onClick={() => onImageClick?.(heroImage)}
-              className="relative w-full aspect-[3/4] rounded overflow-hidden cursor-zoom-in group border border-border"
-            >
-              <Image
-                src={heroImage}
-                alt={listing.title}
-                fill
-                className="object-contain bg-surface-elevated group-hover:scale-[1.01] transition-transform duration-300"
-                sizes="(max-width: 768px) 100vw, 500px"
-                priority
-              />
-            </button>
-          ) : (
-            <div className="w-full aspect-[3/4] rounded bg-surface-elevated border border-border" />
-          )}
+        {/* Image — left column */}
+        <div className="w-full md:w-[400px] lg:w-[500px] flex-shrink-0">
+          <figure>
+            {heroImage ? (
+              <button
+                onClick={() => onImageClick?.(heroImage)}
+                className="relative w-full aspect-[3/4] rounded overflow-hidden cursor-zoom-in group border border-border"
+              >
+                <Image
+                  src={heroImage}
+                  alt={listing.title}
+                  fill
+                  className="object-contain bg-surface-elevated group-hover:scale-[1.01] transition-transform duration-300"
+                  sizes="(max-width: 768px) 100vw, 500px"
+                  priority
+                />
+              </button>
+            ) : (
+              <div className="w-full aspect-[3/4] rounded bg-surface-elevated border border-border" />
+            )}
+            {certCaption}
+          </figure>
         </div>
 
         {/* Metadata — right column */}
         <div className="flex-1 min-w-0 pt-0 md:pt-2">
           {/* Desktop title */}
           <div className="hidden md:block mb-8">
+            <div className="w-10 h-[2px] bg-gold/50 mb-4" />
             {itemType && (
               <p className="text-[11px] uppercase tracking-[0.18em] text-gold/50 mb-3">
                 {itemType}
               </p>
             )}
             {artisanName && (
-              <h1 className="text-2xl md:text-3xl lg:text-4xl font-serif font-light text-ink leading-[1.1] tracking-tight">
+              <h1 className="text-[2.5rem] font-serif font-light text-ink leading-[1.1] tracking-tight">
                 {listing.artisan_id && listing.artisan_display_name ? (
                   <Link
                     href={`/artists/${generateArtisanSlug(listing.artisan_display_name, listing.artisan_id)}`}
@@ -160,96 +161,54 @@ export function ShowcaseHero({ listing, onImageClick, heroVideo }: ShowcaseHeroP
               </h1>
             )}
             {listing.artisan_name_kanji && (
-              <p className="text-[14px] text-muted mt-2 font-serif font-light tracking-[0.08em]">
+              <p className="text-lg text-ink/35 font-serif font-light mt-1.5 tracking-[0.08em]">
                 {listing.artisan_name_kanji}
               </p>
             )}
           </div>
 
           {/* Metadata grid */}
-          <div className="grid grid-cols-[auto_1fr] gap-x-3 sm:gap-x-6 gap-y-1 sm:gap-y-1.5 mb-6">
+          <div className="grid grid-cols-[auto_1fr] gap-x-3 sm:gap-x-6 gap-y-1 sm:gap-y-1.5 text-[12px] sm:text-[13px] leading-snug">
             {school && (
               <>
-                <span className="text-[11px] uppercase tracking-wider text-ink/50">School</span>
-                <span className="text-[13px] text-ink font-light">{school}</span>
+                <span className="text-ink/50">School</span>
+                <span className="text-ink">{school}</span>
               </>
             )}
             {era && (
               <>
-                <span className="text-[11px] uppercase tracking-wider text-ink/50">Period</span>
-                <span className="text-[13px] text-ink font-light">{era}</span>
+                <span className="text-ink/50">Period</span>
+                <span className="text-ink">{era}</span>
               </>
             )}
             {listing.province && (
               <>
-                <span className="text-[11px] uppercase tracking-wider text-ink/50">Province</span>
-                <span className="text-[13px] text-ink font-light">{listing.province}</span>
+                <span className="text-ink/50">Province</span>
+                <span className="text-ink">{listing.province}</span>
               </>
             )}
             {meiLabel && (
               <>
-                <span className="text-[11px] uppercase tracking-wider text-ink/50">Signature</span>
-                <span className="text-[13px] text-ink font-light">
+                <span className="text-ink/50">Signature</span>
+                <span className="text-ink">
                   {meiLabel}
                   {listing.mei_text && (
-                    <span className="ml-2 text-charcoal">{listing.mei_text}</span>
+                    <span className="ml-2 text-ink/40">{listing.mei_text}</span>
                   )}
                 </span>
               </>
             )}
             {measurements.map(m => (
               <React.Fragment key={m.label}>
-                <span className="text-[11px] uppercase tracking-wider text-ink/50">{m.label}</span>
-                <span className="text-[13px] text-ink tabular-nums font-light">{m.value}</span>
+                <span className="text-ink/50">{m.label}</span>
+                <span className="text-ink tabular-nums">{m.value}</span>
               </React.Fragment>
             ))}
           </div>
 
-          {/* Cert badge */}
-          {certInfo && (
-            <div className="mb-6">
-              <span className={`inline-block text-[11px] uppercase tracking-[0.15em] font-medium px-3.5 py-1.5 rounded ${getCertColorClass(certInfo.tier)}`}>
-                {certInfo.label}
-                {listing.cert_session && (
-                  <span className="ml-2 opacity-60">
-                    {getOrdinalSuffix(parseInt(listing.cert_session, 10))} Session
-                  </span>
-                )}
-              </span>
-            </div>
-          )}
-
-          {/* Elite factor bar */}
-          {eliteFactor !== undefined && eliteFactor > 0 && totalItems !== undefined && totalItems > 0 && (
-            <div className="border-t border-border-subtle pt-5 mb-6">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[11px] uppercase tracking-wider text-ink/50">
-                  Designation Factor
-                </span>
-                <span className="text-[13px] text-ink tabular-nums font-light">
-                  {eliteFactor.toFixed(2)}
-                </span>
-              </div>
-              <div className="w-full h-1.5 bg-surface-elevated rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-gold rounded-full transition-all duration-500"
-                  style={{ width: `${Math.min((eliteFactor / 2.0) * 100, 100)}%` }}
-                />
-              </div>
-              <p className="text-[11px] text-muted mt-1.5">
-                {eliteFactor.toFixed(2)} across {totalItems} designated work{totalItems !== 1 ? 's' : ''}
-                {elitePercentile !== undefined && (
-                  <span className="ml-1">
-                    &middot; Top {100 - elitePercentile}%
-                  </span>
-                )}
-              </p>
-            </div>
-          )}
-
           {/* Description */}
           {listing.description && (
-            <div className="border-t border-border-subtle pt-5">
+            <div className="border-t border-border-subtle pt-5 mt-6">
               <p className="text-[13px] leading-[1.8] text-charcoal font-light">
                 {listing.description_en || listing.description}
               </p>
