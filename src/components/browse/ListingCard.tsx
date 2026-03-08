@@ -644,7 +644,7 @@ export const ListingCard = memo(function ListingCard({
       className={`object-cover group-hover:scale-105 transition-[opacity,transform] duration-500 ${
         isLoading ? 'opacity-0' : 'opacity-100'
       }`}
-      style={focalPosition ? { objectPosition: focalPosition } : undefined}
+      style={{ objectPosition: focalPosition || 'top' }}
       sizes={isGridMobile ? '(max-width: 640px) 50vw, (max-width: 1024px) 50vw, 25vw' : '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw'}
       priority={priority}
       fetchPriority={priority ? 'high' : undefined}
