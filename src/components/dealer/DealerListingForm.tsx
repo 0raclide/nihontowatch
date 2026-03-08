@@ -349,8 +349,15 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
       setNakagoType([]);
       setSayagaki([]);
       setKantoHibisho(null);
+      // Tosogu only supports zaimei/mumei — clear incompatible mei types
+      if (meiType && meiType !== 'zaimei' && meiType !== 'mumei') {
+        setMeiType(null);
+        setMeiText(null);
+      }
+      // Tosogu never from Heian period
+      if (era === 'Heian') setEra('');
     }
-  }, [category, heightCm, widthCm, materials, hakogaki, nagasaCm, motohabaCm, sakihabaCm, soriCm, nakagoType, sayagaki, kantoHibisho, t]);
+  }, [category, heightCm, widthCm, materials, hakogaki, nagasaCm, motohabaCm, sakihabaCm, soriCm, nakagoType, sayagaki, kantoHibisho, meiType, era, t]);
 
   const canDelete = mode === 'edit' && initialData?.id &&
     (initialData?.status === 'INVENTORY' || initialData?.status === 'WITHDRAWN');
@@ -1290,7 +1297,10 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
                   {t('dealer.signature')}
                 </label>
                 <div className="flex flex-wrap gap-2">
-                  {MEI_TYPES.map(({ value: v, labelKey }) => (
+                  {(category === 'tosogu'
+                    ? MEI_TYPES.filter(m => m.value === 'zaimei' || m.value === 'mumei')
+                    : MEI_TYPES
+                  ).map(({ value: v, labelKey }) => (
                     <button
                       key={v}
                       type="button"
@@ -1373,7 +1383,10 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
                 {t('dealer.era')}
               </label>
               <div className="flex flex-wrap gap-2">
-                {ERA_OPTIONS.map(({ value: v, labelKey }) => (
+                {(category === 'tosogu'
+                  ? ERA_OPTIONS.filter(e => e.value !== 'Heian')
+                  : ERA_OPTIONS
+                ).map(({ value: v, labelKey }) => (
                   <button
                     key={v}
                     type="button"
