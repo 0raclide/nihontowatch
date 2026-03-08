@@ -14,11 +14,15 @@ interface ImageUploadZoneProps {
   onPendingFilesChange?: (files: File[]) => void;
   /** Override the upload/delete API endpoint. Default: '/api/collection/images' */
   apiEndpoint?: string;
+  /** Explicit hero (cover) image index. When set, that image shows the cover badge instead of index 0. */
+  heroImageIndex?: number | null;
+  /** Called when the user clicks the star on an image to mark it as the cover. */
+  onHeroImageChange?: (index: number | null) => void;
 }
 
 const DEFAULT_API_ENDPOINT = '/api/collection/images';
 
-export function ImageUploadZone({ images, itemId, onChange, onPendingFilesChange, apiEndpoint = DEFAULT_API_ENDPOINT }: ImageUploadZoneProps) {
+export function ImageUploadZone({ images, itemId, onChange, onPendingFilesChange, apiEndpoint = DEFAULT_API_ENDPOINT, heroImageIndex, onHeroImageChange }: ImageUploadZoneProps) {
   const { t } = useLocale();
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -115,6 +119,15 @@ export function ImageUploadZone({ images, itemId, onChange, onPendingFilesChange
     const newImages = images.filter((_, i) => i !== index);
     onChange(newImages);
 
+    // Reset hero if removed image was the hero, or adjust index if needed
+    if (onHeroImageChange && heroImageIndex != null) {
+      if (index === heroImageIndex) {
+        onHeroImageChange(null);
+      } else if (index < heroImageIndex) {
+        onHeroImageChange(heroImageIndex - 1);
+      }
+    }
+
     if (isAddMode) {
       // Only remove from pendingFiles if this is a local blob (not a prefill URL)
       if (path.startsWith('blob:')) {
@@ -141,7 +154,7 @@ export function ImageUploadZone({ images, itemId, onChange, onPendingFilesChange
         // Best effort — image removed from list regardless
       }
     }
-  }, [images, pendingFiles, itemId, isAddMode, onChange, onPendingFilesChange, apiEndpoint]);
+  }, [images, pendingFiles, itemId, isAddMode, onChange, onPendingFilesChange, apiEndpoint, heroImageIndex, onHeroImageChange]);
 
   return (
     <div>
@@ -187,29 +200,45 @@ export function ImageUploadZone({ images, itemId, onChange, onPendingFilesChange
       {/* Thumbnail strip */}
       {images.length > 0 && (
         <div className="flex gap-2 mt-3 overflow-x-auto pb-1">
-          {images.map((url, i) => (
-            <div key={i} className="relative w-16 h-16 rounded overflow-hidden shrink-0 group">
-              {/* Use img tag for blob URLs since Next.js Image doesn't support them */}
-              {url.startsWith('blob:') ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={url} alt="" className="w-full h-full object-cover" />
-              ) : (
-                <Image src={url} alt="" fill className="object-cover" />
-              )}
-              <button
-                onClick={(e) => { e.stopPropagation(); handleRemove(i); }}
-                className="absolute top-0.5 right-0.5 w-5 h-5 flex items-center justify-center bg-black/60 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity text-[10px]"
-                aria-label={t('collection.removeImage')}
-              >
-                &times;
-              </button>
-              {i === 0 && (
-                <div className="absolute bottom-0 inset-x-0 bg-gold/80 text-white text-[8px] text-center py-0.5">
-                  {t('collection.cover')}
-                </div>
-              )}
-            </div>
-          ))}
+          {images.map((url, i) => {
+            const isHero = onHeroImageChange
+              ? (heroImageIndex != null ? i === heroImageIndex : i === 0)
+              : i === 0;
+            return (
+              <div key={i} className={`relative w-16 h-16 rounded overflow-hidden shrink-0 group ${isHero ? 'ring-2 ring-gold' : ''}`}>
+                {/* Use img tag for blob URLs since Next.js Image doesn't support them */}
+                {url.startsWith('blob:') ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={url} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  <Image src={url} alt="" fill className="object-cover" />
+                )}
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleRemove(i); }}
+                  className="absolute top-0.5 right-0.5 w-5 h-5 flex items-center justify-center bg-black/60 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity text-[10px]"
+                  aria-label={t('collection.removeImage')}
+                >
+                  &times;
+                </button>
+                {/* Hero selection star — shown on hover for non-hero images */}
+                {onHeroImageChange && !isHero && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onHeroImageChange(i); }}
+                    className="absolute top-0.5 left-0.5 w-5 h-5 flex items-center justify-center bg-black/40 text-white/70 hover:text-gold rounded-full opacity-0 group-hover:opacity-100 transition-opacity text-[10px]"
+                    aria-label="Set as cover"
+                    title="Set as cover photo"
+                  >
+                    &#9734;
+                  </button>
+                )}
+                {isHero && (
+                  <div className="absolute bottom-0 inset-x-0 bg-gold/80 text-white text-[8px] text-center py-0.5">
+                    {t('collection.cover')}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

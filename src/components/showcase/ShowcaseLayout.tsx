@@ -12,6 +12,7 @@ import { ShowcaseLightbox } from './ShowcaseLightbox';
 import { ShowcaseScholarNote } from './ShowcaseCuratorNotePlaceholder';
 import { VideoGalleryItem } from '@/components/video/VideoGalleryItem';
 import { getAllImages } from '@/lib/images';
+import { getHeroImage } from '@/lib/images/classification';
 import { useValidatedImages } from '@/hooks/useValidatedImages';
 import type { EnrichedListingDetail } from '@/lib/listing/getListingDetail';
 
@@ -48,9 +49,12 @@ export function ShowcaseLayout({ listing }: ShowcaseLayoutProps) {
     setLightboxOpen(true);
   }, [validatedImages]);
 
-  // Collect images used in documentation/provenance sections
+  // Collect images used in hero/documentation/provenance sections
   const usedImages = useMemo(() => {
     const used = new Set<string>();
+    // Hero image should not appear again in gallery
+    const hero = getHeroImage(listing);
+    if (hero) used.add(hero);
     if (listing.setsumei_image_url) used.add(listing.setsumei_image_url);
     listing.sayagaki?.forEach(entry => {
       entry.images?.forEach(url => used.add(url));

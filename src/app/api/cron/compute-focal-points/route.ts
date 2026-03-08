@@ -30,17 +30,28 @@ interface ListingRow {
   id: number;
   stored_images: string[] | null;
   images: string[] | null;
+  hero_image_index: number | null;
 }
 
 /**
- * Get the first usable image URL for a listing.
+ * Get the hero image URL for a listing (used as thumbnail/cover).
+ * Respects hero_image_index when set, otherwise uses first image.
  * Prefers stored_images (Supabase Storage) over original dealer URLs.
  */
-function getFirstImageUrl(listing: ListingRow): string | null {
-  const stored = listing.stored_images;
-  if (stored && stored.length > 0 && stored[0]) return stored[0];
-  const original = listing.images;
-  if (original && original.length > 0 && original[0]) return original[0];
+function getHeroCropImageUrl(listing: ListingRow): string | null {
+  const stored = listing.stored_images || [];
+  const original = listing.images || [];
+  const idx = listing.hero_image_index;
+
+  // If explicit hero index set, try to find that image
+  if (typeof idx === 'number' && idx >= 0) {
+    if (idx < stored.length && stored[idx]) return stored[idx];
+    if (idx < original.length && original[idx]) return original[idx];
+  }
+
+  // Fallback: first image
+  if (stored.length > 0 && stored[0]) return stored[0];
+  if (original.length > 0 && original[0]) return original[0];
   return null;
 }
 
@@ -120,7 +131,7 @@ export async function GET(request: NextRequest) {
       // Fetch listings with NULL focal_x that have images
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: listings, error } = await (supabase.from('listings') as any)
-        .select('id, stored_images, images')
+        .select('id, stored_images, images, hero_image_index')
         .is('focal_x', null)
         .not('images', 'is', null)
         .range(offset, offset + fetchSize - 1) as { data: ListingRow[] | null; error: unknown };
@@ -136,7 +147,7 @@ export async function GET(request: NextRequest) {
       const updates: { id: number; focal_x: number; focal_y: number; image_width: number; image_height: number }[] = [];
 
       for (const listing of listings) {
-        const imageUrl = getFirstImageUrl(listing);
+        const imageUrl = getHeroCropImageUrl(listing);
         if (!imageUrl) {
           totalSkipped++;
           continue;

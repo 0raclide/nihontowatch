@@ -133,6 +133,8 @@ export interface KoshiraeData {
   era?: string | null;
   province?: string | null;
   school?: string | null;
+  // Hero image selection
+  hero_image_index?: number | null;
 }
 
 // =============================================================================
@@ -666,6 +668,9 @@ export interface Listing {
   // Smart crop focal point (0-100%)
   focal_x?: number | null;
   focal_y?: number | null;
+
+  // Hero image selection
+  hero_image_index?: number | null; // Explicit cover image index into images[]. NULL = use index 0.
 
   // Timestamps
   first_seen_at: string;

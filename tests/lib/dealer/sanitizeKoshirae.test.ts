@@ -33,6 +33,7 @@ describe('sanitizeKoshirae', () => {
       era: null,
       province: null,
       school: null,
+      hero_image_index: null,
     });
   });
 

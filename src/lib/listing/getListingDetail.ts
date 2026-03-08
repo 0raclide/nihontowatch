@@ -97,6 +97,7 @@ interface ListingWithDealer {
   artisan_verified: string | null;
   focal_x: number | null;
   focal_y: number | null;
+  hero_image_index: number | null;
   sayagaki: SayagakiEntry[] | null;
   hakogaki: HakogakiEntry[] | null;
   koshirae: KoshiraeData | null;
@@ -192,6 +193,7 @@ export interface EnrichedListingDetail {
   artisan_verified: string | null;
   focal_x: number | null;
   focal_y: number | null;
+  hero_image_index: number | null;
   sayagaki: SayagakiEntry[] | null;
   hakogaki: HakogakiEntry[] | null;
   koshirae: KoshiraeData | null;
@@ -281,6 +283,7 @@ const LISTING_SELECT = `
   artisan_verified,
   focal_x,
   focal_y,
+  hero_image_index,
   sayagaki,
   hakogaki,
   koshirae,
@@ -477,6 +480,7 @@ export async function getListingDetail(
     artisan_verified: typedListing.artisan_verified,
     focal_x: typedListing.focal_x,
     focal_y: typedListing.focal_y,
+    hero_image_index: typedListing.hero_image_index,
     sayagaki: typedListing.sayagaki,
     hakogaki: typedListing.hakogaki,
     koshirae: typedListing.koshirae,

@@ -22,6 +22,7 @@ import { SetsumeiPreview } from './SetsumeiPreview';
 import { VideoUploadSection } from './VideoUploadSection';
 import type { ListingVideo } from '@/types/media';
 import { CATALOG_CERT_TYPES } from '@/lib/collection/catalogMapping';
+import { isYuhinkaiCatalogImage } from '@/lib/images/classification';
 import { SIGNED_MEI_TYPES, computeMeiText, computeMeiGuaranteed } from '@/lib/dealer/meiPayload';
 import type { SayagakiEntry, HakogakiEntry, KoshiraeData, ProvenanceEntry, KiwameEntry, KantoHibishoData } from '@/types';
 import { useLocale } from '@/i18n/LocaleContext';
@@ -145,6 +146,7 @@ export interface DealerListingInitialData {
   cert_session?: number | null;
   setsumei_text_en?: string | null;
   setsumei_text_ja?: string | null;
+  hero_image_index?: number | null;
   status?: string | null;
   videos?: ListingVideo[];
 }
@@ -269,6 +271,7 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
     (initialData?.item_category === 'tosogu' ? initialData?.tosogu_school : initialData?.school) || draft?.artisanSchool || null
   );
   const [images, setImages] = useState<string[]>(initialData?.images || draft?.images || []);
+  const [heroImageIndex, setHeroImageIndex] = useState<number | null>(initialData?.hero_image_index ?? null);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [videos, setVideos] = useState<ListingVideo[]>(initialData?.videos || []);
   const [sayagaki, setSayagaki] = useState<SayagakiEntry[]>(
@@ -462,9 +465,8 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
     // preserving user-uploaded photos. Catalog images are identifiable by the
     // Yuhinkai storage domain.
     if (fields.catalogImages?.length) {
-      const isCatalogImage = (url: string) => url.includes('itbhfhyptogxcjbjfzwx.supabase.co');
       setImages(prev => {
-        const userImages = prev.filter(url => !isCatalogImage(url));
+        const userImages = prev.filter(url => !isYuhinkaiCatalogImage(url));
         return [...fields.catalogImages!, ...userImages];
       });
     }
@@ -540,6 +542,7 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
         } : null,
         setsumei_text_en: setsumeiTextEn || null,
         setsumei_text_ja: setsumeiTextJa || null,
+        hero_image_index: heroImageIndex,
         images: images.filter(url => !url.startsWith('blob:')),
       };
 
@@ -878,6 +881,8 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
             onChange={setImages}
             onPendingFilesChange={setPendingFiles}
             apiEndpoint="/api/dealer/images"
+            heroImageIndex={heroImageIndex}
+            onHeroImageChange={setHeroImageIndex}
           />
 
           {/* Video upload */}

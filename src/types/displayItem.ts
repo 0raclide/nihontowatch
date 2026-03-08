@@ -108,6 +108,7 @@ export interface DisplayItem {
   og_image_url?: string | null;
   focal_x?: number | null;
   focal_y?: number | null;
+  hero_image_index?: number | null;
   thumbnail_url?: string | null;
 
   // Video

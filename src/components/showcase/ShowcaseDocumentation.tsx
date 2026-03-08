@@ -4,12 +4,9 @@ import { useState } from 'react';
 import Image from 'next/image';
 import { HighlightedMarkdown } from '@/components/glossary/HighlightedMarkdown';
 import { getOrdinalSuffix } from '@/lib/text/ordinal';
+import { isYuhinkaiCatalogImage, classifyCatalogImage } from '@/lib/images/classification';
 import type { EnrichedListingDetail } from '@/lib/listing/getListingDetail';
 import type { SayagakiEntry, HakogakiEntry } from '@/types';
-
-/** Matches Yuhinkai catalog images (oshigata, setsumei scans) in the `images` bucket.
- *  Does NOT match dealer-uploaded photos in `dealer-images` or `listing-images` buckets. */
-const YUHINKAI_CATALOG_PATH = 'itbhfhyptogxcjbjfzwx.supabase.co/storage/v1/object/public/images/';
 
 const SAYAGAKI_AUTHOR_LABELS: Record<string, string> = {
   tanobe_michihiro: 'Tanobe Michihiro (\u7530\u91CE\u908A\u9053\u5B8F)',
@@ -102,11 +99,22 @@ interface ShowcaseDocumentationProps {
 export function ShowcaseDocumentation({ listing, onImageClick }: ShowcaseDocumentationProps) {
   const sections: React.ReactNode[] = [];
 
-  // Setsumei
+  // Pre-classify catalog images for use in setsumei and oshigata sections
+  const allCatalogImages = [...(listing.images || []), ...(listing.stored_images || [])]
+    .filter(url => url && isYuhinkaiCatalogImage(url));
+  const catalogSetsumeiImages = allCatalogImages.filter(url =>
+    classifyCatalogImage(url) === 'setsumei'
+  );
+
+  // Setsumei — include classified setsumei page scans alongside text
   if (listing.setsumei_text_en || listing.setsumei_text_ja) {
     const sessionLabel = listing.cert_session
       ? `${getOrdinalSuffix(parseInt(listing.cert_session, 10))} Session`
       : undefined;
+    const setsumeiDocImages = [
+      ...(listing.setsumei_image_url ? [listing.setsumei_image_url] : []),
+      ...catalogSetsumeiImages,
+    ];
     sections.push(
       <DocumentCard
         key="setsumei"
@@ -114,7 +122,7 @@ export function ShowcaseDocumentation({ listing, onImageClick }: ShowcaseDocumen
         subtitle={sessionLabel}
         text={listing.setsumei_text_en}
         textAlt={listing.setsumei_text_ja}
-        imageUrl={listing.setsumei_image_url}
+        images={setsumeiDocImages.length > 0 ? setsumeiDocImages : undefined}
         onImageClick={onImageClick}
       />
     );
@@ -153,20 +161,40 @@ export function ShowcaseDocumentation({ listing, onImageClick }: ShowcaseDocumen
     });
   }
 
-  // Oshigata — catalog images (identified by Yuhinkai storage domain)
-  const allImages = [...(listing.images || []), ...(listing.stored_images || [])].filter(Boolean);
-  const oshigataImages = allImages.filter(url => url.includes(YUHINKAI_CATALOG_PATH));
-  if (oshigataImages.length > 0) {
-    sections.push(
-      <DocumentCard
-        key="oshigata"
-        title="Oshigata"
-        subtitle="From Yuhinkai catalog"
-        text={null}
-        images={oshigataImages}
-        onImageClick={onImageClick}
-      />
-    );
+  // Oshigata — catalog images classified as oshigata or combined
+  if (allCatalogImages.length > 0) {
+    const oshigataImages = allCatalogImages.filter(url => {
+      const type = classifyCatalogImage(url);
+      return type === 'oshigata' || type === 'combined';
+    });
+
+    if (oshigataImages.length > 0) {
+      sections.push(
+        <DocumentCard
+          key="oshigata"
+          title="Oshigata"
+          subtitle="From Yuhinkai catalog"
+          text={null}
+          images={oshigataImages}
+          onImageClick={onImageClick}
+        />
+      );
+    }
+
+    // Setsumei page scans — standalone card only when no setsumei text exists
+    // (when text exists, these images are already included in the Setsumei card above)
+    if (catalogSetsumeiImages.length > 0 && !listing.setsumei_text_en && !listing.setsumei_text_ja) {
+      sections.push(
+        <DocumentCard
+          key="setsumei-images"
+          title="Setsumei"
+          subtitle="From Yuhinkai catalog"
+          text={null}
+          images={catalogSetsumeiImages}
+          onImageClick={onImageClick}
+        />
+      );
+    }
   }
 
   if (sections.length === 0) return null;

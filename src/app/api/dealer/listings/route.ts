@@ -167,6 +167,7 @@ export async function POST(request: NextRequest) {
     kanto_hibisho,
     setsumei_text_en,
     setsumei_text_ja,
+    hero_image_index,
     images: initialImages,
   } = body;
 
@@ -206,6 +207,7 @@ export async function POST(request: NextRequest) {
     page_exists: true,
     is_initial_import: false,
     images: Array.isArray(initialImages) && initialImages.length > 0 ? initialImages : [],
+    hero_image_index: (typeof hero_image_index === 'number' && hero_image_index >= 0) ? Math.floor(hero_image_index) : null,
     scrape_count: 0,
     sayagaki: Array.isArray(sayagaki) && sayagaki.length > 0
       ? sayagaki.map((entry: Record<string, unknown>) => ({

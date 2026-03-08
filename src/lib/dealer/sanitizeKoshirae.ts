@@ -35,6 +35,10 @@ export function sanitizeKoshirae(raw: unknown): KoshiraeData | null {
     era: trimOrNull(k.era, 100),
     province: trimOrNull(k.province, 100),
     school: trimOrNull(k.school, 100),
+    // Hero image selection
+    hero_image_index: typeof k.hero_image_index === 'number' && k.hero_image_index >= 0
+      ? Math.floor(k.hero_image_index)
+      : null,
   };
 }
 

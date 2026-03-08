@@ -306,6 +306,7 @@ export async function GET(request: NextRequest) {
         featured_score,
         focal_x,
         focal_y,
+        hero_image_index,
         thumbnail_url,
         source,
         video_count,

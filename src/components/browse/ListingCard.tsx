@@ -9,6 +9,7 @@ import { useActivityOptional } from '@/components/activity/ActivityProvider';
 import { useQuickViewOptional } from '@/contexts/QuickViewContext';
 import { useViewportTrackingOptional } from '@/lib/viewport';
 import { getAllImages, getCachedValidation, isRenderFailed, setRenderFailed, dealerDoesNotPublishImages, getPlaceholderKanji } from '@/lib/images';
+import { getHeroImageIndex } from '@/lib/images/classification';
 import { shouldShowNewBadge } from '@/lib/newListing';
 import { isTrialModeActive } from '@/types/subscription';
 import { isSetsumeiEligibleCert } from '@/types';
@@ -507,6 +508,16 @@ export const ListingCard = memo(function ListingCard({
     // Prefer composite thumbnail for extreme aspect ratio images
     if (listing.thumbnail_url) return listing.thumbnail_url;
 
+    // Try hero image first (explicit cover selection or index 0)
+    const heroIdx = getHeroImageIndex(listing);
+    if (heroIdx < allImages.length) {
+      const heroUrl = allImages[heroIdx];
+      if (heroUrl && getCachedValidation(heroUrl) !== 'invalid' && !isRenderFailed(heroUrl)) {
+        return heroUrl;
+      }
+    }
+
+    // Fall back to first valid image
     for (const url of allImages) {
       if (getCachedValidation(url) === 'invalid') continue;
       if (isRenderFailed(url)) continue;
@@ -514,7 +525,7 @@ export const ListingCard = memo(function ListingCard({
     }
     return null;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [listing.thumbnail_url, allImages, fallbackIndex]);
+  }, [listing.thumbnail_url, listing.hero_image_index, allImages, fallbackIndex]);
 
   // Check if item is definitively sold (for showing sale data)
   const isSold = listing.is_sold || listing.status === 'sold' || listing.status === 'presumed_sold';

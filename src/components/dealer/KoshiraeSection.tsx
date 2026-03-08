@@ -4,6 +4,7 @@ import { useState, useCallback, useRef } from 'react';
 import Image from 'next/image';
 import type { KoshiraeData } from '@/types';
 import { resizeImage } from '@/lib/images/resizeImage';
+import { isYuhinkaiCatalogImage } from '@/lib/images/classification';
 import { CertPills } from './CertPills';
 import { KoshiraeMakerSection } from './KoshiraeMakerSection';
 import { CatalogMatchPanel } from './CatalogMatchPanel';
@@ -85,7 +86,7 @@ export function KoshiraeSection({ koshirae, itemId, onChange, onPendingFilesChan
     onChange({ ...koshirae, description: value || null });
   }, [koshirae, onChange]);
 
-  const isCatalogImage = (url: string) => url.includes('itbhfhyptogxcjbjfzwx.supabase.co');
+  const isCatalogImage = isYuhinkaiCatalogImage;
 
   const handleCatalogPrefill = useCallback((fields: CatalogPrefillFields) => {
     if (!koshirae) return;

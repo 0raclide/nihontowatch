@@ -36,7 +36,7 @@ export async function GET(
   const serviceClient = createServiceClient();
 
   const { data: listing, error } = await (serviceClient.from('listings') as any)
-    .select('id, title, title_en, title_ja, item_type, item_category, cert_type, cert_session, price_value, price_currency, description, artisan_id, smith, tosogu_maker, school, tosogu_school, era, province, mei_type, mei_text, mei_guaranteed, nakago_type, nagasa_cm, motohaba_cm, sakihaba_cm, sori_cm, height_cm, width_cm, material, images, sayagaki, hakogaki, koshirae, provenance, kiwame, kanto_hibisho, setsumei_text_en, setsumei_text_ja, status, is_available, is_sold, source, dealer_id')
+    .select('id, title, title_en, title_ja, item_type, item_category, cert_type, cert_session, price_value, price_currency, description, artisan_id, smith, tosogu_maker, school, tosogu_school, era, province, mei_type, mei_text, mei_guaranteed, nakago_type, nagasa_cm, motohaba_cm, sakihaba_cm, sori_cm, height_cm, width_cm, material, images, sayagaki, hakogaki, koshirae, provenance, kiwame, kanto_hibisho, hero_image_index, setsumei_text_en, setsumei_text_ja, status, is_available, is_sold, source, dealer_id')
     .eq('id', listingId)
     .eq('dealer_id', auth.dealerId)
     .eq('source', 'dealer')
@@ -65,6 +65,7 @@ const ALLOWED_FIELDS = new Set([
   'provenance',
   'kiwame',
   'kanto_hibisho',
+  'hero_image_index',
   'setsumei_text_en',
   'setsumei_text_ja',
   // Note: 'images' intentionally excluded — managed exclusively via /api/dealer/images
@@ -123,6 +124,12 @@ export async function PATCH(
   // Sanitize JSONB fields — whitelist every nested field, enforce length limits
   if ('koshirae' in updates) {
     updates.koshirae = sanitizeKoshirae(updates.koshirae);
+  }
+
+  // Sanitize hero_image_index — must be non-negative integer or null
+  if ('hero_image_index' in updates) {
+    const idx = updates.hero_image_index;
+    updates.hero_image_index = (typeof idx === 'number' && idx >= 0) ? Math.floor(idx) : null;
   }
 
   // Handle status change side effects

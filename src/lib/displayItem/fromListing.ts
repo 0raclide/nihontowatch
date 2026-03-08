@@ -48,6 +48,7 @@ interface ListingInput {
   og_image_url?: string | null;
   focal_x?: number | null;
   focal_y?: number | null;
+  hero_image_index?: number | null;
   thumbnail_url?: string | null;
   artisan_id?: string | null;
   artisan_display_name?: string | null;
@@ -152,6 +153,7 @@ export function listingToDisplayItem(listing: ListingInput, locale: string): Dis
     og_image_url: listing.og_image_url ?? null,
     focal_x: listing.focal_x ?? null,
     focal_y: listing.focal_y ?? null,
+    hero_image_index: listing.hero_image_index ?? null,
     thumbnail_url: listing.thumbnail_url ?? null,
 
     // Artisan
