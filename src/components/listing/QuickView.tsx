@@ -24,7 +24,7 @@ import { usePinchZoomTracking } from '@/lib/viewport';
 import { getAllImages, dealerDoesNotPublishImages, getCachedDimensions, getPlaceholderKanji } from '@/lib/images';
 import { useValidatedImages } from '@/hooks/useValidatedImages';
 import { useAuth } from '@/lib/auth/AuthContext';
-import type { ListingWithEnrichment } from '@/types';
+import type { ListingWithEnrichment, Currency } from '@/types';
 import { useLocale } from '@/i18n/LocaleContext';
 
 // Slot components
@@ -256,12 +256,20 @@ export function QuickView() {
 
   // Dealer status change → optimistic update via refreshCurrentListing
   // MUST be before the early return — hooks cannot be conditional
-  const handleDealerStatusChange = useCallback((newStatus: string) => {
-    const optimistic = {
+  const handleDealerStatusChange = useCallback((newStatus: string, patchedFields?: { price_value?: number | null; price_currency?: string }) => {
+    const optimistic: Partial<ListingWithEnrichment> = {
       status: newStatus as ListingWithEnrichment['status'],
       is_available: newStatus === 'AVAILABLE',
       is_sold: newStatus === 'SOLD',
     };
+    if (patchedFields) {
+      if (patchedFields.price_value !== undefined) {
+        optimistic.price_value = patchedFields.price_value ?? undefined;
+      }
+      if (patchedFields.price_currency !== undefined) {
+        optimistic.price_currency = patchedFields.price_currency as Currency;
+      }
+    }
     refreshCurrentListing(optimistic);
 
     // Notify DealerPageClient to remove the listing from the current tab grid

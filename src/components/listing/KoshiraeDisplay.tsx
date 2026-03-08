@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import ReactMarkdown from 'react-markdown';
 import type { KoshiraeData, KoshiraeComponentType } from '@/types';
 import { useLocale } from '@/i18n/LocaleContext';
 
@@ -14,6 +15,46 @@ const COMPONENT_TYPE_LABELS: Record<KoshiraeComponentType, string> = {
   kogai: 'dealer.componentKogai',
   other: 'dealer.componentOther',
 };
+
+function KoshiraeSetsumei({ textEn, textJa }: { textEn: string; textJa: string | null }) {
+  const { t, locale } = useLocale();
+  const [showAlternate, setShowAlternate] = useState(false);
+  const isJaLocale = locale === 'ja';
+  const showingJa = textJa ? (isJaLocale ? !showAlternate : showAlternate) : false;
+  const hasToggle = !!(textEn && textJa);
+
+  return (
+    <div className="mt-2">
+      <div className="text-[10px] uppercase tracking-wider text-muted font-medium mb-1">
+        {t('dealer.koshiraeSetsumei')}
+      </div>
+      <div className="rounded-lg border border-gold/20 bg-gold/5 dark:bg-gold/5">
+        {hasToggle && (
+          <div className="flex justify-end px-3 py-1.5 border-b border-gold/10">
+            <button
+              type="button"
+              onClick={() => setShowAlternate(!showAlternate)}
+              className="text-[11px] text-gold hover:text-gold/80 font-medium transition-colors"
+            >
+              {showingJa ? t('dealer.setsumeiShowEnglish') : t('dealer.setsumeiShowOriginal')}
+            </button>
+          </div>
+        )}
+        <div className="px-3 py-2 max-h-[300px] overflow-y-auto">
+          {showingJa ? (
+            <p className="text-[13px] text-ink/80 leading-[1.85] whitespace-pre-line font-jp">
+              {textJa}
+            </p>
+          ) : (
+            <article className="prose-translation">
+              <ReactMarkdown>{textEn}</ReactMarkdown>
+            </article>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 interface KoshiraeDisplayProps {
   koshirae: KoshiraeData;
@@ -39,6 +80,7 @@ export function KoshiraeDisplay({ koshirae, hideHeading }: KoshiraeDisplayProps)
             {koshirae.cert_type && (
               <span className="inline-block px-2 py-0.5 text-[11px] font-medium rounded-full bg-gold/10 text-gold border border-gold/20 mr-2">
                 {koshirae.cert_type}
+                {koshirae.cert_session != null && ` #${koshirae.cert_session}`}
               </span>
             )}
             {koshirae.cert_in_blade_paper && (
@@ -128,6 +170,11 @@ export function KoshiraeDisplay({ koshirae, hideHeading }: KoshiraeDisplayProps)
               </button>
             ))}
           </div>
+        )}
+
+        {/* Setsumei (NBTHK Zufu commentary) */}
+        {koshirae.setsumei_text_en && (
+          <KoshiraeSetsumei textEn={koshirae.setsumei_text_en} textJa={koshirae.setsumei_text_ja} />
         )}
       </div>
 

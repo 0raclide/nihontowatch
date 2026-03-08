@@ -114,6 +114,7 @@ export interface KoshiraeComponentEntry {
 export interface KoshiraeData {
   cert_type: string | null;
   cert_in_blade_paper: boolean;
+  cert_session: number | null;
   description: string | null;
   images: string[];
   // Single maker (issaku) — the common case
@@ -122,6 +123,10 @@ export interface KoshiraeData {
   artisan_kanji: string | null;
   // Multi maker — individual component attributions
   components: KoshiraeComponentEntry[];
+  // Yuhinkai catalog link
+  setsumei_text_en: string | null;
+  setsumei_text_ja: string | null;
+  catalog_object_uuid: string | null;
 }
 
 // =============================================================================

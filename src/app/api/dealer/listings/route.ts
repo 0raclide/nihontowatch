@@ -222,8 +222,14 @@ export async function POST(request: NextRequest) {
       ? {
           cert_type: (koshirae as Record<string, unknown>).cert_type ?? null,
           cert_in_blade_paper: !!(koshirae as Record<string, unknown>).cert_in_blade_paper,
+          cert_session: (koshirae as Record<string, unknown>).cert_session ?? null,
           description: (koshirae as Record<string, unknown>).description ?? null,
-          images: [], // Images uploaded separately after creation
+          // Pass through non-blob URLs (catalog images are URLs, not file uploads)
+          images: Array.isArray((koshirae as Record<string, unknown>).images)
+            ? ((koshirae as Record<string, unknown>).images as string[]).filter(
+                url => typeof url === 'string' && !url.startsWith('blob:')
+              )
+            : [],
           // Single maker (issaku)
           artisan_id: (koshirae as Record<string, unknown>).artisan_id ?? null,
           artisan_name: (koshirae as Record<string, unknown>).artisan_name ?? null,
@@ -239,6 +245,10 @@ export async function POST(request: NextRequest) {
                 description: c.description ?? null,
               }))
             : [],
+          // Yuhinkai catalog link
+          setsumei_text_en: (koshirae as Record<string, unknown>).setsumei_text_en ?? null,
+          setsumei_text_ja: (koshirae as Record<string, unknown>).setsumei_text_ja ?? null,
+          catalog_object_uuid: (koshirae as Record<string, unknown>).catalog_object_uuid ?? null,
         }
       : null,
     provenance: Array.isArray(provenance) && provenance.length > 0

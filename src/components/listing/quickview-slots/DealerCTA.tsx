@@ -1,12 +1,14 @@
 'use client';
 
+import { useState } from 'react';
 import { useLocale } from '@/i18n/LocaleContext';
 import type { Listing } from '@/types';
 import { useDealerStatusChange } from './useDealerStatusChange';
+import { ListForSaleModal } from '@/components/dealer/ListForSaleModal';
 
 interface DealerCTAProps {
   listing: Listing;
-  onStatusChange?: (status: string) => void;
+  onStatusChange?: (status: string, patchedFields?: { price_value?: number | null; price_currency?: string }) => void;
 }
 
 /**
@@ -19,6 +21,7 @@ export function DealerCTA({ listing, onStatusChange }: DealerCTAProps) {
     listingId: listing.id,
     onStatusChange,
   });
+  const [showPriceModal, setShowPriceModal] = useState(false);
 
   const status = listing.status?.toUpperCase();
   const isInventory = status === 'INVENTORY' || status === 'WITHDRAWN';
@@ -39,10 +42,10 @@ export function DealerCTA({ listing, onStatusChange }: DealerCTAProps) {
         <p className="text-[11px] text-red-500 dark:text-red-400 text-center animate-pulse">{error}</p>
       )}
 
-      {/* Inventory: single gold CTA */}
+      {/* Inventory: open price modal to list for sale */}
       {isInventory && (
         <button
-          onClick={() => handleStatusChange('AVAILABLE')}
+          onClick={() => setShowPriceModal(true)}
           disabled={isUpdating}
           className="w-full py-2.5 rounded-lg bg-gold text-white text-[13px] font-medium disabled:opacity-50 transition-all hover:bg-gold/90 active:scale-[0.98]"
         >
@@ -118,6 +121,17 @@ export function DealerCTA({ listing, onStatusChange }: DealerCTAProps) {
           {isUpdating ? spinner : t('dealer.relist')}
         </button>
       )}
+
+      <ListForSaleModal
+        isOpen={showPriceModal}
+        onClose={() => setShowPriceModal(false)}
+        listingId={listing.id}
+        currentPrice={listing.price_value}
+        currentCurrency={listing.price_currency}
+        onSuccess={(newStatus, patchedFields) => {
+          onStatusChange?.(newStatus, patchedFields);
+        }}
+      />
     </div>
   );
 }

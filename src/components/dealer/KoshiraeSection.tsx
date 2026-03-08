@@ -5,6 +5,10 @@ import Image from 'next/image';
 import type { KoshiraeData } from '@/types';
 import { CertPills } from './CertPills';
 import { KoshiraeMakerSection } from './KoshiraeMakerSection';
+import { CatalogMatchPanel } from './CatalogMatchPanel';
+import type { CatalogPrefillFields } from './CatalogMatchPanel';
+import { SetsumeiPreview } from './SetsumeiPreview';
+import { CATALOG_CERT_TYPES } from '@/lib/collection/catalogMapping';
 import { useLocale } from '@/i18n/LocaleContext';
 
 const MAX_IMAGES = 10;
@@ -15,12 +19,16 @@ export function createEmptyKoshirae(): KoshiraeData {
   return {
     cert_type: null,
     cert_in_blade_paper: false,
+    cert_session: null,
     description: null,
     images: [],
     artisan_id: null,
     artisan_name: null,
     artisan_kanji: null,
     components: [],
+    setsumei_text_en: null,
+    setsumei_text_ja: null,
+    catalog_object_uuid: null,
   };
 }
 
@@ -72,6 +80,30 @@ export function KoshiraeSection({ koshirae, itemId, onChange, onPendingFilesChan
     if (!koshirae) return;
     onChange({ ...koshirae, description: value || null });
   }, [koshirae, onChange]);
+
+  const isCatalogImage = (url: string) => url.includes('itbhfhyptogxcjbjfzwx.supabase.co');
+
+  const handleCatalogPrefill = useCallback((fields: CatalogPrefillFields) => {
+    if (!koshirae) return;
+    const updated = { ...koshirae };
+
+    // Koshirae-relevant fields from catalog
+    if (fields.certSession != null) updated.cert_session = fields.certSession;
+    if (fields.catalogObjectUuid) updated.catalog_object_uuid = fields.catalogObjectUuid;
+    if (fields.setsumeiTextEn !== undefined) updated.setsumei_text_en = fields.setsumeiTextEn ?? null;
+    if (fields.setsumeiTextJa !== undefined) updated.setsumei_text_ja = fields.setsumeiTextJa ?? null;
+
+    // Prepend catalog images, replacing any prior catalog images but keeping user uploads
+    if (fields.catalogImages?.length) {
+      const userImages = (koshirae.images || []).filter(url => !isCatalogImage(url));
+      updated.images = [...fields.catalogImages, ...userImages];
+    }
+
+    onChange(updated);
+  }, [koshirae, onChange]);
+
+  // Show catalog lookup when single-maker mode with an eligible cert type
+  const showKoshiraeCatalog = !!(koshirae?.artisan_id && koshirae?.cert_type && CATALOG_CERT_TYPES.has(koshirae.cert_type));
 
   const handleFiles = useCallback(async (files: FileList) => {
     if (!koshirae) return;
@@ -251,6 +283,25 @@ export function KoshiraeSection({ koshirae, itemId, onChange, onPendingFilesChan
             onComponentsChange={handleComponentsChange}
           />
         </div>
+
+        {/* Yuhinkai catalog lookup (koshirae's own Zufu entry) */}
+        {showKoshiraeCatalog && (
+          <CatalogMatchPanel
+            certType={koshirae.cert_type!}
+            artisanId={koshirae.artisan_id!}
+            artisanName={koshirae.artisan_name}
+            onPrefill={handleCatalogPrefill}
+          />
+        )}
+
+        {/* Koshirae setsumei preview — auto-filled from catalog */}
+        {koshirae.setsumei_text_en && (
+          <SetsumeiPreview
+            textEn={koshirae.setsumei_text_en}
+            textJa={koshirae.setsumei_text_ja}
+            label="dealer.koshiraeSetsumei"
+          />
+        )}
 
         {/* Description */}
         <div>

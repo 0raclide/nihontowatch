@@ -17,6 +17,7 @@ import { ProvenanceSection } from './ProvenanceSection';
 import { KiwameSection } from './KiwameSection';
 import { CatalogMatchPanel } from './CatalogMatchPanel';
 import type { CatalogPrefillFields } from './CatalogMatchPanel';
+import { SetsumeiPreview } from './SetsumeiPreview';
 import { CATALOG_CERT_TYPES } from '@/lib/collection/catalogMapping';
 import type { SayagakiEntry, HakogakiEntry, KoshiraeData, ProvenanceEntry, KiwameEntry } from '@/types';
 import { useLocale } from '@/i18n/LocaleContext';
@@ -189,51 +190,7 @@ function sanitizeDecimal(value: string): string {
   return parts[0] + '.' + parts.slice(1).join('');
 }
 
-/** Read-only preview of NBTHK Zufu commentary auto-filled from catalog. */
-function SetsumeiPreview({ textEn, textJa, t, locale }: { textEn: string; textJa: string | null; locale: string; t: (key: string) => string }) {
-  // Default to the user's locale: JA users see Japanese first, EN users see English first
-  const [showAlternate, setShowAlternate] = useState(false);
-  const isJaLocale = locale === 'ja';
-  const showingJa = textJa ? (isJaLocale ? !showAlternate : showAlternate) : false;
-  const hasToggle = !!(textEn && textJa);
-  return (
-    <section>
-      <label className="block text-[11px] uppercase tracking-wider text-muted mb-2">
-        {t('dealer.setsumeiCommentary')}
-      </label>
-      <div className="rounded-lg border border-gold/20 bg-gold/5 dark:bg-gold/5">
-        <div className="flex items-center justify-between px-3 py-2 border-b border-gold/10">
-          <span className="inline-flex items-center gap-1.5 text-[11px] text-green-600 dark:text-green-400 font-medium">
-            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
-            {t('dealer.setsumeiAutoFilled')}
-          </span>
-          {hasToggle && (
-            <button
-              type="button"
-              onClick={() => setShowAlternate(!showAlternate)}
-              className="text-[11px] text-gold hover:text-gold/80 font-medium transition-colors"
-            >
-              {showingJa ? t('dealer.setsumeiShowEnglish') : t('dealer.setsumeiShowOriginal')}
-            </button>
-          )}
-        </div>
-        <div className="px-3 py-2 max-h-[300px] overflow-y-auto">
-          {showingJa ? (
-            <p className="text-[13px] text-ink/80 leading-[1.85] whitespace-pre-line font-jp">
-              {textJa}
-            </p>
-          ) : (
-            <article className="prose-translation">
-              <ReactMarkdown>{textEn}</ReactMarkdown>
-            </article>
-          )}
-        </div>
-      </div>
-    </section>
-  );
-}
+// SetsumeiPreview moved to ./SetsumeiPreview.tsx
 
 function getStickyValue(key: string, fallback: string): string {
   if (typeof window === 'undefined') return fallback;
@@ -1038,7 +995,7 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
 
         {/* 5c. Setsumei preview — auto-filled from catalog */}
         {setsumeiTextEn && (
-          <SetsumeiPreview textEn={setsumeiTextEn} textJa={setsumeiTextJa} locale={locale} t={t} />
+          <SetsumeiPreview textEn={setsumeiTextEn} textJa={setsumeiTextJa} />
         )}
 
         {/* 6. Title (auto-generated, editable) */}
@@ -1069,7 +1026,8 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
           )}
         </section>
 
-        {/* 7. Price */}
+        {/* 7. Price — only shown in edit mode for listed items */}
+        {mode === 'edit' && (initialData?.status === 'AVAILABLE' || initialData?.status === 'HOLD') && (
         <section>
           <label className="block text-[11px] uppercase tracking-wider text-muted mb-2">
             {t('dealer.price')}
@@ -1108,6 +1066,7 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
             <span className="text-[12px] text-muted">{t('dealer.priceOnRequest')}</span>
           </label>
         </section>
+        )}
 
         {/* 8. Notes (collapsed) */}
         <details>
