@@ -59,6 +59,8 @@ interface ListingWithDealer {
   tosogu_era: string | null;
   province: string | null;
   mei_type: string | null;
+  mei_text: string | null;
+  mei_guaranteed: boolean | null;
   nagasa_cm: number | null;
   sori_cm: number | null;
   motohaba_cm: number | null;
@@ -149,6 +151,8 @@ export interface EnrichedListingDetail {
   tosogu_era: string | null;
   province: string | null;
   mei_type: string | null;
+  mei_text: string | null;
+  mei_guaranteed: boolean | null;
   nagasa_cm: number | null;
   sori_cm: number | null;
   motohaba_cm: number | null;
@@ -227,6 +231,8 @@ const LISTING_SELECT = `
   tosogu_era,
   province,
   mei_type,
+  mei_text,
+  mei_guaranteed,
   nagasa_cm,
   sori_cm,
   motohaba_cm,
@@ -401,6 +407,8 @@ export async function getListingDetail(
     tosogu_era: typedListing.tosogu_era,
     province: typedListing.province,
     mei_type: typedListing.mei_type,
+    mei_text: typedListing.mei_text,
+    mei_guaranteed: typedListing.mei_guaranteed,
     nagasa_cm: typedListing.nagasa_cm,
     sori_cm: typedListing.sori_cm,
     motohaba_cm: typedListing.motohaba_cm,

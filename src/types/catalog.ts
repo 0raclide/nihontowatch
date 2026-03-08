@@ -12,6 +12,7 @@ export interface CatalogMatchItem {
   motohaba_cm: number | null;
   sakihaba_cm: number | null;
   mei_status: string | null;
+  mei_kanji: string | null;
   period: string | null;
   artisan_kanji: string | null;
   item_type: string | null;

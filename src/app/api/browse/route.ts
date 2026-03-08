@@ -277,6 +277,8 @@ export async function GET(request: NextRequest) {
         era,
         province,
         mei_type,
+        mei_text,
+        mei_guaranteed,
         nagasa_cm,
         sori_cm,
         motohaba_cm,

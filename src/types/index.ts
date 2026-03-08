@@ -584,6 +584,8 @@ export interface Listing {
   province?: string;
   era?: string;
   mei_type?: string;
+  mei_text?: string | null;
+  mei_guaranteed?: boolean | null;
 
   // Certification
   cert_type?: CertificationType;

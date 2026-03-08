@@ -32,6 +32,8 @@ interface ListingInput {
   province?: string | null;
   era?: string | null;
   mei_type?: string | null;
+  mei_text?: string | null;
+  mei_guaranteed?: boolean | null;
   cert_type?: string | null;
   cert_session?: number | null;
   cert_organization?: string | null;
@@ -128,6 +130,8 @@ export function listingToDisplayItem(listing: ListingInput, locale: string): Dis
     province: listing.province ?? null,
     era: listing.era ?? null,
     mei_type: listing.mei_type ?? null,
+    mei_text: listing.mei_text ?? null,
+    mei_guaranteed: listing.mei_guaranteed ?? null,
 
     // Certification
     cert_type: listing.cert_type ?? null,

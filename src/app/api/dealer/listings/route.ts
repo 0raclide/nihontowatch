@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let query = (serviceClient.from('listings') as any)
-    .select('id, url, title, title_en, title_ja, item_type, item_category, price_value, price_currency, cert_type, images, status, is_available, is_sold, first_seen_at, smith, tosogu_maker, school, tosogu_school, artisan_id, artisan_confidence, description, era, province, mei_type, nakago_type, nagasa_cm, motohaba_cm, sakihaba_cm, sori_cm, height_cm, width_cm, material, source, dealers:dealers(id, name, name_ja, domain)', { count: 'exact' })
+    .select('id, url, title, title_en, title_ja, item_type, item_category, price_value, price_currency, cert_type, images, status, is_available, is_sold, first_seen_at, smith, tosogu_maker, school, tosogu_school, artisan_id, artisan_confidence, description, era, province, mei_type, mei_text, mei_guaranteed, nakago_type, nagasa_cm, motohaba_cm, sakihaba_cm, sori_cm, height_cm, width_cm, material, source, dealers:dealers(id, name, name_ja, domain)', { count: 'exact' })
     .eq('dealer_id', auth.dealerId)
     .eq('source', 'dealer');
 
@@ -146,6 +146,8 @@ export async function POST(request: NextRequest) {
     era,
     province,
     mei_type,
+    mei_text,
+    mei_guaranteed,
     nakago_type,
     nagasa_cm,
     motohaba_cm,
@@ -190,6 +192,8 @@ export async function POST(request: NextRequest) {
     era: era ?? null,
     province: province ?? null,
     mei_type: mei_type ?? null,
+    mei_text: mei_text ?? null,
+    mei_guaranteed: mei_guaranteed ?? null,
     nakago_type: nakago_type ?? null,
     nagasa_cm: nagasa_cm ?? null,
     motohaba_cm: motohaba_cm ?? null,

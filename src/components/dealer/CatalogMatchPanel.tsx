@@ -21,6 +21,7 @@ export interface CatalogPrefillFields {
   catalogImages?: string[];
   setsumeiTextEn?: string | null;
   setsumeiTextJa?: string | null;
+  meiText?: string;
 }
 
 interface CatalogMatchPanelProps {
@@ -144,6 +145,9 @@ export function CatalogMatchPanel({ certType, artisanId, artisanName, onPrefill 
       const mapped = MEI_STATUS_MAP[item.mei_status.toLowerCase().trim()];
       if (mapped) fields.meiType = mapped;
     }
+
+    // Mei kanji (inscription text)
+    if (item.mei_kanji) fields.meiText = item.mei_kanji;
 
     // Nakago condition → nakagoType pills
     if (item.nakago_condition) {

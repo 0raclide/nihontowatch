@@ -389,6 +389,20 @@ export function MetadataGrid({
               <MetadataItem label={t('metadata.province')} value={td('province', listing.province)} />
               <MetadataItem label={t('metadata.signature')} value={td('meiType', listing.mei_type)} />
 
+              {/* Inscription text */}
+              {listing.mei_text && (
+                <MetadataItem label={t('metadata.inscription')} value={listing.mei_text} />
+              )}
+
+              {/* Signature not guaranteed disclaimer */}
+              {listing.mei_guaranteed === false && (
+                <div className="col-span-2">
+                  <span className="text-[10px] text-orange-500">
+                    ⚠ {t('metadata.signatureNotGuaranteed')}
+                  </span>
+                </div>
+              )}
+
               {/* Certification with session */}
               {certInfo && (
                 <div className="col-span-2">

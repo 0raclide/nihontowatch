@@ -47,6 +47,8 @@ interface DealerDraft {
   sakihabaCm: string;
   soriCm: string;
   meiType: string | null;
+  meiText: string | null;
+  meiGuaranteed: boolean | null;
   nakagoType: string[];
   era: string;
   province: string;
@@ -122,6 +124,8 @@ export interface DealerListingInitialData {
   era?: string | null;
   province?: string | null;
   mei_type?: string | null;
+  mei_text?: string | null;
+  mei_guaranteed?: boolean | null;
   nakago_type?: string | null;
   nagasa_cm?: number | null;
   motohaba_cm?: number | null;
@@ -158,6 +162,9 @@ const MEI_TYPES = [
   { value: 'gakumei', labelKey: 'meiType.gakumei' },
   { value: 'orikaeshi-mei', labelKey: 'meiType.orikaeshi-mei' },
 ];
+
+// Mei types that indicate the blade is signed (has an inscription)
+const SIGNED_MEI_TYPES = new Set(['zaimei', 'kinzogan-mei', 'shumei', 'kinpunmei', 'gakumei', 'orikaeshi-mei']);
 
 const NAKAGO_TYPES = [
   { value: 'ubu', labelKey: 'meiType.ubu' },
@@ -243,6 +250,8 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
   const [sakihabaCm, setSakihabaCm] = useState(initialData?.sakihaba_cm != null ? String(initialData.sakihaba_cm) : (draft?.sakihabaCm ?? ''));
   const [soriCm, setSoriCm] = useState(initialData?.sori_cm != null ? String(initialData.sori_cm) : (draft?.soriCm ?? ''));
   const [meiType, setMeiType] = useState<string | null>(initialData?.mei_type || draft?.meiType || null);
+  const [meiText, setMeiText] = useState<string | null>(initialData?.mei_text || draft?.meiText || null);
+  const [meiGuaranteed, setMeiGuaranteed] = useState<boolean | null>(initialData?.mei_guaranteed ?? draft?.meiGuaranteed ?? null);
   const [nakagoType, setNakagoType] = useState<string[]>(
     initialData?.nakago_type ? initialData.nakago_type.split(',') : (draft?.nakagoType ?? [])
   );
@@ -321,7 +330,7 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
     if (newCategory === category) return;
     const wouldLoseData = newCategory === 'nihonto'
       ? !!(heightCm || widthCm || materials.length || hakogaki.length)
-      : !!(nagasaCm || motohabaCm || sakihabaCm || soriCm || meiType || nakagoType.length || sayagaki.length || kantoHibisho);
+      : !!(nagasaCm || motohabaCm || sakihabaCm || soriCm || meiType || meiText || nakagoType.length || sayagaki.length || kantoHibisho);
     if (wouldLoseData && !window.confirm(t('dealer.confirmCategorySwitch'))) return;
     setCategory(newCategory);
     if (newCategory === 'nihonto') {
@@ -335,11 +344,13 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
       setSakihabaCm('');
       setSoriCm('');
       setMeiType(null);
+      setMeiText(null);
+      setMeiGuaranteed(null);
       setNakagoType([]);
       setSayagaki([]);
       setKantoHibisho(null);
     }
-  }, [category, heightCm, widthCm, materials, hakogaki, nagasaCm, motohabaCm, sakihabaCm, soriCm, meiType, nakagoType, sayagaki, kantoHibisho, t]);
+  }, [category, heightCm, widthCm, materials, hakogaki, nagasaCm, motohabaCm, sakihabaCm, soriCm, meiType, meiText, nakagoType, sayagaki, kantoHibisho, t]);
 
   const canDelete = mode === 'edit' && initialData?.id &&
     (initialData?.status === 'INVENTORY' || initialData?.status === 'WITHDRAWN');
@@ -360,7 +371,7 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
         category, itemType, certType, artisanId, artisanName, artisanKanji,
         priceValue, priceCurrency, isAsk, description,
         nagasaCm, motohabaCm, sakihabaCm, soriCm,
-        meiType, nakagoType, era, province,
+        meiType, meiText, meiGuaranteed, nakagoType, era, province,
         heightCm, widthCm, material: materials.length ? materials.join(',') : null, artisanSchool, titleOverride,
         certSession, catalogObjectUuid,
         setsumeiTextEn, setsumeiTextJa,
@@ -398,7 +409,7 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
   }, [
     mode, category, itemType, certType, artisanId, artisanName, artisanKanji,
     priceValue, priceCurrency, isAsk, description,
-    nagasaCm, motohabaCm, sakihabaCm, soriCm, meiType, nakagoType, era, province,
+    nagasaCm, motohabaCm, sakihabaCm, soriCm, meiType, meiText, meiGuaranteed, nakagoType, era, province,
     heightCm, widthCm, materials, artisanSchool, titleOverride,
     certSession, catalogObjectUuid, setsumeiTextEn, setsumeiTextJa,
     images, sayagaki, hakogaki, koshirae, provenance, kiwame, kantoHibisho,
@@ -435,6 +446,7 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
     if (fields.motohabaCm !== undefined) setMotohabaCm(fields.motohabaCm);
     if (fields.sakihabaCm !== undefined) setSakihabaCm(fields.sakihabaCm);
     if (fields.meiType !== undefined) setMeiType(fields.meiType);
+    if (fields.meiText !== undefined) setMeiText(fields.meiText);
     if (fields.era !== undefined) setEra(fields.era);
     if (fields.certSession != null) setCertSession(fields.certSession);
     if (fields.catalogObjectUuid) setCatalogObjectUuid(fields.catalogObjectUuid);
@@ -457,7 +469,7 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
     }
 
     // Auto-expand "More Details" if any detail fields were written
-    const wroteDetails = !!(fields.nagasaCm || fields.soriCm || fields.motohabaCm || fields.sakihabaCm || fields.meiType || fields.era || fields.nakagoType?.length || fields.province);
+    const wroteDetails = !!(fields.nagasaCm || fields.soriCm || fields.motohabaCm || fields.sakihabaCm || fields.meiType || fields.meiText || fields.era || fields.nakagoType?.length || fields.province);
     if (wroteDetails && moreDetailsRef.current && !moreDetailsRef.current.open) {
       moreDetailsRef.current.open = true;
     }
@@ -489,6 +501,11 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
         sakihaba_cm: sakihabaCm ? Number(sakihabaCm) : null,
         sori_cm: soriCm ? Number(soriCm) : null,
         mei_type: meiType,
+        mei_text: category === 'nihonto' && meiType && SIGNED_MEI_TYPES.has(meiType)
+          ? (meiText || null) : null,
+        mei_guaranteed: category === 'nihonto' && meiType && SIGNED_MEI_TYPES.has(meiType)
+          ? (meiGuaranteed ?? (certType && certType !== CERT_NONE ? true : false))
+          : null,
         nakago_type: nakagoType.length ? nakagoType.join(',') : null,
         height_cm: category === 'tosogu' && heightCm ? Number(heightCm) : null,
         width_cm: category === 'tosogu' && widthCm ? Number(widthCm) : null,
@@ -713,6 +730,8 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
     setSakihabaCm('');
     setSoriCm('');
     setMeiType(null);
+    setMeiText(null);
+    setMeiGuaranteed(null);
     setNakagoType([]);
     setEra('');
     setProvince('');
@@ -1283,6 +1302,39 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
                     </button>
                   ))}
                 </div>
+
+                {/* Inscription text — visible when signed */}
+                {meiType && SIGNED_MEI_TYPES.has(meiType) && (
+                  <div className="mt-3">
+                    <label className="block text-[11px] uppercase tracking-wider text-muted mb-1.5">
+                      {t('dealer.meiText')}
+                    </label>
+                    <input
+                      type="text"
+                      value={meiText || ''}
+                      onChange={(e) => setMeiText(e.target.value || null)}
+                      placeholder={t('dealer.meiTextPlaceholder')}
+                      className="w-full bg-surface border border-border/50 rounded-lg px-3 py-2 text-[13px] text-ink placeholder:text-muted/50 focus:outline-none focus:border-gold/50"
+                    />
+                    <p className="text-[10px] text-muted mt-1">{t('dealer.meiTextHint')}</p>
+                  </div>
+                )}
+
+                {/* Signature not guaranteed — visible when signed + no papers */}
+                {meiType && SIGNED_MEI_TYPES.has(meiType) && (!certType || certType === CERT_NONE) && (
+                  <label className="flex items-center gap-2 mt-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={meiGuaranteed === false}
+                      onChange={(e) => setMeiGuaranteed(e.target.checked ? false : null)}
+                      className="w-4 h-4 rounded border-border/50 text-gold focus:ring-gold/30"
+                    />
+                    <span className="text-[12px] text-orange-500 font-medium">
+                      {t('dealer.signatureNotGuaranteed')}
+                    </span>
+                  </label>
+                )}
+
                 <label className="block text-[11px] uppercase tracking-wider text-muted mt-3 mb-2">
                   {t('dealer.nakago')}
                 </label>

@@ -80,6 +80,7 @@ export async function GET(request: NextRequest) {
         motohaba_cm: toNum(row.gold_motohaba),
         sakihaba_cm: toNum(row.gold_sakihaba),
         mei_status: (row.gold_mei_status as string | null) || null,
+        mei_kanji: (row.gold_mei_kanji as string | null) || null,
         period: (row.gold_period as string | null) || null,
         artisan_kanji: (row.gold_artisan_kanji as string | null) || null,
         item_type: (row.gold_item_type as string | null) || null,

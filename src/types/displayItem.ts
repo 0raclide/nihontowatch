@@ -86,6 +86,8 @@ export interface DisplayItem {
   province?: string | null;
   era?: string | null;
   mei_type?: string | null;
+  mei_text?: string | null;
+  mei_guaranteed?: boolean | null;
 
   // Certification
   cert_type: string | null;
