@@ -707,6 +707,55 @@ When a dealer selects a Yuhinkai catalog card in the CatalogMatchPanel, the foll
 | Tests (23) | `tests/components/dealer/CatalogMatchPanel.test.tsx` |
 | **Full documentation** | `docs/SESSION_20260307_CATALOG_PREFILL_EXPANSION.md` |
 
+### Dealer Video Upload & Playback
+
+Dealers can upload videos to listings via Bunny.net Stream (TUS resumable uploads, HLS delivery). Videos appear in listing detail pages, QuickView, and artist profile pages. A video count badge shows on ListingCard thumbnails.
+
+**Architecture:** Dealer uploads MP4 → `POST /api/dealer/videos` creates Bunny video + DB row (status=processing) → tus-js-client uploads direct to Bunny CDN → Bunny transcodes → webhook callback sets status=ready → Postgres trigger increments `listings.video_count`.
+
+**Performance:** Browse API reads `video_count` from a denormalized column (migration 112 trigger), NOT a per-row join on `listing_videos`. The old N+1 join pattern was removed.
+
+**Display integration:**
+- **ListingCard** — Video count badge (bottom-left) when `video_count > 0`
+- **ListingDetailClient** — Unified `MediaItem[]` via `getMediaItemsFromImages()`. Images first, then ready videos. Single thumbnail strip.
+- **QuickView** — `VideoGalleryItem` components appended after image scroller
+- **getListingDetail** — Server-side: joins `listing_videos`, filters to ready, enriches with `stream_url`
+- **Artisan/favorites APIs** — Include `video_count` in SELECT for badge display
+
+**Typed helpers:** `src/lib/supabase/listingVideos.ts` centralizes all `as any` casts for the ungenerated `listing_videos` table. Zero `as any` in route files.
+
+**Bunny cleanup:** `DELETE /api/dealer/listings/[id]` queries `listing_videos` for `provider_id` values and deletes from Bunny before CASCADE removes DB rows.
+
+**Environment variables:**
+```bash
+BUNNY_STREAM_LIBRARY_ID=573856              # Shared with oshi-v2
+BUNNY_STREAM_API_KEY=<secret>               # Bunny Stream API key
+BUNNY_STREAM_CDN_HOSTNAME=vz-abb611a8-a81.b-cdn.net  # Optional CDN hostname
+```
+
+`isVideoProviderConfigured()` gates all video functionality — returns 503 if credentials missing.
+
+**Key files:**
+| Component | Location |
+|-----------|----------|
+| Video provider (Bunny) | `src/lib/video/videoProvider.ts` |
+| Media gallery utils | `src/lib/media.ts` (`getMediaItems`, `getMediaItemsFromImages`, `hasReadyVideos`) |
+| Typed DB helpers | `src/lib/supabase/listingVideos.ts` |
+| Types | `src/types/media.ts` (`MediaItem`, `ListingVideo`, `ListingVideosRow`) |
+| VideoPlayer (HLS.js) | `src/components/video/VideoPlayer.tsx` |
+| VideoThumbnail | `src/components/video/VideoThumbnail.tsx` |
+| VideoGalleryItem | `src/components/video/VideoGalleryItem.tsx` |
+| VideoUploadProgress (TUS) | `src/components/video/VideoUploadProgress.tsx` |
+| VideoUploadSection (dealer form) | `src/components/dealer/VideoUploadSection.tsx` |
+| POST/GET videos API | `src/app/api/dealer/videos/route.ts` |
+| DELETE video API | `src/app/api/dealer/videos/[id]/route.ts` |
+| Bunny webhook | `src/app/api/dealer/videos/webhook/route.ts` |
+| Listing detail enrichment | `src/lib/listing/getListingDetail.ts` |
+| DB: listing_videos table | `supabase/migrations/111_listing_videos.sql` |
+| DB: video_count + trigger | `supabase/migrations/112_listing_video_count.sql` |
+| Tests (56) | `tests/lib/media.test.ts`, `tests/lib/video-implementation.test.ts`, `tests/api/dealer/videos.test.ts`, `tests/components/video/VideoGalleryItem.test.tsx`, `tests/lib/video/videoProvider.test.ts` |
+| **Full documentation** | `docs/SESSION_20260308_VIDEO_SUPPORT.md` |
+
 ### User Feedback & Reporting
 
 Two-channel feedback system: users flag inaccurate data on listings/artist pages, and submit general feedback (bugs, features) from the nav. All stored in `user_feedback` table, triaged via admin panel at `/admin/feedback`.
@@ -768,6 +817,7 @@ For detailed implementation docs, see:
 - `docs/SESSION_20260306_KOSHIRAE_MAKER_TOGGLE.md` - **Koshirae maker toggle** — standalone koshirae single/multi maker, `KoshiraeMakerSection` shared component, `hideHeading` prop
 - `docs/SESSION_20260307_PROVENANCE_KIWAME.md` - **Provenance & kiwame** — dealer form sections for ownership history (伝来) and expert appraisals (極め), Yuhinkai autocomplete, provenance images, display in QuickView/detail
 - `docs/SESSION_20260307_CATALOG_PREFILL_EXPANSION.md` - **Catalog prefill expansion** — auto-add oshigata/setsumei images, school, province, nakago on card select. MEI_STATUS_MAP fix. RPC migration 466.
+- `docs/SESSION_20260308_VIDEO_SUPPORT.md` - **Dealer video upload & playback** — Bunny.net Stream TUS uploads, HLS playback, video_count denormalization, unified MediaItem gallery, Bunny cleanup on delete, typed helpers. 56 tests.
 
 ---
 
