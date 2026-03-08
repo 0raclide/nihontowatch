@@ -260,7 +260,7 @@ export function KoshiraeSection({ koshirae, itemId, onChange, onPendingFilesChan
         </button>
       </div>
 
-      <div className="bg-surface border border-border/50 rounded-lg p-3 space-y-4">
+      <div className="bg-surface border border-border/50 rounded-lg p-3 space-y-4 overflow-hidden">
         {/* Certification */}
         <div>
           <label className="block text-[10px] uppercase tracking-wider text-muted mb-1.5">

@@ -25,14 +25,14 @@ export function CertPills({ value, onChange }: CertPillsProps) {
   const { t } = useLocale();
 
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap gap-1.5">
       {CERT_OPTIONS.map(({ value: v, labelKey }) => (
         <button
           key={v}
           type="button"
           onClick={() => onChange(value === v ? null : v)}
           aria-pressed={value === v}
-          className={`px-3 py-1.5 rounded-full text-[12px] font-medium transition-all ${
+          className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-all whitespace-nowrap ${
             value === v
               ? 'bg-gold/10 text-gold border border-gold/30'
               : 'bg-surface text-muted border border-border/50 hover:border-gold/30'
@@ -45,7 +45,7 @@ export function CertPills({ value, onChange }: CertPillsProps) {
         type="button"
         onClick={() => onChange(value === CERT_NONE ? null : CERT_NONE)}
         aria-pressed={value === CERT_NONE}
-        className={`px-3 py-1.5 rounded-full text-[12px] font-medium transition-all ${
+        className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-all whitespace-nowrap ${
           value === CERT_NONE
             ? 'bg-gold/10 text-gold border border-gold/30'
             : 'bg-surface text-muted border border-border/50 hover:border-gold/30'
