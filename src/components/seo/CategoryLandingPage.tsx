@@ -78,7 +78,7 @@ export function CategoryLandingPage({
                           src={imgUrl}
                           alt={listing.title}
                           fill
-                          className="object-cover group-hover:scale-[1.02] transition-transform"
+                          className="object-cover object-top group-hover:scale-[1.02] transition-transform"
                           sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                         />
                       ) : (
