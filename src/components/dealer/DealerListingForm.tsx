@@ -442,8 +442,12 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
     if (fields.soriCm !== undefined) setSoriCm(fields.soriCm);
     if (fields.motohabaCm !== undefined) setMotohabaCm(fields.motohabaCm);
     if (fields.sakihabaCm !== undefined) setSakihabaCm(fields.sakihabaCm);
-    if (fields.meiType !== undefined) setMeiType(fields.meiType);
-    if (fields.meiText !== undefined) setMeiText(fields.meiText);
+    if (fields.meiType !== undefined) {
+      setMeiType(fields.meiType);
+      // Clear inscription when switching to unsigned — meiText is undefined
+      // for unsigned cards, so the old value would persist without this.
+      setMeiText(fields.meiText ?? null);
+    }
     if (fields.era !== undefined) setEra(fields.era);
     if (fields.certSession != null) setCertSession(fields.certSession);
     if (fields.catalogObjectUuid) setCatalogObjectUuid(fields.catalogObjectUuid);
