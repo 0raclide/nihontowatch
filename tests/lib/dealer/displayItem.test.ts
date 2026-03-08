@@ -134,3 +134,25 @@ describe('dealerListingToDisplayItem', () => {
     expect(di.dealer_display_name).toBe('葵美術');
   });
 });
+
+// =============================================================================
+// mei_text / mei_guaranteed pass-through
+// =============================================================================
+
+describe('listingToDisplayItem — mei field pass-through', () => {
+  it('passes mei_text through to DisplayItem', () => {
+    const di = listingToDisplayItem(makeListing({ mei_text: '備前国長船住景光' }), 'en');
+    expect(di.mei_text).toBe('備前国長船住景光');
+  });
+
+  it('passes mei_guaranteed: false through to DisplayItem', () => {
+    const di = listingToDisplayItem(makeListing({ mei_guaranteed: false }), 'en');
+    expect(di.mei_guaranteed).toBe(false);
+  });
+
+  it('defaults missing mei fields to null', () => {
+    const di = listingToDisplayItem(makeListing(), 'en');
+    expect(di.mei_text).toBeNull();
+    expect(di.mei_guaranteed).toBeNull();
+  });
+});

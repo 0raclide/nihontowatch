@@ -51,6 +51,7 @@ const mockItems = [
     motohaba_cm: 3.1,
     sakihaba_cm: 2.2,
     mei_status: 'signed',
+    mei_kanji: '備前国長船住景光',
     period: 'Kamakura',
     artisan_kanji: '正宗',
     item_type: 'token',
@@ -70,6 +71,7 @@ const mockItems = [
     motohaba_cm: null,
     sakihaba_cm: null,
     mei_status: 'unsigned',
+    mei_kanji: '正宗',
     period: 'Kamakura',
     artisan_kanji: '正宗',
     item_type: 'token',
@@ -454,6 +456,40 @@ describe('CatalogMatchPanel', () => {
     const fields = onPrefill.mock.calls[0][0];
     expect(fields.motohabaCm).toBeUndefined();
     expect(fields.sakihabaCm).toBeUndefined();
+  });
+
+  it('signed card click: onPrefill includes meiText from mei_kanji', async () => {
+    global.fetch = mockFetchSuccess();
+    const onPrefill = vi.fn();
+
+    render(<CatalogMatchPanel {...defaultProps} onPrefill={onPrefill} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Vol. 45 #12')).toBeTruthy();
+    });
+
+    const card = screen.getByText('Vol. 45 #12').closest('button')!;
+    fireEvent.click(card);
+
+    const fields = onPrefill.mock.calls[0][0];
+    expect(fields.meiText).toBe('備前国長船住景光');
+  });
+
+  it('unsigned card click: onPrefill does NOT include meiText', async () => {
+    global.fetch = mockFetchSuccess();
+    const onPrefill = vi.fn();
+
+    render(<CatalogMatchPanel {...defaultProps} onPrefill={onPrefill} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Vol. 50 #5')).toBeTruthy();
+    });
+
+    const card = screen.getByText('Vol. 50 #5').closest('button')!;
+    fireEvent.click(card);
+
+    const fields = onPrefill.mock.calls[0][0];
+    expect(fields.meiText).toBeUndefined();
   });
 
   describe('OshigataImage fallback', () => {

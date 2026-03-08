@@ -22,6 +22,7 @@ import { SetsumeiPreview } from './SetsumeiPreview';
 import { VideoUploadSection } from './VideoUploadSection';
 import type { ListingVideo } from '@/types/media';
 import { CATALOG_CERT_TYPES } from '@/lib/collection/catalogMapping';
+import { SIGNED_MEI_TYPES, computeMeiText, computeMeiGuaranteed } from '@/lib/dealer/meiPayload';
 import type { SayagakiEntry, HakogakiEntry, KoshiraeData, ProvenanceEntry, KiwameEntry, KantoHibishoData } from '@/types';
 import { useLocale } from '@/i18n/LocaleContext';
 import ReactMarkdown from 'react-markdown';
@@ -163,8 +164,7 @@ const MEI_TYPES = [
   { value: 'orikaeshi-mei', labelKey: 'meiType.orikaeshi-mei' },
 ];
 
-// Mei types that indicate the blade is signed (has an inscription)
-const SIGNED_MEI_TYPES = new Set(['zaimei', 'kinzogan-mei', 'shumei', 'kinpunmei', 'gakumei', 'orikaeshi-mei']);
+// SIGNED_MEI_TYPES imported from @/lib/dealer/meiPayload
 
 const NAKAGO_TYPES = [
   { value: 'ubu', labelKey: 'meiType.ubu' },
@@ -501,11 +501,8 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
         sakihaba_cm: sakihabaCm ? Number(sakihabaCm) : null,
         sori_cm: soriCm ? Number(soriCm) : null,
         mei_type: meiType,
-        mei_text: category === 'nihonto' && meiType && SIGNED_MEI_TYPES.has(meiType)
-          ? (meiText || null) : null,
-        mei_guaranteed: category === 'nihonto' && meiType && SIGNED_MEI_TYPES.has(meiType)
-          ? (meiGuaranteed ?? (certType && certType !== CERT_NONE ? true : false))
-          : null,
+        mei_text: computeMeiText(category, meiType, meiText),
+        mei_guaranteed: computeMeiGuaranteed(category, meiType, meiGuaranteed, certType, CERT_NONE),
         nakago_type: nakagoType.length ? nakagoType.join(',') : null,
         height_cm: category === 'tosogu' && heightCm ? Number(heightCm) : null,
         width_cm: category === 'tosogu' && widthCm ? Number(widthCm) : null,

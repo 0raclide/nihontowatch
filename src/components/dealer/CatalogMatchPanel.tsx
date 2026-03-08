@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useLocale } from '@/i18n/LocaleContext';
 import { CERT_TO_COLLECTION, FORM_TO_ITEM_TYPE, MEI_STATUS_MAP, NAKAGO_CONDITION_MAP } from '@/lib/collection/catalogMapping';
+import { shouldPrefillMeiKanji } from '@/lib/dealer/meiPayload';
 import type { CatalogMatchItem, CatalogMatchResponse } from '@/types/catalog';
 
 export interface CatalogPrefillFields {
@@ -149,12 +150,8 @@ export function CatalogMatchPanel({ certType, artisanId, artisanName, onPrefill 
     // Mei kanji (inscription text) — only for signed items.
     // For unsigned items, gold_mei_kanji contains the attributed maker's name,
     // not a physical inscription on the tang. Prefilling it would mislead dealers.
-    if (item.mei_kanji && item.mei_status) {
-      const normalized = item.mei_status.toLowerCase().trim();
-      if (normalized !== 'unsigned') {
-        fields.meiText = item.mei_kanji;
-      }
-    }
+    const prefillMei = shouldPrefillMeiKanji(item.mei_kanji, item.mei_status);
+    if (prefillMei !== undefined) fields.meiText = prefillMei;
 
     // Nakago condition → nakagoType pills
     if (item.nakago_condition) {

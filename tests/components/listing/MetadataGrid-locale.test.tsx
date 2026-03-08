@@ -175,4 +175,44 @@ describe('MetadataGrid locale awareness', () => {
       expect(screen.getByText('作者')).toBeInTheDocument();
     });
   });
+
+  describe('mei_text inscription display', () => {
+    it('renders inscription text + "Inscription" label when mei_text set', () => {
+      mockLocale = 'en';
+      const listing = baseListing({ mei_text: '備前国長船住景光', smith: 'Kagemitsu', school: 'Osafune' });
+      render(<MetadataGrid listing={listing} />);
+      expect(screen.getByText('Inscription')).toBeInTheDocument();
+      expect(screen.getByText('備前国長船住景光')).toBeInTheDocument();
+    });
+
+    it('no "Inscription" label when mei_text is null', () => {
+      mockLocale = 'en';
+      const listing = baseListing({ mei_text: null, smith: 'Kagemitsu', school: 'Osafune' });
+      render(<MetadataGrid listing={listing} />);
+      expect(screen.queryByText('Inscription')).toBeNull();
+    });
+  });
+
+  describe('mei_guaranteed disclaimer display', () => {
+    it('renders "Signature not guaranteed" disclaimer when mei_guaranteed === false', () => {
+      mockLocale = 'en';
+      const listing = baseListing({ mei_guaranteed: false, smith: 'Kagemitsu', school: 'Osafune' });
+      render(<MetadataGrid listing={listing} />);
+      expect(screen.getByText(/Signature not guaranteed/)).toBeInTheDocument();
+    });
+
+    it('no disclaimer when mei_guaranteed === true', () => {
+      mockLocale = 'en';
+      const listing = baseListing({ mei_guaranteed: true, smith: 'Kagemitsu', school: 'Osafune' });
+      render(<MetadataGrid listing={listing} />);
+      expect(screen.queryByText(/Signature not guaranteed/)).toBeNull();
+    });
+
+    it('no disclaimer when mei_guaranteed === null (legacy)', () => {
+      mockLocale = 'en';
+      const listing = baseListing({ mei_guaranteed: null, smith: 'Kagemitsu', school: 'Osafune' });
+      render(<MetadataGrid listing={listing} />);
+      expect(screen.queryByText(/Signature not guaranteed/)).toBeNull();
+    });
+  });
 });
