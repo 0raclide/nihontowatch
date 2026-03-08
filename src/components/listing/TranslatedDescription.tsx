@@ -17,9 +17,19 @@ interface TranslatedDescriptionProps {
 
 import { isPredominantlyJapanese } from '@/lib/text/japanese';
 
-/** Detect if text contains markdown formatting worth rendering */
+/**
+ * Detect if text contains markdown formatting worth rendering.
+ * Tight regex to avoid false positives on scraped descriptions:
+ * - `*word*` italic (scholar's notes use this for Japanese terms)
+ * - `**word**` bold
+ * - `## ` headings
+ * Excluded: `- `, `* `, `> `, `1. ` — too many false positives from
+ * scraped breadcrumbs, nav fragments, and line-break artifacts.
+ */
 function containsMarkdown(text: string): boolean {
-  return /(\*\*|^#{1,3}\s|^[-*]\s|^>\s|^\d+\.\s)/m.test(text);
+  // Match *italic* or **bold** (word bounded, not bare asterisks like ***)
+  // or ## headings at start of line
+  return /(\*[a-zA-Zā-ūÀ-ÿ].+?\*|^#{1,3}\s)/m.test(text);
 }
 
 // =============================================================================
