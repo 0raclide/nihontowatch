@@ -19,6 +19,7 @@ interface ShowcaseSectionProps {
  *
  * Section header matches artist page SectionHeader:
  * thin horizontal rule + small-caps title.
+ * Container width matches artist page (780px).
  */
 export function ShowcaseSection({
   id,
@@ -58,7 +59,7 @@ export function ShowcaseSection({
       } ${className}`}
     >
       {title && (
-        <div className="max-w-5xl mx-auto px-6 md:px-0 mb-10 md:mb-14">
+        <div className="max-w-[780px] mx-auto px-4 sm:px-8 mb-10 md:mb-14">
           {!hideDivider && (
             <div className="h-px bg-border/30 mb-5" />
           )}

@@ -35,7 +35,7 @@ export function ShowcaseImageGallery({ images, usedImages, onImageClick, videos,
   if (!hasContent) return null;
 
   return (
-    <div className="max-w-6xl mx-auto px-6 md:px-0">
+    <div className="max-w-[780px] mx-auto px-4 sm:px-8">
       {/* Videos */}
       {readyVideos.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">

@@ -124,7 +124,7 @@ export function ShowcaseLayout({ listing }: ShowcaseLayoutProps) {
         )}
 
         {heroVideo && heroVideo.stream_url && (
-          <div className="max-w-3xl mx-auto px-6 md:px-0">
+          <div className="max-w-[780px] mx-auto px-4 sm:px-8">
             <div className="rounded overflow-hidden border border-border aspect-video">
               <VideoGalleryItem
                 streamUrl={heroVideo.stream_url}

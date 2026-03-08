@@ -10,7 +10,7 @@ interface ShowcaseScholarNoteProps {
 
 /**
  * Scholar's Note section — AI-generated curator's analysis.
- * Renders markdown through HighlightedMarkdown (same as DocumentCard in ShowcaseDocumentation).
+ * Clean flowing prose (no box) matching artist page biography typography.
  * Shows translation toggle when both EN and JA are available.
  */
 export function ShowcaseScholarNote({ noteEn, noteJa }: ShowcaseScholarNoteProps) {
@@ -22,21 +22,19 @@ export function ShowcaseScholarNote({ noteEn, noteJa }: ShowcaseScholarNoteProps
   const hasToggle = noteEn && noteJa;
 
   return (
-    <div className="max-w-2xl mx-auto px-6 md:px-0">
-      <div className="bg-surface-elevated rounded p-6 md:p-8 border border-border">
-        {hasToggle && (
-          <div className="flex justify-end mb-4">
-            <button
-              onClick={() => setShowJa(!showJa)}
-              className="text-[11px] text-muted hover:text-charcoal transition-colors tracking-wide"
-            >
-              {showJa ? 'Original' : '翻訳'}
-            </button>
-          </div>
-        )}
-        <div className="prose-translation text-[13px] leading-[1.8] font-light">
-          <HighlightedMarkdown content={displayText || ''} variant="translation" />
+    <div className="max-w-[780px] mx-auto px-4 sm:px-8">
+      {hasToggle && (
+        <div className="flex justify-end mb-5">
+          <button
+            onClick={() => setShowJa(!showJa)}
+            className="text-[12px] text-muted hover:text-charcoal transition-colors tracking-wide"
+          >
+            {showJa ? 'Original' : '\u7FFB\u8A33'}
+          </button>
         </div>
+      )}
+      <div className="prose-translation text-[15px] md:text-[17px] leading-[1.85] font-light max-w-[62ch]">
+        <HighlightedMarkdown content={displayText || ''} variant="translation" />
       </div>
     </div>
   );

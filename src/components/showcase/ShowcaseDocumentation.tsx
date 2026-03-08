@@ -33,7 +33,7 @@ function DocumentCard({ title, subtitle, text, textAlt, imageUrl, images, onImag
   const hasToggle = text && textAlt;
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className="space-y-8">
       {/* Document image(s) — full width, natural height */}
       {allImages.length > 0 && (
         <div className="space-y-3">
@@ -49,35 +49,35 @@ function DocumentCard({ title, subtitle, text, textAlt, imageUrl, images, onImag
                 width={800}
                 height={600}
                 className="w-full h-auto object-contain group-hover:scale-[1.01] transition-transform duration-300"
-                sizes="(max-width: 768px) 100vw, 672px"
+                sizes="(max-width: 768px) 100vw, 780px"
               />
             </button>
           ))}
         </div>
       )}
 
-      {/* Text card — markdown rendered */}
+      {/* Text — clean flowing prose, no box */}
       {displayText && (
-        <div className="bg-surface-elevated rounded p-6 md:p-8 border border-border">
-          <div className="flex items-baseline justify-between mb-4">
+        <div>
+          <div className="flex items-baseline justify-between mb-5">
             <div>
-              <h3 className="text-[11px] uppercase tracking-[0.15em] font-medium text-muted">
+              <h3 className="text-[13px] uppercase tracking-[0.15em] font-medium text-muted">
                 {title}
               </h3>
               {subtitle && (
-                <p className="text-[12px] text-muted mt-1">{subtitle}</p>
+                <p className="text-[13px] text-muted mt-1">{subtitle}</p>
               )}
             </div>
             {hasToggle && (
               <button
                 onClick={() => setShowAlt(!showAlt)}
-                className="text-[11px] text-muted hover:text-charcoal transition-colors tracking-wide"
+                className="text-[12px] text-muted hover:text-charcoal transition-colors tracking-wide"
               >
                 {showAlt ? 'Original' : 'Translation'}
               </button>
             )}
           </div>
-          <div className="prose-translation text-[13px] leading-[1.8] font-light">
+          <div className="prose-translation text-[15px] md:text-[17px] leading-[1.85] font-light max-w-[62ch]">
             <HighlightedMarkdown content={displayText} variant="translation" />
           </div>
         </div>
@@ -200,7 +200,7 @@ export function ShowcaseDocumentation({ listing, onImageClick }: ShowcaseDocumen
   if (sections.length === 0) return null;
 
   return (
-    <div className="space-y-14 md:space-y-20 max-w-5xl mx-auto px-6 md:px-0">
+    <div className="space-y-14 md:space-y-20 max-w-[780px] mx-auto px-4 sm:px-8">
       {sections}
     </div>
   );
