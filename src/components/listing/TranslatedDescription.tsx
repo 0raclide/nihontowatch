@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { Listing } from '@/types';
 import { useLocale } from '@/i18n/LocaleContext';
+import ReactMarkdown from 'react-markdown';
 
 // =============================================================================
 // TYPES
@@ -15,6 +16,11 @@ interface TranslatedDescriptionProps {
 }
 
 import { isPredominantlyJapanese } from '@/lib/text/japanese';
+
+/** Detect if text contains markdown formatting worth rendering */
+function containsMarkdown(text: string): boolean {
+  return /(\*\*|^#{1,3}\s|^[-*]\s|^>\s|^\d+\.\s)/m.test(text);
+}
 
 // =============================================================================
 // COMPONENT
@@ -136,11 +142,43 @@ export function TranslatedDescription({
 
   // Determine which text to display
   const displayText = showOriginal ? listing.description : (translation || listing.description);
+  const isMarkdown = containsMarkdown(displayText);
 
   // Toggle label depends on current state and locale:
   // When showing original → offer "Show translation" (EN) or "翻訳を表示" (JA)
   // When showing translation → offer "Show original" (EN) or "原文を表示" (JA)
   const toggleLabel = showOriginal ? t('listing.showTranslation') : t('listing.showOriginal');
+
+  // Shared truncation style for both plain and markdown text
+  const truncationStyle = isExpanded ? {} : {
+    display: '-webkit-box' as const,
+    WebkitLineClamp: maxLines,
+    WebkitBoxOrient: 'vertical' as const,
+    overflow: 'hidden' as const,
+  };
+
+  const renderText = (text: string) => {
+    if (containsMarkdown(text)) {
+      return (
+        <div
+          ref={textRef as React.RefObject<HTMLDivElement>}
+          className="text-[13px] text-ink/80 leading-relaxed prose prose-sm prose-neutral dark:prose-invert max-w-none prose-p:my-2 prose-headings:text-ink prose-headings:mt-3 prose-headings:mb-1 prose-strong:text-ink prose-blockquote:border-gold/40 prose-blockquote:text-muted"
+          style={truncationStyle}
+        >
+          <ReactMarkdown>{text}</ReactMarkdown>
+        </div>
+      );
+    }
+    return (
+      <p
+        ref={textRef}
+        className="text-[13px] text-ink/80 leading-relaxed whitespace-pre-line"
+        style={truncationStyle}
+      >
+        {text}
+      </p>
+    );
+  };
 
   return (
     <div className={`px-4 py-3 lg:px-5 ${className}`}>
@@ -172,18 +210,7 @@ export function TranslatedDescription({
       {/* Error state - show original */}
       {error && !isLoading && (
         <>
-          <p
-            ref={textRef}
-            className="text-[13px] text-ink/80 leading-relaxed whitespace-pre-line"
-            style={isExpanded ? {} : {
-              display: '-webkit-box',
-              WebkitLineClamp: maxLines,
-              WebkitBoxOrient: 'vertical',
-              overflow: 'hidden',
-            }}
-          >
-            {listing.description}
-          </p>
+          {renderText(listing.description)}
           <p className="text-[10px] text-muted mt-1">{t('listing.translationUnavailable')}</p>
           {(isTruncated || isExpanded) && (
             <button
@@ -200,18 +227,7 @@ export function TranslatedDescription({
       {/* Normal display */}
       {!isLoading && !error && (
         <>
-          <p
-            ref={textRef}
-            className="text-[13px] text-ink/80 leading-relaxed whitespace-pre-line"
-            style={isExpanded ? {} : {
-              display: '-webkit-box',
-              WebkitLineClamp: maxLines,
-              WebkitBoxOrient: 'vertical',
-              overflow: 'hidden',
-            }}
-          >
-            {displayText}
-          </p>
+          {renderText(displayText)}
           {(isTruncated || isExpanded) && (
             <button
               type="button"
