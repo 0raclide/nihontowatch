@@ -40,7 +40,7 @@ export function SetsumeiBlock({
             </button>
           </div>
         )}
-        <div className="px-4 py-3 max-h-[400px] overflow-y-auto">
+        <div className="px-4 py-3">
           {showingJa ? (
             <p className="text-[13px] text-ink/80 leading-[1.85] whitespace-pre-line font-jp">
               {displayText}
