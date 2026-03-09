@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useCallback, useRef } from 'react';
-import Image from 'next/image';
 import { useLocale } from '@/i18n/LocaleContext';
 import { resizeImage } from '@/lib/images/resizeImage';
 
@@ -206,13 +205,8 @@ export function ImageUploadZone({ images, itemId, onChange, onPendingFilesChange
               : i === 0;
             return (
               <div key={i} className={`relative w-16 h-16 rounded overflow-hidden shrink-0 group ${isHero ? 'ring-2 ring-gold' : ''}`}>
-                {/* Use img tag for blob URLs since Next.js Image doesn't support them */}
-                {url.startsWith('blob:') ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={url} alt="" className="w-full h-full object-cover" />
-                ) : (
-                  <Image src={url} alt="" fill className="object-cover" />
-                )}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={url} alt="" className="w-full h-full object-cover" />
                 <button
                   onClick={(e) => { e.stopPropagation(); handleRemove(i); }}
                   className="absolute top-0.5 right-0.5 w-5 h-5 flex items-center justify-center bg-black/60 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity text-[10px]"
