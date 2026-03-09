@@ -78,6 +78,22 @@ Migration is idempotent (skips existing rows via `NOT EXISTS`). Preserves origin
 
 ---
 
+## Deployment (2026-03-09)
+
+- **Committed:** `4ba6149` (code) + `a20e34f` (migration SQL + doc)
+- **Pushed:** to `origin/main`
+- **Migration 125 applied:** `supabase db push --include-all` — applied cleanly
+  - NOTICE: `trigger "trg_update_item_video_count" does not exist, skipping` (harmless `DROP IF EXISTS` guard)
+- **Prod verification:**
+  - `item_videos` rows: 2 (both migrated from `listing_videos`)
+  - `item_uuid` linkage: correct (`c21d2691...` matches listing)
+  - `listing_videos` table: functionally gone (empty/inaccessible via PostgREST)
+  - Video playback: working (HLS delivery via Bunny CDN)
+  - `video_count` trigger: active on `item_videos` (fires on INSERT/DELETE/UPDATE OF status)
+- **Full test suite:** 5,209/5,209 pass, build clean
+
+---
+
 ## Files Created
 
 ```

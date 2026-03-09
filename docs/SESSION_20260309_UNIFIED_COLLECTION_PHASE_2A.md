@@ -74,6 +74,21 @@ Phase 2a creates the database infrastructure for the unified collection system. 
 
 ---
 
+## Deployment (2026-03-09)
+
+- **Committed:** `31792aa` — 13 files, 2,774 insertions
+- **Pushed:** to `origin/main`
+- **Migrations applied:** `supabase db push --include-all` — all 6 migrations (119-124) applied cleanly
+- **Prod verification:**
+  - `listings` with `item_uuid`: 6/6 dealer listings backfilled
+  - `listings` with `owner_id`: 6/6 dealer listings backfilled
+  - `collection_items` table: exists, empty (ready for Phase 2c)
+  - `collection_events` table: exists (audit log ready)
+  - `item_videos` table: exists (populated in Phase 2b)
+  - All existing queries, cron jobs, and APIs unaffected (new columns are nullable)
+
+---
+
 ## Phase 2b: Next Steps
 
 **Depends on:** This phase (2a) — needs `item_uuid` backfilled on dealer listings.
