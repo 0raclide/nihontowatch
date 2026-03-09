@@ -172,7 +172,7 @@ function useNextScan(
 function LiveStatsBanner({ data }: { data: BrowseResponse | null }) {
   const { locale, t } = useLocale();
   const nextScan = useNextScan(data?.lastUpdated ?? null, data?.scanIntervalHours ?? 2, locale);
-  if (!data || !nextScan) return null;
+  if (!data || !data.facets || !nextScan) return null;
 
   const galleryCount = data.totalDealerCount || data.facets.dealers.length;
   const itemCount = data.total.toLocaleString();
@@ -390,6 +390,10 @@ export default function HomeContent() {
         const params = buildFetchParams();
         params.set('page', '1');
         const res = await fetch(`/api/browse?${params.toString()}`, { credentials: 'include' });
+        if (!res.ok) {
+          console.error('Browse API error:', res.status);
+          return;
+        }
         const json = await res.json();
         setData(json);
 
@@ -459,6 +463,10 @@ export default function HomeContent() {
       params.set('limit', String(PAGINATION.INFINITE_SCROLL_BATCH_SIZE));
 
       const res = await fetch(`/api/browse?${params.toString()}`, { credentials: 'include' });
+      if (!res.ok) {
+        console.error('Browse API pagination error:', res.status);
+        return;
+      }
       const json = await res.json();
 
       // Deduplicate items as a safety net
@@ -587,7 +595,7 @@ export default function HomeContent() {
             {/* Desktop: Show "Collection" */}
             <h1 className="hidden lg:block font-serif text-2xl text-ink tracking-tight">{t('home.title')}</h1>
             <p className="hidden lg:block text-[13px] text-muted mt-1">
-              {data ? (() => {
+              {data?.facets ? (() => {
                 const bladeSet = new Set(BLADE_TYPES as readonly string[]);
                 const tosoguSet = new Set(TOSOGU_TYPES as readonly string[]);
                 const swordCount = data.facets.itemTypes

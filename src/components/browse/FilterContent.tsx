@@ -532,7 +532,7 @@ export function FilterContent({
   const normalizedItemTypes = useMemo(() => {
     const aggregated: Record<string, number> = {};
 
-    facets.itemTypes.forEach((facet) => {
+    (facets.itemTypes || []).forEach((facet) => {
       const normalized = ITEM_TYPE_NORMALIZE[facet.value] || facet.value.toLowerCase();
       aggregated[normalized] = (aggregated[normalized] || 0) + facet.count;
     });
