@@ -324,6 +324,9 @@ export async function GET(request: NextRequest) {
       query = query.or(statusFilter);
     }
 
+    // Always exclude DELISTED items (soft-delisted dealer listings)
+    query = query.neq('status', 'DELISTED');
+
     // 7-day data delay for free tier users
     // Free users only see listings discovered more than 7 days ago
     if (subscription.isDelayed) {

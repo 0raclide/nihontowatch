@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import { useLocale } from '@/i18n/LocaleContext';
 import type { Listing } from '@/types';
 import { useDealerStatusChange } from './useDealerStatusChange';
+import { useDelistAction } from './useDelistAction';
 import { ListForSaleModal } from '@/components/dealer/ListForSaleModal';
 
 interface DealerCTAProps {
@@ -22,9 +23,11 @@ export function DealerCTA({ listing, onStatusChange, onDelisted }: DealerCTAProp
     listingId: listing.id,
     onStatusChange,
   });
+  const { isDelisting, delistError, handleDelist } = useDelistAction({
+    listingId: listing.id,
+    onDelisted,
+  });
   const [showPriceModal, setShowPriceModal] = useState(false);
-  const [isDelisting, setIsDelisting] = useState(false);
-  const [delistError, setDelistError] = useState<string | null>(null);
 
   const status = listing.status?.toUpperCase();
   const isInventory = status === 'INVENTORY' || status === 'WITHDRAWN';
@@ -32,27 +35,6 @@ export function DealerCTA({ listing, onStatusChange, onDelisted }: DealerCTAProp
   const isHold = status === 'HOLD';
   const isSold = listing.is_sold;
   const canDelist = !!listing.item_uuid && (isAvailable || isHold);
-
-  const handleDelist = useCallback(async () => {
-    setIsDelisting(true);
-    setDelistError(null);
-    try {
-      const res = await fetch(`/api/listings/${listing.id}/delist`, { method: 'POST' });
-      if (res.ok) {
-        onDelisted?.();
-        window.dispatchEvent(new CustomEvent('dealer-listing-delisted', { detail: { listingId: listing.id } }));
-      } else {
-        const data = await res.json().catch(() => ({ error: 'Request failed' }));
-        setDelistError(data.error || 'Request failed');
-        setTimeout(() => setDelistError(null), 3000);
-      }
-    } catch {
-      setDelistError('Network error');
-      setTimeout(() => setDelistError(null), 3000);
-    } finally {
-      setIsDelisting(false);
-    }
-  }, [listing.id, onDelisted]);
 
   const spinner = (
     <span className="flex items-center justify-center gap-2">
