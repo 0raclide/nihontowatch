@@ -2,6 +2,7 @@ import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import { selectCollectionItemSingle, updateCollectionItem } from '@/lib/supabase/collectionItems';
+import { checkCollectionAccess } from '@/lib/collection/access';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,6 +17,9 @@ export async function POST(request: NextRequest) {
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const accessDenied = await checkCollectionAccess(supabase, user.id);
+    if (accessDenied) return accessDenied;
 
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
@@ -98,6 +102,9 @@ export async function DELETE(request: NextRequest) {
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const accessDenied = await checkCollectionAccess(supabase, user.id);
+    if (accessDenied) return accessDenied;
 
     const { imageUrl, itemId } = await request.json();
     if (!imageUrl || !itemId) {

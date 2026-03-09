@@ -15,6 +15,7 @@ import {
   updateItemVideo,
 } from '@/lib/supabase/itemVideos';
 import { selectCollectionItemSingle } from '@/lib/supabase/collectionItems';
+import { checkCollectionAccess } from '@/lib/collection/access';
 import type { ItemVideoRow } from '@/types/collectionItem';
 
 export const dynamic = 'force-dynamic';
@@ -30,6 +31,9 @@ export async function POST(request: NextRequest) {
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const accessDenied = await checkCollectionAccess(supabase, user.id);
+    if (accessDenied) return accessDenied;
 
     const body = await request.json();
     const { itemId, filename } = body;
@@ -88,6 +92,9 @@ export async function GET(request: NextRequest) {
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const accessDenied = await checkCollectionAccess(supabase, user.id);
+    if (accessDenied) return accessDenied;
 
     const itemId = request.nextUrl.searchParams.get('itemId');
     if (!itemId) {

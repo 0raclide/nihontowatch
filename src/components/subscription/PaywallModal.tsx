@@ -90,7 +90,7 @@ interface PaywallModalContentProps {
   message: string;
   requiredTier: SubscriptionTier;
   onDismiss: () => void;
-  onCheckout: (tier: Exclude<SubscriptionTier, 'free'>, billingPeriod: BillingPeriod) => Promise<void>;
+  onCheckout: (tier: Exclude<SubscriptionTier, 'free' | 'yuhinkai'>, billingPeriod: BillingPeriod) => Promise<void>;
   isLoggedIn: boolean;
   onSignIn: () => void;
 }
@@ -261,7 +261,7 @@ interface DesktopModalProps {
   message: string;
   requiredTier: SubscriptionTier;
   onDismiss: () => void;
-  onCheckout: (tier: Exclude<SubscriptionTier, 'free'>, billingPeriod: BillingPeriod) => Promise<void>;
+  onCheckout: (tier: Exclude<SubscriptionTier, 'free' | 'yuhinkai'>, billingPeriod: BillingPeriod) => Promise<void>;
   isClosing: boolean;
   isLoggedIn: boolean;
   onSignIn: () => void;
@@ -333,7 +333,7 @@ interface MobileSheetProps {
   message: string;
   requiredTier: SubscriptionTier;
   onDismiss: () => void;
-  onCheckout: (tier: Exclude<SubscriptionTier, 'free'>, billingPeriod: BillingPeriod) => Promise<void>;
+  onCheckout: (tier: Exclude<SubscriptionTier, 'free' | 'yuhinkai'>, billingPeriod: BillingPeriod) => Promise<void>;
   isClosing: boolean;
   isLoggedIn: boolean;
   onSignIn: () => void;
@@ -491,7 +491,7 @@ export function PaywallModal() {
 
   // Handle checkout
   const handleCheckout = useCallback(async (
-    tier: Exclude<SubscriptionTier, 'free'>,
+    tier: Exclude<SubscriptionTier, 'free' | 'yuhinkai'>,
     billingPeriod: BillingPeriod
   ) => {
     await checkout(tier, billingPeriod);

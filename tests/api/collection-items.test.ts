@@ -103,6 +103,10 @@ vi.mock('@/lib/supabase/server', () => ({
   }),
 }));
 
+vi.mock('@/lib/collection/access', () => ({
+  checkCollectionAccess: vi.fn().mockResolvedValue(null),
+}));
+
 vi.mock('@/lib/supabase/collectionItems', () => ({
   collectionItemsFrom: (...args) => mockCollectionItemsFrom(...args),
   insertCollectionItem: (...args) => mockInsertCollectionItem(...args),

@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { videoProvider, isVideoProviderConfigured } from '@/lib/video/videoProvider';
 import { selectItemVideoSingle, deleteItemVideo } from '@/lib/supabase/itemVideos';
+import { checkCollectionAccess } from '@/lib/collection/access';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,6 +24,9 @@ export async function DELETE(
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const accessDenied = await checkCollectionAccess(supabase, user.id);
+    if (accessDenied) return accessDenied;
 
     const serviceClient = createServiceClient();
 

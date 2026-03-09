@@ -11,6 +11,7 @@ import {
 } from '@/lib/supabase/collectionItems';
 import { selectItemVideos, deleteItemVideo } from '@/lib/supabase/itemVideos';
 import { videoProvider, isVideoProviderConfigured } from '@/lib/video/videoProvider';
+import { checkCollectionAccess } from '@/lib/collection/access';
 
 export const dynamic = 'force-dynamic';
 
@@ -85,6 +86,9 @@ export async function PATCH(
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const accessDenied = await checkCollectionAccess(supabase, user.id);
+    if (accessDenied) return accessDenied;
 
     const serviceClient = createServiceClient();
 
@@ -219,6 +223,9 @@ export async function DELETE(
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const accessDenied = await checkCollectionAccess(supabase, user.id);
+    if (accessDenied) return accessDenied;
 
     const serviceClient = createServiceClient();
 

@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
+import { checkCollectionAccess } from '@/lib/collection/access';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,6 +16,9 @@ export async function PATCH(
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const accessDenied = await checkCollectionAccess(supabase, user.id);
+    if (accessDenied) return accessDenied;
 
     const { data: existing } = await (supabase
       .from('user_collection_folders') as any)  // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -61,6 +65,9 @@ export async function DELETE(
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const accessDenied = await checkCollectionAccess(supabase, user.id);
+    if (accessDenied) return accessDenied;
 
     const { data: existing } = await (supabase
       .from('user_collection_folders') as any)  // eslint-disable-line @typescript-eslint/no-explicit-any

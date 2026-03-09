@@ -39,6 +39,10 @@ const {
 const mockUser = { id: 'user-123', email: 'test@example.com' };
 const mockAuthResponse = { data: { user: mockUser }, error: null };
 
+vi.mock('@/lib/collection/access', () => ({
+  checkCollectionAccess: vi.fn().mockResolvedValue(null),
+}));
+
 vi.mock('@/lib/supabase/collectionItems', () => ({
   selectCollectionItemSingle: (...args) => mockSelectCollectionItemSingle(...args),
   updateCollectionItem: (...args) => mockUpdateCollectionItem(...args),

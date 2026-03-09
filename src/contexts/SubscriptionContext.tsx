@@ -38,8 +38,8 @@ interface SubscriptionContextValue extends SubscriptionState {
   hidePaywall: () => void;
   /** Current paywall info (if showing) */
   paywallInfo: PaywallInfo | null;
-  /** Start checkout for a tier */
-  checkout: (tier: Exclude<SubscriptionTier, 'free'>, billingPeriod: BillingPeriod) => Promise<void>;
+  /** Start checkout for a tier (excludes free and yuhinkai which have no Stripe pricing) */
+  checkout: (tier: Exclude<SubscriptionTier, 'free' | 'yuhinkai'>, billingPeriod: BillingPeriod) => Promise<void>;
   /** Open billing portal */
   openPortal: () => Promise<void>;
   /** Check if user can access a feature, showing paywall if not */
@@ -116,7 +116,7 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
 
   // Start checkout for a tier
   const checkout = useCallback(async (
-    tier: Exclude<SubscriptionTier, 'free'>,
+    tier: Exclude<SubscriptionTier, 'free' | 'yuhinkai'>,
     billingPeriod: BillingPeriod
   ) => {
     if (isCheckingOut) return;
