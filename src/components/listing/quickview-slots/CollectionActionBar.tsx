@@ -6,11 +6,11 @@ import { SocialShareButtons } from '@/components/share/SocialShareButtons';
 import { useQuickViewOptional } from '@/contexts/QuickViewContext';
 import { useLocale } from '@/i18n/LocaleContext';
 import type { Listing } from '@/types';
-import type { CollectionItem } from '@/types/collection';
+import type { CollectionItemRow } from '@/types/collectionItem';
 
 interface CollectionActionBarProps {
   listing: Listing;
-  collectionItem?: CollectionItem | null;
+  collectionItem?: CollectionItemRow | null;
   onEditCollection?: () => void;
 }
 

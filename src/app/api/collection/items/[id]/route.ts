@@ -1,44 +1,78 @@
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
-import type { UpdateCollectionItemInput } from '@/types/collection';
+import { sanitizeKoshirae } from '@/lib/dealer/sanitizeKoshirae';
+import { sanitizeSayagaki, sanitizeHakogaki, sanitizeProvenance, sanitizeKiwame, sanitizeKantoHibisho } from '@/lib/dealer/sanitizeSections';
+import {
+  selectCollectionItemSingle,
+  updateCollectionItem,
+  deleteCollectionItem,
+  insertCollectionEvent,
+} from '@/lib/supabase/collectionItems';
+import { selectItemVideos, deleteItemVideo } from '@/lib/supabase/itemVideos';
+import { videoProvider, isVideoProviderConfigured } from '@/lib/video/videoProvider';
 
 export const dynamic = 'force-dynamic';
 
+const BUCKET = 'user-images';
+
+/**
+ * GET /api/collection/items/[id]
+ * Fetch a single collection item.
+ */
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
     const supabase = await createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const { data: { user } } = await supabase.auth.getUser();
 
-    // Fetch the item
-    const { data: item, error } = await (supabase
-      .from('user_collection_items') as any)  // eslint-disable-line @typescript-eslint/no-explicit-any
-      .select('*')
-      .eq('id', id)
-      .single() as { data: Record<string, unknown> | null; error: { message: string } | null };
+    const serviceClient = createServiceClient();
+    const { data: item, error } = await selectCollectionItemSingle(
+      serviceClient, 'id', id
+    );
 
     if (error || !item) {
       return NextResponse.json({ error: 'Item not found' }, { status: 404 });
     }
 
-    // Check access: owner or public
-    const isOwner = user && item.user_id === user.id;
-    if (!isOwner && !item.is_public) {
+    // Check access: owner or public/unlisted
+    const isOwner = user && item.owner_id === user.id;
+    if (!isOwner && item.visibility === 'private') {
       if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    return NextResponse.json({ item });
+    return NextResponse.json(item);
   } catch (error) {
     logger.logError('Collection item GET error', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
+// Fields that users are allowed to update
+const ALLOWED_FIELDS = new Set([
+  'title', 'title_en', 'title_ja', 'description',
+  'price_value', 'price_currency',
+  'cert_type', 'cert_session', 'item_type', 'item_category',
+  'smith', 'tosogu_maker', 'school', 'tosogu_school',
+  'artisan_id',
+  'era', 'province', 'mei_type', 'mei_text', 'mei_guaranteed', 'nakago_type',
+  'nagasa_cm', 'motohaba_cm', 'sakihaba_cm', 'sori_cm',
+  'height_cm', 'width_cm', 'material',
+  'sayagaki', 'hakogaki', 'koshirae', 'provenance', 'kiwame', 'kanto_hibisho',
+  'hero_image_index',
+  'setsumei_text_en', 'setsumei_text_ja',
+  'visibility', 'personal_notes',
+  // Note: 'images' intentionally excluded — managed via /api/collection/images
+]);
+
+/**
+ * PATCH /api/collection/items/[id]
+ * Update a collection item.
+ */
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -51,65 +85,126 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Verify ownership
-    const { data: existing, error: fetchError } = await (supabase
-      .from('user_collection_items') as any)  // eslint-disable-line @typescript-eslint/no-explicit-any
-      .select('id, user_id')
-      .eq('id', id)
-      .single() as { data: { id: string; user_id: string } | null; error: { message: string } | null };
+    const serviceClient = createServiceClient();
 
-    if (fetchError || !existing) {
+    // Verify ownership
+    const { data: item } = await selectCollectionItemSingle(
+      serviceClient, 'id', id, 'id, owner_id'
+    );
+
+    if (!item || item.owner_id !== user.id) {
       return NextResponse.json({ error: 'Item not found' }, { status: 404 });
     }
-    if (existing.user_id !== user.id) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+
+    let body: Record<string, unknown>;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     }
 
-    const body: UpdateCollectionItemInput = await request.json();
-
-    // Build update object — only include fields that were provided
-    const updateData: Record<string, unknown> = {};
-    const allowedFields = [
-      'item_type', 'title', 'artisan_id', 'artisan_display_name',
-      'cert_type', 'cert_session', 'cert_organization',
-      'smith', 'school', 'province', 'era', 'mei_type',
-      'nagasa_cm', 'sori_cm', 'motohaba_cm', 'sakihaba_cm',
-      'price_paid', 'price_paid_currency', 'current_value', 'current_value_currency',
-      'acquired_date', 'acquired_from', 'condition', 'status', 'notes',
-      'images', 'catalog_reference', 'is_public', 'folder_id', 'sort_order',
-    ];
-
-    for (const field of allowedFields) {
-      if (field in body) {
-        updateData[field] = (body as Record<string, unknown>)[field];
+    // Filter to allowed fields only
+    const updates: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(body)) {
+      if (ALLOWED_FIELDS.has(key)) {
+        updates[key] = value;
       }
     }
 
-    if (Object.keys(updateData).length === 0) {
-      return NextResponse.json({ error: 'No fields to update' }, { status: 400 });
+    // Sanitize JSONB fields
+    if ('koshirae' in updates) {
+      updates.koshirae = sanitizeKoshirae(updates.koshirae);
+    }
+    if ('sayagaki' in updates) {
+      updates.sayagaki = sanitizeSayagaki(updates.sayagaki);
+    }
+    if ('hakogaki' in updates) {
+      updates.hakogaki = sanitizeHakogaki(updates.hakogaki);
+    }
+    if ('provenance' in updates) {
+      updates.provenance = sanitizeProvenance(updates.provenance);
+    }
+    if ('kiwame' in updates) {
+      updates.kiwame = sanitizeKiwame(updates.kiwame);
+    }
+    if ('kanto_hibisho' in updates) {
+      updates.kanto_hibisho = sanitizeKantoHibisho(updates.kanto_hibisho);
     }
 
-    const { data: item, error } = await (supabase
-      .from('user_collection_items') as any)  // eslint-disable-line @typescript-eslint/no-explicit-any
-      .update(updateData as never)
-      .eq('id', id)
-      .select()
-      .single() as { data: Record<string, unknown> | null; error: { message: string } | null };
+    // Sanitize hero_image_index
+    if ('hero_image_index' in updates) {
+      const idx = updates.hero_image_index;
+      updates.hero_image_index = (typeof idx === 'number' && idx >= 0) ? Math.floor(idx) : null;
+    }
+
+    // Sanitize cert_session — TEXT in DB
+    if ('cert_session' in updates) {
+      updates.cert_session = updates.cert_session != null ? String(updates.cert_session) : null;
+    }
+
+    // Validate visibility
+    if ('visibility' in updates) {
+      const v = updates.visibility;
+      if (v !== 'private' && v !== 'unlisted' && v !== 'public') {
+        updates.visibility = 'private';
+      }
+    }
+
+    // Handle status change side effects
+    if (body.status === 'SOLD') {
+      updates.status = 'SOLD';
+      updates.is_available = false;
+      updates.is_sold = true;
+    } else if (body.status === 'INVENTORY') {
+      updates.status = 'INVENTORY';
+      updates.is_available = false;
+      updates.is_sold = false;
+    } else if (body.status === 'AVAILABLE') {
+      updates.status = 'AVAILABLE';
+      updates.is_available = true;
+      updates.is_sold = false;
+    }
+
+    // Set artisan confidence when artisan changes
+    if (updates.artisan_id && typeof updates.artisan_id === 'string') {
+      updates.artisan_confidence = 'HIGH';
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 });
+    }
+
+    const { error } = await updateCollectionItem(serviceClient, id, updates);
 
     if (error) {
-      logger.error('Error updating collection item', { error });
+      logger.error('[collection/items/[id]] Update error:', { error });
       return NextResponse.json({ error: 'Failed to update item' }, { status: 500 });
     }
 
-    return NextResponse.json({ item });
+    // Log audit event
+    await insertCollectionEvent(serviceClient, {
+      item_uuid: item.item_uuid,
+      actor_id: user.id,
+      event_type: 'updated',
+      payload: { fields: Object.keys(updates) },
+    }).catch(err => logger.warn('Failed to log collection event', { error: err }));
+
+    // Fetch updated item to return
+    const { data: updated } = await selectCollectionItemSingle(serviceClient, 'id', id);
+
+    return NextResponse.json(updated);
   } catch (error) {
     logger.logError('Collection item PATCH error', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
+/**
+ * DELETE /api/collection/items/[id]
+ * Delete a collection item with full cleanup.
+ */
 export async function DELETE(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
@@ -120,46 +215,68 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Verify ownership and get images for cleanup
-    const { data: existing, error: fetchError } = await (supabase
-      .from('user_collection_items') as any)  // eslint-disable-line @typescript-eslint/no-explicit-any
-      .select('id, user_id, images')
-      .eq('id', id)
-      .single() as { data: { id: string; user_id: string; images: string[] | null } | null; error: { message: string } | null };
+    const serviceClient = createServiceClient();
 
-    if (fetchError || !existing) {
+    // Verify ownership and get images + item_uuid for cleanup
+    const { data: item } = await selectCollectionItemSingle(
+      serviceClient, 'id', id, 'id, owner_id, images, item_uuid'
+    );
+
+    if (!item || item.owner_id !== user.id) {
       return NextResponse.json({ error: 'Item not found' }, { status: 404 });
     }
-    if (existing.user_id !== user.id) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
 
-    // Cleanup storage images (images array stores full URLs, extract storage paths)
-    const images = (existing.images as string[]) || [];
-    const bucketMarker = '/collection-images/';
+    // Log audit event BEFORE delete (so item_uuid FK still valid if needed)
+    await insertCollectionEvent(serviceClient, {
+      item_uuid: item.item_uuid,
+      actor_id: user.id,
+      event_type: 'deleted',
+      payload: null,
+    }).catch(err => logger.warn('Failed to log collection delete event', { error: err }));
+
+    // Clean up storage images
+    const images = (item.images as string[]) || [];
+    const bucketMarker = `/${BUCKET}/`;
     const storagePaths = images
       .map(url => {
+        if (typeof url !== 'string') return null;
         const idx = url.indexOf(bucketMarker);
         return idx !== -1 ? url.slice(idx + bucketMarker.length) : null;
       })
       .filter((p): p is string => p !== null);
     if (storagePaths.length > 0) {
-      const { error: storageError } = await supabase.storage
-        .from('collection-images')
+      const { error: storageError } = await serviceClient.storage
+        .from(BUCKET)
         .remove(storagePaths);
       if (storageError) {
         logger.warn('Failed to cleanup collection images', { error: storageError, itemId: id });
       }
     }
 
+    // Clean up Bunny videos
+    if (isVideoProviderConfigured() && item.item_uuid) {
+      const { data: videos } = await selectItemVideos(
+        serviceClient, 'item_uuid', item.item_uuid, 'id, provider_id'
+      );
+      if (videos && videos.length > 0) {
+        await Promise.all(
+          videos.map(v =>
+            videoProvider.deleteVideo(v.provider_id).catch(err =>
+              logger.warn(`Failed to delete Bunny video ${v.provider_id}`, { error: err })
+            )
+          )
+        );
+        await Promise.all(
+          videos.map(v => deleteItemVideo(serviceClient, v.id))
+        );
+      }
+    }
+
     // Delete the item
-    const { error } = await (supabase
-      .from('user_collection_items') as any)  // eslint-disable-line @typescript-eslint/no-explicit-any
-      .delete()
-      .eq('id', id) as { error: { message: string } | null };
+    const { error } = await deleteCollectionItem(serviceClient, id);
 
     if (error) {
-      logger.error('Error deleting collection item', { error });
+      logger.error('[collection/items/[id]] Delete error:', { error });
       return NextResponse.json({ error: 'Failed to delete item' }, { status: 500 });
     }
 

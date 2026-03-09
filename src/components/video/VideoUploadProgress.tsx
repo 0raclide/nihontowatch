@@ -5,7 +5,7 @@ import { useLocale } from '@/i18n/LocaleContext';
 import { useVideoUpload } from '@/contexts/VideoUploadContext';
 
 interface VideoUploadProgressProps {
-  listingId: number;
+  listingId: number | string;
   onUploadComplete?: (videoId: string) => void;
   onUploadError?: (error: string) => void;
   accept?: string;

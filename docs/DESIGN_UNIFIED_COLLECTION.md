@@ -1,6 +1,6 @@
 # Unified Collection Architecture
 
-> **Status:** Phase 2b DONE (2026-03-09) — `listing_videos` migrated to `item_videos`, all routes/helpers/trigger updated, old table dropped. 46 tests. Next: Phase 2c (collection API) + Phase 2d (DisplayItem + "All Items" tab).
+> **Status:** Phase 2d DONE (2026-03-09) — CollectionItemRow→DisplayItem mapper, QuickView now shows full JSONB sections for collection items, edit redirects to full-page form. 43 tests. Next: Phase 3 (promote/delist transit).
 > **Date:** 2026-03-09
 > **Authors:** Chris + Claude
 > **Replaces:** Collection Manager V1 (`/collection`), dealer "My Listings" naming
@@ -1261,42 +1261,53 @@ Phase 2 is split into four sub-phases with explicit dependencies:
 
 **Scope:** Create the `user-images` storage bucket, build CRUD API routes for collection items, wire the dealer form to write to `collection_items` for new items. Dealer-tier only.
 
-- [ ] Create `user-images` Supabase Storage bucket (public read, owner-scoped write/delete RLS)
-- [ ] Create collection image upload route (`POST /api/collection/images`) using `user-images/{owner_id}/{item_uuid}/` path
-- [ ] Create collection CRUD API routes:
-  - `GET /api/collection/items` — list owner's collection items
-  - `POST /api/collection/items` — create new collection item (generates `item_uuid`)
-  - `PATCH /api/collection/items/[id]` — update collection item
-  - `DELETE /api/collection/items/[id]` — delete collection item (+ Bunny cleanup for `item_videos`)
-- [ ] Create collection video upload route (same Bunny TUS flow, writes to `item_videos` with `item_uuid`)
-- [ ] Wire `DealerListingForm` to POST/PATCH to collection API when in collection context (new item or editing a collection item)
-- [ ] Form context detection: collection context = no `listing_id`, writes to collection API. Listed context = has `listing_id`, writes to existing dealer listings API.
-- [ ] All JSONB sanitizers (`sanitizeKoshirae`, `sanitizeSayagaki`, etc.) apply to collection writes
-- [ ] Audit log: write `collection_events` rows on create/update/delete
-- [ ] Verify form validation, draft persistence, catalog match panel all work in collection context
+- [x] Create `user-images` Supabase Storage bucket (public read, owner-scoped write/delete RLS) — migration 126
+- [x] Create collection image upload routes (6 total: main + sayagaki/hakogaki/koshirae/provenance/kanto-hibisho) using `user-images/{owner_id}/{item_uuid}/` path
+- [x] Create collection CRUD API routes:
+  - `GET /api/collection/items` — list owner's collection items (facets, filters, pagination)
+  - `POST /api/collection/items` — create new collection item (generates `item_uuid`, 56 fields, all 6 JSONB sanitizers)
+  - `PATCH /api/collection/items/[id]` — update collection item (whitelist enforcement, JSONB sanitization)
+  - `DELETE /api/collection/items/[id]` — delete collection item (+ storage cleanup + Bunny video cleanup)
+- [x] Create collection video routes (`POST/GET /api/collection/videos`, `DELETE /api/collection/videos/[id]`)
+- [x] Wire `DealerListingForm` with `context` prop ('listing' | 'collection') — routes all API calls through context-driven base path
+- [x] Create `/collection/add` and `/collection/edit/[id]` pages using `DealerListingForm` with `context="collection"`
+- [x] All JSONB sanitizers (`sanitizeKoshirae`, `sanitizeSayagaki`, etc.) apply to collection writes
+- [x] Audit log: write `collection_events` rows on create/update/delete
+- [x] `VideoUploadContext` types widened to `number | string` for collection item UUIDs
+- [x] `CollectionPageClient` "Add Item" links to `/collection/add`
+- [x] 64 tests across 5 files (24 items + 16 images + 9 videos + 7 form + 8 page)
 
 **Risk:** Medium. New API surface, but fully isolated from `listings`. Form dual-routing (collection vs listed) is the main complexity.
 **Deploys:** Yes — dealers can create collection items. Existing listing functionality unchanged.
 
 ---
 
-#### Phase 2d — DisplayItem Type + Mapper + "All Items" Tab
+#### Phase 2d — DisplayItem Mapper + Collection QuickView Upgrade ✅
 
 **Depends on:** 2c (needs collection API to fetch data)
+**Completed:** 2026-03-09 | **Tests:** 43 (35 mapper + 8 page client)
 
-**Scope:** Normalize `DisplayItem.id` to string, create collection→DisplayItem mapper, add "All Items" tab to the collection page.
+**Scope:** Rewrite collection→DisplayItem mapper to use `CollectionItemRow`, unlock JSONB sections in QuickView, redirect edit to full-page form.
 
-- [ ] Change `DisplayItem.id` type from `number` to `string`
-- [ ] Update all `listingToDisplayItem()` callers to use `String(listing.id)`
-- [ ] Update all downstream `DisplayItem.id` usages that assume numeric type (grep for `Number(`, numeric comparisons, etc.)
-- [ ] Create `collectionItemToDisplayItem()` mapper (uses `item_uuid` as id, `source: 'collection'`)
-- [ ] Add "All Items" tab to collection page (queries `GET /api/collection/items`, maps through new DisplayItem mapper)
-- [ ] Collection cards render via existing `ListingCard` component (scholarly presentation via `source: 'collection'` branching)
-- [ ] QuickView works for collection items (via DisplayItem adapter)
-- [ ] Verify all existing browse/dealer/artist page tests pass with string id change
+**Key discovery:** `DisplayItem.id` was already typed as `string | number` (line 65 of `displayItem.ts`). The planned `id` type migration from `number` to `string` was unnecessary — no breaking changes anywhere.
 
-**Risk:** Medium. The `DisplayItem.id` type change touches many files, but is mechanical. The "All Items" tab is new UI but uses existing components.
-**Deploys:** Yes — dealers see their collection items in the new tab. Browse and all other pages unchanged.
+- [x] Rewrite `collectionRowToDisplayItem()` mapper — all `ItemDataFields` pass through (JSONB sections, tosogu fields, setsumei, descriptions, translations, AI curator notes, focal points, video count). V1 silently dropped all of these.
+- [x] Simplify `CollectionExtension` type — 4 fields (`item_uuid`, `personal_notes`, `visibility`, `source_listing_id`) replaces 10 V1 fields
+- [x] Update barrel exports with new function names + V1 backward-compat aliases
+- [x] Update 5 collection QuickView slot components to accept `CollectionItemRow`
+- [x] Update `QuickViewContext` — `collectionItem` typed as `CollectionItemRow | null`, `openCollectionQuickView()` spreads item directly (carries JSONB sections)
+- [x] Edit action redirects to `/collection/edit/[id]` instead of V1 inline QuickView form
+- [x] Update `CollectionPageClient` — new types, new mapper, lookups via `item_uuid`
+- [x] 35 mapper golden tests + 8 updated page client tests
+- [x] `tsc --noEmit` passes, full suite 5,272 pass
+
+**What was deferred to Phase 5:**
+- V1 `CollectionFormContent` still dynamically imported in QuickView.tsx (dead code — `isCollectionEditMode` is unreachable now that edit redirects to `/collection/edit/[id]`). Cast to `as any` for type compat. Remove in Phase 5 cleanup.
+- V1 `CollectionItem` type in `src/types/collection.ts` still exists — used by `CollectionFormContent`, `CatalogSearchBar`, `listingImport.ts`. These form internals migrate in Phase 5.
+- "All Items" tab — deferred. The tab concept requires the promote/delist state machine (Phase 3) to distinguish "not yet listed" from "listed". For now, the collection page shows all private items.
+
+**Risk:** Turned out to be low. No `DisplayItem.id` type migration needed. The slot component updates were mechanical.
+**Deploys:** Yes — collection QuickView now shows full rich metadata. Browse and all other pages unchanged.
 
 ---
 

@@ -1,7 +1,13 @@
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
-import type { CreateCollectionItemInput, CollectionFilters } from '@/types/collection';
+import { sanitizeKoshirae } from '@/lib/dealer/sanitizeKoshirae';
+import { sanitizeSayagaki, sanitizeHakogaki, sanitizeProvenance, sanitizeKiwame, sanitizeKantoHibisho } from '@/lib/dealer/sanitizeSections';
+import {
+  collectionItemsFrom,
+  insertCollectionItem,
+  insertCollectionEvent,
+} from '@/lib/supabase/collectionItems';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,6 +21,17 @@ const TOSOGU_TYPES = [
   'mitokoromono', 'gotokoromono',
 ];
 
+interface CollectionFilters {
+  category?: 'nihonto' | 'tosogu';
+  itemType?: string;
+  certType?: string;
+  era?: string;
+  meiType?: string;
+  sort: 'newest' | 'value_desc' | 'value_asc' | 'type';
+  page: number;
+  limit: number;
+}
+
 function parseFilters(searchParams: URLSearchParams): CollectionFilters {
   return {
     category: (searchParams.get('category') as CollectionFilters['category']) || undefined,
@@ -22,15 +39,16 @@ function parseFilters(searchParams: URLSearchParams): CollectionFilters {
     certType: searchParams.get('cert') || undefined,
     era: searchParams.get('era') || undefined,
     meiType: searchParams.get('meiType') || undefined,
-    status: (searchParams.get('status') as CollectionFilters['status']) || undefined,
-    condition: (searchParams.get('condition') as CollectionFilters['condition']) || undefined,
-    folderId: searchParams.get('folder') || undefined,
     sort: (searchParams.get('sort') as CollectionFilters['sort']) || 'newest',
     page: Number(searchParams.get('page')) || 1,
     limit: Math.min(Number(searchParams.get('limit')) || 100, 200),
   };
 }
 
+/**
+ * GET /api/collection/items
+ * Fetch authenticated user's collection items with filters and facets.
+ */
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient();
@@ -39,15 +57,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const serviceClient = createServiceClient();
     const filters = parseFilters(request.nextUrl.searchParams);
     const safePage = Math.max(1, filters.page || 1);
-    const offset = (safePage - 1) * filters.limit!;
+    const offset = (safePage - 1) * filters.limit;
 
     // Build main query
-    let query = (supabase
-      .from('user_collection_items') as any)  // eslint-disable-line @typescript-eslint/no-explicit-any
+    let query = collectionItemsFrom(serviceClient)
       .select('*', { count: 'exact' })
-      .eq('user_id', user.id);
+      .eq('owner_id', user.id);
 
     // Apply filters
     if (filters.category) {
@@ -66,23 +84,14 @@ export async function GET(request: NextRequest) {
     if (filters.meiType) {
       query = query.eq('mei_type', filters.meiType);
     }
-    if (filters.status) {
-      query = query.eq('status', filters.status);
-    }
-    if (filters.condition) {
-      query = query.eq('condition', filters.condition);
-    }
-    if (filters.folderId) {
-      query = query.eq('folder_id', filters.folderId);
-    }
 
     // Sort
     switch (filters.sort) {
       case 'value_desc':
-        query = query.order('current_value', { ascending: false, nullsFirst: false });
+        query = query.order('price_value', { ascending: false, nullsFirst: false });
         break;
       case 'value_asc':
-        query = query.order('current_value', { ascending: true, nullsFirst: false });
+        query = query.order('price_value', { ascending: true, nullsFirst: false });
         break;
       case 'type':
         query = query.order('item_type', { ascending: true, nullsFirst: false });
@@ -92,9 +101,9 @@ export async function GET(request: NextRequest) {
     }
 
     // Pagination
-    query = query.range(offset, offset + filters.limit! - 1);
+    query = query.range(offset, offset + filters.limit - 1);
 
-    const { data: items, error, count } = await query as { data: Record<string, unknown>[] | null; error: { message: string } | null; count: number | null };
+    const { data: items, error, count } = await query;
 
     if (error) {
       logger.error('Collection items query error', { error });
@@ -102,28 +111,11 @@ export async function GET(request: NextRequest) {
     }
 
     // Compute facets (all items for this user, ignoring current filters)
-    const { data: allItems } = await (supabase
-      .from('user_collection_items') as any)  // eslint-disable-line @typescript-eslint/no-explicit-any
-      .select('item_type, cert_type, era, mei_type, status, condition, folder_id')
-      .eq('user_id', user.id) as { data: Record<string, unknown>[] | null };
+    const { data: allItems } = await collectionItemsFrom(serviceClient)
+      .select('item_type, cert_type, era, mei_type')
+      .eq('owner_id', user.id);
 
     const facets = computeFacets(allItems || []);
-
-    // Get folder names for facets
-    if (facets.folders.length > 0) {
-      const folderIds = facets.folders.map(f => f.id);
-      const { data: folders } = await (supabase
-        .from('user_collection_folders') as any)  // eslint-disable-line @typescript-eslint/no-explicit-any
-        .select('id, name')
-        .in('id', folderIds) as { data: { id: string; name: string }[] | null };
-      if (folders) {
-        const nameMap = new Map(folders.map(f => [f.id, f.name]));
-        facets.folders = facets.folders.map(f => ({
-          ...f,
-          name: nameMap.get(f.id) || 'Unknown',
-        }));
-      }
-    }
 
     return NextResponse.json({
       data: items || [],
@@ -136,6 +128,10 @@ export async function GET(request: NextRequest) {
   }
 }
 
+/**
+ * POST /api/collection/items
+ * Create a new collection item.
+ */
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
@@ -144,13 +140,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body: CreateCollectionItemInput = await request.json();
+    const serviceClient = createServiceClient();
 
     // Max 500 items per user
-    const { count, error: countError } = await (supabase
-      .from('user_collection_items') as any)  // eslint-disable-line @typescript-eslint/no-explicit-any
+    const { count, error: countError } = await collectionItemsFrom(serviceClient)
       .select('*', { count: 'exact', head: true })
-      .eq('user_id', user.id) as { count: number | null; error: { message: string } | null };
+      .eq('owner_id', user.id);
 
     if (countError) {
       logger.error('Error counting collection items', { error: countError });
@@ -161,50 +156,134 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { data: item, error } = await (supabase
-      .from('user_collection_items') as any)  // eslint-disable-line @typescript-eslint/no-explicit-any
-      .insert({
-        user_id: user.id,
-        source_listing_id: body.source_listing_id ?? null,
-        item_type: body.item_type ?? null,
-        title: body.title ?? null,
-        artisan_id: body.artisan_id ?? null,
-        artisan_display_name: body.artisan_display_name ?? null,
-        cert_type: body.cert_type ?? null,
-        cert_session: body.cert_session ?? null,
-        cert_organization: body.cert_organization ?? null,
-        smith: body.smith ?? null,
-        school: body.school ?? null,
-        province: body.province ?? null,
-        era: body.era ?? null,
-        mei_type: body.mei_type ?? null,
-        nagasa_cm: body.nagasa_cm ?? null,
-        sori_cm: body.sori_cm ?? null,
-        motohaba_cm: body.motohaba_cm ?? null,
-        sakihaba_cm: body.sakihaba_cm ?? null,
-        price_paid: body.price_paid ?? null,
-        price_paid_currency: body.price_paid_currency ?? null,
-        current_value: body.current_value ?? null,
-        current_value_currency: body.current_value_currency ?? null,
-        acquired_date: body.acquired_date ?? null,
-        acquired_from: body.acquired_from ?? null,
-        condition: body.condition || 'good',
-        status: body.status || 'owned',
-        notes: body.notes ?? null,
-        images: body.images ?? [],
-        catalog_reference: body.catalog_reference ?? null,
-        is_public: body.is_public ?? false,
-        folder_id: body.folder_id ?? null,
-      } as never)
-      .select()
-      .single() as { data: Record<string, unknown> | null; error: { message: string } | null };
+    let body: Record<string, unknown>;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    }
+
+    const {
+      title,
+      title_en,
+      title_ja,
+      item_type,
+      item_category,
+      cert_type,
+      price_value,
+      price_currency,
+      description,
+      artisan_id,
+      smith,
+      tosogu_maker,
+      school,
+      tosogu_school,
+      era,
+      province,
+      mei_type,
+      mei_text,
+      mei_guaranteed,
+      nakago_type,
+      nagasa_cm,
+      motohaba_cm,
+      sakihaba_cm,
+      sori_cm,
+      height_cm,
+      width_cm,
+      material,
+      status: requestedStatus,
+      cert_session,
+      sayagaki,
+      hakogaki,
+      koshirae,
+      provenance,
+      kiwame,
+      kanto_hibisho,
+      setsumei_text_en,
+      setsumei_text_ja,
+      hero_image_index,
+      images: initialImages,
+      personal_notes,
+      source_listing_id,
+    } = body;
+
+    // Build collection item row
+    const itemData: Record<string, unknown> = {
+      owner_id: user.id,
+      title: title ?? null,
+      title_en: title_en ?? null,
+      title_ja: title_ja ?? null,
+      item_type: item_type ?? null,
+      item_category: item_category ?? null,
+      cert_type: cert_type ?? null,
+      cert_session: cert_session != null ? String(cert_session) : null,
+      price_value: price_value ?? null,
+      price_currency: price_currency ?? 'JPY',
+      description: description ?? null,
+      era: era ?? null,
+      province: province ?? null,
+      mei_type: mei_type ?? null,
+      mei_text: mei_text ?? null,
+      mei_guaranteed: mei_guaranteed ?? null,
+      nakago_type: nakago_type ?? null,
+      nagasa_cm: nagasa_cm ?? null,
+      motohaba_cm: motohaba_cm ?? null,
+      sakihaba_cm: sakihaba_cm ?? null,
+      sori_cm: sori_cm ?? null,
+      status: requestedStatus === 'AVAILABLE' ? 'AVAILABLE' : 'INVENTORY',
+      is_available: requestedStatus === 'AVAILABLE',
+      is_sold: false,
+      images: Array.isArray(initialImages) && initialImages.length > 0 ? initialImages : [],
+      hero_image_index: (typeof hero_image_index === 'number' && hero_image_index >= 0) ? Math.floor(hero_image_index) : null,
+      sayagaki: sanitizeSayagaki(sayagaki),
+      hakogaki: sanitizeHakogaki(hakogaki),
+      koshirae: sanitizeKoshirae(koshirae),
+      provenance: sanitizeProvenance(provenance),
+      kiwame: sanitizeKiwame(kiwame),
+      kanto_hibisho: sanitizeKantoHibisho(kanto_hibisho),
+      setsumei_text_en: setsumei_text_en ?? null,
+      setsumei_text_ja: setsumei_text_ja ?? null,
+      visibility: 'private',
+      personal_notes: personal_notes ?? null,
+      source_listing_id: source_listing_id ?? null,
+    };
+
+    // Route artisan fields based on category
+    if (item_category === 'tosogu') {
+      itemData.tosogu_maker = smith || tosogu_maker || null;
+      itemData.tosogu_school = school || tosogu_school || null;
+      itemData.height_cm = height_cm ?? null;
+      itemData.width_cm = width_cm ?? null;
+      itemData.material = material ?? null;
+    } else {
+      itemData.smith = smith || null;
+      itemData.school = school || null;
+    }
+
+    // Set artisan fields if provided (no elite stats sync for collection items)
+    if (artisan_id) {
+      itemData.artisan_id = artisan_id;
+      itemData.artisan_confidence = 'HIGH';
+    }
+
+    const { data, error } = await insertCollectionItem(serviceClient, itemData);
 
     if (error) {
-      logger.error('Error creating collection item', { error });
+      logger.error('[collection/items] Insert error:', { error });
       return NextResponse.json({ error: 'Failed to create collection item' }, { status: 500 });
     }
 
-    return NextResponse.json({ item }, { status: 201 });
+    // Log audit event
+    if (data) {
+      await insertCollectionEvent(serviceClient, {
+        item_uuid: data.item_uuid,
+        actor_id: user.id,
+        event_type: 'created',
+        payload: null,
+      }).catch(err => logger.warn('Failed to log collection event', { error: err }));
+    }
+
+    return NextResponse.json(data, { status: 201 });
   } catch (error) {
     logger.logError('Create collection item error', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -217,9 +296,6 @@ function computeFacets(items: Array<Record<string, unknown>>) {
   const certifications = new Map<string, number>();
   const historicalPeriods = new Map<string, number>();
   const signatureStatuses = new Map<string, number>();
-  const statuses = new Map<string, number>();
-  const conditions = new Map<string, number>();
-  const folders = new Map<string, number>();
 
   for (const item of items) {
     if (item.item_type) {
@@ -238,18 +314,6 @@ function computeFacets(items: Array<Record<string, unknown>>) {
       const m = item.mei_type as string;
       signatureStatuses.set(m, (signatureStatuses.get(m) || 0) + 1);
     }
-    if (item.status) {
-      const s = item.status as string;
-      statuses.set(s, (statuses.get(s) || 0) + 1);
-    }
-    if (item.condition) {
-      const co = item.condition as string;
-      conditions.set(co, (conditions.get(co) || 0) + 1);
-    }
-    if (item.folder_id) {
-      const f = item.folder_id as string;
-      folders.set(f, (folders.get(f) || 0) + 1);
-    }
   }
 
   const toArray = (map: Map<string, number>) =>
@@ -262,10 +326,5 @@ function computeFacets(items: Array<Record<string, unknown>>) {
     certifications: toArray(certifications),
     historicalPeriods: toArray(historicalPeriods),
     signatureStatuses: toArray(signatureStatuses),
-    statuses: toArray(statuses),
-    conditions: toArray(conditions),
-    folders: Array.from(folders.entries())
-      .map(([id, count]) => ({ id, name: '', count }))
-      .sort((a, b) => b.count - a.count),
   };
 }

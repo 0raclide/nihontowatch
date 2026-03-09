@@ -1,10 +1,10 @@
 'use client';
 
 import { useLocale } from '@/i18n/LocaleContext';
-import type { CollectionItem } from '@/types/collection';
+import type { CollectionItemRow } from '@/types/collectionItem';
 
 interface CollectionCTAProps {
-  collectionItem?: CollectionItem | null;
+  collectionItem?: CollectionItemRow | null;
   onEditCollection?: () => void;
 }
 

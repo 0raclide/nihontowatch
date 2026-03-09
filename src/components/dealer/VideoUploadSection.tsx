@@ -8,9 +8,10 @@ import { VideoThumbnail } from '@/components/video/VideoThumbnail';
 import type { ListingVideo } from '@/types/media';
 
 interface VideoUploadSectionProps {
-  listingId?: number;
+  listingId?: number | string;
   videos: ListingVideo[];
   onVideosChange: (videos: ListingVideo[]) => void;
+  apiBase?: string;  // defaults to '/api/dealer'
 }
 
 /**
@@ -25,6 +26,7 @@ export function VideoUploadSection({
   listingId,
   videos,
   onVideosChange,
+  apiBase = '/api/dealer',
 }: VideoUploadSectionProps) {
   const { t } = useLocale();
   const { subscribeToListing } = useVideoUpload();
@@ -45,7 +47,7 @@ export function VideoUploadSection({
 
     const poll = async () => {
       try {
-        const res = await fetch(`/api/dealer/videos?listingId=${listingId}`);
+        const res = await fetch(`${apiBase}/videos?listingId=${listingId}`);
         if (res.ok) {
           const data = await res.json();
           onVideosChange(data.videos);
@@ -66,7 +68,7 @@ export function VideoUploadSection({
     return subscribeToListing(listingId, async () => {
       // Upload finished (now processing on Bunny) — refresh video list
       try {
-        const res = await fetch(`/api/dealer/videos?listingId=${listingId}`);
+        const res = await fetch(`${apiBase}/videos?listingId=${listingId}`);
         if (res.ok) {
           const data = await res.json();
           onVideosChange(data.videos);
@@ -78,7 +80,7 @@ export function VideoUploadSection({
   const handleDelete = useCallback(async (videoId: string) => {
     setIsDeleting(videoId);
     try {
-      const res = await fetch(`/api/dealer/videos/${videoId}`, { method: 'DELETE' });
+      const res = await fetch(`${apiBase}/videos/${videoId}`, { method: 'DELETE' });
       if (res.ok) {
         onVideosChange(videos.filter(v => v.id !== videoId));
       }

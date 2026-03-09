@@ -3,7 +3,8 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useLocale } from '@/i18n/LocaleContext';
-import type { CollectionItem, CollectionFilters, CollectionFacets, CollectionListResponse } from '@/types/collection';
+import type { CollectionFilters, CollectionFacets } from '@/types/collection';
+import type { CollectionItemRow } from '@/types/collectionItem';
 import type { DisplayItem } from '@/types/displayItem';
 import { ListingGrid } from '@/components/browse/ListingGrid';
 import { AddItemCard } from '@/components/collection/AddItemCard';
@@ -12,7 +13,7 @@ import { CollectionBottomBar } from '@/components/collection/CollectionBottomBar
 import { Drawer } from '@/components/ui/Drawer';
 import { useQuickView } from '@/contexts/QuickViewContext';
 import { useCurrency } from '@/hooks/useCurrency';
-import { collectionItemsToDisplayItems } from '@/lib/displayItem';
+import { collectionRowsToDisplayItems } from '@/lib/displayItem';
 import { SORT_OPTIONS } from '@/lib/collection/labels';
 import { Header } from '@/components/layout/Header';
 
@@ -40,7 +41,7 @@ export function CollectionPageClient() {
   const { currency, exchangeRates } = useCurrency();
   const quickView = useQuickView();
 
-  const [items, setItemsState] = useState<CollectionItem[]>([]);
+  const [items, setItemsState] = useState<CollectionItemRow[]>([]);
   const [total, setTotal] = useState(0);
   const [facets, setFacets] = useState<CollectionFacets>(EMPTY_FACETS);
   const [isLoading, setIsLoading] = useState(true);
@@ -79,7 +80,7 @@ export function CollectionPageClient() {
 
   // Adapt collection items to DisplayItem shape for ListingCard
   const adaptedItems = useMemo(
-    () => collectionItemsToDisplayItems(items),
+    () => collectionRowsToDisplayItems(items),
     [items]
   );
 
@@ -120,7 +121,7 @@ export function CollectionPageClient() {
         throw new Error(t('collection.fetchFailed'));
       }
 
-      const data: CollectionListResponse = await res.json();
+      const data: { data: CollectionItemRow[]; total: number; facets: CollectionFacets } = await res.json();
       setItemsState(data.data);
       setTotal(data.total);
       setFacets(data.facets);
@@ -164,7 +165,7 @@ export function CollectionPageClient() {
     const itemId = searchParams.get('item');
     if (!itemId) return;
 
-    const match = items.find(i => i.id === itemId);
+    const match = items.find(i => i.item_uuid === itemId);
     if (match) {
       deepLinkHandledRef.current = true;
       quickView.openCollectionQuickView(match, 'view');
@@ -222,16 +223,16 @@ export function CollectionPageClient() {
 
   // Card click → open collection QuickView (receives DisplayItem from ListingGrid, looks up original CollectionItem)
   const handleCardClick = useCallback((displayItem: DisplayItem) => {
-    const original = items.find(i => i.id === displayItem.id);
+    const original = items.find(i => i.item_uuid === displayItem.id);
     if (original) {
       quickView.openCollectionQuickView(original, 'view');
     }
   }, [items, quickView]);
 
-  // Add button
+  // Add button — navigate to full-page form
   const handleAddClick = useCallback(() => {
-    quickView.openCollectionAddForm();
-  }, [quickView]);
+    window.location.href = '/collection/add';
+  }, []);
 
   return (
     <div className="min-h-screen bg-surface transition-colors">

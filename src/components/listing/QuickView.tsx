@@ -415,7 +415,11 @@ export function QuickView() {
   // =========================================================================
   // Assemble slots based on source
   // =========================================================================
-  const handleEditCollection = () => setCollectionMode('edit');
+  const handleEditCollection = () => {
+    if (collectionItem?.id) {
+      window.location.href = `/collection/edit/${collectionItem.id}`;
+    }
+  };
 
   // Desktop QuickViewContent slots (3-way: dealer > collection > browse)
   const desktopActionBarSlot = isDealer
@@ -454,7 +458,7 @@ export function QuickView() {
       : <BrowseMobileHeaderActions listing={currentListing} isStudyMode={isStudyMode} onToggleStudyMode={toggleStudyMode} isAdminEditMode={isAdminEditMode} onToggleAdminEditMode={toggleAdminEditMode} />;
 
   const mobileDealerSlot = isCollection
-    ? (collectionItem?.acquired_from ? <CollectionDealerRow collectionItem={collectionItem} /> : null)
+    ? <CollectionDealerRow collectionItem={collectionItem} />
     : <BrowseDealerRow listing={currentListing} />;
 
   const mobileDescriptionSlot = isCollection
@@ -549,7 +553,7 @@ export function QuickView() {
             <div className="flex-1 min-h-0 overflow-y-auto bg-cream">
               <CollectionFormContent
                 mode={collectionMode!}
-                item={collectionMode === 'edit' ? collectionItem : null}
+                item={collectionMode === 'edit' ? collectionItem as any : null}
                 prefillData={collectionMode === 'add' ? collectionItem as any : null}
                 onSaved={() => { onCollectionSaved?.(); closeQuickView(); }}
                 onCancel={() => {
@@ -657,7 +661,7 @@ export function QuickView() {
             <div className="flex-1 min-h-0 w-3/5 overflow-y-auto bg-cream">
               <CollectionFormContent
                 mode={collectionMode!}
-                item={collectionMode === 'edit' ? collectionItem : null}
+                item={collectionMode === 'edit' ? collectionItem as any : null}
                 prefillData={collectionMode === 'add' ? collectionItem as any : null}
                 onSaved={() => { onCollectionSaved?.(); closeQuickView(); }}
                 onCancel={() => {
@@ -666,7 +670,7 @@ export function QuickView() {
                 }}
               />
             </div>
-          ) : isAdminEditMode ? (
+) : isAdminEditMode ? (
             <div className="flex-1 min-h-0 w-3/5 overflow-y-auto bg-cream">
               <AdminEditView
                 listing={currentListing}

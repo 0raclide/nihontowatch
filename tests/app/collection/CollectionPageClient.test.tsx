@@ -147,81 +147,166 @@ vi.mock('@/components/layout/Header', () => ({
 }));
 
 // ---------------------------------------------------------------------------
-// Mock fetch
+// Mock fetch — CollectionItemRow shape
 // ---------------------------------------------------------------------------
 
 const MOCK_ITEMS = [
   {
-    id: 'uuid-111',
-    user_id: 'user-1',
+    // Identity (CollectionItemRow)
+    id: 'pk-aaa',
+    item_uuid: 'uuid-111',
+    owner_id: 'user-1',
+
+    // Collection-only
+    visibility: 'private' as const,
     source_listing_id: null,
+    personal_notes: null,
+
+    // Shared fields (ItemDataFields)
     item_type: 'KATANA',
+    item_category: 'nihonto',
     title: 'Test Katana',
-    artisan_id: null,
-    artisan_display_name: null,
-    cert_type: 'Juyo',
-    cert_session: null,
-    cert_organization: null,
+    description: null,
+    status: 'INVENTORY',
+    is_available: true,
+    is_sold: false,
+    price_value: null,
+    price_currency: null,
+
+    // Attribution
     smith: '正宗',
     school: 'Sagami',
     province: null,
     era: null,
     mei_type: null,
+    mei_text: null,
+    mei_guaranteed: null,
+    nakago_type: null,
+
+    // Tosogu
+    tosogu_maker: null,
+    tosogu_school: null,
+    material: null,
+    height_cm: null,
+    width_cm: null,
+    thickness_mm: null,
+
+    // Certification
+    cert_type: 'Juyo',
+    cert_session: null,
+    cert_organization: null,
+
+    // Measurements
     nagasa_cm: 70,
     sori_cm: null,
     motohaba_cm: null,
     sakihaba_cm: null,
-    price_paid: null,
-    price_paid_currency: null,
-    current_value: null,
-    current_value_currency: null,
-    acquired_date: null,
-    acquired_from: null,
-    condition: 'good' as const,
-    status: 'owned' as const,
-    notes: null,
+    kasane_cm: null,
+    weight_g: null,
+    nakago_cm: null,
+
+    // Media
     images: ['https://example.com/img.jpg'],
-    catalog_reference: null,
-    is_public: false,
-    folder_id: null,
-    sort_order: 0,
+    stored_images: null,
+
+    // Artisan
+    artisan_id: null,
+    artisan_confidence: null,
+
+    // JSONB sections
+    sayagaki: null,
+    hakogaki: null,
+    koshirae: null,
+    provenance: null,
+    kiwame: null,
+    kanto_hibisho: null,
+
+    // Setsumei
+    setsumei_text_en: null,
+    setsumei_text_ja: null,
+
+    // Translation cache
+    title_en: null,
+    title_ja: null,
+    description_en: null,
+    description_ja: null,
+
+    // AI curator
+    ai_curator_note_en: null,
+    ai_curator_note_ja: null,
+
+    // Smart crop
+    focal_x: null,
+    focal_y: null,
+    hero_image_index: null,
+    video_count: 0,
+
+    // Timestamps
     created_at: '2024-01-01T00:00:00Z',
     updated_at: '2024-01-01T00:00:00Z',
   },
   {
-    id: 'uuid-222',
-    user_id: 'user-1',
+    id: 'pk-bbb',
+    item_uuid: 'uuid-222',
+    owner_id: 'user-1',
+    visibility: 'private' as const,
     source_listing_id: null,
+    personal_notes: null,
     item_type: 'WAKIZASHI',
+    item_category: 'nihonto',
     title: 'Test Wakizashi',
-    artisan_id: null,
-    artisan_display_name: null,
-    cert_type: null,
-    cert_session: null,
-    cert_organization: null,
+    description: null,
+    status: 'INVENTORY',
+    is_available: true,
+    is_sold: false,
+    price_value: null,
+    price_currency: null,
     smith: null,
     school: null,
     province: null,
     era: null,
     mei_type: null,
+    mei_text: null,
+    mei_guaranteed: null,
+    nakago_type: null,
+    tosogu_maker: null,
+    tosogu_school: null,
+    material: null,
+    height_cm: null,
+    width_cm: null,
+    thickness_mm: null,
+    cert_type: null,
+    cert_session: null,
+    cert_organization: null,
     nagasa_cm: 45,
     sori_cm: null,
     motohaba_cm: null,
     sakihaba_cm: null,
-    price_paid: null,
-    price_paid_currency: null,
-    current_value: null,
-    current_value_currency: null,
-    acquired_date: null,
-    acquired_from: null,
-    condition: 'fair' as const,
-    status: 'owned' as const,
-    notes: null,
+    kasane_cm: null,
+    weight_g: null,
+    nakago_cm: null,
     images: [],
-    catalog_reference: null,
-    is_public: false,
-    folder_id: null,
-    sort_order: 1,
+    stored_images: null,
+    artisan_id: null,
+    artisan_confidence: null,
+    sayagaki: null,
+    hakogaki: null,
+    koshirae: null,
+    provenance: null,
+    kiwame: null,
+    kanto_hibisho: null,
+    setsumei_text_en: null,
+    setsumei_text_ja: null,
+    title_en: null,
+    title_ja: null,
+    description_en: null,
+    description_ja: null,
+    ai_curator_note_en: null,
+    ai_curator_note_ja: null,
+    focal_x: null,
+    focal_y: null,
+    hero_image_index: null,
+    video_count: 0,
     created_at: '2024-01-02T00:00:00Z',
     updated_at: '2024-01-02T00:00:00Z',
   },
@@ -287,7 +372,7 @@ describe('CollectionPageClient', () => {
       expect(screen.getByTestId('listing-grid')).toBeInTheDocument();
     });
 
-    // Items should be rendered
+    // Items should be rendered — DisplayItem.id = item_uuid
     expect(screen.getByTestId('item-uuid-111')).toBeInTheDocument();
     expect(screen.getByTestId('item-uuid-222')).toBeInTheDocument();
   });
@@ -308,6 +393,8 @@ describe('CollectionPageClient', () => {
     // First item should be a DisplayItem with source='collection'
     expect(capturedGridProps.preMappedItems[0].source).toBe('collection');
     expect(capturedGridProps.preMappedItems[0].title).toBe('Test Katana');
+    // DisplayItem.id should be item_uuid, not PK
+    expect(capturedGridProps.preMappedItems[0].id).toBe('uuid-111');
   });
 
   it('renders AddItemCard via appendSlot', async () => {
@@ -320,7 +407,15 @@ describe('CollectionPageClient', () => {
     });
   });
 
-  it('clicking AddItemCard opens collection add form', async () => {
+  it('clicking AddItemCard navigates to collection add page', async () => {
+    // Mock window.location.href setter
+    const locationHrefSpy = vi.spyOn(window, 'location', 'get').mockReturnValue({
+      ...window.location,
+      href: '',
+    } as Location);
+    const hrefSetter = vi.fn();
+    Object.defineProperty(window.location, 'href', { set: hrefSetter, configurable: true });
+
     await act(async () => {
       await renderPage();
     });
@@ -330,10 +425,12 @@ describe('CollectionPageClient', () => {
     });
 
     fireEvent.click(screen.getByTestId('add-item-card'));
-    expect(mockOpenCollectionAddForm).toHaveBeenCalled();
+    expect(hrefSetter).toHaveBeenCalledWith('/collection/add');
+
+    locationHrefSpy.mockRestore();
   });
 
-  it('card click routes through openCollectionQuickView', async () => {
+  it('card click routes through openCollectionQuickView with item_uuid lookup', async () => {
     await act(async () => {
       await renderPage();
     });
@@ -345,13 +442,13 @@ describe('CollectionPageClient', () => {
     fireEvent.click(screen.getByTestId('item-uuid-111'));
 
     expect(mockOpenCollectionQuickView).toHaveBeenCalledWith(
-      expect.objectContaining({ id: 'uuid-111', title: 'Test Katana' }),
+      expect.objectContaining({ item_uuid: 'uuid-111', title: 'Test Katana' }),
       'view'
     );
   });
 
   describe('deep link ?item=UUID', () => {
-    it('auto-opens QuickView for matching item after load', async () => {
+    it('auto-opens QuickView for matching item after load (matches item_uuid)', async () => {
       mockSearchParams = new URLSearchParams('item=uuid-222');
 
       await act(async () => {
@@ -360,7 +457,7 @@ describe('CollectionPageClient', () => {
 
       await waitFor(() => {
         expect(mockOpenCollectionQuickView).toHaveBeenCalledWith(
-          expect.objectContaining({ id: 'uuid-222' }),
+          expect.objectContaining({ item_uuid: 'uuid-222' }),
           'view'
         );
       });
@@ -391,7 +488,7 @@ describe('CollectionPageClient', () => {
       expect(mockSetListings).toHaveBeenCalled();
     });
 
-    // Should be called with DisplayItem[] (adapted from CollectionItems)
+    // Should be called with DisplayItem[] (adapted from CollectionItemRow[])
     const passedListings = mockSetListings.mock.calls[0][0];
     expect(passedListings).toHaveLength(2);
   });

@@ -21,7 +21,7 @@ export type UploadStatus = 'preparing' | 'uploading' | 'processing' | 'complete'
 export interface UploadEntry {
   id: string;
   videoId: string;
-  listingId: number;
+  listingId: number | string;
   fileName: string;
   fileSize: number;
   status: UploadStatus;
@@ -42,7 +42,7 @@ interface VideoUploadContextValue {
   /** Whether any uploads are active (uploading or preparing) */
   hasActiveUploads: boolean;
   /** Start a new upload for a listing */
-  startUpload: (listingId: number, file: File) => Promise<void>;
+  startUpload: (listingId: number | string, file: File) => Promise<void>;
   /** Pause an active upload */
   pauseUpload: (id: string) => void;
   /** Resume a paused upload */
@@ -52,9 +52,9 @@ interface VideoUploadContextValue {
   /** Dismiss a completed/errored entry from UI */
   dismissUpload: (id: string) => void;
   /** Get uploads filtered to a specific listing */
-  getUploadsForListing: (listingId: number) => UploadEntry[];
+  getUploadsForListing: (listingId: number | string) => UploadEntry[];
   /** Subscribe to completion events for a listing. Returns unsubscribe fn. */
-  subscribeToListing: (listingId: number, cb: () => void) => () => void;
+  subscribeToListing: (listingId: number | string, cb: () => void) => () => void;
 }
 
 // ============================================================================
@@ -82,7 +82,7 @@ export function VideoUploadProvider({ children }: { children: ReactNode }) {
   const [uploads, setUploads] = useState<UploadEntry[]>(EMPTY_UPLOADS);
 
   // Per-listing completion subscribers
-  const subscribersRef = useRef<Map<number, Set<() => void>>>(new Map());
+  const subscribersRef = useRef<Map<number | string, Set<() => void>>>(new Map());
 
   // Auto-dismiss timers
   const dismissTimersRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
@@ -116,7 +116,7 @@ export function VideoUploadProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const notifyListingSubscribers = useCallback((listingId: number) => {
+  const notifyListingSubscribers = useCallback((listingId: number | string) => {
     const subs = subscribersRef.current.get(listingId);
     if (subs) {
       subs.forEach(cb => {
@@ -135,7 +135,7 @@ export function VideoUploadProvider({ children }: { children: ReactNode }) {
     dismissTimersRef.current.set(id, timer);
   }, []);
 
-  const startUpload = useCallback(async (listingId: number, file: File) => {
+  const startUpload = useCallback(async (listingId: number | string, file: File) => {
     if (file.size > MAX_FILE_SIZE) {
       throw new Error('File too large. Maximum size is 5 GB.');
     }
@@ -295,11 +295,11 @@ export function VideoUploadProvider({ children }: { children: ReactNode }) {
     setUploads(Array.from(uploadsRef.current.values()).map(h => ({ ...h.entry })));
   }, []);
 
-  const getUploadsForListing = useCallback((listingId: number): UploadEntry[] => {
+  const getUploadsForListing = useCallback((listingId: number | string): UploadEntry[] => {
     return uploads.filter(u => u.listingId === listingId);
   }, [uploads]);
 
-  const subscribeToListing = useCallback((listingId: number, cb: () => void) => {
+  const subscribeToListing = useCallback((listingId: number | string, cb: () => void) => {
     if (!subscribersRef.current.has(listingId)) {
       subscribersRef.current.set(listingId, new Set());
     }

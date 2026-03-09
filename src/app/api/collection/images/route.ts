@@ -1,11 +1,13 @@
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
+import { selectCollectionItemSingle, updateCollectionItem } from '@/lib/supabase/collectionItems';
 
 export const dynamic = 'force-dynamic';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const BUCKET = 'user-images';
 
 export async function POST(request: NextRequest) {
   try {
@@ -33,31 +35,27 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify item ownership
-    const { data: item } = await (supabase
-      .from('user_collection_items') as any)  // eslint-disable-line @typescript-eslint/no-explicit-any
-      .select('id, user_id, images')
-      .eq('id', itemId)
-      .single() as { data: { id: string; user_id: string; images: string[] | null } | null };
+    const serviceClient = createServiceClient();
+    const { data: item } = await selectCollectionItemSingle(
+      serviceClient, 'id', itemId, 'id, owner_id, item_uuid, images'
+    );
 
-    if (!item || item.user_id !== user.id) {
+    if (!item || item.owner_id !== user.id) {
       return NextResponse.json({ error: 'Item not found' }, { status: 404 });
     }
 
-    // Max 20 images per item
     const currentImages = (item.images as string[]) || [];
     if (currentImages.length >= 20) {
       return NextResponse.json({ error: 'Maximum of 20 images per item' }, { status: 400 });
     }
 
-    // Generate storage path
+    // Generate storage path: {ownerId}/{itemUuid}/{uuid}.{ext}
     const ext = file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg';
     const uuid = crypto.randomUUID();
-    const path = `${user.id}/${itemId}/${uuid}.${ext}`;
-
-    // Upload to Supabase Storage
+    const path = `${user.id}/${item.item_uuid}/${uuid}.${ext}`;
     const arrayBuffer = await file.arrayBuffer();
-    const { error: uploadError } = await supabase.storage
-      .from('collection-images')
+    const { error: uploadError } = await serviceClient.storage
+      .from(BUCKET)
       .upload(path, arrayBuffer, {
         contentType: file.type,
         upsert: false,
@@ -68,31 +66,27 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to upload image' }, { status: 500 });
     }
 
-    // Add path to item's images array
-    const updatedImages = [...currentImages, path];
-    const { error: updateError } = await (supabase
-      .from('user_collection_items') as any)  // eslint-disable-line @typescript-eslint/no-explicit-any
-      .update({ images: updatedImages } as never)
-      .eq('id', itemId);
+    // Get public URL
+    const { data: urlData } = serviceClient.storage
+      .from(BUCKET)
+      .getPublicUrl(path);
+
+    // Add public URL to item's images array
+    const updatedImages = [...currentImages, urlData.publicUrl];
+    const { error: updateError } = await updateCollectionItem(serviceClient, itemId, { images: updatedImages });
 
     if (updateError) {
-      logger.error('Error updating item images', { error: updateError });
-      // Cleanup uploaded file
-      await supabase.storage.from('collection-images').remove([path]);
+      logger.error('Error updating collection item images', { error: updateError });
+      await serviceClient.storage.from(BUCKET).remove([path]);
       return NextResponse.json({ error: 'Failed to update item' }, { status: 500 });
     }
-
-    // Get public URL
-    const { data: urlData } = supabase.storage
-      .from('collection-images')
-      .getPublicUrl(path);
 
     return NextResponse.json({
       path,
       publicUrl: urlData.publicUrl,
     }, { status: 201 });
   } catch (error) {
-    logger.logError('Image upload error', error);
+    logger.logError('Collection image upload error', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -110,52 +104,52 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'imageUrl and itemId are required' }, { status: 400 });
     }
 
+    // Verify item ownership
+    const serviceClient = createServiceClient();
+    const { data: item } = await selectCollectionItemSingle(
+      serviceClient, 'id', itemId, 'id, owner_id, images'
+    );
+
+    if (!item || item.owner_id !== user.id) {
+      return NextResponse.json({ error: 'Item not found' }, { status: 404 });
+    }
+
     // Extract storage path from public URL
-    // URL format: https://xxx.supabase.co/storage/v1/object/public/collection-images/{user_id}/{item_id}/{uuid}.ext
-    const bucketMarker = '/collection-images/';
+    const bucketMarker = `/${BUCKET}/`;
     const bucketIdx = imageUrl.indexOf(bucketMarker);
     const storagePath = bucketIdx !== -1
       ? imageUrl.slice(bucketIdx + bucketMarker.length)
       : null;
 
-    // Verify storage path belongs to this user (if it's a Supabase URL)
-    if (storagePath && !storagePath.startsWith(`${user.id}/`)) {
+    // Verify storage path belongs to this user (reject traversal attempts)
+    if (storagePath && (storagePath.includes('..') || !storagePath.startsWith(`${user.id}/`))) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // Verify item ownership
-    const { data: item } = await (supabase
-      .from('user_collection_items') as any)  // eslint-disable-line @typescript-eslint/no-explicit-any
-      .select('id, user_id, images')
-      .eq('id', itemId)
-      .single() as { data: { id: string; user_id: string; images: string[] | null } | null };
-
-    if (!item || item.user_id !== user.id) {
-      return NextResponse.json({ error: 'Item not found' }, { status: 404 });
-    }
-
-    // Remove from storage (only for Supabase-hosted images)
+    // Remove from storage
     if (storagePath) {
-      const { error: storageError } = await supabase.storage
-        .from('collection-images')
+      const { error: storageError } = await serviceClient.storage
+        .from(BUCKET)
         .remove([storagePath]);
 
       if (storageError) {
-        logger.warn('Failed to remove image from storage', { error: storageError });
+        logger.warn('Failed to remove collection image from storage', { error: storageError });
       }
     }
 
-    // Remove from item's images array (match on the full URL)
+    // Remove from item's images array
     const currentImages = (item.images as string[]) || [];
-    const updatedImages = currentImages.filter(img => img !== imageUrl);
-    await (supabase
-      .from('user_collection_items') as any)  // eslint-disable-line @typescript-eslint/no-explicit-any
-      .update({ images: updatedImages } as never)
-      .eq('id', itemId);
+    const updatedImages = currentImages.filter((img: string) => img !== imageUrl);
+    const { error: updateError } = await updateCollectionItem(serviceClient, itemId, { images: updatedImages });
+
+    if (updateError) {
+      logger.error('Failed to update collection item images after storage removal', { error: updateError, itemId });
+      return NextResponse.json({ error: 'Image removed from storage but item update failed' }, { status: 500 });
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    logger.logError('Image delete error', error);
+    logger.logError('Collection image delete error', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

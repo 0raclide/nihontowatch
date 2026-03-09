@@ -12,7 +12,7 @@ import {
 } from 'react';
 import { usePathname } from 'next/navigation';
 import type { Listing } from '@/types';
-import type { CollectionItem } from '@/types/collection';
+import type { CollectionItemRow } from '@/types/collectionItem';
 import { useSignupPressureOptional } from './SignupPressureContext';
 import { useAuth } from '@/lib/auth/AuthContext';
 import {
@@ -21,7 +21,6 @@ import {
   getCachedValidation,
   setCachedValidation,
 } from '@/lib/images';
-import { collectionItemToDisplayItem } from '@/lib/displayItem';
 
 // ============================================================================
 // Types
@@ -63,14 +62,14 @@ interface QuickViewContextType {
   detailLoaded: boolean;
   /** Data source: 'browse' for crawled listings, 'collection' for personal items, 'dealer' for dealer's own listings */
   source: 'browse' | 'collection' | 'dealer';
-  /** The original CollectionItem when source='collection' */
-  collectionItem: CollectionItem | null;
+  /** The original CollectionItemRow when source='collection' */
+  collectionItem: CollectionItemRow | null;
   /** Current collection mode: 'view', 'add', 'edit', or null */
   collectionMode: 'view' | 'add' | 'edit' | null;
   /** Open QuickView for a collection item */
-  openCollectionQuickView: (item: CollectionItem, mode?: 'view' | 'edit') => void;
+  openCollectionQuickView: (item: CollectionItemRow, mode?: 'view' | 'edit') => void;
   /** Open QuickView with the add form for a new collection item */
-  openCollectionAddForm: (prefill?: Partial<CollectionItem>) => void;
+  openCollectionAddForm: (prefill?: Partial<CollectionItemRow>) => void;
   /** Change the collection mode (e.g., view → edit) */
   setCollectionMode: (mode: 'view' | 'edit' | null) => void;
   /** Callback invoked after a collection item is saved (add/edit/delete) */
@@ -151,7 +150,7 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
 
   // Collection-specific state
   const [source, setSource] = useState<'browse' | 'collection' | 'dealer'>('browse');
-  const [collectionItem, setCollectionItem] = useState<CollectionItem | null>(null);
+  const [collectionItem, setCollectionItem] = useState<CollectionItemRow | null>(null);
   const [collectionMode, setCollectionModeState] = useState<'view' | 'add' | 'edit' | null>(null);
   const onCollectionSavedRef = useRef<(() => void) | null>(null);
 
@@ -409,10 +408,21 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
   }, []);
 
   // Collection: open QuickView for a collection item
-  const openCollectionQuickView = useCallback((item: CollectionItem, mode: 'view' | 'edit' = 'view') => {
+  const openCollectionQuickView = useCallback((item: CollectionItemRow, mode: 'view' | 'edit' = 'view') => {
     if (closeCooldown.current) return;
 
-    const adaptedListing = collectionItemToDisplayItem(item) as unknown as Listing;
+    // Cast CollectionItemRow → Listing shape for currentListing state.
+    // Since CollectionItemRow extends ItemDataFields, this carries ALL JSONB sections
+    // (sayagaki, koshirae, provenance, etc.) — a major upgrade over the V1 mapper
+    // which dropped them silently.
+    const adaptedListing = {
+      ...item,
+      id: item.item_uuid,  // Stable identity for URL
+      url: '',
+      dealer_id: 0,
+      first_seen_at: item.created_at,
+    } as unknown as Listing;
+
     setSource('collection');
     setCollectionItem(item);
     setCollectionModeState(mode);
@@ -421,15 +431,15 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
     openQuickView(adaptedListing, { skipFetch: true });
 
     // Fix URL: use ?item=UUID instead of ?listing=ID (openQuickView set ?listing=)
-    updateUrl(item.id, 'collection');
+    updateUrl(item.item_uuid, 'collection');
   }, [openQuickView, updateUrl]);
 
   // Collection: open add form in QuickView
-  const openCollectionAddForm = useCallback((prefill?: Partial<CollectionItem>) => {
+  const openCollectionAddForm = useCallback((prefill?: Partial<CollectionItemRow>) => {
     if (closeCooldown.current) return;
 
     setSource('collection');
-    setCollectionItem(prefill as CollectionItem | null);
+    setCollectionItem(prefill as CollectionItemRow | null);
     setCollectionModeState('add');
     setIsOpen(true);
     setDetailLoaded(true);

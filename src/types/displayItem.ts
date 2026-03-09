@@ -44,15 +44,9 @@ export interface DealerExtension {
 }
 
 export interface CollectionExtension {
-  notes: string | null;
-  condition: string;
-  collection_status: string;
-  price_paid: number | null;
-  price_paid_currency: string | null;
-  current_value: number | null;
-  current_value_currency: string | null;
-  acquired_from: string | null;
-  acquired_date: string | null;
+  item_uuid: string;
+  personal_notes: string | null;
+  visibility: import('@/types/collectionItem').CollectionVisibility;
   source_listing_id: number | null;
 }
 
