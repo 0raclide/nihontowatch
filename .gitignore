@@ -48,3 +48,18 @@ tests/screenshots/
 
 # Private infrastructure docs
 docs/private/
+
+# Local assets (large binary files)
+/assets/
+
+# Data caches
+/data/
+
+# Claude Code local config
+.claude/
+
+# Temp logs
+tailwindcss-*.log
+
+# Supabase CLI temp files
+supabase/.temp/
