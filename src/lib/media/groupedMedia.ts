@@ -3,15 +3,15 @@
  *
  * Used by QuickView to render a unified vertical scroller with group dividers.
  *
- * Order: Hero → Videos → Remaining Photos → Koshirae → Sayagaki/Hakogaki →
- *        Kanto Hibisho → Provenance → NBTHK Documentation (catalog images).
+ * **Dealer listings** (isDealerSource=true):
+ *   Hero → Videos → Remaining Photos → Koshirae → Sayagaki/Hakogaki →
+ *   Kanto Hibisho → Provenance. No catalog filtering — dealer chose these images.
  *
- * Scraped listings (no section data) return only the primary group.
- * When detailLoaded=false, returns only the primary group (section data not yet available).
+ * **Browse listings** (isDealerSource=false):
+ *   Flat image list + videos. No grouping, no catalog filtering, no dividers.
  */
 
 import type { Listing } from '@/types';
-import { isYuhinkaiCatalogImage } from '@/lib/images/classification';
 
 // ============================================================================
 // Types
@@ -126,32 +126,27 @@ const SECTION_DEFS: SectionDef[] = [
  * @param listing - The full listing object (may have section data)
  * @param detailLoaded - Whether the detail API has resolved (sections only available after detail load)
  * @param videoItems - Actual video data to integrate inline after hero image
+ * @param isDealerSource - When true, enable section grouping for dealer listings. Browse stays flat.
  */
 export function collectGroupedMedia(
   displayImages: string[],
   listing: Listing | null,
   detailLoaded: boolean,
   videoItems: VideoMediaItem[] = [],
+  isDealerSource: boolean = false,
 ): GroupedMediaResult {
   const groups: MediaGroup[] = [];
   const allImageUrls: string[] = [];
 
-  // Split primary photos: regular vs catalog (Yuhinkai documentation)
-  const regularPhotos = displayImages.filter(url => !isYuhinkaiCatalogImage(url));
-  const catalogImages = displayImages.filter(url => isYuhinkaiCatalogImage(url));
-
-  // Primary group: regular (non-catalog) photos
+  // Primary group: all photos (no catalog filtering — images stay where they were placed)
   groups.push({
     labelKey: 'quickview.sectionPhotos',
-    images: regularPhotos,
+    images: displayImages,
   });
-  allImageUrls.push(...regularPhotos);
+  allImageUrls.push(...displayImages);
 
-  // Collect catalog images from all sources (primary + sections) for Documentation group
-  const allCatalogImages: string[] = [...catalogImages];
-
-  // Section groups only when detail data is available
-  if (listing && detailLoaded) {
+  // Section groups only for dealer listings with detail data available
+  if (isDealerSource && listing && detailLoaded) {
     const seen = new Set<string>(displayImages);
 
     for (const def of SECTION_DEFS) {
@@ -163,25 +158,11 @@ export function collectGroupedMedia(
         return true;
       });
 
-      // Split section images: regular photos stay in section, catalog images go to Documentation
-      const sectionPhotos = unique.filter(url => !isYuhinkaiCatalogImage(url));
-      const sectionCatalog = unique.filter(url => isYuhinkaiCatalogImage(url));
-      allCatalogImages.push(...sectionCatalog);
-
-      if (sectionPhotos.length > 0) {
-        groups.push({ labelKey: def.labelKey, images: sectionPhotos });
-        allImageUrls.push(...sectionPhotos);
+      if (unique.length > 0) {
+        groups.push({ labelKey: def.labelKey, images: unique });
+        allImageUrls.push(...unique);
       }
     }
-  }
-
-  // Documentation group: catalog oshigata + setsumei at the very end (from all sources)
-  if (allCatalogImages.length > 0) {
-    groups.push({
-      labelKey: 'quickview.sectionDocumentation',
-      images: allCatalogImages,
-    });
-    allImageUrls.push(...allCatalogImages);
   }
 
   // Build pre-flattened items for pure render (no mutable counter in JSX)

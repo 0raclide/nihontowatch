@@ -289,11 +289,11 @@ export function QuickView() {
     [videoItems]
   );
 
-  // Grouped media: hero → videos → photos → sections → documentation
+  // Grouped media — dealer: sections (koshirae, sayagaki, etc.); browse: flat list
   const groupedMedia = useMemo(
-    () => collectGroupedMedia(displayImages, currentListing, detailLoaded, videoMediaItems),
+    () => collectGroupedMedia(displayImages, currentListing, detailLoaded, videoMediaItems, isDealer),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [displayImages, currentListing?.id, detailLoaded, videoMediaItems,
+    [displayImages, currentListing?.id, detailLoaded, videoMediaItems, isDealer,
      currentListing?.sayagaki, currentListing?.hakogaki, currentListing?.koshirae,
      currentListing?.provenance, currentListing?.kanto_hibisho]
   );
