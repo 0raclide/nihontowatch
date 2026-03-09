@@ -172,9 +172,11 @@ export function DealerPageClient() {
 
   const handleCardClick = useCallback((item: DisplayItem) => {
     if (quickView) {
-      quickView.openQuickView(item as unknown as Listing, { source: 'dealer' });
+      // Look up the raw listing — DisplayItem strips section data (provenance, koshirae, etc.)
+      const rawListing = listings.find(l => l.id === item.id);
+      quickView.openQuickView((rawListing || item) as unknown as Listing, { source: 'dealer' });
     }
-  }, [quickView]);
+  }, [quickView, listings]);
 
   const handleAddClick = useCallback(() => {
     router.push('/dealer/new');
