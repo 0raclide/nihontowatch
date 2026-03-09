@@ -253,6 +253,49 @@ describe('collectGroupedMedia', () => {
       expect(result.groups[1].labelKey).toBe('quickview.sectionDocumentation');
       expect(result.groups[1].images).toEqual([cat1, cat2]);
     });
+
+    it('catalog images in section data (koshirae) are pulled to Documentation', () => {
+      const koshiraeCatalog = `https://${CATALOG_DOMAIN}59_109_setsumei.jpg`;
+      const listing = makeListing({
+        koshirae: { cert_type: null, cert_in_blade_paper: false, cert_session: null, description: null, images: ['k_photo.jpg', koshiraeCatalog], artisan_id: null, artisan_name: null, artisan_kanji: null, components: [], setsumei_text_en: null, setsumei_text_ja: null, catalog_object_uuid: null },
+      });
+      const result = collectGroupedMedia(['a.jpg'], listing, true);
+      // Koshirae group has only the regular photo
+      expect(result.groups[1].labelKey).toBe('dealer.koshirae');
+      expect(result.groups[1].images).toEqual(['k_photo.jpg']);
+      // Documentation group has the koshirae catalog image
+      expect(result.groups[2].labelKey).toBe('quickview.sectionDocumentation');
+      expect(result.groups[2].images).toEqual([koshiraeCatalog]);
+    });
+
+    it('catalog images from primary + sections all merge into Documentation', () => {
+      const bladeCatalog = `https://${CATALOG_DOMAIN}32_47_oshigata.jpg`;
+      const koshiraeCatalog = `https://${CATALOG_DOMAIN}59_109_setsumei.jpg`;
+      const listing = makeListing({
+        koshirae: { cert_type: null, cert_in_blade_paper: false, cert_session: null, description: null, images: ['k_photo.jpg', koshiraeCatalog], artisan_id: null, artisan_name: null, artisan_kanji: null, components: [], setsumei_text_en: null, setsumei_text_ja: null, catalog_object_uuid: null },
+      });
+      const result = collectGroupedMedia(['a.jpg', bladeCatalog], listing, true);
+      // Primary: just regular photos
+      expect(result.groups[0].images).toEqual(['a.jpg']);
+      // Koshirae: just regular photos
+      expect(result.groups[1].images).toEqual(['k_photo.jpg']);
+      // Documentation: blade + koshirae catalog images merged
+      expect(result.groups[2].labelKey).toBe('quickview.sectionDocumentation');
+      expect(result.groups[2].images).toEqual([bladeCatalog, koshiraeCatalog]);
+    });
+
+    it('section with only catalog images is omitted (no empty section group)', () => {
+      const koshiraeCatalog = `https://${CATALOG_DOMAIN}59_109_oshigata.jpg`;
+      const listing = makeListing({
+        koshirae: { cert_type: null, cert_in_blade_paper: false, cert_session: null, description: null, images: [koshiraeCatalog], artisan_id: null, artisan_name: null, artisan_kanji: null, components: [], setsumei_text_en: null, setsumei_text_ja: null, catalog_object_uuid: null },
+      });
+      const result = collectGroupedMedia(['a.jpg'], listing, true);
+      // Should be: photos + documentation (no empty koshirae group)
+      expect(result.groups.map(g => g.labelKey)).toEqual([
+        'quickview.sectionPhotos',
+        'quickview.sectionDocumentation',
+      ]);
+    });
   });
 
   // =========================================================================
@@ -401,15 +444,16 @@ describe('collectGroupedMedia', () => {
 
   describe('combined: videos + catalog + sections', () => {
     it('full ordering: hero → videos → photos → koshirae → sayagaki → documentation', () => {
-      const catalogUrl = `https://${CATALOG_DOMAIN}oshigata_1.jpg`;
+      const bladeCatalog = `https://${CATALOG_DOMAIN}oshigata_1.jpg`;
+      const koshiraeCatalog = `https://${CATALOG_DOMAIN}59_109_setsumei.jpg`;
       const listing = makeListing({
-        koshirae: { cert_type: null, cert_in_blade_paper: false, cert_session: null, description: null, images: ['k1.jpg'], artisan_id: null, artisan_name: null, artisan_kanji: null, components: [], setsumei_text_en: null, setsumei_text_ja: null, catalog_object_uuid: null },
+        koshirae: { cert_type: null, cert_in_blade_paper: false, cert_session: null, description: null, images: ['k1.jpg', koshiraeCatalog], artisan_id: null, artisan_name: null, artisan_kanji: null, components: [], setsumei_text_en: null, setsumei_text_ja: null, catalog_object_uuid: null },
         sayagaki: [{ id: '1', author: 'tanobe_michihiro', author_custom: null, content: null, images: ['s1.jpg'] }],
       });
       const videos = [makeVideo('v1')];
-      const result = collectGroupedMedia(['hero.jpg', catalogUrl, 'photo2.jpg'], listing, true, videos);
+      const result = collectGroupedMedia(['hero.jpg', bladeCatalog, 'photo2.jpg'], listing, true, videos);
 
-      // Groups: photos (hero, photo2), koshirae, sayagaki, documentation
+      // Groups: photos (hero, photo2), koshirae (k1 only), sayagaki, documentation (blade + koshirae catalog)
       expect(result.groups.map(g => g.labelKey)).toEqual([
         'quickview.sectionPhotos',
         'dealer.koshirae',
@@ -417,18 +461,22 @@ describe('collectGroupedMedia', () => {
         'quickview.sectionDocumentation',
       ]);
 
-      // flatItems: hero → video → photo2 → k1 → s1 → catalog
+      // Documentation group merges catalog images from primary + koshirae
+      expect(result.groups[3].images).toEqual([bladeCatalog, koshiraeCatalog]);
+
+      // flatItems: hero → video → photo2 → k1 → s1 → bladeCatalog → koshiraeCatalog
       expect(result.flatItems.map(i => i.type === 'video' ? `video:${i.videoId}` : i.src)).toEqual([
         'hero.jpg',
         'video:v1',
         'photo2.jpg',
         'k1.jpg',
         's1.jpg',
-        catalogUrl,
+        bladeCatalog,
+        koshiraeCatalog,
       ]);
 
       // totalCount includes all
-      expect(result.totalCount).toBe(6); // 5 images + 1 video
+      expect(result.totalCount).toBe(7); // 6 images + 1 video
     });
   });
 });

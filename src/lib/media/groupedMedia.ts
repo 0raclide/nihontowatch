@@ -147,6 +147,9 @@ export function collectGroupedMedia(
   });
   allImageUrls.push(...regularPhotos);
 
+  // Collect catalog images from all sources (primary + sections) for Documentation group
+  const allCatalogImages: string[] = [...catalogImages];
+
   // Section groups only when detail data is available
   if (listing && detailLoaded) {
     const seen = new Set<string>(displayImages);
@@ -160,20 +163,25 @@ export function collectGroupedMedia(
         return true;
       });
 
-      if (unique.length > 0) {
-        groups.push({ labelKey: def.labelKey, images: unique });
-        allImageUrls.push(...unique);
+      // Split section images: regular photos stay in section, catalog images go to Documentation
+      const sectionPhotos = unique.filter(url => !isYuhinkaiCatalogImage(url));
+      const sectionCatalog = unique.filter(url => isYuhinkaiCatalogImage(url));
+      allCatalogImages.push(...sectionCatalog);
+
+      if (sectionPhotos.length > 0) {
+        groups.push({ labelKey: def.labelKey, images: sectionPhotos });
+        allImageUrls.push(...sectionPhotos);
       }
     }
   }
 
-  // Documentation group: catalog oshigata + setsumei at the very end
-  if (catalogImages.length > 0) {
+  // Documentation group: catalog oshigata + setsumei at the very end (from all sources)
+  if (allCatalogImages.length > 0) {
     groups.push({
       labelKey: 'quickview.sectionDocumentation',
-      images: catalogImages,
+      images: allCatalogImages,
     });
-    allImageUrls.push(...catalogImages);
+    allImageUrls.push(...allCatalogImages);
   }
 
   // Build pre-flattened items for pure render (no mutable counter in JSX)
