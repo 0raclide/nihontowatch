@@ -9,9 +9,10 @@ import { useLocale } from '@/i18n/LocaleContext';
 interface ProvenanceDisplayProps {
   provenance: ProvenanceEntry[];
   onImageClick?: (url: string) => void;
+  readable?: boolean;
 }
 
-export function ProvenanceDisplay({ provenance, onImageClick }: ProvenanceDisplayProps) {
+export function ProvenanceDisplay({ provenance, onImageClick, readable }: ProvenanceDisplayProps) {
   const { t } = useLocale();
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 
@@ -28,7 +29,7 @@ export function ProvenanceDisplay({ provenance, onImageClick }: ProvenanceDispla
   return (
     <>
       <div className="px-4 py-3 lg:px-5 border-b border-border">
-        <div className="text-[10px] uppercase tracking-wider text-muted font-medium mb-3">
+        <div className={`${readable ? 'text-[11px]' : 'text-[10px]'} uppercase tracking-wider text-muted font-medium mb-3`}>
           {t('dealer.provenance')}
         </div>
 
@@ -84,10 +85,10 @@ export function ProvenanceDisplay({ provenance, onImageClick }: ProvenanceDispla
                   {/* Content */}
                   <div className="flex-1 min-w-0 pt-[2px] lg:pt-1">
                     {/* Owner name + kanji */}
-                    <div className="text-[13px] font-medium text-ink leading-tight">
+                    <div className={`${readable ? 'text-[15px]' : 'text-[13px]'} font-medium text-ink leading-tight`}>
                       {entry.owner_name}
                       {entry.owner_name_ja && (
-                        <span className="ml-2 text-[12px] text-muted font-normal">
+                        <span className={`ml-2 ${readable ? 'text-[13px]' : 'text-[12px]'} text-muted font-normal`}>
                           {entry.owner_name_ja}
                         </span>
                       )}
@@ -95,7 +96,7 @@ export function ProvenanceDisplay({ provenance, onImageClick }: ProvenanceDispla
 
                     {/* Notes */}
                     {entry.notes && (
-                      <p className="text-[12px] text-charcoal/80 whitespace-pre-wrap mt-1 leading-relaxed">
+                      <p className={`${readable ? 'text-[14px]' : 'text-[12px]'} text-charcoal/80 whitespace-pre-wrap mt-1 leading-relaxed`}>
                         {entry.notes}
                       </p>
                     )}

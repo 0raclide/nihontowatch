@@ -644,6 +644,7 @@ export function QuickView() {
             isExpanded={isSheetExpanded}
             onToggle={toggleSheet}
             onClose={closeQuickView}
+            readable={isCollection}
             headerActionsSlot={mobileHeaderActionsSlot}
             dealerSlot={mobileDealerSlot}
             descriptionSlot={mobileDescriptionSlot}
@@ -797,6 +798,7 @@ export function QuickView() {
                 <QuickViewContent
                   listing={currentListing}
                   onClose={closeQuickView}
+                  readable={isCollection}
                   actionBarSlot={desktopActionBarSlot}
                   dealerSlot={desktopDealerSlot}
                   descriptionSlot={desktopDescriptionSlot}

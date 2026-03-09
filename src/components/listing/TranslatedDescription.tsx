@@ -13,6 +13,7 @@ interface TranslatedDescriptionProps {
   listing: Listing;
   className?: string;
   maxLines?: number;
+  readable?: boolean;
 }
 
 import { isPredominantlyJapanese } from '@/lib/text/japanese';
@@ -40,6 +41,7 @@ export function TranslatedDescription({
   listing,
   className = '',
   maxLines = 6,
+  readable,
 }: TranslatedDescriptionProps) {
   const { t, locale } = useLocale();
 
@@ -168,11 +170,12 @@ export function TranslatedDescription({
   };
 
   const renderText = (text: string) => {
+    const bodySize = readable ? 'text-[15px]' : 'text-[13px]';
     if (containsMarkdown(text)) {
       return (
         <div
           ref={textRef as React.RefObject<HTMLDivElement>}
-          className="text-[13px] text-ink/80 leading-relaxed prose prose-sm prose-neutral dark:prose-invert max-w-none prose-p:my-2 prose-headings:text-ink prose-headings:mt-3 prose-headings:mb-1 prose-strong:text-ink prose-blockquote:border-gold/40 prose-blockquote:text-muted"
+          className={`${bodySize} text-ink/80 leading-relaxed prose prose-sm prose-neutral dark:prose-invert max-w-none prose-p:my-2 prose-headings:text-ink prose-headings:mt-3 prose-headings:mb-1 prose-strong:text-ink prose-blockquote:border-gold/40 prose-blockquote:text-muted`}
           style={truncationStyle}
         >
           <ReactMarkdown>{text}</ReactMarkdown>
@@ -182,7 +185,7 @@ export function TranslatedDescription({
     return (
       <p
         ref={textRef}
-        className="text-[13px] text-ink/80 leading-relaxed whitespace-pre-line"
+        className={`${bodySize} text-ink/80 leading-relaxed whitespace-pre-line`}
         style={truncationStyle}
       >
         {text}
@@ -193,7 +196,7 @@ export function TranslatedDescription({
   return (
     <div className={`px-4 py-3 lg:px-5 ${className}`}>
       <div className="flex items-center justify-between mb-2">
-        <h3 className="text-[10px] uppercase tracking-wider text-muted font-medium">
+        <h3 className={`${readable ? 'text-[11px]' : 'text-[10px]'} uppercase tracking-wider text-muted font-medium`}>
           {t('listing.description')}
         </h3>
         {/* Show toggle only if we have both original and translation */}

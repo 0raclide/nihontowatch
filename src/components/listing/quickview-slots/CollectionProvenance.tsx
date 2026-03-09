@@ -19,13 +19,13 @@ export function CollectionProvenance({ collectionItem }: CollectionProvenancePro
   return (
     <div className="px-4 py-3 lg:px-5 border-b border-border space-y-2">
       {collectionItem.status && (
-        <div className="flex justify-between text-[13px]">
+        <div className="flex justify-between text-[14px]">
           <span className="text-muted">{t('collection.status')}</span>
           <span className="text-ink capitalize">{collectionItem.status}</span>
         </div>
       )}
       {collectionItem.visibility && collectionItem.visibility !== 'private' && (
-        <div className="flex justify-between text-[13px]">
+        <div className="flex justify-between text-[14px]">
           <span className="text-muted">{t('collection.visibility') || 'Visibility'}</span>
           <span className="text-ink capitalize">{collectionItem.visibility}</span>
         </div>

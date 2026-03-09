@@ -23,7 +23,7 @@ export function CollectionDealerRow({ collectionItem }: CollectionDealerRowProps
           href={`/listing/${collectionItem.source_listing_id}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-gold hover:text-gold-light ml-1 text-[11px]"
+          className="text-gold hover:text-gold-light ml-1 text-[12px]"
         >
           ({t('collection.viewOriginal')})
         </a>

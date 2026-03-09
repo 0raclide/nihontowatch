@@ -26,6 +26,8 @@ import { useLocale } from '@/i18n/LocaleContext';
 interface QuickViewContentProps {
   listing: Listing;
   onClose?: () => void;
+  // Text readability mode (collection context — larger text for leisurely reading)
+  readable?: boolean;
   // Composition slots
   actionBarSlot?: ReactNode;
   dealerSlot?: ReactNode;
@@ -42,6 +44,7 @@ interface QuickViewContentProps {
 
 export function QuickViewContent({
   listing,
+  readable,
   actionBarSlot,
   dealerSlot,
   descriptionSlot,
@@ -209,6 +212,7 @@ export function QuickViewContent({
           variant="full"
           showAttribution={true}
           showMeasurements={true}
+          readable={readable}
         />
 
         {/* Title (auto-translated if Japanese) */}
@@ -218,32 +222,32 @@ export function QuickViewContent({
 
         {/* Sayagaki */}
         {listing.sayagaki && listing.sayagaki.length > 0 && (
-          <SayagakiDisplay sayagaki={listing.sayagaki} />
+          <SayagakiDisplay sayagaki={listing.sayagaki} readable={readable} />
         )}
 
         {/* Hakogaki */}
         {listing.hakogaki && listing.hakogaki.length > 0 && (
-          <HakogakiDisplay hakogaki={listing.hakogaki} />
+          <HakogakiDisplay hakogaki={listing.hakogaki} readable={readable} />
         )}
 
         {/* Koshirae */}
         {listing.koshirae && (
-          <KoshiraeDisplay koshirae={listing.koshirae} hideHeading={listing.item_type?.toLowerCase() === 'koshirae'} />
+          <KoshiraeDisplay koshirae={listing.koshirae} hideHeading={listing.item_type?.toLowerCase() === 'koshirae'} readable={readable} />
         )}
 
         {/* Provenance */}
         {listing.provenance && listing.provenance.length > 0 && (
-          <ProvenanceDisplay provenance={listing.provenance} />
+          <ProvenanceDisplay provenance={listing.provenance} readable={readable} />
         )}
 
         {/* Kiwame */}
         {listing.kiwame && listing.kiwame.length > 0 && (
-          <KiwameDisplay kiwame={listing.kiwame} />
+          <KiwameDisplay kiwame={listing.kiwame} readable={readable} />
         )}
 
         {/* Kanto Hibisho */}
         {listing.kanto_hibisho && (
-          <KantoHibishoDisplay kantoHibisho={listing.kanto_hibisho} />
+          <KantoHibishoDisplay kantoHibisho={listing.kanto_hibisho} readable={readable} />
         )}
 
         {/* Description slot */}

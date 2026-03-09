@@ -96,6 +96,7 @@ interface MetadataGridProps {
   showMeasurements?: boolean;
   hideArtisan?: boolean; // Hide smith/maker (shown elsewhere)
   hideSchool?: boolean;  // Hide school (shown elsewhere)
+  readable?: boolean;    // Larger text for collection context
 }
 
 interface MetadataItemProps {
@@ -103,6 +104,7 @@ interface MetadataItemProps {
   value: string | number | null | undefined;
   unit?: string;
   fullWidth?: boolean;
+  readable?: boolean;
 }
 
 // =============================================================================
@@ -284,26 +286,26 @@ export function getCertInfo(certType: string | undefined): {
 // SUB-COMPONENTS
 // =============================================================================
 
-function MetadataItem({ label, value, unit, fullWidth }: MetadataItemProps) {
+function MetadataItem({ label, value, unit, fullWidth, readable }: MetadataItemProps) {
   if (value === null || value === undefined) return null;
 
   const displayValue = unit ? `${value}${unit}` : value;
 
   return (
     <div className={fullWidth ? 'col-span-2' : ''}>
-      <span className="text-[10px] uppercase tracking-wider text-muted block mb-0.5">
+      <span className={`${readable ? 'text-[11px]' : 'text-[10px]'} uppercase tracking-wider text-muted block mb-0.5`}>
         {label}
       </span>
-      <p className="text-[13px] text-ink">{displayValue}</p>
+      <p className={`${readable ? 'text-[14px]' : 'text-[13px]'} text-ink`}>{displayValue}</p>
     </div>
   );
 }
 
-function MeasurementItem({ label, value, unit }: { label: string; value: number | string | null | undefined; unit: string }) {
+function MeasurementItem({ label, value, unit, readable }: { label: string; value: number | string | null | undefined; unit: string; readable?: boolean }) {
   if (!value && value !== 0) return null;
 
   return (
-    <div className="flex items-center gap-1.5 text-[12px]">
+    <div className={`flex items-center gap-1.5 ${readable ? 'text-[13px]' : 'text-[12px]'}`}>
       <span className="text-muted">{label}</span>
       <span className="text-ink tabular-nums font-medium">{value}{unit}</span>
     </div>
@@ -322,6 +324,7 @@ export function MetadataGrid({
   showMeasurements = true,
   hideArtisan = false,
   hideSchool = false,
+  readable,
 }: MetadataGridProps) {
   const { t, locale } = useLocale();
   const td = (cat: string, v: string | null | undefined) => {
@@ -356,7 +359,7 @@ export function MetadataGrid({
     return (
       <div className={`flex flex-wrap gap-x-4 gap-y-1 ${className}`}>
         {itemIsBlade && listing.nagasa_cm && (
-          <MeasurementItem label={t('metadata.nagasa')} value={listing.nagasa_cm} unit="cm" />
+          <MeasurementItem label={t('metadata.nagasa')} value={listing.nagasa_cm} unit="cm" readable={readable} />
         )}
         {/* Tosogu compact measurements - columns not yet in database */}
       </div>
@@ -374,10 +377,10 @@ export function MetadataGrid({
               {/* School + Smith combined (e.g., "Rai Kunimitsu" or "Osafune Tomomitsu") */}
               {(displayArtisan || displaySchool) && (
                 <div className="col-span-2">
-                  <span className="text-[10px] uppercase tracking-wider text-muted block mb-0.5">
+                  <span className={`${readable ? 'text-[11px]' : 'text-[10px]'} uppercase tracking-wider text-muted block mb-0.5`}>
                     {artisanLabel === 'Smith' ? t('metadata.smith') : t('metadata.maker')}
                   </span>
-                  <p className="text-[14px] text-ink font-medium">
+                  <p className={`${readable ? 'text-[15px]' : 'text-[14px]'} text-ink font-medium`}>
                     {displaySchool && td('school', school)}
                     {displaySchool && displayArtisan && ' '}
                     {displayArtisan && artisan}
@@ -385,13 +388,13 @@ export function MetadataGrid({
                 </div>
               )}
 
-              <MetadataItem label={t('metadata.era')} value={td('period', era)} />
-              <MetadataItem label={t('metadata.province')} value={td('province', listing.province)} />
-              <MetadataItem label={t('metadata.signature')} value={td('meiType', listing.mei_type)} />
+              <MetadataItem label={t('metadata.era')} value={td('period', era)} readable={readable} />
+              <MetadataItem label={t('metadata.province')} value={td('province', listing.province)} readable={readable} />
+              <MetadataItem label={t('metadata.signature')} value={td('meiType', listing.mei_type)} readable={readable} />
 
               {/* Inscription text */}
               {listing.mei_text && (
-                <MetadataItem label={t('metadata.inscription')} value={listing.mei_text} />
+                <MetadataItem label={t('metadata.inscription')} value={listing.mei_text} readable={readable} />
               )}
 
               {/* Signature not guaranteed disclaimer */}
@@ -406,10 +409,10 @@ export function MetadataGrid({
               {/* Certification with session */}
               {certInfo && (
                 <div className="col-span-2">
-                  <span className="text-[10px] uppercase tracking-wider text-muted block mb-0.5">
+                  <span className={`${readable ? 'text-[11px]' : 'text-[10px]'} uppercase tracking-wider text-muted block mb-0.5`}>
                     {t('metadata.papers')}
                   </span>
-                  <p className="text-[13px] text-ink">
+                  <p className={`${readable ? 'text-[14px]' : 'text-[13px]'} text-ink`}>
                     {t(certInfo.certKey)}
                     {listing.cert_session && <span className="text-muted"> #{listing.cert_session}</span>}
                     {listing.cert_organization && <span className="text-muted"> ({listing.cert_organization})</span>}
@@ -425,19 +428,19 @@ export function MetadataGrid({
       {showMeasurements && hasMeasurements && (
         <div className="border-b border-border">
           <div className="px-4 py-3 lg:px-5">
-            <h3 className="text-[10px] uppercase tracking-wider text-muted mb-2 font-medium">
+            <h3 className={`${readable ? 'text-[11px]' : 'text-[10px]'} uppercase tracking-wider text-muted mb-2 font-medium`}>
               {itemIsTosogu ? t('metadata.specifications') : t('metadata.measurements')}
             </h3>
             <div className="flex flex-wrap gap-x-4 gap-y-1.5">
               {/* Sword measurements */}
               {itemIsBlade && (
                 <>
-                  <MeasurementItem label={t('metadata.nagasa')} value={listing.nagasa_cm} unit="cm" />
-                  <MeasurementItem label={t('metadata.sori')} value={listing.sori_cm} unit="cm" />
-                  <MeasurementItem label={t('metadata.motohaba')} value={listing.motohaba_cm} unit="cm" />
-                  <MeasurementItem label={t('metadata.sakihaba')} value={listing.sakihaba_cm} unit="cm" />
-                  <MeasurementItem label={t('metadata.kasane')} value={listing.kasane_cm} unit="cm" />
-                  <MeasurementItem label={t('metadata.weight')} value={listing.weight_g} unit="g" />
+                  <MeasurementItem label={t('metadata.nagasa')} value={listing.nagasa_cm} unit="cm" readable={readable} />
+                  <MeasurementItem label={t('metadata.sori')} value={listing.sori_cm} unit="cm" readable={readable} />
+                  <MeasurementItem label={t('metadata.motohaba')} value={listing.motohaba_cm} unit="cm" readable={readable} />
+                  <MeasurementItem label={t('metadata.sakihaba')} value={listing.sakihaba_cm} unit="cm" readable={readable} />
+                  <MeasurementItem label={t('metadata.kasane')} value={listing.kasane_cm} unit="cm" readable={readable} />
+                  <MeasurementItem label={t('metadata.weight')} value={listing.weight_g} unit="g" readable={readable} />
                 </>
               )}
 

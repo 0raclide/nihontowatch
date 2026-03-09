@@ -31,6 +31,8 @@ interface QuickViewMobileSheetProps {
   isExpanded: boolean;
   onToggle: () => void;
   onClose: () => void;
+  // Text readability mode (collection context — larger text for leisurely reading)
+  readable?: boolean;
   // Composition slots
   headerActionsSlot?: ReactNode;
   dealerSlot?: ReactNode;
@@ -68,6 +70,7 @@ export function QuickViewMobileSheet({
   isExpanded,
   onToggle,
   onClose,
+  readable,
   headerActionsSlot,
   dealerSlot,
   descriptionSlot,
@@ -443,6 +446,7 @@ export function QuickViewMobileSheet({
               variant="full"
               showAttribution={true}
               showMeasurements={true}
+              readable={readable}
             />
 
             {/* Title */}
@@ -465,32 +469,32 @@ export function QuickViewMobileSheet({
               <>
                 {/* Sayagaki */}
                 {listing.sayagaki && listing.sayagaki.length > 0 && (
-                  <SayagakiDisplay sayagaki={listing.sayagaki} />
+                  <SayagakiDisplay sayagaki={listing.sayagaki} readable={readable} />
                 )}
 
                 {/* Hakogaki */}
                 {listing.hakogaki && listing.hakogaki.length > 0 && (
-                  <HakogakiDisplay hakogaki={listing.hakogaki} />
+                  <HakogakiDisplay hakogaki={listing.hakogaki} readable={readable} />
                 )}
 
                 {/* Koshirae */}
                 {listing.koshirae && (
-                  <KoshiraeDisplay koshirae={listing.koshirae} hideHeading={listing.item_type?.toLowerCase() === 'koshirae'} />
+                  <KoshiraeDisplay koshirae={listing.koshirae} hideHeading={listing.item_type?.toLowerCase() === 'koshirae'} readable={readable} />
                 )}
 
                 {/* Provenance */}
                 {listing.provenance && listing.provenance.length > 0 && (
-                  <ProvenanceDisplay provenance={listing.provenance} />
+                  <ProvenanceDisplay provenance={listing.provenance} readable={readable} />
                 )}
 
                 {/* Kiwame */}
                 {listing.kiwame && listing.kiwame.length > 0 && (
-                  <KiwameDisplay kiwame={listing.kiwame} />
+                  <KiwameDisplay kiwame={listing.kiwame} readable={readable} />
                 )}
 
                 {/* Kanto Hibisho */}
                 {listing.kanto_hibisho && (
-                  <KantoHibishoDisplay kantoHibisho={listing.kanto_hibisho} />
+                  <KantoHibishoDisplay kantoHibisho={listing.kanto_hibisho} readable={readable} />
                 )}
               </>
             )}

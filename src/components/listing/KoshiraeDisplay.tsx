@@ -57,9 +57,10 @@ interface KoshiraeDisplayProps {
   koshirae: KoshiraeData;
   hideHeading?: boolean;
   onImageClick?: (url: string) => void;
+  readable?: boolean;
 }
 
-export function KoshiraeDisplay({ koshirae, hideHeading, onImageClick }: KoshiraeDisplayProps) {
+export function KoshiraeDisplay({ koshirae, hideHeading, onImageClick, readable }: KoshiraeDisplayProps) {
   const { t } = useLocale();
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 
@@ -67,7 +68,7 @@ export function KoshiraeDisplay({ koshirae, hideHeading, onImageClick }: Koshira
     <>
       <div className="px-4 py-3 lg:px-5 border-b border-border">
         {!hideHeading && (
-          <div className="text-[10px] uppercase tracking-wider text-muted font-medium mb-2">
+          <div className={`${readable ? 'text-[11px]' : 'text-[10px]'} uppercase tracking-wider text-muted font-medium mb-2`}>
             {t('dealer.koshirae')}
           </div>
         )}
@@ -153,7 +154,7 @@ export function KoshiraeDisplay({ koshirae, hideHeading, onImageClick }: Koshira
 
         {/* Description */}
         {koshirae.description && (
-          <p className="text-[13px] text-charcoal whitespace-pre-wrap mb-2">
+          <p className={`${readable ? 'text-[15px] leading-relaxed' : 'text-[13px]'} text-charcoal whitespace-pre-wrap mb-2`}>
             {koshirae.description}
           </p>
         )}

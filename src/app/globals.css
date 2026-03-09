@@ -960,7 +960,7 @@ input[type="search"]::-webkit-search-results-decoration {
    Scholarly typography for setsumei/catalog translations
    ========================================================================== */
 .prose-translation {
-  font-family: var(--font-serif), Georgia, serif;
+  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
   font-size: 14.5px;
   line-height: 1.85;
   color: var(--text-secondary);

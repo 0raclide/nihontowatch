@@ -11,7 +11,10 @@ export function CollectionNotes({ collectionItem }: CollectionNotesProps) {
 
   return (
     <div className="px-4 py-3 lg:px-5 border-b border-border">
-      <p className="text-[13px] text-charcoal whitespace-pre-wrap">{collectionItem.personal_notes}</p>
+      <div className="text-[11px] uppercase tracking-wider text-muted font-medium mb-2">
+        Personal Notes
+      </div>
+      <p className="text-[15px] leading-relaxed text-charcoal whitespace-pre-wrap">{collectionItem.personal_notes}</p>
     </div>
   );
 }

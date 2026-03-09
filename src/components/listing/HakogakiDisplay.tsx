@@ -9,9 +9,10 @@ import { useLocale } from '@/i18n/LocaleContext';
 interface HakogakiDisplayProps {
   hakogaki: HakogakiEntry[];
   onImageClick?: (url: string) => void;
+  readable?: boolean;
 }
 
-export function HakogakiDisplay({ hakogaki, onImageClick }: HakogakiDisplayProps) {
+export function HakogakiDisplay({ hakogaki, onImageClick, readable }: HakogakiDisplayProps) {
   const { t } = useLocale();
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 
@@ -20,19 +21,19 @@ export function HakogakiDisplay({ hakogaki, onImageClick }: HakogakiDisplayProps
   return (
     <>
       <div className="px-4 py-3 lg:px-5 border-b border-border">
-        <div className="text-[10px] uppercase tracking-wider text-muted font-medium mb-2">
+        <div className={`${readable ? 'text-[11px]' : 'text-[10px]'} uppercase tracking-wider text-muted font-medium mb-2`}>
           {t('dealer.hakogaki')}
         </div>
         <div className="space-y-3">
           {hakogaki.map((entry, i) => (
             <div key={entry.id || i}>
               {entry.author && (
-                <div className="text-[13px] font-medium text-ink mb-0.5">
+                <div className={`${readable ? 'text-[15px] leading-relaxed' : 'text-[13px]'} font-medium text-ink mb-0.5`}>
                   {entry.author}
                 </div>
               )}
               {entry.content && (
-                <p className="text-[13px] text-charcoal whitespace-pre-wrap mb-2">
+                <p className={`${readable ? 'text-[15px] leading-relaxed' : 'text-[13px]'} text-charcoal whitespace-pre-wrap mb-2`}>
                   {entry.content}
                 </p>
               )}
