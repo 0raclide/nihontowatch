@@ -1,8 +1,9 @@
 # Handoff: QuickView Content Stream
 
 **Date:** 2026-03-09
-**Status:** Implemented, build passing, 12 new tests, 4998 existing tests green
+**Status:** Deployed to production (`77e6e16`), build passing, 53 new tests, 5000 existing tests green
 **Phase A cleanup (2026-03-09):** SetsumeiBlock extracted, ImageLightbox shared, scroll-spy added, JSONB sanitizers completed. +41 new tests (5 scroll-spy + 36 sanitizer). 5000 existing tests green.
+**Production fixes (2026-03-09):** Curator-note source guard allowlist. Section pill scroll-to bug (two fixes — see Post-Deploy Fixes).
 **Design doc:** `docs/DESIGN_QUICKVIEW_CONTENT_STREAM.md`
 
 ---
@@ -135,7 +136,29 @@ The 5 section display components still each have `useState(lightboxUrl)` for the
 1. ~~**No scroll-spy** on section indicators~~ DONE (2026-03-09)
 2. **No fade-in animation** when section blocks appear after `detailLoaded` toggles true (browse path — not relevant for dealer since `detailLoaded` is always true)
 3. **ShowcaseScholarNote max-width** — the curator note component has `max-w-[960px]` designed for the showcase page's full-width layout. In the 65% content stream panel, this is fine, but on very small screens it could look off. May need a `compact` variant.
-4. **Pre-existing test failure** — `tests/lib/dealer-source-guard.test.ts` flags `src/app/api/listing/[id]/curator-note/route.ts` as missing a dealer source guard. Unrelated to this work but should be fixed.
+4. ~~**Pre-existing test failure** — `tests/lib/dealer-source-guard.test.ts` flags `src/app/api/listing/[id]/curator-note/route.ts` as missing a dealer source guard.~~ FIXED (2026-03-09) — Added to `KNOWN_SAFE_FILES` allowlist. POST is admin-only (`verifyAdmin`), GET returns only AI text (not listing data), and the dealer content stream calls GET for dealer listings.
+
+---
+
+## Post-Deploy Fixes (2026-03-09)
+
+### Fix 1: Section pill scroll targeted hidden container (`08ba65e`)
+
+**Symptom:** Clicking section indicator pills did nothing on mobile.
+
+**Root cause:** `scrollToSection` used `scrollContainerRef.current || mobileScrollContainerRef.current`. Both refs are always assigned (desktop and mobile layouts are both rendered, one hidden via CSS class). On mobile, `scrollContainerRef.current` was truthy (a `display: none` element), so the `||` fallback never fired.
+
+**Fix:** Check `clientHeight > 0` to pick the actually visible container.
+
+### Fix 2: Duplicate DOM IDs across layouts (`77e6e16`)
+
+**Symptom:** Section pills scrolled "up slightly" instead of to the section (desktop and mobile).
+
+**Root cause:** Both mobile (`lg:hidden`) and desktop (`hidden lg:flex`) layouts render `ContentStreamRenderer` with the same blocks, creating duplicate DOM IDs (e.g., two `id="stream-setsumei"` elements). `document.getElementById()` always returned the first one in DOM order (the mobile element). On desktop, this element was inside a `display: none` parent, so `getBoundingClientRect()` returned zeros — scroll offset calculated as near-zero.
+
+**Fix:** Changed `document.getElementById(sectionId)` → `container.querySelector('#' + sectionId)` to scope the search to the visible container's subtree.
+
+**Lesson:** When mobile and desktop layouts both render the same component tree (one hidden via CSS), never use `document.getElementById()` — IDs will be duplicated. Always scope queries to the relevant container via `container.querySelector()`.
 
 ---
 
@@ -144,10 +167,10 @@ The 5 section display components still each have `useState(lightboxUrl)` for the
 - [x] `npm run build` passes
 - [x] 12 new `contentStream.test.ts` tests pass
 - [x] All 34 existing `groupedMedia.test.ts` tests pass (regression)
-- [x] 4998 total tests pass (1 pre-existing failure unrelated)
+- [x] 5000+ total tests pass
 - [ ] Manual: Dealer page → click listing with rich data → content stream renders
 - [ ] Manual: Click image in any section → unified lightbox, prev/next across all images
-- [ ] Manual: Click section indicator → stream scrolls to section
+- [x] Manual: Click section indicator → stream scrolls to section (fixed `77e6e16`)
 - [ ] Manual: Browse page → QuickView unchanged
 - [ ] Manual: Mobile dealer → content stream + stats sheet
 - [ ] Manual: J/K nav → stream resets scroll position
@@ -157,7 +180,7 @@ The 5 section display components still each have `useState(lightboxUrl)` for the
 - [x] `npm run build` passes after all 3 steps
 - [x] 5 new `useScrollSpy.test.ts` tests pass
 - [x] 36 new `sanitizeSections.test.ts` tests pass
-- [x] 5000 existing tests green (3 pre-existing failures unrelated)
+- [x] 5000 existing tests green
 - [ ] Manual: Dealer QuickView → section indicator pills highlight as user scrolls through sections
 - [ ] Manual: Browse QuickView → section displays still have working fallback lightboxes (no onImageClick)
 - [ ] Manual: Listing detail page → section display lightboxes still work

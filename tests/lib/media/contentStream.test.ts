@@ -139,11 +139,25 @@ describe('buildContentStream', () => {
     // img2.jpg appears in both displayImages and koshirae.images
     const result = buildContentStream(['img1.jpg', 'img2.jpg', 'img3.jpg'], listing, true, []);
 
-    // img2.jpg should be removed from the photos block (it will show in koshirae section)
-    const imageBlocks = result.blocks.filter(b => b.type === 'image') as Array<{ type: 'image'; src: string }>;
-    const imageSrcs = imageBlocks.map(b => b.src);
-    expect(imageSrcs).not.toContain('img2.jpg');
-    expect(imageSrcs).toContain('img3.jpg');
+    // Find the koshirae divider position
+    const koshDividerIdx = result.blocks.findIndex(
+      b => b.type === 'section_divider' && (b as any).sectionId === 'stream-koshirae'
+    );
+
+    // img2.jpg should NOT appear in the main photos area (before sections)
+    const mainPhotoBlocks = result.blocks
+      .slice(0, koshDividerIdx)
+      .filter(b => b.type === 'image') as Array<{ type: 'image'; src: string }>;
+    expect(mainPhotoBlocks.map(b => b.src)).not.toContain('img2.jpg');
+    expect(mainPhotoBlocks.map(b => b.src)).toContain('img3.jpg');
+
+    // img2.jpg and kosh-only.jpg appear as full-width image blocks in the koshirae section
+    // (non-catalog koshirae images are promoted to full-width)
+    const koshImageBlocks = result.blocks
+      .slice(koshDividerIdx + 1)
+      .filter(b => b.type === 'image') as Array<{ type: 'image'; src: string }>;
+    expect(koshImageBlocks.map(b => b.src)).toContain('img2.jpg');
+    expect(koshImageBlocks.map(b => b.src)).toContain('kosh-only.jpg');
 
     // allImageUrls should include section images
     expect(result.allImageUrls).toContain('img2.jpg');
@@ -212,5 +226,144 @@ describe('buildContentStream', () => {
     );
     const indices = indexed.map(b => b.globalIndex);
     expect(indices).toEqual([0, 1, 2, 3, 4]); // hero=0, video=1, video=2, photo=3, photo=4
+  });
+
+  // ==========================================================================
+  // Catalog image classification
+  // ==========================================================================
+
+  describe('catalog image classification', () => {
+    const CATALOG_BASE = 'https://itbhfhyptogxcjbjfzwx.supabase.co/storage/v1/object/public/images/';
+    const oshigataUrl = `${CATALOG_BASE}juyo/42/MAS590_oshigata.jpg`;
+    const setsumeiUrl = `${CATALOG_BASE}juyo/42/MAS590_setsumei.jpg`;
+    const combinedUrl = `${CATALOG_BASE}jubun/5/MIT281_combined.jpg`;
+
+    it('excludes catalog images from photo blocks', () => {
+      const listing = makeListing({ setsumei_text_en: 'Setsumei text' });
+      const displayImages = ['hero.jpg', 'photo1.jpg', oshigataUrl, setsumeiUrl, 'photo2.jpg'];
+      const result = buildContentStream(displayImages, listing, true, []);
+
+      const imageBlocks = result.blocks.filter(b => b.type === 'image') as Array<{ type: 'image'; src: string }>;
+      const imageSrcs = imageBlocks.map(b => b.src);
+      expect(imageSrcs).toContain('photo1.jpg');
+      expect(imageSrcs).toContain('photo2.jpg');
+      expect(imageSrcs).not.toContain(oshigataUrl);
+      expect(imageSrcs).not.toContain(setsumeiUrl);
+    });
+
+    it('routes catalog oshigata + setsumei into setsumei block images[]', () => {
+      const listing = makeListing({
+        setsumei_text_en: 'Setsumei text',
+        setsumei_image_url: 'legacy-scan.jpg',
+      });
+      const displayImages = ['hero.jpg', oshigataUrl, setsumeiUrl, combinedUrl];
+      const result = buildContentStream(displayImages, listing, true, []);
+
+      const setsumeiBlock = result.blocks.find(b => b.type === 'setsumei');
+      expect(setsumeiBlock).toBeDefined();
+      if (setsumeiBlock?.type === 'setsumei') {
+        // setsumei_image_url first, then oshigata (oshigata + combined), then setsumei
+        expect(setsumeiBlock.images).toEqual([
+          'legacy-scan.jpg',
+          oshigataUrl,
+          combinedUrl,
+          setsumeiUrl,
+        ]);
+      }
+    });
+
+    it('includes setsumei_image_url alongside catalog images', () => {
+      const listing = makeListing({
+        setsumei_text_en: 'text',
+        setsumei_image_url: 'existing-scan.jpg',
+      });
+      const displayImages = ['hero.jpg', oshigataUrl];
+      const result = buildContentStream(displayImages, listing, true, []);
+
+      const setsumeiBlock = result.blocks.find(b => b.type === 'setsumei');
+      if (setsumeiBlock?.type === 'setsumei') {
+        expect(setsumeiBlock.images[0]).toBe('existing-scan.jpg');
+        expect(setsumeiBlock.images[1]).toBe(oshigataUrl);
+      }
+    });
+
+    it('setsumei block has empty images[] when no catalog images and no setsumei_image_url', () => {
+      const listing = makeListing({ setsumei_text_en: 'text only' });
+      const result = buildContentStream(['hero.jpg', 'photo.jpg'], listing, true, []);
+
+      const setsumeiBlock = result.blocks.find(b => b.type === 'setsumei');
+      if (setsumeiBlock?.type === 'setsumei') {
+        expect(setsumeiBlock.images).toEqual([]);
+      }
+    });
+
+    it('emits non-catalog koshirae photos as full-width image blocks after koshirae divider', () => {
+      const koshPhoto1 = 'https://example.com/koshirae-photo-1.jpg';
+      const koshPhoto2 = 'https://example.com/koshirae-photo-2.jpg';
+      const koshCatalog = `${CATALOG_BASE}juyo/42/KOS001_oshigata.jpg`;
+
+      const listing = makeListing({
+        koshirae: {
+          components: [],
+          images: [koshPhoto1, koshCatalog, koshPhoto2],
+        } as any,
+      });
+      const result = buildContentStream(['hero.jpg'], listing, true, []);
+
+      // Find the koshirae section
+      const koshDividerIdx = result.blocks.findIndex(
+        b => b.type === 'section_divider' && (b as any).sectionId === 'stream-koshirae'
+      );
+      expect(koshDividerIdx).toBeGreaterThanOrEqual(0);
+
+      // After divider: full-width image blocks for non-catalog photos, then koshirae block
+      const afterDivider = result.blocks.slice(koshDividerIdx + 1);
+      expect(afterDivider[0].type).toBe('image');
+      expect((afterDivider[0] as any).src).toBe(koshPhoto1);
+      expect(afterDivider[1].type).toBe('image');
+      expect((afterDivider[1] as any).src).toBe(koshPhoto2);
+      expect(afterDivider[2].type).toBe('koshirae');
+    });
+
+    it('keeps only catalog images in koshirae block data.images (as thumbnails)', () => {
+      const koshPhoto = 'https://example.com/koshirae-photo.jpg';
+      const koshCatalog = `${CATALOG_BASE}juyo/42/KOS001_oshigata.jpg`;
+
+      const listing = makeListing({
+        koshirae: {
+          components: [],
+          images: [koshPhoto, koshCatalog],
+        } as any,
+      });
+      // koshCatalog must also appear in displayImages to be classified
+      const result = buildContentStream(['hero.jpg', koshCatalog], listing, true, []);
+
+      const koshBlock = result.blocks.find(b => b.type === 'koshirae');
+      expect(koshBlock).toBeDefined();
+      if (koshBlock?.type === 'koshirae') {
+        expect(koshBlock.data.images).toEqual([koshCatalog]);
+        expect(koshBlock.data.images).not.toContain(koshPhoto);
+      }
+    });
+
+    it('catalog images tracked in allImageUrls for lightbox navigation', () => {
+      const listing = makeListing({ setsumei_text_en: 'text' });
+      const displayImages = ['hero.jpg', 'photo.jpg', oshigataUrl, setsumeiUrl];
+      const result = buildContentStream(displayImages, listing, true, []);
+
+      expect(result.allImageUrls).toContain(oshigataUrl);
+      expect(result.allImageUrls).toContain(setsumeiUrl);
+    });
+
+    it('does not classify catalog images when detailLoaded is false', () => {
+      const listing = makeListing();
+      const displayImages = ['hero.jpg', oshigataUrl, 'photo.jpg'];
+      const result = buildContentStream(displayImages, listing, false, []);
+
+      // Catalog images should appear as regular photos when detail not loaded
+      const imageBlocks = result.blocks.filter(b => b.type === 'image') as Array<{ type: 'image'; src: string }>;
+      const imageSrcs = imageBlocks.map(b => b.src);
+      expect(imageSrcs).toContain(oshigataUrl);
+    });
   });
 });

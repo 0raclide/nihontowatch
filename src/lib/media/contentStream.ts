@@ -18,6 +18,7 @@ import type {
   KantoHibishoData,
 } from '@/types';
 import type { VideoMediaItem } from './groupedMedia';
+import { isYuhinkaiCatalogImage, classifyCatalogImage } from '@/lib/images/classification';
 
 // ============================================================================
 // Types
@@ -29,7 +30,7 @@ export type ContentBlock =
   | { type: 'video'; streamUrl: string; thumbnailUrl?: string; duration?: number; status?: string; videoId?: string; globalIndex: number }
   | { type: 'image'; src: string; globalIndex: number }
   | { type: 'section_divider'; labelKey: string; sectionId: string }
-  | { type: 'setsumei'; textEn: string | null; textJa: string | null; imageUrl: string | null; metadata: Record<string, unknown> | null }
+  | { type: 'setsumei'; textEn: string | null; textJa: string | null; images: string[]; metadata: Record<string, unknown> | null }
   | { type: 'sayagaki'; data: SayagakiEntry[] }
   | { type: 'hakogaki'; data: HakogakiEntry[] }
   | { type: 'provenance'; data: ProvenanceEntry[] }
@@ -90,12 +91,22 @@ function getSectionImageUrls(listing: Listing): Set<string> {
 // Section definitions — order determines stream order
 // ============================================================================
 
+/** Catalog image context passed from buildContentStream to section block builders. */
+interface CatalogContext {
+  /** Oshigata + combined catalog images from displayImages */
+  oshigata: string[];
+  /** Setsumei scan catalog images from displayImages */
+  setsumei: string[];
+  /** All catalog image URLs (for filtering) */
+  allUrls: Set<string>;
+}
+
 interface SectionDef {
   id: string;
   labelKey: string;
   hasData: (listing: Listing) => boolean;
-  buildBlock: (listing: Listing) => ContentBlock;
-  getImageUrls: (listing: Listing) => string[];
+  buildBlock: (listing: Listing, catalog: CatalogContext) => ContentBlock;
+  getImageUrls: (listing: Listing, catalog: CatalogContext) => string[];
 }
 
 const SECTION_DEFS: SectionDef[] = [
@@ -103,14 +114,27 @@ const SECTION_DEFS: SectionDef[] = [
     id: 'stream-setsumei',
     labelKey: 'dealer.setsumei',
     hasData: (l) => !!(l.setsumei_text_en || l.setsumei_text_ja),
-    buildBlock: (l) => ({
-      type: 'setsumei',
-      textEn: l.setsumei_text_en || null,
-      textJa: l.setsumei_text_ja || null,
-      imageUrl: l.setsumei_image_url || null,
-      metadata: (l.setsumei_metadata as Record<string, unknown>) || null,
-    }),
-    getImageUrls: (l) => l.setsumei_image_url ? [l.setsumei_image_url] : [],
+    buildBlock: (l, catalog) => {
+      // Merge setsumei_image_url + catalog oshigata + catalog setsumei into images[]
+      const images: string[] = [];
+      if (l.setsumei_image_url) images.push(l.setsumei_image_url);
+      for (const url of catalog.oshigata) images.push(url);
+      for (const url of catalog.setsumei) images.push(url);
+      return {
+        type: 'setsumei',
+        textEn: l.setsumei_text_en || null,
+        textJa: l.setsumei_text_ja || null,
+        images,
+        metadata: (l.setsumei_metadata as Record<string, unknown>) || null,
+      };
+    },
+    getImageUrls: (l, catalog) => {
+      const urls: string[] = [];
+      if (l.setsumei_image_url) urls.push(l.setsumei_image_url);
+      for (const url of catalog.oshigata) urls.push(url);
+      for (const url of catalog.setsumei) urls.push(url);
+      return urls;
+    },
   },
   {
     id: 'stream-sayagaki',
@@ -144,12 +168,22 @@ const SECTION_DEFS: SectionDef[] = [
     id: 'stream-koshirae',
     labelKey: 'dealer.koshirae',
     hasData: (l) => !!l.koshirae,
-    buildBlock: (l) => ({
-      type: 'koshirae',
-      data: l.koshirae!,
-      hideHeading: l.item_type?.toLowerCase() === 'koshirae',
-    }),
-    getImageUrls: (l) => l.koshirae?.images || [],
+    buildBlock: (l, catalog) => {
+      // Split koshirae images: catalog images stay as thumbnails, non-catalog removed
+      // (non-catalog photos are emitted as full-width image blocks in buildContentStream)
+      const originalImages = l.koshirae!.images || [];
+      const catalogOnly = originalImages.filter(url => catalog.allUrls.has(url));
+      return {
+        type: 'koshirae',
+        data: { ...l.koshirae!, images: catalogOnly },
+        hideHeading: l.item_type?.toLowerCase() === 'koshirae',
+      };
+    },
+    getImageUrls: (l, catalog) => {
+      // Only catalog thumbnails stay in the koshirae section for lightbox tracking
+      const originalImages = l.koshirae?.images || [];
+      return originalImages.filter(url => catalog.allUrls.has(url));
+    },
   },
   {
     id: 'stream-kanto-hibisho',
@@ -187,6 +221,39 @@ export function buildContentStream(
   // Collect all section image URLs for dedup against primary photos
   const sectionImageUrls = detailLoaded ? getSectionImageUrls(listing) : new Set<string>();
 
+  // Classify catalog images from displayImages (Yuhinkai oshigata/setsumei scans)
+  const catalogAllUrls = new Set<string>();
+  const catalogOshigata: string[] = [];
+  const catalogSetsumei: string[] = [];
+  if (detailLoaded) {
+    for (const url of displayImages) {
+      if (!isYuhinkaiCatalogImage(url)) continue;
+      catalogAllUrls.add(url);
+      const classification = classifyCatalogImage(url);
+      if (classification === 'setsumei') {
+        catalogSetsumei.push(url);
+      } else {
+        // 'oshigata', 'combined', or unclassified → treat as oshigata
+        catalogOshigata.push(url);
+      }
+    }
+  }
+  const catalogContext: CatalogContext = {
+    oshigata: catalogOshigata,
+    setsumei: catalogSetsumei,
+    allUrls: catalogAllUrls,
+  };
+
+  // Identify non-catalog koshirae photos (will be emitted as full-width image blocks)
+  const koshiraePhotoUrls: string[] = [];
+  if (detailLoaded && listing.koshirae?.images) {
+    for (const url of listing.koshirae.images) {
+      if (!isYuhinkaiCatalogImage(url)) {
+        koshiraePhotoUrls.push(url);
+      }
+    }
+  }
+
   // 1. Hero image
   if (displayImages.length > 0) {
     blocks.push({ type: 'hero_image', src: displayImages[0], globalIndex: 0 as const });
@@ -216,10 +283,11 @@ export function buildContentStream(
     });
   }
 
-  // 4. Remaining photos — deduplicated against section images
+  // 4. Remaining photos — deduplicated against section images AND catalog images
   for (let i = 1; i < displayImages.length; i++) {
     const url = displayImages[i];
     if (sectionImageUrls.has(url)) continue; // Will appear in its section instead
+    if (catalogAllUrls.has(url)) continue;   // Will appear in setsumei section
     blocks.push({ type: 'image', src: url, globalIndex: globalIndex++ });
     allImageUrls.push(url);
   }
@@ -236,11 +304,19 @@ export function buildContentStream(
         sectionId: def.id,
       });
 
+      // For koshirae: emit non-catalog photos as full-width image blocks before the metadata block
+      if (def.id === 'stream-koshirae') {
+        for (const url of koshiraePhotoUrls) {
+          blocks.push({ type: 'image', src: url, globalIndex: globalIndex++ });
+          allImageUrls.push(url);
+        }
+      }
+
       // Section content block
-      blocks.push(def.buildBlock(listing));
+      blocks.push(def.buildBlock(listing, catalogContext));
 
       // Track section images in allImageUrls (for lightbox navigation)
-      const sectionImgs = def.getImageUrls(listing);
+      const sectionImgs = def.getImageUrls(listing, catalogContext);
       for (const url of sectionImgs) {
         allImageUrls.push(url);
       }

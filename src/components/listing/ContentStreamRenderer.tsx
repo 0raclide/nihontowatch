@@ -126,7 +126,7 @@ export function ContentStreamRenderer({
                 key="setsumei"
                 textEn={block.textEn}
                 textJa={block.textJa}
-                imageUrl={block.imageUrl}
+                images={block.images}
               />
             );
 

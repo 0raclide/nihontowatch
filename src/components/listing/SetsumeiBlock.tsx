@@ -9,13 +9,13 @@ import { useLocale } from '@/i18n/LocaleContext';
 interface SetsumeiBlockProps {
   textEn: string | null;
   textJa: string | null;
-  imageUrl?: string | null;
+  images?: string[];
 }
 
 export function SetsumeiBlock({
   textEn,
   textJa,
-  imageUrl,
+  images,
 }: SetsumeiBlockProps) {
   const { locale, t } = useLocale();
   const { openLightbox } = useLightbox();
@@ -51,21 +51,24 @@ export function SetsumeiBlock({
             </article>
           )}
         </div>
-        {imageUrl && (
-          <div className="px-3 pb-3 border-t border-gold/10 pt-2">
-            <button
-              type="button"
-              onClick={() => openLightbox(imageUrl)}
-              className="relative w-20 h-20 rounded-lg overflow-hidden hover:ring-2 hover:ring-gold/50 transition-all"
-            >
-              <Image
-                src={imageUrl}
-                alt="Setsumei document"
-                fill
-                className="object-cover"
-                sizes="80px"
-              />
-            </button>
+        {images && images.length > 0 && (
+          <div className="px-3 pb-3 border-t border-gold/10 pt-2 flex flex-wrap gap-2">
+            {images.map((url) => (
+              <button
+                key={url}
+                type="button"
+                onClick={() => openLightbox(url)}
+                className="relative w-20 h-20 rounded-lg overflow-hidden hover:ring-2 hover:ring-gold/50 transition-all"
+              >
+                <Image
+                  src={url}
+                  alt="Setsumei document"
+                  fill
+                  className="object-cover"
+                  sizes="80px"
+                />
+              </button>
+            ))}
           </div>
         )}
       </div>
