@@ -99,16 +99,16 @@ function readDraft(): DealerDraft | null {
   }
 }
 
-function clearDraft() {
+function clearDraft(key: string = DRAFT_STORAGE_KEY) {
   if (typeof window === 'undefined') return;
-  localStorage.removeItem(DRAFT_STORAGE_KEY);
+  localStorage.removeItem(key);
   // Clean up legacy keys
   localStorage.removeItem(STORAGE_KEY_CATEGORY);
   localStorage.removeItem(STORAGE_KEY_TYPE);
 }
 
 export interface DealerListingInitialData {
-  id: number;
+  id: number | string;  // number for listings, UUID string for collection items
   title?: string | null;
   item_type?: string | null;
   item_category?: string | null;
@@ -154,6 +154,7 @@ export interface DealerListingInitialData {
 interface DealerListingFormProps {
   mode: 'add' | 'edit';
   initialData?: DealerListingInitialData;
+  context?: 'listing' | 'collection';  // defaults to 'listing'
 }
 
 const MEI_TYPES = [
@@ -212,9 +213,21 @@ function getStickyValue(key: string, fallback: string): string {
   return localStorage.getItem(key) || fallback;
 }
 
-export function DealerListingForm({ mode, initialData }: DealerListingFormProps) {
+export function DealerListingForm({ mode, initialData, context = 'listing' }: DealerListingFormProps) {
   const router = useRouter();
   const { t, locale } = useLocale();
+
+  // Compute API paths based on context
+  const apiBase = context === 'collection' ? '/api/collection' : '/api/dealer';
+  const itemsEndpoint = context === 'collection' ? `${apiBase}/items` : `${apiBase}/listings`;
+  const imagesEndpoint = `${apiBase}/images`;
+  const sayagakiImagesEndpoint = `${apiBase}/sayagaki-images`;
+  const hakogakiImagesEndpoint = `${apiBase}/hakogaki-images`;
+  const koshiraeImagesEndpoint = `${apiBase}/koshirae-images`;
+  const provenanceImagesEndpoint = `${apiBase}/provenance-images`;
+  const kantoHibishoImagesEndpoint = `${apiBase}/kanto-hibisho-images`;
+  const successRedirect = context === 'collection' ? '/collection' : '/dealer';
+  const draftStorageKey = context === 'collection' ? 'nw-collection-draft' : DRAFT_STORAGE_KEY;
 
   // Restore draft for add mode (no initialData)
   const restoredDraft = useRef<DealerDraft | null>(null);
@@ -410,7 +423,7 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
       };
       // Only persist if the form has substantive content
       if (isDraftSubstantive(draftData)) {
-        localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draftData));
+        localStorage.setItem(draftStorageKey, JSON.stringify(draftData));
       }
     }, DRAFT_DEBOUNCE_MS);
 
@@ -422,6 +435,7 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
     heightCm, widthCm, materials, artisanSchool, titleOverride,
     certSession, catalogObjectUuid, setsumeiTextEn, setsumeiTextJa,
     images, sayagaki, hakogaki, koshirae, provenance, kiwame, kantoHibisho,
+    draftStorageKey,
   ]);
 
   // Auto-generated title
@@ -503,6 +517,7 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
         price_value: isAsk ? null : (priceValue ? Number(priceValue) : null),
         price_currency: priceCurrency,
         description: description || null,
+        ai_curator_note_en: description || null,
         artisan_id: artisanId,
         smith: category === 'nihonto' ? (artisanKanji || artisanName || null) : null,
         tosogu_maker: category === 'tosogu' ? (artisanKanji || artisanName || null) : null,
@@ -560,7 +575,7 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
         payload.status = targetStatus || 'INVENTORY';
 
         // Create listing
-        const res = await fetch('/api/dealer/listings', {
+        const res = await fetch(itemsEndpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
@@ -576,7 +591,7 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
         // Upload pending images — catch failures separately
         if (pendingFiles.length > 0) {
           try {
-            await uploadPendingFiles(pendingFiles, String(listing.id), '/api/dealer/images');
+            await uploadPendingFiles(pendingFiles, String(listing.id), imagesEndpoint);
           } catch {
             setCreatedListingId(String(listing.id));
             setImageUploadFailed(true);
@@ -594,7 +609,7 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
               formData.append('itemId', String(listing.id));
               formData.append('sayagakiId', sayagakiId);
               try {
-                await fetch('/api/dealer/sayagaki-images', {
+                await fetch(sayagakiImagesEndpoint, {
                   method: 'POST',
                   body: formData,
                 });
@@ -614,7 +629,7 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
               formData.append('itemId', String(listing.id));
               formData.append('hakogakiId', hakogakiId);
               try {
-                await fetch('/api/dealer/hakogaki-images', {
+                await fetch(hakogakiImagesEndpoint, {
                   method: 'POST',
                   body: formData,
                 });
@@ -632,7 +647,7 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
             formData.append('file', file, file.name);
             formData.append('itemId', String(listing.id));
             try {
-              await fetch('/api/dealer/koshirae-images', {
+              await fetch(koshiraeImagesEndpoint, {
                 method: 'POST',
                 body: formData,
               });
@@ -651,7 +666,7 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
               formData.append('itemId', String(listing.id));
               formData.append('provenanceId', provenanceId);
               try {
-                await fetch('/api/dealer/provenance-images', {
+                await fetch(provenanceImagesEndpoint, {
                   method: 'POST',
                   body: formData,
                 });
@@ -669,7 +684,7 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
             formData.append('file', file, file.name);
             formData.append('itemId', String(listing.id));
             try {
-              await fetch('/api/dealer/kanto-hibisho-images', {
+              await fetch(kantoHibishoImagesEndpoint, {
                 method: 'POST',
                 body: formData,
               });
@@ -679,10 +694,10 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
           }
         }
 
-        clearDraft();
+        clearDraft(draftStorageKey);
         setShowSuccess(true);
       } else if (mode === 'edit' && initialData?.id) {
-        const res = await fetch(`/api/dealer/listings/${initialData.id}`, {
+        const res = await fetch(`${itemsEndpoint}/${initialData.id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
@@ -693,7 +708,7 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
           throw new Error(data.error || 'Failed to update listing');
         }
 
-        router.push('/dealer');
+        router.push(successRedirect);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
@@ -708,7 +723,10 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
     pendingHakogakiFiles, hakogaki, koshirae, pendingKoshiraeFiles, provenance,
     pendingProvenanceFiles, kiwame, kantoHibisho, pendingKantoHibishoFiles,
     certSession, setsumeiTextEn, setsumeiTextJa, generatedTitle, titleOverride,
-    heroImageIndex, images, router,
+    heroImageIndex, images, router, itemsEndpoint, imagesEndpoint,
+    sayagakiImagesEndpoint, hakogakiImagesEndpoint, koshiraeImagesEndpoint,
+    provenanceImagesEndpoint, kantoHibishoImagesEndpoint, successRedirect,
+    draftStorageKey, meiText, meiGuaranteed,
   ]);
 
   const handleRetryUpload = useCallback(async () => {
@@ -716,7 +734,7 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
     setIsSubmitting(true);
     setError(null);
     try {
-      await uploadPendingFiles(pendingFiles, createdListingId, '/api/dealer/images');
+      await uploadPendingFiles(pendingFiles, createdListingId, imagesEndpoint);
       setImageUploadFailed(false);
       setShowSuccess(true);
     } catch {
@@ -724,7 +742,7 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
     } finally {
       setIsSubmitting(false);
     }
-  }, [createdListingId, pendingFiles, t]);
+  }, [createdListingId, pendingFiles, t, imagesEndpoint]);
 
   const handleReset = useCallback(() => {
     setItemType(null);
@@ -768,27 +786,27 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
     setCreatedListingId(null);
     setError(null);
     setShowDraftBanner(false);
-    clearDraft();
-  }, []);
+    clearDraft(draftStorageKey);
+  }, [draftStorageKey]);
 
   const handleDelete = useCallback(async () => {
     if (!initialData?.id) return;
     setIsDeleting(true);
     setError(null);
     try {
-      const res = await fetch(`/api/dealer/listings/${initialData.id}`, { method: 'DELETE' });
+      const res = await fetch(`${itemsEndpoint}/${initialData.id}`, { method: 'DELETE' });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error || 'Failed to delete');
       }
-      router.push('/dealer');
+      router.push(successRedirect);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
       setConfirmDelete(false);
     } finally {
       setIsDeleting(false);
     }
-  }, [initialData?.id, router]);
+  }, [initialData?.id, router, itemsEndpoint, successRedirect]);
 
   const canGenerateNote = certType === 'Juyo' || certType === 'Tokuju';
   const hasNoteData = !!(artisanId || setsumeiTextEn || setsumeiTextJa);
@@ -926,7 +944,7 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
               type="button"
               onClick={() => {
                 setShowDraftBanner(false);
-                clearDraft();
+                clearDraft(draftStorageKey);
                 handleReset();
               }}
               className="font-medium underline hover:no-underline"
@@ -946,7 +964,7 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
             itemId={mode === 'edit' && initialData?.id ? String(initialData.id) : undefined}
             onChange={setImages}
             onPendingFilesChange={setPendingFiles}
-            apiEndpoint="/api/dealer/images"
+            apiEndpoint={imagesEndpoint}
             heroImageIndex={heroImageIndex}
             onHeroImageChange={setHeroImageIndex}
           />
@@ -960,6 +978,7 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
               listingId={mode === 'edit' && initialData?.id ? initialData.id : undefined}
               videos={videos}
               onVideosChange={setVideos}
+              apiBase={apiBase}
             />
           </div>
         </section>

@@ -293,12 +293,14 @@ export function buildContentStream(
     globalIndex = 1;
   }
 
-  // 2. Curator note
-  if (listing.ai_curator_note_en || listing.ai_curator_note_ja) {
+  // 2. Curator note — prefer dedicated columns, fall back to description
+  const curatorNoteEn = listing.ai_curator_note_en || listing.description || null;
+  const curatorNoteJa = listing.ai_curator_note_ja || null;
+  if (curatorNoteEn || curatorNoteJa) {
     blocks.push({
       type: 'curator_note',
-      noteEn: listing.ai_curator_note_en || null,
-      noteJa: listing.ai_curator_note_ja || null,
+      noteEn: curatorNoteEn,
+      noteJa: curatorNoteJa,
     });
   }
 
