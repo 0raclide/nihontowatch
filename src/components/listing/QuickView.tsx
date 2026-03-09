@@ -347,12 +347,13 @@ export function QuickView() {
 
   // Scroll-to-section handler for section indicator taps
   const scrollToSection = useCallback((sectionId: string) => {
-    // Both refs are always assigned (desktop hidden on mobile, vice versa).
-    // Pick the one that's actually visible (clientHeight > 0).
+    // Both mobile and desktop layouts render ContentStreamRenderer, creating
+    // duplicate DOM IDs. Scope the querySelector to the visible container
+    // so we find the target in the correct layout.
     const desktop = scrollContainerRef.current;
     const mobile = mobileScrollContainerRef.current;
     const container = (desktop && desktop.clientHeight > 0) ? desktop : mobile;
-    const target = document.getElementById(sectionId);
+    const target = container?.querySelector<HTMLElement>(`#${sectionId}`);
     if (container && target) {
       const offset = target.getBoundingClientRect().top
         - container.getBoundingClientRect().top
