@@ -1,18 +1,29 @@
 /**
  * Collects all images from a listing into ordered, deduplicated groups.
  *
- * Used by QuickView to render a unified vertical scroller with group dividers
- * for section images (sayagaki, hakogaki, koshirae, provenance, kanto hibisho).
+ * Used by QuickView to render a unified vertical scroller with group dividers.
  *
- * Scraped listings (no section data) return only the primary photos group.
- * When detailLoaded=false, returns only the photos group (section data not yet available).
+ * Order: Hero → Videos → Remaining Photos → Koshirae → Sayagaki/Hakogaki →
+ *        Kanto Hibisho → Provenance → NBTHK Documentation (catalog images).
+ *
+ * Scraped listings (no section data) return only the primary group.
+ * When detailLoaded=false, returns only the primary group (section data not yet available).
  */
 
 import type { Listing } from '@/types';
+import { isYuhinkaiCatalogImage } from '@/lib/images/classification';
 
 // ============================================================================
 // Types
 // ============================================================================
+
+export interface VideoMediaItem {
+  streamUrl: string;
+  thumbnailUrl?: string;
+  duration?: number;
+  status?: 'processing' | 'ready' | 'failed';
+  videoId?: string;
+}
 
 export interface MediaGroup {
   /** i18n key for the group label */
@@ -22,31 +33,43 @@ export interface MediaGroup {
 }
 
 export interface FlatMediaItem {
-  /** Image URL */
+  /** Image URL (empty string for video items) */
   src: string;
   /** Global index across all groups (for lazy-load visibility tracking) */
   globalIndex: number;
   /** i18n key for the group this item belongs to */
   groupLabelKey: string;
-  /** True if this is the first image in its group (used for divider placement) */
+  /** True if this is the first item in its group (used for divider placement) */
   isFirstInGroup: boolean;
-  /** True if this item belongs to the first group (photos) — no divider before first group */
+  /** True if this item belongs to the first group (primary) — no divider before first group */
   isFirstGroup: boolean;
+  /** Media type — 'image' for photos, 'video' for inline video items */
+  type: 'image' | 'video';
+  /** Video stream URL (only when type === 'video') */
+  streamUrl?: string;
+  /** Video thumbnail URL (only when type === 'video') */
+  thumbnailUrl?: string;
+  /** Video duration in seconds (only when type === 'video') */
+  duration?: number;
+  /** Video processing status (only when type === 'video') */
+  videoStatus?: 'processing' | 'ready' | 'failed';
+  /** Video ID (only when type === 'video') */
+  videoId?: string;
 }
 
 export interface GroupedMediaResult {
   /** Ordered groups of images, empty groups omitted */
   groups: MediaGroup[];
-  /** Total count of all images + videos across all groups */
+  /** Total count of all items (images + videos) across all groups */
   totalCount: number;
-  /** Flat array of all image URLs across all groups (for indexing) */
+  /** Flat array of all image URLs across all groups (for indexing — excludes videos) */
   allImageUrls: string[];
   /** Pre-flattened items with computed indices and group membership (for pure render) */
   flatItems: FlatMediaItem[];
 }
 
 // ============================================================================
-// Group definitions (order matters)
+// Group definitions — reordered: koshirae, sayagaki, hakogaki, kanto hibisho, provenance
 // ============================================================================
 
 interface SectionDef {
@@ -55,6 +78,13 @@ interface SectionDef {
 }
 
 const SECTION_DEFS: SectionDef[] = [
+  {
+    labelKey: 'dealer.koshirae',
+    getImages: (l) => {
+      if (!l.koshirae) return [];
+      return l.koshirae.images || [];
+    },
+  },
   {
     labelKey: 'dealer.sayagaki',
     getImages: (l) => {
@@ -70,10 +100,10 @@ const SECTION_DEFS: SectionDef[] = [
     },
   },
   {
-    labelKey: 'dealer.koshirae',
+    labelKey: 'dealer.kantoHibisho',
     getImages: (l) => {
-      if (!l.koshirae) return [];
-      return l.koshirae.images || [];
+      if (!l.kanto_hibisho) return [];
+      return l.kanto_hibisho.images || [];
     },
   },
   {
@@ -83,13 +113,6 @@ const SECTION_DEFS: SectionDef[] = [
       return l.provenance.flatMap(entry => entry.images || []);
     },
   },
-  {
-    labelKey: 'dealer.kantoHibisho',
-    getImages: (l) => {
-      if (!l.kanto_hibisho) return [];
-      return l.kanto_hibisho.images || [];
-    },
-  },
 ];
 
 // ============================================================================
@@ -97,28 +120,32 @@ const SECTION_DEFS: SectionDef[] = [
 // ============================================================================
 
 /**
- * Collect all images from a listing into ordered, deduplicated groups.
+ * Collect all media from a listing into ordered, deduplicated groups.
  *
  * @param displayImages - Validated primary listing photos (already hero-reordered)
  * @param listing - The full listing object (may have section data)
  * @param detailLoaded - Whether the detail API has resolved (sections only available after detail load)
- * @param videoCount - Number of ready videos to include in totalCount
+ * @param videoItems - Actual video data to integrate inline after hero image
  */
 export function collectGroupedMedia(
   displayImages: string[],
   listing: Listing | null,
   detailLoaded: boolean,
-  videoCount: number = 0,
+  videoItems: VideoMediaItem[] = [],
 ): GroupedMediaResult {
   const groups: MediaGroup[] = [];
   const allImageUrls: string[] = [];
 
-  // Always include the photos group (even if empty — QuickView handles empty state)
+  // Split primary photos: regular vs catalog (Yuhinkai documentation)
+  const regularPhotos = displayImages.filter(url => !isYuhinkaiCatalogImage(url));
+  const catalogImages = displayImages.filter(url => isYuhinkaiCatalogImage(url));
+
+  // Primary group: regular (non-catalog) photos
   groups.push({
     labelKey: 'quickview.sectionPhotos',
-    images: displayImages,
+    images: regularPhotos,
   });
-  allImageUrls.push(...displayImages);
+  allImageUrls.push(...regularPhotos);
 
   // Section groups only when detail data is available
   if (listing && detailLoaded) {
@@ -140,24 +167,82 @@ export function collectGroupedMedia(
     }
   }
 
+  // Documentation group: catalog oshigata + setsumei at the very end
+  if (catalogImages.length > 0) {
+    groups.push({
+      labelKey: 'quickview.sectionDocumentation',
+      images: catalogImages,
+    });
+    allImageUrls.push(...catalogImages);
+  }
+
   // Build pre-flattened items for pure render (no mutable counter in JSX)
   const flatItems: FlatMediaItem[] = [];
   let globalIndex = 0;
+
   for (let g = 0; g < groups.length; g++) {
     const group = groups[g];
     const isFirstGroup = g === 0;
-    for (let i = 0; i < group.images.length; i++) {
-      flatItems.push({
-        src: group.images[i],
-        globalIndex: globalIndex++,
-        groupLabelKey: group.labelKey,
-        isFirstInGroup: i === 0,
-        isFirstGroup,
-      });
+
+    // Insert video items after the hero image (first item of first group)
+    if (isFirstGroup && videoItems.length > 0) {
+      // Hero image (first regular photo, if any)
+      if (group.images.length > 0) {
+        flatItems.push({
+          src: group.images[0],
+          globalIndex: globalIndex++,
+          groupLabelKey: group.labelKey,
+          isFirstInGroup: true,
+          isFirstGroup: true,
+          type: 'image',
+        });
+      }
+
+      // Videos inline after hero
+      for (let v = 0; v < videoItems.length; v++) {
+        const video = videoItems[v];
+        flatItems.push({
+          src: '',
+          globalIndex: globalIndex++,
+          groupLabelKey: group.labelKey,
+          isFirstInGroup: group.images.length === 0 && v === 0,
+          isFirstGroup: true,
+          type: 'video',
+          streamUrl: video.streamUrl,
+          thumbnailUrl: video.thumbnailUrl,
+          duration: video.duration,
+          videoStatus: video.status,
+          videoId: video.videoId,
+        });
+      }
+
+      // Remaining photos after videos
+      for (let i = 1; i < group.images.length; i++) {
+        flatItems.push({
+          src: group.images[i],
+          globalIndex: globalIndex++,
+          groupLabelKey: group.labelKey,
+          isFirstInGroup: false,
+          isFirstGroup: true,
+          type: 'image',
+        });
+      }
+    } else {
+      // Non-primary groups or primary group without videos
+      for (let i = 0; i < group.images.length; i++) {
+        flatItems.push({
+          src: group.images[i],
+          globalIndex: globalIndex++,
+          groupLabelKey: group.labelKey,
+          isFirstInGroup: i === 0,
+          isFirstGroup,
+          type: 'image',
+        });
+      }
     }
   }
 
-  const totalCount = allImageUrls.length + videoCount;
+  const totalCount = allImageUrls.length + videoItems.length;
 
   return { groups, totalCount, allImageUrls, flatItems };
 }

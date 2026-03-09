@@ -277,33 +277,41 @@ export function QuickView() {
     [currentListing?.id, currentListing?.videos?.length]
   );
 
-  // Grouped media: primary photos + section images (sayagaki, hakogaki, koshirae, provenance, kanto hibisho)
+  // Map MediaItem[] → VideoMediaItem[] for collectGroupedMedia
+  const videoMediaItems = useMemo(
+    () => videoItems.map(m => ({
+      streamUrl: m.url,
+      thumbnailUrl: m.thumbnailUrl,
+      duration: m.duration,
+      status: m.status,
+      videoId: m.videoId,
+    })),
+    [videoItems]
+  );
+
+  // Grouped media: hero → videos → photos → sections → documentation
   const groupedMedia = useMemo(
-    () => collectGroupedMedia(displayImages, currentListing, detailLoaded, videoItems.length),
+    () => collectGroupedMedia(displayImages, currentListing, detailLoaded, videoMediaItems),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [displayImages, currentListing?.id, detailLoaded, videoItems.length,
+    [displayImages, currentListing?.id, detailLoaded, videoMediaItems,
      currentListing?.sayagaki, currentListing?.hakogaki, currentListing?.koshirae,
      currentListing?.provenance, currentListing?.kanto_hibisho]
   );
 
   // Total media count for progress bar and counters
   const totalMediaCount = groupedMedia.totalCount;
-  const totalImageCount = groupedMedia.allImageUrls.length;
 
   // Deferred progress denominator: only expands when user scrolls past current boundary.
   // Prevents the progress bar from jumping when section images load mid-scroll.
-  const progressTotalRef = useRef(totalImageCount);
-  // Reset when listing changes (totalImageCount drops to new listing's photo count)
-  if (totalImageCount < progressTotalRef.current) {
-    progressTotalRef.current = totalImageCount;
+  const progressTotalRef = useRef(totalMediaCount);
+  // Reset when listing changes (totalMediaCount drops to new listing's count)
+  if (totalMediaCount < progressTotalRef.current) {
+    progressTotalRef.current = totalMediaCount;
   }
   // Expand when user has scrolled past the current boundary
-  if (currentImageIndex >= progressTotalRef.current && totalImageCount > progressTotalRef.current) {
-    progressTotalRef.current = totalImageCount;
+  if (currentImageIndex >= progressTotalRef.current && totalMediaCount > progressTotalRef.current) {
+    progressTotalRef.current = totalMediaCount;
   }
-  // Also expand if we're still on the first image and totalImageCount grew
-  // (user hasn't scrolled — denominator should stay at initial primary count)
-  // — no, this case is handled by NOT expanding, which is the desired behavior.
   const progressTotal = progressTotalRef.current;
 
   // Dealer status change → optimistic update via refreshCurrentListing
@@ -434,44 +442,37 @@ export function QuickView() {
     return (
       <>
         {flatItems.map((item) => (
-          <div key={`${keyPrefix}-${item.src}-${item.globalIndex}`}>
+          <div key={`${keyPrefix}-${item.type === 'video' ? `video-${item.videoId}` : item.src}-${item.globalIndex}`}>
             {/* Divider between groups (not before the first) */}
             {item.isFirstInGroup && !item.isFirstGroup && (
               <MediaGroupDivider label={t(item.groupLabelKey)} />
             )}
-            <LazyImage
-              src={item.src}
-              index={item.globalIndex}
-              totalImages={totalImageCount}
-              isVisible={visibleImages.has(item.globalIndex)}
-              onVisible={handleImageVisible}
-              onLoadFailed={handleImageLoadFailed}
-              isFirst={item.globalIndex === 0}
-              showScrollHint={item.globalIndex === 0 && totalMediaCount > 1 && !hasScrolled}
-              title={currentListing.title}
-              itemType={currentListing.item_type}
-              certType={currentListing.cert_type}
-              cachedDimensions={getCachedDimensions(item.src)}
-            />
-          </div>
-        ))}
-
-        {/* Videos after all image groups */}
-        {videoItems.length > 0 && (
-          <>
-            <MediaGroupDivider label={t('quickview.sectionVideos')} />
-            {videoItems.map((media) => (
+            {item.type === 'video' ? (
               <VideoGalleryItem
-                key={`${keyPrefix}-video-${media.videoId}`}
-                streamUrl={media.url}
-                thumbnailUrl={media.thumbnailUrl}
-                duration={media.duration}
-                status={media.status}
+                streamUrl={item.streamUrl || ''}
+                thumbnailUrl={item.thumbnailUrl}
+                duration={item.duration}
+                status={item.videoStatus}
                 className="aspect-video"
               />
-            ))}
-          </>
-        )}
+            ) : (
+              <LazyImage
+                src={item.src}
+                index={item.globalIndex}
+                totalImages={totalMediaCount}
+                isVisible={visibleImages.has(item.globalIndex)}
+                onVisible={handleImageVisible}
+                onLoadFailed={handleImageLoadFailed}
+                isFirst={item.globalIndex === 0}
+                showScrollHint={item.globalIndex === 0 && totalMediaCount > 1 && !hasScrolled}
+                title={currentListing.title}
+                itemType={currentListing.item_type}
+                certType={currentListing.cert_type}
+                cachedDimensions={getCachedDimensions(item.src)}
+              />
+            )}
+          </div>
+        ))}
       </>
     );
   };
@@ -537,7 +538,7 @@ export function QuickView() {
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
-                  {totalImageCount} images{videoItems.length > 0 ? `, ${videoItems.length} video${videoItems.length > 1 ? 's' : ''}` : ''}
+                  {totalMediaCount} items
                 </div>
               )}
 
@@ -610,7 +611,7 @@ export function QuickView() {
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
-                  {totalImageCount} images{videoItems.length > 0 ? `, ${videoItems.length} video${videoItems.length > 1 ? 's' : ''}` : ''}
+                  {totalMediaCount} items
                 </div>
               )}
             </div>
@@ -619,7 +620,7 @@ export function QuickView() {
           {/* Content Section */}
           <div data-testid="desktop-content-panel" className="w-2/5 max-w-md border-l border-border bg-cream flex flex-col min-h-0 overflow-hidden">
             <AlertContextBanner />
-            {!isStudyMode && totalImageCount > 1 && (
+            {!isStudyMode && totalMediaCount > 1 && (
               <div className="border-b border-border">
                 <div className="h-0.5 bg-border">
                   <div
