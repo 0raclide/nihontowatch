@@ -18,7 +18,7 @@ type Tab = 'inventory' | 'available' | 'hold' | 'sold';
 type TabCounts = Record<Tab, number>;
 
 const TABS: { value: Tab; labelKey: string }[] = [
-  { value: 'inventory', labelKey: 'dealer.tabInventory' },
+  { value: 'inventory', labelKey: 'collection.tabAllItems' },
   { value: 'available', labelKey: 'dealer.tabForSale' },
   { value: 'hold', labelKey: 'dealer.tabOnHold' },
   { value: 'sold', labelKey: 'dealer.tabSold' },
