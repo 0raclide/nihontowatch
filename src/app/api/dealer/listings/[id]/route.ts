@@ -2,6 +2,7 @@ import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { verifyDealer } from '@/lib/dealer/auth';
 import { getArtisanEliteStats } from '@/lib/featured/scoring';
 import { sanitizeKoshirae } from '@/lib/dealer/sanitizeKoshirae';
+import { sanitizeSayagaki, sanitizeHakogaki, sanitizeProvenance, sanitizeKiwame, sanitizeKantoHibisho } from '@/lib/dealer/sanitizeSections';
 import { selectListingVideos } from '@/lib/supabase/listingVideos';
 import { videoProvider, isVideoProviderConfigured } from '@/lib/video/videoProvider';
 import { NextRequest, NextResponse } from 'next/server';
@@ -36,7 +37,7 @@ export async function GET(
   const serviceClient = createServiceClient();
 
   const { data: listing, error } = await (serviceClient.from('listings') as any)
-    .select('id, title, title_en, title_ja, item_type, item_category, cert_type, cert_session, price_value, price_currency, description, artisan_id, smith, tosogu_maker, school, tosogu_school, era, province, mei_type, mei_text, mei_guaranteed, nakago_type, nagasa_cm, motohaba_cm, sakihaba_cm, sori_cm, height_cm, width_cm, material, images, sayagaki, hakogaki, koshirae, provenance, kiwame, kanto_hibisho, hero_image_index, setsumei_text_en, setsumei_text_ja, status, is_available, is_sold, source, dealer_id')
+    .select('id, title, title_en, title_ja, item_type, item_category, cert_type, cert_session, price_value, price_currency, description, artisan_id, smith, tosogu_maker, school, tosogu_school, era, province, mei_type, mei_text, mei_guaranteed, nakago_type, nagasa_cm, motohaba_cm, sakihaba_cm, sori_cm, height_cm, width_cm, material, images, sayagaki, hakogaki, koshirae, provenance, kiwame, kanto_hibisho, hero_image_index, setsumei_text_en, setsumei_text_ja, ai_curator_note_en, ai_curator_note_ja, status, is_available, is_sold, source, dealer_id')
     .eq('id', listingId)
     .eq('dealer_id', auth.dealerId)
     .eq('source', 'dealer')
@@ -124,6 +125,21 @@ export async function PATCH(
   // Sanitize JSONB fields — whitelist every nested field, enforce length limits
   if ('koshirae' in updates) {
     updates.koshirae = sanitizeKoshirae(updates.koshirae);
+  }
+  if ('sayagaki' in updates) {
+    updates.sayagaki = sanitizeSayagaki(updates.sayagaki);
+  }
+  if ('hakogaki' in updates) {
+    updates.hakogaki = sanitizeHakogaki(updates.hakogaki);
+  }
+  if ('provenance' in updates) {
+    updates.provenance = sanitizeProvenance(updates.provenance);
+  }
+  if ('kiwame' in updates) {
+    updates.kiwame = sanitizeKiwame(updates.kiwame);
+  }
+  if ('kanto_hibisho' in updates) {
+    updates.kanto_hibisho = sanitizeKantoHibisho(updates.kanto_hibisho);
   }
 
   // Sanitize hero_image_index — must be non-negative integer or null

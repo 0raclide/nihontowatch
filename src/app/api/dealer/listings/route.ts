@@ -2,6 +2,7 @@ import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { verifyDealer } from '@/lib/dealer/auth';
 import { getArtisanEliteStats } from '@/lib/featured/scoring';
 import { sanitizeKoshirae } from '@/lib/dealer/sanitizeKoshirae';
+import { sanitizeSayagaki, sanitizeHakogaki, sanitizeProvenance, sanitizeKiwame, sanitizeKantoHibisho } from '@/lib/dealer/sanitizeSections';
 import { NextRequest, NextResponse } from 'next/server';
 import { getArtisanNames } from '@/lib/supabase/yuhinkai';
 import { getArtisanDisplayName, getArtisanDisplayNameKanji, getArtisanAlias } from '@/lib/artisan/displayName';
@@ -36,7 +37,7 @@ export async function GET(request: NextRequest) {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let query = (serviceClient.from('listings') as any)
-    .select('id, url, title, title_en, title_ja, item_type, item_category, price_value, price_currency, cert_type, images, stored_images, status, is_available, is_sold, first_seen_at, smith, tosogu_maker, school, tosogu_school, artisan_id, artisan_confidence, description, era, province, mei_type, mei_text, mei_guaranteed, nakago_type, nagasa_cm, motohaba_cm, sakihaba_cm, sori_cm, height_cm, width_cm, material, source, hero_image_index, focal_x, focal_y, video_count, sayagaki, hakogaki, koshirae, provenance, kiwame, kanto_hibisho, setsumei_text_en, setsumei_text_ja, dealers:dealers(id, name, name_ja, domain)', { count: 'exact' })
+    .select('id, url, title, title_en, title_ja, item_type, item_category, price_value, price_currency, cert_type, images, stored_images, status, is_available, is_sold, first_seen_at, smith, tosogu_maker, school, tosogu_school, artisan_id, artisan_confidence, description, era, province, mei_type, mei_text, mei_guaranteed, nakago_type, nagasa_cm, motohaba_cm, sakihaba_cm, sori_cm, height_cm, width_cm, material, source, hero_image_index, focal_x, focal_y, video_count, sayagaki, hakogaki, koshirae, provenance, kiwame, kanto_hibisho, setsumei_text_en, setsumei_text_ja, ai_curator_note_en, ai_curator_note_ja, dealers:dealers(id, name, name_ja, domain)', { count: 'exact' })
     .eq('dealer_id', auth.dealerId)
     .eq('source', 'dealer');
 
@@ -209,56 +210,14 @@ export async function POST(request: NextRequest) {
     images: Array.isArray(initialImages) && initialImages.length > 0 ? initialImages : [],
     hero_image_index: (typeof hero_image_index === 'number' && hero_image_index >= 0) ? Math.floor(hero_image_index) : null,
     scrape_count: 0,
-    sayagaki: Array.isArray(sayagaki) && sayagaki.length > 0
-      ? sayagaki.map((entry: Record<string, unknown>) => ({
-          id: entry.id,
-          author: entry.author,
-          author_custom: entry.author_custom ?? null,
-          content: entry.content ?? null,
-          images: [], // Images uploaded separately after creation
-        }))
-      : null,
-    hakogaki: Array.isArray(hakogaki) && hakogaki.length > 0
-      ? hakogaki.map((entry: Record<string, unknown>) => ({
-          id: entry.id,
-          author: entry.author ?? null,
-          content: entry.content ?? null,
-          images: [], // Images uploaded separately after creation
-        }))
-      : null,
+    sayagaki: sanitizeSayagaki(sayagaki),
+    hakogaki: sanitizeHakogaki(hakogaki),
     koshirae: sanitizeKoshirae(koshirae),
-    provenance: Array.isArray(provenance) && provenance.length > 0
-      ? provenance.map((entry: Record<string, unknown>) => ({
-          id: entry.id,
-          owner_name: entry.owner_name ?? '',
-          owner_name_ja: entry.owner_name_ja ?? null,
-          notes: entry.notes ?? null,
-          images: [], // Images uploaded separately after creation
-        }))
-      : null,
+    provenance: sanitizeProvenance(provenance),
     setsumei_text_en: setsumei_text_en ?? null,
     setsumei_text_ja: setsumei_text_ja ?? null,
-    kiwame: Array.isArray(kiwame) && kiwame.length > 0
-      ? kiwame.map((entry: Record<string, unknown>) => ({
-          id: entry.id,
-          judge_name: entry.judge_name ?? '',
-          judge_name_ja: entry.judge_name_ja ?? null,
-          kiwame_type: entry.kiwame_type ?? 'origami',
-          notes: entry.notes ?? null,
-        }))
-      : null,
-    kanto_hibisho: kanto_hibisho && typeof kanto_hibisho === 'object'
-      ? {
-          volume: (kanto_hibisho as Record<string, unknown>).volume ?? '',
-          entry_number: (kanto_hibisho as Record<string, unknown>).entry_number ?? '',
-          text: (kanto_hibisho as Record<string, unknown>).text ?? null,
-          images: Array.isArray((kanto_hibisho as Record<string, unknown>).images)
-            ? ((kanto_hibisho as Record<string, unknown>).images as string[]).filter(
-                (url: string) => typeof url === 'string' && !url.startsWith('blob:')
-              )
-            : [],
-        }
-      : null,
+    kiwame: sanitizeKiwame(kiwame),
+    kanto_hibisho: sanitizeKantoHibisho(kanto_hibisho),
   };
 
   // Route artisan fields based on category

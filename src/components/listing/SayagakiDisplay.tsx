@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
+import { ImageLightbox } from '@/components/ui/ImageLightbox';
 import type { SayagakiEntry } from '@/types';
 import { useLocale } from '@/i18n/LocaleContext';
 
@@ -15,9 +16,10 @@ const AUTHOR_KEYS: Record<string, string> = {
 
 interface SayagakiDisplayProps {
   sayagaki: SayagakiEntry[];
+  onImageClick?: (url: string) => void;
 }
 
-export function SayagakiDisplay({ sayagaki }: SayagakiDisplayProps) {
+export function SayagakiDisplay({ sayagaki, onImageClick }: SayagakiDisplayProps) {
   const { t } = useLocale();
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 
@@ -51,7 +53,7 @@ export function SayagakiDisplay({ sayagaki }: SayagakiDisplayProps) {
                       <button
                         key={j}
                         type="button"
-                        onClick={() => setLightboxUrl(url)}
+                        onClick={() => onImageClick ? onImageClick(url) : setLightboxUrl(url)}
                         className="relative w-16 h-16 rounded-lg overflow-hidden hover:ring-2 hover:ring-gold/50 transition-all"
                       >
                         <Image
@@ -71,32 +73,8 @@ export function SayagakiDisplay({ sayagaki }: SayagakiDisplayProps) {
         </div>
       </div>
 
-      {/* Simple lightbox */}
-      {lightboxUrl && (
-        <div
-          className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4"
-          onClick={() => setLightboxUrl(null)}
-        >
-          <button
-            onClick={() => setLightboxUrl(null)}
-            className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 transition-colors"
-            aria-label="Close"
-          >
-            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-          <div className="relative max-w-3xl max-h-[80vh] w-full h-full">
-            <Image
-              src={lightboxUrl}
-              alt="Sayagaki detail"
-              fill
-              className="object-contain"
-              sizes="(max-width: 768px) 100vw, 768px"
-              onClick={(e) => e.stopPropagation()}
-            />
-          </div>
-        </div>
+      {!onImageClick && (
+        <ImageLightbox imageUrl={lightboxUrl} onClose={() => setLightboxUrl(null)} alt="Sayagaki detail" />
       )}
     </>
   );

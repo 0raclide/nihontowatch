@@ -16,9 +16,11 @@ import { KoshiraeDisplay } from './KoshiraeDisplay';
 import { ProvenanceDisplay } from './ProvenanceDisplay';
 import { KiwameDisplay } from './KiwameDisplay';
 import { KantoHibishoDisplay } from './KantoHibishoDisplay';
+import { SectionIndicators } from './SectionIndicators';
 import { QuickMeasurement } from './QuickMeasurement';
 import { useLocale } from '@/i18n/LocaleContext';
 import { useAuth } from '@/lib/auth/AuthContext';
+import type { SectionIndicator } from '@/lib/media/contentStream';
 
 // =============================================================================
 // TYPES
@@ -35,6 +37,11 @@ interface QuickViewMobileSheetProps {
   descriptionSlot?: ReactNode;
   intelligenceSlot?: ReactNode;
   ctaSlot?: ReactNode;
+  // Content stream mode — when 'stats', section displays are omitted (they're in the content stream)
+  variant?: 'full' | 'stats';
+  sections?: SectionIndicator[];
+  onSectionClick?: (sectionId: string) => void;
+  activeSection?: string | null;
 }
 
 // =============================================================================
@@ -66,6 +73,10 @@ export function QuickViewMobileSheet({
   descriptionSlot,
   intelligenceSlot,
   ctaSlot,
+  variant = 'full',
+  sections,
+  onSectionClick,
+  activeSection,
 }: QuickViewMobileSheetProps) {
   const sheetRef = useRef<HTMLDivElement>(null);
   const scrollContentRef = useRef<HTMLDivElement>(null);
@@ -439,34 +450,49 @@ export function QuickViewMobileSheet({
               <TranslatedTitle listing={listing} />
             </div>
 
-            {/* Sayagaki */}
-            {listing.sayagaki && listing.sayagaki.length > 0 && (
-              <SayagakiDisplay sayagaki={listing.sayagaki} />
+            {/* Section indicators (stats variant — sections are in the content stream) */}
+            {variant === 'stats' && sections && sections.length > 0 && onSectionClick && (
+              <div className="px-4 py-3 border-b border-border">
+                <div className="text-[10px] uppercase tracking-wider text-muted font-medium mb-2">
+                  {t('quickview.thisListingHas')}
+                </div>
+                <SectionIndicators sections={sections} onSectionClick={onSectionClick} activeSection={activeSection} />
+              </div>
             )}
 
-            {/* Hakogaki */}
-            {listing.hakogaki && listing.hakogaki.length > 0 && (
-              <HakogakiDisplay hakogaki={listing.hakogaki} />
-            )}
+            {/* Section displays — only in full variant (not shown in stats, they're in the content stream) */}
+            {variant === 'full' && (
+              <>
+                {/* Sayagaki */}
+                {listing.sayagaki && listing.sayagaki.length > 0 && (
+                  <SayagakiDisplay sayagaki={listing.sayagaki} />
+                )}
 
-            {/* Koshirae */}
-            {listing.koshirae && (
-              <KoshiraeDisplay koshirae={listing.koshirae} hideHeading={listing.item_type?.toLowerCase() === 'koshirae'} />
-            )}
+                {/* Hakogaki */}
+                {listing.hakogaki && listing.hakogaki.length > 0 && (
+                  <HakogakiDisplay hakogaki={listing.hakogaki} />
+                )}
 
-            {/* Provenance */}
-            {listing.provenance && listing.provenance.length > 0 && (
-              <ProvenanceDisplay provenance={listing.provenance} />
-            )}
+                {/* Koshirae */}
+                {listing.koshirae && (
+                  <KoshiraeDisplay koshirae={listing.koshirae} hideHeading={listing.item_type?.toLowerCase() === 'koshirae'} />
+                )}
 
-            {/* Kiwame */}
-            {listing.kiwame && listing.kiwame.length > 0 && (
-              <KiwameDisplay kiwame={listing.kiwame} />
-            )}
+                {/* Provenance */}
+                {listing.provenance && listing.provenance.length > 0 && (
+                  <ProvenanceDisplay provenance={listing.provenance} />
+                )}
 
-            {/* Kanto Hibisho */}
-            {listing.kanto_hibisho && (
-              <KantoHibishoDisplay kantoHibisho={listing.kanto_hibisho} />
+                {/* Kiwame */}
+                {listing.kiwame && listing.kiwame.length > 0 && (
+                  <KiwameDisplay kiwame={listing.kiwame} />
+                )}
+
+                {/* Kanto Hibisho */}
+                {listing.kanto_hibisho && (
+                  <KantoHibishoDisplay kantoHibisho={listing.kanto_hibisho} />
+                )}
+              </>
             )}
 
             {/* Description slot */}

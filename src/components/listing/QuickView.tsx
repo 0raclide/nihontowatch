@@ -25,9 +25,14 @@ import { getAllImages, dealerDoesNotPublishImages, getCachedDimensions, getPlace
 import { getHeroImage } from '@/lib/images/classification';
 import { getMediaItems } from '@/lib/media';
 import { collectGroupedMedia } from '@/lib/media/groupedMedia';
+import { buildContentStream } from '@/lib/media/contentStream';
 import { MediaGroupDivider } from './MediaGroupDivider';
 import { VideoGalleryItem } from '@/components/video/VideoGalleryItem';
+import { ContentStreamRenderer } from './ContentStreamRenderer';
+import { StatsCard } from './StatsCard';
+import { LightboxProvider } from '@/contexts/LightboxContext';
 import { useValidatedImages } from '@/hooks/useValidatedImages';
+import { useScrollSpy } from '@/hooks/useScrollSpy';
 import { useAuth } from '@/lib/auth/AuthContext';
 import type { ListingWithEnrichment, Currency } from '@/types';
 import { useLocale } from '@/i18n/LocaleContext';
@@ -314,6 +319,55 @@ export function QuickView() {
   }
   const progressTotal = progressTotalRef.current;
 
+  // Content stream for dealer QuickView — replaces grouped media scroller
+  // MUST be before the early return — hooks cannot be conditional
+  const contentStreamResult = useMemo(
+    () => isDealer && currentListing
+      ? buildContentStream(displayImages, currentListing, true, videoMediaItems)
+      : null,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [isDealer, displayImages, currentListing?.id, videoMediaItems,
+     currentListing?.sayagaki, currentListing?.hakogaki, currentListing?.koshirae,
+     currentListing?.provenance, currentListing?.kiwame, currentListing?.kanto_hibisho,
+     currentListing?.ai_curator_note_en, currentListing?.ai_curator_note_ja,
+     currentListing?.setsumei_text_en, currentListing?.setsumei_text_ja]
+  );
+
+  // Content stream total for progress bar (dealer) vs grouped media total (browse/collection)
+  const streamImageCount = contentStreamResult?.imageCount ?? 0;
+
+  // Scroll-spy for section indicator highlighting (dealer content stream)
+  // MUST be before early return — hooks cannot be conditional
+  const sectionIds = useMemo(
+    () => contentStreamResult?.sections?.map(s => s.id) ?? [],
+    [contentStreamResult?.sections]
+  );
+  const desktopActiveSection = useScrollSpy(sectionIds, scrollContainerRef);
+  const mobileActiveSection = useScrollSpy(sectionIds, mobileScrollContainerRef);
+
+  // Scroll-to-section handler for section indicator taps
+  const scrollToSection = useCallback((sectionId: string) => {
+    // Try both desktop and mobile scroll containers
+    const container = scrollContainerRef.current || mobileScrollContainerRef.current;
+    const target = document.getElementById(sectionId);
+    if (container && target) {
+      const offset = target.getBoundingClientRect().top
+        - container.getBoundingClientRect().top
+        + container.scrollTop;
+      container.scrollTo({ top: offset - 8, behavior: 'smooth' });
+    }
+  }, []);
+
+  const handleSectionClick = useCallback((sectionId: string) => {
+    // Mobile: collapse sheet first, then scroll after animation
+    if (isSheetExpanded) {
+      setIsSheetExpanded(false);
+      setTimeout(() => scrollToSection(sectionId), 350);
+      return;
+    }
+    scrollToSection(sectionId);
+  }, [isSheetExpanded, scrollToSection]);
+
   // Dealer status change → optimistic update via refreshCurrentListing
   // MUST be before the early return — hooks cannot be conditional
   const handleDealerStatusChange = useCallback((newStatus: string, patchedFields?: { price_value?: number | null; price_currency?: string }) => {
@@ -515,6 +569,36 @@ export function QuickView() {
                 onBackToPhotos={toggleStudyMode}
               />
             </div>
+          ) : isDealer && contentStreamResult ? (
+            <div
+              ref={setMobileScrollerRef}
+              data-testid="mobile-image-scroller"
+              onScroll={handleScroll}
+              className="flex-1 min-h-0 overflow-y-auto overscroll-none bg-ink/5 relative"
+            >
+              {isSold && (
+                <div className="sticky top-0 z-20 bg-ink/80 text-white text-center py-2 text-sm font-medium tracking-wider uppercase">
+                  Sold
+                </div>
+              )}
+
+              <div className="space-y-1 p-1">
+                <LightboxProvider allImageUrls={contentStreamResult.allImageUrls}>
+                  <ContentStreamRenderer
+                    blocks={contentStreamResult.blocks}
+                    listing={currentListing}
+                    onImageVisible={handleImageVisible}
+                    onImageLoadFailed={handleImageLoadFailed}
+                    visibleImages={visibleImages}
+                    hasScrolled={hasScrolled}
+                    failedImageUrls={failedImageUrls}
+                    totalMediaCount={streamImageCount}
+                  />
+                </LightboxProvider>
+              </div>
+
+              <div style={{ height: mobileBottomPad }} aria-hidden="true" />
+            </div>
           ) : (
             <div
               ref={setMobileScrollerRef}
@@ -556,6 +640,10 @@ export function QuickView() {
             dealerSlot={mobileDealerSlot}
             descriptionSlot={mobileDescriptionSlot}
             ctaSlot={mobileCtaSlot}
+            variant={isDealer ? 'stats' : 'full'}
+            sections={contentStreamResult?.sections}
+            onSectionClick={handleSectionClick}
+            activeSection={mobileActiveSection}
           />
         </div>
 
@@ -589,6 +677,35 @@ export function QuickView() {
                 onBackToPhotos={toggleStudyMode}
               />
             </div>
+          ) : isDealer && contentStreamResult ? (
+            /* Dealer content stream — interleaved media + text in left panel */
+            <div
+              ref={scrollContainerRef}
+              data-testid="desktop-image-scroller"
+              onScroll={handleScroll}
+              className="flex-1 min-h-0 w-[65%] overflow-y-auto overscroll-contain bg-ink/5 relative"
+            >
+              {isSold && (
+                <div className="sticky top-0 z-20 bg-ink/80 text-white text-center py-2 text-sm font-medium tracking-wider uppercase">
+                  Sold
+                </div>
+              )}
+
+              <div className="space-y-1 p-2">
+                <LightboxProvider allImageUrls={contentStreamResult.allImageUrls}>
+                  <ContentStreamRenderer
+                    blocks={contentStreamResult.blocks}
+                    listing={currentListing}
+                    onImageVisible={handleImageVisible}
+                    onImageLoadFailed={handleImageLoadFailed}
+                    visibleImages={visibleImages}
+                    hasScrolled={hasScrolled}
+                    failedImageUrls={failedImageUrls}
+                    totalMediaCount={streamImageCount}
+                  />
+                </LightboxProvider>
+              </div>
+            </div>
           ) : (
             <div
               ref={scrollContainerRef}
@@ -617,38 +734,71 @@ export function QuickView() {
             </div>
           )}
 
-          {/* Content Section */}
-          <div data-testid="desktop-content-panel" className="w-2/5 max-w-md border-l border-border bg-cream flex flex-col min-h-0 overflow-hidden">
-            <AlertContextBanner />
-            {!isStudyMode && totalMediaCount > 1 && (
-              <div className="border-b border-border">
-                <div className="h-0.5 bg-border">
-                  <div
-                    className="h-full bg-gold transition-all duration-300 ease-out"
-                    style={{ width: `${((currentImageIndex + 1) / progressTotal) * 100}%` }}
-                  />
+          {/* Content Section — StatsCard for dealer, QuickViewContent for browse/collection */}
+          {isDealer && contentStreamResult ? (
+            <div data-testid="desktop-content-panel" className="w-[35%] max-w-sm border-l border-border bg-cream flex flex-col min-h-0 overflow-hidden">
+              <AlertContextBanner />
+              {streamImageCount > 1 && (
+                <div className="border-b border-border">
+                  <div className="h-0.5 bg-border">
+                    <div
+                      className="h-full bg-gold transition-all duration-300 ease-out"
+                      style={{ width: `${((currentImageIndex + 1) / streamImageCount) * 100}%` }}
+                    />
+                  </div>
+                  <div className="flex items-center justify-center py-1.5">
+                    <span className="text-[11px] text-muted tabular-nums">
+                      {t('quickview.photoCounter', { current: currentImageIndex + 1, total: streamImageCount })}
+                    </span>
+                  </div>
                 </div>
-                <div className="flex items-center justify-center py-1.5">
-                  <span className="text-[11px] text-muted tabular-nums">
-                    {t('quickview.photoCounter', { current: currentImageIndex + 1, total: progressTotal })}
-                  </span>
-                </div>
-              </div>
-            )}
+              )}
 
-            <div className="flex-1 min-h-0 overflow-y-auto">
-              <QuickViewContent
-                listing={currentListing}
-                onClose={closeQuickView}
-                actionBarSlot={desktopActionBarSlot}
-                dealerSlot={desktopDealerSlot}
-                descriptionSlot={desktopDescriptionSlot}
-                provenanceSlot={desktopProvenanceSlot}
-                adminToolsSlot={desktopAdminToolsSlot}
-                ctaSlot={desktopCtaSlot}
-              />
+              <div className="flex-1 min-h-0 overflow-hidden">
+                <StatsCard
+                  listing={currentListing}
+                  sections={contentStreamResult.sections}
+                  onSectionClick={handleSectionClick}
+                  activeSection={desktopActiveSection}
+                  actionBarSlot={desktopActionBarSlot}
+                  dealerSlot={desktopDealerSlot}
+                  ctaSlot={desktopCtaSlot}
+                />
+              </div>
             </div>
-          </div>
+          ) : (
+            <div data-testid="desktop-content-panel" className="w-2/5 max-w-md border-l border-border bg-cream flex flex-col min-h-0 overflow-hidden">
+              <AlertContextBanner />
+              {!isStudyMode && totalMediaCount > 1 && (
+                <div className="border-b border-border">
+                  <div className="h-0.5 bg-border">
+                    <div
+                      className="h-full bg-gold transition-all duration-300 ease-out"
+                      style={{ width: `${((currentImageIndex + 1) / progressTotal) * 100}%` }}
+                    />
+                  </div>
+                  <div className="flex items-center justify-center py-1.5">
+                    <span className="text-[11px] text-muted tabular-nums">
+                      {t('quickview.photoCounter', { current: currentImageIndex + 1, total: progressTotal })}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex-1 min-h-0 overflow-y-auto">
+                <QuickViewContent
+                  listing={currentListing}
+                  onClose={closeQuickView}
+                  actionBarSlot={desktopActionBarSlot}
+                  dealerSlot={desktopDealerSlot}
+                  descriptionSlot={desktopDescriptionSlot}
+                  provenanceSlot={desktopProvenanceSlot}
+                  adminToolsSlot={desktopAdminToolsSlot}
+                  ctaSlot={desktopCtaSlot}
+                />
+              </div>
+            </div>
+          )}
 
           {/* Listing Navigation (Desktop only) */}
           {showNavigation && (

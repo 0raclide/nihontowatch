@@ -112,6 +112,8 @@ function mergeDetailIntoListing(browse: Listing, detail: Listing): Listing {
     provenance: detail.provenance ?? browse.provenance,
     kiwame: detail.kiwame ?? browse.kiwame,
     kanto_hibisho: detail.kanto_hibisho ?? browse.kanto_hibisho,
+    ai_curator_note_en: detail.ai_curator_note_en ?? browse.ai_curator_note_en,
+    ai_curator_note_ja: detail.ai_curator_note_ja ?? browse.ai_curator_note_ja,
     videos: detail.videos ?? browse.videos,
     // yuhinkai_enrichment exists at runtime (from browse API enrichment) but not on Listing type
     yuhinkai_enrichment: d.yuhinkai_enrichment ?? b.yuhinkai_enrichment,

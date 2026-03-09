@@ -49,6 +49,10 @@ const KNOWN_SAFE_FILES = new Set([
   'src/app/api/admin/sync-elite-factor/route.ts',
   'src/app/api/debug/subscription/route.ts',
 
+  // Curator note: POST is admin-only (verifyAdmin), GET returns only AI-generated
+  // text (not listing data). Dealer content stream calls GET for dealer listings.
+  'src/app/api/listing/[id]/curator-note/route.ts',
+
   // Dealer portal APIs (intentionally access dealer listings)
   'src/app/api/dealer/listings/route.ts',
   'src/app/api/dealer/listings/[id]/route.ts',

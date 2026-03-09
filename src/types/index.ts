@@ -665,6 +665,10 @@ export interface Listing {
   // Kanto Hibisho (関東日々抄 — Honma Junji scholarly reference)
   kanto_hibisho?: KantoHibishoData | null;
 
+  // AI curator notes (Scholar's Note)
+  ai_curator_note_en?: string | null;
+  ai_curator_note_ja?: string | null;
+
   // Smart crop focal point (0-100%)
   focal_x?: number | null;
   focal_y?: number | null;
