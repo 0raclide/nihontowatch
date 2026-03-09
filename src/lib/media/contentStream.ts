@@ -168,21 +168,22 @@ const SECTION_DEFS: SectionDef[] = [
     id: 'stream-koshirae',
     labelKey: 'dealer.koshirae',
     hasData: (l) => !!l.koshirae,
-    buildBlock: (l, catalog) => {
+    buildBlock: (l) => {
       // Split koshirae images: catalog images stay as thumbnails, non-catalog removed
       // (non-catalog photos are emitted as full-width image blocks in buildContentStream)
+      // Use isYuhinkaiCatalogImage() directly — koshirae catalog images may not be in displayImages
       const originalImages = l.koshirae!.images || [];
-      const catalogOnly = originalImages.filter(url => catalog.allUrls.has(url));
+      const catalogOnly = originalImages.filter(url => isYuhinkaiCatalogImage(url));
       return {
         type: 'koshirae',
         data: { ...l.koshirae!, images: catalogOnly },
         hideHeading: l.item_type?.toLowerCase() === 'koshirae',
       };
     },
-    getImageUrls: (l, catalog) => {
+    getImageUrls: (l) => {
       // Only catalog thumbnails stay in the koshirae section for lightbox tracking
       const originalImages = l.koshirae?.images || [];
-      return originalImages.filter(url => catalog.allUrls.has(url));
+      return originalImages.filter(url => isYuhinkaiCatalogImage(url));
     },
   },
   {
@@ -221,20 +222,38 @@ export function buildContentStream(
   // Collect all section image URLs for dedup against primary photos
   const sectionImageUrls = detailLoaded ? getSectionImageUrls(listing) : new Set<string>();
 
-  // Classify catalog images from displayImages (Yuhinkai oshigata/setsumei scans)
-  const catalogAllUrls = new Set<string>();
+  // Classify catalog images.
+  //
+  // getAllImages() may replace catalog originals (Yuhinkai domain) with stored copies
+  // (listing-images/ domain) at the same index. We need to detect catalog images from
+  // the ORIGINAL `listing.images[]` and map their stored replacements in displayImages
+  // so both the stored URL and the original catalog URL are recognized.
+  const catalogAllUrls = new Set<string>();     // displayImage URLs to exclude from photo stream
+  const catalogOriginalUrls = new Set<string>(); // original Yuhinkai URLs for setsumei thumbnails
   const catalogOshigata: string[] = [];
   const catalogSetsumei: string[] = [];
   if (detailLoaded) {
-    for (const url of displayImages) {
-      if (!isYuhinkaiCatalogImage(url)) continue;
-      catalogAllUrls.add(url);
-      const classification = classifyCatalogImage(url);
+    const originals = listing.images || [];
+    for (let i = 0; i < originals.length; i++) {
+      const originalUrl = originals[i];
+      if (!originalUrl || !isYuhinkaiCatalogImage(originalUrl)) continue;
+
+      // Track the original Yuhinkai URL
+      catalogOriginalUrls.add(originalUrl);
+
+      // Track the displayImage URL at this index (might be a stored copy)
+      const displayUrl = displayImages[i];
+      if (displayUrl) catalogAllUrls.add(displayUrl);
+      // Also track the original in case displayImages uses it directly
+      catalogAllUrls.add(originalUrl);
+
+      // Classify by the original URL (stored copies lose the filename pattern)
+      const classification = classifyCatalogImage(originalUrl);
       if (classification === 'setsumei') {
-        catalogSetsumei.push(url);
+        catalogSetsumei.push(originalUrl);
       } else {
         // 'oshigata', 'combined', or unclassified → treat as oshigata
-        catalogOshigata.push(url);
+        catalogOshigata.push(originalUrl);
       }
     }
   }
@@ -254,10 +273,13 @@ export function buildContentStream(
     }
   }
 
-  // 1. Hero image
-  if (displayImages.length > 0) {
-    blocks.push({ type: 'hero_image', src: displayImages[0], globalIndex: 0 as const });
-    allImageUrls.push(displayImages[0]);
+  // 1. Hero image — skip catalog images to avoid oshigata drawings as hero
+  const heroIndex = detailLoaded
+    ? displayImages.findIndex(url => !catalogAllUrls.has(url))
+    : 0;
+  if (heroIndex >= 0 && heroIndex < displayImages.length) {
+    blocks.push({ type: 'hero_image', src: displayImages[heroIndex], globalIndex: 0 as const });
+    allImageUrls.push(displayImages[heroIndex]);
     globalIndex = 1;
   }
 
@@ -283,11 +305,12 @@ export function buildContentStream(
     });
   }
 
-  // 4. Remaining photos — deduplicated against section images AND catalog images
-  for (let i = 1; i < displayImages.length; i++) {
+  // 4. Remaining photos — deduplicated against hero, section images, and catalog images
+  for (let i = 0; i < displayImages.length; i++) {
+    if (i === heroIndex) continue;             // Already emitted as hero
     const url = displayImages[i];
-    if (sectionImageUrls.has(url)) continue; // Will appear in its section instead
-    if (catalogAllUrls.has(url)) continue;   // Will appear in setsumei section
+    if (sectionImageUrls.has(url)) continue;   // Will appear in its section instead
+    if (catalogAllUrls.has(url)) continue;     // Will appear in setsumei section
     blocks.push({ type: 'image', src: url, globalIndex: globalIndex++ });
     allImageUrls.push(url);
   }

@@ -239,7 +239,11 @@ describe('buildContentStream', () => {
     const combinedUrl = `${CATALOG_BASE}jubun/5/MIT281_combined.jpg`;
 
     it('excludes catalog images from photo blocks', () => {
-      const listing = makeListing({ setsumei_text_en: 'Setsumei text' });
+      // Catalog URLs must be in listing.images (the originals) for classification
+      const listing = makeListing({
+        images: ['hero.jpg', 'photo1.jpg', oshigataUrl, setsumeiUrl, 'photo2.jpg'],
+        setsumei_text_en: 'Setsumei text',
+      });
       const displayImages = ['hero.jpg', 'photo1.jpg', oshigataUrl, setsumeiUrl, 'photo2.jpg'];
       const result = buildContentStream(displayImages, listing, true, []);
 
@@ -253,6 +257,7 @@ describe('buildContentStream', () => {
 
     it('routes catalog oshigata + setsumei into setsumei block images[]', () => {
       const listing = makeListing({
+        images: ['hero.jpg', oshigataUrl, setsumeiUrl, combinedUrl],
         setsumei_text_en: 'Setsumei text',
         setsumei_image_url: 'legacy-scan.jpg',
       });
@@ -274,6 +279,7 @@ describe('buildContentStream', () => {
 
     it('includes setsumei_image_url alongside catalog images', () => {
       const listing = makeListing({
+        images: ['hero.jpg', oshigataUrl],
         setsumei_text_en: 'text',
         setsumei_image_url: 'existing-scan.jpg',
       });
@@ -335,8 +341,8 @@ describe('buildContentStream', () => {
           images: [koshPhoto, koshCatalog],
         } as any,
       });
-      // koshCatalog must also appear in displayImages to be classified
-      const result = buildContentStream(['hero.jpg', koshCatalog], listing, true, []);
+      // koshCatalog does NOT need to be in displayImages — uses isYuhinkaiCatalogImage() directly
+      const result = buildContentStream(['hero.jpg'], listing, true, []);
 
       const koshBlock = result.blocks.find(b => b.type === 'koshirae');
       expect(koshBlock).toBeDefined();
@@ -347,7 +353,10 @@ describe('buildContentStream', () => {
     });
 
     it('catalog images tracked in allImageUrls for lightbox navigation', () => {
-      const listing = makeListing({ setsumei_text_en: 'text' });
+      const listing = makeListing({
+        images: ['hero.jpg', 'photo.jpg', oshigataUrl, setsumeiUrl],
+        setsumei_text_en: 'text',
+      });
       const displayImages = ['hero.jpg', 'photo.jpg', oshigataUrl, setsumeiUrl];
       const result = buildContentStream(displayImages, listing, true, []);
 
@@ -356,7 +365,9 @@ describe('buildContentStream', () => {
     });
 
     it('does not classify catalog images when detailLoaded is false', () => {
-      const listing = makeListing();
+      const listing = makeListing({
+        images: ['hero.jpg', oshigataUrl, 'photo.jpg'],
+      });
       const displayImages = ['hero.jpg', oshigataUrl, 'photo.jpg'];
       const result = buildContentStream(displayImages, listing, false, []);
 
@@ -364,6 +375,54 @@ describe('buildContentStream', () => {
       const imageBlocks = result.blocks.filter(b => b.type === 'image') as Array<{ type: 'image'; src: string }>;
       const imageSrcs = imageBlocks.map(b => b.src);
       expect(imageSrcs).toContain(oshigataUrl);
+    });
+
+    it('detects catalog images via stored copies (listing-images/ replacing originals)', () => {
+      // Simulates getAllImages() replacing catalog originals with stored copies
+      const storedOshigata = 'https://example.supabase.co/storage/v1/object/public/listing-images/shop/L90396/00.jpg';
+      const storedSetsumei = 'https://example.supabase.co/storage/v1/object/public/listing-images/shop/L90396/01.jpg';
+
+      const listing = makeListing({
+        // Original images contain catalog URLs
+        images: [oshigataUrl, setsumeiUrl, 'photo1.jpg', 'photo2.jpg'],
+        setsumei_text_en: 'Setsumei text',
+      });
+      // displayImages has stored copies at positions 0 and 1
+      const displayImages = [storedOshigata, storedSetsumei, 'photo1.jpg', 'photo2.jpg'];
+      const result = buildContentStream(displayImages, listing, true, []);
+
+      // Hero should be photo1.jpg (first non-catalog), NOT the stored oshigata
+      const hero = result.blocks.find(b => b.type === 'hero_image');
+      expect((hero as any)?.src).toBe('photo1.jpg');
+
+      // Stored copies should NOT appear in photo blocks
+      const imageBlocks = result.blocks.filter(b => b.type === 'image') as Array<{ type: 'image'; src: string }>;
+      expect(imageBlocks.map(b => b.src)).not.toContain(storedOshigata);
+      expect(imageBlocks.map(b => b.src)).not.toContain(storedSetsumei);
+
+      // Catalog originals should appear in setsumei block
+      const setsumeiBlock = result.blocks.find(b => b.type === 'setsumei');
+      if (setsumeiBlock?.type === 'setsumei') {
+        expect(setsumeiBlock.images).toContain(oshigataUrl);
+        expect(setsumeiBlock.images).toContain(setsumeiUrl);
+      }
+    });
+
+    it('hero skips catalog images and picks first non-catalog photo', () => {
+      const listing = makeListing({
+        images: [oshigataUrl, setsumeiUrl, 'photo1.jpg', 'photo2.jpg'],
+        setsumei_text_en: 'text',
+      });
+      const displayImages = [oshigataUrl, setsumeiUrl, 'photo1.jpg', 'photo2.jpg'];
+      const result = buildContentStream(displayImages, listing, true, []);
+
+      const hero = result.blocks.find(b => b.type === 'hero_image');
+      expect((hero as any)?.src).toBe('photo1.jpg');
+
+      // photo1.jpg should only be hero, not also in photo blocks
+      const photoBlocks = result.blocks.filter(b => b.type === 'image') as Array<{ type: 'image'; src: string }>;
+      expect(photoBlocks.map(b => b.src)).not.toContain('photo1.jpg');
+      expect(photoBlocks.map(b => b.src)).toContain('photo2.jpg');
     });
   });
 });
