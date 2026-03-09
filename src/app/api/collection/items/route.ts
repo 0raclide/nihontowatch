@@ -8,6 +8,7 @@ import {
   insertCollectionItem,
   insertCollectionEvent,
 } from '@/lib/supabase/collectionItems';
+import { checkCollectionAccess } from '@/lib/collection/access';
 
 export const dynamic = 'force-dynamic';
 
@@ -56,6 +57,9 @@ export async function GET(request: NextRequest) {
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const accessDenied = await checkCollectionAccess(supabase, user.id);
+    if (accessDenied) return accessDenied;
 
     const serviceClient = createServiceClient();
     const filters = parseFilters(request.nextUrl.searchParams);
@@ -139,6 +143,9 @@ export async function POST(request: NextRequest) {
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const accessDenied = await checkCollectionAccess(supabase, user.id);
+    if (accessDenied) return accessDenied;
 
     const serviceClient = createServiceClient();
 
