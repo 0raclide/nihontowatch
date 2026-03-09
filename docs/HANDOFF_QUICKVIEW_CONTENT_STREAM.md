@@ -5,6 +5,7 @@
 **Phase A cleanup (2026-03-09):** SetsumeiBlock extracted, ImageLightbox shared, scroll-spy added, JSONB sanitizers completed. +41 new tests (5 scroll-spy + 36 sanitizer). 5000 existing tests green.
 **Production fixes (2026-03-09):** Curator-note source guard allowlist. Section pill scroll-to bug (two fixes — see Post-Deploy Fixes).
 **Catalog image classification (2026-03-09):** Yuhinkai catalog images (oshigata/setsumei scans) routed from main photo stream to section thumbnails. Koshirae photos promoted to full-width. Three iterations to fix stored-copy detection + hero selection + koshirae thumbnail placement. See Phase B below.
+**Phase C — section text consistency (2026-03-09):** Removed nested scroll boxes (`max-h-[400px] overflow-y-auto`) and gold bordered card styling from setsumei blocks. All section text (setsumei, sayagaki, provenance, kiwame, etc.) now renders consistently as flowing text within the scrollable content stream.
 **Design doc:** `docs/DESIGN_QUICKVIEW_CONTENT_STREAM.md`
 
 ---
@@ -66,7 +67,7 @@ Conditional branching: `isDealer && contentStreamResult ? (stream path) : (exist
 | `src/components/listing/SectionIndicators.tsx` | ~40 | Tappable section pill row with scroll-spy highlighting |
 | `src/components/listing/StatsCard.tsx` | ~200 | Condensed metadata panel |
 | `tests/lib/media/contentStream.test.ts` | ~370 | 22 unit tests (12 original + 10 catalog classification) |
-| `src/components/listing/SetsumeiBlock.tsx` | ~75 | Extracted parchment-style setsumei card (Phase A) |
+| `src/components/listing/SetsumeiBlock.tsx` | ~65 | Extracted setsumei text + translation toggle + catalog thumbnails (Phase A; Phase C removed bordered card) |
 | `src/components/ui/ImageLightbox.tsx` | ~40 | Shared full-screen image lightbox overlay (Phase A) |
 | `src/hooks/useScrollSpy.ts` | ~60 | IntersectionObserver-based scroll-spy hook (Phase A) |
 | `src/lib/dealer/sanitizeSections.ts` | ~160 | Sanitizers for 4 JSONB section fields (Phase A) |
@@ -82,7 +83,7 @@ Conditional branching: `isDealer && contentStreamResult ? (stream path) : (exist
 | `src/app/api/dealer/listings/[id]/route.ts` | Same; **Phase A: PATCH now sanitizes all 5 JSONB fields (was only koshirae)** |
 | `src/components/listing/SayagakiDisplay.tsx` | `onImageClick` prop; **Phase A: lightbox JSX → `<ImageLightbox>`** |
 | `src/components/listing/HakogakiDisplay.tsx` | Same |
-| `src/components/listing/KoshiraeDisplay.tsx` | Same |
+| `src/components/listing/KoshiraeDisplay.tsx` | Same; **Phase C: removed bordered card + nested scroll from KoshiraeSetsumei sub-component** |
 | `src/components/listing/ProvenanceDisplay.tsx` | Same |
 | `src/components/listing/KantoHibishoDisplay.tsx` | Same |
 | `src/components/listing/QuickView.tsx` | Conditional content stream path; **Phase A: `useScrollSpy` hook, `activeSection` threaded to StatsCard + MobileSheet** |
@@ -263,3 +264,15 @@ PHOTOS (full-width, catalog images excluded)
 - [x] Manual: Listing 90396 — koshirae photos are full-width, catalog thumbnails after zufu text
 - [x] Manual: Listing 90396 — hero is a dealer photo, not catalog scan
 - [x] Manual: Stored image copies correctly detected as catalog via filename index
+
+### Phase C (2026-03-09) — Section Text Consistency
+
+Three commits (`230da94`, `b078077`, `36fb50f`):
+
+1. **Removed nested scroll** from SetsumeiBlock (`max-h-[400px] overflow-y-auto` → natural flow)
+2. **Removed nested scroll** from KoshiraeSetsumei in KoshiraeDisplay (`max-h-[300px] overflow-y-auto` → natural flow)
+3. **Removed gold bordered card** (`rounded-lg border border-gold/20 bg-gold/5`) from both setsumei components — all section text now renders consistently (plain text with translation toggle, no card wrapper)
+
+- [x] Manual: Setsumei text flows naturally in content stream (no scroll-within-scroll)
+- [x] Manual: Koshirae zufu commentary text flows naturally (no scroll-within-scroll)
+- [x] Manual: All section text visually consistent (no bordered card on setsumei vs plain text on sayagaki/provenance)
