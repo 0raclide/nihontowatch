@@ -16,10 +16,10 @@ const COLLECTION_TO_CERT: Record<string, string> = {
   'Jubi': 'Juyo Bijutsuhin',
 };
 
-/** Map cert_type display label → Yuhinkai collection name (inverse of COLLECTION_TO_CERT) */
+/** Map cert_type (DB-normalized) → Yuhinkai collection name (inverse of COLLECTION_TO_CERT) */
 export const CERT_TO_COLLECTION: Record<string, string> = {
   'Juyo': 'Juyo',
-  'Tokubetsu Juyo': 'Tokuju',
+  'Tokuju': 'Tokuju',
   'Juyo Bijutsuhin': 'Jubi',
 };
 

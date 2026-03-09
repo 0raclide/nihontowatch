@@ -235,9 +235,9 @@ describe('CERT_NONE sentinel → null conversion', () => {
     expect(convertCertType(CERT_NONE)).toBeNull();
   });
 
-  it('preserves valid cert types', () => {
+  it('preserves valid cert types (DB-normalized values)', () => {
     expect(convertCertType('Juyo')).toBe('Juyo');
-    expect(convertCertType('Tokubetsu Hozon')).toBe('Tokubetsu Hozon');
+    expect(convertCertType('TokuHozon')).toBe('TokuHozon');
     expect(convertCertType('Hozon')).toBe('Hozon');
   });
 

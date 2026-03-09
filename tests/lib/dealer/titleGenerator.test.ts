@@ -27,18 +27,18 @@ describe('generateListingTitle', () => {
   // All cert types map correctly
   // -------------------------------------------------------------------------
 
-  it('maps Tokubetsu Juyo cert in EN', () => {
-    const { en } = generateListingTitle('Tokubetsu Juyo', 'katana', null, null);
+  it('maps Tokuju (DB-normalized Tokubetsu Juyo) cert in EN', () => {
+    const { en } = generateListingTitle('Tokuju', 'katana', null, null);
     expect(en).toBe('Tokubetsu Juyo Katana');
   });
 
-  it('maps Tokubetsu Juyo cert in JA', () => {
-    const { ja } = generateListingTitle('Tokubetsu Juyo', 'katana', null, null);
+  it('maps Tokuju cert in JA', () => {
+    const { ja } = generateListingTitle('Tokuju', 'katana', null, null);
     expect(ja).toBe('特別重要刀剣 刀');
   });
 
-  it('maps Tokubetsu Hozon cert', () => {
-    const { en, ja } = generateListingTitle('Tokubetsu Hozon', 'wakizashi', null, null);
+  it('maps TokuHozon (DB-normalized Tokubetsu Hozon) cert', () => {
+    const { en, ja } = generateListingTitle('TokuHozon', 'wakizashi', null, null);
     expect(en).toBe('Tokubetsu Hozon Wakizashi');
     expect(ja).toBe('特別保存刀剣 脇差');
   });

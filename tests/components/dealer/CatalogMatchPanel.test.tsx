@@ -177,11 +177,11 @@ describe('CatalogMatchPanel', () => {
     expect(screen.queryByText('stale-uuid')).toBeNull();
   });
 
-  it('maps Tokubetsu Juyo → Tokuju collection', async () => {
+  it('maps Tokuju cert → Tokuju collection', async () => {
     const fetchSpy = mockFetchSuccess();
     global.fetch = fetchSpy;
 
-    render(<CatalogMatchPanel {...defaultProps} certType="Tokubetsu Juyo" />);
+    render(<CatalogMatchPanel {...defaultProps} certType="Tokuju" />);
 
     await waitFor(() => {
       const url = fetchSpy.mock.calls[0][0] as string;

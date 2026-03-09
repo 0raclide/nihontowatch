@@ -1,16 +1,16 @@
 const CERT_EN_MAP: Record<string, string> = {
-  'Tokubetsu Juyo': 'Tokubetsu Juyo',
+  'Tokuju': 'Tokubetsu Juyo',
   'Juyo': 'Juyo',
   'Juyo Bijutsuhin': 'Juyo Bijutsuhin',
-  'Tokubetsu Hozon': 'Tokubetsu Hozon',
+  'TokuHozon': 'Tokubetsu Hozon',
   'Hozon': 'Hozon',
 };
 
 const CERT_JA_MAP: Record<string, string> = {
-  'Tokubetsu Juyo': '特別重要刀剣',
+  'Tokuju': '特別重要刀剣',
   'Juyo': '重要刀剣',
   'Juyo Bijutsuhin': '重要美術品',
-  'Tokubetsu Hozon': '特別保存刀剣',
+  'TokuHozon': '特別保存刀剣',
   'Hozon': '保存刀剣',
 };
 

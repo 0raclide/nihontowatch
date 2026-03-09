@@ -790,7 +790,7 @@ export function DealerListingForm({ mode, initialData }: DealerListingFormProps)
     }
   }, [initialData?.id, router]);
 
-  const canGenerateNote = certType === 'Juyo' || certType === 'Tokubetsu Juyo';
+  const canGenerateNote = certType === 'Juyo' || certType === 'Tokuju';
   const hasNoteData = !!(artisanId || setsumeiTextEn || setsumeiTextJa);
 
   const handleGenerateNote = useCallback(async () => {

@@ -3,10 +3,10 @@
 import { useLocale } from '@/i18n/LocaleContext';
 
 const CERT_OPTIONS = [
-  { value: 'Tokubetsu Juyo', labelKey: 'cert.tokuju' },
+  { value: 'Tokuju', labelKey: 'cert.tokuju' },
   { value: 'Juyo', labelKey: 'cert.juyo' },
   { value: 'Juyo Bijutsuhin', labelKey: 'cert.Juyo Bijutsuhin' },
-  { value: 'Tokubetsu Hozon', labelKey: 'cert.Tokubetsu Hozon' },
+  { value: 'TokuHozon', labelKey: 'cert.Tokubetsu Hozon' },
   { value: 'Hozon', labelKey: 'cert.hozon' },
 ];
 
