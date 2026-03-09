@@ -641,15 +641,10 @@ export const ListingCard = memo(function ListingCard({
       src={imageUrl}
       alt={altText}
       fill
-      className={`group-hover:scale-105 transition-[opacity,transform] duration-500 ${
+      className={`object-cover group-hover:scale-105 transition-[opacity,transform] duration-500 ${
         isLoading ? 'opacity-0' : 'opacity-100'
       }`}
-      style={{
-        height: 'auto',
-        minHeight: '100%',
-        objectFit: 'cover',
-        objectPosition: focalPosition || 'top',
-      }}
+      style={{ objectPosition: focalPosition || 'top' }}
       sizes={isGridMobile ? '(max-width: 640px) 50vw, (max-width: 1024px) 50vw, 25vw' : '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw'}
       priority={priority}
       fetchPriority={priority ? 'high' : undefined}
