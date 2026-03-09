@@ -3,13 +3,15 @@
  *
  * Called by Bunny Stream when video encoding status changes.
  * No user auth — webhook from Bunny. Uses service role key.
+ *
+ * Writes to `item_videos` table (keyed by item_uuid).
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/server';
 import { videoProvider } from '@/lib/video/videoProvider';
-import { selectListingVideoSingle, updateListingVideo } from '@/lib/supabase/listingVideos';
-import type { ListingVideosRow } from '@/types/media';
+import { selectItemVideoSingle, updateItemVideo } from '@/lib/supabase/itemVideos';
+import type { ItemVideoRow } from '@/types/collectionItem';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,8 +28,8 @@ export async function POST(request: NextRequest) {
 
     const serviceClient = createServiceClient();
 
-    // Find the listing_videos row by provider_id
-    const { data: video } = await selectListingVideoSingle(
+    // Find the item_videos row by provider_id
+    const { data: video } = await selectItemVideoSingle(
       serviceClient, 'provider_id', providerId, 'id, provider_id'
     );
 
@@ -46,7 +48,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Fetch full metadata from Bunny API when ready
-    const updateData: Partial<ListingVideosRow> = { status };
+    const updateData: Partial<ItemVideoRow> = { status };
 
     if (status === 'ready') {
       try {
@@ -58,9 +60,12 @@ export async function POST(request: NextRequest) {
       } catch {
         // Metadata fetch failed — status update still proceeds
       }
+
+      // Cache stream_url in DB (new in item_videos)
+      updateData.stream_url = videoProvider.getStreamUrl(providerId);
     }
 
-    await updateListingVideo(serviceClient, video.id, updateData);
+    await updateItemVideo(serviceClient, video.id, updateData);
 
     return NextResponse.json({ ok: true });
   } catch (err) {

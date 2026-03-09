@@ -3,7 +3,7 @@ import { verifyDealer } from '@/lib/dealer/auth';
 import { getArtisanEliteStats } from '@/lib/featured/scoring';
 import { sanitizeKoshirae } from '@/lib/dealer/sanitizeKoshirae';
 import { sanitizeSayagaki, sanitizeHakogaki, sanitizeProvenance, sanitizeKiwame, sanitizeKantoHibisho } from '@/lib/dealer/sanitizeSections';
-import { selectListingVideos } from '@/lib/supabase/listingVideos';
+import { selectItemVideos } from '@/lib/supabase/itemVideos';
 import { videoProvider, isVideoProviderConfigured } from '@/lib/video/videoProvider';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -228,7 +228,7 @@ export async function DELETE(
   // Use service client — RLS blocks source='dealer' reads (migration 098)
   const serviceClient = createServiceClient();
   const { data: listing } = await (serviceClient.from('listings') as any)
-    .select('id, dealer_id, source, status')
+    .select('id, dealer_id, source, status, item_uuid')
     .eq('id', listingId)
     .single();
 
@@ -244,10 +244,10 @@ export async function DELETE(
     );
   }
 
-  // Clean up Bunny videos before CASCADE delete removes listing_videos rows
-  if (isVideoProviderConfigured()) {
-    const { data: videos } = await selectListingVideos(
-      serviceClient, 'listing_id', listingId, 'provider_id'
+  // Clean up Bunny videos before deleting (item_videos has no CASCADE from listings)
+  if (isVideoProviderConfigured() && listing.item_uuid) {
+    const { data: videos } = await selectItemVideos(
+      serviceClient, 'item_uuid', listing.item_uuid, 'id, provider_id'
     );
     if (videos && videos.length > 0) {
       await Promise.all(
@@ -255,6 +255,12 @@ export async function DELETE(
           videoProvider.deleteVideo(v.provider_id).catch(err =>
             console.error(`Failed to delete Bunny video ${v.provider_id}:`, err)
           )
+        )
+      );
+      // Delete item_videos rows (no CASCADE since no FK to listings)
+      await Promise.all(
+        videos.map(v =>
+          (serviceClient.from('item_videos' as any) as any).delete().eq('id', v.id)
         )
       );
     }

@@ -1,12 +1,15 @@
 /**
  * DELETE /api/dealer/videos/[id] — Delete a video
+ *
+ * Reads from `item_videos` table (keyed by item_uuid).
+ * Ownership verified via item_videos.owner_id = auth.user.id.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { verifyDealer } from '@/lib/dealer/auth';
 import { videoProvider, isVideoProviderConfigured } from '@/lib/video/videoProvider';
-import { selectListingVideoSingle, deleteListingVideo } from '@/lib/supabase/listingVideos';
+import { selectItemVideoSingle, deleteItemVideo } from '@/lib/supabase/itemVideos';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,22 +31,16 @@ export async function DELETE(
 
     const serviceClient = createServiceClient();
 
-    // Fetch video + verify it belongs to dealer's listing
-    const { data: video } = await selectListingVideoSingle(
-      serviceClient, 'id', videoId, 'id, provider_id, listing_id'
+    // Fetch video + verify ownership directly via owner_id
+    const { data: video } = await selectItemVideoSingle(
+      serviceClient, 'id', videoId, 'id, provider_id, owner_id'
     );
 
     if (!video) {
       return NextResponse.json({ error: 'Video not found' }, { status: 404 });
     }
 
-    const { data: listing } = await serviceClient
-      .from('listings')
-      .select('dealer_id')
-      .eq('id', video.listing_id)
-      .single();
-
-    if (!listing || (listing as { dealer_id: number }).dealer_id !== auth.dealerId) {
+    if (video.owner_id !== auth.user.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -58,7 +55,7 @@ export async function DELETE(
     }
 
     // Delete from DB
-    const { error: deleteError } = await deleteListingVideo(serviceClient, videoId);
+    const { error: deleteError } = await deleteItemVideo(serviceClient, videoId);
 
     if (deleteError) {
       return NextResponse.json({ error: 'Failed to delete video record' }, { status: 500 });

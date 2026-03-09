@@ -34,22 +34,8 @@ export interface ListingVideo {
 }
 
 /**
- * Row type matching the `listing_videos` DB table exactly.
- * Used for typed Supabase queries where generated types are unavailable.
+ * DB row type for `item_videos` table.
+ * Re-exported from collectionItem.ts for convenience.
+ * @see ItemVideoRow in src/types/collectionItem.ts
  */
-export interface ListingVideosRow {
-  id: string;
-  listing_id: number;
-  provider: string;
-  provider_id: string;
-  duration_seconds: number | null;
-  width: number | null;
-  height: number | null;
-  thumbnail_url: string | null;
-  status: string;
-  sort_order: number;
-  original_filename: string | null;
-  size_bytes: number | null;
-  created_by: string | null;
-  created_at: string;
-}
+export type { ItemVideoRow } from './collectionItem';

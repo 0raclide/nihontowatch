@@ -4,6 +4,7 @@ import { getArtisanDisplayName, getArtisanDisplayNameKanji, getArtisanAlias } fr
 import { getArtisanTier } from '@/lib/artisan/tier';
 import { getAttributionName } from '@/lib/listing/attribution';
 import { isVideoProviderConfigured, videoProvider } from '@/lib/video/videoProvider';
+import { selectItemVideos } from '@/lib/supabase/itemVideos';
 import type { YuhinkaiEnrichment, SayagakiEntry, HakogakiEntry, KoshiraeData, ProvenanceEntry, KiwameEntry, KantoHibishoData } from '@/types';
 import type { ListingVideo } from '@/types/media';
 
@@ -114,21 +115,8 @@ interface ListingWithDealer {
     domain: string;
     earliest_listing_at: string | null;
   };
+  item_uuid: string | null;
   listing_yuhinkai_enrichment?: YuhinkaiEnrichmentRow[];
-  listing_videos?: Array<{
-    id: string;
-    provider: string;
-    provider_id: string;
-    duration_seconds: number | null;
-    width: number | null;
-    height: number | null;
-    thumbnail_url: string | null;
-    status: string;
-    sort_order: number;
-    original_filename: string | null;
-    size_bytes: number | null;
-    created_at: string;
-  }>;
 }
 
 /** Enriched listing detail — the canonical shape returned to callers. */
@@ -293,6 +281,7 @@ const LISTING_SELECT = `
   showcase_override,
   ai_curator_note_en,
   ai_curator_note_ja,
+  item_uuid,
   dealers (
     id,
     name,
@@ -326,20 +315,6 @@ const LISTING_SELECT = `
     connection_source,
     enriched_at,
     updated_at
-  ),
-  listing_videos (
-    id,
-    provider,
-    provider_id,
-    duration_seconds,
-    width,
-    height,
-    thumbnail_url,
-    status,
-    sort_order,
-    original_filename,
-    size_bytes,
-    created_at
   )
 `;
 
@@ -506,27 +481,46 @@ export async function getListingDetail(
       domain: typedListing.dealers.domain,
     },
     yuhinkai_enrichment,
-    // Enrich videos with stream URLs
-    videos: (typedListing.listing_videos || [])
-      .filter(v => v.status === 'ready')
-      .sort((a, b) => a.sort_order - b.sort_order)
-      .map(v => ({
-        id: v.id,
-        listing_id: typedListing.id,
-        provider: v.provider,
-        provider_id: v.provider_id,
-        duration_seconds: v.duration_seconds ?? undefined,
-        width: v.width ?? undefined,
-        height: v.height ?? undefined,
-        thumbnail_url: v.thumbnail_url ?? undefined,
-        status: v.status as 'ready',
-        sort_order: v.sort_order,
-        original_filename: v.original_filename ?? undefined,
-        size_bytes: v.size_bytes ?? undefined,
-        created_at: v.created_at,
-        stream_url: isVideoProviderConfigured()
-          ? videoProvider.getStreamUrl(v.provider_id)
-          : undefined,
-      })),
+    // Enrich videos from item_videos (separate query — no FK for nested select)
+    videos: await getVideosForListing(supabase, typedListing.item_uuid, typedListing.id),
   };
+}
+
+/**
+ * Fetch ready videos for a listing from item_videos (keyed by item_uuid).
+ * Returns empty array for scraped listings (no item_uuid).
+ */
+async function getVideosForListing(
+  supabase: SupabaseClient,
+  itemUuid: string | null,
+  listingId: number,
+): Promise<ListingVideo[]> {
+  if (!itemUuid) return [];
+
+  const { data: videos } = await selectItemVideos(
+    supabase, 'item_uuid', itemUuid, '*',
+    { column: 'sort_order', ascending: true }
+  );
+
+  if (!videos || videos.length === 0) return [];
+
+  return videos
+    .filter(v => v.status === 'ready')
+    .map(v => ({
+      id: v.id,
+      listing_id: listingId,
+      provider: v.provider,
+      provider_id: v.provider_id,
+      duration_seconds: v.duration_seconds ?? undefined,
+      width: v.width ?? undefined,
+      height: v.height ?? undefined,
+      thumbnail_url: v.thumbnail_url ?? undefined,
+      status: v.status as 'ready',
+      sort_order: v.sort_order,
+      original_filename: v.original_filename ?? undefined,
+      size_bytes: v.size_bytes ?? undefined,
+      created_at: v.created_at,
+      stream_url: v.stream_url
+        || (isVideoProviderConfigured() ? videoProvider.getStreamUrl(v.provider_id) : undefined),
+    }));
 }
