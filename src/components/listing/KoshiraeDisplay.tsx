@@ -29,30 +29,26 @@ function KoshiraeSetsumei({ textEn, textJa }: { textEn: string; textJa: string |
       <div className="text-[10px] uppercase tracking-wider text-muted font-medium mb-1">
         {t('dealer.koshiraeSetsumei')}
       </div>
-      <div className="rounded-lg border border-gold/20 bg-gold/5 dark:bg-gold/5">
-        {hasToggle && (
-          <div className="flex justify-end px-3 py-1.5 border-b border-gold/10">
-            <button
-              type="button"
-              onClick={() => setShowAlternate(!showAlternate)}
-              className="text-[11px] text-gold hover:text-gold/80 font-medium transition-colors"
-            >
-              {showingJa ? t('dealer.setsumeiShowEnglish') : t('dealer.setsumeiShowOriginal')}
-            </button>
-          </div>
-        )}
-        <div className="px-3 py-2">
-          {showingJa ? (
-            <p className="text-[13px] text-ink/80 leading-[1.85] whitespace-pre-line font-jp">
-              {textJa}
-            </p>
-          ) : (
-            <article className="prose-translation">
-              <ReactMarkdown>{textEn}</ReactMarkdown>
-            </article>
-          )}
+      {hasToggle && (
+        <div className="flex justify-end mb-1">
+          <button
+            type="button"
+            onClick={() => setShowAlternate(!showAlternate)}
+            className="text-[11px] text-gold hover:text-gold/80 font-medium transition-colors"
+          >
+            {showingJa ? t('dealer.setsumeiShowEnglish') : t('dealer.setsumeiShowOriginal')}
+          </button>
         </div>
-      </div>
+      )}
+      {showingJa ? (
+        <p className="text-[13px] text-ink/80 leading-[1.85] whitespace-pre-line font-jp">
+          {textJa}
+        </p>
+      ) : (
+        <article className="prose-translation">
+          <ReactMarkdown>{textEn}</ReactMarkdown>
+        </article>
+      )}
     </div>
   );
 }
