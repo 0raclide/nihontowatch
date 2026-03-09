@@ -9,11 +9,13 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
+import { QUICKVIEW_LAYOUT } from './quickviewLayout';
 
 interface QuickViewModalProps {
   isOpen: boolean;
   onClose: () => void;
   children: ReactNode;
+  source?: 'browse' | 'collection' | 'dealer';
 }
 
 // Spring animation duration
@@ -29,6 +31,7 @@ export function QuickViewModal({
   isOpen,
   onClose,
   children,
+  source,
 }: QuickViewModalProps) {
   // Animation state
   const [isAnimatingOut, setIsAnimatingOut] = useState(false);
@@ -254,7 +257,8 @@ export function QuickViewModal({
             relative w-full bg-cream shadow-xl pointer-events-auto
             rounded-t-2xl lg:rounded-lg
             h-[92vh] lg:h-[90vh]
-            max-w-4xl overflow-hidden flex flex-col
+            ${source === 'dealer' ? QUICKVIEW_LAYOUT.modal.dealer : QUICKVIEW_LAYOUT.modal.default} overflow-hidden flex flex-col
+            transition-[max-width] duration-300 ease-out
             ${isAnimatingOut ? 'animate-slideDown' : 'animate-slideUp'}
           `}
         >
