@@ -16,7 +16,7 @@
 // SUBSCRIPTION TIERS
 // =============================================================================
 
-export type SubscriptionTier = 'free' | 'enthusiast' | 'collector' | 'inner_circle' | 'dealer';
+export type SubscriptionTier = 'free' | 'enthusiast' | 'collector' | 'inner_circle' | 'dealer' | 'yuhinkai';
 
 export type SubscriptionStatus = 'active' | 'inactive' | 'cancelled' | 'past_due';
 
@@ -29,6 +29,7 @@ export const TIER_DISPLAY_NAMES: Record<SubscriptionTier, string> = {
   collector: 'Collector',
   inner_circle: 'Inner Circle',
   dealer: 'Dealer',
+  yuhinkai: 'Yuhinkai',
 };
 
 // =============================================================================
@@ -49,7 +50,8 @@ export type Feature =
   | 'yuhinkai_discord'     // Private Discord community
   | 'line_access'          // LINE chat with Hoshi
   | 'export_data'          // CSV/Excel exports
-  | 'dealer_analytics';    // Dealer-only analytics
+  | 'dealer_analytics'     // Dealer-only analytics
+  | 'collection_access';   // Personal collection manager
 
 /**
  * Feature access by tier
@@ -61,6 +63,7 @@ export const TIER_RANK: Record<SubscriptionTier, number> = {
   collector: 2,
   inner_circle: 3,
   dealer: 1, // Same level as enthusiast for most features
+  yuhinkai: 1, // Same level as enthusiast for most features + collection_access
 };
 
 /**
@@ -89,6 +92,8 @@ export const FEATURE_MIN_TIER: Record<Feature, SubscriptionTier> = {
   line_access: 'inner_circle',
   // Dealer features
   dealer_analytics: 'dealer',
+  // Yuhinkai features
+  collection_access: 'yuhinkai',
 };
 
 /**
@@ -118,9 +123,14 @@ export function canAccessFeature(tier: SubscriptionTier, feature: Feature): bool
 
   const requiredTier = FEATURE_MIN_TIER[feature];
 
-  // Special case: dealer has access to enthusiast features but not collector/inner_circle
+  // Special case: dealer has access to enthusiast features + dealer features + collection
   if (tier === 'dealer') {
-    return requiredTier === 'enthusiast' || requiredTier === 'dealer';
+    return requiredTier === 'enthusiast' || requiredTier === 'dealer' || feature === 'collection_access';
+  }
+
+  // Special case: yuhinkai has access to enthusiast features + collection_access
+  if (tier === 'yuhinkai') {
+    return requiredTier === 'enthusiast' || feature === 'collection_access';
   }
 
   const userRank = TIER_RANK[tier];
@@ -188,6 +198,7 @@ export interface SubscriptionState {
   isCollector: boolean;  // collector or higher
   isInnerCircle: boolean;
   isDealer: boolean;
+  isYuhinkai: boolean;
   // Feature access
   canAccess: (feature: Feature) => boolean;
 }
@@ -212,10 +223,11 @@ export function createSubscriptionState(
     isActive,
     expiresAt: fields?.subscription_expires_at ?? null,
     isFree: effectiveTier === 'free',
-    isPro: rank >= TIER_RANK.enthusiast && effectiveTier !== 'dealer',
+    isPro: rank >= TIER_RANK.enthusiast && effectiveTier !== 'dealer' && effectiveTier !== 'yuhinkai',
     isCollector: rank >= TIER_RANK.collector,
     isInnerCircle: effectiveTier === 'inner_circle',
     isDealer: effectiveTier === 'dealer',
+    isYuhinkai: effectiveTier === 'yuhinkai',
     canAccess: (feature: Feature) => canAccessFeature(effectiveTier, feature),
   };
 }
@@ -230,7 +242,7 @@ export interface TierPricing {
   annualSavings: number; // Percentage saved
 }
 
-export const TIER_PRICING: Record<Exclude<SubscriptionTier, 'free'>, TierPricing> = {
+export const TIER_PRICING: Record<Exclude<SubscriptionTier, 'free' | 'yuhinkai'>, TierPricing> = {
   enthusiast: {
     monthly: 25,
     annual: 225,
@@ -317,6 +329,16 @@ export const TIER_INFO: Record<SubscriptionTier, TierInfo> = {
       'Submit private listings',
     ],
   },
+  yuhinkai: {
+    name: 'Yuhinkai',
+    description: 'Collection management',
+    features: [
+      'Personal collection catalog',
+      'Yuhinkai NBTHK data lookup',
+      'Image uploads',
+      'Collection-to-listing promotion',
+    ],
+  },
 };
 
 // =============================================================================
@@ -357,6 +379,7 @@ export function getPaywallConfig(requiredTier: SubscriptionTier): {
     requiredTier === 'free' ? 'enthusiast'
     : requiredTier === 'inner_circle' ? 'collector'
     : requiredTier === 'dealer' ? 'enthusiast'
+    : requiredTier === 'yuhinkai' ? 'enthusiast'
     : requiredTier as 'enthusiast' | 'collector';
 
   return {

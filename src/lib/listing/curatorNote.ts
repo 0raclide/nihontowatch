@@ -16,6 +16,15 @@ import type { SayagakiEntry, HakogakiEntry, KoshiraeData, ProvenanceEntry, Kiwam
 // TYPES
 // =============================================================================
 
+export interface ArtistOverview {
+  form_distribution: Record<string, number>;
+  mei_distribution: Record<string, number>;
+  top_students: Array<{ name: string; juyo_count: number; tokuju_count: number; elite_factor: number }>;
+  school_ancestry: string[];
+  elite_percentile: number;
+  top_provenance_owners: Array<{ name: string; count: number }>;
+}
+
 export interface CuratorNoteContext {
   sword: {
     item_type: string | null;
@@ -66,6 +75,8 @@ export interface CuratorNoteContext {
     artisan_name: string | null;
     description: string | null;
   } | null;
+  research_notes: string | null;
+  artist_overview: ArtistOverview | null;
 }
 
 export type DataRichness = 'full' | 'moderate' | 'sparse' | 'minimal';
@@ -81,7 +92,8 @@ export type DataRichness = 'full' | 'moderate' | 'sparse' | 'minimal';
 export function assembleCuratorContext(
   listing: EnrichedListingDetail,
   artisanEntity: ArtisanEntity | null,
-  aiDescription: { en: string | null; ja: string | null } | null
+  aiDescription: { en: string | null; ja: string | null } | null,
+  artistOverview?: ArtistOverview | null
 ): CuratorNoteContext {
   // Sword data — always present (even if all null)
   const sword: CuratorNoteContext['sword'] = {
@@ -180,7 +192,14 @@ export function assembleCuratorContext(
       }
     : null;
 
-  return { sword, artisan, setsumei, sayagaki, hakogaki, provenance, kiwame, koshirae };
+  // Research notes — free-text from dealer/collector
+  const researchNotes = listing.research_notes?.trim() || null;
+
+  return {
+    sword, artisan, setsumei, sayagaki, hakogaki, provenance, kiwame, koshirae,
+    research_notes: researchNotes,
+    artist_overview: artistOverview ?? null,
+  };
 }
 
 // =============================================================================
@@ -229,10 +248,11 @@ export function getDataRichness(context: CuratorNoteContext): DataRichness {
   const hasHakogaki = !!context.hakogaki;
   const hasKiwame = !!context.kiwame;
   const hasKoshirae = !!context.koshirae;
+  const hasResearchNotes = !!context.research_notes;
 
   if (!hasSetsumei && !hasArtisan) return 'minimal';
 
-  if (hasSetsumei && hasArtisan && (hasSayagaki || hasProvenance || hasHakogaki || hasKiwame || hasKoshirae)) {
+  if (hasSetsumei && hasArtisan && (hasSayagaki || hasProvenance || hasHakogaki || hasKiwame || hasKoshirae || hasResearchNotes)) {
     return 'full';
   }
 
@@ -266,6 +286,7 @@ export interface GenerateDescriptionFormData {
   provenance: ProvenanceEntry[] | null;
   kiwame: KiwameEntry[] | null;
   koshirae: KoshiraeData | null;
+  research_notes: string | null;
 }
 
 /**
@@ -275,7 +296,8 @@ export interface GenerateDescriptionFormData {
 export function assembleCuratorContextFromFormData(
   formData: GenerateDescriptionFormData,
   artisanEntity: ArtisanEntity | null,
-  aiDescription: { en: string | null; ja: string | null } | null
+  aiDescription: { en: string | null; ja: string | null } | null,
+  artistOverview?: ArtistOverview | null
 ): CuratorNoteContext {
   const sword: CuratorNoteContext['sword'] = {
     item_type: formData.item_type,
@@ -366,5 +388,12 @@ export function assembleCuratorContextFromFormData(
       }
     : null;
 
-  return { sword, artisan, setsumei, sayagaki, hakogaki, provenance, kiwame, koshirae };
+  // Research notes — free-text from dealer/collector
+  const researchNotes = formData.research_notes?.trim() || null;
+
+  return {
+    sword, artisan, setsumei, sayagaki, hakogaki, provenance, kiwame, koshirae,
+    research_notes: researchNotes,
+    artist_overview: artistOverview ?? null,
+  };
 }

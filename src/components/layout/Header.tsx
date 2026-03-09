@@ -16,6 +16,7 @@ import { useLocale } from '@/i18n/LocaleContext';
 import { LocaleSwitcher } from '@/components/ui/LocaleSwitcher';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { FeedbackButton } from '@/components/feedback/FeedbackButton';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 
 function HeaderContent() {
   // Note: useMobileUI is imported but openSearch/openNavDrawer are used by MobileNavDrawer/MobileSearchSheet
@@ -31,6 +32,7 @@ function HeaderContent() {
   const searchAction = isArtistPage ? '/artists' : '/';
   const searchPlaceholder = isArtistPage ? t('search.artistPlaceholder') : t('search.placeholder');
   const { user, profile, isLoading: authLoading, isAdmin, isDealer } = useAuth();
+  const { canAccess } = useSubscription();
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
 
@@ -342,6 +344,14 @@ function HeaderContent() {
                   className="text-[11px] uppercase tracking-[0.2em] text-muted hover:text-gold transition-colors"
                 >
                   {t('nav.glossary')}
+                </Link>
+              )}
+              {user && canAccess('collection_access') && (
+                <Link
+                  href="/collection"
+                  className="text-[11px] uppercase tracking-[0.2em] text-muted hover:text-gold transition-colors"
+                >
+                  {t('nav.collection')}
                 </Link>
               )}
               <FeedbackButton />

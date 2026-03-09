@@ -1,22 +1,31 @@
+/** Max bytes before we force re-encode (keeps uploads under Vercel's ~4.5 MB body limit). */
+const RE_ENCODE_THRESHOLD = 4 * 1024 * 1024; // 4 MB
+
 /** Resize image to max dimension, return as Blob.
  *  Uses step-down resizing (halving) to avoid pixelation when shrinking
  *  large images — single-step canvas downscale produces jagged artifacts
  *  for reductions greater than 2×. */
-export async function resizeImage(file: File, maxDim = 2048, quality = 0.85): Promise<Blob> {
+export async function resizeImage(file: File, maxDim = 8192, quality = 0.85): Promise<Blob> {
   return new Promise((resolve) => {
     const img = document.createElement('img');
     const objectUrl = URL.createObjectURL(file);
     img.onload = () => {
       URL.revokeObjectURL(objectUrl);
       const { width, height } = img;
-      if (width <= maxDim && height <= maxDim) {
+
+      // Dimensions are fine AND file is small enough — pass through as-is
+      if (width <= maxDim && height <= maxDim && file.size <= RE_ENCODE_THRESHOLD) {
         resolve(file);
         return;
       }
 
-      // Compute final target dimensions
+      // Target dimensions: cap longest side at maxDim, or keep original if already under
       let targetW: number, targetH: number;
-      if (width > height) {
+      if (width <= maxDim && height <= maxDim) {
+        // Dimensions OK but file too large — re-encode at original size
+        targetW = width;
+        targetH = height;
+      } else if (width > height) {
         targetW = maxDim;
         targetH = Math.round((height / width) * maxDim);
       } else {

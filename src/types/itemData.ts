@@ -80,6 +80,9 @@ export interface ItemDataFields {
   kiwame?: KiwameEntry[] | null;
   kanto_hibisho?: KantoHibishoData | null;
 
+  // Research notes (AI curator note context — not displayed publicly)
+  research_notes?: string | null;
+
   // Setsumei
   setsumei_text_en?: string | null;
   setsumei_text_ja?: string | null;
@@ -206,6 +209,7 @@ export const SHARED_COLUMNS = [
   'provenance',
   'kiwame',
   'kanto_hibisho',
+  'research_notes',
   'setsumei_text_en',
   'setsumei_text_ja',
   'title_en',

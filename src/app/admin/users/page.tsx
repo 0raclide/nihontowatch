@@ -7,6 +7,8 @@ interface User {
   email: string;
   display_name: string | null;
   is_admin: boolean;
+  subscription_tier: string;
+  subscription_status: string;
   created_at: string;
   updated_at: string;
 }
@@ -85,6 +87,33 @@ export default function AdminUsersPage() {
     e.preventDefault();
     setPage(1);
     fetchUsers();
+  };
+
+  const handleTierChange = async (userId: string, tier: string) => {
+    setUpdatingUser(userId);
+    try {
+      const response = await fetch('/api/admin/users', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, subscriptionTier: tier }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update subscription tier');
+      }
+
+      setUsers((prev) =>
+        prev.map((user) =>
+          user.id === userId
+            ? { ...user, subscription_tier: tier, subscription_status: tier === 'free' ? 'inactive' : 'active' }
+            : user
+        )
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update tier');
+    } finally {
+      setUpdatingUser(null);
+    }
   };
 
   const handleRoleChange = async (userId: string, isAdmin: boolean) => {
@@ -182,6 +211,9 @@ export default function AdminUsersPage() {
                   Role
                 </th>
                 <th className="text-left px-6 py-4 text-xs uppercase tracking-wider text-muted font-semibold">
+                  Tier
+                </th>
+                <th className="text-left px-6 py-4 text-xs uppercase tracking-wider text-muted font-semibold">
                   Joined
                 </th>
                 <th className="text-left px-6 py-4 text-xs uppercase tracking-wider text-muted font-semibold">
@@ -195,7 +227,7 @@ export default function AdminUsersPage() {
             <tbody className="divide-y divide-border">
               {isLoading ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12">
+                  <td colSpan={6} className="px-6 py-12">
                     <div className="flex items-center justify-center">
                       <div className="w-6 h-6 border-2 border-gold border-t-transparent rounded-full animate-spin" />
                     </div>
@@ -203,7 +235,7 @@ export default function AdminUsersPage() {
                 </tr>
               ) : users.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-muted text-sm">
+                  <td colSpan={6} className="px-6 py-12 text-center text-muted text-sm">
                     {search ? 'No users found matching your search' : 'No users found'}
                   </td>
                 </tr>
@@ -236,6 +268,25 @@ export default function AdminUsersPage() {
                       >
                         <option value="user">User</option>
                         <option value="admin">Admin</option>
+                      </select>
+                    </td>
+                    <td className="px-6 py-4">
+                      <select
+                        value={user.subscription_tier || 'free'}
+                        onChange={(e) => handleTierChange(user.id, e.target.value)}
+                        disabled={updatingUser === user.id}
+                        className={`px-3 py-1.5 rounded-md text-xs font-medium border-0 focus:outline-none focus:ring-2 focus:ring-gold/30 transition-all ${
+                          user.subscription_tier && user.subscription_tier !== 'free'
+                            ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300'
+                            : 'bg-linen text-charcoal'
+                        } ${updatingUser === user.id ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                      >
+                        <option value="free">Free</option>
+                        <option value="yuhinkai">Yuhinkai</option>
+                        <option value="enthusiast">Pro</option>
+                        <option value="collector">Collector</option>
+                        <option value="inner_circle">Inner Circle</option>
+                        <option value="dealer">Dealer</option>
                       </select>
                     </td>
                     <td className="px-6 py-4 text-sm text-charcoal">

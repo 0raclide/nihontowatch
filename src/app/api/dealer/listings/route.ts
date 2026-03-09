@@ -166,6 +166,7 @@ export async function POST(request: NextRequest) {
     provenance,
     kiwame,
     kanto_hibisho,
+    research_notes,
     setsumei_text_en,
     setsumei_text_ja,
     ai_curator_note_en,
@@ -220,6 +221,7 @@ export async function POST(request: NextRequest) {
     ai_curator_note_en: ai_curator_note_en ?? null,
     kiwame: sanitizeKiwame(kiwame),
     kanto_hibisho: sanitizeKantoHibisho(kanto_hibisho),
+    research_notes: typeof research_notes === 'string' ? research_notes.slice(0, 5000) || null : null,
   };
 
   // Route artisan fields based on category

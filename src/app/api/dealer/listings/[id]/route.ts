@@ -66,6 +66,7 @@ const ALLOWED_FIELDS = new Set([
   'provenance',
   'kiwame',
   'kanto_hibisho',
+  'research_notes',
   'hero_image_index',
   'ai_curator_note_en',
   'ai_curator_note_ja',
@@ -142,6 +143,10 @@ export async function PATCH(
   }
   if ('kanto_hibisho' in updates) {
     updates.kanto_hibisho = sanitizeKantoHibisho(updates.kanto_hibisho);
+  }
+  if ('research_notes' in updates) {
+    const rn = updates.research_notes;
+    updates.research_notes = typeof rn === 'string' ? rn.slice(0, 5000) || null : null;
   }
 
   // Sanitize hero_image_index — must be non-negative integer or null

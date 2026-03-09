@@ -83,6 +83,7 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
         isCollector: true,
         isInnerCircle: true,
         isDealer: false,
+        isYuhinkai: true,
         canAccess: () => true, // Admins can access everything
       };
     }

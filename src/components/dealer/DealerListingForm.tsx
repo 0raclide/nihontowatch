@@ -66,6 +66,7 @@ interface DealerDraft {
   provenance: ProvenanceEntry[];
   kiwame: KiwameEntry[];
   kantoHibisho: KantoHibishoData | null;
+  researchNotes: string;
   certSession: number | null;
   catalogObjectUuid: string | null;
   setsumeiTextEn: string | null;
@@ -81,7 +82,8 @@ function isDraftSubstantive(d: DealerDraft): boolean {
     d.heightCm || d.widthCm || d.material ||
     d.meiType || d.era || d.province || d.artisanSchool ||
     d.sayagaki?.length || d.hakogaki?.length || d.koshirae ||
-    d.provenance?.length || d.kiwame?.length || d.kantoHibisho
+    d.provenance?.length || d.kiwame?.length || d.kantoHibisho ||
+    d.researchNotes
   );
 }
 
@@ -143,6 +145,7 @@ export interface DealerListingInitialData {
   provenance?: ProvenanceEntry[] | null;
   kiwame?: KiwameEntry[] | null;
   kanto_hibisho?: KantoHibishoData | null;
+  research_notes?: string | null;
   cert_session?: number | null;
   setsumei_text_en?: string | null;
   setsumei_text_ja?: string | null;
@@ -315,6 +318,9 @@ export function DealerListingForm({ mode, initialData, context = 'listing' }: De
   const [kantoHibisho, setKantoHibisho] = useState<KantoHibishoData | null>(
     initialData?.kanto_hibisho || draft?.kantoHibisho || null
   );
+  const [researchNotes, setResearchNotes] = useState<string>(
+    initialData?.research_notes || draft?.researchNotes || ''
+  );
   const [pendingKantoHibishoFiles, setPendingKantoHibishoFiles] = useState<File[]>([]);
   const [isGeneratingNote, setIsGeneratingNote] = useState(false);
   const [generateNoteError, setGenerateNoteError] = useState<string | null>(null);
@@ -419,6 +425,7 @@ export function DealerListingForm({ mode, initialData, context = 'listing' }: De
           ...kantoHibisho,
           images: (kantoHibisho.images || []).filter(url => !url.startsWith('blob:')),
         } : null,
+        researchNotes,
         savedAt: Date.now(),
       };
       // Only persist if the form has substantive content
@@ -434,7 +441,7 @@ export function DealerListingForm({ mode, initialData, context = 'listing' }: De
     nagasaCm, motohabaCm, sakihabaCm, soriCm, meiType, meiText, meiGuaranteed, nakagoType, era, province,
     heightCm, widthCm, materials, artisanSchool, titleOverride,
     certSession, catalogObjectUuid, setsumeiTextEn, setsumeiTextJa,
-    images, sayagaki, hakogaki, koshirae, provenance, kiwame, kantoHibisho,
+    images, sayagaki, hakogaki, koshirae, provenance, kiwame, kantoHibisho, researchNotes,
     draftStorageKey,
   ]);
 
@@ -564,6 +571,7 @@ export function DealerListingForm({ mode, initialData, context = 'listing' }: De
           ...kantoHibisho,
           images: (kantoHibisho.images || []).filter(url => !url.startsWith('blob:')),
         } : null,
+        research_notes: researchNotes || null,
         setsumei_text_en: setsumeiTextEn || null,
         setsumei_text_ja: setsumeiTextJa || null,
         hero_image_index: heroImageIndex,
@@ -842,6 +850,7 @@ export function DealerListingForm({ mode, initialData, context = 'listing' }: De
           provenance: provenance.length > 0 ? provenance : null,
           kiwame: kiwame.length > 0 ? kiwame : null,
           koshirae,
+          research_notes: researchNotes || null,
         }),
       });
 
@@ -861,7 +870,7 @@ export function DealerListingForm({ mode, initialData, context = 'listing' }: De
     certType, itemType, nagasaCm, soriCm, motohabaCm, sakihabaCm,
     meiType, meiText, era, province, artisanSchool, certSession,
     artisanId, setsumeiTextEn, setsumeiTextJa,
-    sayagaki, hakogaki, provenance, kiwame, koshirae,
+    sayagaki, hakogaki, provenance, kiwame, koshirae, researchNotes,
     description, t,
   ]);
 
@@ -1087,6 +1096,24 @@ export function DealerListingForm({ mode, initialData, context = 'listing' }: De
           entries={kiwame}
           onChange={setKiwame}
         />
+
+        {/* 4f. Research Notes */}
+        <section>
+          <label className="block text-[11px] uppercase tracking-wider text-muted mb-1">
+            {t('dealer.researchNotes')}
+          </label>
+          <p className="text-[11px] text-muted/70 mb-2">
+            {t('dealer.researchNotesHint')}
+          </p>
+          <textarea
+            value={researchNotes}
+            onChange={e => setResearchNotes(e.target.value)}
+            maxLength={5000}
+            rows={4}
+            placeholder={t('dealer.researchNotesPlaceholder')}
+            className="w-full rounded-lg border border-border/50 bg-surface px-3 py-2 text-[13px] placeholder:text-muted/40 focus:outline-none focus:ring-1 focus:ring-accent resize-y"
+          />
+        </section>
 
         {/* 5. Artisan */}
         <section>

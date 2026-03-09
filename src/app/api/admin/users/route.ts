@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
 
     let query = supabase
       .from('profiles')
-      .select('id, email, display_name, is_admin, created_at, updated_at', { count: 'exact' });
+      .select('id, email, display_name, is_admin, subscription_tier, subscription_status, created_at, updated_at', { count: 'exact' });
 
     // Apply search filter (sanitize PostgREST operators to prevent filter injection)
     if (search) {
@@ -73,32 +73,58 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { userId, isAdmin } = body;
+    const { userId, isAdmin, subscriptionTier } = body;
 
-    if (!userId || typeof isAdmin !== 'boolean') {
-      return apiBadRequest('userId and isAdmin are required');
+    if (!userId) {
+      return apiBadRequest('userId is required');
     }
 
-    // Prevent admin from removing their own admin status
-    if (userId === authResult.user.id && !isAdmin) {
-      return apiBadRequest('Cannot remove your own admin status');
+    // Handle role change
+    if (typeof isAdmin === 'boolean') {
+      // Prevent admin from removing their own admin status
+      if (userId === authResult.user.id && !isAdmin) {
+        return apiBadRequest('Cannot remove your own admin status');
+      }
+
+      // Update role column only - is_admin is a GENERATED column computed from role
+      const newRole = isAdmin ? 'admin' : 'user';
+      // Type assertion needed - profiles table update has partial typing issues
+      type ProfilesTable = ReturnType<typeof supabase.from>;
+      const { error } = await (supabase
+        .from('profiles') as unknown as ProfilesTable)
+        .update({
+          role: newRole,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', userId) as { error: { message: string } | null };
+
+      if (error) {
+        logger.error('Update user role error', { error: error.message, userId });
+        return NextResponse.json({ error: error.message }, { status: 500 });
+      }
     }
 
-    // Update role column only - is_admin is a GENERATED column computed from role
-    const newRole = isAdmin ? 'admin' : 'user';
-    // Type assertion needed - profiles table update has partial typing issues
-    type ProfilesTable = ReturnType<typeof supabase.from>;
-    const { error } = await (supabase
-      .from('profiles') as unknown as ProfilesTable)
-      .update({
-        role: newRole,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', userId) as { error: { message: string } | null };
+    // Handle subscription tier change
+    if (typeof subscriptionTier === 'string') {
+      const validTiers = ['free', 'enthusiast', 'collector', 'inner_circle', 'dealer', 'yuhinkai'];
+      if (!validTiers.includes(subscriptionTier)) {
+        return apiBadRequest(`Invalid tier. Must be one of: ${validTiers.join(', ')}`);
+      }
 
-    if (error) {
-      logger.error('Update user role error', { error: error.message, userId });
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      type ProfilesTable = ReturnType<typeof supabase.from>;
+      const { error } = await (supabase
+        .from('profiles') as unknown as ProfilesTable)
+        .update({
+          subscription_tier: subscriptionTier,
+          subscription_status: subscriptionTier === 'free' ? 'inactive' : 'active',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', userId) as { error: { message: string } | null };
+
+      if (error) {
+        logger.error('Update subscription tier error', { error: error.message, userId, subscriptionTier });
+        return NextResponse.json({ error: error.message }, { status: 500 });
+      }
     }
 
     return apiSuccess({ success: true });

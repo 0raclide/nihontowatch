@@ -105,6 +105,7 @@ interface ListingWithDealer {
   provenance: ProvenanceEntry[] | null;
   kiwame: KiwameEntry[] | null;
   kanto_hibisho: KantoHibishoData | null;
+  research_notes: string | null;
   showcase_override: boolean | null;
   ai_curator_note_en: string | null;
   ai_curator_note_ja: string | null;
@@ -188,6 +189,7 @@ export interface EnrichedListingDetail {
   provenance: ProvenanceEntry[] | null;
   kiwame: KiwameEntry[] | null;
   kanto_hibisho: KantoHibishoData | null;
+  research_notes: string | null;
   showcase_override?: boolean | null;
   ai_curator_note_en: string | null;
   ai_curator_note_ja: string | null;
@@ -278,6 +280,7 @@ const LISTING_SELECT = `
   provenance,
   kiwame,
   kanto_hibisho,
+  research_notes,
   showcase_override,
   ai_curator_note_en,
   ai_curator_note_ja,
@@ -462,6 +465,7 @@ export async function getListingDetail(
     provenance: typedListing.provenance,
     kiwame: typedListing.kiwame,
     kanto_hibisho: typedListing.kanto_hibisho,
+    research_notes: typedListing.research_notes ?? null,
     showcase_override: typedListing.showcase_override ?? null,
     ai_curator_note_en: typedListing.ai_curator_note_en ?? null,
     ai_curator_note_ja: typedListing.ai_curator_note_ja ?? null,

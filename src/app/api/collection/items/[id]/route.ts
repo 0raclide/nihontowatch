@@ -63,6 +63,7 @@ const ALLOWED_FIELDS = new Set([
   'nagasa_cm', 'motohaba_cm', 'sakihaba_cm', 'sori_cm',
   'height_cm', 'width_cm', 'material',
   'sayagaki', 'hakogaki', 'koshirae', 'provenance', 'kiwame', 'kanto_hibisho',
+  'research_notes',
   'hero_image_index',
   'setsumei_text_en', 'setsumei_text_ja',
   'visibility', 'personal_notes',
@@ -129,6 +130,10 @@ export async function PATCH(
     }
     if ('kanto_hibisho' in updates) {
       updates.kanto_hibisho = sanitizeKantoHibisho(updates.kanto_hibisho);
+    }
+    if ('research_notes' in updates) {
+      const rn = updates.research_notes;
+      updates.research_notes = typeof rn === 'string' ? rn.slice(0, 5000) || null : null;
     }
 
     // Sanitize hero_image_index

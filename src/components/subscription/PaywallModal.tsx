@@ -107,9 +107,9 @@ function PaywallModalContent({
   const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>('annual');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Ensure we have a valid paid tier (free -> enthusiast fallback)
-  const tier: Exclude<SubscriptionTier, 'free'> =
-    requiredTier === 'free' ? 'enthusiast' : requiredTier;
+  // Ensure we have a valid paid tier with pricing (free/yuhinkai -> enthusiast fallback)
+  const tier: Exclude<SubscriptionTier, 'free' | 'yuhinkai'> =
+    (requiredTier === 'free' || requiredTier === 'yuhinkai') ? 'enthusiast' : requiredTier;
   const tierInfo = TIER_INFO[tier];
   const pricing = TIER_PRICING[tier];
 

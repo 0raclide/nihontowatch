@@ -643,30 +643,50 @@ describe('PATCH /api/admin/users', () => {
       const json = await response.json();
 
       expect(response.status).toBe(400);
-      expect(json.error).toBe('userId and isAdmin are required');
+      expect(json.error).toBe('userId is required');
     });
 
-    it('requires isAdmin parameter', async () => {
+    it('accepts userId with only subscriptionTier (no isAdmin)', async () => {
+      setupAdminAuth('admin-123');
+
+      const profileBuilder = createMockQueryBuilder([{ role: 'admin' }]);
+      profileBuilder.single = vi.fn(() =>
+        Promise.resolve({ data: { role: 'admin' }, error: null })
+      );
+
+      const updateBuilder = createMockQueryBuilder(null, null, null);
+      updateBuilder.update = vi.fn(() => updateBuilder);
+      updateBuilder.eq = vi.fn(() => updateBuilder);
+
+      mockSupabaseClient.from.mockImplementation((table: string) => {
+        if (table === 'profiles') {
+          if (profileBuilder.single.mock.calls.length === 0) {
+            return profileBuilder;
+          }
+          return updateBuilder;
+        }
+        return createMockQueryBuilder();
+      });
+
       const request = createMockRequest({}, 'PATCH', {
         userId: 'user-123',
+        subscriptionTier: 'yuhinkai',
+      });
+      const response = await PATCH(request);
+
+      expect(response.status).toBe(200);
+    });
+
+    it('rejects invalid subscription tier', async () => {
+      const request = createMockRequest({}, 'PATCH', {
+        userId: 'user-123',
+        subscriptionTier: 'invalid_tier',
       });
       const response = await PATCH(request);
       const json = await response.json();
 
       expect(response.status).toBe(400);
-      expect(json.error).toBe('userId and isAdmin are required');
-    });
-
-    it('requires isAdmin to be a boolean', async () => {
-      const request = createMockRequest({}, 'PATCH', {
-        userId: 'user-123',
-        isAdmin: 'yes',
-      });
-      const response = await PATCH(request);
-      const json = await response.json();
-
-      expect(response.status).toBe(400);
-      expect(json.error).toBe('userId and isAdmin are required');
+      expect(json.error).toContain('Invalid tier');
     });
 
     it('prevents admin from removing their own admin status', async () => {

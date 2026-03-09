@@ -9,6 +9,8 @@ import {
 } from '@/lib/listing/curatorNote';
 import type { GenerateDescriptionFormData } from '@/lib/listing/curatorNote';
 import { generateCuratorNote } from '@/lib/listing/generateCuratorNote';
+import { buildArtistPageData } from '@/lib/artisan/getArtistPageData';
+import { distillArtistOverview } from '@/lib/listing/distillArtistOverview';
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
@@ -53,6 +55,7 @@ export async function POST(req: NextRequest) {
     provenance: body.provenance ?? null,
     kiwame: body.kiwame ?? null,
     koshirae: body.koshirae ?? null,
+    research_notes: body.research_notes ?? null,
   };
 
   // Fetch artisan data if provided
@@ -66,8 +69,19 @@ export async function POST(req: NextRequest) {
     ]);
   }
 
+  // Distill artist overview for richer context (non-fatal)
+  let artistOverview = null;
+  if (artisanId) {
+    try {
+      const pageData = await buildArtistPageData(artisanId);
+      if (pageData) artistOverview = distillArtistOverview(pageData);
+    } catch {
+      // Non-fatal — artist overview is supplementary
+    }
+  }
+
   // Assemble context
-  const context = assembleCuratorContextFromFormData(formData, artisanEntity, aiDescription);
+  const context = assembleCuratorContextFromFormData(formData, artisanEntity, aiDescription, artistOverview);
 
   // Check if we have enough data
   if (shouldSkipGeneration(context)) {

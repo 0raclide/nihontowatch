@@ -90,7 +90,7 @@ export function BrowseCTA({ listing }: BrowseCTAProps) {
         )}
 
         {/* I Own This Button */}
-        {user && process.env.NEXT_PUBLIC_COLLECTION_ENABLED === 'true' && (
+        {user && canAccess('collection_access') && (
           <button
             onClick={handleIOwn}
             title={t('listing.iOwnThis')}

@@ -83,6 +83,9 @@ CREATE TABLE collection_items (
   kiwame          JSONB,
   kanto_hibisho   JSONB,
 
+  -- Research notes (AI curator note context)
+  research_notes  TEXT,
+
   -- Setsumei (NBTHK certification translations)
   setsumei_text_en TEXT,
   setsumei_text_ja TEXT,

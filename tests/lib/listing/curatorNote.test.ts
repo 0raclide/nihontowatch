@@ -79,6 +79,7 @@ function makeListing(overrides: Partial<EnrichedListingDetail> = {}): EnrichedLi
     provenance: null,
     kiwame: null,
     kanto_hibisho: null,
+    research_notes: null,
     ai_curator_note_en: null,
     ai_curator_note_ja: null,
     artisan_display_name: 'Masamune',
@@ -377,5 +378,122 @@ describe('getDataRichness', () => {
     const artisan = makeArtisanEntity();
     const ctx = assembleCuratorContext(listing, artisan, null);
     expect(getDataRichness(ctx)).toBe('full');
+  });
+
+  it('returns "full" with setsumei + research_notes + artisan', () => {
+    const listing = makeListing({
+      setsumei_text_en: 'Translation...',
+      research_notes: 'Published in Nihonto Taikan vol. 3',
+    });
+    const artisan = makeArtisanEntity();
+    const ctx = assembleCuratorContext(listing, artisan, null);
+    expect(getDataRichness(ctx)).toBe('full');
+  });
+
+  it('research notes alone does not elevate sparse to moderate', () => {
+    const listing = makeListing({
+      research_notes: 'Some notes',
+    });
+    const artisan = makeArtisanEntity();
+    const ctx = assembleCuratorContext(listing, artisan, null);
+    // No setsumei, so still sparse (artisan only)
+    expect(getDataRichness(ctx)).toBe('sparse');
+  });
+});
+
+// =============================================================================
+// research_notes in context assembly
+// =============================================================================
+
+describe('research_notes in assembleCuratorContext', () => {
+  it('extracts research_notes from listing', () => {
+    const listing = makeListing({ research_notes: 'Published in vol. 3' });
+    const ctx = assembleCuratorContext(listing, null, null);
+    expect(ctx.research_notes).toBe('Published in vol. 3');
+  });
+
+  it('trims whitespace from research_notes', () => {
+    const listing = makeListing({ research_notes: '  Some notes  ' });
+    const ctx = assembleCuratorContext(listing, null, null);
+    expect(ctx.research_notes).toBe('Some notes');
+  });
+
+  it('returns null for empty/whitespace-only research_notes', () => {
+    const listing = makeListing({ research_notes: '   ' });
+    const ctx = assembleCuratorContext(listing, null, null);
+    expect(ctx.research_notes).toBeNull();
+  });
+
+  it('returns null when research_notes is not set', () => {
+    const listing = makeListing();
+    const ctx = assembleCuratorContext(listing, null, null);
+    expect(ctx.research_notes).toBeNull();
+  });
+});
+
+// =============================================================================
+// artist_overview passthrough
+// =============================================================================
+
+describe('artist_overview in assembleCuratorContext', () => {
+  it('passes artist_overview through when provided', () => {
+    const listing = makeListing();
+    const overview = {
+      form_distribution: { katana: 20 },
+      mei_distribution: { zaimei: 10 },
+      top_students: [],
+      school_ancestry: ['Soshu'],
+      elite_percentile: 99.2,
+      top_provenance_owners: [],
+    };
+    const ctx = assembleCuratorContext(listing, null, null, overview);
+    expect(ctx.artist_overview).toEqual(overview);
+  });
+
+  it('defaults to null when not provided', () => {
+    const listing = makeListing();
+    const ctx = assembleCuratorContext(listing, null, null);
+    expect(ctx.artist_overview).toBeNull();
+  });
+
+  it('defaults to null when undefined', () => {
+    const listing = makeListing();
+    const ctx = assembleCuratorContext(listing, null, null, undefined);
+    expect(ctx.artist_overview).toBeNull();
+  });
+});
+
+// =============================================================================
+// research_notes changes input hash
+// =============================================================================
+
+describe('research_notes affects input hash', () => {
+  it('produces different hashes when research_notes change', () => {
+    const listing1 = makeListing({ research_notes: 'Version 1' });
+    const listing2 = makeListing({ research_notes: 'Version 2' });
+    const artisan = makeArtisanEntity();
+
+    const ctx1 = assembleCuratorContext(listing1, artisan, null);
+    const ctx2 = assembleCuratorContext(listing2, artisan, null);
+
+    expect(computeInputHash(ctx1)).not.toBe(computeInputHash(ctx2));
+  });
+
+  it('produces different hashes when artist_overview changes', () => {
+    const listing = makeListing();
+    const artisan = makeArtisanEntity();
+    const overview = {
+      form_distribution: { katana: 20 },
+      mei_distribution: {},
+      top_students: [],
+      school_ancestry: [],
+      elite_percentile: 99,
+      top_provenance_owners: [],
+    };
+
+    const ctx1 = assembleCuratorContext(listing, artisan, null);
+    const ctx2 = assembleCuratorContext(listing, artisan, null, overview);
+
+    expect(computeInputHash(ctx1)).not.toBe(computeInputHash(ctx2));
   });
 });

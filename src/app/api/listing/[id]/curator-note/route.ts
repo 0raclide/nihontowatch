@@ -22,6 +22,8 @@ import {
 import { getListingDetail } from '@/lib/listing/getListingDetail';
 import { isShowcaseEligible } from '@/lib/listing/showcase';
 import { getArtisan, getAiDescription } from '@/lib/supabase/yuhinkai';
+import { buildArtistPageData } from '@/lib/artisan/getArtistPageData';
+import { distillArtistOverview } from '@/lib/listing/distillArtistOverview';
 import {
   assembleCuratorContext,
   computeInputHash,
@@ -82,8 +84,19 @@ export async function POST(
       aiDescription = await getAiDescription(listing.artisan_id);
     }
 
+    // Distill artist overview for richer context (non-fatal)
+    let artistOverview = null;
+    if (listing.artisan_id) {
+      try {
+        const pageData = await buildArtistPageData(listing.artisan_id);
+        if (pageData) artistOverview = distillArtistOverview(pageData);
+      } catch {
+        // Non-fatal — artist overview is supplementary
+      }
+    }
+
     // Assemble context
-    const context = assembleCuratorContext(listing, artisanEntity, aiDescription);
+    const context = assembleCuratorContext(listing, artisanEntity, aiDescription, artistOverview);
 
     // Check if we should skip
     if (shouldSkipGeneration(context)) {

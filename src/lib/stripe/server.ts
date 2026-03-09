@@ -43,7 +43,7 @@ export const stripe: Stripe = new Proxy({} as Stripe, {
  * These must be created in the Stripe Dashboard first
  */
 export const STRIPE_PRICES: Record<
-  Exclude<SubscriptionTier, 'free'>,
+  Exclude<SubscriptionTier, 'free' | 'yuhinkai'>,
   Record<BillingPeriod, string>
 > = {
   enthusiast: {
@@ -68,7 +68,7 @@ export const STRIPE_PRICES: Record<
  * Get price ID for a tier and billing period
  */
 export function getPriceId(
-  tier: Exclude<SubscriptionTier, 'free'>,
+  tier: Exclude<SubscriptionTier, 'free' | 'yuhinkai'>,
   billingPeriod: BillingPeriod
 ): string {
   const priceId = STRIPE_PRICES[tier][billingPeriod];
@@ -97,7 +97,7 @@ export function getTierFromPriceId(priceId: string): SubscriptionTier | null {
 export interface CreateCheckoutParams {
   userId: string;
   userEmail: string;
-  tier: Exclude<SubscriptionTier, 'free'>;
+  tier: Exclude<SubscriptionTier, 'free' | 'yuhinkai'>;
   billingPeriod: BillingPeriod;
   successUrl: string;
   cancelUrl: string;

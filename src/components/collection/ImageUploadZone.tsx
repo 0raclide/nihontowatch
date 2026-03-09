@@ -45,7 +45,7 @@ export function ImageUploadZone({ images, itemId, onChange, onPendingFilesChange
         setUploadError(t('collection.unsupportedFormat', { name: file.name }));
         continue;
       }
-      const resized = await resizeImage(file, 2048, 0.85);
+      const resized = await resizeImage(file);
       if (resized.size > 5 * 1024 * 1024) {
         setUploadError(t('collection.fileTooLarge', { name: file.name }));
         continue;

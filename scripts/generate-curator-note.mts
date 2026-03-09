@@ -25,7 +25,7 @@ const yk = createClient(ykUrl, ykKey);
 console.log(`\n📦 Fetching listing ${LISTING_ID}...`);
 const { data: listing, error: listingErr } = await nw
   .from('listings')
-  .select('id, title, item_type, item_category, nagasa_cm, sori_cm, motohaba_cm, sakihaba_cm, kasane_cm, mei_type, mei_text, era, tosogu_era, province, school, tosogu_school, cert_type, cert_session, cert_organization, artisan_id, setsumei_text_en, setsumei_text_ja, sayagaki, hakogaki, provenance, kiwame, koshirae')
+  .select('id, title, item_type, item_category, nagasa_cm, sori_cm, motohaba_cm, sakihaba_cm, kasane_cm, mei_type, mei_text, era, tosogu_era, province, school, tosogu_school, cert_type, cert_session, cert_organization, artisan_id, setsumei_text_en, setsumei_text_ja, sayagaki, hakogaki, provenance, kiwame, koshirae, research_notes')
   .eq('id', LISTING_ID)
   .single();
 
@@ -136,7 +136,23 @@ const koshirae = hasKoshirae && k
   ? { cert_type: k.cert_type, cert_session: k.cert_session, artisan_name: k.artisan_name, description: k.description }
   : null;
 
-const context = { sword, artisan, setsumei, sayagaki, hakogaki, provenance, kiwame, koshirae };
+const researchNotes = listing.research_notes?.trim() || null;
+
+// Step 3b: Distill artist overview
+let artistOverview: any = null;
+if (listing.artisan_id) {
+  try {
+    const { buildArtistPageData } = await import('../src/lib/artisan/getArtistPageData.js');
+    const { distillArtistOverview } = await import('../src/lib/listing/distillArtistOverview.js');
+    const pageData = await buildArtistPageData(listing.artisan_id);
+    if (pageData) artistOverview = distillArtistOverview(pageData);
+    if (artistOverview) console.log(`   Artist overview distilled (${Object.keys(artistOverview.form_distribution).length} form types, ${artistOverview.top_students.length} students)`);
+  } catch (e) {
+    console.log(`   ⚠️ Artist overview failed (non-fatal): ${(e as Error).message}`);
+  }
+}
+
+const context = { sword, artisan, setsumei, sayagaki, hakogaki, provenance, kiwame, koshirae, research_notes: researchNotes, artist_overview: artistOverview };
 
 // Richness
 const hasArt = !!artisan;
@@ -145,14 +161,15 @@ const hasSay = !!sayagaki;
 const hasProv = !!provenance;
 const hasHak = !!hakogaki;
 const hasKiw = !!kiwame;
+const hasResearch = !!researchNotes;
 let richness: string;
 if (!hasSet && !hasArt) richness = 'minimal';
-else if (hasSet && hasArt && (hasSay || hasProv || hasHak || hasKiw)) richness = 'full';
+else if (hasSet && hasArt && (hasSay || hasProv || hasHak || hasKiw || hasResearch)) richness = 'full';
 else if (hasSet && hasArt) richness = 'moderate';
 else richness = 'sparse';
 
 console.log(`\n📊 Data richness: ${richness}`);
-console.log(`   Setsumei: ${hasSet}, Artisan: ${hasArt}, Sayagaki: ${hasSay}, Provenance: ${hasProv}, Hakogaki: ${hasHak}, Kiwame: ${hasKiw}`);
+console.log(`   Setsumei: ${hasSet}, Artisan: ${hasArt}, Sayagaki: ${hasSay}, Provenance: ${hasProv}, Hakogaki: ${hasHak}, Kiwame: ${hasKiw}, Research: ${hasResearch}`);
 
 if (!hasSet && !hasArt) {
   console.log('\n⚠️ Minimal data — skipping generation.');

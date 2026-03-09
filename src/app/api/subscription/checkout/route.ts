@@ -7,7 +7,7 @@ import type { SubscriptionTier, BillingPeriod } from '@/types/subscription';
 export const dynamic = 'force-dynamic';
 
 interface CheckoutRequestBody {
-  tier: Exclude<SubscriptionTier, 'free'>;
+  tier: Exclude<SubscriptionTier, 'free' | 'yuhinkai'>;
   billingPeriod: BillingPeriod;
 }
 
