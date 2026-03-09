@@ -383,12 +383,15 @@ describe('buildContentStream', () => {
       const storedSetsumei = 'https://example.supabase.co/storage/v1/object/public/listing-images/shop/L90396/01.jpg';
 
       const listing = makeListing({
-        // Original images contain catalog URLs
+        // Original images contain catalog URLs at positions 0 and 1
         images: [oshigataUrl, setsumeiUrl, 'photo1.jpg', 'photo2.jpg'],
+        // Stored copies replace positions 0 and 1
+        stored_images: [storedOshigata, storedSetsumei],
         setsumei_text_en: 'Setsumei text',
       });
-      // displayImages has stored copies at positions 0 and 1
-      const displayImages = [storedOshigata, storedSetsumei, 'photo1.jpg', 'photo2.jpg'];
+      // displayImages has stored copies + original photos (reordered by hero selection)
+      // Hero selection moves photo1.jpg to front since it's the first non-catalog
+      const displayImages = ['photo1.jpg', storedOshigata, storedSetsumei, 'photo2.jpg'];
       const result = buildContentStream(displayImages, listing, true, []);
 
       // Hero should be photo1.jpg (first non-catalog), NOT the stored oshigata

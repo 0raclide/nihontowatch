@@ -225,35 +225,45 @@ export function buildContentStream(
   // Classify catalog images.
   //
   // getAllImages() may replace catalog originals (Yuhinkai domain) with stored copies
-  // (listing-images/ domain) at the same index. We need to detect catalog images from
-  // the ORIGINAL `listing.images[]` and map their stored replacements in displayImages
-  // so both the stored URL and the original catalog URL are recognized.
-  const catalogAllUrls = new Set<string>();     // displayImage URLs to exclude from photo stream
-  const catalogOriginalUrls = new Set<string>(); // original Yuhinkai URLs for setsumei thumbnails
+  // (listing-images/ domain) at the same index. displayImages is then REORDERED by
+  // hero selection, so we CANNOT use index correspondence between listing.images[]
+  // and displayImages[]. Instead:
+  //   1. Find catalog positions in listing.images[] (originals)
+  //   2. Map stored_images → original index (via filename pattern /{NN}.ext)
+  //   3. Mark both original URLs and stored copy URLs for exclusion from displayImages
+  const catalogAllUrls = new Set<string>();     // URLs to exclude from photo stream (originals + stored copies)
   const catalogOshigata: string[] = [];
   const catalogSetsumei: string[] = [];
   if (detailLoaded) {
     const originals = listing.images || [];
+    const catalogPositions = new Set<number>();
+
+    // Step 1: Find catalog positions and classify originals
     for (let i = 0; i < originals.length; i++) {
-      const originalUrl = originals[i];
-      if (!originalUrl || !isYuhinkaiCatalogImage(originalUrl)) continue;
+      const url = originals[i];
+      if (!url || !isYuhinkaiCatalogImage(url)) continue;
 
-      // Track the original Yuhinkai URL
-      catalogOriginalUrls.add(originalUrl);
+      catalogPositions.add(i);
+      catalogAllUrls.add(url); // Exclude original if it appears in displayImages directly
 
-      // Track the displayImage URL at this index (might be a stored copy)
-      const displayUrl = displayImages[i];
-      if (displayUrl) catalogAllUrls.add(displayUrl);
-      // Also track the original in case displayImages uses it directly
-      catalogAllUrls.add(originalUrl);
-
-      // Classify by the original URL (stored copies lose the filename pattern)
-      const classification = classifyCatalogImage(originalUrl);
+      const classification = classifyCatalogImage(url);
       if (classification === 'setsumei') {
-        catalogSetsumei.push(originalUrl);
+        catalogSetsumei.push(url);
       } else {
-        // 'oshigata', 'combined', or unclassified → treat as oshigata
-        catalogOshigata.push(originalUrl);
+        catalogOshigata.push(url);
+      }
+    }
+
+    // Step 2: Find stored copies of catalog originals
+    // Stored images use filename pattern /{NN}.ext (e.g., /00.jpg, /01.webp)
+    const storedImages = listing.stored_images || [];
+    for (const storedUrl of storedImages) {
+      if (!storedUrl) continue;
+      const match = storedUrl.match(/\/(\d+)\.[^/]+$/);
+      if (!match) continue;
+      const originalIndex = parseInt(match[1], 10);
+      if (catalogPositions.has(originalIndex)) {
+        catalogAllUrls.add(storedUrl); // Exclude stored copy from photo stream
       }
     }
   }

@@ -162,9 +162,14 @@ export function KoshiraeDisplay({ koshirae, hideHeading, onImageClick }: Koshira
           </p>
         )}
 
-        {/* Images */}
+        {/* Setsumei (NBTHK Zufu commentary) */}
+        {koshirae.setsumei_text_en && (
+          <KoshiraeSetsumei textEn={koshirae.setsumei_text_en} textJa={koshirae.setsumei_text_ja} />
+        )}
+
+        {/* Catalog thumbnails (oshigata/setsumei scans) — after text, consistent with blade setsumei */}
         {koshirae.images && koshirae.images.length > 0 && (
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 mt-2">
             {koshirae.images.map((url, j) => (
               <button
                 key={j}
@@ -182,11 +187,6 @@ export function KoshiraeDisplay({ koshirae, hideHeading, onImageClick }: Koshira
               </button>
             ))}
           </div>
-        )}
-
-        {/* Setsumei (NBTHK Zufu commentary) */}
-        {koshirae.setsumei_text_en && (
-          <KoshiraeSetsumei textEn={koshirae.setsumei_text_en} textJa={koshirae.setsumei_text_ja} />
         )}
       </div>
 
