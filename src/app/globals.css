@@ -961,20 +961,19 @@ input[type="search"]::-webkit-search-results-decoration {
    ========================================================================== */
 .prose-translation {
   font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
-  font-size: 14.5px;
-  line-height: 1.85;
+  font-size: 13px;
+  line-height: 1.6;
   color: var(--text-secondary);
-  letter-spacing: 0.01em;
 }
 
-/* First paragraph - slightly larger for emphasis */
+/* First paragraph - no special sizing (match body) */
 .prose-translation > p:first-of-type {
-  font-size: 15px;
+  font-size: inherit;
 }
 
 /* Title header with underline */
 .prose-translation h1 {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 500;
   color: var(--text-primary);
   margin-top: 0;
@@ -985,7 +984,7 @@ input[type="search"]::-webkit-search-results-decoration {
 
 /* Section headers */
 .prose-translation h2 {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   color: var(--text-primary);
   margin-top: 1.75rem;
