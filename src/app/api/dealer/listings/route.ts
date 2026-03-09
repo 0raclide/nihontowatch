@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let query = (serviceClient.from('listings') as any)
-    .select('id, url, title, title_en, title_ja, item_type, item_category, price_value, price_currency, cert_type, images, stored_images, status, is_available, is_sold, first_seen_at, smith, tosogu_maker, school, tosogu_school, artisan_id, artisan_confidence, description, era, province, mei_type, mei_text, mei_guaranteed, nakago_type, nagasa_cm, motohaba_cm, sakihaba_cm, sori_cm, height_cm, width_cm, material, source, hero_image_index, focal_x, focal_y, video_count, dealers:dealers(id, name, name_ja, domain)', { count: 'exact' })
+    .select('id, url, title, title_en, title_ja, item_type, item_category, price_value, price_currency, cert_type, images, stored_images, status, is_available, is_sold, first_seen_at, smith, tosogu_maker, school, tosogu_school, artisan_id, artisan_confidence, description, era, province, mei_type, mei_text, mei_guaranteed, nakago_type, nagasa_cm, motohaba_cm, sakihaba_cm, sori_cm, height_cm, width_cm, material, source, hero_image_index, focal_x, focal_y, video_count, sayagaki, hakogaki, koshirae, provenance, kiwame, kanto_hibisho, setsumei_text_en, setsumei_text_ja, dealers:dealers(id, name, name_ja, domain)', { count: 'exact' })
     .eq('dealer_id', auth.dealerId)
     .eq('source', 'dealer');
 

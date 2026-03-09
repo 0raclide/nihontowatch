@@ -236,11 +236,13 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
     setCurrentListing(mappedListing);
     setIsOpen(true);
     setCurrentIndex(index);
-    setDetailLoaded(!!options?.skipFetch); // Already loaded if caller pre-fetched
     // Auto-detect dealer source from listing data (for Phase 3 browse integration)
     const detectedSource = options?.source
       || ((mappedListing as any).source === 'dealer' || mappedListing.url?.startsWith('nw://') ? 'dealer' : 'browse');
     setSource(detectedSource as 'browse' | 'collection' | 'dealer');
+    // Dealer listings come pre-loaded with section data — public API rejects them (RLS),
+    // so fetchFullListing will always 404. Mark as loaded immediately.
+    setDetailLoaded(!!options?.skipFetch || detectedSource === 'dealer');
 
     // Push a history entry so browser back closes the modal instead of leaving the page.
     // Only push if no ?listing= currently in URL — avoids double-push on deep links
@@ -261,8 +263,9 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
     signupPressure?.trackQuickView();
 
     // Fetch full listing data (with enrichment) asynchronously
+    // Skip for dealer (public API rejects source='dealer' via RLS — always 404)
     // Skip if caller already fetched the complete listing (e.g., DeepLinkHandler)
-    if (!options?.skipFetch) {
+    if (!options?.skipFetch && detectedSource !== 'dealer') {
       fetchFullListing(listing.id).then((fullListing) => {
         if (fullListing && !refreshInFlightRef.current) {
           setCurrentListing(prev => prev ? mergeDetailIntoListing(prev, fullListing) : fullListing);
