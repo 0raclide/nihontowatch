@@ -347,8 +347,11 @@ export function QuickView() {
 
   // Scroll-to-section handler for section indicator taps
   const scrollToSection = useCallback((sectionId: string) => {
-    // Try both desktop and mobile scroll containers
-    const container = scrollContainerRef.current || mobileScrollContainerRef.current;
+    // Both refs are always assigned (desktop hidden on mobile, vice versa).
+    // Pick the one that's actually visible (clientHeight > 0).
+    const desktop = scrollContainerRef.current;
+    const mobile = mobileScrollContainerRef.current;
+    const container = (desktop && desktop.clientHeight > 0) ? desktop : mobile;
     const target = document.getElementById(sectionId);
     if (container && target) {
       const offset = target.getBoundingClientRect().top
