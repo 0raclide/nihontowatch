@@ -105,6 +105,14 @@ function mergeDetailIntoListing(browse: Listing, detail: Listing): Listing {
     artisan_candidates: detail.artisan_candidates ?? browse.artisan_candidates,
     artisan_method: detail.artisan_method ?? browse.artisan_method,
     og_image_url: detail.og_image_url ?? browse.og_image_url,
+    // Section data — browse API doesn't SELECT these, detail API does
+    sayagaki: detail.sayagaki ?? browse.sayagaki,
+    hakogaki: detail.hakogaki ?? browse.hakogaki,
+    koshirae: detail.koshirae ?? browse.koshirae,
+    provenance: detail.provenance ?? browse.provenance,
+    kiwame: detail.kiwame ?? browse.kiwame,
+    kanto_hibisho: detail.kanto_hibisho ?? browse.kanto_hibisho,
+    videos: detail.videos ?? browse.videos,
     // yuhinkai_enrichment exists at runtime (from browse API enrichment) but not on Listing type
     yuhinkai_enrichment: d.yuhinkai_enrichment ?? b.yuhinkai_enrichment,
     // Also overlay fields that both APIs have but detail may be fresher:

@@ -24,6 +24,8 @@ import { usePinchZoomTracking } from '@/lib/viewport';
 import { getAllImages, dealerDoesNotPublishImages, getCachedDimensions, getPlaceholderKanji } from '@/lib/images';
 import { getHeroImage } from '@/lib/images/classification';
 import { getMediaItems } from '@/lib/media';
+import { collectGroupedMedia } from '@/lib/media/groupedMedia';
+import { MediaGroupDivider } from './MediaGroupDivider';
 import { VideoGalleryItem } from '@/components/video/VideoGalleryItem';
 import { useValidatedImages } from '@/hooks/useValidatedImages';
 import { useAuth } from '@/lib/auth/AuthContext';
@@ -75,6 +77,7 @@ export function QuickView() {
     collectionMode,
     setCollectionMode,
     onCollectionSaved,
+    detailLoaded,
   } = useQuickView();
 
   const activityTracker = useActivityTrackerOptional();
@@ -85,7 +88,7 @@ export function QuickView() {
   const [visibleImages, setVisibleImages] = useState<Set<number>>(new Set([0, 1]));
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [hasScrolled, setHasScrolled] = useState(false);
-  const [failedImageIndices, setFailedImageIndices] = useState<Set<number>>(new Set());
+  const [failedImageUrls, setFailedImageUrls] = useState<Set<string>>(new Set());
   const [isSheetExpanded, setIsSheetExpanded] = useState(false);
   const [isStudyMode, setIsStudyMode] = useState(false);
   const [isAdminEditMode, setIsAdminEditMode] = useState(false);
@@ -133,7 +136,7 @@ export function QuickView() {
       setVisibleImages(new Set([0, 1]));
       setCurrentImageIndex(0);
       setHasScrolled(false);
-      setFailedImageIndices(new Set());
+      setFailedImageUrls(new Set());
       setIsSheetExpanded(false);
       setIsStudyMode(false);
       setIsAdminEditMode(false);
@@ -220,9 +223,9 @@ export function QuickView() {
     setCurrentImageIndex(index);
   }, []);
 
-  // Track images that fail to load
-  const handleImageLoadFailed = useCallback((index: number) => {
-    setFailedImageIndices(prev => new Set(prev).add(index));
+  // Track images that fail to load (by URL — stable across hero reordering and group membership)
+  const handleImageLoadFailed = useCallback((_index: number, url: string) => {
+    setFailedImageUrls(prev => new Set(prev).add(url));
   }, []);
 
   // Toggle study mode — exits admin edit mode
@@ -253,8 +256,8 @@ export function QuickView() {
   const { validatedImages: validImages } = useValidatedImages(rawImages);
 
   const images = useMemo(
-    () => validImages.filter((_, i) => !failedImageIndices.has(i)),
-    [validImages, failedImageIndices]
+    () => validImages.filter(url => !failedImageUrls.has(url)),
+    [validImages, failedImageUrls]
   );
 
   // Reorder images so the hero (cover) image appears first in the scroller
@@ -273,6 +276,35 @@ export function QuickView() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [currentListing?.id, currentListing?.videos?.length]
   );
+
+  // Grouped media: primary photos + section images (sayagaki, hakogaki, koshirae, provenance, kanto hibisho)
+  const groupedMedia = useMemo(
+    () => collectGroupedMedia(displayImages, currentListing, detailLoaded, videoItems.length),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [displayImages, currentListing?.id, detailLoaded, videoItems.length,
+     currentListing?.sayagaki, currentListing?.hakogaki, currentListing?.koshirae,
+     currentListing?.provenance, currentListing?.kanto_hibisho]
+  );
+
+  // Total media count for progress bar and counters
+  const totalMediaCount = groupedMedia.totalCount;
+  const totalImageCount = groupedMedia.allImageUrls.length;
+
+  // Deferred progress denominator: only expands when user scrolls past current boundary.
+  // Prevents the progress bar from jumping when section images load mid-scroll.
+  const progressTotalRef = useRef(totalImageCount);
+  // Reset when listing changes (totalImageCount drops to new listing's photo count)
+  if (totalImageCount < progressTotalRef.current) {
+    progressTotalRef.current = totalImageCount;
+  }
+  // Expand when user has scrolled past the current boundary
+  if (currentImageIndex >= progressTotalRef.current && totalImageCount > progressTotalRef.current) {
+    progressTotalRef.current = totalImageCount;
+  }
+  // Also expand if we're still on the first image and totalImageCount grew
+  // (user hasn't scrolled — denominator should stay at initial primary count)
+  // — no, this case is handled by NOT expanding, which is the desired behavior.
+  const progressTotal = progressTotalRef.current;
 
   // Dealer status change → optimistic update via refreshCurrentListing
   // MUST be before the early return — hooks cannot be conditional
@@ -372,61 +404,77 @@ export function QuickView() {
   // =========================================================================
   // Image rendering helper
   // =========================================================================
-  const renderImageList = (keyPrefix: string) => (
-    <>
-      {displayImages.length === 0 ? (
-        dealerDoesNotPublishImages(currentListing.dealers?.domain) ? (
-          <div className="aspect-[4/3] bg-linen flex flex-col items-center justify-center text-center">
-            <span className="font-serif text-[96px] leading-none text-muted/10 select-none" aria-hidden="true">
-              {placeholderKanji}
-            </span>
-            <span className="text-[10px] text-muted/40 tracking-widest uppercase mt-4">
-              Photos not published
-            </span>
-          </div>
-        ) : (
-          <div className="aspect-[4/3] bg-linen flex flex-col items-center justify-center">
-            <span className="font-serif text-[96px] leading-none text-muted/10 select-none" aria-hidden="true">
-              {placeholderKanji}
-            </span>
-            <span className="text-[10px] text-muted/40 tracking-widest uppercase mt-4">
-              No photos available
-            </span>
-          </div>
-        )
+  const renderImageList = (keyPrefix: string) => {
+    // Empty state — no primary photos at all
+    if (displayImages.length === 0) {
+      return dealerDoesNotPublishImages(currentListing.dealers?.domain) ? (
+        <div className="aspect-[4/3] bg-linen flex flex-col items-center justify-center text-center">
+          <span className="font-serif text-[96px] leading-none text-muted/10 select-none" aria-hidden="true">
+            {placeholderKanji}
+          </span>
+          <span className="text-[10px] text-muted/40 tracking-widest uppercase mt-4">
+            Photos not published
+          </span>
+        </div>
       ) : (
-        displayImages.map((src, index) => (
-          <LazyImage
-            key={`${keyPrefix}-${src}-${index}`}
-            src={src}
-            index={index}
-            totalImages={displayImages.length}
-            isVisible={visibleImages.has(index)}
-            onVisible={handleImageVisible}
-            onLoadFailed={handleImageLoadFailed}
-            isFirst={index === 0}
-            showScrollHint={index === 0 && displayImages.length > 1 && !hasScrolled}
-            title={currentListing.title}
-            itemType={currentListing.item_type}
-            certType={currentListing.cert_type}
-            cachedDimensions={getCachedDimensions(src)}
-          />
-        ))
-      )}
+        <div className="aspect-[4/3] bg-linen flex flex-col items-center justify-center">
+          <span className="font-serif text-[96px] leading-none text-muted/10 select-none" aria-hidden="true">
+            {placeholderKanji}
+          </span>
+          <span className="text-[10px] text-muted/40 tracking-widest uppercase mt-4">
+            No photos available
+          </span>
+        </div>
+      );
+    }
 
-      {/* Videos after images */}
-      {videoItems.map((media) => (
-        <VideoGalleryItem
-          key={`${keyPrefix}-video-${media.videoId}`}
-          streamUrl={media.url}
-          thumbnailUrl={media.thumbnailUrl}
-          duration={media.duration}
-          status={media.status}
-          className="aspect-video"
-        />
-      ))}
-    </>
-  );
+    // Flat render: pre-computed items with group boundaries (no mutable counter in JSX)
+    const { flatItems } = groupedMedia;
+
+    return (
+      <>
+        {flatItems.map((item) => (
+          <div key={`${keyPrefix}-${item.src}-${item.globalIndex}`}>
+            {/* Divider between groups (not before the first) */}
+            {item.isFirstInGroup && !item.isFirstGroup && (
+              <MediaGroupDivider label={t(item.groupLabelKey)} />
+            )}
+            <LazyImage
+              src={item.src}
+              index={item.globalIndex}
+              totalImages={totalImageCount}
+              isVisible={visibleImages.has(item.globalIndex)}
+              onVisible={handleImageVisible}
+              onLoadFailed={handleImageLoadFailed}
+              isFirst={item.globalIndex === 0}
+              showScrollHint={item.globalIndex === 0 && totalMediaCount > 1 && !hasScrolled}
+              title={currentListing.title}
+              itemType={currentListing.item_type}
+              certType={currentListing.cert_type}
+              cachedDimensions={getCachedDimensions(item.src)}
+            />
+          </div>
+        ))}
+
+        {/* Videos after all image groups */}
+        {videoItems.length > 0 && (
+          <>
+            <MediaGroupDivider label={t('quickview.sectionVideos')} />
+            {videoItems.map((media) => (
+              <VideoGalleryItem
+                key={`${keyPrefix}-video-${media.videoId}`}
+                streamUrl={media.url}
+                thumbnailUrl={media.thumbnailUrl}
+                duration={media.duration}
+                status={media.status}
+                className="aspect-video"
+              />
+            ))}
+          </>
+        )}
+      </>
+    );
+  };
 
   return (
     <ErrorBoundary>
@@ -484,12 +532,12 @@ export function QuickView() {
                 {renderImageList('mobile')}
               </div>
 
-              {displayImages.length > 1 && (
+              {totalMediaCount > 1 && (
                 <div className="text-center py-4 text-[11px] text-muted flex items-center justify-center gap-2">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
-                  {displayImages.length} images
+                  {totalImageCount} images{videoItems.length > 0 ? `, ${videoItems.length} video${videoItems.length > 1 ? 's' : ''}` : ''}
                 </div>
               )}
 
@@ -557,12 +605,12 @@ export function QuickView() {
                 {renderImageList('desktop')}
               </div>
 
-              {displayImages.length > 1 && (
+              {totalMediaCount > 1 && (
                 <div className="text-center py-4 text-[11px] text-muted flex items-center justify-center gap-2">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
-                  {displayImages.length} images
+                  {totalImageCount} images{videoItems.length > 0 ? `, ${videoItems.length} video${videoItems.length > 1 ? 's' : ''}` : ''}
                 </div>
               )}
             </div>
@@ -571,17 +619,17 @@ export function QuickView() {
           {/* Content Section */}
           <div data-testid="desktop-content-panel" className="w-2/5 max-w-md border-l border-border bg-cream flex flex-col min-h-0 overflow-hidden">
             <AlertContextBanner />
-            {!isStudyMode && displayImages.length > 1 && (
+            {!isStudyMode && totalImageCount > 1 && (
               <div className="border-b border-border">
                 <div className="h-0.5 bg-border">
                   <div
                     className="h-full bg-gold transition-all duration-300 ease-out"
-                    style={{ width: `${((currentImageIndex + 1) / displayImages.length) * 100}%` }}
+                    style={{ width: `${((currentImageIndex + 1) / progressTotal) * 100}%` }}
                   />
                 </div>
                 <div className="flex items-center justify-center py-1.5">
                   <span className="text-[11px] text-muted tabular-nums">
-                    {t('quickview.photoCounter', { current: currentImageIndex + 1, total: displayImages.length })}
+                    {t('quickview.photoCounter', { current: currentImageIndex + 1, total: progressTotal })}
                   </span>
                 </div>
               </div>

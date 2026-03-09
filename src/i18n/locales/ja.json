@@ -654,6 +654,8 @@
   "quickview.hide": "\u975e\u8868\u793a\u306b\u3059\u308b",
   "quickview.viewPhotos": "\u5199\u771f\u3092\u898b\u308b",
   "quickview.studySetsumei": "NBTHK\u8aac\u660e\u3092\u8aad\u3080",
+  "quickview.sectionPhotos": "\u5199\u771f",
+  "quickview.sectionVideos": "\u52d5\u753b",
 
   "metadata.smith": "\u5200\u5de5",
   "metadata.maker": "\u4f5c\u8005",

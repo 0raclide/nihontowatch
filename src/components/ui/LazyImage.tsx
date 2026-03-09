@@ -39,7 +39,7 @@ export function LazyImage({
   itemType?: string | null;
   certType?: string | null;
   cachedDimensions?: { width: number; height: number } | null;
-  onLoadFailed?: (index: number) => void;
+  onLoadFailed?: (index: number, src: string) => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [loaded, setLoaded] = useState(false);
@@ -117,7 +117,7 @@ export function LazyImage({
       setLoaded(false);
     } else {
       setError(true);
-      onLoadFailed?.(index);
+      onLoadFailed?.(index, src);
     }
   };
 
