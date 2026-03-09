@@ -17,10 +17,12 @@ const nextConfig: NextConfig = {
         hostname: '**',
       },
     ],
-    // Optimize image loading
-    deviceSizes: [640, 750, 828, 1080, 1200, 1920],
+    // Optimize image loading — 2560 serves Retina/4K displays at native resolution
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2560],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
     formats: ['image/avif', 'image/webp'],
+    // 90% preserves fine metallurgical detail (hada/hamon) — AVIF at 90 is still ~40% smaller than JPEG
+    qualities: [90],
     // Cache optimized images longer
     minimumCacheTTL: 60 * 60 * 24 * 30, // 30 days
   },
