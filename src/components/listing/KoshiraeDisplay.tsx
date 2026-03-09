@@ -41,7 +41,7 @@ function KoshiraeSetsumei({ textEn, textJa }: { textEn: string; textJa: string |
             </button>
           </div>
         )}
-        <div className="px-3 py-2 max-h-[300px] overflow-y-auto">
+        <div className="px-3 py-2">
           {showingJa ? (
             <p className="text-[13px] text-ink/80 leading-[1.85] whitespace-pre-line font-jp">
               {textJa}
