@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
   // Tab filters — 4-state lifecycle: Inventory → For Sale → Hold → Sold
   switch (tab) {
     case 'inventory':
-      query = query.eq('is_available', false).eq('is_sold', false).neq('status', 'HOLD');
+      query = query.eq('is_available', false).eq('is_sold', false).neq('status', 'HOLD').neq('status', 'DELISTED');
       break;
     case 'available':
       query = query.eq('is_available', true).eq('is_sold', false);

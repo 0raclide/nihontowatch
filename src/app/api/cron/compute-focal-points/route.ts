@@ -134,6 +134,7 @@ export async function GET(request: NextRequest) {
         .select('id, stored_images, images, hero_image_index')
         .is('focal_x', null)
         .not('images', 'is', null)
+        .eq('is_available', true)
         .range(offset, offset + fetchSize - 1) as { data: ListingRow[] | null; error: unknown };
 
       if (error) {

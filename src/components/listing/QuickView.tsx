@@ -30,6 +30,7 @@ import { MediaGroupDivider } from './MediaGroupDivider';
 import { VideoGalleryItem } from '@/components/video/VideoGalleryItem';
 import { ContentStreamRenderer } from './ContentStreamRenderer';
 import { StatsCard } from './StatsCard';
+import { QUICKVIEW_LAYOUT } from './quickviewLayout';
 import { LightboxProvider } from '@/contexts/LightboxContext';
 import { useValidatedImages } from '@/hooks/useValidatedImages';
 import { useScrollSpy } from '@/hooks/useScrollSpy';
@@ -468,7 +469,7 @@ export function QuickView() {
   const mobileCtaSlot = isDealer
     ? <DealerMobileCTA listing={currentListing} onStatusChange={handleDealerStatusChange} />
     : isCollection
-      ? <CollectionMobileCTA onEditCollection={handleEditCollection} />
+      ? <CollectionMobileCTA collectionItem={collectionItem} onEditCollection={handleEditCollection} />
       : <BrowseMobileCTA listing={currentListing} />;
 
   // =========================================================================
@@ -545,6 +546,7 @@ export function QuickView() {
       <QuickViewModal
         isOpen={isOpen}
         onClose={closeQuickView}
+        source={source}
       >
         {/* Mobile layout (show below lg, hide on lg+) */}
         <div className="lg:hidden h-full flex flex-col" data-testid="quickview-mobile-layout">
@@ -659,7 +661,7 @@ export function QuickView() {
         {/* Desktop layout (hide below lg, show on lg+) */}
         <div className="hidden lg:flex flex-row h-full min-h-0 overflow-hidden" data-testid="quickview-desktop-layout">
           {isCollectionEditMode ? (
-            <div className="flex-1 min-h-0 w-3/5 overflow-y-auto bg-cream">
+            <div className={`flex-1 min-h-0 ${QUICKVIEW_LAYOUT.leftPanel.default} overflow-y-auto bg-cream`}>
               <CollectionFormContent
                 mode={collectionMode!}
                 item={collectionMode === 'edit' ? collectionItem as any : null}
@@ -672,7 +674,7 @@ export function QuickView() {
               />
             </div>
 ) : isAdminEditMode ? (
-            <div className="flex-1 min-h-0 w-3/5 overflow-y-auto bg-cream">
+            <div className={`flex-1 min-h-0 ${QUICKVIEW_LAYOUT.leftPanel.default} overflow-y-auto bg-cream`}>
               <AdminEditView
                 listing={currentListing}
                 onBackToPhotos={toggleAdminEditMode}
@@ -680,7 +682,7 @@ export function QuickView() {
               />
             </div>
           ) : isStudyMode ? (
-            <div className="flex-1 min-h-0 w-3/5 overflow-hidden">
+            <div className={`flex-1 min-h-0 ${QUICKVIEW_LAYOUT.leftPanel.default} overflow-hidden`}>
               <StudySetsumeiView
                 listing={currentListing as ListingWithEnrichment}
                 onBackToPhotos={toggleStudyMode}
@@ -692,7 +694,7 @@ export function QuickView() {
               ref={scrollContainerRef}
               data-testid="desktop-image-scroller"
               onScroll={handleScroll}
-              className="flex-1 min-h-0 w-[65%] overflow-y-auto overscroll-contain bg-ink/5 relative"
+              className={`flex-1 min-h-0 ${QUICKVIEW_LAYOUT.leftPanel.dealer} overflow-y-auto overscroll-contain bg-ink/5 relative`}
             >
               {isSold && (
                 <div className="sticky top-0 z-20 bg-ink/80 text-white text-center py-2 text-sm font-medium tracking-wider uppercase">
@@ -720,7 +722,7 @@ export function QuickView() {
               ref={scrollContainerRef}
               data-testid="desktop-image-scroller"
               onScroll={handleScroll}
-              className="flex-1 min-h-0 w-3/5 overflow-y-auto overscroll-contain bg-ink/5 relative"
+              className={`flex-1 min-h-0 ${QUICKVIEW_LAYOUT.leftPanel.default} overflow-y-auto overscroll-contain bg-ink/5 relative`}
             >
               {isSold && (
                 <div className="sticky top-0 z-20 bg-ink/80 text-white text-center py-2 text-sm font-medium tracking-wider uppercase">
@@ -745,7 +747,7 @@ export function QuickView() {
 
           {/* Content Section — StatsCard for dealer, QuickViewContent for browse/collection */}
           {isDealer && contentStreamResult ? (
-            <div data-testid="desktop-content-panel" className="w-[35%] max-w-sm border-l border-border bg-cream flex flex-col min-h-0 overflow-hidden">
+            <div data-testid="desktop-content-panel" className={`${QUICKVIEW_LAYOUT.rightPanel.dealer.width} ${QUICKVIEW_LAYOUT.rightPanel.dealer.maxWidth} border-l border-border bg-cream flex flex-col min-h-0 overflow-hidden`}>
               <AlertContextBanner />
               {streamImageCount > 1 && (
                 <div className="border-b border-border">
@@ -776,7 +778,7 @@ export function QuickView() {
               </div>
             </div>
           ) : (
-            <div data-testid="desktop-content-panel" className="w-2/5 max-w-md border-l border-border bg-cream flex flex-col min-h-0 overflow-hidden">
+            <div data-testid="desktop-content-panel" className={`${QUICKVIEW_LAYOUT.rightPanel.default.width} ${QUICKVIEW_LAYOUT.rightPanel.default.maxWidth} border-l border-border bg-cream flex flex-col min-h-0 overflow-hidden`}>
               <AlertContextBanner />
               {!isStudyMode && totalMediaCount > 1 && (
                 <div className="border-b border-border">

@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useLocale } from '@/i18n/LocaleContext';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 import type { CollectionFilters, CollectionFacets } from '@/types/collection';
 import type { CollectionItemRow } from '@/types/collectionItem';
 import type { DisplayItem } from '@/types/displayItem';
@@ -13,9 +14,12 @@ import { CollectionBottomBar } from '@/components/collection/CollectionBottomBar
 import { Drawer } from '@/components/ui/Drawer';
 import { useQuickView } from '@/contexts/QuickViewContext';
 import { useCurrency } from '@/hooks/useCurrency';
-import { collectionRowsToDisplayItems } from '@/lib/displayItem';
+import { collectionRowsToDisplayItems, dealerListingToDisplayItem } from '@/lib/displayItem';
 import { SORT_OPTIONS } from '@/lib/collection/labels';
 import { Header } from '@/components/layout/Header';
+
+// Tab types for dealer users
+type CollectionTab = 'collection' | 'available' | 'hold' | 'sold';
 
 // =============================================================================
 // Constants
@@ -36,10 +40,19 @@ const EMPTY_FACETS: CollectionFacets = {
 // =============================================================================
 
 export function CollectionPageClient() {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const searchParams = useSearchParams();
   const { currency, exchangeRates } = useCurrency();
   const quickView = useQuickView();
+  const { isDealer } = useSubscription();
+
+  // Tab state for dealer users (collection | available | hold | sold)
+  const [activeTab, setActiveTab] = useState<CollectionTab>('collection');
+
+  // Dealer listings state (for non-collection tabs)
+  const [dealerListings, setDealerListings] = useState<DisplayItem[]>([]);
+  const [dealerTotal, setDealerTotal] = useState(0);
+  const [isDealerLoading, setIsDealerLoading] = useState(false);
 
   const [items, setItemsState] = useState<CollectionItemRow[]>([]);
   const [total, setTotal] = useState(0);
@@ -132,6 +145,56 @@ export function CollectionPageClient() {
       setIsLoading(false);
     }
   }, [t]);
+
+  // Fetch dealer listings for dealer tabs (available/hold/sold)
+  const fetchDealerListings = useCallback(async (tab: CollectionTab) => {
+    if (tab === 'collection') return;
+    setIsDealerLoading(true);
+    try {
+      const res = await fetch(`/api/dealer/listings?tab=${tab}`);
+      if (!res.ok) throw new Error('Failed to fetch');
+      const data = await res.json();
+      const mapped = (data.listings || []).map(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (l: any) => dealerListingToDisplayItem(l, locale, true)
+      );
+      setDealerListings(mapped);
+      setDealerTotal(data.total ?? mapped.length);
+    } catch {
+      setDealerListings([]);
+      setDealerTotal(0);
+    } finally {
+      setIsDealerLoading(false);
+    }
+  }, [locale]);
+
+  // Handle tab switch
+  const handleTabChange = useCallback((tab: CollectionTab) => {
+    setActiveTab(tab);
+    if (tab === 'collection') {
+      fetchItems(filters);
+    } else {
+      fetchDealerListings(tab);
+    }
+  }, [fetchItems, fetchDealerListings, filters]);
+
+  // Listen for promote/delist events to refresh the current tab
+  useEffect(() => {
+    const handlePromoted = () => {
+      if (activeTab === 'collection') fetchItems(filters);
+      else if (activeTab === 'available') fetchDealerListings('available');
+    };
+    const handleDelisted = () => {
+      if (activeTab === 'available' || activeTab === 'hold') fetchDealerListings(activeTab);
+      else if (activeTab === 'collection') fetchItems(filters);
+    };
+    window.addEventListener('collection-item-promoted', handlePromoted);
+    window.addEventListener('dealer-listing-delisted', handleDelisted);
+    return () => {
+      window.removeEventListener('collection-item-promoted', handlePromoted);
+      window.removeEventListener('dealer-listing-delisted', handleDelisted);
+    };
+  }, [activeTab, filters, fetchItems, fetchDealerListings]);
 
   // Track whether deep link has been handled to prevent re-opening on re-renders
   const deepLinkHandledRef = useRef(false);
@@ -245,7 +308,10 @@ export function CollectionPageClient() {
               {t('collection.myCollection')}
             </h1>
             <p className="text-[13px] text-muted mt-1">
-              {total > 0 ? (total === 1 ? t('collection.itemCount', { count: total }) : t('collection.itemCountPlural', { count: total })) : t('collection.startBuilding')}
+              {activeTab === 'collection'
+                ? (total > 0 ? (total === 1 ? t('collection.itemCount', { count: total }) : t('collection.itemCountPlural', { count: total })) : t('collection.startBuilding'))
+                : t('home.itemCount', { count: (isDealerLoading ? '...' : dealerTotal.toLocaleString()) })
+              }
             </p>
           </div>
 
@@ -276,6 +342,30 @@ export function CollectionPageClient() {
             </span>
           </div>
         </div>
+
+        {/* Dealer tabs */}
+        {isDealer && (
+          <div className="flex gap-1 mb-3 lg:mb-5 overflow-x-auto scrollbar-hide">
+            {([
+              { key: 'collection' as CollectionTab, label: t('collection.tabCollection') },
+              { key: 'available' as CollectionTab, label: t('collection.tabForSale') },
+              { key: 'hold' as CollectionTab, label: t('collection.tabOnHold') },
+              { key: 'sold' as CollectionTab, label: t('collection.tabSold') },
+            ]).map(tab => (
+              <button
+                key={tab.key}
+                onClick={() => handleTabChange(tab.key)}
+                className={`px-4 py-1.5 rounded-full text-[12px] font-medium transition-colors whitespace-nowrap ${
+                  activeTab === tab.key
+                    ? 'bg-gold text-white'
+                    : 'bg-surface-elevated text-muted hover:text-ink border border-border/40'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Subtle divider */}
         <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent mb-4 lg:mb-8" />
@@ -323,41 +413,58 @@ export function CollectionPageClient() {
 
         {/* Main Layout */}
         <div className="flex flex-col lg:flex-row lg:gap-10">
-          {/* Filter Sidebar (desktop) — variant B card styling */}
-          <div className="hidden lg:block w-[264px] flex-shrink-0">
-            <div className="sticky top-24">
-              <div
-                className="bg-surface-elevated rounded-2xl border border-border/40 flex flex-col max-h-[calc(100vh-7rem)] overflow-y-auto overflow-x-hidden scrollbar-hide"
-                style={{ boxShadow: '0 1px 2px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.06)' }}
-              >
-                <CollectionFilterContent
-                  facets={facets}
-                  filters={filters}
-                  onFilterChange={handleFilterChange}
-                  totalItems={total}
-                />
-                {/* Bottom fade */}
-                <div className="pointer-events-none h-6 bg-gradient-to-t from-surface-elevated to-transparent -mt-6 relative z-10 rounded-b-2xl" />
+          {/* Filter Sidebar (desktop) — only on collection tab */}
+          {activeTab === 'collection' && (
+            <div className="hidden lg:block w-[264px] flex-shrink-0">
+              <div className="sticky top-24">
+                <div
+                  className="bg-surface-elevated rounded-2xl border border-border/40 flex flex-col max-h-[calc(100vh-7rem)] overflow-y-auto overflow-x-hidden scrollbar-hide"
+                  style={{ boxShadow: '0 1px 2px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.06)' }}
+                >
+                  <CollectionFilterContent
+                    facets={facets}
+                    filters={filters}
+                    onFilterChange={handleFilterChange}
+                    totalItems={total}
+                  />
+                  {/* Bottom fade */}
+                  <div className="pointer-events-none h-6 bg-gradient-to-t from-surface-elevated to-transparent -mt-6 relative z-10 rounded-b-2xl" />
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* Grid */}
           <div className="flex-1 min-w-0">
-            <ListingGrid
-              listings={[]}
-              preMappedItems={adaptedItems}
-              total={total}
-              page={1}
-              totalPages={1}
-              onPageChange={() => {}}
-              isLoading={isLoading}
-              currency={currency}
-              exchangeRates={exchangeRates}
-              mobileView={mobileView}
-              onCardClick={handleCardClick}
-              appendSlot={<AddItemCard onClick={handleAddClick} />}
-            />
+            {activeTab === 'collection' ? (
+              <ListingGrid
+                listings={[]}
+                preMappedItems={adaptedItems}
+                total={total}
+                page={1}
+                totalPages={1}
+                onPageChange={() => {}}
+                isLoading={isLoading}
+                currency={currency}
+                exchangeRates={exchangeRates}
+                mobileView={mobileView}
+                onCardClick={handleCardClick}
+                appendSlot={<AddItemCard onClick={handleAddClick} />}
+              />
+            ) : (
+              <ListingGrid
+                listings={[]}
+                preMappedItems={dealerListings}
+                total={dealerTotal}
+                page={1}
+                totalPages={1}
+                onPageChange={() => {}}
+                isLoading={isDealerLoading}
+                currency={currency}
+                exchangeRates={exchangeRates}
+                mobileView={mobileView}
+              />
+            )}
           </div>
         </div>
       </div>
