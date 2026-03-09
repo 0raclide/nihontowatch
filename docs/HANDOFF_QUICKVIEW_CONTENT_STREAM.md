@@ -1,9 +1,10 @@
 # Handoff: QuickView Content Stream
 
 **Date:** 2026-03-09
-**Status:** Deployed to production (`77e6e16`), build passing, 53 new tests, 5000 existing tests green
+**Status:** Deployed to production (`c62d268`), build passing, 63 new tests, 5000 existing tests green
 **Phase A cleanup (2026-03-09):** SetsumeiBlock extracted, ImageLightbox shared, scroll-spy added, JSONB sanitizers completed. +41 new tests (5 scroll-spy + 36 sanitizer). 5000 existing tests green.
 **Production fixes (2026-03-09):** Curator-note source guard allowlist. Section pill scroll-to bug (two fixes — see Post-Deploy Fixes).
+**Catalog image classification (2026-03-09):** Yuhinkai catalog images (oshigata/setsumei scans) routed from main photo stream to section thumbnails. Koshirae photos promoted to full-width. Three iterations to fix stored-copy detection + hero selection + koshirae thumbnail placement. See Phase B below.
 **Design doc:** `docs/DESIGN_QUICKVIEW_CONTENT_STREAM.md`
 
 ---
@@ -35,6 +36,8 @@ ContentStreamResult {
 
 **Image deduplication:** Section images (koshirae.images, sayagaki[].images, etc.) are collected into a `Set` and removed from the primary photos block. They appear in their section instead.
 
+**Catalog image classification:** Yuhinkai catalog images (oshigata drawings, setsumei scans) from `listing.images[]` are detected via `isYuhinkaiCatalogImage()` and routed to the setsumei section as thumbnails instead of appearing as full-width photos. Stored copies (CDN copies in `listing-images/`) are mapped back to originals via filename index extraction (`/00.jpg` → index 0). Koshirae images are classified directly (they may contain catalog images not in `displayImages`). The hero image skips catalog images, picking the first real photo.
+
 ### Rendering Layer
 
 - `ContentStreamRenderer` — switch-case maps `ContentBlock` → React components
@@ -62,7 +65,7 @@ Conditional branching: `isDealer && contentStreamResult ? (stream path) : (exist
 | `src/components/listing/ContentStreamRenderer.tsx` | ~140 | Block → component switch renderer (SetsumeiBlock extracted) |
 | `src/components/listing/SectionIndicators.tsx` | ~40 | Tappable section pill row with scroll-spy highlighting |
 | `src/components/listing/StatsCard.tsx` | ~200 | Condensed metadata panel |
-| `tests/lib/media/contentStream.test.ts` | ~170 | 12 unit tests |
+| `tests/lib/media/contentStream.test.ts` | ~370 | 22 unit tests (12 original + 10 catalog classification) |
 | `src/components/listing/SetsumeiBlock.tsx` | ~75 | Extracted parchment-style setsumei card (Phase A) |
 | `src/components/ui/ImageLightbox.tsx` | ~40 | Shared full-screen image lightbox overlay (Phase A) |
 | `src/hooks/useScrollSpy.ts` | ~60 | IntersectionObserver-based scroll-spy hook (Phase A) |
@@ -162,6 +165,71 @@ The 5 section display components still each have `useState(lightboxUrl)` for the
 
 ---
 
+## Phase B: Catalog Image Classification (2026-03-09)
+
+### Problem
+
+Listing 90396 (dual Juyo — blade + koshirae) exposed two image routing problems in the content stream:
+
+1. **Yuhinkai catalog images appeared as full-width photos** — oshigata drawings and setsumei page scans from catalog prefill were rendering in the main photo stream instead of as documentation thumbnails.
+2. **Koshirae section mixed photo sizes** — real koshirae photos (should be full-width) rendered as 64×64 thumbnails alongside catalog oshigata drawings.
+
+### Solution
+
+Import `isYuhinkaiCatalogImage()` and `classifyCatalogImage()` from `src/lib/images/classification.ts` into `contentStream.ts`. Classify all images and route them:
+
+- **Catalog images from `displayImages`** → excluded from photo blocks, routed to setsumei section as thumbnails
+- **Non-catalog koshirae photos** → promoted to full-width `image` blocks after the koshirae divider
+- **Catalog images in `koshirae.images[]`** → stay as thumbnails in KoshiraeDisplay
+- **Hero image** → skips catalog images, picks the first real photo
+
+### Three Iterations (Production Hotfixes)
+
+**Commit `017f2ea` — initial implementation:** Scanned `displayImages` for catalog URLs. Worked for direct Yuhinkai URLs but missed two edge cases.
+
+**Commit `314003e` — stored copy detection:** `getAllImages()` replaces catalog originals with stored CDN copies (`listing-images/...`). These lack the Yuhinkai domain, so classification missed them. Also: koshirae catalog images exist only in `koshirae.images[]` (not in `displayImages`), so `catalog.allUrls.has()` filtering dropped them entirely. Fix: scan `listing.images[]` (originals) for catalog URLs; use `isYuhinkaiCatalogImage()` directly for koshirae.
+
+**Commit `c62d268` — index mapping fix:** `displayImages` is REORDERED by hero selection (hero moved to index 0). Index-based mapping `listing.images[i] ↔ displayImages[i]` was wrong — it was marking the hero (a real photo) as catalog. Fix: extract original index from stored image filenames (`/00.jpg` → index 0) and cross-check against catalog positions. Also: moved koshirae catalog thumbnails to after zufu commentary text (consistent with blade setsumei).
+
+### Key Lessons
+
+1. **`displayImages` ≠ `listing.images[]`**: `getAllImages()` merges stored copies, then hero selection reorders. Never assume index correspondence.
+2. **Stored images lose classification signals**: Stored copies at `listing-images/{shop}/L{id}/{NN}.{ext}` don't contain the original filename patterns (`_oshigata.`, `_setsumei.`). Must map back to originals via the index in the filename.
+3. **Section-specific images may not be in `displayImages`**: Koshirae has its own Juyo record with catalog images that never appear in the main `images[]` array. Use `isYuhinkaiCatalogImage()` directly, not set membership.
+
+### Files Changed (Phase B)
+
+| File | Change |
+|------|--------|
+| `src/lib/media/contentStream.ts` | Catalog classification, stored-copy detection, hero skip, koshirae image split |
+| `src/components/listing/SetsumeiBlock.tsx` | `imageUrl: string \| null` → `images: string[]` (multiple thumbnails) |
+| `src/components/listing/ContentStreamRenderer.tsx` | Pass `images` array to SetsumeiBlock |
+| `src/components/listing/KoshiraeDisplay.tsx` | Thumbnails moved after zufu commentary (consistent with blade) |
+| `tests/lib/media/contentStream.test.ts` | +10 tests for catalog classification, stored copies, hero skip |
+
+### Stream Order (After Phase B)
+
+```
+HERO IMAGE (first non-catalog photo, full-width)
+CURATOR'S NOTE
+VIDEOS
+PHOTOS (full-width, catalog images excluded)
+─── SETSUMEI ───
+  [setsumei text with translation toggle]
+  [blade oshigata + setsumei thumbnails]
+─── SAYAGAKI ───
+  ...
+─── KOSHIRAE (拵) ───
+  [full-width koshirae photos]
+  [koshirae metadata: cert, era, maker]
+  [koshirae zufu commentary text]
+  [koshirae oshigata + setsumei thumbnails]
+─── PROVENANCE ───
+  ...
+```
+
+---
+
 ## Testing Checklist
 
 - [x] `npm run build` passes
@@ -185,3 +253,13 @@ The 5 section display components still each have `useState(lightboxUrl)` for the
 - [ ] Manual: Browse QuickView → section displays still have working fallback lightboxes (no onImageClick)
 - [ ] Manual: Listing detail page → section display lightboxes still work
 - [ ] Manual: Mobile dealer → stats sheet section pills highlight on scroll
+
+### Phase B (2026-03-09)
+
+- [x] `npm run build` passes
+- [x] 22 `contentStream.test.ts` tests pass (12 original + 10 catalog)
+- [x] Manual: Listing 90396 — oshigata/setsumei scans not in main photo stream
+- [x] Manual: Listing 90396 — setsumei section shows blade oshigata+setsumei thumbnails
+- [x] Manual: Listing 90396 — koshirae photos are full-width, catalog thumbnails after zufu text
+- [x] Manual: Listing 90396 — hero is a dealer photo, not catalog scan
+- [x] Manual: Stored image copies correctly detected as catalog via filename index
