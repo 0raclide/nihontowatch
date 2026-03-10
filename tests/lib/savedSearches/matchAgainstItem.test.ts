@@ -19,6 +19,10 @@ function makeItem(overrides: Partial<MatchableItem> = {}): MatchableItem {
     price_value: 500000,
     school: 'Bizen',
     tosogu_school: null,
+    smith: 'Masamune',
+    tosogu_maker: null,
+    artisan_id: 'MAS590',
+    title: 'Katana by Masamune',
     ...overrides,
   };
 }
@@ -40,8 +44,29 @@ describe('searchMatchesItem', () => {
     expect(searchMatchesItem({}, makeItem())).toBe(true);
   });
 
-  it('excludes searches with text queries', () => {
-    expect(searchMatchesItem({ query: 'masamune' }, makeItem())).toBe(false);
+  it('matches text query against smith name', () => {
+    expect(searchMatchesItem({ query: 'masamune' }, makeItem())).toBe(true);
+    expect(searchMatchesItem({ query: 'Masamune' }, makeItem())).toBe(true);
+  });
+
+  it('matches text query against artisan_id code', () => {
+    expect(searchMatchesItem({ query: 'MAS590' }, makeItem())).toBe(true);
+  });
+
+  it('rejects text query that does not match any field', () => {
+    expect(searchMatchesItem({ query: 'norishige' }, makeItem())).toBe(false);
+  });
+
+  it('requires all query words to match (AND semantics)', () => {
+    // "masamune bizen" — both words match (smith + school)
+    expect(searchMatchesItem({ query: 'masamune bizen' }, makeItem())).toBe(true);
+    // "masamune yamashiro" — masamune matches but yamashiro doesn't
+    expect(searchMatchesItem({ query: 'masamune yamashiro' }, makeItem())).toBe(false);
+  });
+
+  it('ignores single-character query words', () => {
+    // "a" is too short, filtered out → empty words → no match
+    expect(searchMatchesItem({ query: 'a' }, makeItem())).toBe(false);
   });
 
   it('excludes sold-tab searches', () => {
@@ -158,9 +183,18 @@ describe('matchItemAgainstSearches', () => {
     expect(result.matchedSearches).toHaveLength(0);
   });
 
-  it('excludes text query searches from count', () => {
+  it('includes text query searches that match item fields', () => {
     const searches = [
-      makeSearch({ query: 'masamune' }, 'user-1'),
+      makeSearch({ query: 'masamune' }, 'user-1'), // matches smith
+      makeSearch({}, 'user-2'),
+    ];
+    const result = matchItemAgainstSearches(makeItem(), searches);
+    expect(result.matchCount).toBe(2);
+  });
+
+  it('excludes text query searches that do not match item fields', () => {
+    const searches = [
+      makeSearch({ query: 'norishige' }, 'user-1'), // doesn't match
       makeSearch({}, 'user-2'),
     ];
     const result = matchItemAgainstSearches(makeItem(), searches);

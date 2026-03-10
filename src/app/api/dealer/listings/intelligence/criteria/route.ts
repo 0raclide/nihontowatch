@@ -22,8 +22,8 @@ import {
 
 export const dynamic = 'force-dynamic';
 
-const LISTING_SELECT = 'id, dealer_id, item_type, item_category, cert_type, price_value, school, tosogu_school, source';
-const COLLECTION_ITEM_SELECT = 'id, item_uuid, owner_id, item_type, item_category, cert_type, price_value, school, tosogu_school';
+const LISTING_SELECT = 'id, dealer_id, item_type, item_category, cert_type, price_value, school, tosogu_school, smith, tosogu_maker, artisan_id, title, source';
+const COLLECTION_ITEM_SELECT = 'id, item_uuid, owner_id, item_type, item_category, cert_type, price_value, school, tosogu_school, smith, tosogu_maker, artisan_id, title';
 
 export async function GET(request: NextRequest) {
   const supabase = await createClient();

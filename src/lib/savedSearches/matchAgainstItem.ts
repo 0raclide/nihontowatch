@@ -22,6 +22,10 @@ export interface MatchableItem {
   price_value?: number | null;
   school?: string | null;
   tosogu_school?: string | null;
+  smith?: string | null;
+  tosogu_maker?: string | null;
+  artisan_id?: string | null;
+  title?: string | null;
 }
 
 /** Shape of a saved search row from the DB */
@@ -61,8 +65,35 @@ function certMatches(searchCert: string, itemCert: string): boolean {
 // ---------------------------------------------------------------------------
 
 /**
+ * Test whether a text query matches the item's searchable fields.
+ * Checks each query word against smith, maker, school, artisan_id, and title.
+ * ALL words must match at least one field (AND semantics, mirrors browse).
+ */
+function queryMatchesItem(query: string, item: MatchableItem): boolean {
+  const words = query.toLowerCase().split(/\s+/).filter(w => w.length >= 2);
+  if (words.length === 0) return false;
+
+  const searchableFields = [
+    item.smith,
+    item.tosogu_maker,
+    item.school,
+    item.tosogu_school,
+    item.artisan_id,
+    item.title,
+  ]
+    .filter(Boolean)
+    .map(f => f!.toLowerCase());
+
+  // Every word must appear in at least one field
+  return words.every(word =>
+    searchableFields.some(field => field.includes(word))
+  );
+}
+
+/**
  * Test whether a single saved search matches the given item.
- * Returns false for searches with text queries or sold-tab (conservative).
+ * Text query searches are matched against the item's smith/maker/school/title
+ * fields (lightweight substring match). Sold-tab searches are excluded.
  */
 export function searchMatchesItem(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -71,8 +102,10 @@ export function searchMatchesItem(
 ): boolean {
   if (!c) return false;
 
-  // Exclude searches with text queries (conservative, mirrors SQL RPC)
-  if (c.query && typeof c.query === 'string' && c.query.trim() !== '') return false;
+  // Text query — match against item fields instead of blanket exclusion
+  if (c.query && typeof c.query === 'string' && c.query.trim() !== '') {
+    if (!queryMatchesItem(c.query, item)) return false;
+  }
 
   // Exclude sold-tab searches — they monitor sold archive, not new listings
   if (c.tab === 'sold') return false;
