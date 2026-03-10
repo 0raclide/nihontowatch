@@ -412,12 +412,6 @@ export function QuickView() {
   // =========================================================================
   // Assemble slots based on source
   // =========================================================================
-  const handleEditCollection = () => {
-    if (collectionItem?.id) {
-      window.location.href = `/vault/edit/${collectionItem.id}`;
-    }
-  };
-
   // Showcase extension data (for showcase source)
   const showcaseExt = (currentListing as any)?.showcase ?? null;
 
@@ -427,7 +421,7 @@ export function QuickView() {
     : isShowcase
       ? <ShowcaseActionBar showcase={showcaseExt} />
       : isCollection
-        ? <CollectionActionBar onEditCollection={handleEditCollection} />
+        ? <CollectionActionBar />
         : <BrowseActionBar listing={currentListing} isStudyMode={isStudyMode} onToggleStudyMode={toggleStudyMode} onToggleAdminEditMode={toggleAdminEditMode} />;
 
   const desktopDealerSlot = isShowcase
@@ -453,7 +447,7 @@ export function QuickView() {
     : isShowcase
       ? null
       : isCollection
-        ? <CollectionCTA collectionItem={collectionItem} onEditCollection={handleEditCollection} />
+        ? <CollectionCTA collectionItem={collectionItem} />
         : <BrowseCTA listing={currentListing} />;
 
   // Mobile QuickViewMobileSheet slots (4-way: dealer > showcase > collection > browse)
@@ -462,7 +456,7 @@ export function QuickView() {
     : isShowcase
       ? <ShowcaseMobileHeaderActions listing={currentListing} showcase={showcaseExt} />
       : isCollection
-        ? <CollectionMobileHeaderActions onEditCollection={handleEditCollection} />
+        ? <CollectionMobileHeaderActions />
         : <BrowseMobileHeaderActions listing={currentListing} isStudyMode={isStudyMode} onToggleStudyMode={toggleStudyMode} isAdminEditMode={isAdminEditMode} onToggleAdminEditMode={toggleAdminEditMode} />;
 
   const mobileDealerSlot = isShowcase
@@ -480,7 +474,7 @@ export function QuickView() {
     : isShowcase
       ? null
       : isCollection
-        ? <CollectionMobileCTA collectionItem={collectionItem} onEditCollection={handleEditCollection} />
+        ? <CollectionMobileCTA collectionItem={collectionItem} />
         : <BrowseMobileCTA listing={currentListing} />;
 
   // =========================================================================

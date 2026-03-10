@@ -1,6 +1,8 @@
 'use client';
 
+import { useCallback, useState } from 'react';
 import { useLocale } from '@/i18n/LocaleContext';
+import { useQuickView } from '@/contexts/QuickViewContext';
 import type { CollectionItemRow } from '@/types/collectionItem';
 
 interface CollectionDealerRowProps {
@@ -9,6 +11,24 @@ interface CollectionDealerRowProps {
 
 export function CollectionDealerRow({ collectionItem }: CollectionDealerRowProps) {
   const { t } = useLocale();
+  const { openQuickView } = useQuickView();
+  const [loading, setLoading] = useState(false);
+
+  const handleViewOriginal = useCallback(async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!collectionItem?.source_listing_id || loading) return;
+
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/listing/${collectionItem.source_listing_id}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      openQuickView(data, { skipFetch: true, source: 'browse' });
+    } finally {
+      setLoading(false);
+    }
+  }, [collectionItem?.source_listing_id, loading, openQuickView]);
 
   return (
     <div className="flex items-center gap-1.5">
@@ -19,14 +39,13 @@ export function CollectionDealerRow({ collectionItem }: CollectionDealerRowProps
         {t('collection.personalCollection')}
       </span>
       {collectionItem?.source_listing_id && (
-        <a
-          href={`/listing/${collectionItem.source_listing_id}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-gold hover:text-gold-light ml-1 text-[12px]"
+        <button
+          onClick={handleViewOriginal}
+          disabled={loading}
+          className={`text-gold hover:text-gold-light ml-1 text-[12px] ${loading ? 'opacity-60' : ''}`}
         >
-          ({t('collection.viewOriginal')})
-        </a>
+          ({loading ? '...' : t('collection.viewOriginal')})
+        </button>
       )}
     </div>
   );
