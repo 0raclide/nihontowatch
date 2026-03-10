@@ -1,7 +1,30 @@
 'use client';
 
-// Collection mobile header actions — currently empty (edit removed, share removed).
-// Dealer-specific actions will be added here.
-export function CollectionMobileHeaderActions() {
-  return null;
+interface CollectionMobileHeaderActionsProps {
+  onEditCollection?: () => void;
+}
+
+export function CollectionMobileHeaderActions({ onEditCollection }: CollectionMobileHeaderActionsProps) {
+  return (
+    <>
+      {onEditCollection && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onEditCollection();
+          }}
+          onTouchStart={(e) => e.stopPropagation()}
+          onTouchEnd={(e) => e.stopPropagation()}
+          className="w-8 h-8 flex items-center justify-center rounded-full text-muted hover:text-ink hover:bg-border/50 transition-all duration-200"
+          aria-label="Edit"
+          title="Edit item"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+              d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" />
+          </svg>
+        </button>
+      )}
+    </>
+  );
 }

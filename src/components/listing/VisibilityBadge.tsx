@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useLocale } from '@/i18n/LocaleContext';
+import { useQuickView } from '@/contexts/QuickViewContext';
 import type { CollectionItemRow, CollectionVisibility } from '@/types/collectionItem';
 
 // =============================================================================
@@ -84,6 +85,7 @@ interface VisibilityBadgeProps {
 
 export function VisibilityBadge({ collectionItem }: VisibilityBadgeProps) {
   const { t } = useLocale();
+  const { onCollectionSaved } = useQuickView();
   const [visibility, setVisibility] = useState<CollectionVisibility>(collectionItem?.visibility ?? 'private');
   const [isOpen, setIsOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -132,13 +134,16 @@ export function VisibilityBadge({ collectionItem }: VisibilityBadgeProps) {
       });
       if (!res.ok) {
         setVisibility(prev);
+      } else {
+        // Notify parent to refetch so cards reflect the new visibility
+        onCollectionSaved?.();
       }
     } catch {
       setVisibility(prev);
     } finally {
       setIsSaving(false);
     }
-  }, [collectionItem, visibility]);
+  }, [collectionItem, visibility, onCollectionSaved]);
 
   if (!collectionItem) return null;
 

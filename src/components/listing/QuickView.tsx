@@ -412,6 +412,12 @@ export function QuickView() {
   // =========================================================================
   // Assemble slots based on source
   // =========================================================================
+  const handleEditCollection = () => {
+    if (collectionItem?.id) {
+      window.location.href = `/vault/edit/${collectionItem.id}`;
+    }
+  };
+
   // Showcase extension data (for showcase source)
   const showcaseExt = (currentListing as any)?.showcase ?? null;
 
@@ -421,7 +427,7 @@ export function QuickView() {
     : isShowcase
       ? <ShowcaseActionBar showcase={showcaseExt} />
       : isCollection
-        ? <CollectionActionBar />
+        ? <CollectionActionBar onEditCollection={handleEditCollection} />
         : <BrowseActionBar listing={currentListing} isStudyMode={isStudyMode} onToggleStudyMode={toggleStudyMode} onToggleAdminEditMode={toggleAdminEditMode} />;
 
   const desktopDealerSlot = isShowcase
@@ -456,7 +462,7 @@ export function QuickView() {
     : isShowcase
       ? <ShowcaseMobileHeaderActions listing={currentListing} showcase={showcaseExt} />
       : isCollection
-        ? <CollectionMobileHeaderActions />
+        ? <CollectionMobileHeaderActions onEditCollection={handleEditCollection} />
         : <BrowseMobileHeaderActions listing={currentListing} isStudyMode={isStudyMode} onToggleStudyMode={toggleStudyMode} isAdminEditMode={isAdminEditMode} onToggleAdminEditMode={toggleAdminEditMode} />;
 
   const mobileDealerSlot = isShowcase
