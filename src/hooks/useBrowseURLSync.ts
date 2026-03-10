@@ -71,16 +71,9 @@ function resolveCategory(urlValue: string | null): BrowseFilters['category'] {
   return CATEGORY_DEFAULT;
 }
 
-const SORT_STORAGE_KEY = 'nihontowatch-sort';
-
-/** Resolve sort from URL param, localStorage, or default */
+/** Resolve sort from URL param or default */
 function resolveSort(urlValue: string | null): string {
-  if (urlValue) return urlValue;
-  if (typeof window !== 'undefined') {
-    const stored = localStorage.getItem(SORT_STORAGE_KEY);
-    if (stored) return stored;
-  }
-  return 'featured';
+  return urlValue || 'featured';
 }
 
 /** URL → canonical state snapshot (single source of truth for parsing) */
@@ -240,13 +233,6 @@ export function useBrowseURLSync() {
       localStorage.setItem(CATEGORY_STORAGE_KEY, filters.category);
     }
   }, [filters.category]);
-
-  // ---- Persist sort to localStorage ----
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(SORT_STORAGE_KEY, sort);
-    }
-  }, [sort]);
 
   // ---- buildFetchParams — for API calls (excludes page, which is local) ----
   const buildFetchParams = useCallback(() => {
