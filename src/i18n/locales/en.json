@@ -310,6 +310,7 @@
   "dealer.intel.criteriaCerts": "Certs",
   "dealer.intel.criteriaSchools": "Schools",
   "dealer.intel.criteriaPrice": "Price",
+  "dealer.intel.criteriaQueries": "Search",
   "dealer.intel.criteriaExpand": "See what collectors are searching for",
   "dealer.intel.criteriaLoading": "Loading criteria…",
 

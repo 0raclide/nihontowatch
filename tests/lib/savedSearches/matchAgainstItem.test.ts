@@ -327,5 +327,31 @@ describe('aggregateCriteria', () => {
     expect(summary.facets.certifications).toHaveLength(0);
     expect(summary.facets.schools).toHaveLength(0);
     expect(summary.facets.priceRanges).toHaveLength(0);
+    expect(summary.facets.queries).toHaveLength(0);
+  });
+
+  it('aggregates text query terms as pills', () => {
+    const searches = [
+      makeSearch({ query: 'masamune' }, 'user-1'),
+      makeSearch({ query: 'masamune' }, 'user-2'),
+      makeSearch({ query: 'bizen katana' }, 'user-3'),
+    ];
+    const matchResult = { matchCount: 3, matchedSearches: searches };
+    const summary = aggregateCriteria(matchResult, defaultItem);
+
+    expect(summary.facets.queries.length).toBeGreaterThanOrEqual(1);
+    const masamune = summary.facets.queries.find(e => e.value === 'Masamune');
+    expect(masamune?.count).toBe(2);
+  });
+
+  it('capitalizes query terms for display', () => {
+    const searches = [
+      makeSearch({ query: 'tokuju' }, 'user-1'),
+    ];
+    const matchResult = { matchCount: 1, matchedSearches: searches };
+    const item = makeItem({ cert_type: 'Tokuju' });
+    const summary = aggregateCriteria(matchResult, item);
+
+    expect(summary.facets.queries[0].value).toBe('Tokuju');
   });
 });

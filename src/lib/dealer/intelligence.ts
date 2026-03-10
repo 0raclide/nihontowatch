@@ -74,6 +74,7 @@ export interface CriteriaSummary {
     certifications: CriteriaFacetEntry[];
     schools: CriteriaFacetEntry[];
     priceRanges: CriteriaFacetEntry[];
+    queries: CriteriaFacetEntry[];
   };
 }
 

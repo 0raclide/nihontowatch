@@ -91,7 +91,7 @@ export async function GET(request: NextRequest) {
     .neq('notification_frequency', 'none') as { data: SavedSearchRow[] | null; error: unknown };
 
   if (!searches || !Array.isArray(searches)) {
-    return NextResponse.json({ totalCollectors: 0, facets: { itemTypes: [], certifications: [], schools: [], priceRanges: [] } });
+    return NextResponse.json({ totalCollectors: 0, facets: { itemTypes: [], certifications: [], schools: [], priceRanges: [], queries: [] } });
   }
 
   const matchResult = matchItemAgainstSearches(item, searches);

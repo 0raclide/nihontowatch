@@ -230,6 +230,7 @@ export function aggregateCriteria(
   const certCounts = new Map<string, Set<string>>();
   const schoolCounts = new Map<string, Set<string>>();
   const priceCounts = new Map<string, Set<string>>();
+  const queryCounts = new Map<string, Set<string>>();
 
   const itemTypeLower = (item.item_type ?? '').toLowerCase();
   const itemCertLower = (item.cert_type ?? '').toLowerCase();
@@ -280,6 +281,15 @@ export function aggregateCriteria(
       if (!priceCounts.has(priceLabel)) priceCounts.set(priceLabel, new Set());
       priceCounts.get(priceLabel)!.add(uid);
     }
+
+    // Text queries — show the raw query term as a pill
+    if (c.query && typeof c.query === 'string' && c.query.trim() !== '') {
+      const q = c.query.trim();
+      // Capitalize first letter for display
+      const display = q.charAt(0).toUpperCase() + q.slice(1);
+      if (!queryCounts.has(display)) queryCounts.set(display, new Set());
+      queryCounts.get(display)!.add(uid);
+    }
   }
 
   const toFacetEntries = (map: Map<string, Set<string>>): CriteriaFacetEntry[] =>
@@ -295,6 +305,7 @@ export function aggregateCriteria(
       certifications: toFacetEntries(certCounts),
       schools: toFacetEntries(schoolCounts),
       priceRanges: toFacetEntries(priceCounts),
+      queries: toFacetEntries(queryCounts),
     },
   };
 }

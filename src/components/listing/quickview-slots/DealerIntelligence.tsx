@@ -35,6 +35,7 @@ const FACET_LABELS: Record<string, string> = {
   certifications: 'dealer.intel.criteriaCerts',
   schools: 'dealer.intel.criteriaSchools',
   priceRanges: 'dealer.intel.criteriaPrice',
+  queries: 'dealer.intel.criteriaQueries',
 };
 
 export function DealerIntelligence({ listingId, collectionItemId, tab }: DealerIntelligenceProps) {

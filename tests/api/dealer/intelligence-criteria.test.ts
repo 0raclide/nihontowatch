@@ -124,5 +124,6 @@ describe('GET /api/dealer/listings/intelligence/criteria', () => {
     expect(body.facets.certifications).toBeInstanceOf(Array);
     expect(body.facets.schools).toBeInstanceOf(Array);
     expect(body.facets.priceRanges).toBeInstanceOf(Array);
+    expect(body.facets.queries).toBeInstanceOf(Array);
   });
 });

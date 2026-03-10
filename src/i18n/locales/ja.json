@@ -310,6 +310,7 @@
   "dealer.intel.criteriaCerts": "鑑定",
   "dealer.intel.criteriaSchools": "刀派",
   "dealer.intel.criteriaPrice": "価格帯",
+  "dealer.intel.criteriaQueries": "検索語",
   "dealer.intel.criteriaExpand": "コレクターの検索条件を表示",
   "dealer.intel.criteriaLoading": "読み込み中…",
 
