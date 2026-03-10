@@ -103,13 +103,13 @@ if (accessDenied) return accessDenied;
 
 ## Known Gaps / Future Work
 
-1. **`NEXT_PUBLIC_COLLECTION_ENABLED` env var is now dead code** — still set in Vercel env vars and referenced in docs (`HANDOFF_COLLECTION_V2_LISTINGGRID.md`, `HANDOFF_COLLECTION_PHASE_4.md`). Should be removed from Vercel env vars and docs updated.
+1. **`NEXT_PUBLIC_COLLECTION_ENABLED` env var is now dead code** — ~~still set in Vercel env vars and referenced in docs~~. Docs updated (2026-03-10). Remove from Vercel env vars (manual step).
 
-2. **No paywall UX for collection** — free users who try to access `/collection` get silently redirected to `/browse`. No modal explaining what they're missing or how to get access. A paywall modal on the collection page would convert better, but since yuhinkai is manually assigned (not Stripe), a "contact us" CTA might be more appropriate than a checkout button.
+2. **No paywall UX for collection — intentional (2026-03-10).** Silent redirect to `/browse` for unauthorized users. Nav links and "I Own This" button hidden entirely. Paywall modal deferred to a future phase when collection access becomes a paid/self-serve feature.
 
-3. **Misleading paywall for `collection_access`** — `getPaywallConfig('yuhinkai')` maps to Pro tier, showing "$25/mo" pricing and Pro feature bullets. But purchasing Pro does NOT grant collection access (yuhinkai is manually assigned). If a free user somehow triggers the paywall for `collection_access`, they'd see a misleading upgrade prompt. Needs a "contact us" CTA instead of checkout.
+3. ~~**Misleading paywall for `collection_access`**~~ — **Not a current issue (2026-03-10).** No paywall modal is triggered in the collection flow. `getPaywallConfig('yuhinkai')` exists but is never called. If a paywall is added later, it will need a "contact us" CTA since yuhinkai is not Stripe-purchasable.
 
-4. **"I Own This" button visibility** — currently hidden entirely for non-yuhinkai users. An alternative design: show the button but trigger a paywall modal on click (similar to how inquiry emails work). This would create awareness of the collection feature for free users.
+4. **"I Own This" button visibility — intentional (2026-03-10).** Hidden entirely for non-yuhinkai users. No paywall-on-click pattern. Revisit when collection opens to broader audience.
 
 5. **Yuhinkai tier has no Stripe pricing** — it's entirely manual (admin assigns via `/admin/users`). If this needs self-serve signup later, need to add Stripe price IDs and include yuhinkai in the checkout flow.
 

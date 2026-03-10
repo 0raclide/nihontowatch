@@ -15,7 +15,6 @@ import type { DisplayItem } from '@/types/displayItem';
 // ---------------------------------------------------------------------------
 
 const mockOpenCollectionQuickView = vi.fn();
-const mockOpenCollectionAddForm = vi.fn();
 const mockSetListings = vi.fn();
 const mockSetOnCollectionSaved = vi.fn();
 
@@ -41,7 +40,6 @@ vi.mock('@/contexts/QuickViewContext', () => ({
     collectionItem: null,
     collectionMode: null,
     openCollectionQuickView: mockOpenCollectionQuickView,
-    openCollectionAddForm: mockOpenCollectionAddForm,
     setCollectionMode: vi.fn(),
     onCollectionSaved: null,
     setOnCollectionSaved: mockSetOnCollectionSaved,
@@ -354,7 +352,7 @@ beforeEach(() => {
 
 // Use dynamic import to avoid hoisting issues
 async function renderPage() {
-  const { CollectionPageClient } = await import('@/app/collection/CollectionPageClient');
+  const { CollectionPageClient } = await import('@/app/vault/CollectionPageClient');
   return render(<CollectionPageClient />);
 }
 
@@ -425,7 +423,7 @@ describe('CollectionPageClient', () => {
     });
 
     fireEvent.click(screen.getByTestId('add-item-card'));
-    expect(hrefSetter).toHaveBeenCalledWith('/collection/add');
+    expect(hrefSetter).toHaveBeenCalledWith('/vault/add');
 
     locationHrefSpy.mockRestore();
   });

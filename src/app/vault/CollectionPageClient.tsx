@@ -204,20 +204,10 @@ export function CollectionPageClient() {
     fetchItems(filters);
 
     // Check if we arrived via "I Own This" from browse QuickView
+    // Redirect to full-page add form (sessionStorage prefill is consumed there)
     const addParam = searchParams.get('add');
     if (addParam === 'listing') {
-      try {
-        const stored = sessionStorage.getItem('collection_prefill');
-        if (stored) {
-          const prefill = JSON.parse(stored);
-          sessionStorage.removeItem('collection_prefill');
-          quickView.openCollectionAddForm(prefill);
-          // Clean up URL
-          window.history.replaceState(null, '', '/collection');
-        }
-      } catch {
-        // ignore parse errors
-      }
+      window.location.href = '/vault/add';
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -294,7 +284,7 @@ export function CollectionPageClient() {
 
   // Add button — navigate to full-page form
   const handleAddClick = useCallback(() => {
-    window.location.href = '/collection/add';
+    window.location.href = '/vault/add';
   }, []);
 
   return (

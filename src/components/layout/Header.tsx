@@ -348,7 +348,7 @@ function HeaderContent() {
               )}
               {user && canAccess('collection_access') && (
                 <Link
-                  href="/collection"
+                  href="/vault"
                   className="text-[11px] uppercase tracking-[0.2em] text-muted hover:text-gold transition-colors"
                 >
                   {t('nav.collection')}

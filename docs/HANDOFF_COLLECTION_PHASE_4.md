@@ -58,19 +58,9 @@ The infrastructure is 95% built. Phase 4 is primarily a **UI routing and visibil
 
 Three files gate this feature:
 
-**`src/app/collection/page.tsx`** (line 13-14):
-```typescript
-if (process.env.NEXT_PUBLIC_COLLECTION_ENABLED !== 'true') {
-  redirect('/browse');
-}
-```
-- Decision: either set this env var to `'true'` in Vercel, or remove the check entirely and delete the env var.
+**`src/app/collection/page.tsx`** — ~~`NEXT_PUBLIC_COLLECTION_ENABLED` gate~~ **replaced by `yuhinkai` tier check** (2026-03-10). Collection access is now gated by `checkCollectionAccess()` in `src/lib/collection/access.ts`. The env var is dead code.
 
-**`src/components/listing/quickview-slots/BrowseCTA.tsx`** (line 92):
-```typescript
-{user && process.env.NEXT_PUBLIC_COLLECTION_ENABLED === 'true' && (
-```
-- Same gate — remove the env var check or set it to true.
+**`src/components/listing/quickview-slots/BrowseCTA.tsx`** — ~~`NEXT_PUBLIC_COLLECTION_ENABLED` check~~ **replaced by `yuhinkai` tier check** (2026-03-10). Same as above.
 
 **`docs/HANDOFF_COLLECTION_V2_LISTINGGRID.md`** — references the env var, update if removing.
 
@@ -130,8 +120,8 @@ Any new empty-state copy needs both locales.
 |------|----------------|
 | `src/components/layout/MobileNavDrawer.tsx` | Add collection link for all authed users (lines 94-95 area) |
 | `src/components/layout/Header.tsx` | Add collection link to desktop nav for authed users |
-| `src/app/collection/page.tsx` | Remove `NEXT_PUBLIC_COLLECTION_ENABLED` gate (or set env var) |
-| `src/components/listing/quickview-slots/BrowseCTA.tsx` | Remove `NEXT_PUBLIC_COLLECTION_ENABLED` check |
+| `src/app/collection/page.tsx` | ~~Remove `NEXT_PUBLIC_COLLECTION_ENABLED` gate~~ — **Done** (replaced by `yuhinkai` tier check, 2026-03-10) |
+| `src/components/listing/quickview-slots/BrowseCTA.tsx` | ~~Remove `NEXT_PUBLIC_COLLECTION_ENABLED` check~~ — **Done** (replaced by `yuhinkai` tier check, 2026-03-10) |
 | `src/app/collection/CollectionPageClient.tsx` | Verify non-dealer UX (no tabs = fine) |
 | `src/i18n/locales/en.json` | Add `nav.collection` key |
 | `src/i18n/locales/ja.json` | Add `nav.collection` key |

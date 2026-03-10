@@ -1,7 +1,7 @@
 # Dealer Portal — Product Document
 
-> **Status:** Brainstorm / Pre-development
-> **Last updated:** 2026-03-03
+> **Status:** Phase 1 shipped (behind feature flag). Unified collection architecture (dealer + collector) complete. See implementation status below.
+> **Last updated:** 2026-03-10
 > **Authors:** Christopher Hill, Claude
 
 ---
@@ -1274,16 +1274,24 @@ The single most important launch metric is **how many dealers claim their scrape
 
 ## 15. Phased Roadmap
 
-### Phase 1: Foundation (Months 1-3)
+### Phase 1: Foundation (Months 1-3) — ✅ BUILT (2026-03-03 → 2026-03-10)
 
-| Component | Scope |
-|---|---|
-| Dealer auth + role | Dealer signup, verification, `dealer` tier in subscription system |
-| Inventory claim flow | Show scraped listings, let dealer verify/correct |
-| Listing CRUD | Create, edit, status management (draft → listed → sold) |
-| Yuhinkai lookup | Search by session/item or smith name, link to listing |
-| Photo upload | Reuse `ImageUploadZone` from collection manager |
-| Dealer profile page | Logo, bio, specialties on `/dealers/[slug]` |
+| Component | Status | Notes |
+|---|---|---|
+| Dealer auth + role | ✅ Done | `verifyDealer()`, middleware protection, `isDealer`/`dealerId` in AuthContext |
+| Listing CRUD | ✅ Done | Full CRUD via `/api/dealer/listings`. Status workflow: INVENTORY → AVAILABLE → SOLD/HOLD |
+| Yuhinkai lookup | ✅ Done | `CatalogMatchPanel` — search + 13-field auto-prefill on card select |
+| Photo upload | ✅ Done | `ImageUploadZone` + `dealer-images` Supabase bucket |
+| Video upload | ✅ Done | Bunny.net Stream TUS uploads, HLS delivery, `item_videos` table |
+| Dealer profile settings | ✅ Done | `/dealer/profile` — logo, banner, accent color, bilingual bios, specializations, auto-save |
+| Dealer profile preview | ✅ Done | `/dealer/preview` — reusable `DealerProfileView` component |
+| Rich metadata sections | ✅ Done | Sayagaki, hakogaki, koshirae, provenance, kiwame, kanto hibisho |
+| Unified form (dealer + collector) | ✅ Done | `DealerListingForm` with `context` prop. Same form for both use cases |
+| Collection / vault system | ✅ Done | Two-table architecture, promote/delist RPCs, `/vault` route |
+| "I Own This" import | ✅ Done | Browse → prefill → collection add form. Source listing tracked |
+| Tier gating | ✅ Done | `checkCollectionAccess()` on all 15 collection API routes |
+| Inventory claim flow | ❌ Not started | Show scraped listings, let dealer verify/correct |
+| Dealer go-live | ❌ Pending | Feature flag flip + first dealer account setup |
 
 ### Phase 2: Intelligence (Months 3-6)
 
@@ -1320,13 +1328,15 @@ The single most important launch metric is **how many dealers claim their scrape
 
 ## 16. What We Already Have
 
-Substantial infrastructure already exists. The dealer portal is largely a new frontend on existing backends.
+> **Last updated:** 2026-03-10. Substantial infrastructure exists — the system has evolved from scraper-only to a unified dealer + collector platform.
+
+### Pre-existing Infrastructure
 
 | Component | Status | Location |
 |---|---|---|
 | Dealer auth tier | Built | `src/types/subscription.ts` |
 | Inventory data (52 dealers) | Built | `listings` table in Supabase |
-| Analytics tracking | Built | Views, clicks, dwell, favorites — `src/lib/tracking/` |
+| Analytics tracking | Built | Views, clicks, dwell, favorites, impressions — `src/lib/tracking/` |
 | Analytics dashboard (admin) | Built | `/admin/dealers/[id]` — needs self-serve repackaging |
 | Analytics SQL RPCs | Built | `get_dealer_click_stats`, etc. (migration 072) |
 | Yuhinkai catalog | Built | 13,572 artisans in `artisan_makers` + catalog records |
@@ -1334,7 +1344,7 @@ Substantial infrastructure already exists. The dealer portal is largely a new fr
 | Translation API | Built | Bidirectional JP↔EN via `/api/translate` |
 | Featured scoring | Built | Complete listings rank higher — `src/lib/featured/scoring.ts` |
 | Artisan matching | Built | Auto-links to profiles — Oshi-scrapper pipeline |
-| Image hosting | Built | Supabase Storage (`collection-images` bucket) |
+| Image hosting | Built | Supabase Storage (`collection-images`, `dealer-images` buckets) |
 | Image upload component | Built | `ImageUploadZone` from collection manager |
 | Smart crop | Built | Auto focal point detection — cron + backfill |
 | Dealer profile pages | Built | `/dealers/[slug]` with inventory |
@@ -1342,17 +1352,55 @@ Substantial infrastructure already exists. The dealer portal is largely a new fr
 | Dealer name localization | Built | `name_ja` column, `getDealerDisplayName()` |
 | Stripe subscriptions | Built | Billing infrastructure for collector tiers |
 
-| Component | Needs Building |
-|---|---|
-| Dealer self-serve portal | New frontend repackaging existing data |
-| "Claim your listings" flow | Migration from scraped → dealer-owned |
-| Listing CRUD for dealers | Create/edit/delete/status management |
-| Yuhinkai cert lookup form | Search-and-link during listing creation |
-| Messaging system | Supabase Realtime + inbox UI |
-| Dealer onboarding flow | Verification, profile setup, first listing wizard |
-| Market comparables engine | Cross-dealer price analysis |
-| Collector context for inquiries | Tier, collection, history visible to dealers |
-| JP-formatted invoicing | Proper 請求書 for Japanese accounting |
+### Built Since 2026-03-03 — Dealer Portal
+
+| Component | Status | Location / Doc |
+|---|---|---|
+| Dealer listing CRUD | Built (behind flag) | `/api/dealer/listings` (GET/POST/PATCH/DELETE). `SESSION_20260303_DEALER_PORTAL_MVP.md` |
+| Dealer listing form | Built | `DealerListingForm.tsx` — rich form with sayagaki, koshirae, provenance, kiwame, kanto hibisho, video, research notes |
+| Yuhinkai catalog prefill | Built | `CatalogMatchPanel.tsx` — 13 fields auto-fill on card select. `SESSION_20260307_CATALOG_PREFILL_EXPANSION.md` |
+| Dealer image upload | Built | `/api/dealer/images`, bucket `dealer-images` |
+| Dealer video upload | Built | Bunny.net Stream TUS uploads, HLS delivery. `item_videos` table. `SESSION_20260308_VIDEO_SUPPORT.md` |
+| Dealer QuickView slots | Built | `DealerCTA`, `DealerActionBar`, `DealerMobileCTA`, `DealerMobileHeaderActions` |
+| Dealer profile settings | Built | `/dealer/profile` — logo, banner, accent color, bilingual bios, specializations. Auto-save. `SESSION_20260306_DEALER_PROFILE_SETTINGS.md` |
+| Dealer profile preview | Built | `/dealer/preview` — reusable `DealerProfileView` component. `SESSION_20260306_DEALER_PREVIEW.md` |
+| Dealer status workflow | Built | INVENTORY → AVAILABLE → SOLD/HOLD, with side effects |
+| Dealer RLS + source guards | Built | `source='dealer'` filter on browse API, `getListingDetail`, cron. Migration 097-098 |
+| Testing gate (feature flag) | Built | `NEXT_PUBLIC_DEALER_LISTINGS_LIVE` — 3 insertion points |
+| Listing impression tracking | Built | Position-aware, viewport-based, deduped. `SESSION_20260306_LISTING_IMPRESSION_TRACKING.md` |
+
+### Built Since 2026-03-09 — Unified Collection (Dealer + Collector)
+
+| Component | Status | Location / Doc |
+|---|---|---|
+| Two-table architecture | Built | `collection_items` (private) + `listings` (public). Physical isolation. `DESIGN_UNIFIED_COLLECTION.md` |
+| Promote / delist RPCs | Built | Atomic Postgres RPCs. Soft-delist preserves 6 FK tables. Migrations 128-130 |
+| Collection API (CRUD) | Built | `/api/collection/items` + 6 image routes + video routes. Auth-only, tier-gated |
+| Yuhinkai tier gating | Built | `checkCollectionAccess()` on all 15 collection API routes. `HANDOFF_YUHINKAI_TIER.md` |
+| Unified form (both contexts) | Built | `DealerListingForm` with `context='listing'\|'collection'`. Same rich form for dealers and collectors |
+| "I Own This" import | Built | BrowseCTA → sessionStorage prefill → `/vault/add` form pre-populated. 8 tests |
+| Collection page (`/vault`) | Built | ListingGrid, filters, QuickView, dealer tabs (For Sale/On Hold/Sold). 301 redirect from `/collection` |
+| DisplayItem adapter | Built | `collectionRowToDisplayItem()` — carries all JSONB sections. 160 tests |
+| Collection QuickView | Built | 14 slot components, source-aware routing. `HANDOFF_DISPLAYITEM_COMPOSITION_SLOTS.md` |
+| Promote to listing UI | Built | `PromoteToListingModal` — price prompt, dealer-tier only |
+| Delist from sale UI | Built | "Remove from Sale" button, soft-delist preserves favorites/views/price history |
+| AI curator notes | Built | Research notes + artist overview in prompt. `SESSION_20260309_CURATOR_NOTE_ENRICHMENT.md` |
+| Showcase layout | Built | Hero image, scholar's note, `isShowcaseEligible()`. `SESSION_20260308_SHOWCASE_LAYOUT.md` |
+| V1 dead code cleanup | Done | `CollectionFormContent`, `openCollectionAddForm`, folders API all deleted |
+
+### Still Needs Building
+
+| Component | Priority | Notes |
+|---|---|---|
+| Dealer go-live | High | Flip `NEXT_PUBLIC_DEALER_LISTINGS_LIVE=true`, create Sokendo account, QA |
+| Messaging system | High | Supabase Realtime + inbox UI (schema ready in migration 097) |
+| Dealer onboarding flow | Medium | Verification, profile setup, first listing wizard |
+| "Claim your listings" flow | Medium | Migration from scraped → dealer-owned |
+| Community visibility | Low | Collector/dealer visibility levels on collection items (Phase 6) |
+| Collector profiles | Low | Profile pages for collectors (Phase 7) |
+| Market comparables engine | Low | Cross-dealer price analysis (Phase 3 roadmap) |
+| JP-formatted invoicing | Low | Proper 請求書 for Japanese accounting |
+| Drop `user_collection_items` table | Low | V1 table, no code references remain |
 
 ---
 
@@ -1384,7 +1432,7 @@ Research across 7+ luxury/collectibles marketplaces:
 
 1. **Scraper coexistence:** When a dealer claims listings, do we keep scraping as fallback? (Recommendation: yes, dealer edits override, scraper catches new items and status changes.)
 2. **Approval flow for new dealers:** Manual admin review, domain verification, or both? (Recommendation: domain email verification + admin approval for first 3 listings.)
-3. **"Reserved" status:** Worth building? Some dealers hold items informally. Reduces "I was about to buy that" friction. (Recommendation: include in Phase 1, low effort.)
+3. **~~"Reserved" status~~:** ✅ Built as "On Hold" (`HOLD` status, `is_available=true`). Visible in browse with hold badge. Dealer-only tab in `/vault` page.
 4. **Dealer-to-dealer messaging:** Some dealers buy from each other. Should the system support B2B? (Recommendation: defer to Phase 3. Same messaging system, different context.)
 
 ### Business

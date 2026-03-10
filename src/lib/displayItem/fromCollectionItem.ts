@@ -1,11 +1,8 @@
 /**
  * Map a CollectionItemRow (Phase 2a+ schema) to DisplayItem.
  *
- * Replaces the V1 mapper that dropped all JSONB sections, tosogu fields,
- * setsumei, descriptions, etc. The new CollectionItemRow extends ItemDataFields,
- * so all shared fields pass through directly.
- *
- * Exports V1 aliases for backward compat until Phase 5 cleanup.
+ * The CollectionItemRow extends ItemDataFields, so all shared fields
+ * pass through directly.
  */
 
 import type { CollectionItemRow } from '@/types/collectionItem';
@@ -128,6 +125,3 @@ export function collectionRowsToDisplayItems(items: CollectionItemRow[]): Displa
   return items.map(collectionRowToDisplayItem);
 }
 
-// V1 aliases — backward compat until Phase 5 cleanup
-export const collectionItemToDisplayItem = collectionRowToDisplayItem;
-export const collectionItemsToDisplayItems = collectionRowsToDisplayItems;

@@ -12,10 +12,6 @@ const AdminEditView = dynamic(
   () => import('./AdminEditView'),
   { ssr: false }
 );
-const CollectionFormContent = dynamic(
-  () => import('@/components/collection/CollectionFormContent').then(mod => mod.CollectionFormContent),
-  { ssr: false }
-);
 import { AlertContextBanner } from './AlertContextBanner';
 import { LazyImage } from '@/components/ui/LazyImage';
 import { useQuickView } from '@/contexts/QuickViewContext';
@@ -80,9 +76,6 @@ export function QuickView() {
     refreshCurrentListing,
     source,
     collectionItem,
-    collectionMode,
-    setCollectionMode,
-    onCollectionSaved,
     detailLoaded,
   } = useQuickView();
 
@@ -99,8 +92,6 @@ export function QuickView() {
   const [isStudyMode, setIsStudyMode] = useState(false);
   const [isAdminEditMode, setIsAdminEditMode] = useState(false);
 
-  // Collection edit/add mode (form replaces images in left panel)
-  const isCollectionEditMode = source === 'collection' && (collectionMode === 'edit' || collectionMode === 'add');
   const isCollection = source === 'collection';
   const isDealer = source === 'dealer';
 
@@ -418,7 +409,7 @@ export function QuickView() {
   // =========================================================================
   const handleEditCollection = () => {
     if (collectionItem?.id) {
-      window.location.href = `/collection/edit/${collectionItem.id}`;
+      window.location.href = `/vault/edit/${collectionItem.id}`;
     }
   };
 
@@ -551,20 +542,7 @@ export function QuickView() {
         {/* Mobile layout (show below lg, hide on lg+) */}
         <div className="lg:hidden h-full flex flex-col" data-testid="quickview-mobile-layout">
           <AlertContextBanner />
-          {isCollectionEditMode ? (
-            <div className="flex-1 min-h-0 overflow-y-auto bg-cream">
-              <CollectionFormContent
-                mode={collectionMode!}
-                item={collectionMode === 'edit' ? collectionItem as any : null}
-                prefillData={collectionMode === 'add' ? collectionItem as any : null}
-                onSaved={() => { onCollectionSaved?.(); closeQuickView(); }}
-                onCancel={() => {
-                  if (collectionMode === 'add') closeQuickView();
-                  else setCollectionMode('view');
-                }}
-              />
-            </div>
-          ) : isAdminEditMode ? (
+          {isAdminEditMode ? (
             <div className="flex-1 min-h-0 overflow-hidden">
               <AdminEditView
                 listing={currentListing}
@@ -660,20 +638,7 @@ export function QuickView() {
 
         {/* Desktop layout (hide below lg, show on lg+) */}
         <div className="hidden lg:flex flex-row h-full min-h-0 overflow-hidden" data-testid="quickview-desktop-layout">
-          {isCollectionEditMode ? (
-            <div className={`flex-1 min-h-0 ${QUICKVIEW_LAYOUT.leftPanel.default} overflow-y-auto bg-cream`}>
-              <CollectionFormContent
-                mode={collectionMode!}
-                item={collectionMode === 'edit' ? collectionItem as any : null}
-                prefillData={collectionMode === 'add' ? collectionItem as any : null}
-                onSaved={() => { onCollectionSaved?.(); closeQuickView(); }}
-                onCancel={() => {
-                  if (collectionMode === 'add') closeQuickView();
-                  else setCollectionMode('view');
-                }}
-              />
-            </div>
-) : isAdminEditMode ? (
+          {isAdminEditMode ? (
             <div className={`flex-1 min-h-0 ${QUICKVIEW_LAYOUT.leftPanel.default} overflow-y-auto bg-cream`}>
               <AdminEditView
                 listing={currentListing}

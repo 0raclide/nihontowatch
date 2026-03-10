@@ -2,8 +2,6 @@ import { describe, it, expect } from 'vitest';
 import {
   collectionRowToDisplayItem,
   collectionRowsToDisplayItems,
-  collectionItemToDisplayItem,
-  collectionItemsToDisplayItems,
 } from '@/lib/displayItem/fromCollectionItem';
 import type { CollectionItemRow } from '@/types/collectionItem';
 
@@ -363,12 +361,4 @@ describe('collectionRowsToDisplayItems (batch)', () => {
   });
 });
 
-describe('V1 backward-compat aliases', () => {
-  it('collectionItemToDisplayItem is an alias for collectionRowToDisplayItem', () => {
-    expect(collectionItemToDisplayItem).toBe(collectionRowToDisplayItem);
-  });
 
-  it('collectionItemsToDisplayItems is an alias for collectionRowsToDisplayItems', () => {
-    expect(collectionItemsToDisplayItems).toBe(collectionRowsToDisplayItems);
-  });
-});

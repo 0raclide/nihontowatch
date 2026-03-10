@@ -64,14 +64,12 @@ interface QuickViewContextType {
   source: 'browse' | 'collection' | 'dealer';
   /** The original CollectionItemRow when source='collection' */
   collectionItem: CollectionItemRow | null;
-  /** Current collection mode: 'view', 'add', 'edit', or null */
-  collectionMode: 'view' | 'add' | 'edit' | null;
+  /** Current collection mode: 'view' or null */
+  collectionMode: 'view' | null;
   /** Open QuickView for a collection item */
-  openCollectionQuickView: (item: CollectionItemRow, mode?: 'view' | 'edit') => void;
-  /** Open QuickView with the add form for a new collection item */
-  openCollectionAddForm: (prefill?: Partial<CollectionItemRow>) => void;
-  /** Change the collection mode (e.g., view → edit) */
-  setCollectionMode: (mode: 'view' | 'edit' | null) => void;
+  openCollectionQuickView: (item: CollectionItemRow, mode?: 'view') => void;
+  /** Change the collection mode */
+  setCollectionMode: (mode: 'view' | null) => void;
   /** Callback invoked after a collection item is saved (add/edit/delete) */
   onCollectionSaved: (() => void) | null;
   /** Register a callback to be called after collection saves */
@@ -151,7 +149,7 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
   // Collection-specific state
   const [source, setSource] = useState<'browse' | 'collection' | 'dealer'>('browse');
   const [collectionItem, setCollectionItem] = useState<CollectionItemRow | null>(null);
-  const [collectionMode, setCollectionModeState] = useState<'view' | 'add' | 'edit' | null>(null);
+  const [collectionMode, setCollectionModeState] = useState<'view' | null>(null);
   const onCollectionSavedRef = useRef<(() => void) | null>(null);
 
   // Cooldown to prevent immediate re-opening after close
@@ -408,7 +406,7 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
   }, []);
 
   // Collection: open QuickView for a collection item
-  const openCollectionQuickView = useCallback((item: CollectionItemRow, mode: 'view' | 'edit' = 'view') => {
+  const openCollectionQuickView = useCallback((item: CollectionItemRow, mode: 'view' = 'view') => {
     if (closeCooldown.current) return;
 
     // Cast CollectionItemRow → Listing shape for currentListing state.
@@ -434,28 +432,8 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
     updateUrl(item.item_uuid, 'collection');
   }, [openQuickView, updateUrl]);
 
-  // Collection: open add form in QuickView
-  const openCollectionAddForm = useCallback((prefill?: Partial<CollectionItemRow>) => {
-    if (closeCooldown.current) return;
-
-    setSource('collection');
-    setCollectionItem(prefill as CollectionItemRow | null);
-    setCollectionModeState('add');
-    setIsOpen(true);
-    setDetailLoaded(true);
-
-    // Push history for back button behavior
-    if (typeof window !== 'undefined') {
-      const currentUrl = new URL(window.location.href);
-      if (!currentUrl.searchParams.has('item')) {
-        window.history.pushState({ quickview: true }, '', window.location.href);
-        pushedHistoryRef.current = true;
-      }
-    }
-  }, []);
-
-  // Collection: change mode (view → edit, etc.)
-  const setCollectionMode = useCallback((mode: 'view' | 'edit' | null) => {
+  // Collection: change mode
+  const setCollectionMode = useCallback((mode: 'view' | null) => {
     setCollectionModeState(mode);
   }, []);
 
@@ -685,7 +663,7 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
       collectionItem,
       collectionMode,
       openCollectionQuickView,
-      openCollectionAddForm,
+
       setCollectionMode,
       onCollectionSaved,
       setOnCollectionSaved,
@@ -711,7 +689,7 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
       collectionItem,
       collectionMode,
       openCollectionQuickView,
-      openCollectionAddForm,
+
       setCollectionMode,
       onCollectionSaved,
       setOnCollectionSaved,

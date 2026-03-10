@@ -95,7 +95,7 @@ export function MobileNavDrawer() {
                   </button>
                   {canAccess('collection_access') && (
                     <Link
-                      href="/collection"
+                      href="/vault"
                       onClick={closeNavDrawer}
                       className="flex items-center gap-3 px-4 py-3 text-[13px] text-text-secondary hover:bg-hover rounded-lg transition-colors"
                     >

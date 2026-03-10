@@ -1,7 +1,7 @@
 # Unified Collection Architecture
 
-> **Status:** Phase 2d DONE (2026-03-09) — CollectionItemRow→DisplayItem mapper, QuickView now shows full JSONB sections for collection items, edit redirects to full-page form. 43 tests. Next: Phase 3 (promote/delist transit).
-> **Date:** 2026-03-09
+> **Status:** Phases 1-5 DONE (2026-03-10). Phase 4 ~95% (remaining: verify nav links, end-to-end non-dealer test, paywall CTA fix). Phase 5 cleanup done: "I Own This" prefill wired, dead code removed (openCollectionAddForm, folders API). Remaining cleanup: drop `user_collection_items` table, remove `NEXT_PUBLIC_COLLECTION_ENABLED` env var.
+> **Date:** 2026-03-10 (last updated)
 > **Authors:** Chris + Claude
 > **Replaces:** Collection Manager V1 (`/collection`), dealer "My Listings" naming
 
@@ -99,9 +99,9 @@ collection_items table               listings table
 
 | Level | Who sees it | Signal | Where it lives | Tier required | Phase |
 |-------|-------------|--------|---------------|---------------|-------|
-| `private` | Owner only | "I own this" | `collection_items` | Collector | 1-4 |
-| `collectors` | Other collector+ users | "Look what I have" | `collection_items` | Collector | 5+ |
-| `dealers` | Dealer-tier users | "I might sell for the right price" | `collection_items` | Collector | 5+ |
+| `private` | Owner only | "I own this" | `collection_items` | Yuhinkai (or any paid tier) | 1-4 |
+| `collectors` | Other collector+ users | "Look what I have" | `collection_items` | Yuhinkai+ | 5+ |
+| `dealers` | Dealer-tier users | "I might sell for the right price" | `collection_items` | Yuhinkai+ | 5+ |
 | `public` | Everyone (browse, SEO, alerts) | "I'm actively selling" | `listings` | Dealer | 1-4 |
 
 **Phase 1-4 scope:** Only `private` and `public` are active. The `collectors` and `dealers` visibility levels exist in the schema (CHECK constraint) but are not exposed in the UI. This simplifies initial implementation while preserving the schema for future community features.
@@ -112,24 +112,25 @@ collection_items table               listings table
 
 ### Tier Structure
 
-| Tier | Access | Price |
-|------|--------|-------|
-| **Free** | Browse, favorites, alerts, currency conversion, **unlimited cataloging** | $0 |
-| **Pro** | Fresh data, AI inquiry emails, setsumei translations | TBD |
-| **Collector** | Pro + community visibility features (Phase 6+) | TBD |
-| **Dealer** | Collector + **"List for Sale"**, dealer profile, analytics, intelligence | TBD |
-| **Inner Circle** | Everything + exclusivity | TBD |
+| Tier | Internal name | Access | Price |
+|------|---------------|--------|-------|
+| **Free** | `free` | Browse, favorites, alerts, currency conversion | $0 |
+| **Yuhinkai** | `yuhinkai` | Collection access (cataloging). Manually assigned, no Stripe pricing. | Free (manual) |
+| **Pro** | `enthusiast` | Fresh data, AI inquiry emails, setsumei translations + collection access (rank ≥ yuhinkai) | $25/mo |
+| **Collector** | `collector` | Pro + community visibility features (Phase 6+) + collection access | $99/mo |
+| **Dealer** | `dealer` | Collector + **"List for Sale"**, dealer profile, analytics + collection access | $150/mo |
+| **Inner Circle** | `inner_circle` | Everything + exclusivity + collection access | $249/mo |
 
-> **Note:** Exact pricing and whether Pro tier persists are deferred decisions. The architecture supports any tier structure.
+> **Note (2026-03-10):** `yuhinkai` tier was added to gate collection access without requiring a paid subscription. All paid tiers (enthusiast/collector/inner_circle) also get collection access via rank-based comparison (rank ≥ yuhinkai=1). Only `free` (rank 0) is denied. Trial mode (`NEXT_PUBLIC_TRIAL_MODE=true`) bypasses all tier checks — currently ON.
 
 **The conversion funnel:**
 ```
-Browse (free) → "I Own This" / "Add Item" → catalog unlimited items (free)
-                                                       │
-                          "I want to sell this piece" ──┘──→ Dealer
+Browse (free) → Yuhinkai tier (manual grant or trial mode) → catalog unlimited items
+                                                                      │
+                                     "I want to sell this piece" ──────┘──→ Dealer
 ```
 
-Cataloging is **free with no cap** — maximum adoption, zero friction. The only paywall moment is "List for Sale," which requires Dealer tier. This appears at the exact moment of intent: a collector has a specific piece they want to sell, maximum purchase intent. Let collectors build deep collections freely — that's engagement, retention, and the foundation for every future monetization lever (community visibility, private sales, analytics).
+Collection access requires the **yuhinkai tier** (or any paid tier, or trial mode). The `yuhinkai` tier exists for users who need *only* collection access without paying for the full enthusiast feature set — it's manually assigned, not Stripe-purchasable. During trial mode (currently ON), all users can access collection freely. The only paywall moment beyond collection access is "List for Sale," which requires Dealer tier. This appears at the exact moment of intent: a collector has a specific piece they want to sell, maximum purchase intent.
 
 ---
 
@@ -879,7 +880,7 @@ The scraper (Oshi-scrapper `repository.py`) writes to `listings` via service rol
 
 - "My Listings" → "Collection" in nav
 - Single nav item. No separate "Inventory" concept in the nav
-- Route: `/vault` — evocative of a secure personal space, distinct from `/dealer` and `/collection`
+- Route: `/vault` (migrated from `/collection` in Phase 5, 301 redirect active)
 
 ### Collection Page
 
@@ -1175,18 +1176,15 @@ The `listings` table gains two nullable columns (`item_uuid` and `owner_id`). Bo
 
 ## Migration Plan
 
-### Phase 1 — Rename (Cosmetic)
+### Phase 1 — Rename (Cosmetic) ✅ DONE
 
-**Scope:** UI labeling only. No data model changes.
+**Scope:** UI labeling only. No data model changes. **Deployed.**
 
-- [ ] Rename "My Listings" → "Collection" in nav (Header, MobileNavDrawer)
-- [ ] Rename i18n keys: `dealer.tabInventory` → `collection.tabAllItems`, etc.
-- [ ] Rename tab labels: "Inventory" → "All Items", "Available" → "For Sale"
-- [ ] Update page title from "My Listings" to "My Collection"
-- [ ] Route stays `/dealer` for now (URL migration in later phase)
-
-**Risk:** Low. Labeling only. No data or behavior changes.
-**Effort:** Small. ~20 i18n key changes, ~5 component label updates.
+- [x] Rename "My Listings" → "Collection" in nav (Header, MobileNavDrawer)
+- [x] Rename i18n keys: `dealer.tabInventory` → `collection.tabAllItems`, etc.
+- [x] Rename tab labels: "Inventory" → "All Items", "Available" → "For Sale"
+- [x] Update page title from "My Listings" to "My Collection"
+- [x] Route migrated to `/vault` (Phase 5, 301 redirect from `/collection`)
 
 ### Phase 2 — Infrastructure + Dealer Migration
 
@@ -1208,24 +1206,21 @@ Phase 2 is split into four sub-phases with explicit dependencies:
 
 ---
 
-#### Phase 2a — Database Migrations + Backfills
+#### Phase 2a — Database Migrations + Backfills ✅ DONE
 
-**Scope:** Create all new tables, add columns to `listings`, backfill existing dealer data, RLS policies, schema sync test. Pure infrastructure — no API or UI changes.
+**Completed:** 2026-03-09. **Migrations:** 119-126. **Deployed to prod:** 2026-03-10.
 
-- [ ] Create `collection_items` table with full shared schema (migration)
-- [ ] Create `collection_events` audit table (migration)
-- [ ] Create `item_videos` table keyed by `item_uuid` (migration)
-- [ ] Add `item_uuid UUID UNIQUE` and `owner_id UUID` nullable columns to `listings` (migration)
-- [ ] Add `'DELISTED'` and `'HOLD'` to `listings.status` CHECK constraint (if one exists)
-- [ ] Create RLS policies on `collection_items` (owner access only for Phase 1-4)
-- [ ] Backfill `owner_id` on existing dealer listings from `profiles.id WHERE profiles.dealer_id = listings.dealer_id`
-- [ ] Backfill `item_uuid` on existing dealer listings (`gen_random_uuid()`) — **prerequisite for Phase 3**
-- [ ] TypeScript: shared `ItemDataFields` type, used by both `CollectionItem` and `Listing`
-- [ ] Create schema sync golden test (compares column lists between `collection_items` and `listings`, fails on divergence)
-- [ ] Verify existing test suite passes (all `listings` queries unchanged — new columns are nullable, invisible to existing code)
-
-**Risk:** Low. Additive only — new tables and nullable columns. Zero behavior change to any existing query, cron job, or API.
-**Deploys:** Yes — tables exist but nothing reads/writes them yet.
+- [x] Create `collection_items` table with full shared schema (migration 119)
+- [x] Create `collection_events` audit table (migration 120)
+- [x] Create `item_videos` table keyed by `item_uuid` (migration 122)
+- [x] Add `item_uuid UUID UNIQUE` and `owner_id UUID` nullable columns to `listings` (migration 119)
+- [x] Add `'DELISTED'` and `'HOLD'` to `listings.status` CHECK constraint
+- [x] Create RLS policies on `collection_items` (owner access only)
+- [x] Backfill `owner_id` on existing dealer listings from `profiles`
+- [x] Backfill `item_uuid` on existing dealer listings (`gen_random_uuid()`)
+- [x] TypeScript: shared `ItemDataFields` type, used by both `CollectionItem` and `Listing`
+- [x] Create schema sync golden test (compares column lists, fails on divergence)
+- [x] Verify existing test suite passes (new nullable columns invisible to existing code)
 
 ---
 
@@ -1301,9 +1296,9 @@ Phase 2 is split into four sub-phases with explicit dependencies:
 - [x] 35 mapper golden tests + 8 updated page client tests
 - [x] `tsc --noEmit` passes, full suite 5,272 pass
 
-**What was deferred to Phase 5:**
-- V1 `CollectionFormContent` still dynamically imported in QuickView.tsx (dead code — `isCollectionEditMode` is unreachable now that edit redirects to `/collection/edit/[id]`). Cast to `as any` for type compat. Remove in Phase 5 cleanup.
-- V1 `CollectionItem` type in `src/types/collection.ts` still exists — used by `CollectionFormContent`, `CatalogSearchBar`, `listingImport.ts`. These form internals migrate in Phase 5.
+**What was deferred to Phase 5 (now done):**
+- ~~V1 `CollectionFormContent` — deleted in Phase 5 (2026-03-10).~~
+- ~~V1 `CollectionItem` type — deleted in Phase 5.~~
 - "All Items" tab — deferred. The tab concept requires the promote/delist state machine (Phase 3) to distinguish "not yet listed" from "listed". For now, the collection page shows all private items.
 
 **Risk:** Turned out to be low. No `DisplayItem.id` type migration needed. The slot component updates were mechanical.
@@ -1313,53 +1308,95 @@ Phase 2 is split into four sub-phases with explicit dependencies:
 
 **Phase 2 overall risk:** Medium. Each sub-phase is independently deployable and testable. The video migration (2b) and DisplayItem type change (2d) are the riskiest — both are "change everything, break nothing" refactors. The sub-phase structure allows shipping and verifying each one before moving to the next.
 
-### Phase 3 — Promote / Delist Transit
+### Phase 3 — Promote / Delist Transit ✅ DONE
 
-**Scope:** Atomic Postgres RPCs. Soft-delist preserves FK data. Dealer tier required for promotion.
+**Completed:** 2026-03-09. **Migrations:** 127-130 (3 RPCs). **Tests:** 29. **Deployed to prod:** 2026-03-10.
 
-- [ ] Implement `promote_to_listing()` Postgres RPC (handles both first-promote and re-promote)
-- [ ] Implement `delist_to_collection()` Postgres RPC (soft-delist: UPDATE, not DELETE)
-- [ ] Implement `delete_collection_item()` Postgres RPC (cleans up DELISTED ghost)
-- [ ] API endpoint: `POST /api/collection/items/[id]/promote` (calls RPC)
-- [ ] API endpoint: `POST /api/listings/[id]/delist` (calls RPC)
-- [ ] "List for Sale" action on collection items (card menu, QuickView action bar)
-- [ ] Paywall gate (dealer tier required for promotion)
-- [ ] Price prompt on promote (required for public listings, "Inquiry" option)
-- [ ] "Remove from Sale" action on listed items (delist RPC)
-- [ ] "Mark On Hold" / "Remove Hold" actions on listed items (simple status UPDATE, `is_available` stays `true`)
-- [ ] Trigger featured score computation after promote (`await`, outside transaction)
-- [ ] Add `.eq('is_available', true)` filter to focal points cron (minor gap fix)
-- [ ] Golden tests: full round-trip (create → promote → edit listing → delist → re-promote → verify all fields + same listing_id)
-- [ ] Golden test: concurrent promote attempt raises exception (FOR UPDATE lock)
-- [ ] Golden test: delist preserves favorites, price_history, item_videos (no CASCADE)
-- [ ] Golden test: re-promote reuses DELISTED listing row (same id, restored FKs)
+- [x] Implement `promote_to_listing()` Postgres RPC — handles both first-promote (INSERT) and re-promote (UPDATE existing DELISTED row, same `listings.id` preserved)
+- [x] Implement `delist_to_collection()` Postgres RPC — soft-delist: INSERT into `collection_items`, UPDATE listing to DELISTED
+- [x] Implement `delete_collection_item()` Postgres RPC — deletes collection item + DELISTED ghost + item videos
+- [x] API endpoint: `POST /api/collection/items/[id]/promote` (calls RPC, gated by `verifyDealer()`)
+- [x] API endpoint: `POST /api/listings/[id]/delist` (calls RPC, gated by `verifyDealer()`)
+- [x] "List for Sale" action on collection items (`PromoteToListingModal` with price prompt)
+- [x] Paywall gate (dealer tier required for promotion)
+- [x] Price prompt on promote (required for public listings, "Inquiry" option)
+- [x] "Remove from Sale" action on listed items (delist RPC)
+- [x] "Mark On Hold" / "Remove Hold" actions (simple status UPDATE, `is_available` stays `true`)
+- [x] Trigger featured score computation after promote (`await`, outside transaction)
+- [x] Collection page tabs: All Items / For Sale / On Hold / Sold (dealer-only tabs)
+- [x] CTA slot updates for promote/delist actions in QuickView
+- [x] Golden tests: full round-trip + concurrent promote prevention + FK preservation + re-promote reuses listing_id
 
-**Risk:** Medium. RPCs are atomic (no partial state). Soft-delist eliminates FK cascade risk. Exhaustive column coverage still critical.
+**Key files:**
+| Component | Location |
+|-----------|----------|
+| Promote RPC | `supabase/migrations/127_promote_to_listing.sql` |
+| Delist RPC | `supabase/migrations/128_delist_to_collection.sql` |
+| Delete RPC | `supabase/migrations/130_delete_collection_item.sql` |
+| Promote API | `src/app/api/collection/items/[id]/promote/route.ts` |
+| Delist API | `src/app/api/listings/[id]/delist/route.ts` |
+| Promote modal | `src/components/collection/PromoteToListingModal.tsx` |
+| Tests (29) | `tests/api/collection/promote.test.ts`, `tests/api/listings/delist.test.ts` |
 
-### Phase 4 — Open to All Users + Route Migration
+### Phase 4 — Open to All Users + Tier Gating 🟡 ~95% DONE
 
-**Scope:** Open collection infrastructure (built in Phase 2) to all authenticated users, not just dealers. New route at `/vault`.
+**Scope:** Gate collection access behind `yuhinkai` subscription tier (or any paid tier). Add nav links, "I Own This" button visibility. Route at `/vault` (migrated from `/collection` in Phase 5).
 
-- [ ] Remove dealer-tier gate on collection API routes — any authenticated user can create/edit collection items
-- [ ] Form works without `dealer_id` — `collection_items` rows for non-dealers have `owner_id` only (no dealer association)
-- [ ] Free cataloging with no cap — cataloging is the engagement hook, "List for Sale" (Phase 3) is the paywall
-- [ ] Move page to `/vault` with permanent 301 redirect from `/dealer`
-- [ ] Update all nav links and internal references to use `/vault`
-- [ ] "I Own This" button in browse QuickView creates `collection_items` row with `source_listing_id` + fresh `item_uuid`
-- [ ] Begin URL transition: `/listing/[item_uuid]` for user-created items, `/listing/[id]` redirects for scraped items
+**Design pivot (2026-03-10):** Originally planned as "free for all authenticated users." Changed to **yuhinkai tier gating** after the P0 dealer listing leak (2026-03-03) showed that open access without proper tier checks is dangerous. The `yuhinkai` tier is manually assigned (not Stripe-purchasable) for users who need *only* collection access. All paid tiers (enthusiast/collector/inner_circle) also get access via rank comparison. Trial mode (`NEXT_PUBLIC_TRIAL_MODE=true`, currently ON) bypasses all checks — everyone can access collection during trial.
 
-**Risk:** Medium. New user-facing feature, but fully isolated from `listings` — non-dealers can only write to `collection_items`.
+- [x] Add `yuhinkai` to `SubscriptionTier` union type and `TIER_RANK` (rank 1)
+- [x] Add `collection_access` to `Feature` union and `FEATURE_MIN_TIER` (requires `yuhinkai`)
+- [x] `canAccessFeature()` special cases for `dealer` and `yuhinkai` tiers
+- [x] `checkCollectionAccess()` helper in `src/lib/collection/access.ts` — returns 403 or null
+- [x] Added `checkCollectionAccess()` to ALL 15 collection API routes
+- [x] Admin bypass (role='admin' always passes)
+- [x] Trial mode bypass (`NEXT_PUBLIC_TRIAL_MODE=true` → all features free)
+- [x] Stripe checkout excludes `yuhinkai` tier (no Stripe pricing)
+- [x] `isYuhinkai` convenience boolean in subscription context
+- [x] Nav links (Header + MobileNavDrawer) gated by `canAccess('collection_access')`
+- [x] "I Own This" button shows/hides based on tier
+- [x] 10 unit tests (`tests/lib/collection/access.test.ts`)
+- [x] `NEXT_PUBLIC_COLLECTION_ENABLED` env var replaced by tier check (dead code)
+- [ ] Verify nav link display end-to-end (desktop + mobile)
+- [ ] Test non-dealer workflow end-to-end (create → view → edit → delete)
+- [ ] Verify empty state message ("Start your collection")
+- [ ] Test "I Own This" flow from browse → creates collection item
+- [x] No paywall modal for collection — intentional. Silent redirect to `/browse` for unauthorized users. Nav links and "I Own This" button hidden. Paywall deferred to future phase.
 
-### Phase 5 — Drop Old Collection System
+**Key files:**
+| Component | Location |
+|-----------|----------|
+| Access check helper | `src/lib/collection/access.ts` |
+| Subscription types | `src/types/subscription.ts` (yuhinkai tier, collection_access feature) |
+| Access tests (10) | `tests/lib/collection/access.test.ts` |
+| Yuhinkai handoff | `docs/HANDOFF_YUHINKAI_TIER.md` |
 
-**Scope:** Remove `user_collection_items` table and old collection code. No data migration — clean break.
+**Risk:** Low. All dangerous architectural work done in Phases 2-3. Remaining items are UX verification and paywall cosmetics.
 
-- [ ] Redirect old `/collection` → new collection page
-- [ ] Drop `user_collection_items` table (after 30-day deprecation notice)
-- [ ] Delete old collection components (7 files), API routes (6 files), types
-- [ ] Clean up DisplayItem: remove old CollectionExtension, update type
+### Phase 5 — Drop Old Collection System + Route Migration ✅ DONE (2026-03-10)
 
-**Risk:** Low. New system is already running. Old data is not migrated (see Decision #24).
+**Scope:** Remove V1 collection code. Migrate route from `/collection` to `/vault`. Session: `docs/SESSION_20260310_VAULT_ROUTE_MIGRATION.md`.
+
+- [x] Move page from `/collection` to `/vault` with permanent 301 redirect (`next.config.ts`)
+- [x] Update all nav links and internal references to use `/vault` (8 files)
+- [x] Update `robots.ts` disallow to `/vault`
+- [x] Delete `CollectionFormContent.tsx` (458 lines) + dynamic import from QuickView.tsx
+- [x] Remove `isCollectionEditMode` variable and branches (mobile + desktop) from QuickView.tsx
+- [x] Delete old `CollectionItem` type + `CollectionListResponse` from `src/types/collection.ts`
+- [x] Remove V1 display aliases (`collectionItemToDisplayItem`/`collectionItemsToDisplayItems`)
+- [x] Narrow `QuickViewContext`: `collectionMode` dropped `'edit'`, `setCollectionMode` dropped `'edit'`
+- [x] Fix "I Own This" flow: redirect to `/vault/add` instead of dead `openCollectionAddForm()`
+
+**Not yet done (cleanup, no user impact):**
+- [x] Delete `openCollectionAddForm` from QuickViewContext + drop `collectionMode: 'add'` (2026-03-10)
+- [x] Delete folders API (`src/app/api/collection/folders/`) — V1 dead code, queries dropped tables (2026-03-10)
+- [ ] Drop `user_collection_items` table (Supabase migration)
+- [ ] Remove `NEXT_PUBLIC_COLLECTION_ENABLED` from Vercel env vars
+- [x] Wire up "I Own This" prefill — `vault/add/page.tsx` reads `sessionStorage.collection_prefill`, maps to `DealerListingInitialData`, passes to form (2026-03-10). 8 tests.
+
+**Previously done (earlier phases):** 7 V1 components (`CollectionCard`, `CollectionGrid`, etc.) deleted in Phase 2d.
+
+**Risk:** Low. New system is already running. Old data is not migrated (see Decision #23).
 
 ### Phase 6 — Community Visibility + Private Sales
 
@@ -1407,7 +1444,7 @@ These questions were evaluated during the design process. Decisions are recorded
 | 10 | Nav structure? | **"Collection" — one nav item** | Tabs (All Items / For Sale / On Hold / Sold) are state filters, not sub-destinations. |
 | 11 | "Inventory" label? | **Not used** | Tab says "For Sale." The word "inventory" doesn't appear in the UI. |
 | 12 | Old collection fields (condition, price_paid, etc.)? | **Not carried over** | `price_paid` is a privacy liability — collectors won't store acquisition costs in a DB they don't control. No legacy fields. |
-| 13 | Route path? | **`/vault`** | Evocative of a secure personal space. Not `/dealer` (breaks mental model), not `/collection` (too close to old system), not `/dashboard` (generic). |
+| 13 | Route path? | **`/vault`** | Evocative of a secure personal space. Not `/dealer` (breaks mental model), not `/collection` (too close to old system), not `/dashboard` (generic). Migrated in Phase 5 (2026-03-10) with 301 redirect. |
 | 14 | Profile URLs? | **Deferred** | Dealers want premium URLs, collectors want anonymity. Design when building profiles. |
 | 15 | Visibility levels in Phase 1-4? | **Private + public only** | Schema supports all 4 levels. UI only exposes 2. Community features in Phase 6. |
 | 16 | Everyone starts in collection? | **Yes** | All items enter `collection_items` first. Publication is a separate action. One pipeline, multiple publication channels (public listing, private offer, dealer-only visibility). |
@@ -1416,12 +1453,14 @@ These questions were evaluated during the design process. Decisions are recorded
 | 19 | "I Own This" button? | **Creates `collection_items` row with `source_listing_id`** | Fresh `item_uuid`. Link is informational (ON DELETE SET NULL), not structural. Owner enriches with personal metadata via the full form. |
 | 20 | Sold items never return to collection? | **Acceptable** | Sold items stay in `listings` (Sold tab queries them). `item_uuid` links to full history in audit log. Re-acquisition = new `item_uuid` (different ownership period). Private sales (Phase 6) stay in `collection_items` with status change. |
 | 21 | `listings` table changes? | **Two nullable columns + `DELISTED` status value** | `item_uuid` and `owner_id` NULL for scraped items. `DELISTED` status invisible to all existing queries. |
-| 22 | Free tier cataloging? | **Free, unlimited, no cap** | Maximum adoption, zero friction. Cataloging is the engagement hook — let collectors build deep collections freely. The only paywall is "List for Sale" (Dealer tier). A cap can be added later if needed, but starting open maximizes the collector base that feeds every future monetization lever. |
+| 22 | Free tier cataloging? | **~~Free, unlimited, no cap~~ → Yuhinkai tier gated (2026-03-10)** | Originally "free for all." Changed to require `yuhinkai` tier (or any paid tier) after the P0 dealer listing leak showed open access is dangerous. Trial mode (currently ON) keeps it free for now. The `yuhinkai` tier is manually assigned for users who need only collection access. All paid tiers also get access via rank comparison. See Decision #28. |
 | 23 | Old `user_collection_items` data? | **Not migrated — clean break** | Old schema has fields collectors wouldn't want stored (`price_paid` = privacy concern). Minimal existing data. New system is better in every way. Drop table after 30-day notice. |
 | 24 | Scraper protection for new columns? | **Explicit exclusion + golden test** | Scraper UPSERT column list must never include `item_uuid` or `owner_id`. Golden test greps `repository.py`. Defense-in-depth: scraper matches on `url` (UNIQUE), promoted items use `nw://` synthetic URLs that the scraper never generates. |
 | 25 | What does "On Hold" mean? | **Dealer-side status marker, item stays publicly visible** | HOLD is a sticky note for the dealer (e.g., buyer expressed interest, pending payment). The item remains in public browse with `is_available=true` — other buyers can still view and inquire. Browse queries filter on `is_available`, not `status`, so HOLD items are visible. The "On Hold" tab in the dealer view filters `listings WHERE owner_id = me AND status = 'HOLD'`. |
 | 26 | Favorites migration to `item_uuid`? | **No — keep `listing_id`** | Soft-delist preserves the `listings` row (same `listing_id`), so favorites survive delist/re-promote cycles without migration. Scraped items have no `item_uuid`, so favorites must use `listing_id` for those regardless. Adding `item_uuid` to favorites adds complexity for no benefit. |
 | 27 | `listing_videos` coexistence? | **No — full migration to `item_videos`** | The scraper never creates videos. ALL videos are user-uploaded. Phase 2 backfills `item_uuid` on all dealer listings, then migrates `listing_videos` → `item_videos`. Single table, single identity system. No dual-source trigger complexity. |
+| 28 | Collection access tier? (2026-03-10) | **Yuhinkai tier gated (not free-for-all)** | Originally planned as free unlimited cataloging. After the P0 dealer listing leak (2026-03-03), added proper tier gating via `checkCollectionAccess()` on all 15 API routes. `yuhinkai` tier is manually assigned (no Stripe). All paid tiers (enthusiast/collector/inner_circle) also get access via rank ≥ yuhinkai. Trial mode (currently ON) bypasses everything. `NEXT_PUBLIC_COLLECTION_ENABLED` env var replaced and is dead code. |
+| 29 | Route migration timing? (2026-03-10) | **`/vault` — DONE** | Migrated in Phase 5 (2026-03-10). 301 redirect from `/collection` → `/vault` active in `next.config.ts`. |
 
 ---
 
@@ -1436,7 +1475,7 @@ These questions were evaluated during the design process. Decisions are recorded
 | DELISTED ghost accumulation | Low — abandoned DELISTED rows grow over time | DELISTED rows are tiny (no images stored in DB, just URLs). Periodic cleanup job could archive ghosts with no matching `collection_items` row (owner deleted item). |
 | Scraper overwrites `item_uuid`/`owner_id` | High — breaks collection↔listing link | Golden test on scraper column list. `nw://` URLs prevent UPSERT collision. Documented as CLAUDE.md Critical Rule. |
 | URL migration (`/listing/[id]` → `/listing/[item_uuid]`) | Medium — SEO impact | Support both URL formats. `/listing/[id]` redirects to `/listing/[item_uuid]` for promoted items. Scraped items keep BIGINT URLs. |
-| Route migration breaks bookmarks | Low — `/dealer` URLs stop working | 301 redirect from `/dealer` → new route. Keep redirect permanently. |
+| Route migration breaks bookmarks | Low — mitigated | 301 redirect from `/collection` → `/vault` active since Phase 5 (2026-03-10). Keep redirect permanently. |
 | Account deletion leaves orphaned images | Low — sold items reference deleted user's images | Pre-deletion check: archive images for any `item_uuid` still in `listings`. |
 | Dual existence during DELISTED state | Low — item in both tables | Principled exception. `collection_items` row is the editable copy; `listings` ghost is inert (DELISTED, `is_available=false`, `featured_score=0`). Ghost contains previously-public data — low blast radius. |
 

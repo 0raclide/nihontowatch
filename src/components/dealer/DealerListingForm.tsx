@@ -152,6 +152,7 @@ export interface DealerListingInitialData {
   hero_image_index?: number | null;
   status?: string | null;
   videos?: ListingVideo[];
+  source_listing_id?: number | null;
 }
 
 interface DealerListingFormProps {
@@ -229,7 +230,7 @@ export function DealerListingForm({ mode, initialData, context = 'listing' }: De
   const koshiraeImagesEndpoint = `${apiBase}/koshirae-images`;
   const provenanceImagesEndpoint = `${apiBase}/provenance-images`;
   const kantoHibishoImagesEndpoint = `${apiBase}/kanto-hibisho-images`;
-  const successRedirect = context === 'collection' ? '/collection' : '/dealer';
+  const successRedirect = context === 'collection' ? '/vault' : '/dealer';
   const draftStorageKey = context === 'collection' ? 'nw-collection-draft' : DRAFT_STORAGE_KEY;
 
   // Restore draft for add mode (no initialData)
@@ -332,6 +333,8 @@ export function DealerListingForm({ mode, initialData, context = 'listing' }: De
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDraftBanner, setShowDraftBanner] = useState(!!draft);
+  // Hidden state: tracks source listing for "I Own This" imports
+  const [sourceListingId] = useState<number | null>(initialData?.source_listing_id ?? null);
   const [titleOverride, setTitleOverride] = useState<string | null>(
     initialData?.title || draft?.titleOverride || null
   );
@@ -581,6 +584,10 @@ export function DealerListingForm({ mode, initialData, context = 'listing' }: De
       if (mode === 'add') {
         // Add status to payload for new listings
         payload.status = targetStatus || 'INVENTORY';
+        // Include source listing reference for "I Own This" imports
+        if (context === 'collection' && sourceListingId) {
+          payload.source_listing_id = sourceListingId;
+        }
 
         // Create listing
         const res = await fetch(itemsEndpoint, {
@@ -731,7 +738,7 @@ export function DealerListingForm({ mode, initialData, context = 'listing' }: De
     pendingHakogakiFiles, hakogaki, koshirae, pendingKoshiraeFiles, provenance,
     pendingProvenanceFiles, kiwame, kantoHibisho, pendingKantoHibishoFiles,
     certSession, setsumeiTextEn, setsumeiTextJa, generatedTitle, titleOverride,
-    heroImageIndex, images, router, itemsEndpoint, imagesEndpoint,
+    heroImageIndex, images, router, itemsEndpoint, imagesEndpoint, context, sourceListingId,
     sayagakiImagesEndpoint, hakogakiImagesEndpoint, koshiraeImagesEndpoint,
     provenanceImagesEndpoint, kantoHibishoImagesEndpoint, successRedirect,
     draftStorageKey, meiText, meiGuaranteed,

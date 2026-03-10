@@ -26,6 +26,13 @@ const nextConfig: NextConfig = {
     // Cache optimized images longer
     minimumCacheTTL: 60 * 60 * 24 * 30, // 30 days
   },
+  // Route migration redirects
+  async redirects() {
+    return [
+      { source: '/collection/:path*', destination: '/vault/:path*', permanent: true },
+      { source: '/collection', destination: '/vault', permanent: true },
+    ];
+  },
   // Security + caching headers
   async headers() {
     return [

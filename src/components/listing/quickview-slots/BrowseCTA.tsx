@@ -56,7 +56,7 @@ export function BrowseCTA({ listing }: BrowseCTAProps) {
     const prefill = mapListingToCollectionItem(listing as Listing);
     sessionStorage.setItem('collection_prefill', JSON.stringify(prefill));
     quickView?.dismissForNavigation?.();
-    router.push('/collection?add=listing');
+    router.push('/vault?add=listing');
   }, [user, listing, quickView, router]);
 
   const handleDealerLinkClick = useCallback(() => {

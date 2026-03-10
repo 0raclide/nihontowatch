@@ -41,7 +41,7 @@ export function CollectionEditClient({ id }: CollectionEditClientProps) {
       <div className="sticky top-0 z-30 bg-surface/95 backdrop-blur-sm border-b border-border/30">
         <div className="max-w-lg mx-auto px-4 py-3 flex items-center gap-3">
           <Link
-            href="/collection"
+            href="/vault"
             className="w-8 h-8 flex items-center justify-center rounded-full text-muted hover:bg-hover transition-colors"
             aria-label={t('common.back')}
           >
@@ -65,7 +65,7 @@ export function CollectionEditClient({ id }: CollectionEditClientProps) {
           <div className="px-4 py-16 text-center">
             <p className="text-[13px] text-muted">{error}</p>
             <Link
-              href="/collection"
+              href="/vault"
               className="inline-block mt-4 text-[13px] text-gold hover:underline"
             >
               {t('common.back')}

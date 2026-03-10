@@ -17,68 +17,6 @@ export type CollectionItemCondition = 'mint' | 'excellent' | 'good' | 'fair' | '
 // CORE TYPES
 // =============================================================================
 
-export interface CollectionItem {
-  id: string;
-  user_id: string;
-  source_listing_id: number | null;
-
-  // Classification
-  item_type: string | null;
-  title: string | null;
-
-  // Artisan
-  artisan_id: string | null;
-  artisan_display_name: string | null;
-
-  // Certification
-  cert_type: string | null;
-  cert_session: number | null;
-  cert_organization: string | null;
-
-  // Attribution
-  smith: string | null;
-  school: string | null;
-  province: string | null;
-  era: string | null;
-  mei_type: string | null;
-
-  // Measurements
-  nagasa_cm: number | null;
-  sori_cm: number | null;
-  motohaba_cm: number | null;
-  sakihaba_cm: number | null;
-
-  // Provenance & value
-  price_paid: number | null;
-  price_paid_currency: string | null;
-  current_value: number | null;
-  current_value_currency: string | null;
-  acquired_date: string | null;
-  acquired_from: string | null;
-
-  // Status & condition
-  condition: CollectionItemCondition;
-  status: CollectionItemStatus;
-  notes: string | null;
-
-  // Media
-  images: string[];
-
-  // Catalog reference
-  catalog_reference: CatalogReference | null;
-
-  // Visibility
-  is_public: boolean;
-
-  // Organization
-  folder_id: string | null;
-  sort_order: number;
-
-  // Timestamps
-  created_at: string;
-  updated_at: string;
-}
-
 export interface CollectionFolder {
   id: string;
   user_id: string;
@@ -123,12 +61,6 @@ export interface CollectionFacets {
   statuses: Array<{ value: string; count: number }>;
   conditions: Array<{ value: string; count: number }>;
   folders: Array<{ id: string; name: string; count: number }>;
-}
-
-export interface CollectionListResponse {
-  data: CollectionItem[];
-  total: number;
-  facets: CollectionFacets;
 }
 
 export interface CreateCollectionItemInput {
