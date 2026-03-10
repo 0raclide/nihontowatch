@@ -37,7 +37,7 @@ export async function GET(
   const serviceClient = createServiceClient();
 
   const { data: listing, error } = await (serviceClient.from('listings') as any)
-    .select('id, title, title_en, title_ja, item_type, item_category, cert_type, cert_session, price_value, price_currency, description, artisan_id, smith, tosogu_maker, school, tosogu_school, era, province, mei_type, mei_text, mei_guaranteed, nakago_type, nagasa_cm, motohaba_cm, sakihaba_cm, sori_cm, height_cm, width_cm, material, images, sayagaki, hakogaki, koshirae, provenance, kiwame, kanto_hibisho, research_notes, hero_image_index, setsumei_text_en, setsumei_text_ja, ai_curator_note_en, ai_curator_note_ja, status, is_available, is_sold, source, dealer_id')
+    .select('id, item_uuid, title, title_en, title_ja, item_type, item_category, cert_type, cert_session, price_value, price_currency, description, artisan_id, smith, tosogu_maker, school, tosogu_school, era, province, mei_type, mei_text, mei_guaranteed, nakago_type, nagasa_cm, motohaba_cm, sakihaba_cm, sori_cm, height_cm, width_cm, material, images, sayagaki, hakogaki, koshirae, provenance, kiwame, kanto_hibisho, research_notes, hero_image_index, setsumei_text_en, setsumei_text_ja, ai_curator_note_en, ai_curator_note_ja, status, is_available, is_sold, source, dealer_id')
     .eq('id', listingId)
     .eq('dealer_id', auth.dealerId)
     .eq('source', 'dealer')
@@ -47,7 +47,38 @@ export async function GET(
     return NextResponse.json({ error: 'Listing not found' }, { status: 404 });
   }
 
-  return NextResponse.json(listing);
+  // Enrich with videos from item_videos (keyed by item_uuid, no FK for nested select)
+  let videos: unknown[] = [];
+  const itemUuid = (listing as { item_uuid?: string }).item_uuid;
+  if (itemUuid) {
+    const { data: videoRows } = await selectItemVideos(
+      serviceClient, 'item_uuid', itemUuid, '*',
+      { column: 'sort_order', ascending: true }
+    );
+    if (videoRows && videoRows.length > 0) {
+      videos = videoRows
+        .filter(v => v.status === 'ready')
+        .map(v => ({
+          id: v.id,
+          listing_id: listingId,
+          provider: v.provider,
+          provider_id: v.provider_id,
+          duration_seconds: v.duration_seconds ?? undefined,
+          width: v.width ?? undefined,
+          height: v.height ?? undefined,
+          thumbnail_url: v.thumbnail_url ?? undefined,
+          status: v.status,
+          sort_order: v.sort_order,
+          original_filename: v.original_filename ?? undefined,
+          size_bytes: v.size_bytes ?? undefined,
+          created_at: v.created_at,
+          stream_url: v.stream_url
+            || (isVideoProviderConfigured() ? videoProvider.getStreamUrl(v.provider_id) : undefined),
+        }));
+    }
+  }
+
+  return NextResponse.json({ ...listing, videos });
 }
 
 // Fields that dealers are allowed to update
