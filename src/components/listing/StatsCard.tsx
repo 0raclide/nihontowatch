@@ -8,10 +8,12 @@ import { saveListingReturnContext } from '@/lib/listing/returnContext';
 import { useCurrency, formatPriceWithConversion } from '@/hooks/useCurrency';
 import { shouldShowNewBadge } from '@/lib/newListing';
 import type { Listing } from '@/types';
+import type { CollectionItemRow } from '@/types/collectionItem';
 import { getItemTypeLabel } from '@/types';
 import { MetadataGrid, getCertInfo, getArtisanInfo } from './MetadataGrid';
 import { TranslatedTitle } from './TranslatedTitle';
 import { SectionIndicators } from './SectionIndicators';
+import { VisibilityBadge } from './VisibilityBadge';
 import { useLocale } from '@/i18n/LocaleContext';
 import type { SectionIndicator } from '@/lib/media/contentStream';
 
@@ -24,6 +26,7 @@ interface StatsCardProps {
   sections: SectionIndicator[];
   onSectionClick: (sectionId: string) => void;
   activeSection?: string | null;
+  collectionItem?: CollectionItemRow | null;
   actionBarSlot?: ReactNode;
   dealerSlot?: ReactNode;
   ctaSlot?: ReactNode;
@@ -38,6 +41,7 @@ export function StatsCard({
   sections,
   onSectionClick,
   activeSection,
+  collectionItem,
   actionBarSlot,
   dealerSlot,
   ctaSlot,
@@ -102,6 +106,7 @@ export function StatsCard({
                   {t('quickview.hidden')}
                 </span>
               )}
+              <VisibilityBadge collectionItem={collectionItem} />
             </div>
             <div className="flex items-center gap-2">
               {actionBarSlot}

@@ -18,8 +18,10 @@ import { KiwameDisplay } from './KiwameDisplay';
 import { KantoHibishoDisplay } from './KantoHibishoDisplay';
 import { SectionIndicators } from './SectionIndicators';
 import { QuickMeasurement } from './QuickMeasurement';
+import { VisibilityBadge } from './VisibilityBadge';
 import { useLocale } from '@/i18n/LocaleContext';
 import { useAuth } from '@/lib/auth/AuthContext';
+import type { CollectionItemRow } from '@/types/collectionItem';
 import type { SectionIndicator } from '@/lib/media/contentStream';
 
 // =============================================================================
@@ -33,6 +35,8 @@ interface QuickViewMobileSheetProps {
   onClose: () => void;
   // Text readability mode (collection context — larger text for leisurely reading)
   readable?: boolean;
+  // Collection item (for visibility badge)
+  collectionItem?: CollectionItemRow | null;
   // Composition slots
   headerActionsSlot?: ReactNode;
   dealerSlot?: ReactNode;
@@ -71,6 +75,7 @@ export function QuickViewMobileSheet({
   onToggle,
   onClose,
   readable,
+  collectionItem,
   headerActionsSlot,
   dealerSlot,
   descriptionSlot,
@@ -337,6 +342,7 @@ export function QuickViewMobileSheet({
               Hidden
             </span>
           )}
+          <VisibilityBadge collectionItem={collectionItem} />
           <QuickMeasurement listing={listing} />
         </div>
 

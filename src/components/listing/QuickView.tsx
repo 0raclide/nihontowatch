@@ -427,7 +427,7 @@ export function QuickView() {
     : isShowcase
       ? <ShowcaseActionBar listing={currentListing} showcase={showcaseExt} />
       : isCollection
-        ? <CollectionActionBar listing={currentListing} collectionItem={collectionItem} onEditCollection={handleEditCollection} />
+        ? <CollectionActionBar listing={currentListing} onEditCollection={handleEditCollection} />
         : <BrowseActionBar listing={currentListing} isStudyMode={isStudyMode} onToggleStudyMode={toggleStudyMode} onToggleAdminEditMode={toggleAdminEditMode} />;
 
   const desktopDealerSlot = isShowcase
@@ -645,6 +645,7 @@ export function QuickView() {
             onToggle={toggleSheet}
             onClose={closeQuickView}
             readable={isCollection || isShowcase}
+            collectionItem={isCollection ? collectionItem : undefined}
             headerActionsSlot={mobileHeaderActionsSlot}
             dealerSlot={mobileDealerSlot}
             descriptionSlot={mobileDescriptionSlot}
@@ -756,6 +757,7 @@ export function QuickView() {
                   sections={contentStreamResult.sections}
                   onSectionClick={handleSectionClick}
                   activeSection={desktopActiveSection}
+                  collectionItem={isCollection ? collectionItem : undefined}
                   actionBarSlot={desktopActionBarSlot}
                   dealerSlot={desktopDealerSlot}
                   ctaSlot={desktopCtaSlot}
@@ -786,6 +788,7 @@ export function QuickView() {
                   listing={currentListing}
                   onClose={closeQuickView}
                   readable={isCollection || isShowcase}
+                  collectionItem={isCollection ? collectionItem : undefined}
                   actionBarSlot={desktopActionBarSlot}
                   dealerSlot={desktopDealerSlot}
                   descriptionSlot={desktopDescriptionSlot}

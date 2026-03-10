@@ -8,6 +8,7 @@ import { saveListingReturnContext } from '@/lib/listing/returnContext';
 import { useCurrency, formatPriceWithConversion } from '@/hooks/useCurrency';
 import { shouldShowNewBadge } from '@/lib/newListing';
 import type { Listing } from '@/types';
+import type { CollectionItemRow } from '@/types/collectionItem';
 import { getItemTypeLabel } from '@/types';
 import { MetadataGrid, getCertInfo, getArtisanInfo } from './MetadataGrid';
 import { TranslatedTitle } from './TranslatedTitle';
@@ -17,6 +18,7 @@ import { KoshiraeDisplay } from './KoshiraeDisplay';
 import { ProvenanceDisplay } from './ProvenanceDisplay';
 import { KiwameDisplay } from './KiwameDisplay';
 import { KantoHibishoDisplay } from './KantoHibishoDisplay';
+import { VisibilityBadge } from './VisibilityBadge';
 import { useLocale } from '@/i18n/LocaleContext';
 
 // =============================================================================
@@ -28,6 +30,8 @@ interface QuickViewContentProps {
   onClose?: () => void;
   // Text readability mode (collection context — larger text for leisurely reading)
   readable?: boolean;
+  // Collection item (for visibility badge)
+  collectionItem?: CollectionItemRow | null;
   // Composition slots
   actionBarSlot?: ReactNode;
   dealerSlot?: ReactNode;
@@ -45,6 +49,7 @@ interface QuickViewContentProps {
 export function QuickViewContent({
   listing,
   readable,
+  collectionItem,
   actionBarSlot,
   dealerSlot,
   descriptionSlot,
@@ -115,6 +120,7 @@ export function QuickViewContent({
                   {t('quickview.hidden')}
                 </span>
               )}
+              <VisibilityBadge collectionItem={collectionItem} />
             </div>
             <div className="flex items-center gap-2">
               {actionBarSlot}

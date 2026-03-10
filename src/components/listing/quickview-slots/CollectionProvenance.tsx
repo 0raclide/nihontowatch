@@ -10,26 +10,14 @@ interface CollectionProvenanceProps {
 export function CollectionProvenance({ collectionItem }: CollectionProvenanceProps) {
   const { t } = useLocale();
 
-  if (!collectionItem) return null;
-
-  const hasContent = collectionItem.visibility !== 'private' || collectionItem.status;
-
-  if (!hasContent) return null;
+  if (!collectionItem?.status) return null;
 
   return (
     <div className="px-4 py-3 lg:px-5 border-b border-border space-y-2">
-      {collectionItem.status && (
-        <div className="flex justify-between text-[14px]">
-          <span className="text-muted">{t('collection.status')}</span>
-          <span className="text-ink capitalize">{collectionItem.status}</span>
-        </div>
-      )}
-      {collectionItem.visibility && collectionItem.visibility !== 'private' && (
-        <div className="flex justify-between text-[14px]">
-          <span className="text-muted">{t('collection.visibility') || 'Visibility'}</span>
-          <span className="text-ink capitalize">{collectionItem.visibility}</span>
-        </div>
-      )}
+      <div className="flex justify-between text-[14px]">
+        <span className="text-muted">{t('collection.status')}</span>
+        <span className="text-ink capitalize">{collectionItem.status}</span>
+      </div>
     </div>
   );
 }
