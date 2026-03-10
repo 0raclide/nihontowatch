@@ -7,8 +7,18 @@
 
 import type { CollectionItemRow } from '@/types/collectionItem';
 import type { DisplayItem } from '@/types/displayItem';
+import { getArtisanDisplayName, getArtisanDisplayNameKanji, getArtisanAlias } from '@/lib/artisan/displayName';
 
-export function collectionRowToDisplayItem(item: CollectionItemRow): DisplayItem {
+export interface ArtisanNameInfo {
+  name_romaji?: string | null;
+  name_kanji?: string | null;
+  school?: string | null;
+}
+
+export function collectionRowToDisplayItem(
+  item: CollectionItemRow,
+  artisanNames?: Record<string, ArtisanNameInfo>,
+): DisplayItem {
   // Parse cert_session: DB stores TEXT, DisplayItem expects number | null
   let certSession: number | null = null;
   if (item.cert_session != null) {
@@ -70,10 +80,14 @@ export function collectionRowToDisplayItem(item: CollectionItemRow): DisplayItem
     // Video
     video_count: item.video_count ?? 0,
 
-    // Artisan
+    // Artisan — enrich from Yuhinkai name map when available
     artisan_id: item.artisan_id ?? null,
-    artisan_display_name: null,
-    artisan_name_kanji: null,
+    artisan_display_name: (item.artisan_id && artisanNames?.[item.artisan_id])
+      ? (getArtisanAlias(item.artisan_id) || getArtisanDisplayName(artisanNames[item.artisan_id].name_romaji ?? null, artisanNames[item.artisan_id].school ?? null, item.artisan_id) || null)
+      : null,
+    artisan_name_kanji: (item.artisan_id && artisanNames?.[item.artisan_id])
+      ? (getArtisanDisplayNameKanji(artisanNames[item.artisan_id].name_kanji ?? null, item.artisan_id) || null)
+      : null,
     artisan_confidence: (item.artisan_confidence as DisplayItem['artisan_confidence']) ?? null,
     artisan_tier: null,
     artisan_method: null,
@@ -121,7 +135,10 @@ export function collectionRowToDisplayItem(item: CollectionItemRow): DisplayItem
  * Batch convert collection item rows to display items.
  * Call sites should wrap in useMemo keyed on `items` reference.
  */
-export function collectionRowsToDisplayItems(items: CollectionItemRow[]): DisplayItem[] {
-  return items.map(collectionRowToDisplayItem);
+export function collectionRowsToDisplayItems(
+  items: CollectionItemRow[],
+  artisanNames?: Record<string, ArtisanNameInfo>,
+): DisplayItem[] {
+  return items.map(item => collectionRowToDisplayItem(item, artisanNames));
 }
 

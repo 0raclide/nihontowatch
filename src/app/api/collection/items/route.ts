@@ -9,6 +9,7 @@ import {
   insertCollectionEvent,
 } from '@/lib/supabase/collectionItems';
 import { checkCollectionAccess } from '@/lib/collection/access';
+import { getArtisanNames } from '@/lib/supabase/yuhinkai';
 
 export const dynamic = 'force-dynamic';
 
@@ -121,10 +122,24 @@ export async function GET(request: NextRequest) {
 
     const facets = computeFacets(allItems || []);
 
+    // Enrich artisan display names from Yuhinkai (same pattern as browse API)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const artisanCodes = [...new Set((items || []).map((i: any) => i.artisan_id).filter(Boolean))] as string[];
+    let artisanNamesObj: Record<string, { name_romaji: string | null; name_kanji: string | null; school: string | null }> = {};
+    if (artisanCodes.length > 0) {
+      try {
+        const artisanNameMap = await getArtisanNames(artisanCodes);
+        artisanNamesObj = Object.fromEntries(artisanNameMap);
+      } catch (err) {
+        logger.warn('Failed to fetch artisan names for collection', { error: err });
+      }
+    }
+
     return NextResponse.json({
       data: items || [],
       total: count || 0,
       facets,
+      artisanNames: artisanNamesObj,
     });
   } catch (error) {
     logger.logError('Collection items API error', error);

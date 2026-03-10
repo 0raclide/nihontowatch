@@ -286,12 +286,16 @@ export function QuickViewMobileSheet({
           <div className="w-10 h-1 rounded-full bg-border" />
         </div>
 
-        {/* Header row: Price + Actions + Close */}
+        {/* Header row: Price + Actions + Close (price hidden for collection) */}
         <div className="pl-4 pr-5 pb-2">
           <div className="flex items-center justify-between">
-            <span className={`text-lg font-semibold tabular-nums ${listing.price_value ? 'text-ink' : 'text-muted'}`}>
-              {priceDisplay}
-            </span>
+            {!collectionItem ? (
+              <span className={`text-lg font-semibold tabular-nums ${listing.price_value ? 'text-ink' : 'text-muted'}`}>
+                {priceDisplay}
+              </span>
+            ) : (
+              <span />
+            )}
 
             <div className="flex items-center gap-2">
               {headerActionsSlot}
@@ -464,7 +468,7 @@ export function QuickViewMobileSheet({
             {variant === 'stats' && sections && sections.length > 0 && onSectionClick && (
               <div className="px-4 py-3 border-b border-border">
                 <div className="text-[10px] uppercase tracking-wider text-muted font-medium mb-2">
-                  {t('quickview.thisListingHas')}
+                  {collectionItem ? t('quickview.thisItemHas') : t('quickview.thisListingHas')}
                 </div>
                 <SectionIndicators sections={sections} onSectionClick={onSectionClick} activeSection={activeSection} />
               </div>

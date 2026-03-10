@@ -57,6 +57,7 @@ export function CollectionPageClient() {
   const [items, setItemsState] = useState<CollectionItemRow[]>([]);
   const [total, setTotal] = useState(0);
   const [facets, setFacets] = useState<CollectionFacets>(EMPTY_FACETS);
+  const [artisanNames, setArtisanNames] = useState<Record<string, { name_romaji?: string | null; name_kanji?: string | null; school?: string | null }>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -93,8 +94,8 @@ export function CollectionPageClient() {
 
   // Adapt collection items to DisplayItem shape for ListingCard
   const adaptedItems = useMemo(
-    () => collectionRowsToDisplayItems(items),
-    [items]
+    () => collectionRowsToDisplayItems(items, artisanNames),
+    [items, artisanNames]
   );
 
   // Set adapted listings in QuickView context for J/K navigation
@@ -134,10 +135,11 @@ export function CollectionPageClient() {
         throw new Error(t('collection.fetchFailed'));
       }
 
-      const data: { data: CollectionItemRow[]; total: number; facets: CollectionFacets } = await res.json();
+      const data: { data: CollectionItemRow[]; total: number; facets: CollectionFacets; artisanNames?: Record<string, { name_romaji?: string | null; name_kanji?: string | null; school?: string | null }> } = await res.json();
       setItemsState(data.data);
       setTotal(data.total);
       setFacets(data.facets);
+      setArtisanNames(data.artisanNames || {});
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') return;
       setError(t('collection.loadFailed'));

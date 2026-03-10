@@ -173,6 +173,32 @@ function normalizeItemType(rawType: string | null): string | null {
   return ITEM_TYPE_LABELS[normalized] || ITEM_TYPE_LABELS[rawType.toLowerCase()] || null;
 }
 
+// Compact visibility badge for collection cards (replaces price row)
+const VISIBILITY_BADGE_CONFIG: Record<string, { labelKey: string; badgeClass: string; icon: 'lock' | 'users' | 'storefront' }> = {
+  private: { labelKey: 'collection.visibility.private', badgeClass: 'bg-border/30 text-muted', icon: 'lock' },
+  collectors: { labelKey: 'collection.visibility.collectors', badgeClass: 'bg-juyo/10 text-juyo', icon: 'users' },
+  dealers: { labelKey: 'collection.visibility.dealers', badgeClass: 'bg-jubi/10 text-jubi', icon: 'storefront' },
+};
+
+function VisibilityCompactBadge({ visibility, t }: { visibility?: string | null; t: (key: string) => string }) {
+  const v = visibility || 'private';
+  const config = VISIBILITY_BADGE_CONFIG[v] || VISIBILITY_BADGE_CONFIG.private;
+  return (
+    <span className={`inline-flex items-center gap-1 text-[10px] uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded ${config.badgeClass}`}>
+      {config.icon === 'lock' && (
+        <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+      )}
+      {config.icon === 'users' && (
+        <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+      )}
+      {config.icon === 'storefront' && (
+        <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h18l-2 8H5L3 3zm0 0l-1 4m18-4l1 4M5 11v10h14V11M9 21v-6h6v6" /></svg>
+      )}
+      {t(config.labelKey)}
+    </span>
+  );
+}
+
 // Check if string contains Japanese characters (hiragana, katakana, kanji)
 function containsJapanese(str: string): boolean {
   return /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(str);
@@ -823,7 +849,7 @@ export const ListingCard = memo(function ListingCard({
       <div className={`${sz.cPad} sm:px-3 sm:pt-3 sm:pb-3 lg:px-4 lg:pt-3.5 lg:pb-4 flex flex-col gap-0.5`}>
         {/* Type — primary identifier */}
         <h3 className={`${sz.type} sm:text-[15px] lg:text-base font-semibold leading-snug text-ink group-hover:text-gold transition-colors`}>
-          {itemType ? (() => { const norm = ITEM_TYPE_NORMALIZE[listing.item_type!] || listing.item_type!.toLowerCase(); const k = `itemType.${norm}`; const r = t(k); return r === k ? itemType : r; })() : cleanedTitle}
+          {(listing.source === 'collection' && cleanedTitle) ? cleanedTitle : (itemType ? (() => { const norm = ITEM_TYPE_NORMALIZE[listing.item_type!] || listing.item_type!.toLowerCase(); const k = `itemType.${norm}`; const r = t(k); return r === k ? itemType : r; })() : cleanedTitle)}
         </h3>
 
         {/* Attribution — gold underline on artisan, plain text fallback */}
@@ -904,20 +930,26 @@ export const ListingCard = memo(function ListingCard({
           />
         )}
 
-        {/* Price row */}
-        <div className={`${sz.pPad} sm:pt-2 sm:mt-1 border-t border-border/40 flex items-center justify-between`}>
-          <span className={`${sz.price} sm:text-[14px] lg:text-[15px] tabular-nums ${(isAskPrice || isSold) ? 'text-charcoal' : 'text-ink font-medium'}`}>
-            {priceDisplay}
-          </span>
-          <div className="flex items-center gap-1.5">
-            {locale === 'ja' && !isNew && listing.last_scraped_at && (
-              <span className="text-[9px] text-muted/60 tabular-nums hidden sm:inline">
-                {t('card.confirmed', { time: formatRelativeTime(listing.last_scraped_at, t) })}
-              </span>
-            )}
-            {newBadge}
+        {/* Price row — hidden for collection items, replaced with visibility badge */}
+        {listing.source === 'collection' ? (
+          <div className={`${sz.pPad} sm:pt-2 sm:mt-1 border-t border-border/40 flex items-center`}>
+            <VisibilityCompactBadge visibility={listing.collection?.visibility} t={t} />
           </div>
-        </div>
+        ) : (
+          <div className={`${sz.pPad} sm:pt-2 sm:mt-1 border-t border-border/40 flex items-center justify-between`}>
+            <span className={`${sz.price} sm:text-[14px] lg:text-[15px] tabular-nums ${(isAskPrice || isSold) ? 'text-charcoal' : 'text-ink font-medium'}`}>
+              {priceDisplay}
+            </span>
+            <div className="flex items-center gap-1.5">
+              {locale === 'ja' && !isNew && listing.last_scraped_at && (
+                <span className="text-[9px] text-muted/60 tabular-nums hidden sm:inline">
+                  {t('card.confirmed', { time: formatRelativeTime(listing.last_scraped_at, t) })}
+                </span>
+              )}
+              {newBadge}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

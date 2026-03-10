@@ -170,14 +170,16 @@ export function StatsCard({
             </div>
           )}
 
-          {/* Price */}
-          <div className="mb-2">
-            <span className={`text-2xl lg:text-3xl font-semibold tabular-nums ${
-              listing.price_value ? 'text-ink' : 'text-muted'
-            }`}>
-              {priceDisplay}
-            </span>
-          </div>
+          {/* Price (hidden for collection items) */}
+          {!collectionItem && (
+            <div className="mb-2">
+              <span className={`text-2xl lg:text-3xl font-semibold tabular-nums ${
+                listing.price_value ? 'text-ink' : 'text-muted'
+              }`}>
+                {priceDisplay}
+              </span>
+            </div>
+          )}
 
           {/* Dealer slot */}
           <div className="flex items-center text-[12px] text-muted">
@@ -202,7 +204,7 @@ export function StatsCard({
         {sections.length > 0 && (
           <div className="px-4 py-3 lg:px-5 border-b border-border">
             <div className="text-[10px] uppercase tracking-wider text-muted font-medium mb-2">
-              {t('quickview.thisListingHas')}
+              {collectionItem ? t('quickview.thisItemHas') : t('quickview.thisListingHas')}
             </div>
             <SectionIndicators sections={sections} onSectionClick={onSectionClick} activeSection={activeSection} />
           </div>

@@ -197,14 +197,16 @@ export function QuickViewContent({
             </div>
           )}
 
-          {/* Price - Large and prominent */}
-          <div className="mb-2">
-            <span className={`text-2xl lg:text-3xl font-semibold tabular-nums ${
-              listing.price_value ? 'text-ink' : 'text-muted'
-            }`} data-testid="price-display">
-              {priceDisplay}
-            </span>
-          </div>
+          {/* Price - Large and prominent (hidden for collection items) */}
+          {!collectionItem && (
+            <div className="mb-2">
+              <span className={`text-2xl lg:text-3xl font-semibold tabular-nums ${
+                listing.price_value ? 'text-ink' : 'text-muted'
+              }`} data-testid="price-display">
+                {priceDisplay}
+              </span>
+            </div>
+          )}
 
           {/* Dealer slot */}
           <div className="flex items-center text-[12px] text-muted">

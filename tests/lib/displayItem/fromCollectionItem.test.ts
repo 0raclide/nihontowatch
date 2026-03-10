@@ -225,12 +225,30 @@ describe('collectionRowToDisplayItem', () => {
     expect(di.video_count).toBe(2);
   });
 
-  it('maps artisan fields', () => {
+  it('maps artisan fields (no name map)', () => {
     const di = collectionRowToDisplayItem(makeItem());
     expect(di.artisan_id).toBe('KAN100');
     expect(di.artisan_confidence).toBe('HIGH');
-    // Display name is not in CollectionItemRow — stays null
+    // Display name is null when no artisan name map provided
     expect(di.artisan_display_name).toBeNull();
+  });
+
+  it('enriches artisan display name from name map', () => {
+    const nameMap = {
+      KAN100: { name_romaji: 'Kanemitsu', name_kanji: '兼光', school: 'Bizen' },
+    };
+    const di = collectionRowToDisplayItem(makeItem(), nameMap);
+    expect(di.artisan_display_name).toBeTruthy();
+    expect(di.artisan_name_kanji).toBeTruthy();
+  });
+
+  it('returns null artisan display name when artisan_id not in map', () => {
+    const nameMap = {
+      OTHER123: { name_romaji: 'Other', name_kanji: '他', school: 'Soshu' },
+    };
+    const di = collectionRowToDisplayItem(makeItem(), nameMap);
+    expect(di.artisan_display_name).toBeNull();
+    expect(di.artisan_name_kanji).toBeNull();
   });
 
   it('suppresses "New" badge via is_initial_import', () => {
@@ -358,6 +376,19 @@ describe('collectionRowsToDisplayItems (batch)', () => {
     const items = [makeItem({ item_uuid: 'a' }), makeItem({ item_uuid: 'b' })];
     const dis = collectionRowsToDisplayItems(items);
     dis.forEach(di => expect(di.source).toBe('collection'));
+  });
+
+  it('passes artisan name map through to all items', () => {
+    const nameMap = {
+      KAN100: { name_romaji: 'Kanemitsu', name_kanji: '兼光', school: 'Bizen' },
+    };
+    const items = [
+      makeItem({ item_uuid: 'a', artisan_id: 'KAN100' }),
+      makeItem({ item_uuid: 'b', artisan_id: 'NONE' }),
+    ];
+    const dis = collectionRowsToDisplayItems(items, nameMap);
+    expect(dis[0].artisan_display_name).toBeTruthy();
+    expect(dis[1].artisan_display_name).toBeNull();
   });
 });
 
