@@ -48,7 +48,7 @@ export interface CollectionFilters {
   status?: CollectionItemStatus;
   condition?: CollectionItemCondition;
   folderId?: string;
-  sort?: 'newest' | 'value_desc' | 'value_asc' | 'type';
+  sort?: 'newest' | 'custom' | 'value_desc' | 'value_asc' | 'type';
   page?: number;
   limit?: number;
 }

@@ -28,6 +28,9 @@ export interface CollectionItemRow extends ItemDataFields {
   source_listing_id: number | null;
   personal_notes: string | null;
 
+  // Ordering
+  sort_order: number;
+
   // Timestamps
   created_at: string;
   updated_at: string;

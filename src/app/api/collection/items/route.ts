@@ -29,7 +29,7 @@ interface CollectionFilters {
   certType?: string;
   era?: string;
   meiType?: string;
-  sort: 'newest' | 'value_desc' | 'value_asc' | 'type';
+  sort: 'newest' | 'custom' | 'value_desc' | 'value_asc' | 'type';
   page: number;
   limit: number;
 }
@@ -92,6 +92,9 @@ export async function GET(request: NextRequest) {
 
     // Sort
     switch (filters.sort) {
+      case 'custom':
+        query = query.order('sort_order', { ascending: true });
+        break;
       case 'value_desc':
         query = query.order('price_value', { ascending: false, nullsFirst: false });
         break;

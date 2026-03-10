@@ -695,8 +695,8 @@ export const ListingCard = memo(function ListingCard({
     />
   );
 
-  // Shared unavailable overlay — skip for dealer portal and collection (not marketplace items)
-  const unavailableOverlay = isUnavailable && listing.source !== 'dealer' && listing.source !== 'collection' && (
+  // Shared unavailable overlay — only for browse (marketplace) items
+  const unavailableOverlay = isUnavailable && listing.source === 'browse' && (
     <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center">
       <span className="text-[10px] uppercase tracking-widest text-white/90 font-medium">
         {isSold ? t('badge.sold') : t('listing.unavailable')}

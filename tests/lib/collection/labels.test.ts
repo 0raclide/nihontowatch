@@ -162,12 +162,13 @@ describe('ITEM_TYPE_LABELS', () => {
 // =============================================================================
 
 describe('SORT_OPTIONS', () => {
-  it('has 4 options in correct order', () => {
-    expect(SORT_OPTIONS).toHaveLength(4);
+  it('has 5 options in correct order', () => {
+    expect(SORT_OPTIONS).toHaveLength(5);
     expect(SORT_OPTIONS[0].value).toBe('newest');
-    expect(SORT_OPTIONS[1].value).toBe('value_desc');
-    expect(SORT_OPTIONS[2].value).toBe('value_asc');
-    expect(SORT_OPTIONS[3].value).toBe('type');
+    expect(SORT_OPTIONS[1].value).toBe('custom');
+    expect(SORT_OPTIONS[2].value).toBe('value_desc');
+    expect(SORT_OPTIONS[3].value).toBe('value_asc');
+    expect(SORT_OPTIONS[4].value).toBe('type');
   });
 
   it('each option has value and label', () => {

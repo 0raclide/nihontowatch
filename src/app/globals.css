@@ -1801,6 +1801,16 @@ html.theme-yuhindo .magical-book:hover {
 }
 
 /* ==========================================================================
+   Drag-and-Drop (Collection Reorder)
+   ========================================================================== */
+.drag-overlay-card {
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+  transform: scale(1.03);
+  opacity: 0.92;
+  pointer-events: none;
+}
+
+/* ==========================================================================
    Legal Content Styles
    Typography for Terms, Privacy, and Cookie Policy pages
    ========================================================================== */

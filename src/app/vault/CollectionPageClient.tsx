@@ -8,6 +8,7 @@ import type { CollectionFilters, CollectionFacets } from '@/types/collection';
 import type { CollectionItemRow } from '@/types/collectionItem';
 import type { DisplayItem } from '@/types/displayItem';
 import { ListingGrid } from '@/components/browse/ListingGrid';
+import { SortableCollectionGrid } from '@/components/collection/SortableCollectionGrid';
 import { AddItemCard } from '@/components/collection/AddItemCard';
 import { CollectionFilterContent } from '@/components/collection/CollectionFilterContent';
 import { CollectionBottomBar } from '@/components/collection/CollectionBottomBar';
@@ -86,6 +87,15 @@ export function CollectionPageClient() {
     page: Number(searchParams.get('page')) || 1,
     limit: 100,
   }));
+
+  // Desktop detection for drag-and-drop (lg breakpoint = 1024px)
+  const [isDesktop, setIsDesktop] = useState(false);
+  useEffect(() => {
+    const check = () => setIsDesktop(window.innerWidth >= 1024);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
 
   // Active filter count for bottom bar badge (category is a mode, not a filter)
   const activeFilterCount = (filters.itemType ? 1 : 0) + (filters.certType ? 1 : 0) +
@@ -310,6 +320,44 @@ export function CollectionPageClient() {
     window.location.href = '/vault/add';
   }, []);
 
+  // Drag-and-drop reorder handler (custom sort, desktop only)
+  const handleReorder = useCallback((activeId: string, overId: string) => {
+    // Find indices in items array
+    const oldIndex = items.findIndex(i => i.item_uuid === activeId);
+    const newIndex = items.findIndex(i => i.item_uuid === overId);
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    // Optimistic reorder — splice in local state
+    const reordered = [...items];
+    const [moved] = reordered.splice(oldIndex, 1);
+    reordered.splice(newIndex, 0, moved);
+    setItemsState(reordered);
+
+    // Build sort_order assignments
+    const reorderPayload = reordered.map((item, idx) => ({
+      id: item.id,
+      sort_order: idx + 1,
+    }));
+
+    // Persist in background — rollback on failure
+    fetch('/api/collection/items/reorder', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ items: reorderPayload }),
+    }).then(res => {
+      if (!res.ok) {
+        console.error('Reorder failed, rolling back');
+        fetchItems(filters);
+      }
+    }).catch(() => {
+      console.error('Reorder network error, rolling back');
+      fetchItems(filters);
+    });
+  }, [items, filters, fetchItems]);
+
+  // Whether drag is enabled (custom sort + desktop + collection tab)
+  const isDragEnabled = filters.sort === 'custom' && isDesktop && activeTab === 'collection';
+
   return (
     <div className="min-h-screen bg-surface transition-colors">
       <Header />
@@ -450,20 +498,41 @@ export function CollectionPageClient() {
           {/* Grid */}
           <div className="flex-1 min-w-0">
             {activeTab === 'collection' ? (
-              <ListingGrid
-                listings={[]}
-                preMappedItems={adaptedItems}
-                total={total}
-                page={1}
-                totalPages={1}
-                onPageChange={() => {}}
-                isLoading={isLoading}
-                currency={currency}
-                exchangeRates={exchangeRates}
-                mobileView={mobileView}
-                onCardClick={handleCardClick}
-                appendSlot={<AddItemCard onClick={handleAddClick} />}
-              />
+              <>
+                {isDragEnabled && (
+                  <p className="text-[12px] text-muted mb-3 flex items-center gap-1.5">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12 2v20M2 12h20M7 7l-5 5 5 5M17 7l5 5-5 5" />
+                    </svg>
+                    {t('collection.dragHint')}
+                  </p>
+                )}
+                {isDragEnabled ? (
+                  <SortableCollectionGrid
+                    items={adaptedItems}
+                    currency={currency}
+                    exchangeRates={exchangeRates}
+                    onReorder={handleReorder}
+                    onCardClick={handleCardClick}
+                    appendSlot={<AddItemCard onClick={handleAddClick} />}
+                  />
+                ) : (
+                  <ListingGrid
+                    listings={[]}
+                    preMappedItems={adaptedItems}
+                    total={total}
+                    page={1}
+                    totalPages={1}
+                    onPageChange={() => {}}
+                    isLoading={isLoading}
+                    currency={currency}
+                    exchangeRates={exchangeRates}
+                    mobileView={mobileView}
+                    onCardClick={handleCardClick}
+                    appendSlot={<AddItemCard onClick={handleAddClick} />}
+                  />
+                )}
+              </>
             ) : (
               <ListingGrid
                 listings={[]}

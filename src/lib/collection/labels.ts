@@ -81,6 +81,7 @@ export const ITEM_TYPE_LABELS: Record<string, string> = {
 
 export const SORT_OPTIONS = [
   { value: 'newest', label: 'Newest Added' },
+  { value: 'custom', label: 'Custom Order' },
   { value: 'value_desc', label: 'Value: High to Low' },
   { value: 'value_asc', label: 'Value: Low to High' },
   { value: 'type', label: 'Item Type' },
