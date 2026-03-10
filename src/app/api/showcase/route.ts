@@ -57,8 +57,11 @@ export async function GET(request: NextRequest) {
       .select('*', { count: 'exact' })
       .neq('owner_id', user.id); // Exclude own items
 
-    // Tab filter
+    // Tab filter — enforce tier even if tab param is sent directly
     if (tab === 'dealers') {
+      if (tier !== 'dealer' && tier !== 'inner_circle') {
+        return NextResponse.json({ data: [], total: 0, page, limit });
+      }
       query = query.in('visibility', ['dealers']);
     } else {
       query = query.in('visibility', visibilityFilter);
