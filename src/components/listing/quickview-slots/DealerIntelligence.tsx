@@ -5,7 +5,8 @@ import { useLocale } from '@/i18n/LocaleContext';
 import type { DealerIntelligenceAPIResponse, HeatTrend, RankBucket } from '@/lib/dealer/intelligence';
 
 interface DealerIntelligenceProps {
-  listingId: number;
+  listingId?: number;
+  collectionItemId?: string;
   tab: 'inventory' | 'available' | 'hold' | 'sold';
 }
 
@@ -29,20 +30,30 @@ const RANK_I18N: Record<RankBucket, string> = {
   below: 'dealer.intel.below',
 };
 
-export function DealerIntelligence({ listingId, tab }: DealerIntelligenceProps) {
+export function DealerIntelligence({ listingId, collectionItemId, tab }: DealerIntelligenceProps) {
   const { t } = useLocale();
   const [data, setData] = useState<DealerIntelligenceAPIResponse['listings'][number] | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const itemKey = collectionItemId ?? listingId;
+
   useEffect(() => {
+    if (!itemKey) return;
     let cancelled = false;
     setLoading(true);
 
-    fetch(`/api/dealer/listings/intelligence?listingIds=${listingId}`)
+    const url = collectionItemId
+      ? `/api/collection/items/${collectionItemId}/intelligence`
+      : `/api/dealer/listings/intelligence?listingIds=${listingId}`;
+
+    fetch(url)
       .then(r => r.ok ? r.json() : null)
       .then((resp: DealerIntelligenceAPIResponse | null) => {
-        if (!cancelled && resp?.listings[listingId]) {
-          setData(resp.listings[listingId]);
+        // listings map is keyed by number (listings) or string (collection items)
+        // JS object keys are always strings, so cast to access either
+        const listings = resp?.listings as Record<string, DealerIntelligenceAPIResponse['listings'][number]> | undefined;
+        if (!cancelled && listings?.[String(itemKey!)]) {
+          setData(listings[String(itemKey!)]);
         }
         if (!cancelled) setLoading(false);
       })
@@ -51,7 +62,7 @@ export function DealerIntelligence({ listingId, tab }: DealerIntelligenceProps) 
       });
 
     return () => { cancelled = true; };
-  }, [listingId]);
+  }, [listingId, collectionItemId, itemKey]);
 
   if (loading) {
     return (

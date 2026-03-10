@@ -72,6 +72,9 @@ const KNOWN_SAFE_FILES = new Set([
   // Scoring module (called by admin endpoints, operates on single listing by ID)
   'src/lib/featured/scoring.ts',
 
+  // Percentile cache (reads only featured_score for aggregate percentile computation — no listing data returned)
+  'src/lib/dealer/percentileCache.ts',
+
   // Test files
   'tests/',
 ]);

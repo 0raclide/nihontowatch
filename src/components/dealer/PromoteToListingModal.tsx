@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useLocale } from '@/i18n/LocaleContext';
+import { DealerIntelligence } from '@/components/listing/quickview-slots/DealerIntelligence';
 
 interface PromoteToListingModalProps {
   isOpen: boolean;
@@ -91,6 +92,10 @@ export function PromoteToListingModal({
         <div className="px-6 pt-5 pb-3">
           <h3 className="text-sm font-medium text-ink">{t('dealer.promoteTitle')}</h3>
           <p className="text-xs text-muted mt-1">{t('dealer.promoteDesc')}</p>
+        </div>
+
+        <div className="px-6">
+          <DealerIntelligence collectionItemId={collectionItemId} tab="inventory" />
         </div>
 
         <div className="px-6 pb-5 space-y-3">

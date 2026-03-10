@@ -12,6 +12,7 @@ import {
   computeFeaturedScore,
   type ListingScoreInput,
 } from '@/lib/featured/scoring';
+import { getScoreData } from '@/lib/dealer/percentileCache';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,15 +21,6 @@ const LISTING_SELECT =
 
 const MAX_IDS = 100;
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
-
-// Cache percentiles + sorted scores in memory (refresh every hour)
-let percentileCache: {
-  p10: number; p25: number; p50: number;
-  sortedScores: number[];
-  totalCount: number;
-  cachedAt: number;
-} | null = null;
-const PERCENTILE_TTL_MS = 60 * 60 * 1000; // 1 hour
 
 /**
  * GET /api/dealer/listings/intelligence?listingIds=1,2,3
@@ -178,61 +170,3 @@ export async function GET(request: NextRequest) {
   return NextResponse.json(result);
 }
 
-/**
- * Get featured score percentiles + sorted score array for position estimation.
- * Cached in module-level memory, refreshed hourly.
- */
-async function getScoreData(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  serviceClient: any
-): Promise<{ p10: number; p25: number; p50: number; sortedScores: number[]; totalCount: number }> {
-  if (percentileCache && Date.now() - percentileCache.cachedAt < PERCENTILE_TTL_MS) {
-    return {
-      p10: percentileCache.p10,
-      p25: percentileCache.p25,
-      p50: percentileCache.p50,
-      sortedScores: percentileCache.sortedScores,
-      totalCount: percentileCache.totalCount,
-    };
-  }
-
-  // Fetch all available listing scores, sorted descending.
-  // Supabase default limit is 1000 — must paginate to get all scores.
-  const allScores: number[] = [];
-  const PAGE_SIZE = 1000;
-  let offset = 0;
-  let hasMore = true;
-
-  while (hasMore) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: page, error: pageErr } = await (serviceClient.from('listings') as any)
-      .select('featured_score')
-      .eq('is_available', true)
-      .not('featured_score', 'is', null)
-      .gt('featured_score', 0)
-      .order('featured_score', { ascending: false })
-      .range(offset, offset + PAGE_SIZE - 1);
-
-    if (pageErr || !page || page.length === 0) {
-      hasMore = false;
-    } else {
-      for (const r of page) {
-        allScores.push(r.featured_score);
-      }
-      offset += PAGE_SIZE;
-      if (page.length < PAGE_SIZE) hasMore = false;
-    }
-  }
-
-  if (allScores.length === 0) {
-    return { p10: 100, p25: 50, p50: 20, sortedScores: [], totalCount: 0 };
-  }
-
-  const scores = allScores;
-  const p10 = scores[Math.floor(scores.length * 0.1)] ?? 100;
-  const p25 = scores[Math.floor(scores.length * 0.25)] ?? 50;
-  const p50 = scores[Math.floor(scores.length * 0.5)] ?? 20;
-
-  percentileCache = { p10, p25, p50, sortedScores: scores, totalCount: scores.length, cachedAt: Date.now() };
-  return { p10, p25, p50, sortedScores: scores, totalCount: scores.length };
-}
