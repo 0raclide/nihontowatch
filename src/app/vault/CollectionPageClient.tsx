@@ -98,13 +98,28 @@ export function CollectionPageClient() {
     [items, artisanNames]
   );
 
+  // Adapt collection items for QuickView navigation — preserves ALL JSONB sections
+  // (sayagaki, koshirae, provenance, kiwame, kanto_hibisho, etc.) that the DisplayItem
+  // mapper drops. openQuickView prefers listings[] over the passed listing arg, so these
+  // must carry the full data for buildContentStream's section indicators to work.
+  const quickViewListings = useMemo(
+    () => items.map(item => ({
+      ...item,
+      id: item.item_uuid,
+      url: '',
+      dealer_id: 0,
+      first_seen_at: item.created_at,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any)),
+    [items]
+  );
+
   // Set adapted listings in QuickView context for J/K navigation
   useEffect(() => {
-    if (adaptedItems.length > 0) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      quickView.setListings(adaptedItems as any[]);
+    if (quickViewListings.length > 0) {
+      quickView.setListings(quickViewListings);
     }
-  }, [adaptedItems, quickView.setListings]);
+  }, [quickViewListings, quickView.setListings]);
 
   // Fetch collection items
   const fetchItems = useCallback(async (currentFilters: CollectionFilters) => {
