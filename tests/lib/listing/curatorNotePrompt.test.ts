@@ -97,7 +97,7 @@ describe('buildUserPrompt — artist overview section', () => {
     expect(prompt).toContain('[ARTIST STATISTICAL OVERVIEW]');
     expect(prompt).toContain('Form distribution');
     expect(prompt).toContain('katana:');
-    expect(prompt).toContain('Mei distribution');
+    expect(prompt).toContain('Extant signed works');
     expect(prompt).toContain('School lineage: Yamato → Soshu');
     expect(prompt).toContain('Sadamune');
     expect(prompt).toContain('Matsudaira');
@@ -115,7 +115,7 @@ describe('buildUserPrompt — artist overview section', () => {
     const prompt = buildUserPrompt(ctx, 'ja');
     expect(prompt).toContain('【作者統計概要】');
     expect(prompt).toContain('形状分布');
-    expect(prompt).toContain('銘分布');
+    expect(prompt).toContain('現存在銘作品');
     expect(prompt).not.toContain('指定ランキング');
     expect(prompt).toContain('流派系譜');
     expect(prompt).toContain('門弟');
@@ -133,6 +133,15 @@ describe('buildUserPrompt — artist overview section', () => {
     const prompt = buildUserPrompt(ctx, 'en');
     // katana: 20/53 ≈ 38%
     expect(prompt).toMatch(/katana: \d+%/);
+  });
+
+  it('renders mei as signed percentage only, not full breakdown', () => {
+    const ctx = makeMinimalContext({ artist_overview: overview });
+    const prompt = buildUserPrompt(ctx, 'en');
+    // zaimei: 15 of 53 total ≈ 28%
+    expect(prompt).toContain('Extant signed works: 28% (15 of 53)');
+    // Should NOT contain mumei count or other mei types
+    expect(prompt).not.toContain('mumei');
   });
 });
 
@@ -176,5 +185,17 @@ describe('buildSystemPrompt — prompt rules', () => {
     const prompt = buildUserPrompt(ctx, 'en');
     expect(prompt).not.toContain('Designation factor');
     expect(prompt).not.toContain('1.52');
+  });
+
+  it('includes mei statistics rule about signed vs unsigned (EN)', () => {
+    const prompt = buildSystemPrompt('en');
+    expect(prompt).toContain('MEI STATISTICS');
+    expect(prompt).toContain('NEVER say "X% are unsigned"');
+  });
+
+  it('includes mei statistics rule about signed vs unsigned (JA)', () => {
+    const prompt = buildSystemPrompt('ja');
+    expect(prompt).toContain('銘の統計');
+    expect(prompt).toContain('無銘の割合から');
   });
 });
