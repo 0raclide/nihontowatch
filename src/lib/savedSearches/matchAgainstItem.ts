@@ -203,28 +203,30 @@ export function aggregateCriteria(
   const itemSchoolLower = (item.school ?? '').toLowerCase();
   const itemTosoguSchoolLower = (item.tosogu_school ?? '').toLowerCase();
 
+  // Canonical display names — all search variants merge under the item's actual value
+  const itemTypeDisplay = itemTypeLower.charAt(0).toUpperCase() + itemTypeLower.slice(1);
+  const itemCertDisplay = itemCertLower.charAt(0).toUpperCase() + itemCertLower.slice(1);
+
   for (const search of matchResult.matchedSearches) {
     const c = search.search_criteria;
     const uid = search.user_id;
     if (!c || !uid) continue;
 
-    // Item types — only include values that match the item's type
+    // Item types — normalize to item's actual type so variants merge
     if (c.itemTypes && Array.isArray(c.itemTypes)) {
-      for (const t of c.itemTypes) {
-        if (String(t).toLowerCase() !== itemTypeLower) continue;
-        const key = String(t).charAt(0).toUpperCase() + String(t).slice(1).toLowerCase();
-        if (!itemTypeCounts.has(key)) itemTypeCounts.set(key, new Set());
-        itemTypeCounts.get(key)!.add(uid);
+      const hasMatch = c.itemTypes.some((t: string) => String(t).toLowerCase() === itemTypeLower);
+      if (hasMatch) {
+        if (!itemTypeCounts.has(itemTypeDisplay)) itemTypeCounts.set(itemTypeDisplay, new Set());
+        itemTypeCounts.get(itemTypeDisplay)!.add(uid);
       }
     }
 
-    // Certifications — only include values that match via cert alias expansion
+    // Certifications — normalize to item's actual cert so aliases merge
     if (c.certifications && Array.isArray(c.certifications) && itemCertLower) {
-      for (const cert of c.certifications) {
-        if (!certMatches(String(cert), itemCertLower)) continue;
-        const key = String(cert).charAt(0).toUpperCase() + String(cert).slice(1).toLowerCase();
-        if (!certCounts.has(key)) certCounts.set(key, new Set());
-        certCounts.get(key)!.add(uid);
+      const hasMatch = c.certifications.some((cert: string) => certMatches(String(cert), itemCertLower));
+      if (hasMatch) {
+        if (!certCounts.has(itemCertDisplay)) certCounts.set(itemCertDisplay, new Set());
+        certCounts.get(itemCertDisplay)!.add(uid);
       }
     }
 

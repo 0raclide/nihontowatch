@@ -207,17 +207,19 @@ describe('aggregateCriteria', () => {
     expect(summary.facets.certifications[0].count).toBe(2);
   });
 
-  it('includes cert alias matches (Tokubetsu Juyo → Tokuju item)', () => {
+  it('merges cert aliases under item cert name (Tokubetsu Juyo + Tokuju → Tokuju ×2)', () => {
     const tokujuItem = makeItem({ cert_type: 'Tokuju' });
     const searches = [
       makeSearch({ certifications: ['Tokubetsu Juyo'] }, 'user-1'),
-      makeSearch({ certifications: ['Juyo bijutsuhin'] }, 'user-2'), // no alias → filtered
+      makeSearch({ certifications: ['Tokuju'] }, 'user-2'),
+      makeSearch({ certifications: ['Juyo bijutsuhin'] }, 'user-3'), // no alias → filtered
     ];
-    const matchResult = { matchCount: 2, matchedSearches: searches };
+    const matchResult = { matchCount: 3, matchedSearches: searches };
     const summary = aggregateCriteria(matchResult, tokujuItem);
 
     expect(summary.facets.certifications).toHaveLength(1);
-    expect(summary.facets.certifications[0].value).toBe('Tokubetsu juyo');
+    expect(summary.facets.certifications[0].value).toBe('Tokuju');
+    expect(summary.facets.certifications[0].count).toBe(2); // user-1 + user-2 merged
   });
 
   it('aggregates schools', () => {
