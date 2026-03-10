@@ -98,6 +98,7 @@ export function QuickView() {
   const isCollection = source === 'collection';
   const isDealer = source === 'dealer';
   const isShowcase = source === 'showcase';
+  const useContentStream = isDealer || isCollection;
 
   // Track when the sheet state last changed for dwell time calculation
   const sheetStateChangeTimeRef = useRef<number>(Date.now());
@@ -290,11 +291,11 @@ export function QuickView() {
     [videoItems]
   );
 
-  // Grouped media — dealer: sections (koshirae, sayagaki, etc.); browse: flat list
+  // Grouped media — dealer/collection: sections (koshirae, sayagaki, etc.); browse: flat list
   const groupedMedia = useMemo(
-    () => collectGroupedMedia(displayImages, currentListing, detailLoaded, videoMediaItems, isDealer),
+    () => collectGroupedMedia(displayImages, currentListing, detailLoaded, videoMediaItems, useContentStream),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [displayImages, currentListing?.id, detailLoaded, videoMediaItems, isDealer,
+    [displayImages, currentListing?.id, detailLoaded, videoMediaItems, useContentStream,
      currentListing?.sayagaki, currentListing?.hakogaki, currentListing?.koshirae,
      currentListing?.provenance, currentListing?.kanto_hibisho]
   );
@@ -315,14 +316,14 @@ export function QuickView() {
   }
   const progressTotal = progressTotalRef.current;
 
-  // Content stream for dealer QuickView — replaces grouped media scroller
+  // Content stream for dealer/collection QuickView — replaces grouped media scroller
   // MUST be before the early return — hooks cannot be conditional
   const contentStreamResult = useMemo(
-    () => isDealer && currentListing
+    () => useContentStream && currentListing
       ? buildContentStream(displayImages, currentListing, true, videoMediaItems)
       : null,
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [isDealer, displayImages, currentListing?.id, videoMediaItems,
+    [useContentStream, displayImages, currentListing?.id, videoMediaItems,
      currentListing?.sayagaki, currentListing?.hakogaki, currentListing?.koshirae,
      currentListing?.provenance, currentListing?.kiwame, currentListing?.kanto_hibisho,
      currentListing?.ai_curator_note_en, currentListing?.ai_curator_note_ja,
@@ -576,7 +577,7 @@ export function QuickView() {
                 onBackToPhotos={toggleStudyMode}
               />
             </div>
-          ) : isDealer && contentStreamResult ? (
+          ) : useContentStream && contentStreamResult ? (
             <div
               ref={setMobileScrollerRef}
               data-testid="mobile-image-scroller"
@@ -648,7 +649,7 @@ export function QuickView() {
             dealerSlot={mobileDealerSlot}
             descriptionSlot={mobileDescriptionSlot}
             ctaSlot={mobileCtaSlot}
-            variant={isDealer ? 'stats' : 'full'}
+            variant={useContentStream ? 'stats' : 'full'}
             sections={contentStreamResult?.sections}
             onSectionClick={handleSectionClick}
             activeSection={mobileActiveSection}
@@ -672,8 +673,8 @@ export function QuickView() {
                 onBackToPhotos={toggleStudyMode}
               />
             </div>
-          ) : isDealer && contentStreamResult ? (
-            /* Dealer content stream — interleaved media + text in left panel */
+          ) : useContentStream && contentStreamResult ? (
+            /* Content stream — interleaved media + text in left panel (dealer + collection) */
             <div
               ref={scrollContainerRef}
               data-testid="desktop-image-scroller"
@@ -729,8 +730,8 @@ export function QuickView() {
             </div>
           )}
 
-          {/* Content Section — StatsCard for dealer, QuickViewContent for browse/collection */}
-          {isDealer && contentStreamResult ? (
+          {/* Content Section — StatsCard for dealer/collection, QuickViewContent for browse */}
+          {useContentStream && contentStreamResult ? (
             <div data-testid="desktop-content-panel" className={`${QUICKVIEW_LAYOUT.rightPanel.dealer.width} ${QUICKVIEW_LAYOUT.rightPanel.dealer.maxWidth} border-l border-border bg-cream flex flex-col min-h-0 overflow-hidden`}>
               <AlertContextBanner />
               {streamImageCount > 1 && (
