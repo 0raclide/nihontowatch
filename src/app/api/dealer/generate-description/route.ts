@@ -24,11 +24,12 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json();
 
-  // Validate cert type — only Juyo / Tokubetsu Juyo
+  // Validate cert type — only Juyo / Tokubetsu Juyo (Tokuju)
   const certType = body.cert_type;
-  if (certType !== 'Juyo' && certType !== 'Tokubetsu Juyo') {
+  const ALLOWED_CERT_TYPES = ['Juyo', 'Tokuju', 'Tokubetsu Juyo', 'juyo', 'tokuju'];
+  if (!ALLOWED_CERT_TYPES.includes(certType)) {
     return NextResponse.json(
-      { error: 'Scholar\'s notes are only available for Juyo and Tokubetsu Juyo items' },
+      { error: `Scholar's notes are only available for Juyo and Tokubetsu Juyo items, but the item is marked as ${certType}` },
       { status: 400 }
     );
   }
