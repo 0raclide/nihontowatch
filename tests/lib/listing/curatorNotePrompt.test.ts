@@ -55,17 +55,17 @@ describe('buildUserPrompt — research notes section', () => {
   it('includes research notes section when data present (EN)', () => {
     const ctx = makeMinimalContext({ research_notes: 'Published in Nihonto Taikan vol. 3' });
     const prompt = buildUserPrompt(ctx, 'en');
-    expect(prompt).toContain('[RESEARCH NOTES (Collector/Dealer Provided)]');
+    expect(prompt).toContain('[RESEARCH NOTES (Collector/Dealer Provided)');
     expect(prompt).toContain('Published in Nihonto Taikan vol. 3');
-    expect(prompt).toContain('unverified information');
+    expect(prompt).toContain('MUST be integrated');
   });
 
   it('includes research notes section when data present (JA)', () => {
     const ctx = makeMinimalContext({ research_notes: '日本刀大観第3巻に掲載' });
     const prompt = buildUserPrompt(ctx, 'ja');
-    expect(prompt).toContain('【調査ノート（出品者・所蔵者提供）】');
+    expect(prompt).toContain('【調査ノート（出品者・所蔵者提供）');
     expect(prompt).toContain('日本刀大観第3巻に掲載');
-    expect(prompt).toContain('独立した検証は行われていません');
+    expect(prompt).toContain('積極的に反映');
   });
 
   it('omits research notes section when null', () => {
@@ -98,10 +98,16 @@ describe('buildUserPrompt — artist overview section', () => {
     expect(prompt).toContain('Form distribution');
     expect(prompt).toContain('katana:');
     expect(prompt).toContain('Mei distribution');
-    expect(prompt).toContain('Elite ranking');
     expect(prompt).toContain('School lineage: Yamato → Soshu');
     expect(prompt).toContain('Sadamune');
     expect(prompt).toContain('Matsudaira');
+  });
+
+  it('does NOT include elite percentile in prompt (internal metric)', () => {
+    const ctx = makeMinimalContext({ artist_overview: overview });
+    const prompt = buildUserPrompt(ctx, 'en');
+    expect(prompt).not.toContain('Elite ranking');
+    expect(prompt).not.toContain('99.2');
   });
 
   it('includes artist overview section when data present (JA)', () => {
@@ -110,7 +116,7 @@ describe('buildUserPrompt — artist overview section', () => {
     expect(prompt).toContain('【作者統計概要】');
     expect(prompt).toContain('形状分布');
     expect(prompt).toContain('銘分布');
-    expect(prompt).toContain('指定ランキング');
+    expect(prompt).not.toContain('指定ランキング');
     expect(prompt).toContain('流派系譜');
     expect(prompt).toContain('門弟');
     expect(prompt).toContain('主要所蔵者');
@@ -130,20 +136,45 @@ describe('buildUserPrompt — artist overview section', () => {
   });
 });
 
-describe('buildSystemPrompt — research notes rule', () => {
-  it('includes rule 6 about research notes attribution (EN)', () => {
+describe('buildSystemPrompt — prompt rules', () => {
+  it('includes rule about research notes integration (EN)', () => {
     const prompt = buildSystemPrompt('en');
-    expect(prompt).toContain('Research notes from collectors/dealers are third-party claims');
+    expect(prompt).toContain('Research notes from collectors/dealers are IMPORTANT');
     expect(prompt).toContain('according to the consignor');
+    expect(prompt).toContain('integrate the substance');
   });
 
-  it('includes rule 6 about research notes attribution (JA)', () => {
+  it('includes rule about research notes integration (JA)', () => {
     const prompt = buildSystemPrompt('ja');
-    expect(prompt).toContain('所蔵者・出品者からの調査ノートは第三者の主張');
+    expect(prompt).toContain('調査ノートは重要な文脈情報');
+    expect(prompt).toContain('積極的に本文に織り込む');
   });
 
-  it('includes artist statistical distributions as citeable data (EN)', () => {
+  it('includes setsumei anonymity rule (EN)', () => {
     const prompt = buildSystemPrompt('en');
-    expect(prompt).toContain('artist statistical distributions');
+    expect(prompt).toContain('SETSUMEI ARE ANONYMOUS');
+    expect(prompt).toContain('NEVER write "written by');
+  });
+
+  it('includes setsumei anonymity rule (JA)', () => {
+    const prompt = buildSystemPrompt('ja');
+    expect(prompt).toContain('説明書は無記名である');
+  });
+
+  it('forbids citing raw designation factor and scores (EN)', () => {
+    const prompt = buildSystemPrompt('en');
+    expect(prompt).toContain('NEVER cite raw designation factor');
+  });
+
+  it('forbids citing raw designation factor and scores (JA)', () => {
+    const prompt = buildSystemPrompt('ja');
+    expect(prompt).toContain('指定係数・エリートパーセンタイル等の内部スコアは絶対に引用しない');
+  });
+
+  it('does NOT pass designation factor in artisan data', () => {
+    const ctx = makeMinimalContext();
+    const prompt = buildUserPrompt(ctx, 'en');
+    expect(prompt).not.toContain('Designation factor');
+    expect(prompt).not.toContain('1.52');
   });
 });
