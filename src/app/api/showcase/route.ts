@@ -54,8 +54,7 @@ export async function GET(request: NextRequest) {
 
     // Build query (no profile join — collection_items has no direct FK to profiles)
     let query = collectionItemsFrom(serviceClient)
-      .select('*', { count: 'exact' })
-      .neq('owner_id', user.id); // Exclude own items
+      .select('*', { count: 'exact' });
 
     // Tab filter — enforce tier even if tab param is sent directly
     if (tab === 'dealers') {
