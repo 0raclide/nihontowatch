@@ -17,10 +17,11 @@ export function ShowcasePageClient() {
   const { t } = useLocale();
   const { currency, exchangeRates } = useCurrency();
   const quickView = useQuickView();
-  const { isDealer } = useSubscription();
+  const { isDealer, isInnerCircle } = useSubscription();
   const canSeeDealerTab = isDealer;
+  const canSeeShowcase = isInnerCircle || isDealer;
 
-  const [activeTab, setActiveTab] = useState<ShowcaseTab>('community');
+  const [activeTab, setActiveTab] = useState<ShowcaseTab>(isDealer ? 'dealers' : 'community');
   const [items, setItems] = useState<DisplayItem[]>([]);
   const [total, setTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(true);

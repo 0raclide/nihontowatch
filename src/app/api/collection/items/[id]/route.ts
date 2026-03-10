@@ -56,7 +56,7 @@ export async function GET(
       if (item.visibility === 'dealers' && tier !== 'dealer') {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
       }
-      if (item.visibility === 'collectors' && tier === 'free') {
+      if (item.visibility === 'collectors' && tier !== 'inner_circle') {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
       }
     }

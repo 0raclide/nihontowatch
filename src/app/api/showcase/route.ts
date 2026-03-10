@@ -34,15 +34,14 @@ export async function GET(request: NextRequest) {
 
     const tier = (profile?.subscription_tier ?? 'free') as SubscriptionTier;
 
-    if (tier === 'free') {
-      return NextResponse.json({ error: 'Subscription required' }, { status: 403 });
-    }
+    // Yuhinkai visibility = inner_circle only; Galleries visibility = dealer only
+    const visibilityFilter: string[] = [];
+    if (tier === 'inner_circle') visibilityFilter.push('collectors');
+    if (tier === 'dealer') visibilityFilter.push('dealers');
 
-    // Determine visible visibility levels
-    // Galleries (dealers) visibility is dealer-tier only — inner_circle is Yuhinkai, not a gallery
-    const visibilityFilter: string[] = tier === 'dealer'
-      ? ['collectors', 'dealers']
-      : ['collectors'];
+    if (visibilityFilter.length === 0) {
+      return NextResponse.json({ data: [], total: 0, page: 1, limit: PAGE_SIZE });
+    }
 
     // Parse query params
     const url = request.nextUrl;
