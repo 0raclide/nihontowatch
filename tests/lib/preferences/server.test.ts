@@ -30,9 +30,13 @@ vi.mock('@/lib/supabase/server', () => ({
   createServiceClient: vi.fn(() => mockServiceClient),
 }));
 
-vi.mock('@/types/subscription', () => ({
-  isTrialModeActive: vi.fn(() => false),
-}));
+vi.mock('@/types/subscription', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/types/subscription')>();
+  return {
+    ...actual,
+    isTrialModeActive: vi.fn(() => false),
+  };
+});
 
 import { getUserSubscription } from '@/lib/subscription/server';
 import { LISTING_FILTERS } from '@/lib/constants';

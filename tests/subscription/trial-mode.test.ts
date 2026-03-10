@@ -253,7 +253,7 @@ describe('getUserSubscription isDelayed in trial mode', () => {
     const result = await getUserSubscription();
 
     expect(result.tier).toBe('free');
-    expect(result.isDelayed).toBe(true); // Delay applies when trial is off
+    expect(result.isDelayed).toBe(false); // fresh_data is free — no delay even with trial off
   });
 });
 

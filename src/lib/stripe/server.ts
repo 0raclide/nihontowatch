@@ -220,6 +220,16 @@ export function constructWebhookEvent(
   return stripe.webhooks.constructEvent(payload, signature, webhookSecret);
 }
 
+/** Map removed tier names to valid tiers. Prevents CHECK constraint violations from legacy Stripe metadata. */
+export function mapLegacyTier(rawTier: string): SubscriptionTier {
+  const LEGACY_MAP: Record<string, SubscriptionTier> = {
+    enthusiast: 'free',
+    collector: 'free',
+    yuhinkai: 'free',
+  };
+  return LEGACY_MAP[rawTier] ?? (rawTier as SubscriptionTier);
+}
+
 /**
  * Extract subscription details from Stripe subscription
  */
@@ -233,7 +243,7 @@ export function extractSubscriptionDetails(subscription: Stripe.Subscription): {
   let tier: SubscriptionTier = 'free';
 
   if (subscription.metadata?.tier) {
-    tier = subscription.metadata.tier as SubscriptionTier;
+    tier = mapLegacyTier(subscription.metadata.tier);
   } else if (subscription.items.data[0]?.price?.id) {
     tier = getTierFromPriceId(subscription.items.data[0].price.id) || 'free';
   }

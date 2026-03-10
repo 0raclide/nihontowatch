@@ -242,8 +242,8 @@ describe('Browse API subscription response fields', () => {
     const res = await fetch(`${API_BASE}/api/browse?limit=1`);
     const data = await res.json();
 
-    // Anonymous users should see delayed data
-    expect(data.isDelayed).toBe(true);
+    // fresh_data is free — anonymous users are not delayed
+    expect(data.isDelayed).toBe(false);
     expect(data.subscriptionTier).toBe('free');
   });
 });
@@ -389,7 +389,7 @@ describe('CRITICAL: getUserSubscription behavior', () => {
     const result = await getUserSubscription();
 
     expect(result.tier).toBe('free');
-    expect(result.isDelayed).toBe(true);
+    expect(result.isDelayed).toBe(false); // fresh_data is free — no delay even without trial mode
     expect(result.userId).toBeNull();
   });
 
@@ -558,8 +558,8 @@ describe('CRITICAL: getUserSubscription behavior', () => {
     const { getUserSubscription } = await import('@/lib/subscription/server');
     const result = await getUserSubscription();
 
-    // Inactive subscription = free tier
+    // Inactive subscription = free tier, but fresh_data is free so no delay
     expect(result.tier).toBe('free');
-    expect(result.isDelayed).toBe(true);
+    expect(result.isDelayed).toBe(false);
   });
 });

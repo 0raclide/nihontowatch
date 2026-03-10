@@ -6,7 +6,7 @@
 
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import type { SubscriptionTier, SubscriptionStatus } from '@/types/subscription';
-import { isTrialModeActive } from '@/types/subscription';
+import { isTrialModeActive, canAccessFeature } from '@/types/subscription';
 
 /**
  * 7 days in milliseconds - data delay for free tier
@@ -37,7 +37,7 @@ export async function getUserSubscription(): Promise<{
         tier: 'free',
         status: 'inactive',
         userId: null,
-        isDelayed: isTrialModeActive() ? false : true,
+        isDelayed: isTrialModeActive() ? false : !canAccessFeature('free', 'fresh_data'),
         isAdmin: false,
         showAllPrices: true,
       };
@@ -123,7 +123,7 @@ export async function getUserSubscription(): Promise<{
       tier: effectiveTier,
       status,
       userId: user.id,
-      isDelayed: isTrialModeActive() ? false : effectiveTier === 'free',
+      isDelayed: isTrialModeActive() ? false : !canAccessFeature(effectiveTier, 'fresh_data'),
       isAdmin: false,
       showAllPrices,
     };
@@ -133,7 +133,7 @@ export async function getUserSubscription(): Promise<{
       tier: 'free',
       status: 'inactive',
       userId: null,
-      isDelayed: isTrialModeActive() ? false : true,
+      isDelayed: isTrialModeActive() ? false : !canAccessFeature('free', 'fresh_data'),
       isAdmin: false,
       showAllPrices: true,
     };
