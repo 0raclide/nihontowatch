@@ -24,20 +24,22 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get user's tier
+    // Get user's tier and admin status
     const serviceClient = createServiceClient();
     const { data: profile } = await serviceClient
       .from('profiles')
-      .select('subscription_tier')
+      .select('subscription_tier, is_admin')
       .eq('id', user.id)
-      .single() as { data: { subscription_tier: string } | null };
+      .single() as { data: { subscription_tier: string; is_admin?: boolean } | null };
 
     const tier = (profile?.subscription_tier ?? 'free') as SubscriptionTier;
+    const isAdmin = profile?.is_admin === true;
 
     // Yuhinkai visibility = inner_circle only; Galleries visibility = dealer only
+    // Admins get full access (both visibility levels)
     const visibilityFilter: string[] = [];
-    if (tier === 'inner_circle') visibilityFilter.push('collectors');
-    if (tier === 'dealer') visibilityFilter.push('dealers');
+    if (isAdmin || tier === 'inner_circle') visibilityFilter.push('collectors');
+    if (isAdmin || tier === 'dealer') visibilityFilter.push('dealers');
 
     if (visibilityFilter.length === 0) {
       return NextResponse.json({ data: [], total: 0, page: 1, limit: PAGE_SIZE });
@@ -58,7 +60,7 @@ export async function GET(request: NextRequest) {
 
     // Tab filter — enforce tier even if tab param is sent directly
     if (tab === 'dealers') {
-      if (tier !== 'dealer') {
+      if (tier !== 'dealer' && !isAdmin) {
         return NextResponse.json({ data: [], total: 0, page, limit });
       }
       query = query.in('visibility', ['dealers']);
