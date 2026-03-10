@@ -92,8 +92,8 @@ export const FEATURE_MIN_TIER: Record<Feature, SubscriptionTier> = {
   line_access: 'inner_circle',
   // Dealer features
   dealer_analytics: 'dealer',
-  // Yuhinkai features
-  collection_access: 'yuhinkai',
+  // Inner Circle features (collection)
+  collection_access: 'inner_circle',
 };
 
 /**
@@ -128,9 +128,9 @@ export function canAccessFeature(tier: SubscriptionTier, feature: Feature): bool
     return requiredTier === 'enthusiast' || requiredTier === 'dealer' || feature === 'collection_access';
   }
 
-  // Special case: yuhinkai has access to enthusiast features + collection_access
+  // Special case: yuhinkai has access to enthusiast features
   if (tier === 'yuhinkai') {
-    return requiredTier === 'enthusiast' || feature === 'collection_access';
+    return requiredTier === 'enthusiast';
   }
 
   const userRank = TIER_RANK[tier];

@@ -28,17 +28,9 @@ describe('checkCollectionAccess', () => {
     expect(res!.status).toBe(403);
   });
 
-  it('allows yuhinkai + active', async () => {
+  it('denies yuhinkai (collection restricted to inner_circle+)', async () => {
     const res = await checkCollectionAccess(
       mockSupabase({ subscription_tier: 'yuhinkai', subscription_status: 'active', role: 'user' }),
-      'user-1'
-    );
-    expect(res).toBeNull();
-  });
-
-  it('denies yuhinkai + inactive', async () => {
-    const res = await checkCollectionAccess(
-      mockSupabase({ subscription_tier: 'yuhinkai', subscription_status: 'inactive', role: 'user' }),
       'user-1'
     );
     expect(res).not.toBeNull();
@@ -61,14 +53,23 @@ describe('checkCollectionAccess', () => {
     expect(res).toBeNull();
   });
 
-  it.each(['enthusiast', 'collector', 'inner_circle'] as const)(
-    'allows %s tier (rank >= yuhinkai)',
+  it('allows inner_circle tier', async () => {
+    const res = await checkCollectionAccess(
+      mockSupabase({ subscription_tier: 'inner_circle', subscription_status: 'active', role: 'user' }),
+      'user-1'
+    );
+    expect(res).toBeNull();
+  });
+
+  it.each(['enthusiast', 'collector'] as const)(
+    'denies %s tier (below inner_circle)',
     async (tier) => {
       const res = await checkCollectionAccess(
         mockSupabase({ subscription_tier: tier, subscription_status: 'active', role: 'user' }),
         'user-1'
       );
-      expect(res).toBeNull();
+      expect(res).not.toBeNull();
+      expect(res!.status).toBe(403);
     }
   );
 

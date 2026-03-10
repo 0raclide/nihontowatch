@@ -1,8 +1,8 @@
 # Collection Manager — Architecture & Vision
 
-**Last updated**: 2026-02-27
-**Status**: V1 live at nihontowatch.com/collection — filter sidebar rebuilt to match browse variant B
-**Migration**: `057_collection_tables.sql` applied
+**Last updated**: 2026-03-10
+**Status**: V2 live at nihontowatch.com/vault — unified collection architecture (Phases 1-6 complete)
+**Migration**: `119-138` (unified collection + showcase). V1 tables (`user_collection_items`, `user_collection_folders`) dropped by migration 133.
 **Storage bucket**: `collection-images` (public, 5MB limit, JPEG/PNG/WebP)
 
 ---
@@ -20,7 +20,7 @@ The collection is a **private gallery**, not a database. It should feel like wal
 
 **Key differentiator**: Yuhinkai catalog search — certified Juyo/Tokuju items can be looked up and linked from authoritative NBTHK data. No other collector tool has this.
 
-**Access**: Free unlimited for all authenticated users. No tier gating.
+**Access**: Gated by `yuhinkai` subscription tier (or higher). During trial mode (`NEXT_PUBLIC_TRIAL_MODE=true`), all authenticated users can access. See `docs/HANDOFF_YUHINKAI_TIER.md`.
 
 ---
 
@@ -187,68 +187,27 @@ One component tree, three skins. The `source` discriminator on `DisplayItem` con
 
 ## Data Model
 
-### `user_collection_items` table
+### `collection_items` table (V2 — migration 120)
 
-| Column | Type | Default | Notes |
-|--------|------|---------|-------|
-| `id` | UUID | `gen_random_uuid()` | PK |
-| `user_id` | UUID | — | FK → auth.users, ON DELETE CASCADE |
-| `source_listing_id` | INTEGER | null | FK → listings, "I Own This" back-reference |
-| `item_type` | TEXT | null | katana, tsuba, etc. |
-| `title` | TEXT | null | User's custom title |
-| `artisan_id` | TEXT | null | Yuhinkai code (e.g., MAS590) |
-| `artisan_display_name` | TEXT | null | Cached display name |
-| `cert_type` | TEXT | null | Juyo, Hozon, Tokubetsu Juyo, etc. |
-| `cert_session` | INTEGER | null | Session/volume number |
-| `cert_organization` | TEXT | null | NBTHK, NTHK |
-| `smith` | TEXT | null | Swordsmith or tosogu maker name |
-| `school` | TEXT | null | |
-| `province` | TEXT | null | |
-| `era` | TEXT | null | Koto, Shinto, Shinshinto, Gendai |
-| `mei_type` | TEXT | null | signed, mumei, gimei, etc. |
-| `nagasa_cm` | NUMERIC | null | Blade length in cm |
-| `sori_cm` | NUMERIC | null | Curvature in cm |
-| `motohaba_cm` | NUMERIC | null | Width at base in cm |
-| `sakihaba_cm` | NUMERIC | null | Width at tip in cm |
-| `price_paid` | NUMERIC | null | Purchase price |
-| `price_paid_currency` | TEXT | null | JPY, USD, EUR |
-| `current_value` | NUMERIC | null | Estimated current value |
-| `current_value_currency` | TEXT | null | |
-| `acquired_date` | DATE | null | |
-| `acquired_from` | TEXT | null | Free text (dealer, auction, etc.) |
-| `condition` | TEXT | `'good'` | mint/excellent/good/fair/project |
-| `status` | TEXT | `'owned'` | owned/sold/lent/consignment |
-| `notes` | TEXT | null | |
-| `images` | JSONB | `'[]'` | Array of full public URLs or external URLs |
-| `catalog_reference` | JSONB | null | `{collection, volume, item_number, object_uuid}` |
-| `is_public` | BOOLEAN | `false` | |
-| `folder_id` | UUID | null | FK → user_collection_folders (Phase 2) |
-| `sort_order` | INTEGER | `0` | |
-| `created_at` | TIMESTAMPTZ | `now()` | |
-| `updated_at` | TIMESTAMPTZ | `now()` | Auto-updated via trigger |
+The unified collection table. See `docs/DESIGN_UNIFIED_COLLECTION.md` for full schema (56 shared columns with `listings`). Key columns:
 
-### `user_collection_folders` table (schema only, UI deferred)
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | BIGSERIAL | PK |
+| `item_uuid` | UUID | Stable identity across collection↔listing transit |
+| `owner_id` | UUID | FK → auth.users |
+| `source_listing_id` | INTEGER | "I Own This" back-reference |
+| `visibility` | TEXT | `'private'` (default), `'collectors'`, `'dealers'` |
+| `personal_notes` | TEXT | Owner's private notes |
+| All `ItemDataFields` | various | 56 shared columns (item_type, title, smith, cert_type, images, etc.) |
 
-| Column | Type | Default |
-|--------|------|---------|
-| `id` | UUID | `gen_random_uuid()` |
-| `user_id` | UUID | FK → auth.users |
-| `name` | TEXT | NOT NULL |
-| `description` | TEXT | null |
-| `cover_image_url` | TEXT | null |
-| `sort_order` | INTEGER | `0` |
-| `created_at` | TIMESTAMPTZ | `now()` |
-| `updated_at` | TIMESTAMPTZ | `now()` |
+**V1 tables dropped**: `user_collection_items` and `user_collection_folders` (migration 133). `collection_items` replaced them with a richer schema that shares columns with `listings` for promote/delist transit.
 
-### RLS Policies
+### RLS Policies (migration 121)
 
-- **Owner full access**: SELECT/INSERT/UPDATE/DELETE where `auth.uid() = user_id`
-- **Public read**: SELECT where `is_public = true`
+- **Owner full access**: SELECT/INSERT/UPDATE/DELETE where `auth.uid() = owner_id`
+- **Showcase read**: SELECT where visibility matches viewer's tier (collectors/dealers)
 - **Service role bypass**: ALL for admin operations
-
-### Indexes
-
-`user_id`, `item_type`, `cert_type`, `status`, `condition`, `source_listing_id`, `artisan_id` on items; `user_id` on folders.
 
 ### Supabase Storage: `collection-images` bucket
 

@@ -4,7 +4,7 @@
  * Checks that the authenticated user has the `collection_access` feature.
  * Call after verifying authentication (supabase.auth.getUser()).
  *
- * Required tiers: yuhinkai, dealer, admin, or trial mode active.
+ * Required tiers: inner_circle, dealer, admin, or trial mode active.
  */
 
 import { NextResponse } from 'next/server';

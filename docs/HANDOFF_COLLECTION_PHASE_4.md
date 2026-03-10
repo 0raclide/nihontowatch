@@ -1,163 +1,87 @@
-# Handoff: Unified Collection Phase 4 — Open to All Users
+# Handoff: Unified Collection Phase 4 — Inner Circle + Dealer Only
 
-**Date:** 2026-03-09
-**Prerequisite phases:** Phase 1 (rename), 2a-2d (DB + API + form + mapper), 3 (promote/delist) — all DONE.
+**Date:** 2026-03-10
+**Prerequisite phases:** Phase 1 (rename), 2a-2d (DB + API + form + mapper), 3 (promote/delist), 5 (route migration + cleanup) — all DONE.
 **Design doc:** `docs/DESIGN_UNIFIED_COLLECTION.md`
 **Memory file:** `memory/unified-collection.md`
 
 ---
 
-## Goal
+## Decision
 
-Open the collection (private item cataloging) to **all authenticated users**, not just dealers. Free, unlimited cataloging with zero friction. The only paywall remains "List for Sale" (dealer tier, already gated in Phase 3).
+The vault (personal collection manager at `/vault`) is restricted to **Inner Circle**, **Dealer**, and **Admin** users only. It is **not** open to all authenticated users.
 
-**Why this matters:** Cataloging is the engagement hook. Collectors who catalog items become daily users. The larger the personal catalog, the higher the switching cost. Revenue comes from dealers promoting items to browse — collectors cataloging for free is the funnel that drives dealer subscriptions.
-
----
-
-## Current State (What's Already Done)
-
-The infrastructure is 95% built. Phase 4 is primarily a **UI routing and visibility** task.
-
-### Already works for all authenticated users (no changes needed):
-- `POST/GET/PATCH/DELETE /api/collection/items` — auth-only, no tier check
-- All 6 image upload routes — auth-only
-- Video upload routes — auth-only
-- `DealerListingForm` with `context='collection'` — works without `dealer_id`
-- "I Own This" button (`BrowseCTA.tsx`) — no tier check, just needs feature flag
-- `collection_items` RLS — owner-based, works for any user
-- `collectionRowToDisplayItem()` mapper — source-agnostic
-
-### Intentionally dealer-only (keep restricted):
-- "List for Sale" button in `CollectionCTA.tsx` / `CollectionMobileCTA.tsx` — checks `isDealer`
-- `POST /api/collection/items/[id]/promote` — calls `verifyDealer()`
-- Dealer inventory tabs (For Sale / On Hold / Sold) — checks `isDealer`
-- `DealerCTA` / `DealerMobileCTA` — "Remove from Sale" button
-- `/api/dealer/listings` — all `verifyDealer()` gated
+**Rationale:** The vault is a premium feature. Opening it to all users is deferred until a future phase when the business case is clearer. For now it remains an exclusive perk of the highest-tier subscriptions plus dealers who need inventory management.
 
 ---
 
-## What Phase 4 Must Implement
+## Current Access Model
 
-### 1. Add "Collection" to Navigation (both platforms)
+| Tier | Collection Access | Mechanism |
+|------|------------------|-----------|
+| free | NO | Rank 0 < required rank 3 |
+| enthusiast | NO | Rank 1 < required rank 3 |
+| collector | NO | Rank 2 < required rank 3 |
+| yuhinkai | NO | Special case: enthusiast features only, no collection |
+| **inner_circle** | **YES** | Rank 3 = required rank 3 |
+| **dealer** | **YES** | Special case: explicit `collection_access` grant |
+| **admin** | **YES** | Role bypass in `checkCollectionAccess()` |
+| **trial mode** | **YES (all)** | `isTrialModeActive()` → all features free |
 
-**Mobile nav** (`src/components/layout/MobileNavDrawer.tsx`):
-- Lines 95-119 have dealer links inside `{isDealer && (...)}`.
-- Add a "Collection" link **outside** the isDealer block, visible to **all authenticated users**.
-- Place it in the authenticated user section (after "Saved Searches", before dealer links).
-- Use icon: folder or archive (not the storefront icon used for dealer links).
-- Link to `/collection`.
-- i18n key: `nav.collection` (add to both `en.json` and `ja.json`).
+### Key files
 
-**Desktop header** (`src/components/layout/Header.tsx`):
-- Currently has NO collection link at all.
-- Add "Collection" to the authenticated user menu/nav area.
-- Same visibility rule: any authenticated user.
-
-### 2. Enable "I Own This" for All Users
-
-Three files gate this feature:
-
-**`src/app/collection/page.tsx`** — ~~`NEXT_PUBLIC_COLLECTION_ENABLED` gate~~ **replaced by `yuhinkai` tier check** (2026-03-10). Collection access is now gated by `checkCollectionAccess()` in `src/lib/collection/access.ts`. The env var is dead code.
-
-**`src/components/listing/quickview-slots/BrowseCTA.tsx`** — ~~`NEXT_PUBLIC_COLLECTION_ENABLED` check~~ **replaced by `yuhinkai` tier check** (2026-03-10). Same as above.
-
-**`docs/HANDOFF_COLLECTION_V2_LISTINGGRID.md`** — references the env var, update if removing.
-
-### 3. Collection Page Tab Visibility for Non-Dealers
-
-**`src/app/collection/CollectionPageClient.tsx`** (line 347):
-```typescript
-{isDealer && (
-  <div className="flex gap-1 ...">
-    {/* tabs: Collection, For Sale, On Hold, Sold */}
-  </div>
-)}
-```
-
-Current behavior: non-dealers see NO tabs (just a flat list of their items).
-
-**Target behavior:** Non-dealers see only the "Collection" tab (or no tab bar at all since they only have one view). The For Sale / On Hold / Sold tabs remain dealer-only. No paywall prompt needed for the tabs themselves — the paywall is on the "List for Sale" CTA button inside QuickView.
-
-### 4. Empty State for New Collectors
-
-When a non-dealer user visits `/collection` for the first time (0 items), show a welcoming empty state:
-- "Start your collection" heading
-- Brief explanation: "Catalog swords and fittings you own. Track provenance, add photos, organize your collection."
-- Two CTAs:
-  - "Add Item" — opens the add form
-  - "Browse Listings" — links to `/browse` (where "I Own This" buttons live)
-
-The existing `AddItemCard` component may already serve this role — check current implementation.
-
-### 5. i18n Keys to Add
-
-```json
-// en.json
-"nav.collection": "Collection",
-
-// ja.json
-"nav.collection": "コレクション",
-```
-
-Any new empty-state copy needs both locales.
+| Component | Location |
+|-----------|----------|
+| Feature min tier | `src/types/subscription.ts` (`FEATURE_MIN_TIER.collection_access = 'inner_circle'`) |
+| `canAccessFeature()` | `src/types/subscription.ts` (dealer special case includes `collection_access`) |
+| API gating | `src/lib/collection/access.ts` (`checkCollectionAccess()`) — all 15 collection API routes |
+| Tests (10) | `tests/lib/collection/access.test.ts` |
 
 ---
 
-## What Phase 4 Should NOT Do
+## What's Already Enforced
 
-- **Do NOT rename `/collection` to `/vault`** — the design doc mentions this but it's cosmetic churn. The URL is already `/collection` after Phase 1 rename. No redirect needed.
-- **Do NOT change URL scheme to `/listing/[item_uuid]`** — deferred to Phase 5+. Current numeric `/listing/[id]` works. Collection items use QuickView (no dedicated URL yet).
-- **Do NOT add privacy/visibility controls** — `collection_items.visibility` column exists but UI for public/private toggle is a separate feature (Phase 5+).
-- **Do NOT touch RLS policies** — they already work for all users (owner-based).
-- **Do NOT modify the promote/delist RPCs** — Phase 3 is complete and correct.
+### API layer (server-side)
+- `checkCollectionAccess()` called in all 15 collection API routes — returns 403 for unauthorized tiers
+- Admin bypass via `role === 'admin'` check
+- Trial mode bypass via `isTrialModeActive()`
 
----
-
-## File Map
-
-| File | What to Change |
-|------|----------------|
-| `src/components/layout/MobileNavDrawer.tsx` | Add collection link for all authed users (lines 94-95 area) |
-| `src/components/layout/Header.tsx` | Add collection link to desktop nav for authed users |
-| `src/app/collection/page.tsx` | ~~Remove `NEXT_PUBLIC_COLLECTION_ENABLED` gate~~ — **Done** (replaced by `yuhinkai` tier check, 2026-03-10) |
-| `src/components/listing/quickview-slots/BrowseCTA.tsx` | ~~Remove `NEXT_PUBLIC_COLLECTION_ENABLED` check~~ — **Done** (replaced by `yuhinkai` tier check, 2026-03-10) |
-| `src/app/collection/CollectionPageClient.tsx` | Verify non-dealer UX (no tabs = fine) |
-| `src/i18n/locales/en.json` | Add `nav.collection` key |
-| `src/i18n/locales/ja.json` | Add `nav.collection` key |
+### UI layer (client-side)
+- Nav links to `/vault` gated by `isDealer` (only dealers see it in nav currently)
+- "I Own This" button in browse QuickView — hidden for non-eligible users
+- `/vault` page redirects unauthorized users to `/browse`
 
 ---
 
-## Testing Checklist
+## What Phase 4 Does NOT Need To Do
 
-1. **Non-dealer authenticated user** can navigate to `/collection` from nav
-2. **Non-dealer** can add an item via the form (POST succeeds)
-3. **Non-dealer** can edit their own item (PATCH succeeds)
-4. **Non-dealer** can delete their own item (DELETE succeeds)
-5. **Non-dealer** sees NO dealer tabs (For Sale / On Hold / Sold)
-6. **Non-dealer** does NOT see "List for Sale" button in collection QuickView
-7. **Non-dealer** CAN see "I Own This" button on browse listings
-8. **"I Own This"** creates collection item with `source_listing_id` set
-9. **Dealer** experience unchanged — still sees all tabs, "List for Sale" button works
-10. **Unauthenticated user** redirected to login when clicking collection nav link
-11. **Empty state** renders correctly for new users with 0 items
-12. **Mobile + desktop** nav both show collection link
+Since we're keeping the current restricted access:
+
+- **No nav changes** — vault link stays dealer-gated in nav (inner_circle users access via direct URL or will get nav link in a future phase)
+- **No "open to all" flow** — no empty states for new collectors needed
+- **No paywall modal for vault** — unauthorized users silently redirect to `/browse`
+- **No i18n keys to add** — existing nav uses dealer-specific labels
 
 ---
 
-## Risk Assessment
+## Future Consideration: Opening to All Users
 
-**Low risk.** Phase 4 is the smallest phase in the collection roadmap. The dangerous work (data isolation, cross-table writes, FK preservation, status transitions) was all done in Phases 2-3. This phase is primarily about making existing functionality visible to more users.
+When/if the decision is made to open the vault more broadly:
 
-**One thing to watch:** The `DealerListingForm` was built for dealer context. Verify that non-dealer users don't see dealer-specific UI elements in the form (dealer name display, catalog match panel). The `context='collection'` prop should handle this, but worth a manual check.
+1. **Lower `FEATURE_MIN_TIER.collection_access`** from `'inner_circle'` to desired tier (e.g., `'yuhinkai'` for all paid, or remove gating entirely)
+2. **Add nav links** for all authenticated users (Header + MobileNavDrawer)
+3. **Add empty state** for new collectors (0 items)
+4. **Add paywall** if gating at a paid tier (currently silent redirect)
+5. **Update tests** in `tests/lib/collection/access.test.ts`
 
 ---
 
-## Verification After Deploy
+## Changes Made (2026-03-10)
 
-1. Log in as a non-dealer user
-2. Confirm collection link appears in both mobile drawer and desktop header
-3. Visit `/collection` — should see empty state or items (not a redirect)
-4. Add an item — confirm it saves and appears
-5. Open a browse listing → click "I Own This" → confirm it pre-fills the collection form
-6. Confirm no "List for Sale" button appears for non-dealer users
+| File | Change |
+|------|--------|
+| `src/types/subscription.ts` | `FEATURE_MIN_TIER.collection_access`: `'yuhinkai'` → `'inner_circle'` |
+| `src/types/subscription.ts` | `canAccessFeature()`: removed `collection_access` from yuhinkai special case |
+| `src/lib/collection/access.ts` | Updated doc comment (required tiers) |
+| `tests/lib/collection/access.test.ts` | Updated: yuhinkai now denied, enthusiast/collector now denied, inner_circle explicitly allowed |
+| `docs/HANDOFF_COLLECTION_PHASE_4.md` | Rewritten to reflect inner_circle+dealer+admin restriction |

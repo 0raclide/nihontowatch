@@ -174,8 +174,8 @@ Next.js SSR runs `useState` initializers on the server where `window` is undefin
 - [x] **Delete folders API** — 2 files + directories deleted
 
 ### Cleanup (low priority, no user impact)
-- [ ] **Drop `user_collection_items` table** — V1 table, no code references it. Coordinate with Supabase migration.
-- [ ] **Remove `NEXT_PUBLIC_COLLECTION_ENABLED`** from Vercel env vars (dead code, replaced by tier check)
+- [x] **Drop `user_collection_items` table** — Dropped by migration 133. Stale types removed from `supabase.ts` (2026-03-10).
+- [x] **Remove `NEXT_PUBLIC_COLLECTION_ENABLED`** — Confirmed never set in Vercel. Dead code in `src/` already removed (2026-03-10).
 
 ### Feature (Phase 4 — see `docs/HANDOFF_COLLECTION_PHASE_4.md`)
 - [ ] **Open vault to all users** — verify nav links, end-to-end non-dealer test, paywall CTA fix

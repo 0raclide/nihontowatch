@@ -3178,69 +3178,6 @@ export type Database = {
           },
         ]
       }
-      user_collection_items: {
-        Row: {
-          added_at: string
-          collection_id: string
-          id: string
-          saved_item_id: string
-        }
-        Insert: {
-          added_at?: string
-          collection_id: string
-          id?: string
-          saved_item_id: string
-        }
-        Update: {
-          added_at?: string
-          collection_id?: string
-          id?: string
-          saved_item_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_collection_items_collection_id_fkey"
-            columns: ["collection_id"]
-            isOneToOne: false
-            referencedRelation: "user_collections"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_collection_items_saved_item_id_fkey"
-            columns: ["saved_item_id"]
-            isOneToOne: false
-            referencedRelation: "user_saved_items"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      user_collections: {
-        Row: {
-          created_at: string
-          description: string | null
-          id: string
-          name: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          name: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          name?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       user_favorites: {
         Row: {
           created_at: string
@@ -3407,45 +3344,6 @@ export type Database = {
           member_since?: string
           membership_tier?: Database["public"]["Enums"]["membership_tier"]
           specialty?: string[] | null
-        }
-        Relationships: []
-      }
-      user_saved_items: {
-        Row: {
-          added_at: string
-          blade_type: string | null
-          collection: string
-          id: string
-          item_number: number
-          notes: string | null
-          smith_name: string | null
-          updated_at: string
-          user_id: string
-          volume: number
-        }
-        Insert: {
-          added_at?: string
-          blade_type?: string | null
-          collection: string
-          id?: string
-          item_number: number
-          notes?: string | null
-          smith_name?: string | null
-          updated_at?: string
-          user_id: string
-          volume: number
-        }
-        Update: {
-          added_at?: string
-          blade_type?: string | null
-          collection?: string
-          id?: string
-          item_number?: number
-          notes?: string | null
-          smith_name?: string | null
-          updated_at?: string
-          user_id?: string
-          volume?: number
         }
         Relationships: []
       }
