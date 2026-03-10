@@ -59,7 +59,7 @@ export function collectionRowToDisplayItem(item: CollectionItemRow): DisplayItem
     weight_g: item.weight_g ?? null,
 
     // Media — empty array → null for ListingCard null-check
-    images: item.images.length > 0 ? item.images : null,
+    images: item.images && item.images.length > 0 ? item.images : null,
     stored_images: item.stored_images ?? null,
     og_image_url: null,
     focal_x: item.focal_x ?? null,
