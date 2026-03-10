@@ -62,6 +62,9 @@ const KNOWN_SAFE_FILES = new Set([
   'src/app/api/dealer/videos/route.ts',
   'src/app/api/dealer/videos/[id]/route.ts',
 
+  // Collection stats: only counts user's own listings via .eq('owner_id', user.id)
+  'src/app/api/collection/stats/route.ts',
+
   // Cron compute jobs (don't return data to users, waste compute at worst)
   'src/app/api/cron/compute-focal-points/route.ts',
   'src/app/api/cron/compute-composite-thumbnails/route.ts',

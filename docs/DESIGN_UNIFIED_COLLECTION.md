@@ -1,6 +1,6 @@
 # Unified Collection Architecture
 
-> **Status:** Phases 1-5 DONE (2026-03-10). Phase 4 QA complete — 5 bugs found and fixed during manual testing. Remaining cleanup: drop `user_collection_items` table, remove `NEXT_PUBLIC_COLLECTION_ENABLED` env var.
+> **Status:** Phases 1-5 DONE (2026-03-10). All cleanup complete. V1 tables dropped (migration 133). Next: Phase 6 (community visibility + private sales).
 > **Date:** 2026-03-10 (last updated)
 > **Authors:** Chris + Claude
 > **Replaces:** Collection Manager V1 (`/collection`), dealer "My Listings" naming
@@ -1401,8 +1401,8 @@ Phase 2 is split into four sub-phases with explicit dependencies:
 **Not yet done (cleanup, no user impact):**
 - [x] Delete `openCollectionAddForm` from QuickViewContext + drop `collectionMode: 'add'` (2026-03-10)
 - [x] Delete folders API (`src/app/api/collection/folders/`) — V1 dead code, queries dropped tables (2026-03-10)
-- [ ] Drop `user_collection_items` table (Supabase migration)
-- [ ] Remove `NEXT_PUBLIC_COLLECTION_ENABLED` from Vercel env vars
+- [x] Drop `user_collection_items` + `user_collection_folders` tables (migration 133)
+- [x] Remove `NEXT_PUBLIC_COLLECTION_ENABLED` from Vercel env vars (confirmed absent — never set)
 - [x] Wire up "I Own This" prefill — `vault/add/page.tsx` reads `sessionStorage.collection_prefill`, maps to `DealerListingInitialData`, passes to form (2026-03-10). 8 tests.
 
 **Deploy hotfixes (2026-03-10):**

@@ -15,7 +15,7 @@ import type { ItemDataFields } from './itemData';
 // COLLECTION ITEM
 // =============================================================================
 
-export type CollectionVisibility = 'private' | 'unlisted' | 'public';
+export type CollectionVisibility = 'private' | 'collectors' | 'dealers';
 
 export interface CollectionItemRow extends ItemDataFields {
   // Identity

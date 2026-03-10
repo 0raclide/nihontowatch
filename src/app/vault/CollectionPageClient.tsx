@@ -17,6 +17,7 @@ import { useCurrency } from '@/hooks/useCurrency';
 import { collectionRowsToDisplayItems, dealerListingToDisplayItem } from '@/lib/displayItem';
 import { SORT_OPTIONS } from '@/lib/collection/labels';
 import { Header } from '@/components/layout/Header';
+import { CollectionStatsCard } from '@/components/collection/CollectionStatsCard';
 
 // Tab types for dealer users
 type CollectionTab = 'collection' | 'available' | 'hold' | 'sold';
@@ -426,6 +427,11 @@ export function CollectionPageClient() {
 
           {/* Grid */}
           <div className="flex-1 min-w-0">
+            {/* Stats card (collection tab only) */}
+            {activeTab === 'collection' && !isLoading && total > 0 && (
+              <CollectionStatsCard />
+            )}
+
             {activeTab === 'collection' ? (
               <ListingGrid
                 listings={[]}

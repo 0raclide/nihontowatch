@@ -39,8 +39,10 @@ import {
   BrowseActionBar,
   CollectionActionBar,
   DealerActionBar,
+  ShowcaseActionBar,
   BrowseDealerRow,
   CollectionDealerRow,
+  ShowcaseOwnerRow,
   BrowseDescription,
   CollectionNotes,
   CollectionProvenance,
@@ -51,6 +53,7 @@ import {
   BrowseMobileHeaderActions,
   CollectionMobileHeaderActions,
   DealerMobileHeaderActions,
+  ShowcaseMobileHeaderActions,
   BrowseMobileCTA,
   CollectionMobileCTA,
   DealerMobileCTA,
@@ -94,6 +97,7 @@ export function QuickView() {
 
   const isCollection = source === 'collection';
   const isDealer = source === 'dealer';
+  const isShowcase = source === 'showcase';
 
   // Track when the sheet state last changed for dwell time calculation
   const sheetStateChangeTimeRef = useRef<number>(Date.now());
@@ -120,7 +124,7 @@ export function QuickView() {
   // Track view via unified pipeline when QuickView opens
   // Skip tracking for collection items — they're personal, not dealer listings
   useEffect(() => {
-    if (!currentListing || !isOpen || source === 'collection') return;
+    if (!currentListing || !isOpen || source === 'collection' || source === 'showcase') return;
 
     if (activityTracker) {
       activityTracker.trackListingDetailView(currentListing.id, 'browse');
@@ -413,16 +417,23 @@ export function QuickView() {
     }
   };
 
-  // Desktop QuickViewContent slots (3-way: dealer > collection > browse)
+  // Showcase extension data (for showcase source)
+  const showcaseExt = (currentListing as any)?.showcase ?? null;
+
+  // Desktop QuickViewContent slots (4-way: dealer > showcase > collection > browse)
   const desktopActionBarSlot = isDealer
     ? <DealerActionBar listing={currentListing} onStatusChange={handleDealerStatusChange} />
-    : isCollection
-      ? <CollectionActionBar listing={currentListing} collectionItem={collectionItem} onEditCollection={handleEditCollection} />
-      : <BrowseActionBar listing={currentListing} isStudyMode={isStudyMode} onToggleStudyMode={toggleStudyMode} onToggleAdminEditMode={toggleAdminEditMode} />;
+    : isShowcase
+      ? <ShowcaseActionBar listing={currentListing} showcase={showcaseExt} />
+      : isCollection
+        ? <CollectionActionBar listing={currentListing} collectionItem={collectionItem} onEditCollection={handleEditCollection} />
+        : <BrowseActionBar listing={currentListing} isStudyMode={isStudyMode} onToggleStudyMode={toggleStudyMode} onToggleAdminEditMode={toggleAdminEditMode} />;
 
-  const desktopDealerSlot = isCollection
-    ? <CollectionDealerRow collectionItem={collectionItem} />
-    : <BrowseDealerRow listing={currentListing} />;
+  const desktopDealerSlot = isShowcase
+    ? <ShowcaseOwnerRow showcase={showcaseExt} />
+    : isCollection
+      ? <CollectionDealerRow collectionItem={collectionItem} />
+      : <BrowseDealerRow listing={currentListing} />;
 
   const desktopDescriptionSlot = isCollection
     ? <CollectionNotes collectionItem={collectionItem} />
@@ -432,26 +443,32 @@ export function QuickView() {
     ? <CollectionProvenance collectionItem={collectionItem} />
     : null;
 
-  const desktopAdminToolsSlot = !isCollection && !isDealer && isAdmin
+  const desktopAdminToolsSlot = !isCollection && !isDealer && !isShowcase && isAdmin
     ? <BrowseAdminTools listing={currentListing} />
     : null;
 
   const desktopCtaSlot = isDealer
     ? <DealerCTA listing={currentListing} onStatusChange={handleDealerStatusChange} />
-    : isCollection
-      ? <CollectionCTA collectionItem={collectionItem} onEditCollection={handleEditCollection} />
-      : <BrowseCTA listing={currentListing} />;
+    : isShowcase
+      ? null
+      : isCollection
+        ? <CollectionCTA collectionItem={collectionItem} onEditCollection={handleEditCollection} />
+        : <BrowseCTA listing={currentListing} />;
 
-  // Mobile QuickViewMobileSheet slots (3-way: dealer > collection > browse)
+  // Mobile QuickViewMobileSheet slots (4-way: dealer > showcase > collection > browse)
   const mobileHeaderActionsSlot = isDealer
     ? <DealerMobileHeaderActions listing={currentListing} onStatusChange={handleDealerStatusChange} />
-    : isCollection
-      ? <CollectionMobileHeaderActions listing={currentListing} onEditCollection={handleEditCollection} />
-      : <BrowseMobileHeaderActions listing={currentListing} isStudyMode={isStudyMode} onToggleStudyMode={toggleStudyMode} isAdminEditMode={isAdminEditMode} onToggleAdminEditMode={toggleAdminEditMode} />;
+    : isShowcase
+      ? <ShowcaseMobileHeaderActions listing={currentListing} showcase={showcaseExt} />
+      : isCollection
+        ? <CollectionMobileHeaderActions listing={currentListing} onEditCollection={handleEditCollection} />
+        : <BrowseMobileHeaderActions listing={currentListing} isStudyMode={isStudyMode} onToggleStudyMode={toggleStudyMode} isAdminEditMode={isAdminEditMode} onToggleAdminEditMode={toggleAdminEditMode} />;
 
-  const mobileDealerSlot = isCollection
-    ? <CollectionDealerRow collectionItem={collectionItem} />
-    : <BrowseDealerRow listing={currentListing} />;
+  const mobileDealerSlot = isShowcase
+    ? <ShowcaseOwnerRow showcase={showcaseExt} />
+    : isCollection
+      ? <CollectionDealerRow collectionItem={collectionItem} />
+      : <BrowseDealerRow listing={currentListing} />;
 
   const mobileDescriptionSlot = isCollection
     ? <CollectionNotes collectionItem={collectionItem} />
@@ -459,9 +476,11 @@ export function QuickView() {
 
   const mobileCtaSlot = isDealer
     ? <DealerMobileCTA listing={currentListing} onStatusChange={handleDealerStatusChange} />
-    : isCollection
-      ? <CollectionMobileCTA collectionItem={collectionItem} onEditCollection={handleEditCollection} />
-      : <BrowseMobileCTA listing={currentListing} />;
+    : isShowcase
+      ? null
+      : isCollection
+        ? <CollectionMobileCTA collectionItem={collectionItem} onEditCollection={handleEditCollection} />
+        : <BrowseMobileCTA listing={currentListing} />;
 
   // =========================================================================
   // Image rendering helper
@@ -624,7 +643,7 @@ export function QuickView() {
             isExpanded={isSheetExpanded}
             onToggle={toggleSheet}
             onClose={closeQuickView}
-            readable={isCollection}
+            readable={isCollection || isShowcase}
             headerActionsSlot={mobileHeaderActionsSlot}
             dealerSlot={mobileDealerSlot}
             descriptionSlot={mobileDescriptionSlot}
@@ -765,7 +784,7 @@ export function QuickView() {
                 <QuickViewContent
                   listing={currentListing}
                   onClose={closeQuickView}
-                  readable={isCollection}
+                  readable={isCollection || isShowcase}
                   actionBarSlot={desktopActionBarSlot}
                   dealerSlot={desktopDealerSlot}
                   descriptionSlot={desktopDescriptionSlot}

@@ -902,6 +902,31 @@
   "collection.smith": "刀工",
   "collection.confirmDelete": "このアイテムをコレクションから削除しますか？",
 
+  "collection.visibility.label": "公開設定",
+  "collection.visibility.private": "非公開",
+  "collection.visibility.collectors": "コレクター",
+  "collection.visibility.dealers": "ディーラー",
+  "collection.visibility.privateHint": "自分だけに表示されます。",
+  "collection.visibility.collectorsHint": "ショーケースで他のコレクターに公開されます。",
+  "collection.visibility.dealersHint": "ディーラーおよびインナーサークル会員に公開されます。",
+
+  "nav.showcase": "ショーケース",
+
+  "showcase.title": "コミュニティ ショーケース",
+  "showcase.empty": "まだ共有されたアイテムはありません。コレクションを最初に紹介しましょう。",
+  "showcase.emptyDealers": "コレクターからの提供品はまだありません。",
+  "showcase.tabCommunity": "コミュニティ",
+  "showcase.tabDealers": "コレクターからの出品",
+  "showcase.ownerCollection": "{name}のコレクション",
+  "showcase.fromCollector": "コレクターより",
+
+  "stats.totalItems": "アイテム合計",
+  "stats.visibility": "共有中",
+  "stats.byType": "種類別",
+  "stats.byCert": "鑑定別",
+  "stats.listedForSale": "販売中",
+  "stats.sold": "売却済み",
+
   "email.priceDropTitle": "価格が{percent}%下がりました",
   "email.priceDropSubtitle": "お気に入りのアイテムが値下げされました",
   "email.viewListing": "商品を見る",

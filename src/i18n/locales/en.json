@@ -902,6 +902,31 @@
   "collection.smith": "Smith",
   "collection.confirmDelete": "Are you sure you want to delete this item from your collection?",
 
+  "collection.visibility.label": "Visibility",
+  "collection.visibility.private": "Private",
+  "collection.visibility.collectors": "Collectors",
+  "collection.visibility.dealers": "Dealers",
+  "collection.visibility.privateHint": "Only you can see this item.",
+  "collection.visibility.collectorsHint": "Visible to other collectors on the Showcase.",
+  "collection.visibility.dealersHint": "Visible to dealers and inner circle members.",
+
+  "nav.showcase": "Showcase",
+
+  "showcase.title": "Community Showcase",
+  "showcase.empty": "No items shared yet. Be the first to showcase your collection.",
+  "showcase.emptyDealers": "No items available from collectors yet.",
+  "showcase.tabCommunity": "Community",
+  "showcase.tabDealers": "Available for Dealers",
+  "showcase.ownerCollection": "{name}'s Collection",
+  "showcase.fromCollector": "From a collector",
+
+  "stats.totalItems": "Total Items",
+  "stats.visibility": "Shared",
+  "stats.byType": "By Type",
+  "stats.byCert": "By Certification",
+  "stats.listedForSale": "Listed for Sale",
+  "stats.sold": "Sold",
+
   "email.priceDropTitle": "Price dropped {percent}%",
   "email.priceDropSubtitle": "An item you're watching just got cheaper",
   "email.viewListing": "View Listing",

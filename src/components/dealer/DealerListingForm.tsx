@@ -25,6 +25,7 @@ import { CATALOG_CERT_TYPES } from '@/lib/collection/catalogMapping';
 import { isYuhinkaiCatalogImage } from '@/lib/images/classification';
 import { SIGNED_MEI_TYPES, computeMeiText, computeMeiGuaranteed } from '@/lib/dealer/meiPayload';
 import type { SayagakiEntry, HakogakiEntry, KoshiraeData, ProvenanceEntry, KiwameEntry, KantoHibishoData } from '@/types';
+import type { CollectionVisibility } from '@/types/collectionItem';
 import { useLocale } from '@/i18n/LocaleContext';
 import ReactMarkdown from 'react-markdown';
 
@@ -153,6 +154,7 @@ export interface DealerListingInitialData {
   status?: string | null;
   videos?: ListingVideo[];
   source_listing_id?: number | null;
+  visibility?: string | null;
 }
 
 interface DealerListingFormProps {
@@ -321,6 +323,9 @@ export function DealerListingForm({ mode, initialData, context = 'listing' }: De
   );
   const [researchNotes, setResearchNotes] = useState<string>(
     initialData?.research_notes || draft?.researchNotes || ''
+  );
+  const [visibility, setVisibility] = useState<CollectionVisibility>(
+    (initialData?.visibility as CollectionVisibility) || 'private'
   );
   const [pendingKantoHibishoFiles, setPendingKantoHibishoFiles] = useState<File[]>([]);
   const [isGeneratingNote, setIsGeneratingNote] = useState(false);
@@ -579,6 +584,7 @@ export function DealerListingForm({ mode, initialData, context = 'listing' }: De
         setsumei_text_ja: setsumeiTextJa || null,
         hero_image_index: heroImageIndex,
         images: images.filter(url => !url.startsWith('blob:')),
+        ...(context === 'collection' ? { visibility } : {}),
       };
 
       if (mode === 'add') {
@@ -1006,6 +1012,38 @@ export function DealerListingForm({ mode, initialData, context = 'listing' }: De
           </label>
           <CategorySelector value={category} onChange={handleCategoryChange} />
         </section>
+
+        {/* 2b. Visibility (collection context only) */}
+        {context === 'collection' && (
+          <section>
+            <label className="block text-[11px] uppercase tracking-wider text-muted mb-2">
+              {t('collection.visibility.label')}
+            </label>
+            <div className="flex gap-1">
+              {([
+                { value: 'private' as const, labelKey: 'collection.visibility.private' },
+                { value: 'collectors' as const, labelKey: 'collection.visibility.collectors' },
+                { value: 'dealers' as const, labelKey: 'collection.visibility.dealers' },
+              ]).map(opt => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setVisibility(opt.value)}
+                  className={`px-3 py-1.5 text-sm rounded-full border transition-all ${
+                    visibility === opt.value
+                      ? 'border-gold bg-gold/10 text-ink font-medium'
+                      : 'border-border text-muted hover:border-gold/50'
+                  }`}
+                >
+                  {t(opt.labelKey)}
+                </button>
+              ))}
+            </div>
+            <p className="text-[11px] text-muted mt-1.5">
+              {t(`collection.visibility.${visibility}Hint`)}
+            </p>
+          </section>
+        )}
 
         {/* 3. Type */}
         <section>

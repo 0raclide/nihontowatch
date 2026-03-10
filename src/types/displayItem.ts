@@ -12,7 +12,7 @@
 // SOURCE DISCRIMINATOR
 // =============================================================================
 
-export type DisplayItemSource = 'browse' | 'collection' | 'dealer';
+export type DisplayItemSource = 'browse' | 'collection' | 'dealer' | 'showcase';
 
 // =============================================================================
 // EXTENSION TYPES (source-specific fields)
@@ -48,6 +48,13 @@ export interface CollectionExtension {
   personal_notes: string | null;
   visibility: import('@/types/collectionItem').CollectionVisibility;
   source_listing_id: number | null;
+}
+
+export interface ShowcaseExtension {
+  item_uuid: string;
+  visibility: import('@/types/collectionItem').CollectionVisibility;
+  owner_display_name: string | null;
+  owner_avatar_url: string | null;
 }
 
 // =============================================================================
@@ -157,4 +164,5 @@ export interface DisplayItem {
   browse?: BrowseExtension | null;
   collection?: CollectionExtension | null;
   dealer?: DealerExtension | null;
+  showcase?: ShowcaseExtension | null;
 }

@@ -32,7 +32,7 @@ interface QuickViewContextType {
   /** The currently displayed listing */
   currentListing: Listing | null;
   /** Open quick view for a specific listing */
-  openQuickView: (listing: Listing, options?: { skipFetch?: boolean; source?: 'browse' | 'dealer' | 'collection' }) => void;
+  openQuickView: (listing: Listing, options?: { skipFetch?: boolean; source?: 'browse' | 'dealer' | 'collection' | 'showcase' }) => void;
   /** Close the quick view modal */
   closeQuickView: () => void;
   /** Dismiss QuickView UI without history.back() — for use before router.push() navigation */
@@ -61,7 +61,7 @@ interface QuickViewContextType {
   /** Whether the detail API has loaded for the current listing (false = showing browse skeleton data) */
   detailLoaded: boolean;
   /** Data source: 'browse' for crawled listings, 'collection' for personal items, 'dealer' for dealer's own listings */
-  source: 'browse' | 'collection' | 'dealer';
+  source: 'browse' | 'collection' | 'dealer' | 'showcase';
   /** The original CollectionItemRow when source='collection' */
   collectionItem: CollectionItemRow | null;
   /** Current collection mode: 'view' or null */
@@ -147,7 +147,7 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
   const [detailLoaded, setDetailLoaded] = useState(false);
 
   // Collection-specific state
-  const [source, setSource] = useState<'browse' | 'collection' | 'dealer'>('browse');
+  const [source, setSource] = useState<'browse' | 'collection' | 'dealer' | 'showcase'>('browse');
   const [collectionItem, setCollectionItem] = useState<CollectionItemRow | null>(null);
   const [collectionMode, setCollectionModeState] = useState<'view' | null>(null);
   const onCollectionSavedRef = useRef<(() => void) | null>(null);
@@ -167,7 +167,7 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
   const historyBackInProgressRef = useRef(false); // guards popstate from our own history.back()
 
   // Update URL synchronously using history API (no React re-renders)
-  const updateUrl = useCallback((id: string | number | null, itemSource?: 'browse' | 'collection' | 'dealer') => {
+  const updateUrl = useCallback((id: string | number | null, itemSource?: 'browse' | 'collection' | 'dealer' | 'showcase') => {
     if (typeof window === 'undefined') return;
 
     const url = new URL(window.location.href);
@@ -213,7 +213,7 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
   }, [isAdmin]);
 
   // Open quick view
-  const openQuickView = useCallback((listing: Listing, options?: { skipFetch?: boolean; source?: 'browse' | 'dealer' | 'collection' }) => {
+  const openQuickView = useCallback((listing: Listing, options?: { skipFetch?: boolean; source?: 'browse' | 'dealer' | 'collection' | 'showcase' }) => {
     // Prevent re-opening during cooldown (after close)
     if (closeCooldown.current) {
       return;
@@ -236,12 +236,15 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
     setIsOpen(true);
     setCurrentIndex(index);
     // Auto-detect dealer source from listing data (for Phase 3 browse integration)
+    const listingSource = (mappedListing as any).source;
     const detectedSource = options?.source
-      || ((mappedListing as any).source === 'dealer' || mappedListing.url?.startsWith('nw://') ? 'dealer' : 'browse');
-    setSource(detectedSource as 'browse' | 'collection' | 'dealer');
-    // Dealer listings come pre-loaded with section data — public API rejects them (RLS),
+      || (listingSource === 'dealer' || mappedListing.url?.startsWith('nw://') ? 'dealer'
+        : listingSource === 'showcase' ? 'showcase'
+        : 'browse');
+    setSource(detectedSource as 'browse' | 'collection' | 'dealer' | 'showcase');
+    // Dealer/showcase listings come pre-loaded — public API rejects them (RLS),
     // so fetchFullListing will always 404. Mark as loaded immediately.
-    setDetailLoaded(!!options?.skipFetch || detectedSource === 'dealer');
+    setDetailLoaded(!!options?.skipFetch || detectedSource === 'dealer' || detectedSource === 'showcase');
 
     // Push a history entry so browser back closes the modal instead of leaving the page.
     // Only push if no ?listing= currently in URL — avoids double-push on deep links

@@ -15,7 +15,7 @@ interface QuickViewModalProps {
   isOpen: boolean;
   onClose: () => void;
   children: ReactNode;
-  source?: 'browse' | 'collection' | 'dealer';
+  source?: 'browse' | 'collection' | 'dealer' | 'showcase';
 }
 
 // Spring animation duration

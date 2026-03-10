@@ -39,11 +39,26 @@ export async function GET(
       return NextResponse.json({ error: 'Item not found' }, { status: 404 });
     }
 
-    // Check access: owner or public/unlisted
+    // Check access: owner always has access; community users need matching visibility + tier
     const isOwner = user && item.owner_id === user.id;
-    if (!isOwner && item.visibility === 'private') {
+    if (!isOwner) {
       if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      if (item.visibility === 'private') {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
+      // For 'collectors' or 'dealers' visibility, check tier access
+      const { data: profile } = await serviceClient
+        .from('profiles')
+        .select('subscription_tier')
+        .eq('id', user.id)
+        .single() as { data: { subscription_tier: string } | null };
+      const tier = profile?.subscription_tier ?? 'free';
+      if (item.visibility === 'dealers' && tier !== 'dealer' && tier !== 'inner_circle') {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
+      if (item.visibility === 'collectors' && tier === 'free') {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
     }
 
     return NextResponse.json(item);
@@ -154,7 +169,7 @@ export async function PATCH(
     // Validate visibility
     if ('visibility' in updates) {
       const v = updates.visibility;
-      if (v !== 'private' && v !== 'unlisted' && v !== 'public') {
+      if (v !== 'private' && v !== 'collectors' && v !== 'dealers') {
         updates.visibility = 'private';
       }
     }

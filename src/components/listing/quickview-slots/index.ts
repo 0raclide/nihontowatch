@@ -1,8 +1,10 @@
 export { BrowseActionBar } from './BrowseActionBar';
 export { CollectionActionBar } from './CollectionActionBar';
 export { DealerActionBar } from './DealerActionBar';
+export { ShowcaseActionBar } from './ShowcaseActionBar';
 export { BrowseDealerRow } from './BrowseDealerRow';
 export { CollectionDealerRow } from './CollectionDealerRow';
+export { ShowcaseOwnerRow } from './ShowcaseOwnerRow';
 export { BrowseDescription } from './BrowseDescription';
 export { CollectionNotes } from './CollectionNotes';
 export { CollectionProvenance } from './CollectionProvenance';
@@ -13,6 +15,7 @@ export { DealerCTA } from './DealerCTA';
 export { BrowseMobileHeaderActions } from './BrowseMobileHeaderActions';
 export { CollectionMobileHeaderActions } from './CollectionMobileHeaderActions';
 export { DealerMobileHeaderActions } from './DealerMobileHeaderActions';
+export { ShowcaseMobileHeaderActions } from './ShowcaseMobileHeaderActions';
 export { BrowseMobileCTA } from './BrowseMobileCTA';
 export { CollectionMobileCTA } from './CollectionMobileCTA';
 export { DealerMobileCTA } from './DealerMobileCTA';

@@ -354,6 +354,14 @@ function HeaderContent() {
                   {t('nav.collection')}
                 </Link>
               )}
+              {user && canAccess('collection_access') && (
+                <Link
+                  href="/showcase"
+                  className="text-[11px] uppercase tracking-[0.2em] text-muted hover:text-gold transition-colors"
+                >
+                  {t('nav.showcase')}
+                </Link>
+              )}
               <FeedbackButton />
               <NotificationBell />
               <div className="h-3 w-px bg-border" />

@@ -4,3 +4,8 @@ export {
   collectionRowsToDisplayItems,
 } from './fromCollectionItem';
 export { dealerListingToDisplayItem } from './fromDealerListing';
+export {
+  showcaseItemToDisplayItem,
+  showcaseItemsToDisplayItems,
+} from './fromShowcaseItem';
+export type { ShowcaseApiRow } from './fromShowcaseItem';

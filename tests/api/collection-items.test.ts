@@ -409,11 +409,46 @@ describe('GET /api/collection/items/[id]', () => {
     expect(res.status).toBe(403);
   });
 
-  it('returns item for non-owner if visibility is public', async () => {
+  it('returns item for non-owner if visibility is collectors and user has tier', async () => {
     mockSelectCollectionItemSingle.mockResolvedValueOnce({
-      data: { id: 'item-1', owner_id: 'other-user', visibility: 'public', title: 'Public Katana' },
+      data: { id: 'item-1', owner_id: 'other-user', visibility: 'collectors', title: 'Shared Katana' },
       error: null,
     });
+    // Mock the profiles query for tier check
+    mockSingle.mockResolvedValueOnce({ data: { subscription_tier: 'enthusiast' }, error: null });
+
+    const res = await GET_SINGLE(makeRequest('http://localhost/api/collection/items/item-1'), makeParams('item-1'));
+    expect(res.status).toBe(200);
+  });
+
+  it('returns 403 for collectors visibility when user is free tier', async () => {
+    mockSelectCollectionItemSingle.mockResolvedValueOnce({
+      data: { id: 'item-1', owner_id: 'other-user', visibility: 'collectors', title: 'Shared Katana' },
+      error: null,
+    });
+    mockSingle.mockResolvedValueOnce({ data: { subscription_tier: 'free' }, error: null });
+
+    const res = await GET_SINGLE(makeRequest('http://localhost/api/collection/items/item-1'), makeParams('item-1'));
+    expect(res.status).toBe(403);
+  });
+
+  it('returns 403 for dealers visibility when user is enthusiast tier', async () => {
+    mockSelectCollectionItemSingle.mockResolvedValueOnce({
+      data: { id: 'item-1', owner_id: 'other-user', visibility: 'dealers', title: 'Dealer Katana' },
+      error: null,
+    });
+    mockSingle.mockResolvedValueOnce({ data: { subscription_tier: 'enthusiast' }, error: null });
+
+    const res = await GET_SINGLE(makeRequest('http://localhost/api/collection/items/item-1'), makeParams('item-1'));
+    expect(res.status).toBe(403);
+  });
+
+  it('returns item for dealers visibility when user is dealer tier', async () => {
+    mockSelectCollectionItemSingle.mockResolvedValueOnce({
+      data: { id: 'item-1', owner_id: 'other-user', visibility: 'dealers', title: 'Dealer Katana' },
+      error: null,
+    });
+    mockSingle.mockResolvedValueOnce({ data: { subscription_tier: 'dealer' }, error: null });
 
     const res = await GET_SINGLE(makeRequest('http://localhost/api/collection/items/item-1'), makeParams('item-1'));
     expect(res.status).toBe(200);
