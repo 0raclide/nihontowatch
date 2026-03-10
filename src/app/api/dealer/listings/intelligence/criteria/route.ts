@@ -95,7 +95,7 @@ export async function GET(request: NextRequest) {
   }
 
   const matchResult = matchItemAgainstSearches(item, searches);
-  const summary = aggregateCriteria(matchResult);
+  const summary = aggregateCriteria(matchResult, item);
 
   return NextResponse.json(summary);
 }

@@ -182,9 +182,15 @@ function bucketPriceRange(minPrice?: number | null, maxPrice?: number | null): s
  * Aggregate matched searches into a CriteriaSummary with faceted counts.
  * Deduplicates by user_id per facet value so one user's 3 searches for
  * "Katana" counts as 1 collector interested in Katana.
+ *
+ * Only includes criteria values that actually match the item — e.g. if a
+ * search has certifications: ['Juyo bijutsuhin'] but the item is Tokuju,
+ * that cert value is NOT included in the pills even if the search matched
+ * on other dimensions (item type, category, etc.).
  */
 export function aggregateCriteria(
-  matchResult: MatchResult
+  matchResult: MatchResult,
+  item: MatchableItem
 ): CriteriaSummary {
   // Track user sets per facet value to deduplicate
   const itemTypeCounts = new Map<string, Set<string>>();
@@ -192,32 +198,41 @@ export function aggregateCriteria(
   const schoolCounts = new Map<string, Set<string>>();
   const priceCounts = new Map<string, Set<string>>();
 
+  const itemTypeLower = (item.item_type ?? '').toLowerCase();
+  const itemCertLower = (item.cert_type ?? '').toLowerCase();
+  const itemSchoolLower = (item.school ?? '').toLowerCase();
+  const itemTosoguSchoolLower = (item.tosogu_school ?? '').toLowerCase();
+
   for (const search of matchResult.matchedSearches) {
     const c = search.search_criteria;
     const uid = search.user_id;
     if (!c || !uid) continue;
 
-    // Item types
+    // Item types — only include values that match the item's type
     if (c.itemTypes && Array.isArray(c.itemTypes)) {
       for (const t of c.itemTypes) {
+        if (String(t).toLowerCase() !== itemTypeLower) continue;
         const key = String(t).charAt(0).toUpperCase() + String(t).slice(1).toLowerCase();
         if (!itemTypeCounts.has(key)) itemTypeCounts.set(key, new Set());
         itemTypeCounts.get(key)!.add(uid);
       }
     }
 
-    // Certifications
-    if (c.certifications && Array.isArray(c.certifications)) {
+    // Certifications — only include values that match via cert alias expansion
+    if (c.certifications && Array.isArray(c.certifications) && itemCertLower) {
       for (const cert of c.certifications) {
+        if (!certMatches(String(cert), itemCertLower)) continue;
         const key = String(cert).charAt(0).toUpperCase() + String(cert).slice(1).toLowerCase();
         if (!certCounts.has(key)) certCounts.set(key, new Set());
         certCounts.get(key)!.add(uid);
       }
     }
 
-    // Schools
+    // Schools — only include values that match via substring
     if (c.schools && Array.isArray(c.schools)) {
       for (const s of c.schools) {
+        const sl = String(s).toLowerCase();
+        if (!itemSchoolLower.includes(sl) && !itemTosoguSchoolLower.includes(sl)) continue;
         const key = String(s);
         if (!schoolCounts.has(key)) schoolCounts.set(key, new Set());
         schoolCounts.get(key)!.add(uid);

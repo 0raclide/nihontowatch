@@ -173,34 +173,51 @@ describe('matchItemAgainstSearches', () => {
 // ---------------------------------------------------------------------------
 
 describe('aggregateCriteria', () => {
+  const defaultItem = makeItem(); // katana, Juyo, Bizen, ¥500K
+
   it('aggregates item types with user dedup per facet', () => {
     const searches = [
       makeSearch({ itemTypes: ['katana'] }, 'user-1'),
       makeSearch({ itemTypes: ['katana'] }, 'user-1'), // same user
       makeSearch({ itemTypes: ['katana'] }, 'user-2'),
-      makeSearch({ itemTypes: ['wakizashi'] }, 'user-3'),
+      makeSearch({ itemTypes: ['wakizashi'] }, 'user-3'), // won't appear — doesn't match item
     ];
     const matchResult = { matchCount: 3, matchedSearches: searches };
-    const summary = aggregateCriteria(matchResult);
+    const summary = aggregateCriteria(matchResult, defaultItem);
 
     expect(summary.totalCollectors).toBe(3);
     const katana = summary.facets.itemTypes.find(e => e.value === 'Katana');
     expect(katana?.count).toBe(2); // user-1 deduped
+    // Wakizashi filtered out because item is katana
     const waki = summary.facets.itemTypes.find(e => e.value === 'Wakizashi');
-    expect(waki?.count).toBe(1);
+    expect(waki).toBeUndefined();
   });
 
-  it('aggregates certifications', () => {
+  it('aggregates certifications — only matching values', () => {
     const searches = [
       makeSearch({ certifications: ['Juyo'] }, 'user-1'),
       makeSearch({ certifications: ['Hozon', 'Juyo'] }, 'user-2'),
     ];
     const matchResult = { matchCount: 2, matchedSearches: searches };
-    const summary = aggregateCriteria(matchResult);
+    const summary = aggregateCriteria(matchResult, defaultItem); // item cert = Juyo
 
-    expect(summary.facets.certifications).toHaveLength(2);
+    // Only Juyo shown (matches item). Hozon filtered out.
+    expect(summary.facets.certifications).toHaveLength(1);
     expect(summary.facets.certifications[0].value).toBe('Juyo');
     expect(summary.facets.certifications[0].count).toBe(2);
+  });
+
+  it('includes cert alias matches (Tokubetsu Juyo → Tokuju item)', () => {
+    const tokujuItem = makeItem({ cert_type: 'Tokuju' });
+    const searches = [
+      makeSearch({ certifications: ['Tokubetsu Juyo'] }, 'user-1'),
+      makeSearch({ certifications: ['Juyo bijutsuhin'] }, 'user-2'), // no alias → filtered
+    ];
+    const matchResult = { matchCount: 2, matchedSearches: searches };
+    const summary = aggregateCriteria(matchResult, tokujuItem);
+
+    expect(summary.facets.certifications).toHaveLength(1);
+    expect(summary.facets.certifications[0].value).toBe('Tokubetsu juyo');
   });
 
   it('aggregates schools', () => {
@@ -209,10 +226,20 @@ describe('aggregateCriteria', () => {
       makeSearch({ schools: ['Bizen'] }, 'user-2'),
     ];
     const matchResult = { matchCount: 2, matchedSearches: searches };
-    const summary = aggregateCriteria(matchResult);
+    const summary = aggregateCriteria(matchResult, defaultItem);
 
     expect(summary.facets.schools).toHaveLength(1);
     expect(summary.facets.schools[0]).toEqual({ value: 'Bizen', count: 2 });
+  });
+
+  it('filters out non-matching schools', () => {
+    const searches = [
+      makeSearch({ schools: ['Soshu'] }, 'user-1'), // doesn't match Bizen item
+    ];
+    const matchResult = { matchCount: 1, matchedSearches: searches };
+    const summary = aggregateCriteria(matchResult, defaultItem);
+
+    expect(summary.facets.schools).toHaveLength(0);
   });
 
   it('buckets price ranges', () => {
@@ -222,30 +249,32 @@ describe('aggregateCriteria', () => {
       makeSearch({ minPrice: 3000000 }, 'user-3'),
     ];
     const matchResult = { matchCount: 3, matchedSearches: searches };
-    const summary = aggregateCriteria(matchResult);
+    const summary = aggregateCriteria(matchResult, defaultItem);
 
     expect(summary.facets.priceRanges.length).toBeGreaterThanOrEqual(2);
   });
 
   it('caps facets at 5 entries', () => {
+    // All types match the item (katana)
     const searches = Array.from({ length: 10 }, (_, i) =>
-      makeSearch({ itemTypes: [`type${i}`] }, `user-${i}`)
+      makeSearch({ itemTypes: ['katana'] }, `user-${i}`)
     );
     const matchResult = { matchCount: 10, matchedSearches: searches };
-    const summary = aggregateCriteria(matchResult);
+    const summary = aggregateCriteria(matchResult, defaultItem);
 
+    // Only 1 unique type value (katana) — all match
     expect(summary.facets.itemTypes.length).toBeLessThanOrEqual(5);
   });
 
   it('sorts facets by count descending', () => {
+    const item = makeItem({ cert_type: 'Juyo' });
     const searches = [
-      makeSearch({ certifications: ['Hozon'] }, 'user-1'),
       makeSearch({ certifications: ['Juyo'] }, 'user-2'),
       makeSearch({ certifications: ['Juyo'] }, 'user-3'),
       makeSearch({ certifications: ['Juyo'] }, 'user-4'),
     ];
-    const matchResult = { matchCount: 4, matchedSearches: searches };
-    const summary = aggregateCriteria(matchResult);
+    const matchResult = { matchCount: 3, matchedSearches: searches };
+    const summary = aggregateCriteria(matchResult, item);
 
     expect(summary.facets.certifications[0].value).toBe('Juyo');
     expect(summary.facets.certifications[0].count).toBe(3);
@@ -256,7 +285,7 @@ describe('aggregateCriteria', () => {
       makeSearch({}, 'user-1'), // no criteria at all
     ];
     const matchResult = { matchCount: 1, matchedSearches: searches };
-    const summary = aggregateCriteria(matchResult);
+    const summary = aggregateCriteria(matchResult, defaultItem);
 
     expect(summary.facets.itemTypes).toHaveLength(0);
     expect(summary.facets.certifications).toHaveLength(0);
