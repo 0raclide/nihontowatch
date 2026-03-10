@@ -1560,10 +1560,12 @@ export function processGoldValuesRows(
   form_distribution: Record<string, number>;
   mei_distribution: Record<string, number>;
   measurements_by_form: MeasurementsByForm;
+  form_by_mei: Record<string, Record<string, number>>;
 } | null {
   const form: Record<string, number> = {};
   const mei: Record<string, number> = {};
   const measurements: MeasurementsByForm = {};
+  const formByMei: Record<string, Record<string, number>> = {};
 
   for (const row of rows) {
     // Skip orphaned JE_Koto records (JE_Koto is the ONLY collection) — unreliable data
@@ -1615,6 +1617,12 @@ export function processGoldValuesRows(
       else if (rawMei === 'shusho-mei' || rawMei === 'shusho_mei') meiKey = 'shusho_mei';
       else meiKey = rawMei;
       mei[meiKey] = (mei[meiKey] || 0) + 1;
+
+      // Cross-tabulate: for each mei type, count forms
+      if (formKey) {
+        if (!formByMei[meiKey]) formByMei[meiKey] = {};
+        formByMei[meiKey][formKey] = (formByMei[meiKey][formKey] || 0) + 1;
+      }
     }
   }
 
@@ -1622,7 +1630,7 @@ export function processGoldValuesRows(
   const hasMei = Object.values(mei).some(v => v > 0);
   if (!hasForm && !hasMei) return null;
 
-  return { form_distribution: form, mei_distribution: mei, measurements_by_form: measurements };
+  return { form_distribution: form, mei_distribution: mei, measurements_by_form: measurements, form_by_mei: formByMei };
 }
 
 export async function getArtisanDistributions(
@@ -1632,6 +1640,7 @@ export async function getArtisanDistributions(
   form_distribution: Record<string, number>;
   mei_distribution: Record<string, number>;
   measurements_by_form: MeasurementsByForm;
+  form_by_mei: Record<string, Record<string, number>>;
 } | null> {
   // Query both columns — artisan code may be in either due to historical misrouting
   // (migration 290 fix). DO NOT revert to single-column .eq() query.

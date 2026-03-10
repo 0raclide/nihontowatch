@@ -685,7 +685,7 @@ export function ArtistPageClient({ data }: ArtistPageClientProps) {
                 subtitle={t('artist.signatureTypesAcross', { count: certifications.total_items })}
                 className="mb-6"
               />
-              <MeiDistributionBar distribution={stats.mei_distribution} />
+              <MeiDistributionBar distribution={stats.mei_distribution} formByMei={stats.form_by_mei} />
             </section>
           </>
         )}

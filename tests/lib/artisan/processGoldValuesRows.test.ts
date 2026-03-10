@@ -222,3 +222,90 @@ describe('processGoldValuesRows — edge cases', () => {
     expect(result!.form_distribution).toEqual({ other: 1 });
   });
 });
+
+describe('processGoldValuesRows — form_by_mei cross-tabulation', () => {
+  it('cross-tabulates form types per mei type', () => {
+    const rows: GoldValuesRow[] = [
+      row({ gold_form_type: 'Katana', gold_mei_status: 'signed', gold_collections: ['Juyo'] }),
+      row({ gold_form_type: 'Katana', gold_mei_status: 'signed', gold_collections: ['Juyo'] }),
+      row({ gold_form_type: 'Tanto', gold_mei_status: 'signed', gold_collections: ['Juyo'] }),
+      row({ gold_form_type: 'Tachi', gold_mei_status: 'mumei', gold_collections: ['Juyo'] }),
+      row({ gold_form_type: 'Katana', gold_mei_status: 'mumei', gold_collections: ['Juyo'] }),
+    ];
+
+    const result = processGoldValuesRows(rows, 'smith');
+    expect(result).not.toBeNull();
+    expect(result!.form_by_mei).toEqual({
+      signed: { katana: 2, tanto: 1 },
+      mumei: { tachi: 1, katana: 1 },
+    });
+  });
+
+  it('excludes orphaned JE_Koto rows from cross-tabulation', () => {
+    const rows: GoldValuesRow[] = [
+      row({ gold_form_type: 'Katana', gold_mei_status: 'signed', gold_collections: ['JE_Koto'] }),
+      row({ gold_form_type: 'Tachi', gold_mei_status: 'signed', gold_collections: ['Juyo'] }),
+    ];
+
+    const result = processGoldValuesRows(rows, 'smith');
+    expect(result).not.toBeNull();
+    expect(result!.form_by_mei).toEqual({ signed: { tachi: 1 } });
+  });
+
+  it('omits mei types with no form data from cross-tabulation', () => {
+    const rows: GoldValuesRow[] = [
+      row({ gold_form_type: null, gold_mei_status: 'signed', gold_collections: ['Juyo'] }),
+      row({ gold_form_type: 'Katana', gold_mei_status: 'mumei', gold_collections: ['Juyo'] }),
+    ];
+
+    const result = processGoldValuesRows(rows, 'smith');
+    expect(result).not.toBeNull();
+    // 'signed' has no form data — should not appear in form_by_mei
+    expect(result!.form_by_mei).toEqual({ mumei: { katana: 1 } });
+    // But 'signed' still appears in mei_distribution
+    expect(result!.mei_distribution.signed).toBe(1);
+  });
+
+  it('works with tosogu form types', () => {
+    const rows: GoldValuesRow[] = [
+      row({ gold_form_type: 'Tsuba', gold_mei_status: 'signed', gold_collections: ['Juyo'] }),
+      row({ gold_form_type: 'Kozuka', gold_mei_status: 'signed', gold_collections: ['Juyo'] }),
+      row({ gold_form_type: 'Tsuba', gold_mei_status: 'mumei', gold_collections: ['Juyo'] }),
+    ];
+
+    const result = processGoldValuesRows(rows, 'tosogu');
+    expect(result).not.toBeNull();
+    expect(result!.form_by_mei).toEqual({
+      signed: { tsuba: 1, kozuka: 1 },
+      mumei: { tsuba: 1 },
+    });
+  });
+
+  it('counts sum to same total as mei_distribution', () => {
+    const rows: GoldValuesRow[] = [
+      row({ gold_form_type: 'Katana', gold_mei_status: 'signed', gold_collections: ['Juyo'] }),
+      row({ gold_form_type: 'Tanto', gold_mei_status: 'signed', gold_collections: ['Juyo'] }),
+      row({ gold_form_type: 'Tachi', gold_mei_status: 'mumei', gold_collections: ['Juyo'] }),
+      row({ gold_form_type: 'Katana', gold_mei_status: 'kinzogan-mei', gold_collections: ['Tokuju'] }),
+    ];
+
+    const result = processGoldValuesRows(rows, 'smith');
+    expect(result).not.toBeNull();
+
+    // Sum of form_by_mei sub-counts per mei type should match mei_distribution
+    for (const [meiType, formCounts] of Object.entries(result!.form_by_mei)) {
+      const crossTabTotal = Object.values(formCounts).reduce((s, v) => s + v, 0);
+      expect(crossTabTotal).toBe(result!.mei_distribution[meiType]);
+    }
+  });
+
+  it('returns empty form_by_mei when no rows have both form and mei', () => {
+    const rows: GoldValuesRow[] = [
+      row({ gold_form_type: 'Katana', gold_mei_status: null, gold_collections: ['Juyo'] }),
+    ];
+
+    const result = processGoldValuesRows(rows, 'smith');
+    expect(result).not.toBeNull();
+    expect(result!.form_by_mei).toEqual({});
+  });
+});

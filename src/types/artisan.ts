@@ -95,6 +95,7 @@ export interface ArtisanPageResponse {
       motohaba: number[];
       sakihaba: number[];
     }>;
+    form_by_mei: Record<string, Record<string, number>>;
   } | null;
   lineage: {
     teacher: { code: string; name_romaji: string | null; slug: string } | null;
