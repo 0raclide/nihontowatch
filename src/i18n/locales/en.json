@@ -306,6 +306,12 @@
   "dealer.intel.description": "Description",
   "dealer.intel.cert": "Certification",
   "dealer.intel.performance": "Performance Summary",
+  "dealer.intel.criteriaTypes": "Types",
+  "dealer.intel.criteriaCerts": "Certs",
+  "dealer.intel.criteriaSchools": "Schools",
+  "dealer.intel.criteriaPrice": "Price",
+  "dealer.intel.criteriaExpand": "See what collectors are searching for",
+  "dealer.intel.criteriaLoading": "Loading criteria…",
 
   "dealer.previewBanner": "This is a preview of your dealer page",
   "dealer.previewEditProfile": "Edit Profile",
@@ -627,6 +633,8 @@
   "collection.sort.valueDesc": "Value: High to Low",
   "collection.sort.valueAsc": "Value: Low to High",
   "collection.sort.type": "Item Type",
+  "collection.sortCustom": "Custom Order",
+  "collection.dragHint": "Hold and drag to reorder",
 
   "login.welcome": "Welcome",
   "login.enterCode": "Enter Code",

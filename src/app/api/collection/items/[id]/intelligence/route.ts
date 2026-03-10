@@ -24,6 +24,7 @@ import {
 } from '@/lib/featured/scoring';
 import { getScoreData } from '@/lib/dealer/percentileCache';
 import { selectCollectionItemSingle } from '@/lib/supabase/collectionItems';
+import { matchItemAgainstSearches, type SavedSearchRow } from '@/lib/savedSearches/matchAgainstItem';
 
 export const dynamic = 'force-dynamic';
 
@@ -123,73 +124,11 @@ export async function GET(
     const { data: searches } = await (serviceClient.from('saved_searches') as any)
       .select('id, user_id, search_criteria')
       .eq('is_active', true)
-      .neq('notification_frequency', 'none');
+      .neq('notification_frequency', 'none') as { data: SavedSearchRow[] | null; error: unknown };
 
     if (searches && Array.isArray(searches)) {
-      // Count distinct users, not searches (mirrors SQL COUNT(DISTINCT user_id))
-      const matchedUserIds = new Set<string>();
-
-      for (const search of searches) {
-        const c = search.search_criteria;
-        if (!c) continue;
-
-        // Exclude searches with text queries (conservative, mirrors SQL RPC)
-        if (c.query && typeof c.query === 'string' && c.query.trim() !== '') continue;
-
-        // Exclude sold-tab searches — they monitor sold archive, not new listings
-        if (c.tab === 'sold') continue;
-
-        // item_type match
-        if (c.itemTypes && c.itemTypes.length > 0) {
-          const itemTypeLower = (item.item_type ?? '').toLowerCase();
-          if (!c.itemTypes.some((t: string) => t.toLowerCase() === itemTypeLower)) continue;
-        }
-
-        // certification match (with alias expansion, mirrors SQL)
-        if (c.certifications && c.certifications.length > 0) {
-          const certLower = (item.cert_type ?? '').toLowerCase();
-          const matches = c.certifications.some((cert: string) => {
-            const cl = cert.toLowerCase();
-            if (cl === certLower) return true;
-            if (cl === 'juyo' && ['juyo', 'juyo tosogu'].includes(certLower)) return true;
-            if (cl === 'hozon' && ['hozon', 'hozon tosogu'].includes(certLower)) return true;
-            if (cl === 'tokubetsu hozon' && ['tokubetsu hozon', 'tokubetsu hozon tosogu', 'tokuhozon'].includes(certLower)) return true;
-            if (cl === 'tokubetsu juyo' && ['tokubetsu juyo', 'tokuju'].includes(certLower)) return true;
-            return false;
-          });
-          if (!matches) continue;
-        }
-
-        // category match ('all' or empty = no restriction, mirrors SQL RPC)
-        if (c.category && c.category !== 'all' && c.category !== '') {
-          if (c.category.toLowerCase() !== (item.item_category ?? '').toLowerCase()) continue;
-        }
-
-        // price range match
-        if (c.minPrice != null && (item.price_value == null || item.price_value < c.minPrice)) continue;
-        if (c.maxPrice != null && (item.price_value == null || item.price_value > c.maxPrice)) continue;
-
-        // schools filter (ILIKE substring match, mirrors SQL RPC + matcher)
-        if (c.schools && c.schools.length > 0) {
-          const schoolLower = (item.school ?? '').toLowerCase();
-          const tosoguSchoolLower = (item.tosogu_school ?? '').toLowerCase();
-          const schoolMatch = c.schools.some((s: string) => {
-            const sl = s.toLowerCase();
-            return schoolLower.includes(sl) || tosoguSchoolLower.includes(sl);
-          });
-          if (!schoolMatch) continue;
-        }
-
-        // askOnly filter — only match inquiry-priced listings
-        if (c.askOnly === true && item.price_value != null) continue;
-
-        // Deduplicate by user — one user with 5 matching searches = 1 collector
-        if (search.user_id) {
-          matchedUserIds.add(search.user_id);
-        }
-      }
-
-      interestedCollectors = matchedUserIds.size;
+      const result = matchItemAgainstSearches(item, searches);
+      interestedCollectors = result.matchCount;
     }
   } catch {
     // Non-fatal — just show 0

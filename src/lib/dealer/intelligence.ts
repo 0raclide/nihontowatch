@@ -59,6 +59,25 @@ export interface DealerIntelligenceAPIResponse {
 }
 
 // ---------------------------------------------------------------------------
+// Criteria summary — aggregated search criteria from matching saved searches
+// ---------------------------------------------------------------------------
+
+export interface CriteriaFacetEntry {
+  value: string;
+  count: number;
+}
+
+export interface CriteriaSummary {
+  totalCollectors: number;
+  facets: {
+    itemTypes: CriteriaFacetEntry[];
+    certifications: CriteriaFacetEntry[];
+    schools: CriteriaFacetEntry[];
+    priceRanges: CriteriaFacetEntry[];
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Completeness — 6 actionable criteria
 // ---------------------------------------------------------------------------
 
