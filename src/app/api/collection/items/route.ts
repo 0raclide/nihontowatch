@@ -335,5 +335,8 @@ function computeFacets(items: Array<Record<string, unknown>>) {
     certifications: toArray(certifications),
     historicalPeriods: toArray(historicalPeriods),
     signatureStatuses: toArray(signatureStatuses),
+    statuses: [],
+    conditions: [],
+    folders: [],
   };
 }

@@ -375,7 +375,7 @@ export function CollectionFilterContent({
           <div className="border-t border-border/15" />
 
           {/* Status (collection-specific, collapsed) */}
-          {facets.statuses.length > 0 && (
+          {facets.statuses?.length > 0 && (
             <>
               <FilterSection
                 title={t('collection.status')}
@@ -401,7 +401,7 @@ export function CollectionFilterContent({
           )}
 
           {/* Condition (collection-specific, collapsed) */}
-          {facets.conditions.length > 0 && (
+          {facets.conditions?.length > 0 && (
             <FilterSection
               title={t('collection.condition')}
               isOpen={openSections.condition}
