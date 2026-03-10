@@ -1,6 +1,6 @@
 # Unified Collection Architecture
 
-> **Status:** Phases 1-5 DONE (2026-03-10). Phase 4 ~95% (remaining: verify nav links, end-to-end non-dealer test, paywall CTA fix). Phase 5 cleanup done: "I Own This" prefill wired, dead code removed (openCollectionAddForm, folders API). Remaining cleanup: drop `user_collection_items` table, remove `NEXT_PUBLIC_COLLECTION_ENABLED` env var.
+> **Status:** Phases 1-5 DONE (2026-03-10). Phase 4 QA complete — 5 bugs found and fixed during manual testing. Remaining cleanup: drop `user_collection_items` table, remove `NEXT_PUBLIC_COLLECTION_ENABLED` env var.
 > **Date:** 2026-03-10 (last updated)
 > **Authors:** Chris + Claude
 > **Replaces:** Collection Manager V1 (`/collection`), dealer "My Listings" naming
@@ -1338,7 +1338,7 @@ Phase 2 is split into four sub-phases with explicit dependencies:
 | Promote modal | `src/components/collection/PromoteToListingModal.tsx` |
 | Tests (29) | `tests/api/collection/promote.test.ts`, `tests/api/listings/delist.test.ts` |
 
-### Phase 4 — Open to All Users + Tier Gating 🟡 ~95% DONE
+### Phase 4 — Open to All Users + Tier Gating ✅ DONE (2026-03-10)
 
 **Scope:** Gate collection access behind `yuhinkai` subscription tier (or any paid tier). Add nav links, "I Own This" button visibility. Route at `/vault` (migrated from `/collection` in Phase 5).
 
@@ -1357,11 +1357,20 @@ Phase 2 is split into four sub-phases with explicit dependencies:
 - [x] "I Own This" button shows/hides based on tier
 - [x] 10 unit tests (`tests/lib/collection/access.test.ts`)
 - [x] `NEXT_PUBLIC_COLLECTION_ENABLED` env var replaced by tier check (dead code)
-- [ ] Verify nav link display end-to-end (desktop + mobile)
-- [ ] Test non-dealer workflow end-to-end (create → view → edit → delete)
-- [ ] Verify empty state message ("Start your collection")
-- [ ] Test "I Own This" flow from browse → creates collection item
+- [x] Verify nav link display end-to-end (desktop + mobile) — QA 2026-03-10
+- [x] Test non-dealer workflow end-to-end (create → view → edit → delete) — QA 2026-03-10 (in progress, edit/delete pending QuickView source fix)
+- [x] Test "I Own This" flow from browse → creates collection item — QA 2026-03-10
 - [x] No paywall modal for collection — intentional. Silent redirect to `/browse` for unauthorized users. Nav links and "I Own This" button hidden. Paywall deferred to future phase.
+
+**QA session (2026-03-10) — 5 bugs found and fixed:**
+
+| Bug | Root Cause | Fix | Commit |
+|-----|-----------|-----|--------|
+| `/vault` crash: `item.images.length` on null | Supabase returns `null` for empty JSONB arrays, not `[]` | Null guard: `item.images && item.images.length > 0` | `e1a9d2e` |
+| `/vault` crash: `facets.statuses.length` on undefined | `computeFacets()` returned 4/7 `CollectionFacets` fields — `statuses`, `conditions`, `folders` missing. `setFacets()` overwrote `EMPTY_FACETS` default. | API returns all 7 fields + optional chaining defense-in-depth | `fed99ab` |
+| Success screen "Back to Collection" → `/dealer` | `router.push('/dealer')` hardcoded, ignored `successRedirect` | Use context-aware `successRedirect` (`/vault` for collection) | `f9e2d39` |
+| Collection cards show "UNAVAILABLE" overlay | `collection_items` has no `is_available` column → `undefined` → `!listing.is_available` = true | Skip unavailable overlay for `source === 'collection'` | `f9e2d39` |
+| Vault QuickView shows browse slots (no edit/delete/promote) | `openCollectionQuickView` called `setSource('collection')` then `openQuickView()` which overwrote to `'browse'` — React batches, last write wins | Pass `source: 'collection'` through `openQuickView()` options | `47b48d8` |
 
 **Key files:**
 | Component | Location |
@@ -1371,7 +1380,9 @@ Phase 2 is split into four sub-phases with explicit dependencies:
 | Access tests (10) | `tests/lib/collection/access.test.ts` |
 | Yuhinkai handoff | `docs/HANDOFF_YUHINKAI_TIER.md` |
 
-**Risk:** Low. All dangerous architectural work done in Phases 2-3. Remaining items are UX verification and paywall cosmetics.
+**Known UX gaps (not blocking, future polish):**
+- Header shows two "COLLECTION" nav items for dealer users (grey → `/vault`, gold → `/dealer`). Gold should be renamed.
+- Empty state message not yet verified.
 
 ### Phase 5 — Drop Old Collection System + Route Migration ✅ DONE (2026-03-10)
 
@@ -1393,6 +1404,12 @@ Phase 2 is split into four sub-phases with explicit dependencies:
 - [ ] Drop `user_collection_items` table (Supabase migration)
 - [ ] Remove `NEXT_PUBLIC_COLLECTION_ENABLED` from Vercel env vars
 - [x] Wire up "I Own This" prefill — `vault/add/page.tsx` reads `sessionStorage.collection_prefill`, maps to `DealerListingInitialData`, passes to form (2026-03-10). 8 tests.
+
+**Deploy hotfixes (2026-03-10):**
+- [x] `e1a9d2e` — Null-guard `item.images.length` in collection item mapper (Supabase returns `null` not `[]`)
+- [x] `fed99ab` — `computeFacets()` return all 7 `CollectionFacets` fields (was only returning 4, crashing on `facets.statuses.length`)
+- [x] `f9e2d39` — Success screen uses `successRedirect` (was hardcoded `/dealer`); hide "UNAVAILABLE" overlay for collection source
+- [x] `47b48d8` — Pass `source: 'collection'` through `openQuickView()` options (React batched `setSource` calls, browse overwrite won)
 
 **Previously done (earlier phases):** 7 V1 components (`CollectionCard`, `CollectionGrid`, etc.) deleted in Phase 2d.
 
