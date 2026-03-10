@@ -72,6 +72,7 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
   // Admins get full access (inner_circle tier) regardless of actual subscription
   const subscriptionState = useMemo(() => {
     // Admins always have full access
+    // If admin also has dealer tier, surface isDealer so dealer features render
     if (isAdmin) {
       return {
         tier: 'inner_circle' as SubscriptionTier,
@@ -82,7 +83,7 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
         isPro: true,
         isCollector: true,
         isInnerCircle: true,
-        isDealer: false,
+        isDealer: profile?.subscription_tier === 'dealer',
         isYuhinkai: true,
         canAccess: () => true, // Admins can access everything
       };
