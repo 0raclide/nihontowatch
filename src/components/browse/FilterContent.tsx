@@ -465,6 +465,7 @@ const DEALER_REGIONS: Record<string, 'us_canada' | 'europe_oceania'> = {
   'Tetsugendo': 'us_canada',
   'Katana Sword': 'us_canada',
   'Giuseppe Piva': 'europe_oceania',
+  'Mandarin Mansion': 'europe_oceania',
   'Nihonto Art EU': 'europe_oceania',
   'Nihonto Australia': 'europe_oceania',
   'Soryu': 'europe_oceania',
@@ -474,6 +475,7 @@ const DEALER_REGIONS: Record<string, 'us_canada' | 'europe_oceania'> = {
 // Country labels for Europe & Oceania dealers (shown as suffix)
 const DEALER_COUNTRY_LABELS: Record<string, string> = {
   'Giuseppe Piva': 'Italy',
+  'Mandarin Mansion': 'NL',
   'Nihonto Art EU': 'FRA',
   'Nihonto Australia': 'AU',
   'Soryu': 'Poland',
