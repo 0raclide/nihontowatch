@@ -911,13 +911,13 @@
   "collection.visibility.collectorsHint": "Visible to Yuhinkai members.",
   "collection.visibility.dealersHint": "Show dealers what you collect.",
 
-  "nav.showcase": "Showcase",
+  "nav.showcase": "Museum",
 
-  "showcase.title": "Community Showcase",
+  "showcase.title": "Yuhinkai Society Museum",
   "showcase.empty": "No items shared yet. Be the first to showcase your collection.",
   "showcase.emptyDealers": "No items available from collectors yet.",
-  "showcase.tabCommunity": "Yuhinkai",
-  "showcase.tabDealers": "Available to Galleries",
+  "showcase.tabCommunity": "Society",
+  "showcase.tabDealers": "Galleries",
   "showcase.ownerCollection": "{name}'s Collection",
   "showcase.fromCollector": "From a collector",
 

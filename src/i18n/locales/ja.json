@@ -911,13 +911,13 @@
   "collection.visibility.collectorsHint": "遊刃会メンバーに公開されます。",
   "collection.visibility.dealersHint": "刀剣商にコレクションを公開します。",
 
-  "nav.showcase": "ショーケース",
+  "nav.showcase": "ミュージアム",
 
-  "showcase.title": "コミュニティ ショーケース",
+  "showcase.title": "遊刃会ミュージアム",
   "showcase.empty": "まだ共有されたアイテムはありません。コレクションを最初に紹介しましょう。",
   "showcase.emptyDealers": "コレクターからの提供品はまだありません。",
-  "showcase.tabCommunity": "遊刃会",
-  "showcase.tabDealers": "ギャラリー向け",
+  "showcase.tabCommunity": "ソサエティ",
+  "showcase.tabDealers": "ギャラリー",
   "showcase.ownerCollection": "{name}のコレクション",
   "showcase.fromCollector": "コレクターより",
 

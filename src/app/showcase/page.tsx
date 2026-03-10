@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { ShowcasePageClient } from './ShowcasePageClient';
 
 export const metadata: Metadata = {
-  title: 'Community Showcase — NihontoWatch',
+  title: 'Yuhinkai Society Museum — NihontoWatch',
   description: 'Browse nihonto and tosogu shared by collectors worldwide.',
 };
 
