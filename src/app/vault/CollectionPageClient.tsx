@@ -180,7 +180,7 @@ export function CollectionPageClient() {
     }
   }, [fetchItems, fetchDealerListings, filters]);
 
-  // Listen for promote/delist events to refresh the current tab
+  // Listen for promote/delist/status-change events to refresh the current tab
   useEffect(() => {
     const handlePromoted = () => {
       if (activeTab === 'collection') fetchItems(filters);
@@ -190,11 +190,17 @@ export function CollectionPageClient() {
       if (activeTab === 'available' || activeTab === 'hold') fetchDealerListings(activeTab);
       else if (activeTab === 'collection') fetchItems(filters);
     };
+    const handleStatusChanged = () => {
+      if (activeTab === 'collection') fetchItems(filters);
+      else fetchDealerListings(activeTab);
+    };
     window.addEventListener('collection-item-promoted', handlePromoted);
     window.addEventListener('dealer-listing-delisted', handleDelisted);
+    window.addEventListener('dealer-listing-status-changed', handleStatusChanged);
     return () => {
       window.removeEventListener('collection-item-promoted', handlePromoted);
       window.removeEventListener('dealer-listing-delisted', handleDelisted);
+      window.removeEventListener('dealer-listing-status-changed', handleStatusChanged);
     };
   }, [activeTab, filters, fetchItems, fetchDealerListings]);
 
