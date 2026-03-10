@@ -349,10 +349,19 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
       .then(data => {
         if (!data?.videos?.length) return;
         // Map ItemVideoRow → ListingVideo shape (add listing_id placeholder)
-        const videos = data.videos.map((v: Record<string, unknown>) => ({
-          ...v,
-          listing_id: 0,
-        }));
+        // Dedup by provider_id to prevent duplicate DB rows from showing twice
+        const seen = new Set<string>();
+        const videos = data.videos
+          .filter((v: Record<string, unknown>) => {
+            const pid = String(v.provider_id ?? '');
+            if (!pid || seen.has(pid)) return false;
+            seen.add(pid);
+            return true;
+          })
+          .map((v: Record<string, unknown>) => ({
+            ...v,
+            listing_id: 0,
+          }));
         setCurrentListing(prev => prev && String(prev.id) === itemUuid
           ? { ...prev, videos }
           : prev

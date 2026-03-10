@@ -61,7 +61,36 @@ export async function GET(
       }
     }
 
-    return NextResponse.json(item);
+    // Enrich with videos from item_videos (separate table, no FK join)
+    let videos: unknown[] = [];
+    if (item.item_uuid) {
+      const { data: videoRows } = await selectItemVideos(
+        serviceClient, 'item_uuid', item.item_uuid, '*',
+        { column: 'sort_order', ascending: true }
+      );
+      if (videoRows && videoRows.length > 0) {
+        videos = videoRows
+          .filter(v => v.status === 'ready')
+          .map(v => ({
+            id: v.id,
+            listing_id: 0,
+            provider: v.provider,
+            provider_id: v.provider_id,
+            duration_seconds: v.duration_seconds ?? undefined,
+            width: v.width ?? undefined,
+            height: v.height ?? undefined,
+            thumbnail_url: v.thumbnail_url ?? undefined,
+            status: v.status,
+            sort_order: v.sort_order,
+            original_filename: v.original_filename ?? undefined,
+            size_bytes: v.size_bytes ?? undefined,
+            created_at: v.created_at,
+            stream_url: v.stream_url ?? undefined,
+          }));
+      }
+    }
+
+    return NextResponse.json({ ...item, videos });
   } catch (error) {
     logger.logError('Collection item GET error', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
