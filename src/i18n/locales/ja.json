@@ -908,7 +908,7 @@
   "collection.visibility.dealers": "ギャラリー",
   "collection.visibility.privateHint": "自分だけに表示されます。",
   "collection.visibility.collectorsHint": "遊刃会メンバーに公開されます。",
-  "collection.visibility.dealersHint": "在庫を探しているギャラリーに公開されます。",
+  "collection.visibility.dealersHint": "刀剣商にコレクションを公開します。",
 
   "nav.showcase": "ショーケース",
 
