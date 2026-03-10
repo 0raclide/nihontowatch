@@ -182,6 +182,7 @@ export async function POST(request: NextRequest) {
   // Build listing row
   const listingData: Record<string, unknown> = {
     url: syntheticUrl,
+    item_uuid: crypto.randomUUID(),
     dealer_id: auth.dealerId,
     source: 'dealer',
     title,
@@ -255,7 +256,7 @@ export async function POST(request: NextRequest) {
 
   const { data, error } = await (serviceClient.from('listings') as any)
     .insert(listingData)
-    .select('id, url, title, item_type, price_value, price_currency, images, status, is_available, is_sold, first_seen_at')
+    .select('id, url, item_uuid, title, item_type, price_value, price_currency, images, status, is_available, is_sold, first_seen_at')
     .single();
 
   if (error) {
