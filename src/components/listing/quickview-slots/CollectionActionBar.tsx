@@ -1,16 +1,12 @@
 'use client';
 
-import { ShareButton } from '@/components/share/ShareButton';
-import { SocialShareButtons } from '@/components/share/SocialShareButtons';
 import { useLocale } from '@/i18n/LocaleContext';
-import type { Listing } from '@/types';
 
 interface CollectionActionBarProps {
-  listing: Listing;
   onEditCollection?: () => void;
 }
 
-export function CollectionActionBar({ listing, onEditCollection }: CollectionActionBarProps) {
+export function CollectionActionBar({ onEditCollection }: CollectionActionBarProps) {
   const { t } = useLocale();
 
   return (
@@ -28,12 +24,6 @@ export function CollectionActionBar({ listing, onEditCollection }: CollectionAct
           </svg>
         </button>
       )}
-      <SocialShareButtons
-        path={`/listing/${listing.id}`}
-        title={listing.title || 'NihontoWatch'}
-        size="sm"
-      />
-      <ShareButton listingId={listing.id} title={listing.title} size="sm" ogImageUrl={listing.og_image_url} />
     </>
   );
 }

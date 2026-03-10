@@ -427,7 +427,7 @@ export function QuickView() {
     : isShowcase
       ? <ShowcaseActionBar listing={currentListing} showcase={showcaseExt} />
       : isCollection
-        ? <CollectionActionBar listing={currentListing} onEditCollection={handleEditCollection} />
+        ? <CollectionActionBar onEditCollection={handleEditCollection} />
         : <BrowseActionBar listing={currentListing} isStudyMode={isStudyMode} onToggleStudyMode={toggleStudyMode} onToggleAdminEditMode={toggleAdminEditMode} />;
 
   const desktopDealerSlot = isShowcase
@@ -462,7 +462,7 @@ export function QuickView() {
     : isShowcase
       ? <ShowcaseMobileHeaderActions listing={currentListing} showcase={showcaseExt} />
       : isCollection
-        ? <CollectionMobileHeaderActions listing={currentListing} onEditCollection={handleEditCollection} />
+        ? <CollectionMobileHeaderActions onEditCollection={handleEditCollection} />
         : <BrowseMobileHeaderActions listing={currentListing} isStudyMode={isStudyMode} onToggleStudyMode={toggleStudyMode} isAdminEditMode={isAdminEditMode} onToggleAdminEditMode={toggleAdminEditMode} />;
 
   const mobileDealerSlot = isShowcase

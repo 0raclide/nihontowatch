@@ -1,14 +1,10 @@
 'use client';
 
-import { ShareButton } from '@/components/share/ShareButton';
-import type { Listing } from '@/types';
-
 interface CollectionMobileHeaderActionsProps {
-  listing: Listing;
   onEditCollection?: () => void;
 }
 
-export function CollectionMobileHeaderActions({ listing, onEditCollection }: CollectionMobileHeaderActionsProps) {
+export function CollectionMobileHeaderActions({ onEditCollection }: CollectionMobileHeaderActionsProps) {
   return (
     <>
       {/* Collection: Edit button */}
@@ -30,17 +26,6 @@ export function CollectionMobileHeaderActions({ listing, onEditCollection }: Col
           </svg>
         </button>
       )}
-      <div
-        onClick={(e) => e.stopPropagation()}
-        onTouchStart={(e) => e.stopPropagation()}
-      >
-        <ShareButton
-          listingId={listing.id}
-          title={listing.title}
-          size="sm"
-          ogImageUrl={listing.og_image_url}
-        />
-      </div>
     </>
   );
 }
