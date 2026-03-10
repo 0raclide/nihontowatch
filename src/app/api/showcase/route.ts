@@ -39,7 +39,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Determine visible visibility levels
-    const visibilityFilter: string[] = tier === 'dealer' || tier === 'inner_circle'
+    // Galleries (dealers) visibility is dealer-tier only — inner_circle is Yuhinkai, not a gallery
+    const visibilityFilter: string[] = tier === 'dealer'
       ? ['collectors', 'dealers']
       : ['collectors'];
 
@@ -59,7 +60,7 @@ export async function GET(request: NextRequest) {
 
     // Tab filter — enforce tier even if tab param is sent directly
     if (tab === 'dealers') {
-      if (tier !== 'dealer' && tier !== 'inner_circle') {
+      if (tier !== 'dealer') {
         return NextResponse.json({ data: [], total: 0, page, limit });
       }
       query = query.in('visibility', ['dealers']);

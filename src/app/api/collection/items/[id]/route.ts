@@ -53,7 +53,7 @@ export async function GET(
         .eq('id', user.id)
         .single() as { data: { subscription_tier: string } | null };
       const tier = profile?.subscription_tier ?? 'free';
-      if (item.visibility === 'dealers' && tier !== 'dealer' && tier !== 'inner_circle') {
+      if (item.visibility === 'dealers' && tier !== 'dealer') {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
       }
       if (item.visibility === 'collectors' && tier === 'free') {
