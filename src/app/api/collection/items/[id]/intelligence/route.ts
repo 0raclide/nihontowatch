@@ -116,19 +116,28 @@ export async function GET(
   const scoreData = await getScoreData(serviceClient);
   const percentiles = { p10: scoreData.p10, p25: scoreData.p25, p50: scoreData.p50 };
 
-  // 6. Count matching saved searches (JS-side, mirrors SQL RPC logic)
+  // 6. Count matching saved searches (JS-side, mirrors SQL RPC logic from migration 141)
   let interestedCollectors = 0;
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: searches } = await (serviceClient.from('saved_searches') as any)
-      .select('id, search_criteria')
+      .select('id, user_id, search_criteria')
       .eq('is_active', true)
       .neq('notification_frequency', 'none');
 
     if (searches && Array.isArray(searches)) {
+      // Count distinct users, not searches (mirrors SQL COUNT(DISTINCT user_id))
+      const matchedUserIds = new Set<string>();
+
       for (const search of searches) {
         const c = search.search_criteria;
         if (!c) continue;
+
+        // Exclude searches with text queries (conservative, mirrors SQL RPC)
+        if (c.query && typeof c.query === 'string' && c.query.trim() !== '') continue;
+
+        // Exclude sold-tab searches — they monitor sold archive, not new listings
+        if (c.tab === 'sold') continue;
 
         // item_type match
         if (c.itemTypes && c.itemTypes.length > 0) {
@@ -151,8 +160,8 @@ export async function GET(
           if (!matches) continue;
         }
 
-        // category match
-        if (c.category && c.category.length > 0) {
+        // category match ('all' or empty = no restriction, mirrors SQL RPC)
+        if (c.category && c.category !== 'all' && c.category !== '') {
           if (c.category.toLowerCase() !== (item.item_category ?? '').toLowerCase()) continue;
         }
 
@@ -160,8 +169,27 @@ export async function GET(
         if (c.minPrice != null && (item.price_value == null || item.price_value < c.minPrice)) continue;
         if (c.maxPrice != null && (item.price_value == null || item.price_value > c.maxPrice)) continue;
 
-        interestedCollectors++;
+        // schools filter (ILIKE substring match, mirrors SQL RPC + matcher)
+        if (c.schools && c.schools.length > 0) {
+          const schoolLower = (item.school ?? '').toLowerCase();
+          const tosoguSchoolLower = (item.tosogu_school ?? '').toLowerCase();
+          const schoolMatch = c.schools.some((s: string) => {
+            const sl = s.toLowerCase();
+            return schoolLower.includes(sl) || tosoguSchoolLower.includes(sl);
+          });
+          if (!schoolMatch) continue;
+        }
+
+        // askOnly filter — only match inquiry-priced listings
+        if (c.askOnly === true && item.price_value != null) continue;
+
+        // Deduplicate by user — one user with 5 matching searches = 1 collector
+        if (search.user_id) {
+          matchedUserIds.add(search.user_id);
+        }
       }
+
+      interestedCollectors = matchedUserIds.size;
     }
   } catch {
     // Non-fatal — just show 0
