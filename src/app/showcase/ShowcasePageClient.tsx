@@ -117,19 +117,19 @@ export function ShowcasePageClient() {
             </h1>
           </div>
 
-          {/* Tabs */}
-          <div className="flex gap-1 mb-6 border-b border-border">
-            <button
-              onClick={() => handleTabChange('community')}
-              className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
-                activeTab === 'community'
-                  ? 'border-gold text-ink'
-                  : 'border-transparent text-muted hover:text-ink'
-              }`}
-            >
-              {t('showcase.tabCommunity')}
-            </button>
-            {canSeeDealerTab && (
+          {/* Tabs — only show if dealer tab is visible */}
+          {canSeeDealerTab && (
+            <div className="flex gap-1 mb-6 border-b border-border">
+              <button
+                onClick={() => handleTabChange('community')}
+                className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+                  activeTab === 'community'
+                    ? 'border-gold text-ink'
+                    : 'border-transparent text-muted hover:text-ink'
+                }`}
+              >
+                {t('showcase.tabCommunity')}
+              </button>
               <button
                 onClick={() => handleTabChange('dealers')}
                 className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
@@ -140,8 +140,8 @@ export function ShowcasePageClient() {
               >
                 {t('showcase.tabDealers')}
               </button>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* Error state */}
           {error && !isLoading && items.length === 0 && (

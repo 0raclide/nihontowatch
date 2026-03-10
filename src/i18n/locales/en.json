@@ -904,19 +904,19 @@
 
   "collection.visibility.label": "Visibility",
   "collection.visibility.private": "Private",
-  "collection.visibility.collectors": "Collectors",
-  "collection.visibility.dealers": "Dealers",
+  "collection.visibility.collectors": "Yuhinkai",
+  "collection.visibility.dealers": "Galleries",
   "collection.visibility.privateHint": "Only you can see this item.",
-  "collection.visibility.collectorsHint": "Visible to other collectors on the Showcase.",
-  "collection.visibility.dealersHint": "Visible to dealers and inner circle members.",
+  "collection.visibility.collectorsHint": "Visible to Yuhinkai members.",
+  "collection.visibility.dealersHint": "Visible to galleries seeking inventory.",
 
   "nav.showcase": "Showcase",
 
   "showcase.title": "Community Showcase",
   "showcase.empty": "No items shared yet. Be the first to showcase your collection.",
   "showcase.emptyDealers": "No items available from collectors yet.",
-  "showcase.tabCommunity": "Community",
-  "showcase.tabDealers": "Available for Dealers",
+  "showcase.tabCommunity": "Yuhinkai",
+  "showcase.tabDealers": "Available to Galleries",
   "showcase.ownerCollection": "{name}'s Collection",
   "showcase.fromCollector": "From a collector",
 

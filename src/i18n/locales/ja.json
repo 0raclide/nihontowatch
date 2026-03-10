@@ -904,19 +904,19 @@
 
   "collection.visibility.label": "公開設定",
   "collection.visibility.private": "非公開",
-  "collection.visibility.collectors": "コレクター",
-  "collection.visibility.dealers": "ディーラー",
+  "collection.visibility.collectors": "遊刃会",
+  "collection.visibility.dealers": "ギャラリー",
   "collection.visibility.privateHint": "自分だけに表示されます。",
-  "collection.visibility.collectorsHint": "ショーケースで他のコレクターに公開されます。",
-  "collection.visibility.dealersHint": "ディーラーおよびインナーサークル会員に公開されます。",
+  "collection.visibility.collectorsHint": "遊刃会メンバーに公開されます。",
+  "collection.visibility.dealersHint": "在庫を探しているギャラリーに公開されます。",
 
   "nav.showcase": "ショーケース",
 
   "showcase.title": "コミュニティ ショーケース",
   "showcase.empty": "まだ共有されたアイテムはありません。コレクションを最初に紹介しましょう。",
   "showcase.emptyDealers": "コレクターからの提供品はまだありません。",
-  "showcase.tabCommunity": "コミュニティ",
-  "showcase.tabDealers": "コレクターからの出品",
+  "showcase.tabCommunity": "遊刃会",
+  "showcase.tabDealers": "ギャラリー向け",
   "showcase.ownerCollection": "{name}のコレクション",
   "showcase.fromCollector": "コレクターより",
 

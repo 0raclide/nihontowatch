@@ -52,9 +52,9 @@ export async function GET(request: NextRequest) {
     const search = url.searchParams.get('q');
     const tab = url.searchParams.get('tab') || 'community'; // 'community' or 'dealers'
 
-    // Build query
+    // Build query (no profile join — collection_items has no direct FK to profiles)
     let query = collectionItemsFrom(serviceClient)
-      .select('*, profiles!owner_id(display_name, avatar_url)', { count: 'exact' })
+      .select('*', { count: 'exact' })
       .neq('owner_id', user.id); // Exclude own items
 
     // Tab filter
@@ -90,8 +90,27 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch showcase items' }, { status: 500 });
     }
 
+    // Fetch profiles for unique owner_ids separately
+    const ownerIds = [...new Set((items || []).map((i: { owner_id: string }) => i.owner_id))];
+    const profileMap = new Map<string, { display_name: string | null; avatar_url: string | null }>();
+    if (ownerIds.length > 0) {
+      const { data: profiles } = await serviceClient
+        .from('profiles')
+        .select('id, display_name, avatar_url')
+        .in('id', ownerIds) as { data: Array<{ id: string; display_name: string | null; avatar_url: string | null }> | null };
+      for (const p of profiles || []) {
+        profileMap.set(p.id, { display_name: p.display_name, avatar_url: p.avatar_url });
+      }
+    }
+
+    // Merge profile data into items
+    const enriched = (items || []).map((item: { owner_id: string }) => ({
+      ...item,
+      profiles: profileMap.get(item.owner_id) || null,
+    }));
+
     return NextResponse.json({
-      data: items || [],
+      data: enriched,
       total: count || 0,
       page,
       limit,
