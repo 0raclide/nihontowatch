@@ -41,7 +41,7 @@ function parseFilters(searchParams: URLSearchParams): CollectionFilters {
     certType: searchParams.get('cert') || undefined,
     era: searchParams.get('era') || undefined,
     meiType: searchParams.get('meiType') || undefined,
-    sort: (searchParams.get('sort') as CollectionFilters['sort']) || 'newest',
+    sort: (searchParams.get('sort') as CollectionFilters['sort']) || 'custom',
     page: Number(searchParams.get('page')) || 1,
     limit: Math.min(Number(searchParams.get('limit')) || 100, 200),
   };

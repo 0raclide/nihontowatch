@@ -83,7 +83,7 @@ export function CollectionPageClient() {
     meiType: searchParams.get('meiType') || undefined,
     status: (searchParams.get('status') as CollectionFilters['status']) || undefined,
     condition: (searchParams.get('condition') as CollectionFilters['condition']) || undefined,
-    sort: (searchParams.get('sort') as CollectionFilters['sort']) || 'newest',
+    sort: (searchParams.get('sort') as CollectionFilters['sort']) || 'custom',
     page: Number(searchParams.get('page')) || 1,
     limit: 100,
   }));
@@ -149,7 +149,7 @@ export function CollectionPageClient() {
       if (currentFilters.meiType) params.set('meiType', currentFilters.meiType);
       if (currentFilters.status) params.set('status', currentFilters.status);
       if (currentFilters.condition) params.set('condition', currentFilters.condition);
-      if (currentFilters.sort && currentFilters.sort !== 'newest') params.set('sort', currentFilters.sort);
+      if (currentFilters.sort && currentFilters.sort !== 'custom') params.set('sort', currentFilters.sort);
       if (currentFilters.page && currentFilters.page > 1) params.set('page', String(currentFilters.page));
 
       const res = await fetch(`/api/collection/items?${params.toString()}`, {
@@ -279,7 +279,7 @@ export function CollectionPageClient() {
     if (newFilters.meiType) url.searchParams.set('meiType', newFilters.meiType);
     if (newFilters.status) url.searchParams.set('status', newFilters.status);
     if (newFilters.condition) url.searchParams.set('condition', newFilters.condition);
-    if (newFilters.sort && newFilters.sort !== 'newest') url.searchParams.set('sort', newFilters.sort);
+    if (newFilters.sort && newFilters.sort !== 'custom') url.searchParams.set('sort', newFilters.sort);
 
     window.history.replaceState(null, '', url.toString());
   }, []);
@@ -381,7 +381,7 @@ export function CollectionPageClient() {
             <div className="flex items-center gap-2">
               <span className="text-[10px] uppercase tracking-[0.08em] text-muted/60 font-medium">{t('home.sort')}</span>
               <select
-                value={filters.sort || 'newest'}
+                value={filters.sort || 'custom'}
                 onChange={(e) => handleFilterChange({ sort: e.target.value as CollectionFilters['sort'] })}
                 className="bg-transparent text-[12px] text-ink font-medium focus:outline-none cursor-pointer pr-4 appearance-none"
                 style={{
@@ -571,7 +571,7 @@ export function CollectionPageClient() {
         activeFilterCount={activeFilterCount}
         onOpenFilters={() => setFilterDrawerOpen(true)}
         onAddClick={handleAddClick}
-        sort={filters.sort || 'newest'}
+        sort={filters.sort || 'custom'}
         onSortChange={handleSortChange}
       />
     </div>
