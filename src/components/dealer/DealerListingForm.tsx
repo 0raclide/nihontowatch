@@ -939,7 +939,7 @@ export function DealerListingForm({ mode, initialData, context = 'listing' }: De
             {t('dealer.addAnother')}
           </button>
           <button
-            onClick={() => router.push('/dealer')}
+            onClick={() => router.push(successRedirect)}
             className="px-4 py-2 rounded-lg bg-surface text-muted text-[13px] font-medium hover:bg-hover transition-colors"
           >
             {t('dealer.backToListings')}
