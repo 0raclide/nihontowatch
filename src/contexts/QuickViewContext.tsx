@@ -261,10 +261,12 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
     // Track for signup pressure system
     signupPressure?.trackQuickView();
 
-    // Fetch full listing data (with enrichment) asynchronously
-    // Skip for dealer (public API rejects source='dealer' via RLS — always 404)
+    // Fetch full listing data (with enrichment) asynchronously.
+    // For dealer listings the bulk API omits videos — the detail API retries with
+    // service client for dealer users (verifyDealer + ownership check), so videos
+    // are loaded here. Section data is already available from the bulk fetch.
     // Skip if caller already fetched the complete listing (e.g., DeepLinkHandler)
-    if (!options?.skipFetch && detectedSource !== 'dealer') {
+    if (!options?.skipFetch) {
       fetchFullListing(listing.id).then((fullListing) => {
         if (fullListing && !refreshInFlightRef.current) {
           setCurrentListing(prev => prev ? mergeDetailIntoListing(prev, fullListing) : fullListing);
@@ -342,7 +344,9 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
 
     setCurrentListing(nextListing);
     setCurrentIndex(nextIndex);
-    setDetailLoaded(source === 'collection'); // Collection items don't need detail fetch
+    // Collection + dealer items already have section data from batch fetch — mark loaded.
+    // Detail fetch still runs for dealer (to pick up videos) but sections render immediately.
+    setDetailLoaded(source === 'collection' || source === 'dealer');
 
     updateUrl(nextListing.id, source);
 
@@ -370,7 +374,9 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
 
     setCurrentListing(prevListing);
     setCurrentIndex(prevIndex);
-    setDetailLoaded(source === 'collection'); // Collection items don't need detail fetch
+    // Collection + dealer items already have section data from batch fetch — mark loaded.
+    // Detail fetch still runs for dealer (to pick up videos) but sections render immediately.
+    setDetailLoaded(source === 'collection' || source === 'dealer');
 
     updateUrl(prevListing.id, source);
 
