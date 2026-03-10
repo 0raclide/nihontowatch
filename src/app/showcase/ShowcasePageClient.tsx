@@ -23,6 +23,7 @@ export function ShowcasePageClient() {
 
   const [activeTab, setActiveTab] = useState<ShowcaseTab>(isDealer ? 'dealers' : 'community');
   const [items, setItems] = useState<DisplayItem[]>([]);
+  const [rawRows, setRawRows] = useState<ShowcaseApiRow[]>([]);
   const [total, setTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -38,12 +39,29 @@ export function ShowcasePageClient() {
   });
 
   // Set listings in QuickView context for J/K navigation
+  // Use adapted raw rows (preserving JSONB sections) so nav preserves content stream
+  const adaptedListings = useMemo(() => {
+    return rawRows.map(row => ({
+      ...row,
+      id: row.item_uuid,
+      url: '',
+      dealer_id: 0,
+      first_seen_at: row.created_at,
+      showcase: {
+        item_uuid: row.item_uuid,
+        visibility: row.visibility,
+        owner_display_name: row.profiles?.display_name ?? null,
+        owner_avatar_url: row.profiles?.avatar_url ?? null,
+      },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    })) as any[];
+  }, [rawRows]);
+
   useEffect(() => {
-    if (items.length > 0) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      quickView.setListings(items as any[]);
+    if (adaptedListings.length > 0) {
+      quickView.setListings(adaptedListings);
     }
-  }, [items, quickView.setListings]);
+  }, [adaptedListings, quickView.setListings]);
 
   const fetchShowcase = useCallback(async (tab: ShowcaseTab, currentPage: number) => {
     abortRef.current?.abort();
@@ -74,6 +92,7 @@ export function ShowcasePageClient() {
       }
 
       const data: { data: ShowcaseApiRow[]; total: number } = await res.json();
+      setRawRows(data.data);
       const mapped = showcaseItemsToDisplayItems(data.data);
       setItems(mapped);
       setTotal(data.total);
@@ -90,15 +109,17 @@ export function ShowcasePageClient() {
     fetchShowcase(activeTab, page);
   }, [activeTab, page, fetchShowcase]);
 
-  // Handle QuickView open for showcase items
+  // Handle QuickView open for showcase items — find raw row to preserve JSONB sections
   const handleItemClick = useCallback((item: DisplayItem) => {
-    // Cast to Listing shape for openQuickView (DisplayItem is a superset)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    quickView.openQuickView(item as any, {
-      source: 'showcase',
-      skipFetch: true,
-    });
-  }, [quickView]);
+    const rawRow = rawRows.find(r => r.item_uuid === item.id);
+    if (rawRow) {
+      quickView.openShowcaseQuickView(rawRow);
+    } else {
+      // Fallback: use generic opener (shouldn't happen, but safe)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      quickView.openQuickView(item as any, { source: 'showcase', skipFetch: true });
+    }
+  }, [quickView, rawRows]);
 
   const handleTabChange = useCallback((tab: ShowcaseTab) => {
     setActiveTab(tab);

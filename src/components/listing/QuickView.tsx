@@ -98,7 +98,7 @@ export function QuickView() {
   const isCollection = source === 'collection';
   const isDealer = source === 'dealer';
   const isShowcase = source === 'showcase';
-  const useContentStream = isDealer || isCollection;
+  const useContentStream = isDealer || isCollection || isShowcase;
 
   // Track when the sheet state last changed for dwell time calculation
   const sheetStateChangeTimeRef = useRef<number>(Date.now());

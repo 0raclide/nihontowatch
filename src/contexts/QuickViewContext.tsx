@@ -13,6 +13,7 @@ import {
 import { usePathname } from 'next/navigation';
 import type { Listing } from '@/types';
 import type { CollectionItemRow } from '@/types/collectionItem';
+import type { ShowcaseApiRow } from '@/lib/displayItem/fromShowcaseItem';
 import { useSignupPressureOptional } from './SignupPressureContext';
 import { useAuth } from '@/lib/auth/AuthContext';
 import {
@@ -68,6 +69,8 @@ interface QuickViewContextType {
   collectionMode: 'view' | null;
   /** Open QuickView for a collection item */
   openCollectionQuickView: (item: CollectionItemRow, mode?: 'view') => void;
+  /** Open QuickView for a showcase item (preserves JSONB sections) */
+  openShowcaseQuickView: (item: ShowcaseApiRow) => void;
   /** Change the collection mode */
   setCollectionMode: (mode: 'view' | null) => void;
   /** Callback invoked after a collection item is saved (add/edit/delete) */
@@ -367,15 +370,15 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
 
     setCurrentListing(nextListing);
     setCurrentIndex(nextIndex);
-    // Collection + dealer items already have section data from batch fetch — mark loaded.
+    // Collection + dealer + showcase items already have section data from batch fetch — mark loaded.
     // Detail fetch still runs for dealer (to pick up videos) but sections render immediately.
-    setDetailLoaded(source === 'collection' || source === 'dealer');
+    setDetailLoaded(source === 'collection' || source === 'dealer' || source === 'showcase');
 
     updateUrl(nextListing.id, source);
 
-    // Fetch full listing data (with enrichment) asynchronously — skip for collection
-    if (source === 'collection') {
-      // Collection items don't have a detail API, but may have videos in item_videos
+    // Fetch full listing data (with enrichment) asynchronously — skip for collection/showcase
+    if (source === 'collection' || source === 'showcase') {
+      // Collection/showcase items don't have a detail API, but may have videos in item_videos
       fetchCollectionVideos(String(nextListing.id));
       return;
     }
@@ -401,15 +404,15 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
 
     setCurrentListing(prevListing);
     setCurrentIndex(prevIndex);
-    // Collection + dealer items already have section data from batch fetch — mark loaded.
+    // Collection + dealer + showcase items already have section data from batch fetch — mark loaded.
     // Detail fetch still runs for dealer (to pick up videos) but sections render immediately.
-    setDetailLoaded(source === 'collection' || source === 'dealer');
+    setDetailLoaded(source === 'collection' || source === 'dealer' || source === 'showcase');
 
     updateUrl(prevListing.id, source);
 
-    // Fetch full listing data (with enrichment) asynchronously — skip for collection
-    if (source === 'collection') {
-      // Collection items don't have a detail API, but may have videos in item_videos
+    // Fetch full listing data (with enrichment) asynchronously — skip for collection/showcase
+    if (source === 'collection' || source === 'showcase') {
+      // Collection/showcase items don't have a detail API, but may have videos in item_videos
       fetchCollectionVideos(String(prevListing.id));
       return;
     }
@@ -466,6 +469,36 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
     openQuickView(adaptedListing, { skipFetch: true, source: 'collection' });
 
     // Fix URL: use ?item=UUID instead of ?listing=ID (openQuickView set ?listing=)
+    updateUrl(item.item_uuid, 'collection');
+
+    // Fetch videos from item_videos table (async enrichment)
+    fetchCollectionVideos(item.item_uuid);
+  }, [openQuickView, updateUrl, fetchCollectionVideos]);
+
+  // Showcase: open QuickView for a showcase item (preserves JSONB sections like collection)
+  const openShowcaseQuickView = useCallback((item: ShowcaseApiRow) => {
+    if (closeCooldown.current) return;
+
+    // Spread raw item preserving ALL JSONB sections (sayagaki, koshirae, provenance, etc.)
+    // Same pattern as openCollectionQuickView but with showcase extension data
+    const adaptedListing = {
+      ...item,
+      id: item.item_uuid,
+      url: '',
+      dealer_id: 0,
+      first_seen_at: item.created_at,
+      // Attach showcase extension data so QuickView slots can render owner row
+      showcase: {
+        item_uuid: item.item_uuid,
+        visibility: item.visibility,
+        owner_display_name: item.profiles?.display_name ?? null,
+        owner_avatar_url: item.profiles?.avatar_url ?? null,
+      },
+    } as unknown as Listing;
+
+    openQuickView(adaptedListing, { skipFetch: true, source: 'showcase' });
+
+    // Fix URL: openQuickView set ?listing=, but showcase uses ?item=UUID
     updateUrl(item.item_uuid, 'collection');
 
     // Fetch videos from item_videos table (async enrichment)
@@ -703,6 +736,7 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
       collectionItem,
       collectionMode,
       openCollectionQuickView,
+      openShowcaseQuickView,
 
       setCollectionMode,
       onCollectionSaved,
@@ -729,6 +763,7 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
       collectionItem,
       collectionMode,
       openCollectionQuickView,
+      openShowcaseQuickView,
 
       setCollectionMode,
       onCollectionSaved,

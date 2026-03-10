@@ -10,6 +10,14 @@
 
 import type { CollectionVisibility } from '@/types/collectionItem';
 import type { DisplayItem } from '@/types/displayItem';
+import type {
+  SayagakiEntry,
+  HakogakiEntry,
+  KoshiraeData,
+  ProvenanceEntry,
+  KiwameEntry,
+  KantoHibishoData,
+} from '@/types';
 
 export interface ShowcaseApiRow {
   // collection_items fields
@@ -62,6 +70,15 @@ export interface ShowcaseApiRow {
   is_sold?: boolean | null;
   setsumei_text_en?: string | null;
   setsumei_text_ja?: string | null;
+  // JSONB section data (returned by select('*') from collection_items)
+  sayagaki?: SayagakiEntry[] | null;
+  hakogaki?: HakogakiEntry[] | null;
+  koshirae?: KoshiraeData | null;
+  provenance?: ProvenanceEntry[] | null;
+  kiwame?: KiwameEntry[] | null;
+  kanto_hibisho?: KantoHibishoData | null;
+  ai_curator_note_en?: string | null;
+  ai_curator_note_ja?: string | null;
   created_at: string;
   // Profile JOIN
   profiles?: {
