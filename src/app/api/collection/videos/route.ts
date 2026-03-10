@@ -97,24 +97,43 @@ export async function GET(request: NextRequest) {
     if (accessDenied) return accessDenied;
 
     const itemId = request.nextUrl.searchParams.get('itemId');
-    if (!itemId) {
-      return NextResponse.json({ error: 'itemId is required' }, { status: 400 });
+    const itemUuid = request.nextUrl.searchParams.get('itemUuid');
+    if (!itemId && !itemUuid) {
+      return NextResponse.json({ error: 'itemId or itemUuid is required' }, { status: 400 });
     }
 
-    // Verify item ownership and get item_uuid
     const serviceClient = createServiceClient();
-    const { data: item } = await selectCollectionItemSingle(
-      serviceClient, 'id', itemId, 'id, owner_id, item_uuid'
-    );
+    let resolvedUuid: string;
 
-    if (!item || item.owner_id !== user.id) {
-      return NextResponse.json({ error: 'Item not found' }, { status: 404 });
+    if (itemUuid) {
+      // Direct query by item_uuid — verify ownership via item_videos.owner_id
+      resolvedUuid = itemUuid;
+    } else {
+      // Lookup by collection item row ID → get item_uuid
+      const { data: item } = await selectCollectionItemSingle(
+        serviceClient, 'id', itemId!, 'id, owner_id, item_uuid'
+      );
+
+      if (!item || item.owner_id !== user.id) {
+        return NextResponse.json({ error: 'Item not found' }, { status: 404 });
+      }
+      resolvedUuid = item.item_uuid;
     }
 
     const { data: videos, error } = await selectItemVideos(
-      serviceClient, 'item_uuid', item.item_uuid, '*',
+      serviceClient, 'item_uuid', resolvedUuid, '*',
       { column: 'sort_order', ascending: true }
     );
+
+    // When queried by itemUuid, verify ownership via owner_id on video rows
+    if (itemUuid && videos) {
+      const owned = videos.filter((v: ItemVideoRow) => v.owner_id === user.id);
+      if (owned.length !== videos.length) {
+        // Some videos don't belong to this user — only return owned ones
+        videos.length = 0;
+        videos.push(...owned);
+      }
+    }
 
     if (error) {
       return NextResponse.json({ error: 'Failed to fetch videos' }, { status: 500 });

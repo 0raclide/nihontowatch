@@ -338,6 +338,26 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
     updateUrl(null);
   }, [updateUrl]);
 
+  // Fetch videos for a collection item by item_uuid, then merge into currentListing.
+  // Best-effort: failures are silently ignored (videos are supplementary content).
+  const fetchCollectionVideos = useCallback((itemUuid: string) => {
+    fetch(`/api/collection/videos?itemUuid=${itemUuid}`)
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (!data?.videos?.length) return;
+        // Map ItemVideoRow → ListingVideo shape (add listing_id placeholder)
+        const videos = data.videos.map((v: Record<string, unknown>) => ({
+          ...v,
+          listing_id: 0,
+        }));
+        setCurrentListing(prev => prev && String(prev.id) === itemUuid
+          ? { ...prev, videos }
+          : prev
+        );
+      })
+      .catch(() => {});
+  }, []);
+
   // Navigate to next listing
   const goToNext = useCallback(() => {
     if (listings.length === 0 || currentIndex === -1) return;
@@ -354,7 +374,11 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
     updateUrl(nextListing.id, source);
 
     // Fetch full listing data (with enrichment) asynchronously — skip for collection
-    if (source === 'collection') return;
+    if (source === 'collection') {
+      // Collection items don't have a detail API, but may have videos in item_videos
+      fetchCollectionVideos(String(nextListing.id));
+      return;
+    }
     fetchFullListing(nextListing.id).then((fullListing) => {
       if (fullListing && !refreshInFlightRef.current) {
         setCurrentListing(prev => prev ? mergeDetailIntoListing(prev, fullListing) : fullListing);
@@ -366,7 +390,7 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
         setDetailLoaded(true);
       }
     });
-  }, [listings, currentIndex, updateUrl, fetchFullListing, source]);
+  }, [listings, currentIndex, updateUrl, fetchFullListing, fetchCollectionVideos, source]);
 
   // Navigate to previous listing
   const goToPrevious = useCallback(() => {
@@ -384,7 +408,11 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
     updateUrl(prevListing.id, source);
 
     // Fetch full listing data (with enrichment) asynchronously — skip for collection
-    if (source === 'collection') return;
+    if (source === 'collection') {
+      // Collection items don't have a detail API, but may have videos in item_videos
+      fetchCollectionVideos(String(prevListing.id));
+      return;
+    }
     fetchFullListing(prevListing.id).then((fullListing) => {
       if (fullListing && !refreshInFlightRef.current) {
         setCurrentListing(prev => prev ? mergeDetailIntoListing(prev, fullListing) : fullListing);
@@ -396,7 +424,7 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
         setDetailLoaded(true);
       }
     });
-  }, [listings, currentIndex, updateUrl, fetchFullListing, source]);
+  }, [listings, currentIndex, updateUrl, fetchFullListing, fetchCollectionVideos, source]);
 
   // Set listings array for navigation
   const setListings = useCallback((newListings: Listing[]) => {
@@ -439,7 +467,10 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
 
     // Fix URL: use ?item=UUID instead of ?listing=ID (openQuickView set ?listing=)
     updateUrl(item.item_uuid, 'collection');
-  }, [openQuickView, updateUrl]);
+
+    // Fetch videos from item_videos table (async enrichment)
+    fetchCollectionVideos(item.item_uuid);
+  }, [openQuickView, updateUrl, fetchCollectionVideos]);
 
   // Collection: change mode
   const setCollectionMode = useCallback((mode: 'view' | null) => {
