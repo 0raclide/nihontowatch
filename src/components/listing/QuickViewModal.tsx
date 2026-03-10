@@ -257,7 +257,7 @@ export function QuickViewModal({
             relative w-full bg-cream shadow-xl pointer-events-auto
             rounded-t-2xl lg:rounded-lg
             h-[92vh] lg:h-[90vh]
-            ${source === 'dealer' || source === 'collection' ? QUICKVIEW_LAYOUT.modal.dealer : QUICKVIEW_LAYOUT.modal.default} overflow-hidden flex flex-col
+            ${source === 'dealer' || source === 'collection' || source === 'showcase' ? QUICKVIEW_LAYOUT.modal.dealer : QUICKVIEW_LAYOUT.modal.default} overflow-hidden flex flex-col
             transition-[max-width] duration-300 ease-out
             ${isAnimatingOut ? 'animate-slideDown' : 'animate-slideUp'}
           `}
