@@ -126,7 +126,7 @@ The ref guard prevents re-opening on re-renders. Items must be loaded before the
 
 4. **`as unknown as Listing` cast in QuickViewContext**: The context still stores `Listing` internally. `collectionItemToDisplayItem(item) as unknown as Listing` is the bridge. This is inherited from the DisplayItem refactor — the proper fix is migrating QuickViewContext to store `DisplayItem` natively (deferred).
 
-5. **Feature flag**: ~~`NEXT_PUBLIC_COLLECTION_ENABLED`~~ — **replaced by `yuhinkai` tier check** (2026-03-10). Collection access is now gated by `checkCollectionAccess()` in `src/lib/collection/access.ts`. Required tier: `yuhinkai`, `dealer`, or `admin`. The env var is dead code and should be removed from Vercel.
+5. **Feature flag**: ~~`NEXT_PUBLIC_COLLECTION_ENABLED`~~ — **replaced by tier check** (2026-03-10). Collection access is now gated by `checkCollectionAccess()` in `src/lib/collection/access.ts`. Required tier: `inner_circle`, `dealer`, or `admin`. The env var is dead code and should be removed from Vercel.
 
 ---
 

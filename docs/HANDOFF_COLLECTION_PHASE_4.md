@@ -19,14 +19,13 @@ The vault (personal collection manager at `/vault`) is restricted to **Inner Cir
 
 | Tier | Collection Access | Mechanism |
 |------|------------------|-----------|
-| free | NO | Rank 0 < required rank 3 |
-| enthusiast | NO | Rank 1 < required rank 3 |
-| collector | NO | Rank 2 < required rank 3 |
-| yuhinkai | NO | Special case: enthusiast features only, no collection |
-| **inner_circle** | **YES** | Rank 3 = required rank 3 |
+| free | NO | `canAccessFeature('free', 'collection_access')` → false |
+| **inner_circle** | **YES** | `FEATURE_MIN_TIER.collection_access = 'inner_circle'` |
 | **dealer** | **YES** | Special case: explicit `collection_access` grant |
 | **admin** | **YES** | Role bypass in `checkCollectionAccess()` |
 | **trial mode** | **YES (all)** | `isTrialModeActive()` → all features free |
+
+> **Note (2026-03-10):** The old tiers `enthusiast`, `collector`, and `yuhinkai` were removed (migration 139). Only 3 tiers remain: `free`, `inner_circle`, `dealer`.
 
 ### Key files
 
@@ -68,7 +67,7 @@ Since we're keeping the current restricted access:
 
 When/if the decision is made to open the vault more broadly:
 
-1. **Lower `FEATURE_MIN_TIER.collection_access`** from `'inner_circle'` to desired tier (e.g., `'yuhinkai'` for all paid, or remove gating entirely)
+1. **Lower `FEATURE_MIN_TIER.collection_access`** from `'inner_circle'` to `'free'` to open to all users
 2. **Add nav links** for all authenticated users (Header + MobileNavDrawer)
 3. **Add empty state** for new collectors (0 items)
 4. **Add paywall** if gating at a paid tier (currently silent redirect)
@@ -80,8 +79,8 @@ When/if the decision is made to open the vault more broadly:
 
 | File | Change |
 |------|--------|
-| `src/types/subscription.ts` | `FEATURE_MIN_TIER.collection_access`: `'yuhinkai'` → `'inner_circle'` |
-| `src/types/subscription.ts` | `canAccessFeature()`: removed `collection_access` from yuhinkai special case |
-| `src/lib/collection/access.ts` | Updated doc comment (required tiers) |
-| `tests/lib/collection/access.test.ts` | Updated: yuhinkai now denied, enthusiast/collector now denied, inner_circle explicitly allowed |
+| `src/types/subscription.ts` | `FEATURE_MIN_TIER.collection_access = 'inner_circle'` |
+| `src/types/subscription.ts` | `canAccessFeature()`: dealer gets explicit `collection_access` grant |
+| `src/lib/collection/access.ts` | Updated doc comment (required tiers: inner_circle, dealer, admin) |
+| `tests/lib/collection/access.test.ts` | 9 tests: free denied, inner_circle/dealer allowed, admin bypass, trial mode |
 | `docs/HANDOFF_COLLECTION_PHASE_4.md` | Rewritten to reflect inner_circle+dealer+admin restriction |

@@ -20,7 +20,7 @@ The collection is a **private gallery**, not a database. It should feel like wal
 
 **Key differentiator**: Yuhinkai catalog search — certified Juyo/Tokuju items can be looked up and linked from authoritative NBTHK data. No other collector tool has this.
 
-**Access**: Gated by `yuhinkai` subscription tier (or higher). During trial mode (`NEXT_PUBLIC_TRIAL_MODE=true`), all authenticated users can access. See `docs/HANDOFF_YUHINKAI_TIER.md`.
+**Access**: Gated by `inner_circle` subscription tier (+ `dealer` + admin). During trial mode (`NEXT_PUBLIC_TRIAL_MODE=true`), all authenticated users can access. See `docs/HANDOFF_COLLECTION_PHASE_4.md`.
 
 ---
 

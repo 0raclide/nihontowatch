@@ -233,20 +233,23 @@ NEXT_PUBLIC_TRIAL_MODE=false  # Normal paywall (or remove var)
 When trial ends, paywall returns instantly - no code changes needed.
 
 **What trial mode does:**
-- `canAccessFeature()` returns `true` for all features
-- `isDelayed` returns `false` (no 7-day data delay)
+- `canAccessFeature()` returns `true` for all features (including inner_circle exclusives)
 - DataDelayBanner is hidden
 - Pricing page still exists but free tier shows "Browse all listings"
 
-### Subscription Tiers (Post-Trial)
+**Note:** `isDelayed` derives from `canAccessFeature(tier, 'fresh_data')`. Since `fresh_data` is now free, `isDelayed` is always `false` for all users regardless of trial mode. If `fresh_data` is re-gated to `inner_circle` in the future, `isDelayed` will automatically follow.
+
+### Subscription Tiers (Simplified 2026-03-10)
+
+Only 3 tiers remain. All previously-paid features (fresh_data, setsumei, alerts, inquiry_emails, artist_stats, export_data, blade_analysis, provenance_data) are now **free for all users**.
 
 | Tier | Internal Name | Price | Key Features |
 |------|---------------|-------|--------------|
-| Free | `free` | $0 | Browse all listings, filters, favorites, currency conversion |
-| Pro | `enthusiast` | $25/mo | Fresh data, email alerts, AI inquiry emails, data exports |
-| Collector | `collector` | $99/mo | Everything in Pro + setsumei translations, artist stats, priority Juyo alerts |
-| Inner Circle | `inner_circle` | $249/mo | Everything in Collector + private listings, Discord, LINE |
-| Dealer | `dealer` | $150/mo | Pro features + analytics dashboard, competitive intel |
+| Free | `free` | $0 | All browse features, filters, favorites, currency conversion, fresh data, email alerts, AI inquiry emails, setsumei, artist stats, data exports |
+| Inner Circle | `inner_circle` | $249/mo | Private listings, Discord access, LINE access, collection access |
+| Dealer | `dealer` | $150/mo | Analytics dashboard, listing management, competitive intel |
+
+**Removed tiers** (migrated to `free` via migration 139): `enthusiast`, `collector`, `yuhinkai`. Legacy Stripe metadata with these names is safely mapped to `free` via `mapLegacyTier()` in `src/lib/stripe/server.ts`.
 
 ### Key Files (Subscriptions & Alerts)
 
@@ -274,13 +277,19 @@ if (!canAccessFeature('search_alerts')) {
 ```
 
 Features and minimum tier:
-- `fresh_data`: enthusiast
-- `setsumei_translation`: enthusiast
-- `inquiry_emails`: enthusiast
-- `saved_searches`: enthusiast
-- `search_alerts`: enthusiast
-- `private_listings`: connoisseur
-- `artist_stats`: connoisseur
+- `fresh_data`: free
+- `setsumei_translation`: free
+- `inquiry_emails`: free
+- `saved_searches`: free
+- `search_alerts`: free
+- `artist_stats`: free
+- `export_data`: free
+- `blade_analysis`: free
+- `provenance_data`: free
+- `private_listings`: inner_circle
+- `discord_access`: inner_circle
+- `line_access`: inner_circle
+- `collection_access`: inner_circle
 
 ### Dealer Analytics (B2B Revenue)
 

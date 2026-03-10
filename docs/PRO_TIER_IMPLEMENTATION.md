@@ -1,5 +1,7 @@
 # Pro Tier Implementation Checklist
 
+> **HISTORICAL (pre-2026-03-10):** This document references the old 5-tier system (free/enthusiast/collector/inner_circle/dealer). As of 2026-03-10, the system was simplified to **3 tiers: free, inner_circle, dealer**. All previously-paid features are now free. See `docs/SUBSCRIPTION_HANDOFF.md` for current state.
+
 Actionable implementation guide for Nihontowatch subscription tiers.
 
 ---

@@ -1,7 +1,9 @@
 # Handoff: Yuhinkai Tier + Collection Gating
 
+> **HISTORICAL (superseded 2026-03-10):** The `yuhinkai` tier was removed in migration 139 (tier simplification to 3 tiers: free, inner_circle, dealer). Collection access is now gated by `inner_circle` + `dealer` + admin. See `docs/HANDOFF_COLLECTION_PHASE_4.md` and `docs/SUBSCRIPTION_HANDOFF.md` for current state.
+
 **Date:** 2026-03-10
-**Status:** Implemented, tests passing, not yet committed
+**Status:** Superseded by tier simplification (migration 139)
 
 ## What Was Done
 

@@ -1,5 +1,7 @@
 # Paywall Design
 
+> **HISTORICAL (pre-2026-03-10):** This document references the old multi-tier system (Pro $25/mo, Collector $99/mo, Inner Circle $249/mo). As of 2026-03-10, the system was simplified to **3 tiers: free, inner_circle, dealer**. All previously-paid features are now free. PaywallModal is dormant (trial mode ON). See `docs/SUBSCRIPTION_HANDOFF.md` for current state. The design principles (Superwall patterns, 8 rules) remain valid for future paywall work.
+
 ## Thesis
 
 **Gate speed, not access. Gate insight, not inventory.**

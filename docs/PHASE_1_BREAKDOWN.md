@@ -1,5 +1,7 @@
 # Phase 1: Foundation + Enthusiast Tier
 
+> **HISTORICAL (pre-2026-03-10):** This document references the old tier system. The `enthusiast` tier ($25/mo) was removed in migration 139. All previously-paid features are now free. See `docs/SUBSCRIPTION_HANDOFF.md` for current 3-tier system (free, inner_circle, dealer).
+
 Detailed task breakdown with dependencies and estimates.
 
 ---

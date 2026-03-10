@@ -114,23 +114,20 @@ collection_items table               listings table
 
 | Tier | Internal name | Access | Price |
 |------|---------------|--------|-------|
-| **Free** | `free` | Browse, favorites, alerts, currency conversion | $0 |
-| **Yuhinkai** | `yuhinkai` | Collection access (cataloging). Manually assigned, no Stripe pricing. | Free (manual) |
-| **Pro** | `enthusiast` | Fresh data, AI inquiry emails, setsumei translations + collection access (rank ≥ yuhinkai) | $25/mo |
-| **Collector** | `collector` | Pro + community visibility features (Phase 6+) + collection access | $99/mo |
-| **Dealer** | `dealer` | Collector + **"List for Sale"**, dealer profile, analytics + collection access | $150/mo |
-| **Inner Circle** | `inner_circle` | Everything + exclusivity + collection access | $249/mo |
+| **Free** | `free` | All browse features, alerts, fresh data, setsumei, artist stats, exports | $0 |
+| **Inner Circle** | `inner_circle` | Free + private listings, Discord, LINE, collection access | $249/mo |
+| **Dealer** | `dealer` | Free + listing management, analytics, collection access | $150/mo |
 
-> **Note (2026-03-10):** `yuhinkai` tier was added to gate collection access without requiring a paid subscription. All paid tiers (enthusiast/collector/inner_circle) also get collection access via rank-based comparison (rank ≥ yuhinkai=1). Only `free` (rank 0) is denied. Trial mode (`NEXT_PUBLIC_TRIAL_MODE=true`) bypasses all tier checks — currently ON.
+> **Note (2026-03-10):** Tiers simplified from 6 → 3 (migration 139). Removed: `enthusiast`, `collector`, `yuhinkai`. All previously-paid features are now free. Collection access gated by `inner_circle` + `dealer` + admin. Trial mode (`NEXT_PUBLIC_TRIAL_MODE=true`) bypasses all tier checks — currently ON.
 
 **The conversion funnel:**
 ```
-Browse (free) → Yuhinkai tier (manual grant or trial mode) → catalog unlimited items
+Browse (free) → Inner Circle tier (or trial mode) → catalog unlimited items
                                                                       │
                                      "I want to sell this piece" ──────┘──→ Dealer
 ```
 
-Collection access requires the **yuhinkai tier** (or any paid tier, or trial mode). The `yuhinkai` tier exists for users who need *only* collection access without paying for the full enthusiast feature set — it's manually assigned, not Stripe-purchasable. During trial mode (currently ON), all users can access collection freely. The only paywall moment beyond collection access is "List for Sale," which requires Dealer tier. This appears at the exact moment of intent: a collector has a specific piece they want to sell, maximum purchase intent.
+Collection access requires the **inner_circle tier** (or dealer, admin, or trial mode). During trial mode (currently ON), all users can access collection freely. The only paywall moment beyond collection access is "List for Sale," which requires Dealer tier. This appears at the exact moment of intent: a collector has a specific piece they want to sell, maximum purchase intent.
 
 ---
 

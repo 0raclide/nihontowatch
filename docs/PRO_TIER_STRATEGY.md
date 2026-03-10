@@ -1,5 +1,7 @@
 # Nihontowatch Pro Tier Strategy
 
+> **HISTORICAL (pre-2026-03-10):** This document references the old multi-tier system (free/enthusiast/connoisseur/collector/inner_circle/dealer). As of 2026-03-10, the system was simplified to **3 tiers: free, inner_circle, dealer**. All previously-paid features are now free. See `docs/SUBSCRIPTION_HANDOFF.md` for current state.
+
 ## Executive Summary
 
 This document outlines the monetization strategy for Nihontowatch through a tiered subscription model. The strategy is designed for a niche market with a small TAM but high-value customers (enthusiasts spending $50-100K/year on nihonto).

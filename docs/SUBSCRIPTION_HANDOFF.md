@@ -2,7 +2,7 @@
 
 Implementation status and handoff notes for the Nihontowatch subscription system.
 
-**Last Updated:** 2026-02-10 (Tier Restructure: 5-tier system)
+**Last Updated:** 2026-03-10 (Tier Simplification: 3-tier system)
 
 ---
 
@@ -36,79 +36,73 @@ NEXT_PUBLIC_TRIAL_MODE=false  # Normal paywall restored
 
 | Component | Behavior |
 |-----------|----------|
-| `canAccessFeature()` | Returns `true` for all features |
-| `isDelayed` | Returns `false` (no 7-day data delay) |
-| `DataDelayBanner` | Hidden |
+| `canAccessFeature()` | Returns `true` for all features (including inner_circle exclusives) |
+| DataDelayBanner | Hidden |
+
+**Note:** `isDelayed` derives from `canAccessFeature(tier, 'fresh_data')`. Since `fresh_data` is now free, `isDelayed` is always `false` for all users regardless of trial mode.
 
 ### Key Files Changed
 
 | File | Change |
 |------|--------|
 | `src/types/subscription.ts` | Added `isTrialModeActive()`, updated `canAccessFeature()` |
-| `src/lib/subscription/server.ts` | `isDelayed` respects trial mode |
+| `src/lib/subscription/server.ts` | `isDelayed` derives from `canAccessFeature('fresh_data')` |
 | `src/components/subscription/DataDelayBanner.tsx` | Hidden in trial mode |
 | `tests/subscription/trial-mode.test.ts` | Comprehensive test coverage |
 
 ---
 
-## Subscription Tiers (5-tier system)
+## Subscription Tiers (3-tier system, simplified 2026-03-10)
+
+All previously-paid features (fresh_data, setsumei, alerts, inquiry_emails, artist_stats, export_data, blade_analysis, provenance_data) are now **free for all users**.
 
 | Tier (internal) | Display Name | Price | Key Features |
 |-----------------|-------------|-------|--------------|
-| `free` | Free | $0 | 7-day delayed data, basic browsing, filters, favorites |
-| `enthusiast` | Pro | $25/mo ($225/yr) | Fresh data, AI inquiry emails, saved search alerts, data exports |
-| `collector` | Collector | $99/mo ($891/yr) | Setsumei translations, artist stats, priority Juyo alerts, blade analysis |
-| `inner_circle` | Inner Circle | $249/mo ($2,241/yr) | Private listings, Yuhinkai Discord, LINE access |
-| `dealer` | Dealer | $150/mo ($1,350/yr) | Analytics dashboard, click tracking, competitive intel |
+| `free` | Free | $0 | All browse features, filters, favorites, fresh data, email alerts, AI inquiry emails, setsumei, artist stats, data exports |
+| `inner_circle` | Inner Circle | $249/mo ($2,241/yr) | Private listings, Discord access, LINE access, collection access |
+| `dealer` | Dealer | $150/mo ($1,350/yr) | Analytics dashboard, listing management, competitive intel |
 
-### Gating Philosophy
+**Removed tiers** (migrated to `free` via migration 139): `enthusiast` ($25/mo "Pro"), `collector` ($99/mo), `yuhinkai`. Legacy Stripe metadata with these names is safely mapped to `free` via `mapLegacyTier()` in `src/lib/stripe/server.ts`.
 
-**Thesis:** "Gate speed, not access. Gate insight, not inventory."
+### Feature Access Matrix
 
-Three gating axes:
-1. **Time** — 7-day delay for free users, instant for Pro+
-2. **Insight** — Artist stats, setsumei translations for Collector+
-3. **Alert Priority** — Juyo/Tokuju 15-min alerts only for Collector+
+| Feature | Free | Inner Circle | Dealer |
+|---------|:---:|:---:|:---:|
+| `fresh_data` (no delay) | x | x | x |
+| `inquiry_emails` | x | x | |
+| `saved_searches` | x | x | |
+| `search_alerts` | x | x | |
+| `export_data` | x | x | |
+| `setsumei_translation` | x | x | |
+| `artist_stats` | x | x | |
+| `priority_juyo_alerts` | x | x | |
+| `blade_analysis` | x | x | |
+| `provenance_data` | x | x | |
+| `private_listings` | | x | |
+| `discord_access` | | x | |
+| `line_access` | | x | |
+| `collection_access` | | x | |
+| `dealer_analytics` | | | x |
+
+### Convenience Booleans
+
+```typescript
+// In SubscriptionState / useSubscription()
+isFree         // tier === 'free'
+isInnerCircle  // tier === 'inner_circle'
+isDealer       // tier === 'dealer'
+```
+
+**Removed:** `isPro`, `isCollector`, `isYuhinkai` (no longer applicable with 3-tier system).
 
 ### Internal-to-Display Name Mapping
 
 ```typescript
 TIER_DISPLAY_NAMES: Record<SubscriptionTier, string> = {
   free: 'Free',
-  enthusiast: 'Pro',       // User-facing name is "Pro"
-  collector: 'Collector',
   inner_circle: 'Inner Circle',
   dealer: 'Dealer',
 };
-```
-
-### Feature Access Matrix
-
-| Feature | Pro (enthusiast) | Collector | Inner Circle | Dealer |
-|---------|:---:|:---:|:---:|:---:|
-| `fresh_data` (no 7-day delay) | x | x | x | x |
-| `inquiry_emails` | x | x | x | |
-| `saved_searches` | x | x | x | |
-| `search_alerts` | x | x | x | |
-| `export_data` | x | x | x | |
-| `setsumei_translation` | | x | x | |
-| `artist_stats` | | x | x | |
-| `priority_juyo_alerts` | | x | x | |
-| `blade_analysis` | | x | x | |
-| `provenance_data` | | x | x | |
-| `private_listings` | | | x | |
-| `yuhinkai_discord` | | | x | |
-| `line_access` | | | x | |
-| `dealer_analytics` | | | | x |
-
-### Convenience Booleans
-
-```typescript
-// In SubscriptionState / useSubscription()
-isPro        // tier >= enthusiast (was isEnthusiast)
-isCollector  // tier >= collector  (NEW)
-isInnerCircle // tier >= inner_circle (was isConnoisseur)
-isDealer     // tier === dealer
 ```
 
 ---
@@ -116,6 +110,8 @@ isDealer     // tier === dealer
 ## Paywall Design Principles
 
 Based on Superwall/Parra patterns (4,500+ A/B tested paywalls). These rules govern all paywall UI.
+
+**Current status:** PaywallModal is dormant (trial mode ON). Single paywall screen for `inner_circle`. No multi-tier comparison needed with simplified system.
 
 ### The Baseline
 
@@ -140,31 +136,14 @@ Not now
 
 ### 8 Rules
 
-1. **No verbage** — Bullets are 2-4 words each. No sentences, no paragraphs.
-2. **Simple plan naming** — One word: "Pro", "Collector". Don't repeat app name.
-3. **"No commitment, cancel anytime"** — Below CTA, small muted text. Always.
-4. **"Continue" not "Subscribe"** — Implies forward momentum, not a transaction.
-5. **CTA is the only colored element** — Everything else neutral.
-6. **Big button** — Full-width, minimum ~4rem / 65pt height.
-7. **Match the app's design language** — Same fonts, colors, feel.
-8. **One price, no toggles** — Show one price. No monthly/annual toggle.
-
-### Implementation
-
-```typescript
-// src/types/subscription.ts
-PAYWALL_BULLETS: Record<'enthusiast' | 'collector', string[]> = {
-  enthusiast: ['New listings first', 'AI inquiry emails', 'Saved search alerts', 'Data exports'],
-  collector: ['Setsumei translations', 'Artist stats & analysis', 'Priority Juyo alerts', 'Blade form insights'],
-};
-
-getPaywallConfig(requiredTier: SubscriptionTier) => {
-  name: string;        // Display name
-  price: string;       // e.g. "$25/mo"
-  bullets: string[];   // Value prop bullets
-  tierToCheckout: SubscriptionTier;
-}
-```
+1. **No verbage** - Bullets are 2-4 words each. No sentences, no paragraphs.
+2. **Simple plan naming** - One word: "Inner Circle". Don't repeat app name.
+3. **"No commitment, cancel anytime"** - Below CTA, small muted text. Always.
+4. **"Continue" not "Subscribe"** - Implies forward momentum, not a transaction.
+5. **CTA is the only colored element** - Everything else neutral.
+6. **Big button** - Full-width, minimum ~4rem / 65pt height.
+7. **Match the app's design language** - Same fonts, colors, feel.
+8. **One price, no toggles** - Show one price. No monthly/annual toggle.
 
 ### Anti-Patterns (DO NOT)
 
@@ -179,80 +158,45 @@ getPaywallConfig(requiredTier: SubscriptionTier) => {
 
 ## Changelog
 
-### 2026-02-10: Tier Restructure — 5-Tier System
+### 2026-03-10: Tier Simplification — 3-Tier System
 
 **What changed:**
-- **Old:** `free → enthusiast("Enthusiast" $25/mo) → connoisseur("Connoisseur" $200/mo) + dealer`
-- **New:** `free → enthusiast("Pro" $25/mo) → collector("Collector" $99/mo) → inner_circle("Inner Circle" $249/mo) + dealer($150/mo)`
+- **Old:** `free → enthusiast("Pro" $25/mo) → collector("Collector" $99/mo) → inner_circle("Inner Circle" $249/mo) + dealer($150/mo)`
+- **New:** `free → inner_circle("Inner Circle" $249/mo) + dealer($150/mo)`
 
-**Feature rebalancing:**
-- `setsumei_translation` and `artist_stats` moved from enthusiast → collector tier
-- New features added: `priority_juyo_alerts`, `blade_analysis`, `provenance_data`
-- Inner Circle gets exclusive: `private_listings`, `yuhinkai_discord`, `line_access`
+**All previously-paid features moved to free:**
+- `fresh_data`, `setsumei_translation`, `inquiry_emails`, `saved_searches`, `search_alerts`, `export_data`, `artist_stats`, `blade_analysis`, `provenance_data`, `priority_juyo_alerts`
 
-**Data delay:**
-- 72 hours → 7 days (`DATA_DELAY_MS` in server.ts, `EARLY_ACCESS_WINDOW_MS` in ListingCard)
+**Inner Circle exclusives (unchanged):**
+- `private_listings`, `discord_access` (was `yuhinkai_discord`), `line_access`, `collection_access`
 
-**Code changes:**
-- `FEATURE_PAYWALL_MESSAGES` removed entirely → replaced by `PAYWALL_BULLETS` + `getPaywallConfig()`
-- `TIER_DISPLAY_NAMES` mapping added (internal name → user-facing name)
-- Convenience booleans renamed: `isEnthusiast` → `isPro`, `isConnoisseur` → `isCollector`, added `isInnerCircle`
-- Admin tier: `connoisseur` → `inner_circle` (in SubscriptionContext + server.ts)
-- PaywallModal: derives content from `getPaywallConfig()` instead of hardcoded messages
-- Old pages (`/pricing`, `/connoisseur`) moved to `archived_pages/`, excluded in `tsconfig.json`
+**`isDelayed` fix:** Now derives from `canAccessFeature(tier, 'fresh_data')` instead of hardcoded `effectiveTier === 'free'`. Since `fresh_data` is free, `isDelayed` is always `false`.
 
-**Files modified (24 files):**
+**Legacy Stripe safety:** `mapLegacyTier()` maps `enthusiast`/`collector`/`yuhinkai` → `'free'` in webhook processing. Prevents CHECK constraint violations from old Stripe metadata.
 
+**DB migration 139:** Migrates existing `enthusiast`/`collector`/`yuhinkai` users to `free`, updates CHECK constraint to `('free', 'inner_circle', 'dealer')`.
+
+**Key files modified:**
 | File | Change |
 |------|--------|
-| `src/types/subscription.ts` | Full rewrite — new tiers, features, pricing, paywall config |
-| `src/types/index.ts` | Updated re-exports |
-| `src/types/database.ts` | Updated subscription_tier enum |
-| `src/contexts/SubscriptionContext.tsx` | New booleans, admin tier, simplified PaywallInfo |
-| `src/lib/subscription/server.ts` | 7-day delay, inner_circle admin |
-| `src/lib/stripe/server.ts` | New price IDs for collector/inner_circle |
-| `src/app/api/subscription/checkout/route.ts` | Tier validation updated |
-| `src/components/subscription/DataDelayBanner.tsx` | 72h → 7-day |
-| `src/components/subscription/PaywallModal.tsx` | getPaywallConfig integration |
-| `src/components/browse/ListingCard.tsx` | EARLY_ACCESS_WINDOW_MS 7 days |
-| `src/app/api/browse/route.ts` | Comment update |
-| `src/app/api/debug/subscription/route.ts` | 72h → 7d |
-| `tsconfig.json` | Exclude archived_pages |
-| `tests/setup.ts` | Updated mock |
-| `tests/subscription/data-delay.test.ts` | Full rewrite for 7-day delay |
-| `tests/subscription/feature-gating.test.tsx` | New tier tests |
-| `tests/subscription/trial-mode.test.ts` | Updated for new tiers |
-| `tests/components/browse/ListingCard.test.tsx` | Updated badge text |
-| `CLAUDE.md` | Updated documentation |
+| `src/types/subscription.ts` | Removed tiers, updated FEATURE_MIN_TIER, removed convenience booleans |
+| `src/lib/subscription/server.ts` | `isDelayed` uses `canAccessFeature()` |
+| `src/lib/stripe/server.ts` | Added `mapLegacyTier()`, STRIPE_PRICES reduced to 2 tiers |
+| `src/contexts/SubscriptionContext.tsx` | Removed `isPro`/`isCollector`/`isYuhinkai`, PaywallModal dormant |
+| `supabase/migrations/139_simplify_subscription_tiers.sql` | DB tier migration + CHECK constraint |
 
-**Deleted:** `src/app/connoisseur/page.tsx`, `src/app/pricing/page.tsx` (archived)
+### 2026-02-10: Tier Restructure — 5-Tier System (HISTORICAL)
 
----
+Restructured from 3 tiers to 5 tiers. Now superseded by 2026-03-10 simplification back to 3 tiers.
+
+**Old:** `free → enthusiast("Enthusiast" $25/mo) → connoisseur("Connoisseur" $200/mo) + dealer`
+**New (at the time):** `free → enthusiast("Pro" $25/mo) → collector("Collector" $99/mo) → inner_circle("Inner Circle" $249/mo) + dealer($150/mo)`
 
 ### 2026-01-26: Sold Items Sorting & Price Preservation
 
-**Problem Identified:**
-- ¥60M Kotetsu katana disappeared from Sold tab after being marked sold
-- Sold items were sorted by discovery date (`first_seen_at`), not sale date (`status_changed_at`)
-- Price was cleared to NULL when items sold, showing "Price on request" instead of sale price
-- Recently sold high-value items were buried beyond position 1000 in pagination
+**Problem:** ¥60M Kotetsu katana disappeared from Sold tab after being marked sold. Sold items were sorted by discovery date, not sale date.
 
-**Fixes Applied:**
-
-| File | Change |
-|------|--------|
-| `src/app/api/browse/route.ts` | Added `sale_date` sort option (orders by `status_changed_at` DESC) |
-| `src/app/api/browse/route.ts` | Enriches sold items with sale price from `price_history.old_price` |
-| `src/app/api/listing/[id]/route.ts` | Fetches sale price from `price_history` for detail page |
-| `src/app/page.tsx` | Auto-switches to "Recently Sold" sort when entering Sold tab |
-| `src/app/page.tsx` | Added "Recently Sold" option to desktop sort dropdown |
-| `src/components/browse/FilterContent.tsx` | Added "Recently Sold" option to mobile sort dropdown |
-
-**Commits:**
-- `1a95430` - feat: Add sale date sorting and price preservation for sold items
-- `ef829ac` - fix: Add secondary sort for sale_date to handle nulls better
-
----
+**Fixes:** Added `sale_date` sort option, enriches sold items with sale price from `price_history`.
 
 ### 2026-01-25: Dealer Analytics Tracking Fix
 
@@ -260,19 +204,11 @@ getPaywallConfig(requiredTier: SubscriptionTier) => {
 
 **Fixes:** Added `viewport_dwell` to API + DB, changed consent default to ON, added detail page tracking.
 
-**Commits:** See previous handoff version for full details.
-
----
-
-### 2026-01-24: Search Alerts Production Fix & Enthusiast Tier Access
+### 2026-01-24: Search Alerts Production Fix
 
 **Problem:** SendGrid env vars missing from Vercel production. All alert emails failing silently.
 
-**Fixes:** Added env vars to Vercel, fixed TypeScript build, moved search_alerts to enthusiast tier.
-
-**Commits:**
-- `3625b32` - fix: Exclude tests from TypeScript build check
-- `cc703f3` - feat: Make search alerts available to Enthusiast tier
+**Fixes:** Added env vars to Vercel, fixed TypeScript build.
 
 ---
 
@@ -282,53 +218,26 @@ getPaywallConfig(requiredTier: SubscriptionTier) => {
 
 | Component | File(s) | Notes |
 |-----------|---------|-------|
-| Database Migration | `supabase/migrations/039_subscription_tiers.sql` | Adds subscription fields to profiles + setsumei_translations table |
-| TypeScript Types | `src/types/subscription.ts` | 5-tier system, feature matrix, `getPaywallConfig()`, `PAYWALL_BULLETS` |
-| Database Types | `src/types/database.ts` | Updated profiles with 5-tier enum |
-| Stripe Server Lib | `src/lib/stripe/server.ts` | Checkout sessions, portal, webhook utils, lazy initialization |
+| Database Migration | `supabase/migrations/039_subscription_tiers.sql`, `139_simplify_subscription_tiers.sql` | Profiles + tier simplification |
+| TypeScript Types | `src/types/subscription.ts` | 3-tier system, feature matrix, `canAccessFeature()` |
+| Stripe Server Lib | `src/lib/stripe/server.ts` | Checkout, portal, webhook utils, `mapLegacyTier()` |
 | Stripe Client Lib | `src/lib/stripe/client.ts` | Browser-safe checkout redirect, portal open |
 | Checkout API | `src/app/api/subscription/checkout/route.ts` | Creates Stripe checkout session |
 | Portal API | `src/app/api/subscription/portal/route.ts` | Creates Stripe billing portal session |
 | Webhook API | `src/app/api/subscription/webhook/route.ts` | Handles all Stripe webhook events |
-| Subscription Context | `src/contexts/SubscriptionContext.tsx` | App-wide state, paywall, `isPro`/`isCollector`/`isInnerCircle` |
-| useSubscription Hook | `src/hooks/useSubscription.ts` | Convenience re-export |
-| App Layout | `src/app/layout.tsx` | SubscriptionProvider + PaywallModal added |
-| Subscription Server Lib | `src/lib/subscription/server.ts` | getUserSubscription(), getDataDelayCutoff(), 7-day delay |
-
-### COMPLETED (Phase 1 - Feature Gating)
-
-| Component | File(s) | Notes |
-|-----------|---------|-------|
-| PaywallModal | `src/components/subscription/PaywallModal.tsx` | Uses `getPaywallConfig()` for content |
-| DataDelayBanner | `src/components/subscription/DataDelayBanner.tsx` | 7-day delay banner for free tier |
-| 7-day data delay | `src/app/api/browse/route.ts`, `src/lib/subscription/server.ts` | Filters listings >7 days old for free tier |
-| Gate inquiry emails | `src/components/listing/QuickViewContent.tsx` | requireFeature check |
-| Gate saved searches | `src/components/browse/SaveSearchButton.tsx` | requireFeature check |
-| Gate setsumei translations | `src/components/listing/SetsumeiSection.tsx` | Shows preview with "Unlock Full Translation" CTA |
-| Admin full access | `src/contexts/SubscriptionContext.tsx`, `src/lib/subscription/server.ts` | Admins get inner_circle tier automatically |
-| Trial mode | `src/types/subscription.ts` | `isTrialModeActive()` bypasses all gating |
-
-### COMPLETED (Phase 1 - Search Alerts)
-
-| Component | File(s) | Notes |
-|-----------|---------|-------|
-| Saved searches DB | `supabase/migrations/018_saved_searches.sql` | saved_searches + saved_search_notifications tables |
-| Saved searches API | `src/app/api/saved-searches/route.ts` | Full CRUD, tier gating |
-| Cron: instant alerts | `src/app/api/cron/process-saved-searches/route.ts` | Every 15 min |
-| Cron: daily digest | `src/app/api/cron/process-saved-searches/route.ts` | 8am UTC |
-| Email templates | `src/lib/email/templates/saved-search.ts` | HTML + plaintext |
-| Matcher logic | `src/lib/savedSearches/matcher.ts` | findMatchingListings() |
+| Subscription Context | `src/contexts/SubscriptionContext.tsx` | App-wide state, paywall, `isFree`/`isInnerCircle`/`isDealer` |
+| Subscription Server Lib | `src/lib/subscription/server.ts` | `getUserSubscription()`, `getDataDelayCutoff()`, `isDelayed` from `canAccessFeature()` |
+| Feature Gating | Various components | `requireFeature` checks, PaywallModal (dormant) |
+| Trial Mode | `src/types/subscription.ts` | `isTrialModeActive()` bypasses all gating |
+| Search Alerts | `src/app/api/cron/process-saved-searches/route.ts` | Cron every 15 min + daily digest |
+| Collection Gating | `src/lib/collection/access.ts` | `inner_circle` + `dealer` + admin only |
 
 ### PENDING (Post-trial)
 
 | Task | Priority | Notes |
 |------|----------|-------|
-| Stripe price IDs | HIGH | Create `STRIPE_PRICE_COLLECTOR_*` and `STRIPE_PRICE_INNER_CIRCLE_*` in Stripe Dashboard |
-| DB migration | HIGH | Update `profiles.subscription_tier` constraint for `collector` + `inner_circle` values |
-| PaywallModal redesign | MEDIUM | Full Superwall bullet-list layout (current is functional but not final) |
-| Inner Circle application page | LOW | Exclusive tier with application flow |
-| Delayed items lock card | LOW | `DelayedItemsCard` component showing blurred items for free users |
-| Alert splitting by tier | LOW | Priority Juyo/Tokuju alerts for Collector+ |
+| Stripe price IDs | HIGH | Create `STRIPE_PRICE_INNER_CIRCLE_*` in Stripe Dashboard |
+| PaywallModal redesign | MEDIUM | Full Superwall bullet-list layout for inner_circle |
 | Private listings | LOW | Exclusive dealer items (Inner Circle feature) |
 
 ---
@@ -338,27 +247,28 @@ getPaywallConfig(requiredTier: SubscriptionTier) => {
 ### Types (`src/types/subscription.ts`)
 
 ```typescript
-// 5-tier system
-type SubscriptionTier = 'free' | 'enthusiast' | 'collector' | 'inner_circle' | 'dealer';
+// 3-tier system (simplified 2026-03-10)
+type SubscriptionTier = 'free' | 'inner_circle' | 'dealer';
 
 // Display name mapping
-TIER_DISPLAY_NAMES: { free: 'Free', enthusiast: 'Pro', collector: 'Collector', ... }
+TIER_DISPLAY_NAMES: { free: 'Free', inner_circle: 'Inner Circle', dealer: 'Dealer' }
 
-// Features that can be gated
+// Features — most are free, only inner_circle exclusives are gated
 type Feature =
-  | 'fresh_data'             // No 7-day delay (Pro+)
-  | 'inquiry_emails'         // AI email drafts (Pro+)
-  | 'saved_searches'         // Save search queries (Pro+)
-  | 'search_alerts'          // Get notified (Pro+)
-  | 'export_data'            // Data exports (Pro+)
-  | 'setsumei_translation'   // AI translation (Collector+)
-  | 'artist_stats'           // Cert statistics (Collector+)
-  | 'priority_juyo_alerts'   // Priority alerts (Collector+)
-  | 'blade_analysis'         // Form analysis (Collector+)
-  | 'provenance_data'        // Denrai data (Collector+)
-  | 'private_listings'       // Exclusive items (Inner Circle)
-  | 'yuhinkai_discord'       // Discord access (Inner Circle)
-  | 'line_access'            // LINE access (Inner Circle)
+  | 'fresh_data'             // Free
+  | 'inquiry_emails'         // Free
+  | 'saved_searches'         // Free
+  | 'search_alerts'          // Free
+  | 'export_data'            // Free
+  | 'setsumei_translation'   // Free
+  | 'artist_stats'           // Free
+  | 'priority_juyo_alerts'   // Free
+  | 'blade_analysis'         // Free
+  | 'provenance_data'        // Free
+  | 'private_listings'       // Inner Circle
+  | 'discord_access'         // Inner Circle
+  | 'line_access'            // Inner Circle
+  | 'collection_access'      // Inner Circle
   | 'dealer_analytics';      // Dealer-only
 
 // Check access
@@ -371,11 +281,9 @@ canAccessFeature(tier: SubscriptionTier, feature: Feature): boolean
 const {
   tier,              // Current tier
   status,            // 'active' | 'inactive' | etc.
-  isFree,            // Boolean helpers
-  isPro,             // tier >= enthusiast
-  isCollector,       // tier >= collector
-  isInnerCircle,     // tier >= inner_circle
-  isDealer,          // tier === dealer
+  isFree,            // tier === 'free'
+  isInnerCircle,     // tier === 'inner_circle'
+  isDealer,          // tier === 'dealer'
   canAccess,         // (feature: Feature) => boolean
   requireFeature,    // (feature: Feature) => boolean - shows paywall if false
   checkout,          // (tier, billingPeriod) => Promise<void>
@@ -397,12 +305,8 @@ STRIPE_WEBHOOK_SECRET=whsec_xxx
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_xxx
 
 # Stripe Price IDs (create in Stripe Dashboard)
-STRIPE_PRICE_ENTHUSIAST_MONTHLY=price_xxx
-STRIPE_PRICE_ENTHUSIAST_ANNUAL=price_xxx
-STRIPE_PRICE_COLLECTOR_MONTHLY=price_xxx       # NEW
-STRIPE_PRICE_COLLECTOR_ANNUAL=price_xxx         # NEW
-STRIPE_PRICE_INNER_CIRCLE_MONTHLY=price_xxx     # NEW
-STRIPE_PRICE_INNER_CIRCLE_ANNUAL=price_xxx      # NEW
+STRIPE_PRICE_INNER_CIRCLE_MONTHLY=price_xxx
+STRIPE_PRICE_INNER_CIRCLE_ANNUAL=price_xxx
 STRIPE_PRICE_DEALER_MONTHLY=price_xxx
 STRIPE_PRICE_DEALER_ANNUAL=price_xxx
 
@@ -412,19 +316,17 @@ NEXT_PUBLIC_TRIAL_MODE=true
 
 ---
 
-## Database Schema Changes
+## Database Schema
 
-Migration `039_subscription_tiers.sql` adds:
+Migration `039_subscription_tiers.sql` (original) + `139_simplify_subscription_tiers.sql` (simplification):
 
 **profiles table:**
-- `subscription_tier` - 'free' | 'enthusiast' | 'collector' | 'inner_circle' | 'dealer'
-- `subscription_status` - 'active' | 'inactive' | 'cancelled' | 'past_due'
+- `subscription_tier` - `'free' | 'inner_circle' | 'dealer'` (CHECK constraint)
+- `subscription_status` - `'active' | 'inactive' | 'cancelled' | 'past_due'`
 - `subscription_started_at` - Timestamp
 - `subscription_expires_at` - Timestamp
 - `stripe_customer_id` - Stripe customer reference
 - `stripe_subscription_id` - Stripe subscription reference
-
-**NOTE:** DB constraint on `subscription_tier` may need updating for `collector` and `inner_circle` values.
 
 ---
 
@@ -434,9 +336,10 @@ Migration `039_subscription_tiers.sql` adds:
 
 | Test File | Tests | Coverage |
 |-----------|-------|----------|
-| `data-delay.test.ts` | 22 | Server auth, 7-day cutoff, admin bypass, client fallback, credentials |
-| `feature-gating.test.tsx` | 12 | Component gating, paywall triggers, feature access matrix (4 tiers) |
-| `trial-mode.test.ts` | 16 | Trial mode toggle, feature unlock, data delay bypass, regression guards |
+| `data-delay.test.ts` | 22 | Server auth, cutoff, admin bypass, client fallback, credentials |
+| `feature-gating.test.tsx` | 12 | Component gating, paywall triggers, feature access matrix |
+| `trial-mode.test.ts` | 16 | Trial mode toggle, feature unlock, data delay bypass |
+| `tests/lib/stripe/webhook-tier-mapping.test.ts` | 6 | Legacy tier mapping (enthusiast/collector/yuhinkai → free) |
 
 ### Running Tests
 
@@ -444,28 +347,9 @@ Migration `039_subscription_tiers.sql` adds:
 # All subscription tests
 npm test -- tests/subscription
 
-# Just feature gating
-npm test -- tests/subscription/feature-gating.test.tsx
-
-# Just data delay auth
-npm test -- tests/subscription/data-delay.test.ts
-
-# Just trial mode
-npm test -- tests/subscription/trial-mode.test.ts
+# Webhook tier mapping
+npm test -- tests/lib/stripe/webhook-tier-mapping.test.ts
 ```
-
----
-
-## Deployment Checklist
-
-Before deploying subscription changes:
-
-1. [ ] Run `npm test` - all subscription tests must pass
-2. [ ] Verify migration is applied: `supabase db push`
-3. [ ] Check env vars in Vercel: `SUPABASE_SERVICE_ROLE_KEY`, Stripe keys
-4. [ ] After deploy, test `/api/debug/subscription` while logged in as admin
-5. [ ] Verify `isDelayed: false` and `tier: "inner_circle"` for admin
-6. [ ] Hard refresh main site, confirm fresh listings visible
 
 ---
 
@@ -493,8 +377,8 @@ Before deploying subscription changes:
 │  ┌─────────────────┐    ┌─────────────────┐                    │
 │  │  profiles table │<───│ /api/subscription│                   │
 │  │   (updated)     │    │    /webhook      │                   │
-│  └─────────────────┘    └─────────────────┘                    │
-│         │                                                       │
+│  └─────────────────┘    │ mapLegacyTier() │                   │
+│         │               └─────────────────┘                    │
 │         ▼                                                       │
 │  ┌─────────────────┐                                           │
 │  │SubscriptionContext                                          │
@@ -514,7 +398,7 @@ Before deploying subscription changes:
 
 3. **Lazy Stripe Initialization**: Uses Proxy for lazy init to avoid build-time errors.
 
-4. **PaywallModal**: Functional but not yet fully redesigned to Superwall bullet-list pattern. Currently uses `getPaywallConfig()` for content but retains some old layout elements.
+4. **PaywallModal**: Dormant (trial mode ON). Single paywall screen for `inner_circle`. Needs Superwall bullet-list redesign before activating.
 
 ---
 
@@ -553,8 +437,8 @@ stripe listen --forward-to localhost:3000/api/subscription/webhook
 ## Contact
 
 For questions about this implementation, refer to:
-- `docs/PRO_TIER_STRATEGY.md` - Business strategy
-- `docs/PRO_TIER_IMPLEMENTATION.md` - Full implementation checklist
+- `docs/PRO_TIER_STRATEGY.md` - Business strategy (HISTORICAL — predates tier simplification)
+- `docs/PRO_TIER_IMPLEMENTATION.md` - Implementation checklist (HISTORICAL)
 - `CLAUDE.md` - AI context with full project guide
 
 ---

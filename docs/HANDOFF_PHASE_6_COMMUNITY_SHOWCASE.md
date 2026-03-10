@@ -235,14 +235,13 @@ Users see their own shared items on `/showcase`. No self-exclusion filter. This 
 
 ---
 
-## Access Matrix (Final)
+## Access Matrix (Updated 2026-03-10)
+
+> **Note:** Old tiers `yuhinkai`, `enthusiast`, `collector` removed (migration 139). Only 3 tiers remain.
 
 | Tier | Own Collection | Showcase (Yuhinkai) | Showcase (Galleries) | Stats |
 |------|---------------|---------------------|---------------------|-------|
 | free | - | - | - | - |
-| yuhinkai | Yes | - | - | Yes |
-| enthusiast | Yes | - | - | Yes |
-| collector | Yes | - | - | Yes |
 | inner_circle | Yes | **Yes** | - | Yes |
 | dealer | Yes | - | **Yes** | Yes |
 | **admin** | Yes | **Yes** | **Yes** | Yes |
