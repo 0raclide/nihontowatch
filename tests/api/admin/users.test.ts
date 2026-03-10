@@ -670,7 +670,7 @@ describe('PATCH /api/admin/users', () => {
 
       const request = createMockRequest({}, 'PATCH', {
         userId: 'user-123',
-        subscriptionTier: 'yuhinkai',
+        subscriptionTier: 'inner_circle',
       });
       const response = await PATCH(request);
 

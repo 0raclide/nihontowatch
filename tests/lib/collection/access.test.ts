@@ -28,15 +28,6 @@ describe('checkCollectionAccess', () => {
     expect(res!.status).toBe(403);
   });
 
-  it('denies yuhinkai (collection restricted to inner_circle+)', async () => {
-    const res = await checkCollectionAccess(
-      mockSupabase({ subscription_tier: 'yuhinkai', subscription_status: 'active', role: 'user' }),
-      'user-1'
-    );
-    expect(res).not.toBeNull();
-    expect(res!.status).toBe(403);
-  });
-
   it('allows dealer + active', async () => {
     const res = await checkCollectionAccess(
       mockSupabase({ subscription_tier: 'dealer', subscription_status: 'active', role: 'user' }),
@@ -61,17 +52,15 @@ describe('checkCollectionAccess', () => {
     expect(res).toBeNull();
   });
 
-  it.each(['enthusiast', 'collector'] as const)(
-    'denies %s tier (below inner_circle)',
-    async (tier) => {
-      const res = await checkCollectionAccess(
-        mockSupabase({ subscription_tier: tier, subscription_status: 'active', role: 'user' }),
-        'user-1'
-      );
-      expect(res).not.toBeNull();
-      expect(res!.status).toBe(403);
-    }
-  );
+  it('denies free tier (below inner_circle)', async () => {
+    // Free tier cannot access collection even with active status
+    const res = await checkCollectionAccess(
+      mockSupabase({ subscription_tier: 'free', subscription_status: 'active', role: 'user' }),
+      'user-1'
+    );
+    expect(res).not.toBeNull();
+    expect(res!.status).toBe(403);
+  });
 
   it('denies when profile not found', async () => {
     const res = await checkCollectionAccess(mockSupabase(null), 'user-1');

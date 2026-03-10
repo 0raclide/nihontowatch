@@ -3,20 +3,19 @@
  *
  * Types for subscription tiers, features, and billing.
  *
- * Tier structure (2026-02-10 restructure):
- *   free → enthusiast("Pro") → collector("Collector") → inner_circle("Inner Circle") + dealer
+ * Tier structure (2026-03-10 simplification):
+ *   free → inner_circle("Inner Circle") + dealer
  *
- * Gating philosophy: "Gate speed, not access. Gate insight, not inventory."
- *   - Pro: speed & convenience (fresh data, alerts, inquiry emails)
- *   - Collector: insight & analysis (setsumei, artist stats, blade analysis)
- *   - Inner Circle: exclusive access (private listings, Discord, LINE)
+ * All previously paid features (fresh data, alerts, setsumei, artist stats)
+ * are now free. Inner Circle gates: exclusive access (private listings, Discord, LINE).
+ * Dealer gates: analytics dashboard + collection access.
  */
 
 // =============================================================================
 // SUBSCRIPTION TIERS
 // =============================================================================
 
-export type SubscriptionTier = 'free' | 'enthusiast' | 'collector' | 'inner_circle' | 'dealer' | 'yuhinkai';
+export type SubscriptionTier = 'free' | 'inner_circle' | 'dealer';
 
 export type SubscriptionStatus = 'active' | 'inactive' | 'cancelled' | 'past_due';
 
@@ -25,11 +24,8 @@ export type SubscriptionStatus = 'active' | 'inactive' | 'cancelled' | 'past_due
  */
 export const TIER_DISPLAY_NAMES: Record<SubscriptionTier, string> = {
   free: 'Free',
-  enthusiast: 'Pro',
-  collector: 'Collector',
   inner_circle: 'Inner Circle',
   dealer: 'Dealer',
-  yuhinkai: 'Yuhinkai',
 };
 
 // =============================================================================
@@ -47,7 +43,7 @@ export type Feature =
   | 'artist_stats'         // Juyo/Tokuju/Bunkazai statistics
   | 'blade_analysis'       // Blade form & measurement insights
   | 'provenance_data'      // Denrai/provenance chain data
-  | 'yuhinkai_discord'     // Private Discord community
+  | 'discord_access'       // Private Discord community
   | 'line_access'          // LINE chat with Hoshi
   | 'export_data'          // CSV/Excel exports
   | 'dealer_analytics'     // Dealer-only analytics
@@ -59,36 +55,32 @@ export type Feature =
  */
 export const TIER_RANK: Record<SubscriptionTier, number> = {
   free: 0,
-  enthusiast: 1,
-  collector: 2,
-  inner_circle: 3,
-  dealer: 1, // Same level as enthusiast for most features
-  yuhinkai: 1, // Same level as enthusiast for most features + collection_access
+  inner_circle: 1,
+  dealer: 1, // Same level as inner_circle for most features
 };
 
 /**
  * Minimum tier required for each feature
  *
- * Pro (enthusiast) — speed & convenience
- * Collector — insight & analysis
- * Inner Circle — exclusive access
+ * Free — all browse/analysis features (previously paid)
+ * Inner Circle — exclusive access (private listings, Discord, LINE)
+ * Dealer — analytics dashboard + collection access
  */
 export const FEATURE_MIN_TIER: Record<Feature, SubscriptionTier> = {
-  // Pro (enthusiast) features — speed & convenience
-  fresh_data: 'enthusiast',
-  inquiry_emails: 'enthusiast',
-  saved_searches: 'enthusiast',
-  search_alerts: 'enthusiast',
-  export_data: 'enthusiast',
-  // Collector features — insight & analysis
-  priority_juyo_alerts: 'collector',
-  artist_stats: 'collector',
-  setsumei_translation: 'collector',
-  blade_analysis: 'collector',
-  provenance_data: 'collector',
+  // Free features (previously paid, now available to all)
+  fresh_data: 'free',
+  inquiry_emails: 'free',
+  saved_searches: 'free',
+  search_alerts: 'free',
+  export_data: 'free',
+  priority_juyo_alerts: 'free',
+  artist_stats: 'free',
+  setsumei_translation: 'free',
+  blade_analysis: 'free',
+  provenance_data: 'free',
   // Inner Circle features — exclusive access
   private_listings: 'inner_circle',
-  yuhinkai_discord: 'inner_circle',
+  discord_access: 'inner_circle',
   line_access: 'inner_circle',
   // Dealer features
   dealer_analytics: 'dealer',
@@ -123,14 +115,9 @@ export function canAccessFeature(tier: SubscriptionTier, feature: Feature): bool
 
   const requiredTier = FEATURE_MIN_TIER[feature];
 
-  // Special case: dealer has access to enthusiast features + dealer features + collection
+  // Special case: dealer has access to free features + dealer features + collection
   if (tier === 'dealer') {
-    return requiredTier === 'enthusiast' || requiredTier === 'dealer' || feature === 'collection_access';
-  }
-
-  // Special case: yuhinkai has access to enthusiast features
-  if (tier === 'yuhinkai') {
-    return requiredTier === 'enthusiast';
+    return requiredTier === 'free' || requiredTier === 'dealer' || feature === 'collection_access';
   }
 
   const userRank = TIER_RANK[tier];
@@ -168,7 +155,7 @@ export interface SubscriptionFields {
 export type BillingPeriod = 'monthly' | 'annual';
 
 export interface StripeCheckoutRequest {
-  tier: 'enthusiast' | 'collector' | 'inner_circle' | 'dealer';
+  tier: 'inner_circle' | 'dealer';
   billingPeriod: BillingPeriod;
   successUrl?: string;
   cancelUrl?: string;
@@ -194,11 +181,8 @@ export interface SubscriptionState {
   expiresAt: string | null;
   // Convenience booleans
   isFree: boolean;
-  isPro: boolean;        // enthusiast or higher
-  isCollector: boolean;  // collector or higher
   isInnerCircle: boolean;
   isDealer: boolean;
-  isYuhinkai: boolean;
   // Feature access
   canAccess: (feature: Feature) => boolean;
 }
@@ -223,11 +207,8 @@ export function createSubscriptionState(
     isActive,
     expiresAt: fields?.subscription_expires_at ?? null,
     isFree: effectiveTier === 'free',
-    isPro: rank >= TIER_RANK.enthusiast && effectiveTier !== 'dealer' && effectiveTier !== 'yuhinkai',
-    isCollector: rank >= TIER_RANK.collector,
     isInnerCircle: effectiveTier === 'inner_circle',
     isDealer: effectiveTier === 'dealer',
-    isYuhinkai: effectiveTier === 'yuhinkai',
     canAccess: (feature: Feature) => canAccessFeature(effectiveTier, feature),
   };
 }
@@ -242,17 +223,7 @@ export interface TierPricing {
   annualSavings: number; // Percentage saved
 }
 
-export const TIER_PRICING: Record<Exclude<SubscriptionTier, 'free' | 'yuhinkai'>, TierPricing> = {
-  enthusiast: {
-    monthly: 25,
-    annual: 225,
-    annualSavings: 25, // 25% off
-  },
-  collector: {
-    monthly: 99,
-    annual: 891,
-    annualSavings: 25,
-  },
+export const TIER_PRICING: Record<Exclude<SubscriptionTier, 'free'>, TierPricing> = {
   inner_circle: {
     monthly: 249,
     annual: 2241,
@@ -279,64 +250,38 @@ export interface TierInfo {
 export const TIER_INFO: Record<SubscriptionTier, TierInfo> = {
   free: {
     name: 'Free',
-    description: 'Browse and explore',
+    description: 'Full access to browse and tools',
     features: [
       'Browse all listings',
       'Full filters and search',
-      'Unlimited favorites',
-      'Currency conversion',
-    ],
-  },
-  enthusiast: {
-    name: 'Pro',
-    description: 'For active collectors',
-    features: [
-      'New listings first',
-      'AI inquiry email drafts',
       'Saved searches with alerts',
-      'Data exports',
-    ],
-    highlighted: true,
-  },
-  collector: {
-    name: 'Collector',
-    description: 'Deep insight & analysis',
-    features: [
-      'Everything in Pro',
+      'AI inquiry emails',
       'Setsumei translations',
-      'Artist certification stats',
-      'Priority Juyo alerts',
-      'Blade form insights',
+      'Artist stats & analysis',
+      'Data exports',
     ],
   },
   inner_circle: {
     name: 'Inner Circle',
     description: 'Exclusive access',
     features: [
-      'Everything in Collector',
+      'Everything in Free',
       'Private dealer offerings',
       'Exclusive Discord community',
       'Direct LINE support',
+      'Personal collection vault',
     ],
+    highlighted: true,
   },
   dealer: {
     name: 'Dealer',
     description: 'For trade professionals',
     features: [
-      'All Pro features',
+      'All free features',
       'Analytics dashboard',
       'Competitor intelligence',
       'Submit private listings',
-    ],
-  },
-  yuhinkai: {
-    name: 'Yuhinkai',
-    description: 'Collection management',
-    features: [
-      'Personal collection catalog',
-      'Yuhinkai NBTHK data lookup',
-      'Image uploads',
-      'Collection-to-listing promotion',
+      'Personal collection vault',
     ],
   },
 };
@@ -346,21 +291,14 @@ export const TIER_INFO: Record<SubscriptionTier, TierInfo> = {
 // =============================================================================
 
 /**
- * Paywall bullet points — 2-4 words each, benefits not features.
- * See /paywall skill for design rules.
+ * Paywall bullet points for Inner Circle upsell.
  */
-export const PAYWALL_BULLETS: Record<'enthusiast' | 'collector', string[]> = {
-  enthusiast: [
-    'New listings first',
-    'AI inquiry emails',
-    'Saved search alerts',
-    'Data exports',
-  ],
-  collector: [
-    'Setsumei translations',
-    'Artist stats & analysis',
-    'Priority Juyo alerts',
-    'Blade form insights',
+export const PAYWALL_BULLETS: Record<'inner_circle', string[]> = {
+  inner_circle: [
+    'Private dealer offerings',
+    'Exclusive Discord community',
+    'Direct LINE support',
+    'Personal collection vault',
   ],
 };
 
@@ -369,23 +307,15 @@ export const PAYWALL_BULLETS: Record<'enthusiast' | 'collector', string[]> = {
  * Returns the tier name, price, and bullet points for the paywall modal.
  */
 export function getPaywallConfig(requiredTier: SubscriptionTier): {
-  tier: 'enthusiast' | 'collector';
+  tier: 'inner_circle';
   name: string;
   price: number;
   bullets: string[];
 } {
-  // Map the required tier to one of our two paywall screens
-  const tier: 'enthusiast' | 'collector' =
-    requiredTier === 'free' ? 'enthusiast'
-    : requiredTier === 'inner_circle' ? 'collector'
-    : requiredTier === 'dealer' ? 'enthusiast'
-    : requiredTier === 'yuhinkai' ? 'enthusiast'
-    : requiredTier as 'enthusiast' | 'collector';
-
   return {
-    tier,
-    name: TIER_DISPLAY_NAMES[tier],
-    price: TIER_PRICING[tier].monthly,
-    bullets: PAYWALL_BULLETS[tier],
+    tier: 'inner_circle',
+    name: TIER_DISPLAY_NAMES.inner_circle,
+    price: TIER_PRICING.inner_circle.monthly,
+    bullets: PAYWALL_BULLETS.inner_circle,
   };
 }

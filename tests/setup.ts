@@ -10,8 +10,6 @@ vi.mock('@/contexts/SubscriptionContext', () => ({
     tier: 'inner_circle',
     status: 'active',
     isFree: false,
-    isPro: true,
-    isCollector: true,
     isInnerCircle: true,
     isDealer: false,
     canAccess: () => true,

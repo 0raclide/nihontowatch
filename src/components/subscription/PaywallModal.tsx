@@ -90,7 +90,7 @@ interface PaywallModalContentProps {
   message: string;
   requiredTier: SubscriptionTier;
   onDismiss: () => void;
-  onCheckout: (tier: Exclude<SubscriptionTier, 'free' | 'yuhinkai'>, billingPeriod: BillingPeriod) => Promise<void>;
+  onCheckout: (tier: Exclude<SubscriptionTier, 'free'>, billingPeriod: BillingPeriod) => Promise<void>;
   isLoggedIn: boolean;
   onSignIn: () => void;
 }
@@ -107,9 +107,9 @@ function PaywallModalContent({
   const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>('annual');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Ensure we have a valid paid tier with pricing (free/yuhinkai -> enthusiast fallback)
-  const tier: Exclude<SubscriptionTier, 'free' | 'yuhinkai'> =
-    (requiredTier === 'free' || requiredTier === 'yuhinkai') ? 'enthusiast' : requiredTier;
+  // Ensure we have a valid paid tier with pricing
+  const tier: Exclude<SubscriptionTier, 'free'> =
+    requiredTier === 'free' ? 'inner_circle' : requiredTier;
   const tierInfo = TIER_INFO[tier];
   const pricing = TIER_PRICING[tier];
 
@@ -261,7 +261,7 @@ interface DesktopModalProps {
   message: string;
   requiredTier: SubscriptionTier;
   onDismiss: () => void;
-  onCheckout: (tier: Exclude<SubscriptionTier, 'free' | 'yuhinkai'>, billingPeriod: BillingPeriod) => Promise<void>;
+  onCheckout: (tier: Exclude<SubscriptionTier, 'free'>, billingPeriod: BillingPeriod) => Promise<void>;
   isClosing: boolean;
   isLoggedIn: boolean;
   onSignIn: () => void;
@@ -333,7 +333,7 @@ interface MobileSheetProps {
   message: string;
   requiredTier: SubscriptionTier;
   onDismiss: () => void;
-  onCheckout: (tier: Exclude<SubscriptionTier, 'free' | 'yuhinkai'>, billingPeriod: BillingPeriod) => Promise<void>;
+  onCheckout: (tier: Exclude<SubscriptionTier, 'free'>, billingPeriod: BillingPeriod) => Promise<void>;
   isClosing: boolean;
   isLoggedIn: boolean;
   onSignIn: () => void;
@@ -491,7 +491,7 @@ export function PaywallModal() {
 
   // Handle checkout
   const handleCheckout = useCallback(async (
-    tier: Exclude<SubscriptionTier, 'free' | 'yuhinkai'>,
+    tier: Exclude<SubscriptionTier, 'free'>,
     billingPeriod: BillingPeriod
   ) => {
     await checkout(tier, billingPeriod);
@@ -504,7 +504,7 @@ export function PaywallModal() {
   if (!paywallInfo && !isClosing) return null;
 
   // Derive paywall content from tier config
-  const requiredTier = paywallInfo?.requiredTier || 'enthusiast';
+  const requiredTier = paywallInfo?.requiredTier || 'inner_circle';
   const config = getPaywallConfig(requiredTier);
   const title = config.name;
   const message = `Unlock ${config.name} features`;

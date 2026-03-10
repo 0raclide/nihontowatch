@@ -29,8 +29,6 @@ vi.mock('@/contexts/SubscriptionContext', () => ({
     tier: 'free',
     status: 'inactive',
     isFree: true,
-    isPro: false,
-    isCollector: false,
     isInnerCircle: false,
     isDealer: false,
     canAccess: mockCanAccess,
@@ -214,37 +212,28 @@ describe('SaveSearchButton feature gating', () => {
 // =============================================================================
 
 describe('Feature access matrix', () => {
-  it('free tier should NOT have access to paid features', async () => {
+  it('free tier should have access to all previously-paid features', async () => {
     const { canAccessFeature } = await import('@/types/subscription');
 
-    expect(canAccessFeature('free', 'fresh_data')).toBe(false);
-    expect(canAccessFeature('free', 'setsumei_translation')).toBe(false);
-    expect(canAccessFeature('free', 'inquiry_emails')).toBe(false);
-    expect(canAccessFeature('free', 'saved_searches')).toBe(false);
+    expect(canAccessFeature('free', 'fresh_data')).toBe(true);
+    expect(canAccessFeature('free', 'setsumei_translation')).toBe(true);
+    expect(canAccessFeature('free', 'inquiry_emails')).toBe(true);
+    expect(canAccessFeature('free', 'saved_searches')).toBe(true);
+    expect(canAccessFeature('free', 'search_alerts')).toBe(true);
+    expect(canAccessFeature('free', 'artist_stats')).toBe(true);
+    expect(canAccessFeature('free', 'export_data')).toBe(true);
+    expect(canAccessFeature('free', 'blade_analysis')).toBe(true);
+    expect(canAccessFeature('free', 'provenance_data')).toBe(true);
+    expect(canAccessFeature('free', 'priority_juyo_alerts')).toBe(true);
   });
 
-  it('enthusiast tier should have access to Pro features but not Collector features', async () => {
+  it('free tier should NOT have access to inner_circle/dealer features', async () => {
     const { canAccessFeature } = await import('@/types/subscription');
 
-    expect(canAccessFeature('enthusiast', 'fresh_data')).toBe(true);
-    expect(canAccessFeature('enthusiast', 'inquiry_emails')).toBe(true);
-    expect(canAccessFeature('enthusiast', 'saved_searches')).toBe(true);
-    // Setsumei moved to collector tier
-    expect(canAccessFeature('enthusiast', 'setsumei_translation')).toBe(false);
-    expect(canAccessFeature('enthusiast', 'artist_stats')).toBe(false);
-  });
-
-  it('collector tier should have access to Pro + Collector features', async () => {
-    const { canAccessFeature } = await import('@/types/subscription');
-
-    expect(canAccessFeature('collector', 'fresh_data')).toBe(true);
-    expect(canAccessFeature('collector', 'setsumei_translation')).toBe(true);
-    expect(canAccessFeature('collector', 'inquiry_emails')).toBe(true);
-    expect(canAccessFeature('collector', 'saved_searches')).toBe(true);
-    expect(canAccessFeature('collector', 'search_alerts')).toBe(true);
-    expect(canAccessFeature('collector', 'artist_stats')).toBe(true);
-    // Inner circle features not accessible
-    expect(canAccessFeature('collector', 'private_listings')).toBe(false);
+    expect(canAccessFeature('free', 'private_listings')).toBe(false);
+    expect(canAccessFeature('free', 'collection_access')).toBe(false);
+    expect(canAccessFeature('free', 'line_access')).toBe(false);
+    expect(canAccessFeature('free', 'dealer_analytics')).toBe(false);
   });
 
   it('inner_circle tier should have access to all features', async () => {
@@ -256,6 +245,20 @@ describe('Feature access matrix', () => {
     expect(canAccessFeature('inner_circle', 'saved_searches')).toBe(true);
     expect(canAccessFeature('inner_circle', 'search_alerts')).toBe(true);
     expect(canAccessFeature('inner_circle', 'private_listings')).toBe(true);
+    expect(canAccessFeature('inner_circle', 'collection_access')).toBe(true);
+    expect(canAccessFeature('inner_circle', 'line_access')).toBe(true);
+  });
+
+  it('dealer tier should have access to free features + dealer features + collection', async () => {
+    const { canAccessFeature } = await import('@/types/subscription');
+
+    expect(canAccessFeature('dealer', 'fresh_data')).toBe(true);
+    expect(canAccessFeature('dealer', 'setsumei_translation')).toBe(true);
+    expect(canAccessFeature('dealer', 'dealer_analytics')).toBe(true);
+    expect(canAccessFeature('dealer', 'collection_access')).toBe(true);
+    // Dealer does NOT get inner_circle exclusives
+    expect(canAccessFeature('dealer', 'private_listings')).toBe(false);
+    expect(canAccessFeature('dealer', 'line_access')).toBe(false);
   });
 });
 

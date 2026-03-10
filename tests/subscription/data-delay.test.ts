@@ -100,21 +100,10 @@ describe('Subscription tier access', () => {
     expect(state.isFree).toBe(true);
   });
 
-  it('enthusiast tier should have access to fresh_data', async () => {
-    const { createSubscriptionState, canAccessFeature } = await import('@/types/subscription');
+  it('free tier should have access to fresh_data (now free)', async () => {
+    const { canAccessFeature } = await import('@/types/subscription');
 
-    const state = createSubscriptionState({
-      subscription_tier: 'enthusiast',
-      subscription_status: 'active',
-      subscription_started_at: null,
-      subscription_expires_at: null,
-      stripe_customer_id: null,
-      stripe_subscription_id: null,
-    });
-
-    expect(state.tier).toBe('enthusiast');
-    expect(state.isFree).toBe(false);
-    expect(canAccessFeature('enthusiast', 'fresh_data')).toBe(true);
+    expect(canAccessFeature('free', 'fresh_data')).toBe(true);
   });
 
   it('inner_circle tier should have access to fresh_data', async () => {
@@ -122,9 +111,9 @@ describe('Subscription tier access', () => {
     expect(canAccessFeature('inner_circle', 'fresh_data')).toBe(true);
   });
 
-  it('free tier should NOT have access to fresh_data', async () => {
+  it('free tier should have access to fresh_data (simplified tiers)', async () => {
     const { canAccessFeature } = await import('@/types/subscription');
-    expect(canAccessFeature('free', 'fresh_data')).toBe(false);
+    expect(canAccessFeature('free', 'fresh_data')).toBe(true);
   });
 
   it('inactive subscription should be treated as free', async () => {
@@ -520,7 +509,7 @@ describe('CRITICAL: getUserSubscription behavior', () => {
     expect(result.isDelayed).toBe(false);
   });
 
-  it('returns paid tier for enthusiast subscription', async () => {
+  it('returns paid tier for inner_circle subscription', async () => {
     const userId = 'paid-user-123';
 
     mockAuthClient.auth.getUser.mockResolvedValue({
@@ -532,7 +521,7 @@ describe('CRITICAL: getUserSubscription behavior', () => {
       select: vi.fn().mockReturnValue({
         eq: vi.fn().mockReturnValue({
           single: vi.fn().mockResolvedValue({
-            data: { role: 'user', subscription_tier: 'enthusiast', subscription_status: 'active' },
+            data: { role: 'user', subscription_tier: 'inner_circle', subscription_status: 'active' },
             error: null,
           }),
         }),
@@ -542,7 +531,7 @@ describe('CRITICAL: getUserSubscription behavior', () => {
     const { getUserSubscription } = await import('@/lib/subscription/server');
     const result = await getUserSubscription();
 
-    expect(result.tier).toBe('enthusiast');
+    expect(result.tier).toBe('inner_circle');
     expect(result.isDelayed).toBe(false);
     expect(result.status).toBe('active');
   });
@@ -559,7 +548,7 @@ describe('CRITICAL: getUserSubscription behavior', () => {
       select: vi.fn().mockReturnValue({
         eq: vi.fn().mockReturnValue({
           single: vi.fn().mockResolvedValue({
-            data: { role: 'user', subscription_tier: 'enthusiast', subscription_status: 'inactive' },
+            data: { role: 'user', subscription_tier: 'inner_circle', subscription_status: 'inactive' },
             error: null,
           }),
         }),

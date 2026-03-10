@@ -282,9 +282,6 @@ export default function AdminUsersPage() {
                         } ${updatingUser === user.id ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                       >
                         <option value="free">Free</option>
-                        <option value="yuhinkai">Yuhinkai</option>
-                        <option value="enthusiast">Pro</option>
-                        <option value="collector">Collector</option>
                         <option value="inner_circle">Inner Circle</option>
                         <option value="dealer">Dealer</option>
                       </select>

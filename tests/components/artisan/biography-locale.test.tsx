@@ -55,8 +55,6 @@ vi.mock('@/contexts/SubscriptionContext', () => ({
     tier: 'free',
     canAccessFeature: () => false,
     requireFeature: () => false,
-    isPro: false,
-    isCollector: false,
     isInnerCircle: false,
     isDealer: false,
   }),

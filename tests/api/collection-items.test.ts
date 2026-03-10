@@ -415,7 +415,7 @@ describe('GET /api/collection/items/[id]', () => {
       error: null,
     });
     // Mock the profiles query for tier check
-    mockSingle.mockResolvedValueOnce({ data: { subscription_tier: 'enthusiast' }, error: null });
+    mockSingle.mockResolvedValueOnce({ data: { subscription_tier: 'inner_circle' }, error: null });
 
     const res = await GET_SINGLE(makeRequest('http://localhost/api/collection/items/item-1'), makeParams('item-1'));
     expect(res.status).toBe(200);
@@ -432,12 +432,12 @@ describe('GET /api/collection/items/[id]', () => {
     expect(res.status).toBe(403);
   });
 
-  it('returns 403 for dealers visibility when user is enthusiast tier', async () => {
+  it('returns 403 for dealers visibility when user is free tier', async () => {
     mockSelectCollectionItemSingle.mockResolvedValueOnce({
       data: { id: 'item-1', owner_id: 'other-user', visibility: 'dealers', title: 'Dealer Katana' },
       error: null,
     });
-    mockSingle.mockResolvedValueOnce({ data: { subscription_tier: 'enthusiast' }, error: null });
+    mockSingle.mockResolvedValueOnce({ data: { subscription_tier: 'free' }, error: null });
 
     const res = await GET_SINGLE(makeRequest('http://localhost/api/collection/items/item-1'), makeParams('item-1'));
     expect(res.status).toBe(403);

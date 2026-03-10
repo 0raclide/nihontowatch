@@ -35,7 +35,7 @@ export function getStripe(): Promise<Stripe | null> {
 import type { SubscriptionTier, BillingPeriod } from '@/types/subscription';
 
 export interface CheckoutOptions {
-  tier: Exclude<SubscriptionTier, 'free' | 'yuhinkai'>;
+  tier: Exclude<SubscriptionTier, 'free'>;
   billingPeriod: BillingPeriod;
 }
 

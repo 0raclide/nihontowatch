@@ -19,7 +19,7 @@
  * }
  *
  * // Start checkout
- * await checkout('enthusiast', 'monthly');
+ * await checkout('inner_circle', 'monthly');
  * ```
  */
 

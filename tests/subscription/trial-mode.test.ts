@@ -97,34 +97,32 @@ describe('canAccessFeature in trial mode', () => {
     expect(canAccessFeature('free', 'export_data')).toBe(true);
   });
 
-  it('free tier is restricted when trial mode is OFF', async () => {
+  it('free tier has most features but NOT inner_circle exclusives when trial mode is OFF', async () => {
     process.env.NEXT_PUBLIC_TRIAL_MODE = 'false';
     vi.resetModules();
 
     const { canAccessFeature } = await import('@/types/subscription');
 
-    // Free tier should NOT have access to paid features
-    expect(canAccessFeature('free', 'fresh_data')).toBe(false);
-    expect(canAccessFeature('free', 'setsumei_translation')).toBe(false);
-    expect(canAccessFeature('free', 'inquiry_emails')).toBe(false);
-    expect(canAccessFeature('free', 'saved_searches')).toBe(false);
-    expect(canAccessFeature('free', 'search_alerts')).toBe(false);
+    // Free tier has access to previously-paid features
+    expect(canAccessFeature('free', 'fresh_data')).toBe(true);
+    expect(canAccessFeature('free', 'setsumei_translation')).toBe(true);
+    expect(canAccessFeature('free', 'inquiry_emails')).toBe(true);
+    expect(canAccessFeature('free', 'saved_searches')).toBe(true);
+    expect(canAccessFeature('free', 'search_alerts')).toBe(true);
+    // Inner circle exclusives still gated
     expect(canAccessFeature('free', 'private_listings')).toBe(false);
+    expect(canAccessFeature('free', 'collection_access')).toBe(false);
   });
 
-  it('paid tiers still work correctly when trial mode is OFF', async () => {
+  it('inner_circle tier has all features when trial mode is OFF', async () => {
     process.env.NEXT_PUBLIC_TRIAL_MODE = 'false';
     vi.resetModules();
 
     const { canAccessFeature } = await import('@/types/subscription');
 
-    // Enthusiast should have Pro features
-    expect(canAccessFeature('enthusiast', 'fresh_data')).toBe(true);
-    expect(canAccessFeature('enthusiast', 'inquiry_emails')).toBe(true);
-
-    // Inner circle should have all features
     expect(canAccessFeature('inner_circle', 'private_listings')).toBe(true);
     expect(canAccessFeature('inner_circle', 'artist_stats')).toBe(true);
+    expect(canAccessFeature('inner_circle', 'collection_access')).toBe(true);
   });
 });
 
@@ -312,12 +310,13 @@ describe('REGRESSION GUARD: Trial mode implementation', () => {
 
 describe('Trial mode toggle behavior', () => {
   it('can be toggled by changing env var (simulated)', async () => {
+    // Use private_listings as test feature — it's inner_circle-gated even with simplified tiers
     // First, trial mode OFF
     process.env.NEXT_PUBLIC_TRIAL_MODE = 'false';
     vi.resetModules();
 
     const { canAccessFeature } = await import('@/types/subscription');
-    expect(canAccessFeature('free', 'fresh_data')).toBe(false);
+    expect(canAccessFeature('free', 'private_listings')).toBe(false);
 
     // Now, trial mode ON
     process.env.NEXT_PUBLIC_TRIAL_MODE = 'true';
@@ -325,13 +324,13 @@ describe('Trial mode toggle behavior', () => {
 
     // Re-import to get fresh module with new env
     const freshModule = await import('@/types/subscription');
-    expect(freshModule.canAccessFeature('free', 'fresh_data')).toBe(true);
+    expect(freshModule.canAccessFeature('free', 'private_listings')).toBe(true);
 
     // Back to OFF
     process.env.NEXT_PUBLIC_TRIAL_MODE = 'false';
     vi.resetModules();
 
     const offModule = await import('@/types/subscription');
-    expect(offModule.canAccessFeature('free', 'fresh_data')).toBe(false);
+    expect(offModule.canAccessFeature('free', 'private_listings')).toBe(false);
   });
 });

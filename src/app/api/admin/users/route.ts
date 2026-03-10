@@ -106,7 +106,7 @@ export async function PATCH(request: NextRequest) {
 
     // Handle subscription tier change
     if (typeof subscriptionTier === 'string') {
-      const validTiers = ['free', 'enthusiast', 'collector', 'inner_circle', 'dealer', 'yuhinkai'];
+      const validTiers = ['free', 'inner_circle', 'dealer'];
       if (!validTiers.includes(subscriptionTier)) {
         return apiBadRequest(`Invalid tier. Must be one of: ${validTiers.join(', ')}`);
       }

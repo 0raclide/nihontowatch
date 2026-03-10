@@ -7,7 +7,7 @@ import type { SubscriptionTier, BillingPeriod } from '@/types/subscription';
 export const dynamic = 'force-dynamic';
 
 interface CheckoutRequestBody {
-  tier: Exclude<SubscriptionTier, 'free' | 'yuhinkai'>;
+  tier: Exclude<SubscriptionTier, 'free'>;
   billingPeriod: BillingPeriod;
 }
 
@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
     const { tier, billingPeriod } = body;
 
     // Validate tier
-    if (!['enthusiast', 'collector', 'inner_circle', 'dealer'].includes(tier)) {
+    if (!['inner_circle', 'dealer'].includes(tier)) {
       return NextResponse.json(
         { error: 'Invalid subscription tier' },
         { status: 400 }

@@ -93,8 +93,8 @@ export async function POST(request: NextRequest) {
         {
           error: 'Upgrade required',
           feature: 'saved_searches',
-          requiredTier: 'enthusiast',
-          message: 'Saved searches require an Enthusiast subscription or higher.',
+          requiredTier: 'free',
+          message: 'Saved searches require a free account.',
         },
         { status: 403 }
       );

@@ -91,19 +91,10 @@ describe('verifyDealer', () => {
     expect(result).toEqual({ isDealer: false, error: 'forbidden' });
   });
 
-  it('returns forbidden for enthusiast tier user', async () => {
+  it('returns forbidden for free tier user', async () => {
     const supabase = createMockSupabase({
       user: { id: 'user-4' },
-      profile: { role: 'user', subscription_tier: 'enthusiast', dealer_id: null },
-    });
-    const result = await verifyDealer(supabase);
-    expect(result).toEqual({ isDealer: false, error: 'forbidden' });
-  });
-
-  it('returns forbidden for collector tier user', async () => {
-    const supabase = createMockSupabase({
-      user: { id: 'user-5' },
-      profile: { role: 'user', subscription_tier: 'collector', dealer_id: null },
+      profile: { role: 'user', subscription_tier: 'free', dealer_id: null },
     });
     const result = await verifyDealer(supabase);
     expect(result).toEqual({ isDealer: false, error: 'forbidden' });

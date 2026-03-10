@@ -165,7 +165,7 @@ export interface Database {
           role: 'user' | 'admin';
           preferences: Record<string, unknown> | null;
           // Subscription fields
-          subscription_tier: 'free' | 'enthusiast' | 'collector' | 'inner_circle' | 'dealer' | 'yuhinkai';
+          subscription_tier: 'free' | 'inner_circle' | 'dealer';
           subscription_status: 'active' | 'inactive' | 'cancelled' | 'past_due';
           subscription_started_at: string | null;
           subscription_expires_at: string | null;
@@ -183,7 +183,7 @@ export interface Database {
           avatar_url?: string | null;
           role?: 'user' | 'admin';
           preferences?: Record<string, unknown> | null;
-          subscription_tier?: 'free' | 'enthusiast' | 'collector' | 'inner_circle' | 'dealer';
+          subscription_tier?: 'free' | 'inner_circle' | 'dealer';
           subscription_status?: 'active' | 'inactive' | 'cancelled' | 'past_due';
           subscription_started_at?: string | null;
           subscription_expires_at?: string | null;

@@ -43,17 +43,9 @@ export const stripe: Stripe = new Proxy({} as Stripe, {
  * These must be created in the Stripe Dashboard first
  */
 export const STRIPE_PRICES: Record<
-  Exclude<SubscriptionTier, 'free' | 'yuhinkai'>,
+  Exclude<SubscriptionTier, 'free'>,
   Record<BillingPeriod, string>
 > = {
-  enthusiast: {
-    monthly: process.env.STRIPE_PRICE_ENTHUSIAST_MONTHLY || '',
-    annual: process.env.STRIPE_PRICE_ENTHUSIAST_ANNUAL || '',
-  },
-  collector: {
-    monthly: process.env.STRIPE_PRICE_COLLECTOR_MONTHLY || '',
-    annual: process.env.STRIPE_PRICE_COLLECTOR_ANNUAL || '',
-  },
   inner_circle: {
     monthly: process.env.STRIPE_PRICE_INNER_CIRCLE_MONTHLY || '',
     annual: process.env.STRIPE_PRICE_INNER_CIRCLE_ANNUAL || '',
@@ -68,7 +60,7 @@ export const STRIPE_PRICES: Record<
  * Get price ID for a tier and billing period
  */
 export function getPriceId(
-  tier: Exclude<SubscriptionTier, 'free' | 'yuhinkai'>,
+  tier: Exclude<SubscriptionTier, 'free'>,
   billingPeriod: BillingPeriod
 ): string {
   const priceId = STRIPE_PRICES[tier][billingPeriod];
@@ -97,7 +89,7 @@ export function getTierFromPriceId(priceId: string): SubscriptionTier | null {
 export interface CreateCheckoutParams {
   userId: string;
   userEmail: string;
-  tier: Exclude<SubscriptionTier, 'free' | 'yuhinkai'>;
+  tier: Exclude<SubscriptionTier, 'free'>;
   billingPeriod: BillingPeriod;
   successUrl: string;
   cancelUrl: string;
