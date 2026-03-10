@@ -425,7 +425,7 @@ export function QuickView() {
   const desktopActionBarSlot = isDealer
     ? <DealerActionBar listing={currentListing} onStatusChange={handleDealerStatusChange} />
     : isShowcase
-      ? <ShowcaseActionBar listing={currentListing} showcase={showcaseExt} />
+      ? <ShowcaseActionBar showcase={showcaseExt} />
       : isCollection
         ? <CollectionActionBar onEditCollection={handleEditCollection} />
         : <BrowseActionBar listing={currentListing} isStudyMode={isStudyMode} onToggleStudyMode={toggleStudyMode} onToggleAdminEditMode={toggleAdminEditMode} />;
