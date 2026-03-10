@@ -346,37 +346,21 @@ function HeaderContent() {
                   {t('nav.glossary')}
                 </Link>
               )}
-              {user && canAccess('collection_access') && (
-                <Link
-                  href="/vault"
-                  className="text-[11px] uppercase tracking-[0.2em] text-muted hover:text-gold transition-colors"
-                >
-                  {t('nav.collection')}
-                </Link>
-              )}
-              {user && canAccess('collection_access') && (
-                <Link
-                  href="/showcase"
-                  className="text-[11px] uppercase tracking-[0.2em] text-muted hover:text-gold transition-colors"
-                >
-                  {t('nav.showcase')}
-                </Link>
-              )}
               <FeedbackButton />
               <NotificationBell />
               <div className="h-3 w-px bg-border" />
               <ThemeSwitcher />
               <LocaleSwitcher />
-              {/* Dealer Portal Link */}
-              {isDealer && (
+              {/* Collection link (gold) */}
+              {user && canAccess('collection_access') && (
                 <>
                   <div className="h-3 w-px bg-border" />
-                  <a
-                    href="/dealer"
+                  <Link
+                    href="/vault"
                     className="text-[11px] uppercase tracking-[0.2em] text-gold hover:text-gold/80 transition-colors"
                   >
-                    {t('nav.myListings')}
-                  </a>
+                    {t('nav.collection')}
+                  </Link>
                 </>
               )}
               {/* Admin Quick Menu */}
