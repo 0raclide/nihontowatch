@@ -65,7 +65,7 @@ describe('buildUserPrompt — research notes section', () => {
     const prompt = buildUserPrompt(ctx, 'ja');
     expect(prompt).toContain('【調査ノート（出品者・所蔵者提供）');
     expect(prompt).toContain('日本刀大観第3巻に掲載');
-    expect(prompt).toContain('積極的に反映');
+    expect(prompt).toContain('自然に織り込んで');
   });
 
   it('omits research notes section when null', () => {
@@ -148,15 +148,15 @@ describe('buildUserPrompt — artist overview section', () => {
 describe('buildSystemPrompt — prompt rules', () => {
   it('includes rule about research notes integration (EN)', () => {
     const prompt = buildSystemPrompt('en');
-    expect(prompt).toContain('Research notes from collectors/dealers are IMPORTANT');
-    expect(prompt).toContain('according to the consignor');
-    expect(prompt).toContain('integrate the substance');
+    expect(prompt).toContain('Research notes are IMPORTANT contextual material');
+    expect(prompt).toContain('without attribution phrases');
+    expect(prompt).not.toContain('"according to the consignor"');
   });
 
   it('includes rule about research notes integration (JA)', () => {
     const prompt = buildSystemPrompt('ja');
     expect(prompt).toContain('調査ノートは重要な文脈情報');
-    expect(prompt).toContain('積極的に本文に織り込む');
+    expect(prompt).toContain('帰属表現は使わず');
   });
 
   it('includes setsumei anonymity rule (EN)', () => {
