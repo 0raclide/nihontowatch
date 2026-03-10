@@ -32,7 +32,7 @@ interface QuickViewContextType {
   /** The currently displayed listing */
   currentListing: Listing | null;
   /** Open quick view for a specific listing */
-  openQuickView: (listing: Listing, options?: { skipFetch?: boolean; source?: 'browse' | 'dealer' }) => void;
+  openQuickView: (listing: Listing, options?: { skipFetch?: boolean; source?: 'browse' | 'dealer' | 'collection' }) => void;
   /** Close the quick view modal */
   closeQuickView: () => void;
   /** Dismiss QuickView UI without history.back() — for use before router.push() navigation */
@@ -213,7 +213,7 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
   }, [isAdmin]);
 
   // Open quick view
-  const openQuickView = useCallback((listing: Listing, options?: { skipFetch?: boolean; source?: 'browse' | 'dealer' }) => {
+  const openQuickView = useCallback((listing: Listing, options?: { skipFetch?: boolean; source?: 'browse' | 'dealer' | 'collection' }) => {
     // Prevent re-opening during cooldown (after close)
     if (closeCooldown.current) {
       return;
@@ -427,12 +427,12 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
       first_seen_at: item.created_at,
     } as unknown as Listing;
 
-    setSource('collection');
     setCollectionItem(item);
     setCollectionModeState(mode);
 
     // Use skipFetch: true — collection items don't have a detail API
-    openQuickView(adaptedListing, { skipFetch: true });
+    // Pass source: 'collection' so openQuickView sets the correct source
+    openQuickView(adaptedListing, { skipFetch: true, source: 'collection' });
 
     // Fix URL: use ?item=UUID instead of ?listing=ID (openQuickView set ?listing=)
     updateUrl(item.item_uuid, 'collection');
