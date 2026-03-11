@@ -731,7 +731,7 @@ describe('Performance safeguards', () => {
     // Item types should be limited
     expect(response.facets.itemTypes.length).toBeLessThan(50);
 
-    // Dealers should be limited (we have ~27)
-    expect(response.facets.dealers.length).toBeLessThan(50);
+    // Dealers should be limited (we have ~52 active)
+    expect(response.facets.dealers.length).toBeLessThan(75);
   });
 });

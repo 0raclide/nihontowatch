@@ -261,9 +261,9 @@ describe('collectionRowToDisplayItem', () => {
     expect(di.first_seen_at).toBe('2024-06-15T10:00:00Z');
   });
 
-  it('always sets dealer_display_name to "Personal Collection"', () => {
+  it('always sets dealer_display_name to "Private Collection"', () => {
     const di = collectionRowToDisplayItem(makeItem());
-    expect(di.dealer_display_name).toBe('Personal Collection');
+    expect(di.dealer_display_name).toBe('Private Collection');
   });
 
   it('derives has_setsumei from setsumei_text_en', () => {

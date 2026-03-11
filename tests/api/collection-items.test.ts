@@ -132,6 +132,16 @@ vi.mock('@/lib/logger', () => ({
   logger: { error: vi.fn(), warn: vi.fn(), logError: vi.fn() },
 }));
 
+// Mock Yuhinkai artisan names lookup
+vi.mock('@/lib/supabase/yuhinkai', () => ({
+  getArtisanNames: vi.fn().mockResolvedValue(new Map()),
+}));
+
+// Mock collection expenses
+vi.mock('@/lib/supabase/collectionExpenses', () => ({
+  getExpenseTotals: vi.fn().mockResolvedValue({}),
+}));
+
 // ─── Import handlers ─────────────────────────────────────────────
 
 import { GET, POST } from '@/app/api/collection/items/route';

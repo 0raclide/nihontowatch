@@ -58,6 +58,7 @@ const KNOWN_SAFE_FILES = new Set([
   'src/app/api/dealer/listings/[id]/route.ts',
   'src/app/api/dealer/listings/counts/route.ts',
   'src/app/api/dealer/listings/intelligence/route.ts',
+  'src/app/api/dealer/listings/intelligence/criteria/route.ts',
   'src/app/api/dealer/images/route.ts',
   'src/app/api/dealer/videos/route.ts',
   'src/app/api/dealer/videos/[id]/route.ts',

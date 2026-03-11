@@ -108,6 +108,30 @@ vi.mock('@/hooks/useVaultReturns', () => ({
 }));
 
 // ---------------------------------------------------------------------------
+// Mock auth + subscription (needed by CollectionPageClient)
+// ---------------------------------------------------------------------------
+
+vi.mock('@/lib/auth/AuthContext', () => ({
+  useAuth: () => ({
+    user: { id: 'user-1' },
+    profile: null,
+    session: null,
+    isLoading: false,
+    isAdmin: false,
+  }),
+}));
+
+vi.mock('@/contexts/SubscriptionContext', () => ({
+  useSubscription: () => ({
+    tier: 'free',
+    isDealer: false,
+    isFree: true,
+    isInnerCircle: false,
+    canAccessFeature: () => true,
+  }),
+}));
+
+// ---------------------------------------------------------------------------
 // Mock ListingGrid — capture props
 // ---------------------------------------------------------------------------
 
@@ -139,6 +163,18 @@ vi.mock('@/components/browse/ListingGrid', () => ({
 
 vi.mock('@/components/collection/CollectionFilterContent', () => ({
   CollectionFilterContent: () => <div data-testid="filter-content" />,
+}));
+
+vi.mock('@/components/collection/SortableCollectionGrid', () => ({
+  SortableCollectionGrid: () => <div data-testid="sortable-grid" />,
+}));
+
+vi.mock('@/components/collection/VaultTableView', () => ({
+  VaultTableView: () => <div data-testid="vault-table-view" />,
+}));
+
+vi.mock('@/components/collection/VaultViewToggle', () => ({
+  VaultViewToggle: () => <div data-testid="vault-view-toggle" />,
 }));
 
 vi.mock('@/components/collection/CollectionBottomBar', () => ({
@@ -335,6 +371,9 @@ beforeEach(() => {
   capturedGridProps = null;
   mockSearchParams = new URLSearchParams();
 
+  // Force mobile viewport so isDesktop=false and ListingGrid is rendered (not SortableCollectionGrid)
+  Object.defineProperty(window, 'innerWidth', { value: 500, writable: true, configurable: true });
+
   // Mock localStorage (jsdom doesn't always provide it as a function)
   Object.defineProperty(window, 'localStorage', {
     value: {
@@ -415,17 +454,20 @@ describe('CollectionPageClient', () => {
     expect(capturedGridProps.preMappedItems[0].id).toBe('uuid-111');
   });
 
-  it('renders AddItemCard via appendSlot', async () => {
+  it('renders Add button in toolbar', async () => {
     await act(async () => {
       await renderPage();
     });
 
     await waitFor(() => {
-      expect(screen.getByTestId('add-item-card')).toBeInTheDocument();
+      expect(screen.getByTestId('listing-grid')).toBeInTheDocument();
     });
+
+    // The Add button is rendered as an inline button (not via appendSlot)
+    expect(screen.getByText('Add')).toBeInTheDocument();
   });
 
-  it('clicking AddItemCard navigates to collection add page', async () => {
+  it('clicking Add button navigates to vault add page', async () => {
     // Mock window.location.href setter
     const locationHrefSpy = vi.spyOn(window, 'location', 'get').mockReturnValue({
       ...window.location,
@@ -439,10 +481,10 @@ describe('CollectionPageClient', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByTestId('add-item-card')).toBeInTheDocument();
+      expect(screen.getByTestId('listing-grid')).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByTestId('add-item-card'));
+    fireEvent.click(screen.getByText('Add'));
     expect(hrefSetter).toHaveBeenCalledWith('/vault/add');
 
     locationHrefSpy.mockRestore();

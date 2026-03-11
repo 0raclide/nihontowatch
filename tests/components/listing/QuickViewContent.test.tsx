@@ -59,6 +59,12 @@ vi.mock('@/contexts/QuickViewContext', () => ({
     refreshCurrentListing: vi.fn(),
     closeQuickView: vi.fn(),
   }),
+  useQuickView: () => ({
+    onCollectionSaved: null,
+    refreshCurrentListing: vi.fn(),
+    closeQuickView: vi.fn(),
+    dismissForNavigation: vi.fn(),
+  }),
 }));
 
 // Mock the TranslatedTitle component

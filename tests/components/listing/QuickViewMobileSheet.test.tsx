@@ -53,6 +53,17 @@ vi.mock('@/lib/auth/AuthContext', () => ({
   }),
 }));
 
+// Mock the QuickViewContext (needed by VisibilityBadge)
+vi.mock('@/contexts/QuickViewContext', () => ({
+  useQuickView: () => ({
+    onCollectionSaved: null,
+    refreshCurrentListing: vi.fn(),
+    closeQuickView: vi.fn(),
+    dismissForNavigation: vi.fn(),
+  }),
+  useQuickViewOptional: () => null,
+}));
+
 // Mock the InquiryModal component
 vi.mock('@/components/inquiry', () => ({
   InquiryModal: () => null,
