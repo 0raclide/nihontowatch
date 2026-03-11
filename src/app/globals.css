@@ -1970,19 +1970,24 @@ html.theme-yuhindo .magical-book:hover {
 }
 
 /* ==========================================================================
-   Vault Pulse Animation — unlocking overlay
+   Vault Door Reveal Animation
    ========================================================================== */
-@keyframes vaultPulse {
-  0%, 100% {
-    opacity: 0.4;
-  }
-  50% {
-    opacity: 1;
-  }
+@keyframes vaultDoorLeft {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-100%); }
 }
 
-.animate-vault-pulse {
-  animation: vaultPulse 2s ease-in-out infinite;
+@keyframes vaultDoorRight {
+  from { transform: translateX(0); }
+  to   { transform: translateX(100%); }
+}
+
+.animate-vault-door-left {
+  animation: vaultDoorLeft 600ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.animate-vault-door-right {
+  animation: vaultDoorRight 600ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
 /* Slide-in from right animation for QuickView panel */

@@ -34,7 +34,7 @@ const EMPTY_FACETS: CollectionFacets = {
 };
 
 /** Minimum time (ms) the vault overlay is shown */
-const VAULT_OVERLAY_MIN_MS = 600;
+const VAULT_OVERLAY_MIN_MS = 800;
 
 // =============================================================================
 // Component
@@ -65,7 +65,8 @@ export function CollectionPageClient() {
 
   // Vault overlay state
   const [showVaultOverlay, setShowVaultOverlay] = useState(true);
-  const [overlayFading, setOverlayFading] = useState(false);
+  const [wordmarkFading, setWordmarkFading] = useState(false);
+  const [doorsOpening, setDoorsOpening] = useState(false);
   const mountTimeRef = useRef(Date.now());
 
   // Mobile view toggle (shared localStorage key with browse)
@@ -94,20 +95,25 @@ export function CollectionPageClient() {
 
   // Dismiss vault overlay once data loaded AND min time elapsed
   useEffect(() => {
-    if (!showVaultOverlay || overlayFading) return;
+    if (!showVaultOverlay || wordmarkFading || doorsOpening) return;
     if (isLoading) return;
 
     const elapsed = Date.now() - mountTimeRef.current;
     const remaining = Math.max(0, VAULT_OVERLAY_MIN_MS - elapsed);
 
     const timer = setTimeout(() => {
-      setOverlayFading(true);
-      // Remove overlay after fade completes (500ms)
-      setTimeout(() => setShowVaultOverlay(false), 500);
+      // 1. Fade out wordmark + seam (300ms)
+      setWordmarkFading(true);
+      setTimeout(() => {
+        // 2. Slide doors apart (600ms)
+        setDoorsOpening(true);
+        // 3. Remove overlay from DOM after doors finish
+        setTimeout(() => setShowVaultOverlay(false), 600);
+      }, 300);
     }, remaining);
 
     return () => clearTimeout(timer);
-  }, [isLoading, showVaultOverlay, overlayFading]);
+  }, [isLoading, showVaultOverlay, wordmarkFading, doorsOpening]);
 
   // Adapt collection items to DisplayItem shape for ListingCard
   const adaptedItems = useMemo(
@@ -334,24 +340,37 @@ export function CollectionPageClient() {
   const activeCount = activeTab === 'collection' ? total : dealerTotal;
   const activeLoading = activeTab === 'collection' ? isLoading : isDealerLoading;
 
-  // Whether the grid content should be visible (overlay dismissed)
-  const gridReady = !showVaultOverlay;
-
   return (
     <div className="min-h-screen bg-surface transition-colors">
-      {/* Vault Unlock Overlay */}
+      {/* Vault Door Reveal Overlay */}
       {showVaultOverlay && (
-        <div
-          className={`fixed inset-0 z-50 bg-surface flex flex-col items-center justify-center transition-opacity duration-500 ${
-            overlayFading ? 'opacity-0' : 'opacity-100'
-          }`}
-        >
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" className="text-gold animate-vault-pulse mb-5">
-            <path d="M12 2L3 7v6c0 5.25 3.83 10.15 9 11.25C17.17 23.15 21 18.25 21 13V7l-9-5z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
-          </svg>
-          <p className="font-serif uppercase tracking-[0.15em] text-muted text-[13px]">
-            {t('vault.unlocking')}
-          </p>
+        <div className="fixed inset-0 z-50 pointer-events-none">
+          {/* Left door */}
+          <div
+            className={`absolute inset-y-0 left-0 w-1/2 bg-surface ${
+              doorsOpening ? 'animate-vault-door-left' : ''
+            }`}
+          />
+          {/* Right door */}
+          <div
+            className={`absolute inset-y-0 right-0 w-1/2 bg-surface ${
+              doorsOpening ? 'animate-vault-door-right' : ''
+            }`}
+          />
+          {/* Gold seam line at center */}
+          {!doorsOpening && (
+            <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-px bg-gradient-to-b from-transparent via-gold/40 to-transparent" />
+          )}
+          {/* Centered VAULT wordmark */}
+          <div
+            className={`absolute inset-0 flex items-center justify-center transition-opacity duration-300 ${
+              wordmarkFading ? 'opacity-0' : 'opacity-100'
+            }`}
+          >
+            <span className="font-serif text-[28px] lg:text-[36px] uppercase tracking-[0.3em] text-ink/70 select-none">
+              VAULT
+            </span>
+          </div>
         </div>
       )}
 
@@ -428,53 +447,50 @@ export function CollectionPageClient() {
           </div>
         )}
 
-        {/* Main Layout — fade in once overlay is dismissed */}
-        <div className={gridReady ? 'animate-fadeIn' : 'opacity-0'}>
-          {/* Grid */}
-          <div className="flex-1 min-w-0">
-            {activeTab === 'collection' ? (
-              <>
-                {isDragEnabled ? (
-                  <SortableCollectionGrid
-                    items={adaptedItems}
-                    currency={currency}
-                    exchangeRates={exchangeRates}
-                    onReorder={handleReorder}
-                    onCardClick={handleCardClick}
-                    appendSlot={<AddItemCard onClick={handleAddClick} />}
-                  />
-                ) : (
-                  <ListingGrid
-                    listings={[]}
-                    preMappedItems={adaptedItems}
-                    total={total}
-                    page={1}
-                    totalPages={1}
-                    onPageChange={() => {}}
-                    isLoading={isLoading}
-                    currency={currency}
-                    exchangeRates={exchangeRates}
-                    mobileView={mobileView}
-                    onCardClick={handleCardClick}
-                    appendSlot={<AddItemCard onClick={handleAddClick} />}
-                  />
-                )}
-              </>
-            ) : (
-              <ListingGrid
-                listings={[]}
-                preMappedItems={dealerListings}
-                total={dealerTotal}
-                page={1}
-                totalPages={1}
-                onPageChange={() => {}}
-                isLoading={isDealerLoading}
-                currency={currency}
-                exchangeRates={exchangeRates}
-                mobileView={mobileView}
-              />
-            )}
-          </div>
+        {/* Grid */}
+        <div className="flex-1 min-w-0">
+          {activeTab === 'collection' ? (
+            <>
+              {isDragEnabled ? (
+                <SortableCollectionGrid
+                  items={adaptedItems}
+                  currency={currency}
+                  exchangeRates={exchangeRates}
+                  onReorder={handleReorder}
+                  onCardClick={handleCardClick}
+                  appendSlot={<AddItemCard onClick={handleAddClick} />}
+                />
+              ) : (
+                <ListingGrid
+                  listings={[]}
+                  preMappedItems={adaptedItems}
+                  total={total}
+                  page={1}
+                  totalPages={1}
+                  onPageChange={() => {}}
+                  isLoading={isLoading}
+                  currency={currency}
+                  exchangeRates={exchangeRates}
+                  mobileView={mobileView}
+                  onCardClick={handleCardClick}
+                  appendSlot={<AddItemCard onClick={handleAddClick} />}
+                />
+              )}
+            </>
+          ) : (
+            <ListingGrid
+              listings={[]}
+              preMappedItems={dealerListings}
+              total={dealerTotal}
+              page={1}
+              totalPages={1}
+              onPageChange={() => {}}
+              isLoading={isDealerLoading}
+              currency={currency}
+              exchangeRates={exchangeRates}
+              mobileView={mobileView}
+            />
+          )}
         </div>
       </div>
 
