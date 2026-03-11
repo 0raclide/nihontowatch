@@ -32,16 +32,19 @@ export function SayagakiDisplay({ sayagaki, onImageClick, readable }: SayagakiDi
         <div className={`${readable ? 'text-[11px]' : 'text-[10px]'} uppercase tracking-wider text-muted font-medium mb-2`}>
           {t('dealer.sayagaki')}
         </div>
-        <div className="space-y-3">
+        <div className={sayagaki.length > 1 ? 'divide-y divide-border/50 space-y-4' : 'space-y-3'}>
           {sayagaki.map((entry, i) => {
             const authorLabel = entry.author === 'other'
               ? (entry.author_custom || t('dealer.sayagakiAuthorOther'))
               : t(AUTHOR_KEYS[entry.author] || 'dealer.sayagakiAuthorOther');
 
             return (
-              <div key={entry.id || i}>
+              <div key={entry.id || i} className={i > 0 && sayagaki.length > 1 ? 'pt-4' : ''}>
                 <div className={`${readable ? 'text-[15px] leading-relaxed' : 'text-[13px]'} font-medium text-ink mb-0.5`}>
                   {authorLabel}
+                  {sayagaki.length > 1 && (
+                    <span className="ml-2 text-[10px] text-muted font-normal uppercase tracking-wider">#{i + 1}</span>
+                  )}
                 </div>
                 {entry.content && (
                   <p className={`${readable ? 'text-[15px] leading-relaxed' : 'text-[13px]'} text-charcoal whitespace-pre-wrap mb-2`}>
