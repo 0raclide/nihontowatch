@@ -400,7 +400,7 @@ export function CollectionPageClient() {
 
         {/* Grid — compact vault cards with fade-in */}
         <div
-          className="flex-1 min-w-0 vault-compact-grid transition-opacity"
+          className="flex-1 min-w-0 transition-opacity"
           style={{
             opacity: contentVisible ? 1 : 0,
             transitionDuration: `${FADE_IN_DURATION}ms`,
