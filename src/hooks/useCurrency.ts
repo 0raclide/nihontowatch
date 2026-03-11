@@ -96,11 +96,48 @@ export function useCurrency() {
     }
   }, []);
 
+  // Fetch historical exchange rate for a specific date
+  const fetchHistoricalRate = useCallback(async (
+    date: string,
+    fromCurrency: string,
+    toCurrency: string
+  ): Promise<number | null> => {
+    if (fromCurrency.toUpperCase() === toCurrency.toUpperCase()) return 1;
+
+    const cacheKey = `nw-fx-${date}-${fromCurrency}-${toCurrency}`;
+    if (typeof window !== 'undefined') {
+      const cached = sessionStorage.getItem(cacheKey);
+      if (cached) return Number(cached);
+    }
+
+    try {
+      const res = await fetch(`/api/exchange-rates?date=${date}`);
+      if (!res.ok) return null;
+      const data: ExchangeRates = await res.json();
+
+      const from = fromCurrency.toUpperCase();
+      const to = toCurrency.toUpperCase();
+      const sourceRate = from === 'USD' ? 1 : data.rates[from];
+      const targetRate = to === 'USD' ? 1 : data.rates[to];
+
+      if (!sourceRate || !targetRate) return null;
+
+      const rate = targetRate / sourceRate;
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem(cacheKey, String(rate));
+      }
+      return rate;
+    } catch {
+      return null;
+    }
+  }, []);
+
   return {
     currency,
     setCurrency,
     exchangeRates,
     isLoading,
+    fetchHistoricalRate,
   };
 }
 

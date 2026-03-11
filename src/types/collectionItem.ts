@@ -28,6 +28,15 @@ export interface CollectionItemRow extends ItemDataFields {
   source_listing_id: number | null;
   personal_notes: string | null;
 
+  // Financial fields (collection-only, not shared with listings)
+  purchase_price?: number | null;
+  purchase_currency?: string | null;
+  purchase_date?: string | null;
+  purchase_source?: string | null;
+  current_value?: number | null;
+  current_currency?: string | null;
+  location?: string | null;
+
   // Ordering
   sort_order: number;
 

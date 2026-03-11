@@ -11,9 +11,12 @@ import type { DisplayItem } from '@/types/displayItem';
 import { ListingGrid } from '@/components/browse/ListingGrid';
 import { SortableCollectionGrid } from '@/components/collection/SortableCollectionGrid';
 import { CollectionBottomBar } from '@/components/collection/CollectionBottomBar';
+import { VaultViewToggle } from '@/components/collection/VaultViewToggle';
+import { VaultTableView } from '@/components/collection/VaultTableView';
 import { useQuickView } from '@/contexts/QuickViewContext';
 import { useCurrency } from '@/hooks/useCurrency';
 import { collectionRowsToDisplayItems, dealerListingToDisplayItem } from '@/lib/displayItem';
+import type { ExpenseTotalsMap } from '@/lib/displayItem/fromCollectionItem';
 import { Header } from '@/components/layout/Header';
 
 // Tab types for dealer users
@@ -85,6 +88,7 @@ export function CollectionPageClient() {
   const [total, setTotal] = useState(0);
   const [facets, setFacets] = useState<CollectionFacets>(EMPTY_FACETS);
   const [artisanNames, setArtisanNames] = useState<Record<string, { name_romaji?: string | null; name_kanji?: string | null; school?: string | null }>>({});
+  const [expenseTotals, setExpenseTotals] = useState<ExpenseTotalsMap>({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -99,6 +103,21 @@ export function CollectionPageClient() {
     }
     return 'grid';
   });
+
+  // Desktop view toggle — grid (card view) or table (spreadsheet view)
+  const [desktopView, setDesktopView] = useState<'grid' | 'table'>(() => {
+    if (typeof window !== 'undefined') {
+      return (localStorage.getItem('nihontowatch-vault-view') as 'grid' | 'table') || 'grid';
+    }
+    return 'grid';
+  });
+
+  const handleDesktopViewChange = useCallback((view: 'grid' | 'table') => {
+    setDesktopView(view);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('nihontowatch-vault-view', view);
+    }
+  }, []);
 
   // Filters — always custom sort, no user-facing filter UI for now
   const [filters] = useState<CollectionFilters>(() => ({
@@ -127,8 +146,8 @@ export function CollectionPageClient() {
 
   // Adapt collection items to DisplayItem shape for ListingCard
   const adaptedItems = useMemo(
-    () => collectionRowsToDisplayItems(items, artisanNames),
-    [items, artisanNames]
+    () => collectionRowsToDisplayItems(items, artisanNames, expenseTotals),
+    [items, artisanNames, expenseTotals]
   );
 
   // Adapt collection items for QuickView navigation — preserves ALL JSONB sections
@@ -183,11 +202,18 @@ export function CollectionPageClient() {
         throw new Error(t('collection.fetchFailed'));
       }
 
-      const data: { data: CollectionItemRow[]; total: number; facets: CollectionFacets; artisanNames?: Record<string, { name_romaji?: string | null; name_kanji?: string | null; school?: string | null }> } = await res.json();
+      const data: {
+        data: CollectionItemRow[];
+        total: number;
+        facets: CollectionFacets;
+        artisanNames?: Record<string, { name_romaji?: string | null; name_kanji?: string | null; school?: string | null }>;
+        expenseTotals?: ExpenseTotalsMap;
+      } = await res.json();
       setItemsState(data.data);
       setTotal(data.total);
       setFacets(data.facets);
       setArtisanNames(data.artisanNames || {});
+      setExpenseTotals(data.expenseTotals || {});
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') return;
       setError(t('collection.loadFailed'));
@@ -308,6 +334,32 @@ export function CollectionPageClient() {
     window.location.href = '/vault/add';
   }, []);
 
+  // Inline item update from table view (optimistic update + PATCH)
+  const handleItemUpdate = useCallback(async (itemId: string, updates: Record<string, unknown>) => {
+    // Optimistic update in local items state
+    setItemsState(prev => prev.map(item =>
+      item.item_uuid === itemId ? { ...item, ...updates } as CollectionItemRow : item
+    ));
+
+    // Find the DB id from the item_uuid
+    const dbItem = items.find(i => i.item_uuid === itemId);
+    if (!dbItem) return;
+
+    try {
+      const res = await fetch(`/api/collection/items/${dbItem.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+      });
+      if (!res.ok) {
+        // Revert on failure
+        fetchItems(filters);
+      }
+    } catch {
+      fetchItems(filters);
+    }
+  }, [items, filters, fetchItems]);
+
   // Drag-and-drop reorder handler (custom sort, desktop only)
   const handleReorder = useCallback((activeId: string, overId: string) => {
     // Find indices in items array
@@ -343,8 +395,11 @@ export function CollectionPageClient() {
     });
   }, [items, filters, fetchItems]);
 
-  // Whether drag is enabled (custom sort + desktop + collection tab)
-  const isDragEnabled = filters.sort === 'custom' && isDesktop && activeTab === 'collection';
+  // Whether drag is enabled (custom sort + desktop + collection tab + grid view)
+  const isDragEnabled = filters.sort === 'custom' && isDesktop && activeTab === 'collection' && desktopView === 'grid';
+
+  // Whether to show table view (desktop + collection tab + table mode)
+  const showTableView = isDesktop && activeTab === 'collection' && desktopView === 'table';
 
   // Determine active count for the pieces label
   const activeCount = activeTab === 'collection' ? total : dealerTotal;
@@ -379,7 +434,7 @@ export function CollectionPageClient() {
           </div>
         )}
 
-        {/* Toolbar: item count + add button (desktop, collection tab only) + mobile view toggle */}
+        {/* Toolbar: item count + view toggles + add button */}
         <div className="flex items-center justify-between mb-3 lg:mb-4">
           <div className="flex items-center gap-3">
             <span className="text-[11px] uppercase tracking-[0.12em] text-muted/50 tabular-nums">
@@ -403,28 +458,35 @@ export function CollectionPageClient() {
               </button>
             )}
           </div>
-          <div className="flex items-center gap-0.5 sm:hidden">
-            <button
-              onClick={() => handleMobileViewChange('gallery')}
-              className={`p-1.5 rounded transition-colors ${mobileView === 'gallery' ? 'text-gold' : 'text-muted/50'}`}
-              aria-label="Gallery view"
-            >
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                <rect x="3" y="4" width="12" height="10" rx="1" stroke="currentColor" strokeWidth="1.5" />
-              </svg>
-            </button>
-            <button
-              onClick={() => handleMobileViewChange('grid')}
-              className={`p-1.5 rounded transition-colors ${mobileView === 'grid' ? 'text-gold' : 'text-muted/50'}`}
-              aria-label="Grid view"
-            >
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                <rect x="2.5" y="2.5" width="5.5" height="5.5" rx="0.75" stroke="currentColor" strokeWidth="1.5" />
-                <rect x="10" y="2.5" width="5.5" height="5.5" rx="0.75" stroke="currentColor" strokeWidth="1.5" />
-                <rect x="2.5" y="10" width="5.5" height="5.5" rx="0.75" stroke="currentColor" strokeWidth="1.5" />
-                <rect x="10" y="10" width="5.5" height="5.5" rx="0.75" stroke="currentColor" strokeWidth="1.5" />
-              </svg>
-            </button>
+          <div className="flex items-center gap-2">
+            {/* Desktop view toggle (grid/table) — collection tab only */}
+            {activeTab === 'collection' && (
+              <VaultViewToggle view={desktopView} onViewChange={handleDesktopViewChange} />
+            )}
+            {/* Mobile view toggle (gallery/grid) */}
+            <div className="flex items-center gap-0.5 sm:hidden">
+              <button
+                onClick={() => handleMobileViewChange('gallery')}
+                className={`p-1.5 rounded transition-colors ${mobileView === 'gallery' ? 'text-gold' : 'text-muted/50'}`}
+                aria-label="Gallery view"
+              >
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                  <rect x="3" y="4" width="12" height="10" rx="1" stroke="currentColor" strokeWidth="1.5" />
+                </svg>
+              </button>
+              <button
+                onClick={() => handleMobileViewChange('grid')}
+                className={`p-1.5 rounded transition-colors ${mobileView === 'grid' ? 'text-gold' : 'text-muted/50'}`}
+                aria-label="Grid view"
+              >
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                  <rect x="2.5" y="2.5" width="5.5" height="5.5" rx="0.75" stroke="currentColor" strokeWidth="1.5" />
+                  <rect x="10" y="2.5" width="5.5" height="5.5" rx="0.75" stroke="currentColor" strokeWidth="1.5" />
+                  <rect x="2.5" y="10" width="5.5" height="5.5" rx="0.75" stroke="currentColor" strokeWidth="1.5" />
+                  <rect x="10" y="10" width="5.5" height="5.5" rx="0.75" stroke="currentColor" strokeWidth="1.5" />
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -438,7 +500,7 @@ export function CollectionPageClient() {
           </div>
         )}
 
-        {/* Grid — compact vault cards with fade-in */}
+        {/* Content area with fade-in */}
         <div
           className="flex-1 min-w-0 transition-opacity"
           style={{
@@ -448,7 +510,16 @@ export function CollectionPageClient() {
         >
           {activeTab === 'collection' ? (
             <>
-              {isDragEnabled ? (
+              {showTableView ? (
+                <VaultTableView
+                  items={adaptedItems}
+                  isLoading={isLoading}
+                  defaultCurrency={currency}
+                  onItemUpdate={handleItemUpdate}
+                  onCardClick={handleCardClick}
+                  onRefresh={() => fetchItems(filters)}
+                />
+              ) : isDragEnabled ? (
                 <SortableCollectionGrid
                   items={adaptedItems}
                   currency={currency}

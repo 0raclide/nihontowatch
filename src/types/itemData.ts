@@ -158,6 +158,13 @@ export const COLLECTION_ONLY_COLUMNS = [
   'visibility',
   'source_listing_id',
   'personal_notes',
+  'purchase_price',
+  'purchase_currency',
+  'purchase_date',
+  'purchase_source',
+  'current_value',
+  'current_currency',
+  'location',
 ] as const;
 
 /**

@@ -15,9 +15,16 @@ export interface ArtisanNameInfo {
   school?: string | null;
 }
 
+/**
+ * Expense totals per item, grouped by currency.
+ * { [item_id]: { [currency]: totalAmount } }
+ */
+export type ExpenseTotalsMap = Record<string, Record<string, number>>;
+
 export function collectionRowToDisplayItem(
   item: CollectionItemRow,
   artisanNames?: Record<string, ArtisanNameInfo>,
+  expenseTotals?: ExpenseTotalsMap,
 ): DisplayItem {
   // Parse cert_session: DB stores TEXT, DisplayItem expects number | null
   let certSession: number | null = null;
@@ -126,9 +133,41 @@ export function collectionRowToDisplayItem(
       personal_notes: item.personal_notes,
       visibility: item.visibility,
       source_listing_id: item.source_listing_id,
+
+      // Financial fields
+      purchase_price: item.purchase_price ?? null,
+      purchase_currency: item.purchase_currency ?? null,
+      purchase_date: item.purchase_date ?? null,
+      purchase_source: item.purchase_source ?? null,
+      current_value: item.current_value ?? null,
+      current_currency: item.current_currency ?? null,
+      location: item.location ?? null,
+
+      // Computed: purchase_price + matching-currency expenses
+      total_invested: computeTotalInvested(item, expenseTotals),
     },
     dealer: null,
   };
+}
+
+/**
+ * Compute total invested = purchase_price + expenses in the same currency.
+ * Multi-currency expenses are NOT auto-summed (can't accurately convert without historical rates).
+ * Returns null if no purchase_price is set.
+ */
+function computeTotalInvested(
+  item: CollectionItemRow,
+  expenseTotals?: ExpenseTotalsMap,
+): number | null {
+  if (item.purchase_price == null) return null;
+
+  const purchaseCurrency = (item.purchase_currency || 'JPY').toUpperCase();
+  const itemExpenses = expenseTotals?.[item.id];
+  if (!itemExpenses) return item.purchase_price;
+
+  // Only sum expenses in the same currency as the purchase
+  const matchingExpenses = itemExpenses[purchaseCurrency] || 0;
+  return item.purchase_price + matchingExpenses;
 }
 
 /**
@@ -138,7 +177,8 @@ export function collectionRowToDisplayItem(
 export function collectionRowsToDisplayItems(
   items: CollectionItemRow[],
   artisanNames?: Record<string, ArtisanNameInfo>,
+  expenseTotals?: ExpenseTotalsMap,
 ): DisplayItem[] {
-  return items.map(item => collectionRowToDisplayItem(item, artisanNames));
+  return items.map(item => collectionRowToDisplayItem(item, artisanNames, expenseTotals));
 }
 

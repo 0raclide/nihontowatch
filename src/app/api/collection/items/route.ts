@@ -8,6 +8,7 @@ import {
   insertCollectionItem,
   insertCollectionEvent,
 } from '@/lib/supabase/collectionItems';
+import { getExpenseTotals } from '@/lib/supabase/collectionExpenses';
 import { checkCollectionAccess } from '@/lib/collection/access';
 import { getArtisanNames } from '@/lib/supabase/yuhinkai';
 
@@ -96,10 +97,12 @@ export async function GET(request: NextRequest) {
         query = query.order('sort_order', { ascending: true });
         break;
       case 'value_desc':
-        query = query.order('price_value', { ascending: false, nullsFirst: false });
+        query = query.order('current_value', { ascending: false, nullsFirst: false })
+                     .order('price_value', { ascending: false, nullsFirst: false });
         break;
       case 'value_asc':
-        query = query.order('price_value', { ascending: true, nullsFirst: false });
+        query = query.order('current_value', { ascending: true, nullsFirst: false })
+                     .order('price_value', { ascending: true, nullsFirst: false });
         break;
       case 'type':
         query = query.order('item_type', { ascending: true, nullsFirst: false });
@@ -138,11 +141,24 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Fetch expense totals for all items in one batch query
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const itemIds = (items || []).map((i: any) => i.id as string);
+    let expenseTotals: Record<string, Record<string, number>> = {};
+    if (itemIds.length > 0) {
+      try {
+        expenseTotals = await getExpenseTotals(serviceClient, itemIds);
+      } catch (err) {
+        logger.warn('Failed to fetch expense totals', { error: err });
+      }
+    }
+
     return NextResponse.json({
       data: items || [],
       total: count || 0,
       facets,
       artisanNames: artisanNamesObj,
+      expenseTotals,
     });
   } catch (error) {
     logger.logError('Collection items API error', error);

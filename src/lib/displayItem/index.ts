@@ -3,6 +3,7 @@ export {
   collectionRowToDisplayItem,
   collectionRowsToDisplayItems,
 } from './fromCollectionItem';
+export type { ExpenseTotalsMap } from './fromCollectionItem';
 export { dealerListingToDisplayItem } from './fromDealerListing';
 export {
   showcaseItemToDisplayItem,

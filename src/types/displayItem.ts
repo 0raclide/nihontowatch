@@ -48,6 +48,18 @@ export interface CollectionExtension {
   personal_notes: string | null;
   visibility: import('@/types/collectionItem').CollectionVisibility;
   source_listing_id: number | null;
+
+  // Financial fields
+  purchase_price: number | null;
+  purchase_currency: string | null;
+  purchase_date: string | null;
+  purchase_source: string | null;
+  current_value: number | null;
+  current_currency: string | null;
+  location: string | null;
+
+  // Computed: purchase_price + SUM(expenses in same currency)
+  total_invested: number | null;
 }
 
 export interface ShowcaseExtension {

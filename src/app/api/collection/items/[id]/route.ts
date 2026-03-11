@@ -112,6 +112,9 @@ const ALLOWED_FIELDS = new Set([
   'hero_image_index',
   'setsumei_text_en', 'setsumei_text_ja',
   'visibility', 'personal_notes',
+  // Financial fields (vault table view)
+  'purchase_price', 'purchase_currency', 'purchase_date', 'purchase_source',
+  'current_value', 'current_currency', 'location',
   // Note: 'images' intentionally excluded — managed via /api/collection/images
 ]);
 
@@ -193,6 +196,40 @@ export async function PATCH(
     // Sanitize cert_session — TEXT in DB
     if ('cert_session' in updates) {
       updates.cert_session = updates.cert_session != null ? String(updates.cert_session) : null;
+    }
+
+    // Validate financial fields
+    if ('purchase_price' in updates) {
+      const pp = Number(updates.purchase_price);
+      updates.purchase_price = (updates.purchase_price != null && !isNaN(pp) && pp >= 0) ? pp : null;
+    }
+    if ('current_value' in updates) {
+      const cv = Number(updates.current_value);
+      updates.current_value = (updates.current_value != null && !isNaN(cv) && cv >= 0) ? cv : null;
+    }
+    if ('purchase_currency' in updates) {
+      const pc = updates.purchase_currency;
+      updates.purchase_currency = (typeof pc === 'string' && pc.length <= 10) ? pc.toUpperCase() : null;
+    }
+    if ('current_currency' in updates) {
+      const cc = updates.current_currency;
+      updates.current_currency = (typeof cc === 'string' && cc.length <= 10) ? cc.toUpperCase() : null;
+    }
+    if ('purchase_date' in updates) {
+      const pd = updates.purchase_date;
+      if (pd && typeof pd === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(pd)) {
+        updates.purchase_date = pd;
+      } else {
+        updates.purchase_date = null;
+      }
+    }
+    if ('purchase_source' in updates) {
+      const ps = updates.purchase_source;
+      updates.purchase_source = (typeof ps === 'string') ? ps.slice(0, 500) || null : null;
+    }
+    if ('location' in updates) {
+      const loc = updates.location;
+      updates.location = (typeof loc === 'string') ? loc.slice(0, 500) || null : null;
     }
 
     // Validate visibility
