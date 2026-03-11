@@ -113,10 +113,10 @@ describe('computeItemReturn', () => {
     expect(result.expenseDrag).toBeCloseTo(0);
   });
 
-  it('mixed currencies — canDecompose is false', () => {
-    // Bought in JPY, current value in USD — different currencies
+  it('mixed currencies (JPY purchase, USD value) — decomposes via purchase currency rates', () => {
+    // Bought ¥2M when JPY→USD = 1/110, now valued at $15,000 USD
     const historicalRates = buildHistoricalRates([
-      ['2023-06-01', 'JPY', 'USD', 1 / 110],
+      ['2023-06-01', 'JPY', 'USD', 1 / 110],  // ¥110 = $1
     ]);
 
     const result = computeItemReturn(
@@ -126,14 +126,44 @@ describe('computeItemReturn', () => {
       TODAY_RATES,
     );
 
-    expect(result.canDecompose).toBe(false);
-    expect(result.assetReturn).toBeNull();
-    expect(result.fxImpact).toBeNull();
-    // But totalReturn should still be computed
-    expect(result.totalReturn).not.toBeNull();
     expect(result.currentValueHome).toBe(15000); // Already in USD
-    expect(result.totalInvestedHome).toBeCloseTo(18181.82, 0);
+    expect(result.totalInvestedHome).toBeCloseTo(18181.82, 0); // ¥2M × 1/110
     expect(result.totalReturn).toBeCloseTo(-3181.82, 0);
+
+    // Decomposition uses purchase currency (JPY) rates
+    expect(result.canDecompose).toBe(true);
+    // FX impact: ¥2M × (1/150 - 1/110) ≈ -$4,848 (yen weakened)
+    expect(result.fxImpact).toBeCloseTo(2000000 * (1 / 150 - 1 / 110), 0);
+    expect(result.fxImpact!).toBeLessThan(0); // Yen depreciation = negative FX impact
+    expect(result.expenseDrag).toBeCloseTo(0);
+    // Asset return = residual: totalReturn - fxImpact - expenses
+    expect(result.assetReturn).toBeCloseTo(result.totalReturn! - result.fxImpact! - result.expenseDrag!, 2);
+    // Identity holds
+    expect(result.assetReturn! + result.fxImpact! + result.expenseDrag!).toBeCloseTo(result.totalReturn!, 2);
+  });
+
+  it('mixed currencies with expenses — expenses included in decomposition', () => {
+    // Bought ¥50M when JPY→USD = 1/110, now valued at $1M USD, with ¥500K expenses
+    const historicalRates = buildHistoricalRates([
+      ['2021-05-05', 'JPY', 'USD', 1 / 110],
+    ]);
+
+    const result = computeItemReturn(
+      { purchase_price: 50000000, purchase_currency: 'JPY', purchase_date: '2021-05-05', current_value: 1000000, current_currency: 'USD' },
+      'USD',
+      historicalRates,
+      TODAY_RATES,
+      { 'JPY': 500000 },
+    );
+
+    // Expenses: ¥500K / 150 ≈ $3,333
+    const expensesHome = 500000 / 150;
+    expect(result.totalInvestedHome).toBeCloseTo(50000000 / 110 + expensesHome, 0);
+    expect(result.canDecompose).toBe(true);
+    expect(result.expenseDrag).toBeCloseTo(-expensesHome, 0);
+    expect(result.fxImpact).toBeCloseTo(50000000 * (1 / 150 - 1 / 110), 0);
+    // Identity
+    expect(result.assetReturn! + result.fxImpact! + result.expenseDrag!).toBeCloseTo(result.totalReturn!, 2);
   });
 
   it('includes expenses in total invested', () => {

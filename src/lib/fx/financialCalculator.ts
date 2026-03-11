@@ -163,31 +163,15 @@ export function computeItemReturn(
     ? (totalReturn / totalInvestedHome) * 100
     : null;
 
-  // Decomposition: only when purchase_currency === current_currency
-  // (same asset currency means we can cleanly separate asset gain from FX)
-  const currCur = item.current_currency.toUpperCase();
-  const canDecompose = purchCur === currCur;
+  // Decomposition: always possible when we have purchase-currency rates.
+  // FX impact = change in purchase currency value relative to home.
+  // Works for both same-currency (JPY→JPY) and mixed-currency (JPY→USD) items.
+  // Asset return is the residual: totalReturn - fxImpact - expenseDrag.
 
-  if (!canDecompose) {
-    return {
-      currentValueHome,
-      totalInvestedHome,
-      totalReturn,
-      totalReturnPct,
-      canDecompose: false,
-      assetReturn: null,
-      fxImpact: null,
-      expenseDrag: null,
-    };
-  }
-
-  // Get today's rate for the asset currency → home
+  // Get today's rate for the PURCHASE currency → home
   const todayRateToHome = purchCur === home
     ? 1
-    : (() => {
-        const converted = toHome(1, purchCur, home, todayRates);
-        return converted;
-      })();
+    : toHome(1, purchCur, home, todayRates);
 
   if (todayRateToHome == null) {
     return {
@@ -202,7 +186,7 @@ export function computeItemReturn(
     };
   }
 
-  // Historical rate for decomposition
+  // Historical rate for decomposition (purchase currency → home at purchase date)
   const historicalRateToHome = purchCur === home
     ? 1
     : historicalRates.get(fxKey(item.purchase_date, purchCur, home)) ?? null;
@@ -220,14 +204,14 @@ export function computeItemReturn(
     };
   }
 
-  // Asset return: (V_now - P_buy) × R_today
-  const assetReturn = (item.current_value - item.purchase_price) * todayRateToHome;
-
-  // FX impact: P_buy × (R_today - R_purchase)
+  // FX impact: P_buy × (R_today - R_purchase) — how much the purchase currency moved
   const fxImpact = item.purchase_price * (todayRateToHome - historicalRateToHome);
 
   // Expense drag: negative of total expenses in home currency
   const expenseDrag = -expensesHome;
+
+  // Asset return: residual so identity holds (asset + fx + expenses = total)
+  const assetReturn = totalReturn - fxImpact - expenseDrag;
 
   return {
     currentValueHome,
