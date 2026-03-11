@@ -401,22 +401,35 @@ function TableItemRow({
         <td className="py-1.5 px-2">
           <button
             onClick={() => toggleExpenseLedger(itemId)}
-            className="text-[12px] tabular-nums text-right w-full hover:text-gold transition-colors group"
+            className={`text-[12px] w-full transition-colors group flex items-center gap-1 ${
+              isExpanded
+                ? 'text-gold'
+                : totalInvested != null
+                  ? 'text-ink hover:text-gold'
+                  : 'text-muted/40 hover:text-gold'
+            }`}
             title={t('vault.table.clickToExpand')}
           >
             {totalInvested != null ? (
-              <span>
+              <span className="tabular-nums text-right flex-1">
                 {formatPrice(totalInvested, ext?.purchase_currency || defaultCurrency, locale)}
-                <span className="text-muted/30 group-hover:text-gold/50 ml-0.5 text-[9px]">
-                  {isExpanded ? '▲' : '▼'}
-                </span>
               </span>
             ) : (
-              <span className="text-muted/30">
-                —
-                <span className="text-muted/20 group-hover:text-gold/50 ml-0.5 text-[9px]">▼</span>
+              <span className="flex items-center gap-0.5 text-[11px]">
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                {t('vault.expense.expenses')}
               </span>
             )}
+            <svg
+              className={`w-3.5 h-3.5 flex-shrink-0 transition-transform ${
+                isExpanded ? 'rotate-180' : ''
+              } ${isExpanded ? 'text-gold' : 'text-muted/20 group-hover:text-gold/50'}`}
+              fill="none" stroke="currentColor" viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
           </button>
         </td>
 
