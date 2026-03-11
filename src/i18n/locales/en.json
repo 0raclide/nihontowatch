@@ -420,6 +420,8 @@
   "filter.noCertifications": "No certifications",
   "filter.noPeriods": "No periods available",
   "filter.noItems": "No items available",
+  "filter.emptyTitle": "No matching items",
+  "filter.emptyDescription": "Try broadening your filters or check back soon — new inventory is added regularly.",
   "filter.noSignatureData": "No signature data",
   "filter.noDealers": "No dealers available",
   "filter.noDealersMatch": "No dealers match \"{q}\"",

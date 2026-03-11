@@ -420,6 +420,8 @@
   "filter.noCertifications": "この条件に一致する鑑定書はありません",
   "filter.noPeriods": "この条件に一致する時代区分はありません",
   "filter.noItems": "この条件に一致する商品はありません。検索条件を変更してお試しください。",
+  "filter.emptyTitle": "該当する品が見つかりませんでした",
+  "filter.emptyDescription": "条件を少し広げてお探しいただくか、しばらくしてから再度ご確認ください。新しい品が随時追加されております。",
   "filter.noSignatureData": "この条件に一致する銘データはありません",
   "filter.noDealers": "登録されている刀剣商はありません",
   "filter.noDealersMatch": "「{q}」に一致する刀剣商はありません。別のキーワードをお試しください。",

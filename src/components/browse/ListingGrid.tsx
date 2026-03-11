@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { VirtualListingGrid } from './VirtualListingGrid';
 import { ViewportTrackingProvider } from '@/lib/viewport';
+import { useLocale } from '@/i18n/LocaleContext';
 import type { DisplayItem } from '@/types/displayItem';
 
 
@@ -138,11 +139,13 @@ function EmptyState({ isAdmin, isUrlSearch, searchQuery }: {
     }
   };
 
+  const { t } = useLocale();
+
   return (
     <div className="text-center py-16">
       <div className="inline-block p-6 bg-paper border border-border">
         <svg
-          className="w-12 h-12 text-muted mx-auto mb-4"
+          className="w-10 h-10 text-muted/40 mx-auto mb-4"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -150,13 +153,13 @@ function EmptyState({ isAdmin, isUrlSearch, searchQuery }: {
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
-            strokeWidth={1}
-            d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            strokeWidth={1.2}
+            d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
           />
         </svg>
-        <h3 className="font-serif text-lg text-ink mb-2">No items found</h3>
-        <p className="text-sm text-muted">
-          Try adjusting your filters to see more results
+        <h3 className="font-serif text-lg text-ink mb-2">{t('filter.emptyTitle')}</h3>
+        <p className="text-sm text-muted max-w-xs mx-auto">
+          {t('filter.emptyDescription')}
         </p>
 
         {/* Admin: Report missing URL button */}
