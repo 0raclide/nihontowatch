@@ -1970,35 +1970,40 @@ html.theme-yuhindo .magical-book:hover {
 }
 
 /* ==========================================================================
-   Vault — Compact card grid (more columns, smaller cards)
+   Vault — Compact card grid (more columns, smaller cards, square images)
    ========================================================================== */
 .vault-compact-grid [data-testid="virtual-listing-grid"] {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.5rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 0.5rem !important;
+}
+
+/* Square image aspect ratio for vault cards */
+.vault-compact-grid [data-testid="listing-card"] .bg-linen {
+  aspect-ratio: 1 / 1 !important;
 }
 
 @media (min-width: 640px) {
   .vault-compact-grid [data-testid="virtual-listing-grid"] {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 0.625rem;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 0.625rem !important;
   }
 }
 
 @media (min-width: 1024px) {
   .vault-compact-grid [data-testid="virtual-listing-grid"] {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
   }
 }
 
 @media (min-width: 1280px) {
   .vault-compact-grid [data-testid="virtual-listing-grid"] {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
   }
 }
 
 @media (min-width: 1536px) {
   .vault-compact-grid [data-testid="virtual-listing-grid"] {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
+    grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
   }
 }
 
