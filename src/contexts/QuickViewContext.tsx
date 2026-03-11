@@ -275,7 +275,13 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
     if (!options?.skipFetch) {
       fetchFullListing(listing.id).then((fullListing) => {
         if (fullListing && !refreshInFlightRef.current) {
-          setCurrentListing(prev => prev ? mergeDetailIntoListing(prev, fullListing) : fullListing);
+          setCurrentListing(prev => {
+            if (!prev) return fullListing;
+            // Minimal stub (e.g., from notification click) — use full detail directly
+            // since the merge would lose fields not in the explicit overlay list
+            if (!prev.title && !prev.images) return fullListing;
+            return mergeDetailIntoListing(prev, fullListing);
+          });
           // Also update in listings array if present
           if (index !== -1) {
             setListingsState((prev) => {
