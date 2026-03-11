@@ -113,8 +113,8 @@ export async function POST(
     }
 
     const numAmount = Number(amount);
-    if (amount == null || isNaN(numAmount) || numAmount <= 0) {
-      return NextResponse.json({ error: 'Amount must be a positive number' }, { status: 400 });
+    if (amount == null || isNaN(numAmount) || numAmount < 0) {
+      return NextResponse.json({ error: 'Amount must be a non-negative number' }, { status: 400 });
     }
 
     const expenseCurrency = (typeof currency === 'string' && currency.length <= 10)
