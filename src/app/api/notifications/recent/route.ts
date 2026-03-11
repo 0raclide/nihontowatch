@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { getImageUrl } from '@/lib/images';
 import { NextRequest, NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -18,6 +19,7 @@ type ListingRow = {
   price_value: number | null;
   price_currency: string | null;
   images: unknown;
+  stored_images: unknown;
   dealer_id: number | null;
 };
 type DealerRow = { id: number; name: string };
@@ -119,7 +121,7 @@ export async function GET(request: NextRequest) {
     if (listingIds.length > 0) {
       let notifListingsQuery = supabase
         .from('listings')
-        .select('id, title, item_type, price_value, price_currency, images, dealer_id')
+        .select('id, title, item_type, price_value, price_currency, images, stored_images, dealer_id')
         .in('id', listingIds);
       // Exclude dealer portal listings when feature flag is off
       if (process.env.NEXT_PUBLIC_DEALER_LISTINGS_LIVE !== 'true') {
@@ -145,7 +147,10 @@ export async function GET(request: NextRequest) {
         }
 
         for (const listing of listings) {
-          const images = listing.images as string[] | null;
+          const imageSource = {
+            stored_images: listing.stored_images as string[] | null,
+            images: listing.images as string[] | null,
+          };
           listingMap.set(listing.id, {
             id: listing.id,
             title: listing.title,
@@ -153,7 +158,7 @@ export async function GET(request: NextRequest) {
             price_value: listing.price_value,
             price_currency: listing.price_currency,
             dealer_name: listing.dealer_id ? (dealerNameMap.get(listing.dealer_id) || null) : null,
-            thumbnail: images?.[0] || null,
+            thumbnail: getImageUrl(imageSource),
           });
         }
       }
