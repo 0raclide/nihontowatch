@@ -431,34 +431,59 @@ export function CollectionPageClient() {
         {/* Subtle divider */}
         <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent mb-4 lg:mb-8" />
 
-        {/* Mobile item count + view toggle */}
+        {/* Mobile item count + sort + view toggle */}
         <div className="lg:hidden flex items-center justify-between mb-4">
           <span className="text-[13px] text-muted">
             {isLoading ? t('common.loading') : t('home.itemCount', { count: total.toLocaleString() })}
           </span>
-          {/* View toggle — only on phone-sized screens */}
-          <div className="flex items-center gap-0.5 sm:hidden">
-            <button
-              onClick={() => handleMobileViewChange('gallery')}
-              className={`p-1.5 rounded transition-colors ${mobileView === 'gallery' ? 'text-gold' : 'text-muted/50'}`}
-              aria-label="Gallery view"
-            >
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                <rect x="3" y="4" width="12" height="10" rx="1" stroke="currentColor" strokeWidth="1.5" />
+          <div className="flex items-center gap-2 sm:hidden">
+            {/* Sort dropdown */}
+            <div className="flex items-center">
+              <svg className="w-3.5 h-3.5 text-muted mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
               </svg>
-            </button>
-            <button
-              onClick={() => handleMobileViewChange('grid')}
-              className={`p-1.5 rounded transition-colors ${mobileView === 'grid' ? 'text-gold' : 'text-muted/50'}`}
-              aria-label="Grid view"
-            >
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                <rect x="2.5" y="2.5" width="5.5" height="5.5" rx="0.75" stroke="currentColor" strokeWidth="1.5" />
-                <rect x="10" y="2.5" width="5.5" height="5.5" rx="0.75" stroke="currentColor" strokeWidth="1.5" />
-                <rect x="2.5" y="10" width="5.5" height="5.5" rx="0.75" stroke="currentColor" strokeWidth="1.5" />
-                <rect x="10" y="10" width="5.5" height="5.5" rx="0.75" stroke="currentColor" strokeWidth="1.5" />
-              </svg>
-            </button>
+              <select
+                value={filters.sort || 'custom'}
+                onChange={(e) => handleSortChange(e.target.value)}
+                className="text-[12px] font-medium text-ink bg-transparent border-none focus:outline-none cursor-pointer appearance-none pr-3"
+                style={{
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239ca3af'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                  backgroundRepeat: 'no-repeat',
+                  backgroundPosition: 'right 0 center',
+                  backgroundSize: '10px',
+                }}
+              >
+                {SORT_OPTIONS.map(opt => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
+            {/* Divider */}
+            <div className="w-px h-4 bg-border/40" />
+            {/* View toggle */}
+            <div className="flex items-center gap-0.5">
+              <button
+                onClick={() => handleMobileViewChange('gallery')}
+                className={`p-1.5 rounded transition-colors ${mobileView === 'gallery' ? 'text-gold' : 'text-muted/50'}`}
+                aria-label="Gallery view"
+              >
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                  <rect x="3" y="4" width="12" height="10" rx="1" stroke="currentColor" strokeWidth="1.5" />
+                </svg>
+              </button>
+              <button
+                onClick={() => handleMobileViewChange('grid')}
+                className={`p-1.5 rounded transition-colors ${mobileView === 'grid' ? 'text-gold' : 'text-muted/50'}`}
+                aria-label="Grid view"
+              >
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                  <rect x="2.5" y="2.5" width="5.5" height="5.5" rx="0.75" stroke="currentColor" strokeWidth="1.5" />
+                  <rect x="10" y="2.5" width="5.5" height="5.5" rx="0.75" stroke="currentColor" strokeWidth="1.5" />
+                  <rect x="2.5" y="10" width="5.5" height="5.5" rx="0.75" stroke="currentColor" strokeWidth="1.5" />
+                  <rect x="10" y="10" width="5.5" height="5.5" rx="0.75" stroke="currentColor" strokeWidth="1.5" />
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -571,8 +596,6 @@ export function CollectionPageClient() {
         activeFilterCount={activeFilterCount}
         onOpenFilters={() => setFilterDrawerOpen(true)}
         onAddClick={handleAddClick}
-        sort={filters.sort || 'custom'}
-        onSortChange={handleSortChange}
       />
     </div>
   );

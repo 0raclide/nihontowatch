@@ -2,8 +2,12 @@
 
 import { useState, useCallback } from 'react';
 import dynamic from 'next/dynamic';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth/AuthContext';
+import { useSubscription } from '@/contexts/SubscriptionContext';
+import { useQuickViewOptional } from '@/contexts/QuickViewContext';
 import { useActivityTrackerOptional } from '@/lib/tracking/ActivityTracker';
+import { mapListingToCollectionItem } from '@/lib/collection/listingImport';
 import { useLocale } from '@/i18n/LocaleContext';
 import { getDealerDisplayName } from '@/lib/dealers/displayName';
 import { LoginModal } from '@/components/auth/LoginModal';
@@ -19,7 +23,10 @@ interface BrowseMobileCTAProps {
 }
 
 export function BrowseMobileCTA({ listing }: BrowseMobileCTAProps) {
+  const router = useRouter();
   const { user } = useAuth();
+  const { canAccess } = useSubscription();
+  const quickView = useQuickViewOptional();
   const activityTracker = useActivityTrackerOptional();
   const { t, locale } = useLocale();
   const [isInquiryModalOpen, setIsInquiryModalOpen] = useState(false);
@@ -37,6 +44,18 @@ export function BrowseMobileCTA({ listing }: BrowseMobileCTAProps) {
     }
     setIsInquiryModalOpen(true);
   }, [user]);
+
+  const handleIOwn = useCallback((e: React.TouchEvent | React.MouseEvent) => {
+    e.stopPropagation();
+    if (!user) {
+      setShowLoginModal(true);
+      return;
+    }
+    const prefill = mapListingToCollectionItem(listing as Listing);
+    sessionStorage.setItem('collection_prefill', JSON.stringify(prefill));
+    quickView?.dismissForNavigation?.();
+    router.push('/vault?add=listing');
+  }, [user, listing, quickView, router]);
 
   const handleDealerLinkClick = useCallback(() => {
     if (activityTracker && listing) {
@@ -67,6 +86,21 @@ export function BrowseMobileCTA({ listing }: BrowseMobileCTAProps) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
             </svg>
             Inquire
+          </button>
+        )}
+
+        {/* I Own This Button */}
+        {user && canAccess('collection_access') && (
+          <button
+            onClick={handleIOwn}
+            onTouchStart={(e) => e.stopPropagation()}
+            onTouchEnd={(e) => e.stopPropagation()}
+            title={t('listing.iOwnThis')}
+            className="flex items-center justify-center px-3 py-3 text-[13px] font-medium text-charcoal bg-linen hover:bg-hover border border-border rounded-lg transition-colors active:scale-[0.98]"
+          >
+            <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
           </button>
         )}
 
