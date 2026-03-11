@@ -1,10 +1,10 @@
 {
   "nav.browse": "Browse",
-  "nav.browseCollection": "Browse Collection",
+  "nav.browseCollection": "Browse",
   "nav.artists": "Artists",
   "nav.glossary": "Glossary",
   "nav.saved": "Saved",
-  "nav.collection": "Collection",
+  "nav.collection": "Vault",
   "nav.myCollection": "My Collection",
   "nav.profile": "Profile",
   "nav.admin": "Admin",
