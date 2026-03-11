@@ -21,6 +21,7 @@ import { collectionRowsToDisplayItems, dealerListingToDisplayItem } from '@/lib/
 import type { ExpenseTotalsMap } from '@/lib/displayItem/fromCollectionItem';
 import { Header } from '@/components/layout/Header';
 import { HomeCurrencyPicker } from '@/components/collection/HomeCurrencyPicker';
+import { LedgerTabs } from '@/components/dealer/LedgerTabs';
 
 // Tab types for dealer users
 type CollectionTab = 'collection' | 'available' | 'hold' | 'sold';
@@ -87,6 +88,7 @@ export function CollectionPageClient() {
   const [dealerListings, setDealerListings] = useState<DisplayItem[]>([]);
   const [dealerTotal, setDealerTotal] = useState(0);
   const [isDealerLoading, setIsDealerLoading] = useState(false);
+  const [tabCounts, setTabCounts] = useState<Record<string, number> | null>(null);
 
   const [items, setItemsState] = useState<CollectionItemRow[]>([]);
   const [total, setTotal] = useState(0);
@@ -261,19 +263,34 @@ export function CollectionPageClient() {
     }
   }, [fetchItems, fetchDealerListings, filters]);
 
-  // Listen for promote/delist/status-change events to refresh the current tab
+  // Fetch dealer tab counts
+  const fetchTabCounts = useCallback(async () => {
+    try {
+      const res = await fetch('/api/dealer/listings/counts');
+      if (!res.ok) return;
+      const data = await res.json();
+      setTabCounts(data);
+    } catch {
+      // Non-critical — tabs still work without counts
+    }
+  }, []);
+
+  // Listen for promote/delist/status-change events to refresh the current tab + counts
   useEffect(() => {
     const handlePromoted = () => {
       if (activeTab === 'collection') fetchItems(filters);
       else if (activeTab === 'available') fetchDealerListings('available');
+      if (effectiveIsDealer) fetchTabCounts();
     };
     const handleDelisted = () => {
       if (activeTab === 'available' || activeTab === 'hold') fetchDealerListings(activeTab);
       else if (activeTab === 'collection') fetchItems(filters);
+      if (effectiveIsDealer) fetchTabCounts();
     };
     const handleStatusChanged = () => {
       if (activeTab === 'collection') fetchItems(filters);
       else fetchDealerListings(activeTab);
+      if (effectiveIsDealer) fetchTabCounts();
     };
     window.addEventListener('collection-item-promoted', handlePromoted);
     window.addEventListener('dealer-listing-delisted', handleDelisted);
@@ -283,7 +300,7 @@ export function CollectionPageClient() {
       window.removeEventListener('dealer-listing-delisted', handleDelisted);
       window.removeEventListener('dealer-listing-status-changed', handleStatusChanged);
     };
-  }, [activeTab, filters, fetchItems, fetchDealerListings]);
+  }, [activeTab, filters, fetchItems, fetchDealerListings, effectiveIsDealer, fetchTabCounts]);
 
   // Track whether deep link has been handled to prevent re-opening on re-renders
   const deepLinkHandledRef = useRef(false);
@@ -291,6 +308,7 @@ export function CollectionPageClient() {
   // Initial fetch + check for listing import prefill
   useEffect(() => {
     fetchItems(filters);
+    if (effectiveIsDealer) fetchTabCounts();
 
     // Check if we arrived via "I Own This" from browse QuickView
     // Redirect to full-page add form (sessionStorage prefill is consumed there)
@@ -419,6 +437,25 @@ export function CollectionPageClient() {
   const activeCount = activeTab === 'collection' ? total : dealerTotal;
   const activeLoading = activeTab === 'collection' ? isLoading : isDealerLoading;
 
+  // Merge collection total with dealer tab counts for LedgerTabs
+  const mergedTabCounts = useMemo(() => {
+    if (!tabCounts && isLoading) return null; // Still loading
+    return {
+      collection: total,
+      available: tabCounts?.available ?? 0,
+      hold: tabCounts?.hold ?? 0,
+      sold: tabCounts?.sold ?? 0,
+    };
+  }, [total, tabCounts, isLoading]);
+
+  // Ledger tab definitions with status dot colors
+  const ledgerTabs = useMemo(() => [
+    { value: 'collection' as CollectionTab, label: t('collection.tabAllItems') },
+    { value: 'available' as CollectionTab, label: t('collection.tabForSale'), dotColor: 'var(--success)' },
+    { value: 'hold' as CollectionTab, label: t('collection.tabOnHold'), dotColor: 'var(--warning)' },
+    { value: 'sold' as CollectionTab, label: t('collection.tabSold'), dotColor: 'var(--text-muted)' },
+  ], [t]);
+
   return (
     <div className="min-h-screen bg-surface transition-colors">
       <Header />
@@ -426,25 +463,13 @@ export function CollectionPageClient() {
       <div className="max-w-[1600px] mx-auto px-4 py-3 lg:px-6 lg:py-4 pb-24 lg:pb-8">
         {/* Dealer tabs */}
         {effectiveIsDealer && (
-          <div className="flex gap-1 mb-3 lg:mb-4 overflow-x-auto scrollbar-hide">
-            {([
-              { key: 'collection' as CollectionTab, label: 'Inventory' },
-              { key: 'available' as CollectionTab, label: t('collection.tabForSale') },
-              { key: 'hold' as CollectionTab, label: t('collection.tabOnHold') },
-              { key: 'sold' as CollectionTab, label: t('collection.tabSold') },
-            ]).map(tab => (
-              <button
-                key={tab.key}
-                onClick={() => handleTabChange(tab.key)}
-                className={`px-4 py-1.5 rounded-full text-[12px] font-medium transition-colors whitespace-nowrap ${
-                  activeTab === tab.key
-                    ? 'bg-gold text-white'
-                    : 'bg-surface-elevated text-muted hover:text-ink border border-border/40'
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
+          <div className="mb-4 lg:mb-5">
+            <LedgerTabs
+              tabs={ledgerTabs}
+              activeTab={activeTab}
+              onTabChange={handleTabChange}
+              tabCounts={mergedTabCounts}
+            />
           </div>
         )}
 
