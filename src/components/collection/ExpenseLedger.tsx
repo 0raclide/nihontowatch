@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import type { CollectionExpense } from '@/types/expense';
 import { EXPENSE_CATEGORIES, EXPENSE_CATEGORY_LABELS } from '@/types/expense';
 import { useLocale } from '@/i18n/LocaleContext';
@@ -260,10 +260,13 @@ interface ExpenseRowProps {
   locale: 'en' | 'ja';
 }
 
-function ExpenseRow({ expense, onUpdate, onDelete, locale }: ExpenseRowProps) {
+function ExpenseRow({ expense, onUpdate, onDelete }: ExpenseRowProps) {
   const { t } = useLocale();
+  // Local state buffers for instant typing — debounce the API save
   const [amount, setAmount] = useState(String(expense.amount || ''));
-  const debounceRef = { current: null as ReturnType<typeof setTimeout> | null };
+  const [vendor, setVendor] = useState(expense.vendor || '');
+  const [notes, setNotes] = useState(expense.notes || '');
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const debouncedUpdate = useCallback((field: string, value: unknown) => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -318,8 +321,11 @@ function ExpenseRow({ expense, onUpdate, onDelete, locale }: ExpenseRowProps) {
       <td className="py-1 pr-2">
         <input
           type="text"
-          value={expense.vendor || ''}
-          onChange={(e) => debouncedUpdate('vendor', e.target.value || null)}
+          value={vendor}
+          onChange={(e) => {
+            setVendor(e.target.value);
+            debouncedUpdate('vendor', e.target.value || null);
+          }}
           placeholder="—"
           className="bg-transparent text-[11px] text-ink w-full border-none outline-none"
         />
@@ -327,8 +333,11 @@ function ExpenseRow({ expense, onUpdate, onDelete, locale }: ExpenseRowProps) {
       <td className="py-1 pr-2">
         <input
           type="text"
-          value={expense.notes || ''}
-          onChange={(e) => debouncedUpdate('notes', e.target.value || null)}
+          value={notes}
+          onChange={(e) => {
+            setNotes(e.target.value);
+            debouncedUpdate('notes', e.target.value || null);
+          }}
           placeholder="—"
           className="bg-transparent text-[11px] text-ink w-full border-none outline-none"
         />
