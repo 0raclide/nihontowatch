@@ -1970,24 +1970,36 @@ html.theme-yuhindo .magical-book:hover {
 }
 
 /* ==========================================================================
-   Vault Door Reveal Animation
+   Vault — Compact card grid (more columns, smaller cards)
    ========================================================================== */
-@keyframes vaultDoorLeft {
-  from { transform: translateX(0); }
-  to   { transform: translateX(-100%); }
+.vault-compact-grid [data-testid="virtual-listing-grid"] {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
 }
 
-@keyframes vaultDoorRight {
-  from { transform: translateX(0); }
-  to   { transform: translateX(100%); }
+@media (min-width: 640px) {
+  .vault-compact-grid [data-testid="virtual-listing-grid"] {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.625rem;
+  }
 }
 
-.animate-vault-door-left {
-  animation: vaultDoorLeft 600ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+@media (min-width: 1024px) {
+  .vault-compact-grid [data-testid="virtual-listing-grid"] {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 
-.animate-vault-door-right {
-  animation: vaultDoorRight 600ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+@media (min-width: 1280px) {
+  .vault-compact-grid [data-testid="virtual-listing-grid"] {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1536px) {
+  .vault-compact-grid [data-testid="virtual-listing-grid"] {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
 }
 
 /* Slide-in from right animation for QuickView panel */

@@ -33,8 +33,8 @@ const EMPTY_FACETS: CollectionFacets = {
   folders: [],
 };
 
-/** Minimum time (ms) the vault overlay is shown */
-const VAULT_OVERLAY_MIN_MS = 800;
+/** Fade-in duration for grid content (ms) */
+const FADE_IN_DURATION = 400;
 
 // =============================================================================
 // Component
@@ -63,11 +63,8 @@ export function CollectionPageClient() {
   const [error, setError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
-  // Vault overlay state
-  const [showVaultOverlay, setShowVaultOverlay] = useState(true);
-  const [wordmarkFading, setWordmarkFading] = useState(false);
-  const [doorsOpening, setDoorsOpening] = useState(false);
-  const mountTimeRef = useRef(Date.now());
+  // Fade-in state — starts invisible, fades in once data loads
+  const [contentVisible, setContentVisible] = useState(false);
 
   // Mobile view toggle (shared localStorage key with browse)
   const [mobileView, setMobileView] = useState<'grid' | 'gallery'>(() => {
@@ -93,27 +90,14 @@ export function CollectionPageClient() {
     return () => window.removeEventListener('resize', check);
   }, []);
 
-  // Dismiss vault overlay once data loaded AND min time elapsed
+  // Fade in content once data loads
   useEffect(() => {
-    if (!showVaultOverlay || wordmarkFading || doorsOpening) return;
-    if (isLoading) return;
-
-    const elapsed = Date.now() - mountTimeRef.current;
-    const remaining = Math.max(0, VAULT_OVERLAY_MIN_MS - elapsed);
-
-    const timer = setTimeout(() => {
-      // 1. Fade out wordmark + seam (300ms)
-      setWordmarkFading(true);
-      setTimeout(() => {
-        // 2. Slide doors apart (600ms)
-        setDoorsOpening(true);
-        // 3. Remove overlay from DOM after doors finish
-        setTimeout(() => setShowVaultOverlay(false), 600);
-      }, 300);
-    }, remaining);
-
-    return () => clearTimeout(timer);
-  }, [isLoading, showVaultOverlay, wordmarkFading, doorsOpening]);
+    if (!isLoading && !contentVisible) {
+      // Small delay so the browser paints the grid before fading in
+      const timer = setTimeout(() => setContentVisible(true), 50);
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading, contentVisible]);
 
   // Adapt collection items to DisplayItem shape for ListingCard
   const adaptedItems = useMemo(
@@ -342,39 +326,6 @@ export function CollectionPageClient() {
 
   return (
     <div className="min-h-screen bg-surface transition-colors">
-      {/* Vault Door Reveal Overlay */}
-      {showVaultOverlay && (
-        <div className="fixed inset-0 z-50 pointer-events-none">
-          {/* Left door */}
-          <div
-            className={`absolute inset-y-0 left-0 w-1/2 bg-surface ${
-              doorsOpening ? 'animate-vault-door-left' : ''
-            }`}
-          />
-          {/* Right door */}
-          <div
-            className={`absolute inset-y-0 right-0 w-1/2 bg-surface ${
-              doorsOpening ? 'animate-vault-door-right' : ''
-            }`}
-          />
-          {/* Gold seam line at center */}
-          {!doorsOpening && (
-            <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-px bg-gradient-to-b from-transparent via-gold/40 to-transparent" />
-          )}
-          {/* Centered VAULT wordmark */}
-          <div
-            className={`absolute inset-0 flex items-center justify-center transition-opacity duration-300 ${
-              wordmarkFading ? 'opacity-0' : 'opacity-100'
-            }`}
-          >
-            <span className="font-serif text-[28px] lg:text-[36px] uppercase tracking-[0.3em] text-ink/70 select-none">
-              VAULT
-            </span>
-          </div>
-        </div>
-      )}
-
-      {/* Standard Header with VAULT branding */}
       <Header />
 
       <div className="max-w-[1600px] mx-auto px-4 py-3 lg:px-6 lg:py-4 pb-24 lg:pb-8">
@@ -447,8 +398,14 @@ export function CollectionPageClient() {
           </div>
         )}
 
-        {/* Grid */}
-        <div className="flex-1 min-w-0">
+        {/* Grid — compact vault cards with fade-in */}
+        <div
+          className="flex-1 min-w-0 vault-compact-grid transition-opacity"
+          style={{
+            opacity: contentVisible ? 1 : 0,
+            transitionDuration: `${FADE_IN_DURATION}ms`,
+          }}
+        >
           {activeTab === 'collection' ? (
             <>
               {isDragEnabled ? (
