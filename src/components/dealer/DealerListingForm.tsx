@@ -1143,6 +1143,7 @@ export function DealerListingForm({ mode, initialData, context = 'listing' }: De
                 return next;
               });
             }}
+            apiEndpoint={sayagakiImagesEndpoint}
           />
         ) : (
           <HakogakiSection
@@ -1160,6 +1161,7 @@ export function DealerListingForm({ mode, initialData, context = 'listing' }: De
                 return next;
               });
             }}
+            apiEndpoint={hakogakiImagesEndpoint}
           />
         )}
 
@@ -1170,6 +1172,7 @@ export function DealerListingForm({ mode, initialData, context = 'listing' }: De
             itemId={mode === 'edit' && initialData?.id ? String(initialData.id) : undefined}
             onChange={setKantoHibisho}
             onPendingFilesChange={setPendingKantoHibishoFiles}
+            apiEndpoint={kantoHibishoImagesEndpoint}
           />
         )}
 
@@ -1182,6 +1185,7 @@ export function DealerListingForm({ mode, initialData, context = 'listing' }: De
             onPendingFilesChange={setPendingKoshiraeFiles}
             onMoveImageToBlades={handleMoveImageToBlades}
             bladeImagesFull={images.length >= 20}
+            apiEndpoint={koshiraeImagesEndpoint}
           />
         )}
 
@@ -1201,6 +1205,7 @@ export function DealerListingForm({ mode, initialData, context = 'listing' }: De
               return next;
             });
           }}
+          apiEndpoint={provenanceImagesEndpoint}
         />
 
         {/* 4e. Kiwame */}

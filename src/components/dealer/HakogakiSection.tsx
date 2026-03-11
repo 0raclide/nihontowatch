@@ -10,9 +10,11 @@ interface HakogakiSectionProps {
   itemId?: string; // Present in edit mode
   onChange: (entries: HakogakiEntry[]) => void;
   onPendingFilesChange?: (hakogakiId: string, files: File[]) => void;
+  /** Override the image upload/delete API endpoint for child cards. */
+  apiEndpoint?: string;
 }
 
-export function HakogakiSection({ entries, itemId, onChange, onPendingFilesChange }: HakogakiSectionProps) {
+export function HakogakiSection({ entries, itemId, onChange, onPendingFilesChange, apiEndpoint }: HakogakiSectionProps) {
   const { t } = useLocale();
 
   const handleAdd = useCallback(() => {
@@ -54,6 +56,7 @@ export function HakogakiSection({ entries, itemId, onChange, onPendingFilesChang
               onChange={(updated) => handleEntryChange(i, updated)}
               onRemove={() => handleEntryRemove(i)}
               onPendingFilesChange={onPendingFilesChange}
+              apiEndpoint={apiEndpoint}
             />
           ))}
         </div>

@@ -10,9 +10,11 @@ interface ProvenanceSectionProps {
   itemId?: string; // Present in edit mode
   onChange: (entries: ProvenanceEntry[]) => void;
   onPendingFilesChange?: (provenanceId: string, files: File[]) => void;
+  /** Override the image upload/delete API endpoint for child cards. */
+  apiEndpoint?: string;
 }
 
-export function ProvenanceSection({ entries, itemId, onChange, onPendingFilesChange }: ProvenanceSectionProps) {
+export function ProvenanceSection({ entries, itemId, onChange, onPendingFilesChange, apiEndpoint }: ProvenanceSectionProps) {
   const { t } = useLocale();
 
   const handleAdd = useCallback(() => {
@@ -55,6 +57,7 @@ export function ProvenanceSection({ entries, itemId, onChange, onPendingFilesCha
               onChange={(updated) => handleEntryChange(i, updated)}
               onRemove={() => handleEntryRemove(i)}
               onPendingFilesChange={onPendingFilesChange}
+              apiEndpoint={apiEndpoint}
             />
           ))}
         </div>

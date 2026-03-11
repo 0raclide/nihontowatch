@@ -26,9 +26,11 @@ interface SayagakiCardProps {
   onChange: (updated: SayagakiEntry) => void;
   onRemove: () => void;
   onPendingFilesChange?: (sayagakiId: string, files: File[]) => void;
+  /** Override the image upload/delete API endpoint. Default: '/api/dealer/sayagaki-images' */
+  apiEndpoint?: string;
 }
 
-export function SayagakiCard({ entry, index, itemId, onChange, onRemove, onPendingFilesChange }: SayagakiCardProps) {
+export function SayagakiCard({ entry, index, itemId, onChange, onRemove, onPendingFilesChange, apiEndpoint = '/api/dealer/sayagaki-images' }: SayagakiCardProps) {
   const { t } = useLocale();
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -94,7 +96,7 @@ export function SayagakiCard({ entry, index, itemId, onChange, onRemove, onPendi
         formData.append('itemId', itemId!);
         formData.append('sayagakiId', entry.id);
 
-        const res = await fetch('/api/dealer/sayagaki-images', {
+        const res = await fetch(apiEndpoint, {
           method: 'POST',
           body: formData,
         });
@@ -138,7 +140,7 @@ export function SayagakiCard({ entry, index, itemId, onChange, onRemove, onPendi
 
     // Edit mode: delete from server
     try {
-      const res = await fetch('/api/dealer/sayagaki-images', {
+      const res = await fetch(apiEndpoint, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ imageUrl, itemId, sayagakiId: entry.id }),

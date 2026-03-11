@@ -18,9 +18,11 @@ interface ProvenanceCardProps {
   onChange: (updated: ProvenanceEntry) => void;
   onRemove: () => void;
   onPendingFilesChange?: (provenanceId: string, files: File[]) => void;
+  /** Override the image upload/delete API endpoint. Default: '/api/dealer/provenance-images' */
+  apiEndpoint?: string;
 }
 
-export function ProvenanceCard({ entry, index, itemId, onChange, onRemove, onPendingFilesChange }: ProvenanceCardProps) {
+export function ProvenanceCard({ entry, index, itemId, onChange, onRemove, onPendingFilesChange, apiEndpoint = '/api/dealer/provenance-images' }: ProvenanceCardProps) {
   const { t } = useLocale();
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -82,7 +84,7 @@ export function ProvenanceCard({ entry, index, itemId, onChange, onRemove, onPen
         formData.append('itemId', itemId!);
         formData.append('provenanceId', entry.id);
 
-        const res = await fetch('/api/dealer/provenance-images', {
+        const res = await fetch(apiEndpoint, {
           method: 'POST',
           body: formData,
         });
@@ -126,7 +128,7 @@ export function ProvenanceCard({ entry, index, itemId, onChange, onRemove, onPen
 
     // Edit mode: delete from server
     try {
-      const res = await fetch('/api/dealer/provenance-images', {
+      const res = await fetch(apiEndpoint, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ imageUrl, itemId, provenanceId: entry.id }),

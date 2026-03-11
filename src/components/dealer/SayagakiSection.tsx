@@ -10,9 +10,11 @@ interface SayagakiSectionProps {
   itemId?: string; // Present in edit mode
   onChange: (entries: SayagakiEntry[]) => void;
   onPendingFilesChange?: (sayagakiId: string, files: File[]) => void;
+  /** Override the image upload/delete API endpoint for child cards. */
+  apiEndpoint?: string;
 }
 
-export function SayagakiSection({ entries, itemId, onChange, onPendingFilesChange }: SayagakiSectionProps) {
+export function SayagakiSection({ entries, itemId, onChange, onPendingFilesChange, apiEndpoint }: SayagakiSectionProps) {
   const { t } = useLocale();
 
   const handleAdd = useCallback(() => {
@@ -55,6 +57,7 @@ export function SayagakiSection({ entries, itemId, onChange, onPendingFilesChang
               onChange={(updated) => handleEntryChange(i, updated)}
               onRemove={() => handleEntryRemove(i)}
               onPendingFilesChange={onPendingFilesChange}
+              apiEndpoint={apiEndpoint}
             />
           ))}
         </div>

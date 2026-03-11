@@ -46,9 +46,11 @@ interface KoshiraeSectionProps {
   onMoveImageToBlades?: (imageUrl: string) => void;
   /** When true, hides the move button because blade images are at capacity. */
   bladeImagesFull?: boolean;
+  /** Override the image upload/delete API endpoint. Default: '/api/dealer/koshirae-images' */
+  apiEndpoint?: string;
 }
 
-export function KoshiraeSection({ koshirae, itemId, onChange, onPendingFilesChange, onMoveImageToBlades, bladeImagesFull }: KoshiraeSectionProps) {
+export function KoshiraeSection({ koshirae, itemId, onChange, onPendingFilesChange, onMoveImageToBlades, bladeImagesFull, apiEndpoint = '/api/dealer/koshirae-images' }: KoshiraeSectionProps) {
   const { t } = useLocale();
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -167,7 +169,7 @@ export function KoshiraeSection({ koshirae, itemId, onChange, onPendingFilesChan
         formData.append('file', file, file.name);
         formData.append('itemId', itemId!);
 
-        const res = await fetch('/api/dealer/koshirae-images', {
+        const res = await fetch(apiEndpoint, {
           method: 'POST',
           body: formData,
         });
@@ -213,7 +215,7 @@ export function KoshiraeSection({ koshirae, itemId, onChange, onPendingFilesChan
 
     // Edit mode: delete from server
     try {
-      const res = await fetch('/api/dealer/koshirae-images', {
+      const res = await fetch(apiEndpoint, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ imageUrl, itemId }),

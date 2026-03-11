@@ -15,9 +15,11 @@ interface KantoHibishoSectionProps {
   itemId?: string; // Present in edit mode
   onChange: (data: KantoHibishoData | null) => void;
   onPendingFilesChange?: (files: File[]) => void;
+  /** Override the image upload/delete API endpoint. Default: '/api/dealer/kanto-hibisho-images' */
+  apiEndpoint?: string;
 }
 
-export function KantoHibishoSection({ data, itemId, onChange, onPendingFilesChange }: KantoHibishoSectionProps) {
+export function KantoHibishoSection({ data, itemId, onChange, onPendingFilesChange, apiEndpoint = '/api/dealer/kanto-hibisho-images' }: KantoHibishoSectionProps) {
   const { t } = useLocale();
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -91,7 +93,7 @@ export function KantoHibishoSection({ data, itemId, onChange, onPendingFilesChan
         formData.append('file', file, file.name);
         formData.append('itemId', itemId!);
 
-        const res = await fetch('/api/dealer/kanto-hibisho-images', {
+        const res = await fetch(apiEndpoint, {
           method: 'POST',
           body: formData,
         });
@@ -137,7 +139,7 @@ export function KantoHibishoSection({ data, itemId, onChange, onPendingFilesChan
 
     // Edit mode: delete from server
     try {
-      const res = await fetch('/api/dealer/kanto-hibisho-images', {
+      const res = await fetch(apiEndpoint, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ imageUrl, itemId }),

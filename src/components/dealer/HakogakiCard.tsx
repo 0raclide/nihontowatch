@@ -17,9 +17,11 @@ interface HakogakiCardProps {
   onChange: (updated: HakogakiEntry) => void;
   onRemove: () => void;
   onPendingFilesChange?: (hakogakiId: string, files: File[]) => void;
+  /** Override the image upload/delete API endpoint. Default: '/api/dealer/hakogaki-images' */
+  apiEndpoint?: string;
 }
 
-export function HakogakiCard({ entry, index, itemId, onChange, onRemove, onPendingFilesChange }: HakogakiCardProps) {
+export function HakogakiCard({ entry, index, itemId, onChange, onRemove, onPendingFilesChange, apiEndpoint = '/api/dealer/hakogaki-images' }: HakogakiCardProps) {
   const { t } = useLocale();
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -77,7 +79,7 @@ export function HakogakiCard({ entry, index, itemId, onChange, onRemove, onPendi
         formData.append('itemId', itemId!);
         formData.append('hakogakiId', entry.id);
 
-        const res = await fetch('/api/dealer/hakogaki-images', {
+        const res = await fetch(apiEndpoint, {
           method: 'POST',
           body: formData,
         });
@@ -121,7 +123,7 @@ export function HakogakiCard({ entry, index, itemId, onChange, onRemove, onPendi
 
     // Edit mode: delete from server
     try {
-      const res = await fetch('/api/dealer/hakogaki-images', {
+      const res = await fetch(apiEndpoint, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ imageUrl, itemId, hakogakiId: entry.id }),
