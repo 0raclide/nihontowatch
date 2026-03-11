@@ -35,9 +35,9 @@ export async function PATCH(
 
     const serviceClient = createServiceClient();
 
-    // Verify item ownership
+    // Verify item ownership (URL param is item_uuid, not PK)
     const { data: item } = await selectCollectionItemSingle(
-      serviceClient, 'id', id, 'id, owner_id'
+      serviceClient, 'item_uuid', id, 'id, owner_id'
     );
 
     if (!item || item.owner_id !== user.id) {
@@ -50,7 +50,7 @@ export async function PATCH(
       .eq('id', expenseId)
       .single();
 
-    if (!existing || existing.item_id !== id || existing.owner_id !== user.id) {
+    if (!existing || existing.item_id !== item.id || existing.owner_id !== user.id) {
       return NextResponse.json({ error: 'Expense not found' }, { status: 404 });
     }
 
@@ -141,9 +141,9 @@ export async function DELETE(
 
     const serviceClient = createServiceClient();
 
-    // Verify item ownership
+    // Verify item ownership (URL param is item_uuid, not PK)
     const { data: item } = await selectCollectionItemSingle(
-      serviceClient, 'id', id, 'id, owner_id'
+      serviceClient, 'item_uuid', id, 'id, owner_id'
     );
 
     if (!item || item.owner_id !== user.id) {
@@ -156,7 +156,7 @@ export async function DELETE(
       .eq('id', expenseId)
       .single();
 
-    if (!existing || existing.item_id !== id || existing.owner_id !== user.id) {
+    if (!existing || existing.item_id !== item.id || existing.owner_id !== user.id) {
       return NextResponse.json({ error: 'Expense not found' }, { status: 404 });
     }
 

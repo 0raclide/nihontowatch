@@ -36,16 +36,16 @@ export async function GET(
 
     const serviceClient = createServiceClient();
 
-    // Verify ownership
+    // Verify ownership (URL param is item_uuid, not PK)
     const { data: item } = await selectCollectionItemSingle(
-      serviceClient, 'id', id, 'id, owner_id'
+      serviceClient, 'item_uuid', id, 'id, owner_id'
     );
 
     if (!item || item.owner_id !== user.id) {
       return NextResponse.json({ error: 'Item not found' }, { status: 404 });
     }
 
-    const { data: expenses, error } = await selectExpensesForItem(serviceClient, id);
+    const { data: expenses, error } = await selectExpensesForItem(serviceClient, item.id);
 
     if (error) {
       logger.error('Expense list error', { error });
@@ -80,9 +80,9 @@ export async function POST(
 
     const serviceClient = createServiceClient();
 
-    // Verify ownership
+    // Verify ownership (URL param is item_uuid, not PK)
     const { data: item } = await selectCollectionItemSingle(
-      serviceClient, 'id', id, 'id, owner_id'
+      serviceClient, 'item_uuid', id, 'id, owner_id'
     );
 
     if (!item || item.owner_id !== user.id) {
@@ -90,7 +90,7 @@ export async function POST(
     }
 
     // Check expense count limit
-    const expenseCount = await countExpensesForItem(serviceClient, id);
+    const expenseCount = await countExpensesForItem(serviceClient, item.id);
     if (expenseCount >= MAX_EXPENSES_PER_ITEM) {
       return NextResponse.json(
         { error: `Maximum of ${MAX_EXPENSES_PER_ITEM} expenses per item` },
@@ -128,7 +128,7 @@ export async function POST(
     }
 
     const { data: expense, error } = await insertExpense(serviceClient, {
-      item_id: id,
+      item_id: item.id,
       owner_id: user.id,
       category: category as string,
       amount: numAmount,
