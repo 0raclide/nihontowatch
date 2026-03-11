@@ -461,9 +461,9 @@ export function CollectionPageClient() {
       <Header />
 
       <div className="max-w-[1600px] mx-auto px-4 py-3 lg:px-6 lg:py-4 pb-24 lg:pb-8">
-        {/* Dealer tabs */}
+        {/* Dealer tabs — desktop only (mobile tabs are in the bottom bar) */}
         {effectiveIsDealer && (
-          <div className="mb-4 lg:mb-5">
+          <div className="hidden lg:block mb-5">
             <LedgerTabs
               tabs={ledgerTabs}
               activeTab={activeTab}
@@ -610,12 +610,33 @@ export function CollectionPageClient() {
         </div>
       </div>
 
-      {/* Mobile Bottom Bar — only show Add on collection tab */}
-      {activeTab === 'collection' && (
-        <CollectionBottomBar
-          onAddClick={handleAddClick}
-        />
-      )}
+      {/* Mobile Bottom Bar */}
+      {effectiveIsDealer ? (
+        <>
+          {/* Dealer: ledger tabs fixed at bottom on mobile */}
+          <nav
+            className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-surface/95 backdrop-blur-sm border-t border-border"
+            style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+          >
+            <div className="px-3 pt-2 pb-1">
+              <LedgerTabs
+                tabs={ledgerTabs}
+                activeTab={activeTab}
+                onTabChange={handleTabChange}
+                tabCounts={mergedTabCounts}
+              />
+            </div>
+          </nav>
+          {/* Spacer to prevent content overlap */}
+          <div
+            className="lg:hidden flex-shrink-0"
+            style={{ height: 'calc(80px + env(safe-area-inset-bottom, 0px))' }}
+            aria-hidden="true"
+          />
+        </>
+      ) : activeTab === 'collection' ? (
+        <CollectionBottomBar onAddClick={handleAddClick} />
+      ) : null}
     </div>
   );
 }
