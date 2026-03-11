@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useLocale } from '@/i18n/LocaleContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
+import { useAuth } from '@/lib/auth/AuthContext';
 import type { CollectionFilters, CollectionFacets } from '@/types/collection';
 import type { CollectionItemRow } from '@/types/collectionItem';
 import type { DisplayItem } from '@/types/displayItem';
@@ -44,7 +45,29 @@ export function CollectionPageClient() {
   const searchParams = useSearchParams();
   const { currency, exchangeRates } = useCurrency();
   const quickView = useQuickView();
-  const { isDealer } = useSubscription();
+  const { isDealer: realIsDealer } = useSubscription();
+  const { isAdmin } = useAuth();
+
+  // Admin mode simulation toggle (persisted in localStorage)
+  type SimMode = 'none' | 'inner_circle' | 'dealer';
+  const [adminSimMode, setAdminSimMode] = useState<SimMode>(() => {
+    if (typeof window !== 'undefined') {
+      return (localStorage.getItem('nihontowatch-vault-sim') as SimMode) || 'none';
+    }
+    return 'none';
+  });
+
+  const handleSimModeChange = useCallback((mode: SimMode) => {
+    setAdminSimMode(mode);
+    localStorage.setItem('nihontowatch-vault-sim', mode);
+    // Reset to collection tab when switching away from dealer
+    if (mode !== 'dealer') setActiveTab('collection');
+  }, []);
+
+  // Effective role: admin toggle overrides real subscription
+  const effectiveIsDealer = isAdmin
+    ? adminSimMode === 'dealer'
+    : realIsDealer;
 
   // Tab state for dealer users (collection | available | hold | sold)
   const [activeTab, setActiveTab] = useState<CollectionTab>('collection');
@@ -328,11 +351,31 @@ export function CollectionPageClient() {
       <Header />
 
       <div className="max-w-[1600px] mx-auto px-4 py-3 lg:px-6 lg:py-4 pb-24 lg:pb-8">
+        {/* Admin mode toggle */}
+        {isAdmin && (
+          <div className="flex items-center gap-2 mb-3 lg:mb-4 text-[11px]">
+            <span className="text-muted/50 uppercase tracking-wider">Simulate:</span>
+            {(['none', 'inner_circle', 'dealer'] as SimMode[]).map(mode => (
+              <button
+                key={mode}
+                onClick={() => handleSimModeChange(mode)}
+                className={`px-2.5 py-1 rounded text-[11px] transition-colors ${
+                  adminSimMode === mode
+                    ? 'bg-gold/20 text-gold border border-gold/40'
+                    : 'text-muted/60 border border-border/30 hover:text-muted'
+                }`}
+              >
+                {mode === 'none' ? 'Admin' : mode === 'inner_circle' ? 'Inner Circle' : 'Dealer'}
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* Dealer tabs */}
-        {isDealer && (
+        {effectiveIsDealer && (
           <div className="flex gap-1 mb-3 lg:mb-4 overflow-x-auto scrollbar-hide">
             {([
-              { key: 'collection' as CollectionTab, label: t('collection.tabCollection') },
+              { key: 'collection' as CollectionTab, label: 'Inventory' },
               { key: 'available' as CollectionTab, label: t('collection.tabForSale') },
               { key: 'hold' as CollectionTab, label: t('collection.tabOnHold') },
               { key: 'sold' as CollectionTab, label: t('collection.tabSold') },
@@ -352,7 +395,7 @@ export function CollectionPageClient() {
           </div>
         )}
 
-        {/* Toolbar: item count + add button (desktop) + mobile view toggle */}
+        {/* Toolbar: item count + add button (desktop, collection tab only) + mobile view toggle */}
         <div className="flex items-center justify-between mb-3 lg:mb-4">
           <div className="flex items-center gap-3">
             <span className="text-[11px] uppercase tracking-[0.12em] text-muted/50 tabular-nums">
@@ -363,16 +406,18 @@ export function CollectionPageClient() {
                   : t('vault.pieces', { count: activeCount })
               }
             </span>
-            {/* Desktop add button */}
-            <button
-              onClick={handleAddClick}
-              className="hidden lg:inline-flex items-center gap-1.5 px-3 py-1 text-[11px] uppercase tracking-[0.1em] text-gold border border-gold/30 rounded hover:bg-gold/10 transition-colors"
-            >
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              {t('collection.add')}
-            </button>
+            {/* Desktop add button — collection tab only */}
+            {activeTab === 'collection' && (
+              <button
+                onClick={handleAddClick}
+                className="hidden lg:inline-flex items-center gap-1.5 px-3 py-1 text-[11px] uppercase tracking-[0.1em] text-gold border border-gold/30 rounded hover:bg-gold/10 transition-colors"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                {t('collection.add')}
+              </button>
+            )}
           </div>
           <div className="flex items-center gap-0.5 sm:hidden">
             <button
@@ -460,10 +505,12 @@ export function CollectionPageClient() {
         </div>
       </div>
 
-      {/* Mobile Bottom Bar */}
-      <CollectionBottomBar
-        onAddClick={handleAddClick}
-      />
+      {/* Mobile Bottom Bar — only show Add on collection tab */}
+      {activeTab === 'collection' && (
+        <CollectionBottomBar
+          onAddClick={handleAddClick}
+        />
+      )}
     </div>
   );
 }
