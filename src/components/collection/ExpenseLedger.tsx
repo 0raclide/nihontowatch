@@ -48,7 +48,7 @@ export function ExpenseLedger({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch expenses on mount
+  // Fetch expenses on mount and sync totals with parent
   useEffect(() => {
     let cancelled = false;
 
@@ -58,7 +58,11 @@ export function ExpenseLedger({
         const res = await fetch(`/api/collection/items/${itemId}/expenses`);
         if (!res.ok) throw new Error('Failed to fetch expenses');
         const data = await res.json();
-        if (!cancelled) setExpenses(data.expenses || []);
+        if (!cancelled) {
+          const fetched = data.expenses || [];
+          setExpenses(fetched);
+          onTotalChange?.(computeExpenseTotals(fetched));
+        }
       } catch {
         if (!cancelled) setError('Failed to load expenses');
       } finally {
@@ -68,7 +72,7 @@ export function ExpenseLedger({
 
     fetch_();
     return () => { cancelled = true; };
-  }, [itemId]);
+  }, [itemId, onTotalChange]);
 
   // Add new expense
   const handleAdd = useCallback(async () => {
@@ -212,7 +216,6 @@ export function ExpenseLedger({
               expense={expense}
               onUpdate={handleUpdate}
               onDelete={handleDelete}
-              locale={locale}
             />
           ))}
         </tbody>
@@ -257,7 +260,6 @@ interface ExpenseRowProps {
   expense: CollectionExpense;
   onUpdate: (id: string, field: string, value: unknown) => void;
   onDelete: (id: string) => void;
-  locale: 'en' | 'ja';
 }
 
 function ExpenseRow({ expense, onUpdate, onDelete }: ExpenseRowProps) {
@@ -267,6 +269,11 @@ function ExpenseRow({ expense, onUpdate, onDelete }: ExpenseRowProps) {
   const [vendor, setVendor] = useState(expense.vendor || '');
   const [notes, setNotes] = useState(expense.notes || '');
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Clean up debounce timer on unmount (e.g., ledger collapsed while typing)
+  useEffect(() => {
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, []);
 
   const debouncedUpdate = useCallback((field: string, value: unknown) => {
     if (debounceRef.current) clearTimeout(debounceRef.current);

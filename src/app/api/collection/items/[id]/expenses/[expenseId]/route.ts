@@ -70,7 +70,7 @@ export async function PATCH(
     }
     if ('amount' in body) {
       const num = Number(body.amount);
-      if (!isNaN(num) && num > 0) {
+      if (!isNaN(num) && num >= 0) {
         updates.amount = num;
       }
     }

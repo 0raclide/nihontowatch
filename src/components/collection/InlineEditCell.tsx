@@ -50,12 +50,13 @@ interface InlineTextCellProps {
 
 export function InlineTextCell({ value, onSave, placeholder, maxLength = 500, className = '' }: InlineTextCellProps) {
   const [localValue, setLocalValue] = useState(value || '');
-  const [originalValue] = useState(value || '');
+  const [originalValue, setOriginalValue] = useState(value || '');
   const { save, cancel, isSaving } = useDebouncedSave(onSave);
 
-  // Sync with external value changes
+  // Sync with external value changes (including after save)
   useEffect(() => {
     setLocalValue(value || '');
+    setOriginalValue(value || '');
   }, [value]);
 
   const handleBlur = useCallback(() => {
@@ -106,11 +107,12 @@ interface InlineDateCellProps {
 
 export function InlineDateCell({ value, onSave, className = '' }: InlineDateCellProps) {
   const [localValue, setLocalValue] = useState(value || '');
-  const [originalValue] = useState(value || '');
+  const [originalValue, setOriginalValue] = useState(value || '');
   const { save, cancel, isSaving } = useDebouncedSave(onSave);
 
   useEffect(() => {
     setLocalValue(value || '');
+    setOriginalValue(value || '');
   }, [value]);
 
   const handleBlur = useCallback(() => {
@@ -179,7 +181,7 @@ export function InlineCurrencyCell({
   const effectiveCurrency = currency || defaultCurrency;
   const [localAmount, setLocalAmount] = useState(amount != null ? String(amount) : '');
   const [localCurrency, setLocalCurrency] = useState(effectiveCurrency);
-  const [originalAmount] = useState(amount != null ? String(amount) : '');
+  const [originalAmount, setOriginalAmount] = useState(amount != null ? String(amount) : '');
   const { save, cancel, isSaving } = useDebouncedSave(
     (val: unknown) => {
       const { a, c } = val as { a: number | null; c: string };
@@ -189,6 +191,7 @@ export function InlineCurrencyCell({
 
   useEffect(() => {
     setLocalAmount(amount != null ? String(amount) : '');
+    setOriginalAmount(amount != null ? String(amount) : '');
     setLocalCurrency(currency || defaultCurrency);
   }, [amount, currency, defaultCurrency]);
 

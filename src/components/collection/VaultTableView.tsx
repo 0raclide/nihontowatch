@@ -125,8 +125,8 @@ export function VaultTableView({
     setExpandedItemId(prev => prev === itemId ? null : itemId);
   }, []);
 
-  // Sort header arrow
-  const SortArrow = ({ column }: { column: SortKey }) => {
+  // Sort header arrow — plain function (not a component) to avoid new identity each render
+  const sortArrow = (column: SortKey) => {
     if (sortKey !== column) return null;
     return (
       <span className="ml-0.5 text-gold">
@@ -190,31 +190,31 @@ export function VaultTableView({
             <tr className="border-b border-border/30">
               <th className="py-2 px-2 w-[44px]"></th>
               <th className={headerClass} onClick={() => handleSort('title')}>
-                {t('vault.table.title')}<SortArrow column="title" />
+                {t('vault.table.title')}{sortArrow('title')}
               </th>
               <th className={headerClass} onClick={() => handleSort('type')}>
-                {t('vault.table.type')}<SortArrow column="type" />
+                {t('vault.table.type')}{sortArrow('type')}
               </th>
               <th className={headerClass} onClick={() => handleSort('cert')}>
-                {t('vault.table.cert')}<SortArrow column="cert" />
+                {t('vault.table.cert')}{sortArrow('cert')}
               </th>
               <th className={headerClass} onClick={() => handleSort('attribution')}>
-                {t('vault.table.attribution')}<SortArrow column="attribution" />
+                {t('vault.table.attribution')}{sortArrow('attribution')}
               </th>
               <th className={`${headerClass} w-[120px]`} onClick={() => handleSort('purchase_date')}>
-                {t('vault.table.purchaseDate')}<SortArrow column="purchase_date" />
+                {t('vault.table.purchaseDate')}{sortArrow('purchase_date')}
               </th>
               <th className={`${headerClass} w-[140px]`} onClick={() => handleSort('paid')}>
-                {t('vault.table.paid')}<SortArrow column="paid" />
+                {t('vault.table.paid')}{sortArrow('paid')}
               </th>
               <th className={`${headerClass} w-[140px]`} onClick={() => handleSort('current_value')}>
-                {t('vault.table.currentValue')}<SortArrow column="current_value" />
+                {t('vault.table.currentValue')}{sortArrow('current_value')}
               </th>
               <th className={`${headerClass} w-[100px]`} onClick={() => handleSort('invested')}>
-                {t('vault.table.invested')}<SortArrow column="invested" />
+                {t('vault.table.invested')}{sortArrow('invested')}
               </th>
               <th className={`${headerClass} w-[120px]`} onClick={() => handleSort('location')}>
-                {t('vault.table.location')}<SortArrow column="location" />
+                {t('vault.table.location')}{sortArrow('location')}
               </th>
             </tr>
           </thead>
