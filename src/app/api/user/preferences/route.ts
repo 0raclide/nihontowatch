@@ -4,7 +4,9 @@ import { NextRequest, NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 
 /** Whitelist of allowed preference keys that can be set via this endpoint */
-const ALLOWED_KEYS = new Set(['showAllPrices']);
+const ALLOWED_KEYS = new Set(['showAllPrices', 'home_currency']);
+
+const VALID_HOME_CURRENCIES = new Set(['USD', 'JPY', 'EUR', 'AUD', 'GBP', 'CAD', 'CHF']);
 
 /**
  * GET /api/user/preferences
@@ -59,6 +61,11 @@ export async function PATCH(request: NextRequest) {
     // Validate types
     if ('showAllPrices' in updates && typeof updates.showAllPrices !== 'boolean') {
       return NextResponse.json({ error: 'showAllPrices must be a boolean' }, { status: 400 });
+    }
+    if ('home_currency' in updates) {
+      if (typeof updates.home_currency !== 'string' || !VALID_HOME_CURRENCIES.has(updates.home_currency)) {
+        return NextResponse.json({ error: `home_currency must be one of: ${[...VALID_HOME_CURRENCIES].join(', ')}` }, { status: 400 });
+      }
     }
 
     const supabase = await createClient();

@@ -88,6 +88,22 @@ vi.mock('@/hooks/useCurrency', () => ({
     currency: 'JPY' as const,
     exchangeRates: null,
     setCurrency: vi.fn(),
+    fetchHistoricalRate: vi.fn().mockResolvedValue(null),
+  }),
+}));
+
+vi.mock('@/hooks/useHomeCurrency', () => ({
+  useHomeCurrency: () => ({
+    homeCurrency: 'USD',
+    setHomeCurrency: vi.fn().mockResolvedValue(undefined),
+    isLoading: false,
+  }),
+}));
+
+vi.mock('@/hooks/useVaultReturns', () => ({
+  useVaultReturns: () => ({
+    returnMap: new Map(),
+    isLoadingRates: false,
   }),
 }));
 
@@ -142,6 +158,10 @@ vi.mock('@/components/ui/Drawer', () => ({
 
 vi.mock('@/components/layout/Header', () => ({
   Header: () => <header data-testid="header" />,
+}));
+
+vi.mock('@/components/collection/HomeCurrencyPicker', () => ({
+  HomeCurrencyPicker: () => <div data-testid="home-currency-picker" />,
 }));
 
 // ---------------------------------------------------------------------------

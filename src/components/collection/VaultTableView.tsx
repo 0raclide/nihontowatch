@@ -9,6 +9,8 @@ import { getItemTypeLabel, CERT_LABELS, getCertTierClass, formatPrice } from '@/
 import { InlineCurrencyCell, InlineDateCell, InlineTextCell } from './InlineEditCell';
 import { ExpenseLedger } from './ExpenseLedger';
 import { VaultTableFooter } from './VaultTableFooter';
+import { ReturnBreakdownPopover } from './ReturnBreakdownPopover';
+import type { ItemReturnData } from '@/lib/fx/financialCalculator';
 
 // =============================================================================
 // Types
@@ -21,9 +23,12 @@ interface VaultTableViewProps {
   onItemUpdate: (itemId: string, updates: Record<string, unknown>) => Promise<void>;
   onCardClick: (item: DisplayItem) => void;
   onExpenseTotalsChange: (itemUuid: string, totals: Record<string, number>) => void;
+  homeCurrency: string;
+  returnMap: Map<string, ItemReturnData>;
+  isLoadingReturns: boolean;
 }
 
-type SortKey = 'title' | 'type' | 'cert' | 'attribution' | 'purchase_date' | 'paid' | 'current_value' | 'invested' | 'location';
+type SortKey = 'title' | 'type' | 'cert' | 'attribution' | 'purchase_date' | 'paid' | 'current_value' | 'invested' | 'return' | 'location';
 type SortDir = 'asc' | 'desc';
 
 // =============================================================================
@@ -37,6 +42,9 @@ export function VaultTableView({
   onItemUpdate,
   onCardClick,
   onExpenseTotalsChange,
+  homeCurrency,
+  returnMap,
+  isLoadingReturns,
 }: VaultTableViewProps) {
   const { t, locale } = useLocale();
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
@@ -80,6 +88,10 @@ export function VaultTableView({
           va = ext_a?.current_value ?? null; vb = ext_b?.current_value ?? null; break;
         case 'invested':
           va = ext_a?.total_invested ?? null; vb = ext_b?.total_invested ?? null; break;
+        case 'return':
+          va = returnMap.get(String(a.id))?.totalReturn ?? null;
+          vb = returnMap.get(String(b.id))?.totalReturn ?? null;
+          break;
         case 'location':
           va = ext_a?.location ?? null; vb = ext_b?.location ?? null; break;
       }
@@ -98,7 +110,7 @@ export function VaultTableView({
 
       return sortDir === 'desc' ? -cmp : cmp;
     });
-  }, [items, sortKey, sortDir]);
+  }, [items, sortKey, sortDir, returnMap]);
 
   // Handle inline field update
   const handleFieldUpdate = useCallback(async (
@@ -142,7 +154,7 @@ export function VaultTableView({
         <table className="w-full text-[12px]">
           <thead>
             <tr className="border-b border-border/30">
-              {Array.from({ length: 10 }).map((_, i) => (
+              {Array.from({ length: 11 }).map((_, i) => (
                 <th key={i} className="py-2 px-2">
                   <div className="h-3 bg-surface-elevated rounded animate-pulse" />
                 </th>
@@ -152,7 +164,7 @@ export function VaultTableView({
           <tbody>
             {Array.from({ length: 8 }).map((_, i) => (
               <tr key={i} className="border-b border-border/10">
-                {Array.from({ length: 10 }).map((_, j) => (
+                {Array.from({ length: 11 }).map((_, j) => (
                   <td key={j} className="py-3 px-2">
                     <div className="h-3 bg-surface-elevated rounded animate-pulse" />
                   </td>
@@ -213,6 +225,9 @@ export function VaultTableView({
               <th className={`${headerClass} w-[100px]`} onClick={() => handleSort('invested')}>
                 {t('vault.table.invested')}{sortArrow('invested')}
               </th>
+              <th className={`${headerClass} w-[130px]`} onClick={() => handleSort('return')}>
+                {t('vault.table.return')}{sortArrow('return')}
+              </th>
               <th className={`${headerClass} w-[120px]`} onClick={() => handleSort('location')}>
                 {t('vault.table.location')}{sortArrow('location')}
               </th>
@@ -245,6 +260,9 @@ export function VaultTableView({
                   onCurrencyUpdate={handleCurrencyUpdate}
                   toggleExpenseLedger={toggleExpenseLedger}
                   onExpenseTotalsChange={onExpenseTotalsChange}
+                  returnData={returnMap.get(itemId)}
+                  homeCurrency={homeCurrency}
+                  isLoadingReturns={isLoadingReturns}
                 />
               );
             })}
@@ -252,7 +270,12 @@ export function VaultTableView({
         </table>
       </div>
 
-      <VaultTableFooter items={items} />
+      <VaultTableFooter
+        items={items}
+        returnMap={returnMap}
+        homeCurrency={homeCurrency}
+        isLoadingReturns={isLoadingReturns}
+      />
     </div>
   );
 }
@@ -278,6 +301,9 @@ interface TableItemRowProps {
   onCurrencyUpdate: (itemId: string, amountField: string, currencyField: string, amount: number | null, currency: string) => Promise<void>;
   toggleExpenseLedger: (itemId: string) => void;
   onExpenseTotalsChange: (itemUuid: string, totals: Record<string, number>) => void;
+  returnData: ItemReturnData | undefined;
+  homeCurrency: string;
+  isLoadingReturns: boolean;
 }
 
 function TableItemRow({
@@ -296,6 +322,9 @@ function TableItemRow({
   onCurrencyUpdate,
   toggleExpenseLedger,
   onExpenseTotalsChange,
+  returnData,
+  homeCurrency,
+  isLoadingReturns,
 }: TableItemRowProps) {
   const hasCurrentValue = ext?.current_value != null;
   const totalInvested = ext?.total_invested;
@@ -433,6 +462,20 @@ function TableItemRow({
           </button>
         </td>
 
+        {/* Return (computed, click for decomposition popover) */}
+        <td className="py-1.5 px-2">
+          {isLoadingReturns ? (
+            <div className="h-3 w-16 bg-surface-elevated rounded animate-pulse" />
+          ) : returnData ? (
+            <ReturnBreakdownPopover
+              returnData={returnData}
+              homeCurrency={homeCurrency}
+            />
+          ) : (
+            <span className="text-muted/30 text-[12px]">—</span>
+          )}
+        </td>
+
         {/* Location (editable) */}
         <td className="py-1.5 px-1">
           <InlineTextCell
@@ -446,7 +489,7 @@ function TableItemRow({
       {/* Expense ledger (inline sub-row) */}
       {isExpanded && (
         <tr>
-          <td colSpan={10} className="p-0">
+          <td colSpan={11} className="p-0">
             <ExpenseLedger
               itemId={itemId}
               purchasePrice={ext?.purchase_price ?? null}

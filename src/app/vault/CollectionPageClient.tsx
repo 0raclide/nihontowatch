@@ -15,9 +15,12 @@ import { VaultViewToggle } from '@/components/collection/VaultViewToggle';
 import { VaultTableView } from '@/components/collection/VaultTableView';
 import { useQuickView } from '@/contexts/QuickViewContext';
 import { useCurrency } from '@/hooks/useCurrency';
+import { useHomeCurrency } from '@/hooks/useHomeCurrency';
+import { useVaultReturns } from '@/hooks/useVaultReturns';
 import { collectionRowsToDisplayItems, dealerListingToDisplayItem } from '@/lib/displayItem';
 import type { ExpenseTotalsMap } from '@/lib/displayItem/fromCollectionItem';
 import { Header } from '@/components/layout/Header';
+import { HomeCurrencyPicker } from '@/components/collection/HomeCurrencyPicker';
 
 // Tab types for dealer users
 type CollectionTab = 'collection' | 'available' | 'hold' | 'sold';
@@ -50,6 +53,7 @@ export function CollectionPageClient() {
   const quickView = useQuickView();
   const { isDealer: realIsDealer } = useSubscription();
   const { isAdmin } = useAuth();
+  const { homeCurrency, setHomeCurrency, isLoading: isHomeCurrencyLoading } = useHomeCurrency();
 
   // Admin mode simulation (persisted in localStorage, toggled from Header admin dropdown)
   type SimMode = 'none' | 'inner_circle' | 'dealer';
@@ -149,6 +153,9 @@ export function CollectionPageClient() {
     () => collectionRowsToDisplayItems(items, artisanNames, expenseTotals),
     [items, artisanNames, expenseTotals]
   );
+
+  // Compute vault returns (historical FX conversion + gain/loss)
+  const { returnMap, isLoadingRates: isLoadingReturns } = useVaultReturns(adaptedItems, homeCurrency, expenseTotals);
 
   // Adapt collection items for QuickView navigation — preserves ALL JSONB sections
   // (sayagaki, koshirae, provenance, kiwame, kanto_hibisho, etc.) that the DisplayItem
@@ -466,6 +473,14 @@ export function CollectionPageClient() {
             )}
           </div>
           <div className="flex items-center gap-2">
+            {/* Home currency picker — table view + collection tab only */}
+            {activeTab === 'collection' && desktopView === 'table' && (
+              <HomeCurrencyPicker
+                value={homeCurrency}
+                onChange={setHomeCurrency}
+                isLoading={isHomeCurrencyLoading}
+              />
+            )}
             {/* Desktop view toggle (grid/table) — collection tab only */}
             {activeTab === 'collection' && (
               <VaultViewToggle view={desktopView} onViewChange={handleDesktopViewChange} />
@@ -525,6 +540,9 @@ export function CollectionPageClient() {
                   onItemUpdate={handleItemUpdate}
                   onCardClick={handleCardClick}
                   onExpenseTotalsChange={handleExpenseTotalsChange}
+                  homeCurrency={homeCurrency}
+                  returnMap={returnMap}
+                  isLoadingReturns={isLoadingReturns}
                 />
               ) : isDragEnabled ? (
                 <SortableCollectionGrid
