@@ -105,8 +105,8 @@ export function collectionRowToDisplayItem(
     dealer_earliest_seen_at: null,
     last_scraped_at: null,
 
-    // Dealer (pre-resolved — collection always shows "Personal Collection")
-    dealer_display_name: 'Personal Collection',
+    // Dealer (pre-resolved — collection always shows "Private Collection")
+    dealer_display_name: 'Private Collection',
     dealer_display_name_ja: null,
     dealer_domain: undefined,
     dealer_id: null,
