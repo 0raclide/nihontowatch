@@ -22,6 +22,7 @@ import type { ExpenseTotalsMap } from '@/lib/displayItem/fromCollectionItem';
 import { Header } from '@/components/layout/Header';
 import { HomeCurrencyPicker } from '@/components/collection/HomeCurrencyPicker';
 import { LedgerTabs } from '@/components/dealer/LedgerTabs';
+import { useMobileUI } from '@/contexts/MobileUIContext';
 
 // Tab types for dealer users
 type CollectionTab = 'collection' | 'available' | 'hold' | 'sold';
@@ -55,6 +56,7 @@ export function CollectionPageClient() {
   const { isDealer: realIsDealer } = useSubscription();
   const { isAdmin } = useAuth();
   const { homeCurrency, setHomeCurrency, isLoading: isHomeCurrencyLoading } = useHomeCurrency();
+  const { openNavDrawer } = useMobileUI();
 
   // Admin mode simulation (persisted in localStorage, toggled from Header admin dropdown)
   type SimMode = 'none' | 'inner_circle' | 'dealer';
@@ -461,9 +463,9 @@ export function CollectionPageClient() {
       <Header />
 
       <div className="max-w-[1600px] mx-auto px-4 py-3 lg:px-6 lg:py-4 pb-24 lg:pb-8">
-        {/* Dealer tabs */}
+        {/* Dealer tabs — desktop only (mobile tabs live in the bottom bar) */}
         {effectiveIsDealer && (
-          <div className="mb-4 lg:mb-5">
+          <div className="hidden lg:block mb-5">
             <LedgerTabs
               tabs={ledgerTabs}
               activeTab={activeTab}
@@ -610,10 +612,55 @@ export function CollectionPageClient() {
         </div>
       </div>
 
-      {/* Mobile Bottom Bar — only show Add on collection tab */}
-      {activeTab === 'collection' && (
+      {/* Mobile Bottom Bar */}
+      {effectiveIsDealer ? (
+        <>
+          {/* Dealer: ledger tabs + Add/Menu stacked in bottom bar */}
+          <nav
+            className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-surface/95 backdrop-blur-sm border-t border-border"
+            style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+          >
+            {/* Ledger tabs row */}
+            <div className="px-3 pt-2">
+              <LedgerTabs
+                tabs={ledgerTabs}
+                activeTab={activeTab}
+                onTabChange={handleTabChange}
+                tabCounts={mergedTabCounts}
+              />
+            </div>
+            {/* Add + Menu row */}
+            <div className="flex items-center h-12">
+              <button
+                onClick={handleAddClick}
+                className="flex flex-col items-center justify-center flex-1 h-full text-gold active:text-gold-light transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                <span className="text-[10px] mt-0.5 font-medium">{t('collection.add')}</span>
+              </button>
+              <button
+                onClick={openNavDrawer}
+                className="flex flex-col items-center justify-center flex-1 h-full text-charcoal active:text-gold transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+                <span className="text-[10px] mt-0.5 font-medium">{t('nav.menu')}</span>
+              </button>
+            </div>
+          </nav>
+          {/* Spacer */}
+          <div
+            className="lg:hidden flex-shrink-0"
+            style={{ height: 'calc(140px + env(safe-area-inset-bottom, 0px))' }}
+            aria-hidden="true"
+          />
+        </>
+      ) : activeTab === 'collection' ? (
         <CollectionBottomBar onAddClick={handleAddClick} />
-      )}
+      ) : null}
     </div>
   );
 }
