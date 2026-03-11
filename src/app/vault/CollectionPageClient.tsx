@@ -375,7 +375,7 @@ export function CollectionPageClient() {
       )}
 
       {/* Standard Header with VAULT branding */}
-      <Header logoOverride="VAULT" />
+      <Header />
 
       <div className="max-w-[1600px] mx-auto px-4 py-3 lg:px-6 lg:py-4 pb-24 lg:pb-8">
         {/* Dealer tabs */}
