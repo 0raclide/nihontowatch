@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
     // Fetch fresh rates from Frankfurter API (free, no API key needed)
     // Base is USD, get JPY, EUR, and AUD rates
     const response = await fetch(
-      'https://api.frankfurter.app/latest?from=USD&to=JPY,EUR,AUD',
+      'https://api.frankfurter.app/latest?from=USD&to=JPY,EUR,AUD,GBP,CAD,CHF',
       { next: { revalidate: 3600 } }
     );
 
@@ -60,6 +60,9 @@ export async function GET(request: NextRequest) {
         JPY: data.rates.JPY,
         EUR: data.rates.EUR,
         AUD: data.rates.AUD,
+        GBP: data.rates.GBP,
+        CAD: data.rates.CAD,
+        CHF: data.rates.CHF,
       },
       timestamp: now,
     };
@@ -79,9 +82,12 @@ export async function GET(request: NextRequest) {
       base: 'USD',
       rates: {
         USD: 1,
-        JPY: 150, // Approximate fallback
-        EUR: 0.92, // Approximate fallback
-        AUD: 1.55, // Approximate fallback
+        JPY: 150,
+        EUR: 0.92,
+        AUD: 1.55,
+        GBP: 0.79,
+        CAD: 1.37,
+        CHF: 0.88,
       },
       timestamp: Date.now(),
     };
@@ -102,7 +108,7 @@ async function fetchHistoricalRates(date: string): Promise<NextResponse> {
 
   try {
     const response = await fetch(
-      `https://api.frankfurter.app/${date}?from=USD&to=JPY,EUR,AUD`
+      `https://api.frankfurter.app/${date}?from=USD&to=JPY,EUR,AUD,GBP,CAD,CHF`
     );
 
     if (!response.ok) {
@@ -118,6 +124,9 @@ async function fetchHistoricalRates(date: string): Promise<NextResponse> {
         JPY: data.rates.JPY,
         EUR: data.rates.EUR,
         AUD: data.rates.AUD,
+        GBP: data.rates.GBP,
+        CAD: data.rates.CAD,
+        CHF: data.rates.CHF,
       },
       timestamp: Date.now(),
       date,
