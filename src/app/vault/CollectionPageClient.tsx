@@ -4,7 +4,6 @@ import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useLocale } from '@/i18n/LocaleContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
-import { useAuth } from '@/lib/auth/AuthContext';
 import type { CollectionFilters, CollectionFacets } from '@/types/collection';
 import type { CollectionItemRow } from '@/types/collectionItem';
 import type { DisplayItem } from '@/types/displayItem';
@@ -15,6 +14,7 @@ import { CollectionBottomBar } from '@/components/collection/CollectionBottomBar
 import { useQuickView } from '@/contexts/QuickViewContext';
 import { useCurrency } from '@/hooks/useCurrency';
 import { collectionRowsToDisplayItems, dealerListingToDisplayItem } from '@/lib/displayItem';
+import { Header } from '@/components/layout/Header';
 
 // Tab types for dealer users
 type CollectionTab = 'collection' | 'available' | 'hold' | 'sold';
@@ -35,45 +35,6 @@ const EMPTY_FACETS: CollectionFacets = {
 
 /** Minimum time (ms) the vault overlay is shown */
 const VAULT_OVERLAY_MIN_MS = 600;
-
-// =============================================================================
-// Vault Header — slim, dedicated header replacing standard Header
-// =============================================================================
-
-function VaultHeader() {
-  const { t } = useLocale();
-  const { user } = useAuth();
-
-  // Derive initials from email
-  const initials = useMemo(() => {
-    const email = user?.email;
-    if (!email) return '?';
-    return email.charAt(0).toUpperCase();
-  }, [user?.email]);
-
-  return (
-    <header className="sticky top-0 z-40 bg-surface/95 backdrop-blur-sm">
-      <div className="max-w-[1600px] mx-auto px-4 lg:px-6 h-12 flex items-center justify-between">
-        {/* Left: Shield + VAULT */}
-        <div className="flex items-center gap-2.5">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="text-gold/70">
-            <path d="M12 2L3 7v6c0 5.25 3.83 10.15 9 11.25C17.17 23.15 21 18.25 21 13V7l-9-5z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
-          </svg>
-          <span className="font-serif text-[14px] uppercase tracking-[0.25em] text-ink/80">
-            {t('vault.title')}
-          </span>
-        </div>
-
-        {/* Right: User avatar circle */}
-        <div className="w-7 h-7 rounded-full bg-gold/15 border border-gold/25 flex items-center justify-center">
-          <span className="text-[11px] font-medium text-gold/80">{initials}</span>
-        </div>
-      </div>
-      {/* Gold gradient line */}
-      <div className="h-px bg-gradient-to-r from-transparent via-gold/20 to-transparent" />
-    </header>
-  );
-}
 
 // =============================================================================
 // Component
@@ -394,8 +355,8 @@ export function CollectionPageClient() {
         </div>
       )}
 
-      {/* Vault Header */}
-      <VaultHeader />
+      {/* Standard Header with VAULT branding */}
+      <Header logoOverride="VAULT" />
 
       <div className="max-w-[1600px] mx-auto px-4 py-3 lg:px-6 lg:py-4 pb-24 lg:pb-8">
         {/* Dealer tabs */}

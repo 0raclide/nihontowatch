@@ -18,7 +18,7 @@ import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { FeedbackButton } from '@/components/feedback/FeedbackButton';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 
-function HeaderContent() {
+function HeaderContent({ logoOverride }: { logoOverride?: string }) {
   // Note: useMobileUI is imported but openSearch/openNavDrawer are used by MobileNavDrawer/MobileSearchSheet
   useMobileUI(); // Keep context active for child components
   const searchParams = useSearchParams();
@@ -251,8 +251,12 @@ function HeaderContent() {
                 className="opacity-90 group-hover:opacity-100 transition-opacity"
               />
               <h1 className="font-serif text-2xl tracking-tight text-ink">
-                Nihonto<span className="text-gold font-medium">Watch</span>
-                <sup className="ml-1.5 text-[9px] font-sans font-semibold tracking-widest text-gold/70 border border-gold/30 rounded px-1 py-px align-super">BETA</sup>
+                {logoOverride ? (
+                  <span className="uppercase tracking-[0.15em]">{logoOverride}</span>
+                ) : (
+                  <>Nihonto<span className="text-gold font-medium">Watch</span>
+                  <sup className="ml-1.5 text-[9px] font-sans font-semibold tracking-widest text-gold/70 border border-gold/30 rounded px-1 py-px align-super">BETA</sup></>
+                )}
               </h1>
             </Link>
 
@@ -514,7 +518,7 @@ function HeaderContent() {
 }
 
 // Fallback for Suspense - includes functional form for native submission before JS hydrates
-function HeaderFallback() {
+function HeaderFallback({ logoOverride }: { logoOverride?: string }) {
   return (
     <header className="hidden lg:block sticky top-0 z-40 bg-cream transition-colors">
       <div className="max-w-[1600px] mx-auto px-4 py-3 lg:px-6 lg:py-5">
@@ -528,8 +532,12 @@ function HeaderFallback() {
               className="opacity-90"
             />
             <span className="font-serif text-2xl tracking-tight text-ink">
-              Nihonto<span className="text-gold font-medium">Watch</span>
-              <sup className="ml-1.5 text-[9px] font-sans font-semibold tracking-widest text-gold/70 border border-gold/30 rounded px-1 py-px align-super">BETA</sup>
+              {logoOverride ? (
+                <span className="uppercase tracking-[0.15em]">{logoOverride}</span>
+              ) : (
+                <>Nihonto<span className="text-gold font-medium">Watch</span>
+                <sup className="ml-1.5 text-[9px] font-sans font-semibold tracking-widest text-gold/70 border border-gold/30 rounded px-1 py-px align-super">BETA</sup></>
+              )}
             </span>
           </div>
           {/* Functional form that works without JS via native form submission */}
@@ -594,10 +602,10 @@ function HeaderFallback() {
   );
 }
 
-export function Header() {
+export function Header({ logoOverride }: { logoOverride?: string } = {}) {
   return (
-    <Suspense fallback={<HeaderFallback />}>
-      <HeaderContent />
+    <Suspense fallback={<HeaderFallback logoOverride={logoOverride} />}>
+      <HeaderContent logoOverride={logoOverride} />
     </Suspense>
   );
 }
