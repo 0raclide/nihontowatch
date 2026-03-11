@@ -1969,6 +1969,22 @@ html.theme-yuhindo .magical-book:hover {
   border-color: var(--accent);
 }
 
+/* ==========================================================================
+   Vault Pulse Animation — unlocking overlay
+   ========================================================================== */
+@keyframes vaultPulse {
+  0%, 100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.animate-vault-pulse {
+  animation: vaultPulse 2s ease-in-out infinite;
+}
+
 /* Slide-in from right animation for QuickView panel */
 @keyframes slideInRight {
   from { transform: translateX(100%); }

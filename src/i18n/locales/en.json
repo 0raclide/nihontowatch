@@ -639,6 +639,11 @@
   "collection.sortCustom": "Custom Order",
   "collection.dragHint": "Hold and drag to reorder",
 
+  "vault.title": "VAULT",
+  "vault.unlocking": "Unlocking your vault...",
+  "vault.pieces": "{count} pieces",
+  "vault.piece": "1 piece",
+
   "login.welcome": "Welcome",
   "login.enterCode": "Enter Code",
   "login.enterPassword": "Enter Password",

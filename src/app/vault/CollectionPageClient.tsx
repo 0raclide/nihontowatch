@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useLocale } from '@/i18n/LocaleContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
+import { useAuth } from '@/lib/auth/AuthContext';
 import type { CollectionFilters, CollectionFacets } from '@/types/collection';
 import type { CollectionItemRow } from '@/types/collectionItem';
 import type { DisplayItem } from '@/types/displayItem';
@@ -14,7 +15,6 @@ import { CollectionBottomBar } from '@/components/collection/CollectionBottomBar
 import { useQuickView } from '@/contexts/QuickViewContext';
 import { useCurrency } from '@/hooks/useCurrency';
 import { collectionRowsToDisplayItems, dealerListingToDisplayItem } from '@/lib/displayItem';
-import { Header } from '@/components/layout/Header';
 
 // Tab types for dealer users
 type CollectionTab = 'collection' | 'available' | 'hold' | 'sold';
@@ -32,6 +32,48 @@ const EMPTY_FACETS: CollectionFacets = {
   conditions: [],
   folders: [],
 };
+
+/** Minimum time (ms) the vault overlay is shown */
+const VAULT_OVERLAY_MIN_MS = 600;
+
+// =============================================================================
+// Vault Header — slim, dedicated header replacing standard Header
+// =============================================================================
+
+function VaultHeader() {
+  const { t } = useLocale();
+  const { user } = useAuth();
+
+  // Derive initials from email
+  const initials = useMemo(() => {
+    const email = user?.email;
+    if (!email) return '?';
+    return email.charAt(0).toUpperCase();
+  }, [user?.email]);
+
+  return (
+    <header className="sticky top-0 z-40 bg-surface/95 backdrop-blur-sm">
+      <div className="max-w-[1600px] mx-auto px-4 lg:px-6 h-12 flex items-center justify-between">
+        {/* Left: Shield + VAULT */}
+        <div className="flex items-center gap-2.5">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="text-gold/70">
+            <path d="M12 2L3 7v6c0 5.25 3.83 10.15 9 11.25C17.17 23.15 21 18.25 21 13V7l-9-5z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+          </svg>
+          <span className="font-serif text-[14px] uppercase tracking-[0.25em] text-ink/80">
+            {t('vault.title')}
+          </span>
+        </div>
+
+        {/* Right: User avatar circle */}
+        <div className="w-7 h-7 rounded-full bg-gold/15 border border-gold/25 flex items-center justify-center">
+          <span className="text-[11px] font-medium text-gold/80">{initials}</span>
+        </div>
+      </div>
+      {/* Gold gradient line */}
+      <div className="h-px bg-gradient-to-r from-transparent via-gold/20 to-transparent" />
+    </header>
+  );
+}
 
 // =============================================================================
 // Component
@@ -60,6 +102,11 @@ export function CollectionPageClient() {
   const [error, setError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
+  // Vault overlay state
+  const [showVaultOverlay, setShowVaultOverlay] = useState(true);
+  const [overlayFading, setOverlayFading] = useState(false);
+  const mountTimeRef = useRef(Date.now());
+
   // Mobile view toggle (shared localStorage key with browse)
   const [mobileView, setMobileView] = useState<'grid' | 'gallery'>(() => {
     if (typeof window !== 'undefined') {
@@ -83,6 +130,23 @@ export function CollectionPageClient() {
     window.addEventListener('resize', check);
     return () => window.removeEventListener('resize', check);
   }, []);
+
+  // Dismiss vault overlay once data loaded AND min time elapsed
+  useEffect(() => {
+    if (!showVaultOverlay || overlayFading) return;
+    if (isLoading) return;
+
+    const elapsed = Date.now() - mountTimeRef.current;
+    const remaining = Math.max(0, VAULT_OVERLAY_MIN_MS - elapsed);
+
+    const timer = setTimeout(() => {
+      setOverlayFading(true);
+      // Remove overlay after fade completes (500ms)
+      setTimeout(() => setShowVaultOverlay(false), 500);
+    }, remaining);
+
+    return () => clearTimeout(timer);
+  }, [isLoading, showVaultOverlay, overlayFading]);
 
   // Adapt collection items to DisplayItem shape for ListingCard
   const adaptedItems = useMemo(
@@ -305,35 +369,38 @@ export function CollectionPageClient() {
   // Whether drag is enabled (custom sort + desktop + collection tab)
   const isDragEnabled = filters.sort === 'custom' && isDesktop && activeTab === 'collection';
 
+  // Determine active count for the pieces label
+  const activeCount = activeTab === 'collection' ? total : dealerTotal;
+  const activeLoading = activeTab === 'collection' ? isLoading : isDealerLoading;
+
+  // Whether the grid content should be visible (overlay dismissed)
+  const gridReady = !showVaultOverlay;
+
   return (
     <div className="min-h-screen bg-surface transition-colors">
-      <Header />
-      <div className="max-w-[1600px] mx-auto px-4 py-4 lg:px-6 lg:py-8 pb-24 lg:pb-8">
-        {/* Page Header — browse-style on desktop, simple on mobile */}
-        <div className="mb-2 lg:mb-6 flex flex-col lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <h1 className="text-[22px] lg:text-2xl font-serif text-ink tracking-tight">
-              {t('collection.myCollection')}
-            </h1>
-            <p className="text-[13px] text-muted mt-1">
-              {activeTab === 'collection'
-                ? (total > 0 ? (total === 1 ? t('collection.itemCount', { count: total }) : t('collection.itemCountPlural', { count: total })) : t('collection.startBuilding'))
-                : t('home.itemCount', { count: (isDealerLoading ? '...' : dealerTotal.toLocaleString()) })
-              }
-            </p>
-          </div>
-
-          {/* Desktop: item count */}
-          <div className="hidden lg:flex items-center shrink-0">
-            <span className="text-[11px] text-muted tabular-nums">
-              {isLoading ? t('common.loading') : t('home.itemCount', { count: total.toLocaleString() })}
-            </span>
-          </div>
+      {/* Vault Unlock Overlay */}
+      {showVaultOverlay && (
+        <div
+          className={`fixed inset-0 z-50 bg-surface flex flex-col items-center justify-center transition-opacity duration-500 ${
+            overlayFading ? 'opacity-0' : 'opacity-100'
+          }`}
+        >
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" className="text-gold animate-vault-pulse mb-5">
+            <path d="M12 2L3 7v6c0 5.25 3.83 10.15 9 11.25C17.17 23.15 21 18.25 21 13V7l-9-5z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+          </svg>
+          <p className="font-serif uppercase tracking-[0.15em] text-muted text-[13px]">
+            {t('vault.unlocking')}
+          </p>
         </div>
+      )}
 
+      {/* Vault Header */}
+      <VaultHeader />
+
+      <div className="max-w-[1600px] mx-auto px-4 py-3 lg:px-6 lg:py-4 pb-24 lg:pb-8">
         {/* Dealer tabs */}
         {isDealer && (
-          <div className="flex gap-1 mb-3 lg:mb-5 overflow-x-auto scrollbar-hide">
+          <div className="flex gap-1 mb-3 lg:mb-4 overflow-x-auto scrollbar-hide">
             {([
               { key: 'collection' as CollectionTab, label: t('collection.tabCollection') },
               { key: 'available' as CollectionTab, label: t('collection.tabForSale') },
@@ -355,13 +422,15 @@ export function CollectionPageClient() {
           </div>
         )}
 
-        {/* Subtle divider */}
-        <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent mb-4 lg:mb-8" />
-
-        {/* Mobile item count + view toggle */}
-        <div className="lg:hidden flex items-center justify-between mb-4">
-          <span className="text-[13px] text-muted">
-            {isLoading ? t('common.loading') : t('home.itemCount', { count: total.toLocaleString() })}
+        {/* Subtle item count + mobile view toggle */}
+        <div className="flex items-center justify-between mb-3 lg:mb-4">
+          <span className="text-[11px] uppercase tracking-[0.12em] text-muted/50 tabular-nums">
+            {activeLoading
+              ? '\u00A0'
+              : activeCount === 1
+                ? t('vault.piece')
+                : t('vault.pieces', { count: activeCount })
+            }
           </span>
           <div className="flex items-center gap-0.5 sm:hidden">
             <button
@@ -398,20 +467,12 @@ export function CollectionPageClient() {
           </div>
         )}
 
-        {/* Main Layout */}
-        <div>
+        {/* Main Layout — fade in once overlay is dismissed */}
+        <div className={gridReady ? 'animate-fadeIn' : 'opacity-0'}>
           {/* Grid */}
           <div className="flex-1 min-w-0">
             {activeTab === 'collection' ? (
               <>
-                {isDragEnabled && (
-                  <p className="text-[12px] text-muted mb-3 flex items-center gap-1.5">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M12 2v20M2 12h20M7 7l-5 5 5 5M17 7l5 5-5 5" />
-                    </svg>
-                    {t('collection.dragHint')}
-                  </p>
-                )}
                 {isDragEnabled ? (
                   <SortableCollectionGrid
                     items={adaptedItems}
