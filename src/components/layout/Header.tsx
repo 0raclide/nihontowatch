@@ -479,6 +479,39 @@ function HeaderContent({ logoOverride }: { logoOverride?: string }) {
                           </svg>
                           {t('nav.feedback')}
                         </a>
+                        {/* Vault sim toggle */}
+                        <div className="border-t border-border/50 mt-1 pt-1 px-4 py-2">
+                          <span className="text-[10px] uppercase tracking-wider text-muted/50">Vault Simulate</span>
+                          <div className="flex gap-1.5 mt-1.5">
+                            {([
+                              { key: 'inner_circle', label: 'Inner Circle' },
+                              { key: 'dealer', label: 'Dealer' },
+                            ] as const).map(opt => {
+                              const current = typeof window !== 'undefined'
+                                ? localStorage.getItem('nihontowatch-vault-sim') || 'none'
+                                : 'none';
+                              const isActive = current === opt.key;
+                              return (
+                                <button
+                                  key={opt.key}
+                                  onClick={() => {
+                                    const next = isActive ? 'none' : opt.key;
+                                    localStorage.setItem('nihontowatch-vault-sim', next);
+                                    window.dispatchEvent(new Event('vault-sim-change'));
+                                    setShowAdminMenu(false);
+                                  }}
+                                  className={`px-2 py-0.5 rounded text-[11px] transition-colors ${
+                                    isActive
+                                      ? 'bg-gold/20 text-gold border border-gold/40'
+                                      : 'text-muted/60 border border-border/30 hover:text-muted'
+                                  }`}
+                                >
+                                  {opt.label}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
                       </div>
                     )}
                   </div>
