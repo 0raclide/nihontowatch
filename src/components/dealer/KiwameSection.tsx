@@ -8,9 +8,12 @@ import { useLocale } from '@/i18n/LocaleContext';
 interface KiwameSectionProps {
   entries: KiwameEntry[];
   onChange: (entries: KiwameEntry[]) => void;
+  itemId?: string;
+  onPendingFilesChange?: (kiwameId: string, files: File[]) => void;
+  apiEndpoint?: string;
 }
 
-export function KiwameSection({ entries, onChange }: KiwameSectionProps) {
+export function KiwameSection({ entries, onChange, itemId, onPendingFilesChange, apiEndpoint }: KiwameSectionProps) {
   const { t } = useLocale();
 
   const handleAdd = useCallback(() => {
@@ -22,6 +25,7 @@ export function KiwameSection({ entries, onChange }: KiwameSectionProps) {
         judge_name_ja: null,
         kiwame_type: 'origami',
         notes: null,
+        images: [],
       },
     ]);
   }, [entries, onChange]);
@@ -49,8 +53,11 @@ export function KiwameSection({ entries, onChange }: KiwameSectionProps) {
               key={entry.id}
               entry={entry}
               index={i}
+              itemId={itemId}
               onChange={(updated) => handleEntryChange(i, updated)}
               onRemove={() => handleEntryRemove(i)}
+              onPendingFilesChange={onPendingFilesChange}
+              apiEndpoint={apiEndpoint}
             />
           ))}
         </div>

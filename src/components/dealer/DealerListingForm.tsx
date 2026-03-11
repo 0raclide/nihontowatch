@@ -231,6 +231,7 @@ export function DealerListingForm({ mode, initialData, context = 'listing' }: De
   const hakogakiImagesEndpoint = `${apiBase}/hakogaki-images`;
   const koshiraeImagesEndpoint = `${apiBase}/koshirae-images`;
   const provenanceImagesEndpoint = `${apiBase}/provenance-images`;
+  const kiwameImagesEndpoint = `${apiBase}/kiwame-images`;
   const kantoHibishoImagesEndpoint = `${apiBase}/kanto-hibisho-images`;
   const successRedirect = '/vault';
   const draftStorageKey = context === 'collection' ? 'nw-collection-draft' : DRAFT_STORAGE_KEY;
@@ -318,6 +319,9 @@ export function DealerListingForm({ mode, initialData, context = 'listing' }: De
   const [kiwame, setKiwame] = useState<KiwameEntry[]>(
     initialData?.kiwame || draft?.kiwame || []
   );
+  const [pendingKiwameFiles, setPendingKiwameFiles] = useState<
+    Map<string, File[]>
+  >(new Map());
   const [kantoHibisho, setKantoHibisho] = useState<KantoHibishoData | null>(
     initialData?.kanto_hibisho || draft?.kantoHibisho || null
   );
@@ -428,7 +432,10 @@ export function DealerListingForm({ mode, initialData, context = 'listing' }: De
           ...e,
           images: (e.images || []).filter(url => !url.startsWith('blob:')),
         })),
-        kiwame,
+        kiwame: kiwame.map(e => ({
+          ...e,
+          images: (e.images || []).filter(url => !url.startsWith('blob:')),
+        })),
         kantoHibisho: kantoHibisho ? {
           ...kantoHibisho,
           images: (kantoHibisho.images || []).filter(url => !url.startsWith('blob:')),
@@ -636,7 +643,12 @@ export function DealerListingForm({ mode, initialData, context = 'listing' }: De
               images: (e.images || []).filter(url => !url.startsWith('blob:')),
             }))
           : null,
-        kiwame: kiwame.length > 0 ? kiwame : null,
+        kiwame: kiwame.length > 0
+          ? kiwame.map(e => ({
+              ...e,
+              images: (e.images || []).filter(url => !url.startsWith('blob:')),
+            }))
+          : null,
         kanto_hibisho: category === 'nihonto' && kantoHibisho ? {
           ...kantoHibisho,
           images: (kantoHibisho.images || []).filter(url => !url.startsWith('blob:')),
@@ -760,6 +772,26 @@ export function DealerListingForm({ mode, initialData, context = 'listing' }: De
           }
         }
 
+        // Upload pending kiwame images
+        if (pendingKiwameFiles.size > 0) {
+          for (const [kiwameId, files] of pendingKiwameFiles) {
+            for (const file of files) {
+              const formData = new FormData();
+              formData.append('file', file, file.name);
+              formData.append('itemId', String(listing.id));
+              formData.append('kiwameId', kiwameId);
+              try {
+                await fetch(kiwameImagesEndpoint, {
+                  method: 'POST',
+                  body: formData,
+                });
+              } catch {
+                // Best effort — don't block success
+              }
+            }
+          }
+        }
+
         // Upload pending kanto-hibisho images
         if (pendingKantoHibishoFiles.length > 0) {
           for (const file of pendingKantoHibishoFiles) {
@@ -804,11 +836,11 @@ export function DealerListingForm({ mode, initialData, context = 'listing' }: De
     nagasaCm, motohabaCm, sakihabaCm, soriCm, meiType, nakagoType, era, province,
     heightCm, widthCm, materials, pendingFiles, pendingSayagakiFiles, sayagaki,
     pendingHakogakiFiles, hakogaki, koshirae, pendingKoshiraeFiles, provenance,
-    pendingProvenanceFiles, kiwame, kantoHibisho, pendingKantoHibishoFiles,
+    pendingProvenanceFiles, kiwame, pendingKiwameFiles, kantoHibisho, pendingKantoHibishoFiles,
     certSession, setsumeiTextEn, setsumeiTextJa, generatedTitle, titleOverride,
     heroImageIndex, images, router, itemsEndpoint, imagesEndpoint, context, sourceListingId,
     sayagakiImagesEndpoint, hakogakiImagesEndpoint, koshiraeImagesEndpoint,
-    provenanceImagesEndpoint, kantoHibishoImagesEndpoint, successRedirect,
+    provenanceImagesEndpoint, kiwameImagesEndpoint, kantoHibishoImagesEndpoint, successRedirect,
     draftStorageKey, meiText, meiGuaranteed,
   ]);
 
@@ -1212,6 +1244,19 @@ export function DealerListingForm({ mode, initialData, context = 'listing' }: De
         <KiwameSection
           entries={kiwame}
           onChange={setKiwame}
+          itemId={mode === 'edit' ? String(initialData?.id) : undefined}
+          onPendingFilesChange={(kiwameId, files) => {
+            setPendingKiwameFiles(prev => {
+              const next = new Map(prev);
+              if (files.length === 0) {
+                next.delete(kiwameId);
+              } else {
+                next.set(kiwameId, files);
+              }
+              return next;
+            });
+          }}
+          apiEndpoint={kiwameImagesEndpoint}
         />
 
         {/* 4f. Research Notes */}

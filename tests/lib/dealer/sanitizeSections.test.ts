@@ -196,10 +196,12 @@ describe('sanitizeKiwame', () => {
       judge_name_ja: '本阿弥光徳',
       kiwame_type: 'origami',
       notes: 'Attribution to Masamune',
+      images: ['https://example.com/img.jpg'],
     }]);
     expect(result).toHaveLength(1);
     expect(result![0].judge_name).toBe('Hon\'ami Kōtoku');
     expect(result![0].kiwame_type).toBe('origami');
+    expect(result![0].images).toEqual(['https://example.com/img.jpg']);
   });
 
   it('defaults invalid kiwame_type to "origami"', () => {
@@ -208,15 +210,33 @@ describe('sanitizeKiwame', () => {
   });
 
   it('allows all valid kiwame types', () => {
-    for (const type of ['origami', 'kinzogan', 'saya_mei', 'other']) {
+    for (const type of ['origami', 'kinzogan', 'shumei', 'kinpunmei', 'other']) {
       const result = sanitizeKiwame([{ kiwame_type: type }]);
       expect(result![0].kiwame_type).toBe(type);
     }
   });
 
+  it('rejects removed kiwame type saya_mei', () => {
+    const result = sanitizeKiwame([{ kiwame_type: 'saya_mei' }]);
+    expect(result![0].kiwame_type).toBe('origami');
+  });
+
   it('defaults judge_name to empty string when missing', () => {
     const result = sanitizeKiwame([{}]);
     expect(result![0].judge_name).toBe('');
+  });
+
+  it('defaults images to empty array when missing', () => {
+    const result = sanitizeKiwame([{ judge_name: 'Test' }]);
+    expect(result![0].images).toEqual([]);
+  });
+
+  it('sanitizes images array — strips non-strings and limits to 5', () => {
+    const result = sanitizeKiwame([{
+      judge_name: 'Test',
+      images: ['url1', '', 'url2', null, 42, 'url3', 'url4', 'url5', 'url6'],
+    }]);
+    expect(result![0].images).toEqual(['url1', 'url2', 'url3', 'url4', 'url5']);
   });
 
   it('enforces max 10 entries', () => {

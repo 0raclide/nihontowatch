@@ -112,11 +112,11 @@ export function sanitizeProvenance(raw: unknown): ProvenanceEntry[] | null {
 // Kiwame
 // =============================================================================
 
-const VALID_KIWAME_TYPES = new Set<string>(['origami', 'kinzogan', 'saya_mei', 'other']);
+const VALID_KIWAME_TYPES = new Set<string>(['origami', 'kinzogan', 'shumei', 'kinpunmei', 'other']);
 
 function sanitizeKiwameEntry(raw: unknown): KiwameEntry {
   if (!raw || typeof raw !== 'object') {
-    return { id: crypto.randomUUID(), judge_name: '', judge_name_ja: null, kiwame_type: 'origami', notes: null };
+    return { id: crypto.randomUUID(), judge_name: '', judge_name_ja: null, kiwame_type: 'origami', notes: null, images: [] };
   }
   const e = raw as Record<string, unknown>;
   return {
@@ -127,6 +127,9 @@ function sanitizeKiwameEntry(raw: unknown): KiwameEntry {
       ? (e.kiwame_type as KiwameType)
       : 'origami',
     notes: trimOrNull(e.notes, 5000),
+    images: Array.isArray(e.images)
+      ? (e.images as unknown[]).filter((url): url is string => typeof url === 'string' && url.length > 0).slice(0, 5)
+      : [],
   };
 }
 

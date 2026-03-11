@@ -1,11 +1,14 @@
 'use client';
 
+import Image from 'next/image';
 import type { KiwameEntry } from '@/types';
 import { useLocale } from '@/i18n/LocaleContext';
 
 const KIWAME_TYPE_KEYS: Record<string, string> = {
   origami: 'dealer.kiwameTypeOrigami',
   kinzogan: 'dealer.kiwameTypeKinzogan',
+  shumei: 'dealer.kiwameTypeShumei',
+  kinpunmei: 'dealer.kiwameTypeKinpunmei',
   saya_mei: 'dealer.kiwameTypeSayaMei',
   other: 'dealer.kiwameTypeOther',
 };
@@ -43,6 +46,21 @@ export function KiwameDisplay({ kiwame, readable }: KiwameDisplayProps) {
               <p className={`${readable ? 'text-[15px] leading-relaxed' : 'text-[13px]'} text-charcoal whitespace-pre-wrap`}>
                 {entry.notes}
               </p>
+            )}
+            {entry.images && entry.images.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-2">
+                {entry.images.map((url, j) => (
+                  <div key={j} className="relative w-16 h-16 rounded-lg overflow-hidden">
+                    <Image
+                      src={url}
+                      alt={`${t('dealer.kiwame')} ${i + 1} photo ${j + 1}`}
+                      fill
+                      className="object-cover"
+                      sizes="64px"
+                    />
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         ))}

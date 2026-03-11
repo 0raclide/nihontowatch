@@ -155,7 +155,7 @@ export interface ProvenanceEntry {
 // KIWAME (expert appraisals / 極め)
 // =============================================================================
 
-export type KiwameType = 'origami' | 'kinzogan' | 'saya_mei' | 'other';
+export type KiwameType = 'origami' | 'kinzogan' | 'shumei' | 'kinpunmei' | 'other';
 
 export interface KiwameEntry {
   id: string;
@@ -163,6 +163,7 @@ export interface KiwameEntry {
   judge_name_ja: string | null;  // Auto-populated from suggestions
   kiwame_type: KiwameType;
   notes: string | null;
+  images: string[];              // Document/origami photos
 }
 
 // =============================================================================
