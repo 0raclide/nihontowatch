@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import { verifyAdmin } from '@/lib/admin/auth';
@@ -107,9 +107,27 @@ export async function GET(request: NextRequest) {
     const periodEndISO = now.toISOString();
     const previousPeriodStartISO = previousPeriodStart.toISOString();
 
-    // Fetch all data in parallel — RPC for event aggregation, direct query for dealers/listings
+    // Use service client for RPC calls (bypasses RLS, consistent permissions)
+    const serviceClient = createServiceClient();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const rpc = (supabase.rpc as any).bind(supabase);
+    const rpc = (serviceClient.rpc as any).bind(serviceClient);
+
+    // Dwell RPC is slow (JSONB join on activity_events) — fetch it separately
+    // with a timeout so it doesn't block the fast queries
+    const dwellPromise = Promise.race([
+      rpc('get_dealer_dwell_stats', {
+        p_start: periodStartISO,
+        p_end: periodEndISO,
+      }),
+      new Promise<{ data: null; error: { message: string; code: string } }>(resolve =>
+        setTimeout(() => resolve({
+          data: null,
+          error: { message: 'Dwell stats query timed out (5s)', code: 'TIMEOUT' },
+        }), 5000)
+      ),
+    ]);
+
+    // Fetch all other data in parallel — these are fast (<1s each)
     const [
       dealersResult,
       clickStatsResult,
@@ -137,10 +155,7 @@ export async function GET(request: NextRequest) {
         p_end: periodStartISO,
       }),
 
-      rpc('get_dealer_dwell_stats', {
-        p_start: periodStartISO,
-        p_end: periodEndISO,
-      }),
+      dwellPromise,
 
       rpc('get_dealer_favorite_stats', {
         p_start: periodStartISO,
@@ -411,12 +426,10 @@ export async function GET(request: NextRequest) {
       .slice(0, 10)
       .map(d => ({ dealerId: d.dealerId, name: d.dealerName, avgDwellMs: d.avgDwellMs }));
 
-    const dealersWithListings = dealerStatsArray.filter(d => d.activeListings > 0).length;
-
     const analytics: DealerAnalytics = {
       totalClicks,
       totalViews,
-      totalDealers: dealersWithListings,
+      totalDealers: dealerStatsArray.length,
       periodStart: periodStartISO,
       periodEnd: periodEndISO,
       dealers: filteredDealers,
