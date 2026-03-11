@@ -232,7 +232,7 @@ export function DealerListingForm({ mode, initialData, context = 'listing' }: De
   const koshiraeImagesEndpoint = `${apiBase}/koshirae-images`;
   const provenanceImagesEndpoint = `${apiBase}/provenance-images`;
   const kantoHibishoImagesEndpoint = `${apiBase}/kanto-hibisho-images`;
-  const successRedirect = context === 'collection' ? '/vault' : '/dealer';
+  const successRedirect = '/vault';
   const draftStorageKey = context === 'collection' ? 'nw-collection-draft' : DRAFT_STORAGE_KEY;
 
   // Restore draft for add mode (no initialData)

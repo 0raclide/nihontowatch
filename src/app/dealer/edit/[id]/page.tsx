@@ -1,6 +1,4 @@
-import { DealerEditListingClient } from './DealerEditListingClient';
-
-export const dynamic = 'force-dynamic';
+import { redirect } from 'next/navigation';
 
 export default async function DealerEditListingPage({
   params,
@@ -8,5 +6,5 @@ export default async function DealerEditListingPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  return <DealerEditListingClient id={id} />;
+  redirect(`/vault/edit/${id}`);
 }

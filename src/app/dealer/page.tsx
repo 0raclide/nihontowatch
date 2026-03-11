@@ -1,7 +1,5 @@
-import { DealerPageClient } from './DealerPageClient';
-
-export const dynamic = 'force-dynamic';
+import { redirect } from 'next/navigation';
 
 export default function DealerPage() {
-  return <DealerPageClient />;
+  redirect('/vault');
 }

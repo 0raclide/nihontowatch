@@ -1,7 +1,5 @@
-import { DealerNewListingClient } from './DealerNewListingClient';
-
-export const dynamic = 'force-dynamic';
+import { redirect } from 'next/navigation';
 
 export default function DealerNewListingPage() {
-  return <DealerNewListingClient />;
+  redirect('/vault/add');
 }
