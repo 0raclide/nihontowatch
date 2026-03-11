@@ -128,16 +128,16 @@ export function VideoPlayer({
 
   if (error) {
     return (
-      <div className={`flex items-center justify-center bg-[var(--bg-secondary)] rounded-lg p-4 ${className}`}>
+      <div className={`flex items-center justify-center bg-[var(--bg-secondary)] rounded overflow-hidden p-4 ${className}`}>
         <p className="text-[var(--text-muted)] text-sm">{error}</p>
       </div>
     );
   }
 
   return (
-    <div className={`relative ${className}`}>
+    <div className={`relative rounded overflow-hidden ${className}`}>
       {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-[var(--bg-secondary)] rounded-lg">
+        <div className="absolute inset-0 flex items-center justify-center bg-[var(--bg-secondary)]">
           <div className="w-8 h-8 border-2 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
         </div>
       )}
@@ -149,7 +149,7 @@ export function VideoPlayer({
         loop={loop}
         muted={muted}
         playsInline
-        className={`w-full rounded-lg bg-black ${isLoading ? 'invisible' : 'visible'}`}
+        className={`w-full bg-black ${isLoading ? 'invisible' : 'visible'}`}
       />
     </div>
   );

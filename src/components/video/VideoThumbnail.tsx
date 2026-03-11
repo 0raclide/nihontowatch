@@ -23,7 +23,7 @@ export function VideoThumbnail({
 }: VideoThumbnailProps) {
   if (status === 'processing') {
     return (
-      <div className={`relative flex items-center justify-center bg-[var(--bg-secondary)] rounded-lg aspect-video ${className}`}>
+      <div className={`relative flex items-center justify-center bg-[var(--bg-secondary)] rounded overflow-hidden aspect-video ${className}`}>
         <div className="flex flex-col items-center gap-2">
           <div className="w-8 h-8 border-2 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
           <span className="text-xs text-[var(--text-muted)]">Processing...</span>
@@ -34,7 +34,7 @@ export function VideoThumbnail({
 
   if (status === 'failed') {
     return (
-      <div className={`relative flex items-center justify-center bg-red-500/10 rounded-lg aspect-video ${className}`}>
+      <div className={`relative flex items-center justify-center bg-red-500/10 rounded overflow-hidden aspect-video ${className}`}>
         <span className="text-xs text-red-500">Processing failed</span>
       </div>
     );
@@ -43,7 +43,7 @@ export function VideoThumbnail({
   return (
     <button
       onClick={onClick}
-      className={`relative group rounded-lg overflow-hidden aspect-video ${className}`}
+      className={`relative group rounded overflow-hidden aspect-video ${className}`}
     >
       {thumbnailUrl ? (
         <img
