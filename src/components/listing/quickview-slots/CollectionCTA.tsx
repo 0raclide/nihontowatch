@@ -13,11 +13,15 @@ interface CollectionCTAProps {
 
 export function CollectionCTA({ collectionItem, onPromoted }: CollectionCTAProps) {
   const { t } = useLocale();
-  const { isDealer } = useSubscription();
+  const { isDealer: subscriptionIsDealer } = useSubscription();
   const [showPromoteModal, setShowPromoteModal] = useState(false);
 
+  // Respect vault sim toggle for admins (localStorage override)
+  const vaultSim = typeof window !== 'undefined' ? localStorage.getItem('nihontowatch-vault-sim') : null;
+  const effectiveIsDealer = vaultSim ? vaultSim === 'dealer' : subscriptionIsDealer;
+
   // Only render for dealers — collectors have no CTA buttons
-  if (!isDealer || !collectionItem) return null;
+  if (!effectiveIsDealer || !collectionItem) return null;
 
   return (
     <div className="space-y-2">
