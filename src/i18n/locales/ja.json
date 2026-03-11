@@ -184,6 +184,7 @@
   "dealer.putOnHold": "保留にする",
   "dealer.relist": "再出品",
   "dealer.removeFromSale": "販売を取り下げる",
+  "dealer.returnToVault": "コレクションに戻す",
   "dealer.promoteTitle": "価格を設定して出品",
   "dealer.promoteDesc": "コレクションからアイテムを出品するために価格を設定してください。",
   "dealer.editListing": "出品を編集",

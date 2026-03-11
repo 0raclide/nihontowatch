@@ -34,7 +34,7 @@ export function DealerMobileCTA({ listing, onStatusChange, onDelisted }: DealerM
   const isAvailable = status === 'AVAILABLE';
   const isHold = status === 'HOLD';
   const isSold = listing.is_sold;
-  const canDelist = !!listing.item_uuid && (isAvailable || isHold);
+  const canDelist = !!listing.item_uuid && (isAvailable || isHold || isSold);
 
   const spinner = (
     <span className="flex items-center justify-center gap-2">
@@ -70,29 +70,20 @@ export function DealerMobileCTA({ listing, onStatusChange, onDelisted }: DealerM
           >
             {isUpdating ? spinner : t('dealer.markSold')}
           </button>
-          <div className="flex gap-2">
-            <button
-              onClick={() => handleStatusChange('HOLD')}
-              disabled={isUpdating || isDelisting}
-              className="flex-1 py-2 rounded-lg border border-border text-[12px] font-medium text-primary disabled:opacity-50 transition-all hover:bg-hover active:scale-[0.98]"
-            >
-              {t('dealer.putOnHold')}
-            </button>
-            <button
-              onClick={() => handleStatusChange('INVENTORY')}
-              disabled={isUpdating || isDelisting}
-              className="flex-1 py-2 rounded-lg border border-border text-[12px] font-medium text-muted disabled:opacity-50 transition-all hover:bg-hover active:scale-[0.98]"
-            >
-              {t('dealer.moveToInventory')}
-            </button>
-          </div>
+          <button
+            onClick={() => handleStatusChange('HOLD')}
+            disabled={isUpdating || isDelisting}
+            className="w-full py-2 rounded-lg border border-border text-[12px] font-medium text-primary disabled:opacity-50 transition-all hover:bg-hover active:scale-[0.98]"
+          >
+            {t('dealer.putOnHold')}
+          </button>
           {canDelist && (
             <button
               onClick={handleDelist}
               disabled={isUpdating || isDelisting}
               className="w-full py-2 rounded-lg border border-border/50 text-[11px] font-medium text-muted disabled:opacity-50 transition-all hover:bg-hover active:scale-[0.98]"
             >
-              {isDelisting ? spinner : t('dealer.removeFromSale')}
+              {isDelisting ? spinner : t('dealer.returnToVault')}
             </button>
           )}
         </>
@@ -108,43 +99,45 @@ export function DealerMobileCTA({ listing, onStatusChange, onDelisted }: DealerM
           >
             {isUpdating ? spinner : t('dealer.markSold')}
           </button>
-          <div className="flex gap-2">
-            <button
-              onClick={() => handleStatusChange('AVAILABLE')}
-              disabled={isUpdating || isDelisting}
-              className="flex-1 py-2 rounded-lg border border-border text-[12px] font-medium text-primary disabled:opacity-50 transition-all hover:bg-hover active:scale-[0.98]"
-            >
-              {t('dealer.relist')}
-            </button>
-            <button
-              onClick={() => handleStatusChange('INVENTORY')}
-              disabled={isUpdating || isDelisting}
-              className="flex-1 py-2 rounded-lg border border-border text-[12px] font-medium text-muted disabled:opacity-50 transition-all hover:bg-hover active:scale-[0.98]"
-            >
-              {t('dealer.moveToInventory')}
-            </button>
-          </div>
+          <button
+            onClick={() => handleStatusChange('AVAILABLE')}
+            disabled={isUpdating || isDelisting}
+            className="w-full py-2 rounded-lg border border-border text-[12px] font-medium text-primary disabled:opacity-50 transition-all hover:bg-hover active:scale-[0.98]"
+          >
+            {t('dealer.relist')}
+          </button>
           {canDelist && (
             <button
               onClick={handleDelist}
               disabled={isUpdating || isDelisting}
               className="w-full py-2 rounded-lg border border-border/50 text-[11px] font-medium text-muted disabled:opacity-50 transition-all hover:bg-hover active:scale-[0.98]"
             >
-              {isDelisting ? spinner : t('dealer.removeFromSale')}
+              {isDelisting ? spinner : t('dealer.returnToVault')}
             </button>
           )}
         </>
       )}
 
-      {/* Sold: single CTA to relist */}
+      {/* Sold: relist (back to For Sale) + return to vault */}
       {isSold && (
-        <button
-          onClick={() => handleStatusChange('INVENTORY')}
-          disabled={isUpdating}
-          className="w-full py-2.5 rounded-lg border border-border text-[13px] font-medium text-primary disabled:opacity-50 transition-all hover:bg-hover active:scale-[0.98]"
-        >
-          {isUpdating ? spinner : t('dealer.relist')}
-        </button>
+        <>
+          <button
+            onClick={() => setShowPriceModal(true)}
+            disabled={isUpdating || isDelisting}
+            className="w-full py-2.5 rounded-lg bg-gold text-white text-[13px] font-medium disabled:opacity-50 transition-all hover:bg-gold/90 active:scale-[0.98]"
+          >
+            {t('dealer.relist')}
+          </button>
+          {canDelist && (
+            <button
+              onClick={handleDelist}
+              disabled={isUpdating || isDelisting}
+              className="w-full py-2 rounded-lg border border-border/50 text-[11px] font-medium text-muted disabled:opacity-50 transition-all hover:bg-hover active:scale-[0.98]"
+            >
+              {isDelisting ? spinner : t('dealer.returnToVault')}
+            </button>
+          )}
+        </>
       )}
 
       <ListForSaleModal

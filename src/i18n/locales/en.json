@@ -184,6 +184,7 @@
   "dealer.putOnHold": "Put on Hold",
   "dealer.relist": "Relist",
   "dealer.removeFromSale": "Remove from Sale",
+  "dealer.returnToVault": "Return to Vault",
   "dealer.promoteTitle": "Set price and list for sale",
   "dealer.promoteDesc": "Set a price to publish this item from your collection.",
   "dealer.editListing": "Edit Listing",
