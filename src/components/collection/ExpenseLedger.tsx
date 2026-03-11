@@ -15,10 +15,22 @@ interface ExpenseLedgerProps {
   purchasePrice: number | null;
   purchaseCurrency: string | null;
   defaultCurrency: string;
-  onTotalChange?: () => void;
+  onTotalChange?: (totals: Record<string, number>) => void;
 }
 
 const CURRENCIES = ['JPY', 'USD', 'EUR', 'AUD', 'GBP', 'CAD', 'CHF'] as const;
+
+/** Compute { [currency]: totalAmount } from an expense list (excludes purchase price). */
+function computeExpenseTotals(expenses: CollectionExpense[]): Record<string, number> {
+  const totals: Record<string, number> = {};
+  for (const exp of expenses) {
+    if (exp.amount > 0) {
+      const c = exp.currency.toUpperCase();
+      totals[c] = (totals[c] || 0) + exp.amount;
+    }
+  }
+  return totals;
+}
 
 // =============================================================================
 // Component
@@ -72,8 +84,11 @@ export function ExpenseLedger({
       });
       if (!res.ok) throw new Error('Failed to create expense');
       const expense = await res.json();
-      setExpenses(prev => [expense, ...prev]);
-      onTotalChange?.();
+      setExpenses(prev => {
+        const next = [expense, ...prev];
+        onTotalChange?.(computeExpenseTotals(next));
+        return next;
+      });
     } catch {
       setError('Failed to add expense');
     }
@@ -85,10 +100,16 @@ export function ExpenseLedger({
     field: string,
     value: unknown
   ) => {
-    // Optimistic update
-    setExpenses(prev => prev.map(e =>
-      e.id === expenseId ? { ...e, [field]: value } : e
-    ));
+    // Optimistic update + report new totals locally
+    setExpenses(prev => {
+      const next = prev.map(e =>
+        e.id === expenseId ? { ...e, [field]: value } : e
+      );
+      if (field === 'amount' || field === 'currency') {
+        onTotalChange?.(computeExpenseTotals(next as CollectionExpense[]));
+      }
+      return next;
+    });
 
     try {
       const res = await fetch(
@@ -102,7 +123,6 @@ export function ExpenseLedger({
       if (!res.ok) throw new Error('Failed to update');
       const updated = await res.json();
       setExpenses(prev => prev.map(e => e.id === expenseId ? updated : e));
-      if (field === 'amount' || field === 'currency') onTotalChange?.();
     } catch {
       // Revert on failure would need original state — not critical for MVP
     }
@@ -110,19 +130,24 @@ export function ExpenseLedger({
 
   // Delete expense
   const handleDelete = useCallback(async (expenseId: string) => {
-    setExpenses(prev => prev.filter(e => e.id !== expenseId));
+    setExpenses(prev => {
+      const next = prev.filter(e => e.id !== expenseId);
+      onTotalChange?.(computeExpenseTotals(next));
+      return next;
+    });
     try {
       await fetch(
         `/api/collection/items/${itemId}/expenses/${expenseId}`,
         { method: 'DELETE' }
       );
-      onTotalChange?.();
     } catch {
       // Re-fetch on failure
       const res = await fetch(`/api/collection/items/${itemId}/expenses`);
       if (res.ok) {
         const data = await res.json();
-        setExpenses(data.expenses || []);
+        const fetched = data.expenses || [];
+        setExpenses(fetched);
+        onTotalChange?.(computeExpenseTotals(fetched));
       }
     }
   }, [itemId, onTotalChange]);

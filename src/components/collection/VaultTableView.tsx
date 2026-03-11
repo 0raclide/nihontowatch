@@ -20,7 +20,7 @@ interface VaultTableViewProps {
   defaultCurrency: string;
   onItemUpdate: (itemId: string, updates: Record<string, unknown>) => Promise<void>;
   onCardClick: (item: DisplayItem) => void;
-  onRefresh: () => void;
+  onExpenseTotalsChange: (itemUuid: string, totals: Record<string, number>) => void;
 }
 
 type SortKey = 'title' | 'type' | 'cert' | 'attribution' | 'purchase_date' | 'paid' | 'current_value' | 'invested' | 'location';
@@ -36,7 +36,7 @@ export function VaultTableView({
   defaultCurrency,
   onItemUpdate,
   onCardClick,
-  onRefresh,
+  onExpenseTotalsChange,
 }: VaultTableViewProps) {
   const { t, locale } = useLocale();
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
@@ -244,7 +244,7 @@ export function VaultTableView({
                   onFieldUpdate={handleFieldUpdate}
                   onCurrencyUpdate={handleCurrencyUpdate}
                   toggleExpenseLedger={toggleExpenseLedger}
-                  onRefresh={onRefresh}
+                  onExpenseTotalsChange={onExpenseTotalsChange}
                 />
               );
             })}
@@ -277,7 +277,7 @@ interface TableItemRowProps {
   onFieldUpdate: (itemId: string, field: string, value: unknown) => Promise<void>;
   onCurrencyUpdate: (itemId: string, amountField: string, currencyField: string, amount: number | null, currency: string) => Promise<void>;
   toggleExpenseLedger: (itemId: string) => void;
-  onRefresh: () => void;
+  onExpenseTotalsChange: (itemUuid: string, totals: Record<string, number>) => void;
 }
 
 function TableItemRow({
@@ -295,7 +295,7 @@ function TableItemRow({
   onFieldUpdate,
   onCurrencyUpdate,
   toggleExpenseLedger,
-  onRefresh,
+  onExpenseTotalsChange,
 }: TableItemRowProps) {
   const hasCurrentValue = ext?.current_value != null;
   const totalInvested = ext?.total_invested;
@@ -452,7 +452,7 @@ function TableItemRow({
               purchasePrice={ext?.purchase_price ?? null}
               purchaseCurrency={ext?.purchase_currency ?? null}
               defaultCurrency={defaultCurrency}
-              onTotalChange={onRefresh}
+              onTotalChange={(totals) => onExpenseTotalsChange(itemId, totals)}
             />
           </td>
         </tr>

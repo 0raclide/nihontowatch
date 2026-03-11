@@ -360,6 +360,13 @@ export function CollectionPageClient() {
     }
   }, [items, filters, fetchItems]);
 
+  // Expense totals changed locally — update state without full refetch
+  const handleExpenseTotalsChange = useCallback((itemUuid: string, totals: Record<string, number>) => {
+    const dbItem = items.find(i => i.item_uuid === itemUuid);
+    if (!dbItem) return;
+    setExpenseTotals(prev => ({ ...prev, [dbItem.id]: totals }));
+  }, [items]);
+
   // Drag-and-drop reorder handler (custom sort, desktop only)
   const handleReorder = useCallback((activeId: string, overId: string) => {
     // Find indices in items array
@@ -517,7 +524,7 @@ export function CollectionPageClient() {
                   defaultCurrency={currency}
                   onItemUpdate={handleItemUpdate}
                   onCardClick={handleCardClick}
-                  onRefresh={() => fetchItems(filters)}
+                  onExpenseTotalsChange={handleExpenseTotalsChange}
                 />
               ) : isDragEnabled ? (
                 <SortableCollectionGrid

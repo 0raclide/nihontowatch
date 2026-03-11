@@ -56,8 +56,8 @@ function mockClient(selectData: unknown[] | null, selectError: unknown = null) {
 // =============================================================================
 
 describe('EXPENSE_CATEGORIES', () => {
-  it('has 14 categories', () => {
-    expect(EXPENSE_CATEGORIES).toHaveLength(14);
+  it('has 15 categories', () => {
+    expect(EXPENSE_CATEGORIES).toHaveLength(15);
   });
 
   it('includes all expected nihonto expense types', () => {
