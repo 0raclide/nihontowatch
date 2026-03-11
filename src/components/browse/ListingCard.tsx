@@ -801,7 +801,7 @@ export const ListingCard = memo(function ListingCard({
           </span>
         )}
         <div className={`flex items-center ${isGridMobile ? 'gap-1' : 'gap-2'}`}>
-          {locale !== 'ja' && hasSetsumeiTranslation(listing) && <SetsumeiZufuBadge iconOnly />}
+          {locale !== 'ja' && listing.source !== 'collection' && hasSetsumeiTranslation(listing) && <SetsumeiZufuBadge iconOnly />}
           {certInfo && (
             <span className={`${sz.hText} sm:text-[9px] lg:text-[10px] uppercase tracking-wider font-bold ${certTextColor}`}>
               {t(certInfo.certKey)}
