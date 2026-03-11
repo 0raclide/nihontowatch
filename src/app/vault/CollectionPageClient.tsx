@@ -473,8 +473,8 @@ export function CollectionPageClient() {
             )}
           </div>
           <div className="flex items-center gap-2">
-            {/* Home currency picker — collection tab, any view */}
-            {activeTab === 'collection' && (
+            {/* Home currency picker — desktop table view only */}
+            {showTableView && (
               <HomeCurrencyPicker
                 value={homeCurrency}
                 onChange={setHomeCurrency}

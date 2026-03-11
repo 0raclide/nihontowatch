@@ -48,6 +48,10 @@ export function ExpenseLedger({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Stable ref for onTotalChange to avoid re-fetch loops
+  const onTotalChangeRef = useRef(onTotalChange);
+  onTotalChangeRef.current = onTotalChange;
+
   // Fetch expenses on mount and sync totals with parent
   useEffect(() => {
     let cancelled = false;
@@ -61,7 +65,7 @@ export function ExpenseLedger({
         if (!cancelled) {
           const fetched = data.expenses || [];
           setExpenses(fetched);
-          onTotalChange?.(computeExpenseTotals(fetched));
+          onTotalChangeRef.current?.(computeExpenseTotals(fetched));
         }
       } catch {
         if (!cancelled) setError('Failed to load expenses');
@@ -72,7 +76,7 @@ export function ExpenseLedger({
 
     fetch_();
     return () => { cancelled = true; };
-  }, [itemId, onTotalChange]);
+  }, [itemId]);
 
   // Add new expense
   const handleAdd = useCallback(async () => {
