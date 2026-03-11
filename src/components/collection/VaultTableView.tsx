@@ -79,7 +79,7 @@ export function VaultTableView({
         case 'cert':
           va = a.cert_type; vb = b.cert_type; break;
         case 'attribution':
-          va = getAttributionName(a); vb = getAttributionName(b); break;
+          va = getAttributionName(a) || a.artisan_display_name || null; vb = getAttributionName(b) || b.artisan_display_name || null; break;
         case 'purchase_date':
           va = ext_a?.purchase_date ?? null; vb = ext_b?.purchase_date ?? null; break;
         case 'paid':
@@ -238,7 +238,7 @@ export function VaultTableView({
               const ext = item.collection;
               const itemId = String(item.id);
               const isExpanded = expandedItemId === itemId;
-              const attribution = getAttributionName(item);
+              const attribution = getAttributionName(item) || item.artisan_display_name || null;
               const certInfo = item.cert_type ? CERT_LABELS[item.cert_type] : null;
               const thumbUrl = item.stored_images?.[0] || (item.images && item.images.length > 0 ? item.images[0] : null);
 

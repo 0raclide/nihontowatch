@@ -25,8 +25,8 @@ export function mapListingToCollectionItem(
     images.push(...listing.images);
   }
 
-  // Use smith or tosogu_maker depending on item type
-  const smithName = getAttributionName(listing) ?? undefined;
+  // Use smith or tosogu_maker, falling back to enriched display name
+  const smithName = getAttributionName(listing) || listing.artisan_display_name || undefined;
   const schoolName = getAttributionSchool(listing) ?? undefined;
 
   // Dealer name for acquired_from
