@@ -369,10 +369,10 @@ export function CollectionPageClient() {
 
   // Expense totals changed locally — update state without full refetch
   const handleExpenseTotalsChange = useCallback((itemUuid: string, totals: Record<string, number>) => {
-    const dbItem = items.find(i => i.item_uuid === itemUuid);
-    if (!dbItem) return;
-    setExpenseTotals(prev => ({ ...prev, [dbItem.id]: totals }));
-  }, [items]);
+    // Key by itemUuid — useVaultReturns looks up by String(item.id) which IS item_uuid
+    // for collection items (set in collectionRowToDisplayItem)
+    setExpenseTotals(prev => ({ ...prev, [itemUuid]: totals }));
+  }, []);
 
   // Drag-and-drop reorder handler (custom sort, desktop only)
   const handleReorder = useCallback((activeId: string, overId: string) => {
@@ -473,8 +473,8 @@ export function CollectionPageClient() {
             )}
           </div>
           <div className="flex items-center gap-2">
-            {/* Home currency picker — table view + collection tab only */}
-            {activeTab === 'collection' && desktopView === 'table' && (
+            {/* Home currency picker — collection tab, any view */}
+            {activeTab === 'collection' && (
               <HomeCurrencyPicker
                 value={homeCurrency}
                 onChange={setHomeCurrency}

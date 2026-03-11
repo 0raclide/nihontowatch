@@ -60,7 +60,7 @@ function toHome(
   const home = homeCurrency.toUpperCase();
   if (from === home) return amount;
   if (!todayRates) return null;
-  const converted = convertPrice(amount, from, home as 'USD' | 'JPY' | 'EUR', todayRates);
+  const converted = convertPrice(amount, from, home, todayRates);
   // convertPrice returns the original value if rates missing — detect that case
   if (from !== home && converted === amount) return null;
   return converted;

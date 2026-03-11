@@ -107,7 +107,7 @@ export function getCertTierClass(tier: CertTier): string {
 }
 
 export function formatPrice(value: number | null, currency: string | null, locale?: 'en' | 'ja'): string | null {
-  if (!value) return null;
+  if (value == null) return null;
   const curr = currency || 'JPY';
   const numLocale = locale === 'ja' ? 'ja-JP' : 'en-US';
   try {

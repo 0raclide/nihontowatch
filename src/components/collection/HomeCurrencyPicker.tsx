@@ -14,7 +14,7 @@ export function HomeCurrencyPicker({ value, onChange, isLoading }: HomeCurrencyP
   const { t } = useLocale();
 
   return (
-    <div className="hidden lg:flex items-center gap-1.5 text-[11px]">
+    <div className="flex items-center gap-1.5 text-[11px]">
       <span className="text-muted/50 uppercase tracking-wider">
         {t('vault.table.homeCurrency')}:
       </span>

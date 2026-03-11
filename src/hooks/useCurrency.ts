@@ -151,7 +151,7 @@ export function useCurrency() {
 export function convertPrice(
   value: number,
   sourceCurrency: string,
-  targetCurrency: Currency,
+  targetCurrency: string,
   rates: ExchangeRates | null
 ): number {
   if (!rates || sourceCurrency === targetCurrency) {
@@ -179,7 +179,7 @@ export function convertPrice(
 export function formatPriceWithConversion(
   value: number | null | undefined,
   sourceCurrency: string | null,
-  targetCurrency: Currency,
+  targetCurrency: string,
   rates: ExchangeRates | null
 ): string {
   if (value === null || value === undefined) {

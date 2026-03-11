@@ -234,8 +234,9 @@ describe('formatPrice', () => {
     expect(formatPrice(null, 'JPY')).toBeNull();
   });
 
-  it('returns null for zero value', () => {
-    expect(formatPrice(0, 'JPY')).toBeNull();
+  it('formats zero value as ¥0', () => {
+    const result = formatPrice(0, 'JPY');
+    expect(result).toContain('0');
   });
 
   it('formats JPY without decimals', () => {
