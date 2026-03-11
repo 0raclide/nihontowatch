@@ -128,6 +128,8 @@
   "dealer.researchNotesHint": "AI解説文の生成に使用される補足情報（一般には非公開）",
   "dealer.researchNotesPlaceholder": "例：日本刀大観第3巻に掲載、NBTHK 2024年展覧会出品、藤代『日本刀工辞典』記載...",
   "dealer.addPhoto": "写真を追加",
+  "dealer.moveToKoshirae": "拵に移動",
+  "dealer.moveToBladeImages": "刀身写真に移動",
   "dealer.artisan": "刀工・金工",
   "dealer.changeArtisan": "変更",
   "dealer.title": "タイトル",

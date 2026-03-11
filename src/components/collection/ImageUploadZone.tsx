@@ -17,11 +17,17 @@ interface ImageUploadZoneProps {
   heroImageIndex?: number | null;
   /** Called when the user clicks the star on an image to mark it as the cover. */
   onHeroImageChange?: (index: number | null) => void;
+  /** Called when user clicks the move button on a thumbnail. Receives (imageIndex, destination). */
+  onMoveImage?: (index: number, destination: string) => void;
+  /** Whether the move-to-koshirae button should be shown (nihonto + not standalone koshirae). */
+  canMoveToKoshirae?: boolean;
+  /** When true, hides the move button because the koshirae images array is at capacity. */
+  koshiraeImagesFull?: boolean;
 }
 
 const DEFAULT_API_ENDPOINT = '/api/collection/images';
 
-export function ImageUploadZone({ images, itemId, onChange, onPendingFilesChange, apiEndpoint = DEFAULT_API_ENDPOINT, heroImageIndex, onHeroImageChange }: ImageUploadZoneProps) {
+export function ImageUploadZone({ images, itemId, onChange, onPendingFilesChange, apiEndpoint = DEFAULT_API_ENDPOINT, heroImageIndex, onHeroImageChange, onMoveImage, canMoveToKoshirae, koshiraeImagesFull }: ImageUploadZoneProps) {
   const { t } = useLocale();
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -223,6 +229,19 @@ export function ImageUploadZone({ images, itemId, onChange, onPendingFilesChange
                     title="Set as cover photo"
                   >
                     &#9734;
+                  </button>
+                )}
+                {/* Move to koshirae button */}
+                {onMoveImage && canMoveToKoshirae && !koshiraeImagesFull && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onMoveImage(i, 'koshirae'); }}
+                    className="absolute bottom-0.5 left-0.5 w-5 h-5 flex items-center justify-center bg-blue-600/70 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    aria-label={t('dealer.moveToKoshirae')}
+                    title={t('dealer.moveToKoshirae')}
+                  >
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                    </svg>
                   </button>
                 )}
                 {isHero && (

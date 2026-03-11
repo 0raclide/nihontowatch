@@ -42,9 +42,13 @@ interface KoshiraeSectionProps {
   itemId?: string; // Present in edit mode
   onChange: (koshirae: KoshiraeData | null) => void;
   onPendingFilesChange?: (files: File[]) => void;
+  /** Called when user clicks the move-to-blades button on a koshirae thumbnail. */
+  onMoveImageToBlades?: (imageUrl: string) => void;
+  /** When true, hides the move button because blade images are at capacity. */
+  bladeImagesFull?: boolean;
 }
 
-export function KoshiraeSection({ koshirae, itemId, onChange, onPendingFilesChange }: KoshiraeSectionProps) {
+export function KoshiraeSection({ koshirae, itemId, onChange, onPendingFilesChange, onMoveImageToBlades, bladeImagesFull }: KoshiraeSectionProps) {
   const { t } = useLocale();
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -380,12 +384,25 @@ export function KoshiraeSection({ koshirae, itemId, onChange, onPendingFilesChan
                   <button
                     type="button"
                     onClick={() => handleRemoveImage(url)}
-                    className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                    className="absolute top-0.5 right-0.5 w-5 h-5 flex items-center justify-center bg-black/60 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity text-[10px]"
+                    aria-label={t('collection.removeImage')}
                   >
-                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
+                    &times;
                   </button>
+                  {/* Move to blade images button */}
+                  {onMoveImageToBlades && !bladeImagesFull && (
+                    <button
+                      type="button"
+                      onClick={() => onMoveImageToBlades(url)}
+                      className="absolute bottom-0.5 left-0.5 w-5 h-5 flex items-center justify-center bg-blue-600/70 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                      aria-label={t('dealer.moveToBladeImages')}
+                      title={t('dealer.moveToBladeImages')}
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                      </svg>
+                    </button>
+                  )}
                 </div>
               ))}
             </div>

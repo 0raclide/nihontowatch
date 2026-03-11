@@ -516,6 +516,68 @@ export function DealerListingForm({ mode, initialData, context = 'listing' }: De
     }
   }, []);
 
+  // Move image from blade images to koshirae section
+  const handleMoveImageToKoshirae = useCallback((index: number) => {
+    const imageUrl = images[index];
+    if (!imageUrl) return;
+
+    // Remove from blade images
+    setImages(prev => prev.filter((_, i) => i !== index));
+
+    // Adjust hero index
+    if (heroImageIndex != null) {
+      if (index === heroImageIndex) {
+        setHeroImageIndex(null);
+      } else if (index < heroImageIndex) {
+        setHeroImageIndex(heroImageIndex - 1);
+      }
+    }
+
+    // If blob URL in add mode, move File from pendingFiles to pendingKoshiraeFiles
+    if (imageUrl.startsWith('blob:')) {
+      let blobIndex = 0;
+      for (let j = 0; j < index; j++) {
+        if (images[j].startsWith('blob:')) blobIndex++;
+      }
+      const file = pendingFiles[blobIndex];
+      if (file) {
+        setPendingFiles(prev => prev.filter((_, i) => i !== blobIndex));
+        setPendingKoshiraeFiles(prev => [...prev, file]);
+      }
+    }
+
+    // Append to koshirae images (auto-create koshirae if null)
+    setKoshirae(prev => {
+      const base = prev ?? createEmptyKoshirae();
+      return { ...base, images: [...(base.images || []), imageUrl] };
+    });
+  }, [images, heroImageIndex, pendingFiles]);
+
+  // Move image from koshirae section back to blade images
+  const handleMoveImageToBlades = useCallback((imageUrl: string) => {
+    if (!koshirae) return;
+
+    // Remove from koshirae images
+    setKoshirae(prev => {
+      if (!prev) return prev;
+      return { ...prev, images: (prev.images || []).filter(u => u !== imageUrl) };
+    });
+
+    // If blob URL in add mode, move File from pendingKoshiraeFiles to pendingFiles
+    if (imageUrl.startsWith('blob:')) {
+      const blobUrls = (koshirae.images || []).filter(u => u.startsWith('blob:'));
+      const blobIndex = blobUrls.indexOf(imageUrl);
+      if (blobIndex !== -1 && pendingKoshiraeFiles[blobIndex]) {
+        const file = pendingKoshiraeFiles[blobIndex];
+        setPendingKoshiraeFiles(prev => prev.filter((_, i) => i !== blobIndex));
+        setPendingFiles(prev => [...prev, file]);
+      }
+    }
+
+    // Append to blade images
+    setImages(prev => [...prev, imageUrl]);
+  }, [koshirae, pendingKoshiraeFiles]);
+
   const handleSubmit = useCallback(async (targetStatus?: 'INVENTORY' | 'AVAILABLE') => {
     setIsSubmitting(true);
     setError(null);
@@ -989,6 +1051,9 @@ export function DealerListingForm({ mode, initialData, context = 'listing' }: De
             apiEndpoint={imagesEndpoint}
             heroImageIndex={heroImageIndex}
             onHeroImageChange={setHeroImageIndex}
+            onMoveImage={handleMoveImageToKoshirae}
+            canMoveToKoshirae={category === 'nihonto' && itemType !== 'koshirae'}
+            koshiraeImagesFull={(koshirae?.images || []).length >= 10}
           />
 
           {/* Video upload */}
@@ -1115,6 +1180,8 @@ export function DealerListingForm({ mode, initialData, context = 'listing' }: De
             itemId={mode === 'edit' && initialData?.id ? String(initialData.id) : undefined}
             onChange={setKoshirae}
             onPendingFilesChange={setPendingKoshiraeFiles}
+            onMoveImageToBlades={handleMoveImageToBlades}
+            bladeImagesFull={images.length >= 20}
           />
         )}
 
