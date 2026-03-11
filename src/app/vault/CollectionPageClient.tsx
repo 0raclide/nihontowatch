@@ -9,7 +9,6 @@ import type { CollectionItemRow } from '@/types/collectionItem';
 import type { DisplayItem } from '@/types/displayItem';
 import { ListingGrid } from '@/components/browse/ListingGrid';
 import { SortableCollectionGrid } from '@/components/collection/SortableCollectionGrid';
-import { AddItemCard } from '@/components/collection/AddItemCard';
 import { CollectionBottomBar } from '@/components/collection/CollectionBottomBar';
 import { useQuickView } from '@/contexts/QuickViewContext';
 import { useCurrency } from '@/hooks/useCurrency';
@@ -353,16 +352,28 @@ export function CollectionPageClient() {
           </div>
         )}
 
-        {/* Subtle item count + mobile view toggle */}
+        {/* Toolbar: item count + add button (desktop) + mobile view toggle */}
         <div className="flex items-center justify-between mb-3 lg:mb-4">
-          <span className="text-[11px] uppercase tracking-[0.12em] text-muted/50 tabular-nums">
-            {activeLoading
-              ? '\u00A0'
-              : activeCount === 1
-                ? t('vault.piece')
-                : t('vault.pieces', { count: activeCount })
-            }
-          </span>
+          <div className="flex items-center gap-3">
+            <span className="text-[11px] uppercase tracking-[0.12em] text-muted/50 tabular-nums">
+              {activeLoading
+                ? '\u00A0'
+                : activeCount === 1
+                  ? t('vault.piece')
+                  : t('vault.pieces', { count: activeCount })
+              }
+            </span>
+            {/* Desktop add button */}
+            <button
+              onClick={handleAddClick}
+              className="hidden lg:inline-flex items-center gap-1.5 px-3 py-1 text-[11px] uppercase tracking-[0.1em] text-gold border border-gold/30 rounded hover:bg-gold/10 transition-colors"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              {t('collection.add')}
+            </button>
+          </div>
           <div className="flex items-center gap-0.5 sm:hidden">
             <button
               onClick={() => handleMobileViewChange('gallery')}
@@ -415,7 +426,6 @@ export function CollectionPageClient() {
                   exchangeRates={exchangeRates}
                   onReorder={handleReorder}
                   onCardClick={handleCardClick}
-                  appendSlot={<AddItemCard onClick={handleAddClick} />}
                 />
               ) : (
                 <ListingGrid
@@ -430,7 +440,6 @@ export function CollectionPageClient() {
                   exchangeRates={exchangeRates}
                   mobileView={mobileView}
                   onCardClick={handleCardClick}
-                  appendSlot={<AddItemCard onClick={handleAddClick} />}
                 />
               )}
             </>
