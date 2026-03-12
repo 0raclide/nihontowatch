@@ -8,13 +8,15 @@ import { useLocale } from '@/i18n/LocaleContext';
 interface ProvenanceSectionProps {
   entries: ProvenanceEntry[];
   itemId?: string; // Present in edit mode
+  /** IDs of entries that already exist in the database (for image upload mode detection) */
+  savedEntryIds?: Set<string>;
   onChange: (entries: ProvenanceEntry[]) => void;
   onPendingFilesChange?: (provenanceId: string, files: File[]) => void;
   /** Override the image upload/delete API endpoint for child cards. */
   apiEndpoint?: string;
 }
 
-export function ProvenanceSection({ entries, itemId, onChange, onPendingFilesChange, apiEndpoint }: ProvenanceSectionProps) {
+export function ProvenanceSection({ entries, itemId, savedEntryIds, onChange, onPendingFilesChange, apiEndpoint }: ProvenanceSectionProps) {
   const { t } = useLocale();
 
   const handleAdd = useCallback(() => {
@@ -54,6 +56,7 @@ export function ProvenanceSection({ entries, itemId, onChange, onPendingFilesCha
               entry={entry}
               index={i}
               itemId={itemId}
+              isSaved={savedEntryIds?.has(entry.id) ?? false}
               onChange={(updated) => handleEntryChange(i, updated)}
               onRemove={() => handleEntryRemove(i)}
               onPendingFilesChange={onPendingFilesChange}

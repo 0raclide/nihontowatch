@@ -40,6 +40,8 @@ export function createEmptyKoshirae(): KoshiraeData {
 interface KoshiraeSectionProps {
   koshirae: KoshiraeData | null;
   itemId?: string; // Present in edit mode
+  /** Whether this data has been saved to the database. New entries should queue uploads locally. */
+  isSaved?: boolean;
   onChange: (koshirae: KoshiraeData | null) => void;
   onPendingFilesChange?: (files: File[]) => void;
   /** Called when user clicks the move-to-blades button on a koshirae thumbnail. */
@@ -50,14 +52,15 @@ interface KoshiraeSectionProps {
   apiEndpoint?: string;
 }
 
-export function KoshiraeSection({ koshirae, itemId, onChange, onPendingFilesChange, onMoveImageToBlades, bladeImagesFull, apiEndpoint = '/api/dealer/koshirae-images' }: KoshiraeSectionProps) {
+export function KoshiraeSection({ koshirae, itemId, isSaved = false, onChange, onPendingFilesChange, onMoveImageToBlades, bladeImagesFull, apiEndpoint = '/api/dealer/koshirae-images' }: KoshiraeSectionProps) {
   const { t } = useLocale();
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const isEditMode = !!itemId;
+  // Only use immediate upload when the listing is being edited AND this data exists in the DB
+  const isEditMode = !!itemId && isSaved;
 
   const handleAdd = useCallback(() => {
     onChange(createEmptyKoshirae());

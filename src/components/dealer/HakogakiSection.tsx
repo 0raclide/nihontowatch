@@ -8,13 +8,15 @@ import { useLocale } from '@/i18n/LocaleContext';
 interface HakogakiSectionProps {
   entries: HakogakiEntry[];
   itemId?: string; // Present in edit mode
+  /** IDs of entries that already exist in the database (for image upload mode detection) */
+  savedEntryIds?: Set<string>;
   onChange: (entries: HakogakiEntry[]) => void;
   onPendingFilesChange?: (hakogakiId: string, files: File[]) => void;
   /** Override the image upload/delete API endpoint for child cards. */
   apiEndpoint?: string;
 }
 
-export function HakogakiSection({ entries, itemId, onChange, onPendingFilesChange, apiEndpoint }: HakogakiSectionProps) {
+export function HakogakiSection({ entries, itemId, savedEntryIds, onChange, onPendingFilesChange, apiEndpoint }: HakogakiSectionProps) {
   const { t } = useLocale();
 
   const handleAdd = useCallback(() => {
@@ -53,6 +55,7 @@ export function HakogakiSection({ entries, itemId, onChange, onPendingFilesChang
               entry={entry}
               index={i}
               itemId={itemId}
+              isSaved={savedEntryIds?.has(entry.id) ?? false}
               onChange={(updated) => handleEntryChange(i, updated)}
               onRemove={() => handleEntryRemove(i)}
               onPendingFilesChange={onPendingFilesChange}

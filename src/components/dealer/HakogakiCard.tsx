@@ -14,6 +14,8 @@ interface HakogakiCardProps {
   entry: HakogakiEntry;
   index: number;
   itemId?: string; // Present in edit mode, absent in add mode
+  /** Whether this specific entry has been saved to the database (exists in JSONB). */
+  isSaved?: boolean;
   onChange: (updated: HakogakiEntry) => void;
   onRemove: () => void;
   onPendingFilesChange?: (hakogakiId: string, files: File[]) => void;
@@ -21,14 +23,15 @@ interface HakogakiCardProps {
   apiEndpoint?: string;
 }
 
-export function HakogakiCard({ entry, index, itemId, onChange, onRemove, onPendingFilesChange, apiEndpoint = '/api/dealer/hakogaki-images' }: HakogakiCardProps) {
+export function HakogakiCard({ entry, index, itemId, isSaved = false, onChange, onRemove, onPendingFilesChange, apiEndpoint = '/api/dealer/hakogaki-images' }: HakogakiCardProps) {
   const { t } = useLocale();
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const isEditMode = !!itemId;
+  // Only use immediate upload when the listing is being edited AND this entry exists in the DB
+  const isEditMode = !!itemId && isSaved;
 
   const handleFiles = useCallback(async (files: FileList) => {
     const currentCount = (entry.images || []).length + pendingFiles.length;

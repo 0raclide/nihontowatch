@@ -23,6 +23,8 @@ interface SayagakiCardProps {
   entry: SayagakiEntry;
   index: number;
   itemId?: string; // Present in edit mode, absent in add mode
+  /** Whether this specific entry has been saved to the database (exists in JSONB). */
+  isSaved?: boolean;
   onChange: (updated: SayagakiEntry) => void;
   onRemove: () => void;
   onPendingFilesChange?: (sayagakiId: string, files: File[]) => void;
@@ -30,14 +32,15 @@ interface SayagakiCardProps {
   apiEndpoint?: string;
 }
 
-export function SayagakiCard({ entry, index, itemId, onChange, onRemove, onPendingFilesChange, apiEndpoint = '/api/dealer/sayagaki-images' }: SayagakiCardProps) {
+export function SayagakiCard({ entry, index, itemId, isSaved = false, onChange, onRemove, onPendingFilesChange, apiEndpoint = '/api/dealer/sayagaki-images' }: SayagakiCardProps) {
   const { t } = useLocale();
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const isEditMode = !!itemId;
+  // Only use immediate upload when the listing is being edited AND this entry exists in the DB
+  const isEditMode = !!itemId && isSaved;
 
   const handleAuthorChange = useCallback((author: SayagakiAuthor) => {
     onChange({

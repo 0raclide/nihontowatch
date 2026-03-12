@@ -9,11 +9,13 @@ interface KiwameSectionProps {
   entries: KiwameEntry[];
   onChange: (entries: KiwameEntry[]) => void;
   itemId?: string;
+  /** IDs of entries that already exist in the database (for image upload mode detection) */
+  savedEntryIds?: Set<string>;
   onPendingFilesChange?: (kiwameId: string, files: File[]) => void;
   apiEndpoint?: string;
 }
 
-export function KiwameSection({ entries, onChange, itemId, onPendingFilesChange, apiEndpoint }: KiwameSectionProps) {
+export function KiwameSection({ entries, onChange, itemId, savedEntryIds, onPendingFilesChange, apiEndpoint }: KiwameSectionProps) {
   const { t } = useLocale();
 
   const handleAdd = useCallback(() => {
@@ -54,6 +56,7 @@ export function KiwameSection({ entries, onChange, itemId, onPendingFilesChange,
               entry={entry}
               index={i}
               itemId={itemId}
+              isSaved={savedEntryIds?.has(entry.id) ?? false}
               onChange={(updated) => handleEntryChange(i, updated)}
               onRemove={() => handleEntryRemove(i)}
               onPendingFilesChange={onPendingFilesChange}

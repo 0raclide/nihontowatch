@@ -13,20 +13,23 @@ const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 interface KantoHibishoSectionProps {
   data: KantoHibishoData | null;
   itemId?: string; // Present in edit mode
+  /** Whether this data has been saved to the database. New entries should queue uploads locally. */
+  isSaved?: boolean;
   onChange: (data: KantoHibishoData | null) => void;
   onPendingFilesChange?: (files: File[]) => void;
   /** Override the image upload/delete API endpoint. Default: '/api/dealer/kanto-hibisho-images' */
   apiEndpoint?: string;
 }
 
-export function KantoHibishoSection({ data, itemId, onChange, onPendingFilesChange, apiEndpoint = '/api/dealer/kanto-hibisho-images' }: KantoHibishoSectionProps) {
+export function KantoHibishoSection({ data, itemId, isSaved = false, onChange, onPendingFilesChange, apiEndpoint = '/api/dealer/kanto-hibisho-images' }: KantoHibishoSectionProps) {
   const { t } = useLocale();
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const isEditMode = !!itemId;
+  // Only use immediate upload when the listing is being edited AND this data exists in the DB
+  const isEditMode = !!itemId && isSaved;
 
   const handleAdd = useCallback(() => {
     onChange({

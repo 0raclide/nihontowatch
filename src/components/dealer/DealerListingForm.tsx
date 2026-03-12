@@ -361,6 +361,15 @@ export function DealerListingForm({ mode, initialData, context = 'listing' }: De
   );
   const moreDetailsRef = useRef<HTMLDetailsElement>(null);
 
+  // Track which JSONB section entries were loaded from the database.
+  // New entries added during edit should queue image uploads locally (not hit the API immediately).
+  const savedProvenanceIds = useMemo(() => new Set((initialData?.provenance || []).map((e: ProvenanceEntry) => e.id)), [initialData]);
+  const savedKiwameIds = useMemo(() => new Set((initialData?.kiwame || []).map((e: KiwameEntry) => e.id)), [initialData]);
+  const savedSayagakiIds = useMemo(() => new Set((initialData?.sayagaki || []).map((e: SayagakiEntry) => e.id)), [initialData]);
+  const savedHakogakiIds = useMemo(() => new Set((initialData?.hakogaki || []).map((e: HakogakiEntry) => e.id)), [initialData]);
+  const hadKoshirae = useMemo(() => !!initialData?.koshirae, [initialData]);
+  const hadKantoHibisho = useMemo(() => !!initialData?.kanto_hibisho, [initialData]);
+
   // Guarded category switch — confirms before clearing filled cross-category fields
   const handleCategoryChange = useCallback((newCategory: 'nihonto' | 'tosogu') => {
     if (newCategory === category) return;
@@ -1163,6 +1172,7 @@ export function DealerListingForm({ mode, initialData, context = 'listing' }: De
           <SayagakiSection
             entries={sayagaki}
             itemId={mode === 'edit' && initialData?.id ? String(initialData.id) : undefined}
+            savedEntryIds={savedSayagakiIds}
             onChange={setSayagaki}
             onPendingFilesChange={(sayagakiId, files) => {
               setPendingSayagakiFiles(prev => {
@@ -1181,6 +1191,7 @@ export function DealerListingForm({ mode, initialData, context = 'listing' }: De
           <HakogakiSection
             entries={hakogaki}
             itemId={mode === 'edit' && initialData?.id ? String(initialData.id) : undefined}
+            savedEntryIds={savedHakogakiIds}
             onChange={setHakogaki}
             onPendingFilesChange={(hakogakiId, files) => {
               setPendingHakogakiFiles(prev => {
@@ -1202,6 +1213,7 @@ export function DealerListingForm({ mode, initialData, context = 'listing' }: De
           <KantoHibishoSection
             data={kantoHibisho}
             itemId={mode === 'edit' && initialData?.id ? String(initialData.id) : undefined}
+            isSaved={hadKantoHibisho}
             onChange={setKantoHibisho}
             onPendingFilesChange={setPendingKantoHibishoFiles}
             apiEndpoint={kantoHibishoImagesEndpoint}
@@ -1213,6 +1225,7 @@ export function DealerListingForm({ mode, initialData, context = 'listing' }: De
           <KoshiraeSection
             koshirae={koshirae}
             itemId={mode === 'edit' && initialData?.id ? String(initialData.id) : undefined}
+            isSaved={hadKoshirae}
             onChange={setKoshirae}
             onPendingFilesChange={setPendingKoshiraeFiles}
             onMoveImageToBlades={handleMoveImageToBlades}
@@ -1225,6 +1238,7 @@ export function DealerListingForm({ mode, initialData, context = 'listing' }: De
         <ProvenanceSection
           entries={provenance}
           itemId={mode === 'edit' && initialData?.id ? String(initialData.id) : undefined}
+          savedEntryIds={savedProvenanceIds}
           onChange={setProvenance}
           onPendingFilesChange={(provenanceId, files) => {
             setPendingProvenanceFiles(prev => {
@@ -1245,6 +1259,7 @@ export function DealerListingForm({ mode, initialData, context = 'listing' }: De
           entries={kiwame}
           onChange={setKiwame}
           itemId={mode === 'edit' ? String(initialData?.id) : undefined}
+          savedEntryIds={savedKiwameIds}
           onPendingFilesChange={(kiwameId, files) => {
             setPendingKiwameFiles(prev => {
               const next = new Map(prev);

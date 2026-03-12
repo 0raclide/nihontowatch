@@ -15,6 +15,8 @@ interface ProvenanceCardProps {
   entry: ProvenanceEntry;
   index: number;
   itemId?: string; // Present in edit mode, absent in add mode
+  /** Whether this specific entry has been saved to the database (exists in JSONB). New entries added during edit should queue uploads locally. */
+  isSaved?: boolean;
   onChange: (updated: ProvenanceEntry) => void;
   onRemove: () => void;
   onPendingFilesChange?: (provenanceId: string, files: File[]) => void;
@@ -22,14 +24,15 @@ interface ProvenanceCardProps {
   apiEndpoint?: string;
 }
 
-export function ProvenanceCard({ entry, index, itemId, onChange, onRemove, onPendingFilesChange, apiEndpoint = '/api/dealer/provenance-images' }: ProvenanceCardProps) {
+export function ProvenanceCard({ entry, index, itemId, isSaved = false, onChange, onRemove, onPendingFilesChange, apiEndpoint = '/api/dealer/provenance-images' }: ProvenanceCardProps) {
   const { t } = useLocale();
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const isEditMode = !!itemId;
+  // Only use immediate upload when the listing is being edited AND this entry exists in the DB
+  const isEditMode = !!itemId && isSaved;
 
   const handleOwnerChange = useCallback((name: string, name_ja: string | null) => {
     onChange({ ...entry, owner_name: name, owner_name_ja: name_ja });

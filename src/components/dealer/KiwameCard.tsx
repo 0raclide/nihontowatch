@@ -23,20 +23,23 @@ interface KiwameCardProps {
   entry: KiwameEntry;
   index: number;
   itemId?: string;
+  /** Whether this specific entry has been saved to the database (exists in JSONB). */
+  isSaved?: boolean;
   onChange: (updated: KiwameEntry) => void;
   onRemove: () => void;
   onPendingFilesChange?: (kiwameId: string, files: File[]) => void;
   apiEndpoint?: string;
 }
 
-export function KiwameCard({ entry, index, itemId, onChange, onRemove, onPendingFilesChange, apiEndpoint = '/api/dealer/kiwame-images' }: KiwameCardProps) {
+export function KiwameCard({ entry, index, itemId, isSaved = false, onChange, onRemove, onPendingFilesChange, apiEndpoint = '/api/dealer/kiwame-images' }: KiwameCardProps) {
   const { t } = useLocale();
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const isEditMode = !!itemId;
+  // Only use immediate upload when the listing is being edited AND this entry exists in the DB
+  const isEditMode = !!itemId && isSaved;
 
   const handleJudgeChange = useCallback((name: string, name_ja: string | null) => {
     onChange({ ...entry, judge_name: name, judge_name_ja: name_ja });

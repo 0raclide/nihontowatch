@@ -8,13 +8,15 @@ import { useLocale } from '@/i18n/LocaleContext';
 interface SayagakiSectionProps {
   entries: SayagakiEntry[];
   itemId?: string; // Present in edit mode
+  /** IDs of entries that already exist in the database (for image upload mode detection) */
+  savedEntryIds?: Set<string>;
   onChange: (entries: SayagakiEntry[]) => void;
   onPendingFilesChange?: (sayagakiId: string, files: File[]) => void;
   /** Override the image upload/delete API endpoint for child cards. */
   apiEndpoint?: string;
 }
 
-export function SayagakiSection({ entries, itemId, onChange, onPendingFilesChange, apiEndpoint }: SayagakiSectionProps) {
+export function SayagakiSection({ entries, itemId, savedEntryIds, onChange, onPendingFilesChange, apiEndpoint }: SayagakiSectionProps) {
   const { t } = useLocale();
 
   const handleAdd = useCallback(() => {
@@ -54,6 +56,7 @@ export function SayagakiSection({ entries, itemId, onChange, onPendingFilesChang
               entry={entry}
               index={i}
               itemId={itemId}
+              isSaved={savedEntryIds?.has(entry.id) ?? false}
               onChange={(updated) => handleEntryChange(i, updated)}
               onRemove={() => handleEntryRemove(i)}
               onPendingFilesChange={onPendingFilesChange}
