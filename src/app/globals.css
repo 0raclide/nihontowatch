@@ -1620,6 +1620,16 @@ html[lang="ja"] .prose-methodology {
   padding-top: env(safe-area-inset-top, 0px);
 }
 
+/* In standalone (homescreen) mode, no browser chrome exists to fill the 8vh gap
+   at the top of bottom sheets. Expand to full viewport height. */
+@media (display-mode: standalone) {
+  .quickview-panel {
+    height: 100dvh !important;
+    border-top-left-radius: 0 !important;
+    border-top-right-radius: 0 !important;
+  }
+}
+
 /* Drawer open state - overflow hidden WITHOUT position:fixed
    Using position:fixed breaks fixed children (BottomTabBar) */
 body.drawer-open {
@@ -1643,6 +1653,15 @@ body.drawer-open {
   .card-hover:hover {
     transform: none;
     box-shadow: none;
+  }
+}
+
+/* Prevent iOS Safari auto-zoom on input focus in admin panel */
+@media (hover: none) and (pointer: coarse) {
+  [data-testid="admin-edit-view"] input,
+  [data-testid="admin-edit-view"] select,
+  [data-testid="admin-edit-view"] textarea {
+    font-size: 16px !important;
   }
 }
 

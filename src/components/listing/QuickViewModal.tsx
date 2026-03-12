@@ -254,6 +254,7 @@ export function QuickViewModal({
           data-testid="quickview-content"
           onClick={(e) => e.stopPropagation()}
           className={`
+            quickview-panel
             relative w-full bg-cream shadow-xl pointer-events-auto
             rounded-t-2xl lg:rounded-lg
             h-[92vh] lg:h-[90vh]
