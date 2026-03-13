@@ -121,8 +121,8 @@ export function ShowcasePageClient() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           {/* Page header */}
           <div className="text-center mb-10 pt-4 sm:pt-8">
-            <h1 className="text-3xl sm:text-4xl font-serif text-gold tracking-wide">
-              {t('showcase.title')}
+            <h1 className="text-3xl sm:text-4xl font-serif text-ink tracking-wide">
+              <span className="text-gold">{t('showcase.titleAccent')}</span>{' '}{t('showcase.titleRest')}
             </h1>
             <p className="mt-2 text-sm text-muted/70 tracking-[0.2em] uppercase font-light">
               {t('showcase.subtitle')}

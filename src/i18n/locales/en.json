@@ -997,6 +997,8 @@
   "nav.showcase": "Gallery",
 
   "showcase.title": "Yuhinkai Gallery",
+  "showcase.titleAccent": "Yuhinkai",
+  "showcase.titleRest": "Gallery",
   "showcase.subtitle": "Important objects by members of our community",
   "showcase.empty": "No items shared yet. Be the first to showcase your collection.",
   "showcase.emptyDealers": "No items available from collectors yet.",
