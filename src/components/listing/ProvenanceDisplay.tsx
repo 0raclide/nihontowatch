@@ -5,14 +5,17 @@ import Image from 'next/image';
 import { ImageLightbox } from '@/components/ui/ImageLightbox';
 import type { ProvenanceEntry } from '@/types';
 import { useLocale } from '@/i18n/LocaleContext';
+import { EditableText } from './EditableText';
 
 interface ProvenanceDisplayProps {
   provenance: ProvenanceEntry[];
   onImageClick?: (url: string) => void;
   readable?: boolean;
+  editable?: boolean;
+  onTextSave?: (entryIndex: number, newText: string | null) => Promise<void>;
 }
 
-export function ProvenanceDisplay({ provenance, onImageClick, readable }: ProvenanceDisplayProps) {
+export function ProvenanceDisplay({ provenance, onImageClick, readable, editable, onTextSave }: ProvenanceDisplayProps) {
   const { t } = useLocale();
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 
@@ -95,11 +98,18 @@ export function ProvenanceDisplay({ provenance, onImageClick, readable }: Proven
                     </div>
 
                     {/* Notes */}
-                    {entry.notes && (
+                    {editable ? (
+                      <EditableText
+                        value={entry.notes ?? null}
+                        onSave={(v) => onTextSave?.(i, v) ?? Promise.resolve()}
+                        className={`${readable ? 'text-[14px]' : 'text-[12px]'} text-charcoal/80 whitespace-pre-wrap mt-1 leading-relaxed`}
+                        placeholder="Add notes..."
+                      />
+                    ) : entry.notes ? (
                       <p className={`${readable ? 'text-[14px]' : 'text-[12px]'} text-charcoal/80 whitespace-pre-wrap mt-1 leading-relaxed`}>
                         {entry.notes}
                       </p>
-                    )}
+                    ) : null}
 
                     {/* Document images (remaining after portrait) */}
                     {documentImages.length > 0 && (

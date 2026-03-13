@@ -5,14 +5,17 @@ import Image from 'next/image';
 import { ImageLightbox } from '@/components/ui/ImageLightbox';
 import type { HakogakiEntry } from '@/types';
 import { useLocale } from '@/i18n/LocaleContext';
+import { EditableText } from './EditableText';
 
 interface HakogakiDisplayProps {
   hakogaki: HakogakiEntry[];
   onImageClick?: (url: string) => void;
   readable?: boolean;
+  editable?: boolean;
+  onTextSave?: (entryIndex: number, newText: string | null) => Promise<void>;
 }
 
-export function HakogakiDisplay({ hakogaki, onImageClick, readable }: HakogakiDisplayProps) {
+export function HakogakiDisplay({ hakogaki, onImageClick, readable, editable, onTextSave }: HakogakiDisplayProps) {
   const { t } = useLocale();
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 
@@ -32,11 +35,18 @@ export function HakogakiDisplay({ hakogaki, onImageClick, readable }: HakogakiDi
                   {entry.author}
                 </div>
               )}
-              {entry.content && (
+              {editable ? (
+                <EditableText
+                  value={entry.content ?? null}
+                  onSave={(v) => onTextSave?.(i, v) ?? Promise.resolve()}
+                  className={`${readable ? 'text-[15px] leading-relaxed' : 'text-[13px]'} text-charcoal whitespace-pre-wrap mb-2`}
+                  placeholder="Add content..."
+                />
+              ) : entry.content ? (
                 <p className={`${readable ? 'text-[15px] leading-relaxed' : 'text-[13px]'} text-charcoal whitespace-pre-wrap mb-2`}>
                   {entry.content}
                 </p>
-              )}
+              ) : null}
               {entry.images && entry.images.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                   {entry.images.map((url, j) => (

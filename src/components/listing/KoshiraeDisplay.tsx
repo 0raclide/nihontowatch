@@ -7,6 +7,7 @@ import ReactMarkdown from 'react-markdown';
 import { ImageLightbox } from '@/components/ui/ImageLightbox';
 import type { KoshiraeData, KoshiraeComponentType } from '@/types';
 import { useLocale } from '@/i18n/LocaleContext';
+import { EditableText } from './EditableText';
 
 const COMPONENT_TYPE_LABELS: Record<KoshiraeComponentType, string> = {
   tsuba: 'dealer.componentTsuba',
@@ -59,9 +60,11 @@ interface KoshiraeDisplayProps {
   onImageClick?: (url: string) => void;
   onNavigate?: () => void;
   readable?: boolean;
+  editable?: boolean;
+  onTextSave?: (entryIndex: number, newText: string | null) => Promise<void>;
 }
 
-export function KoshiraeDisplay({ koshirae, hideHeading, onImageClick, onNavigate, readable }: KoshiraeDisplayProps) {
+export function KoshiraeDisplay({ koshirae, hideHeading, onImageClick, onNavigate, readable, editable, onTextSave }: KoshiraeDisplayProps) {
   const { t } = useLocale();
   const router = useRouter();
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
@@ -165,11 +168,18 @@ export function KoshiraeDisplay({ koshirae, hideHeading, onImageClick, onNavigat
         )}
 
         {/* Description */}
-        {koshirae.description && (
+        {editable ? (
+          <EditableText
+            value={koshirae.description ?? null}
+            onSave={(v) => onTextSave?.(0, v) ?? Promise.resolve()}
+            className={`${readable ? 'text-[15px] leading-relaxed' : 'text-[13px]'} text-charcoal whitespace-pre-wrap mb-2`}
+            placeholder="Add description..."
+          />
+        ) : koshirae.description ? (
           <p className={`${readable ? 'text-[15px] leading-relaxed' : 'text-[13px]'} text-charcoal whitespace-pre-wrap mb-2`}>
             {koshirae.description}
           </p>
-        )}
+        ) : null}
 
         {/* Setsumei (NBTHK Zufu commentary) */}
         {koshirae.setsumei_text_en && (

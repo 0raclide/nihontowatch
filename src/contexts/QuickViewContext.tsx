@@ -559,6 +559,17 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
           return newListings;
         });
       }
+
+      // Also update collectionItem state for consistency
+      if (source === 'collection') {
+        setCollectionItem(prev => prev ? { ...prev, ...optimisticFields } as CollectionItemRow : null);
+      }
+    }
+
+    // Collection items don't have a detail API — just apply optimistic fields
+    if (source === 'collection') {
+      refreshInFlightRef.current = false;
+      return;
     }
 
     try {
@@ -604,7 +615,7 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
     } finally {
       refreshInFlightRef.current = false;
     }
-  }, [currentListing]);
+  }, [currentListing, source]);
 
   // Recalculate currentIndex when listings change while a listing is displayed.
   // This handles the race condition where setListings() and openQuickView() are

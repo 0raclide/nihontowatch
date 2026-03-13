@@ -5,14 +5,17 @@ import Image from 'next/image';
 import { ImageLightbox } from '@/components/ui/ImageLightbox';
 import type { KantoHibishoData } from '@/types';
 import { useLocale } from '@/i18n/LocaleContext';
+import { EditableText } from './EditableText';
 
 interface KantoHibishoDisplayProps {
   kantoHibisho: KantoHibishoData;
   onImageClick?: (url: string) => void;
   readable?: boolean;
+  editable?: boolean;
+  onTextSave?: (entryIndex: number, newText: string | null) => Promise<void>;
 }
 
-export function KantoHibishoDisplay({ kantoHibisho, onImageClick, readable }: KantoHibishoDisplayProps) {
+export function KantoHibishoDisplay({ kantoHibisho, onImageClick, readable, editable, onTextSave }: KantoHibishoDisplayProps) {
   const { t } = useLocale();
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 
@@ -37,11 +40,18 @@ export function KantoHibishoDisplay({ kantoHibisho, onImageClick, readable }: Ka
         )}
 
         {/* Text body */}
-        {text && (
+        {editable ? (
+          <EditableText
+            value={text ?? null}
+            onSave={(v) => onTextSave?.(0, v) ?? Promise.resolve()}
+            className={`${readable ? 'text-[15px] leading-relaxed' : 'text-[13px]'} text-charcoal whitespace-pre-wrap mb-2`}
+            placeholder="Add text..."
+          />
+        ) : text ? (
           <p className={`${readable ? 'text-[15px] leading-relaxed' : 'text-[13px]'} text-charcoal whitespace-pre-wrap mb-2`}>
             {text}
           </p>
-        )}
+        ) : null}
 
         {/* Image thumbnails */}
         {images && images.length > 0 && (

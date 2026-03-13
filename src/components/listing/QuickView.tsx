@@ -370,6 +370,56 @@ export function QuickView() {
     scrollToSection(sectionId);
   }, [isSheetExpanded, scrollToSection]);
 
+  // Section text inline editing (collection items only)
+  // MUST be before the early return — hooks cannot be conditional
+  const handleSectionTextSave = useCallback(async (sectionKey: string, entryIndex: number, newText: string | null) => {
+    if (!collectionItem?.id || !currentListing) return;
+
+    // Build the updated section data
+    let patchBody: Record<string, unknown>;
+
+    if (sectionKey === 'personal_notes') {
+      patchBody = { personal_notes: newText };
+    } else if (sectionKey === 'koshirae') {
+      const koshirae = currentListing.koshirae;
+      if (!koshirae) return;
+      patchBody = { koshirae: { ...koshirae, description: newText } };
+    } else if (sectionKey === 'kanto_hibisho') {
+      const kh = currentListing.kanto_hibisho;
+      if (!kh) return;
+      patchBody = { kanto_hibisho: { ...kh, text: newText } };
+    } else {
+      // Array sections: sayagaki, hakogaki, provenance, kiwame
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const sectionData = (currentListing as any)[sectionKey] as unknown[];
+      if (!Array.isArray(sectionData)) return;
+      const textField = (sectionKey === 'sayagaki' || sectionKey === 'hakogaki') ? 'content' : 'notes';
+      const updated = sectionData.map((entry, i) =>
+        i === entryIndex ? { ...entry as object, [textField]: newText } : entry
+      );
+      patchBody = { [sectionKey]: updated };
+    }
+
+    const res = await fetch(`/api/collection/items/${collectionItem.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(patchBody),
+    });
+
+    if (!res.ok) {
+      console.error('Failed to save section text:', res.status);
+      throw new Error('Save failed');
+    }
+
+    // Optimistic update
+    refreshCurrentListing(patchBody as Partial<ListingWithEnrichment>);
+  }, [collectionItem?.id, currentListing, refreshCurrentListing]);
+
+  // Personal notes save (for CollectionNotes slot)
+  const handlePersonalNotesSave = useCallback(async (newText: string | null) => {
+    await handleSectionTextSave('personal_notes', 0, newText);
+  }, [handleSectionTextSave]);
+
   // Dealer status change → optimistic update via refreshCurrentListing
   // MUST be before the early return — hooks cannot be conditional
   const handleDealerStatusChange = useCallback((newStatus: string, patchedFields?: { price_value?: number | null; price_currency?: string }) => {
@@ -438,7 +488,7 @@ export function QuickView() {
       : <BrowseDealerRow listing={currentListing} />;
 
   const desktopDescriptionSlot = isCollection
-    ? <CollectionNotes collectionItem={collectionItem} />
+    ? <CollectionNotes collectionItem={collectionItem} editable onSave={handlePersonalNotesSave} />
     : <BrowseDescription listing={currentListing} />;
 
   const desktopProvenanceSlot = isCollection
@@ -473,7 +523,7 @@ export function QuickView() {
       : <BrowseDealerRow listing={currentListing} />;
 
   const mobileDescriptionSlot = isCollection
-    ? <CollectionNotes collectionItem={collectionItem} />
+    ? <CollectionNotes collectionItem={collectionItem} editable onSave={handlePersonalNotesSave} />
     : <BrowseDescription listing={currentListing} maxLines={12} />;
 
   const mobileCtaSlot = isDealer
@@ -603,6 +653,8 @@ export function QuickView() {
                     failedImageUrls={failedImageUrls}
                     totalMediaCount={streamImageCount}
                     onNavigate={dismissForNavigation}
+                    editable={isCollection}
+                    onSectionTextSave={isCollection ? handleSectionTextSave : undefined}
                   />
                 </LightboxProvider>
               </div>
@@ -702,6 +754,8 @@ export function QuickView() {
                     failedImageUrls={failedImageUrls}
                     totalMediaCount={streamImageCount}
                     onNavigate={dismissForNavigation}
+                    editable={isCollection}
+                    onSectionTextSave={isCollection ? handleSectionTextSave : undefined}
                   />
                 </LightboxProvider>
               </div>

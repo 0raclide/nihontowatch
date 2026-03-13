@@ -31,6 +31,8 @@ interface ContentStreamRendererProps {
   failedImageUrls: Set<string>;
   totalMediaCount: number;
   onNavigate?: () => void;
+  editable?: boolean;
+  onSectionTextSave?: (sectionKey: string, entryIndex: number, newText: string | null) => Promise<void>;
 }
 
 export function ContentStreamRenderer({
@@ -43,6 +45,8 @@ export function ContentStreamRenderer({
   failedImageUrls,
   totalMediaCount,
   onNavigate,
+  editable,
+  onSectionTextSave,
 }: ContentStreamRendererProps) {
   const { t } = useLocale();
   const { openLightbox } = useLightbox();
@@ -133,22 +137,22 @@ export function ContentStreamRenderer({
             );
 
           case 'sayagaki':
-            return <SayagakiDisplay key="sayagaki" sayagaki={block.data} onImageClick={openLightbox} />;
+            return <SayagakiDisplay key="sayagaki" sayagaki={block.data} onImageClick={openLightbox} editable={editable} onTextSave={(i, v) => onSectionTextSave?.('sayagaki', i, v) ?? Promise.resolve()} />;
 
           case 'hakogaki':
-            return <HakogakiDisplay key="hakogaki" hakogaki={block.data} onImageClick={openLightbox} />;
+            return <HakogakiDisplay key="hakogaki" hakogaki={block.data} onImageClick={openLightbox} editable={editable} onTextSave={(i, v) => onSectionTextSave?.('hakogaki', i, v) ?? Promise.resolve()} />;
 
           case 'provenance':
-            return <ProvenanceDisplay key="provenance" provenance={block.data} onImageClick={openLightbox} />;
+            return <ProvenanceDisplay key="provenance" provenance={block.data} onImageClick={openLightbox} editable={editable} onTextSave={(i, v) => onSectionTextSave?.('provenance', i, v) ?? Promise.resolve()} />;
 
           case 'kiwame':
-            return <KiwameDisplay key="kiwame" kiwame={block.data} />;
+            return <KiwameDisplay key="kiwame" kiwame={block.data} editable={editable} onTextSave={(i, v) => onSectionTextSave?.('kiwame', i, v) ?? Promise.resolve()} />;
 
           case 'koshirae':
-            return <KoshiraeDisplay key="koshirae" koshirae={block.data} hideHeading={block.hideHeading} onImageClick={openLightbox} onNavigate={onNavigate} />;
+            return <KoshiraeDisplay key="koshirae" koshirae={block.data} hideHeading={block.hideHeading} onImageClick={openLightbox} onNavigate={onNavigate} editable={editable} onTextSave={(i, v) => onSectionTextSave?.('koshirae', i, v) ?? Promise.resolve()} />;
 
           case 'kanto_hibisho':
-            return <KantoHibishoDisplay key="kanto-hibisho" kantoHibisho={block.data} onImageClick={openLightbox} />;
+            return <KantoHibishoDisplay key="kanto-hibisho" kantoHibisho={block.data} onImageClick={openLightbox} editable={editable} onTextSave={(i, v) => onSectionTextSave?.('kanto_hibisho', i, v) ?? Promise.resolve()} />;
 
           default:
             return null;

@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { ImageLightbox } from '@/components/ui/ImageLightbox';
 import type { KiwameEntry } from '@/types';
 import { useLocale } from '@/i18n/LocaleContext';
+import { EditableText } from './EditableText';
 
 const KIWAME_TYPE_KEYS: Record<string, string> = {
   origami: 'dealer.kiwameTypeOrigami',
@@ -19,9 +20,11 @@ interface KiwameDisplayProps {
   kiwame: KiwameEntry[];
   onImageClick?: (url: string) => void;
   readable?: boolean;
+  editable?: boolean;
+  onTextSave?: (entryIndex: number, newText: string | null) => Promise<void>;
 }
 
-export function KiwameDisplay({ kiwame, onImageClick, readable }: KiwameDisplayProps) {
+export function KiwameDisplay({ kiwame, onImageClick, readable, editable, onTextSave }: KiwameDisplayProps) {
   const { t } = useLocale();
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 
@@ -55,11 +58,18 @@ export function KiwameDisplay({ kiwame, onImageClick, readable }: KiwameDisplayP
                   {t(KIWAME_TYPE_KEYS[entry.kiwame_type] || 'dealer.kiwameTypeOther')}
                 </span>
               </div>
-              {entry.notes && (
+              {editable ? (
+                <EditableText
+                  value={entry.notes ?? null}
+                  onSave={(v) => onTextSave?.(i, v) ?? Promise.resolve()}
+                  className={`${readable ? 'text-[15px] leading-relaxed' : 'text-[13px]'} text-charcoal whitespace-pre-wrap`}
+                  placeholder="Add notes..."
+                />
+              ) : entry.notes ? (
                 <p className={`${readable ? 'text-[15px] leading-relaxed' : 'text-[13px]'} text-charcoal whitespace-pre-wrap`}>
                   {entry.notes}
                 </p>
-              )}
+              ) : null}
               {entry.images && entry.images.length > 0 && (
                 <div className="flex flex-wrap gap-2 mt-2">
                   {entry.images.map((url, j) => (
