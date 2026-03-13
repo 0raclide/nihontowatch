@@ -25,6 +25,11 @@ const DEFAULT_CURRENCY: Currency = 'JPY';
 let cachedRates: ExchangeRates | null = null;
 let ratesFetchPromise: Promise<ExchangeRates | null> | null = null;
 
+// Dedup map for in-flight historical rate requests (date → promise).
+// Prevents duplicate HTTP requests when multiple concurrent calls
+// fetch the same date with different currency pairs.
+const historicalDateFetchCache = new Map<string, Promise<ExchangeRates | null>>();
+
 // =============================================================================
 // HOOK
 // =============================================================================
@@ -96,37 +101,63 @@ export function useCurrency() {
     }
   }, []);
 
-  // Fetch historical exchange rate for a specific date
+  // Fetch historical exchange rate for a specific date.
+  // Deduplicates in-flight requests per date: concurrent calls for the same date
+  // (e.g., JPY→CHF and USD→CHF on 2025-03-01) share one HTTP request.
+  // Caches ALL cross-rates from each response to prevent redundant fetches.
   const fetchHistoricalRate = useCallback(async (
     date: string,
     fromCurrency: string,
     toCurrency: string
   ): Promise<number | null> => {
-    if (fromCurrency.toUpperCase() === toCurrency.toUpperCase()) return 1;
+    const from = fromCurrency.toUpperCase();
+    const to = toCurrency.toUpperCase();
+    if (from === to) return 1;
 
-    const cacheKey = `nw-fx-${date}-${fromCurrency}-${toCurrency}`;
+    const cacheKey = `nw-fx-${date}-${from}-${to}`;
     if (typeof window !== 'undefined') {
       const cached = sessionStorage.getItem(cacheKey);
       if (cached) return Number(cached);
     }
 
     try {
-      const res = await fetch(`/api/exchange-rates?date=${date}`);
-      if (!res.ok) return null;
-      const data: ExchangeRates = await res.json();
+      // Deduplicate: reuse in-flight request for the same date
+      let dataPromise = historicalDateFetchCache.get(date);
+      if (!dataPromise) {
+        dataPromise = fetch(`/api/exchange-rates?date=${date}`)
+          .then(res => res.ok ? res.json() as Promise<ExchangeRates> : null)
+          .catch(() => null)
+          .finally(() => {
+            // Clear from dedup cache once settled — sessionStorage has the results
+            historicalDateFetchCache.delete(date);
+          });
+        historicalDateFetchCache.set(date, dataPromise);
+      }
 
-      const from = fromCurrency.toUpperCase();
-      const to = toCurrency.toUpperCase();
+      const data = await dataPromise;
+      if (!data) return null;
+
+      // Cache ALL cross-rates from this response so other currency pairs
+      // for the same date hit sessionStorage instead of making new requests
+      if (typeof window !== 'undefined') {
+        const currencies = Object.keys(data.rates);
+        for (const f of currencies) {
+          for (const t of currencies) {
+            if (f === t) continue;
+            const sRate = f === 'USD' ? 1 : data.rates[f];
+            const tRate = t === 'USD' ? 1 : data.rates[t];
+            if (sRate && tRate) {
+              sessionStorage.setItem(`nw-fx-${date}-${f}-${t}`, String(tRate / sRate));
+            }
+          }
+        }
+      }
+
       const sourceRate = from === 'USD' ? 1 : data.rates[from];
       const targetRate = to === 'USD' ? 1 : data.rates[to];
-
       if (!sourceRate || !targetRate) return null;
 
-      const rate = targetRate / sourceRate;
-      if (typeof window !== 'undefined') {
-        sessionStorage.setItem(cacheKey, String(rate));
-      }
-      return rate;
+      return targetRate / sourceRate;
     } catch {
       return null;
     }

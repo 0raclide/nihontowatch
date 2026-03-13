@@ -107,9 +107,15 @@ async function fetchHistoricalRates(date: string): Promise<NextResponse> {
   }
 
   try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+
     const response = await fetch(
-      `https://api.frankfurter.app/${date}?from=USD&to=JPY,EUR,AUD,GBP,CAD,CHF`
+      `https://api.frankfurter.app/${date}?from=USD&to=JPY,EUR,AUD,GBP,CAD,CHF`,
+      { signal: controller.signal }
     );
+
+    clearTimeout(timeout);
 
     if (!response.ok) {
       throw new Error(`Failed to fetch historical rates for ${date}`);
