@@ -26,7 +26,7 @@ import { isYuhinkaiCatalogImage, classifyCatalogImage } from '@/lib/images/class
 
 export type ContentBlock =
   | { type: 'hero_image'; src: string; globalIndex: 0 }
-  | { type: 'curator_note'; noteEn: string | null; noteJa: string | null }
+  | { type: 'curator_note'; noteEn: string | null; noteJa: string | null; headlineEn: string | null; headlineJa: string | null; listingTitle: string | null }
   | { type: 'video'; streamUrl: string; thumbnailUrl?: string; duration?: number; status?: string; videoId?: string; globalIndex: number }
   | { type: 'image'; src: string; globalIndex: number }
   | { type: 'section_divider'; labelKey: string; sectionId: string }
@@ -301,6 +301,9 @@ export function buildContentStream(
       type: 'curator_note',
       noteEn: curatorNoteEn,
       noteJa: curatorNoteJa,
+      headlineEn: listing.ai_curator_headline_en || null,
+      headlineJa: listing.ai_curator_headline_ja || null,
+      listingTitle: listing.title_en || listing.title_ja || listing.title || null,
     });
   }
 

@@ -95,6 +95,9 @@ export function ShowcaseLayout({ listing }: ShowcaseLayoutProps) {
   // Scholar's Note — prefer dedicated columns, fall back to description (dealer-generated notes)
   const curatorNoteEn = listing.ai_curator_note_en || listing.description || null;
   const curatorNoteJa = listing.ai_curator_note_ja || null;
+  const curatorHeadlineEn = listing.ai_curator_headline_en || null;
+  const curatorHeadlineJa = listing.ai_curator_headline_ja || null;
+  const scholarTitle = listing.title_en || listing.title_ja || listing.title;
   const hasCuratorNote = !!(curatorNoteEn || curatorNoteJa);
 
   // Build section nav items — hero IS the overview (id="identity")
@@ -121,7 +124,13 @@ export function ShowcaseLayout({ listing }: ShowcaseLayoutProps) {
       <div className="space-y-16 md:space-y-20 pb-20 md:pb-24">
         {hasCuratorNote && (
           <ShowcaseSection id="scholars-note" title="Scholar's Note" titleJa="解説">
-            <ShowcaseScholarNote noteEn={curatorNoteEn} noteJa={curatorNoteJa} />
+            <ShowcaseScholarNote
+              noteEn={curatorNoteEn}
+              noteJa={curatorNoteJa}
+              headlineEn={curatorHeadlineEn}
+              headlineJa={curatorHeadlineJa}
+              listingTitle={scholarTitle}
+            />
           </ShowcaseSection>
         )}
 

@@ -22,19 +22,37 @@ interface OpenRouterResponse {
   };
 }
 
+export interface CuratorNoteResult {
+  note: string | null;
+  headline: string | null;
+}
+
+/**
+ * Parse the HEADLINE: ... \n---\n ... format from the LLM response.
+ * Falls back to treating the entire response as the note if no delimiter is found.
+ */
+export function parseHeadlineAndNote(raw: string): CuratorNoteResult {
+  const match = raw.match(/^HEADLINE:\s*(.+?)\n---\n([\s\S]+)$/);
+  if (match) {
+    return { headline: match[1].trim(), note: match[2].trim() };
+  }
+  // Fallback: no delimiter — treat entire response as note
+  return { headline: null, note: raw.trim() };
+}
+
 /**
  * Generate a curator's note for the given context and language.
  *
- * @returns The generated note text, or null on error.
+ * @returns The generated note and headline, or nulls on error.
  */
 export async function generateCuratorNote(
   context: CuratorNoteContext,
   lang: 'en' | 'ja'
-): Promise<string | null> {
+): Promise<CuratorNoteResult> {
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) {
     logger.error('OPENROUTER_API_KEY not configured');
-    return null;
+    return { note: null, headline: null };
   }
 
   const systemPrompt = buildSystemPrompt(lang);
@@ -67,26 +85,26 @@ export async function generateCuratorNote(
         errorText,
         lang,
       });
-      return null;
+      return { note: null, headline: null };
     }
 
     const data: OpenRouterResponse = await response.json();
 
     if (data.error) {
       logger.error('OpenRouter returned error', { error: data.error.message, lang });
-      return null;
+      return { note: null, headline: null };
     }
 
     const content = data.choices?.[0]?.message?.content?.trim();
 
     if (!content) {
       logger.error('Empty curator note response', { lang });
-      return null;
+      return { note: null, headline: null };
     }
 
-    return content;
+    return parseHeadlineAndNote(content);
   } catch (error) {
     logger.logError('Curator note generation failed', error, { lang });
-    return null;
+    return { note: null, headline: null };
   }
 }

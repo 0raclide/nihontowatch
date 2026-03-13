@@ -119,13 +119,15 @@ export async function POST(
         // Read the cached note
         const { data: cached } = await (serviceClient as any)
           .from('listings')
-          .select('ai_curator_note_en, ai_curator_note_ja, ai_curator_note_generated_at')
+          .select('ai_curator_note_en, ai_curator_note_ja, ai_curator_headline_en, ai_curator_headline_ja, ai_curator_note_generated_at')
           .eq('id', listingId)
           .single();
 
         return apiSuccess({
           en: cached?.ai_curator_note_en ?? null,
           ja: cached?.ai_curator_note_ja ?? null,
+          headline_en: cached?.ai_curator_headline_en ?? null,
+          headline_ja: cached?.ai_curator_headline_ja ?? null,
           generated_at: cached?.ai_curator_note_generated_at ?? null,
           input_hash: inputHash,
           data_richness: getDataRichness(context),
@@ -145,10 +147,10 @@ export async function POST(
       force,
     });
 
-    const noteEn = await generateCuratorNote(context, 'en');
-    const noteJa = await generateCuratorNote(context, 'ja');
+    const resultEn = await generateCuratorNote(context, 'en');
+    const resultJa = await generateCuratorNote(context, 'ja');
 
-    if (!noteEn && !noteJa) {
+    if (!resultEn.note && !resultJa.note) {
       return apiServerError('Both EN and JA generation failed');
     }
 
@@ -157,8 +159,10 @@ export async function POST(
     const { error: updateError } = await (serviceClient as any)
       .from('listings')
       .update({
-        ai_curator_note_en: noteEn,
-        ai_curator_note_ja: noteJa,
+        ai_curator_note_en: resultEn.note,
+        ai_curator_note_ja: resultJa.note,
+        ai_curator_headline_en: resultEn.headline,
+        ai_curator_headline_ja: resultJa.headline,
         ai_curator_note_generated_at: now,
         ai_curator_note_input_hash: inputHash,
       })
@@ -172,13 +176,17 @@ export async function POST(
     logger.info('Curator note generated and stored', {
       listingId,
       richness,
-      enLength: noteEn?.length ?? 0,
-      jaLength: noteJa?.length ?? 0,
+      enLength: resultEn.note?.length ?? 0,
+      jaLength: resultJa.note?.length ?? 0,
+      hasHeadlineEn: !!resultEn.headline,
+      hasHeadlineJa: !!resultJa.headline,
     });
 
     return apiSuccess({
-      en: noteEn,
-      ja: noteJa,
+      en: resultEn.note,
+      ja: resultJa.note,
+      headline_en: resultEn.headline,
+      headline_ja: resultJa.headline,
       generated_at: now,
       input_hash: inputHash,
       data_richness: richness,
@@ -208,7 +216,7 @@ export async function GET(
     const serviceClient = createServiceClient();
     const { data, error } = await (serviceClient as any)
       .from('listings')
-      .select('ai_curator_note_en, ai_curator_note_ja, ai_curator_note_generated_at')
+      .select('ai_curator_note_en, ai_curator_note_ja, ai_curator_headline_en, ai_curator_headline_ja, ai_curator_note_generated_at')
       .eq('id', listingId)
       .single();
 
@@ -219,6 +227,8 @@ export async function GET(
     return apiSuccess({
       en: data.ai_curator_note_en ?? null,
       ja: data.ai_curator_note_ja ?? null,
+      headline_en: data.ai_curator_headline_en ?? null,
+      headline_ja: data.ai_curator_headline_ja ?? null,
       generated_at: data.ai_curator_note_generated_at ?? null,
     });
   } catch (error) {

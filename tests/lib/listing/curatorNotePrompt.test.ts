@@ -198,4 +198,75 @@ describe('buildSystemPrompt — prompt rules', () => {
     expect(prompt).toContain('銘の統計');
     expect(prompt).toContain('無銘の割合から');
   });
+
+  describe('headline format instructions', () => {
+    it('includes HEADLINE format instruction for full richness (EN)', () => {
+      const context = makeMinimalContext({
+        setsumei: { text_en: 'test', text_ja: null },
+        sayagaki: [{ author: 'Tanobe', content: 'Fine blade' }],
+      });
+      const prompt = buildUserPrompt(context, 'en');
+
+      expect(prompt).toContain('HEADLINE:');
+      expect(prompt).toContain('---');
+      expect(prompt).toContain('15-30 words');
+    });
+
+    it('includes HEADLINE format instruction for moderate richness (EN)', () => {
+      const context = makeMinimalContext({
+        setsumei: { text_en: 'test', text_ja: null },
+      });
+      const prompt = buildUserPrompt(context, 'en');
+
+      expect(prompt).toContain('HEADLINE:');
+      expect(prompt).toContain('---');
+    });
+
+    it('includes HEADLINE format instruction for sparse richness (EN)', () => {
+      const context = makeMinimalContext({
+        setsumei: undefined,
+        sayagaki: undefined,
+      });
+      const prompt = buildUserPrompt(context, 'en');
+
+      expect(prompt).toContain('HEADLINE:');
+    });
+
+    it('includes HEADLINE format instruction for full richness (JA)', () => {
+      const context = makeMinimalContext({
+        setsumei: { text_en: null, text_ja: 'テスト' },
+        sayagaki: [{ author: '田野邊', content: '名刀' }],
+      });
+      const prompt = buildUserPrompt(context, 'ja');
+
+      expect(prompt).toContain('HEADLINE:');
+      expect(prompt).toContain('---');
+      expect(prompt).toContain('30-60文字');
+    });
+
+    it('does NOT include HEADLINE for minimal richness (EN)', () => {
+      const context: CuratorNoteContext = {
+        sword: {
+          item_type: 'katana',
+          nagasa_cm: null,
+          sori_cm: null,
+          motohaba_cm: null,
+          sakihaba_cm: null,
+          kasane_cm: null,
+          mei_type: null,
+          mei_text: null,
+          era: null,
+          province: null,
+          school: null,
+          cert_type: null,
+          cert_session: null,
+          cert_organization: null,
+        },
+      };
+      const prompt = buildUserPrompt(context, 'en');
+
+      // Minimal richness returns empty string instruction — no headline
+      expect(prompt).not.toContain('Before the note, output a headline');
+    });
+  });
 });

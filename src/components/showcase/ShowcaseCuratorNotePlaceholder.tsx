@@ -7,23 +7,34 @@ import { EditableText } from '@/components/listing/EditableText';
 interface ShowcaseScholarNoteProps {
   noteEn: string | null;
   noteJa: string | null;
+  headlineEn?: string | null;
+  headlineJa?: string | null;
+  listingTitle?: string | null;
   editable?: boolean;
   onTextSave?: (lang: 'en' | 'ja', newText: string | null) => Promise<void>;
+  onHeadlineSave?: (lang: 'en' | 'ja', newText: string | null) => Promise<void>;
 }
 
 /**
  * Scholar's Note section — AI-generated curator's analysis.
  * Uses prose width (65ch) for readable long-form text.
  * Container is media width (960px) so it aligns with section headers.
+ *
+ * Hero section: centered listing title + headline above the full note body.
  */
-export function ShowcaseScholarNote({ noteEn, noteJa, editable, onTextSave }: ShowcaseScholarNoteProps) {
+export function ShowcaseScholarNote({
+  noteEn, noteJa, headlineEn, headlineJa, listingTitle,
+  editable, onTextSave, onHeadlineSave,
+}: ShowcaseScholarNoteProps) {
   const [showJa, setShowJa] = useState(false);
 
   if (!editable && !noteEn && !noteJa) return null;
 
   const isShowingJa = showJa && noteJa;
   const displayText = isShowingJa ? noteJa : (noteEn || noteJa);
+  const displayHeadline = isShowingJa ? (headlineJa || headlineEn) : (headlineEn || headlineJa);
   const hasToggle = noteEn && noteJa;
+  const hasHeroContent = listingTitle || displayHeadline;
 
   return (
     <div className="max-w-[960px] mx-auto px-4 sm:px-8">
@@ -38,6 +49,38 @@ export function ShowcaseScholarNote({ noteEn, noteJa, editable, onTextSave }: Sh
             </button>
           </div>
         )}
+
+        {/* Hero section: centered title + headline */}
+        {listingTitle && (
+          <h3 className="text-center font-serif text-xl md:text-2xl text-ink font-light tracking-tight mb-4">
+            {listingTitle}
+          </h3>
+        )}
+
+        {displayHeadline && (
+          editable && onHeadlineSave ? (
+            <EditableText
+              value={displayHeadline}
+              onSave={(v) => onHeadlineSave(isShowingJa ? 'ja' : 'en', v)}
+              className="text-center text-[16px] md:text-[18px] leading-[1.7] italic text-charcoal mb-6"
+              placeholder="Add headline..."
+            >
+              <p className="text-center text-[16px] md:text-[18px] leading-[1.7] italic text-charcoal mb-6">
+                {displayHeadline}
+              </p>
+            </EditableText>
+          ) : (
+            <p className="text-center text-[16px] md:text-[18px] leading-[1.7] italic text-charcoal mb-6">
+              {displayHeadline}
+            </p>
+          )
+        )}
+
+        {hasHeroContent && (
+          <div className="w-16 h-px bg-border/40 mx-auto mb-8" />
+        )}
+
+        {/* Full note body */}
         {editable ? (
           <EditableText
             value={displayText || null}

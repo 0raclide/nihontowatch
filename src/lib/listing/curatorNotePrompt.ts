@@ -427,26 +427,30 @@ function buildInstruction(richness: DataRichness, lang: 'en' | 'ja'): string {
 }
 
 function buildEnInstruction(richness: DataRichness): string {
+  const headlineInstruction = `Before the note, output a headline — a single sentence (15-30 words) capturing what makes this object remarkable. Use museum exhibition label tone. Format:\n\nHEADLINE: [your headline]\n---\n[curator's note paragraphs]`;
+
   switch (richness) {
     case 'full':
-      return '[INSTRUCTION]\nWrite a curator\'s note (350-500 words) following the Context → Observation → Significance arc. If koshirae data is provided, add a dedicated paragraph discussing the mountings. Quote the setsumei\'s evaluative conclusions and the sayagaki directly — but do not restate the setsumei\'s raw measurements. When kiwame records earlier attributions, note the shift. Cite specific designation statistics. Output prose paragraphs only — no headers or bullets.';
+      return `[INSTRUCTION]\n${headlineInstruction}\n\nWrite a curator's note (350-500 words) following the Context → Observation → Significance arc. If koshirae data is provided, add a dedicated paragraph discussing the mountings. Quote the setsumei's evaluative conclusions and the sayagaki directly — but do not restate the setsumei's raw measurements. When kiwame records earlier attributions, note the shift. Cite specific designation statistics. Output prose paragraphs only — no headers or bullets.`;
     case 'moderate':
-      return '[INSTRUCTION]\nWrite a 2-paragraph curator\'s note (200-300 words) focusing on Context and Observation. Quote the setsumei directly. Cite specific designation statistics. Output prose paragraphs only — no headers or bullets.';
+      return `[INSTRUCTION]\n${headlineInstruction}\n\nWrite a 2-paragraph curator's note (200-300 words) focusing on Context and Observation. Quote the setsumei directly. Cite specific designation statistics. Output prose paragraphs only — no headers or bullets.`;
     case 'sparse':
-      return '[INSTRUCTION]\nWrite a 1-paragraph curator\'s note (150-200 words) contextualizing this piece within the maker\'s body of work and its certification level. Do not invent observations about features not described in the data. Output prose only — no headers or bullets.';
+      return `[INSTRUCTION]\n${headlineInstruction}\n\nWrite a 1-paragraph curator's note (150-200 words) contextualizing this piece within the maker's body of work and its certification level. Do not invent observations about features not described in the data. Output prose only — no headers or bullets.`;
     case 'minimal':
       return '[INSTRUCTION]\nInsufficient data for a curator\'s note. Return an empty string.';
   }
 }
 
 function buildJaInstruction(richness: DataRichness): string {
+  const headlineInstruction = '解説文の前に、見出しを1文（30-60文字）で記述してください。博物館の展示ラベルの口調で、本品の特筆すべき点を凝縮してください。\n\nHEADLINE: [見出し]\n---\n[解説文]';
+
   switch (richness) {
     case 'full':
-      return '【指示】\n文脈→観察→意義の構成（800-1400文字）で解説文を執筆してください。拵データが提供されている場合は、拵について独立した段落を追加してください。説明書の評価的所見と鞘書を直接引用し、寸法の機械的な列挙は避けてください。極めに過去の異なる極めが記録されている場合はその変遷に言及してください。指定統計を具体的に記載。散文形式のみ — 見出し・箇条書き不可。';
+      return `【指示】\n${headlineInstruction}\n\n文脈→観察→意義の構成（800-1400文字）で解説文を執筆してください。拵データが提供されている場合は、拵について独立した段落を追加してください。説明書の評価的所見と鞘書を直接引用し、寸法の機械的な列挙は避けてください。極めに過去の異なる極めが記録されている場合はその変遷に言及してください。指定統計を具体的に記載。散文形式のみ — 見出し・箇条書き不可。`;
     case 'moderate':
-      return '【指示】\n文脈と観察の2段落構成（500-800文字）で解説文を執筆してください。説明書を直接引用し、指定統計を具体的に記載してください。散文形式のみ — 見出し・箇条書き不可。';
+      return `【指示】\n${headlineInstruction}\n\n文脈と観察の2段落構成（500-800文字）で解説文を執筆してください。説明書を直接引用し、指定統計を具体的に記載してください。散文形式のみ — 見出し・箇条書き不可。`;
     case 'sparse':
-      return '【指示】\n作者の作品群における本品の位置づけと認定レベルを1段落（300-500文字）で記述してください。提供されていないデータに基づく観察は行わないでください。散文形式のみ。';
+      return `【指示】\n${headlineInstruction}\n\n作者の作品群における本品の位置づけと認定レベルを1段落（300-500文字）で記述してください。提供されていないデータに基づく観察は行わないでください。散文形式のみ。`;
     case 'minimal':
       return '【指示】\n解説文を生成するためのデータが不足しています。空文字列を返してください。';
   }

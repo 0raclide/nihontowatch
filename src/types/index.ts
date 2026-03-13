@@ -671,6 +671,8 @@ export interface Listing {
   // AI curator notes (Scholar's Note)
   ai_curator_note_en?: string | null;
   ai_curator_note_ja?: string | null;
+  ai_curator_headline_en?: string | null;
+  ai_curator_headline_ja?: string | null;
 
   // Smart crop focal point (0-100%)
   focal_x?: number | null;

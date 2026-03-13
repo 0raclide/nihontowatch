@@ -81,8 +81,12 @@ export function ContentStreamRenderer({
                 <ShowcaseScholarNote
                   noteEn={block.noteEn}
                   noteJa={block.noteJa}
+                  headlineEn={block.headlineEn}
+                  headlineJa={block.headlineJa}
+                  listingTitle={block.listingTitle}
                   editable={editable}
                   onTextSave={editable ? (lang, v) => onSectionTextSave?.(`ai_curator_note_${lang}`, 0, v) ?? Promise.resolve() : undefined}
+                  onHeadlineSave={editable ? (lang, v) => onSectionTextSave?.(`ai_curator_headline_${lang}`, 0, v) ?? Promise.resolve() : undefined}
                 />
               </div>
             );
