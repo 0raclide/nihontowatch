@@ -170,6 +170,7 @@ export async function POST(request: NextRequest) {
     setsumei_text_en,
     setsumei_text_ja,
     ai_curator_note_en,
+    ai_curator_headline_en,
     hero_image_index,
     images: initialImages,
   } = body;
@@ -220,6 +221,7 @@ export async function POST(request: NextRequest) {
     setsumei_text_en: setsumei_text_en ?? null,
     setsumei_text_ja: setsumei_text_ja ?? null,
     ai_curator_note_en: ai_curator_note_en ?? null,
+    ai_curator_headline_en: ai_curator_headline_en ?? null,
     kiwame: sanitizeKiwame(kiwame),
     kanto_hibisho: sanitizeKantoHibisho(kanto_hibisho),
     research_notes: typeof research_notes === 'string' ? research_notes.slice(0, 5000) || null : null,

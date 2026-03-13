@@ -332,6 +332,9 @@ export function DealerListingForm({ mode, initialData, context = 'listing' }: De
     (initialData?.visibility as CollectionVisibility) || 'private'
   );
   const [pendingKantoHibishoFiles, setPendingKantoHibishoFiles] = useState<File[]>([]);
+  const [curatorHeadlineEn, setCuratorHeadlineEn] = useState<string | null>(
+    (initialData as any)?.ai_curator_headline_en ?? null
+  );
   const [isGeneratingNote, setIsGeneratingNote] = useState(false);
   const [generateNoteError, setGenerateNoteError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -611,6 +614,7 @@ export function DealerListingForm({ mode, initialData, context = 'listing' }: De
         price_currency: priceCurrency,
         description: description || null,
         ai_curator_note_en: description || null,
+        ai_curator_headline_en: curatorHeadlineEn,
         artisan_id: artisanId,
         smith: category === 'nihonto' ? (artisanKanji || artisanName || null) : null,
         tosogu_maker: category === 'tosogu' ? (artisanKanji || artisanName || null) : null,
@@ -851,7 +855,7 @@ export function DealerListingForm({ mode, initialData, context = 'listing' }: De
     heroImageIndex, images, router, itemsEndpoint, imagesEndpoint, context, sourceListingId,
     sayagakiImagesEndpoint, hakogakiImagesEndpoint, koshiraeImagesEndpoint,
     provenanceImagesEndpoint, kiwameImagesEndpoint, kantoHibishoImagesEndpoint, successRedirect,
-    draftStorageKey, meiText, meiGuaranteed,
+    draftStorageKey, meiText, meiGuaranteed, curatorHeadlineEn,
   ]);
 
   const handleRetryUpload = useCallback(async () => {
@@ -978,6 +982,7 @@ export function DealerListingForm({ mode, initialData, context = 'listing' }: De
 
       const data = await res.json();
       setDescription(data.description);
+      setCuratorHeadlineEn(data.headline ?? null);
     } catch (err) {
       setGenerateNoteError(err instanceof Error ? err.message : 'Generation failed');
     } finally {

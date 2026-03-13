@@ -101,6 +101,8 @@ const ALLOWED_FIELDS = new Set([
   'hero_image_index',
   'ai_curator_note_en',
   'ai_curator_note_ja',
+  'ai_curator_headline_en',
+  'ai_curator_headline_ja',
   'setsumei_text_en',
   'setsumei_text_ja',
   // Note: 'images' intentionally excluded — managed exclusively via /api/dealer/images
