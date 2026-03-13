@@ -94,7 +94,7 @@ export function EditableText({ value, onSave, className, placeholder, children }
 
   return (
     <div
-      className="group/editable relative cursor-pointer"
+      className="group/editable relative cursor-pointer pr-6"
       onClick={() => setIsEditing(true)}
       role="button"
       tabIndex={0}
@@ -106,14 +106,14 @@ export function EditableText({ value, onSave, className, placeholder, children }
         <p className={`${className ?? ''} text-muted/50 italic`}>{placeholder}</p>
       ) : null)}
 
-      {/* Pen icon — visible on hover/focus */}
+      {/* Pen icon — visible on hover/focus, tucked into upper-right corner */}
       <button
         type="button"
         onClick={(e) => { e.stopPropagation(); setIsEditing(true); }}
-        className="absolute top-0 right-0 p-1 opacity-0 group-hover/editable:opacity-100 focus:opacity-100 transition-opacity text-muted hover:text-gold"
+        className="absolute -top-0.5 -right-0.5 p-0.5 opacity-0 group-hover/editable:opacity-100 focus:opacity-100 transition-opacity text-muted/60 hover:text-gold"
         aria-label="Edit"
       >
-        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
         </svg>
       </button>

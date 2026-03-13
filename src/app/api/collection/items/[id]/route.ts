@@ -112,6 +112,7 @@ const ALLOWED_FIELDS = new Set([
   'hero_image_index',
   'setsumei_text_en', 'setsumei_text_ja',
   'visibility', 'personal_notes',
+  'ai_curator_note_en', 'ai_curator_note_ja',
   // Financial fields (vault table view)
   'purchase_price', 'purchase_currency', 'purchase_date', 'purchase_source',
   'current_value', 'current_currency', 'location',

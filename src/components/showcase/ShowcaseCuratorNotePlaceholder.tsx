@@ -2,10 +2,13 @@
 
 import { useState } from 'react';
 import { HighlightedMarkdown } from '@/components/glossary/HighlightedMarkdown';
+import { EditableText } from '@/components/listing/EditableText';
 
 interface ShowcaseScholarNoteProps {
   noteEn: string | null;
   noteJa: string | null;
+  editable?: boolean;
+  onTextSave?: (lang: 'en' | 'ja', newText: string | null) => Promise<void>;
 }
 
 /**
@@ -13,12 +16,13 @@ interface ShowcaseScholarNoteProps {
  * Uses prose width (65ch) for readable long-form text.
  * Container is media width (960px) so it aligns with section headers.
  */
-export function ShowcaseScholarNote({ noteEn, noteJa }: ShowcaseScholarNoteProps) {
+export function ShowcaseScholarNote({ noteEn, noteJa, editable, onTextSave }: ShowcaseScholarNoteProps) {
   const [showJa, setShowJa] = useState(false);
 
-  if (!noteEn && !noteJa) return null;
+  if (!editable && !noteEn && !noteJa) return null;
 
-  const displayText = showJa && noteJa ? noteJa : (noteEn || noteJa);
+  const isShowingJa = showJa && noteJa;
+  const displayText = isShowingJa ? noteJa : (noteEn || noteJa);
   const hasToggle = noteEn && noteJa;
 
   return (
@@ -34,9 +38,24 @@ export function ShowcaseScholarNote({ noteEn, noteJa }: ShowcaseScholarNoteProps
             </button>
           </div>
         )}
-        <div className="prose-translation text-[15px] md:text-[17px] leading-[1.85] font-light">
-          <HighlightedMarkdown content={displayText || ''} variant="translation" />
-        </div>
+        {editable ? (
+          <EditableText
+            value={displayText || null}
+            onSave={(v) => onTextSave?.(isShowingJa ? 'ja' : 'en', v) ?? Promise.resolve()}
+            className="prose-translation text-[15px] md:text-[17px] leading-[1.85] font-light whitespace-pre-wrap"
+            placeholder="Add scholar's note..."
+          >
+            {displayText ? (
+              <div className="prose-translation text-[15px] md:text-[17px] leading-[1.85] font-light">
+                <HighlightedMarkdown content={displayText} variant="translation" />
+              </div>
+            ) : undefined}
+          </EditableText>
+        ) : (
+          <div className="prose-translation text-[15px] md:text-[17px] leading-[1.85] font-light">
+            <HighlightedMarkdown content={displayText || ''} variant="translation" />
+          </div>
+        )}
       </div>
     </div>
   );

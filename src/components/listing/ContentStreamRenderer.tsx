@@ -78,7 +78,12 @@ export function ContentStreamRenderer({
           case 'curator_note':
             return (
               <div key="curator-note" className="py-4">
-                <ShowcaseScholarNote noteEn={block.noteEn} noteJa={block.noteJa} />
+                <ShowcaseScholarNote
+                  noteEn={block.noteEn}
+                  noteJa={block.noteJa}
+                  editable={editable}
+                  onTextSave={editable ? (lang, v) => onSectionTextSave?.(`ai_curator_note_${lang}`, 0, v) ?? Promise.resolve() : undefined}
+                />
               </div>
             );
 

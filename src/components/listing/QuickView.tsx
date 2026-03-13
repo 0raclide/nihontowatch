@@ -378,8 +378,8 @@ export function QuickView() {
     // Build the updated section data
     let patchBody: Record<string, unknown>;
 
-    if (sectionKey === 'personal_notes') {
-      patchBody = { personal_notes: newText };
+    if (sectionKey === 'personal_notes' || sectionKey === 'ai_curator_note_en' || sectionKey === 'ai_curator_note_ja') {
+      patchBody = { [sectionKey]: newText };
     } else if (sectionKey === 'koshirae') {
       const koshirae = currentListing.koshirae;
       if (!koshirae) return;
