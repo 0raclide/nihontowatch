@@ -103,12 +103,16 @@ export function VaultTableFooter({ items, returnMap, homeCurrency, isLoadingRetu
               {formatPrice(portfolio.totalInvestedHome, homeCurrency, locale)}
             </span>
             <span className="text-muted/30">|</span>
-            <span className="text-muted/60 text-[10px]">{t('vault.return.totalReturn')}:</span>
-            <span className={`tabular-nums font-medium ${returnColor(portfolio.totalReturn)}`}>
-              {sign(portfolio.totalReturn)}{fmtHome(portfolio.totalReturn)}
-              {portfolio.totalReturnPct != null && (
+            <span className="text-muted/60 text-[10px]">
+              {portfolio.hasInflation ? t('vault.return.realReturn') : t('vault.return.totalReturn')}:
+            </span>
+            <span className={`tabular-nums font-medium ${returnColor(portfolio.hasInflation ? portfolio.totalRealReturn : portfolio.totalReturn)}`}>
+              {sign(portfolio.hasInflation ? portfolio.totalRealReturn : portfolio.totalReturn)}
+              {fmtHome(portfolio.hasInflation ? portfolio.totalRealReturn : portfolio.totalReturn)}
+              {(portfolio.hasInflation ? portfolio.totalRealReturnPct : portfolio.totalReturnPct) != null && (
                 <span className="ml-1 font-normal">
-                  ({sign(portfolio.totalReturnPct)}{Math.abs(portfolio.totalReturnPct).toFixed(1)}%)
+                  ({sign((portfolio.hasInflation ? portfolio.totalRealReturnPct : portfolio.totalReturnPct)!)}
+                  {Math.abs((portfolio.hasInflation ? portfolio.totalRealReturnPct : portfolio.totalReturnPct)!).toFixed(1)}%)
                 </span>
               )}
             </span>
@@ -127,6 +131,15 @@ export function VaultTableFooter({ items, returnMap, homeCurrency, isLoadingRetu
               <span className={`tabular-nums ${returnColor(portfolio.totalFxImpact)}`}>
                 {sign(portfolio.totalFxImpact)}{fmtHome(portfolio.totalFxImpact)}
               </span>
+              {portfolio.hasInflation && (
+                <>
+                  <span className="text-muted/20">|</span>
+                  <span>{t('vault.return.inflation')}:</span>
+                  <span className={`tabular-nums ${returnColor(portfolio.totalInflationImpact)}`}>
+                    {sign(portfolio.totalInflationImpact)}{fmtHome(portfolio.totalInflationImpact)}
+                  </span>
+                </>
+              )}
               <span className="text-muted/20">|</span>
               <span>{t('vault.return.expenses')}:</span>
               <span className={`tabular-nums ${returnColor(portfolio.totalExpenseDrag)}`}>

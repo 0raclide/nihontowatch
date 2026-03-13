@@ -41,12 +41,16 @@ export function ReturnBreakdownPopover({ returnData, homeCurrency }: ReturnBreak
     return <span className="text-muted/30">—</span>;
   }
 
-  const isPositive = returnData.totalReturn >= 0;
+  // Show real return when available, fall back to nominal
+  const displayReturn = returnData.realReturn ?? returnData.totalReturn;
+  const displayPct = returnData.realReturnPct ?? returnData.totalReturnPct;
+
+  const isPositive = displayReturn >= 0;
   const sign = isPositive ? '+' : '';
   const colorClass = isPositive ? 'text-green-500' : 'text-red-400';
-  const formatted = formatPrice(Math.abs(returnData.totalReturn), homeCurrency, locale) || '—';
-  const pct = returnData.totalReturnPct != null
-    ? `(${sign}${returnData.totalReturnPct.toFixed(1)}%)`
+  const formatted = formatPrice(Math.abs(displayReturn), homeCurrency, locale) || '—';
+  const pct = displayPct != null
+    ? `(${sign}${displayPct.toFixed(1)}%)`
     : '';
 
   return (
@@ -74,6 +78,14 @@ export function ReturnBreakdownPopover({ returnData, homeCurrency }: ReturnBreak
                 currency={homeCurrency}
                 locale={locale}
               />
+              {returnData.inflationImpact != null && (
+                <Row
+                  label={t('vault.return.inflation')}
+                  value={returnData.inflationImpact}
+                  currency={homeCurrency}
+                  locale={locale}
+                />
+              )}
               <Row
                 label={t('vault.return.expenses')}
                 value={returnData.expenseDrag}
@@ -82,8 +94,8 @@ export function ReturnBreakdownPopover({ returnData, homeCurrency }: ReturnBreak
               />
               <div className="border-t border-border/30 my-1.5" />
               <Row
-                label={t('vault.return.totalReturn')}
-                value={returnData.totalReturn}
+                label={returnData.realReturn != null ? t('vault.return.realReturn') : t('vault.return.totalReturn')}
+                value={displayReturn}
                 currency={homeCurrency}
                 locale={locale}
                 bold
@@ -92,8 +104,8 @@ export function ReturnBreakdownPopover({ returnData, homeCurrency }: ReturnBreak
           ) : (
             <div className="space-y-1.5">
               <Row
-                label={t('vault.return.totalReturn')}
-                value={returnData.totalReturn}
+                label={returnData.realReturn != null ? t('vault.return.realReturn') : t('vault.return.totalReturn')}
+                value={displayReturn}
                 currency={homeCurrency}
                 locale={locale}
                 bold

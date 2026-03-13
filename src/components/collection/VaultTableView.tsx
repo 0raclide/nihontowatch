@@ -88,10 +88,13 @@ export function VaultTableView({
           va = ext_a?.current_value ?? null; vb = ext_b?.current_value ?? null; break;
         case 'invested':
           va = ext_a?.total_invested ?? null; vb = ext_b?.total_invested ?? null; break;
-        case 'return':
-          va = returnMap.get(String(a.id))?.totalReturn ?? null;
-          vb = returnMap.get(String(b.id))?.totalReturn ?? null;
+        case 'return': {
+          const ra = returnMap.get(String(a.id));
+          const rb = returnMap.get(String(b.id));
+          va = ra?.realReturn ?? ra?.totalReturn ?? null;
+          vb = rb?.realReturn ?? rb?.totalReturn ?? null;
           break;
+        }
         case 'location':
           va = ext_a?.location ?? null; vb = ext_b?.location ?? null; break;
       }
@@ -410,6 +413,11 @@ function TableItemRow({
               onCurrencyUpdate(itemId, 'purchase_price', 'purchase_currency', amount, currency)
             }
           />
+          {returnData?.inflationAdjustedCost != null && (
+            <div className="text-[9px] text-muted/40 mt-0.5 pl-0.5 tabular-nums">
+              ≈{formatPrice(returnData.inflationAdjustedCost, homeCurrency, locale)} {t('vault.table.adjustedToday')}
+            </div>
+          )}
         </td>
 
         {/* Current Value (editable) */}

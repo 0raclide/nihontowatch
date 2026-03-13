@@ -32,6 +32,15 @@ export interface ItemReturnData {
   fxImpact: number | null;
   /** -(sum of expenses converted at today's rate) */
   expenseDrag: number | null;
+
+  /** -costBasisHome × (inflationFactor - 1). Negative = purchasing power lost. */
+  inflationImpact: number | null;
+  /** totalReturn + inflationImpact */
+  realReturn: number | null;
+  /** realReturn / (inflationAdjustedCost + expenses) × 100 */
+  realReturnPct: number | null;
+  /** costBasisHome × inflationFactor — what you paid in today's money */
+  inflationAdjustedCost: number | null;
 }
 
 export interface ItemFinancialInput {
@@ -75,6 +84,10 @@ const NULL_RETURN: ItemReturnData = {
   assetReturn: null,
   fxImpact: null,
   expenseDrag: null,
+  inflationImpact: null,
+  realReturn: null,
+  realReturnPct: null,
+  inflationAdjustedCost: null,
 };
 
 // =============================================================================
@@ -89,6 +102,7 @@ const NULL_RETURN: ItemReturnData = {
  * @param historicalRates - Map of "date|FROM|TO" → rate (from fetchBatchHistoricalRates)
  * @param todayRates - Today's exchange rates (from useCurrency)
  * @param expenseTotalsByCurrency - { "JPY": 50000, "USD": 200 } expense totals for this item
+ * @param inflationFactor - CPI(today) / CPI(purchase). >1 = inflation, <1 = deflation. Optional.
  */
 export function computeItemReturn(
   item: ItemFinancialInput,
@@ -96,6 +110,7 @@ export function computeItemReturn(
   historicalRates: FxRateMap,
   todayRates: ExchangeRates | null,
   expenseTotalsByCurrency?: Record<string, number>,
+  inflationFactor?: number | null,
 ): ItemReturnData {
   const home = homeCurrency.toUpperCase();
 
@@ -130,6 +145,10 @@ export function computeItemReturn(
       assetReturn: null,
       fxImpact: null,
       expenseDrag: null,
+      inflationImpact: null,
+      realReturn: null,
+      realReturnPct: null,
+      inflationAdjustedCost: null,
     };
   }
 
@@ -152,6 +171,10 @@ export function computeItemReturn(
         assetReturn: null,
         fxImpact: null,
         expenseDrag: null,
+        inflationImpact: null,
+        realReturn: null,
+        realReturnPct: null,
+        inflationAdjustedCost: null,
       };
     }
     costBasisHome = item.purchase_price * historicalRate;
@@ -183,6 +206,10 @@ export function computeItemReturn(
       assetReturn: null,
       fxImpact: null,
       expenseDrag: null,
+      inflationImpact: null,
+      realReturn: null,
+      realReturnPct: null,
+      inflationAdjustedCost: null,
     };
   }
 
@@ -201,6 +228,10 @@ export function computeItemReturn(
       assetReturn: null,
       fxImpact: null,
       expenseDrag: null,
+      inflationImpact: null,
+      realReturn: null,
+      realReturnPct: null,
+      inflationAdjustedCost: null,
     };
   }
 
@@ -213,6 +244,22 @@ export function computeItemReturn(
   // Asset return: residual so identity holds (asset + fx + expenses = total)
   const assetReturn = totalReturn - fxImpact - expenseDrag;
 
+  // Inflation layer — purely additive, doesn't affect nominal values
+  let inflationImpact: number | null = null;
+  let realReturn: number | null = null;
+  let realReturnPct: number | null = null;
+  let inflationAdjustedCost: number | null = null;
+
+  if (inflationFactor != null) {
+    inflationImpact = -costBasisHome * (inflationFactor - 1);
+    inflationAdjustedCost = costBasisHome * inflationFactor;
+    realReturn = totalReturn + inflationImpact;
+    const realDenominator = inflationAdjustedCost + expensesHome;
+    realReturnPct = realDenominator !== 0
+      ? (realReturn / realDenominator) * 100
+      : null;
+  }
+
   return {
     currentValueHome,
     totalInvestedHome,
@@ -222,6 +269,10 @@ export function computeItemReturn(
     assetReturn,
     fxImpact,
     expenseDrag,
+    inflationImpact,
+    realReturn,
+    realReturnPct,
+    inflationAdjustedCost,
   };
 }
 
@@ -240,13 +291,21 @@ export function computePortfolioTotals(
   totalExpenseDrag: number;
   hasDecomposition: boolean;
   itemsWithData: number;
+  totalInflationImpact: number;
+  totalRealReturn: number;
+  totalRealReturnPct: number | null;
+  hasInflation: boolean;
 } {
   let totalValueHome = 0;
   let totalInvestedHome = 0;
   let totalAssetReturn = 0;
   let totalFxImpact = 0;
   let totalExpenseDrag = 0;
+  let totalInflationImpact = 0;
+  let totalInflationAdjustedCost = 0;
+  let totalExpensesForReal = 0;
   let hasDecomposition = false;
+  let hasInflation = false;
   let itemsWithData = 0;
 
   for (const data of returnMap.values()) {
@@ -265,11 +324,23 @@ export function computePortfolioTotals(
       if (data.fxImpact != null) totalFxImpact += data.fxImpact;
       if (data.expenseDrag != null) totalExpenseDrag += data.expenseDrag;
     }
+    if (data.inflationImpact != null) {
+      hasInflation = true;
+      totalInflationImpact += data.inflationImpact;
+      if (data.inflationAdjustedCost != null) totalInflationAdjustedCost += data.inflationAdjustedCost;
+      if (data.expenseDrag != null) totalExpensesForReal += -data.expenseDrag; // expenseDrag is negative
+    }
   }
 
   const totalReturn = totalValueHome - totalInvestedHome;
   const totalReturnPct = totalInvestedHome !== 0
     ? (totalReturn / totalInvestedHome) * 100
+    : null;
+
+  const totalRealReturn = totalReturn + totalInflationImpact;
+  const realDenominator = totalInflationAdjustedCost + totalExpensesForReal;
+  const totalRealReturnPct = hasInflation && realDenominator !== 0
+    ? (totalRealReturn / realDenominator) * 100
     : null;
 
   return {
@@ -282,5 +353,9 @@ export function computePortfolioTotals(
     totalExpenseDrag,
     hasDecomposition,
     itemsWithData,
+    totalInflationImpact,
+    totalRealReturn,
+    totalRealReturnPct,
+    hasInflation,
   };
 }

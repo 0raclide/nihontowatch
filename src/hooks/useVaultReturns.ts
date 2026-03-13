@@ -7,6 +7,7 @@ import type { FxRateMap } from '@/lib/fx/batchHistoricalRates';
 import { fetchBatchHistoricalRates } from '@/lib/fx/batchHistoricalRates';
 import type { ItemReturnData } from '@/lib/fx/financialCalculator';
 import { computeItemReturn } from '@/lib/fx/financialCalculator';
+import { getCumulativeInflation } from '@/lib/fx/inflation';
 import type { ExpenseTotalsMap } from '@/lib/displayItem/fromCollectionItem';
 
 /**
@@ -78,6 +79,12 @@ export function useVaultReturns(
       // However, onExpenseTotalsChange in CollectionPageClient stores by item_uuid.
       const itemExpenses = expenseTotals[itemId];
 
+      // Compute inflation factor from purchase date to today (synchronous, static CPI data)
+      let inflationFactor: number | null = null;
+      if (ext.purchase_date) {
+        inflationFactor = getCumulativeInflation(homeCurrency, ext.purchase_date);
+      }
+
       const data = computeItemReturn(
         {
           purchase_price: ext.purchase_price,
@@ -90,6 +97,7 @@ export function useVaultReturns(
         historicalRates,
         exchangeRates,
         itemExpenses,
+        inflationFactor,
       );
 
       map.set(itemId, data);

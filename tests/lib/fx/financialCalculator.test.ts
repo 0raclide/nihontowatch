@@ -336,6 +336,199 @@ describe('computeItemReturn', () => {
 });
 
 // =============================================================================
+// computeItemReturn — inflation
+// =============================================================================
+
+describe('computeItemReturn — inflation', () => {
+  it('inflation fields are null when inflationFactor not provided (backwards compat)', () => {
+    const result = computeItemReturn(
+      { purchase_price: 10000, purchase_currency: 'USD', purchase_date: '2023-01-01', current_value: 12000, current_currency: 'USD' },
+      'USD',
+      new Map(),
+      TODAY_RATES,
+    );
+
+    expect(result.inflationImpact).toBeNull();
+    expect(result.realReturn).toBeNull();
+    expect(result.realReturnPct).toBeNull();
+    expect(result.inflationAdjustedCost).toBeNull();
+    // Nominal values unchanged
+    expect(result.totalReturn).toBe(2000);
+    expect(result.totalReturnPct).toBeCloseTo(20, 1);
+  });
+
+  it('computes inflation impact with known factor', () => {
+    // $10K purchase, now $12K, 28% cumulative inflation (factor=1.28)
+    const result = computeItemReturn(
+      { purchase_price: 10000, purchase_currency: 'USD', purchase_date: '2023-01-01', current_value: 12000, current_currency: 'USD' },
+      'USD',
+      new Map(),
+      TODAY_RATES,
+      undefined,
+      1.28,
+    );
+
+    // inflationImpact = -10000 × (1.28 - 1) = -2800
+    expect(result.inflationImpact).toBeCloseTo(-2800, 1);
+    // inflationAdjustedCost = 10000 × 1.28 = 12800
+    expect(result.inflationAdjustedCost).toBeCloseTo(12800, 1);
+    // realReturn = 2000 + (-2800) = -800
+    expect(result.realReturn).toBeCloseTo(-800, 1);
+    // realReturnPct = -800 / 12800 × 100 = -6.25%
+    expect(result.realReturnPct).toBeCloseTo(-6.25, 1);
+
+    // Nominal values UNCHANGED
+    expect(result.totalReturn).toBe(2000);
+    expect(result.totalReturnPct).toBeCloseTo(20, 1);
+  });
+
+  it('4-component identity: asset + fx + inflation + expenses ≈ realReturn', () => {
+    const historicalRates = buildHistoricalRates([
+      ['2023-06-01', 'JPY', 'USD', 1 / 110],
+    ]);
+
+    const result = computeItemReturn(
+      { purchase_price: 2000000, purchase_currency: 'JPY', purchase_date: '2023-06-01', current_value: 2500000, current_currency: 'JPY' },
+      'USD',
+      historicalRates,
+      TODAY_RATES,
+      { 'JPY': 100000 },
+      1.15, // 15% inflation
+    );
+
+    expect(result.canDecompose).toBe(true);
+    expect(result.realReturn).not.toBeNull();
+    const sum = result.assetReturn! + result.fxImpact! + result.inflationImpact! + result.expenseDrag!;
+    expect(sum).toBeCloseTo(result.realReturn!, 2);
+  });
+
+  it('nominal positive but real negative (inflation exceeds gain)', () => {
+    // $40K → $45K (+12.5% nominal), but 20% inflation
+    const result = computeItemReturn(
+      { purchase_price: 40000, purchase_currency: 'USD', purchase_date: '2018-01-01', current_value: 45000, current_currency: 'USD' },
+      'USD',
+      new Map(),
+      TODAY_RATES,
+      undefined,
+      1.20, // 20% inflation
+    );
+
+    expect(result.totalReturn).toBe(5000); // Nominal gain
+    expect(result.totalReturn!).toBeGreaterThan(0);
+
+    expect(result.realReturn!).toBeLessThan(0); // Real loss
+    // inflationImpact = -40000 × 0.20 = -8000
+    // realReturn = 5000 + (-8000) = -3000
+    expect(result.realReturn).toBeCloseTo(-3000, 1);
+  });
+
+  it('zero inflation (factor = 1.0) → zero impact', () => {
+    const result = computeItemReturn(
+      { purchase_price: 10000, purchase_currency: 'USD', purchase_date: '2023-01-01', current_value: 12000, current_currency: 'USD' },
+      'USD',
+      new Map(),
+      TODAY_RATES,
+      undefined,
+      1.0,
+    );
+
+    expect(result.inflationImpact).toBeCloseTo(0, 5);
+    expect(result.realReturn).toBeCloseTo(result.totalReturn!, 5);
+    expect(result.inflationAdjustedCost).toBeCloseTo(10000, 5);
+  });
+
+  it('deflation (factor < 1.0) → positive impact (real return > nominal)', () => {
+    // JPY deflation scenario: factor = 0.97 (3% deflation)
+    const result = computeItemReturn(
+      { purchase_price: 1000000, purchase_currency: 'JPY', purchase_date: '2005-01-01', current_value: 1000000, current_currency: 'JPY' },
+      'JPY',
+      new Map(),
+      TODAY_RATES,
+      undefined,
+      0.97,
+    );
+
+    // inflationImpact = -1000000 × (0.97 - 1) = -1000000 × (-0.03) = +30000
+    expect(result.inflationImpact!).toBeGreaterThan(0);
+    expect(result.totalReturn).toBe(0); // Nominal flat
+    expect(result.realReturn!).toBeGreaterThan(0); // Real gain from deflation
+    expect(result.realReturn).toBeCloseTo(30000, 1);
+  });
+
+  it('inflation with expenses — realReturn includes both drags', () => {
+    const result = computeItemReturn(
+      { purchase_price: 20000, purchase_currency: 'USD', purchase_date: '2020-01-01', current_value: 25000, current_currency: 'USD' },
+      'USD',
+      new Map(),
+      TODAY_RATES,
+      { 'USD': 1000 },
+      1.25, // 25% inflation
+    );
+
+    // Nominal: 25000 - 21000 = 4000
+    expect(result.totalReturn).toBeCloseTo(4000, 1);
+    // inflationImpact = -20000 × 0.25 = -5000
+    expect(result.inflationImpact).toBeCloseTo(-5000, 1);
+    // realReturn = 4000 + (-5000) = -1000
+    expect(result.realReturn).toBeCloseTo(-1000, 1);
+    // realReturnPct = -1000 / (25000 + 1000) × 100 (denom = adjCost + expenses)
+    expect(result.realReturnPct).toBeCloseTo(-1000 / (25000 + 1000) * 100, 1);
+  });
+
+  it('null inflationFactor explicitly passed → fields are null', () => {
+    const result = computeItemReturn(
+      { purchase_price: 10000, purchase_currency: 'USD', purchase_date: '2023-01-01', current_value: 12000, current_currency: 'USD' },
+      'USD',
+      new Map(),
+      TODAY_RATES,
+      undefined,
+      null,
+    );
+
+    expect(result.inflationImpact).toBeNull();
+    expect(result.realReturn).toBeNull();
+  });
+
+  it('mixed currency with inflation — 4-component identity holds', () => {
+    const historicalRates = buildHistoricalRates([
+      ['2021-05-05', 'JPY', 'USD', 1 / 110],
+    ]);
+
+    const result = computeItemReturn(
+      { purchase_price: 5000000, purchase_currency: 'JPY', purchase_date: '2021-05-05', current_value: 50000, current_currency: 'USD' },
+      'USD',
+      historicalRates,
+      TODAY_RATES,
+      { 'USD': 500 },
+      1.18,
+    );
+
+    expect(result.canDecompose).toBe(true);
+    expect(result.realReturn).not.toBeNull();
+    const sum = result.assetReturn! + result.fxImpact! + result.inflationImpact! + result.expenseDrag!;
+    expect(sum).toBeCloseTo(result.realReturn!, 2);
+  });
+
+  it('nominal return unchanged regardless of inflation factor', () => {
+    const withoutInflation = computeItemReturn(
+      { purchase_price: 10000, purchase_currency: 'USD', purchase_date: '2023-01-01', current_value: 15000, current_currency: 'USD' },
+      'USD', new Map(), TODAY_RATES,
+    );
+    const withInflation = computeItemReturn(
+      { purchase_price: 10000, purchase_currency: 'USD', purchase_date: '2023-01-01', current_value: 15000, current_currency: 'USD' },
+      'USD', new Map(), TODAY_RATES,
+      undefined, 1.30,
+    );
+
+    expect(withInflation.totalReturn).toBe(withoutInflation.totalReturn);
+    expect(withInflation.totalReturnPct).toBe(withoutInflation.totalReturnPct);
+    expect(withInflation.assetReturn).toBe(withoutInflation.assetReturn);
+    expect(withInflation.fxImpact).toBe(withoutInflation.fxImpact);
+    expect(withInflation.expenseDrag).toBe(withoutInflation.expenseDrag);
+  });
+});
+
+// =============================================================================
 // computePortfolioTotals
 // =============================================================================
 
@@ -418,5 +611,106 @@ describe('computePortfolioTotals', () => {
     expect(totals.totalValueHome).toBe(0);
     expect(totals.totalReturn).toBe(0);
     expect(totals.itemsWithData).toBe(0);
+    expect(totals.hasInflation).toBe(false);
+    expect(totals.totalInflationImpact).toBe(0);
+  });
+
+  it('aggregates inflation across items', () => {
+    const map = new Map<string, ItemReturnData>();
+    map.set('a', {
+      currentValueHome: 12000,
+      totalInvestedHome: 10000,
+      totalReturn: 2000,
+      totalReturnPct: 20,
+      canDecompose: true,
+      assetReturn: 2000,
+      fxImpact: 0,
+      expenseDrag: 0,
+      inflationImpact: -2800,
+      realReturn: -800,
+      realReturnPct: -6.25,
+      inflationAdjustedCost: 12800,
+    });
+    map.set('b', {
+      currentValueHome: 8000,
+      totalInvestedHome: 5000,
+      totalReturn: 3000,
+      totalReturnPct: 60,
+      canDecompose: true,
+      assetReturn: 3000,
+      fxImpact: 0,
+      expenseDrag: 0,
+      inflationImpact: -1000,
+      realReturn: 2000,
+      realReturnPct: 33.33,
+      inflationAdjustedCost: 6000,
+    });
+
+    const totals = computePortfolioTotals(map);
+    expect(totals.hasInflation).toBe(true);
+    expect(totals.totalInflationImpact).toBe(-3800);
+    expect(totals.totalRealReturn).toBe(5000 + (-3800)); // totalReturn + totalInflation
+    expect(totals.totalRealReturnPct).not.toBeNull();
+  });
+
+  it('hasInflation false when no items have inflation data', () => {
+    const map = new Map<string, ItemReturnData>();
+    map.set('a', {
+      currentValueHome: 10000,
+      totalInvestedHome: 8000,
+      totalReturn: 2000,
+      totalReturnPct: 25,
+      canDecompose: true,
+      assetReturn: 2000,
+      fxImpact: 0,
+      expenseDrag: 0,
+      inflationImpact: null,
+      realReturn: null,
+      realReturnPct: null,
+      inflationAdjustedCost: null,
+    });
+
+    const totals = computePortfolioTotals(map);
+    expect(totals.hasInflation).toBe(false);
+    expect(totals.totalInflationImpact).toBe(0);
+    expect(totals.totalRealReturnPct).toBeNull();
+  });
+
+  it('mixed items — some with inflation, some without', () => {
+    const map = new Map<string, ItemReturnData>();
+    map.set('withInflation', {
+      currentValueHome: 15000,
+      totalInvestedHome: 10000,
+      totalReturn: 5000,
+      totalReturnPct: 50,
+      canDecompose: true,
+      assetReturn: 5000,
+      fxImpact: 0,
+      expenseDrag: 0,
+      inflationImpact: -2000,
+      realReturn: 3000,
+      realReturnPct: 25,
+      inflationAdjustedCost: 12000,
+    });
+    map.set('withoutInflation', {
+      currentValueHome: 8000,
+      totalInvestedHome: 6000,
+      totalReturn: 2000,
+      totalReturnPct: 33.33,
+      canDecompose: true,
+      assetReturn: 2000,
+      fxImpact: 0,
+      expenseDrag: 0,
+      inflationImpact: null,
+      realReturn: null,
+      realReturnPct: null,
+      inflationAdjustedCost: null,
+    });
+
+    const totals = computePortfolioTotals(map);
+    expect(totals.hasInflation).toBe(true);
+    expect(totals.totalInflationImpact).toBe(-2000);
+    // totalRealReturn = totalReturn + totalInflationImpact = 7000 + (-2000) = 5000
+    expect(totals.totalRealReturn).toBe(7000 + (-2000));
   });
 });
