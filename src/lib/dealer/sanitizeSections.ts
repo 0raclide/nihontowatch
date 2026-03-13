@@ -93,7 +93,7 @@ function sanitizeProvenanceEntry(raw: unknown): ProvenanceEntry {
     id: typeof e.id === 'string' ? e.id : crypto.randomUUID(),
     owner_name: trimOrNull(e.owner_name, 200) ?? '',
     owner_name_ja: trimOrNull(e.owner_name_ja, 200),
-    notes: trimOrNull(e.notes, 5000),
+    notes: trimOrNull(e.notes, 20000),
     images: sanitizeImageArray(e.images, 5),
   };
 }
@@ -126,7 +126,7 @@ function sanitizeKiwameEntry(raw: unknown): KiwameEntry {
     kiwame_type: typeof e.kiwame_type === 'string' && VALID_KIWAME_TYPES.has(e.kiwame_type)
       ? (e.kiwame_type as KiwameType)
       : 'origami',
-    notes: trimOrNull(e.notes, 5000),
+    notes: trimOrNull(e.notes, 20000),
     images: Array.isArray(e.images)
       ? (e.images as unknown[]).filter((url): url is string => typeof url === 'string' && url.length > 0).slice(0, 5)
       : [],
