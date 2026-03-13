@@ -90,6 +90,7 @@ export function KantoHibishoSection({ data, itemId, isSaved = false, onChange, o
 
     // Edit mode: upload immediately
     setIsUploading(true);
+    const newImageUrls: string[] = [];
     try {
       for (const file of validFiles) {
         const formData = new FormData();
@@ -103,10 +104,7 @@ export function KantoHibishoSection({ data, itemId, isSaved = false, onChange, o
 
         if (res.ok) {
           const result = await res.json();
-          onChange({
-            ...data,
-            images: [...(data.images || []), result.publicUrl],
-          });
+          newImageUrls.push(result.publicUrl);
         } else {
           const result = await res.json().catch(() => ({}));
           setUploadError(result.error || 'Upload failed');
@@ -115,6 +113,12 @@ export function KantoHibishoSection({ data, itemId, isSaved = false, onChange, o
     } catch {
       setUploadError('Upload failed');
     } finally {
+      if (newImageUrls.length > 0) {
+        onChange({
+          ...data,
+          images: [...(data.images || []), ...newImageUrls],
+        });
+      }
       setIsUploading(false);
     }
   }, [data, itemId, isEditMode, pendingFiles, onChange, onPendingFilesChange, t]);

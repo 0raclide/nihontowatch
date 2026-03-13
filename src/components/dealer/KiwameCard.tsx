@@ -86,6 +86,7 @@ export function KiwameCard({ entry, index, itemId, isSaved = false, onChange, on
 
     // Edit mode: upload immediately
     setIsUploading(true);
+    const newImageUrls: string[] = [];
     try {
       for (const file of validFiles) {
         const formData = new FormData();
@@ -100,10 +101,7 @@ export function KiwameCard({ entry, index, itemId, isSaved = false, onChange, on
 
         if (res.ok) {
           const data = await res.json();
-          onChange({
-            ...entry,
-            images: [...(entry.images || []), data.publicUrl],
-          });
+          newImageUrls.push(data.publicUrl);
         } else {
           const data = await res.json().catch(() => ({}));
           setUploadError(data.error || 'Upload failed');
@@ -112,6 +110,12 @@ export function KiwameCard({ entry, index, itemId, isSaved = false, onChange, on
     } catch {
       setUploadError('Upload failed');
     } finally {
+      if (newImageUrls.length > 0) {
+        onChange({
+          ...entry,
+          images: [...(entry.images || []), ...newImageUrls],
+        });
+      }
       setIsUploading(false);
     }
   }, [entry, itemId, isEditMode, pendingFiles, onChange, onPendingFilesChange, t, apiEndpoint]);

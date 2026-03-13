@@ -172,6 +172,7 @@ export function KoshiraeSection({ koshirae, itemId, isSaved = false, onChange, o
 
     // Edit mode: upload immediately
     setIsUploading(true);
+    const newImageUrls: string[] = [];
     try {
       for (const file of validFiles) {
         const formData = new FormData();
@@ -185,10 +186,7 @@ export function KoshiraeSection({ koshirae, itemId, isSaved = false, onChange, o
 
         if (res.ok) {
           const data = await res.json();
-          onChange({
-            ...koshirae,
-            images: [...(koshirae.images || []), data.publicUrl],
-          });
+          newImageUrls.push(data.publicUrl);
         } else {
           const data = await res.json().catch(() => ({}));
           setUploadError(data.error || 'Upload failed');
@@ -197,6 +195,12 @@ export function KoshiraeSection({ koshirae, itemId, isSaved = false, onChange, o
     } catch {
       setUploadError('Upload failed');
     } finally {
+      if (newImageUrls.length > 0) {
+        onChange({
+          ...koshirae,
+          images: [...(koshirae.images || []), ...newImageUrls],
+        });
+      }
       setIsUploading(false);
     }
   }, [koshirae, itemId, isEditMode, pendingFiles, onChange, onPendingFilesChange, t]);
