@@ -77,7 +77,7 @@ export function ShowcaseScholarNote({
         )}
 
         {hasHeroContent && (
-          <div className="w-16 h-px bg-border/40 mx-auto mb-5" />
+          <div className="w-16 h-px bg-gradient-to-r from-transparent via-amber-600/60 to-transparent mx-auto mb-5" />
         )}
 
         {/* Full note body */}
