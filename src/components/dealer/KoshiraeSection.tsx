@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import type { KoshiraeData } from '@/types';
 import { resizeImage } from '@/lib/images/resizeImage';
@@ -58,6 +58,11 @@ export function KoshiraeSection({ koshirae, itemId, isSaved = false, onChange, o
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
+
+  const koshiraeImagesLength = koshirae?.images?.length ?? 0;
+  // Clear selection when images array changes length (image removed/moved)
+  useEffect(() => { setSelectedImageIndex(null); }, [koshiraeImagesLength]);
 
   // Only use immediate upload when the listing is being edited AND this data exists in the DB
   const isEditMode = !!itemId && isSaved;
@@ -377,41 +382,78 @@ export function KoshiraeSection({ koshirae, itemId, isSaved = false, onChange, o
 
           {/* Existing images */}
           {(koshirae.images || []).length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-2">
-              {(koshirae.images || []).map((url, i) => (
-                <div key={i} className="relative w-16 h-16 rounded-lg overflow-hidden group">
-                  <Image
-                    src={url}
-                    alt={`Koshirae photo ${i + 1}`}
-                    fill
-                    className="object-cover"
-                    sizes="64px"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveImage(url)}
-                    className="absolute top-0.5 right-0.5 w-5 h-5 flex items-center justify-center bg-black/60 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity text-[10px]"
-                    aria-label={t('collection.removeImage')}
-                  >
-                    &times;
-                  </button>
-                  {/* Move to blade images button */}
+            <>
+              <div className="flex flex-wrap gap-2 mb-2">
+                {(koshirae.images || []).map((url, i) => {
+                  const isSelected = i === selectedImageIndex;
+                  return (
+                    <div
+                      key={i}
+                      className={`relative w-16 h-16 rounded-lg overflow-hidden group cursor-pointer ${isSelected ? 'ring-2 ring-accent' : ''}`}
+                      onClick={(e) => { e.stopPropagation(); setSelectedImageIndex(isSelected ? null : i); }}
+                    >
+                      <Image
+                        src={url}
+                        alt={`Koshirae photo ${i + 1}`}
+                        fill
+                        className="object-cover"
+                        sizes="64px"
+                      />
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); handleRemoveImage(url); }}
+                        className="absolute top-0.5 right-0.5 w-5 h-5 flex items-center justify-center bg-black/60 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity text-[10px] hidden md:flex"
+                        aria-label={t('collection.removeImage')}
+                      >
+                        &times;
+                      </button>
+                      {/* Move to blade images button */}
+                      {onMoveImageToBlades && !bladeImagesFull && (
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); onMoveImageToBlades(url); }}
+                          className="absolute bottom-0.5 left-0.5 w-5 h-5 flex items-center justify-center bg-blue-600/70 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hidden md:flex"
+                          aria-label={t('dealer.moveToBladeImages')}
+                          title={t('dealer.moveToBladeImages')}
+                        >
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                          </svg>
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Mobile action bar */}
+              {selectedImageIndex !== null && selectedImageIndex < (koshirae.images || []).length && (
+                <div className="flex md:hidden gap-2 mb-2">
                   {onMoveImageToBlades && !bladeImagesFull && (
                     <button
                       type="button"
-                      onClick={() => onMoveImageToBlades(url)}
-                      className="absolute bottom-0.5 left-0.5 w-5 h-5 flex items-center justify-center bg-blue-600/70 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                      aria-label={t('dealer.moveToBladeImages')}
-                      title={t('dealer.moveToBladeImages')}
+                      onClick={() => { const url = (koshirae.images || [])[selectedImageIndex!]; if (url) onMoveImageToBlades(url); }}
+                      className="flex items-center gap-1 px-3 py-2 rounded-lg bg-blue-600/10 text-blue-500 border border-blue-500/20 text-[12px] min-h-[44px]"
                     >
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18" />
                       </svg>
+                      {t('dealer.moveToBladesShort')}
                     </button>
                   )}
+                  <button
+                    type="button"
+                    onClick={() => { const url = (koshirae.images || [])[selectedImageIndex!]; if (url) handleRemoveImage(url); }}
+                    className="flex items-center gap-1 px-3 py-2 rounded-lg bg-red-500/10 text-red-500 border border-red-500/20 text-[12px] min-h-[44px]"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    {t('collection.delete')}
+                  </button>
                 </div>
-              ))}
-            </div>
+              )}
+            </>
           )}
 
           {/* Upload button */}
