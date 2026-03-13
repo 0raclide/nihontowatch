@@ -569,6 +569,12 @@ export function QuickViewProvider({ children }: QuickViewProviderProps) {
     // Collection items don't have a detail API — just apply optimistic fields
     if (source === 'collection') {
       refreshInFlightRef.current = false;
+      // Notify parent grid so reopening QuickView shows fresh data
+      if (optimisticFields) {
+        window.dispatchEvent(new CustomEvent('collection-item-updated', {
+          detail: { item_uuid: currentListing.id, ...optimisticFields },
+        }));
+      }
       return;
     }
 

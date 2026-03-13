@@ -177,6 +177,19 @@ export function CollectionPageClient() {
     [items]
   );
 
+  // Sync collection grid when an item is edited inline in QuickView
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const updated = (e as CustomEvent).detail;
+      if (!updated?.item_uuid) return;
+      setItemsState(prev => prev.map(item =>
+        item.item_uuid === updated.item_uuid ? { ...item, ...updated } as CollectionItemRow : item
+      ));
+    };
+    window.addEventListener('collection-item-updated', handler);
+    return () => window.removeEventListener('collection-item-updated', handler);
+  }, []);
+
   // Set adapted listings in QuickView context for J/K navigation
   useEffect(() => {
     if (quickViewListings.length > 0) {
