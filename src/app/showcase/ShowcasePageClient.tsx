@@ -124,7 +124,7 @@ export function ShowcasePageClient() {
             <h1 className="text-3xl sm:text-4xl font-serif tracking-wide">
               <span className="text-ink">{t('showcase.titlePrefix')}</span><span className="text-gold">{t('showcase.titleAccent')}</span>
             </h1>
-            <p className="mt-2 text-sm text-muted/70 tracking-wide font-light">
+            <p className="mt-2 text-sm text-ink tracking-wide font-light">
               {t('showcase.subtitle')}
             </p>
           </div>
