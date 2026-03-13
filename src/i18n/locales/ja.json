@@ -681,6 +681,9 @@
   "vault.return.portfolioValue": "\u30dd\u30fc\u30c8\u30d5\u30a9\u30ea\u30aa\u8a55\u4fa1\u984d",
   "vault.return.totalInvested": "\u6295\u8cc7\u7dcf\u984d",
   "vault.return.loadingRates": "\u30ec\u30fc\u30c8\u8aad\u8fbc\u4e2d...",
+  "vault.return.inflation": "\u30a4\u30f3\u30d5\u30ec\u5f71\u97ff",
+  "vault.return.realReturn": "\u5b9f\u8cea\u640d\u76ca",
+  "vault.table.adjustedToday": "\u73fe\u5728\u4fa1\u5024",
 
   "vault.expense.date": "\u65e5\u4ed8",
   "vault.expense.category": "\u5206\u985e",
@@ -998,8 +1001,8 @@
   "showcase.emptyDealers": "コレクターからの提供品はまだありません。",
   "showcase.tabCommunity": "ソサエティ",
   "showcase.tabDealers": "ギャラリー",
-  "showcase.ownerCollection": "{name}のコレクション",
-  "showcase.fromCollector": "コレクターより",
+  "showcase.ownerCollection": "会員コレクション",
+  "showcase.fromCollector": "会員コレクション",
 
   "stats.totalItems": "アイテム合計",
   "stats.visibility": "共有中",

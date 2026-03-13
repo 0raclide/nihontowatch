@@ -30,18 +30,18 @@ describe('showcaseItemToDisplayItem', () => {
     expect(di.source).toBe('showcase');
     expect(di.title).toBe('Test Katana');
     expect(di.item_type).toBe('KATANA');
-    expect(di.dealer_display_name).toBe('Collector X');
+    expect(di.dealer_display_name).toBe('Society member');
   });
 
-  it('includes showcase extension with owner identity', () => {
+  it('includes showcase extension with anonymous owner', () => {
     const row = makeRow();
     const di = showcaseItemToDisplayItem(row);
 
     expect(di.showcase).toEqual({
       item_uuid: 'uuid-1',
       visibility: 'collectors',
-      owner_display_name: 'Collector X',
-      owner_avatar_url: 'https://example.com/avatar.jpg',
+      owner_display_name: null,
+      owner_avatar_url: null,
     });
     expect(di.browse).toBeNull();
     expect(di.collection).toBeNull();
@@ -76,7 +76,7 @@ describe('showcaseItemToDisplayItem', () => {
     const row = makeRow({ profiles: null });
     const di = showcaseItemToDisplayItem(row);
 
-    expect(di.dealer_display_name).toBe('Collector');
+    expect(di.dealer_display_name).toBe('Society member');
     expect(di.showcase?.owner_display_name).toBeNull();
     expect(di.showcase?.owner_avatar_url).toBeNull();
   });

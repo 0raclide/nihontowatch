@@ -161,7 +161,7 @@ export function showcaseItemToDisplayItem(item: ShowcaseApiRow): DisplayItem {
     dealer_earliest_seen_at: null,
     last_scraped_at: null,
 
-    dealer_display_name: item.profiles?.display_name || 'Collector',
+    dealer_display_name: 'Society member',
     dealer_display_name_ja: null,
     dealer_domain: undefined,
     dealer_id: null,
@@ -179,8 +179,8 @@ export function showcaseItemToDisplayItem(item: ShowcaseApiRow): DisplayItem {
     showcase: {
       item_uuid: item.item_uuid,
       visibility: item.visibility,
-      owner_display_name: item.profiles?.display_name ?? null,
-      owner_avatar_url: item.profiles?.avatar_url ?? null,
+      owner_display_name: null,
+      owner_avatar_url: null,
     },
   };
 }

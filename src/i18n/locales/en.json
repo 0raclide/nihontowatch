@@ -681,6 +681,9 @@
   "vault.return.portfolioValue": "Portfolio Value",
   "vault.return.totalInvested": "Total Invested",
   "vault.return.loadingRates": "Loading rates...",
+  "vault.return.inflation": "Inflation",
+  "vault.return.realReturn": "Real Return",
+  "vault.table.adjustedToday": "today",
 
   "vault.expense.date": "Date",
   "vault.expense.category": "Category",
@@ -998,8 +1001,8 @@
   "showcase.emptyDealers": "No items available from collectors yet.",
   "showcase.tabCommunity": "Society",
   "showcase.tabDealers": "Galleries",
-  "showcase.ownerCollection": "{name}'s Collection",
-  "showcase.fromCollector": "From a collector",
+  "showcase.ownerCollection": "Society member",
+  "showcase.fromCollector": "Society member",
 
   "stats.totalItems": "Total Items",
   "stats.visibility": "Shared",

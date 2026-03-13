@@ -2,7 +2,6 @@
 
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { useLocale } from '@/i18n/LocaleContext';
-import { useSubscription } from '@/contexts/SubscriptionContext';
 import { useQuickView } from '@/contexts/QuickViewContext';
 import { useCurrency } from '@/hooks/useCurrency';
 import { ListingGrid } from '@/components/browse/ListingGrid';
@@ -11,17 +10,10 @@ import { showcaseItemsToDisplayItems } from '@/lib/displayItem';
 import type { ShowcaseApiRow } from '@/lib/displayItem';
 import type { DisplayItem } from '@/types/displayItem';
 
-type ShowcaseTab = 'community' | 'dealers';
-
 export function ShowcasePageClient() {
   const { t } = useLocale();
   const { currency, exchangeRates } = useCurrency();
   const quickView = useQuickView();
-  const { isDealer, isInnerCircle } = useSubscription();
-  const canSeeDealerTab = isDealer;
-  const canSeeShowcase = isInnerCircle || isDealer;
-
-  const [activeTab, setActiveTab] = useState<ShowcaseTab>(isDealer ? 'dealers' : 'community');
   const [items, setItems] = useState<DisplayItem[]>([]);
   const [rawRows, setRawRows] = useState<ShowcaseApiRow[]>([]);
   const [total, setTotal] = useState(0);
@@ -50,8 +42,8 @@ export function ShowcasePageClient() {
       showcase: {
         item_uuid: row.item_uuid,
         visibility: row.visibility,
-        owner_display_name: row.profiles?.display_name ?? null,
-        owner_avatar_url: row.profiles?.avatar_url ?? null,
+        owner_display_name: null,
+        owner_avatar_url: null,
       },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     })) as any[];
@@ -63,7 +55,7 @@ export function ShowcasePageClient() {
     }
   }, [adaptedListings, quickView.setListings]);
 
-  const fetchShowcase = useCallback(async (tab: ShowcaseTab, currentPage: number) => {
+  const fetchShowcase = useCallback(async (currentPage: number) => {
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
@@ -73,7 +65,7 @@ export function ShowcasePageClient() {
 
     try {
       const params = new URLSearchParams();
-      params.set('tab', tab);
+      params.set('tab', 'community');
       params.set('page', String(currentPage));
       params.set('limit', '50');
 
@@ -104,10 +96,10 @@ export function ShowcasePageClient() {
     }
   }, [t]);
 
-  // Initial fetch + refetch on tab/page change
+  // Initial fetch + refetch on page change
   useEffect(() => {
-    fetchShowcase(activeTab, page);
-  }, [activeTab, page, fetchShowcase]);
+    fetchShowcase(page);
+  }, [page, fetchShowcase]);
 
   // Handle QuickView open for showcase items — find raw row to preserve JSONB sections
   const handleItemClick = useCallback((item: DisplayItem) => {
@@ -120,11 +112,6 @@ export function ShowcasePageClient() {
       quickView.openQuickView(item as any, { source: 'showcase', skipFetch: true });
     }
   }, [quickView, rawRows]);
-
-  const handleTabChange = useCallback((tab: ShowcaseTab) => {
-    setActiveTab(tab);
-    setPage(1);
-  }, []);
 
   return (
     <div className="flex flex-col min-h-screen bg-cream">
@@ -139,32 +126,6 @@ export function ShowcasePageClient() {
             </h1>
           </div>
 
-          {/* Tabs — only show if dealer tab is visible */}
-          {canSeeDealerTab && (
-            <div className="flex gap-1 mb-6 border-b border-border">
-              <button
-                onClick={() => handleTabChange('community')}
-                className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
-                  activeTab === 'community'
-                    ? 'border-gold text-ink'
-                    : 'border-transparent text-muted hover:text-ink'
-                }`}
-              >
-                {t('showcase.tabCommunity')}
-              </button>
-              <button
-                onClick={() => handleTabChange('dealers')}
-                className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
-                  activeTab === 'dealers'
-                    ? 'border-gold text-ink'
-                    : 'border-transparent text-muted hover:text-ink'
-                }`}
-              >
-                {t('showcase.tabDealers')}
-              </button>
-            </div>
-          )}
-
           {/* Error state */}
           {error && !isLoading && items.length === 0 && (
             <div className="text-center py-16 text-muted">
@@ -178,7 +139,7 @@ export function ShowcasePageClient() {
               <svg className="w-12 h-12 mx-auto mb-4 text-muted/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
               </svg>
-              <p>{activeTab === 'dealers' ? t('showcase.emptyDealers') : t('showcase.empty')}</p>
+              <p>{t('showcase.empty')}</p>
             </div>
           )}
 
