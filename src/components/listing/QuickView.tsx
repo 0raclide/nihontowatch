@@ -70,6 +70,7 @@ export function QuickView() {
     isOpen,
     currentListing,
     closeQuickView,
+    dismissForNavigation,
     hasNext,
     hasPrevious,
     goToNext,
@@ -601,6 +602,7 @@ export function QuickView() {
                     hasScrolled={hasScrolled}
                     failedImageUrls={failedImageUrls}
                     totalMediaCount={streamImageCount}
+                    onNavigate={dismissForNavigation}
                   />
                 </LightboxProvider>
               </div>
@@ -699,6 +701,7 @@ export function QuickView() {
                     hasScrolled={hasScrolled}
                     failedImageUrls={failedImageUrls}
                     totalMediaCount={streamImageCount}
+                    onNavigate={dismissForNavigation}
                   />
                 </LightboxProvider>
               </div>

@@ -240,7 +240,7 @@ export function QuickViewContent({
 
         {/* Koshirae */}
         {listing.koshirae && (
-          <KoshiraeDisplay koshirae={listing.koshirae} hideHeading={listing.item_type?.toLowerCase() === 'koshirae'} readable={readable} />
+          <KoshiraeDisplay koshirae={listing.koshirae} hideHeading={listing.item_type?.toLowerCase() === 'koshirae'} readable={readable} onNavigate={() => quickView?.dismissForNavigation?.()} />
         )}
 
         {/* Provenance */}

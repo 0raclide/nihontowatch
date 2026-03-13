@@ -30,6 +30,7 @@ interface ContentStreamRendererProps {
   hasScrolled: boolean;
   failedImageUrls: Set<string>;
   totalMediaCount: number;
+  onNavigate?: () => void;
 }
 
 export function ContentStreamRenderer({
@@ -41,6 +42,7 @@ export function ContentStreamRenderer({
   hasScrolled,
   failedImageUrls,
   totalMediaCount,
+  onNavigate,
 }: ContentStreamRendererProps) {
   const { t } = useLocale();
   const { openLightbox } = useLightbox();
@@ -143,7 +145,7 @@ export function ContentStreamRenderer({
             return <KiwameDisplay key="kiwame" kiwame={block.data} />;
 
           case 'koshirae':
-            return <KoshiraeDisplay key="koshirae" koshirae={block.data} hideHeading={block.hideHeading} onImageClick={openLightbox} />;
+            return <KoshiraeDisplay key="koshirae" koshirae={block.data} hideHeading={block.hideHeading} onImageClick={openLightbox} onNavigate={onNavigate} />;
 
           case 'kanto_hibisho':
             return <KantoHibishoDisplay key="kanto-hibisho" kantoHibisho={block.data} onImageClick={openLightbox} />;

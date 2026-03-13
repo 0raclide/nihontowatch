@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import Link from 'next/link';
 import ReactMarkdown from 'react-markdown';
 import { ImageLightbox } from '@/components/ui/ImageLightbox';
 import type { KoshiraeData, KoshiraeComponentType } from '@/types';
@@ -57,12 +57,22 @@ interface KoshiraeDisplayProps {
   koshirae: KoshiraeData;
   hideHeading?: boolean;
   onImageClick?: (url: string) => void;
+  onNavigate?: () => void;
   readable?: boolean;
 }
 
-export function KoshiraeDisplay({ koshirae, hideHeading, onImageClick, readable }: KoshiraeDisplayProps) {
+export function KoshiraeDisplay({ koshirae, hideHeading, onImageClick, onNavigate, readable }: KoshiraeDisplayProps) {
   const { t } = useLocale();
+  const router = useRouter();
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+
+  function navigateToArtist(e: React.MouseEvent, artisanId: string, artisanName?: string | null) {
+    e.preventDefault();
+    e.stopPropagation();
+    onNavigate?.();
+    const slug = artisanName ? `${artisanName.toLowerCase().replace(/\s+/g, '-')}-${artisanId}` : artisanId;
+    router.push(`/artists/${slug}`);
+  }
 
   return (
     <>
@@ -103,15 +113,16 @@ export function KoshiraeDisplay({ koshirae, hideHeading, onImageClick, readable 
             <span className="text-[11px] uppercase tracking-wider text-muted shrink-0">
               {t('dealer.koshiraeMaker')}
             </span>
-            <Link
+            <a
               href={`/artists/${koshirae.artisan_name?.toLowerCase().replace(/\s+/g, '-')}-${koshirae.artisan_id}`}
-              className="text-[13px] text-gold hover:underline"
+              onClick={(e) => navigateToArtist(e, koshirae.artisan_id!, koshirae.artisan_name)}
+              className="text-[13px] text-gold hover:underline cursor-pointer"
             >
               {koshirae.artisan_name}
               {koshirae.artisan_kanji && koshirae.artisan_kanji !== koshirae.artisan_name && (
                 <span className="text-muted ml-1">({koshirae.artisan_kanji})</span>
               )}
-            </Link>
+            </a>
           </div>
         )}
 
@@ -124,15 +135,16 @@ export function KoshiraeDisplay({ koshirae, hideHeading, onImageClick, readable 
                   {t(COMPONENT_TYPE_LABELS[comp.component_type] || 'dealer.componentOther')}
                 </span>
                 {comp.artisan_id ? (
-                  <Link
+                  <a
                     href={`/artists/${comp.artisan_name?.toLowerCase().replace(/\s+/g, '-')}-${comp.artisan_id}`}
-                    className="text-[13px] text-gold hover:underline"
+                    onClick={(e) => navigateToArtist(e, comp.artisan_id!, comp.artisan_name)}
+                    className="text-[13px] text-gold hover:underline cursor-pointer"
                   >
                     {comp.artisan_name}
                     {comp.artisan_kanji && comp.artisan_kanji !== comp.artisan_name && (
                       <span className="text-muted ml-1">({comp.artisan_kanji})</span>
                     )}
-                  </Link>
+                  </a>
                 ) : comp.artisan_name ? (
                   <span className="text-[13px] text-ink">
                     {comp.artisan_name}
