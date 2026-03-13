@@ -72,7 +72,8 @@ export function KoshiraeSection({ koshirae, itemId, isSaved = false, onChange, o
 
   const handleCertChange = useCallback((certType: string | null) => {
     if (!koshirae) return;
-    onChange({ ...koshirae, cert_type: certType === 'none' ? null : certType });
+    // Store 'none' as-is so the pill stays highlighted; convert to null at submit time
+    onChange({ ...koshirae, cert_type: certType });
   }, [koshirae, onChange]);
 
   const handleCertInBladeChange = useCallback((checked: boolean) => {
@@ -270,7 +271,7 @@ export function KoshiraeSection({ koshirae, itemId, isSaved = false, onChange, o
         </button>
       </div>
 
-      <div className="bg-surface border border-border/50 rounded-lg p-3 space-y-4 overflow-hidden">
+      <div className="bg-surface border border-border/50 rounded-lg p-3 space-y-4">
         {/* Certification */}
         <div>
           <label className="block text-[10px] uppercase tracking-wider text-muted mb-1.5">

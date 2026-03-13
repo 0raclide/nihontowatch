@@ -644,6 +644,7 @@ export function DealerListingForm({ mode, initialData, context = 'listing' }: De
           : null,
         koshirae: koshirae ? {
           ...koshirae,
+          cert_type: koshirae.cert_type === 'none' ? null : koshirae.cert_type,
           images: (koshirae.images || []).filter(url => !url.startsWith('blob:')),
         } : null,
         provenance: provenance.length > 0
