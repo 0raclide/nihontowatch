@@ -996,9 +996,9 @@
 
   "nav.showcase": "名刀館",
 
-  "showcase.title": "遊刃会ギャラリー",
-  "showcase.titleAccent": "遊刃会",
-  "showcase.titleRest": "ギャラリー",
+  "showcase.title": "遊刃会",
+  "showcase.titlePrefix": "遊刃",
+  "showcase.titleAccent": "会",
   "showcase.subtitle": "会員所蔵の名品",
   "showcase.empty": "まだ共有されたアイテムはありません。コレクションを最初に紹介しましょう。",
   "showcase.emptyDealers": "コレクターからの提供品はまだありません。",
