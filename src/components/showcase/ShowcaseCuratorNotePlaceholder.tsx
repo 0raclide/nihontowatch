@@ -57,6 +57,10 @@ export function ShowcaseScholarNote({
           </h3>
         )}
 
+        {listingTitle && displayHeadline && (
+          <div className="w-64 h-px bg-gradient-to-r from-transparent via-amber-600/60 to-transparent mx-auto mb-4" />
+        )}
+
         {displayHeadline && (
           editable && onHeadlineSave ? (
             <EditableText
