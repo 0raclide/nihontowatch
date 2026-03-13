@@ -163,27 +163,11 @@ describe('SetsumeiSection feature gating', () => {
 });
 
 // =============================================================================
-// INQUIRY MODAL GATING TESTS
+// INQUIRY MODAL GATING TESTS — HIBERNATED
 // =============================================================================
-
-describe('InquiryModal feature gating', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  it('CRITICAL: free users cannot access inquiry without seeing paywall', async () => {
-    // This test verifies the gating logic exists in BrowseCTA (inquiry handling moved from QuickViewContent to slot component)
-    const fs = await import('fs');
-    const path = await import('path');
-
-    const browseCTAPath = path.resolve(process.cwd(), 'src/components/listing/quickview-slots/BrowseCTA.tsx');
-    const content = fs.readFileSync(browseCTAPath, 'utf-8');
-
-    // Must check canAccess before showing inquiry modal
-    expect(content).toContain("canAccess('inquiry_emails')");
-    expect(content).toContain("showPaywall('inquiry_emails')");
-  });
-});
+// Inquiry email button removed from QuickView UI (2026-03-13).
+// InquiryModal component and API routes preserved for future re-enablement.
+// When re-enabling, restore the button in BrowseCTA/BrowseMobileCTA and un-skip this test.
 
 // =============================================================================
 // SAVED SEARCHES GATING TESTS
@@ -280,18 +264,8 @@ describe('REGRESSION GUARD: Feature gating code presence', () => {
     expect(content).toContain('Unlock Full Translation');
   });
 
-  it('BrowseCTA gates inquiry emails', async () => {
-    // Inquiry handling moved from QuickViewContent to BrowseCTA slot component
-    const fs = await import('fs');
-    const path = await import('path');
-
-    const filePath = path.resolve(process.cwd(), 'src/components/listing/quickview-slots/BrowseCTA.tsx');
-    const content = fs.readFileSync(filePath, 'utf-8');
-
-    expect(content).toContain('useSubscription');
-    expect(content).toContain("canAccess('inquiry_emails')");
-    expect(content).toContain("showPaywall('inquiry_emails')");
-  });
+  // BrowseCTA inquiry email gating — HIBERNATED (2026-03-13)
+  // Inquiry button removed from UI. Restore button + un-skip when re-enabling.
 
   it('SaveSearchButton gates saved searches', async () => {
     const fs = await import('fs');

@@ -5,7 +5,6 @@ import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import { QuickViewModal } from './QuickViewModal';
 import { QuickViewContent } from './QuickViewContent';
 import { QuickViewMobileSheet } from './QuickViewMobileSheet';
-import { StudySetsumeiView } from './StudySetsumeiView';
 import dynamic from 'next/dynamic';
 
 const AdminEditView = dynamic(
@@ -93,7 +92,6 @@ export function QuickView() {
   const [hasScrolled, setHasScrolled] = useState(false);
   const [failedImageUrls, setFailedImageUrls] = useState<Set<string>>(new Set());
   const [isSheetExpanded, setIsSheetExpanded] = useState(false);
-  const [isStudyMode, setIsStudyMode] = useState(false);
   const [isAdminEditMode, setIsAdminEditMode] = useState(false);
 
   const isCollection = source === 'collection';
@@ -141,7 +139,6 @@ export function QuickView() {
       setHasScrolled(false);
       setFailedImageUrls(new Set());
       setIsSheetExpanded(false);
-      setIsStudyMode(false);
       setIsAdminEditMode(false);
       sheetStateChangeTimeRef.current = Date.now();
       if (scrollContainerRef.current) {
@@ -179,7 +176,7 @@ export function QuickView() {
       scroller.removeEventListener('scroll', onScroll);
       scroller.style.overscrollBehaviorY = '';
     };
-  }, [isStudyMode, isAdminEditMode, isOpen]);
+  }, [isAdminEditMode, isOpen]);
 
   // Track pinch zoom gestures on images
   const handlePinchZoom = useCallback(
@@ -231,20 +228,9 @@ export function QuickView() {
     setFailedImageUrls(prev => new Set(prev).add(url));
   }, []);
 
-  // Toggle study mode — exits admin edit mode
-  const toggleStudyMode = useCallback(() => {
-    setIsStudyMode(prev => {
-      if (!prev) setIsAdminEditMode(false);
-      return !prev;
-    });
-  }, []);
-
-  // Toggle admin edit mode — exits study mode
+  // Toggle admin edit mode
   const toggleAdminEditMode = useCallback(() => {
-    setIsAdminEditMode(prev => {
-      if (!prev) setIsStudyMode(false);
-      return !prev;
-    });
+    setIsAdminEditMode(prev => !prev);
   }, []);
 
   // Get and validate images
@@ -479,7 +465,7 @@ export function QuickView() {
       ? <ShowcaseActionBar showcase={showcaseExt} />
       : isCollection
         ? <CollectionActionBar onEditCollection={handleEditCollection} />
-        : <BrowseActionBar listing={currentListing} isStudyMode={isStudyMode} onToggleStudyMode={toggleStudyMode} onToggleAdminEditMode={toggleAdminEditMode} />;
+        : <BrowseActionBar listing={currentListing} onToggleAdminEditMode={toggleAdminEditMode} />;
 
   const desktopDealerSlot = isShowcase
     ? <ShowcaseOwnerRow showcase={showcaseExt} />
@@ -514,7 +500,7 @@ export function QuickView() {
       ? <ShowcaseMobileHeaderActions listing={currentListing} showcase={showcaseExt} />
       : isCollection
         ? <CollectionMobileHeaderActions onEditCollection={handleEditCollection} />
-        : <BrowseMobileHeaderActions listing={currentListing} isStudyMode={isStudyMode} onToggleStudyMode={toggleStudyMode} isAdminEditMode={isAdminEditMode} onToggleAdminEditMode={toggleAdminEditMode} />;
+        : <BrowseMobileHeaderActions listing={currentListing} isAdminEditMode={isAdminEditMode} onToggleAdminEditMode={toggleAdminEditMode} />;
 
   const mobileDealerSlot = isShowcase
     ? <ShowcaseOwnerRow showcase={showcaseExt} />
@@ -621,13 +607,6 @@ export function QuickView() {
                 onRefresh={(fields) => refreshCurrentListing(fields)}
               />
             </div>
-          ) : isStudyMode ? (
-            <div className="flex-1 min-h-0 overflow-hidden">
-              <StudySetsumeiView
-                listing={currentListing as ListingWithEnrichment}
-                onBackToPhotos={toggleStudyMode}
-              />
-            </div>
           ) : useContentStream && contentStreamResult ? (
             <div
               ref={setMobileScrollerRef}
@@ -719,13 +698,6 @@ export function QuickView() {
                 listing={currentListing}
                 onBackToPhotos={toggleAdminEditMode}
                 onRefresh={(fields) => refreshCurrentListing(fields)}
-              />
-            </div>
-          ) : isStudyMode ? (
-            <div className={`flex-1 min-h-0 ${QUICKVIEW_LAYOUT.leftPanel.default} overflow-hidden`}>
-              <StudySetsumeiView
-                listing={currentListing as ListingWithEnrichment}
-                onBackToPhotos={toggleStudyMode}
               />
             </div>
           ) : useContentStream && contentStreamResult ? (
@@ -824,7 +796,7 @@ export function QuickView() {
           ) : (
             <div data-testid="desktop-content-panel" className={`${QUICKVIEW_LAYOUT.rightPanel.default.width} ${QUICKVIEW_LAYOUT.rightPanel.default.maxWidth} border-l border-border bg-cream flex flex-col min-h-0 overflow-hidden`}>
               <AlertContextBanner />
-              {!isStudyMode && totalMediaCount > 1 && (
+              {totalMediaCount > 1 && (
                 <div className="border-b border-border">
                   <div className="h-0.5 bg-border">
                     <div

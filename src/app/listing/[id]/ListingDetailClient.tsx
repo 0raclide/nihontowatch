@@ -20,10 +20,6 @@ const CreateAlertModal = dynamic(
   () => import('@/components/alerts/CreateAlertModal').then(m => ({ default: m.CreateAlertModal })),
   { ssr: false }
 );
-const InquiryModal = dynamic(
-  () => import('@/components/inquiry/InquiryModal').then(m => ({ default: m.InquiryModal })),
-  { ssr: false }
-);
 import { useAlerts } from '@/hooks/useAlerts';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { getAllImages } from '@/lib/images';
@@ -92,7 +88,6 @@ export default function ListingDetailPage({ initialData }: ListingDetailPageProp
     () => initialData ? getHeroImageIndex(initialData) : 0
   );
   const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
-  const [isInquiryModalOpen, setIsInquiryModalOpen] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
 
   const { createAlert, isCreating } = useAlerts({ autoFetch: false });
@@ -202,14 +197,6 @@ export default function ListingDetailPage({ initialData }: ListingDetailPageProp
       return;
     }
     setIsAlertModalOpen(true);
-  };
-
-  const handleInquire = () => {
-    if (!user) {
-      setShowLoginModal(true);
-      return;
-    }
-    setIsInquiryModalOpen(true);
   };
 
   // Loading state
@@ -380,9 +367,6 @@ export default function ListingDetailPage({ initialData }: ListingDetailPageProp
               ) : certInfo ? (
                 <span className={certBadgeClass}>{certInfo.label}</span>
               ) : null}
-              {locale !== 'ja' && listing.setsumei_text_en && isSetsumeiEligibleCert(listing.cert_type) && (
-                <SetsumeiZufuBadge />
-              )}
               {shouldShowNewBadge(listing.first_seen_at, listing.dealer_earliest_seen_at, listing.is_initial_import) && (
                 <span className="text-[11px] uppercase tracking-wider font-medium px-2.5 py-1 rounded bg-new-listing-bg text-new-listing">
                   {t('quickview.newThisWeek')}
@@ -640,19 +624,6 @@ export default function ListingDetailPage({ initialData }: ListingDetailPageProp
                     </a>
                   )}
 
-                  {/* Inquire Button — hidden for JA locale */}
-                  {locale !== 'ja' && (
-                    <button
-                      onClick={handleInquire}
-                      className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 text-[14px] font-medium text-charcoal bg-paper border border-border hover:border-gold hover:text-gold rounded-lg transition-colors"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                      </svg>
-                      {t('listing.inquire')}
-                    </button>
-                  )}
-
                   {/* Set Alert Button */}
                   <button
                     onClick={handleSetAlert}
@@ -676,13 +647,6 @@ export default function ListingDetailPage({ initialData }: ListingDetailPageProp
         onClose={() => setIsAlertModalOpen(false)}
         onSubmit={handleCreateAlert}
         isSubmitting={isCreating}
-        listing={listing as unknown as Listing}
-      />
-
-      {/* Inquiry Modal */}
-      <InquiryModal
-        isOpen={isInquiryModalOpen}
-        onClose={() => setIsInquiryModalOpen(false)}
         listing={listing as unknown as Listing}
       />
 

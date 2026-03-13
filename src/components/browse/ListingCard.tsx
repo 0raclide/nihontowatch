@@ -787,7 +787,7 @@ export const ListingCard = memo(function ListingCard({
         !isGridMobile ? ' shadow rounded overflow-hidden sm:shadow-none sm:rounded-none sm:overflow-visible' : ''
       }`}
     >
-      {/* Header: dealer (left) + book icon + cert (right) */}
+      {/* Header: dealer (left) + cert (right) */}
       <div className={`${sz.hPad} sm:px-3 sm:py-2 lg:px-4 lg:py-2.5 flex items-center justify-between`}>
         {listing.source === 'dealer' ? (
           <span className={`${sz.hText} sm:text-[9px] lg:text-[10px] font-semibold tracking-[0.14em] ${
@@ -801,7 +801,6 @@ export const ListingCard = memo(function ListingCard({
           </span>
         )}
         <div className={`flex items-center ${isGridMobile ? 'gap-1' : 'gap-2'}`}>
-          {locale !== 'ja' && listing.source !== 'collection' && hasSetsumeiTranslation(listing) && <SetsumeiZufuBadge iconOnly />}
           {certInfo && (
             <span className={`${sz.hText} sm:text-[9px] lg:text-[10px] uppercase tracking-wider font-bold ${certTextColor}`}>
               {t(certInfo.certKey)}
