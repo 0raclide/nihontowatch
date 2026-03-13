@@ -66,15 +66,15 @@ export function ShowcaseScholarNote({
             <EditableText
               value={displayHeadline}
               onSave={(v) => onHeadlineSave(isShowingJa ? 'ja' : 'en', v)}
-              className="text-center font-serif text-[17px] md:text-[19px] leading-[1.7] italic text-ink/80 mb-4"
+              className="text-center text-[17px] md:text-[19px] leading-[1.7] italic text-ink/80 mb-4"
               placeholder="Add headline..."
             >
-              <p className="text-center font-serif text-[17px] md:text-[19px] leading-[1.7] italic text-ink/80 mb-4">
+              <p className="text-center text-[17px] md:text-[19px] leading-[1.7] italic text-ink/80 mb-4">
                 {displayHeadline}
               </p>
             </EditableText>
           ) : (
-            <p className="text-center font-serif text-[17px] md:text-[19px] leading-[1.7] italic text-ink/80 mb-4">
+            <p className="text-center text-[17px] md:text-[19px] leading-[1.7] italic text-ink/80 mb-4">
               {displayHeadline}
             </p>
           )
