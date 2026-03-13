@@ -51,7 +51,7 @@ describe('fetchBatchHistoricalRates', () => {
     expect(map.size).toBe(0);
   });
 
-  it('partial fetch failures do not block others', async () => {
+  it('partial fetch failures do not block others (retries once)', async () => {
     let callCount = 0;
     const fetchFn = vi.fn().mockImplementation(async (date: string) => {
       callCount++;
@@ -66,7 +66,8 @@ describe('fetchBatchHistoricalRates', () => {
 
     const map = await fetchBatchHistoricalRates(items, 'USD', fetchFn);
 
-    expect(callCount).toBe(2);
+    // 2024-01-01 fails twice (initial + 1 retry), 2024-02-01 succeeds once = 3 calls
+    expect(callCount).toBe(3);
     expect(map.has(fxKey('2024-01-01', 'JPY', 'USD'))).toBe(false);
     expect(map.get(fxKey('2024-02-01', 'EUR', 'USD'))).toBe(0.5);
   });

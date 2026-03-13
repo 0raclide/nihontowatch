@@ -65,41 +65,31 @@ export async function fetchBatchHistoricalRates(
 
   if (tasks.length === 0) return map;
 
-  // Inline semaphore for concurrency control
+  // Concurrent execution with proper await of ALL tasks.
+  // Previous implementation had a bug: promises spawned from `finally` callbacks
+  // were pushed to the results array AFTER Promise.all had started iterating,
+  // so trailing tasks (beyond the concurrency limit) were never awaited.
   const CONCURRENCY = 5;
-  let running = 0;
-  const queue = [...tasks];
-  const results: Promise<void>[] = [];
 
-  function next(): Promise<void> | null {
-    const task = queue.shift();
-    if (!task) return null;
-
-    running++;
-    const promise = fetchFn(task.date, task.from, home)
-      .then(rate => {
+  async function fetchWithRetry(date: string, from: string): Promise<void> {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const rate = await fetchFn(date, from, home);
         if (rate != null) {
-          map.set(fxKey(task.date, task.from, home), rate);
+          map.set(fxKey(date, from, home), rate);
+          return;
         }
-      })
-      .catch(() => {
-        // Partial failures don't block others
-      })
-      .finally(() => {
-        running--;
-        const n = next();
-        if (n) results.push(n);
-      });
-
-    return promise;
+      } catch {
+        // Retry once on failure
+      }
+    }
   }
 
-  // Kick off initial batch
-  for (let i = 0; i < Math.min(CONCURRENCY, tasks.length); i++) {
-    const p = next();
-    if (p) results.push(p);
+  // Process in chunks of CONCURRENCY
+  for (let i = 0; i < tasks.length; i += CONCURRENCY) {
+    const chunk = tasks.slice(i, i + CONCURRENCY);
+    await Promise.all(chunk.map(t => fetchWithRetry(t.date, t.from)));
   }
 
-  await Promise.all(results);
   return map;
 }
