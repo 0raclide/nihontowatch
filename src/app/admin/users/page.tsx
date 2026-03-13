@@ -200,7 +200,8 @@ export default function AdminUsersPage() {
 
       {/* Users Table */}
       <div className="bg-cream rounded-xl border border-border overflow-hidden">
-        <div className="overflow-x-auto">
+        {/* Desktop table */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b border-border bg-linen/50">
@@ -305,6 +306,73 @@ export default function AdminUsersPage() {
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile cards */}
+        <div className="md:hidden divide-y divide-border">
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="w-6 h-6 border-2 border-gold border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : users.length === 0 ? (
+            <div className="py-12 text-center text-muted text-sm">
+              {search ? 'No users found matching your search' : 'No users found'}
+            </div>
+          ) : (
+            users.map((user) => (
+              <div key={user.id} className="px-4 py-4 space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-gold/10 flex items-center justify-center text-gold font-medium flex-shrink-0">
+                    {(user.display_name || user.email)[0].toUpperCase()}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-ink truncate">
+                      {user.display_name || 'No name'}
+                    </p>
+                    <p className="text-xs text-muted truncate">{user.email}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <select
+                    value={user.is_admin ? 'admin' : 'user'}
+                    onChange={(e) => handleRoleChange(user.id, e.target.value === 'admin')}
+                    disabled={updatingUser === user.id}
+                    className={`flex-1 px-3 py-2 rounded-md text-xs font-medium border-0 focus:outline-none focus:ring-2 focus:ring-gold/30 transition-all min-h-[44px] ${
+                      user.is_admin
+                        ? 'bg-gold/10 text-gold'
+                        : 'bg-linen text-charcoal'
+                    } ${updatingUser === user.id ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                  >
+                    <option value="user">User</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                  <select
+                    value={user.subscription_tier || 'free'}
+                    onChange={(e) => handleTierChange(user.id, e.target.value)}
+                    disabled={updatingUser === user.id}
+                    className={`flex-1 px-3 py-2 rounded-md text-xs font-medium border-0 focus:outline-none focus:ring-2 focus:ring-gold/30 transition-all min-h-[44px] ${
+                      user.subscription_tier && user.subscription_tier !== 'free'
+                        ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300'
+                        : 'bg-linen text-charcoal'
+                    } ${updatingUser === user.id ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                  >
+                    <option value="free">Free</option>
+                    <option value="inner_circle">Inner Circle</option>
+                    <option value="dealer">Dealer</option>
+                  </select>
+                </div>
+                <div className="flex items-center justify-between text-xs text-muted">
+                  <span>Joined {formatDate(user.created_at)}</span>
+                  <button
+                    onClick={() => {/* TODO: implement user details modal */}}
+                    className="text-gold hover:text-gold-light transition-colors"
+                  >
+                    View Details
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
         </div>
 
         {/* Pagination */}

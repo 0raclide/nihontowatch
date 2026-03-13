@@ -280,7 +280,8 @@ export default function AdminAlertsPage() {
 
       {/* Alerts List */}
       <div className="bg-cream rounded-xl border border-border overflow-hidden">
-        <div className="overflow-x-auto">
+        {/* Desktop table */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b border-border bg-linen/50">
@@ -455,6 +456,95 @@ export default function AdminAlertsPage() {
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile cards */}
+        <div className="md:hidden divide-y divide-border">
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="w-6 h-6 border-2 border-gold border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : alerts.length === 0 ? (
+            <div className="py-12 text-center text-muted text-sm">
+              No alerts found
+            </div>
+          ) : (
+            alerts.map((alert) => (
+              <div key={alert.id} className="px-4 py-4 space-y-2">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-gold/10 flex items-center justify-center text-gold text-xs font-medium flex-shrink-0">
+                    {(alert.user?.display_name || alert.user?.email || 'U')[0].toUpperCase()}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm text-ink truncate">
+                      {alert.user?.display_name || alert.user?.email || alert.user_id}
+                    </p>
+                  </div>
+                  <span className={`inline-flex px-2 py-0.5 rounded-md text-[10px] font-medium flex-shrink-0 ${
+                    ALERT_TYPE_COLORS[alert.alert_type] || 'bg-gray-100 text-gray-600'
+                  }`}>
+                    {ALERT_TYPE_LABELS[alert.alert_type] || alert.alert_type}
+                  </span>
+                </div>
+                <div className="text-sm text-charcoal">
+                  {alert.alert_type === 'new_listing' ? (
+                    <div>
+                      {alert.name && <p className="font-medium text-ink truncate">{alert.name}</p>}
+                      <p className="text-xs text-muted truncate">{formatSearchCriteria(alert.search_criteria)}</p>
+                    </div>
+                  ) : alert.listing_id ? (
+                    <p className="truncate">{alert.listing?.title || `Listing #${alert.listing_id}`}</p>
+                  ) : (
+                    <p className="text-xs text-muted truncate">{formatSearchCriteria(alert.search_criteria)}</p>
+                  )}
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className={`inline-flex px-2 py-0.5 rounded-md text-[10px] font-medium ${
+                      alert.is_active
+                        ? 'bg-green-500/10 text-green-600'
+                        : 'bg-gray-500/10 text-gray-600'
+                    }`}>
+                      {alert.is_active ? 'Active' : 'Inactive'}
+                    </span>
+                    <span className="text-[10px] text-muted">{formatDateTime(alert.created_at)}</span>
+                  </div>
+                  <button
+                    onClick={() => setExpandedAlert(expandedAlert === alert.id ? null : alert.id)}
+                    className="text-xs text-gold hover:text-gold-light transition-colors min-h-[44px] flex items-center"
+                  >
+                    {expandedAlert === alert.id ? 'Hide' : 'History'}
+                  </button>
+                </div>
+                {expandedAlert === alert.id && (
+                  <div className="border-l-2 border-gold/30 pl-3 mt-2 space-y-2">
+                    <h4 className="text-[10px] uppercase tracking-wider text-muted font-semibold">
+                      {alert.alert_type === 'new_listing' ? 'Notification History' : 'Delivery History'}
+                    </h4>
+                    {alert.history && alert.history.length > 0 ? (
+                      alert.history.map((record, index) => (
+                        <div
+                          key={record.id || index}
+                          className="flex flex-wrap items-center gap-2 text-xs bg-cream rounded px-3 py-2"
+                        >
+                          <span className={`inline-flex px-2 py-0.5 rounded font-medium ${STATUS_COLORS[record.delivery_status]}`}>
+                            {STATUS_LABELS[record.delivery_status]}
+                          </span>
+                          <span className="text-muted capitalize">{record.delivery_method}</span>
+                          <span className="text-muted">{formatDateTime(record.triggered_at)}</span>
+                          {record.error_message && (
+                            <span className="text-error text-xs w-full">{record.error_message}</span>
+                          )}
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-xs text-muted">No delivery history</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))
+          )}
         </div>
 
         {/* Pagination */}

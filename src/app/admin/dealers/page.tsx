@@ -149,7 +149,7 @@ export default function DealerAnalyticsPage() {
       {/* Header */}
       <div className="border-b border-border bg-paper">
         <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <Link href="/admin" className="text-sm text-muted hover:text-ink mb-1 block">
                 &larr; Back to Admin
@@ -159,7 +159,7 @@ export default function DealerAnalyticsPage() {
                 Traffic and engagement metrics to prove value to dealers
               </p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               {(['7d', '30d', '90d'] as TimeRange[]).map((range) => (
                 <button
                   key={range}
@@ -180,7 +180,7 @@ export default function DealerAnalyticsPage() {
 
       <div className="max-w-7xl mx-auto px-6 py-6 space-y-6">
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="bg-paper border border-border rounded-lg p-4">
             <p className="text-sm text-muted uppercase tracking-wider">Total Click-Throughs</p>
             <p className="text-3xl font-semibold text-ink mt-1">{formatNumber(analytics?.totalClicks || 0)}</p>
@@ -226,7 +226,8 @@ export default function DealerAnalyticsPage() {
               ))}
             </div>
           </div>
-          <div className="overflow-x-auto">
+          {/* Desktop table */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-linen/50">
                 <tr>
@@ -299,6 +300,52 @@ export default function DealerAnalyticsPage() {
                 ))}
               </tbody>
             </table>
+          </div>
+
+          {/* Mobile cards */}
+          <div className="md:hidden divide-y divide-border">
+            {sortedDealers.map((dealer) => (
+              <div key={dealer.dealerId} className="px-4 py-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-medium flex-shrink-0 ${
+                      dealer.clicksRank <= 3 ? 'bg-gold/20 text-gold' : 'bg-linen text-charcoal'
+                    }`}>
+                      {dealer.clicksRank}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="font-medium text-ink truncate">{dealer.dealerName}</p>
+                      <p className="text-xs text-muted truncate">{dealer.domain}</p>
+                    </div>
+                  </div>
+                  <Link
+                    href={`/admin/dealers/${dealer.dealerId}`}
+                    className="text-gold text-xs font-medium flex-shrink-0 ml-2"
+                  >
+                    Report
+                  </Link>
+                </div>
+                <div className="grid grid-cols-3 gap-3 text-center">
+                  <div>
+                    <p className="text-lg font-medium text-ink">{formatNumber(dealer.clickThroughs)}</p>
+                    <p className="text-[10px] uppercase tracking-wider text-muted">Clicks</p>
+                  </div>
+                  <div>
+                    <p className="text-lg font-medium text-ink">{formatNumber(dealer.listingViews)}</p>
+                    <p className="text-[10px] uppercase tracking-wider text-muted">Views</p>
+                  </div>
+                  <div>
+                    <p className="text-lg font-medium text-ink">{formatTrend(dealer.clicksTrend)}</p>
+                    <p className="text-[10px] uppercase tracking-wider text-muted">Trend</p>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between text-xs text-muted">
+                  <span>{formatNumber(dealer.activeListings)} listings</span>
+                  <span>CTR {dealer.ctr > 0 ? `${(dealer.ctr * 100).toFixed(1)}%` : '-'}</span>
+                  <span>{formatNumber(dealer.favorites)} favs</span>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 

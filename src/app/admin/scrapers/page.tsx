@@ -340,73 +340,115 @@ export default function ScrapersAdmin() {
               No recent runs
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="text-left text-xs uppercase tracking-wider text-muted border-b border-border">
-                    <th className="px-4 py-3 font-medium">Type</th>
-                    <th className="px-4 py-3 font-medium">Dealer</th>
-                    <th className="px-4 py-3 font-medium">Time</th>
-                    <th className="px-4 py-3 font-medium">Status</th>
-                    <th className="px-4 py-3 font-medium text-right">Processed</th>
-                    <th className="px-4 py-3 font-medium text-right">New</th>
-                    <th className="px-4 py-3 font-medium">Details</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {runs.slice(0, 15).map((run) => (
-                    <tr key={run.id} className={`hover:bg-linen/50 ${run.status === 'failed' ? 'bg-error/5' : ''}`}>
-                      <td className="px-4 py-3">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                          run.runType === 'discovery' ? 'bg-blue-100 text-blue-700' :
-                          run.runType === 'scrape' ? 'bg-purple-100 text-purple-700' :
-                          'bg-gray-100 text-gray-700'
-                        }`}>
-                          {run.runType}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-ink">{run.dealer}</td>
-                      <td className="px-4 py-3 text-sm text-muted">{formatTimeAgo(run.startedAt)}</td>
-                      <td className="px-4 py-3">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                          run.status === 'completed' ? 'bg-success/10 text-success' :
-                          run.status === 'running' ? 'bg-gold/10 text-gold animate-pulse' :
-                          run.status === 'pending' ? 'bg-gray-100 text-gray-600' :
-                          'bg-error/10 text-error'
-                        }`}>
-                          {run.status}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-right text-ink">
-                        {run.processed}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-right">
-                        {run.newListings > 0 ? (
-                          <span className="text-success font-medium">+{run.newListings}</span>
-                        ) : (
-                          <span className="text-muted">0</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-muted max-w-[200px]">
-                        {run.status === 'failed' && run.errorMessage ? (
-                          <span className="text-error truncate block" title={run.errorMessage}>
-                            {run.errorMessage.length > 50
-                              ? run.errorMessage.substring(0, 50) + '...'
-                              : run.errorMessage}
-                          </span>
-                        ) : run.errors > 0 ? (
-                          <span className="text-warning">{run.errors} errors</span>
-                        ) : run.updatedListings > 0 ? (
-                          <span>{run.updatedListings} updated</span>
-                        ) : (
-                          '-'
-                        )}
-                      </td>
+            <>
+              {/* Desktop table */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="text-left text-xs uppercase tracking-wider text-muted border-b border-border">
+                      <th className="px-4 py-3 font-medium">Type</th>
+                      <th className="px-4 py-3 font-medium">Dealer</th>
+                      <th className="px-4 py-3 font-medium">Time</th>
+                      <th className="px-4 py-3 font-medium">Status</th>
+                      <th className="px-4 py-3 font-medium text-right">Processed</th>
+                      <th className="px-4 py-3 font-medium text-right">New</th>
+                      <th className="px-4 py-3 font-medium">Details</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {runs.slice(0, 15).map((run) => (
+                      <tr key={run.id} className={`hover:bg-linen/50 ${run.status === 'failed' ? 'bg-error/5' : ''}`}>
+                        <td className="px-4 py-3">
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                            run.runType === 'discovery' ? 'bg-blue-100 text-blue-700' :
+                            run.runType === 'scrape' ? 'bg-purple-100 text-purple-700' :
+                            'bg-gray-100 text-gray-700'
+                          }`}>
+                            {run.runType}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-ink">{run.dealer}</td>
+                        <td className="px-4 py-3 text-sm text-muted">{formatTimeAgo(run.startedAt)}</td>
+                        <td className="px-4 py-3">
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                            run.status === 'completed' ? 'bg-success/10 text-success' :
+                            run.status === 'running' ? 'bg-gold/10 text-gold animate-pulse' :
+                            run.status === 'pending' ? 'bg-gray-100 text-gray-600' :
+                            'bg-error/10 text-error'
+                          }`}>
+                            {run.status}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-right text-ink">
+                          {run.processed}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-right">
+                          {run.newListings > 0 ? (
+                            <span className="text-success font-medium">+{run.newListings}</span>
+                          ) : (
+                            <span className="text-muted">0</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-muted max-w-[200px]">
+                          {run.status === 'failed' && run.errorMessage ? (
+                            <span className="text-error truncate block" title={run.errorMessage}>
+                              {run.errorMessage.length > 50
+                                ? run.errorMessage.substring(0, 50) + '...'
+                                : run.errorMessage}
+                            </span>
+                          ) : run.errors > 0 ? (
+                            <span className="text-warning">{run.errors} errors</span>
+                          ) : run.updatedListings > 0 ? (
+                            <span>{run.updatedListings} updated</span>
+                          ) : (
+                            '-'
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile cards */}
+              <div className="md:hidden divide-y divide-border">
+                {runs.slice(0, 15).map((run) => (
+                  <div key={run.id} className={`px-4 py-3 space-y-2 ${run.status === 'failed' ? 'bg-error/5' : ''}`}>
+                    <div className="flex items-center gap-2">
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                        run.runType === 'discovery' ? 'bg-blue-100 text-blue-700' :
+                        run.runType === 'scrape' ? 'bg-purple-100 text-purple-700' :
+                        'bg-gray-100 text-gray-700'
+                      }`}>
+                        {run.runType}
+                      </span>
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                        run.status === 'completed' ? 'bg-success/10 text-success' :
+                        run.status === 'running' ? 'bg-gold/10 text-gold animate-pulse' :
+                        run.status === 'pending' ? 'bg-gray-100 text-gray-600' :
+                        'bg-error/10 text-error'
+                      }`}>
+                        {run.status}
+                      </span>
+                      <span className="text-xs text-muted ml-auto">{formatTimeAgo(run.startedAt)}</span>
+                    </div>
+                    <p className="text-sm text-ink">{run.dealer}</p>
+                    <div className="flex items-center gap-4 text-xs text-muted">
+                      <span>{run.processed} processed</span>
+                      {run.newListings > 0 && (
+                        <span className="text-success font-medium">+{run.newListings} new</span>
+                      )}
+                      {run.errors > 0 && (
+                        <span className="text-warning">{run.errors} errors</span>
+                      )}
+                    </div>
+                    {run.status === 'failed' && run.errorMessage && (
+                      <p className="text-xs text-error truncate">{run.errorMessage}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </>
           )}
         </div>
 
@@ -420,42 +462,70 @@ export default function ScrapersAdmin() {
               No QA issues detected
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="text-left text-xs uppercase tracking-wider text-muted border-b border-border">
-                    <th className="px-6 py-3 font-medium">Dealer</th>
-                    <th className="px-6 py-3 font-medium">Pass Rate</th>
-                    <th className="px-6 py-3 font-medium">Top Issue</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {qaIssues.map((issue) => (
-                    <tr key={issue.dealer} className="hover:bg-linen/50">
-                      <td className="px-6 py-3 text-sm text-ink">{issue.dealer}</td>
-                      <td className="px-6 py-3">
-                        <div className="flex items-center gap-2">
-                          <div className="flex-1 h-2 bg-linen rounded-full overflow-hidden max-w-[100px]">
-                            <div
-                              className={`h-full rounded-full ${
-                                issue.passRate >= 80 ? 'bg-success' :
-                                issue.passRate >= 60 ? 'bg-warning' :
-                                'bg-error'
-                              }`}
-                              style={{ width: `${issue.passRate}%` }}
-                            />
-                          </div>
-                          <span className="text-xs text-muted">{issue.passRate.toFixed(0)}%</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-3 text-sm text-muted">
-                        {issue.topIssue || '-'}
-                      </td>
+            <>
+              {/* Desktop table */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="text-left text-xs uppercase tracking-wider text-muted border-b border-border">
+                      <th className="px-6 py-3 font-medium">Dealer</th>
+                      <th className="px-6 py-3 font-medium">Pass Rate</th>
+                      <th className="px-6 py-3 font-medium">Top Issue</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {qaIssues.map((issue) => (
+                      <tr key={issue.dealer} className="hover:bg-linen/50">
+                        <td className="px-6 py-3 text-sm text-ink">{issue.dealer}</td>
+                        <td className="px-6 py-3">
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1 h-2 bg-linen rounded-full overflow-hidden max-w-[100px]">
+                              <div
+                                className={`h-full rounded-full ${
+                                  issue.passRate >= 80 ? 'bg-success' :
+                                  issue.passRate >= 60 ? 'bg-warning' :
+                                  'bg-error'
+                                }`}
+                                style={{ width: `${issue.passRate}%` }}
+                              />
+                            </div>
+                            <span className="text-xs text-muted">{issue.passRate.toFixed(0)}%</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-3 text-sm text-muted">
+                          {issue.topIssue || '-'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile cards */}
+              <div className="md:hidden divide-y divide-border">
+                {qaIssues.map((issue) => (
+                  <div key={issue.dealer} className="px-4 py-3 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-ink font-medium">{issue.dealer}</span>
+                      <span className="text-xs text-muted">{issue.passRate.toFixed(0)}%</span>
+                    </div>
+                    <div className="h-2 bg-linen rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full ${
+                          issue.passRate >= 80 ? 'bg-success' :
+                          issue.passRate >= 60 ? 'bg-warning' :
+                          'bg-error'
+                        }`}
+                        style={{ width: `${issue.passRate}%` }}
+                      />
+                    </div>
+                    {issue.topIssue && (
+                      <p className="text-xs text-muted">{issue.topIssue}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </>
           )}
         </div>
       </div>

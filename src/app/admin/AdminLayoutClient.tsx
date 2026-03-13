@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { ReactNode, useEffect } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth/AuthContext';
 
 interface AdminLayoutClientProps {
@@ -124,6 +124,12 @@ export default function AdminLayoutClient({ children }: AdminLayoutClientProps) 
   const router = useRouter();
   const breadcrumbs = getBreadcrumbs(pathname);
   const { user, isAdmin, isLoading } = useAuth();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Auto-close sidebar on route change
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [pathname]);
 
   useEffect(() => {
     if (!isLoading) {
@@ -152,8 +158,76 @@ export default function AdminLayoutClient({ children }: AdminLayoutClientProps) 
 
   return (
     <div className="min-h-screen bg-linen">
-      {/* Sidebar */}
-      <aside className="fixed inset-y-0 left-0 w-64 bg-cream border-r border-border z-30">
+      {/* Mobile sidebar overlay */}
+      {sidebarOpen && (
+        <div className="fixed inset-0 z-40 md:hidden">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/40 animate-fadeIn"
+            onClick={() => setSidebarOpen(false)}
+          />
+          {/* Sidebar panel */}
+          <aside className="absolute inset-y-0 left-0 w-72 bg-cream animate-slideInLeft flex flex-col">
+            {/* Header with close button */}
+            <div className="h-16 flex items-center justify-between px-6 border-b border-border">
+              <Link href="/" className="flex items-baseline" onClick={() => setSidebarOpen(false)}>
+                <h1 className="font-serif text-xl tracking-tight text-ink">
+                  Nihonto<span className="text-gold">watch</span>
+                </h1>
+              </Link>
+              <button
+                onClick={() => setSidebarOpen(false)}
+                className="p-2 -mr-2 text-muted hover:text-ink transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Navigation */}
+            <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+              {navigation.map((item) => {
+                const isActive = pathname === item.href ||
+                  (item.href !== '/admin' && pathname.startsWith(item.href));
+
+                return (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    onClick={() => setSidebarOpen(false)}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors min-h-[44px] ${
+                      isActive
+                        ? 'bg-gold/10 text-gold'
+                        : 'text-charcoal hover:bg-linen hover:text-ink'
+                    }`}
+                  >
+                    <item.icon className="w-5 h-5" />
+                    {item.name}
+                  </Link>
+                );
+              })}
+            </nav>
+
+            {/* Back to site */}
+            <div className="p-4 border-t border-border">
+              <Link
+                href="/"
+                onClick={() => setSidebarOpen(false)}
+                className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-muted hover:bg-linen hover:text-ink transition-colors min-h-[44px]"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Back to Site
+              </Link>
+            </div>
+          </aside>
+        </div>
+      )}
+
+      {/* Desktop sidebar */}
+      <aside className="hidden md:flex md:flex-col fixed inset-y-0 left-0 w-64 bg-cream border-r border-border z-30">
         {/* Logo */}
         <div className="h-16 flex items-center px-6 border-b border-border">
           <Link href="/" className="flex items-baseline">
@@ -201,9 +275,18 @@ export default function AdminLayoutClient({ children }: AdminLayoutClientProps) 
       </aside>
 
       {/* Main content */}
-      <main className="ml-64">
+      <main className="md:ml-64">
         {/* Header with breadcrumb */}
-        <header className="h-16 bg-cream border-b border-border flex items-center px-8">
+        <header className="h-16 bg-cream border-b border-border flex items-center px-4 md:px-8">
+          {/* Hamburger button - mobile only */}
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="md:hidden p-2 -ml-2 mr-2 text-charcoal hover:text-ink transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+            </svg>
+          </button>
           <nav className="flex items-center gap-2 text-sm">
             {breadcrumbs.map((crumb, index) => (
               <div key={crumb.href} className="flex items-center gap-2">
@@ -225,7 +308,7 @@ export default function AdminLayoutClient({ children }: AdminLayoutClientProps) 
         </header>
 
         {/* Page content */}
-        <div className="p-8">
+        <div className="p-4 md:p-8">
           {children}
         </div>
       </main>

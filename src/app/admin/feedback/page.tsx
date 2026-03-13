@@ -131,7 +131,7 @@ export default function AdminFeedbackPage() {
   const totalPages = Math.ceil(total / limit);
 
   return (
-    <div className="max-w-6xl mx-auto px-6 py-8">
+    <div className="max-w-6xl mx-auto px-4 md:px-6 py-4 md:py-8">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
@@ -189,7 +189,9 @@ export default function AdminFeedbackPage() {
           No feedback found
         </div>
       ) : (
-        <div className="overflow-x-auto">
+        <>
+        {/* Desktop table */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-border">
@@ -219,6 +221,120 @@ export default function AdminFeedbackPage() {
             </tbody>
           </table>
         </div>
+
+        {/* Mobile cards */}
+        <div className="md:hidden space-y-3 p-4">
+          {feedback.map(item => {
+            const isExpanded = expandedId === item.id;
+            const targetUrl = item.target_type === 'listing'
+              ? `/listing/${item.target_id}`
+              : item.target_type === 'artist'
+              ? `/artists/${item.target_id}`
+              : null;
+
+            return (
+              <div
+                key={item.id}
+                className="bg-cream rounded-lg border border-border/50 overflow-hidden"
+              >
+                <div
+                  className="px-4 py-3 cursor-pointer"
+                  onClick={() => handleExpand(item)}
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-medium ${TYPE_COLORS[item.feedback_type] || 'bg-gray-500/10 text-gray-600'}`}>
+                      {TYPE_LABELS[item.feedback_type] || item.feedback_type}
+                    </span>
+                    <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-medium capitalize ${STATUS_COLORS[item.status] || ''}`}>
+                      {item.status}
+                    </span>
+                    <span className="text-[10px] text-muted ml-auto">{timeAgo(item.created_at)}</span>
+                  </div>
+                  <p className="text-sm text-ink line-clamp-2">{item.message}</p>
+                  <div className="flex items-center justify-between mt-2 text-xs text-muted">
+                    <span>{item.user_display_name}</span>
+                    {targetUrl ? (
+                      <a
+                        href={targetUrl}
+                        onClick={(e) => e.stopPropagation()}
+                        className="text-gold hover:underline"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {item.target_label || item.target_id}
+                      </a>
+                    ) : (
+                      <span>General</span>
+                    )}
+                  </div>
+                </div>
+
+                {isExpanded && (
+                  <div className="px-4 py-3 bg-linen/20 border-t border-border/30 space-y-3">
+                    <div>
+                      <label className="text-[10px] uppercase tracking-wider text-muted font-semibold block mb-1">
+                        Full Message
+                      </label>
+                      <p className="text-sm text-ink whitespace-pre-wrap bg-cream rounded p-3 border border-border/30">
+                        {item.message}
+                      </p>
+                    </div>
+                    {item.page_url && (
+                      <div>
+                        <label className="text-[10px] uppercase tracking-wider text-muted font-semibold block mb-1">
+                          Source
+                        </label>
+                        <a
+                          href={item.page_url}
+                          className="text-xs text-gold hover:underline break-all"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {item.page_url}
+                        </a>
+                      </div>
+                    )}
+                    <div>
+                      <label className="text-[10px] uppercase tracking-wider text-muted font-semibold block mb-1">
+                        Admin Notes
+                      </label>
+                      <textarea
+                        value={editNotes}
+                        onChange={(e) => setEditNotes(e.target.value)}
+                        placeholder="Add notes..."
+                        rows={3}
+                        className="w-full px-3 py-2 text-sm text-ink bg-cream border border-border rounded
+                          placeholder:text-muted/40 focus:outline-none focus:border-gold/40 resize-none min-h-[44px]"
+                      />
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <select
+                        value={editStatus}
+                        onChange={(e) => setEditStatus(e.target.value as FeedbackStatus)}
+                        className="flex-1 px-3 py-2 text-sm bg-cream border border-border rounded text-ink
+                          focus:outline-none focus:border-gold/40 min-h-[44px]"
+                      >
+                        <option value="open">Open</option>
+                        <option value="acknowledged">Acknowledged</option>
+                        <option value="resolved">Resolved</option>
+                        <option value="dismissed">Dismissed</option>
+                      </select>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleSave(item.id); }}
+                        disabled={saving}
+                        className="px-4 py-2 text-xs font-medium text-white bg-gold rounded
+                          hover:bg-gold/90 disabled:opacity-50 transition-all min-h-[44px]"
+                      >
+                        {saving ? 'Saving...' : 'Save'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+        </>
       )}
 
       {/* Pagination */}

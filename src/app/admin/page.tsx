@@ -182,7 +182,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Metrics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6">
         <MetricCard
           title="Visitors (24h)"
           value={stats.activeVisitors24h.toLocaleString()}
@@ -372,7 +372,7 @@ export default function AdminDashboard() {
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-serif text-lg text-ink">Activity Overview</h2>
           {activityData && (
-            <div className="flex items-center gap-4 text-xs">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
               <span className="flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-[#3B82F6]" />
                 <span className="text-muted">Views</span>

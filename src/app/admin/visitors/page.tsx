@@ -185,7 +185,7 @@ export default function VisitorsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-serif text-ink">Visitors</h1>
           <p className="text-muted text-sm mt-1">
@@ -381,7 +381,8 @@ export default function VisitorsPage() {
           </div>
           <span className="text-xs text-muted">{stats?.visitors?.length || 0} visitors</span>
         </div>
-        <div className="overflow-x-auto">
+        {/* Desktop table */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b border-border bg-linen/30">
@@ -442,6 +443,51 @@ export default function VisitorsPage() {
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile cards */}
+        <div className="md:hidden divide-y divide-border">
+          {stats?.visitors && stats.visitors.length > 0 ? (
+            stats.visitors.slice(0, 20).map((visitor) => {
+              const geo = visitor.ip ? geoData?.geoData?.[visitor.ip] : null;
+              return (
+                <div
+                  key={visitor.visitorId}
+                  className="px-4 py-3 cursor-pointer hover:bg-linen/30 transition-colors"
+                  onClick={() => setSelectedVisitorId(visitor.visitorId)}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <code className="text-xs bg-linen px-2 py-1 rounded text-charcoal">
+                      {visitor.visitorIdShort}
+                    </code>
+                    <span className="text-xs text-muted">{formatRelativeTime(visitor.lastSeen)}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      {geo ? (
+                        <>
+                          <span>{getFlag(geo.countryCode)}</span>
+                          <span className="text-sm text-charcoal">{geo.city || geo.country}</span>
+                        </>
+                      ) : (
+                        <span className="text-xs text-muted">Unknown location</span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-medium text-ink">{visitor.events} events</span>
+                      <span className="text-[10px] bg-gold/10 text-gold px-2 py-0.5 rounded">
+                        {EVENT_TYPE_LABELS[visitor.topEvent] || visitor.topEvent}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          ) : (
+            <div className="px-4 py-8 text-center text-muted text-sm">
+              No visitors in this period
+            </div>
+          )}
         </div>
       </div>
 
