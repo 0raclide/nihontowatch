@@ -120,10 +120,13 @@ export function ShowcasePageClient() {
       <main className="flex-1">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           {/* Page header */}
-          <div className="mb-6">
-            <h1 className="text-2xl font-serif text-ink">
+          <div className="text-center mb-10 pt-4 sm:pt-8">
+            <h1 className="text-3xl sm:text-4xl font-serif italic text-gold tracking-wide">
               {t('showcase.title')}
             </h1>
+            <p className="mt-2 text-sm text-muted/70 tracking-[0.2em] uppercase font-light">
+              {t('showcase.subtitle')}
+            </p>
           </div>
 
           {/* Error state */}
@@ -157,6 +160,7 @@ export function ShowcasePageClient() {
               exchangeRates={exchangeRates}
               isLoading={isLoading}
               onCardClick={handleItemClick}
+              hideResultCount
             />
           )}
 

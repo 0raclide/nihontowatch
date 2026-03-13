@@ -94,6 +94,7 @@ interface VirtualListingGridProps {
   appendSlot?: React.ReactNode; // Optional element rendered after the last card (e.g. AddItemCard)
   onCardClick?: (listing: DisplayItem) => void; // Override default QuickView open (e.g. collection items)
   preMappedItems?: DisplayItem[]; // Pre-mapped DisplayItems (skip internal listingToDisplayItem mapping)
+  hideResultCount?: boolean; // Hide "Showing X of Y items" line
 }
 
 function Pagination({
@@ -222,6 +223,7 @@ export function VirtualListingGrid({
   appendSlot,
   onCardClick,
   preMappedItems,
+  hideResultCount = false,
 }: VirtualListingGridProps) {
   const quickView = useQuickViewOptional();
   const { t, locale } = useLocale();
@@ -405,13 +407,15 @@ export function VirtualListingGrid({
 
   return (
     <div className={galleryWrapperClass}>
-      {/* Results count - hidden on mobile */}
-      <div className="hidden lg:flex items-center justify-between mb-6">
-        <p className="text-sm text-muted">
-          {t('browse.showingCount', { count: String(displayItems.length), total: total.toLocaleString() })}
-          {columns === 1 && <span className="text-muted/60"> (1 column)</span>}
-        </p>
-      </div>
+      {/* Results count - hidden on mobile, hideable via prop */}
+      {!hideResultCount && (
+        <div className="hidden lg:flex items-center justify-between mb-6">
+          <p className="text-sm text-muted">
+            {t('browse.showingCount', { count: String(displayItems.length), total: total.toLocaleString() })}
+            {columns === 1 && <span className="text-muted/60"> (1 column)</span>}
+          </p>
+        </div>
+      )}
 
       {/* Virtualized container with scroll anchoring CSS */}
       {isVirtualized ? (

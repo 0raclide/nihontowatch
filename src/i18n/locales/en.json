@@ -994,9 +994,10 @@
   "collection.visibility.collectorsHint": "Visible to Yuhinkai members.",
   "collection.visibility.dealersHint": "Show dealers what you collect.",
 
-  "nav.showcase": "Museum",
+  "nav.showcase": "Gallery",
 
-  "showcase.title": "Yuhinkai Society Museum",
+  "showcase.title": "Yuhinkai Meito Gallery",
+  "showcase.subtitle": "Distinguished blades from private collections",
   "showcase.empty": "No items shared yet. Be the first to showcase your collection.",
   "showcase.emptyDealers": "No items available from collectors yet.",
   "showcase.tabCommunity": "Society",

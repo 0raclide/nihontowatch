@@ -88,6 +88,7 @@ interface ListingGridProps {
   appendSlot?: React.ReactNode; // Optional element rendered after the last card (e.g. AddItemCard)
   onCardClick?: (listing: DisplayItem) => void; // Override default QuickView open (e.g. collection items)
   preMappedItems?: DisplayItem[]; // Pre-mapped DisplayItems (skip internal listingToDisplayItem mapping)
+  hideResultCount?: boolean; // Hide "Showing X of Y items" line
 }
 
 function LoadingSkeleton() {
@@ -228,6 +229,7 @@ export function ListingGrid({
   appendSlot,
   onCardClick,
   preMappedItems,
+  hideResultCount,
 }: ListingGridProps) {
   // Loading state
   if (isLoading) {
@@ -264,6 +266,7 @@ export function ListingGrid({
         appendSlot={appendSlot}
         onCardClick={onCardClick}
         preMappedItems={preMappedItems}
+        hideResultCount={hideResultCount}
       />
     </ViewportTrackingProvider>
   );

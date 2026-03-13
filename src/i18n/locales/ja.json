@@ -994,9 +994,10 @@
   "collection.visibility.collectorsHint": "遊刃会メンバーに公開されます。",
   "collection.visibility.dealersHint": "刀剣商にコレクションを公開します。",
 
-  "nav.showcase": "ミュージアム",
+  "nav.showcase": "名刀館",
 
-  "showcase.title": "遊刃会ミュージアム",
+  "showcase.title": "遊刃会 名刀館",
+  "showcase.subtitle": "会員秘蔵の名品を一堂に",
   "showcase.empty": "まだ共有されたアイテムはありません。コレクションを最初に紹介しましょう。",
   "showcase.emptyDealers": "コレクターからの提供品はまだありません。",
   "showcase.tabCommunity": "ソサエティ",
