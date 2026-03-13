@@ -118,6 +118,10 @@ export function collectionRowToDisplayItem(
     dealer_domain: undefined,
     dealer_id: null,
 
+    // Curator headline
+    ai_curator_headline_en: item.ai_curator_headline_en ?? null,
+    ai_curator_headline_ja: item.ai_curator_headline_ja ?? null,
+
     // Setsumei
     setsumei_text_en: item.setsumei_text_en ?? null,
     setsumei_text_ja: item.setsumei_text_ja ?? null,

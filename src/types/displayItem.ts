@@ -164,6 +164,10 @@ export interface DisplayItem {
   dealer_domain?: string;
   dealer_id?: number | null;
 
+  // Curator headline (Scholar's Note hero text)
+  ai_curator_headline_en?: string | null;
+  ai_curator_headline_ja?: string | null;
+
   // Setsumei
   setsumei_text_en?: string | null;
   setsumei_text_ja?: string | null;

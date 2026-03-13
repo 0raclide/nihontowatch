@@ -96,6 +96,8 @@ export interface ItemDataFields {
   // AI curator notes
   ai_curator_note_en?: string | null;
   ai_curator_note_ja?: string | null;
+  ai_curator_headline_en?: string | null;
+  ai_curator_headline_ja?: string | null;
 
   // Smart crop
   focal_x?: number | null;

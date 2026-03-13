@@ -90,6 +90,9 @@ interface ListingInput {
     days_on_market_display: string | null;
     confidence: string;
   } | null;
+  // Curator headline
+  ai_curator_headline_en?: string | null;
+  ai_curator_headline_ja?: string | null;
   // Setsumei
   setsumei_text_en?: string | null;
   setsumei_text_ja?: string | null;
@@ -182,6 +185,10 @@ export function listingToDisplayItem(listing: ListingInput, locale: string): Dis
     dealer_display_name_ja: dealerObj?.name_ja ?? null,
     dealer_domain: dealerObj?.domain,
     dealer_id: listing.dealer_id ?? dealerObj?.id ?? null,
+
+    // Curator headline
+    ai_curator_headline_en: listing.ai_curator_headline_en ?? null,
+    ai_curator_headline_ja: listing.ai_curator_headline_ja ?? null,
 
     // Setsumei
     setsumei_text_en: listing.setsumei_text_en ?? null,
