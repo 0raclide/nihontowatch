@@ -93,9 +93,9 @@ export async function POST(req: NextRequest) {
   }
 
   // Generate EN description
-  const description = await generateCuratorNote(context, 'en');
+  const result = await generateCuratorNote(context, 'en');
 
-  if (!description) {
+  if (!result.note) {
     return NextResponse.json(
       { error: 'Generation failed — please try again' },
       { status: 500 }
@@ -103,7 +103,8 @@ export async function POST(req: NextRequest) {
   }
 
   return NextResponse.json({
-    description,
+    description: result.note,
+    headline: result.headline,
     data_richness: getDataRichness(context),
   });
 }
