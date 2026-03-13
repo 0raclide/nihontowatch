@@ -62,22 +62,22 @@ export function ShowcaseScholarNote({
             <EditableText
               value={displayHeadline}
               onSave={(v) => onHeadlineSave(isShowingJa ? 'ja' : 'en', v)}
-              className="text-center text-[16px] md:text-[18px] leading-[1.7] italic text-charcoal mb-6"
+              className="text-center text-[16px] md:text-[18px] leading-[1.7] italic text-charcoal mb-4"
               placeholder="Add headline..."
             >
-              <p className="text-center text-[16px] md:text-[18px] leading-[1.7] italic text-charcoal mb-6">
+              <p className="text-center text-[16px] md:text-[18px] leading-[1.7] italic text-charcoal mb-4">
                 {displayHeadline}
               </p>
             </EditableText>
           ) : (
-            <p className="text-center text-[16px] md:text-[18px] leading-[1.7] italic text-charcoal mb-6">
+            <p className="text-center text-[16px] md:text-[18px] leading-[1.7] italic text-charcoal mb-4">
               {displayHeadline}
             </p>
           )
         )}
 
         {hasHeroContent && (
-          <div className="w-16 h-px bg-border/40 mx-auto mb-8" />
+          <div className="w-16 h-px bg-border/40 mx-auto mb-5" />
         )}
 
         {/* Full note body */}
