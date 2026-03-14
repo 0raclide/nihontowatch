@@ -28,6 +28,9 @@ export function VaultTableFooter({ items, returnMap, homeCurrency, isLoadingRetu
     for (const item of items) {
       const ext = item.collection;
       if (!ext) continue;
+      // Exclude sold/deaccessioned items — their value is captured by sold_price, not current_value
+      const holdingStatus = ext.holding_status || 'owned';
+      if (holdingStatus !== 'owned') continue;
       const val = ext.current_value;
       const cur = ext.current_currency || 'JPY';
       if (val != null && val > 0) {

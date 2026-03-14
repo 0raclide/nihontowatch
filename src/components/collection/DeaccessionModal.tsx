@@ -51,6 +51,9 @@ export function DeaccessionModal({ itemId, itemTitle, onClose, onSuccess }: Deac
     const updates: Record<string, unknown> = {
       holding_status: disposition,
       sold_date: date || null,
+      // Clear current_value — item is leaving the collection, value is now captured by sold_price
+      current_value: null,
+      current_currency: null,
     };
 
     if (disposition === 'sold') {
