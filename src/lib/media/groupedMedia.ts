@@ -12,6 +12,7 @@
  */
 
 import type { Listing } from '@/types';
+import { normalizeProvenance } from '@/lib/provenance/normalize';
 
 // ============================================================================
 // Types
@@ -109,16 +110,13 @@ const SECTION_DEFS: SectionDef[] = [
   {
     labelKey: 'dealer.provenance',
     getImages: (l) => {
-      if (!l.provenance) return [];
+      const prov = normalizeProvenance(l.provenance);
+      if (!prov) return [];
       const urls: string[] = [];
-      if (l.provenance.entries) {
-        for (const entry of l.provenance.entries) {
-          if (entry.portrait_image) urls.push(entry.portrait_image);
-        }
+      for (const entry of prov.entries) {
+        if (entry.portrait_image) urls.push(entry.portrait_image);
       }
-      if (l.provenance.documents) {
-        urls.push(...l.provenance.documents);
-      }
+      urls.push(...prov.documents);
       return urls;
     },
   },

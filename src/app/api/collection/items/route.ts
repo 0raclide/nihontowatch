@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import { sanitizeKoshirae } from '@/lib/dealer/sanitizeKoshirae';
 import { sanitizeSayagaki, sanitizeHakogaki, sanitizeProvenance, sanitizeKiwame, sanitizeKantoHibisho } from '@/lib/dealer/sanitizeSections';
+import { normalizeProvenance } from '@/lib/provenance/normalize';
 import {
   collectionItemsFrom,
   insertCollectionItem,
@@ -153,8 +154,13 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Normalize provenance JSONB from legacy array format to ProvenanceData
+    const normalizedItems = (items || []).map((item: Record<string, unknown>) =>
+      item.provenance ? { ...item, provenance: normalizeProvenance(item.provenance) } : item
+    );
+
     return NextResponse.json({
-      data: items || [],
+      data: normalizedItems,
       total: count || 0,
       facets,
       artisanNames: artisanNamesObj,

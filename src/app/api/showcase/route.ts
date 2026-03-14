@@ -2,6 +2,7 @@ import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import { collectionItemsFrom } from '@/lib/supabase/collectionItems';
+import { normalizeProvenance } from '@/lib/provenance/normalize';
 import type { SubscriptionTier } from '@/types/subscription';
 
 export const dynamic = 'force-dynamic';
@@ -107,9 +108,10 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Merge profile data into items
-    const enriched = (items || []).map((item: { owner_id: string }) => ({
+    // Merge profile data into items + normalize provenance JSONB
+    const enriched = (items || []).map((item: { owner_id: string; provenance?: unknown }) => ({
       ...item,
+      provenance: normalizeProvenance(item.provenance),
       profiles: profileMap.get(item.owner_id) || null,
     }));
 
