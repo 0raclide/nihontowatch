@@ -13,10 +13,11 @@ import type {
   SayagakiEntry,
   HakogakiEntry,
   KoshiraeData,
-  ProvenanceEntry,
+  ProvenanceData,
   KiwameEntry,
   KantoHibishoData,
 } from '@/types';
+import { normalizeProvenance } from '@/lib/provenance/normalize';
 import type { VideoMediaItem } from './groupedMedia';
 import { isYuhinkaiCatalogImage, classifyCatalogImage } from '@/lib/images/classification';
 
@@ -33,7 +34,7 @@ export type ContentBlock =
   | { type: 'setsumei'; textEn: string | null; textJa: string | null; images: string[]; metadata: Record<string, unknown> | null }
   | { type: 'sayagaki'; data: SayagakiEntry[] }
   | { type: 'hakogaki'; data: HakogakiEntry[] }
-  | { type: 'provenance'; data: ProvenanceEntry[] }
+  | { type: 'provenance'; data: ProvenanceData }
   | { type: 'kiwame'; data: KiwameEntry[] }
   | { type: 'koshirae'; data: KoshiraeData; hideHeading: boolean }
   | { type: 'kanto_hibisho'; data: KantoHibishoData };
@@ -75,9 +76,13 @@ function getSectionImageUrls(listing: Listing): Set<string> {
       if (entry.images) for (const url of entry.images) urls.add(url);
     }
   }
-  if (listing.provenance && Array.isArray(listing.provenance)) {
-    for (const entry of listing.provenance) {
-      if (entry.images) for (const url of entry.images) urls.add(url);
+  if (listing.provenance) {
+    const prov = normalizeProvenance(listing.provenance);
+    if (prov) {
+      for (const entry of prov.entries) {
+        if (entry.portrait_image) urls.add(entry.portrait_image);
+      }
+      for (const url of prov.documents) urls.add(url);
     }
   }
   if (listing.kanto_hibisho?.images) {
@@ -153,9 +158,19 @@ const SECTION_DEFS: SectionDef[] = [
   {
     id: 'stream-provenance',
     labelKey: 'dealer.provenance',
-    hasData: (l) => !!(l.provenance && l.provenance.length > 0),
-    buildBlock: (l) => ({ type: 'provenance', data: l.provenance! }),
-    getImageUrls: (l) => (l.provenance || []).flatMap(e => e.images || []),
+    hasData: (l) => {
+      const p = normalizeProvenance(l.provenance);
+      return !!(p && (p.entries.length > 0 || p.documents.length > 0));
+    },
+    buildBlock: (l) => ({ type: 'provenance', data: normalizeProvenance(l.provenance)! }),
+    getImageUrls: (l) => {
+      const p = normalizeProvenance(l.provenance);
+      if (!p) return [];
+      const urls: string[] = [];
+      for (const e of p.entries) { if (e.portrait_image) urls.push(e.portrait_image); }
+      urls.push(...p.documents);
+      return urls;
+    },
   },
   {
     id: 'stream-kiwame',

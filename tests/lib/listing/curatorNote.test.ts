@@ -144,9 +144,9 @@ describe('assembleCuratorContext', () => {
       hakogaki: [
         { id: '2', author: 'Honma Junji', content: 'Excellent preservation', images: [] },
       ],
-      provenance: [
-        { id: '3', owner_name: 'Matsudaira', owner_name_ja: '松平', notes: 'Daimyo collection', images: [] },
-      ],
+      provenance: { entries: [
+        { id: '3', owner_name: 'Matsudaira', owner_name_ja: '松平', notes: 'Daimyo collection', portrait_image: null },
+      ], documents: [] },
       kiwame: [
         { id: '4', judge_name: "Hon'ami Koson", judge_name_ja: null, kiwame_type: 'origami' as const, notes: 'Confirmed' },
       ],
@@ -324,7 +324,7 @@ describe('getDataRichness', () => {
     const listing = makeListing({
       setsumei_text_en: 'Translation...',
       sayagaki: [{ id: '1', author: 'tanobe_michihiro', author_custom: null, content: 'Text', images: [] }],
-      provenance: [{ id: '2', owner_name: 'Matsudaira', owner_name_ja: null, notes: null, images: [] }],
+      provenance: { entries: [{ id: '2', owner_name: 'Matsudaira', owner_name_ja: null, notes: null, portrait_image: null }], documents: [] },
     });
     const artisan = makeArtisanEntity();
     const ctx = assembleCuratorContext(listing, artisan, null);

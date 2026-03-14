@@ -24,7 +24,7 @@ import type { ListingVideo } from '@/types/media';
 import { CATALOG_CERT_TYPES } from '@/lib/collection/catalogMapping';
 import { isYuhinkaiCatalogImage } from '@/lib/images/classification';
 import { SIGNED_MEI_TYPES, computeMeiText, computeMeiGuaranteed } from '@/lib/dealer/meiPayload';
-import type { SayagakiEntry, HakogakiEntry, KoshiraeData, ProvenanceEntry, KiwameEntry, KantoHibishoData } from '@/types';
+import type { SayagakiEntry, HakogakiEntry, KoshiraeData, ProvenanceEntry, ProvenanceData, KiwameEntry, KantoHibishoData } from '@/types';
 import type { CollectionVisibility } from '@/types/collectionItem';
 import { useLocale } from '@/i18n/LocaleContext';
 import ReactMarkdown from 'react-markdown';
@@ -64,7 +64,7 @@ interface DealerDraft {
   sayagaki: SayagakiEntry[];
   hakogaki: HakogakiEntry[];
   koshirae: KoshiraeData | null;
-  provenance: ProvenanceEntry[];
+  provenance: ProvenanceData | null;
   kiwame: KiwameEntry[];
   kantoHibisho: KantoHibishoData | null;
   researchNotes: string;
@@ -83,7 +83,7 @@ function isDraftSubstantive(d: DealerDraft): boolean {
     d.heightCm || d.widthCm || d.material ||
     d.meiType || d.era || d.province || d.artisanSchool ||
     d.sayagaki?.length || d.hakogaki?.length || d.koshirae ||
-    d.provenance?.length || d.kiwame?.length || d.kantoHibisho ||
+    d.provenance?.entries?.length || d.provenance?.documents?.length || d.kiwame?.length || d.kantoHibisho ||
     d.researchNotes
   );
 }
@@ -143,7 +143,7 @@ export interface DealerListingInitialData {
   sayagaki?: SayagakiEntry[] | null;
   hakogaki?: HakogakiEntry[] | null;
   koshirae?: KoshiraeData | null;
-  provenance?: ProvenanceEntry[] | null;
+  provenance?: ProvenanceData | null;
   kiwame?: KiwameEntry[] | null;
   kanto_hibisho?: KantoHibishoData | null;
   research_notes?: string | null;
@@ -310,12 +310,16 @@ export function DealerListingForm({ mode, initialData, context = 'listing' }: De
     initialData?.koshirae || draft?.koshirae || null
   );
   const [pendingKoshiraeFiles, setPendingKoshiraeFiles] = useState<File[]>([]);
-  const [provenance, setProvenance] = useState<ProvenanceEntry[]>(
-    initialData?.provenance || draft?.provenance || []
+  const [provenanceEntries, setProvenanceEntries] = useState<ProvenanceEntry[]>(
+    initialData?.provenance?.entries || draft?.provenance?.entries || []
   );
-  const [pendingProvenanceFiles, setPendingProvenanceFiles] = useState<
-    Map<string, File[]>
+  const [provenanceDocuments, setProvenanceDocuments] = useState<string[]>(
+    initialData?.provenance?.documents || draft?.provenance?.documents || []
+  );
+  const [pendingProvenancePortraits, setPendingProvenancePortraits] = useState<
+    Map<string, File>
   >(new Map());
+  const [pendingProvenanceDocuments, setPendingProvenanceDocuments] = useState<File[]>([]);
   const [kiwame, setKiwame] = useState<KiwameEntry[]>(
     initialData?.kiwame || draft?.kiwame || []
   );
@@ -366,7 +370,7 @@ export function DealerListingForm({ mode, initialData, context = 'listing' }: De
 
   // Track which JSONB section entries were loaded from the database.
   // New entries added during edit should queue image uploads locally (not hit the API immediately).
-  const savedProvenanceIds = useMemo(() => new Set((initialData?.provenance || []).map((e: ProvenanceEntry) => e.id)), [initialData]);
+  const savedProvenanceIds = useMemo(() => new Set((initialData?.provenance?.entries || []).map((e: ProvenanceEntry) => e.id)), [initialData]);
   const savedKiwameIds = useMemo(() => new Set((initialData?.kiwame || []).map((e: KiwameEntry) => e.id)), [initialData]);
   const savedSayagakiIds = useMemo(() => new Set((initialData?.sayagaki || []).map((e: SayagakiEntry) => e.id)), [initialData]);
   const savedHakogakiIds = useMemo(() => new Set((initialData?.hakogaki || []).map((e: HakogakiEntry) => e.id)), [initialData]);
@@ -440,10 +444,15 @@ export function DealerListingForm({ mode, initialData, context = 'listing' }: De
           ...koshirae,
           images: (koshirae.images || []).filter(url => !url.startsWith('blob:')),
         } : null,
-        provenance: provenance.map(e => ({
-          ...e,
-          images: (e.images || []).filter(url => !url.startsWith('blob:')),
-        })),
+        provenance: provenanceEntries.length > 0 || provenanceDocuments.length > 0
+          ? {
+              entries: provenanceEntries.map(e => ({
+                ...e,
+                portrait_image: e.portrait_image?.startsWith('blob:') ? null : e.portrait_image,
+              })),
+              documents: provenanceDocuments.filter(url => !url.startsWith('blob:')),
+            }
+          : null,
         kiwame: kiwame.map(e => ({
           ...e,
           images: (e.images || []).filter(url => !url.startsWith('blob:')),
@@ -468,7 +477,7 @@ export function DealerListingForm({ mode, initialData, context = 'listing' }: De
     nagasaCm, motohabaCm, sakihabaCm, soriCm, meiType, meiText, meiGuaranteed, nakagoType, era, province,
     heightCm, widthCm, materials, artisanSchool, titleOverride,
     certSession, catalogObjectUuid, setsumeiTextEn, setsumeiTextJa,
-    images, sayagaki, hakogaki, koshirae, provenance, kiwame, kantoHibisho, researchNotes,
+    images, sayagaki, hakogaki, koshirae, provenanceEntries, provenanceDocuments, kiwame, kantoHibisho, researchNotes,
     draftStorageKey,
   ]);
 
@@ -651,11 +660,14 @@ export function DealerListingForm({ mode, initialData, context = 'listing' }: De
           cert_type: koshirae.cert_type === 'none' ? null : koshirae.cert_type,
           images: (koshirae.images || []).filter(url => !url.startsWith('blob:')),
         } : null,
-        provenance: provenance.length > 0
-          ? provenance.map(e => ({
-              ...e,
-              images: (e.images || []).filter(url => !url.startsWith('blob:')),
-            }))
+        provenance: provenanceEntries.length > 0 || provenanceDocuments.length > 0
+          ? {
+              entries: provenanceEntries.map(e => ({
+                ...e,
+                portrait_image: e.portrait_image?.startsWith('blob:') ? null : e.portrait_image,
+              })),
+              documents: provenanceDocuments.filter(url => !url.startsWith('blob:')),
+            }
           : null,
         kiwame: kiwame.length > 0
           ? kiwame.map(e => ({
@@ -766,22 +778,39 @@ export function DealerListingForm({ mode, initialData, context = 'listing' }: De
           }
         }
 
-        // Upload pending provenance images
-        if (pendingProvenanceFiles.size > 0) {
-          for (const [provenanceId, files] of pendingProvenanceFiles) {
-            for (const file of files) {
-              const formData = new FormData();
-              formData.append('file', file, file.name);
-              formData.append('itemId', String(listing.id));
-              formData.append('provenanceId', provenanceId);
-              try {
-                await fetch(provenanceImagesEndpoint, {
-                  method: 'POST',
-                  body: formData,
-                });
-              } catch {
-                // Best effort — don't block success
-              }
+        // Upload pending provenance portraits
+        if (pendingProvenancePortraits.size > 0) {
+          for (const [provenanceId, file] of pendingProvenancePortraits) {
+            const formData = new FormData();
+            formData.append('file', file, file.name);
+            formData.append('itemId', String(listing.id));
+            formData.append('provenanceId', provenanceId);
+            formData.append('role', 'portrait');
+            try {
+              await fetch(provenanceImagesEndpoint, {
+                method: 'POST',
+                body: formData,
+              });
+            } catch {
+              // Best effort — don't block success
+            }
+          }
+        }
+
+        // Upload pending provenance documents
+        if (pendingProvenanceDocuments.length > 0) {
+          for (const file of pendingProvenanceDocuments) {
+            const formData = new FormData();
+            formData.append('file', file, file.name);
+            formData.append('itemId', String(listing.id));
+            formData.append('role', 'document');
+            try {
+              await fetch(provenanceImagesEndpoint, {
+                method: 'POST',
+                body: formData,
+              });
+            } catch {
+              // Best effort — don't block success
             }
           }
         }
@@ -849,8 +878,8 @@ export function DealerListingForm({ mode, initialData, context = 'listing' }: De
     artisanKanji, artisanSchool, priceValue, priceCurrency, isAsk, description,
     nagasaCm, motohabaCm, sakihabaCm, soriCm, meiType, nakagoType, era, province,
     heightCm, widthCm, materials, pendingFiles, pendingSayagakiFiles, sayagaki,
-    pendingHakogakiFiles, hakogaki, koshirae, pendingKoshiraeFiles, provenance,
-    pendingProvenanceFiles, kiwame, pendingKiwameFiles, kantoHibisho, pendingKantoHibishoFiles,
+    pendingHakogakiFiles, hakogaki, koshirae, pendingKoshiraeFiles, provenanceEntries, provenanceDocuments,
+    pendingProvenancePortraits, pendingProvenanceDocuments, kiwame, pendingKiwameFiles, kantoHibisho, pendingKantoHibishoFiles,
     certSession, setsumeiTextEn, setsumeiTextJa, generatedTitle, titleOverride,
     heroImageIndex, images, router, itemsEndpoint, imagesEndpoint, context, sourceListingId,
     sayagakiImagesEndpoint, hakogakiImagesEndpoint, koshiraeImagesEndpoint,
@@ -907,8 +936,10 @@ export function DealerListingForm({ mode, initialData, context = 'listing' }: De
     setPendingSayagakiFiles(new Map());
     setKoshirae(null);
     setPendingKoshiraeFiles([]);
-    setProvenance([]);
-    setPendingProvenanceFiles(new Map());
+    setProvenanceEntries([]);
+    setProvenanceDocuments([]);
+    setPendingProvenancePortraits(new Map());
+    setPendingProvenanceDocuments([]);
     setKiwame([]);
     setShowSuccess(false);
     setImageUploadFailed(false);
@@ -968,7 +999,9 @@ export function DealerListingForm({ mode, initialData, context = 'listing' }: De
           setsumei_text_ja: setsumeiTextJa,
           sayagaki: sayagaki.length > 0 ? sayagaki : null,
           hakogaki: hakogaki.length > 0 ? hakogaki : null,
-          provenance: provenance.length > 0 ? provenance : null,
+          provenance: provenanceEntries.length > 0 || provenanceDocuments.length > 0
+            ? { entries: provenanceEntries, documents: provenanceDocuments }
+            : null,
           kiwame: kiwame.length > 0 ? kiwame : null,
           koshirae,
           research_notes: researchNotes || null,
@@ -992,7 +1025,7 @@ export function DealerListingForm({ mode, initialData, context = 'listing' }: De
     certType, itemType, nagasaCm, soriCm, motohabaCm, sakihabaCm,
     meiType, meiText, era, province, artisanSchool, certSession,
     artisanId, setsumeiTextEn, setsumeiTextJa,
-    sayagaki, hakogaki, provenance, kiwame, koshirae, researchNotes,
+    sayagaki, hakogaki, provenanceEntries, provenanceDocuments, kiwame, koshirae, researchNotes,
     description, t,
   ]);
 
@@ -1242,21 +1275,21 @@ export function DealerListingForm({ mode, initialData, context = 'listing' }: De
 
         {/* 4d. Provenance */}
         <ProvenanceSection
-          entries={provenance}
+          entries={provenanceEntries}
+          documents={provenanceDocuments}
           itemId={mode === 'edit' && initialData?.id ? String(initialData.id) : undefined}
           savedEntryIds={savedProvenanceIds}
-          onChange={setProvenance}
-          onPendingFilesChange={(provenanceId, files) => {
-            setPendingProvenanceFiles(prev => {
+          onChange={setProvenanceEntries}
+          onDocumentsChange={setProvenanceDocuments}
+          onPendingFilesChange={(provenanceId, file) => {
+            setPendingProvenancePortraits(prev => {
               const next = new Map(prev);
-              if (files.length === 0) {
-                next.delete(provenanceId);
-              } else {
-                next.set(provenanceId, files);
-              }
+              if (file) next.set(provenanceId, file);
+              else next.delete(provenanceId);
               return next;
             });
           }}
+          onPendingDocumentsChange={setPendingProvenanceDocuments}
           apiEndpoint={provenanceImagesEndpoint}
         />
 

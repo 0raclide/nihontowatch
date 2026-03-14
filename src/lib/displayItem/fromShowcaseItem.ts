@@ -14,7 +14,7 @@ import type {
   SayagakiEntry,
   HakogakiEntry,
   KoshiraeData,
-  ProvenanceEntry,
+  ProvenanceData,
   KiwameEntry,
   KantoHibishoData,
 } from '@/types';
@@ -74,7 +74,7 @@ export interface ShowcaseApiRow {
   sayagaki?: SayagakiEntry[] | null;
   hakogaki?: HakogakiEntry[] | null;
   koshirae?: KoshiraeData | null;
-  provenance?: ProvenanceEntry[] | null;
+  provenance?: ProvenanceData | null;
   kiwame?: KiwameEntry[] | null;
   kanto_hibisho?: KantoHibishoData | null;
   ai_curator_note_en?: string | null;

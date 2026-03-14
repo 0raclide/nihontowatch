@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import type { ProvenanceEntry, KiwameEntry } from '@/types';
+import type { ProvenanceData, KiwameEntry } from '@/types';
 
 const KIWAME_TYPE_LABELS: Record<string, { label: string; color: string }> = {
   origami: { label: 'Origami', color: 'text-gold' },
@@ -11,7 +11,7 @@ const KIWAME_TYPE_LABELS: Record<string, { label: string; color: string }> = {
 };
 
 interface ShowcaseTimelineProps {
-  provenance: ProvenanceEntry[];
+  provenance: ProvenanceData;
   kiwame?: KiwameEntry[];
   onImageClick: (url: string) => void;
 }
@@ -25,19 +25,19 @@ export function ShowcaseTimeline({ provenance, kiwame, onImageClick }: ShowcaseT
   return (
     <div className="max-w-[960px] mx-auto px-4 sm:px-8">
       <div className="max-w-[65ch] mx-auto">
-        {provenance.length > 0 && (
+        {provenance.entries.length > 0 && (
           <div className="relative pl-6">
             {/* Vertical line */}
             <div className="absolute left-[4px] top-0 bottom-0 w-px bg-border-subtle" />
 
             <div className="space-y-6">
-              {provenance.map((entry) => {
-                const hasImages = entry.images && entry.images.length > 0;
+              {provenance.entries.map((entry) => {
+                const hasPortrait = !!entry.portrait_image;
                 return (
                   <div key={entry.id} className="relative">
                     {/* Dot */}
                     <div className={`absolute -left-6 top-1.5 w-[9px] h-[9px] rounded-full ring-[2.5px] ring-background ${
-                      hasImages ? 'bg-gold/50' : 'bg-border-subtle'
+                      hasPortrait ? 'bg-gold/50' : 'bg-border-subtle'
                     }`} />
 
                     <div>
@@ -55,18 +55,15 @@ export function ShowcaseTimeline({ provenance, kiwame, onImageClick }: ShowcaseT
                         </p>
                       )}
 
-                      {/* Thumbnails */}
-                      {hasImages && (
+                      {/* Portrait thumbnail */}
+                      {hasPortrait && (
                         <div className="flex gap-1.5 mt-2">
-                          {entry.images.slice(0, 3).map((img, j) => (
-                            <button
-                              key={j}
-                              onClick={() => onImageClick(img)}
-                              className="relative w-12 h-12 rounded overflow-hidden ring-1 ring-border hover:ring-gold/50 transition-all cursor-zoom-in"
-                            >
-                              <Image src={img} alt={`${entry.owner_name} document`} fill className="object-cover" sizes="48px" />
-                            </button>
-                          ))}
+                          <button
+                            onClick={() => onImageClick(entry.portrait_image!)}
+                            className="relative w-12 h-12 rounded overflow-hidden ring-1 ring-border hover:ring-gold/50 transition-all cursor-zoom-in"
+                          >
+                            <Image src={entry.portrait_image!} alt={`${entry.owner_name} portrait`} fill className="object-cover" sizes="48px" />
+                          </button>
                         </div>
                       )}
                     </div>
@@ -77,10 +74,27 @@ export function ShowcaseTimeline({ provenance, kiwame, onImageClick }: ShowcaseT
           </div>
         )}
 
+        {/* Supporting Documents */}
+        {provenance.documents && provenance.documents.length > 0 && (
+          <div className={provenance.entries.length > 0 ? 'mt-6' : ''}>
+            <div className="flex flex-wrap gap-1.5">
+              {provenance.documents.map((url, j) => (
+                <button
+                  key={j}
+                  onClick={() => onImageClick(url)}
+                  className="relative w-12 h-12 rounded overflow-hidden ring-1 ring-border hover:ring-gold/50 transition-all cursor-zoom-in"
+                >
+                  <Image src={url} alt={`Provenance document ${j + 1}`} fill className="object-cover" sizes="48px" />
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Kiwame appraisals */}
         {kiwame && kiwame.length > 0 && (
-          <div className={provenance.length > 0 ? 'mt-14 md:mt-16' : ''}>
-            {provenance.length > 0 && (
+          <div className={provenance.entries.length > 0 ? 'mt-14 md:mt-16' : ''}>
+            {provenance.entries.length > 0 && (
               <div className="h-px bg-border/30 mb-5" />
             )}
             <h3 className="text-[13px] uppercase tracking-[0.18em] font-medium text-charcoal mb-6">

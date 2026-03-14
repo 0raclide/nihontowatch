@@ -244,7 +244,7 @@ export function QuickViewContent({
         )}
 
         {/* Provenance */}
-        {listing.provenance && listing.provenance.length > 0 && (
+        {listing.provenance && (listing.provenance.entries?.length > 0 || listing.provenance.documents?.length > 0) && (
           <ProvenanceDisplay provenance={listing.provenance} readable={readable} />
         )}
 

@@ -7,7 +7,6 @@ import { resizeImage } from '@/lib/images/resizeImage';
 import { AutocompleteInput } from './AutocompleteInput';
 import { useLocale } from '@/i18n/LocaleContext';
 
-const MAX_IMAGES = 5;
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
@@ -19,7 +18,7 @@ interface ProvenanceCardProps {
   isSaved?: boolean;
   onChange: (updated: ProvenanceEntry) => void;
   onRemove: () => void;
-  onPendingFilesChange?: (provenanceId: string, files: File[]) => void;
+  onPendingFilesChange?: (provenanceId: string, file: File | null) => void;
   /** Override the image upload/delete API endpoint. Default: '/api/dealer/provenance-images' */
   apiEndpoint?: string;
 }
@@ -28,7 +27,7 @@ export function ProvenanceCard({ entry, index, itemId, isSaved = false, onChange
   const { t } = useLocale();
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
-  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const [pendingPortrait, setPendingPortrait] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Only use immediate upload when the listing is being edited AND this entry exists in the DB
@@ -38,98 +37,71 @@ export function ProvenanceCard({ entry, index, itemId, isSaved = false, onChange
     onChange({ ...entry, owner_name: name, owner_name_ja: name_ja });
   }, [entry, onChange]);
 
-  const handleFiles = useCallback(async (files: FileList) => {
-    const currentCount = (entry.images || []).length + pendingFiles.length;
-    if (currentCount + files.length > MAX_IMAGES) {
-      setUploadError(t('dealer.provenanceMaxImages'));
+  const handlePortraitFile = useCallback(async (files: FileList) => {
+    const file = files[0];
+    if (!file) return;
+
+    setUploadError(null);
+
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      setUploadError(t('collection.unsupportedFormat', { name: file.name }));
+      return;
+    }
+    const resized = await resizeImage(file);
+    const resizedFile = new File([resized], file.name, { type: 'image/jpeg' });
+    if (resizedFile.size > MAX_FILE_SIZE) {
+      setUploadError(t('collection.fileTooLarge', { name: file.name }));
       return;
     }
 
-    setUploadError(null);
-    const validFiles: File[] = [];
-
-    for (const file of Array.from(files)) {
-      if (!ALLOWED_TYPES.includes(file.type)) {
-        setUploadError(t('collection.unsupportedFormat', { name: file.name }));
-        continue;
-      }
-      const resized = await resizeImage(file);
-      const resizedFile = new File([resized], file.name, { type: 'image/jpeg' });
-      if (resizedFile.size > MAX_FILE_SIZE) {
-        setUploadError(t('collection.fileTooLarge', { name: file.name }));
-        continue;
-      }
-      validFiles.push(resizedFile);
-    }
-
-    if (validFiles.length === 0) return;
-
     if (!isEditMode) {
-      // Add mode: queue files locally with blob URL previews
-      const newPending = [...pendingFiles, ...validFiles];
-      setPendingFiles(newPending);
-      onPendingFilesChange?.(entry.id, newPending);
-
-      const previewUrls = validFiles.map(f => URL.createObjectURL(f));
-      onChange({
-        ...entry,
-        images: [...(entry.images || []), ...previewUrls],
-      });
+      // Add mode: queue file locally with blob URL preview
+      setPendingPortrait(resizedFile);
+      onPendingFilesChange?.(entry.id, resizedFile);
+      const previewUrl = URL.createObjectURL(resizedFile);
+      onChange({ ...entry, portrait_image: previewUrl });
       return;
     }
 
     // Edit mode: upload immediately
     setIsUploading(true);
-    const newImageUrls: string[] = [];
     try {
-      for (const file of validFiles) {
-        const formData = new FormData();
-        formData.append('file', file, file.name);
-        formData.append('itemId', itemId!);
-        formData.append('provenanceId', entry.id);
+      const formData = new FormData();
+      formData.append('file', resizedFile, resizedFile.name);
+      formData.append('itemId', itemId!);
+      formData.append('provenanceId', entry.id);
+      formData.append('role', 'portrait');
 
-        const res = await fetch(apiEndpoint, {
-          method: 'POST',
-          body: formData,
-        });
+      const res = await fetch(apiEndpoint, {
+        method: 'POST',
+        body: formData,
+      });
 
-        if (res.ok) {
-          const data = await res.json();
-          newImageUrls.push(data.publicUrl);
-        } else {
-          const data = await res.json().catch(() => ({}));
-          setUploadError(data.error || 'Upload failed');
-        }
+      if (res.ok) {
+        const data = await res.json();
+        onChange({ ...entry, portrait_image: data.publicUrl });
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setUploadError(data.error || 'Upload failed');
       }
     } catch {
       setUploadError('Upload failed');
     } finally {
-      if (newImageUrls.length > 0) {
-        onChange({
-          ...entry,
-          images: [...(entry.images || []), ...newImageUrls],
-        });
-      }
       setIsUploading(false);
     }
-  }, [entry, itemId, isEditMode, pendingFiles, onChange, onPendingFilesChange, t]);
+  }, [entry, itemId, isEditMode, onChange, onPendingFilesChange, t, apiEndpoint]);
 
-  const handleRemoveImage = useCallback(async (imageUrl: string) => {
-    if (!isEditMode || imageUrl.startsWith('blob:')) {
+  const handleRemovePortrait = useCallback(async () => {
+    const portraitUrl = entry.portrait_image;
+    if (!portraitUrl) return;
+
+    if (!isEditMode || portraitUrl.startsWith('blob:')) {
       // Add mode or blob preview: just remove from state
-      const idx = pendingFiles.findIndex((_, i) => {
-        const blobUrls = (entry.images || []).filter(u => u.startsWith('blob:'));
-        return blobUrls.indexOf(imageUrl) === i;
-      });
-      if (idx !== -1) {
-        const newPending = pendingFiles.filter((_, i) => i !== idx);
-        setPendingFiles(newPending);
-        onPendingFilesChange?.(entry.id, newPending);
+      if (pendingPortrait) {
+        setPendingPortrait(null);
+        onPendingFilesChange?.(entry.id, null);
       }
-      onChange({
-        ...entry,
-        images: (entry.images || []).filter(u => u !== imageUrl),
-      });
+      onChange({ ...entry, portrait_image: null });
       return;
     }
 
@@ -138,18 +110,15 @@ export function ProvenanceCard({ entry, index, itemId, isSaved = false, onChange
       const res = await fetch(apiEndpoint, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageUrl, itemId, provenanceId: entry.id }),
+        body: JSON.stringify({ imageUrl: portraitUrl, itemId, provenanceId: entry.id, role: 'portrait' }),
       });
       if (res.ok) {
-        onChange({
-          ...entry,
-          images: (entry.images || []).filter(u => u !== imageUrl),
-        });
+        onChange({ ...entry, portrait_image: null });
       }
     } catch {
       // Best effort
     }
-  }, [entry, itemId, isEditMode, pendingFiles, onChange, onPendingFilesChange]);
+  }, [entry, itemId, isEditMode, pendingPortrait, onChange, onPendingFilesChange, apiEndpoint]);
 
   return (
     <div className="bg-surface border border-border/50 rounded-lg p-3">
@@ -167,24 +136,81 @@ export function ProvenanceCard({ entry, index, itemId, isSaved = false, onChange
         </button>
       </div>
 
-      {/* Owner name with autocomplete */}
+      {/* Owner name with portrait + autocomplete */}
       <div className="mb-3">
         <label className="block text-[10px] uppercase tracking-wider text-muted mb-1">
           {t('dealer.provenanceOwner')}
         </label>
-        <AutocompleteInput
-          value={entry.owner_name}
-          onChange={handleOwnerChange}
-          fetchUrl="/api/dealer/suggestions?type=provenance"
-          placeholder={t('dealer.provenanceOwnerPlaceholder')}
-        />
-        {entry.owner_name_ja && (
-          <div className="mt-1 text-[11px] text-muted">{entry.owner_name_ja}</div>
-        )}
+        <div className="flex items-start gap-3">
+          {/* Portrait circle */}
+          <div className="flex-shrink-0">
+            {entry.portrait_image ? (
+              <div className="relative w-11 h-11 rounded-full overflow-hidden ring-[1.5px] ring-gold/40 group">
+                <Image
+                  src={entry.portrait_image}
+                  alt={entry.owner_name || t('dealer.provenancePortrait')}
+                  fill
+                  className="object-cover"
+                  sizes="44px"
+                />
+                <button
+                  type="button"
+                  onClick={handleRemovePortrait}
+                  className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                >
+                  <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            ) : (
+              <>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={e => {
+                    if (e.target.files) handlePortraitFile(e.target.files);
+                    e.target.value = '';
+                  }}
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploading}
+                  className="w-11 h-11 rounded-full border border-dashed border-border/50 flex items-center justify-center text-muted hover:border-gold/30 hover:text-gold transition-colors disabled:opacity-50"
+                  title={t('dealer.provenanceAddPortrait')}
+                >
+                  {isUploading ? (
+                    <span className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                  )}
+                </button>
+              </>
+            )}
+          </div>
+
+          {/* Name input */}
+          <div className="flex-1 min-w-0">
+            <AutocompleteInput
+              value={entry.owner_name}
+              onChange={handleOwnerChange}
+              fetchUrl="/api/dealer/suggestions?type=provenance"
+              placeholder={t('dealer.provenanceOwnerPlaceholder')}
+            />
+            {entry.owner_name_ja && (
+              <div className="mt-1 text-[11px] text-muted">{entry.owner_name_ja}</div>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Notes */}
-      <div className="mb-3">
+      <div>
         <label className="block text-[10px] uppercase tracking-wider text-muted mb-1">
           {t('dealer.provenanceNotes')}
         </label>
@@ -197,74 +223,9 @@ export function ProvenanceCard({ entry, index, itemId, isSaved = false, onChange
         />
       </div>
 
-      {/* Photos */}
-      <div>
-        <label className="block text-[10px] uppercase tracking-wider text-muted mb-1">
-          {t('dealer.provenancePhotos')}
-        </label>
-
-        {/* Existing images */}
-        {(entry.images || []).length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-2">
-            {(entry.images || []).map((url, i) => (
-              <div key={i} className="relative w-16 h-16 rounded-lg overflow-hidden group">
-                <Image
-                  src={url}
-                  alt={`${t('dealer.provenance')} ${index + 1} photo ${i + 1}`}
-                  fill
-                  className="object-cover"
-                  sizes="64px"
-                />
-                <button
-                  type="button"
-                  onClick={() => handleRemoveImage(url)}
-                  className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
-                >
-                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Upload button */}
-        {(entry.images || []).length + pendingFiles.length < MAX_IMAGES && (
-          <>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              multiple
-              onChange={e => {
-                if (e.target.files) handleFiles(e.target.files);
-                e.target.value = '';
-              }}
-              className="hidden"
-            />
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isUploading}
-              className="flex items-center gap-2 px-3 py-1.5 bg-surface border border-dashed border-border/50 rounded-lg text-[12px] text-muted hover:border-gold/30 hover:text-gold transition-colors disabled:opacity-50"
-            >
-              {isUploading ? (
-                <span className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-              )}
-              {t('dealer.addPhoto')}
-            </button>
-          </>
-        )}
-
-        {uploadError && (
-          <p className="mt-1 text-[11px] text-red-500">{uploadError}</p>
-        )}
-      </div>
+      {uploadError && (
+        <p className="mt-1 text-[11px] text-red-500">{uploadError}</p>
+      )}
     </div>
   );
 }

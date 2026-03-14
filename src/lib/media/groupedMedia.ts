@@ -109,8 +109,17 @@ const SECTION_DEFS: SectionDef[] = [
   {
     labelKey: 'dealer.provenance',
     getImages: (l) => {
-      if (!l.provenance || !Array.isArray(l.provenance)) return [];
-      return l.provenance.flatMap(entry => entry.images || []);
+      if (!l.provenance) return [];
+      const urls: string[] = [];
+      if (l.provenance.entries) {
+        for (const entry of l.provenance.entries) {
+          if (entry.portrait_image) urls.push(entry.portrait_image);
+        }
+      }
+      if (l.provenance.documents) {
+        urls.push(...l.provenance.documents);
+      }
+      return urls;
     },
   },
 ];

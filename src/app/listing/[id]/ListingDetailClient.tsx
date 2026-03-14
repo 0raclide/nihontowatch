@@ -531,7 +531,7 @@ export default function ListingDetailPage({ initialData }: ListingDetailPageProp
             )}
 
             {/* Provenance */}
-            {listing.provenance && listing.provenance.length > 0 && (
+            {listing.provenance && (listing.provenance.entries?.length > 0 || listing.provenance.documents?.length > 0) && (
               <div className="mb-6">
                 <ProvenanceDisplay provenance={listing.provenance} />
               </div>

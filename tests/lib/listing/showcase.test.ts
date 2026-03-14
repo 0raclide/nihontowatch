@@ -101,7 +101,7 @@ describe('countRichSections', () => {
 
   it('counts provenance as 1 section', () => {
     const listing = makeListing({
-      provenance: [{ id: '1', owner_name: 'Lord Tokugawa', owner_name_ja: null, notes: null, images: [] }],
+      provenance: { entries: [{ id: '1', owner_name: 'Lord Tokugawa', owner_name_ja: null, notes: null, portrait_image: null }], documents: [] },
     });
     expect(countRichSections(listing)).toBe(1);
   });
@@ -159,7 +159,7 @@ describe('countRichSections', () => {
     const listing = makeListing({
       setsumei_text_en: 'Translation...',
       sayagaki: [{ id: '1', author: 'tanobe_michihiro', author_custom: null, content: 'Text', images: [] }],
-      provenance: [{ id: '1', owner_name: 'Lord Tokugawa', owner_name_ja: null, notes: null, images: [] }],
+      provenance: { entries: [{ id: '1', owner_name: 'Lord Tokugawa', owner_name_ja: null, notes: null, portrait_image: null }], documents: [] },
       kiwame: [{ id: '1', judge_name: "Hon'ami", judge_name_ja: null, kiwame_type: 'origami', notes: null }],
     });
     expect(countRichSections(listing)).toBe(4);
@@ -180,7 +180,7 @@ describe('isShowcaseEligible', () => {
       images: ['img1.jpg', 'img2.jpg'], // Only 2 images
       setsumei_text_en: 'Translation...',
       sayagaki: [{ id: '1', author: 'tanobe_michihiro', author_custom: null, content: 'Text', images: [] }],
-      provenance: [{ id: '1', owner_name: 'Lord Tokugawa', owner_name_ja: null, notes: null, images: [] }],
+      provenance: { entries: [{ id: '1', owner_name: 'Lord Tokugawa', owner_name_ja: null, notes: null, portrait_image: null }], documents: [] },
     });
     expect(isShowcaseEligible(listing)).toBe(false);
   });
@@ -198,7 +198,7 @@ describe('isShowcaseEligible', () => {
     const listing = makeListing({
       images: ['img1.jpg', 'img2.jpg', 'img3.jpg'],
       setsumei_text_en: 'Translation...',
-      provenance: [{ id: '1', owner_name: 'Lord Tokugawa', owner_name_ja: null, notes: null, images: [] }],
+      provenance: { entries: [{ id: '1', owner_name: 'Lord Tokugawa', owner_name_ja: null, notes: null, portrait_image: null }], documents: [] },
     });
     expect(isShowcaseEligible(listing)).toBe(true);
   });
@@ -216,7 +216,7 @@ describe('isShowcaseEligible', () => {
       images: ['img1.jpg', 'img2.jpg', 'img3.jpg', 'img4.jpg'],
       setsumei_text_en: 'Translation...',
       sayagaki: [{ id: '1', author: 'tanobe_michihiro', author_custom: null, content: 'Text', images: [] }],
-      provenance: [{ id: '1', owner_name: 'Lord Tokugawa', owner_name_ja: null, notes: null, images: [] }],
+      provenance: { entries: [{ id: '1', owner_name: 'Lord Tokugawa', owner_name_ja: null, notes: null, portrait_image: null }], documents: [] },
     });
     (listing as any).showcase_override = false;
     expect(isShowcaseEligible(listing)).toBe(false);
@@ -226,7 +226,7 @@ describe('isShowcaseEligible', () => {
     const listing = makeListing({
       images: ['img1.jpg', 'img2.jpg', 'img3.jpg'],
       setsumei_text_en: 'Translation...',
-      provenance: [{ id: '1', owner_name: 'Lord Tokugawa', owner_name_ja: null, notes: null, images: [] }],
+      provenance: { entries: [{ id: '1', owner_name: 'Lord Tokugawa', owner_name_ja: null, notes: null, portrait_image: null }], documents: [] },
     });
     (listing as any).showcase_override = null;
     expect(isShowcaseEligible(listing)).toBe(true);

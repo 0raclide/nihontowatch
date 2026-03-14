@@ -26,7 +26,7 @@ export function countRichSections(listing: EnrichedListingDetail): number {
   if (listing.hakogaki && listing.hakogaki.length > 0) count++;
 
   // Provenance
-  if (listing.provenance && listing.provenance.length > 0) count++;
+  if (listing.provenance && (listing.provenance.entries?.length > 0 || listing.provenance.documents?.length > 0)) count++;
 
   // Kiwame
   if (listing.kiwame && listing.kiwame.length > 0) count++;

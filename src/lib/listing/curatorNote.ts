@@ -10,7 +10,7 @@
 import { createHash } from 'crypto';
 import type { EnrichedListingDetail } from './getListingDetail';
 import type { ArtisanEntity } from '@/lib/supabase/yuhinkai';
-import type { SayagakiEntry, HakogakiEntry, KoshiraeData, ProvenanceEntry, KiwameEntry } from '@/types';
+import type { SayagakiEntry, HakogakiEntry, KoshiraeData, ProvenanceData, KiwameEntry } from '@/types';
 
 // =============================================================================
 // TYPES
@@ -161,9 +161,10 @@ export function assembleCuratorContext(
     : null;
 
   // Provenance — only if entries exist
-  const provenanceEntries = listing.provenance?.filter(p => p.owner_name) ?? [];
-  const provenance: CuratorNoteContext['provenance'] = provenanceEntries.length > 0
-    ? provenanceEntries.map(p => ({
+  const rawProv = listing.provenance;
+  const provEntries = rawProv?.entries?.filter(p => p.owner_name) ?? [];
+  const provenance: CuratorNoteContext['provenance'] = provEntries.length > 0
+    ? provEntries.map(p => ({
         owner_name: p.owner_name,
         owner_name_ja: p.owner_name_ja,
         notes: p.notes,
@@ -283,7 +284,7 @@ export interface GenerateDescriptionFormData {
   setsumei_text_ja: string | null;
   sayagaki: SayagakiEntry[] | null;
   hakogaki: HakogakiEntry[] | null;
-  provenance: ProvenanceEntry[] | null;
+  provenance: ProvenanceData | null;
   kiwame: KiwameEntry[] | null;
   koshirae: KoshiraeData | null;
   research_notes: string | null;
@@ -359,9 +360,9 @@ export function assembleCuratorContextFromFormData(
       }))
     : null;
 
-  const provenanceEntries = formData.provenance?.filter(p => p.owner_name) ?? [];
-  const provenance: CuratorNoteContext['provenance'] = provenanceEntries.length > 0
-    ? provenanceEntries.map(p => ({
+  const formProvEntries = formData.provenance?.entries?.filter(p => p.owner_name) ?? [];
+  const provenance: CuratorNoteContext['provenance'] = formProvEntries.length > 0
+    ? formProvEntries.map(p => ({
         owner_name: p.owner_name,
         owner_name_ja: p.owner_name_ja,
         notes: p.notes,

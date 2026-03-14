@@ -132,46 +132,110 @@ describe('sanitizeHakogaki', () => {
 // =============================================================================
 
 describe('sanitizeProvenance', () => {
-  it('returns null for non-array input', () => {
+  it('returns null for non-array and non-object input', () => {
     expect(sanitizeProvenance(null)).toBeNull();
     expect(sanitizeProvenance(42)).toBeNull();
+    expect(sanitizeProvenance(undefined)).toBeNull();
   });
 
   it('returns null for empty array', () => {
     expect(sanitizeProvenance([])).toBeNull();
   });
 
-  it('sanitizes valid entries', () => {
+  it('returns null for empty ProvenanceData object', () => {
+    expect(sanitizeProvenance({ entries: [], documents: [] })).toBeNull();
+  });
+
+  it('sanitizes legacy array entries and returns ProvenanceData', () => {
     const result = sanitizeProvenance([{
       id: 'p-1',
       owner_name: 'Tokugawa Ieyasu',
       owner_name_ja: '徳川家康',
       notes: 'Presented as a gift',
-      images: ['https://example.com/doc.jpg'],
+      images: ['https://example.com/portrait.jpg', 'https://example.com/doc.jpg'],
     }]);
-    expect(result).toHaveLength(1);
-    expect(result![0].owner_name).toBe('Tokugawa Ieyasu');
-    expect(result![0].owner_name_ja).toBe('徳川家康');
-    expect(result![0].notes).toBe('Presented as a gift');
+    expect(result).not.toBeNull();
+    expect(result!.entries).toHaveLength(1);
+    expect(result!.entries[0].owner_name).toBe('Tokugawa Ieyasu');
+    expect(result!.entries[0].owner_name_ja).toBe('徳川家康');
+    expect(result!.entries[0].notes).toBe('Presented as a gift');
+    // images[0] → portrait_image, images[1:] → documents
+    expect(result!.entries[0].portrait_image).toBe('https://example.com/portrait.jpg');
+    expect(result!.documents).toEqual(['https://example.com/doc.jpg']);
   });
 
-  it('defaults owner_name to empty string when missing', () => {
-    const result = sanitizeProvenance([{}]);
-    expect(result![0].owner_name).toBe('');
+  it('sanitizes new ProvenanceData shape', () => {
+    const result = sanitizeProvenance({
+      entries: [{
+        id: 'p-1',
+        owner_name: 'Tokugawa',
+        portrait_image: 'https://example.com/portrait.jpg',
+      }],
+      documents: ['https://example.com/doc.jpg'],
+    });
+    expect(result).not.toBeNull();
+    expect(result!.entries).toHaveLength(1);
+    expect(result!.entries[0].owner_name).toBe('Tokugawa');
+    expect(result!.entries[0].portrait_image).toBe('https://example.com/portrait.jpg');
+    expect(result!.documents).toEqual(['https://example.com/doc.jpg']);
   });
 
-  it('enforces max 20 entries', () => {
+  it('enforces max 20 entries (legacy array)', () => {
     const entries = Array.from({ length: 25 }, () => ({ owner_name: 'Test' }));
     const result = sanitizeProvenance(entries);
-    expect(result).toHaveLength(20);
+    expect(result!.entries).toHaveLength(20);
   });
 
-  it('strips blob: URLs from images', () => {
+  it('enforces max 10 chain-level documents', () => {
+    const docs = Array.from({ length: 15 }, (_, i) => `https://example.com/doc${i}.jpg`);
+    const result = sanitizeProvenance({
+      entries: [{ owner_name: 'Test' }],
+      documents: docs,
+    });
+    expect(result!.documents).toHaveLength(10);
+  });
+
+  it('strips blob: URLs from portrait_image', () => {
+    const result = sanitizeProvenance({
+      entries: [{
+        owner_name: 'Test',
+        portrait_image: 'blob:http://localhost/fake',
+      }],
+      documents: [],
+    });
+    expect(result!.entries[0].portrait_image).toBeNull();
+  });
+
+  it('migrates legacy images — blob stripped, valid URL becomes portrait', () => {
     const result = sanitizeProvenance([{
       owner_name: 'Test',
       images: ['blob:x', 'https://real.com/img.jpg', ''],
     }]);
-    expect(result![0].images).toEqual(['https://real.com/img.jpg']);
+    // sanitizeImageArray strips blob:x and '', leaving ['https://real.com/img.jpg']
+    // images[0] after sanitization → portrait_image
+    expect(result!.entries[0].portrait_image).toBe('https://real.com/img.jpg');
+    // No remaining images for documents
+    expect(result!.documents).toEqual([]);
+  });
+
+  it('migrates legacy images — first valid is portrait, rest are documents', () => {
+    const result = sanitizeProvenance([{
+      owner_name: 'Test',
+      images: ['https://example.com/portrait.jpg', 'https://example.com/doc1.jpg', 'https://example.com/doc2.jpg'],
+    }]);
+    expect(result!.entries[0].portrait_image).toBe('https://example.com/portrait.jpg');
+    expect(result!.documents).toEqual(['https://example.com/doc1.jpg', 'https://example.com/doc2.jpg']);
+  });
+
+  it('filters out entries without owner_name from legacy array', () => {
+    const result = sanitizeProvenance([
+      { owner_name: 'Valid' },
+      { owner_name: '' },
+      {},
+    ]);
+    // Only entries with truthy owner_name pass
+    expect(result!.entries).toHaveLength(1);
+    expect(result!.entries[0].owner_name).toBe('Valid');
   });
 });
 

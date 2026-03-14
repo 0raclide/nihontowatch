@@ -3,14 +3,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import { selectCollectionItemSingle, updateCollectionItem } from '@/lib/supabase/collectionItems';
 import { checkCollectionAccess } from '@/lib/collection/access';
-import type { ProvenanceEntry } from '@/types';
+import type { ProvenanceData } from '@/types';
+import { normalizeProvenance } from '@/lib/provenance/normalize';
 
 export const dynamic = 'force-dynamic';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const BUCKET = 'user-images';
-const MAX_PROVENANCE_IMAGES = 5;
+const MAX_DOCUMENTS = 10;
 
 export async function POST(request: NextRequest) {
   try {
@@ -27,10 +28,11 @@ export async function POST(request: NextRequest) {
     const file = formData.get('file') as File | null;
     const itemId = formData.get('itemId') as string | null;
     const provenanceId = formData.get('provenanceId') as string | null;
+    const role = (formData.get('role') as string | null) || 'portrait';
 
     if (!file) return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     if (!itemId) return NextResponse.json({ error: 'itemId is required' }, { status: 400 });
-    if (!provenanceId) return NextResponse.json({ error: 'provenanceId is required' }, { status: 400 });
+    if (role === 'portrait' && !provenanceId) return NextResponse.json({ error: 'provenanceId is required for portrait uploads' }, { status: 400 });
     if (file.size > MAX_FILE_SIZE) return NextResponse.json({ error: 'File too large (max 5MB)' }, { status: 400 });
     if (!ALLOWED_TYPES.includes(file.type)) return NextResponse.json({ error: 'Unsupported file type. Use JPEG, PNG, or WebP.' }, { status: 400 });
 
@@ -43,15 +45,48 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Item not found' }, { status: 404 });
     }
 
-    const provenanceEntries = (item.provenance as ProvenanceEntry[]) || [];
-    const entryIndex = provenanceEntries.findIndex((e: ProvenanceEntry) => e.id === provenanceId);
-    if (entryIndex === -1) {
-      return NextResponse.json({ error: 'Provenance entry not found' }, { status: 404 });
+    // Normalize legacy data
+    const provenance: ProvenanceData = normalizeProvenance(item.provenance) || { entries: [], documents: [] };
+
+    if (role === 'portrait') {
+      const entryIndex = provenance.entries.findIndex(e => e.id === provenanceId);
+      if (entryIndex === -1) {
+        return NextResponse.json({ error: 'Provenance entry not found' }, { status: 404 });
+      }
+
+      const ext = file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg';
+      const uuid = crypto.randomUUID();
+      const path = `${user.id}/${item.item_uuid}/provenance/${uuid}.${ext}`;
+      const arrayBuffer = await file.arrayBuffer();
+      const { error: uploadError } = await serviceClient.storage
+        .from(BUCKET)
+        .upload(path, arrayBuffer, { contentType: file.type, upsert: false });
+
+      if (uploadError) {
+        logger.error('Error uploading provenance portrait', { error: uploadError });
+        return NextResponse.json({ error: 'Failed to upload image' }, { status: 500 });
+      }
+
+      const { data: urlData } = serviceClient.storage.from(BUCKET).getPublicUrl(path);
+
+      provenance.entries[entryIndex] = {
+        ...provenance.entries[entryIndex],
+        portrait_image: urlData.publicUrl,
+      };
+
+      const { error: updateError } = await updateCollectionItem(serviceClient, itemId, { provenance });
+      if (updateError) {
+        logger.error('Error updating provenance portrait', { error: updateError });
+        await serviceClient.storage.from(BUCKET).remove([path]);
+        return NextResponse.json({ error: 'Failed to update item' }, { status: 500 });
+      }
+
+      return NextResponse.json({ path, publicUrl: urlData.publicUrl }, { status: 201 });
     }
 
-    const entry = provenanceEntries[entryIndex];
-    if ((entry.images || []).length >= MAX_PROVENANCE_IMAGES) {
-      return NextResponse.json({ error: `Maximum of ${MAX_PROVENANCE_IMAGES} images per provenance entry` }, { status: 400 });
+    // role === 'document'
+    if (provenance.documents.length >= MAX_DOCUMENTS) {
+      return NextResponse.json({ error: `Maximum of ${MAX_DOCUMENTS} supporting documents` }, { status: 400 });
     }
 
     const ext = file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg';
@@ -63,22 +98,17 @@ export async function POST(request: NextRequest) {
       .upload(path, arrayBuffer, { contentType: file.type, upsert: false });
 
     if (uploadError) {
-      logger.error('Error uploading provenance image', { error: uploadError });
+      logger.error('Error uploading provenance document', { error: uploadError });
       return NextResponse.json({ error: 'Failed to upload image' }, { status: 500 });
     }
 
     const { data: urlData } = serviceClient.storage.from(BUCKET).getPublicUrl(path);
 
-    const updatedEntries = [...provenanceEntries];
-    updatedEntries[entryIndex] = {
-      ...entry,
-      images: [...(entry.images || []), urlData.publicUrl],
-    };
+    provenance.documents.push(urlData.publicUrl);
 
-    const { error: updateError } = await updateCollectionItem(serviceClient, itemId, { provenance: updatedEntries });
-
+    const { error: updateError } = await updateCollectionItem(serviceClient, itemId, { provenance });
     if (updateError) {
-      logger.error('Error updating provenance images', { error: updateError });
+      logger.error('Error updating provenance documents', { error: updateError });
       await serviceClient.storage.from(BUCKET).remove([path]);
       return NextResponse.json({ error: 'Failed to update item' }, { status: 500 });
     }
@@ -101,9 +131,12 @@ export async function DELETE(request: NextRequest) {
     const accessDenied = await checkCollectionAccess(supabase, user.id);
     if (accessDenied) return accessDenied;
 
-    const { imageUrl, itemId, provenanceId } = await request.json();
-    if (!imageUrl || !itemId || !provenanceId) {
-      return NextResponse.json({ error: 'imageUrl, itemId, and provenanceId are required' }, { status: 400 });
+    const { imageUrl, itemId, provenanceId, role = 'portrait' } = await request.json();
+    if (!imageUrl || !itemId) {
+      return NextResponse.json({ error: 'imageUrl and itemId are required' }, { status: 400 });
+    }
+    if (role === 'portrait' && !provenanceId) {
+      return NextResponse.json({ error: 'provenanceId is required for portrait deletion' }, { status: 400 });
     }
 
     const serviceClient = createServiceClient();
@@ -128,20 +161,25 @@ export async function DELETE(request: NextRequest) {
       logger.warn('Failed to remove provenance image from storage', { error: storageError });
     }
 
-    const provenanceEntries = (item.provenance as ProvenanceEntry[]) || [];
-    const entryIndex = provenanceEntries.findIndex((e: ProvenanceEntry) => e.id === provenanceId);
-    if (entryIndex !== -1) {
-      const updatedEntries = [...provenanceEntries];
-      updatedEntries[entryIndex] = {
-        ...provenanceEntries[entryIndex],
-        images: (provenanceEntries[entryIndex].images || []).filter((img: string) => img !== imageUrl),
-      };
+    // Normalize legacy data
+    const provenance: ProvenanceData = normalizeProvenance(item.provenance) || { entries: [], documents: [] };
 
-      const { error: updateError } = await updateCollectionItem(serviceClient, itemId, { provenance: updatedEntries });
-      if (updateError) {
-        logger.error('Failed to update provenance after image removal', { error: updateError, itemId });
-        return NextResponse.json({ error: 'Image removed from storage but item update failed' }, { status: 500 });
+    if (role === 'portrait') {
+      const entryIndex = provenance.entries.findIndex(e => e.id === provenanceId);
+      if (entryIndex !== -1) {
+        provenance.entries[entryIndex] = {
+          ...provenance.entries[entryIndex],
+          portrait_image: null,
+        };
       }
+    } else {
+      provenance.documents = provenance.documents.filter(url => url !== imageUrl);
+    }
+
+    const { error: updateError } = await updateCollectionItem(serviceClient, itemId, { provenance });
+    if (updateError) {
+      logger.error('Failed to update provenance after image removal', { error: updateError, itemId });
+      return NextResponse.json({ error: 'Image removed from storage but item update failed' }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });

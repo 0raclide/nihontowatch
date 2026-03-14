@@ -13,7 +13,7 @@ import type {
   SayagakiEntry,
   HakogakiEntry,
   KoshiraeData,
-  ProvenanceEntry,
+  ProvenanceData,
   KiwameEntry,
   KantoHibishoData,
 } from './index';
@@ -76,7 +76,7 @@ export interface ItemDataFields {
   sayagaki?: SayagakiEntry[] | null;
   hakogaki?: HakogakiEntry[] | null;
   koshirae?: KoshiraeData | null;
-  provenance?: ProvenanceEntry[] | null;
+  provenance?: ProvenanceData | null;
   kiwame?: KiwameEntry[] | null;
   kanto_hibisho?: KantoHibishoData | null;
 

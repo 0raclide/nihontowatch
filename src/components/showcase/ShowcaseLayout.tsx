@@ -62,9 +62,10 @@ export function ShowcaseLayout({ listing }: ShowcaseLayoutProps) {
     listing.hakogaki?.forEach(entry => {
       entry.images?.forEach(url => used.add(url));
     });
-    listing.provenance?.forEach(entry => {
-      entry.images?.forEach(url => used.add(url));
+    listing.provenance?.entries?.forEach(entry => {
+      if (entry.portrait_image) used.add(entry.portrait_image);
     });
+    listing.provenance?.documents?.forEach(url => used.add(url));
     listing.koshirae?.images?.forEach(url => used.add(url));
     listing.kanto_hibisho?.images?.forEach(url => used.add(url));
     return used;
@@ -84,7 +85,7 @@ export function ShowcaseLayout({ listing }: ShowcaseLayoutProps) {
     (listing.sayagaki && listing.sayagaki.length > 0) ||
     (listing.hakogaki && listing.hakogaki.length > 0)
   );
-  const hasProvenance = !!(listing.provenance && listing.provenance.length > 0);
+  const hasProvenance = !!(listing.provenance && (listing.provenance.entries?.length > 0 || listing.provenance.documents?.length > 0));
   const hasKiwame = !!(listing.kiwame && listing.kiwame.length > 0);
   const hasKoshirae = !!(listing.koshirae && (
     listing.koshirae.artisan_id ||
@@ -166,7 +167,7 @@ export function ShowcaseLayout({ listing }: ShowcaseLayoutProps) {
         {(hasProvenance || hasKiwame) && (
           <ShowcaseSection id="provenance" title="Provenance" titleJa="伝来">
             <ShowcaseTimeline
-              provenance={listing.provenance || []}
+              provenance={listing.provenance || { entries: [], documents: [] }}
               kiwame={hasKiwame ? listing.kiwame! : undefined}
               onImageClick={openLightbox}
             />

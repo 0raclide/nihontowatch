@@ -148,7 +148,12 @@ export interface ProvenanceEntry {
   owner_name: string;      // Autocomplete from denrai_canonical_names
   owner_name_ja: string | null;  // Auto-populated from suggestions
   notes: string | null;
-  images: string[];        // Document/origami photos
+  portrait_image: string | null;  // Single portrait per entry (was: images: string[])
+}
+
+export interface ProvenanceData {
+  entries: ProvenanceEntry[];
+  documents: string[];     // Chain-level supporting documents
 }
 
 // =============================================================================
@@ -660,7 +665,7 @@ export interface Listing {
   koshirae?: KoshiraeData | null;
 
   // Provenance (伝来 — ownership history)
-  provenance?: ProvenanceEntry[] | null;
+  provenance?: ProvenanceData | null;
 
   // Kiwame (極め — expert appraisals)
   kiwame?: KiwameEntry[] | null;

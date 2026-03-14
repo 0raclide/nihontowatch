@@ -5,7 +5,7 @@ import { getArtisanTier } from '@/lib/artisan/tier';
 import { getAttributionName } from '@/lib/listing/attribution';
 import { isVideoProviderConfigured, videoProvider } from '@/lib/video/videoProvider';
 import { selectItemVideos } from '@/lib/supabase/itemVideos';
-import type { YuhinkaiEnrichment, SayagakiEntry, HakogakiEntry, KoshiraeData, ProvenanceEntry, KiwameEntry, KantoHibishoData } from '@/types';
+import type { YuhinkaiEnrichment, SayagakiEntry, HakogakiEntry, KoshiraeData, ProvenanceData, KiwameEntry, KantoHibishoData } from '@/types';
 import type { ListingVideo } from '@/types/media';
 
 // Yuhinkai enrichment as returned by the Supabase view (array wrapper)
@@ -102,7 +102,7 @@ interface ListingWithDealer {
   sayagaki: SayagakiEntry[] | null;
   hakogaki: HakogakiEntry[] | null;
   koshirae: KoshiraeData | null;
-  provenance: ProvenanceEntry[] | null;
+  provenance: ProvenanceData | null;
   kiwame: KiwameEntry[] | null;
   kanto_hibisho: KantoHibishoData | null;
   research_notes: string | null;
@@ -188,7 +188,7 @@ export interface EnrichedListingDetail {
   sayagaki: SayagakiEntry[] | null;
   hakogaki: HakogakiEntry[] | null;
   koshirae: KoshiraeData | null;
-  provenance: ProvenanceEntry[] | null;
+  provenance: ProvenanceData | null;
   kiwame: KiwameEntry[] | null;
   kanto_hibisho: KantoHibishoData | null;
   research_notes: string | null;

@@ -1,4 +1,4 @@
-import type { SayagakiEntry, SayagakiAuthor, HakogakiEntry, ProvenanceEntry, KiwameEntry, KiwameType, KantoHibishoData } from '@/types';
+import type { SayagakiEntry, SayagakiAuthor, HakogakiEntry, ProvenanceEntry, ProvenanceData, KiwameEntry, KiwameType, KantoHibishoData } from '@/types';
 
 // =============================================================================
 // Shared helpers
@@ -86,26 +86,67 @@ export function sanitizeHakogaki(raw: unknown): HakogakiEntry[] | null {
 
 function sanitizeProvenanceEntry(raw: unknown): ProvenanceEntry {
   if (!raw || typeof raw !== 'object') {
-    return { id: crypto.randomUUID(), owner_name: '', owner_name_ja: null, notes: null, images: [] };
+    return { id: crypto.randomUUID(), owner_name: '', owner_name_ja: null, notes: null, portrait_image: null };
   }
   const e = raw as Record<string, unknown>;
+
+  // Accept both new `portrait_image` and legacy `images[0]` (after sanitization)
+  let portrait: string | null = null;
+  if (typeof e.portrait_image === 'string' && e.portrait_image && !e.portrait_image.startsWith('blob:')) {
+    portrait = e.portrait_image;
+  } else if (Array.isArray(e.images)) {
+    const sanitized = sanitizeImageArray(e.images, 5);
+    if (sanitized.length > 0) portrait = sanitized[0];
+  }
+
   return {
     id: typeof e.id === 'string' ? e.id : crypto.randomUUID(),
     owner_name: trimOrNull(e.owner_name, 200) ?? '',
     owner_name_ja: trimOrNull(e.owner_name_ja, 200),
     notes: trimOrNull(e.notes, 20000),
-    images: sanitizeImageArray(e.images, 5),
+    portrait_image: portrait,
   };
 }
 
 /**
  * Sanitizes raw provenance input from untrusted client payloads.
- * Returns a valid ProvenanceEntry[] or null if input is empty/invalid.
+ * Accepts both legacy ProvenanceEntry[] and new ProvenanceData shapes.
+ * Always returns ProvenanceData or null.
  */
-export function sanitizeProvenance(raw: unknown): ProvenanceEntry[] | null {
-  if (!Array.isArray(raw) || raw.length === 0) return null;
-  const entries = (raw as unknown[]).slice(0, 20).map(sanitizeProvenanceEntry);
-  return entries.length > 0 ? entries : null;
+export function sanitizeProvenance(raw: unknown): ProvenanceData | null {
+  if (raw === null || raw === undefined) return null;
+
+  // Legacy: flat ProvenanceEntry[]
+  if (Array.isArray(raw)) {
+    const entries = (raw as unknown[]).slice(0, 20).map(sanitizeProvenanceEntry);
+    // Collect images[1:] from all legacy entries into chain-level documents
+    const documents: string[] = [];
+    for (const item of raw as any[]) {
+      if (item?.images && Array.isArray(item.images)) {
+        const sanitized = sanitizeImageArray(item.images, 5);
+        documents.push(...sanitized.slice(1));
+      }
+    }
+    const validEntries = entries.filter(e => e.owner_name);
+    return validEntries.length > 0 || documents.length > 0
+      ? { entries: validEntries, documents: documents.slice(0, 10) }
+      : null;
+  }
+
+  // New: ProvenanceData object
+  if (typeof raw === 'object') {
+    const obj = raw as Record<string, unknown>;
+    const entries = Array.isArray(obj.entries)
+      ? (obj.entries as unknown[]).slice(0, 20).map(sanitizeProvenanceEntry)
+      : [];
+    const documents = sanitizeImageArray(obj.documents, 10);
+    const validEntries = entries.filter(e => e.owner_name);
+    return validEntries.length > 0 || documents.length > 0
+      ? { entries: validEntries, documents }
+      : null;
+  }
+
+  return null;
 }
 
 // =============================================================================

@@ -172,7 +172,7 @@ describe('collectGroupedMedia', () => {
         sayagaki: [{ id: '1', author: 'tanobe_michihiro', author_custom: null, content: null, images: ['s1.jpg'] }],
         hakogaki: [{ id: '2', author: null, content: null, images: ['h1.jpg'] }],
         koshirae: { cert_type: null, cert_in_blade_paper: false, cert_session: null, description: null, images: ['k1.jpg'], artisan_id: null, artisan_name: null, artisan_kanji: null, components: [], setsumei_text_en: null, setsumei_text_ja: null, catalog_object_uuid: null },
-        provenance: [{ id: '3', owner_name: 'Tokugawa', owner_name_ja: null, notes: null, images: ['p1.jpg'] }],
+        provenance: { entries: [{ id: '3', owner_name: 'Tokugawa', owner_name_ja: null, notes: null, portrait_image: null }], documents: ['p1.jpg'] },
         kanto_hibisho: { volume: '2', entry_number: '1110', text: null, images: ['kh1.jpg'] },
       });
       const result = collectGroupedMedia(['a.jpg'], listing, true, [], true);
