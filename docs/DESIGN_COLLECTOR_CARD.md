@@ -80,18 +80,22 @@ A user-selectable card style inspired by Magic: The Gathering card frames but wi
 | `src/i18n/locales/en.json` | Card style i18n keys |
 | `src/i18n/locales/ja.json` | Card style i18n keys |
 
-## Border Color by Certification
+## Border Treatment
 
-| Cert | CSS Variable | On Hover |
-|------|-------------|----------|
-| Tokubetsu Juyo | `var(--tokuju)` | Purple |
-| Jubun / Jubi | `var(--jubi)` | Orange |
-| Juyo | `var(--juyo)` | Blue |
-| Tokubetsu Hozon | `var(--toku-hozon)` | Brown |
-| Hozon | `var(--hozon)` | Olive |
-| No cert | `var(--gold)` | Gold (stays gold) |
+**At rest:** 1px `border-border/60` — muted, barely visible. Just enough to define the card edge.
 
-At rest, ALL cards have gold borders. On hover, certified items transition to their cert color.
+**On hover:** Transitions to cert color (300ms). No cert = stays muted.
+
+| Cert | Hover Color |
+|------|-------------|
+| Tokubetsu Juyo | Purple (`var(--tokuju)`) |
+| Jubun / Jubi | Orange (`var(--jubi)`) |
+| Juyo | Blue (`var(--juyo)`) |
+| Tokubetsu Hozon | Brown (`var(--toku-hozon)`) |
+| Hozon | Olive (`var(--hozon)`) |
+| No cert | Stays muted |
+
+**Design note:** Early iteration used `2px solid var(--gold)` (bright accent). This was overwhelmingly loud — drew all attention to the frame. The current muted border lets the content breathe.
 
 ## Future Extensions
 
