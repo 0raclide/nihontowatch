@@ -653,6 +653,7 @@
   "collection.sortCustom": "Custom Order",
   "collection.dragHint": "Hold and drag to reorder",
 
+  "vault.navSubtitle": "Your private collection",
   "vault.title": "VAULT",
   "vault.unlocking": "Unlocking your vault...",
   "vault.pieces": "{count} pieces",

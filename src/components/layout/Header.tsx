@@ -17,6 +17,7 @@ import { LocaleSwitcher } from '@/components/ui/LocaleSwitcher';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { FeedbackButton } from '@/components/feedback/FeedbackButton';
 import { useSubscription } from '@/contexts/SubscriptionContext';
+import { VaultIcon } from '@/components/icons/VaultIcon';
 
 function HeaderContent({ logoOverride }: { logoOverride?: string }) {
   // Note: useMobileUI is imported but openSearch/openNavDrawer are used by MobileNavDrawer/MobileSearchSheet
@@ -342,6 +343,12 @@ function HeaderContent({ logoOverride }: { logoOverride?: string }) {
               >
                 {t('nav.artists')}
               </Link>
+              <Link
+                href="/showcase"
+                className="text-[11px] uppercase tracking-[0.2em] text-muted hover:text-gold transition-colors"
+              >
+                {t('nav.showcase')}
+              </Link>
               {locale !== 'ja' && (
                 <Link
                   href="/glossary"
@@ -355,14 +362,15 @@ function HeaderContent({ logoOverride }: { logoOverride?: string }) {
               <div className="h-3 w-px bg-border" />
               <ThemeSwitcher />
               <LocaleSwitcher />
-              {/* Collection link (gold) */}
+              {/* Vault pill (gold) */}
               {user && canAccess('collection_access') && (
                 <>
                   <div className="h-3 w-px bg-border" />
                   <Link
                     href="/vault"
-                    className="text-[11px] uppercase tracking-[0.2em] text-gold hover:text-gold/80 transition-colors"
+                    className="group/vault flex items-center gap-1.5 rounded-full border border-gold/25 bg-gold/[0.04] px-3 py-1.5 text-[11px] uppercase tracking-[0.2em] text-gold transition-all duration-200 hover:border-gold/40 hover:bg-gold/[0.08] hover:shadow-[0_0_12px_rgba(184,134,11,0.15)]"
                   >
+                    <VaultIcon className="w-3.5 h-3.5 opacity-70 group-hover/vault:opacity-100 transition-opacity" />
                     {t('nav.collection')}
                   </Link>
                 </>
@@ -604,6 +612,12 @@ function HeaderFallback({ logoOverride }: { logoOverride?: string }) {
               className="text-[11px] uppercase tracking-[0.2em] text-muted hover:text-gold transition-colors"
             >
               Artists
+            </Link>
+            <Link
+              href="/showcase"
+              className="text-[11px] uppercase tracking-[0.2em] text-muted hover:text-gold transition-colors"
+            >
+              Gallery
             </Link>
             <Link
               href="/glossary"

@@ -12,6 +12,7 @@ import { useConsent } from '@/contexts/ConsentContext';
 import { useLocale } from '@/i18n/LocaleContext';
 import { MobileLocaleSwitcher } from '@/components/ui/LocaleSwitcher';
 import { useSubscription } from '@/contexts/SubscriptionContext';
+import { VaultIcon } from '@/components/icons/VaultIcon';
 
 export function MobileNavDrawer() {
   const { navDrawerOpen, closeNavDrawer } = useMobileUI();
@@ -97,10 +98,15 @@ export function MobileNavDrawer() {
                     <Link
                       href="/vault"
                       onClick={closeNavDrawer}
-                      className="flex items-center gap-3 px-4 py-3 text-[13px] text-text-secondary hover:bg-hover rounded-lg transition-colors"
+                      className="flex items-center gap-3 mx-2 px-4 py-3 rounded-xl border border-gold/20 bg-gradient-to-r from-gold/[0.06] to-transparent hover:from-gold/[0.1] transition-colors"
                     >
-                      <CollectionIcon />
-                      {t('nav.collection')}
+                      <div className="w-9 h-9 rounded-full bg-gold/10 flex items-center justify-center flex-shrink-0">
+                        <VaultIcon className="w-[18px] h-[18px] text-gold" />
+                      </div>
+                      <div className="min-w-0">
+                        <span className="block text-[13px] font-medium text-gold">{t('nav.collection')}</span>
+                        <span className="block text-[11px] text-muted">{t('vault.navSubtitle')}</span>
+                      </div>
                     </Link>
                   )}
                   {isDealer && (
@@ -163,6 +169,13 @@ export function MobileNavDrawer() {
             className="flex items-center px-4 py-3 text-[13px] uppercase tracking-[0.15em] text-text-secondary hover:bg-hover rounded-lg transition-colors"
           >
             {t('nav.artists')}
+          </Link>
+          <Link
+            href="/showcase"
+            onClick={closeNavDrawer}
+            className="flex items-center px-4 py-3 text-[13px] uppercase tracking-[0.15em] text-text-secondary hover:bg-hover rounded-lg transition-colors"
+          >
+            {t('nav.showcase')}
           </Link>
           {locale !== 'ja' && (
             <Link
@@ -343,24 +356,6 @@ function ChatBubbleIcon() {
         strokeLinejoin="round"
         strokeWidth={1.5}
         d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-      />
-    </svg>
-  );
-}
-
-function CollectionIcon() {
-  return (
-    <svg
-      className="w-5 h-5"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={1.5}
-        d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
       />
     </svg>
   );
