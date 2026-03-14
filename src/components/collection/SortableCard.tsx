@@ -3,6 +3,8 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { ListingCard } from '@/components/browse/ListingCard';
+import { CollectorCard } from '@/components/browse/CollectorCard';
+import { useCardStyle } from '@/hooks/useCardStyle';
 import type { DisplayItem } from '@/types/displayItem';
 
 type Currency = 'USD' | 'JPY' | 'EUR';
@@ -20,6 +22,7 @@ interface SortableCardProps {
 }
 
 export function SortableCard({ item, currency, exchangeRates, onClick }: SortableCardProps) {
+  const { cardStyle } = useCardStyle();
   const {
     attributes,
     listeners,
@@ -36,9 +39,11 @@ export function SortableCard({ item, currency, exchangeRates, onClick }: Sortabl
     cursor: 'grab',
   };
 
+  const CardComponent = cardStyle === 'collector' ? CollectorCard : ListingCard;
+
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      <ListingCard
+      <CardComponent
         listing={item}
         currency={currency}
         exchangeRates={exchangeRates}

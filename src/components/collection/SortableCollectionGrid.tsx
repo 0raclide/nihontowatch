@@ -17,6 +17,8 @@ import {
 } from '@dnd-kit/sortable';
 import { SortableCard } from './SortableCard';
 import { ListingCard } from '@/components/browse/ListingCard';
+import { CollectorCard } from '@/components/browse/CollectorCard';
+import { useCardStyle } from '@/hooks/useCardStyle';
 import type { DisplayItem } from '@/types/displayItem';
 
 type Currency = 'USD' | 'JPY' | 'EUR';
@@ -43,7 +45,9 @@ export function SortableCollectionGrid({
   appendSlot,
   onCardClick,
 }: SortableCollectionGridProps) {
+  const { cardStyle } = useCardStyle();
   const [activeItem, setActiveItem] = useState<DisplayItem | null>(null);
+  const CardComponent = cardStyle === 'collector' ? CollectorCard : ListingCard;
 
   // PointerSensor only (no TouchSensor) — desktop drag only, Critical Rule #10 safe
   const sensors = useSensors(
@@ -100,7 +104,7 @@ export function SortableCollectionGrid({
       <DragOverlay>
         {activeItem ? (
           <div className="drag-overlay-card">
-            <ListingCard
+            <CardComponent
               listing={activeItem}
               currency={currency}
               exchangeRates={exchangeRates}
