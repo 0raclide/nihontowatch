@@ -338,18 +338,14 @@ export const CollectorCard = memo(function CollectorCard({
       }}
       className="group block cursor-pointer"
     >
-      {/* Outer frame — 2px gold border, cert color on hover */}
+      {/* Outer frame — thin muted border, cert color on hover */}
       <div
-        className="rounded-lg overflow-hidden transition-[border-color] duration-300"
-        style={{
-          border: '2px solid var(--gold)',
-          ...(certColor ? { '--collector-cert-color': certColor } as React.CSSProperties : {}),
-        }}
+        className="rounded-lg overflow-hidden transition-[border-color] duration-300 border border-border/60"
         onMouseEnter={(e) => {
           if (certColor) (e.currentTarget as HTMLElement).style.borderColor = certColor;
         }}
         onMouseLeave={(e) => {
-          (e.currentTarget as HTMLElement).style.borderColor = 'var(--gold)';
+          (e.currentTarget as HTMLElement).style.borderColor = '';
         }}
       >
         {/* Inner mat padding */}
