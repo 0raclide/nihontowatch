@@ -107,9 +107,12 @@ export const isSmartCropActive = (): boolean => {
 /**
  * Check if a tier has access to a feature
  */
+// Features that are NOT unlocked by trial mode (always require proper tier)
+const TRIAL_EXEMPT_FEATURES: Feature[] = ['collection_access'];
+
 export function canAccessFeature(tier: SubscriptionTier, feature: Feature): boolean {
-  // Trial mode: everyone gets all features
-  if (isTrialModeActive()) {
+  // Trial mode: everyone gets all features EXCEPT trial-exempt ones
+  if (isTrialModeActive() && !TRIAL_EXEMPT_FEATURES.includes(feature)) {
     return true;
   }
 

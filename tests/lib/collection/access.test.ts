@@ -68,12 +68,13 @@ describe('checkCollectionAccess', () => {
     expect(res!.status).toBe(403);
   });
 
-  it('allows free tier when trial mode is active', async () => {
+  it('denies free tier even when trial mode is active (collection_access is trial-exempt)', async () => {
     process.env.NEXT_PUBLIC_TRIAL_MODE = 'true';
     const res = await checkCollectionAccess(
       mockSupabase({ subscription_tier: 'free', subscription_status: 'active', role: 'user' }),
       'user-1'
     );
-    expect(res).toBeNull();
+    expect(res).not.toBeNull();
+    expect(res!.status).toBe(403);
   });
 });

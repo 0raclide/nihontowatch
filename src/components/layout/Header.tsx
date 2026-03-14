@@ -343,12 +343,14 @@ function HeaderContent({ logoOverride }: { logoOverride?: string }) {
               >
                 {t('nav.artists')}
               </Link>
-              <Link
-                href="/showcase"
-                className="text-[11px] uppercase tracking-[0.2em] text-muted hover:text-gold transition-colors"
-              >
-                {t('nav.showcase')}
-              </Link>
+              {canAccess('collection_access') && (
+                <Link
+                  href="/showcase"
+                  className="text-[11px] uppercase tracking-[0.2em] text-muted hover:text-gold transition-colors"
+                >
+                  {t('nav.showcase')}
+                </Link>
+              )}
               {locale !== 'ja' && (
                 <Link
                   href="/glossary"
@@ -612,12 +614,6 @@ function HeaderFallback({ logoOverride }: { logoOverride?: string }) {
               className="text-[11px] uppercase tracking-[0.2em] text-muted hover:text-gold transition-colors"
             >
               Artists
-            </Link>
-            <Link
-              href="/showcase"
-              className="text-[11px] uppercase tracking-[0.2em] text-muted hover:text-gold transition-colors"
-            >
-              Gallery
             </Link>
             <Link
               href="/glossary"

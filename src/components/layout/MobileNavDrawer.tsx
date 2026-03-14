@@ -170,13 +170,15 @@ export function MobileNavDrawer() {
           >
             {t('nav.artists')}
           </Link>
-          <Link
-            href="/showcase"
-            onClick={closeNavDrawer}
-            className="flex items-center px-4 py-3 text-[13px] uppercase tracking-[0.15em] text-text-secondary hover:bg-hover rounded-lg transition-colors"
-          >
-            {t('nav.showcase')}
-          </Link>
+          {canAccess('collection_access') && (
+            <Link
+              href="/showcase"
+              onClick={closeNavDrawer}
+              className="flex items-center px-4 py-3 text-[13px] uppercase tracking-[0.15em] text-text-secondary hover:bg-hover rounded-lg transition-colors"
+            >
+              {t('nav.showcase')}
+            </Link>
+          )}
           {locale !== 'ja' && (
             <Link
               href="/glossary"
