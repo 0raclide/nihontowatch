@@ -114,7 +114,8 @@ export function useCurrency() {
     const to = toCurrency.toUpperCase();
     if (from === to) return 1;
 
-    const cacheKey = `nw-fx-${date}-${from}-${to}`;
+    // v2: bust CDN cache from before GBP/CAD/CHF were added to the API
+    const cacheKey = `nw-fx-v2-${date}-${from}-${to}`;
     if (typeof window !== 'undefined') {
       const cached = sessionStorage.getItem(cacheKey);
       if (cached) return Number(cached);
@@ -124,7 +125,7 @@ export function useCurrency() {
       // Deduplicate: reuse in-flight request for the same date
       let dataPromise = historicalDateFetchCache.get(date);
       if (!dataPromise) {
-        dataPromise = fetch(`/api/exchange-rates?date=${date}`)
+        dataPromise = fetch(`/api/exchange-rates?date=${date}&v=2`)
           .then(res => res.ok ? res.json() as Promise<ExchangeRates> : null)
           .catch(() => null)
           .finally(() => {
@@ -147,7 +148,7 @@ export function useCurrency() {
             const sRate = f === 'USD' ? 1 : data.rates[f];
             const tRate = t === 'USD' ? 1 : data.rates[t];
             if (sRate && tRate) {
-              sessionStorage.setItem(`nw-fx-${date}-${f}-${t}`, String(tRate / sRate));
+              sessionStorage.setItem(`nw-fx-v2-${date}-${f}-${t}`, String(tRate / sRate));
             }
           }
         }
