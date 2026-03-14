@@ -49,6 +49,9 @@ export interface CollectionExtension {
   visibility: import('@/types/collectionItem').CollectionVisibility;
   source_listing_id: number | null;
 
+  // Holding status (orthogonal to listing lifecycle)
+  holding_status: import('@/types/collectionItem').HoldingStatus;
+
   // Financial fields
   purchase_price: number | null;
   purchase_currency: string | null;
@@ -57,6 +60,13 @@ export interface CollectionExtension {
   current_value: number | null;
   current_currency: string | null;
   location: string | null;
+
+  // Sold fields (populated when holding_status = 'sold')
+  sold_price: number | null;
+  sold_currency: string | null;
+  sold_date: string | null;
+  sold_to: string | null;
+  sold_venue: string | null;
 
   // Computed: purchase_price + SUM(expenses in same currency)
   total_invested: number | null;

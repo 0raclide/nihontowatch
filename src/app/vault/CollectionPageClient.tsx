@@ -27,6 +27,9 @@ import { useMobileUI } from '@/contexts/MobileUIContext';
 // Tab types for dealer users
 type CollectionTab = 'collection' | 'available' | 'hold' | 'sold';
 
+// Holding status tabs for collector vault view
+type HoldingTab = 'all' | 'owned' | 'sold';
+
 // =============================================================================
 // Constants
 // =============================================================================
@@ -85,6 +88,9 @@ export function CollectionPageClient() {
 
   // Tab state for dealer users (collection | available | hold | sold)
   const [activeTab, setActiveTab] = useState<CollectionTab>('collection');
+
+  // Holding status tab for collector vault view (all | owned | sold)
+  const [holdingTab, setHoldingTab] = useState<HoldingTab>('owned');
 
   // Dealer listings state (for non-collection tabs)
   const [dealerListings, setDealerListings] = useState<DisplayItem[]>([]);
@@ -215,6 +221,8 @@ export function CollectionPageClient() {
       if (currentFilters.meiType) params.set('meiType', currentFilters.meiType);
       if (currentFilters.status) params.set('status', currentFilters.status);
       if (currentFilters.condition) params.set('condition', currentFilters.condition);
+      // Add holding status filter from collector tab (owned/sold)
+      if (holdingTab !== 'all') params.set('holdingStatus', holdingTab);
       if (currentFilters.sort && currentFilters.sort !== 'custom') params.set('sort', currentFilters.sort);
       if (currentFilters.page && currentFilters.page > 1) params.set('page', String(currentFilters.page));
 
@@ -244,7 +252,7 @@ export function CollectionPageClient() {
     } finally {
       setIsLoading(false);
     }
-  }, [t]);
+  }, [t, holdingTab]);
 
   // Fetch dealer listings for dealer tabs (available/hold/sold)
   const fetchDealerListings = useCallback(async (tab: CollectionTab) => {
@@ -268,7 +276,7 @@ export function CollectionPageClient() {
     }
   }, [locale]);
 
-  // Handle tab switch
+  // Handle dealer tab switch
   const handleTabChange = useCallback((tab: CollectionTab) => {
     setActiveTab(tab);
     if (tab === 'collection') {
@@ -277,6 +285,11 @@ export function CollectionPageClient() {
       fetchDealerListings(tab);
     }
   }, [fetchItems, fetchDealerListings, filters]);
+
+  // Handle collector holding tab switch
+  const handleHoldingTabChange = useCallback((tab: HoldingTab) => {
+    setHoldingTab(tab);
+  }, []);
 
   // Fetch dealer tab counts
   const fetchTabCounts = useCallback(async () => {
@@ -319,6 +332,12 @@ export function CollectionPageClient() {
 
   // Track whether deep link has been handled to prevent re-opening on re-renders
   const deepLinkHandledRef = useRef(false);
+
+  // Re-fetch when holdingTab changes
+  useEffect(() => {
+    fetchItems(filters);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [holdingTab]);
 
   // Initial fetch + check for listing import prefill
   useEffect(() => {
@@ -463,7 +482,29 @@ export function CollectionPageClient() {
     };
   }, [total, tabCounts, isLoading]);
 
-  // Ledger tab definitions with status dot colors
+  // Collector holding tab counts (derived from facets)
+  const holdingTabCounts = useMemo(() => {
+    const statusMap = new Map<string, number>();
+    for (const s of facets.holdingStatuses || []) {
+      statusMap.set(s.value, s.count);
+    }
+    const owned = statusMap.get('owned') || 0;
+    const sold = statusMap.get('sold') || 0;
+    return {
+      all: owned + sold + (statusMap.get('consigned') || 0) + (statusMap.get('gifted') || 0) + (statusMap.get('lost') || 0),
+      owned,
+      sold,
+    };
+  }, [facets.holdingStatuses]);
+
+  // Collector holding tab definitions
+  const holdingTabs = useMemo(() => [
+    { value: 'all' as HoldingTab, label: t('vault.tabAll') },
+    { value: 'owned' as HoldingTab, label: t('vault.tabOwned') },
+    { value: 'sold' as HoldingTab, label: t('vault.tabSold'), dotColor: 'var(--text-muted)' },
+  ], [t]);
+
+  // Ledger tab definitions with status dot colors (dealer)
   const ledgerTabs = useMemo(() => [
     { value: 'collection' as CollectionTab, label: t('collection.tabAllItems') },
     { value: 'available' as CollectionTab, label: t('collection.tabForSale'), dotColor: 'var(--success)' },
@@ -484,6 +525,18 @@ export function CollectionPageClient() {
               activeTab={activeTab}
               onTabChange={handleTabChange}
               tabCounts={mergedTabCounts}
+            />
+          </div>
+        )}
+
+        {/* Collector holding tabs — visible when collection tab is active (or not a dealer) */}
+        {activeTab === 'collection' && (
+          <div className="mb-4">
+            <LedgerTabs
+              tabs={holdingTabs}
+              activeTab={holdingTab}
+              onTabChange={handleHoldingTabChange}
+              tabCounts={holdingTabCounts}
             />
           </div>
         )}

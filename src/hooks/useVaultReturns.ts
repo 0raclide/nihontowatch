@@ -29,13 +29,33 @@ export function useVaultReturns(
   const requestIdRef = useRef(0);
 
   // Fetch historical rates when items or home currency change
+  // Include sold_date rates for realized return computation
   useEffect(() => {
-    const rateItems = items
-      .filter(i => i.collection)
-      .map(i => ({
-        purchase_date: i.collection!.purchase_date,
-        purchase_currency: i.collection!.purchase_currency,
-      }));
+    const rateItems: { purchase_date: string | null; purchase_currency: string | null }[] = [];
+    for (const i of items) {
+      const ext = i.collection;
+      if (!ext) continue;
+      // Purchase date rate (always needed)
+      rateItems.push({
+        purchase_date: ext.purchase_date,
+        purchase_currency: ext.purchase_currency,
+      });
+      // Sold date rates (for realized returns — sold_currency→home and purchase_currency→home at sold_date)
+      if (ext.holding_status === 'sold' && ext.sold_date) {
+        if (ext.sold_currency) {
+          rateItems.push({
+            purchase_date: ext.sold_date,
+            purchase_currency: ext.sold_currency,
+          });
+        }
+        if (ext.purchase_currency) {
+          rateItems.push({
+            purchase_date: ext.sold_date,
+            purchase_currency: ext.purchase_currency,
+          });
+        }
+      }
+    }
 
     if (rateItems.length === 0) {
       setHistoricalRates(new Map());
@@ -92,6 +112,10 @@ export function useVaultReturns(
           purchase_date: ext.purchase_date,
           current_value: ext.current_value,
           current_currency: ext.current_currency,
+          holding_status: ext.holding_status,
+          sold_price: ext.sold_price,
+          sold_currency: ext.sold_currency,
+          sold_date: ext.sold_date,
         },
         homeCurrency,
         historicalRates,

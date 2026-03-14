@@ -58,6 +58,7 @@ export interface CollectionFacets {
   certifications: Array<{ value: string; count: number }>;
   historicalPeriods: Array<{ value: string; count: number }>;
   signatureStatuses: Array<{ value: string; count: number }>;
+  holdingStatuses?: Array<{ value: string; count: number }>;
   statuses: Array<{ value: string; count: number }>;
   conditions: Array<{ value: string; count: number }>;
   folders: Array<{ id: string; name: string; count: number }>;

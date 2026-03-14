@@ -28,7 +28,7 @@ interface VaultTableViewProps {
   isLoadingReturns: boolean;
 }
 
-type SortKey = 'title' | 'type' | 'cert' | 'attribution' | 'purchase_date' | 'paid' | 'current_value' | 'invested' | 'return' | 'location';
+type SortKey = 'title' | 'type' | 'cert' | 'attribution' | 'holding_status' | 'purchase_date' | 'paid' | 'current_value' | 'invested' | 'return' | 'location';
 type SortDir = 'asc' | 'desc';
 
 // =============================================================================
@@ -80,6 +80,8 @@ export function VaultTableView({
           va = a.cert_type; vb = b.cert_type; break;
         case 'attribution':
           va = getAttributionName(a) || a.artisan_display_name || null; vb = getAttributionName(b) || b.artisan_display_name || null; break;
+        case 'holding_status':
+          va = ext_a?.holding_status ?? 'owned'; vb = ext_b?.holding_status ?? 'owned'; break;
         case 'purchase_date':
           va = ext_a?.purchase_date ?? null; vb = ext_b?.purchase_date ?? null; break;
         case 'paid':
@@ -157,7 +159,7 @@ export function VaultTableView({
         <table className="w-full text-[12px]">
           <thead>
             <tr className="border-b border-border/30">
-              {Array.from({ length: 11 }).map((_, i) => (
+              {Array.from({ length: 12 }).map((_, i) => (
                 <th key={i} className="py-2 px-2">
                   <div className="h-3 bg-surface-elevated rounded animate-pulse" />
                 </th>
@@ -204,6 +206,9 @@ export function VaultTableView({
           <thead>
             <tr className="border-b border-border/30">
               <th className="py-2 px-2 w-[44px]"></th>
+              <th className={`${headerClass} w-[70px]`} onClick={() => handleSort('holding_status')}>
+                {t('vault.table.status')}{sortArrow('holding_status')}
+              </th>
               <th className={headerClass} onClick={() => handleSort('title')}>
                 {t('vault.table.title')}{sortArrow('title')}
               </th>
@@ -309,6 +314,14 @@ interface TableItemRowProps {
   isLoadingReturns: boolean;
 }
 
+const HOLDING_STATUS_STYLES: Record<string, { label: string; className: string }> = {
+  owned: { label: 'vault.holdingStatus.owned', className: 'bg-green-500/15 text-green-600 dark:text-green-400' },
+  sold: { label: 'vault.holdingStatus.sold', className: 'bg-neutral-500/15 text-neutral-500' },
+  consigned: { label: 'vault.holdingStatus.consigned', className: 'bg-amber-500/15 text-amber-600 dark:text-amber-400' },
+  gifted: { label: 'vault.holdingStatus.gifted', className: 'bg-blue-500/15 text-blue-600 dark:text-blue-400' },
+  lost: { label: 'vault.holdingStatus.lost', className: 'bg-red-500/15 text-red-500' },
+};
+
 function TableItemRow({
   item,
   itemId,
@@ -331,10 +344,13 @@ function TableItemRow({
 }: TableItemRowProps) {
   const hasCurrentValue = ext?.current_value != null;
   const totalInvested = ext?.total_invested;
+  const holdingStatus = ext?.holding_status || 'owned';
+  const isSold = holdingStatus === 'sold';
+  const statusStyle = HOLDING_STATUS_STYLES[holdingStatus] || HOLDING_STATUS_STYLES.owned;
 
   return (
     <>
-      <tr className="border-b border-border/10 hover:bg-surface-elevated/30 transition-colors">
+      <tr className={`border-b border-border/10 hover:bg-surface-elevated/30 transition-colors ${isSold ? 'opacity-60' : ''}`}>
         {/* Thumbnail */}
         <td className="py-1.5 px-2">
           <button
@@ -358,6 +374,13 @@ function TableItemRow({
               </div>
             )}
           </button>
+        </td>
+
+        {/* Status pill */}
+        <td className="py-1.5 px-2">
+          <span className={`text-[9px] font-medium uppercase tracking-wide px-1.5 py-0.5 rounded ${statusStyle.className}`}>
+            {t(statusStyle.label)}
+          </span>
         </td>
 
         {/* Title (read-only, click opens QuickView) */}
@@ -420,18 +443,32 @@ function TableItemRow({
           )}
         </td>
 
-        {/* Current Value (editable) */}
+        {/* Current Value / Sold Price */}
         <td className="py-1.5 px-1">
-          <div className={!hasCurrentValue ? 'ring-1 ring-amber-300/30 rounded' : ''}>
-            <InlineCurrencyCell
-              amount={ext?.current_value ?? null}
-              currency={ext?.current_currency ?? null}
-              defaultCurrency={defaultCurrency}
-              onSave={(amount, currency) =>
-                onCurrencyUpdate(itemId, 'current_value', 'current_currency', amount, currency)
-              }
-            />
-          </div>
+          {isSold && ext?.sold_price != null ? (
+            <div>
+              <div className="text-[10px] text-muted/50 mb-0.5">{t('vault.table.soldFor')}</div>
+              <span className="text-[12px] text-ink tabular-nums">
+                {formatPrice(ext.sold_price, ext.sold_currency || defaultCurrency, locale)}
+              </span>
+              {ext.sold_date && (
+                <div className="text-[9px] text-muted/40 mt-0.5">
+                  {ext.sold_date}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className={!hasCurrentValue ? 'ring-1 ring-amber-300/30 rounded' : ''}>
+              <InlineCurrencyCell
+                amount={ext?.current_value ?? null}
+                currency={ext?.current_currency ?? null}
+                defaultCurrency={defaultCurrency}
+                onSave={(amount, currency) =>
+                  onCurrencyUpdate(itemId, 'current_value', 'current_currency', amount, currency)
+                }
+              />
+            </div>
+          )}
         </td>
 
         {/* Invested (computed, click to expand expense ledger) */}
@@ -497,7 +534,7 @@ function TableItemRow({
       {/* Expense ledger (inline sub-row) */}
       {isExpanded && (
         <tr>
-          <td colSpan={11} className="p-0">
+          <td colSpan={12} className="p-0">
             <ExpenseLedger
               itemId={itemId}
               purchasePrice={ext?.purchase_price ?? null}

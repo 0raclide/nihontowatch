@@ -41,6 +41,13 @@ export interface ItemReturnData {
   realReturnPct: number | null;
   /** costBasisHome × inflationFactor — what you paid in today's money */
   inflationAdjustedCost: number | null;
+
+  /** Whether this is a realized (sold) or unrealized (owned) return */
+  isRealized: boolean;
+  /** Annualized return percentage (only when holdingDays >= 30) */
+  annualizedReturnPct: number | null;
+  /** Days between purchase and sold_date (or today for owned items) */
+  holdingDays: number | null;
 }
 
 export interface ItemFinancialInput {
@@ -49,6 +56,12 @@ export interface ItemFinancialInput {
   purchase_date: string | null;
   current_value: number | null;
   current_currency: string | null;
+
+  // Holding status fields (sold items use sold_price as exit value)
+  holding_status?: string;
+  sold_price?: number | null;
+  sold_currency?: string | null;
+  sold_date?: string | null;
 }
 
 // =============================================================================
@@ -88,6 +101,9 @@ const NULL_RETURN: ItemReturnData = {
   realReturn: null,
   realReturnPct: null,
   inflationAdjustedCost: null,
+  isRealized: false,
+  annualizedReturnPct: null,
+  holdingDays: null,
 };
 
 // =============================================================================
@@ -95,7 +111,34 @@ const NULL_RETURN: ItemReturnData = {
 // =============================================================================
 
 /**
+ * Compute holding days between two ISO date strings (or today).
+ */
+function computeHoldingDays(purchaseDate: string, endDate?: string | null): number | null {
+  const start = new Date(purchaseDate);
+  if (isNaN(start.getTime())) return null;
+  const end = endDate ? new Date(endDate) : new Date();
+  if (isNaN(end.getTime())) return null;
+  return Math.max(0, Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
+}
+
+/**
+ * Compute annualized return percentage. Only meaningful for holding periods >= 30 days.
+ */
+function computeAnnualizedReturn(totalReturnPct: number | null, holdingDays: number | null): number | null {
+  if (totalReturnPct == null || holdingDays == null || holdingDays < 30) return null;
+  const totalReturnFraction = totalReturnPct / 100;
+  // annualized = ((1 + totalReturn/invested) ^ (365/holdingDays) - 1) × 100
+  const base = 1 + totalReturnFraction;
+  if (base <= 0) return null; // Can't take fractional power of negative
+  return (Math.pow(base, 365 / holdingDays) - 1) * 100;
+}
+
+/**
  * Compute gain/loss data for a single collection item.
+ *
+ * For sold items (holding_status = 'sold'), uses sold_price/sold_currency as exit value
+ * and FX rates at sold_date (realized return, locked in).
+ * For owned items, uses current_value/current_currency at today's rate (unrealized).
  *
  * @param item - Financial fields from the collection item
  * @param homeCurrency - User's home currency (e.g. "USD")
@@ -113,15 +156,42 @@ export function computeItemReturn(
   inflationFactor?: number | null,
 ): ItemReturnData {
   const home = homeCurrency.toUpperCase();
+  const isSold = item.holding_status === 'sold';
+  const isRealized = isSold && item.sold_price != null && !!item.sold_currency;
 
-  // Need at least current_value to compute anything useful
-  if (item.current_value == null || !item.current_currency) {
+  // Resolve exit value: sold items use sold_price, owned items use current_value
+  const exitValue = isRealized ? item.sold_price! : item.current_value;
+  const exitCurrency = isRealized ? item.sold_currency! : item.current_currency;
+  const exitDate = isRealized ? item.sold_date : null; // null = use today's rate
+
+  // Need at least an exit value to compute anything useful
+  if (exitValue == null || !exitCurrency) {
     return NULL_RETURN;
   }
 
-  // Convert current value to home currency
-  const currentValueHome = toHome(item.current_value, item.current_currency, home, todayRates);
-  if (currentValueHome == null) return NULL_RETURN;
+  // Convert exit value to home currency
+  // For sold items: use sold_date historical rate (realized, locked in)
+  // For owned items: use today's rate (unrealized, fluctuates)
+  let exitValueHome: number | null;
+
+  if (isRealized && exitDate) {
+    const exitCur = exitCurrency.toUpperCase();
+    if (exitCur === home) {
+      exitValueHome = exitValue;
+    } else {
+      const soldDateRate = historicalRates.get(fxKey(exitDate, exitCur, home));
+      if (soldDateRate == null) {
+        // Fall back to today's rate if sold-date rate unavailable
+        exitValueHome = toHome(exitValue, exitCurrency, home, todayRates);
+      } else {
+        exitValueHome = exitValue * soldDateRate;
+      }
+    }
+  } else {
+    exitValueHome = toHome(exitValue, exitCurrency, home, todayRates);
+  }
+
+  if (exitValueHome == null) return NULL_RETURN;
 
   // Convert expenses to home currency (all at today's rate)
   let expensesHome = 0;
@@ -134,10 +204,15 @@ export function computeItemReturn(
     }
   }
 
+  // Compute holding days and annualized return metadata
+  const holdingDays = item.purchase_date
+    ? computeHoldingDays(item.purchase_date, isRealized ? item.sold_date : null)
+    : null;
+
   // If no purchase price, we can still show current value but not returns
   if (item.purchase_price == null || !item.purchase_currency || !item.purchase_date) {
     return {
-      currentValueHome,
+      currentValueHome: exitValueHome,
       totalInvestedHome: null,
       totalReturn: null,
       totalReturnPct: null,
@@ -149,6 +224,9 @@ export function computeItemReturn(
       realReturn: null,
       realReturnPct: null,
       inflationAdjustedCost: null,
+      isRealized,
+      annualizedReturnPct: null,
+      holdingDays,
     };
   }
 
@@ -163,7 +241,7 @@ export function computeItemReturn(
     if (historicalRate == null) {
       // No historical rate available — can't compute proper cost basis
       return {
-        currentValueHome,
+        currentValueHome: exitValueHome,
         totalInvestedHome: null,
         totalReturn: null,
         totalReturnPct: null,
@@ -175,30 +253,46 @@ export function computeItemReturn(
         realReturn: null,
         realReturnPct: null,
         inflationAdjustedCost: null,
+        isRealized,
+        annualizedReturnPct: null,
+        holdingDays,
       };
     }
     costBasisHome = item.purchase_price * historicalRate;
   }
 
   const totalInvestedHome = costBasisHome + expensesHome;
-  const totalReturn = currentValueHome - totalInvestedHome;
+  const totalReturn = exitValueHome - totalInvestedHome;
   const totalReturnPct = totalInvestedHome !== 0
     ? (totalReturn / totalInvestedHome) * 100
     : null;
 
+  const annualizedReturnPct = computeAnnualizedReturn(totalReturnPct, holdingDays);
+
   // Decomposition: always possible when we have purchase-currency rates.
-  // FX impact = change in purchase currency value relative to home.
-  // Works for both same-currency (JPY→JPY) and mixed-currency (JPY→USD) items.
-  // Asset return is the residual: totalReturn - fxImpact - expenseDrag.
+  // For sold items: FX impact = rate change between purchase date and sold date
+  // For owned items: FX impact = rate change between purchase date and today
 
-  // Get today's rate for the PURCHASE currency → home
-  const todayRateToHome = purchCur === home
-    ? 1
-    : toHome(1, purchCur, home, todayRates);
+  // Get the exit-date rate for the PURCHASE currency → home
+  // (sold: sold_date rate, owned: today's rate)
+  let exitDateRateToHome: number | null;
+  if (isRealized && exitDate) {
+    exitDateRateToHome = purchCur === home
+      ? 1
+      : historicalRates.get(fxKey(exitDate, purchCur, home)) ?? null;
+    // Fall back to today's rate if sold-date rate for purchase currency unavailable
+    if (exitDateRateToHome == null) {
+      exitDateRateToHome = purchCur === home ? 1 : toHome(1, purchCur, home, todayRates);
+    }
+  } else {
+    exitDateRateToHome = purchCur === home
+      ? 1
+      : toHome(1, purchCur, home, todayRates);
+  }
 
-  if (todayRateToHome == null) {
+  if (exitDateRateToHome == null) {
     return {
-      currentValueHome,
+      currentValueHome: exitValueHome,
       totalInvestedHome,
       totalReturn,
       totalReturnPct,
@@ -210,6 +304,9 @@ export function computeItemReturn(
       realReturn: null,
       realReturnPct: null,
       inflationAdjustedCost: null,
+      isRealized,
+      annualizedReturnPct,
+      holdingDays,
     };
   }
 
@@ -220,7 +317,7 @@ export function computeItemReturn(
 
   if (historicalRateToHome == null) {
     return {
-      currentValueHome,
+      currentValueHome: exitValueHome,
       totalInvestedHome,
       totalReturn,
       totalReturnPct,
@@ -232,11 +329,15 @@ export function computeItemReturn(
       realReturn: null,
       realReturnPct: null,
       inflationAdjustedCost: null,
+      isRealized,
+      annualizedReturnPct,
+      holdingDays,
     };
   }
 
-  // FX impact: P_buy × (R_today - R_purchase) — how much the purchase currency moved
-  const fxImpact = item.purchase_price * (todayRateToHome - historicalRateToHome);
+  // FX impact: P_buy × (R_exit - R_purchase) — how much the purchase currency moved
+  // For sold items, R_exit = rate at sold_date; for owned, R_exit = rate today
+  const fxImpact = item.purchase_price * (exitDateRateToHome - historicalRateToHome);
 
   // Expense drag: negative of total expenses in home currency
   const expenseDrag = -expensesHome;
@@ -261,7 +362,7 @@ export function computeItemReturn(
   }
 
   return {
-    currentValueHome,
+    currentValueHome: exitValueHome,
     totalInvestedHome,
     totalReturn,
     totalReturnPct,
@@ -273,15 +374,21 @@ export function computeItemReturn(
     realReturn,
     realReturnPct,
     inflationAdjustedCost,
+    isRealized,
+    annualizedReturnPct,
+    holdingDays,
   };
 }
 
-/**
- * Aggregate return data across all items for portfolio totals.
- */
-export function computePortfolioTotals(
-  returnMap: Map<string, ItemReturnData>,
-): {
+export interface PortfolioSplit {
+  totalValueHome: number;
+  totalInvestedHome: number;
+  totalReturn: number;
+  totalReturnPct: number | null;
+  itemCount: number;
+}
+
+export interface PortfolioTotals {
   totalValueHome: number;
   totalInvestedHome: number;
   totalReturn: number;
@@ -295,7 +402,17 @@ export function computePortfolioTotals(
   totalRealReturn: number;
   totalRealReturnPct: number | null;
   hasInflation: boolean;
-} {
+  unrealized: PortfolioSplit;
+  realized: PortfolioSplit;
+}
+
+/**
+ * Aggregate return data across all items for portfolio totals.
+ * Splits into unrealized (owned) and realized (sold) buckets.
+ */
+export function computePortfolioTotals(
+  returnMap: Map<string, ItemReturnData>,
+): PortfolioTotals {
   let totalValueHome = 0;
   let totalInvestedHome = 0;
   let totalAssetReturn = 0;
@@ -308,15 +425,25 @@ export function computePortfolioTotals(
   let hasInflation = false;
   let itemsWithData = 0;
 
+  // Split buckets
+  const unrealized: PortfolioSplit = { totalValueHome: 0, totalInvestedHome: 0, totalReturn: 0, totalReturnPct: null, itemCount: 0 };
+  const realized: PortfolioSplit = { totalValueHome: 0, totalInvestedHome: 0, totalReturn: 0, totalReturnPct: null, itemCount: 0 };
+
   for (const data of returnMap.values()) {
+    const bucket = data.isRealized ? realized : unrealized;
+
     if (data.currentValueHome != null) {
       totalValueHome += data.currentValueHome;
+      bucket.totalValueHome += data.currentValueHome;
     }
     if (data.totalInvestedHome != null) {
       totalInvestedHome += data.totalInvestedHome;
+      bucket.totalInvestedHome += data.totalInvestedHome;
     }
     if (data.totalReturn != null) {
       itemsWithData++;
+      bucket.itemCount++;
+      bucket.totalReturn += data.totalReturn;
     }
     if (data.canDecompose) {
       hasDecomposition = true;
@@ -343,6 +470,14 @@ export function computePortfolioTotals(
     ? (totalRealReturn / realDenominator) * 100
     : null;
 
+  // Compute per-bucket percentages
+  unrealized.totalReturnPct = unrealized.totalInvestedHome !== 0
+    ? (unrealized.totalReturn / unrealized.totalInvestedHome) * 100
+    : null;
+  realized.totalReturnPct = realized.totalInvestedHome !== 0
+    ? (realized.totalReturn / realized.totalInvestedHome) * 100
+    : null;
+
   return {
     totalValueHome,
     totalInvestedHome,
@@ -357,5 +492,7 @@ export function computePortfolioTotals(
     totalRealReturn,
     totalRealReturnPct,
     hasInflation,
+    unrealized,
+    realized,
   };
 }

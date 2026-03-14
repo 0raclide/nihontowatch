@@ -138,6 +138,9 @@ export function collectionRowToDisplayItem(
       visibility: item.visibility,
       source_listing_id: item.source_listing_id,
 
+      // Holding status
+      holding_status: item.holding_status || 'owned',
+
       // Financial fields
       purchase_price: item.purchase_price ?? null,
       purchase_currency: item.purchase_currency ?? null,
@@ -146,6 +149,13 @@ export function collectionRowToDisplayItem(
       current_value: item.current_value ?? null,
       current_currency: item.current_currency ?? null,
       location: item.location ?? null,
+
+      // Sold fields
+      sold_price: item.sold_price ?? null,
+      sold_currency: item.sold_currency ?? null,
+      sold_date: item.sold_date ?? null,
+      sold_to: item.sold_to ?? null,
+      sold_venue: item.sold_venue ?? null,
 
       // Computed: purchase_price + matching-currency expenses
       total_invested: computeTotalInvested(item, expenseTotals),

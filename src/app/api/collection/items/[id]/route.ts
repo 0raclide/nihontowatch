@@ -118,6 +118,8 @@ const ALLOWED_FIELDS = new Set([
   // Financial fields (vault table view)
   'purchase_price', 'purchase_currency', 'purchase_date', 'purchase_source',
   'current_value', 'current_currency', 'location',
+  // Holding status + sold fields
+  'holding_status', 'sold_price', 'sold_currency', 'sold_date', 'sold_to', 'sold_venue',
   // Note: 'images' intentionally excluded — managed via /api/collection/images
 ]);
 
@@ -142,9 +144,9 @@ export async function PATCH(
 
     const serviceClient = createServiceClient();
 
-    // Verify ownership
+    // Verify ownership (include item_uuid for audit event)
     const { data: item } = await selectCollectionItemSingle(
-      serviceClient, 'id', id, 'id, owner_id'
+      serviceClient, 'id', id, 'id, owner_id, item_uuid'
     );
 
     if (!item || item.owner_id !== user.id) {
@@ -235,6 +237,41 @@ export async function PATCH(
       updates.location = (typeof loc === 'string') ? loc.slice(0, 500) || null : null;
     }
 
+    // Validate holding_status
+    if ('holding_status' in updates) {
+      const hs = updates.holding_status;
+      const validStatuses = ['owned', 'sold', 'consigned', 'gifted', 'lost'];
+      if (typeof hs !== 'string' || !validStatuses.includes(hs)) {
+        updates.holding_status = 'owned';
+      }
+    }
+
+    // Validate sold fields
+    if ('sold_price' in updates) {
+      const sp = Number(updates.sold_price);
+      updates.sold_price = (updates.sold_price != null && !isNaN(sp) && sp >= 0) ? sp : null;
+    }
+    if ('sold_currency' in updates) {
+      const sc = updates.sold_currency;
+      updates.sold_currency = (typeof sc === 'string' && sc.length <= 10) ? sc.toUpperCase() : null;
+    }
+    if ('sold_date' in updates) {
+      const sd = updates.sold_date;
+      if (sd && typeof sd === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(sd)) {
+        updates.sold_date = sd;
+      } else {
+        updates.sold_date = null;
+      }
+    }
+    if ('sold_to' in updates) {
+      const st = updates.sold_to;
+      updates.sold_to = (typeof st === 'string') ? st.slice(0, 500) || null : null;
+    }
+    if ('sold_venue' in updates) {
+      const sv = updates.sold_venue;
+      updates.sold_venue = (typeof sv === 'string') ? sv.slice(0, 500) || null : null;
+    }
+
     // Validate visibility
     if ('visibility' in updates) {
       const v = updates.visibility;
@@ -274,11 +311,12 @@ export async function PATCH(
       return NextResponse.json({ error: 'Failed to update item' }, { status: 500 });
     }
 
-    // Log audit event
+    // Log audit event — use 'sold' event type when holding_status changes to 'sold'
+    const eventType = updates.holding_status === 'sold' ? 'sold' : 'updated';
     await insertCollectionEvent(serviceClient, {
       item_uuid: item.item_uuid,
       actor_id: user.id,
-      event_type: 'updated',
+      event_type: eventType,
       payload: { fields: Object.keys(updates) },
     }).catch(err => logger.warn('Failed to log collection event', { error: err }));
 

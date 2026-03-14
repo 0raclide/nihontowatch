@@ -25,24 +25,29 @@ const TOSOGU_TYPES = [
   'mitokoromono', 'gotokoromono',
 ];
 
+const VALID_HOLDING_STATUSES = ['owned', 'sold', 'consigned', 'gifted', 'lost'];
+
 interface CollectionFilters {
   category?: 'nihonto' | 'tosogu';
   itemType?: string;
   certType?: string;
   era?: string;
   meiType?: string;
+  holdingStatus?: string;
   sort: 'newest' | 'custom' | 'value_desc' | 'value_asc' | 'type';
   page: number;
   limit: number;
 }
 
 function parseFilters(searchParams: URLSearchParams): CollectionFilters {
+  const hs = searchParams.get('holdingStatus');
   return {
     category: (searchParams.get('category') as CollectionFilters['category']) || undefined,
     itemType: searchParams.get('type') || undefined,
     certType: searchParams.get('cert') || undefined,
     era: searchParams.get('era') || undefined,
     meiType: searchParams.get('meiType') || undefined,
+    holdingStatus: (hs && VALID_HOLDING_STATUSES.includes(hs)) ? hs : undefined,
     sort: (searchParams.get('sort') as CollectionFilters['sort']) || 'custom',
     page: Number(searchParams.get('page')) || 1,
     limit: Math.min(Number(searchParams.get('limit')) || 100, 200),
@@ -91,6 +96,9 @@ export async function GET(request: NextRequest) {
     if (filters.meiType) {
       query = query.eq('mei_type', filters.meiType);
     }
+    if (filters.holdingStatus) {
+      query = query.eq('holding_status', filters.holdingStatus);
+    }
 
     // Sort
     switch (filters.sort) {
@@ -124,7 +132,7 @@ export async function GET(request: NextRequest) {
 
     // Compute facets (all items for this user, ignoring current filters)
     const { data: allItems } = await collectionItemsFrom(serviceClient)
-      .select('item_type, cert_type, era, mei_type')
+      .select('item_type, cert_type, era, mei_type, holding_status')
       .eq('owner_id', user.id);
 
     const facets = computeFacets(allItems || []);
@@ -351,6 +359,7 @@ function computeFacets(items: Array<Record<string, unknown>>) {
   const certifications = new Map<string, number>();
   const historicalPeriods = new Map<string, number>();
   const signatureStatuses = new Map<string, number>();
+  const holdingStatuses = new Map<string, number>();
 
   for (const item of items) {
     if (item.item_type) {
@@ -369,6 +378,9 @@ function computeFacets(items: Array<Record<string, unknown>>) {
       const m = item.mei_type as string;
       signatureStatuses.set(m, (signatureStatuses.get(m) || 0) + 1);
     }
+    // holding_status defaults to 'owned' in DB
+    const hs = (item.holding_status as string) || 'owned';
+    holdingStatuses.set(hs, (holdingStatuses.get(hs) || 0) + 1);
   }
 
   const toArray = (map: Map<string, number>) =>
@@ -381,6 +393,7 @@ function computeFacets(items: Array<Record<string, unknown>>) {
     certifications: toArray(certifications),
     historicalPeriods: toArray(historicalPeriods),
     signatureStatuses: toArray(signatureStatuses),
+    holdingStatuses: toArray(holdingStatuses),
     statuses: [],
     conditions: [],
     folders: [],

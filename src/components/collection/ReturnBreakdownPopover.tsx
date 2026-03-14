@@ -100,6 +100,22 @@ export function ReturnBreakdownPopover({ returnData, homeCurrency }: ReturnBreak
                 locale={locale}
                 bold
               />
+              {/* Realized/unrealized label */}
+              <div className="text-[9px] text-muted/40 mt-1">
+                {returnData.isRealized ? t('vault.return.realized') : t('vault.return.unrealized')}
+              </div>
+              {/* Holding period */}
+              {returnData.holdingDays != null && (
+                <div className="text-[9px] text-muted/40">
+                  {t('vault.return.daysHeld', { count: returnData.holdingDays })}
+                </div>
+              )}
+              {/* Annualized return */}
+              {returnData.annualizedReturnPct != null && (
+                <div className={`text-[9px] tabular-nums ${returnData.annualizedReturnPct >= 0 ? 'text-green-500/70' : 'text-red-400/70'}`}>
+                  {t('vault.return.annualized')}: {returnData.annualizedReturnPct >= 0 ? '+' : ''}{returnData.annualizedReturnPct.toFixed(1)}%/yr
+                </div>
+              )}
             </div>
           ) : (
             <div className="space-y-1.5">

@@ -89,34 +89,84 @@ export function VaultTableFooter({ items, returnMap, homeCurrency, isLoadingRetu
           </span>
         </div>
       ) : portfolio && portfolio.itemsWithData > 0 && (
-        <div className="space-y-0.5">
-          <div className="flex items-center gap-3 text-[11px] flex-wrap">
-            <span className="text-muted/60 uppercase tracking-wider text-[10px]">
-              {t('vault.return.portfolioValue')} ({homeCurrency}):
-            </span>
-            <span className="text-ink tabular-nums">
-              {formatPrice(portfolio.totalValueHome, homeCurrency, locale)}
-            </span>
-            <span className="text-muted/30">|</span>
-            <span className="text-muted/60 text-[10px]">{t('vault.return.totalInvested')}:</span>
-            <span className="text-ink tabular-nums">
-              {formatPrice(portfolio.totalInvestedHome, homeCurrency, locale)}
-            </span>
-            <span className="text-muted/30">|</span>
-            <span className="text-muted/60 text-[10px]">
-              {portfolio.hasInflation ? t('vault.return.realReturn') : t('vault.return.totalReturn')}:
-            </span>
-            <span className={`tabular-nums font-medium ${returnColor(portfolio.hasInflation ? portfolio.totalRealReturn : portfolio.totalReturn)}`}>
-              {sign(portfolio.hasInflation ? portfolio.totalRealReturn : portfolio.totalReturn)}
-              {fmtHome(portfolio.hasInflation ? portfolio.totalRealReturn : portfolio.totalReturn)}
-              {(portfolio.hasInflation ? portfolio.totalRealReturnPct : portfolio.totalReturnPct) != null && (
-                <span className="ml-1 font-normal">
-                  ({sign((portfolio.hasInflation ? portfolio.totalRealReturnPct : portfolio.totalReturnPct)!)}
-                  {Math.abs((portfolio.hasInflation ? portfolio.totalRealReturnPct : portfolio.totalReturnPct)!).toFixed(1)}%)
-                </span>
-              )}
-            </span>
-          </div>
+        <div className="space-y-1.5">
+          {/* Unrealized section (owned items) */}
+          {portfolio.unrealized.itemCount > 0 && (
+            <div className="flex items-center gap-3 text-[11px] flex-wrap">
+              <span className="text-muted/60 uppercase tracking-wider text-[10px]">
+                {t('vault.return.unrealized')}
+              </span>
+              <span className="text-muted/60 text-[10px]">{t('vault.return.portfolioValue')}:</span>
+              <span className="text-ink tabular-nums">
+                {formatPrice(portfolio.unrealized.totalValueHome, homeCurrency, locale)}
+              </span>
+              <span className="text-muted/30">|</span>
+              <span className="text-muted/60 text-[10px]">{t('vault.return.totalInvested')}:</span>
+              <span className="text-ink tabular-nums">
+                {formatPrice(portfolio.unrealized.totalInvestedHome, homeCurrency, locale)}
+              </span>
+              <span className="text-muted/30">|</span>
+              <span className="text-muted/60 text-[10px]">{t('vault.return.totalReturn')}:</span>
+              <span className={`tabular-nums font-medium ${returnColor(portfolio.unrealized.totalReturn)}`}>
+                {sign(portfolio.unrealized.totalReturn)}{fmtHome(portfolio.unrealized.totalReturn)}
+                {portfolio.unrealized.totalReturnPct != null && (
+                  <span className="ml-1 font-normal">
+                    ({sign(portfolio.unrealized.totalReturnPct!)}{Math.abs(portfolio.unrealized.totalReturnPct!).toFixed(1)}%)
+                  </span>
+                )}
+              </span>
+            </div>
+          )}
+
+          {/* Realized section (sold items) */}
+          {portfolio.realized.itemCount > 0 && (
+            <div className="flex items-center gap-3 text-[11px] flex-wrap">
+              <span className="text-muted/60 uppercase tracking-wider text-[10px]">
+                {t('vault.return.realized')}
+              </span>
+              <span className="text-muted/60 text-[10px]">{t('vault.return.proceeds')}:</span>
+              <span className="text-ink tabular-nums">
+                {formatPrice(portfolio.realized.totalValueHome, homeCurrency, locale)}
+              </span>
+              <span className="text-muted/30">|</span>
+              <span className="text-muted/60 text-[10px]">{t('vault.return.costBasis')}:</span>
+              <span className="text-ink tabular-nums">
+                {formatPrice(portfolio.realized.totalInvestedHome, homeCurrency, locale)}
+              </span>
+              <span className="text-muted/30">|</span>
+              <span className="text-muted/60 text-[10px]">{t('vault.return.netGain')}:</span>
+              <span className={`tabular-nums font-medium ${returnColor(portfolio.realized.totalReturn)}`}>
+                {sign(portfolio.realized.totalReturn)}{fmtHome(portfolio.realized.totalReturn)}
+                {portfolio.realized.totalReturnPct != null && (
+                  <span className="ml-1 font-normal">
+                    ({sign(portfolio.realized.totalReturnPct!)}{Math.abs(portfolio.realized.totalReturnPct!).toFixed(1)}%)
+                  </span>
+                )}
+              </span>
+            </div>
+          )}
+
+          {/* Combined total (only when both sections exist) */}
+          {portfolio.unrealized.itemCount > 0 && portfolio.realized.itemCount > 0 && (
+            <div className="flex items-center gap-3 text-[11px] flex-wrap border-t border-border/20 pt-1.5">
+              <span className="text-muted/60 uppercase tracking-wider text-[10px]">
+                {t('vault.return.combined')}
+              </span>
+              <span className="text-muted/60 text-[10px]">
+                {portfolio.hasInflation ? t('vault.return.realReturn') : t('vault.return.totalReturn')}:
+              </span>
+              <span className={`tabular-nums font-medium ${returnColor(portfolio.hasInflation ? portfolio.totalRealReturn : portfolio.totalReturn)}`}>
+                {sign(portfolio.hasInflation ? portfolio.totalRealReturn : portfolio.totalReturn)}
+                {fmtHome(portfolio.hasInflation ? portfolio.totalRealReturn : portfolio.totalReturn)}
+                {(portfolio.hasInflation ? portfolio.totalRealReturnPct : portfolio.totalReturnPct) != null && (
+                  <span className="ml-1 font-normal">
+                    ({sign((portfolio.hasInflation ? portfolio.totalRealReturnPct : portfolio.totalReturnPct)!)}
+                    {Math.abs((portfolio.hasInflation ? portfolio.totalRealReturnPct : portfolio.totalReturnPct)!).toFixed(1)}%)
+                  </span>
+                )}
+              </span>
+            </div>
+          )}
 
           {/* Decomposition row */}
           {portfolio.hasDecomposition && (

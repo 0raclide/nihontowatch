@@ -714,3 +714,279 @@ describe('computePortfolioTotals', () => {
     expect(totals.totalRealReturn).toBe(7000 + (-2000));
   });
 });
+
+// =============================================================================
+// computeItemReturn — holding status (realized/unrealized)
+// =============================================================================
+
+describe('computeItemReturn — holding status', () => {
+  it('defaults to unrealized when no holding_status', () => {
+    const result = computeItemReturn(
+      { purchase_price: 1000, purchase_currency: 'USD', purchase_date: '2024-01-15',
+        current_value: 1500, current_currency: 'USD' },
+      'USD', new Map(), TODAY_RATES,
+    );
+    expect(result.isRealized).toBe(false);
+  });
+
+  it('marks as unrealized for owned items', () => {
+    const result = computeItemReturn(
+      { purchase_price: 1000, purchase_currency: 'USD', purchase_date: '2024-01-15',
+        current_value: 1500, current_currency: 'USD', holding_status: 'owned' },
+      'USD', new Map(), TODAY_RATES,
+    );
+    expect(result.isRealized).toBe(false);
+  });
+
+  it('marks as realized for sold items with sold_price', () => {
+    const result = computeItemReturn(
+      { purchase_price: 1000, purchase_currency: 'USD', purchase_date: '2024-01-15',
+        current_value: 1500, current_currency: 'USD',
+        holding_status: 'sold', sold_price: 1800, sold_currency: 'USD', sold_date: '2025-06-01' },
+      'USD', new Map(), TODAY_RATES,
+    );
+    expect(result.isRealized).toBe(true);
+  });
+
+  it('uses sold_price as exit value for realized returns (same currency)', () => {
+    const result = computeItemReturn(
+      { purchase_price: 1000, purchase_currency: 'USD', purchase_date: '2024-01-15',
+        current_value: 1500, current_currency: 'USD',
+        holding_status: 'sold', sold_price: 1800, sold_currency: 'USD', sold_date: '2025-06-01' },
+      'USD', new Map(), TODAY_RATES,
+    );
+    // Exit value = sold_price (1800), not current_value (1500)
+    expect(result.currentValueHome).toBe(1800);
+    expect(result.totalReturn).toBe(800); // 1800 - 1000
+    expect(result.totalReturnPct).toBeCloseTo(80.0, 1);
+  });
+
+  it('uses sold_date FX rate for cross-currency sold items', () => {
+    // Bought in JPY, sold in JPY, home=USD
+    // Purchase: 1M JPY on 2024-01-15 at rate 0.00667 → $6,670 cost basis
+    // Sold: 1.5M JPY on 2025-06-01 at rate 0.00700 → $10,500 proceeds
+    const historical = buildHistoricalRates([
+      ['2024-01-15', 'JPY', 'USD', 0.00667],
+      ['2025-06-01', 'JPY', 'USD', 0.00700],
+    ]);
+    const result = computeItemReturn(
+      { purchase_price: 1000000, purchase_currency: 'JPY', purchase_date: '2024-01-15',
+        current_value: 2000000, current_currency: 'JPY', // current_value ignored for sold
+        holding_status: 'sold', sold_price: 1500000, sold_currency: 'JPY', sold_date: '2025-06-01' },
+      'USD', historical, TODAY_RATES,
+    );
+    expect(result.isRealized).toBe(true);
+    // Exit value at sold_date rate: 1,500,000 × 0.007 = $10,500
+    expect(result.currentValueHome).toBeCloseTo(10500, 0);
+    // Cost basis: 1,000,000 × 0.00667 = $6,670
+    expect(result.totalInvestedHome).toBeCloseTo(6670, 0);
+    expect(result.totalReturn).toBeCloseTo(3830, 0);
+  });
+
+  it('FX impact uses sold_date rate (not today rate) for sold items', () => {
+    // Purchase: 1M JPY on 2024-01-15, rate JPY→USD = 0.00667
+    // Sold: 1.5M JPY on 2025-06-01, rate JPY→USD = 0.00700
+    // FX impact should use sold_date rate, not today's rate
+    const historical = buildHistoricalRates([
+      ['2024-01-15', 'JPY', 'USD', 0.00667],
+      ['2025-06-01', 'JPY', 'USD', 0.00700],
+    ]);
+    const result = computeItemReturn(
+      { purchase_price: 1000000, purchase_currency: 'JPY', purchase_date: '2024-01-15',
+        current_value: 2000000, current_currency: 'JPY',
+        holding_status: 'sold', sold_price: 1500000, sold_currency: 'JPY', sold_date: '2025-06-01' },
+      'USD', historical, TODAY_RATES,
+    );
+    expect(result.canDecompose).toBe(true);
+    // FX impact = P_buy × (R_sold_date - R_purchase) = 1M × (0.00700 - 0.00667) = $330
+    expect(result.fxImpact).toBeCloseTo(330, 0);
+    // Identity: asset + fx + expenses ≈ total
+    if (result.assetReturn != null && result.fxImpact != null && result.expenseDrag != null && result.totalReturn != null) {
+      expect(result.assetReturn + result.fxImpact + result.expenseDrag).toBeCloseTo(result.totalReturn, 1);
+    }
+  });
+
+  it('returns NULL for sold items without sold_price', () => {
+    const result = computeItemReturn(
+      { purchase_price: 1000, purchase_currency: 'USD', purchase_date: '2024-01-15',
+        current_value: null, current_currency: null,
+        holding_status: 'sold', sold_price: null, sold_currency: null },
+      'USD', new Map(), TODAY_RATES,
+    );
+    expect(result.totalReturn).toBeNull();
+  });
+
+  it('falls back to current_value when holding_status is sold but no sold_price', () => {
+    const result = computeItemReturn(
+      { purchase_price: 1000, purchase_currency: 'USD', purchase_date: '2024-01-15',
+        current_value: 1500, current_currency: 'USD',
+        holding_status: 'sold', sold_price: null, sold_currency: null },
+      'USD', new Map(), TODAY_RATES,
+    );
+    // Not truly realized since no sold_price → falls back to unrealized path
+    expect(result.isRealized).toBe(false);
+    expect(result.currentValueHome).toBe(1500);
+  });
+});
+
+// =============================================================================
+// computeItemReturn — annualized return
+// =============================================================================
+
+describe('computeItemReturn — annualized return', () => {
+  it('computes annualized return for owned items (holding period to today)', () => {
+    // Purchase ~365 days ago with 10% total return → ~10% annualized
+    const oneYearAgo = new Date();
+    oneYearAgo.setDate(oneYearAgo.getDate() - 365);
+    const purchaseDate = oneYearAgo.toISOString().split('T')[0];
+
+    const result = computeItemReturn(
+      { purchase_price: 1000, purchase_currency: 'USD', purchase_date: purchaseDate,
+        current_value: 1100, current_currency: 'USD' },
+      'USD', new Map(), TODAY_RATES,
+    );
+    // Allow ±1 day tolerance for timezone edge cases
+    expect(result.holdingDays).toBeGreaterThanOrEqual(364);
+    expect(result.holdingDays).toBeLessThanOrEqual(366);
+    // Annualized ~10% (varies slightly with exact holdingDays)
+    expect(result.annualizedReturnPct).toBeCloseTo(10.0, -1);
+  });
+
+  it('computes annualized return for sold items (purchase → sold date)', () => {
+    // Held exactly 730 days (2 years), +21% total → ~10% annualized
+    const result = computeItemReturn(
+      { purchase_price: 1000, purchase_currency: 'USD', purchase_date: '2023-01-15',
+        current_value: 1500, current_currency: 'USD',
+        holding_status: 'sold', sold_price: 1210, sold_currency: 'USD', sold_date: '2025-01-14' },
+      'USD', new Map(), TODAY_RATES,
+    );
+    expect(result.holdingDays).toBeCloseTo(730, 1);
+    // (1.21)^(365/730) - 1 = (1.21)^0.5 - 1 ≈ 10%
+    expect(result.annualizedReturnPct).toBeCloseTo(10.0, 0);
+  });
+
+  it('returns null annualized for holding period < 30 days', () => {
+    const result = computeItemReturn(
+      { purchase_price: 1000, purchase_currency: 'USD', purchase_date: '2026-03-01',
+        current_value: 1100, current_currency: 'USD',
+        holding_status: 'sold', sold_price: 1100, sold_currency: 'USD', sold_date: '2026-03-15' },
+      'USD', new Map(), TODAY_RATES,
+    );
+    expect(result.holdingDays).toBe(14);
+    expect(result.annualizedReturnPct).toBeNull();
+  });
+
+  it('computes holdingDays between purchase and sold date', () => {
+    const result = computeItemReturn(
+      { purchase_price: 1000, purchase_currency: 'USD', purchase_date: '2024-01-01',
+        current_value: 1500, current_currency: 'USD',
+        holding_status: 'sold', sold_price: 1500, sold_currency: 'USD', sold_date: '2025-01-01' },
+      'USD', new Map(), TODAY_RATES,
+    );
+    expect(result.holdingDays).toBe(366); // 2024 is leap year
+  });
+
+  it('returns null holdingDays when no purchase_date', () => {
+    const result = computeItemReturn(
+      { purchase_price: null, purchase_currency: null, purchase_date: null,
+        current_value: 1500, current_currency: 'USD' },
+      'USD', new Map(), TODAY_RATES,
+    );
+    expect(result.holdingDays).toBeNull();
+    expect(result.annualizedReturnPct).toBeNull();
+  });
+});
+
+// =============================================================================
+// computePortfolioTotals — unrealized/realized split
+// =============================================================================
+
+describe('computePortfolioTotals — unrealized/realized split', () => {
+  it('splits items into unrealized and realized buckets', () => {
+    const map = new Map<string, ItemReturnData>();
+    map.set('owned1', {
+      currentValueHome: 2000, totalInvestedHome: 1500, totalReturn: 500,
+      totalReturnPct: 33.3, canDecompose: false,
+      assetReturn: null, fxImpact: null, expenseDrag: null,
+      inflationImpact: null, realReturn: null, realReturnPct: null, inflationAdjustedCost: null,
+      isRealized: false, annualizedReturnPct: null, holdingDays: 365,
+    });
+    map.set('sold1', {
+      currentValueHome: 3000, totalInvestedHome: 2000, totalReturn: 1000,
+      totalReturnPct: 50.0, canDecompose: false,
+      assetReturn: null, fxImpact: null, expenseDrag: null,
+      inflationImpact: null, realReturn: null, realReturnPct: null, inflationAdjustedCost: null,
+      isRealized: true, annualizedReturnPct: 10.0, holdingDays: 730,
+    });
+
+    const totals = computePortfolioTotals(map);
+
+    // Unrealized
+    expect(totals.unrealized.itemCount).toBe(1);
+    expect(totals.unrealized.totalValueHome).toBe(2000);
+    expect(totals.unrealized.totalInvestedHome).toBe(1500);
+    expect(totals.unrealized.totalReturn).toBe(500);
+    expect(totals.unrealized.totalReturnPct).toBeCloseTo(33.3, 1);
+
+    // Realized
+    expect(totals.realized.itemCount).toBe(1);
+    expect(totals.realized.totalValueHome).toBe(3000);
+    expect(totals.realized.totalInvestedHome).toBe(2000);
+    expect(totals.realized.totalReturn).toBe(1000);
+    expect(totals.realized.totalReturnPct).toBeCloseTo(50.0, 1);
+
+    // Combined
+    expect(totals.totalValueHome).toBe(5000);
+    expect(totals.totalInvestedHome).toBe(3500);
+    expect(totals.itemsWithData).toBe(2);
+  });
+
+  it('returns zero counts for empty buckets', () => {
+    const map = new Map<string, ItemReturnData>();
+    map.set('owned1', {
+      currentValueHome: 2000, totalInvestedHome: 1500, totalReturn: 500,
+      totalReturnPct: 33.3, canDecompose: false,
+      assetReturn: null, fxImpact: null, expenseDrag: null,
+      inflationImpact: null, realReturn: null, realReturnPct: null, inflationAdjustedCost: null,
+      isRealized: false, annualizedReturnPct: null, holdingDays: 365,
+    });
+
+    const totals = computePortfolioTotals(map);
+    expect(totals.unrealized.itemCount).toBe(1);
+    expect(totals.realized.itemCount).toBe(0);
+    expect(totals.realized.totalReturn).toBe(0);
+    expect(totals.realized.totalReturnPct).toBeNull(); // 0/0
+  });
+
+  it('empty map has zero counts in both buckets', () => {
+    const totals = computePortfolioTotals(new Map());
+    expect(totals.unrealized.itemCount).toBe(0);
+    expect(totals.realized.itemCount).toBe(0);
+    expect(totals.unrealized.totalReturnPct).toBeNull();
+    expect(totals.realized.totalReturnPct).toBeNull();
+  });
+
+  it('all sold items → unrealized bucket is empty', () => {
+    const map = new Map<string, ItemReturnData>();
+    map.set('sold1', {
+      currentValueHome: 3000, totalInvestedHome: 2000, totalReturn: 1000,
+      totalReturnPct: 50.0, canDecompose: false,
+      assetReturn: null, fxImpact: null, expenseDrag: null,
+      inflationImpact: null, realReturn: null, realReturnPct: null, inflationAdjustedCost: null,
+      isRealized: true, annualizedReturnPct: 10.0, holdingDays: 730,
+    });
+    map.set('sold2', {
+      currentValueHome: 5000, totalInvestedHome: 4000, totalReturn: 1000,
+      totalReturnPct: 25.0, canDecompose: false,
+      assetReturn: null, fxImpact: null, expenseDrag: null,
+      inflationImpact: null, realReturn: null, realReturnPct: null, inflationAdjustedCost: null,
+      isRealized: true, annualizedReturnPct: 8.0, holdingDays: 500,
+    });
+
+    const totals = computePortfolioTotals(map);
+    expect(totals.unrealized.itemCount).toBe(0);
+    expect(totals.realized.itemCount).toBe(2);
+    expect(totals.realized.totalReturn).toBe(2000);
+    expect(totals.realized.totalReturnPct).toBeCloseTo(33.3, 1); // 2000/6000
+  });
+});

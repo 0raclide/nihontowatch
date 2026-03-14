@@ -17,6 +17,8 @@ import type { ItemDataFields } from './itemData';
 
 export type CollectionVisibility = 'private' | 'collectors' | 'dealers';
 
+export type HoldingStatus = 'owned' | 'sold' | 'consigned' | 'gifted' | 'lost';
+
 export interface CollectionItemRow extends ItemDataFields {
   // Identity
   id: string;             // UUID PK
@@ -28,6 +30,9 @@ export interface CollectionItemRow extends ItemDataFields {
   source_listing_id: number | null;
   personal_notes: string | null;
 
+  // Holding status (orthogonal to listing lifecycle status/is_sold/is_available)
+  holding_status: HoldingStatus;
+
   // Financial fields (collection-only, not shared with listings)
   purchase_price?: number | null;
   purchase_currency?: string | null;
@@ -36,6 +41,13 @@ export interface CollectionItemRow extends ItemDataFields {
   current_value?: number | null;
   current_currency?: string | null;
   location?: string | null;
+
+  // Sold fields (populated when holding_status = 'sold')
+  sold_price?: number | null;
+  sold_currency?: string | null;
+  sold_date?: string | null;
+  sold_to?: string | null;
+  sold_venue?: string | null;
 
   // Ordering
   sort_order: number;
