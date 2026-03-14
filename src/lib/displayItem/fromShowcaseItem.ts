@@ -79,6 +79,8 @@ export interface ShowcaseApiRow {
   kanto_hibisho?: KantoHibishoData | null;
   ai_curator_note_en?: string | null;
   ai_curator_note_ja?: string | null;
+  ai_curator_headline_en?: string | null;
+  ai_curator_headline_ja?: string | null;
   created_at: string;
   // Profile JOIN
   profiles?: {
@@ -171,6 +173,8 @@ export function showcaseItemToDisplayItem(item: ShowcaseApiRow): DisplayItem {
     setsumei_metadata: null,
     setsumei_processed_at: null,
     has_setsumei: !!(item.setsumei_text_en || item.setsumei_text_ja),
+    ai_curator_headline_en: item.ai_curator_headline_en ?? null,
+    ai_curator_headline_ja: item.ai_curator_headline_ja ?? null,
     yuhinkai_enrichment: null,
 
     browse: null,

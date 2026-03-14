@@ -3,10 +3,12 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useTheme, THEMES, type ThemeName } from '@/contexts/ThemeContext';
 import { useLocale } from '@/i18n/LocaleContext';
+import { useCardStyle, type CardStyle } from '@/hooks/useCardStyle';
 
-export function ThemeSwitcher() {
+export function ThemeSwitcher({ isAdmin = false }: { isAdmin?: boolean }) {
   const { activeTheme, themeSetting, setTheme, themes } = useTheme();
   const { t } = useLocale();
+  const { cardStyle, setCardStyle } = useCardStyle();
   const [isOpen, setIsOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -212,6 +214,49 @@ export function ThemeSwitcher() {
               </button>
             );
           })}
+
+          {/* Card Style section — admin only for now */}
+          {isAdmin && (
+            <>
+              <div className="h-px bg-border mx-3 my-1" />
+              <div className="px-3 py-1.5">
+                <span className="text-[10px] uppercase tracking-widest text-muted font-semibold">
+                  {t('cardStyle.label')}
+                </span>
+              </div>
+
+              {([
+                { key: 'standard' as CardStyle, labelKey: 'cardStyle.standard', descKey: 'cardStyle.standardDesc', icon: '▫' },
+                { key: 'collector' as CardStyle, labelKey: 'cardStyle.collector', descKey: 'cardStyle.collectorDesc', icon: '◆' },
+              ]).map(({ key, labelKey, descKey, icon }) => {
+                const isSelected = cardStyle === key;
+                return (
+                  <button
+                    key={key}
+                    onClick={() => { setCardStyle(key); setIsOpen(false); buttonRef.current?.focus(); }}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-hover transition-colors ${
+                      isSelected ? 'bg-hover' : ''
+                    }`}
+                    role="option"
+                    aria-selected={isSelected}
+                  >
+                    <div className="w-6 h-6 flex items-center justify-center text-muted text-sm" aria-hidden="true">
+                      {icon}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-ink">{t(labelKey)}</div>
+                      <div className="text-xs text-muted truncate">{t(descKey)}</div>
+                    </div>
+                    {isSelected && (
+                      <svg className="w-4 h-4 text-gold flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                    )}
+                  </button>
+                );
+              })}
+            </>
+          )}
         </div>
       )}
     </div>

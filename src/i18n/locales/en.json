@@ -1880,5 +1880,11 @@
   "theme.selectorLoading": "Theme selector loading",
   "theme.selectTheme": "Select theme",
   "theme.options": "Theme options",
-  "theme.followOS": "Follow OS preference"
+  "theme.followOS": "Follow OS preference",
+
+  "cardStyle.label": "Card Style",
+  "cardStyle.standard": "Standard",
+  "cardStyle.standardDesc": "Clean, density-focused cards",
+  "cardStyle.collector": "Collector",
+  "cardStyle.collectorDesc": "Framed cards with curator notes"
 }

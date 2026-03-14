@@ -362,7 +362,7 @@ function HeaderContent({ logoOverride }: { logoOverride?: string }) {
               <FeedbackButton />
               <NotificationBell />
               <div className="h-3 w-px bg-border" />
-              <ThemeSwitcher />
+              <ThemeSwitcher isAdmin={isAdmin} />
               <LocaleSwitcher />
               {/* Vault pill (gold) */}
               {user && canAccess('collection_access') && (

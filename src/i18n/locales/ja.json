@@ -1880,5 +1880,11 @@
   "theme.selectorLoading": "テーマ選択読み込み中",
   "theme.selectTheme": "テーマを選択",
   "theme.options": "テーマオプション",
-  "theme.followOS": "OSの設定に従う"
+  "theme.followOS": "OSの設定に従う",
+
+  "cardStyle.label": "カードスタイル",
+  "cardStyle.standard": "スタンダード",
+  "cardStyle.standardDesc": "シンプルで情報重視のカード",
+  "cardStyle.collector": "コレクター",
+  "cardStyle.collectorDesc": "学芸員ノート付き額装カード"
 }

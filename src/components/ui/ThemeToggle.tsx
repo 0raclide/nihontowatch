@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useTheme, THEMES, type ThemeName } from '@/contexts/ThemeContext';
+import { useCardStyle, type CardStyle } from '@/hooks/useCardStyle';
+import { useLocale } from '@/i18n/LocaleContext';
 
 /**
  * ThemeToggle - Cycles through available themes
@@ -72,8 +74,10 @@ export function ThemeToggle() {
  * ThemeSelector - Shows all themes in a list format
  * Good for mobile nav drawers where you want to show all options inline.
  */
-export function ThemeSelector() {
+export function ThemeSelector({ isAdmin = false }: { isAdmin?: boolean }) {
   const { themeSetting, activeTheme, setTheme } = useTheme();
+  const { cardStyle, setCardStyle } = useCardStyle();
+  const { t } = useLocale();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -143,6 +147,44 @@ export function ThemeSelector() {
           </button>
         );
       })}
+
+      {/* Card Style section — admin only for now */}
+      {isAdmin && (
+        <>
+          <div className="h-px bg-border my-2" />
+          <div className="px-3 py-1">
+            <span className="text-[10px] uppercase tracking-widest text-muted font-semibold">
+              {t('cardStyle.label')}
+            </span>
+          </div>
+
+          {([
+            { key: 'standard' as CardStyle, labelKey: 'cardStyle.standard', icon: '▫' },
+            { key: 'collector' as CardStyle, labelKey: 'cardStyle.collector', icon: '◆' },
+          ]).map(({ key, labelKey, icon }) => {
+            const isSelected = cardStyle === key;
+            return (
+              <button
+                key={key}
+                onClick={() => setCardStyle(key)}
+                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
+                  isSelected ? 'bg-accent/10 text-accent' : 'hover:bg-hover text-text-secondary'
+                }`}
+              >
+                <div className="w-5 h-5 flex items-center justify-center text-muted text-xs" aria-hidden="true">
+                  {icon}
+                </div>
+                <span className="text-sm">{t(labelKey)}</span>
+                {isSelected && (
+                  <svg className="w-4 h-4 ml-auto text-accent" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                )}
+              </button>
+            );
+          })}
+        </>
+      )}
     </div>
   );
 }

@@ -310,6 +310,8 @@ export async function GET(request: NextRequest) {
         thumbnail_url,
         source,
         video_count,
+        ai_curator_headline_en,
+        ai_curator_headline_ja,
         dealers:dealers!inner(id, name, name_ja, domain, earliest_listing_at),
         listing_yuhinkai_enrichment(
           setsumei_en,

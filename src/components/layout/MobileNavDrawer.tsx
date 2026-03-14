@@ -195,7 +195,7 @@ export function MobileNavDrawer() {
             <span className="text-[11px] uppercase tracking-[0.15em] text-text-muted mb-2 block">
               {t('theme.label')}
             </span>
-            <ThemeSelector />
+            <ThemeSelector isAdmin={isAdmin} />
           </div>
 
           <div className="h-px bg-border/50 my-4" />

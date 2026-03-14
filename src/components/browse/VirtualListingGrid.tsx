@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useMemo, useState } from 'react';
 import { ListingCard } from './ListingCard';
+import { CollectorCard } from './CollectorCard';
+import { useCardStyle } from '@/hooks/useCardStyle';
 import { useAdaptiveVirtualScroll } from '@/hooks/useAdaptiveVirtualScroll';
 import { useQuickViewOptional } from '@/contexts/QuickViewContext';
 import { useLocale } from '@/i18n/LocaleContext';
@@ -227,8 +229,11 @@ export function VirtualListingGrid({
 }: VirtualListingGridProps) {
   const quickView = useQuickViewOptional();
   const { t, locale } = useLocale();
+  const { cardStyle } = useCardStyle();
   // Use prop override if provided, otherwise fall back to env var check
   const smartCropEnabled = smartCropEnabledProp ?? isSmartCropActive();
+  // Collector card falls back to standard on mobile 2-col grid (too dense for framed cards)
+  const useCollectorCard = cardStyle === 'collector' && mobileView !== 'grid';
 
   // Map incoming API listings to DisplayItem for ListingCard consumption
   // When preMappedItems is provided (e.g. collection items), skip the mapping
@@ -379,25 +384,28 @@ export function VirtualListingGrid({
         '--card-intrinsic-height': `${MOBILE_CARD_HEIGHTS[mobileView]}px`,
       } as React.CSSProperties : undefined}
     >
-      {visibleItems.map((item, idx) => (
-        <ListingCard
-          key={item.id}
-          listing={item}
-          currency={currency}
-          exchangeRates={exchangeRates}
-          priority={startIndex + idx < PRIORITY_COUNT}
-          gridPosition={startIndex + idx}
-          searchId={searchId}
-          isAdmin={isAdmin}
-          mobileView={mobileView}
-          focalPosition={
-            smartCropEnabled && !item.thumbnail_url && item.focal_x != null && item.focal_y != null
-              ? `${item.focal_x}% ${item.focal_y}%`
-              : undefined
-          }
-          onClick={onCardClick}
-        />
-      ))}
+      {visibleItems.map((item, idx) => {
+        const CardComponent = useCollectorCard ? CollectorCard : ListingCard;
+        return (
+          <CardComponent
+            key={item.id}
+            listing={item}
+            currency={currency}
+            exchangeRates={exchangeRates}
+            priority={startIndex + idx < PRIORITY_COUNT}
+            gridPosition={startIndex + idx}
+            searchId={searchId}
+            isAdmin={isAdmin}
+            mobileView={mobileView}
+            focalPosition={
+              smartCropEnabled && !item.thumbnail_url && item.focal_x != null && item.focal_y != null
+                ? `${item.focal_x}% ${item.focal_y}%`
+                : undefined
+            }
+            onClick={onCardClick}
+          />
+        );
+      })}
       {appendSlot}
     </div>
   );
