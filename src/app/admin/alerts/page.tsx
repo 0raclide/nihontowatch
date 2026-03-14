@@ -35,10 +35,13 @@ interface AlertHistoryRecord {
   id?: number;
   alert_id?: string | number;
   triggered_at: string;
-  delivery_status: 'pending' | 'sent' | 'failed';
+  delivery_status: 'pending' | 'sent' | 'failed' | 'abandoned';
   delivery_method: 'email' | 'push';
   error_message?: string | null;
   match_count?: number;
+  retry_count?: number;
+  retry_after?: string | null;
+  error_category?: 'transient' | 'permanent' | null;
 }
 
 interface AlertsResponse {
@@ -46,6 +49,11 @@ interface AlertsResponse {
   total: number;
   page: number;
   totalPages: number;
+  circuitBreaker?: {
+    open: boolean;
+    tripped_at?: string;
+    reason?: string;
+  };
 }
 
 const ALERT_TYPE_OPTIONS = [
@@ -76,13 +84,15 @@ const ALERT_TYPE_COLORS: Record<string, string> = {
 const STATUS_LABELS: Record<string, string> = {
   pending: 'Pending',
   sent: 'Sent',
-  failed: 'Failed',
+  failed: 'Retrying',
+  abandoned: 'Abandoned',
 };
 
 const STATUS_COLORS: Record<string, string> = {
   pending: 'bg-yellow-500/10 text-yellow-600',
   sent: 'bg-green-500/10 text-green-600',
-  failed: 'bg-red-500/10 text-red-600',
+  failed: 'bg-orange-500/10 text-orange-600',
+  abandoned: 'bg-red-500/10 text-red-600',
 };
 
 function formatDateTime(dateString: string) {
@@ -159,6 +169,7 @@ export default function AdminAlertsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedAlert, setExpandedAlert] = useState<string | number | null>(null);
+  const [circuitBreaker, setCircuitBreaker] = useState<AlertsResponse['circuitBreaker']>(undefined);
 
   // Filters - default to new_listing
   const [typeFilter, setTypeFilter] = useState<string>('new_listing');
@@ -185,6 +196,7 @@ export default function AdminAlertsPage() {
       setAlerts(data.alerts || []);
       setTotal(data.total || 0);
       setTotalPages(data.totalPages || 0);
+      setCircuitBreaker(data.circuitBreaker);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -269,6 +281,24 @@ export default function AdminAlertsPage() {
           )}
         </div>
       </div>
+
+      {/* Circuit Breaker Banner */}
+      {circuitBreaker?.open && (
+        <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4">
+          <div className="flex items-center gap-2">
+            <span className="text-amber-600 text-lg">&#9888;</span>
+            <div>
+              <p className="font-medium text-amber-700">Email Circuit Breaker Open</p>
+              <p className="text-sm text-amber-600 mt-0.5">
+                Email sends are paused due to high failure rate. {circuitBreaker.reason}
+                {circuitBreaker.tripped_at && (
+                  <> Tripped at {formatDateTime(circuitBreaker.tripped_at)}. Auto-resets after 30 minutes.</>
+                )}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Error State */}
       {error && (
@@ -428,6 +458,20 @@ export default function AdminAlertsPage() {
                                         {record.match_count} match{record.match_count !== 1 ? 'es' : ''}
                                       </span>
                                     )}
+                                    {record.delivery_status === 'failed' && record.retry_count !== undefined && record.retry_after && (
+                                      <span className="text-xs text-orange-600">
+                                        Retry {record.retry_count}/5 — next: {formatDateTime(record.retry_after)}
+                                      </span>
+                                    )}
+                                    {record.error_category && (
+                                      <span className={`text-xs px-1.5 py-0.5 rounded ${
+                                        record.error_category === 'permanent'
+                                          ? 'bg-red-500/10 text-red-600'
+                                          : 'bg-orange-500/10 text-orange-600'
+                                      }`}>
+                                        {record.error_category}
+                                      </span>
+                                    )}
                                     {record.error_message && (
                                       <span className="text-error text-xs">{record.error_message}</span>
                                     )}
@@ -532,6 +576,11 @@ export default function AdminAlertsPage() {
                           </span>
                           <span className="text-muted capitalize">{record.delivery_method}</span>
                           <span className="text-muted">{formatDateTime(record.triggered_at)}</span>
+                          {record.delivery_status === 'failed' && record.retry_count !== undefined && record.retry_after && (
+                            <span className="text-orange-600 text-xs w-full">
+                              Retry {record.retry_count}/5 — next: {formatDateTime(record.retry_after)}
+                            </span>
+                          )}
                           {record.error_message && (
                             <span className="text-error text-xs w-full">{record.error_message}</span>
                           )}

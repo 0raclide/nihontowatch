@@ -310,16 +310,22 @@ export interface Database {
           id: string;
           saved_search_id: string;
           matched_listing_ids: number[];
-          status: 'pending' | 'sent' | 'failed';
+          status: 'pending' | 'sent' | 'failed' | 'abandoned';
           error_message: string | null;
           created_at: string;
           sent_at: string | null;
+          retry_count: number;
+          retry_after: string | null;
+          error_category: 'transient' | 'permanent' | null;
         };
         Insert: {
           saved_search_id: string;
           matched_listing_ids: number[];
-          status?: 'pending' | 'sent' | 'failed';
+          status?: 'pending' | 'sent' | 'failed' | 'abandoned';
           error_message?: string | null;
+          retry_count?: number;
+          retry_after?: string | null;
+          error_category?: 'transient' | 'permanent' | null;
         };
         Update: Partial<Omit<Database['public']['Tables']['saved_search_notifications']['Row'], 'id' | 'created_at'>>;
       };
@@ -689,7 +695,7 @@ export interface Database {
       delivery_status: 'pending' | 'sent' | 'failed';
       activity_event_type: 'page_view' | 'listing_view' | 'search' | 'filter_change' | 'favorite_add' | 'favorite_remove' | 'alert_create' | 'alert_delete' | 'external_link_click' | 'viewport_dwell' | 'quickview_open' | 'inquiry_copy' | 'inquiry_mailto_click';
       notification_frequency: 'instant' | 'daily' | 'none';
-      saved_search_notification_status: 'pending' | 'sent' | 'failed';
+      saved_search_notification_status: 'pending' | 'sent' | 'failed' | 'abandoned';
     };
   };
 }

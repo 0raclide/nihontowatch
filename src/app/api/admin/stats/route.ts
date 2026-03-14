@@ -8,6 +8,7 @@ import {
   apiServerError,
 } from '@/lib/api/responses';
 import { getAdminUserIds, fetchAllRows } from '@/app/api/admin/analytics/engagement/_lib/utils';
+import { isCircuitBreakerOpen } from '@/lib/email/circuitBreaker';
 
 export const dynamic = 'force-dynamic';
 
@@ -37,6 +38,13 @@ type AlertRecord = {
 type AlertHistoryRecord = {
   alert_id: number | string;
   triggered_at: string;
+  delivery_status: 'pending' | 'sent' | 'failed' | 'abandoned';
+  delivery_method: 'email' | 'push';
+  error_message?: string | null;
+  match_count?: number;
+  retry_count?: number;
+  retry_after?: string | null;
+  error_category?: 'transient' | 'permanent' | null;
   [key: string]: unknown;
 };
 
@@ -448,7 +456,7 @@ async function getSavedSearchAlerts(
       type NotificationHistoryTable = ReturnType<typeof supabase.from>;
       const { data: historyData } = await (supabase
         .from('saved_search_notifications') as unknown as NotificationHistoryTable)
-        .select('saved_search_id, status, created_at, sent_at, error_message, matched_listing_ids')
+        .select('saved_search_id, status, created_at, sent_at, error_message, matched_listing_ids, retry_count, retry_after, error_category')
         .in('saved_search_id', searchIds)
         .order('created_at', { ascending: false })
         .limit(100) as { data: Array<{
@@ -458,6 +466,9 @@ async function getSavedSearchAlerts(
           sent_at: string | null;
           error_message: string | null;
           matched_listing_ids: number[];
+          retry_count: number;
+          retry_after: string | null;
+          error_category: 'transient' | 'permanent' | null;
         }> | null };
 
       if (historyData) {
@@ -470,10 +481,13 @@ async function getSavedSearchAlerts(
           historyBySearch[searchId].push({
             alert_id: searchId,
             triggered_at: record.sent_at || record.created_at,
-            delivery_status: record.status as 'pending' | 'sent' | 'failed',
+            delivery_status: record.status as 'pending' | 'sent' | 'failed' | 'abandoned',
             delivery_method: 'email' as const,
             error_message: record.error_message,
             match_count: record.matched_listing_ids?.length || 0,
+            retry_count: record.retry_count,
+            retry_after: record.retry_after,
+            error_category: record.error_category,
           });
         }
       }
@@ -499,11 +513,16 @@ async function getSavedSearchAlerts(
     history: historyBySearch[search.id] || [],
   }));
 
+  // Check circuit breaker state for the admin UI banner
+  const serviceSupabase = createServiceClient();
+  const cbState = await isCircuitBreakerOpen(serviceSupabase);
+
   return NextResponse.json({
     alerts: formattedAlerts,
     total: count || 0,
     page,
     totalPages: Math.ceil((count || 0) / limit),
+    ...(cbState.open ? { circuitBreaker: cbState } : {}),
   });
 }
 

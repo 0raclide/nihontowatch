@@ -1032,7 +1032,7 @@ export interface UpdateSavedSearchInput {
   is_active?: boolean;
 }
 
-export type SavedSearchNotificationStatus = 'pending' | 'sent' | 'failed';
+export type SavedSearchNotificationStatus = 'pending' | 'sent' | 'failed' | 'abandoned';
 
 export interface SavedSearchNotification {
   id: string;
@@ -1042,6 +1042,9 @@ export interface SavedSearchNotification {
   error_message?: string;
   created_at: string;
   sent_at?: string;
+  retry_count: number;
+  retry_after?: string | null;
+  error_category?: 'transient' | 'permanent' | null;
 }
 
 /**
