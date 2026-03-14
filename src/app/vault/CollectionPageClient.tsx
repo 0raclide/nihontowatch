@@ -432,26 +432,34 @@ export function CollectionPageClient() {
   }, []);
 
   // Deaccession handler — from table pill or QuickView button
+  // DisplayItem.id is item_uuid for collection items; the API needs the numeric DB id
   const handleDeaccession = useCallback((item: DisplayItem) => {
-    setDeaccessionTarget({ itemId: String(item.id), itemTitle: item.title || '' });
-  }, []);
+    const dbItem = items.find(i => i.item_uuid === String(item.id));
+    const dbId = dbItem ? String(dbItem.id) : String(item.id);
+    setDeaccessionTarget({ itemId: dbId, itemTitle: item.title || '' });
+  }, [items]);
 
   // Re-accession handler — from table pill click on consigned/gifted/lost items
   const handleReaccession = useCallback((item: DisplayItem) => {
-    setReaccessionTarget({ itemId: String(item.id) });
-  }, []);
+    const dbItem = items.find(i => i.item_uuid === String(item.id));
+    const dbId = dbItem ? String(dbItem.id) : String(item.id);
+    setReaccessionTarget({ itemId: dbId });
+  }, [items]);
 
   // Listen for deaccession events dispatched from QuickView
+  // QuickView sends item_uuid; resolve to numeric DB id for the PATCH API
   useEffect(() => {
     const handler = (e: Event) => {
       const detail = (e as CustomEvent).detail;
       if (detail?.itemId) {
-        setDeaccessionTarget({ itemId: detail.itemId, itemTitle: detail.itemTitle || '' });
+        const dbItem = items.find(i => i.item_uuid === detail.itemId);
+        const dbId = dbItem ? String(dbItem.id) : detail.itemId;
+        setDeaccessionTarget({ itemId: dbId, itemTitle: detail.itemTitle || '' });
       }
     };
     window.addEventListener('vault-open-deaccession', handler);
     return () => window.removeEventListener('vault-open-deaccession', handler);
-  }, []);
+  }, [items]);
 
   // After deaccession/re-accession success, refresh the list
   const handleDeaccessionSuccess = useCallback(() => {
