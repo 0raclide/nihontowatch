@@ -135,7 +135,11 @@ export function VisibilityBadge({ collectionItem }: VisibilityBadgeProps) {
       if (!res.ok) {
         setVisibility(prev);
       } else {
-        // Notify parent to refetch so cards reflect the new visibility
+        // Notify vault grid directly so cards reflect the new visibility immediately
+        window.dispatchEvent(new CustomEvent('collection-item-updated', {
+          detail: { item_uuid: collectionItem.item_uuid, visibility: newVisibility },
+        }));
+        // Also trigger full refetch for facets/counts
         onCollectionSaved?.();
       }
     } catch {
