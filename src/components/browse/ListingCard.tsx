@@ -3,7 +3,6 @@
 import Image from 'next/image';
 import { useState, useCallback, useEffect, useRef, useMemo, memo } from 'react';
 import { FavoriteButton } from '@/components/favorites/FavoriteButton';
-import { SetsumeiZufuBadge } from '@/components/ui/SetsumeiZufuBadge';
 import { ArtisanTooltip } from '@/components/artisan/ArtisanTooltip';
 import { useActivityOptional } from '@/components/activity/ActivityProvider';
 import { useQuickViewOptional } from '@/contexts/QuickViewContext';
@@ -12,7 +11,6 @@ import { getAllImages, getCachedValidation, isRenderFailed, setRenderFailed, dea
 import { getHeroImageIndex } from '@/lib/images/classification';
 import { shouldShowNewBadge } from '@/lib/newListing';
 import { isTrialModeActive } from '@/types/subscription';
-import { isSetsumeiEligibleCert } from '@/types';
 import { useImagePreloader } from '@/hooks/useImagePreloader';
 import { getValidatedCertInfo } from '@/lib/cert/validation';
 import { useLocale } from '@/i18n/LocaleContext';
@@ -341,35 +339,6 @@ function formatPrice(
   return getCurrencyFormatter(targetCurrency).format(Math.round(converted));
 }
 
-
-/**
- * Check if a listing has English setsumei translation available.
- * Prefers the browse API's precomputed `has_setsumei` boolean when available.
- * Falls back to full check for detail-page data or QuickView context merges.
- */
-function hasSetsumeiTranslation(listing: DisplayItem): boolean {
-  // Fast path: browse API pre-computes this
-  if (listing.has_setsumei != null) return !!listing.has_setsumei;
-
-  // Legacy path: full listing data (detail page, QuickView after merge)
-  if (!isSetsumeiEligibleCert(listing.cert_type)) return false;
-
-  if (listing.setsumei_text_en) return true;
-
-  // Check Yuhinkai enrichment (from QuickView context - single object)
-  const enrichment = listing.yuhinkai_enrichment;
-  if (enrichment?.setsumei_en) {
-    if (
-      enrichment.match_confidence === 'DEFINITIVE' &&
-      enrichment.connection_source === 'manual' &&
-      enrichment.verification_status === 'confirmed'
-    ) {
-      return true;
-    }
-  }
-
-  return false;
-}
 
 function cleanTitle(title: string | null, smith: string | null, maker: string | null, untitledLabel = 'Untitled'): string {
   if (!title) return untitledLabel;

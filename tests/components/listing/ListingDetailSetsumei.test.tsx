@@ -64,15 +64,6 @@ describe('ListingDetailClient Import Checks', () => {
     expect(content).not.toContain('hasVerifiedEnrichment');
   });
 
-  it('should import SetsumeiZufuBadge', async () => {
-    const fs = await import('fs');
-    const path = await import('path');
-    const filePath = path.join(process.cwd(), 'src/app/listing/[id]/ListingDetailClient.tsx');
-    const content = fs.readFileSync(filePath, 'utf-8');
-
-    expect(content).toContain('SetsumeiZufuBadge');
-  });
-
   it('should NOT import SetsumeiSection (inline removed; setsumei accessed via QuickView book icon only)', async () => {
     const fs = await import('fs');
     const path = await import('path');
@@ -84,18 +75,14 @@ describe('ListingDetailClient Import Checks', () => {
 });
 
 describe('ListingDetailClient Setsumei Logic', () => {
-  it('should show SetsumeiZufuBadge based on setsumei_text_en, not yuhinkai_enrichment', async () => {
+  it('should NOT render SetsumeiZufuBadge (feature deactivated by design)', async () => {
     const fs = await import('fs');
     const path = await import('path');
     const filePath = path.join(process.cwd(), 'src/app/listing/[id]/ListingDetailClient.tsx');
     const content = fs.readFileSync(filePath, 'utf-8');
 
-    // Badge should be conditional on setsumei_text_en
-    expect(content).toContain('listing.setsumei_text_en');
-    expect(content).toContain('<SetsumeiZufuBadge');
-
-    // Badge should NOT be conditional on yuhinkai_enrichment
-    expect(content).not.toMatch(/listing\.yuhinkai_enrichment\s*&&\s*\(\s*<.*Badge/);
+    // Badge rendering removed — feature deactivated
+    expect(content).not.toContain('<SetsumeiZufuBadge');
   });
 
   it('should not have inline SetsumeiSection (setsumei accessed via QuickView book icon only)', async () => {

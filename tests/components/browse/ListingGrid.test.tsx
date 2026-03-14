@@ -128,8 +128,8 @@ describe('ListingGrid Component', () => {
   it('shows empty state when no listings', () => {
     render(<ListingGrid {...defaultProps} listings={[]} />);
 
-    expect(screen.getByText('No items found')).toBeInTheDocument();
-    expect(screen.getByText('Try adjusting your filters to see more results')).toBeInTheDocument();
+    expect(screen.getByText('No matching items')).toBeInTheDocument();
+    expect(screen.getByText('Try broadening your filters or check back soon — new inventory is added regularly.')).toBeInTheDocument();
   });
 
   it('shows results count on desktop', () => {

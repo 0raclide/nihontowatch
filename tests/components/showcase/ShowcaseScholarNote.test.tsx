@@ -54,7 +54,7 @@ describe('ShowcaseScholarNote', () => {
       />
     );
     // Separator is a thin horizontal line div
-    const separator = container.querySelector('.w-16');
+    const separator = container.querySelector('.w-64');
     expect(separator).toBeTruthy();
   });
 
@@ -65,7 +65,7 @@ describe('ShowcaseScholarNote', () => {
         noteJa={null}
       />
     );
-    const separator = container.querySelector('.w-16');
+    const separator = container.querySelector('.w-64');
     expect(separator).toBeNull();
   });
 

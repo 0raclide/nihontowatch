@@ -474,148 +474,15 @@ describe('ListingCard Component', () => {
     });
   });
 
-  describe('Setsumei badge', () => {
-    it('shows Zufu badge when listing has setsumei_text_en', () => {
+  describe('Setsumei badge (removed by design)', () => {
+    it('does NOT show Zufu badge (feature deactivated)', () => {
       const listingWithSetsumei = {
         ...mockListing,
         setsumei_text_en: '## Juyo-Token, 45th Session\n\nThis is a test setsumei translation.',
+        has_setsumei: true,
       };
       render(<ListingCard {...defaultProps} listing={listingWithSetsumei} />);
 
-      expect(screen.getByTestId('setsumei-zufu-badge')).toBeInTheDocument();
-    });
-
-    it('does NOT show Zufu badge when setsumei_text_en is null', () => {
-      const listingNoSetsumei = {
-        ...mockListing,
-        setsumei_text_en: null,
-      };
-      render(<ListingCard {...defaultProps} listing={listingNoSetsumei} />);
-
-      expect(screen.queryByTestId('setsumei-zufu-badge')).not.toBeInTheDocument();
-    });
-
-    it('does NOT show Zufu badge when setsumei_text_en is undefined', () => {
-      // mockListing doesn't have setsumei_text_en, so it's undefined
-      render(<ListingCard {...defaultProps} />);
-
-      expect(screen.queryByTestId('setsumei-zufu-badge')).not.toBeInTheDocument();
-    });
-
-    it('shows both certification and Zufu badges together', () => {
-      const certifiedWithSetsumei = {
-        ...mockListing,
-        cert_type: 'Juyo',
-        setsumei_text_en: '## Test setsumei',
-      };
-      render(<ListingCard {...defaultProps} listing={certifiedWithSetsumei} />);
-
-      expect(screen.getByText('Jūyō')).toBeInTheDocument();
-      expect(screen.getByTestId('setsumei-zufu-badge')).toBeInTheDocument();
-    });
-
-    it('does NOT show Zufu badge when cert_type is not Juyo/Tokuju (orphaned setsumei)', () => {
-      const noCertWithSetsumei = {
-        ...mockListing,
-        cert_type: null,
-        setsumei_text_en: '## Test setsumei',
-      };
-      render(<ListingCard {...defaultProps} listing={noCertWithSetsumei} />);
-
-      // Setsumei data without Juyo/Tokuju cert is orphaned — badge must NOT show
-      expect(screen.queryByText('Jūyō')).not.toBeInTheDocument();
-      expect(screen.queryByTestId('setsumei-zufu-badge')).not.toBeInTheDocument();
-    });
-
-    it('does NOT show Zufu badge when cert_type is Hozon with orphaned setsumei', () => {
-      const hozonWithSetsumei = {
-        ...mockListing,
-        cert_type: 'Hozon',
-        setsumei_text_en: '## Hallucinated setsumei from wrong cert assignment',
-      };
-      render(<ListingCard {...defaultProps} listing={hozonWithSetsumei} />);
-
-      // Hozon items never have setsumei — this is orphaned data
-      expect(screen.queryByTestId('setsumei-zufu-badge')).not.toBeInTheDocument();
-    });
-
-    // Browse API precomputed has_setsumei boolean tests
-    describe('with has_setsumei boolean (browse API format)', () => {
-      it('shows Zufu badge when has_setsumei is true', () => {
-        const listingWithSetsumei = {
-          ...mockListing,
-          has_setsumei: true,
-        };
-        render(<ListingCard {...defaultProps} listing={listingWithSetsumei} />);
-
-        expect(screen.getByTestId('setsumei-zufu-badge')).toBeInTheDocument();
-      });
-
-      it('does NOT show Zufu badge when has_setsumei is false', () => {
-        const listingWithoutSetsumei = {
-          ...mockListing,
-          has_setsumei: false,
-        };
-        render(<ListingCard {...defaultProps} listing={listingWithoutSetsumei} />);
-
-        expect(screen.queryByTestId('setsumei-zufu-badge')).not.toBeInTheDocument();
-      });
-    });
-
-    // Yuhinkai enrichment tests (legacy path — QuickView context merges)
-    describe('with Yuhinkai enrichment (legacy path)', () => {
-      it('shows Zufu badge when listing has yuhinkai_enrichment object (from QuickView context)', () => {
-        const listingWithEnrichmentObject = {
-          ...mockListing,
-          setsumei_text_en: null,
-          yuhinkai_enrichment: {
-            setsumei_en: '## Setsumei from optimistic update',
-            match_confidence: 'DEFINITIVE',
-            connection_source: 'manual',
-            verification_status: 'confirmed',
-          },
-        };
-        render(<ListingCard {...defaultProps} listing={listingWithEnrichmentObject} />);
-
-        expect(screen.getByTestId('setsumei-zufu-badge')).toBeInTheDocument();
-      });
-    });
-  });
-
-  describe('React.memo comparison for setsumei changes', () => {
-    /**
-     * These tests verify that ListingCard re-renders when setsumei-related
-     * data changes. This is critical because React.memo could prevent
-     * badge updates if the comparison function is too aggressive.
-     */
-
-    it('re-renders when has_setsumei changes from false to true', () => {
-      const listingWithout = { ...mockListing, has_setsumei: false };
-      const { rerender } = render(<ListingCard {...defaultProps} listing={listingWithout} />);
-
-      // Initially no badge
-      expect(screen.queryByTestId('setsumei-zufu-badge')).not.toBeInTheDocument();
-
-      // Update with has_setsumei = true
-      const listingWith = { ...mockListing, has_setsumei: true };
-      rerender(<ListingCard {...defaultProps} listing={listingWith} />);
-
-      // Badge should now appear
-      expect(screen.getByTestId('setsumei-zufu-badge')).toBeInTheDocument();
-    });
-
-    it('re-renders when has_setsumei changes from true to false (disconnect)', () => {
-      const listingWith = { ...mockListing, has_setsumei: true };
-      const { rerender } = render(<ListingCard {...defaultProps} listing={listingWith} />);
-
-      // Initially has badge
-      expect(screen.getByTestId('setsumei-zufu-badge')).toBeInTheDocument();
-
-      // Remove setsumei
-      const listingWithout = { ...mockListing, has_setsumei: false };
-      rerender(<ListingCard {...defaultProps} listing={listingWithout} />);
-
-      // Badge should be gone
       expect(screen.queryByTestId('setsumei-zufu-badge')).not.toBeInTheDocument();
     });
   });

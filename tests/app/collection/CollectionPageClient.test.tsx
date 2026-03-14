@@ -131,6 +131,12 @@ vi.mock('@/contexts/SubscriptionContext', () => ({
   }),
 }));
 
+vi.mock('@/contexts/MobileUIContext', () => ({
+  useMobileUI: () => ({
+    openNavDrawer: vi.fn(),
+  }),
+}));
+
 // ---------------------------------------------------------------------------
 // Mock ListingGrid — capture props
 // ---------------------------------------------------------------------------
