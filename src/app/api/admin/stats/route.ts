@@ -197,7 +197,7 @@ export async function GET(request: NextRequest) {
       .select('started_at, completed_at')
       .order('started_at', { ascending: false })
       .limit(1)
-      .single();
+      .single() as { data: { started_at: string; completed_at: string | null } | null };
 
     let pipelineHealth: { status: string; hoursSinceLastRun: number; message: string } = {
       status: 'healthy',
