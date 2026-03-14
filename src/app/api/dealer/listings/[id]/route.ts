@@ -3,6 +3,7 @@ import { verifyDealer } from '@/lib/dealer/auth';
 import { getArtisanEliteStats } from '@/lib/featured/scoring';
 import { sanitizeKoshirae } from '@/lib/dealer/sanitizeKoshirae';
 import { sanitizeSayagaki, sanitizeHakogaki, sanitizeProvenance, sanitizeKiwame, sanitizeKantoHibisho } from '@/lib/dealer/sanitizeSections';
+import { normalizeProvenance } from '@/lib/provenance/normalize';
 import { selectItemVideos } from '@/lib/supabase/itemVideos';
 import { videoProvider, isVideoProviderConfigured } from '@/lib/video/videoProvider';
 import { NextRequest, NextResponse } from 'next/server';
@@ -78,7 +79,7 @@ export async function GET(
     }
   }
 
-  return NextResponse.json({ ...listing, videos });
+  return NextResponse.json({ ...listing, provenance: normalizeProvenance(listing.provenance), videos });
 }
 
 // Fields that dealers are allowed to update

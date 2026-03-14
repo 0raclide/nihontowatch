@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import { sanitizeKoshirae } from '@/lib/dealer/sanitizeKoshirae';
 import { sanitizeSayagaki, sanitizeHakogaki, sanitizeProvenance, sanitizeKiwame, sanitizeKantoHibisho } from '@/lib/dealer/sanitizeSections';
+import { normalizeProvenance } from '@/lib/provenance/normalize';
 import {
   selectCollectionItemSingle,
   updateCollectionItem,
@@ -90,7 +91,7 @@ export async function GET(
       }
     }
 
-    return NextResponse.json({ ...item, videos });
+    return NextResponse.json({ ...item, provenance: normalizeProvenance(item.provenance), videos });
   } catch (error) {
     logger.logError('Collection item GET error', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

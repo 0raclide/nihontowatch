@@ -5,6 +5,7 @@ import { getArtisanTier } from '@/lib/artisan/tier';
 import { getAttributionName } from '@/lib/listing/attribution';
 import { isVideoProviderConfigured, videoProvider } from '@/lib/video/videoProvider';
 import { selectItemVideos } from '@/lib/supabase/itemVideos';
+import { normalizeProvenance } from '@/lib/provenance/normalize';
 import type { YuhinkaiEnrichment, SayagakiEntry, HakogakiEntry, KoshiraeData, ProvenanceData, KiwameEntry, KantoHibishoData } from '@/types';
 import type { ListingVideo } from '@/types/media';
 
@@ -468,7 +469,7 @@ export async function getListingDetail(
     sayagaki: typedListing.sayagaki,
     hakogaki: typedListing.hakogaki,
     koshirae: typedListing.koshirae,
-    provenance: typedListing.provenance,
+    provenance: normalizeProvenance(typedListing.provenance),
     kiwame: typedListing.kiwame,
     kanto_hibisho: typedListing.kanto_hibisho,
     research_notes: typedListing.research_notes ?? null,
