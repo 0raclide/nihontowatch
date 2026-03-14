@@ -2,6 +2,7 @@
 
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { isTrialModeActive } from '@/types/subscription';
+import { useLocale } from '@/i18n/LocaleContext';
 
 /**
  * Banner shown to free tier users indicating their data is delayed 7 days
@@ -10,6 +11,7 @@ import { isTrialModeActive } from '@/types/subscription';
  */
 export function DataDelayBanner() {
   const { isFree, showPaywall, isLoading } = useSubscription();
+  const { t } = useLocale();
 
   // Don't show during loading, for paid users, or during trial mode
   if (isLoading || !isFree || isTrialModeActive()) {
@@ -23,12 +25,12 @@ export function DataDelayBanner() {
           <div className="flex items-center gap-2">
             <ClockIcon className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
             <p className="text-amber-800 dark:text-amber-200">
-              <span className="font-medium">7-day delay:</span>{' '}
+              <span className="font-medium">{t('delay.label')}</span>{' '}
               <span className="hidden sm:inline">
-                Free members see listings after a 7-day window.
+                {t('delay.message')}
               </span>
               <span className="sm:hidden">
-                Listings delayed 7 days.
+                {t('delay.messageMobile')}
               </span>
             </p>
           </div>
@@ -36,7 +38,7 @@ export function DataDelayBanner() {
             onClick={() => showPaywall('fresh_data')}
             className="flex-shrink-0 text-amber-700 dark:text-amber-300 font-medium hover:text-amber-900 dark:hover:text-amber-100 transition-colors"
           >
-            See new listings first →
+            {t('delay.cta')}
           </button>
         </div>
       </div>

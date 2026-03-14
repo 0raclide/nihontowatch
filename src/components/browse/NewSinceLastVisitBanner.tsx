@@ -10,6 +10,7 @@ import {
   useShouldShowNewItemsBanner,
 } from '@/contexts/NewSinceLastVisitContext';
 import { NEW_SINCE_LAST_VISIT } from '@/lib/constants';
+import { useLocale } from '@/i18n/LocaleContext';
 
 /**
  * Banner shown to users indicating new items since their last visit.
@@ -26,6 +27,7 @@ export function NewSinceLastVisitBanner({ onViewNewItems }: NewSinceLastVisitBan
   const shouldShow = useShouldShowNewItemsBanner();
   const [showLoginModal, setShowLoginModal] = useState(false);
   const { openPreferences } = useConsent();
+  const { t } = useLocale();
 
   if (!shouldShow || isLoading) {
     return null;
@@ -41,10 +43,10 @@ export function NewSinceLastVisitBanner({ onViewNewItems }: NewSinceLastVisitBan
               <SparklesIcon className="w-4 h-4 text-purple-600 dark:text-purple-400 flex-shrink-0" />
               <p className="text-purple-800 dark:text-purple-200">
                 <span className="hidden sm:inline">
-                  <strong>Enable personalization</strong> to track new items, save currency preference, and more
+                  <strong>{t('banner.enablePersonalization')}</strong> {t('banner.enableDesc')}
                 </span>
                 <span className="sm:hidden">
-                  <strong>Enable personalization</strong> for cool features
+                  <strong>{t('banner.enablePersonalization')}</strong> {t('banner.enableDescMobile')}
                 </span>
               </p>
             </div>
@@ -53,11 +55,11 @@ export function NewSinceLastVisitBanner({ onViewNewItems }: NewSinceLastVisitBan
                 onClick={openPreferences}
                 className="flex-shrink-0 text-purple-700 dark:text-purple-300 font-medium hover:text-purple-900 dark:hover:text-purple-100 transition-colors"
               >
-                Enable
+                {t('banner.enable')}
               </button>
               <button
                 onClick={dismiss}
-                aria-label="Dismiss"
+                aria-label={t('common.dismiss')}
                 className="p-1 -mr-1 text-purple-400 hover:text-purple-600 dark:hover:text-purple-200 transition-colors"
               >
                 <XIcon className="w-4 h-4" />
@@ -80,10 +82,10 @@ export function NewSinceLastVisitBanner({ onViewNewItems }: NewSinceLastVisitBan
                 <SparklesIcon className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0" />
                 <p className="text-blue-800 dark:text-blue-200">
                   <span className="hidden sm:inline">
-                    Log in to track new items since your last visit
+                    {t('banner.loginTrack')}
                   </span>
                   <span className="sm:hidden">
-                    Log in to track new items
+                    {t('banner.loginTrackMobile')}
                   </span>
                 </p>
               </div>
@@ -92,11 +94,11 @@ export function NewSinceLastVisitBanner({ onViewNewItems }: NewSinceLastVisitBan
                   onClick={() => setShowLoginModal(true)}
                   className="flex-shrink-0 text-blue-700 dark:text-blue-300 font-medium hover:text-blue-900 dark:hover:text-blue-100 transition-colors"
                 >
-                  Log in
+                  {t('banner.login')}
                 </button>
                 <button
                   onClick={dismiss}
-                  aria-label="Dismiss"
+                  aria-label={t('common.dismiss')}
                   className="p-1 -mr-1 text-blue-400 hover:text-blue-600 dark:hover:text-blue-200 transition-colors"
                 >
                   <XIcon className="w-4 h-4" />
@@ -116,7 +118,7 @@ export function NewSinceLastVisitBanner({ onViewNewItems }: NewSinceLastVisitBan
   }
 
   // Logged-in user with new items
-  const daysDisplay = formatDaysSince(daysSince);
+  const daysDisplay = formatDaysSince(daysSince, t);
 
   return (
     <div className="bg-emerald-50 dark:bg-emerald-900/20 border-b border-emerald-200 dark:border-emerald-800/50">
@@ -125,9 +127,13 @@ export function NewSinceLastVisitBanner({ onViewNewItems }: NewSinceLastVisitBan
           <div className="flex items-center gap-2">
             <SparklesIcon className="w-4 h-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
             <p className="text-emerald-800 dark:text-emerald-200">
-              <span className="font-medium">{count?.toLocaleString()} new item{count !== 1 ? 's' : ''}</span>
+              <span className="font-medium">
+                {count !== 1
+                  ? t('banner.newItems', { count: count?.toLocaleString() ?? '0' })
+                  : t('banner.newItem', { count: '1' })}
+              </span>
               {daysDisplay && (
-                <span className="hidden sm:inline"> since your last visit {daysDisplay}</span>
+                <span className="hidden sm:inline"> {t('banner.sinceLastVisit', { time: daysDisplay })}</span>
               )}
             </p>
           </div>
@@ -141,11 +147,11 @@ export function NewSinceLastVisitBanner({ onViewNewItems }: NewSinceLastVisitBan
               }}
               className="flex-shrink-0 text-emerald-700 dark:text-emerald-300 font-medium hover:text-emerald-900 dark:hover:text-emerald-100 transition-colors"
             >
-              View new items
+              {t('banner.viewNewItems')}
             </button>
             <button
               onClick={dismiss}
-              aria-label="Dismiss"
+              aria-label={t('common.dismiss')}
               className="p-1 -mr-1 text-emerald-400 hover:text-emerald-600 dark:hover:text-emerald-200 transition-colors"
             >
               <XIcon className="w-4 h-4" />
@@ -160,22 +166,25 @@ export function NewSinceLastVisitBanner({ onViewNewItems }: NewSinceLastVisitBan
 /**
  * Format days since last visit for display
  */
-function formatDaysSince(daysSince: number | null): string | null {
+function formatDaysSince(
+  daysSince: number | null,
+  t: (key: string, params?: Record<string, string | number>) => string,
+): string | null {
   if (daysSince === null) return null;
 
   if (daysSince > NEW_SINCE_LAST_VISIT.MAX_DAYS_DISPLAY) {
-    return `${NEW_SINCE_LAST_VISIT.MAX_DAYS_DISPLAY}+ days ago`;
+    return t('banner.daysAgoPlus', { n: NEW_SINCE_LAST_VISIT.MAX_DAYS_DISPLAY });
   }
 
   if (daysSince === 0) {
-    return 'today';
+    return t('banner.today');
   }
 
   if (daysSince === 1) {
-    return 'yesterday';
+    return t('banner.yesterday');
   }
 
-  return `${daysSince} days ago`;
+  return t('banner.daysAgo', { n: daysSince });
 }
 
 // =============================================================================

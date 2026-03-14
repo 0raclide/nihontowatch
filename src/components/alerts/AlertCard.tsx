@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Image from 'next/image';
 import type { Alert } from '@/types';
 import { getImageUrl } from '@/lib/images';
+import { useLocale } from '@/i18n/LocaleContext';
 
 interface AlertCardProps {
   alert: Alert;
@@ -11,9 +12,13 @@ interface AlertCardProps {
   onDelete: (id: number) => Promise<void>;
 }
 
-// Format relative time
-function formatRelativeTime(isoDate: string | null): string {
-  if (!isoDate) return 'Never';
+// Format relative time using i18n
+function formatAlertRelativeTime(
+  isoDate: string | null,
+  t: (key: string, params?: Record<string, string | number>) => string,
+  locale: string,
+): string {
+  if (!isoDate) return t('alerts.never');
 
   const date = new Date(isoDate);
   const now = new Date();
@@ -22,12 +27,12 @@ function formatRelativeTime(isoDate: string | null): string {
   const diffHours = Math.floor(diffMins / 60);
   const diffDays = Math.floor(diffHours / 24);
 
-  if (diffMins < 1) return 'Just now';
-  if (diffMins < 60) return `${diffMins}m ago`;
-  if (diffHours < 24) return `${diffHours}h ago`;
-  if (diffDays === 1) return 'Yesterday';
-  if (diffDays < 7) return `${diffDays}d ago`;
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  if (diffMins < 1) return t('alerts.justNow');
+  if (diffMins < 60) return t('alerts.minutesAgo', { n: diffMins });
+  if (diffHours < 24) return t('alerts.hoursAgo', { n: diffHours });
+  if (diffDays === 1) return t('alerts.yesterdayLabel');
+  if (diffDays < 7) return t('alerts.daysAgo', { n: diffDays });
+  return date.toLocaleDateString(locale === 'ja' ? 'ja-JP' : 'en-US', { month: 'short', day: 'numeric' });
 }
 
 // Get alert type icon
@@ -54,21 +59,19 @@ function AlertTypeIcon({ type }: { type: Alert['alert_type'] }) {
   }
 }
 
-// Get alert type label
-function getAlertTypeLabel(type: Alert['alert_type']): string {
-  switch (type) {
-    case 'price_drop':
-      return 'Price Drop';
-    case 'new_listing':
-      return 'New Listing';
-    case 'back_in_stock':
-      return 'Back in Stock';
-  }
-}
+// Get alert type label key
+const ALERT_TYPE_KEYS: Record<Alert['alert_type'], string> = {
+  price_drop: 'alerts.typePriceDrop',
+  new_listing: 'alerts.typeNewListing',
+  back_in_stock: 'alerts.typeBackInStock',
+};
 
 // Format search criteria for display
-function formatSearchCriteria(criteria: Alert['search_criteria']): string {
-  if (!criteria) return 'All items';
+function formatSearchCriteria(
+  criteria: Alert['search_criteria'],
+  t: (key: string, params?: Record<string, string | number>) => string,
+): string {
+  if (!criteria) return t('alerts.allItems');
 
   const parts: string[] = [];
 
@@ -84,17 +87,18 @@ function formatSearchCriteria(criteria: Alert['search_criteria']): string {
     } else if (criteria.min_price) {
       parts.push(`¥${criteria.min_price.toLocaleString()}+`);
     } else if (criteria.max_price) {
-      parts.push(`Up to ¥${criteria.max_price.toLocaleString()}`);
+      parts.push(t('alerts.upTo', { price: criteria.max_price.toLocaleString() }));
     }
   }
 
-  return parts.length > 0 ? parts.join(' / ') : 'All items';
+  return parts.length > 0 ? parts.join(' / ') : t('alerts.allItems');
 }
 
 export function AlertCard({ alert, onToggle, onDelete }: AlertCardProps) {
   const [isToggling, setIsToggling] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const { t, locale } = useLocale();
 
   const handleToggle = async () => {
     setIsToggling(true);
@@ -136,7 +140,7 @@ export function AlertCard({ alert, onToggle, onDelete }: AlertCardProps) {
               : 'bg-gold/10 text-gold'
           }`}>
             <AlertTypeIcon type={alert.alert_type} />
-            {getAlertTypeLabel(alert.alert_type)}
+            {t(ALERT_TYPE_KEYS[alert.alert_type])}
           </div>
 
           {/* Toggle Switch */}
@@ -144,7 +148,7 @@ export function AlertCard({ alert, onToggle, onDelete }: AlertCardProps) {
             onClick={handleToggle}
             disabled={isToggling}
             className="relative flex-shrink-0"
-            aria-label={alert.is_active ? 'Disable alert' : 'Enable alert'}
+            aria-label={alert.is_active ? t('alerts.disable') : t('alerts.enable')}
           >
             <div className={`w-11 h-6 rounded-full transition-colors ${
               alert.is_active
@@ -166,7 +170,7 @@ export function AlertCard({ alert, onToggle, onDelete }: AlertCardProps) {
               {imageUrl ? (
                 <Image
                   src={imageUrl}
-                  alt={listing.title || 'Listing'}
+                  alt={listing.title || t('alerts.untitled')}
                   fill
                   className="object-cover"
                   sizes="64px"
@@ -183,11 +187,11 @@ export function AlertCard({ alert, onToggle, onDelete }: AlertCardProps) {
             {/* Listing Info */}
             <div className="flex-1 min-w-0">
               <h3 className="text-[14px] font-medium text-ink line-clamp-2">
-                {listing.title || 'Untitled'}
+                {listing.title || t('alerts.untitled')}
               </h3>
               {alert.alert_type === 'price_drop' && alert.target_price && (
                 <p className="text-[12px] text-muted mt-1">
-                  Target: {new Intl.NumberFormat('en-US', {
+                  Target: {new Intl.NumberFormat(locale === 'ja' ? 'ja-JP' : 'en-US', {
                     style: 'currency',
                     currency: listing.price_currency || 'JPY',
                     maximumFractionDigits: 0,
@@ -196,7 +200,7 @@ export function AlertCard({ alert, onToggle, onDelete }: AlertCardProps) {
               )}
               {listing.price_value && (
                 <p className="text-[12px] text-charcoal mt-1">
-                  Current: {new Intl.NumberFormat('en-US', {
+                  Current: {new Intl.NumberFormat(locale === 'ja' ? 'ja-JP' : 'en-US', {
                     style: 'currency',
                     currency: listing.price_currency || 'JPY',
                     maximumFractionDigits: 0,
@@ -208,11 +212,11 @@ export function AlertCard({ alert, onToggle, onDelete }: AlertCardProps) {
         ) : (
           <div>
             <p className="text-[14px] text-ink font-medium">
-              {formatSearchCriteria(alert.search_criteria)}
+              {formatSearchCriteria(alert.search_criteria, t)}
             </p>
             {alert.search_criteria?.dealer_id && (
               <p className="text-[12px] text-muted mt-1">
-                From specific dealer
+                {t('alerts.fromDealer')}
               </p>
             )}
           </div>
@@ -222,9 +226,9 @@ export function AlertCard({ alert, onToggle, onDelete }: AlertCardProps) {
         <div className="flex items-center justify-between mt-4 pt-3 border-t border-border/50">
           <div className="text-[11px] text-muted">
             {alert.last_triggered_at ? (
-              <span>Last triggered: {formatRelativeTime(alert.last_triggered_at)}</span>
+              <span>{t('alerts.lastTriggered', { time: formatAlertRelativeTime(alert.last_triggered_at, t, locale) })}</span>
             ) : (
-              <span>Created {formatRelativeTime(alert.created_at)}</span>
+              <span>{t('alerts.created', { time: formatAlertRelativeTime(alert.created_at, t, locale) })}</span>
             )}
           </div>
 
@@ -234,7 +238,7 @@ export function AlertCard({ alert, onToggle, onDelete }: AlertCardProps) {
               onClick={() => setShowDeleteConfirm(true)}
               className="text-[11px] text-muted hover:text-error transition-colors"
             >
-              Delete
+              {t('alerts.delete')}
             </button>
           ) : (
             <div className="flex items-center gap-2">
@@ -242,14 +246,14 @@ export function AlertCard({ alert, onToggle, onDelete }: AlertCardProps) {
                 onClick={() => setShowDeleteConfirm(false)}
                 className="text-[11px] text-muted hover:text-ink transition-colors"
               >
-                Cancel
+                {t('alerts.cancel')}
               </button>
               <button
                 onClick={handleDelete}
                 disabled={isDeleting}
                 className="text-[11px] text-error font-medium hover:underline disabled:opacity-50"
               >
-                {isDeleting ? 'Deleting...' : 'Confirm'}
+                {isDeleting ? t('alerts.deleting') : t('alerts.confirm')}
               </button>
             </div>
           )}

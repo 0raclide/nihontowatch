@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useQuickView } from '@/contexts/QuickViewContext';
+import { useLocale } from '@/i18n/LocaleContext';
 
 interface AlertContext {
   searchName: string;
@@ -29,6 +30,7 @@ export function AlertContextBanner() {
     hasPrevious,
   } = useQuickView();
   const [alertContext, setAlertContext] = useState<AlertContext | null>(null);
+  const { t } = useLocale();
 
   // Read alert context from sessionStorage on mount.
   // Only use it if the URL still has multi-listing params — prevents stale
@@ -83,7 +85,7 @@ export function AlertContextBanner() {
         {alertContext.searchName ? (
           <span className="text-ink/60 truncate">{alertContext.searchName}</span>
         ) : (
-          <span className="text-ink/60">Alert matches</span>
+          <span className="text-ink/60">{t('alertContext.alertMatches')}</span>
         )}
       </div>
 
@@ -100,8 +102,8 @@ export function AlertContextBanner() {
               ? 'text-ink/20 cursor-not-allowed'
               : 'text-ink/60 hover:text-ink hover:bg-gold/20 active:bg-gold/30'
           }`}
-          aria-label="Previous match"
-          title="Previous match (K / Left arrow)"
+          aria-label={t('alertContext.previous')}
+          title={t('alertContext.previousHint')}
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -109,7 +111,7 @@ export function AlertContextBanner() {
         </button>
 
         <span className="text-ink/70 tabular-nums text-[13px] font-medium min-w-[3.5rem] text-center select-none">
-          {currentIndex + 1} of {listings.length}
+          {currentIndex + 1} {t('alertContext.of')} {listings.length}
         </span>
 
         <button
@@ -123,8 +125,8 @@ export function AlertContextBanner() {
               ? 'text-ink/20 cursor-not-allowed'
               : 'text-ink/60 hover:text-ink hover:bg-gold/20 active:bg-gold/30'
           }`}
-          aria-label="Next match"
-          title="Next match (J / Right arrow)"
+          aria-label={t('alertContext.next')}
+          title={t('alertContext.nextHint')}
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />

@@ -13,6 +13,7 @@ import {
   getPaywallConfig,
 } from '@/types/subscription';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
+import { useLocale } from '@/i18n/LocaleContext';
 
 // Animation timing in ms
 const ANIMATION_TIMING = {
@@ -106,6 +107,7 @@ function PaywallModalContent({
 }: PaywallModalContentProps) {
   const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>('annual');
   const [isLoading, setIsLoading] = useState(false);
+  const { t } = useLocale();
 
   // Ensure we have a valid paid tier with pricing
   const tier: Exclude<SubscriptionTier, 'free'> =
@@ -158,7 +160,7 @@ function PaywallModalContent({
       {/* Required Tier Badge */}
       <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface border border-border mb-6">
         <span className="text-xs font-medium text-muted uppercase tracking-wider">
-          Requires
+          {t('paywall.requires')}
         </span>
         <span className="text-sm font-semibold text-ink">
           {tierInfo.name}
@@ -176,7 +178,7 @@ function PaywallModalContent({
                 : 'bg-surface text-secondary hover:bg-border'
             }`}
           >
-            Monthly
+            {t('paywall.monthly')}
           </button>
           <button
             type="button"
@@ -187,9 +189,9 @@ function PaywallModalContent({
                 : 'bg-surface text-secondary hover:bg-border'
             }`}
           >
-            Annual
+            {t('paywall.annual')}
             <span className="ml-1.5 text-xs opacity-75">
-              (Save {pricing.annualSavings}%)
+              {t('paywall.annualSave', { n: pricing.annualSavings })}
             </span>
           </button>
       </div>
@@ -200,11 +202,11 @@ function PaywallModalContent({
           <span className="text-3xl font-bold text-ink">
             ${monthlyEquivalent}
           </span>
-          <span className="text-secondary text-sm">/mo</span>
+          <span className="text-secondary text-sm">{t('paywall.perMonth')}</span>
         </div>
         {billingPeriod === 'annual' && (
           <p className="text-xs text-muted mt-1">
-            Billed ${price}/year
+            {t('paywall.billedYearly', { price: String(price) })}
           </p>
         )}
       </div>
@@ -229,10 +231,10 @@ function PaywallModalContent({
         className="w-full max-w-xs px-6 py-3 rounded-lg bg-ink text-cream font-medium tracking-wide hover:bg-ink/90 focus:outline-none focus:ring-2 focus:ring-accent/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98]"
       >
         {isLoading
-          ? 'Redirecting...'
+          ? t('paywall.redirecting')
           : isLoggedIn
-          ? `Upgrade to ${tierInfo.name}`
-          : 'Sign in to upgrade'}
+          ? t('paywall.upgrade', { name: tierInfo.name })
+          : t('paywall.signInUpgrade')}
       </button>
 
       {/* Dismiss link */}
@@ -241,12 +243,12 @@ function PaywallModalContent({
         onClick={onDismiss}
         className="mt-6 text-muted text-sm hover:text-secondary transition-colors focus:outline-none focus:underline"
       >
-        Maybe later
+        {t('paywall.maybeLater')}
       </button>
 
       {/* Trust signals */}
       <p className="mt-4 text-muted text-xs">
-        Cancel anytime. No hidden fees.
+        {t('paywall.trustSignal')}
       </p>
     </div>
   );
@@ -277,6 +279,8 @@ function DesktopModal({
   isLoggedIn,
   onSignIn,
 }: DesktopModalProps) {
+  const { t } = useLocale();
+
   return (
     <div
       className="fixed inset-0 z-[60] flex items-center justify-center p-4"
@@ -305,7 +309,7 @@ function DesktopModal({
           type="button"
           onClick={onDismiss}
           className="absolute top-4 right-4 p-2 text-muted hover:text-ink transition-colors rounded-full hover:bg-surface dark:hover:bg-border focus:outline-none focus:ring-2 focus:ring-accent/30"
-          aria-label="Close"
+          aria-label={t('paywall.close')}
         >
           <CloseIcon className="w-5 h-5" />
         </button>
@@ -352,6 +356,7 @@ function MobileSheet({
   const sheetRef = useRef<HTMLDivElement>(null);
   const startY = useRef<number>(0);
   const currentY = useRef<number>(0);
+  const { t } = useLocale();
 
   const handleTouchStart = (e: React.TouchEvent) => {
     startY.current = e.touches[0].clientY;
@@ -418,7 +423,7 @@ function MobileSheet({
           type="button"
           onClick={onDismiss}
           className="absolute top-3 right-3 p-2 text-muted hover:text-ink transition-colors rounded-full"
-          aria-label="Close"
+          aria-label={t('paywall.close')}
         >
           <CloseIcon className="w-5 h-5" />
         </button>
@@ -450,6 +455,7 @@ export function PaywallModal() {
   const [isClosing, setIsClosing] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const { t } = useLocale();
 
   const isLoggedIn = !!user;
 
@@ -507,7 +513,7 @@ export function PaywallModal() {
   const requiredTier = paywallInfo?.requiredTier || 'inner_circle';
   const config = getPaywallConfig(requiredTier);
   const title = config.name;
-  const message = `Unlock ${config.name} features`;
+  const message = t('paywall.unlock', { name: config.name });
 
   // Detect mobile vs desktop
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 1024;
