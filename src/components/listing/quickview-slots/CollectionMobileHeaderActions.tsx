@@ -1,10 +1,16 @@
 'use client';
 
+import { useLocale } from '@/i18n/LocaleContext';
+
 interface CollectionMobileHeaderActionsProps {
   onEditCollection?: () => void;
+  onDeaccession?: () => void;
+  holdingStatus?: string;
 }
 
-export function CollectionMobileHeaderActions({ onEditCollection }: CollectionMobileHeaderActionsProps) {
+export function CollectionMobileHeaderActions({ onEditCollection, onDeaccession, holdingStatus }: CollectionMobileHeaderActionsProps) {
+  const { t } = useLocale();
+
   return (
     <>
       {onEditCollection && (
@@ -22,6 +28,23 @@ export function CollectionMobileHeaderActions({ onEditCollection }: CollectionMo
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
               d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" />
+          </svg>
+        </button>
+      )}
+      {onDeaccession && holdingStatus === 'owned' && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onDeaccession();
+          }}
+          onTouchStart={(e) => e.stopPropagation()}
+          onTouchEnd={(e) => e.stopPropagation()}
+          className="w-8 h-8 flex items-center justify-center rounded-full text-muted hover:text-ink hover:bg-border/50 transition-all duration-200"
+          aria-label={t('vault.deaccession.title')}
+          title={t('vault.deaccession.title')}
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
           </svg>
         </button>
       )}

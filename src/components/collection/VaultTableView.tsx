@@ -26,6 +26,8 @@ interface VaultTableViewProps {
   homeCurrency: string;
   returnMap: Map<string, ItemReturnData>;
   isLoadingReturns: boolean;
+  onDeaccession?: (item: DisplayItem) => void;
+  onReaccession?: (item: DisplayItem) => void;
 }
 
 type SortKey = 'title' | 'type' | 'cert' | 'attribution' | 'holding_status' | 'purchase_date' | 'paid' | 'current_value' | 'invested' | 'return' | 'location';
@@ -45,6 +47,8 @@ export function VaultTableView({
   homeCurrency,
   returnMap,
   isLoadingReturns,
+  onDeaccession,
+  onReaccession,
 }: VaultTableViewProps) {
   const { t, locale } = useLocale();
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
@@ -271,6 +275,8 @@ export function VaultTableView({
                   returnData={returnMap.get(itemId)}
                   homeCurrency={homeCurrency}
                   isLoadingReturns={isLoadingReturns}
+                  onDeaccession={onDeaccession}
+                  onReaccession={onReaccession}
                 />
               );
             })}
@@ -312,6 +318,8 @@ interface TableItemRowProps {
   returnData: ItemReturnData | undefined;
   homeCurrency: string;
   isLoadingReturns: boolean;
+  onDeaccession?: (item: DisplayItem) => void;
+  onReaccession?: (item: DisplayItem) => void;
 }
 
 const HOLDING_STATUS_STYLES: Record<string, { label: string; className: string }> = {
@@ -341,6 +349,8 @@ function TableItemRow({
   returnData,
   homeCurrency,
   isLoadingReturns,
+  onDeaccession,
+  onReaccession,
 }: TableItemRowProps) {
   const hasCurrentValue = ext?.current_value != null;
   const totalInvested = ext?.total_invested;
@@ -376,11 +386,27 @@ function TableItemRow({
           </button>
         </td>
 
-        {/* Status pill */}
+        {/* Status pill — clickable for owned (deaccession) and consigned/gifted/lost (re-accession) */}
         <td className="py-1.5 px-2">
-          <span className={`text-[9px] font-medium uppercase tracking-wide px-1.5 py-0.5 rounded ${statusStyle.className}`}>
-            {t(statusStyle.label)}
-          </span>
+          {holdingStatus === 'owned' && onDeaccession ? (
+            <button
+              onClick={(e) => { e.stopPropagation(); onDeaccession(item); }}
+              className={`text-[9px] font-medium uppercase tracking-wide px-1.5 py-0.5 rounded cursor-pointer hover:ring-1 hover:ring-gold/40 transition-all ${statusStyle.className}`}
+            >
+              {t(statusStyle.label)}
+            </button>
+          ) : (holdingStatus === 'consigned' || holdingStatus === 'gifted' || holdingStatus === 'lost') && onReaccession ? (
+            <button
+              onClick={(e) => { e.stopPropagation(); onReaccession(item); }}
+              className={`text-[9px] font-medium uppercase tracking-wide px-1.5 py-0.5 rounded cursor-pointer hover:ring-1 hover:ring-gold/40 transition-all ${statusStyle.className}`}
+            >
+              {t(statusStyle.label)}
+            </button>
+          ) : (
+            <span className={`text-[9px] font-medium uppercase tracking-wide px-1.5 py-0.5 rounded ${statusStyle.className}`}>
+              {t(statusStyle.label)}
+            </span>
+          )}
         </td>
 
         {/* Title (read-only, click opens QuickView) */}

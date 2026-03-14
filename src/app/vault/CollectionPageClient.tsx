@@ -22,6 +22,7 @@ import type { ExpenseTotalsMap } from '@/lib/displayItem/fromCollectionItem';
 import { Header } from '@/components/layout/Header';
 import { HomeCurrencyPicker } from '@/components/collection/HomeCurrencyPicker';
 import { LedgerTabs } from '@/components/dealer/LedgerTabs';
+import { DeaccessionModal, ReaccessionConfirm } from '@/components/collection/DeaccessionModal';
 import { useMobileUI } from '@/contexts/MobileUIContext';
 
 // Tab types for dealer users
@@ -148,6 +149,10 @@ export function CollectionPageClient() {
     window.addEventListener('resize', check);
     return () => window.removeEventListener('resize', check);
   }, []);
+
+  // Deaccession / re-accession modal state
+  const [deaccessionTarget, setDeaccessionTarget] = useState<{ itemId: string; itemTitle: string } | null>(null);
+  const [reaccessionTarget, setReaccessionTarget] = useState<{ itemId: string } | null>(null);
 
   // Fade in content once data loads
   useEffect(() => {
@@ -426,6 +431,33 @@ export function CollectionPageClient() {
     setExpenseTotals(prev => ({ ...prev, [itemUuid]: totals }));
   }, []);
 
+  // Deaccession handler — from table pill or QuickView button
+  const handleDeaccession = useCallback((item: DisplayItem) => {
+    setDeaccessionTarget({ itemId: String(item.id), itemTitle: item.title || '' });
+  }, []);
+
+  // Re-accession handler — from table pill click on consigned/gifted/lost items
+  const handleReaccession = useCallback((item: DisplayItem) => {
+    setReaccessionTarget({ itemId: String(item.id) });
+  }, []);
+
+  // Listen for deaccession events dispatched from QuickView
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.itemId) {
+        setDeaccessionTarget({ itemId: detail.itemId, itemTitle: detail.itemTitle || '' });
+      }
+    };
+    window.addEventListener('vault-open-deaccession', handler);
+    return () => window.removeEventListener('vault-open-deaccession', handler);
+  }, []);
+
+  // After deaccession/re-accession success, refresh the list
+  const handleDeaccessionSuccess = useCallback(() => {
+    fetchItems(filters);
+  }, [fetchItems, filters]);
+
   // Drag-and-drop reorder handler (custom sort, desktop only)
   const handleReorder = useCallback((activeId: string, overId: string) => {
     // Find indices in items array
@@ -636,6 +668,8 @@ export function CollectionPageClient() {
                   homeCurrency={homeCurrency}
                   returnMap={returnMap}
                   isLoadingReturns={isLoadingReturns}
+                  onDeaccession={handleDeaccession}
+                  onReaccession={handleReaccession}
                 />
               ) : isDragEnabled ? (
                 <SortableCollectionGrid
@@ -727,6 +761,25 @@ export function CollectionPageClient() {
       ) : activeTab === 'collection' ? (
         <CollectionBottomBar onAddClick={handleAddClick} />
       ) : null}
+
+      {/* Deaccession modal */}
+      {deaccessionTarget && (
+        <DeaccessionModal
+          itemId={deaccessionTarget.itemId}
+          itemTitle={deaccessionTarget.itemTitle}
+          onClose={() => setDeaccessionTarget(null)}
+          onSuccess={handleDeaccessionSuccess}
+        />
+      )}
+
+      {/* Re-accession confirm dialog */}
+      {reaccessionTarget && (
+        <ReaccessionConfirm
+          itemId={reaccessionTarget.itemId}
+          onClose={() => setReaccessionTarget(null)}
+          onSuccess={handleDeaccessionSuccess}
+        />
+      )}
     </div>
   );
 }

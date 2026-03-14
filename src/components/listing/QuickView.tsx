@@ -455,6 +455,16 @@ export function QuickView() {
     }
   };
 
+  const handleDeaccession = () => {
+    if (collectionItem?.item_uuid) {
+      window.dispatchEvent(new CustomEvent('vault-open-deaccession', {
+        detail: { itemId: collectionItem.item_uuid, itemTitle: currentListing?.title || '' },
+      }));
+    }
+  };
+
+  const collectionHoldingStatus = collectionItem?.holding_status || 'owned';
+
   // Showcase extension data (for showcase source)
   const showcaseExt = (currentListing as any)?.showcase ?? null;
 
@@ -464,7 +474,7 @@ export function QuickView() {
     : isShowcase
       ? <ShowcaseActionBar showcase={showcaseExt} />
       : isCollection
-        ? <CollectionActionBar onEditCollection={handleEditCollection} />
+        ? <CollectionActionBar onEditCollection={handleEditCollection} onDeaccession={handleDeaccession} holdingStatus={collectionHoldingStatus} />
         : <BrowseActionBar listing={currentListing} onToggleAdminEditMode={toggleAdminEditMode} />;
 
   const desktopDealerSlot = isShowcase
@@ -499,7 +509,7 @@ export function QuickView() {
     : isShowcase
       ? <ShowcaseMobileHeaderActions listing={currentListing} showcase={showcaseExt} />
       : isCollection
-        ? <CollectionMobileHeaderActions onEditCollection={handleEditCollection} />
+        ? <CollectionMobileHeaderActions onEditCollection={handleEditCollection} onDeaccession={handleDeaccession} holdingStatus={collectionHoldingStatus} />
         : <BrowseMobileHeaderActions listing={currentListing} isAdminEditMode={isAdminEditMode} onToggleAdminEditMode={toggleAdminEditMode} />;
 
   const mobileDealerSlot = isShowcase
