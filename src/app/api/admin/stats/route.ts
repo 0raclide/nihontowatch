@@ -191,6 +191,38 @@ export async function GET(request: NextRequest) {
       .sort((a, b) => (b.views + b.favorites * 2) - (a.views + a.favorites * 2)) // Weight favorites more
       .slice(0, 10);
 
+    // Pipeline health — check last scrape_run activity
+    const { data: lastPipelineActivity } = await supabase
+      .from('scrape_runs')
+      .select('started_at, completed_at')
+      .order('started_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    let pipelineHealth: { status: string; hoursSinceLastRun: number; message: string } = {
+      status: 'healthy',
+      hoursSinceLastRun: 0,
+      message: 'Pipeline running normally',
+    };
+
+    if (lastPipelineActivity) {
+      const lastTimestamp = lastPipelineActivity.completed_at || lastPipelineActivity.started_at;
+      const hoursSince = (Date.now() - new Date(lastTimestamp).getTime()) / (1000 * 60 * 60);
+      pipelineHealth.hoursSinceLastRun = Math.round(hoursSince * 10) / 10;
+
+      if (hoursSince > 12) {
+        pipelineHealth.status = 'critical';
+        pipelineHealth.message = `No pipeline activity in ${Math.round(hoursSince)}h. Check GitHub Actions.`;
+      } else if (hoursSince > 6) {
+        pipelineHealth.status = 'warning';
+        pipelineHealth.message = `Pipeline delayed — last activity ${Math.round(hoursSince)}h ago.`;
+      }
+    } else {
+      pipelineHealth.status = 'critical';
+      pipelineHealth.hoursSinceLastRun = -1;
+      pipelineHealth.message = 'No pipeline runs found.';
+    }
+
     const basicStats = {
       totalUsers: usersResult.count || 0,
       activeVisitors24h: uniqueVisitors24h,
@@ -199,6 +231,7 @@ export async function GET(request: NextRequest) {
       favoritesCount: favoritesResult.count || 0,
       recentSignups: recentSignupsResult.data || [],
       popularListings: topListings,
+      pipelineHealth,
     };
 
     // If detailed analytics requested

@@ -21,12 +21,19 @@ interface ActivityChartData {
   period: string;
 }
 
+interface PipelineHealth {
+  status: 'healthy' | 'warning' | 'critical';
+  hoursSinceLastRun: number;
+  message: string;
+}
+
 interface DashboardStats {
   totalUsers: number;
   activeVisitors24h: number;
   activeUsers24h: number;
   totalListings: number;
   favoritesCount: number;
+  pipelineHealth?: PipelineHealth;
   recentSignups: {
     id: string;
     email: string;
@@ -180,6 +187,44 @@ export default function AdminDashboard() {
         <h1 className="text-2xl font-serif text-ink">Dashboard</h1>
         <p className="text-muted text-sm mt-1">Overview of your site activity</p>
       </div>
+
+      {/* Pipeline Down Alert */}
+      {stats.pipelineHealth && stats.pipelineHealth.status !== 'healthy' && (
+        <div
+          className={`rounded-xl p-4 flex items-center justify-between border ${
+            stats.pipelineHealth.status === 'critical'
+              ? 'bg-error/10 border-error/30'
+              : 'bg-gold/10 border-gold/30'
+          }`}
+        >
+          <div className="flex items-center gap-3">
+            <div className={`p-2 rounded-lg ${
+              stats.pipelineHealth.status === 'critical' ? 'bg-error/15 text-error' : 'bg-gold/15 text-gold'
+            }`}>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+            </div>
+            <div>
+              <p className={`font-medium text-sm ${
+                stats.pipelineHealth.status === 'critical' ? 'text-error' : 'text-gold'
+              }`}>
+                {stats.pipelineHealth.status === 'critical' ? 'PIPELINE DOWN' : 'PIPELINE DELAYED'}
+              </p>
+              <p className="text-xs text-muted mt-0.5">
+                {stats.pipelineHealth.message}
+              </p>
+            </div>
+          </div>
+          <div className={`text-2xl font-serif font-bold tabular-nums flex-shrink-0 ml-4 ${
+            stats.pipelineHealth.status === 'critical' ? 'text-error' : 'text-gold'
+          }`}>
+            {stats.pipelineHealth.hoursSinceLastRun >= 0
+              ? `${Math.round(stats.pipelineHealth.hoursSinceLastRun)}h`
+              : '--'}
+          </div>
+        </div>
+      )}
 
       {/* Metrics Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6">
