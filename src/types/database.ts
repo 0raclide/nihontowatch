@@ -108,6 +108,19 @@ export interface Database {
         Insert: Omit<Database['public']['Tables']['discovered_urls']['Row'], 'id' | 'discovered_at'>;
         Update: Partial<Database['public']['Tables']['discovered_urls']['Insert']>;
       };
+      system_state: {
+        Row: {
+          key: string;
+          value: string;
+          updated_at: string;
+        };
+        Insert: {
+          key: string;
+          value: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database['public']['Tables']['system_state']['Insert']>;
+      };
       scrape_runs: {
         Row: {
           id: number;
