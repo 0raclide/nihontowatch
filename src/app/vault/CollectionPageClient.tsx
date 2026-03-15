@@ -604,9 +604,8 @@ export function CollectionPageClient() {
                 </div>
               );
             })()}
-            {/* Divider between tabs and piece count — desktop only */}
-            <div className="hidden lg:block w-px h-4 bg-border/30" />
-            <span className="text-[11px] uppercase tracking-[0.12em] text-muted/50 tabular-nums">
+            {/* Piece count — mobile only (desktop has counts in tab pills) */}
+            <span className="lg:hidden text-[11px] uppercase tracking-[0.12em] text-muted/50 tabular-nums">
               {activeLoading
                 ? '\u00A0'
                 : activeCount === 1
