@@ -536,4 +536,54 @@ describe('CatalogMatchPanel', () => {
       expect(updatedImgs.length).toBe(imgs.length - 1);
     });
   });
+
+  // ── apiBase prop (collection context bug fix) ───────────────────────
+  describe('apiBase prop', () => {
+    it('uses /api/dealer as default apiBase in fetch URL', async () => {
+      const fetchSpy = mockFetchSuccess();
+      global.fetch = fetchSpy;
+
+      render(<CatalogMatchPanel {...defaultProps} />);
+
+      await waitFor(() => {
+        expect(fetchSpy).toHaveBeenCalledTimes(1);
+        const url = fetchSpy.mock.calls[0][0] as string;
+        expect(url).toMatch(/^\/api\/dealer\/catalog-match\?/);
+      });
+    });
+
+    it('uses custom apiBase (/api/collection) in fetch URL when provided', async () => {
+      const fetchSpy = mockFetchSuccess();
+      global.fetch = fetchSpy;
+
+      render(<CatalogMatchPanel {...defaultProps} apiBase="/api/collection" />);
+
+      await waitFor(() => {
+        expect(fetchSpy).toHaveBeenCalledTimes(1);
+        const url = fetchSpy.mock.calls[0][0] as string;
+        expect(url).toMatch(/^\/api\/collection\/catalog-match\?/);
+        expect(url).toContain('artisan_code=MAS590');
+        expect(url).toContain('collection=Juyo');
+      });
+    });
+
+    it('re-fetches with new apiBase when it changes', async () => {
+      const fetchSpy = mockFetchSuccess();
+      global.fetch = fetchSpy;
+
+      const { rerender } = render(<CatalogMatchPanel {...defaultProps} apiBase="/api/dealer" />);
+
+      await waitFor(() => {
+        expect(fetchSpy).toHaveBeenCalledTimes(1);
+        expect((fetchSpy.mock.calls[0][0] as string)).toMatch(/^\/api\/dealer\//);
+      });
+
+      rerender(<CatalogMatchPanel {...defaultProps} apiBase="/api/collection" />);
+
+      await waitFor(() => {
+        expect(fetchSpy).toHaveBeenCalledTimes(2);
+        expect((fetchSpy.mock.calls[1][0] as string)).toMatch(/^\/api\/collection\//);
+      });
+    });
+  });
 });

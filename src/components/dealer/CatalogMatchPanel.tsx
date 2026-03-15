@@ -30,6 +30,7 @@ interface CatalogMatchPanelProps {
   artisanId: string;
   artisanName: string | null;
   onPrefill: (fields: CatalogPrefillFields) => void;
+  apiBase?: string;
 }
 
 /** Image with fallback — tries candidate URLs in order, hides on total failure. */
@@ -62,7 +63,7 @@ function OshigataImage({ urls, alt, className }: { urls: string[]; alt: string; 
   );
 }
 
-export function CatalogMatchPanel({ certType, artisanId, artisanName, onPrefill }: CatalogMatchPanelProps) {
+export function CatalogMatchPanel({ certType, artisanId, artisanName, onPrefill, apiBase = '/api/dealer' }: CatalogMatchPanelProps) {
   const { t } = useLocale();
   // allItems = full unfiltered result from API; items = filtered view
   const [allItems, setAllItems] = useState<CatalogMatchItem[]>([]);
@@ -94,7 +95,7 @@ export function CatalogMatchPanel({ certType, artisanId, artisanName, onPrefill 
     setSelectedVolume(null);
     setIsLoading(true);
 
-    fetch(`/api/dealer/catalog-match?${new URLSearchParams({ artisan_code: artisanId, collection })}`, {
+    fetch(`${apiBase}/catalog-match?${new URLSearchParams({ artisan_code: artisanId, collection })}`, {
       signal: controller.signal,
     })
       .then(res => {
@@ -119,7 +120,7 @@ export function CatalogMatchPanel({ certType, artisanId, artisanName, onPrefill 
       });
 
     return () => controller.abort();
-  }, [artisanId, collection]);
+  }, [artisanId, collection, apiBase]);
 
   const handleCardSelect = useCallback((item: CatalogMatchItem) => {
     setSelectedItem(item);

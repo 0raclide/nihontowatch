@@ -978,7 +978,7 @@ export function DealerListingForm({ mode, initialData, context = 'listing' }: De
     setGenerateNoteError(null);
 
     try {
-      const res = await fetch('/api/dealer/generate-description', {
+      const res = await fetch(`${apiBase}/generate-description`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1022,7 +1022,7 @@ export function DealerListingForm({ mode, initialData, context = 'listing' }: De
       setIsGeneratingNote(false);
     }
   }, [
-    certType, itemType, nagasaCm, soriCm, motohabaCm, sakihabaCm,
+    apiBase, certType, itemType, nagasaCm, soriCm, motohabaCm, sakihabaCm,
     meiType, meiText, era, province, artisanSchool, certSession,
     artisanId, setsumeiTextEn, setsumeiTextJa,
     sayagaki, hakogaki, provenanceEntries, provenanceDocuments, kiwame, koshirae, researchNotes,
@@ -1404,6 +1404,7 @@ export function DealerListingForm({ mode, initialData, context = 'listing' }: De
             artisanId={artisanId!}
             artisanName={artisanName}
             onPrefill={handleCatalogPrefill}
+            apiBase={apiBase}
           />
         )}
 
