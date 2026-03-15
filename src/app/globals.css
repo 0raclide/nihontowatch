@@ -2006,3 +2006,23 @@ html.theme-yuhindo .magical-book:hover {
 .animate-slideInLeft {
   animation: slideInLeft 0.25s cubic-bezier(0.32, 0.72, 0, 1);
 }
+
+/* Foil shimmer effect for Tokubetsu Juyo collector cards */
+@keyframes foilSweep {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.collector-card-foil {
+  background: linear-gradient(
+    105deg,
+    var(--tokuju) 0%,
+    var(--tokuju) 35%,
+    rgba(255, 255, 255, 0.35) 45%,
+    rgba(255, 255, 255, 0.45) 50%,
+    rgba(255, 255, 255, 0.35) 55%,
+    var(--tokuju) 65%,
+    var(--tokuju) 100%
+  );
+  background-size: 200% 100%;
+  animation: foilSweep 4s ease-in-out infinite;
+}
