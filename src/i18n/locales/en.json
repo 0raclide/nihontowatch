@@ -751,6 +751,10 @@
   "vault.expense.category.other": "Other",
   "vault.expense.expenses": "Expenses",
 
+  "vault.export.button": "Export",
+  "vault.export.exporting": "Exporting...",
+  "vault.export.portfolioSummary": "Portfolio Summary",
+
   "login.welcome": "Welcome",
   "login.enterCode": "Enter Code",
   "login.enterPassword": "Enter Password",

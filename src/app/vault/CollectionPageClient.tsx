@@ -21,6 +21,7 @@ import { collectionRowsToDisplayItems, dealerListingToDisplayItem } from '@/lib/
 import type { ExpenseTotalsMap } from '@/lib/displayItem/fromCollectionItem';
 import { Header } from '@/components/layout/Header';
 import { HomeCurrencyPicker } from '@/components/collection/HomeCurrencyPicker';
+import { ExportButton } from '@/components/collection/ExportButton';
 import { LedgerTabs } from '@/components/dealer/LedgerTabs';
 import { DeaccessionModal, ReaccessionConfirm } from '@/components/collection/DeaccessionModal';
 import { DealerInventoryTable } from '@/components/dealer/DealerInventoryTable';
@@ -616,6 +617,28 @@ export function CollectionPageClient() {
   // Whether to show dealer inventory table (desktop + dealer tab + table mode)
   const showDealerTable = isDesktop && activeTab !== 'collection' && desktopView === 'table' && effectiveIsDealer;
 
+  // Export handler — dynamic imports exceljs on first use (~300KB, loaded once)
+  const handleExport = useCallback(async () => {
+    const ExcelJS = await import('exceljs');
+    if (activeTab === 'collection') {
+      const { exportCollectorVault } = await import('@/lib/export/excelExport');
+      await exportCollectorVault({
+        items: adaptedItems,
+        returnMap,
+        homeCurrency,
+        Workbook: ExcelJS.Workbook,
+      });
+    } else {
+      const { exportDealerInventory } = await import('@/lib/export/excelExport');
+      const tabLabels: Record<string, string> = { available: 'Available', hold: 'Hold', sold: 'Sold' };
+      await exportDealerInventory({
+        items: dealerListings,
+        tabLabel: tabLabels[activeTab] || activeTab,
+        Workbook: ExcelJS.Workbook,
+      });
+    }
+  }, [activeTab, adaptedItems, returnMap, homeCurrency, dealerListings]);
+
   // Determine active count for the pieces label
   const activeCount = activeTab === 'collection' ? total : dealerTotal;
   const activeLoading = activeTab === 'collection' ? isLoading : isDealerLoading;
@@ -743,6 +766,10 @@ export function CollectionPageClient() {
                 onChange={setHomeCurrency}
                 isLoading={isHomeCurrencyLoading}
               />
+            )}
+            {/* Export button — desktop table view only */}
+            {(showTableView || showDealerTable) && (
+              <ExportButton onExport={handleExport} />
             )}
             {/* Desktop view toggle (grid/table) */}
             <VaultViewToggle view={desktopView} onViewChange={handleDesktopViewChange} />
