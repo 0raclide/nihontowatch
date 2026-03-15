@@ -6,13 +6,12 @@ import { useLocale } from '@/i18n/LocaleContext';
 
 const CURRENCIES = ['JPY', 'USD', 'EUR', 'AUD', 'GBP', 'CAD', 'CHF'] as const;
 
-type DispositionType = 'sold' | 'consigned' | 'gifted' | 'lost';
+type DispositionType = 'sold' | 'consigned' | 'gifted';
 
 const DISPOSITION_OPTIONS: { value: DispositionType; labelKey: string }[] = [
   { value: 'sold', labelKey: 'vault.deaccession.sold' },
   { value: 'consigned', labelKey: 'vault.deaccession.consigned' },
   { value: 'gifted', labelKey: 'vault.deaccession.gifted' },
-  { value: 'lost', labelKey: 'vault.deaccession.lost' },
 ];
 
 interface DeaccessionModalProps {
@@ -30,7 +29,6 @@ export function DeaccessionModal({ itemId, itemTitle, onClose, onSuccess }: Deac
   const [currency, setCurrency] = useState('JPY');
   const [buyer, setBuyer] = useState('');
   const [venue, setVenue] = useState('');
-  const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -66,8 +64,6 @@ export function DeaccessionModal({ itemId, itemTitle, onClose, onSuccess }: Deac
       updates.sold_venue = venue || null;
     } else if (disposition === 'gifted') {
       updates.sold_to = buyer || null; // recipient
-    } else if (disposition === 'lost') {
-      updates.sold_venue = notes || null; // notes → venue field
     }
 
     try {
@@ -92,7 +88,7 @@ export function DeaccessionModal({ itemId, itemTitle, onClose, onSuccess }: Deac
       setError('Network error');
       setSubmitting(false);
     }
-  }, [disposition, date, price, currency, buyer, venue, notes, itemId, onSuccess, onClose]);
+  }, [disposition, date, price, currency, buyer, venue, itemId, onSuccess, onClose]);
 
   // Person label varies by disposition
   const personLabel = disposition === 'consigned'
@@ -191,8 +187,7 @@ export function DeaccessionModal({ itemId, itemTitle, onClose, onSuccess }: Deac
               )}
 
               {/* Person field — sold (buyer), consigned (consignee), gifted (recipient) */}
-              {disposition !== 'lost' && (
-                <div>
+              <div>
                   <label className="text-[10px] uppercase tracking-wider text-muted/60 mb-1.5 block">
                     {personLabel}
                   </label>
@@ -203,7 +198,6 @@ export function DeaccessionModal({ itemId, itemTitle, onClose, onSuccess }: Deac
                     className={inputClass}
                   />
                 </div>
-              )}
 
               {/* Venue — sold and consigned */}
               {(disposition === 'sold' || disposition === 'consigned') && (
@@ -216,21 +210,6 @@ export function DeaccessionModal({ itemId, itemTitle, onClose, onSuccess }: Deac
                     value={venue}
                     onChange={e => setVenue(e.target.value)}
                     className={inputClass}
-                  />
-                </div>
-              )}
-
-              {/* Notes — lost only */}
-              {disposition === 'lost' && (
-                <div>
-                  <label className="text-[10px] uppercase tracking-wider text-muted/60 mb-1.5 block">
-                    {t('vault.deaccession.notes')}
-                  </label>
-                  <textarea
-                    value={notes}
-                    onChange={e => setNotes(e.target.value)}
-                    rows={3}
-                    className={`${inputClass} resize-none`}
                   />
                 </div>
               )}
