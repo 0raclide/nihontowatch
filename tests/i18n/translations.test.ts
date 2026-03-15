@@ -36,11 +36,11 @@ describe('i18n translation system', () => {
   // 3. t() function basics
   describe('t() function', () => {
     it('returns English string for en locale', () => {
-      expect(t('en', 'nav.browse')).toBe('Browse');
+      expect(t('en', 'nav.browse')).toBe('Market');
     });
 
     it('returns Japanese string for ja locale', () => {
-      expect(t('ja', 'nav.browse')).toBe('一覧');
+      expect(t('ja', 'nav.browse')).toBe('マーケット');
     });
 
     it('falls back to English when key missing in ja', () => {
