@@ -504,8 +504,8 @@ export function CollectionPageClient() {
   // Whether drag is enabled (custom sort + desktop + collection tab + grid view)
   const isDragEnabled = filters.sort === 'custom' && isDesktop && activeTab === 'collection' && desktopView === 'grid';
 
-  // Whether to show table view (desktop + collection tab + table mode)
-  const showTableView = isDesktop && activeTab === 'collection' && desktopView === 'table';
+  // Whether to show table view (desktop + collection tab + table mode + dealer only)
+  const showTableView = isDesktop && activeTab === 'collection' && desktopView === 'table' && effectiveIsDealer;
 
   // Determine active count for the pieces label
   const activeCount = activeTab === 'collection' ? total : dealerTotal;
@@ -635,8 +635,8 @@ export function CollectionPageClient() {
                 isLoading={isHomeCurrencyLoading}
               />
             )}
-            {/* Desktop view toggle (grid/table) — collection tab only */}
-            {activeTab === 'collection' && (
+            {/* Desktop view toggle (grid/table) — dealer only, collection tab */}
+            {activeTab === 'collection' && effectiveIsDealer && (
               <VaultViewToggle view={desktopView} onViewChange={handleDesktopViewChange} />
             )}
             {/* Mobile view toggle (gallery/grid) */}
@@ -738,6 +738,7 @@ export function CollectionPageClient() {
               currency={currency}
               exchangeRates={exchangeRates}
               mobileView={mobileView}
+              showFavoriteButton={false}
             />
           )}
         </div>

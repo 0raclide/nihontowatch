@@ -165,6 +165,7 @@ export function ShowcasePageClient() {
               isLoading={isLoading}
               onCardClick={handleItemClick}
               hideResultCount
+              showFavoriteButton={false}
             />
           )}
 
