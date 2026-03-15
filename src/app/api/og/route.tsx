@@ -710,6 +710,186 @@ async function generateArtistsDirectoryOG(font: ArrayBuffer): Promise<ImageRespo
 }
 
 // =============================================================================
+// Showcase OG Image
+// =============================================================================
+
+async function generateShowcaseOG(font: ArrayBuffer): Promise<ImageResponse> {
+  return new ImageResponse(
+    (
+      <div
+        style={{
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: OPUS.bg,
+          fontFamily: 'Inter',
+          position: 'relative',
+        }}
+      >
+        {/* Warm radial glow */}
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            display: 'flex',
+            background: 'radial-gradient(ellipse at 50% 45%, rgba(218,165,90,0.10) 0%, transparent 65%)',
+          }}
+        />
+
+        {/* Top ornamental line */}
+        <div
+          style={{
+            display: 'flex',
+            width: 80,
+            height: 1,
+            backgroundColor: OPUS.accent,
+            opacity: 0.5,
+            marginBottom: 40,
+          }}
+        />
+
+        {/* Title — YUHINKAI in large tracked letters */}
+        <div
+          style={{
+            display: 'flex',
+            fontSize: 64,
+            fontWeight: 700,
+            letterSpacing: '0.25em',
+            textTransform: 'uppercase',
+          }}
+        >
+          <span style={{ color: OPUS.textPrimary }}>Yuhin</span>
+          <span style={{ color: OPUS.accent }}>kai</span>
+        </div>
+
+        {/* Subtitle */}
+        <div
+          style={{
+            display: 'flex',
+            fontSize: 20,
+            color: OPUS.textSecondary,
+            marginTop: 20,
+            letterSpacing: '0.15em',
+            fontWeight: 400,
+          }}
+        >
+          A curated exhibition of distinguished works
+        </div>
+        <div
+          style={{
+            display: 'flex',
+            fontSize: 20,
+            color: OPUS.textSecondary,
+            marginTop: 8,
+            letterSpacing: '0.15em',
+            fontWeight: 400,
+          }}
+        >
+          from private collections
+        </div>
+
+        {/* Bottom ornamental line */}
+        <div
+          style={{
+            display: 'flex',
+            width: 80,
+            height: 1,
+            backgroundColor: OPUS.accent,
+            opacity: 0.5,
+            marginTop: 40,
+          }}
+        />
+
+        {/* Descriptor pills */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 24,
+            marginTop: 36,
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              backgroundColor: `${OPUS.accent}15`,
+              border: `1px solid ${OPUS.accent}40`,
+              color: OPUS.accent,
+              padding: '8px 20px',
+              borderRadius: 6,
+              fontSize: 14,
+              fontWeight: 500,
+              letterSpacing: '0.08em',
+            }}
+          >
+            Nihonto
+          </div>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              backgroundColor: `${OPUS.accent}15`,
+              border: `1px solid ${OPUS.accent}40`,
+              color: OPUS.accent,
+              padding: '8px 20px',
+              borderRadius: 6,
+              fontSize: 14,
+              fontWeight: 500,
+              letterSpacing: '0.08em',
+            }}
+          >
+            Tosogu
+          </div>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              backgroundColor: `${OPUS.accent}15`,
+              border: `1px solid ${OPUS.accent}40`,
+              color: OPUS.accent,
+              padding: '8px 20px',
+              borderRadius: 6,
+              fontSize: 14,
+              fontWeight: 500,
+              letterSpacing: '0.08em',
+            }}
+          >
+            Private Collections
+          </div>
+        </div>
+
+        {/* Footer brand */}
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 28,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+          }}
+        >
+          <span style={{ fontSize: 14, color: OPUS.textMuted, fontWeight: 400 }}>Powered by</span>
+          <span style={{ fontSize: 14, color: OPUS.textSecondary, fontWeight: 600 }}>Nihonto</span>
+          <span style={{ fontSize: 14, color: OPUS.accent, fontWeight: 600 }}>Watch</span>
+        </div>
+      </div>
+    ),
+    {
+      width: 1200,
+      height: 630,
+      fonts: [{ name: 'Inter', data: font, style: 'normal', weight: 400 }],
+    }
+  );
+}
+
+// =============================================================================
 // GET Handler
 // =============================================================================
 
@@ -748,6 +928,13 @@ export async function GET(request: NextRequest) {
   if (page === 'artists') {
     try {
       return await generateArtistsDirectoryOG(font);
+    } catch {
+      return generateDefaultOG(font);
+    }
+  }
+  if (page === 'showcase') {
+    try {
+      return await generateShowcaseOG(font);
     } catch {
       return generateDefaultOG(font);
     }

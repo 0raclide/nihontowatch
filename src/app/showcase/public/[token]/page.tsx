@@ -42,6 +42,20 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       url: `${BASE_URL}/showcase/public/${token}`,
       siteName: 'NihontoWatch',
       type: 'website',
+      images: [
+        {
+          url: `${BASE_URL}/api/og?page=showcase`,
+          width: 1200,
+          height: 630,
+          alt: 'Yuhinkai — A curated exhibition of distinguished works from private collections',
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: 'Yuhinkai — NihontoWatch',
+      description: 'A curated exhibition of distinguished works from private collections.',
+      images: [`${BASE_URL}/api/og?page=showcase`],
     },
   };
 }
