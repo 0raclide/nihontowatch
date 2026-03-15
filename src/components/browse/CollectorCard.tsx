@@ -336,11 +336,11 @@ export const CollectorCard = memo(function CollectorCard({
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleClick(e as unknown as React.MouseEvent); }
       }}
-      className="group block cursor-pointer"
+      className="group block cursor-pointer h-full"
     >
       {/* Outer frame — layered shadow + cert color border on hover */}
       <div
-        className="rounded-lg overflow-hidden transition-[border-color] duration-300 border border-border/60 collector-card-frame"
+        className="rounded-lg overflow-hidden transition-[border-color] duration-300 border border-border/60 collector-card-frame h-full"
         onMouseEnter={(e) => {
           if (certColor) (e.currentTarget as HTMLElement).style.borderColor = certColor;
         }}
@@ -349,7 +349,7 @@ export const CollectorCard = memo(function CollectorCard({
         }}
       >
         {/* Inner mat padding — noise texture overlay */}
-        <div className="p-[3px] bg-cream collector-card-texture">
+        <div className="p-[3px] bg-cream collector-card-texture h-full flex flex-col">
 
           {/* ── Name Bar ──────────────────────────────────────── */}
           <div className="px-3 py-2 flex items-center justify-between gap-2">
@@ -407,29 +407,32 @@ export const CollectorCard = memo(function CollectorCard({
             )}
           </div>
 
-          {/* ── Type Line ─────────────────────────────────────── */}
-          {typeLine && (
-            <>
-              <div className="h-px bg-border/40 mx-2" />
-              <div className="px-3 py-1.5">
-                <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.12em] text-muted truncate">
-                  {typeLine}
-                </p>
-              </div>
-            </>
-          )}
+          {/* ── Flexible middle (absorbs height differences) ── */}
+          <div className="flex-1">
+            {/* ── Type Line ─────────────────────────────────────── */}
+            {typeLine && (
+              <>
+                <div className="h-px bg-border/40 mx-2" />
+                <div className="px-3 py-1.5">
+                  <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.12em] text-muted truncate">
+                    {typeLine}
+                  </p>
+                </div>
+              </>
+            )}
 
-          {/* ── Text Box (curator headline / description) ───── */}
-          {flavorText && (
-            <>
-              <div className="h-px bg-border/40 mx-2" />
-              <div className="px-3 py-2">
-                <p className="text-[11px] sm:text-[12px] leading-relaxed text-charcoal italic line-clamp-3 font-serif">
-                  {flavorText}
-                </p>
-              </div>
-            </>
-          )}
+            {/* ── Text Box (curator headline / description) ───── */}
+            {flavorText && (
+              <>
+                <div className="h-px bg-border/40 mx-2" />
+                <div className="px-3 py-2">
+                  <p className="text-[11px] sm:text-[12px] leading-relaxed text-charcoal italic line-clamp-3 font-serif">
+                    {flavorText}
+                  </p>
+                </div>
+              </>
+            )}
+          </div>
 
           {/* ── Stat Bar ──────────────────────────────────────── */}
           <div className="h-px bg-border/40 mx-2" />
