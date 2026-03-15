@@ -569,9 +569,9 @@ export function CollectionPageClient() {
           </div>
         )}
 
-        {/* Collector holding tabs — visible when collection tab is active (or not a dealer) */}
-        {activeTab === 'collection' && (
-          <div className="mb-4">
+        {/* Collector holding tabs — only for non-dealers, desktop only (mobile lives in bottom bar) */}
+        {!effectiveIsDealer && activeTab === 'collection' && (
+          <div className="hidden lg:block mb-4">
             <LedgerTabs
               tabs={holdingTabs}
               activeTab={holdingTab}
@@ -767,7 +767,13 @@ export function CollectionPageClient() {
           />
         </>
       ) : activeTab === 'collection' ? (
-        <CollectionBottomBar onAddClick={handleAddClick} />
+        <CollectionBottomBar
+          onAddClick={handleAddClick}
+          holdingTabs={holdingTabs}
+          holdingTab={holdingTab}
+          onHoldingTabChange={handleHoldingTabChange as (tab: string) => void}
+          holdingTabCounts={holdingTabCounts}
+        />
       ) : null}
 
       {/* Deaccession modal */}
