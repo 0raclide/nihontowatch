@@ -396,15 +396,6 @@ export const CollectorCard = memo(function CollectorCard({
                 <FavoriteButton listingId={Number(listing.id)} size="sm" />
               </div>
             )}
-            {/* Video badge */}
-            {(listing.video_count ?? 0) > 0 && (
-              <div className="absolute bottom-2 left-2 flex items-center gap-1 px-1.5 py-0.5 rounded bg-black/60 text-white text-[10px] font-medium">
-                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                </svg>
-                {listing.video_count}
-              </div>
-            )}
           </div>
 
           {/* ── Flexible middle (absorbs height differences) ── */}
