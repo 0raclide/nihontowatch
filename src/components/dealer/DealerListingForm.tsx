@@ -27,7 +27,6 @@ import { SIGNED_MEI_TYPES, computeMeiText, computeMeiGuaranteed } from '@/lib/de
 import type { SayagakiEntry, HakogakiEntry, KoshiraeData, ProvenanceEntry, ProvenanceData, KiwameEntry, KantoHibishoData } from '@/types';
 import type { CollectionVisibility } from '@/types/collectionItem';
 import { useLocale } from '@/i18n/LocaleContext';
-import ReactMarkdown from 'react-markdown';
 
 const STORAGE_KEY_CATEGORY = 'nw-dealer-category';
 const STORAGE_KEY_TYPE = 'nw-dealer-type';
@@ -94,6 +93,14 @@ function readDraft(): DealerDraft | null {
     const raw = localStorage.getItem(DRAFT_STORAGE_KEY);
     if (!raw) return null;
     const draft = JSON.parse(raw) as DealerDraft;
+    // Migrate old provenance format (ProvenanceEntry[] → ProvenanceData)
+    // Before 2026-03-14, provenance was stored as a flat array.
+    // Array.prototype.entries is a function — using it as state crashes .map()/.length.
+    if (Array.isArray(draft.provenance)) {
+      draft.provenance = draft.provenance.length > 0
+        ? { entries: draft.provenance, documents: [] }
+        : null;
+    }
     // Don't treat an empty form (all defaults) as a restorable draft
     if (!isDraftSubstantive(draft)) return null;
     return draft;
@@ -1291,6 +1298,7 @@ export function DealerListingForm({ mode, initialData, context = 'listing' }: De
           }}
           onPendingDocumentsChange={setPendingProvenanceDocuments}
           apiEndpoint={provenanceImagesEndpoint}
+          apiBase={apiBase}
         />
 
         {/* 4e. Kiwame */}
@@ -1311,6 +1319,7 @@ export function DealerListingForm({ mode, initialData, context = 'listing' }: De
             });
           }}
           apiEndpoint={kiwameImagesEndpoint}
+          apiBase={apiBase}
         />
 
         {/* 4f. Research Notes */}
