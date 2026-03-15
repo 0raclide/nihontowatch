@@ -424,7 +424,7 @@ export function QuickView() {
     }
     refreshCurrentListing(optimistic);
 
-    // Notify DealerPageClient to remove the listing from the current tab grid
+    // Notify dealer inventory to remove the listing from the current tab grid
     if (currentListing) {
       window.dispatchEvent(new CustomEvent('dealer-listing-status-changed', {
         detail: { listingId: currentListing.id, newStatus },

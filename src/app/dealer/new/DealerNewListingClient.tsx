@@ -13,7 +13,7 @@ export function DealerNewListingClient() {
       <div className="sticky top-0 z-30 bg-surface/95 backdrop-blur-sm border-b border-border/30">
         <div className="max-w-lg mx-auto px-4 py-3 flex items-center gap-3">
           <Link
-            href="/dealer"
+            href="/vault"
             className="w-8 h-8 flex items-center justify-center rounded-full text-muted hover:bg-hover transition-colors"
             aria-label={t('dealer.back')}
           >

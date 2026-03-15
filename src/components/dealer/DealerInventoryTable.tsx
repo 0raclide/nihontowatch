@@ -5,7 +5,7 @@ import type { DisplayItem } from '@/types/displayItem';
 import { useLocale } from '@/i18n/LocaleContext';
 import { getAttributionName } from '@/lib/listing/attribution';
 import { CERT_LABELS } from '@/lib/collection/labels';
-import { computeListingCompleteness } from '@/lib/dealer/completeness';
+import { computeInventoryCompleteness } from '@/lib/dealer/completeness';
 import { DealerInventoryRow } from './DealerInventoryRow';
 import { ListForSaleModal } from './ListForSaleModal';
 
@@ -80,7 +80,7 @@ export function DealerInventoryTable({
   const derivedData = useMemo(() => {
     const map = new Map<string | number, {
       attribution: string | null;
-      completeness: ReturnType<typeof computeListingCompleteness>;
+      completeness: ReturnType<typeof computeInventoryCompleteness>;
       daysListed: number | null;
       imageCount: number;
       featuredScore: number | null;
@@ -88,7 +88,7 @@ export function DealerInventoryTable({
     for (const item of items) {
       map.set(item.id, {
         attribution: getAttributionName(item) || item.artisan_display_name || null,
-        completeness: computeListingCompleteness(item),
+        completeness: computeInventoryCompleteness(item),
         daysListed: computeDaysListed(item.first_seen_at),
         imageCount: getImageCount(item),
         featuredScore: getFeaturedScore(item),

@@ -14,7 +14,7 @@ export interface CompletenessResult {
  *   images (20), price (20), attribution (15), measurements (15),
  *   description (10), era (5), cert (5), school (5), province (5) = 100
  */
-export function computeListingCompleteness(item: DisplayItem): CompletenessResult {
+export function computeInventoryCompleteness(item: DisplayItem): CompletenessResult {
   const total = 100;
   let score = 0;
   const missing: string[] = [];
