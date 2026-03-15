@@ -109,14 +109,16 @@ function clearAuthCache() {
 }
 
 // Fetch profile with timeout protection
+// If the profile row doesn't exist (handle_new_user trigger failed), creates it as a fallback.
 async function fetchProfileWithTimeout(
   supabase: SupabaseClient<Database>,
-  userId: string
+  userId: string,
+  userEmail?: string | undefined
 ): Promise<Profile | null> {
   console.log('[Auth] Fetching profile for user:', userId);
 
   // Create timeout promise
-  const timeoutPromise = new Promise<{ data: null; error: { message: string } }>((resolve) => {
+  const timeoutPromise = new Promise<{ data: null; error: { message: string; code?: string } }>((resolve) => {
     setTimeout(() => {
       console.error('[Auth] Profile fetch timed out after', PROFILE_FETCH_TIMEOUT, 'ms');
       resolve({ data: null, error: { message: 'Profile fetch timed out' } });
@@ -134,6 +136,30 @@ async function fetchProfileWithTimeout(
     const result = await Promise.race([fetchPromise, timeoutPromise]);
 
     if (result.error) {
+      // PGRST116 = "no rows returned" from .single() — profile row doesn't exist
+      // This happens when the handle_new_user() trigger fails silently
+      if (result.error.code === 'PGRST116' && userEmail) {
+        console.warn('[Auth] Profile row missing for user', userId, '— creating fallback profile');
+        const displayName = userEmail.split('@')[0];
+        const { data: newProfile, error: insertError } = await supabase
+          .from('profiles')
+          .insert({
+            id: userId,
+            email: userEmail,
+            display_name: displayName,
+          } as any)
+          .select('*')
+          .single();
+
+        if (insertError) {
+          console.error('[Auth] Failed to create fallback profile:', insertError);
+          return null;
+        }
+
+        console.log('[Auth] Fallback profile created for', userEmail);
+        return newProfile as Profile | null;
+      }
+
       console.error('[Auth] Error fetching profile:', result.error);
       return null;
     }
@@ -179,7 +205,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const refreshProfile = useCallback(async () => {
     if (!state.user) return;
 
-    const profile = await fetchProfileWithTimeout(supabase, state.user.id);
+    const profile = await fetchProfileWithTimeout(supabase, state.user.id, state.user.email);
     setState((prev) => ({
       ...prev,
       profile,
@@ -213,7 +239,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
         if (session?.user) {
           console.log('[Auth] INITIAL_SESSION with user, fetching profile...');
-          const profile = await fetchProfileWithTimeout(supabase, session.user.id);
+          const profile = await fetchProfileWithTimeout(supabase, session.user.id, session.user.email);
           // Double-check we haven't been initialized while fetching
           if (isMounted && !hasInitializedRef.current) {
             hasInitializedRef.current = true;
@@ -267,7 +293,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
 
         console.log('[Auth] SIGNED_IN event, fetching profile...');
-        const profile = await fetchProfileWithTimeout(supabase, session.user.id);
+        const profile = await fetchProfileWithTimeout(supabase, session.user.id, session.user.email);
         if (isMounted) {
           hasInitializedRef.current = true;
           lastSignInTimeRef.current = Date.now(); // Set AFTER successful init
