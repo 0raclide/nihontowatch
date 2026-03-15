@@ -123,14 +123,16 @@ export function ShowcasePageClient() {
 
       <main className="flex-1">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          {/* Page header */}
-          <div className="text-center mb-10 pt-4 sm:pt-8">
-            <h1 className="text-3xl sm:text-4xl font-serif tracking-wide">
+          {/* Gallery header */}
+          <div className="text-center pt-12 sm:pt-20 mb-14">
+            <div className="w-20 mx-auto border-t border-gold/30 mb-8" />
+            <h1 className="text-2xl sm:text-3xl font-serif tracking-[0.25em] uppercase">
               <span className="text-ink">{t('showcase.titlePrefix')}</span><span className="text-gold">{t('showcase.titleAccent')}</span>
             </h1>
-            <p className="mt-2 text-sm text-ink tracking-wide font-light">
+            <p className="mt-4 text-xs sm:text-sm text-muted tracking-[0.18em] font-light">
               {t('showcase.subtitle')}
             </p>
+            <div className="w-20 mx-auto border-t border-gold/30 mt-8" />
           </div>
 
           {/* Error state */}
