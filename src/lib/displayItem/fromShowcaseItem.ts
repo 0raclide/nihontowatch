@@ -18,6 +18,13 @@ import type {
   KiwameEntry,
   KantoHibishoData,
 } from '@/types';
+import { getArtisanDisplayName, getArtisanDisplayNameKanji, getArtisanAlias } from '@/lib/artisan/displayName';
+
+export interface ArtisanNameInfo {
+  name_romaji?: string | null;
+  name_kanji?: string | null;
+  school?: string | null;
+}
 
 export interface ShowcaseApiRow {
   // collection_items fields
@@ -89,7 +96,10 @@ export interface ShowcaseApiRow {
   } | null;
 }
 
-export function showcaseItemToDisplayItem(item: ShowcaseApiRow): DisplayItem {
+export function showcaseItemToDisplayItem(
+  item: ShowcaseApiRow,
+  artisanNames?: Record<string, ArtisanNameInfo>,
+): DisplayItem {
   let certSession: number | null = null;
   if (item.cert_session != null) {
     const parsed = Number(item.cert_session);
@@ -146,8 +156,12 @@ export function showcaseItemToDisplayItem(item: ShowcaseApiRow): DisplayItem {
     video_count: item.video_count ?? 0,
 
     artisan_id: item.artisan_id ?? null,
-    artisan_display_name: null,
-    artisan_name_kanji: null,
+    artisan_display_name: (item.artisan_id && artisanNames?.[item.artisan_id])
+      ? (getArtisanAlias(item.artisan_id) || getArtisanDisplayName(artisanNames[item.artisan_id].name_romaji ?? null, artisanNames[item.artisan_id].school ?? null, item.artisan_id) || null)
+      : null,
+    artisan_name_kanji: (item.artisan_id && artisanNames?.[item.artisan_id])
+      ? (getArtisanDisplayNameKanji(artisanNames[item.artisan_id].name_kanji ?? null, item.artisan_id) || null)
+      : null,
     artisan_confidence: (item.artisan_confidence as DisplayItem['artisan_confidence']) ?? null,
     artisan_tier: null,
     artisan_method: null,
@@ -163,7 +177,7 @@ export function showcaseItemToDisplayItem(item: ShowcaseApiRow): DisplayItem {
     dealer_earliest_seen_at: null,
     last_scraped_at: null,
 
-    dealer_display_name: 'Society member',
+    dealer_display_name: 'Private Collection',
     dealer_display_name_ja: null,
     dealer_domain: undefined,
     dealer_id: null,
@@ -189,6 +203,9 @@ export function showcaseItemToDisplayItem(item: ShowcaseApiRow): DisplayItem {
   };
 }
 
-export function showcaseItemsToDisplayItems(items: ShowcaseApiRow[]): DisplayItem[] {
-  return items.map(showcaseItemToDisplayItem);
+export function showcaseItemsToDisplayItems(
+  items: ShowcaseApiRow[],
+  artisanNames?: Record<string, ArtisanNameInfo>,
+): DisplayItem[] {
+  return items.map(item => showcaseItemToDisplayItem(item, artisanNames));
 }

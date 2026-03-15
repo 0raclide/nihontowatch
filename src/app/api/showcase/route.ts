@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import { collectionItemsFrom } from '@/lib/supabase/collectionItems';
 import { normalizeProvenance } from '@/lib/provenance/normalize';
+import { getArtisanNames } from '@/lib/supabase/yuhinkai';
 import type { SubscriptionTier } from '@/types/subscription';
 
 export const dynamic = 'force-dynamic';
@@ -108,6 +109,19 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Enrich artisan display names from Yuhinkai (same pattern as collection API)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const artisanCodes = [...new Set((items || []).map((i: any) => i.artisan_id).filter(Boolean))] as string[];
+    let artisanNamesObj: Record<string, { name_romaji: string | null; name_kanji: string | null; school: string | null }> = {};
+    if (artisanCodes.length > 0) {
+      try {
+        const artisanNameMap = await getArtisanNames(artisanCodes);
+        artisanNamesObj = Object.fromEntries(artisanNameMap);
+      } catch (err) {
+        logger.warn('Failed to fetch artisan names for showcase', { error: err });
+      }
+    }
+
     // Merge profile data into items + normalize provenance JSONB
     const enriched = (items || []).map((item: { owner_id: string; provenance?: unknown }) => ({
       ...item,
@@ -120,6 +134,7 @@ export async function GET(request: NextRequest) {
       total: count || 0,
       page,
       limit,
+      artisanNames: artisanNamesObj,
     });
   } catch (error) {
     logger.logError('Showcase GET error', error);

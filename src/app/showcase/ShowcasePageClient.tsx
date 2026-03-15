@@ -87,9 +87,9 @@ export function ShowcasePageClient() {
         throw new Error('Failed to fetch');
       }
 
-      const data: { data: ShowcaseApiRow[]; total: number } = await res.json();
+      const data: { data: ShowcaseApiRow[]; total: number; artisanNames?: Record<string, { name_romaji: string | null; name_kanji: string | null; school: string | null }> } = await res.json();
       setRawRows(data.data);
-      const mapped = showcaseItemsToDisplayItems(data.data);
+      const mapped = showcaseItemsToDisplayItems(data.data, data.artisanNames);
       setItems(mapped);
       setTotal(data.total);
     } catch (err) {

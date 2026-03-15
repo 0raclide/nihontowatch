@@ -817,7 +817,7 @@ export const ListingCard = memo(function ListingCard({
       <div className={`${sz.cPad} sm:px-3 sm:pt-3 sm:pb-3 lg:px-4 lg:pt-3.5 lg:pb-4 flex flex-col gap-0.5`}>
         {/* Type — primary identifier */}
         <h3 className={`${sz.type} sm:text-[15px] lg:text-base font-semibold leading-snug text-ink group-hover:text-gold transition-colors`}>
-          {(listing.source === 'collection' && cleanedTitle) ? cleanedTitle : (itemType ? (() => { const norm = ITEM_TYPE_NORMALIZE[listing.item_type!] || listing.item_type!.toLowerCase(); const k = `itemType.${norm}`; const r = t(k); return r === k ? itemType : r; })() : cleanedTitle)}
+          {((listing.source === 'collection' || listing.source === 'showcase') && cleanedTitle) ? cleanedTitle : (itemType ? (() => { const norm = ITEM_TYPE_NORMALIZE[listing.item_type!] || listing.item_type!.toLowerCase(); const k = `itemType.${norm}`; const r = t(k); return r === k ? itemType : r; })() : cleanedTitle)}
         </h3>
 
         {/* Attribution — gold underline on artisan, plain text fallback */}
@@ -898,8 +898,8 @@ export const ListingCard = memo(function ListingCard({
           />
         )}
 
-        {/* Price row — hidden for collection items, replaced with visibility badge */}
-        {listing.source === 'collection' ? (
+        {/* Price row — collection shows visibility badge, showcase hides entirely */}
+        {listing.source === 'showcase' ? null : listing.source === 'collection' ? (
           <div className={`${sz.pPad} sm:pt-2 sm:mt-1 border-t border-border/40 flex items-center`}>
             <VisibilityCompactBadge visibility={listing.collection?.visibility} t={t} />
           </div>
