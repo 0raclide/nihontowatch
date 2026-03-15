@@ -338,9 +338,9 @@ export const CollectorCard = memo(function CollectorCard({
       }}
       className="group block cursor-pointer"
     >
-      {/* Outer frame — thin muted border, cert color on hover */}
+      {/* Outer frame — layered shadow + cert color border on hover */}
       <div
-        className="rounded-lg overflow-hidden transition-[border-color] duration-300 border border-border/60"
+        className="rounded-lg overflow-hidden transition-[border-color] duration-300 border border-border/60 collector-card-frame"
         onMouseEnter={(e) => {
           if (certColor) (e.currentTarget as HTMLElement).style.borderColor = certColor;
         }}
@@ -348,8 +348,8 @@ export const CollectorCard = memo(function CollectorCard({
           (e.currentTarget as HTMLElement).style.borderColor = '';
         }}
       >
-        {/* Inner mat padding */}
-        <div className="p-[3px] bg-cream">
+        {/* Inner mat padding — noise texture overlay */}
+        <div className="p-[3px] bg-cream collector-card-texture">
 
           {/* ── Name Bar ──────────────────────────────────────── */}
           <div className="px-3 py-2 flex items-center justify-between gap-2">
@@ -378,8 +378,8 @@ export const CollectorCard = memo(function CollectorCard({
           {/* Hairline separator */}
           <div className="h-px bg-border/40 mx-2" />
 
-          {/* ── Image Window ──────────────────────────────────── */}
-          <div className="relative aspect-[4/5] overflow-hidden bg-linen mx-[1px]">
+          {/* ── Image Window (recessed well) ─────────────────── */}
+          <div className="relative aspect-[4/5] overflow-hidden bg-linen mx-[1px] collector-card-image-well">
             {isLoading && imageUrl && <div className="absolute inset-0 bg-gradient-to-r from-linen via-paper to-linen animate-shimmer" />}
             {imageElement}
             {/* Sold overlay */}
