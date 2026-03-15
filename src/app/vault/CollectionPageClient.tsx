@@ -557,33 +557,55 @@ export function CollectionPageClient() {
       <Header />
 
       <div className="max-w-[1600px] mx-auto px-4 py-3 lg:px-6 lg:py-4 pb-24 lg:pb-8">
-        {/* Dealer tabs — desktop only (mobile tabs live in the bottom bar) */}
-        {effectiveIsDealer && (
-          <div className="hidden lg:block mb-5">
-            <LedgerTabs
-              tabs={ledgerTabs}
-              activeTab={activeTab}
-              onTabChange={handleTabChange}
-              tabCounts={mergedTabCounts}
-            />
-          </div>
-        )}
-
-        {/* Collector holding tabs — only for non-dealers, desktop only (mobile lives in bottom bar) */}
-        {!effectiveIsDealer && activeTab === 'collection' && (
-          <div className="hidden lg:block mb-4">
-            <LedgerTabs
-              tabs={holdingTabs}
-              activeTab={holdingTab}
-              onTabChange={handleHoldingTabChange}
-              tabCounts={holdingTabCounts}
-            />
-          </div>
-        )}
-
-        {/* Toolbar: item count + view toggles + add button */}
+        {/* Toolbar: segment tabs + item count + add button + view toggles */}
         <div className="flex items-center justify-between mb-3 lg:mb-4">
           <div className="flex items-center gap-3">
+            {/* Compact segment tabs — desktop only (mobile uses bottom bar) */}
+            {(() => {
+              const tabs = effectiveIsDealer ? ledgerTabs : holdingTabs;
+              const currentTab: string = effectiveIsDealer ? activeTab : holdingTab;
+              const counts = (effectiveIsDealer ? mergedTabCounts : holdingTabCounts) as Record<string, number> | null;
+              const onChange = (effectiveIsDealer
+                ? handleTabChange
+                : handleHoldingTabChange) as (tab: string) => void;
+              return (
+                <div className="hidden lg:flex items-center gap-0.5" role="tablist">
+                  {tabs.map((tab) => {
+                    const isActive = tab.value === currentTab;
+                    const count = counts ? counts[tab.value] : undefined;
+                    return (
+                      <button
+                        key={tab.value}
+                        role="tab"
+                        aria-selected={isActive}
+                        onClick={() => onChange(tab.value)}
+                        className={`
+                          flex items-center gap-1.5 px-2.5 py-1 rounded text-[11px] uppercase tracking-[0.1em]
+                          transition-colors duration-150
+                          ${isActive
+                            ? 'text-gold font-semibold bg-gold/8'
+                            : 'text-muted/50 hover:text-charcoal hover:bg-white/5'
+                          }
+                        `}
+                      >
+                        {tab.dotColor && (
+                          <span
+                            className="w-1.5 h-1.5 rounded-full shrink-0"
+                            style={{ backgroundColor: tab.dotColor }}
+                          />
+                        )}
+                        {tab.label}
+                        {count !== undefined && (
+                          <span className="tabular-nums opacity-70">{count}</span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              );
+            })()}
+            {/* Divider between tabs and piece count — desktop only */}
+            <div className="hidden lg:block w-px h-4 bg-border/30" />
             <span className="text-[11px] uppercase tracking-[0.12em] text-muted/50 tabular-nums">
               {activeLoading
                 ? '\u00A0'
