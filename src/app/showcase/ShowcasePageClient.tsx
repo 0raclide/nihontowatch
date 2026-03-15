@@ -118,7 +118,7 @@ export function ShowcasePageClient() {
   }, [quickView, rawRows]);
 
   return (
-    <div className="flex flex-col min-h-screen bg-cream">
+    <div className="flex flex-col min-h-screen bg-surface">
       <Header />
 
       <main className="flex-1">
