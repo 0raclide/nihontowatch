@@ -23,6 +23,8 @@ interface ProvenanceSectionProps {
   onPendingDocumentsChange?: (files: File[]) => void;
   /** Override the image upload/delete API endpoint for child cards. */
   apiEndpoint?: string;
+  /** API base path for suggestions endpoint. Default: '/api/dealer' */
+  apiBase?: string;
 }
 
 export function ProvenanceSection({
@@ -30,6 +32,7 @@ export function ProvenanceSection({
   onChange, onDocumentsChange,
   onPendingFilesChange, onPendingDocumentsChange,
   apiEndpoint,
+  apiBase,
 }: ProvenanceSectionProps) {
   const { t } = useLocale();
   const [pendingDocFiles, setPendingDocFiles] = useState<File[]>([]);
@@ -178,6 +181,7 @@ export function ProvenanceSection({
               onRemove={() => handleEntryRemove(i)}
               onPendingFilesChange={onPendingFilesChange}
               apiEndpoint={apiEndpoint}
+              apiBase={apiBase}
             />
           ))}
         </div>

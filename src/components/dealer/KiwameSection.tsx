@@ -13,9 +13,11 @@ interface KiwameSectionProps {
   savedEntryIds?: Set<string>;
   onPendingFilesChange?: (kiwameId: string, files: File[]) => void;
   apiEndpoint?: string;
+  /** API base path for suggestions endpoint. Default: '/api/dealer' */
+  apiBase?: string;
 }
 
-export function KiwameSection({ entries, onChange, itemId, savedEntryIds, onPendingFilesChange, apiEndpoint }: KiwameSectionProps) {
+export function KiwameSection({ entries, onChange, itemId, savedEntryIds, onPendingFilesChange, apiEndpoint, apiBase }: KiwameSectionProps) {
   const { t } = useLocale();
 
   const handleAdd = useCallback(() => {
@@ -61,6 +63,7 @@ export function KiwameSection({ entries, onChange, itemId, savedEntryIds, onPend
               onRemove={() => handleEntryRemove(i)}
               onPendingFilesChange={onPendingFilesChange}
               apiEndpoint={apiEndpoint}
+              apiBase={apiBase}
             />
           ))}
         </div>

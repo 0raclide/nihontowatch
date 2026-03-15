@@ -21,9 +21,11 @@ interface ProvenanceCardProps {
   onPendingFilesChange?: (provenanceId: string, file: File | null) => void;
   /** Override the image upload/delete API endpoint. Default: '/api/dealer/provenance-images' */
   apiEndpoint?: string;
+  /** API base path for suggestions endpoint. Default: '/api/dealer' */
+  apiBase?: string;
 }
 
-export function ProvenanceCard({ entry, index, itemId, isSaved = false, onChange, onRemove, onPendingFilesChange, apiEndpoint = '/api/dealer/provenance-images' }: ProvenanceCardProps) {
+export function ProvenanceCard({ entry, index, itemId, isSaved = false, onChange, onRemove, onPendingFilesChange, apiEndpoint = '/api/dealer/provenance-images', apiBase = '/api/dealer' }: ProvenanceCardProps) {
   const { t } = useLocale();
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -199,7 +201,7 @@ export function ProvenanceCard({ entry, index, itemId, isSaved = false, onChange
             <AutocompleteInput
               value={entry.owner_name}
               onChange={handleOwnerChange}
-              fetchUrl="/api/dealer/suggestions?type=provenance"
+              fetchUrl={`${apiBase}/suggestions?type=provenance`}
               placeholder={t('dealer.provenanceOwnerPlaceholder')}
             />
             {entry.owner_name_ja && (

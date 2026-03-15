@@ -29,9 +29,11 @@ interface KiwameCardProps {
   onRemove: () => void;
   onPendingFilesChange?: (kiwameId: string, files: File[]) => void;
   apiEndpoint?: string;
+  /** API base path for suggestions endpoint. Default: '/api/dealer' */
+  apiBase?: string;
 }
 
-export function KiwameCard({ entry, index, itemId, isSaved = false, onChange, onRemove, onPendingFilesChange, apiEndpoint = '/api/dealer/kiwame-images' }: KiwameCardProps) {
+export function KiwameCard({ entry, index, itemId, isSaved = false, onChange, onRemove, onPendingFilesChange, apiEndpoint = '/api/dealer/kiwame-images', apiBase = '/api/dealer' }: KiwameCardProps) {
   const { t } = useLocale();
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -180,7 +182,7 @@ export function KiwameCard({ entry, index, itemId, isSaved = false, onChange, on
         <AutocompleteInput
           value={entry.judge_name}
           onChange={handleJudgeChange}
-          fetchUrl="/api/dealer/suggestions?type=kiwame"
+          fetchUrl={`${apiBase}/suggestions?type=kiwame`}
           placeholder={t('dealer.kiwameJudgePlaceholder')}
         />
         {entry.judge_name_ja && (
