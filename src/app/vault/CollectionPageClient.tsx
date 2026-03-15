@@ -23,6 +23,7 @@ import { Header } from '@/components/layout/Header';
 import { HomeCurrencyPicker } from '@/components/collection/HomeCurrencyPicker';
 import { LedgerTabs } from '@/components/dealer/LedgerTabs';
 import { DeaccessionModal, ReaccessionConfirm } from '@/components/collection/DeaccessionModal';
+import { DealerInventoryTable } from '@/components/dealer/DealerInventoryTable';
 import { useMobileUI } from '@/contexts/MobileUIContext';
 
 // Tab types for dealer users
@@ -119,20 +120,36 @@ export function CollectionPageClient() {
     return 'grid';
   });
 
-  // Desktop view toggle — grid (card view) or table (spreadsheet view)
-  const [desktopView, setDesktopView] = useState<'grid' | 'table'>(() => {
+  // Desktop view toggle — separate preferences for collection vs dealer tabs
+  const [collectionDesktopView, setCollectionDesktopView] = useState<'grid' | 'table'>(() => {
     if (typeof window !== 'undefined') {
       return (localStorage.getItem('nihontowatch-vault-view') as 'grid' | 'table') || 'grid';
     }
     return 'grid';
   });
+  const [dealerDesktopView, setDealerDesktopView] = useState<'grid' | 'table'>(() => {
+    if (typeof window !== 'undefined') {
+      return (localStorage.getItem('nihontowatch-dealer-view') as 'grid' | 'table') || 'grid';
+    }
+    return 'grid';
+  });
+
+  // Active view depends on which tab group we're in
+  const desktopView = activeTab === 'collection' ? collectionDesktopView : dealerDesktopView;
 
   const handleDesktopViewChange = useCallback((view: 'grid' | 'table') => {
-    setDesktopView(view);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('nihontowatch-vault-view', view);
+    if (activeTab === 'collection') {
+      setCollectionDesktopView(view);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('nihontowatch-vault-view', view);
+      }
+    } else {
+      setDealerDesktopView(view);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('nihontowatch-dealer-view', view);
+      }
     }
-  }, []);
+  }, [activeTab]);
 
   // Filters — always custom sort, no user-facing filter UI for now
   const [filters] = useState<CollectionFilters>(() => ({
@@ -335,6 +352,89 @@ export function CollectionPageClient() {
     };
   }, [activeTab, filters, fetchItems, fetchDealerListings, effectiveIsDealer, fetchTabCounts]);
 
+  // Map status → which tab it belongs to (for optimistic count adjustments)
+  const statusToTab = useCallback((status: string): 'available' | 'hold' | 'sold' | null => {
+    switch (status) {
+      case 'AVAILABLE': return 'available';
+      case 'HOLD': return 'hold';
+      case 'SOLD': case 'PRESUMED_SOLD': return 'sold';
+      default: return null;
+    }
+  }, []);
+
+  // Dealer inventory table: status change handler (optimistic removal + background PATCH)
+  const handleDealerTableStatusChange = useCallback(async (listingId: number, newStatus: string) => {
+    // Snapshot for rollback
+    const prevListings = dealerListings;
+    const prevTotal = dealerTotal;
+    const prevTabCounts = tabCounts;
+
+    // Determine source and destination tabs for count adjustment
+    const movedItem = dealerListings.find(item => Number(item.id) === listingId);
+    const sourceTab = statusToTab(movedItem?.status || '');
+    const destTab = statusToTab(newStatus);
+
+    // Optimistic: remove item from current tab's list (it's moving to a different tab)
+    setDealerListings(prev => prev.filter(item => Number(item.id) !== listingId));
+    setDealerTotal(prev => Math.max(0, prev - 1));
+
+    // Optimistic: adjust tab counts
+    if (sourceTab || destTab) {
+      setTabCounts(prev => {
+        if (!prev) return prev;
+        const next = { ...prev };
+        if (sourceTab && next[sourceTab] != null) next[sourceTab] = Math.max(0, next[sourceTab] - 1);
+        if (destTab && next[destTab] != null) next[destTab] = (next[destTab] || 0) + 1;
+        return next;
+      });
+    }
+
+    try {
+      const res = await fetch(`/api/dealer/listings/${listingId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (!res.ok) {
+        // Rollback on failure
+        setDealerListings(prevListings);
+        setDealerTotal(prevTotal);
+        setTabCounts(prevTabCounts);
+      } else {
+        // Background refresh counts for accuracy (non-blocking)
+        fetchTabCounts();
+        window.dispatchEvent(new Event('dealer-listing-status-changed'));
+      }
+    } catch {
+      // Rollback on network error
+      setDealerListings(prevListings);
+      setDealerTotal(prevTotal);
+      setTabCounts(prevTabCounts);
+    }
+  }, [dealerListings, dealerTotal, tabCounts, statusToTab, fetchTabCounts]);
+
+  // Dealer inventory table: inline price update handler
+  const handleDealerTablePriceUpdate = useCallback(async (listingId: number, amount: number | null, currency: string) => {
+    // Optimistic update
+    setDealerListings(prev => prev.map(item => {
+      if (Number(item.id) !== listingId) return item;
+      return { ...item, price_value: amount, price_currency: currency };
+    }));
+
+    try {
+      const res = await fetch(`/api/dealer/listings/${listingId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ price_value: amount, price_currency: currency }),
+      });
+      if (!res.ok) {
+        fetchDealerListings(activeTab);
+      }
+    } catch {
+      fetchDealerListings(activeTab);
+    }
+  }, [activeTab, fetchDealerListings]);
+
   // Track whether deep link has been handled to prevent re-opening on re-renders
   const deepLinkHandledRef = useRef(false);
 
@@ -392,6 +492,12 @@ export function CollectionPageClient() {
       quickView.openCollectionQuickView(original, 'view');
     }
   }, [items, quickView]);
+
+  // Dealer table card click → open QuickView (same as ListingCard default behavior)
+  const handleDealerCardClick = useCallback((displayItem: DisplayItem) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    quickView.openQuickView(displayItem as any, { source: 'dealer' });
+  }, [quickView]);
 
   // Add button — navigate to full-page form
   const handleAddClick = useCallback(() => {
@@ -506,6 +612,9 @@ export function CollectionPageClient() {
 
   // Whether to show table view (desktop + collection tab + table mode + dealer only)
   const showTableView = isDesktop && activeTab === 'collection' && desktopView === 'table' && effectiveIsDealer;
+
+  // Whether to show dealer inventory table (desktop + dealer tab + table mode)
+  const showDealerTable = isDesktop && activeTab !== 'collection' && desktopView === 'table' && effectiveIsDealer;
 
   // Determine active count for the pieces label
   const activeCount = activeTab === 'collection' ? total : dealerTotal;
@@ -635,8 +744,8 @@ export function CollectionPageClient() {
                 isLoading={isHomeCurrencyLoading}
               />
             )}
-            {/* Desktop view toggle (grid/table) — dealer only, collection tab */}
-            {activeTab === 'collection' && effectiveIsDealer && (
+            {/* Desktop view toggle (grid/table) — dealer only */}
+            {effectiveIsDealer && (
               <VaultViewToggle view={desktopView} onViewChange={handleDesktopViewChange} />
             )}
             {/* Mobile view toggle (gallery/grid) */}
@@ -726,6 +835,15 @@ export function CollectionPageClient() {
                 />
               )}
             </>
+          ) : showDealerTable ? (
+            <DealerInventoryTable
+              items={dealerListings}
+              isLoading={isDealerLoading}
+              activeTab={activeTab}
+              onStatusChange={handleDealerTableStatusChange}
+              onPriceUpdate={handleDealerTablePriceUpdate}
+              onCardClick={handleDealerCardClick}
+            />
           ) : (
             <ListingGrid
               listings={[]}

@@ -1,7 +1,7 @@
 # Dealer Portal MVP — Sokendo Build Spec
 
-> **Status:** Ready to build
-> **Last updated:** 2026-03-03
+> **Status:** Phase 1 BUILT + Inventory Table BUILT — unified into `/vault`
+> **Last updated:** 2026-03-15
 > **Vision doc:** `docs/DEALER_PORTAL_PRODUCT.md`
 
 ---
@@ -418,34 +418,45 @@ The inquiry detail page shows:
 
 ## Build Order
 
-### Phase 1: Dealer can see + add listings (no public visibility)
+### Phase 1: Dealer can see + add listings (no public visibility) — DONE
 
-1. DB migration: `dealer_id` on profiles, `source` on listings
-2. Storage: `dealer-images` bucket
-3. API: `/api/dealer/listings` (GET + POST)
-4. API: `/api/dealer/images` (POST + DELETE)
-5. Page: `/dealer` with ListingGrid
-6. Page: `/dealer/new` with listing form
-7. Mapper: `dealerListingToDisplayItem()`
-8. Utility: `generateListingTitle()`
-9. QuickView: dealer action slots (Edit / Sold / Withdraw)
-10. API: `/api/dealer/listings/[id]` (PATCH for status changes)
+1. ✅ DB migration: `dealer_id` on profiles, `source` on listings (migration 097)
+2. ✅ Storage: `dealer-images` bucket
+3. ✅ API: `/api/dealer/listings` (GET + POST)
+4. ✅ API: `/api/dealer/images` (POST + DELETE) + 6 section image APIs
+5. ✅ Page: `/dealer` with ListingGrid (now superseded by `/vault` unified page)
+6. ✅ Page: `/dealer/new` with listing form
+7. ✅ Mapper: `dealerListingToDisplayItem()`
+8. ✅ Utility: `generateListingTitle()`
+9. ✅ QuickView: dealer action slots (Edit / Sold / Withdraw / Promote / Delist)
+10. ✅ API: `/api/dealer/listings/[id]` (PATCH for status changes + DELETE)
+
+### Phase 1.5: Inventory Table + Unified Vault — DONE (2026-03-15)
+
+11. ✅ `DealerInventoryTable` — sortable, data-dense table for dealer tabs in `/vault`
+12. ✅ `DealerInventoryRow` — portal-based status menu, completeness bar, inline price, age coloring
+13. ✅ `computeListingCompleteness()` — 9-field weighted scoring (100 points)
+14. ✅ `ListForSaleModal` — INVENTORY→AVAILABLE transition with price + DealerIntelligence
+15. ✅ `CollectionPageClient` integration — dealer tabs, optimistic status/price handlers, per-tab view
+16. ✅ Per-tab view preferences — separate localStorage keys for collection vs dealer
+
+**See:** `docs/SESSION_20260315_DEALER_INVENTORY_TABLE.md` for full details.
 
 ### Phase 2: Collectors can inquire (still behind feature flag)
 
-11. DB migration: `inquiries` table, `line_notify_token` on dealers
-12. API: `/api/dealer/inquiries` (GET + POST)
-13. Component: `InquiryModal` (collector side)
-14. LINE Notify: `src/lib/notifications/line.ts`
-15. Page: `/dealer/inquiries/[id]` (dealer reads inquiry)
-16. QuickView: "Inquire" CTA for dealer-source listings
+17. DB migration: `inquiries` table, `line_notify_token` on dealers
+18. API: `/api/dealer/inquiries` (GET + POST)
+19. Component: `InquiryModal` (collector side)
+20. LINE Notify: `src/lib/notifications/line.ts`
+21. Page: `/dealer/inquiries/[id]` (dealer reads inquiry)
+22. QuickView: "Inquire" CTA for dealer-source listings
 
 ### Phase 3: Go live
 
-17. Browse API: remove `source != 'dealer'` filter
-18. Set `NEXT_PUBLIC_DEALER_LISTINGS_LIVE=true`
-19. Featured score cron: include dealer listings
-20. Smart crop cron: include dealer listings
+23. Browse API: remove `source != 'dealer'` filter
+24. Set `NEXT_PUBLIC_DEALER_LISTINGS_LIVE=true`
+25. Featured score cron: include dealer listings
+26. Smart crop cron: include dealer listings
 
 ---
 
