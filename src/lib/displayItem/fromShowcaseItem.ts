@@ -156,12 +156,14 @@ export function showcaseItemToDisplayItem(
     video_count: item.video_count ?? 0,
 
     artisan_id: item.artisan_id ?? null,
-    artisan_display_name: (item.artisan_id && artisanNames?.[item.artisan_id])
-      ? (getArtisanAlias(item.artisan_id) || getArtisanDisplayName(artisanNames[item.artisan_id].name_romaji ?? null, artisanNames[item.artisan_id].school ?? null, item.artisan_id) || null)
-      : null,
-    artisan_name_kanji: (item.artisan_id && artisanNames?.[item.artisan_id])
-      ? (getArtisanDisplayNameKanji(artisanNames[item.artisan_id].name_kanji ?? null, item.artisan_id) || null)
-      : null,
+    artisan_display_name: (item as any).artisan_display_name
+      ?? ((item.artisan_id && artisanNames?.[item.artisan_id])
+        ? (getArtisanAlias(item.artisan_id) || getArtisanDisplayName(artisanNames[item.artisan_id].name_romaji ?? null, artisanNames[item.artisan_id].school ?? null, item.artisan_id) || null)
+        : null),
+    artisan_name_kanji: (item as any).artisan_name_kanji
+      ?? ((item.artisan_id && artisanNames?.[item.artisan_id])
+        ? (getArtisanDisplayNameKanji(artisanNames[item.artisan_id].name_kanji ?? null, item.artisan_id) || null)
+        : null),
     artisan_confidence: (item.artisan_confidence as DisplayItem['artisan_confidence']) ?? null,
     artisan_tier: null,
     artisan_method: null,

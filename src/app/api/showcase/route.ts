@@ -4,6 +4,7 @@ import { logger } from '@/lib/logger';
 import { collectionItemsFrom } from '@/lib/supabase/collectionItems';
 import { normalizeProvenance } from '@/lib/provenance/normalize';
 import { getArtisanNames } from '@/lib/supabase/yuhinkai';
+import { getArtisanDisplayName, getArtisanDisplayNameKanji, getArtisanAlias } from '@/lib/artisan/displayName';
 import type { SubscriptionTier } from '@/types/subscription';
 
 export const dynamic = 'force-dynamic';
@@ -122,12 +123,23 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Merge profile data into items + normalize provenance JSONB
-    const enriched = (items || []).map((item: { owner_id: string; provenance?: unknown }) => ({
-      ...item,
-      provenance: normalizeProvenance(item.provenance),
-      profiles: profileMap.get(item.owner_id) || null,
-    }));
+    // Merge profile data into items + normalize provenance JSONB + enrich artisan names
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const enriched = (items || []).map((item: any) => {
+      const artisanId = item.artisan_id as string | null;
+      const entry = artisanId ? artisanNamesObj[artisanId] : null;
+      return {
+        ...item,
+        provenance: normalizeProvenance(item.provenance),
+        profiles: profileMap.get(item.owner_id) || null,
+        artisan_display_name: entry
+          ? (getArtisanAlias(artisanId!) || getArtisanDisplayName(entry.name_romaji ?? null, entry.school ?? null, artisanId!) || null)
+          : null,
+        artisan_name_kanji: entry
+          ? (getArtisanDisplayNameKanji(entry.name_kanji ?? null, artisanId!) || null)
+          : null,
+      };
+    });
 
     return NextResponse.json({
       data: enriched,
