@@ -848,6 +848,8 @@ For detailed implementation docs, see:
 - `docs/SESSION_20260307_CATALOG_PREFILL_EXPANSION.md` - **Catalog prefill expansion** — auto-add oshigata/setsumei images, school, province, nakago on card select. MEI_STATUS_MAP fix. RPC migration 466.
 - `docs/SESSION_20260308_VIDEO_SUPPORT.md` - **Dealer video upload & playback** — Bunny.net Stream TUS uploads, HLS playback, video_count denormalization, unified MediaItem gallery, Bunny cleanup on delete, typed helpers. 56 tests.
 - `docs/SESSION_20260308_KANTO_HIBISHO.md` - **Kanto Hibisho (関東日々抄)** — scholarly reference by Honma Junji. Single entry per nihonto listing: volume, entry number, text, page scans (max 10). Opt-in reveal form, lightbox display.
+- `docs/SESSION_20260314_NOTIFICATION_RETRY_SYSTEM.md` - **Notification retry system** — two-phase cron with circuit breaker. Exponential backoff (15m→4h→abandon), error classification (transient/permanent), dedup prevents duplicate failures, `system_state` persistence across serverless invocations. Migration 157. 57 tests.
+- `docs/SESSION_20260314_PROVENANCE_SPLIT.md` - **Provenance split** — `ProvenanceEntry.images[]` → `portrait_image` + chain-level `ProvenanceData.documents[]`. Backward-compatible JSONB normalizer. 28 files, 23 new tests.
 
 ---
 

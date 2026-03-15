@@ -1,7 +1,7 @@
 # Unified Collection Architecture
 
-> **Status:** Phases 1-5 DONE (2026-03-10). All cleanup complete. V1 tables dropped (migration 133). Next: Phase 6 (community visibility + private sales).
-> **Date:** 2026-03-10 (last updated)
+> **Status:** Phases 1-5 DONE (2026-03-10). All cleanup complete. V1 tables dropped (migration 133). Stale `/dealer` inventory routes redirected to `/vault` (2026-03-11). Next: Phase 6 (community visibility + private sales).
+> **Date:** 2026-03-11 (last updated)
 > **Authors:** Chris + Claude
 > **Replaces:** Collection Manager V1 (`/collection`), dealer "My Listings" naming
 
@@ -1378,7 +1378,7 @@ Phase 2 is split into four sub-phases with explicit dependencies:
 | Yuhinkai handoff | `docs/HANDOFF_YUHINKAI_TIER.md` |
 
 **Known UX gaps (not blocking, future polish):**
-- Header shows two "COLLECTION" nav items for dealer users (grey → `/vault`, gold → `/dealer`). Gold should be renamed.
+- ~~Header shows two "COLLECTION" nav items for dealer users (grey → `/vault`, gold → `/dealer`). Gold should be renamed.~~ FIXED (2026-03-11): `/dealer` nav link removed, stale `/dealer` routes redirect to `/vault`.
 - Empty state message not yet verified.
 
 ### Phase 5 — Drop Old Collection System + Route Migration ✅ DONE (2026-03-10)
@@ -1407,6 +1407,15 @@ Phase 2 is split into four sub-phases with explicit dependencies:
 - [x] `fed99ab` — `computeFacets()` return all 7 `CollectionFacets` fields (was only returning 4, crashing on `facets.statuses.length`)
 - [x] `f9e2d39` — Success screen uses `successRedirect` (was hardcoded `/dealer`); hide "UNAVAILABLE" overlay for collection source
 - [x] `47b48d8` — Pass `source: 'collection'` through `openQuickView()` options (React batched `setSource` calls, browse overwrite won)
+
+**Stale dealer route cleanup (2026-03-11):**
+- [x] `/dealer` → `redirect('/vault')` (was rendering `DealerPageClient`)
+- [x] `/dealer/new` → `redirect('/vault/add')` (was rendering `DealerNewListingClient`)
+- [x] `/dealer/edit/[id]` → `redirect('/vault/edit/[id]')` (was rendering `DealerEditListingClient`)
+- [x] `DealerListingForm.successRedirect` always `/vault` (was `/dealer` for listing context)
+- [x] Removed redundant "My Listings" `/dealer` link from MobileNavDrawer (vault link already present)
+- `/dealer/profile` and `/dealer/preview` untouched (dealer storefront settings, not inventory)
+- Dead client components (`DealerPageClient.tsx`, `DealerNewListingClient.tsx`, `DealerEditListingClient.tsx`) left in tree — harmless, can be deleted later.
 
 **Previously done (earlier phases):** 7 V1 components (`CollectionCard`, `CollectionGrid`, etc.) deleted in Phase 2d.
 
