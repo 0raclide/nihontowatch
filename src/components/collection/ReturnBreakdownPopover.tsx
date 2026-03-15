@@ -61,6 +61,11 @@ export function ReturnBreakdownPopover({ returnData, homeCurrency }: ReturnBreak
       >
         {sign}{formatted} {pct}
       </button>
+      {returnData.annualizedReturnPct != null && (
+        <div className={`text-[9px] tabular-nums ${returnData.annualizedReturnPct >= 0 ? 'text-muted/50' : 'text-red-400/50'}`}>
+          {returnData.annualizedReturnPct >= 0 ? '+' : ''}{returnData.annualizedReturnPct.toFixed(1)}%{locale === 'ja' ? '/年' : '/yr'}
+        </div>
+      )}
 
       {isOpen && (
         <div className="absolute z-50 right-0 top-full mt-1 bg-surface border border-border/40 rounded-lg shadow-lg p-3 min-w-[220px] text-[11px]">

@@ -610,8 +610,8 @@ export function CollectionPageClient() {
   // Whether drag is enabled (custom sort + desktop + collection tab + grid view)
   const isDragEnabled = filters.sort === 'custom' && isDesktop && activeTab === 'collection' && desktopView === 'grid';
 
-  // Whether to show table view (desktop + collection tab + table mode + dealer only)
-  const showTableView = isDesktop && activeTab === 'collection' && desktopView === 'table' && effectiveIsDealer;
+  // Whether to show table view (desktop + collection tab + table mode)
+  const showTableView = isDesktop && activeTab === 'collection' && desktopView === 'table';
 
   // Whether to show dealer inventory table (desktop + dealer tab + table mode)
   const showDealerTable = isDesktop && activeTab !== 'collection' && desktopView === 'table' && effectiveIsDealer;
@@ -744,10 +744,8 @@ export function CollectionPageClient() {
                 isLoading={isHomeCurrencyLoading}
               />
             )}
-            {/* Desktop view toggle (grid/table) — dealer only */}
-            {effectiveIsDealer && (
-              <VaultViewToggle view={desktopView} onViewChange={handleDesktopViewChange} />
-            )}
+            {/* Desktop view toggle (grid/table) */}
+            <VaultViewToggle view={desktopView} onViewChange={handleDesktopViewChange} />
             {/* Mobile view toggle (gallery/grid) */}
             <div className="flex items-center gap-0.5 sm:hidden">
               <button
