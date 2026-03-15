@@ -370,10 +370,9 @@ export function VirtualListingGrid({
   // without the transform timing issues that cause "teleport" glitches on iOS
   // Mobile grid classes: grid mode = 2 cols compact, gallery mode = 1 col with breathing room
   // sm: and up are unchanged regardless of mobileView
-  const collectorGap = useCollectorCard ? 'sm:gap-5 lg:gap-6' : 'sm:gap-4';
   const mobileGridClasses = mobileView === 'grid'
-    ? `grid grid-cols-2 gap-2.5 ${collectorGap} sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5`
-    : `grid grid-cols-1 gap-10 ${collectorGap} sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5`;
+    ? 'grid grid-cols-2 gap-2.5 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5'
+    : 'grid grid-cols-1 gap-10 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5';
 
   const renderGrid = () => (
     <div

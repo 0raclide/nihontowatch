@@ -348,14 +348,6 @@ export const CollectorCard = memo(function CollectorCard({
           (e.currentTarget as HTMLElement).style.borderColor = '';
         }}
       >
-        {/* Cert-colored top ribbon — always visible rarity signal */}
-        {certInfo && (
-          <div
-            className={`h-[3px] w-full${certInfo.tier === 'tokuju' ? ' collector-card-foil' : ''}`}
-            style={certInfo.tier !== 'tokuju' ? { backgroundColor: CERT_BORDER_COLOR[certInfo.tier] } : undefined}
-          />
-        )}
-
         {/* Inner mat padding */}
         <div className="p-[3px] bg-cream">
 
@@ -375,7 +367,7 @@ export const CollectorCard = memo(function CollectorCard({
               )}
               {certInfo && (
                 <span
-                  className="w-3 h-3 rounded-full shrink-0"
+                  className="w-2.5 h-2.5 rounded-full shrink-0"
                   style={{ backgroundColor: CERT_BORDER_COLOR[certInfo.tier] }}
                   title={certInfo.label}
                 />
