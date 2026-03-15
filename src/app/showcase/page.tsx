@@ -32,5 +32,5 @@ export default async function ShowcasePage() {
     redirect('/browse');
   }
 
-  return <ShowcasePageClient />;
+  return <ShowcasePageClient isAdmin={isAdmin} />;
 }
