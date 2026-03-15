@@ -97,6 +97,7 @@ interface VirtualListingGridProps {
   onCardClick?: (listing: DisplayItem) => void; // Override default QuickView open (e.g. collection items)
   preMappedItems?: DisplayItem[]; // Pre-mapped DisplayItems (skip internal listingToDisplayItem mapping)
   hideResultCount?: boolean; // Hide "Showing X of Y items" line
+  showFavoriteButton?: boolean; // Show favorite/watchlist button on cards (default true)
 }
 
 function Pagination({
@@ -226,6 +227,7 @@ export function VirtualListingGrid({
   onCardClick,
   preMappedItems,
   hideResultCount = false,
+  showFavoriteButton,
 }: VirtualListingGridProps) {
   const quickView = useQuickViewOptional();
   const { t, locale } = useLocale();
@@ -403,6 +405,7 @@ export function VirtualListingGrid({
                 ? `${item.focal_x}% ${item.focal_y}%`
                 : undefined
             }
+            showFavoriteButton={showFavoriteButton}
             onClick={onCardClick}
           />
         );

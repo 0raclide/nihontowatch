@@ -89,6 +89,7 @@ interface ListingGridProps {
   onCardClick?: (listing: DisplayItem) => void; // Override default QuickView open (e.g. collection items)
   preMappedItems?: DisplayItem[]; // Pre-mapped DisplayItems (skip internal listingToDisplayItem mapping)
   hideResultCount?: boolean; // Hide "Showing X of Y items" line
+  showFavoriteButton?: boolean; // Show favorite/watchlist button on cards (default true)
 }
 
 function LoadingSkeleton() {
@@ -230,6 +231,7 @@ export function ListingGrid({
   onCardClick,
   preMappedItems,
   hideResultCount,
+  showFavoriteButton,
 }: ListingGridProps) {
   // Loading state
   if (isLoading) {
@@ -267,6 +269,7 @@ export function ListingGrid({
         onCardClick={onCardClick}
         preMappedItems={preMappedItems}
         hideResultCount={hideResultCount}
+        showFavoriteButton={showFavoriteButton}
       />
     </ViewportTrackingProvider>
   );

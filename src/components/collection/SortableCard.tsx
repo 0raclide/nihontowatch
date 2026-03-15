@@ -19,9 +19,10 @@ interface SortableCardProps {
   currency: Currency;
   exchangeRates: ExchangeRates | null;
   onClick?: (listing: DisplayItem) => void;
+  showFavoriteButton?: boolean;
 }
 
-export function SortableCard({ item, currency, exchangeRates, onClick }: SortableCardProps) {
+export function SortableCard({ item, currency, exchangeRates, onClick, showFavoriteButton }: SortableCardProps) {
   const { cardStyle } = useCardStyle();
   const {
     attributes,
@@ -48,6 +49,7 @@ export function SortableCard({ item, currency, exchangeRates, onClick }: Sortabl
         currency={currency}
         exchangeRates={exchangeRates}
         onClick={onClick}
+        showFavoriteButton={showFavoriteButton}
       />
     </div>
   );

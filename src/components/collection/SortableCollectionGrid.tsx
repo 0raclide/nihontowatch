@@ -35,6 +35,7 @@ interface SortableCollectionGridProps {
   onReorder: (activeId: string, overId: string) => void;
   appendSlot?: React.ReactNode;
   onCardClick?: (listing: DisplayItem) => void;
+  showFavoriteButton?: boolean;
 }
 
 export function SortableCollectionGrid({
@@ -44,6 +45,7 @@ export function SortableCollectionGrid({
   onReorder,
   appendSlot,
   onCardClick,
+  showFavoriteButton,
 }: SortableCollectionGridProps) {
   const { cardStyle } = useCardStyle();
   const [activeItem, setActiveItem] = useState<DisplayItem | null>(null);
@@ -96,6 +98,7 @@ export function SortableCollectionGrid({
               currency={currency}
               exchangeRates={exchangeRates}
               onClick={onCardClick}
+              showFavoriteButton={showFavoriteButton}
             />
           ))}
           {appendSlot}
@@ -108,6 +111,7 @@ export function SortableCollectionGrid({
               listing={activeItem}
               currency={currency}
               exchangeRates={exchangeRates}
+              showFavoriteButton={showFavoriteButton}
             />
           </div>
         ) : null}

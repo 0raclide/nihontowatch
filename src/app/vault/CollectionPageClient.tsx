@@ -556,7 +556,7 @@ export function CollectionPageClient() {
     <div className="min-h-screen bg-surface transition-colors">
       <Header />
 
-      <div className="max-w-[1600px] mx-auto px-4 py-3 lg:px-6 lg:py-4 pb-24 lg:pb-8">
+      <div className="max-w-7xl mx-auto px-4 py-3 lg:px-6 lg:py-4 pb-24 lg:pb-8">
         {/* Toolbar: segment tabs + item count + add button + view toggles */}
         <div className="flex items-center justify-between mb-3 lg:mb-4">
           <div className="flex items-center gap-3">
@@ -707,6 +707,7 @@ export function CollectionPageClient() {
                   exchangeRates={exchangeRates}
                   onReorder={handleReorder}
                   onCardClick={handleCardClick}
+                  showFavoriteButton={false}
                 />
               ) : (
                 <ListingGrid
@@ -721,6 +722,7 @@ export function CollectionPageClient() {
                   exchangeRates={exchangeRates}
                   mobileView={mobileView}
                   onCardClick={handleCardClick}
+                  showFavoriteButton={false}
                 />
               )}
             </>
